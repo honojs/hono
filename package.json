@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Minimal web framework for Cloudflare Workers",
   "main": "src/hono.js",
   "scripts": {
@@ -8,6 +8,11 @@
   },
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yusukebe/hono.git"
+  },
+  "homepage": "https://github.com/yusukebe/hono",
   "devDependencies": {
     "jest": "^27.4.5",
     "node-fetch": "^2.6.6"
