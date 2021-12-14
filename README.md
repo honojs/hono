@@ -27,6 +27,11 @@ app.fire(); // call `addEventListener`
 
 Then, run `wrangler dev`.
 
+## Related projects
+
+- <https://github.com/bmf-san/goblin>
+- <https://github.com/kwhitley/itty-router>
+
 ## Author
 
 Yusuke Wada <https://github.com/yusukebe>
