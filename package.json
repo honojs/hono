@@ -1,0 +1,11 @@
+{
+  "name": "hono",
+  "version": "0.0.1",
+  "description": "Minimal web framework for such as Cloudflare Workers",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
+  "license": "MIT"
+}
