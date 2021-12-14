@@ -2,10 +2,14 @@
   "name": "hono",
   "version": "0.0.1",
   "description": "Minimal web framework for such as Cloudflare Workers",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --verbose"
   },
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^27.4.5",
+    "node-fetch": "^2.6.6"
+  }
 }
