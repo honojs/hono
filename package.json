@@ -1,8 +1,8 @@
 {
   "name": "hono",
   "version": "0.0.1",
-  "description": "Minimal web framework for such as Cloudflare Workers",
-  "main": "src/index.js",
+  "description": "Minimal web framework for Cloudflare Workers",
+  "main": "src/hono.js",
   "scripts": {
     "test": "jest --verbose"
   },
