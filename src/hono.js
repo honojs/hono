@@ -56,7 +56,7 @@ class App {
 
     const method = request.method.toLowerCase()
     const route = match[0]
-    if (route.method == method) {
+    if (route.method == method || route.method === 'all') {
       const handler = route.handler
       return handler(request)
     }
