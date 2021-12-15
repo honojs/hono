@@ -17,8 +17,32 @@ class App {
   }
 
   handle(event) {
-    const response = this.dispatch(event.request)
+    const result = this.dispatch(event.request)
+    const response = this.filter(result)
     return event.respondWith(response)
+  }
+
+  filter(result) {
+    if (result instanceof Response) {
+      return result
+    }
+    if (typeof (result) === 'object') {
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+    }
+    if (typeof (result) === 'string') {
+      return new Response(result, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/plain'
+        }
+      })
+    }
+    return this.notFound()
   }
 
   dispatch(request) {

@@ -16,5 +16,9 @@
   "devDependencies": {
     "jest": "^27.4.5",
     "node-fetch": "^2.6.6"
+  },
+  "dependencies": {
+    "global": "^4.4.0",
+    "wrangler": "^0.0.0-beta.6"
   }
 }
