@@ -4,26 +4,29 @@ class Router {
   constructor() {
     this.node = new Node({ label: "/" })
   }
-  add(path, stuff) {
-    this.node.insert(path, stuff);
+  add(method, path, handler) {
+    return this.node.insert(method, path, handler);
   }
-  match(path) {
-    return this.node.search(path);
+  match(method, path) {
+    return this.node.search(method, path);
   }
 }
 
 class Node {
-  constructor({ label, stuff, children } = {}) {
+  constructor({ label, method, handler, children } = {}) {
     this.label = label || "";
-    this.stuff = stuff || {};
     this.children = children || [];
+    this.method = {};
+    if (method) {
+      this['method'][method] = handler || {}
+    }
   }
 
-  insert(path, stuff) {
+  insert(method, path, handler) {
     let curNode = this
     if (path == '/') {
       curNode.label = path
-      curNode.stuff = stuff
+      curNode['method'][method] = handler
     }
     const ps = this.splitPath(path)
     for (const p of ps) {
@@ -31,10 +34,13 @@ class Node {
       if (nextNode) {
         curNode = nextNode
       } else {
-        curNode.children[p] = new Node({ label: p, stuff: stuff, children: [] })
+        curNode.children[p] = new Node({
+          method: method, label: p, handler: handler, children: []
+        })
         curNode = curNode.children[p]
       }
     }
+    return this
   }
 
   splitPath(path) {
@@ -68,8 +74,7 @@ class Node {
     return null
   }
 
-  search(path) {
-
+  search(method, path) {
     let curNode = this
     const params = {}
 
@@ -109,8 +114,32 @@ class Node {
         return this.noRoute()
       }
     }
-    return [curNode.stuff, params]
+
+    let handler = curNode['method']['all']
+    if (!handler) {
+      handler = curNode['method'][method];
+    }
+    if (!handler) {
+      return this.noRoute()
+    }
+    return [handler, params]
   }
 }
 
-module.exports = Router
+const proxyHandler = {
+  get: (target, prop) => (...args) => {
+    if (target.constructor.prototype.hasOwnProperty(prop)) {
+      return target[prop](...args)
+    } else {
+      return target.add(prop, ...args)
+    }
+  }
+}
+
+const WrappedRouter = () => {
+  return new Proxy(
+    new Router(), proxyHandler
+  )
+}
+
+module.exports = WrappedRouter
