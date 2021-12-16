@@ -9,11 +9,16 @@ class Route {
 
 class App {
   constructor() {
-    this.router = new Router();
+    this.router = Router();
   }
 
   addRoute(method, path, handler) {
     this.router.add(path, new Route(method, handler))
+    return this.router
+  }
+
+  route(path) {
+    this.router.add()
   }
 
   handle(event) {
@@ -55,7 +60,9 @@ class App {
     }
 
     const method = request.method.toLowerCase()
+    console.log("method " + method)
     const route = match[0]
+    console.log("route.method " + route.method)
     if (route.method == method || route.method === 'all') {
       const handler = route.handler
       return handler(request)
@@ -84,8 +91,7 @@ const proxyHandler = {
     if (target.constructor.prototype.hasOwnProperty(prop)) {
       return target[prop](args[0])
     } else {
-      target.addRoute(prop, args[0], args[1])
-      return
+      return target.addRoute(prop, args[0], args[1])
     }
   }
 }
