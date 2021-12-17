@@ -9,7 +9,7 @@ class Result {
 
 class Node {
   constructor({ method, label, handler, children } = {}) {
-    this.label = label || '/'
+    this.label = label || ''
     this.children = children || []
     this.method = {}
     if (method && handler) {
@@ -26,14 +26,12 @@ class Node {
         curNode = nextNode
       } else {
         curNode.children[p] = new Node({
-          method: method,
           label: p,
           handler: handler,
         })
         curNode = curNode.children[p]
       }
     }
-    // XXX
     if (!curNode.method[method]) {
       curNode.method[method] = handler
     }
@@ -67,22 +65,24 @@ class Node {
   }
 
   search(method, path) {
-    if (
-      path === '/' &&
-      this.label === '/' &&
-      Object.keys(this.method).length == 0
-    ) {
-      return this.noRoute()
-    }
-
     let curNode = this
     const params = {}
+
+    if (path === '/') {
+      const root = this.children['/']
+      if (!root.method[method]) {
+        return this.noRoute()
+      }
+    }
+
     for (const p of this.splitPath(path)) {
       let nextNode = curNode.children[p]
+
       if (nextNode) {
         curNode = nextNode
         continue
       }
+
       let isParamMatch = false
       for (const key in curNode.children) {
         if (key === '*') {
