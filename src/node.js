@@ -67,6 +67,14 @@ class Node {
   }
 
   search(method, path) {
+    if (
+      path === '/' &&
+      this.label === '/' &&
+      Object.keys(this.method).length == 0
+    ) {
+      return this.noRoute()
+    }
+
     let curNode = this
     const params = {}
     for (const p of this.splitPath(path)) {

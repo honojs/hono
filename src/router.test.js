@@ -1,23 +1,23 @@
-const Router = require('./router')
+const Router = require('./hono')
 let router = Router()
 
 describe('Basic Usage', () => {
-  it('get, post root', () => {
-    router.get('/', 'get root')
-    router.post('/', 'post root')
+  it('get, post hello', () => {
+    router.get('/hello', 'get hello')
+    router.post('/hello', 'post hello')
 
-    let res = router.matchRoute('GET', '/')
+    let res = router.matchRoute('GET', '/hello')
     expect(res).not.toBeNull()
-    expect(res.handler).toBe('get root')
+    expect(res.handler).toBe('get hello')
 
-    res = router.matchRoute('POST', '/')
+    res = router.matchRoute('POST', '/hello')
     expect(res).not.toBeNull()
-    expect(res.handler).toBe('post root')
+    expect(res.handler).toBe('post hello')
 
-    res = router.matchRoute('PUT', '/')
+    res = router.matchRoute('PUT', '/hello')
     expect(res).toBeNull()
 
-    res = router.matchRoute('GET', '/nothing')
+    res = router.matchRoute('GET', '/')
     expect(res).toBeNull()
   })
 })
@@ -52,12 +52,12 @@ describe('Complex', () => {
 
 describe('Chained Route', () => {
   it('Return rooter object', () => {
-    router = router.patch('/', 'patch root')
+    router = router.patch('/hello', 'patch hello')
     expect(router).not.toBeNull()
-    router = router.delete('/', 'delete root')
-    res = router.matchRoute('DELETE', '/')
+    router = router.delete('/hello', 'delete hello')
+    res = router.matchRoute('DELETE', '/hello')
     expect(res).not.toBeNull()
-    expect(res.handler).toBe('delete root')
+    expect(res.handler).toBe('delete hello')
   })
   it('Chain with route method', () => {
     router.route('/api/book').get('get book').post('post book').put('put book')
