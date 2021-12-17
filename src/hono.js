@@ -61,8 +61,6 @@ class Router {
       return this.notFound()
     }
 
-    console.log(res)
-
     const handler = res.handler
     return handler(request)
   }
