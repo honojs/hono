@@ -1,6 +1,21 @@
-# hono
+# Hono
 
-Minimal web framework for Cloudflare Workers.
+Hono [炎] - Tiny web framework for Cloudflare Workers and others.
+
+```js
+const app = new Hono()
+
+app.get('/', () => new Response('Hono!!'))
+
+app.fire()
+```
+
+## Feature
+
+- Fast - the router is implemented with Trie-Tree structure.
+- Tiny - use only standard API.
+- Portable - zero dependencies.
+- Optimized for Cloudflare Workers.
 
 ## Install
 
@@ -14,23 +29,48 @@ or
 $ npm install hono
 ```
 
-## Hello hono!
+## Routing
+
+### Basic
 
 ```js
-const Hono = require("hono");
-const app = Hono();
-
-app.get("/", () => new Response("Hono!!"));
-
-app.fire(); // call `addEventListener`
+app.get('/', () => 'GET /')
+app.post('/', () => 'POST /')
+app.get('/wild/*/card', () => 'GET /wild/*/card')
 ```
 
-Then, run `wrangler dev`.
+### Named Parameter
+
+```js
+app.get('/user/:name', (req) => {
+  const name = req.params('name')
+  ...
+})
+```
+
+### Regexp
+
+```js
+app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (req) => {
+  const date = req.params('date')
+  const title = req.params('title')
+  ...
+```
+
+### Chained Route
+
+```js
+app
+  .route('/api/book')
+  .get(() => 'GET /api/book')
+  .post(() => 'POST /api/book')
+  .put(() => 'PUT /api/book')
+```
 
 ## Related projects
 
-- <https://github.com/bmf-san/goblin>
-- <https://github.com/kwhitley/itty-router>
+- goblin <https://github.com/bmf-san/goblin>
+- itty-router <https://github.com/kwhitley/itty-router>
 
 ## Author
 
