@@ -1,89 +1,76 @@
 const Router = require('./router')
+let router = Router()
 
-describe('root match', () => {
-  let router = Router()
-  let route = router.get('/', 'get handler')
-  route = router.post('/', 'post handler')
+describe('Basic Usage', () => {
+  it('get, post root', () => {
+    router.get('/', 'get root')
+    router.post('/', 'post root')
 
-  let match = router.match('get', '/')
-  expect(match[0]).toBe('get handler')
-  match = router.match('post', '/')
-  expect(match[0]).toBe('post handler')
-})
+    let res = router.matchRoute('GET', '/')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('get root')
 
-describe.skip('all', () => {
-  let router = Router()
-  router.all('/hello', 'all hello')
+    res = router.matchRoute('POST', '/')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('post root')
 
-  let match = router.match('get', '/hello')
-  expect(match[0]).toBe('all hello')
-  match = router.match('post', '/hello')
-  expect(match[0]).toBe('all hello')
-})
+    res = router.matchRoute('PUT', '/')
+    expect(res).toBeNull()
 
-describe.skip('', () => {
-  let router = Router()
-  it('/ match', () => {
-    router.add('get', '/', 'root')
-    let match = router.match('get', '/')
-    expect(match).not.toBeNull()
-    expect(match[0]).toBe('root')
-    match = router.match('get', '/foo')
-    expect(match).toBeNull()
-  })
-
-  it('/hello match', () => {
-    router.add('/hello', 'hello')
-    match = router.match('/foo')
-    expect(match).toBeNull()
-    match = router.match('/hello')
-    expect(match[0]).toBe('hello')
+    res = router.matchRoute('GET', '/nothing')
+    expect(res).toBeNull()
   })
 })
 
-
-describe.skip('path match', () => {
-  let router = Router()
-  router.add('/entry/:id', 'entry-id')
-  router.add('/entry/:id/:comment', 'entry-id-comment')
-  router.add('/year/:year{[0-9]{4}}/:month{[0-9]{2}}', 'date-regex')
-
-  it('entry id match', () => {
-    const match = router.match('/entry/123')
-    expect(match[0]).toBe('entry-id')
-    expect(match[1]['id']).toBe('123')
+describe('Complex', () => {
+  it('Named Param', () => {
+    router.get('/entry/:id', 'get entry')
+    res = router.matchRoute('GET', '/entry/123')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('get entry')
+    expect(res.params['id']).toBe('123')
   })
-
-  it('entry id and comment match', () => {
-    const match = router.match('/entry/123/45678')
-    expect(match[0]).toBe('entry-id-comment')
-    expect(match[1]['id']).toBe('123')
-    expect(match[1]['comment']).toBe('45678')
+  it('Wildcard', () => {
+    router.get('/wild/*/card', 'get wildcard')
+    res = router.matchRoute('GET', '/wild/xxx/card')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('get wildcard')
   })
-
-  it('date-regex', () => {
-    const match = router.match('/year/2021/12')
-    expect(match[0]).toBe('date-regex')
-    expect(match[1]['year']).toBe('2021')
-    expect(match[1]['month']).toBe('12')
-  })
-
-  it('not match', () => {
-    let match = router.match('/foo')
-    expect(match).toBeNull()
-    match = router.match('/year/abc')
-    expect(match).toBeNull()
+  it('Regexp', () => {
+    router.get('/post/:date{[0-9]+}/:title{[a-z]+}', 'get post')
+    res = router.matchRoute('GET', '/post/20210101/hello')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('get post')
+    expect(res.params['date']).toBe('20210101')
+    expect(res.params['title']).toBe('hello')
+    res = router.matchRoute('GET', '/post/onetwothree')
+    expect(res).toBeNull()
+    res = router.matchRoute('GET', '/post/123/123')
+    expect(res).toBeNull()
   })
 })
 
-describe.skip('wildcard', () => {
-  let router = Router()
-  it('match', () => {
-    router = Router()
-    router.add('/abc/*/def')
-    let match = router.match('/abc/xxx/def')
-    expect(match).not.toBeNull()
-    match = router.match('/abc/xxx/abc')
-    expect(match).toBeNull()
+describe('Chained Route', () => {
+  it('Return rooter object', () => {
+    router = router.patch('/', 'patch root')
+    expect(router).not.toBeNull()
+    router = router.delete('/', 'delete root')
+    res = router.matchRoute('DELETE', '/')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('delete root')
+  })
+  it('Chain with route method', () => {
+    router.route('/api/book').get('get book').post('post book').put('put book')
+    res = router.matchRoute('GET', '/api/book')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('get book')
+    res = router.matchRoute('POST', '/api/book')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('post book')
+    res = router.matchRoute('PUT', '/api/book')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('put book')
+    res = router.matchRoute('DELETE', '/api/book')
+    expect(res).toBeNull()
   })
 })
