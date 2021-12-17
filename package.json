@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Minimal web framework for Cloudflare Workers",
   "main": "src/hono.js",
   "scripts": {
