@@ -3,7 +3,7 @@
 Hono [炎] - Tiny web framework for Cloudflare Workers and others.
 
 ```js
-const app = new Hono()
+const app = Hono()
 
 app.get('/', () => new Response('Hono!!'))
 

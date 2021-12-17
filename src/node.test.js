@@ -12,13 +12,12 @@ describe('Util Methods', () => {
 })
 
 describe('Basic Usage', () => {
-  node.insert('get', '/', 'get root')
   node.insert('get', '/hello', 'get hello')
   node.insert('post', '/hello', 'post hello')
   node.insert('get', '/hello/foo', 'get hello foo')
 
   it('get, post /hello', () => {
-    expect(node.search('get', '/').handler).toBe('get root')
+    expect(node.search('get', '/')).toBeNull()
     expect(node.search('post', '/')).toBeNull()
 
     expect(node.search('get', '/hello').handler).toBe('get hello')

@@ -1,17 +1,17 @@
 const Hono = require('./hono')
 const fetch = require('node-fetch')
 
-const app = new Hono()
+const app = Hono()
 
 describe('GET match', () => {
   app.get('/hello', () => {
     return new fetch.Response('hello', {
-      status: 200
+      status: 200,
     })
   })
   app.notFound = () => {
     return new fetch.Response('not found', {
-      status: 404
+      status: 404,
     })
   }
   it('GET /hello is ok', () => {

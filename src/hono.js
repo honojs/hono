@@ -1,24 +1,25 @@
-const Router = require('./router')
+const Node = require('./node')
 
-class Route {
-  constructor(method, handler) {
-    this.method = method;
-    this.handler = handler;
-  }
-}
-
-class App {
+class Router {
   constructor() {
-    this.router = Router();
-  }
-
-  addRoute(method, path, handler) {
-    this.router.add(path, new Route(method, handler))
-    return this.router
+    this.node = new Node()
+    this.tempPath = '/'
   }
 
   route(path) {
-    this.router.add()
+    this.tempPath = path
+    return WrappedRouter(this)
+  }
+
+  addRoute(method, path, handler) {
+    this.node.insert(method, path, handler)
+    return WrappedRouter(this)
+  }
+
+  matchRoute(method, path) {
+    method = method.toLowerCase()
+    const res = this.node.search(method, path)
+    return res
   }
 
   handle(event) {
@@ -31,20 +32,20 @@ class App {
     if (result instanceof Response) {
       return result
     }
-    if (typeof (result) === 'object') {
+    if (typeof result === 'object') {
       return new Response(JSON.stringify(result), {
         status: 200,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       })
     }
-    if (typeof (result) === 'string') {
+    if (typeof result === 'string') {
       return new Response(result, {
         status: 200,
         headers: {
-          'Content-Type': 'text/plain'
-        }
+          'Content-Type': 'text/plain',
+        },
       })
     }
     return this.notFound()
@@ -53,55 +54,52 @@ class App {
   dispatch(request) {
     const url = new URL(request.url)
     const path = url.pathname
-    const match = this.router.match(path)
+    const method = request.method
+    const res = this.matchRoute(method, path)
 
-    if (!match) {
+    if (!res) {
       return this.notFound()
     }
 
-    const method = request.method.toLowerCase()
-    console.log("method " + method)
-    const route = match[0]
-    console.log("route.method " + route.method)
-    if (route.method == method || route.method === 'all') {
-      const handler = route.handler
-      return handler(request)
-    }
-    return this.notFound()
+    console.log(res)
+
+    const handler = res.handler
+    return handler(request)
   }
 
   notFound() {
     return new Response('Not Found', {
       status: 404,
       headers: {
-        'content-type': 'text/plain'
-      }
+        'content-type': 'text/plain',
+      },
     })
   }
 
   fire() {
-    addEventListener("fetch", (event) => {
+    addEventListener('fetch', (event) => {
       this.handle(event)
     })
   }
 }
 
 const proxyHandler = {
-  get: (target, prop) => (...args) => {
-    if (target.constructor.prototype.hasOwnProperty(prop)) {
-      return target[prop](args[0])
-    } else {
-      return target.addRoute(prop, args[0], args[1])
-    }
-  }
+  get:
+    (target, prop) =>
+    (...args) => {
+      if (target.constructor.prototype.hasOwnProperty(prop)) {
+        return target[prop](...args)
+      } else {
+        if (args.length === 1) {
+          return target.addRoute(prop, target.tempPath, ...args)
+        }
+        return target.addRoute(prop, ...args)
+      }
+    },
 }
 
-const app = new App()
-
-function Hono() {
-  return new Proxy(
-    app, proxyHandler
-  )
+const WrappedRouter = (router = new Router()) => {
+  return new Proxy(router, proxyHandler)
 }
 
-module.exports = Hono
+module.exports = WrappedRouter
