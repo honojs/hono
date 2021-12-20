@@ -5,7 +5,7 @@ Hono [炎] - Tiny web framework for Cloudflare Workers and others.
 ```js
 const app = Hono()
 
-app.get('/', () => 'Hono!!')
+app.get('/', () => new Response('Hono!!'))
 
 app.fire()
 ```
@@ -19,7 +19,7 @@ app.fire()
 
 ## Install
 
-```sh
+```
 $ yarn add hono
 ```
 
@@ -31,11 +31,10 @@ $ npm install hono
 
 ## Methods
 
-- app.**HTTP_METHOD**(path, ...callback)
-- app.**all**(path, ...callback)
+- app.**HTTP_METHOD**(path, callback)
+- app.**all**(path, callback)
 - app.**route**(path)
-- app.**before**(...callback)
-- app.**after**(...callback)
+- app.**use**(path, middleware)
 
 ## Routing
 
@@ -44,14 +43,21 @@ $ npm install hono
 `app.HTTP_METHOD`
 
 ```js
-app.get('/', () => 'GET /')
-app.post('/', () => 'POST /')
-app.get('/wild/*/card', () => 'GET /wild/*/card')
+// HTTP Methods
+app.get('/', () => new Response('GET /'))
+app.post('/', () => new Response('POST /'))
+
+
+// Wildcard
+app.get('/wild/*/card', => {
+  return new Reponse('GET /wild/*/card')
+})
 ```
 
 `app.all`
 
 ```js
+// Any HTTP methods
 app.all('/hello', () => 'ALL Method /hello')
 ```
 
@@ -78,9 +84,9 @@ app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (req) => {
 ```js
 app
   .route('/api/book')
-  .get(() => 'GET /api/book')
-  .post(() => 'POST /api/book')
-  .put(() => 'PUT /api/book')
+  .get(() => {...})
+  .post(() => {...})
+  .put(() => {...})
 ```
 
 ## Middleware
@@ -93,7 +99,7 @@ const logger = (req, res, next) => {
 
 const addHeader = (req, res, next) => {
   next()
-  res.headers.add('X-message', 'This is addHeader middleware!')
+  res.headers.add('x-message', 'This is middleware!')
 }
 
 app = app.use('*', logger)
@@ -122,6 +128,8 @@ app.get('/entry/:id', (req) => {
 
 ## Related projects
 
+- koa <https://github.com/koajs/koa>
+- express <https://github.com/expressjs/express>
 - itty-router <https://github.com/kwhitley/itty-router>
 - Sunder <https://github.com/SunderJS/sunder>
 - goblin <https://github.com/bmf-san/goblin>
