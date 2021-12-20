@@ -1,4 +1,4 @@
-name = "basic"
+name = "hono-example-basic"
 type = "webpack"
 route = ''
 zone_id = ''
