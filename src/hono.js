@@ -8,7 +8,6 @@ class Router {
 
   add(method, path, ...handlers) {
     this.node.insert(method, path, handlers)
-    return WrappedRouter(this)
   }
 
   match(method, path) {
@@ -24,7 +23,7 @@ const proxyHandler = {
       if (target.constructor.prototype.hasOwnProperty(prop)) {
         return target[prop](...args)
       } else {
-        if (args.length === 1) {
+        if (args.length == 1) {
           return target.addRoute(prop, target.router.tempPath, ...args)
         }
         return target.addRoute(prop, ...args)
@@ -56,15 +55,12 @@ const compose = (middleware) => {
 class App {
   constructor() {
     this.router = new Router()
-    this.routerBefore = new Router()
-    this.routerAfter = new Router()
-    this.middleware = []
     this.middlewareRouter = new Router()
   }
 
   addRoute(method, path, ...args) {
     this.router.add(method, path, ...args)
-    return WrappedRouter(this)
+    return WrappedApp(this)
   }
 
   matchRoute(method, path) {
@@ -73,16 +69,16 @@ class App {
 
   route(path) {
     this.router.tempPath = path
-    return WrappedRouter(this)
+    return WrappedApp(this)
   }
 
-  use(path, fn) {
-    fn = [fn]
+  use(path, middleware) {
+    middleware = [middleware]
     const result = this.middlewareRouter.match('all', path)
     if (result) {
-      fn.push(...result.handler)
+      middleware.push(...result.handler)
     }
-    this.middlewareRouter.add('all', path, ...fn)
+    this.middlewareRouter.add('all', path, ...middleware)
   }
 
   async dispatch(request, response) {
@@ -105,16 +101,13 @@ class App {
       middleware.push(...mwResult.handler)
     }
 
-    const handlers = result.handler
-    for (const handler of handlers) {
+    for (const handler of result.handler) {
       const handleReponse = handler(request)
-      if (handleReponse) {
-        response = handleReponse
-      }
+      if (handleReponse) response = handleReponse
     }
 
-    const fn = compose(middleware)
-    fn(request, response)
+    const composed = compose(middleware)
+    composed(request, response)
 
     return response
   }
@@ -134,8 +127,8 @@ class App {
   }
 }
 
-const WrappedRouter = (router = new App()) => {
+const WrappedApp = (router = new App()) => {
   return new Proxy(router, proxyHandler)
 }
 
-module.exports = WrappedRouter
+module.exports = WrappedApp
