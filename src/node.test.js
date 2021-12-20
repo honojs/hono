@@ -1,7 +1,7 @@
 const Node = require('./node')
-const node = new Node()
 
 describe('Util Methods', () => {
+  const node = new Node()
   it('node.splitPath', () => {
     let ps = node.splitPath('/')
     expect(ps[0]).toBe('/')
@@ -11,7 +11,24 @@ describe('Util Methods', () => {
   })
 })
 
+describe('Root Node', () => {
+  const node = new Node()
+  node.insert('get', '/', 'get root')
+  it('get /', () => {
+    expect(node.search('get', '/')).not.toBeNull()
+  })
+})
+
+describe('Root Node', () => {
+  const node = new Node()
+  node.insert('get', '/hello', 'get hello')
+  it('get /', () => {
+    expect(node.search('get', '/')).toBeNull()
+  })
+})
+
 describe('Basic Usage', () => {
+  const node = new Node()
   node.insert('get', '/hello', 'get hello')
   node.insert('post', '/hello', 'post hello')
   node.insert('get', '/hello/foo', 'get hello foo')
@@ -38,6 +55,7 @@ describe('Basic Usage', () => {
 })
 
 describe('Name path', () => {
+  const node = new Node()
   it('get /entry/123', () => {
     node.insert('get', '/entry/:id', 'get entry')
     let res = node.search('get', '/entry/123')
@@ -65,6 +83,7 @@ describe('Name path', () => {
 })
 
 describe('Wildcard', () => {
+  const node = new Node()
   it('/wildcard-abc/xxxxxx/wildcard-efg', () => {
     node.insert('get', '/wildcard-abc/*/wildcard-efg', 'wildcard')
     res = node.search('get', '/wildcard-abc/xxxxxx/wildcard-efg')
@@ -74,6 +93,7 @@ describe('Wildcard', () => {
 })
 
 describe('Regexp', () => {
+  const node = new Node()
   node.insert(
     'get',
     '/regex-abc/:id{[0-9]+}/comment/:comment_id{[a-z]+}',
@@ -97,6 +117,7 @@ describe('Regexp', () => {
 })
 
 describe('All', () => {
+  const node = new Node()
   node.insert('all', '/all-methods', 'all methods')
   it('/all-methods', () => {
     res = node.search('get', '/all-methods')
