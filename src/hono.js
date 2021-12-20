@@ -11,8 +11,8 @@ class Router {
     return WrappedRouter(this)
   }
 
-  addRoute(method, path, handler) {
-    this.node.insert(method, path, handler)
+  addRoute(method, path, ...handler) {
+    this.node.insert(method, path, [...handler])
     return WrappedRouter(this)
   }
 
@@ -51,7 +51,7 @@ class Router {
     return this.notFound()
   }
 
-  dispatch(request) {
+  dispatch(request, response) {
     const url = new URL(request.url)
     const result = this.match(request.method, url.pathname)
 
@@ -66,8 +66,11 @@ class Router {
       return result.params[key]
     }
 
-    const handler = result.handler
-    return handler(request)
+    for (const handler of result.handler) {
+      response = handler(request, response)
+      response ||= response
+    }
+    return response
   }
 
   notFound() {

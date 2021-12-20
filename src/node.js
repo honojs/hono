@@ -2,7 +2,7 @@ const methodNameOfAll = 'all'
 
 class Result {
   constructor({ handler, params } = {}) {
-    this.handler = handler
+    this.handler = handler || []
     this.params = params || {}
   }
 }
