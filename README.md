@@ -86,24 +86,20 @@ app
 ## Middleware
 
 ```js
-const logger = (req, _) => {
-  console.log(`${req.method}` : `${req.url}`)
+const logger = (req, res, next) => {
+  console.log(`[${req.method}] ${req.url}`)
+  next()
 }
 
-app.before('/*', logger)
-
-const addHeader = (_, res) => {
+const addHeader = (req, res, next) => {
+  next()
   res.headers.add('X-message', 'This is addHeader middleware!')
 }
-const customNotFound = (_, res) => {
-  if (res.status == 404) {
-    return new Response('404 Not Found!!', {
-      status: 404
-    })
-  }
-}
 
-app.after('/*', addHeader, customNotFound)
+app = app.use('*', logger)
+app = app.use('/message/*', addHeader)
+
+app.get('/message/hello', () => 'Hello Middleware!')
 ```
 
 ## Request

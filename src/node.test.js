@@ -16,6 +16,7 @@ describe('Root Node', () => {
   node.insert('get', '/', 'get root')
   it('get /', () => {
     expect(node.search('get', '/')).not.toBeNull()
+    expect(node.search('get', '/hello')).toBeNull()
   })
 })
 
@@ -24,6 +25,15 @@ describe('Root Node', () => {
   node.insert('get', '/hello', 'get hello')
   it('get /', () => {
     expect(node.search('get', '/')).toBeNull()
+  })
+})
+
+describe('All', () => {
+  const node = new Node()
+  node.insert('get', '*', 'get all')
+  it('get /', () => {
+    expect(node.search('get', '/')).not.toBeNull()
+    expect(node.search('get', '/hello')).not.toBeNull()
   })
 })
 

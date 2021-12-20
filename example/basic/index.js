@@ -1,35 +1,26 @@
 const Hono = require('../../src/hono')
 const app = Hono()
 
-app.get('/', () => 'Hono!!')
-app.get('/hello', () => 'This is /hello')
-
-app.fire()
-
-const router = app.router()
-
-router.get('/:id', (req, res) => {
-  req.query
-  req.params
-  res.status(200).json({ message: 'hello' })
-})
-
-app.use('/', router)
-app.all('/', router)
-
-const logger = (req) => {
-  const url = req.newURL
-  console.log(req.url.pathname)
+// Middleware
+const logger = (req, _, next) => {
+  console.log(`[${req.method}] ${req.url}`)
+  next()
+}
+const addHeader = (_, res, next) => {
+  next()
+  res.headers.append('X-message', 'This is addHeader middleware!')
 }
 
-app.get('/hello', logger, (req) => {
-  const message = body.URLSearchParams.get('message')
-  const res = req.newResponse()
-  res.json({ message: message })
-  return res
+app.use('*', logger)
+app.use('/hello', addHeader)
+
+// Routing
+app.get('/', () => {
+  return new Response('Hono!!')
+})
+app.get('/hello', () => {
+  return new Response('This is /hello')
 })
 
-app.handle({ method: 'GET', path: '/hello?message=hello' })
-
-Application
-Router
+// addEventListener
+app.fire()
