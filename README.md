@@ -5,7 +5,7 @@ Hono [炎] - Tiny web framework for Cloudflare Workers and others.
 ```js
 const app = Hono()
 
-app.get('/', () => new Response('Hono!!'))
+app.get('/', () => 'Hono!!')
 
 app.fire()
 ```
@@ -29,14 +29,30 @@ or
 $ npm install hono
 ```
 
+## Methods
+
+- app.**HTTP_METHOD**(path, ...callback)
+- app.**all**(path, ...callback)
+- app.**route**(path)
+- app.**before**(...callback)
+- app.**after**(...callback)
+
 ## Routing
 
 ### Basic
+
+`app.HTTP_METHOD`
 
 ```js
 app.get('/', () => 'GET /')
 app.post('/', () => 'POST /')
 app.get('/wild/*/card', () => 'GET /wild/*/card')
+```
+
+`app.all`
+
+```js
+app.all('/hello', () => 'ALL Method /hello')
 ```
 
 ### Named Parameter
@@ -67,10 +83,52 @@ app
   .put(() => 'PUT /api/book')
 ```
 
+## Middleware
+
+```js
+const logger = (req, _) => {
+  console.log(`${req.method}` : `${req.url}`)
+}
+
+app.before('/*', logger)
+
+const addHeader = (_, res) => {
+  res.headers.add('X-message', 'This is addHeader middleware!')
+}
+const customNotFound = (_, res) => {
+  if (res.status == 404) {
+    return new Response('404 Not Found!!', {
+      status: 404
+    })
+  }
+}
+
+app.after('/*', addHeader, customNotFound)
+```
+
+## Request
+
+### query
+
+```js
+app.get('/search', (req) => {
+  const query = req.query('q')
+})
+```
+
+### params
+
+```js
+app.get('/entry/:id', (req) => {
+  const id = req.params('id')
+})
+```
+
 ## Related projects
 
-- goblin <https://github.com/bmf-san/goblin>
 - itty-router <https://github.com/kwhitley/itty-router>
+- Sunder <https://github.com/SunderJS/sunder>
+- goblin <https://github.com/bmf-san/goblin>
 
 ## Author
 
