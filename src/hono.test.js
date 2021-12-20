@@ -3,7 +3,7 @@ const fetch = require('node-fetch')
 
 const app = Hono()
 
-describe('GET match', () => {
+describe('GET Request', () => {
   app.get('/hello', () => {
     return new fetch.Response('hello', {
       status: 200,
@@ -25,5 +25,32 @@ describe('GET match', () => {
     let res = app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
+  })
+})
+
+describe('params and query', () => {
+  app.get('/entry/:id', (req) => {
+    const id = req.params('id')
+    return new fetch.Response(`id is ${id}`, {
+      status: 200,
+    })
+  })
+  app.get('/search', (req) => {
+    const name = req.query('name')
+    return new fetch.Response(`name is ${name}`, {
+      status: 200,
+    })
+  })
+  it('params of /entry/:id is found', async () => {
+    let req = new fetch.Request('https://example.com/entry/123')
+    let res = app.dispatch(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('id is 123')
+  })
+  it('query of /search?name=sam is found', async () => {
+    let req = new fetch.Request('https://example.com/search?name=sam')
+    let res = app.dispatch(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('name is sam')
   })
 })

@@ -16,13 +16,13 @@ class Router {
     return WrappedRouter(this)
   }
 
-  matchRoute(method, path) {
+  match(method, path) {
     method = method.toLowerCase()
     const res = this.node.search(method, path)
     return res
   }
 
-  handle(event) {
+  handleEvent(event) {
     const result = this.dispatch(event.request)
     const response = this.filter(result)
     return event.respondWith(response)
@@ -53,15 +53,20 @@ class Router {
 
   dispatch(request) {
     const url = new URL(request.url)
-    const path = url.pathname
-    const method = request.method
-    const res = this.matchRoute(method, path)
+    const result = this.match(request.method, url.pathname)
 
-    if (!res) {
+    if (!result) {
       return this.notFound()
     }
 
-    const handler = res.handler
+    request.query = (key) => {
+      return url.searchParams.get(key)
+    }
+    request.params = (key) => {
+      return result.params[key]
+    }
+
+    const handler = result.handler
     return handler(request)
   }
 
@@ -76,7 +81,7 @@ class Router {
 
   fire() {
     addEventListener('fetch', (event) => {
-      this.handle(event)
+      this.handleEvent(event)
     })
   }
 }
