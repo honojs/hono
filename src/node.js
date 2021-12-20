@@ -32,9 +32,7 @@ class Node {
         curNode = curNode.children[p]
       }
     }
-    if (!curNode.method[method]) {
-      curNode.method[method] = handler
-    }
+    curNode.method[method] = handler
   }
 
   splitPath(path) {
@@ -66,11 +64,17 @@ class Node {
 
   search(method, path) {
     let curNode = this
-    const params = {}
+    let [handler, params] = [, {}]
 
     if (path === '/') {
       const root = this.children['/']
-      if (!root.method[method]) {
+      if (!root) return this.noRoute()
+      // app.get('*', () => 'All')
+      const rootAsterisk = root.children['*']
+      if (rootAsterisk) {
+        handler =
+          rootAsterisk.method[method] || rootAsterisk.method[methodNameOfAll]
+      } else if (!root.method[method]) {
         return this.noRoute()
       }
     }
@@ -109,14 +113,14 @@ class Node {
       }
     }
 
-    let handler = curNode.method[methodNameOfAll] || curNode.method[method]
+    handler =
+      handler || curNode.method[methodNameOfAll] || curNode.method[method]
 
-    if (handler) {
-      const res = new Result({ handler: handler, params: params })
-      return res
-    } else {
+    if (!handler) {
       return this.noRoute()
     }
+    const res = new Result({ handler: handler, params: params })
+    return res
   }
 
   noRoute() {
