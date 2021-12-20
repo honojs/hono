@@ -11,16 +11,13 @@ const addHeader = (_, res, next) => {
   res.headers.append('X-message', 'This is addHeader middleware!')
 }
 
+// Mount middleware
 app.use('*', logger)
 app.use('/hello', addHeader)
 
 // Routing
-app.get('/', () => {
-  return new Response('Hono!!')
-})
-app.get('/hello', () => {
-  return new Response('This is /hello')
-})
+app.get('/', () => new Response('Hono!!'))
+app.get('/hello', () => new Response('This is /hello'))
 
 // addEventListener
 app.fire()
