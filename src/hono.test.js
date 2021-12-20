@@ -1,9 +1,8 @@
 const Hono = require('./hono')
 const fetch = require('node-fetch')
 
-const app = Hono()
-
 describe('GET Request', () => {
+  const app = Hono()
   app.get('/hello', () => {
     return new fetch.Response('hello', {
       status: 200,
@@ -29,6 +28,7 @@ describe('GET Request', () => {
 })
 
 describe('params and query', () => {
+  const app = Hono()
   app.get('/entry/:id', (req) => {
     const id = req.params('id')
     return new fetch.Response(`id is ${id}`, {
@@ -52,5 +52,20 @@ describe('params and query', () => {
     let res = app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('name is sam')
+  })
+})
+
+describe('Middleware', () => {
+  const app = Hono()
+  const logger = (req) => {
+    console.log(`${req.method} : ${req.url}`)
+  }
+  app.get('/*', logger, () => {
+    return new fetch.Response('log!')
+  })
+  it('logger', async () => {
+    let req = new fetch.Request('https://example.com/log')
+    let res = app.dispatch(req)
+    expect(res.status).toBe(200)
   })
 })
