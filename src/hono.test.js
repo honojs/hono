@@ -29,17 +29,18 @@ describe('GET Request', () => {
 
 describe('params and query', () => {
   const app = Hono()
-  app.get('/entry/:id', (req) => {
-    const id = req.params('id')
+  app.get('/entry/:id', async (req) => {
+    const id = await req.params('id')
     return new fetch.Response(`id is ${id}`, {
       status: 200,
     })
   })
-  app.get('/search', (req) => {
-    const name = req.query('name')
-    return new fetch.Response(`name is ${name}`, {
+  app.get('/search', async (req) => {
+    const name = await req.query('name')
+    let res = new fetch.Response(`name is ${name}`, {
       status: 200,
     })
+    return res
   })
   it('params of /entry/:id is found', async () => {
     let req = new fetch.Request('https://example.com/entry/123')
@@ -55,8 +56,8 @@ describe('params and query', () => {
   })
 })
 
-describe('Middleware', () => {
-  let app = Hono()
+describe.skip('Middleware', () => {
+  const app = Hono()
 
   const logger = (req, _, next) => {
     console.log(`${req.method} : ${req.url}`)
