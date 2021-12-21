@@ -15,13 +15,14 @@ describe('GET Request', () => {
   }
   it('GET /hello is ok', async () => {
     let req = new fetch.Request('https://example.com/hello')
-    let res = await app.dispatch(req)
+    let res = await app.dispatch(req, new fetch.Response())
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello')
   })
   it('GET / is not found', async () => {
     let req = new fetch.Request('https://example.com/')
-    let res = await app.dispatch(req)
+    let res = await app.dispatch(req, new fetch.Response())
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
   })
@@ -29,19 +30,21 @@ describe('GET Request', () => {
 
 describe('params and query', () => {
   const app = Hono()
-  app.get('/entry/:id', async (req) => {
-    const id = await req.params('id')
+
+  app.get('/entry/:id', async (c) => {
+    const id = await c.req.params('id')
     return new fetch.Response(`id is ${id}`, {
       status: 200,
     })
   })
-  app.get('/search', async (req) => {
-    const name = await req.query('name')
-    let res = new fetch.Response(`name is ${name}`, {
+
+  app.get('/search', async (c) => {
+    const name = await c.req.query('name')
+    return new fetch.Response(`name is ${name}`, {
       status: 200,
     })
-    return res
   })
+
   it('params of /entry/:id is found', async () => {
     let req = new fetch.Request('https://example.com/entry/123')
     let res = await app.dispatch(req)
@@ -56,16 +59,17 @@ describe('params and query', () => {
   })
 })
 
-describe.skip('Middleware', () => {
+describe('Middleware', () => {
   const app = Hono()
 
-  const logger = (req, _, next) => {
-    console.log(`${req.method} : ${req.url}`)
+  const logger = (c, next) => {
+    console.log(`${c.req.method} : ${c.req.url}`)
     next()
   }
-  const customHeader = (_, res, next) => {
+
+  const customHeader = (c, next) => {
     next()
-    res.headers.append('x-message', 'custom-header')
+    c.res.headers.append('x-message', 'custom-header')
   }
 
   app.use('*', logger)
@@ -79,6 +83,6 @@ describe.skip('Middleware', () => {
     let res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello')
-    expect(res.headers.get('x-message')).toBe('custom-header')
+    expect(await res.headers.get('x-message')).toBe('custom-header')
   })
 })

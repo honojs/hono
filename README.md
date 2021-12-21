@@ -15,7 +15,8 @@ app.fire()
 - Fast - the router is implemented with Trie-Tree structure.
 - Tiny - use only standard API.
 - Portable - zero dependencies.
-- Optimized for Cloudflare Workers.
+- Flexible - you can make your own middlewares.
+- Optimized - for Cloudflare Workers.
 
 ## Install
 
@@ -47,9 +48,8 @@ $ npm install hono
 app.get('/', () => new Response('GET /'))
 app.post('/', () => new Response('POST /'))
 
-
 // Wildcard
-app.get('/wild/*/card', => {
+app.get('/wild/*/card', () => {
   return new Reponse('GET /wild/*/card')
 })
 ```
@@ -64,8 +64,8 @@ app.all('/hello', () => 'ALL Method /hello')
 ### Named Parameter
 
 ```js
-app.get('/user/:name', (req) => {
-  const name = req.params('name')
+app.get('/user/:name', (c) => {
+  const name = c.req.params('name')
   ...
 })
 ```
@@ -73,9 +73,9 @@ app.get('/user/:name', (req) => {
 ### Regexp
 
 ```js
-app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (req) => {
-  const date = req.params('date')
-  const title = req.params('title')
+app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (c) => {
+  const date = c.req.params('date')
+  const title = c.req.params('title')
   ...
 ```
 
@@ -84,22 +84,22 @@ app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (req) => {
 ```js
 app
   .route('/api/book')
-  .get(() => {...})
-  .post(() => {...})
-  .put(() => {...})
+    .get(() => {...})
+    .post(() => {...})
+    .put(() => {...})
 ```
 
 ## Middleware
 
 ```js
-const logger = (req, res, next) => {
-  console.log(`[${req.method}] ${req.url}`)
+const logger = (c, next) => {
+  console.log(`[${c.req.method}] ${c.req.url}`)
   next()
 }
 
-const addHeader = (req, res, next) => {
+const addHeader = (c, next) => {
   next()
-  res.headers.add('x-message', 'This is middleware!')
+  c.res.headers.add('x-message', 'This is middleware!')
 }
 
 app = app.use('*', logger)
@@ -108,21 +108,43 @@ app = app.use('/message/*', addHeader)
 app.get('/message/hello', () => 'Hello Middleware!')
 ```
 
+## Context
+
+### req
+
+```js
+app.get('/hello', (c) => {
+  const userAgent = c.req.headers('User-Agent')
+  ...
+})
+```
+
+### res
+
+```js
+app.use('/', (c, next) => {
+  next()
+  c.res.headers.append('X-Debug', 'Debug message')
+})
+```
+
 ## Request
 
 ### query
 
 ```js
-app.get('/search', (req) => {
-  const query = req.query('q')
+app.get('/search', (c) => {
+  const query = c.req.query('q')
+  ...
 })
 ```
 
 ### params
 
 ```js
-app.get('/entry/:id', (req) => {
-  const id = req.params('id')
+app.get('/entry/:id', (c) => {
+  const id = c.req.params('id')
+  ...
 })
 ```
 

@@ -1,5 +1,8 @@
+'use strict'
+
 const Node = require('./node')
-const filter = require('./middleware/request')
+const compose = require('./compose')
+const filter = require('./middleware/filter')
 
 class Router {
   constructor() {
@@ -32,31 +35,11 @@ const proxyHandler = {
     },
 }
 
-// Based on the code in the MIT licensed `koa-compose` package.
-const compose = (middleware) => {
-  return function (req, res, next) {
-    let index = -1
-    return dispatch(0)
-    function dispatch(i) {
-      if (i <= index)
-        return Promise.reject(new Error('next() called multiple times'))
-      index = i
-      let fn = middleware[i]
-      if (i === middleware.length) fn = next
-      if (!fn) return Promise.resolve()
-      try {
-        return Promise.resolve(fn(req, res, dispatch.bind(null, i + 1)))
-      } catch (err) {
-        return Promise.reject(err)
-      }
-    }
-  }
-}
-
 class App {
   constructor() {
     this.router = new Router()
     this.middlewareRouter = new Router()
+    this.middleware = []
   }
 
   addRoute(method, path, ...args) {
@@ -82,6 +65,11 @@ class App {
     this.middlewareRouter.add('all', path, ...middleware)
   }
 
+  // XXX
+  createContext(req, res) {
+    return { req: req, res: res }
+  }
+
   async dispatch(request, response) {
     const url = new URL(request.url)
     const [method, path] = [request.method, url.pathname]
@@ -99,22 +87,23 @@ class App {
 
     let handler
     for (const resultHandler of result.handler) {
-      handler = resultHandler
+      if (resultHandler) {
+        handler = resultHandler
+      }
     }
 
-    /*
-    middleware.push((req, res, next) => {
-      handler(req, res)
+    let wrappedHandler = (context, next) => {
+      context.res = handler(context)
       next()
-    })
-    */
+    }
 
+    middleware.push(wrappedHandler)
     const composed = compose(middleware)
-    composed(request, response)
-    response = await handler(request, response)
-    composed(request, response)
+    const c = this.createContext(request, response)
 
-    return response
+    composed(c)
+
+    return c.res
   }
 
   async handleEvent(event) {
