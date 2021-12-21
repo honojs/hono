@@ -1,4 +1,5 @@
 const Node = require('./node')
+const filter = require('./middleware/request')
 
 class Router {
   constructor() {
@@ -88,25 +89,29 @@ class App {
     const result = this.matchRoute(method, path)
     if (!result) return this.notFound()
 
-    request.query = (key) => {
-      return url.searchParams.get(key)
-    }
-    request.params = (key) => {
-      return result.params[key]
-    }
+    request.params = (key) => result.params[key]
 
-    const middleware = []
+    const middleware = [filter]
     const mwResult = this.middlewareRouter.match('all', path)
     if (mwResult) {
       middleware.push(...mwResult.handler)
     }
 
-    for (const handler of result.handler) {
-      const handleReponse = handler(request)
-      if (handleReponse) response = handleReponse
+    let handler
+    for (const resultHandler of result.handler) {
+      handler = resultHandler
     }
 
+    /*
+    middleware.push((req, res, next) => {
+      handler(req, res)
+      next()
+    })
+    */
+
     const composed = compose(middleware)
+    composed(request, response)
+    response = await handler(request, response)
     composed(request, response)
 
     return response
