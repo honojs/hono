@@ -50,7 +50,7 @@ app.post('/', () => new Response('POST /'))
 
 // Wildcard
 app.get('/wild/*/card', () => {
-  return new Reponse('GET /wild/*/card')
+  return new Response('GET /wild/*/card')
 })
 ```
 
