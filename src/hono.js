@@ -44,7 +44,6 @@ class App {
   constructor() {
     this.router = new Router()
     this.middlewareRouter = new Router()
-    this.middleware = []
   }
 
   addRoute(method, path, ...args) {
