@@ -16,7 +16,7 @@ app.fire()
 - Tiny - use only standard API.
 - Portable - zero dependencies.
 - Flexible - you can make your own middlewares.
-- Optimized - for Cloudflare Workers.
+- Optimized - for Cloudflare Workers and Fastly Compute@Edge.
 
 ## Install
 
@@ -152,6 +152,7 @@ app.get('/entry/:id', (c) => {
 
 - koa <https://github.com/koajs/koa>
 - express <https://github.com/expressjs/express>
+- oak <https://github.com/oakserver/oak>
 - itty-router <https://github.com/kwhitley/itty-router>
 - Sunder <https://github.com/SunderJS/sunder>
 - goblin <https://github.com/bmf-san/goblin>
