@@ -1,6 +1,6 @@
 const METHOD_NAME_OF_ALL = 'all'
 
-const createResult = ({ handler, params } = {}) => {
+const createResult = (handler, params) => {
   return { handler: handler, params: params }
 }
 
@@ -111,7 +111,7 @@ class Node {
       return this.noRoute()
     }
 
-    return createResult({ handler: handler, params: params })
+    return createResult(handler, params)
   }
 
   noRoute() {
