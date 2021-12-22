@@ -85,8 +85,7 @@ class Node {
           curNode = curNode.children[key]
           isParamMatch = true
           break
-        }
-        if (key.match(/^:/)) {
+        } else if (key.match(/^:/)) {
           const pattern = this.getPattern(key)
           const match = p.match(new RegExp(pattern))
           if (match) {
