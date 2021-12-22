@@ -14,7 +14,16 @@ router.post('/foo/bar', () => new Response('POST Foo Bar!'))
 router.delete('/foo/bar', () => new Response('DELETE Foo Bar!'))
 
 router.get('/todos', () => new Response('Todos Index!'))
-router.get('/todos/:id', ({ params }) => new Response(`Todo #${params.id}`))
+router.get(
+  '/todos/:id',
+  ({ params }) =>
+    new Response(`Todo #${params.id}`, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/plain;charset=UTF-8',
+      },
+    })
+)
 
 router.post('/todos', async (request) => {
   const content = await request.json()
