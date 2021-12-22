@@ -58,7 +58,7 @@ app.get('/wild/*/card', () => {
 
 ```js
 // Any HTTP methods
-app.all('/hello', () => 'ALL Method /hello')
+app.all('/hello', () => new Response('ALL Method /hello'))
 ```
 
 ### Named Parameter
