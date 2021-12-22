@@ -15,7 +15,16 @@ app.post('/foo/bar', () => new Response('POST Foo Bar!'))
 app.delete('/foo/bar', () => new Response('DELETE Foo Bar!'))
 
 app.get('/todos', () => new Response('Todos Index!'))
-app.get('/todos/:id', (c) => new Response(`Todo #${c.req.params('id')}`))
+app.get(
+  '/todos/:id',
+  (c) =>
+    new Response(`Todo #${c.req.params('id')}`, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/plain;charset=UTF-8',
+      },
+    })
+)
 
 app.post('/todos', async (c) => {
   const content = await c.req.json()
