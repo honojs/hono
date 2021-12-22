@@ -1,10 +1,7 @@
-const methodNameOfAll = 'all'
+const METHOD_NAME_OF_ALL = 'all'
 
-class Result {
-  constructor({ handler, params } = {}) {
-    this.handler = handler || []
-    this.params = params || {}
-  }
+const createResult = ({ handler, params } = {}) => {
+  return { handler: handler, params: params }
 }
 
 class Node {
@@ -19,8 +16,7 @@ class Node {
 
   insert(method, path, handler) {
     let curNode = this
-    const ps = this.splitPath(path)
-    for (const p of ps) {
+    for (const p of this.splitPath(path)) {
       let nextNode = curNode.children[p]
       if (nextNode) {
         curNode = nextNode
@@ -36,13 +32,7 @@ class Node {
   }
 
   splitPath(path) {
-    let ps = ['/']
-    for (const p of path.split('/')) {
-      if (p) {
-        ps.push(p)
-      }
-    }
-    return ps
+    return ['/', ...path.split('/').filter((p) => p !== '')]
   }
 
   getPattern(label) {
@@ -64,7 +54,8 @@ class Node {
 
   search(method, path) {
     let curNode = this
-    let [handler, params] = [, {}]
+    let handler
+    let params = {}
 
     if (path === '/') {
       const root = this.children['/']
@@ -73,7 +64,7 @@ class Node {
       const rootAsterisk = root.children['*']
       if (rootAsterisk) {
         handler =
-          rootAsterisk.method[method] || rootAsterisk.method[methodNameOfAll]
+          rootAsterisk.method[method] || rootAsterisk.method[METHOD_NAME_OF_ALL]
       } else if (!root.method[method]) {
         return this.noRoute()
       }
@@ -114,13 +105,13 @@ class Node {
     }
 
     handler =
-      handler || curNode.method[methodNameOfAll] || curNode.method[method]
+      handler || curNode.method[METHOD_NAME_OF_ALL] || curNode.method[method]
 
     if (!handler) {
       return this.noRoute()
     }
-    const res = new Result({ handler: handler, params: params })
-    return res
+
+    return createResult({ handler: handler, params: params })
   }
 
   noRoute() {

@@ -2,7 +2,7 @@
 
 const Node = require('./node')
 const compose = require('./compose')
-const filter = require('./middleware/filter')
+const defaultFilter = require('./middleware/filter')
 
 class Router {
   constructor() {
@@ -33,6 +33,11 @@ const proxyHandler = {
         return target.addRoute(prop, ...args)
       }
     },
+}
+
+const getPathFromURL = (url) => {
+  url = new URL(url)
+  return url.pathname
 }
 
 class App {
@@ -71,26 +76,21 @@ class App {
   }
 
   async dispatch(request, response) {
-    const url = new URL(request.url)
-    const [method, path] = [request.method, url.pathname]
+    const [method, path] = [request.method, getPathFromURL(request.url)]
 
     const result = this.matchRoute(method, path)
     if (!result) return this.notFound()
 
     request.params = (key) => result.params[key]
 
-    const middleware = [filter]
+    const middleware = [defaultFilter]
+
     const mwResult = this.middlewareRouter.match('all', path)
     if (mwResult) {
       middleware.push(...mwResult.handler)
     }
 
-    let handler
-    for (const resultHandler of result.handler) {
-      if (resultHandler) {
-        handler = resultHandler
-      }
-    }
+    let handler = result.handler[0] // XXX
 
     let wrappedHandler = (context, next) => {
       context.res = handler(context)
