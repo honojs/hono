@@ -5,15 +5,6 @@ const filter = (c, next) => {
   }
 
   next()
-
-  if (typeof c.res === 'string') {
-    c.res = new Response(c.res, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/plain',
-      },
-    })
-  }
 }
 
 module.exports = filter
