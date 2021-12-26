@@ -1,3 +1,5 @@
+const { splitPath, getPattern, getParamName } = require('./util')
+
 const METHOD_NAME_OF_ALL = 'all'
 
 const createResult = (handler, params) => {
@@ -16,62 +18,30 @@ class Node {
 
   insert(method, path, handler) {
     let curNode = this
-    for (const p of this.splitPath(path)) {
-      let nextNode = curNode.children[p]
+    for (const p of splitPath(path)) {
+      const nextNode = curNode.children[p]
       if (nextNode) {
         curNode = nextNode
-      } else {
-        curNode.children[p] = new Node({
-          label: p,
-          handler: handler,
-        })
-        curNode = curNode.children[p]
+        continue
       }
+      curNode.children[p] = new Node({
+        label: p,
+        method: method,
+        handler: handler,
+      })
+      curNode = curNode.children[p]
     }
     curNode.method[method] = handler
-  }
-
-  splitPath(path) {
-    return ['/', ...path.split('/').filter((p) => p !== '')]
-  }
-
-  getPattern(label) {
-    // :id{[0-9]+}  → [0-9]+$
-    // :id          → (.+)
-    const match = label.match(/^\:.+?\{(.+)\}$/)
-    if (match) {
-      return '(' + match[1] + ')'
-    }
-    return '(.+)'
-  }
-
-  getParamName(label) {
-    const match = label.match(/^\:([^\{\}]+)/)
-    if (match) {
-      return match[1]
-    }
+    return curNode
   }
 
   search(method, path) {
     let curNode = this
-    let handler
-    let params = {}
+    const params = {}
+    const parts = splitPath(path)
 
-    if (path === '/') {
-      const root = this.children['/']
-      if (!root) return this.noRoute()
-      // app.get('*', () => 'All')
-      const rootAsterisk = root.children['*']
-      if (rootAsterisk) {
-        handler =
-          rootAsterisk.method[method] || rootAsterisk.method[METHOD_NAME_OF_ALL]
-      } else if (!root.method[method]) {
-        return this.noRoute()
-      }
-    }
-
-    for (const p of this.splitPath(path)) {
-      let nextNode = curNode.children[p]
+    for (const [i, p] of parts.entries()) {
+      const nextNode = curNode.children[p]
 
       if (nextNode) {
         curNode = nextNode
@@ -80,16 +50,16 @@ class Node {
 
       let isParamMatch = false
       for (const key in curNode.children) {
+        // Wildcard
         if (key === '*') {
-          // Wildcard
           curNode = curNode.children[key]
           isParamMatch = true
           break
         } else if (key.match(/^:/)) {
-          const pattern = this.getPattern(key)
+          const pattern = getPattern(key)
           const match = p.match(new RegExp(pattern))
           if (match) {
-            const k = this.getParamName(key)
+            const k = getParamName(key)
             params[k] = match[0]
             curNode = curNode.children[key]
             isParamMatch = true
@@ -98,13 +68,17 @@ class Node {
           return this.noRoute()
         }
       }
+
       if (isParamMatch == false) {
         return this.noRoute()
       }
+
+      if (i === parts.length - 1) {
+        break
+      }
     }
 
-    handler =
-      handler || curNode.method[METHOD_NAME_OF_ALL] || curNode.method[method]
+    const handler = curNode.method[METHOD_NAME_OF_ALL] || curNode.method[method]
 
     if (!handler) {
       return this.noRoute()

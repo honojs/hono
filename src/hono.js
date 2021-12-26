@@ -44,6 +44,7 @@ class App {
   constructor() {
     this.router = new Router()
     this.middlewareRouter = new Router()
+    this.middlewareRouters = []
   }
 
   addRoute(method, path, ...args) {
@@ -61,6 +62,13 @@ class App {
   }
 
   use(path, middleware) {
+    const router = new Router()
+    router.add('all', path, middleware)
+    this.middlewareRouters.push(router)
+  }
+
+  /*
+  use(path, middleware) {
     middleware = [middleware]
     const result = this.middlewareRouter.match('all', path)
     if (result) {
@@ -68,6 +76,7 @@ class App {
     }
     this.middlewareRouter.add('all', path, ...middleware)
   }
+  */
 
   // XXX
   createContext(req, res) {
@@ -82,14 +91,16 @@ class App {
 
     request.params = (key) => result.params[key]
 
+    let handler = result.handler[0] // XXX
+
     const middleware = [defaultFilter]
 
-    const mwResult = this.middlewareRouter.match('all', path)
-    if (mwResult) {
-      middleware.push(...mwResult.handler)
+    for (const mr of this.middlewareRouters) {
+      const mwResult = mr.match('all', path)
+      if (mwResult) {
+        middleware.push(...mwResult.handler)
+      }
     }
-
-    let handler = result.handler[0] // XXX
 
     let wrappedHandler = (context, next) => {
       context.res = handler(context)

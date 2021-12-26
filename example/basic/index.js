@@ -26,3 +26,46 @@ app.get('/entry/:id', (c) => {
 
 // addEventListener
 app.fire()
+
+//
+
+const logger = (c, next) => {
+  console.log(`Req: [${c.req.method}] ${c.req.url}`)
+  next()
+  console.log(`Respond`)
+}
+
+const auth = (c, next) => {
+  const url = new URL(c.req.url)
+  if (!url.pathname.match(/\/admin*/)) {
+    next()
+  }
+  const auth = c.req.headers.get('x-auth')
+  if (auth != 'auth-path') {
+    return c.notFound()
+  }
+  next()
+}
+
+const hello = (c, next) => {
+  next()
+  c.res.headers.append('x-message', 'Hello!')
+}
+
+const notFound = (c, next) => {
+  next()
+  if (res.status === 404) {
+    c.res = new Response('Not Found', {
+      status: 404,
+    })
+  }
+}
+
+app.use('*', logger)
+app.use('*', notFound)
+app.use('/hello', hello)
+app.use('/admin/*', auth)
+
+app.get('/admin', () => 'Your are Admin!')
+
+const handler = app.matchRoute('GET', '/admin')

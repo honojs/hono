@@ -1,26 +1,17 @@
 const Node = require('./node')
 
-describe('Util Methods', () => {
-  const node = new Node()
-  it('node.splitPath', () => {
-    let ps = node.splitPath('/')
-    expect(ps[0]).toBe('/')
-    ps = node.splitPath('/hello')
-    expect(ps[0]).toBe('/')
-    expect(ps[1]).toBe('hello')
-  })
-})
-
 describe('Root Node', () => {
   const node = new Node()
   node.insert('get', '/', 'get root')
   it('get /', () => {
-    expect(node.search('get', '/')).not.toBeNull()
+    let res = node.search('get', '/')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('get root')
     expect(node.search('get', '/hello')).toBeNull()
   })
 })
 
-describe('Root Node', () => {
+describe('Root Node id not defined', () => {
   const node = new Node()
   node.insert('get', '/hello', 'get hello')
   it('get /', () => {
@@ -28,7 +19,7 @@ describe('Root Node', () => {
   })
 })
 
-describe('All', () => {
+describe('All with *', () => {
   const node = new Node()
   node.insert('get', '*', 'get all')
   it('get /', () => {
@@ -78,13 +69,13 @@ describe('Name path', () => {
 
   it('get /entry/456/comment', () => {
     node.insert('get', '/entry/:id', 'get entry')
-    res = node.search('get', '/entry/456/comment')
+    let res = node.search('get', '/entry/456/comment')
     expect(res).toBeNull()
   })
 
   it('get /entry/789/comment/123', () => {
     node.insert('get', '/entry/:id/comment/:comment_id', 'get comment')
-    res = node.search('get', '/entry/789/comment/123')
+    let res = node.search('get', '/entry/789/comment/123')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('get comment')
     expect(res.params['id']).toBe('789')
@@ -96,7 +87,7 @@ describe('Wildcard', () => {
   const node = new Node()
   it('/wildcard-abc/xxxxxx/wildcard-efg', () => {
     node.insert('get', '/wildcard-abc/*/wildcard-efg', 'wildcard')
-    res = node.search('get', '/wildcard-abc/xxxxxx/wildcard-efg')
+    let res = node.search('get', '/wildcard-abc/xxxxxx/wildcard-efg')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('wildcard')
   })
