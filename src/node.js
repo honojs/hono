@@ -1,6 +1,6 @@
 'use strict'
 
-const { splitPath, getPattern, getParamName } = require('./util')
+const { splitPath, getPattern } = require('./util')
 
 const METHOD_NAME_OF_ALL = 'all'
 
@@ -8,85 +8,84 @@ const createResult = (handler, params) => {
   return { handler: handler, params: params }
 }
 
-class Node {
-  constructor({ method, label, handler, children } = {}) {
-    this.label = label || ''
-    this.children = children || []
-    this.method = {}
-    if (method && handler) {
-      this.method[method] = handler
-    }
-  }
+const noRoute = () => {
+  return null
+}
 
-  insert(method, path, handler) {
-    let curNode = this
-    for (const p of splitPath(path)) {
-      if (Object.keys(curNode.children).includes(p)) {
-        curNode = curNode.children[p]
-        continue
-      }
-      curNode.children[p] = new Node({
-        label: p,
-        method: method,
-        handler: handler,
-      })
+function Node(method, handler, children) {
+  this.children = children || {}
+  this.method = {}
+  if (method && handler) {
+    this.method[method] = handler
+  }
+}
+
+Node.prototype.insert = function (method, path, handler) {
+  let curNode = this
+  const parts = splitPath(path)
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i]
+    if (Object.keys(curNode.children).includes(p)) {
       curNode = curNode.children[p]
+      continue
     }
-    curNode.method[method] = handler
-    return curNode
+    curNode.children[p] = new Node(method, handler)
+    curNode = curNode.children[p]
   }
+  curNode.method[method] = handler
+  return curNode
+}
 
-  search(method, path) {
-    let curNode = this
-    const params = {}
-    const parts = splitPath(path)
+Node.prototype.search = function (method, path) {
+  let curNode = this
 
-    for (const p of parts) {
-      const nextNode = curNode.children[p]
-      if (nextNode) {
-        curNode = nextNode
-        continue
+  const params = {}
+  const parts = splitPath(path)
+
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i]
+    const nextNode = curNode.children[p]
+    if (nextNode) {
+      curNode = nextNode
+      continue
+    }
+
+    let isParamMatch = false
+    const keys = Object.keys(curNode.children)
+    for (let j = 0; j < keys.length; j++) {
+      const key = keys[j]
+      // Wildcard
+      if (key === '*') {
+        curNode = curNode.children['*']
+        isParamMatch = true
+        break
       }
-
-      let isParamMatch = false
-      for (const key in curNode.children) {
-        // Wildcard
-        if (key === '*') {
-          curNode = curNode.children['*']
+      const pattern = getPattern(key)
+      if (pattern) {
+        const match = p.match(new RegExp(pattern[1]))
+        if (match) {
+          const k = pattern[0]
+          params[k] = match[1]
+          curNode = curNode.children[key]
           isParamMatch = true
           break
         }
-        const pattern = getPattern(key)
-        if (pattern) {
-          const match = p.match(new RegExp(pattern[1]))
-          if (match) {
-            const k = pattern[0]
-            params[k] = match[1]
-            curNode = curNode.children[key]
-            isParamMatch = true
-            break
-          }
-          return this.noRoute()
-        }
-      }
-
-      if (isParamMatch == false) {
-        return this.noRoute()
+        return noRoute()
       }
     }
 
-    const handler = curNode.method[METHOD_NAME_OF_ALL] || curNode.method[method]
-
-    if (!handler) {
-      return this.noRoute()
+    if (isParamMatch === false) {
+      return noRoute()
     }
-
-    return createResult(handler, params)
   }
 
-  noRoute() {
-    return null
+  const handler = curNode.method[METHOD_NAME_OF_ALL] || curNode.method[method]
+
+  if (!handler) {
+    return noRoute()
   }
+
+  return createResult(handler, params)
 }
 
 module.exports = Node
