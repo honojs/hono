@@ -47,6 +47,8 @@ class Node {
       if (nextNode) {
         curNode = nextNode
         continue
+      } else {
+        break
       }
 
       let isParamMatch = false
