@@ -20,15 +20,10 @@ describe('Utility methods', () => {
 
   it('getPattern', () => {
     let res = getPattern(':id')
-    expect(res).toBe('(.+)')
+    expect(res[0]).toBe('id')
+    expect(res[1]).toBe('(.+)')
     res = getPattern(':id{[0-9]+}')
-    expect(res).toBe('([0-9]+)')
-  })
-
-  it('getParamName', () => {
-    let res = getParamName(':id')
-    expect(res).toBe('id')
-    res = getParamName(':id{[0-9]+}')
-    expect(res).toBe('id')
+    expect(res[0]).toBe('id')
+    expect(res[1]).toBe('([0-9]+)')
   })
 })
