@@ -52,15 +52,16 @@ class Node {
       for (const key in curNode.children) {
         // Wildcard
         if (key === '*') {
-          curNode = curNode.children[key]
+          curNode = curNode.children['*']
           isParamMatch = true
           break
-        } else if (key.match(/^:/)) {
-          const pattern = getPattern(key)
-          const match = p.match(new RegExp(pattern))
+        }
+        const pattern = getPattern(key)
+        if (pattern) {
+          const match = p.match(new RegExp(pattern[1]))
           if (match) {
-            const k = getParamName(key)
-            params[k] = match[0]
+            const k = pattern[0]
+            params[k] = match[1]
             curNode = curNode.children[key]
             isParamMatch = true
             break

@@ -9,22 +9,18 @@ const splitPath = (path) => {
 const getPattern = (label) => {
   // :id{[0-9]+}  => ([0-9]+)
   // :id          => (.+)
-  const match = label.match(/^\:.+?\{(.+)\}$/)
+  //const name = ''
+  const match = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
   if (match) {
-    return '(' + match[1] + ')'
-  }
-  return '(.+)'
-}
-
-const getParamName = (label) => {
-  const match = label.match(/^\:([^\{\}]+)/)
-  if (match) {
-    return match[1]
+    if (match[2]) {
+      return [match[1], '(' + match[2] + ')']
+    } else {
+      return [match[1], '(.+)']
+    }
   }
 }
 
 module.exports = {
   splitPath,
   getPattern,
-  getParamName,
 }
