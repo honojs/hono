@@ -1,3 +1,5 @@
+'use strict'
+
 const { splitPath, getPattern, getParamName } = require('./util')
 
 const METHOD_NAME_OF_ALL = 'all'
@@ -19,9 +21,8 @@ class Node {
   insert(method, path, handler) {
     let curNode = this
     for (const p of splitPath(path)) {
-      const nextNode = curNode.children[p]
-      if (nextNode) {
-        curNode = nextNode
+      if (Object.keys(curNode.children).includes(p)) {
+        curNode = curNode.children[p]
         continue
       }
       curNode.children[p] = new Node({

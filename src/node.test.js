@@ -81,6 +81,14 @@ describe('Name path', () => {
     expect(res.params['id']).toBe('789')
     expect(res.params['comment_id']).toBe('123')
   })
+
+  it('get /map/:location/events', () => {
+    node.insert('get', '/map/:location/events', 'get events')
+    let res = node.search('get', '/map/yokohama/events')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('get events')
+    expect(res.params['location']).toBe('yokohama')
+  })
 })
 
 describe('Wildcard', () => {

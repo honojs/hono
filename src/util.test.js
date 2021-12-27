@@ -12,6 +12,10 @@ describe('Utility methods', () => {
     expect(ps[0]).toBe('wildcard-abc')
     expect(ps[1]).toBe('*')
     expect(ps[2]).toBe('wildcard-efg')
+    ps = splitPath('/map/:location/events')
+    expect(ps[0]).toBe('map')
+    expect(ps[1]).toBe(':location')
+    expect(ps[2]).toBe('events')
   })
 
   it('getPattern', () => {

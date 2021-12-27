@@ -1,7 +1,7 @@
 const App = require('./hono')
 
 describe('Basic Usage', () => {
-  let router = App()
+  const router = App()
 
   it('get, post hello', () => {
     router.get('/hello', 'get hello')
