@@ -73,10 +73,6 @@ class Node {
       if (isParamMatch == false) {
         return this.noRoute()
       }
-
-      if (i === parts.length - 1) {
-        break
-      }
     }
 
     const handler = curNode.method[METHOD_NAME_OF_ALL] || curNode.method[method]
