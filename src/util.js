@@ -1,6 +1,9 @@
 const splitPath = (path) => {
-  path = path.replace(/^\//, '')
-  return path.split('/')
+  path = path.split(/\//) // faster than path.split('/')
+  if (path[0] === '') {
+    path.shift()
+  }
+  return path
 }
 
 const getPattern = (label) => {
