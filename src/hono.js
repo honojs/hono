@@ -20,11 +20,12 @@ class Router {
 }
 
 const getPathFromURL = (url) => {
-  url = new URL(url)
-  return url.pathname
+  // XXX
+  const match = url.match(/^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/)
+  return match[5]
 }
 
-class App {
+class Hono {
   constructor() {
     this.router = new Router()
     this.middlewareRouter = new Router()
@@ -61,11 +62,6 @@ class App {
     return this.router
   }
 
-  matchRoute(method, path) {
-    const res = this.router.match(method, path)
-    return res
-  }
-
   route(path) {
     this.router.tempPath = path
     return this
@@ -77,22 +73,33 @@ class App {
     this.middlewareRouters.push(router)
   }
 
+  async matchRoute(method, path) {
+    const res = this.router.match(method, path)
+    return res
+  }
+
   // XXX
-  createContext(req, res) {
-    return { req: req, res: res }
+  async createContext(req, res) {
+    return {
+      req: req,
+      res: res,
+      newResponse: (params) => {
+        return new Response(params)
+      },
+    }
   }
 
   async dispatch(request, response) {
     const [method, path] = [request.method, getPathFromURL(request.url)]
 
-    const result = this.matchRoute(method, path)
+    const result = await this.matchRoute(method, path)
     if (!result) return this.notFound()
 
     request.params = (key) => result.params[key]
 
     let handler = result.handler[0] // XXX
 
-    const middleware = [defaultFilter]
+    const middleware = [defaultFilter] // add defaultFilter later
 
     for (const mr of this.middlewareRouters) {
       const mwResult = mr.match('all', path)
@@ -101,14 +108,14 @@ class App {
       }
     }
 
-    let wrappedHandler = (context, next) => {
+    let wrappedHandler = async (context, next) => {
       context.res = handler(context)
       next()
     }
 
     middleware.push(wrappedHandler)
     const composed = compose(middleware)
-    const c = this.createContext(request, response)
+    const c = await this.createContext(request, response)
 
     composed(c)
 
@@ -116,7 +123,7 @@ class App {
   }
 
   async handleEvent(event) {
-    await this.dispatch(event.request, {}) // XXX
+    return this.dispatch(event.request, {}) // XXX
   }
 
   fire() {
@@ -131,7 +138,7 @@ class App {
 }
 
 const CreateApp = () => {
-  return new App()
+  return new Hono()
 }
 
 module.exports = CreateApp
