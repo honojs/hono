@@ -20,6 +20,41 @@ router.delete('/hello', (response) => {
   response.body = 'DELETE Hello!'
 })
 
+router.get('/user/comments', (res) => {
+  res.body = 'User Commnet'
+})
+router.get('/user/avatar', (res) => {
+  res.body = 'User Avatar'
+})
+router.get('/user/lookup/username/:username', (res) => {
+  res.body = 'User Lookup Username'
+})
+router.get('/user/lookup/email/:address', (res) => {
+  res.body = 'User Lookup Email Address'
+})
+router.get('/event/:id', (res) => {
+  res.body = 'Event'
+})
+
+router.get('/event/:id/comments', (res) => {
+  res.body = 'Event Comments'
+})
+router.post('/event/:id/comments', (res) => {
+  res.body = 'POST Event Comments'
+})
+router.post('/status', (res) => {
+  res.body = 'Status'
+})
+router.get('/very/deeply/nested/route/hello/there', (res) => {
+  res.body = 'Very Deeply Nested Route'
+})
+
+/*
+router.get('/static/*', (res) => {
+  res.body = 'Static'
+})
+*/
+
 router.get('/foo/bar', (response) => {
   response.body = 'GET Foo Bar!'
 })
