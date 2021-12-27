@@ -69,15 +69,19 @@ describe('Chained Route', () => {
 
   it('Chain with route method', () => {
     router.route('/api/book').get('get book').post('post book').put('put book')
+
     res = router.matchRoute('GET', '/api/book')
     expect(res).not.toBeNull()
     expect(res.handler[0]).toBe('get book')
+
     res = router.matchRoute('POST', '/api/book')
     expect(res).not.toBeNull()
     expect(res.handler[0]).toBe('post book')
+
     res = router.matchRoute('PUT', '/api/book')
     expect(res).not.toBeNull()
     expect(res.handler[0]).toBe('put book')
+
     res = router.matchRoute('DELETE', '/api/book')
     expect(res).toBeNull()
   })

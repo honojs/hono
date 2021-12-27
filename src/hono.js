@@ -19,24 +19,6 @@ class Router {
   }
 }
 
-const proxyHandler = {
-  get:
-    (target, prop) =>
-    (...args) => {
-      if (prop === 'handleEvent') {
-        return target.handleEvent(...args)
-      }
-      if (target.constructor.prototype.hasOwnProperty(prop)) {
-        return target[prop](...args)
-      } else {
-        if (args.length == 1) {
-          return target.addRoute(prop, target.router.tempPath, ...args)
-        }
-        return target.addRoute(prop, ...args)
-      }
-    },
-}
-
 const getPathFromURL = (url) => {
   url = new URL(url)
   return url.pathname
@@ -49,23 +31,44 @@ class App {
     this.middlewareRouters = []
   }
 
+  get(...args) {
+    return this.addRoute('GET', ...args)
+  }
+  post(...args) {
+    return this.addRoute('POST', ...args)
+  }
+  put(...args) {
+    return this.addRoute('PUT', ...args)
+  }
+  delete(...args) {
+    return this.addRoute('DELETE', ...args)
+  }
+  patch(...args) {
+    return this.addRoute('PATCH', ...args)
+  }
+
+  addRoute(method, ...args) {
+    method = method.toUpperCase()
+    if (args.length === 1) {
+      this.router.add(method, this.router.tempPath, ...args)
+    } else {
+      this.router.add(method, ...args)
+    }
+    return this
+  }
+
   getRouter() {
     return this.router
   }
 
-  addRoute(method, path, ...args) {
-    method = method.toUpperCase()
-    this.router.add(method, path, ...args)
-    return WrappedApp(this)
-  }
-
   matchRoute(method, path) {
-    return this.router.match(method, path)
+    const res = this.router.match(method, path)
+    return res
   }
 
   route(path) {
     this.router.tempPath = path
-    return WrappedApp(this)
+    return this
   }
 
   use(path, middleware) {
@@ -73,17 +76,6 @@ class App {
     router.add('all', path, middleware)
     this.middlewareRouters.push(router)
   }
-
-  /*
-  use(path, middleware) {
-    middleware = [middleware]
-    const result = this.middlewareRouter.match('all', path)
-    if (result) {
-      middleware.push(...result.handler)
-    }
-    this.middlewareRouter.add('all', path, ...middleware)
-  }
-  */
 
   // XXX
   createContext(req, res) {
@@ -124,8 +116,7 @@ class App {
   }
 
   async handleEvent(event) {
-    return new Response('Hello')
-    return this.dispatch(event.request, {}) // XXX
+    await this.dispatch(event.request, {}) // XXX
   }
 
   fire() {
@@ -139,8 +130,8 @@ class App {
   }
 }
 
-const WrappedApp = (router = new App()) => {
-  return new Proxy(router, proxyHandler)
+const CreateApp = () => {
+  return new App()
 }
 
-module.exports = WrappedApp
+module.exports = CreateApp
