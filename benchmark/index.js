@@ -108,7 +108,7 @@ suite
   .add('itty-router', async () => {
     await ittyRouter.handle(event.request)
   })
-  .add('sundar', async () => {
+  .add('sunder', async () => {
     await sunderApp.handle(event)
   })
   .on('cycle', (event) => {

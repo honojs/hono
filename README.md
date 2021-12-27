@@ -24,7 +24,7 @@ app.fire()
 ```
 hono x 813,001 ops/sec ±2.96% (75 runs sampled)
 itty-router x 160,415 ops/sec ±3.31% (85 runs sampled)
-sundar x 307,438 ops/sec ±4.77% (73 runs sampled)
+sunder x 307,438 ops/sec ±4.77% (73 runs sampled)
 Fastest is hono
 ✨  Done in 37.03s.
 ```
