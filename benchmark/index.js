@@ -86,7 +86,7 @@ sunderApp.use(sunderRouter.middleware)
 // Request Object
 const request = new Request('/user/lookup/username/hey', { method: 'GET' })
 // FetchEvent Object
-const event = new FetchEvent('fetch', { request })
+const event = new FetchEvent('fetch', { request: request })
 
 const suite = new Benchmark.Suite()
 
@@ -102,6 +102,7 @@ fn()
 
 suite
   .add('hono', () => {
+    //  hono.matchRoute('GET', '/user/lookup/username/hey')
     hono.handleEvent(event)
   })
   .add('itty-router', () => {

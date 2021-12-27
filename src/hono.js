@@ -23,6 +23,9 @@ const proxyHandler = {
   get:
     (target, prop) =>
     (...args) => {
+      if (prop === 'handleEvent') {
+        return target.handleEvent(...args)
+      }
       if (target.constructor.prototype.hasOwnProperty(prop)) {
         return target[prop](...args)
       } else {
@@ -51,12 +54,12 @@ class App {
   }
 
   addRoute(method, path, ...args) {
+    method = method.toUpperCase()
     this.router.add(method, path, ...args)
     return WrappedApp(this)
   }
 
   matchRoute(method, path) {
-    method = method.toLowerCase()
     return this.router.match(method, path)
   }
 
@@ -121,7 +124,8 @@ class App {
   }
 
   async handleEvent(event) {
-    return await this.dispatch(event.request, new Response())
+    return new Response('Hello')
+    return this.dispatch(event.request, {}) // XXX
   }
 
   fire() {

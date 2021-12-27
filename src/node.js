@@ -1,6 +1,6 @@
 'use strict'
 
-const { splitPath, getPattern, getParamName } = require('./util')
+const { splitPath, getPattern } = require('./util')
 
 const METHOD_NAME_OF_ALL = 'all'
 
@@ -9,8 +9,7 @@ const createResult = (handler, params) => {
 }
 
 class Node {
-  constructor({ method, label, handler, children } = {}) {
-    this.label = label || ''
+  constructor({ method, handler, children } = {}) {
     this.children = children || []
     this.method = {}
     if (method && handler) {
@@ -20,13 +19,14 @@ class Node {
 
   insert(method, path, handler) {
     let curNode = this
-    for (const p of splitPath(path)) {
+    const parts = splitPath(path)
+    for (let i = 0; i < parts.length; i++) {
+      const p = parts[i]
       if (Object.keys(curNode.children).includes(p)) {
         curNode = curNode.children[p]
         continue
       }
       curNode.children[p] = new Node({
-        label: p,
         method: method,
         handler: handler,
       })
@@ -41,7 +41,8 @@ class Node {
     const params = {}
     const parts = splitPath(path)
 
-    for (const p of parts) {
+    for (let i = 0; i < parts.length; i++) {
+      const p = parts[i]
       const nextNode = curNode.children[p]
       if (nextNode) {
         curNode = nextNode
@@ -49,7 +50,9 @@ class Node {
       }
 
       let isParamMatch = false
-      for (const key in curNode.children) {
+      const keys = Object.keys(curNode.children)
+      for (let j = 0; j < keys.length; j++) {
+        const key = keys[j]
         // Wildcard
         if (key === '*') {
           curNode = curNode.children['*']
@@ -70,7 +73,7 @@ class Node {
         }
       }
 
-      if (isParamMatch == false) {
+      if (isParamMatch === false) {
         return this.noRoute()
       }
     }
