@@ -2,7 +2,7 @@ import Benchmark from 'benchmark'
 import { makeEdgeEnv } from 'edge-mock'
 import Hono from '../src/hono.js'
 import itty from 'itty-router'
-const { Router: ItteyRouter } = itty
+const { Router: IttyRouter } = itty
 import { Router as SunderRouter, Sunder } from 'sunder'
 
 makeEdgeEnv()
@@ -28,7 +28,7 @@ hono.get('/user/lookup/username/:username', (c) => {
   })
 })
 
-const ittyRouter = ItteyRouter()
+const ittyRouter = IttyRouter()
 ittyRouter.get('/user', () => new Response('User'))
 ittyRouter.get('/user/comments', () => new Response('User Comments'))
 ittyRouter.get('/user/avatar', () => new Response('User Avatar'))
@@ -49,36 +49,36 @@ ittyRouter.get('/user/lookup/username/:username', ({ params }) => {
 })
 
 const sunderRouter = new SunderRouter()
-sunderRouter.get('/user', (response) => {
-  response.body('User')
+sunderRouter.get('/user', (ctx) => {
+  ctx.response.body = 'User'
 })
-sunderRouter.get('/user/comments', (response) => {
-  response.body('User Comments')
+sunderRouter.get('/user/comments', (ctx) => {
+  ctx.response.body = 'User Comments'
 })
-sunderRouter.get('/user/avatar', (response) => {
-  response.body('User Avatar')
+sunderRouter.get('/user/avatar', (ctx) => {
+  ctx.response.body = 'User Avatar'
 })
-sunderRouter.get('/user/lookup/email/:address', (response) => {
-  response.body('User Lookup Email Address')
+sunderRouter.get('/user/lookup/email/:address', (ctx) => {
+  ctx.response.body = 'User Lookup Email Address'
 })
-sunderRouter.get('/event/:id', (response) => {
-  response.body('Event')
+sunderRouter.get('/event/:id', (ctx) => {
+  ctx.response.body = 'Event'
 })
-sunderRouter.get('/event/:id/comments', (response) => {
-  response.body('Event Comments')
+sunderRouter.get('/event/:id/comments', (ctx) => {
+  ctx.response.body = 'Event Comments'
 })
-sunderRouter.post('/event/:id/comments', (response) => {
-  response.body('POST Event Comments')
+sunderRouter.post('/event/:id/comments', (ctx) => {
+  ctx.response.body = 'POST Event Comments'
 })
-sunderRouter.post('/status', (response) => {
-  response.body('Status')
+sunderRouter.post('/status', (ctx) => {
+  ctx.response.body = 'Status'
 })
-sunderRouter.get('/very/deeply/nested/route/hello/there', (response) => {
-  response.body('Very Deeply Nested Route')
+sunderRouter.get('/very/deeply/nested/route/hello/there', (ctx) => {
+  ctx.response.body = 'Very Deeply Nested Route'
 })
 //sunderRouter.get('/static/*', () => {})
-sunderRouter.get('/user/lookup/username/:username', ({ response, params }) => {
-  response.body = `Hello ${params.username}`
+sunderRouter.get('/user/lookup/username/:username', (ctx) => {
+  ctx.response.body = `Hello ${ctx.params.username}`
 })
 const sunderApp = new Sunder()
 sunderApp.use(sunderRouter.middleware)
