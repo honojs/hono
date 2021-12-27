@@ -15,7 +15,6 @@ class Router {
   }
 
   match(method, path) {
-    method = method.toLowerCase()
     return this.node.search(method, path)
   }
 }
@@ -47,12 +46,17 @@ class App {
     this.middlewareRouters = []
   }
 
+  getRouter() {
+    return this.router
+  }
+
   addRoute(method, path, ...args) {
     this.router.add(method, path, ...args)
     return WrappedApp(this)
   }
 
   matchRoute(method, path) {
+    method = method.toLowerCase()
     return this.router.match(method, path)
   }
 
