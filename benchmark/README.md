@@ -1,1 +1,0 @@
-# Sample applications for Benchmark
