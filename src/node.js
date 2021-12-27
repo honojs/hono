@@ -41,14 +41,11 @@ class Node {
     const params = {}
     const parts = splitPath(path)
 
-    for (const [i, p] of parts.entries()) {
+    for (const p of parts) {
       const nextNode = curNode.children[p]
-
       if (nextNode) {
         curNode = nextNode
         continue
-      } else {
-        break
       }
 
       let isParamMatch = false
