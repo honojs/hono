@@ -3,6 +3,7 @@
 Hono [炎] - Tiny web framework for Cloudflare Workers and others.
 
 ```js
+const Hono = require('Hono')
 const app = Hono()
 
 app.get('/', () => new Response('Hono!!'))
@@ -17,6 +18,16 @@ app.fire()
 - Portable - zero dependencies.
 - Flexible - you can make your own middlewares.
 - Optimized - for Cloudflare Workers and Fastly Compute@Edge.
+
+## Benchmark
+
+```
+hono x 813,001 ops/sec ±2.96% (75 runs sampled)
+itty-router x 160,415 ops/sec ±3.31% (85 runs sampled)
+sundar x 307,438 ops/sec ±4.77% (73 runs sampled)
+Fastest is hono
+✨  Done in 37.03s.
+```
 
 ## Install
 

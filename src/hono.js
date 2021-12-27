@@ -2,7 +2,7 @@
 
 const Node = require('./node')
 const compose = require('./compose')
-const defaultFilter = require('./middleware/filter')
+const defaultFilter = require('./middleware/defaultFilter')
 
 class Router {
   constructor() {
