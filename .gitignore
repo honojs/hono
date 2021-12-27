@@ -1,3 +1,6 @@
+# Cloudflare Workers
+worker
+
 # Logs
 logs
 *.log
