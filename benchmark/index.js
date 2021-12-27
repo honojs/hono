@@ -20,7 +20,7 @@ hono.post('/status', () => new Response('Status'))
 hono.get('/very/deeply/nested/route/hello/there', () => new Response('Very Deeply Nested Route'))
 //hono.get('/static/*', () => new Response('Static'))
 hono.get('/user/lookup/username/:username', (c) => {
-  return new Response(`Hello ${c.req.params('username')}`, {
+  return c.newResponse(`Hello ${c.req.params('username')}`, {
     status: 200,
     headers: {
       'Content-Type': 'text/plain;charset=UTF-8',
@@ -88,8 +88,6 @@ const request = new Request('/user/lookup/username/hey', { method: 'GET' })
 // FetchEvent Object
 const event = new FetchEvent('fetch', { request })
 
-const suite = new Benchmark.Suite()
-
 const fn = async () => {
   let res = await hono.handleEvent(event)
   console.log(await res.text())
@@ -100,15 +98,18 @@ const fn = async () => {
 }
 fn()
 
+const suite = new Benchmark.Suite()
+
 suite
-  .add('hono', () => {
-    hono.handleEvent(event)
+  .add('hono', async () => {
+    //  hono.matchRoute('GET', '/user/lookup/username/hey')
+    await hono.handleEvent(event)
   })
-  .add('itty-router', () => {
-    ittyRouter.handle(event.request)
+  .add('itty-router', async () => {
+    await ittyRouter.handle(event.request)
   })
-  .add('sundar', () => {
-    sunderApp.handle(event)
+  .add('sundar', async () => {
+    await sunderApp.handle(event)
   })
   .on('cycle', (event) => {
     console.log(String(event.target))

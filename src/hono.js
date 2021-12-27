@@ -19,50 +19,52 @@ class Router {
   }
 }
 
-const proxyHandler = {
-  get:
-    (target, prop) =>
-    (...args) => {
-      if (target.constructor.prototype.hasOwnProperty(prop)) {
-        return target[prop](...args)
-      } else {
-        if (args.length == 1) {
-          return target.addRoute(prop, target.router.tempPath, ...args)
-        }
-        return target.addRoute(prop, ...args)
-      }
-    },
-}
-
 const getPathFromURL = (url) => {
-  url = new URL(url)
-  return url.pathname
+  // XXX
+  const match = url.match(/^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/)
+  return match[5]
 }
 
-class App {
+class Hono {
   constructor() {
     this.router = new Router()
     this.middlewareRouter = new Router()
     this.middlewareRouters = []
   }
 
+  get(...args) {
+    return this.addRoute('GET', ...args)
+  }
+  post(...args) {
+    return this.addRoute('POST', ...args)
+  }
+  put(...args) {
+    return this.addRoute('PUT', ...args)
+  }
+  delete(...args) {
+    return this.addRoute('DELETE', ...args)
+  }
+  patch(...args) {
+    return this.addRoute('PATCH', ...args)
+  }
+
+  addRoute(method, ...args) {
+    method = method.toUpperCase()
+    if (args.length === 1) {
+      this.router.add(method, this.router.tempPath, ...args)
+    } else {
+      this.router.add(method, ...args)
+    }
+    return this
+  }
+
   getRouter() {
     return this.router
   }
 
-  addRoute(method, path, ...args) {
-    this.router.add(method, path, ...args)
-    return WrappedApp(this)
-  }
-
-  matchRoute(method, path) {
-    method = method.toLowerCase()
-    return this.router.match(method, path)
-  }
-
   route(path) {
     this.router.tempPath = path
-    return WrappedApp(this)
+    return this
   }
 
   use(path, middleware) {
@@ -71,33 +73,33 @@ class App {
     this.middlewareRouters.push(router)
   }
 
-  /*
-  use(path, middleware) {
-    middleware = [middleware]
-    const result = this.middlewareRouter.match('all', path)
-    if (result) {
-      middleware.push(...result.handler)
-    }
-    this.middlewareRouter.add('all', path, ...middleware)
+  async matchRoute(method, path) {
+    const res = this.router.match(method, path)
+    return res
   }
-  */
 
   // XXX
-  createContext(req, res) {
-    return { req: req, res: res }
+  async createContext(req, res) {
+    return {
+      req: req,
+      res: res,
+      newResponse: (params) => {
+        return new Response(params)
+      },
+    }
   }
 
   async dispatch(request, response) {
     const [method, path] = [request.method, getPathFromURL(request.url)]
 
-    const result = this.matchRoute(method, path)
+    const result = await this.matchRoute(method, path)
     if (!result) return this.notFound()
 
     request.params = (key) => result.params[key]
 
     let handler = result.handler[0] // XXX
 
-    const middleware = [defaultFilter]
+    const middleware = [defaultFilter] // add defaultFilter later
 
     for (const mr of this.middlewareRouters) {
       const mwResult = mr.match('all', path)
@@ -106,14 +108,14 @@ class App {
       }
     }
 
-    let wrappedHandler = (context, next) => {
+    let wrappedHandler = async (context, next) => {
       context.res = handler(context)
       next()
     }
 
     middleware.push(wrappedHandler)
     const composed = compose(middleware)
-    const c = this.createContext(request, response)
+    const c = await this.createContext(request, response)
 
     composed(c)
 
@@ -121,7 +123,7 @@ class App {
   }
 
   async handleEvent(event) {
-    return await this.dispatch(event.request, new Response())
+    return this.dispatch(event.request, {}) // XXX
   }
 
   fire() {
@@ -135,8 +137,8 @@ class App {
   }
 }
 
-const WrappedApp = (router = new App()) => {
-  return new Proxy(router, proxyHandler)
+const CreateApp = () => {
+  return new Hono()
 }
 
-module.exports = WrappedApp
+module.exports = CreateApp

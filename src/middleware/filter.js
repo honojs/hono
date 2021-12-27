@@ -3,7 +3,6 @@ const filter = (c, next) => {
     const url = new URL(c.req.url)
     return url.searchParams.get(key)
   }
-
   next()
 }
 
