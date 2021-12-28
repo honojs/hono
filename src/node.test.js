@@ -123,7 +123,7 @@ describe('Regexp', () => {
 
 describe('All', () => {
   const node = new Node()
-  node.insert('all', '/all-methods', 'all methods')
+  node.insert('ALL', '/all-methods', 'all methods') // ALL
   it('/all-methods', () => {
     res = node.search('get', '/all-methods')
     expect(res).not.toBeNull()

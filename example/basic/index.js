@@ -13,7 +13,7 @@ const addHeader = (c, next) => {
 
 // Mount middleware
 app.use('*', logger)
-app.use('/hello', addHeader)
+app.use('/hello/*', addHeader)
 
 // Routing
 app.get('/', () => new Response('Hono!!'))

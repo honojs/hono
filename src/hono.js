@@ -4,6 +4,8 @@ const Node = require('./node')
 const compose = require('./compose')
 const defaultFilter = require('./middleware/defaultFilter')
 
+const METHOD_NAME_OF_ALL = 'ALL'
+
 class Router {
   constructor() {
     this.node = new Node()
@@ -65,7 +67,7 @@ class Hono {
 
   use(path, middleware) {
     const router = new Router()
-    router.add('all', path, middleware)
+    router.add(METHOD_NAME_OF_ALL, path, middleware)
     this.middlewareRouters.push(router)
   }
 
@@ -97,7 +99,7 @@ class Hono {
     const middleware = [defaultFilter] // add defaultFilter later
 
     for (const mr of this.middlewareRouters) {
-      const mwResult = mr.match('all', path)
+      const mwResult = mr.match(METHOD_NAME_OF_ALL, path)
       if (mwResult) {
         middleware.push(...mwResult.handler)
       }
