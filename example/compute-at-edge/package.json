@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@fastly/js-compute": "^0.2.1",
-    "hono": "^0.0.5"
+    "hono": "^0.0.6"
   },
   "scripts": {
     "prebuild": "webpack",

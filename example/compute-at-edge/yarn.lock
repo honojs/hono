@@ -408,10 +408,10 @@ has@^1.0.3:
   dependencies:
     function-bind "^1.1.1"
 
-hono@^0.0.5:
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/hono/-/hono-0.0.5.tgz#826643f9e685d69a55ef92f485e6dca19e0cd02b"
-  integrity sha512-+6gXSktwuvpz2g8Jh7UXLriTJeYQ60HltdJv7mQscviHlBl4HSGjL2WUyeuP+cwZxYoBFxQYHikM/2gvcdcUJg==
+hono@^0.0.6:
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/hono/-/hono-0.0.6.tgz#1b37a7f3132cbb4c58c52ef0f069107d2aeca752"
+  integrity sha512-gGgAw6B+HzzG9QQfKm77C9auPsQOToKHG+kko2IAOLK1iDFqCGGkhbzzAymeVaVswhohL+RQn7q/SuFNXOCGRg==
 
 human-signals@^2.1.0:
   version "2.1.0"
