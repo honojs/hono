@@ -25,6 +25,18 @@ const getPathFromURL = (url) => {
   return match[5]
 }
 
+const proxyHandler = {
+  get:
+    (target, prop) =>
+    (...args) => {
+      if (target.constructor.prototype.hasOwnProperty(prop)) {
+        return target[prop](...args)
+      } else {
+        return target.addRoute(prop, ...args)
+      }
+    },
+}
+
 class Hono {
   constructor() {
     this.router = new Router()
@@ -32,20 +44,8 @@ class Hono {
     this.middlewareRouters = []
   }
 
-  get(...args) {
-    return this.addRoute('GET', ...args)
-  }
-  post(...args) {
-    return this.addRoute('POST', ...args)
-  }
-  put(...args) {
-    return this.addRoute('PUT', ...args)
-  }
-  delete(...args) {
-    return this.addRoute('DELETE', ...args)
-  }
-  patch(...args) {
-    return this.addRoute('PATCH', ...args)
+  getRouter() {
+    return this.router
   }
 
   addRoute(method, ...args) {
@@ -55,16 +55,12 @@ class Hono {
     } else {
       this.router.add(method, ...args)
     }
-    return this
-  }
-
-  getRouter() {
-    return this.router
+    return WrappedApp(this)
   }
 
   route(path) {
     this.router.tempPath = path
-    return this
+    return WrappedApp(this)
   }
 
   use(path, middleware) {
@@ -74,8 +70,7 @@ class Hono {
   }
 
   async matchRoute(method, path) {
-    const res = this.router.match(method, path)
-    return res
+    return this.router.match(method, path)
   }
 
   // XXX
@@ -137,8 +132,8 @@ class Hono {
   }
 }
 
-const CreateApp = () => {
-  return new Hono()
+const WrappedApp = (hono = new Hono()) => {
+  return new Proxy(hono, proxyHandler)
 }
 
-module.exports = CreateApp
+module.exports = WrappedApp
