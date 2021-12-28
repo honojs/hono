@@ -2,7 +2,7 @@
 
 const { splitPath, getPattern } = require('./util')
 
-const METHOD_NAME_OF_ALL = 'all'
+const METHOD_NAME_OF_ALL = 'ALL'
 
 const createResult = (handler, params) => {
   return { handler: handler, params: params }
@@ -18,6 +18,7 @@ function Node(method, handler, children) {
   if (method && handler) {
     this.method[method] = handler
   }
+  this.middlewares = []
 }
 
 Node.prototype.insert = function (method, path, handler) {
@@ -50,6 +51,7 @@ Node.prototype.search = function (method, path) {
       continue
     }
 
+    let isWildcard = false
     let isParamMatch = false
     const keys = Object.keys(curNode.children)
     for (let j = 0; j < keys.length; j++) {
@@ -57,7 +59,7 @@ Node.prototype.search = function (method, path) {
       // Wildcard
       if (key === '*') {
         curNode = curNode.children['*']
-        isParamMatch = true
+        isWildcard = true
         break
       }
       const pattern = getPattern(key)
@@ -72,6 +74,10 @@ Node.prototype.search = function (method, path) {
         }
         return noRoute()
       }
+    }
+
+    if (isWildcard) {
+      break
     }
 
     if (isParamMatch === false) {

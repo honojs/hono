@@ -62,20 +62,35 @@ describe('params and query', () => {
 describe('Middleware', () => {
   const app = Hono()
 
-  const logger = (c, next) => {
+  const logger = async (c, next) => {
     console.log(`${c.req.method} : ${c.req.url}`)
     next()
   }
 
-  const customHeader = (c, next) => {
+  const rootHeader = async (c, next) => {
     next()
-    c.res.headers.append('x-message', 'custom-header')
+    await c.res.headers.append('x-custom', 'root')
+  }
+
+  const customHeader = async (c, next) => {
+    next()
+    await c.res.headers.append('x-message', 'custom-header')
+  }
+  const customHeader2 = async (c, next) => {
+    next()
+    await c.res.headers.append('x-message-2', 'custom-header-2')
   }
 
   app.use('*', logger)
+  app.use('*', rootHeader)
   app.use('/hello', customHeader)
+  app.use('/hello/*', customHeader2)
   app.get('/hello', () => {
     return new fetch.Response('hello')
+  })
+  app.get('/hello/:message', (c) => {
+    const message = c.req.params('message')
+    return new fetch.Response(`${message}`)
   })
 
   it('logging and custom header', async () => {
@@ -83,6 +98,17 @@ describe('Middleware', () => {
     let res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello')
+    expect(await res.headers.get('x-custom')).toBe('root')
     expect(await res.headers.get('x-message')).toBe('custom-header')
+    expect(await res.headers.get('x-message-2')).toBe('custom-header-2')
+  })
+
+  it('logging and custom header with named params', async () => {
+    let req = new fetch.Request('https://example.com/hello/message')
+    let res = await app.dispatch(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('message')
+    expect(await res.headers.get('x-custom')).toBe('root')
+    expect(await res.headers.get('x-message-2')).toBe('custom-header-2')
   })
 })
