@@ -1,3 +1,4 @@
 /node_modules
 /bin
 /pkg
+fastly.toml

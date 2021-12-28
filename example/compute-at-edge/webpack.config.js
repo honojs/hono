@@ -11,4 +11,5 @@ module.exports = {
     path: path.resolve(__dirname, 'bin'),
     libraryTarget: 'this',
   },
+  mode: 'production',
 }
