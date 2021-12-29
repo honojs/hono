@@ -1,7 +1,7 @@
-name = "hono-example-basic"
+name = "ping"
 type = "webpack"
 route = ''
-zone_id = ''
+zone_id = 'b3177416e15dfbb73416bad76b828c49'
 usage_model = ''
 compatibility_flags = []
 workers_dev = true
