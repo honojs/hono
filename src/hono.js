@@ -42,7 +42,6 @@ const proxyHandler = {
 class Hono {
   constructor() {
     this.router = new Router()
-    this.middlewareRouter = new Router()
     this.middlewareRouters = []
   }
 
