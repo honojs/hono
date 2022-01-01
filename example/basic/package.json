@@ -11,6 +11,6 @@
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "license": "MIT",
   "dependencies": {
-    "hono": "^0.0.7"
+    "hono": "^0.0.8"
   }
 }
