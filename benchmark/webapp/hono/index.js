@@ -1,6 +1,6 @@
-const Hono = require('../../../src/hono')
+const { Hono } = require('../../../src/hono')
 
-const hono = Hono()
+const hono = new Hono()
 hono.get('/user', () => new Response('User'))
 hono.get('/user/comments', () => new Response('User Comments'))
 hono.get('/user/avatar', () => new Response('User Avatar'))

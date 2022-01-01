@@ -1,5 +1,5 @@
-const Hono = require('../../src/hono')
-const app = Hono()
+const { Hono } = require('../../src/hono')
+const app = new Hono()
 
 // Middleware
 const logger = (c, next) => {
