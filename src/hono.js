@@ -59,8 +59,8 @@ class Hono {
   }
 
   use(path, middleware) {
-    if (middleware.constructor.name !== 'AsyncFunction') {
-      throw new TypeError('middleware must be a async function!')
+    if (middleware.constructor.name !== 'Function') {
+      throw new TypeError('middleware must be a function!')
     }
 
     const router = new Router()

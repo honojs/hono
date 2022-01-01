@@ -1,6 +1,6 @@
-const poweredBy = async (c, next) => {
+const poweredBy = (c, next) => {
   next()
-  await c.res.headers.append('X-Powered-By', 'Hono')
+  c.res.headers.append('X-Powered-By', 'Hono')
 }
 
 module.exports = poweredBy
