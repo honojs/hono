@@ -102,6 +102,19 @@ app
 
 ## Middleware
 
+### Builtin Middleware
+
+```js
+const { Hono, Middleware } = require('hono')
+
+...
+
+app.use('*', Middleware.poweredBy)
+
+```
+
+### Custom Middleware
+
 ```js
 const logger = (c, next) => {
   console.log(`[${c.req.method}] ${c.req.url}`)
@@ -113,8 +126,8 @@ const addHeader = (c, next) => {
   c.res.headers.add('x-message', 'This is middleware!')
 }
 
-app = app.use('*', logger)
-app = app.use('/message/*', addHeader)
+app.use('*', logger)
+app.use('/message/*', addHeader)
 
 app.get('/message/hello', () => 'Hello Middleware!')
 ```

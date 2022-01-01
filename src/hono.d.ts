@@ -39,4 +39,9 @@ export class Hono {
   delete(path: string, handler: any): Hono
 }
 
-export class Middleware {}
+// XXX
+declare interface BuiltinMiddleware {}
+
+export class Middleware {
+  static poweredBy: BuiltinMiddleware
+}
