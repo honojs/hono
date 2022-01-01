@@ -151,7 +151,7 @@ app.use('*', customNotFound)
 
 ```js
 app.get('/hello', (c) => {
-  const userAgent = c.req.headers('User-Agent')
+  const userAgent = c.req.headers.get('User-Agent')
   ...
 })
 ```
