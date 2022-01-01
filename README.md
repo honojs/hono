@@ -116,12 +116,12 @@ app.use('*', Middleware.poweredBy)
 ### Custom Middleware
 
 ```js
-const logger = (c, next) => {
+const logger = async (c, next) => {
   console.log(`[${c.req.method}] ${c.req.url}`)
   next()
 }
 
-const addHeader = (c, next) => {
+const addHeader = async (c, next) => {
   next()
   c.res.headers.add('x-message', 'This is middleware!')
 }
@@ -130,6 +130,19 @@ app.use('*', logger)
 app.use('/message/*', addHeader)
 
 app.get('/message/hello', () => 'Hello Middleware!')
+```
+
+### Custom 404 Response
+
+```js
+const customNotFound = async (c, next) => {
+  next()
+  if (c.res.status === 404) {
+    c.res = new Response('Custom 404 Not Found', { status: 404 })
+  }
+}
+
+app.use('*', customNotFound)
 ```
 
 ## Context
@@ -146,9 +159,9 @@ app.get('/hello', (c) => {
 ### res
 
 ```js
-app.use('/', (c, next) => {
+app.use('/', async (c, next) => {
   next()
-  c.res.headers.append('X-Debug', 'Debug message')
+  await c.res.headers.append('X-Debug', 'Debug message')
 })
 ```
 

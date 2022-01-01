@@ -113,3 +113,32 @@ describe('Middleware', () => {
     expect(await res.headers.get('x-message-2')).toBe('custom-header-2')
   })
 })
+
+describe('Custom 404', () => {
+  const app = new Hono()
+
+  const customNotFound = async (c, next) => {
+    next()
+    if (c.res.status === 404) {
+      c.res = new fetch.Response('Custom 404 Not Found', { status: 404 })
+    }
+  }
+
+  app.notFound = () => {
+    return new fetch.Response('Default 404 Nout Found', { status: 404 })
+  }
+
+  app.use('*', customNotFound)
+  app.get('/hello', () => {
+    return new fetch.Response('hello')
+  })
+  it('Custom 404 Not Found', async () => {
+    let req = new fetch.Request('https://example.com/hello')
+    let res = await app.dispatch(req)
+    expect(res.status).toBe(200)
+    req = new fetch.Request('https://example.com/foo')
+    res = await app.dispatch(req)
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('Custom 404 Not Found')
+  })
+})

@@ -83,11 +83,10 @@ class Hono {
     const [method, path] = [request.method, getPathFromURL(request.url)]
 
     const result = await this.matchRoute(method, path)
-    if (!result) return this.notFound()
 
     request.params = (key) => result.params[key]
 
-    let handler = result.handler[0] // XXX
+    let handler = result ? result.handler[0] : this.notFound // XXX
 
     const middleware = [Middleware.defaultFilter] // add defaultFilter later
 
@@ -122,7 +121,7 @@ class Hono {
     })
   }
 
-  notFound() {
+  async notFound() {
     return new Response('Not Found', { status: 404 })
   }
 }
