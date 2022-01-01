@@ -125,7 +125,7 @@ class Hono {
     })
   }
 
-  async notFound() {
+  notFound() {
     return new Response('Not Found', { status: 404 })
   }
 }
