@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Minimal web framework for Cloudflare Workers and Fastly Compute@Edge",
   "main": "src/hono.js",
   "scripts": {
