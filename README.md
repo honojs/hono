@@ -123,7 +123,7 @@ const logger = async (c, next) => {
 
 const addHeader = async (c, next) => {
   next()
-  c.res.headers.add('x-message', 'This is middleware!')
+  await c.res.headers.add('x-message', 'This is middleware!')
 }
 
 app.use('*', logger)

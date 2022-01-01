@@ -158,6 +158,7 @@ describe('Error Handling', () => {
         c.res = new fetch.Response('Custom 404 Not Found', { status: 404 })
       }
     }
+
     expect(() => {
       app.use('*', customNotFound)
     }).toThrow(TypeError)
