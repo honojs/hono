@@ -1,5 +1,5 @@
-const Hono = require('hono')
-const app = Hono()
+const { Hono } = require('hono')
+const app = new Hono()
 
 app.use('*', (c, next) => {
   console.log(`[${c.req.method}] ${c.req.url}`)
