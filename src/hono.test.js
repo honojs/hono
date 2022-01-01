@@ -142,3 +142,24 @@ describe('Custom 404', () => {
     expect(await res.text()).toBe('Custom 404 Not Found')
   })
 })
+
+describe('Error Handling', () => {
+  const app = new Hono()
+
+  it('Middleware must be async function', () => {
+    const t = () => {
+      throw new TypeError()
+    }
+    expect(t).toThrow(TypeError)
+
+    const customNotFound = (c, next) => {
+      next()
+      if (c.res.status === 404) {
+        c.res = new fetch.Response('Custom 404 Not Found', { status: 404 })
+      }
+    }
+    expect(() => {
+      app.use('*', customNotFound)
+    }).toThrow(TypeError)
+  })
+})
