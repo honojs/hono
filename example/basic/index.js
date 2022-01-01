@@ -2,13 +2,13 @@ const { Hono, Middleware } = require('hono')
 const app = new Hono()
 
 // Custom Middleware
-const logger = async (c, next) => {
+const logger = (c, next) => {
   console.log(`[${c.req.method}] ${c.req.url}`)
   next()
 }
-const addHeader = async (c, next) => {
+const addHeader = (c, next) => {
   next()
-  await c.res.headers.append('X-message', 'This is addHeader middleware!')
+  c.res.headers.append('X-message', 'This is addHeader middleware!')
 }
 
 // Mount Builtin Middleware
