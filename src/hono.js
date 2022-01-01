@@ -1,9 +1,10 @@
 'use strict'
 
 const Node = require('./node')
+const Middleware = require('./middleware')
 const compose = require('./compose')
 const methods = require('./methods')
-const Middleware = require('./middleware')
+const { getPathFromURL } = require('./util')
 
 const METHOD_NAME_OF_ALL = 'ALL'
 
@@ -20,12 +21,6 @@ class Router {
   match(method, path) {
     return this.node.search(method, path)
   }
-}
-
-const getPathFromURL = (url) => {
-  // XXX
-  const match = url.match(/^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/)
-  return match[5]
 }
 
 class Hono {
