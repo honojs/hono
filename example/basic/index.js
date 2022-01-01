@@ -1,4 +1,4 @@
-const { Hono } = require('../../src/hono')
+const { Hono } = require('hono')
 const app = new Hono()
 
 // Middleware
