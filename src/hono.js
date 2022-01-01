@@ -4,6 +4,7 @@ const Node = require('./node')
 const compose = require('./compose')
 const methods = require('./methods')
 const defaultFilter = require('./middleware/defaultFilter')
+const Middleware = require('./middleware')
 
 const METHOD_NAME_OF_ALL = 'ALL'
 
@@ -132,6 +133,10 @@ class Hono {
   }
 }
 
-module.exports = () => {
-  return new Hono()
-}
+// Default Export
+module.exports = Hono
+exports = module.exports
+
+// Named Export
+exports.Hono = Hono
+exports.Middleware = Middleware

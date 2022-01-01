@@ -1,7 +1,7 @@
-const App = require('./hono')
+const { Hono } = require('./hono')
 
 describe('Basic Usage', () => {
-  const router = App()
+  const router = new Hono()
 
   it('get, post hello', async () => {
     router.get('/hello', 'get hello')
@@ -24,7 +24,7 @@ describe('Basic Usage', () => {
 })
 
 describe('Complex', () => {
-  let router = App()
+  let router = new Hono()
 
   it('Named Param', async () => {
     router.get('/entry/:id', 'get entry')
@@ -56,7 +56,7 @@ describe('Complex', () => {
 })
 
 describe('Chained Route', () => {
-  let router = App()
+  let router = new Hono()
 
   it('Return rooter object', async () => {
     router = router.patch('/hello', 'patch hello')
