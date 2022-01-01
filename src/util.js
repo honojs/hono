@@ -20,7 +20,14 @@ const getPattern = (label) => {
   }
 }
 
+const getPathFromURL = (url) => {
+  // XXX
+  const match = url.match(/^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/)
+  return match[5]
+}
+
 module.exports = {
   splitPath,
   getPattern,
+  getPathFromURL,
 }
