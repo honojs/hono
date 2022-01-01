@@ -1,13 +1,13 @@
 import Benchmark from 'benchmark'
 import { makeEdgeEnv } from 'edge-mock'
-import Hono from '../../src/hono.js'
+import { Hono } from '../../src/hono.js'
 import itty from 'itty-router'
 const { Router: IttyRouter } = itty
 import { Router as SunderRouter, Sunder } from 'sunder'
 
 makeEdgeEnv()
 
-const hono = Hono()
+const hono = new Hono()
 hono.get('/user', () => new Response('User'))
 hono.get('/user/comments', () => new Response('User Comments'))
 hono.get('/user/avatar', () => new Response('User Avatar'))
