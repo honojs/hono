@@ -3,7 +3,6 @@
 const Node = require('./node')
 const compose = require('./compose')
 const methods = require('./methods')
-const defaultFilter = require('./middleware/defaultFilter')
 const Middleware = require('./middleware')
 
 const METHOD_NAME_OF_ALL = 'ALL'
@@ -95,7 +94,7 @@ class Hono {
 
     let handler = result.handler[0] // XXX
 
-    const middleware = [defaultFilter] // add defaultFilter later
+    const middleware = [Middleware.defaultFilter] // add defaultFilter later
 
     for (const mr of this.middlewareRouters) {
       const mwResult = mr.match(METHOD_NAME_OF_ALL, path)
