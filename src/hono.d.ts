@@ -43,5 +43,6 @@ export class Hono {
 declare interface BuiltinMiddleware {}
 
 export class Middleware {
+  static defaultFilter: BuiltinMiddleware
   static poweredBy: BuiltinMiddleware
 }
