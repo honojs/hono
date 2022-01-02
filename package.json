@@ -13,6 +13,18 @@
     "url": "https://github.com/yusukebe/hono.git"
   },
   "homepage": "https://github.com/yusukebe/hono",
+  "keywords": [
+    "web",
+    "app",
+    "http",
+    "application",
+    "framework",
+    "router",
+    "cloudflare",
+    "workers",
+    "fastly",
+    "compute@edge"
+  ],
   "devDependencies": {
     "jest": "^27.4.5",
     "node-fetch": "^2.6.6"
