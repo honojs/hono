@@ -1,15 +1,35 @@
-declare class FetchEvent {}
-declare class Request {}
-declare class Response {}
-declare class Context {}
+declare interface FetchEvent {}
+declare interface Request {}
+declare interface Response {}
 
-declare class Node {}
+type Result = {
+  handler: any
+  params: {}
+}
+
+declare class Node {
+  method: string
+  handler: any
+  children: Node[]
+  middlewares: any[]
+
+  insert(method: string, path: string, handler: any): Node
+  search(method: string, path: string): Result
+}
+
+declare class Context {
+  req: Request
+  res: Response
+  newResponse(params: {}): Response
+}
+
+type Handler = (c: Context, next: () => void) => Response | void
 
 declare class Router {
   tempPath: string
   node: Node
 
-  add(method: string, path: string, handlers: any[]): Node
+  add(method: string, path: string, handler: Handler): Node
   match(method: string, path: string): Node
 }
 
@@ -17,32 +37,30 @@ export class Hono {
   router: Router
   middlewareRouters: Router[]
 
-  getRouter(): Router
-  addRoute(method: string, args: any[]): Hono
-  matchRoute(method: string, path: string): Node
-  createContext(req: Request, res: Response): Context
-  dispatch(req: Request, res: Response): Response
-  handleEvent(event: FetchEvent): Response
+  use(path: string, middleware: Handler): void
+
+  route(path: string): Hono
   fire(): void
+
+  all(path: string, handler: Handler): Hono
+  get(path: string, handler: Handler): Hono
+  post(path: string, handler: Handler): Hono
+  put(path: string, handler: Handler): Hono
+  head(path: string, handler: Handler): Hono
+  delete(path: string, handler: Handler): Hono
 
   notFound(): Response
 
-  route(path: string): Hono
-
-  use(path: string, middleware: any): void
-
-  all(path: string, handler: any): Hono
-  get(path: string, handler: any): Hono
-  post(path: string, handler: any): Hono
-  put(path: string, handler: any): Hono
-  head(path: string, handler: any): Hono
-  delete(path: string, handler: any): Hono
+  getRouter(): Router
+  addRoute(method: string, args: any[]): Hono
+  matchRoute(method: string, path: string): Promise<Node>
+  createContext(req: Request, res: Response): Promise<Context>
+  dispatch(req: Request, res: Response): Promise<Response>
+  handleEvent(event: FetchEvent): Promise<Response>
 }
 
-// XXX
-declare interface BuiltinMiddleware {}
-
 export class Middleware {
-  static defaultFilter: BuiltinMiddleware
-  static poweredBy: BuiltinMiddleware
+  static defaultFilter: Handler
+  // Add builtin middlewares
+  static poweredBy: Handler
 }
