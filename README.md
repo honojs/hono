@@ -187,7 +187,7 @@ app.get('/entry/:id', (c) => {
 })
 ```
 
-## Hono in 1 minutes
+## Hono in 1 minute
 
 Create your first Cloudflare Workers with Hono from scratch.
 
