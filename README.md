@@ -11,6 +11,8 @@ app.get('/', () => new Response('Hono!!'))
 app.fire()
 ```
 
+![carbon](https://user-images.githubusercontent.com/10682/147877725-bce9bd46-953d-4d70-9c2b-3eae47ad4df9.png)
+
 ## Feature
 
 - Fast - the router is implemented with Trie-Tree structure.
@@ -183,6 +185,69 @@ app.get('/entry/:id', (c) => {
   const id = c.req.params('id')
   ...
 })
+```
+
+## Hono in 1 minutes
+
+Create your first Cloudflare Workers with Hono from scratch.
+
+### Demo
+
+![Demo](https://user-images.githubusercontent.com/10682/147877447-ff5907cd-49be-4976-b3b4-5df2ac6dfda4.gif)
+
+### 1. Install Wrangler
+
+Install Cloudflare Command Line "[Wrangler](https://github.com/cloudflare/wrangler)"
+
+```sh
+$ npm i @cloudflare/wrangler -g
+```
+
+### 2. `npm init`
+
+Make npm skeleton directory.
+
+```sh
+$ mkdir hono-example
+$ ch hono-example
+$ npm init -y
+```
+
+### 3. `wrangler init`
+
+Init as a wrangler project.
+
+```sh
+$ wrangler init
+```
+
+### 4. `npm install hono`
+
+Install `hono` from npm repository.
+
+```
+$ npm i hono
+```
+
+### 5. Write your app
+
+Only 4 line!!
+
+```js
+const { Hono } = require('hono')
+const app = new Hono()
+
+app.get('/', () => new Response('Hello! Hono!'))
+
+app.fire()
+```
+
+### 6. Run!
+
+Run the development server locally.
+
+```sh
+$ wrangler dev
 ```
 
 ## Related projects
