@@ -1,8 +1,10 @@
 'use strict'
 
 const Node = require('./node')
+const Middleware = require('./middleware')
 const compose = require('./compose')
-const defaultFilter = require('./middleware/defaultFilter')
+const methods = require('./methods')
+const { getPathFromURL } = require('./util')
 
 const METHOD_NAME_OF_ALL = 'ALL'
 
@@ -21,29 +23,20 @@ class Router {
   }
 }
 
-const getPathFromURL = (url) => {
-  // XXX
-  const match = url.match(/^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/)
-  return match[5]
-}
-
-const proxyHandler = {
-  get:
-    (target, prop) =>
-    (...args) => {
-      if (target.constructor.prototype.hasOwnProperty(prop)) {
-        return target[prop](...args)
-      } else {
-        return target.addRoute(prop, ...args)
-      }
-    },
-}
-
 class Hono {
   constructor() {
     this.router = new Router()
-    this.middlewareRouter = new Router()
     this.middlewareRouters = []
+
+    for (const method of methods) {
+      this[method] = (...args) => {
+        return this.addRoute(method, ...args)
+      }
+    }
+  }
+
+  all(...args) {
+    this.addRoute('ALL', ...args)
   }
 
   getRouter() {
@@ -57,15 +50,19 @@ class Hono {
     } else {
       this.router.add(method, ...args)
     }
-    return WrappedApp(this)
+    return this
   }
 
   route(path) {
     this.router.tempPath = path
-    return WrappedApp(this)
+    return this
   }
 
   use(path, middleware) {
+    if (middleware.constructor.name !== 'Function') {
+      throw new TypeError('middleware must be a function!')
+    }
+
     const router = new Router()
     router.add(METHOD_NAME_OF_ALL, path, middleware)
     this.middlewareRouters.push(router)
@@ -90,13 +87,12 @@ class Hono {
     const [method, path] = [request.method, getPathFromURL(request.url)]
 
     const result = await this.matchRoute(method, path)
-    if (!result) return this.notFound()
 
     request.params = (key) => result.params[key]
 
-    let handler = result.handler[0] // XXX
+    let handler = result ? result.handler[0] : this.notFound // XXX
 
-    const middleware = [defaultFilter] // add defaultFilter later
+    const middleware = [Middleware.defaultFilter] // add defaultFilter later
 
     for (const mr of this.middlewareRouters) {
       const mwResult = mr.match(METHOD_NAME_OF_ALL, path)
@@ -134,8 +130,10 @@ class Hono {
   }
 }
 
-const WrappedApp = (hono = new Hono()) => {
-  return new Proxy(hono, proxyHandler)
-}
+// Default Export
+module.exports = Hono
+exports = module.exports
 
-module.exports = WrappedApp
+// Named Export
+exports.Hono = Hono
+exports.Middleware = Middleware

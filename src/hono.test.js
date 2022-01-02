@@ -1,8 +1,9 @@
-const Hono = require('./hono')
 const fetch = require('node-fetch')
+const { Hono } = require('./hono')
 
 describe('GET Request', () => {
-  const app = Hono()
+  const app = new Hono()
+
   app.get('/hello', () => {
     return new fetch.Response('hello', {
       status: 200,
@@ -29,7 +30,7 @@ describe('GET Request', () => {
 })
 
 describe('params and query', () => {
-  const app = Hono()
+  const app = new Hono()
 
   app.get('/entry/:id', async (c) => {
     const id = await c.req.params('id')
@@ -60,25 +61,25 @@ describe('params and query', () => {
 })
 
 describe('Middleware', () => {
-  const app = Hono()
+  const app = new Hono()
 
-  const logger = async (c, next) => {
+  const logger = (c, next) => {
     console.log(`${c.req.method} : ${c.req.url}`)
     next()
   }
 
-  const rootHeader = async (c, next) => {
+  const rootHeader = (c, next) => {
     next()
-    await c.res.headers.append('x-custom', 'root')
+    c.res.headers.append('x-custom', 'root')
   }
 
-  const customHeader = async (c, next) => {
+  const customHeader = (c, next) => {
     next()
-    await c.res.headers.append('x-message', 'custom-header')
+    c.res.headers.append('x-message', 'custom-header')
   }
-  const customHeader2 = async (c, next) => {
+  const customHeader2 = (c, next) => {
     next()
-    await c.res.headers.append('x-message-2', 'custom-header-2')
+    c.res.headers.append('x-message-2', 'custom-header-2')
   }
 
   app.use('*', logger)
@@ -110,5 +111,44 @@ describe('Middleware', () => {
     expect(await res.text()).toBe('message')
     expect(await res.headers.get('x-custom')).toBe('root')
     expect(await res.headers.get('x-message-2')).toBe('custom-header-2')
+  })
+})
+
+describe('Custom 404', () => {
+  const app = new Hono()
+
+  const customNotFound = (c, next) => {
+    next()
+    if (c.res.status === 404) {
+      c.res = new fetch.Response('Custom 404 Not Found', { status: 404 })
+    }
+  }
+
+  app.notFound = () => {
+    return new fetch.Response('Default 404 Nout Found', { status: 404 })
+  }
+
+  app.use('*', customNotFound)
+  app.get('/hello', () => {
+    return new fetch.Response('hello')
+  })
+  it('Custom 404 Not Found', async () => {
+    let req = new fetch.Request('https://example.com/hello')
+    let res = await app.dispatch(req)
+    expect(res.status).toBe(200)
+    req = new fetch.Request('https://example.com/foo')
+    res = await app.dispatch(req)
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('Custom 404 Not Found')
+  })
+})
+
+describe('Error Handling', () => {
+  const app = new Hono()
+
+  it('Middleware must be function', () => {
+    expect(() => {
+      app.use('*', {})
+    }).toThrow(TypeError)
   })
 })

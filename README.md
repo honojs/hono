@@ -3,13 +3,15 @@
 Hono [炎] - Tiny web framework for Cloudflare Workers and others.
 
 ```js
-const Hono = require('hono')
-const app = Hono()
+const { Hono } = require('hono')
+const app = new Hono()
 
 app.get('/', () => new Response('Hono!!'))
 
 app.fire()
 ```
+
+![carbon](https://user-images.githubusercontent.com/10682/147877725-bce9bd46-953d-4d70-9c2b-3eae47ad4df9.png)
 
 ## Feature
 
@@ -102,6 +104,19 @@ app
 
 ## Middleware
 
+### Builtin Middleware
+
+```js
+const { Hono, Middleware } = require('hono')
+
+...
+
+app.use('*', Middleware.poweredBy)
+
+```
+
+### Custom Middleware
+
 ```js
 const logger = (c, next) => {
   console.log(`[${c.req.method}] ${c.req.url}`)
@@ -113,10 +128,23 @@ const addHeader = (c, next) => {
   c.res.headers.add('x-message', 'This is middleware!')
 }
 
-app = app.use('*', logger)
-app = app.use('/message/*', addHeader)
+app.use('*', logger)
+app.use('/message/*', addHeader)
 
 app.get('/message/hello', () => 'Hello Middleware!')
+```
+
+### Custom 404 Response
+
+```js
+const customNotFound = (c, next) => {
+  next()
+  if (c.res.status === 404) {
+    c.res = new Response('Custom 404 Not Found', { status: 404 })
+  }
+}
+
+app.use('*', customNotFound)
 ```
 
 ## Context
@@ -125,7 +153,7 @@ app.get('/message/hello', () => 'Hello Middleware!')
 
 ```js
 app.get('/hello', (c) => {
-  const userAgent = c.req.headers('User-Agent')
+  const userAgent = c.req.headers.get('User-Agent')
   ...
 })
 ```
@@ -157,6 +185,69 @@ app.get('/entry/:id', (c) => {
   const id = c.req.params('id')
   ...
 })
+```
+
+## Hono in 1 minutes
+
+Create your first Cloudflare Workers with Hono from scratch.
+
+### Demo
+
+![Demo](https://user-images.githubusercontent.com/10682/147877447-ff5907cd-49be-4976-b3b4-5df2ac6dfda4.gif)
+
+### 1. Install Wrangler
+
+Install Cloudflare Command Line "[Wrangler](https://github.com/cloudflare/wrangler)"
+
+```sh
+$ npm i @cloudflare/wrangler -g
+```
+
+### 2. `npm init`
+
+Make npm skeleton directory.
+
+```sh
+$ mkdir hono-example
+$ ch hono-example
+$ npm init -y
+```
+
+### 3. `wrangler init`
+
+Init as a wrangler project.
+
+```sh
+$ wrangler init
+```
+
+### 4. `npm install hono`
+
+Install `hono` from npm repository.
+
+```
+$ npm i hono
+```
+
+### 5. Write your app
+
+Only 4 line!!
+
+```js
+const { Hono } = require('hono')
+const app = new Hono()
+
+app.get('/', () => new Response('Hello! Hono!'))
+
+app.fire()
+```
+
+### 6. Run!
+
+Run the development server locally.
+
+```sh
+$ wrangler dev
 ```
 
 ## Related projects

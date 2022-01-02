@@ -1,7 +1,7 @@
 {
   "name": "hono",
-  "version": "0.0.6",
-  "description": "Minimal web framework for Cloudflare Workers",
+  "version": "0.0.9",
+  "description": "Minimal web framework for Cloudflare Workers and Fastly Compute@Edge",
   "main": "src/hono.js",
   "scripts": {
     "test": "jest"
@@ -13,6 +13,18 @@
     "url": "https://github.com/yusukebe/hono.git"
   },
   "homepage": "https://github.com/yusukebe/hono",
+  "keywords": [
+    "web",
+    "app",
+    "http",
+    "application",
+    "framework",
+    "router",
+    "cloudflare",
+    "workers",
+    "fastly",
+    "compute@edge"
+  ],
   "devDependencies": {
     "jest": "^27.4.5",
     "node-fetch": "^2.6.6"
