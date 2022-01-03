@@ -59,8 +59,8 @@ class Hono {
   }
 
   use(path, middleware) {
-    if (middleware.constructor.name !== 'Function') {
-      throw new TypeError('middleware must be a function!')
+    if (middleware.constructor.name !== 'AsyncFunction') {
+      throw new TypeError('middleware must be a async function!')
     }
 
     const router = new Router()
@@ -92,7 +92,7 @@ class Hono {
 
     let handler = result ? result.handler[0] : this.notFound // XXX
 
-    const middleware = [Middleware.defaultFilter] // add defaultFilter later
+    const middleware = []
 
     for (const mr of this.middlewareRouters) {
       const mwResult = mr.match(METHOD_NAME_OF_ALL, path)
@@ -102,15 +102,17 @@ class Hono {
     }
 
     let wrappedHandler = async (context, next) => {
-      context.res = handler(context)
-      next()
+      context.res = await handler(context)
+      await next()
     }
 
+    middleware.push(Middleware.defaultFilter)
     middleware.push(wrappedHandler)
+
     const composed = compose(middleware)
     const c = await this.createContext(request, response)
 
-    composed(c)
+    await composed(c)
 
     return c.res
   }

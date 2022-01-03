@@ -102,6 +102,15 @@ app
     .put(() => {...})
 ```
 
+## Async
+
+```js
+app.get('/fetch-url', async () => {
+  const response = await fetch('https://example.com/')
+  return new Response(`Status is ${response.status}`)
+})
+```
+
 ## Middleware
 
 ### Builtin Middleware
@@ -118,14 +127,14 @@ app.use('*', Middleware.poweredBy)
 ### Custom Middleware
 
 ```js
-const logger = (c, next) => {
+const logger = async (c, next) => {
   console.log(`[${c.req.method}] ${c.req.url}`)
-  next()
+  await next()
 }
 
-const addHeader = (c, next) => {
-  next()
-  c.res.headers.add('x-message', 'This is middleware!')
+const addHeader = async (c, next) => {
+  await next()
+  await c.res.headers.add('x-message', 'This is middleware!')
 }
 
 app.use('*', logger)
@@ -137,14 +146,33 @@ app.get('/message/hello', () => 'Hello Middleware!')
 ### Custom 404 Response
 
 ```js
-const customNotFound = (c, next) => {
-  next()
+const customNotFound = async (c, next) => {
+  await next()
   if (c.res.status === 404) {
     c.res = new Response('Custom 404 Not Found', { status: 404 })
   }
 }
 
 app.use('*', customNotFound)
+```
+
+### Complex Pattern
+
+```js
+// Log response time
+app.use('*', async (c, next) => {
+  await next()
+  const responseTime = await c.res.headers.get('X-Response-Time')
+  console.log(`X-Response-Time: ${responseTime}`)
+})
+
+// Add X-Response-Time header
+app.use('*', async (c, next) => {
+  const start = Date.now()
+  await next()
+  const ms = Date.now() - start
+  await c.res.headers.append('X-Response-Time', `${ms}ms`)
+})
 ```
 
 ## Context
@@ -187,7 +215,7 @@ app.get('/entry/:id', (c) => {
 })
 ```
 
-## Hono in 1 minutes
+## Hono in 1 minute
 
 Create your first Cloudflare Workers with Hono from scratch.
 
