@@ -1,4 +1,4 @@
-const { Hono } = require('./hono')
+const { Hono } = require('../src/hono')
 
 describe('Basic Usage', () => {
   const router = new Hono()
