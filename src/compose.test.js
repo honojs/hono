@@ -3,21 +3,21 @@ const compose = require('./compose')
 describe('compose middleware', () => {
   const middleware = []
 
-  const a = (c, next) => {
+  const a = async (c, next) => {
     c.req['log'] = 'log'
-    next()
+    await next()
   }
   middleware.push(a)
 
-  const b = (c, next) => {
-    next()
+  const b = async (c, next) => {
+    await next()
     c.res['header'] = `${c.res.header}-custom-header`
   }
   middleware.push(b)
 
-  const handler = (c, next) => {
+  const handler = async (c, next) => {
     c.req['log'] = `${c.req.log} message`
-    next()
+    await next()
     c.res = { message: 'new response' }
   }
   middleware.push(handler)
@@ -25,17 +25,17 @@ describe('compose middleware', () => {
   const request = {}
   const response = {}
 
-  it('Request', () => {
+  it('Request', async () => {
     const c = { req: request, res: response }
     const composed = compose(middleware)
-    composed(c)
+    await composed(c)
     expect(c.req['log']).not.toBeNull()
     expect(c.req['log']).toBe('log message')
   })
-  it('Response', () => {
+  it('Response', async () => {
     const c = { req: request, res: response }
     const composed = compose(middleware)
-    composed(c)
+    await composed(c)
     expect(c.res['header']).not.toBeNull()
     expect(c.res['message']).toBe('new response')
   })
