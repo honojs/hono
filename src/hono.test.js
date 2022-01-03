@@ -63,22 +63,22 @@ describe('params and query', () => {
 describe('Middleware', () => {
   const app = new Hono()
 
-  const logger = (c, next) => {
+  const logger = async (c, next) => {
     console.log(`${c.req.method} : ${c.req.url}`)
-    next()
+    await next()
   }
 
-  const rootHeader = (c, next) => {
-    next()
-    c.res.headers.append('x-custom', 'root')
+  const rootHeader = async (c, next) => {
+    await next()
+    await c.res.headers.append('x-custom', 'root')
   }
 
-  const customHeader = (c, next) => {
-    next()
-    c.res.headers.append('x-message', 'custom-header')
+  const customHeader = async (c, next) => {
+    await next()
+    await c.res.headers.append('x-message', 'custom-header')
   }
-  const customHeader2 = (c, next) => {
-    next()
+  const customHeader2 = async (c, next) => {
+    await next()
     c.res.headers.append('x-message-2', 'custom-header-2')
   }
 
@@ -86,6 +86,7 @@ describe('Middleware', () => {
   app.use('*', rootHeader)
   app.use('/hello', customHeader)
   app.use('/hello/*', customHeader2)
+
   app.get('/hello', () => {
     return new fetch.Response('hello')
   })
@@ -117,8 +118,8 @@ describe('Middleware', () => {
 describe('Custom 404', () => {
   const app = new Hono()
 
-  const customNotFound = (c, next) => {
-    next()
+  const customNotFound = async (c, next) => {
+    await next()
     if (c.res.status === 404) {
       c.res = new fetch.Response('Custom 404 Not Found', { status: 404 })
     }
@@ -146,9 +147,12 @@ describe('Custom 404', () => {
 describe('Error Handling', () => {
   const app = new Hono()
 
-  it('Middleware must be function', () => {
+  it('Middleware must be async function', () => {
     expect(() => {
       app.use('*', {})
+    }).toThrow(TypeError)
+    expect(() => {
+      app.use('*', () => '')
     }).toThrow(TypeError)
   })
 })

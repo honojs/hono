@@ -1,7 +1,3 @@
-declare interface FetchEvent {}
-declare interface Request {}
-declare interface Response {}
-
 type Result = {
   handler: any
   params: {}
@@ -63,4 +59,9 @@ export class Middleware {
   static defaultFilter: Handler
   // Add builtin middlewares
   static poweredBy: Handler
+}
+
+interface FetchEvent extends Event {
+  request: Request
+  respondWith(response: Promise<Response> | Response): Promise<Response>
 }
