@@ -1,4 +1,4 @@
-const { getPathFromURL } = require('../util')
+const { getPathFromURL } = require('../../util')
 
 const humanize = (n, opts) => {
   const options = opts || {}
