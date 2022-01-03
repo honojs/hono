@@ -1,5 +1,5 @@
 const { makeEdgeEnv } = require('edge-mock')
-const { Hono } = require('./hono')
+const { Hono } = require('../src/hono')
 
 makeEdgeEnv()
 

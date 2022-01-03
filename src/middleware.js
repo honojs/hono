@@ -1,6 +1,6 @@
 const defaultFilter = require('./middleware/defaultFilter')
-const poweredBy = require('./middleware/poweredBy')
-const logger = require('./middleware/logger')
+const poweredBy = require('./middleware/poweredBy/poweredBy')
+const logger = require('./middleware/logger/logger')
 
 function Middleware() {}
 

@@ -1,4 +1,4 @@
-const compose = require('./compose')
+const compose = require('../src/compose')
 
 describe('compose middleware', () => {
   const middleware = []
