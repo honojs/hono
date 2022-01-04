@@ -1,6 +1,7 @@
-const { getPathFromURL } = require('../../util')
+import { getPathFromURL } from '../../util'
+import { Context } from '../../hono'
 
-const humanize = (n, opts) => {
+const humanize = (n: string[], opts?: any) => {
   const options = opts || {}
   const d = options.delimiter || ','
   const s = options.separator || '.'
@@ -9,9 +10,9 @@ const humanize = (n, opts) => {
   return n.join(s)
 }
 
-const time = (start) => {
+const time = (start: number) => {
   const delta = Date.now() - start
-  return humanize(delta < 10000 ? delta + 'ms' : Math.round(delta / 1000) + 's')
+  return humanize([delta < 10000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
 }
 
 const LogPrefix = {
@@ -20,8 +21,8 @@ const LogPrefix = {
   Error: 'xxx',
 }
 
-const colorStatus = (status) => {
-  const out = {
+const colorStatus = (status: number = 0) => {
+  const out: { [key: number]: string } = {
     7: `\x1b[35m${status}\x1b[0m`,
     5: `\x1b[31m${status}\x1b[0m`,
     4: `\x1b[33m${status}\x1b[0m`,
@@ -32,7 +33,7 @@ const colorStatus = (status) => {
   }
   return out[(status / 100) | 0]
 }
-function log(fn, prefix, method, path, status, elasped) {
+function log(fn: Function, prefix: string, method: string, path: string, status?: number, elasped?: string) {
   const out =
     prefix === LogPrefix.Incoming
       ? `  ${prefix} ${method} ${path}`
@@ -40,8 +41,8 @@ function log(fn, prefix, method, path, status, elasped) {
   fn(out)
 }
 
-const logger = (fn = console.log) => {
-  return async (c, next) => {
+export const logger = (fn = console.log) => {
+  return async (c: Context, next: Function) => {
     const { method } = c.req
     const path = getPathFromURL(c.req.url)
 
@@ -59,5 +60,3 @@ const logger = (fn = console.log) => {
     log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start))
   }
 }
-
-module.exports = logger

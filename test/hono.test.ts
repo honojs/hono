@@ -1,11 +1,11 @@
-const { makeEdgeEnv } = require('edge-mock')
-const { Hono } = require('../src/hono')
+import makeServiceWorkerEnv from 'service-worker-mock'
+import { Hono, Context } from '../src/hono'
 
-makeEdgeEnv()
+declare var global: any
+Object.assign(global, makeServiceWorkerEnv())
 
 describe('GET Request', () => {
   const app = new Hono()
-
   app.get('/hello', () => {
     return new Response('hello', {
       status: 200,
@@ -27,6 +27,42 @@ describe('GET Request', () => {
     let req = new Request('/')
     let res = await app.dispatch(req)
     expect(res).not.toBeNull()
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('Routing', () => {
+  const app = new Hono()
+
+  it('Return it self', async () => {
+    const appRes = app.get('/', () => new Response('get /'))
+    expect(appRes).not.toBeUndefined()
+    appRes.delete('/', () => new Response('delete /'))
+    let req = new Request('/', { method: 'DELETE' })
+    const res = await appRes.dispatch(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('delete /')
+  })
+
+  it('Chained route', async () => {
+    app
+      .route('/route')
+      .get(() => new Response('get /route'))
+      .post(() => new Response('post /route'))
+      .put(() => new Response('put /route'))
+    let req = new Request('/route', { method: 'GET' })
+    let res = await app.dispatch(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /route')
+
+    req = new Request('/route', { method: 'POST' })
+    res = await app.dispatch(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('post /route')
+
+    req = new Request('/route', { method: 'DELETE' })
+    res = await app.dispatch(req)
     expect(res.status).toBe(404)
   })
 })
@@ -65,29 +101,27 @@ describe('params and query', () => {
 describe('Middleware', () => {
   const app = new Hono()
 
-  const logger = async (c, next) => {
+  // Custom Logger
+  app.use('*', async (c, next) => {
     console.log(`${c.req.method} : ${c.req.url}`)
     await next()
-  }
+  })
 
-  const rootHeader = async (c, next) => {
+  // Apeend Custom Header
+  app.use('*', async (c, next) => {
     await next()
     await c.res.headers.append('x-custom', 'root')
-  }
+  })
 
-  const customHeader = async (c, next) => {
+  app.use('/hello', async (c, next) => {
     await next()
     await c.res.headers.append('x-message', 'custom-header')
-  }
-  const customHeader2 = async (c, next) => {
-    await next()
-    c.res.headers.append('x-message-2', 'custom-header-2')
-  }
+  })
 
-  app.use('*', logger)
-  app.use('*', rootHeader)
-  app.use('/hello', customHeader)
-  app.use('/hello/*', customHeader2)
+  app.use('/hello/*', async (c, next) => {
+    await next()
+    await c.res.headers.append('x-message-2', 'custom-header-2')
+  })
 
   app.get('/hello', () => {
     return new Response('hello')
@@ -120,21 +154,21 @@ describe('Middleware', () => {
 describe('Custom 404', () => {
   const app = new Hono()
 
-  const customNotFound = async (c, next) => {
-    await next()
-    if (c.res.status === 404) {
-      c.res = new Response('Custom 404 Not Found', { status: 404 })
-    }
-  }
-
   app.notFound = () => {
     return new Response('Default 404 Nout Found', { status: 404 })
   }
 
-  app.use('*', customNotFound)
+  app.use('*', async (c, next) => {
+    await next()
+    if (c.res.status === 404) {
+      c.res = new Response('Custom 404 Not Found', { status: 404 })
+    }
+  })
+
   app.get('/hello', () => {
     return new Response('hello')
   })
+
   it('Custom 404 Not Found', async () => {
     let req = new Request('/hello')
     let res = await app.dispatch(req)
@@ -146,15 +180,16 @@ describe('Custom 404', () => {
   })
 })
 
-describe('Error Handling', () => {
+describe('Context', () => {
   const app = new Hono()
+  app.get('/', (c) => {
+    return c.text('get /')
+  })
 
-  it('Middleware must be async function', () => {
-    expect(() => {
-      app.use('*', {})
-    }).toThrow(TypeError)
-    expect(() => {
-      app.use('*', () => '')
-    }).toThrow(TypeError)
+  it('c.text', async () => {
+    let req = new Request('/')
+    let res = await app.dispatch(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /')
   })
 })

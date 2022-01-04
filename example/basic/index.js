@@ -1,8 +1,10 @@
-const { Hono, Middleware } = require('../../src/hono')
+const { Hono, Middleware } = require('../../dist/index')
+// or install from npm:
+// const { Hono, Middleware } = require('hono')
 const app = new Hono()
 
 // Mount Builtin Middleware
-app.use('*', Middleware.poweredBy)
+app.use('*', Middleware.poweredBy())
 app.use('*', Middleware.logger())
 
 // Custom Middleware
