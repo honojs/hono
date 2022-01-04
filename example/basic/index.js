@@ -3,6 +3,7 @@ const app = new Hono()
 
 // Mount Builtin Middleware
 app.use('*', Middleware.poweredBy)
+app.use('*', Middleware.logger())
 
 // Custom Middleware
 // Add Custom Header

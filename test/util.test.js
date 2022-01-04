@@ -1,4 +1,4 @@
-const { splitPath, getPattern, getPathFromURL } = require('./util')
+const { splitPath, getPattern, getPathFromURL } = require('../src/util')
 
 describe('Utility methods', () => {
   it('splitPath', () => {

@@ -1,15 +1,17 @@
-const fetch = require('node-fetch')
-const { Hono, Middleware } = require('../hono')
+const { makeEdgeEnv } = require('edge-mock')
+const { Hono, Middleware } = require('../../hono')
+
+makeEdgeEnv()
 
 describe('Powered by Middleware', () => {
   const app = new Hono()
 
   app.use('*', Middleware.poweredBy)
-  app.get('/', () => new fetch.Response('root'))
+  app.get('/', () => new Response('root'))
 
   it('Response headers include X-Powered-By', async () => {
-    let req = new fetch.Request('https://example.com/')
-    let res = await app.dispatch(req, new fetch.Response())
+    let req = new Request('/')
+    let res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('X-Powered-By')).toBe('Hono')

@@ -1,4 +1,4 @@
-const Node = require('./node')
+const Node = require('../src/node')
 
 describe('Root Node', () => {
   const node = new Node()
