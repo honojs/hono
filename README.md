@@ -11,15 +11,15 @@ app.get('/', (c) => c.text('Hono!!'))
 app.fire()
 ```
 
-![carbon](https://user-images.githubusercontent.com/10682/148269201-d5f83d7e-5cf4-4d51-82ae-3862da90cff0.png)
+![carbon](https://user-images.githubusercontent.com/10682/148270020-feba04c1-5640-43c3-85fc-62ff175b567b.png)
 
 ## Feature
 
-- Fast - the router is implemented with Trie-Tree structure.
-- Portable - zero dependencies.
-- Flexible - you can make your own middlewares.
-- Easy - simple API, builtin middleware, and TypeScript support.
-- Optimized - for Cloudflare Workers or Fastly Compute@Edge.
+- **Fast** - the router is implemented with Trie-Tree structure.
+- **Tiny** - zero dependencies, using Web standard API.
+- **Flexible** - you can make your own middleware.
+- **Easy** - simple API, builtin middleware, and written in TypeScript.
+- **Optimized** - for Cloudflare Workers or Fastly Compute@Edge.
 
 ## Benchmark
 
@@ -274,17 +274,25 @@ Only 4 line!!
 const { Hono } = require('hono')
 const app = new Hono()
 
-app.get('/', () => new Response('Hello! Hono!'))
+app.get('/', (c) => c.text('Hello! Hono!'))
 
 app.fire()
 ```
 
-### 6. Run!
+### 6. Run
 
 Run the development server locally.
 
 ```sh
 $ wrangler dev
+```
+
+### Publish
+
+Deploy to Cloudflare.
+
+```sh
+$ wrangler publish
 ```
 
 ## Related projects
