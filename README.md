@@ -11,7 +11,11 @@ app.get('/', (c) => c.text('Hono!!'))
 app.fire()
 ```
 
-![carbon](https://user-images.githubusercontent.com/10682/148270020-feba04c1-5640-43c3-85fc-62ff175b567b.png)
+Hono[炎] - _**means flame🔥 in Japanese**_ - is small, fast and simple web flamework for a Service Workers API based serverless service such as **Cloudflare Workers** and **Fastly Compute@Edge**. Because Hono does not depend on any NPM packages, it's easy to install, setup, and deploy. Although Hono has a router, context object, and middleware including builtin. Mostly web application like a Web API can be made.
+
+In the case of Cloudflare Workers, there are `wrangler` and `miniflare`.You can develop the application locally and publish it with few commands.
+
+It's amazing that the experience of writing code with Hono. Enjoy!
 
 ## Feature
 
@@ -23,7 +27,7 @@ app.fire()
 
 ## Benchmark
 
-Hono is fastest!!
+**Hono is fastest** compared to other routers for Cloudflare Workers.
 
 ```
 hono x 758,264 ops/sec ±5.41% (75 runs sampled)
@@ -33,7 +37,15 @@ Fastest is hono
 ✨  Done in 42.84s.
 ```
 
+## Hono in 1 minute
+
+Below is demonstration to create an application of Cloudflare Workers with Hono.
+
+![Demo](https://user-images.githubusercontent.com/10682/148223268-2484a891-57c1-472f-9df3-936a5586f002.gif)
+
 ## Install
+
+You can install from npm public registry:
 
 ```
 $ yarn add hono
@@ -46,6 +58,8 @@ $ npm install hono
 ```
 
 ## Methods
+
+Instance of `Hono` has these methods:
 
 - app.**HTTP_METHOD**(path, handler)
 - app.**all**(path, handler)
@@ -104,7 +118,7 @@ app
     .put(() => {...})
 ```
 
-## Async
+## async/await
 
 ```js
 app.get('/fetch-url', async () => {
@@ -124,10 +138,13 @@ const { Hono, Middleware } = require('hono')
 
 app.use('*', Middleware.poweredBy())
 app.use('*', Middleware.logger())
-
 ```
 
+Available builtin middleware are listed on [src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware) directory.
+
 ### Custom Middleware
+
+You can write your own middleware:
 
 ```js
 // Custom logger
@@ -147,6 +164,8 @@ app.get('/message/hello', () => 'Hello Middleware!')
 
 ### Custom 404 Response
 
+If you want to customize 404 Not Found response:
+
 ```js
 app.use('*', async (c, next) => {
   await next()
@@ -157,6 +176,8 @@ app.use('*', async (c, next) => {
 ```
 
 ### Complex Pattern
+
+You can also do this:
 
 ```js
 // Output response time
@@ -177,7 +198,9 @@ app.use('*', async (c, next) => {
 
 ## Context
 
-### req
+To handle Request and Reponse easily, you can use Context object:
+
+### c.req
 
 ```js
 
@@ -200,7 +223,7 @@ app.get('/entry/:id', (c) => {
 })
 ```
 
-### res
+### c.res
 
 ```js
 // Response object
@@ -210,7 +233,9 @@ app.use('/', (c, next) => {
 })
 ```
 
-### text
+### c.text()
+
+Render text as `Content-Type:text/plain`:
 
 ```js
 app.get('/say', (c) => {
@@ -218,7 +243,9 @@ app.get('/say', (c) => {
 })
 ```
 
-### json
+### c.json()
+
+Render text as `Content-Type:application/json`:
 
 ```js
 app.get('/api', (c) => {
@@ -226,11 +253,9 @@ app.get('/api', (c) => {
 })
 ```
 
-## Hono in 1 minute
+## Cloudflare Workers with Hono
 
-Create your first Cloudflare Workers with Hono from scratch.
-
-![Demo](https://user-images.githubusercontent.com/10682/148223268-2484a891-57c1-472f-9df3-936a5586f002.gif)
+Write your first code for Cloudflare Workers with Hono.
 
 ### 1. Install Wrangler
 
@@ -260,7 +285,7 @@ $ wrangler init
 
 ### 4. `npm install hono`
 
-Install `hono` from npm repository.
+Install `hono` from npm registry.
 
 ```
 $ npm i hono
@@ -289,7 +314,7 @@ $ wrangler dev
 
 ### Publish
 
-Deploy to Cloudflare.
+Deploy to Cloudflare. That's all!
 
 ```sh
 $ wrangler publish
@@ -297,12 +322,24 @@ $ wrangler publish
 
 ## Related projects
 
-- koa <https://github.com/koajs/koa>
+Implementation of the router is inspired by [goblin](https://github.com/bmf-san/goblin). API design is inspired by [express](https://github.com/expressjs/express) and [koa](https://github.com/koajs/koa). [itty-router](https://github.com/kwhitley/itty-router) and [Sunder](https://github.com/SunderJS/sunder) are the other routers or frameworks for Cloudflare Workers.
+
 - express <https://github.com/expressjs/express>
-- oak <https://github.com/oakserver/oak>
+- koa <https://github.com/koajs/koa>
 - itty-router <https://github.com/kwhitley/itty-router>
 - Sunder <https://github.com/SunderJS/sunder>
 - goblin <https://github.com/bmf-san/goblin>
+
+## Contributing
+
+Contributions Welcome! You can contribute by the following way:
+
+- Write or fix documents
+- Write code of middleware
+- Fix bugs
+- Refactor the code
+
+If you can, please!
 
 ## Author
 
@@ -310,4 +347,4 @@ Yusuke Wada <https://github.com/yusukebe>
 
 ## License
 
-MIT
+Distributed under the MIT License. See [LICENSE](LISENCE) for more information.
