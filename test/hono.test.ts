@@ -1,5 +1,5 @@
 import makeServiceWorkerEnv from 'service-worker-mock'
-import { Hono, Context } from '../src/hono'
+import { Hono } from '../src/hono'
 
 declare var global: any
 Object.assign(global, makeServiceWorkerEnv())
@@ -177,19 +177,5 @@ describe('Custom 404', () => {
     res = await app.dispatch(req)
     expect(res.status).toBe(404)
     expect(await res.text()).toBe('Custom 404 Not Found')
-  })
-})
-
-describe('Context', () => {
-  const app = new Hono()
-  app.get('/', (c) => {
-    return c.text('get /')
-  })
-
-  it('c.text', async () => {
-    let req = new Request('/')
-    let res = await app.dispatch(req)
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('get /')
   })
 })

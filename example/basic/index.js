@@ -30,7 +30,7 @@ app.use('*', async (c, next) => {
 })
 
 // Routing
-app.get('/', () => new Response('Hono!!'))
+app.get('/', (c) => c.text('Hono!!'))
 app.get('/hello', () => new Response('This is /hello'))
 app.get('/entry/:id', (c) => {
   const id = c.req.params('id')
@@ -47,6 +47,17 @@ app.get('/fetch-url', async () => {
 app.get('/user-agent', (c) => {
   const userAgent = c.req.headers.get('User-Agent')
   return new Response(`Your UserAgent is ${userAgent}`)
+})
+
+// JSON
+app.get('/api/posts', (c) => {
+  const posts = [
+    { id: 1, title: 'Good Morning' },
+    { id: 2, title: 'Good Aternoon' },
+    { id: 3, title: 'Good Evening' },
+    { id: 4, title: 'Good Night' },
+  ]
+  return c.json(posts, null, 2)
 })
 
 // addEventListener

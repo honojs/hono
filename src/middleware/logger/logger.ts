@@ -1,5 +1,5 @@
 import { getPathFromURL } from '../../util'
-import { Context } from '../../hono'
+import { Context } from '../../context'
 
 const humanize = (n: string[], opts?: any) => {
   const options = opts || {}

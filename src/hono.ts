@@ -2,6 +2,7 @@ import { Node, Result } from './node'
 import { compose } from './compose'
 import { getPathFromURL } from './util'
 import { Middleware } from './middleware'
+import { Context } from './context'
 
 export { Middleware }
 
@@ -11,29 +12,6 @@ declare global {
   interface Request {
     params: (key: string) => any
     query: (key: string) => string | null
-  }
-}
-
-export class Context {
-  req: Request
-  res: Response
-
-  constructor(req: Request, res: Response) {
-    this.req = req
-    this.res = res
-  }
-
-  newResponse(body?: BodyInit | null | undefined, init?: ResponseInit | undefined): Response {
-    return new Response(body, init)
-  }
-
-  text(body: string) {
-    return this.newResponse(body, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/plain',
-      },
-    })
   }
 }
 
