@@ -1,7 +1,7 @@
 const { Hono } = require('hono')
 const app = new Hono()
 
-app.use('*', (c, next) => {
+app.use('*', async (c, next) => {
   console.log(`[${c.req.method}] ${c.req.url}`)
   next()
 })

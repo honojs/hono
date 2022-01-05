@@ -1,14 +1,15 @@
 {
   "name": "hono",
-  "version": "0.0.10",
-  "description": "Minimal web framework for Cloudflare Workers and Fastly Compute@Edge",
+  "version": "0.0.11",
+  "description": "Tiny web framework for Cloudflare Workers and others.",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
     "test": "jest",
-    "build": "tsc",
+    "build": "rimraf dist && tsc",
     "watch": "tsc -w",
     "prepublishOnly": "yarn build"
   },
@@ -36,9 +37,9 @@
     "@types/jest": "^27.4.0",
     "@types/service-worker-mock": "^2.0.1",
     "jest": "^27.4.5",
+    "rimraf": "^3.0.2",
     "service-worker-mock": "^2.0.5",
     "ts-jest": "^27.1.2",
     "typescript": "^4.5.4"
-  },
-  "dependencies": {}
+  }
 }

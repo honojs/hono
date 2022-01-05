@@ -9,11 +9,10 @@ app.use('*', Middleware.logger())
 
 // Custom Middleware
 // Add Custom Header
-const addHeader = async (c, next) => {
+app.use('/hello/*', async (c, next) => {
   await next()
   await c.res.headers.append('X-message', 'This is addHeader middleware!')
-}
-app.use('/hello/*', addHeader)
+})
 
 // Log response time
 app.use('*', async (c, next) => {
@@ -31,7 +30,7 @@ app.use('*', async (c, next) => {
 })
 
 // Routing
-app.get('/', () => 'Hono!!')
+app.get('/', () => new Response('Hono!!'))
 app.get('/hello', () => new Response('This is /hello'))
 app.get('/entry/:id', (c) => {
   const id = c.req.params('id')
@@ -44,6 +43,7 @@ app.get('/fetch-url', async () => {
   return new Response(`https://example.com/ is ${response.status}`)
 })
 
+// Request headers
 app.get('/user-agent', (c) => {
   const userAgent = c.req.headers.get('User-Agent')
   return new Response(`Your UserAgent is ${userAgent}`)

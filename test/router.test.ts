@@ -1,6 +1,6 @@
 import { Router } from '../src/hono'
 
-describe.only('Basic Usage', () => {
+describe('Basic Usage', () => {
   const router = new Router<string>()
 
   router.add('GET', '/hello', 'get hello')
