@@ -65,6 +65,7 @@ Instance of `Hono` has these methods:
 - app.**all**(path, handler)
 - app.**route**(path)
 - app.**use**(path, middleware)
+- app.**fire**()
 
 ## Routing
 
@@ -250,6 +251,16 @@ Render text as `Content-Type:application/json`:
 ```js
 app.get('/api', (c) => {
   return c.json({ message: 'Hello!' })
+})
+```
+
+## fire
+
+`app.fire()` do:
+
+```js
+addEventListener('fetch', (event) => {
+  event.respondWith(this.handleEvent(event))
 })
 ```
 
