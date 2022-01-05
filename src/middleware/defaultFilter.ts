@@ -1,4 +1,4 @@
-import { Context } from '../hono'
+import { Context } from '../context'
 
 export const defaultFilter = async (c: Context, next: Function) => {
   c.req.query = (key: string) => {

@@ -11,15 +11,30 @@ export class Context {
     return new Response(body, init)
   }
 
-  text(body: string) {
+  text(body: string): Response {
     if (typeof body !== 'string') {
-      throw new TypeError('text arg must be a string!')
+      throw new TypeError('text method arg must be a string!')
     }
 
     return this.newResponse(body, {
       status: 200,
       headers: {
         'Content-Type': 'text/plain',
+      },
+    })
+  }
+
+  json(object: object): Response {
+    if (typeof object !== 'object') {
+      throw new TypeError('json method arg must be a object!')
+    }
+
+    const body = JSON.stringify(object)
+
+    return this.newResponse(body, {
+      status: 200,
+      headers: {
+        'Contet-Type': 'application/json; charset=UTF-8',
       },
     })
   }
