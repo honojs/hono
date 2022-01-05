@@ -1,4 +1,4 @@
-const methods = [
+export const methods = [
   'get',
   'post',
   'put',
@@ -26,5 +26,3 @@ const methods = [
   'search',
   'connect',
 ]
-
-module.exports = methods

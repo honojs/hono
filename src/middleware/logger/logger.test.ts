@@ -1,13 +1,14 @@
-const { makeEdgeEnv } = require('edge-mock')
-const { Hono, Middleware } = require('../../hono')
+import makeServiceWorkerEnv from 'service-worker-mock'
+import { Hono, Middleware } from '../../hono'
 
-makeEdgeEnv()
+declare var global: any
+Object.assign(global, makeServiceWorkerEnv())
 
 describe('Logger by Middleware', () => {
   const app = new Hono()
 
   let log = ''
-  const logFn = (str) => {
+  const logFn = (str: string) => {
     log = str
   }
 

@@ -1,4 +1,4 @@
-const { splitPath, getPattern, getPathFromURL } = require('../src/util')
+import { splitPath, getPattern, getPathFromURL } from '../src/util'
 
 describe('Utility methods', () => {
   it('splitPath', () => {
@@ -20,6 +20,7 @@ describe('Utility methods', () => {
 
   it('getPattern', () => {
     let res = getPattern(':id')
+    expect(res).not.toBeNull()
     expect(res[0]).toBe('id')
     expect(res[1]).toBe('(.+)')
     res = getPattern(':id{[0-9]+}')

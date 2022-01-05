@@ -1,12 +1,12 @@
-const splitPath = (path) => {
-  path = path.split(/\//) // faster than path.split('/')
-  if (path[0] === '') {
-    path.shift()
+export const splitPath = (path: string): string[] => {
+  const paths = path.split(/\//) // faster than path.split('/')
+  if (paths[0] === '') {
+    paths.shift()
   }
-  return path
+  return paths
 }
 
-const getPattern = (label) => {
+export const getPattern = (label: string): string[] | null => {
   // :id{[0-9]+}  => ([0-9]+)
   // :id          => (.+)
   //const name = ''
@@ -18,16 +18,14 @@ const getPattern = (label) => {
       return [match[1], '(.+)']
     }
   }
+  return null
 }
 
-const getPathFromURL = (url) => {
+export const getPathFromURL = (url: string) => {
   // XXX
   const match = url.match(/^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/)
-  return match[5]
-}
-
-module.exports = {
-  splitPath,
-  getPattern,
-  getPathFromURL,
+  if (match) {
+    return match[5]
+  }
+  return ''
 }
