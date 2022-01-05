@@ -1,12 +1,13 @@
-const { makeEdgeEnv } = require('edge-mock')
-const { Hono, Middleware } = require('../../hono')
+import makeServiceWorkerEnv from 'service-worker-mock'
+import { Hono, Middleware } from '../../hono'
 
-makeEdgeEnv()
+declare var global: any
+Object.assign(global, makeServiceWorkerEnv())
 
 describe('Powered by Middleware', () => {
   const app = new Hono()
 
-  app.use('*', Middleware.poweredBy)
+  app.use('*', Middleware.poweredBy())
   app.get('/', () => new Response('root'))
 
   it('Response headers include X-Powered-By', async () => {

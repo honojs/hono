@@ -1,3 +1,5 @@
 example
 benchmark
 .github
+tsconfig.json
+src

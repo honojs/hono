@@ -1,9 +1,9 @@
 // Based on the code in the MIT licensed `koa-compose` package.
-const compose = (middleware) => {
-  return function (context, next) {
+export const compose = (middleware: any) => {
+  return function (context: any, next?: Function) {
     let index = -1
     return dispatch(0)
-    function dispatch(i) {
+    function dispatch(i: number): any {
       if (i <= index) return Promise.reject(new Error('next() called multiple times'))
       index = i
       let fn = middleware[i]
@@ -17,5 +17,3 @@ const compose = (middleware) => {
     }
   }
 }
-
-module.exports = compose

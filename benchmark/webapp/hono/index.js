@@ -1,4 +1,4 @@
-const { Hono } = require('../../../src/hono')
+const { Hono } = require('../../../dist/index')
 
 const hono = new Hono()
 hono.get('/user', () => new Response('User'))
