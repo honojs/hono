@@ -12,6 +12,10 @@ export class Context {
   }
 
   text(body: string) {
+    if (typeof body !== 'string') {
+      throw new TypeError('text arg must be a string!')
+    }
+
     return this.newResponse(body, {
       status: 200,
       headers: {
