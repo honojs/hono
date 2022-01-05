@@ -222,9 +222,7 @@ app.get('/say', (c) => {
 
 Create your first Cloudflare Workers with Hono from scratch.
 
-### How to setup
-
-![Demo](https://user-images.githubusercontent.com/10682/147877447-ff5907cd-49be-4976-b3b4-5df2ac6dfda4.gif)
+![Demo](https://user-images.githubusercontent.com/10682/148223268-2484a891-57c1-472f-9df3-936a5586f002.gif)
 
 ### 1. Install Wrangler
 
