@@ -24,17 +24,17 @@ export class Context {
     })
   }
 
-  json(object: object): Response {
+  json(object: object, replacer?: (string | number)[], space?: string | number): Response {
     if (typeof object !== 'object') {
       throw new TypeError('json method arg must be a object!')
     }
 
-    const body = JSON.stringify(object)
+    const body = JSON.stringify(object, replacer, space)
 
     return this.newResponse(body, {
       status: 200,
       headers: {
-        'Contet-Type': 'application/json; charset=UTF-8',
+        'Content-Type': 'application/json; charset=UTF-8',
       },
     })
   }

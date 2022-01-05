@@ -218,6 +218,14 @@ app.get('/say', (c) => {
 })
 ```
 
+### json
+
+```js
+app.get('/api', (c) => {
+  return c.json({ message: 'Hello!' })
+})
+```
+
 ## Hono in 1 minute
 
 Create your first Cloudflare Workers with Hono from scratch.
