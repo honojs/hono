@@ -6,12 +6,12 @@ Hono [炎] - Tiny web framework for Cloudflare Workers and others.
 const { Hono } = require('hono')
 const app = new Hono()
 
-app.get('/', () => new Response('Hono!!'))
+app.get('/', (c) => c.text('Hono!!'))
 
 app.fire()
 ```
 
-![carbon](https://user-images.githubusercontent.com/10682/147877725-bce9bd46-953d-4d70-9c2b-3eae47ad4df9.png)
+![carbon](https://user-images.githubusercontent.com/10682/148269201-d5f83d7e-5cf4-4d51-82ae-3862da90cff0.png)
 
 ## Feature
 
