@@ -16,19 +16,21 @@ app.fire()
 ## Feature
 
 - Fast - the router is implemented with Trie-Tree structure.
-- Tiny - use only standard API.
 - Portable - zero dependencies.
 - Flexible - you can make your own middlewares.
-- Optimized - for Cloudflare Workers and Fastly Compute@Edge.
+- Easy - simple API, builtin middleware, and TypeScript support.
+- Optimized - for Cloudflare Workers or Fastly Compute@Edge.
 
 ## Benchmark
 
+Hono is fastest!!
+
 ```
-hono x 813,001 ops/sec ±2.96% (75 runs sampled)
-itty-router x 160,415 ops/sec ±3.31% (85 runs sampled)
-sunder x 307,438 ops/sec ±4.77% (73 runs sampled)
+hono x 758,264 ops/sec ±5.41% (75 runs sampled)
+itty-router x 158,359 ops/sec ±3.21% (89 runs sampled)
+sunder x 297,581 ops/sec ±4.74% (83 runs sampled)
 Fastest is hono
-✨  Done in 37.03s.
+✨  Done in 42.84s.
 ```
 
 ## Install
@@ -45,8 +47,8 @@ $ npm install hono
 
 ## Methods
 
-- app.**HTTP_METHOD**(path, callback)
-- app.**all**(path, callback)
+- app.**HTTP_METHOD**(path, handler)
+- app.**all**(path, handler)
 - app.**route**(path)
 - app.**use**(path, middleware)
 
@@ -120,25 +122,25 @@ const { Hono, Middleware } = require('hono')
 
 ...
 
-app.use('*', Middleware.poweredBy)
+app.use('*', Middleware.poweredBy())
+app.use('*', Middleware.logger())
 
 ```
 
 ### Custom Middleware
 
 ```js
-const logger = async (c, next) => {
+// Custom logger
+app.use('*', async (c, next) => {
   console.log(`[${c.req.method}] ${c.req.url}`)
   await next()
-}
+})
 
-const addHeader = async (c, next) => {
+// Add custom header
+app.use('/message/*', async (c, next) => {
   await next()
   await c.res.headers.add('x-message', 'This is middleware!')
-}
-
-app.use('*', logger)
-app.use('/message/*', addHeader)
+})
 
 app.get('/message/hello', () => 'Hello Middleware!')
 ```
@@ -146,20 +148,18 @@ app.get('/message/hello', () => 'Hello Middleware!')
 ### Custom 404 Response
 
 ```js
-const customNotFound = async (c, next) => {
+app.use('*', async (c, next) => {
   await next()
   if (c.res.status === 404) {
     c.res = new Response('Custom 404 Not Found', { status: 404 })
   }
-}
-
-app.use('*', customNotFound)
+})
 ```
 
 ### Complex Pattern
 
 ```js
-// Log response time
+// Output response time
 app.use('*', async (c, next) => {
   await next()
   const responseTime = await c.res.headers.get('X-Response-Time')
@@ -180,8 +180,22 @@ app.use('*', async (c, next) => {
 ### req
 
 ```js
+
+// Get Request object
 app.get('/hello', (c) => {
   const userAgent = c.req.headers.get('User-Agent')
+  ...
+})
+
+// Query params
+app.get('/search', (c) => {
+  const query = c.req.query('q')
+  ...
+})
+
+// Captured params
+app.get('/entry/:id', (c) => {
+  const id = c.req.params('id')
   ...
 })
 ```
@@ -189,29 +203,18 @@ app.get('/hello', (c) => {
 ### res
 
 ```js
+// Response object
 app.use('/', (c, next) => {
   next()
   c.res.headers.append('X-Debug', 'Debug message')
 })
 ```
 
-## Request
-
-### query
+### text
 
 ```js
-app.get('/search', (c) => {
-  const query = c.req.query('q')
-  ...
-})
-```
-
-### params
-
-```js
-app.get('/entry/:id', (c) => {
-  const id = c.req.params('id')
-  ...
+app.get('/say', (c) => {
+  return c.text('Hello!')
 })
 ```
 
@@ -219,7 +222,7 @@ app.get('/entry/:id', (c) => {
 
 Create your first Cloudflare Workers with Hono from scratch.
 
-### Demo
+### How to setup
 
 ![Demo](https://user-images.githubusercontent.com/10682/147877447-ff5907cd-49be-4976-b3b4-5df2ac6dfda4.gif)
 

@@ -1,6 +1,6 @@
 import Benchmark from 'benchmark'
 import { makeEdgeEnv } from 'edge-mock'
-import { Hono } from '../../src/hono.js'
+import { Hono } from '../../dist/index'
 import itty from 'itty-router'
 const { Router: IttyRouter } = itty
 import { Router as SunderRouter, Sunder } from 'sunder'

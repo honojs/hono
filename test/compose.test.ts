@@ -1,21 +1,26 @@
-const compose = require('../src/compose')
+import { compose } from '../src/compose'
+
+class C {
+  req: { [key: string]: any }
+  res: { [key: string]: any }
+}
 
 describe('compose middleware', () => {
-  const middleware = []
+  const middleware: Function[] = []
 
-  const a = async (c, next) => {
+  const a = async (c: C, next: Function) => {
     c.req['log'] = 'log'
     await next()
   }
   middleware.push(a)
 
-  const b = async (c, next) => {
+  const b = async (c: C, next: Function) => {
     await next()
-    c.res['header'] = `${c.res.header}-custom-header`
+    c.res['headers'] = `${c.res.headers}-custom-header`
   }
   middleware.push(b)
 
-  const handler = async (c, next) => {
+  const handler = async (c: C, next: Function) => {
     c.req['log'] = `${c.req.log} message`
     await next()
     c.res = { message: 'new response' }
@@ -26,14 +31,14 @@ describe('compose middleware', () => {
   const response = {}
 
   it('Request', async () => {
-    const c = { req: request, res: response }
+    const c: C = { req: request, res: response }
     const composed = compose(middleware)
     await composed(c)
     expect(c.req['log']).not.toBeNull()
     expect(c.req['log']).toBe('log message')
   })
   it('Response', async () => {
-    const c = { req: request, res: response }
+    const c: C = { req: request, res: response }
     const composed = compose(middleware)
     await composed(c)
     expect(c.res['header']).not.toBeNull()
