@@ -1,4 +1,5 @@
-import { Node, Result } from './node'
+import type { Result } from './node'
+import { Node } from './node'
 import { compose } from './compose'
 import { getPathFromURL } from './util'
 import { Middleware } from './middleware'
@@ -131,7 +132,7 @@ export class Hono {
       return ''
     }
 
-    let handler = result ? result.handler[0] : this.notFound // XXX
+    const handler = result ? result.handler[0] : this.notFound // XXX
 
     const middleware = []
 
@@ -142,7 +143,7 @@ export class Hono {
       }
     }
 
-    let wrappedHandler = async (context: Context, next: Function) => {
+    const wrappedHandler = async (context: Context, next: Function) => {
       context.res = await handler(context)
       await next()
     }

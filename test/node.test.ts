@@ -4,7 +4,7 @@ describe('Root Node', () => {
   const node = new Node()
   node.insert('get', '/', 'get root')
   it('get /', () => {
-    let res = node.search('get', '/')
+    const res = node.search('get', '/')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('get root')
     expect(node.search('get', '/hello')).toBeNull()
@@ -62,7 +62,7 @@ describe('Name path', () => {
   node.insert('get', '/map/:location/events', 'get events')
 
   it('get /entry/123', () => {
-    let res = node.search('get', '/entry/123')
+    const res = node.search('get', '/entry/123')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('get entry')
     expect(res.params).not.toBeNull()
@@ -71,12 +71,12 @@ describe('Name path', () => {
   })
 
   it('get /entry/456/comment', () => {
-    let res = node.search('get', '/entry/456/comment')
+    const res = node.search('get', '/entry/456/comment')
     expect(res).toBeNull()
   })
 
   it('get /entry/789/comment/123', () => {
-    let res = node.search('get', '/entry/789/comment/123')
+    const res = node.search('get', '/entry/789/comment/123')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('get comment')
     expect(res.params['id']).toBe('789')
@@ -84,7 +84,7 @@ describe('Name path', () => {
   })
 
   it('get /map/:location/events', () => {
-    let res = node.search('get', '/map/yokohama/events')
+    const res = node.search('get', '/map/yokohama/events')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('get events')
     expect(res.params['location']).toBe('yokohama')
@@ -95,13 +95,13 @@ describe('Wildcard', () => {
   const node = new Node()
   node.insert('get', '/wildcard-abc/*/wildcard-efg', 'wildcard')
   it('/wildcard-abc/xxxxxx/wildcard-efg', () => {
-    let res = node.search('get', '/wildcard-abc/xxxxxx/wildcard-efg')
+    const res = node.search('get', '/wildcard-abc/xxxxxx/wildcard-efg')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('wildcard')
   })
   node.insert('get', '/wildcard-abc/*/wildcard-efg/hijk', 'wildcard')
   it('/wildcard-abc/xxxxxx/wildcard-efg/hijk', () => {
-    let res = node.search('get', '/wildcard-abc/xxxxxx/wildcard-efg/hijk')
+    const res = node.search('get', '/wildcard-abc/xxxxxx/wildcard-efg/hijk')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('wildcard')
   })
@@ -145,17 +145,17 @@ describe('Special Wildcard', () => {
   node.insert('ALL', '*', 'match all')
 
   it('/foo', () => {
-    let res = node.search('get', '/foo')
+    const res = node.search('get', '/foo')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('match all')
   })
   it('/hello', () => {
-    let res = node.search('get', '/hello')
+    const res = node.search('get', '/hello')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('match all')
   })
   it('/hello/foo', () => {
-    let res = node.search('get', '/hello/foo')
+    const res = node.search('get', '/hello/foo')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('match all')
   })
@@ -165,12 +165,12 @@ describe('Special Wildcard deeply', () => {
   const node = new Node()
   node.insert('ALL', '/hello/*', 'match hello')
   it('/hello', () => {
-    let res = node.search('get', '/hello')
+    const res = node.search('get', '/hello')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('match hello')
   })
   it('/hello/foo', () => {
-    let res = node.search('get', '/hello/foo')
+    const res = node.search('get', '/hello/foo')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('match hello')
   })

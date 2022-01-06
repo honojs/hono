@@ -31,6 +31,7 @@ export class Node<T> {
   }
 
   insert(method: string, path: string, handler: T): Node<T> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     let curNode: Node<T> = this
     const parts = splitPath(path)
     for (let i = 0, len = parts.length; i < len; i++) {
@@ -47,10 +48,11 @@ export class Node<T> {
   }
 
   search(method: string, path: string): Result<T> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     let curNode: Node<T> = this
 
     const params: { [key: string]: string } = {}
-    let parts = splitPath(path)
+    const parts = splitPath(path)
 
     for (let i = 0, len = parts.length; i < len; i++) {
       const p: string = parts[i]

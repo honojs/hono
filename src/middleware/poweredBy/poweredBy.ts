@@ -1,4 +1,4 @@
-import { Context } from '../../context'
+import type { Context } from '../../context'
 
 export const poweredBy = () => {
   return async (c: Context, next: Function) => {

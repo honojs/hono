@@ -1,7 +1,10 @@
 import { getPathFromURL } from '../../util'
-import { Context } from '../../context'
+import type { Context } from '../../context'
 
-const humanize = (n: string[], opts?: any) => {
+const humanize = (
+  n: string[],
+  opts?: { delimiter?: string; separator?: string }
+) => {
   const options = opts || {}
   const d = options.delimiter || ','
   const s = options.separator || '.'
@@ -12,7 +15,9 @@ const humanize = (n: string[], opts?: any) => {
 
 const time = (start: number) => {
   const delta = Date.now() - start
-  return humanize([delta < 10000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
+  return humanize([
+    delta < 10000 ? delta + 'ms' : Math.round(delta / 1000) + 's',
+  ])
 }
 
 const LogPrefix = {
@@ -33,7 +38,16 @@ const colorStatus = (status: number = 0) => {
   }
   return out[(status / 100) | 0]
 }
-function log(fn: Function, prefix: string, method: string, path: string, status?: number, elasped?: string) {
+type PrintFunc = (str: string, ...rest: string[]) => void;
+
+function log(
+  fn: PrintFunc,
+  prefix: string,
+  method: string,
+  path: string,
+  status?: number,
+  elasped?: string
+) {
   const out =
     prefix === LogPrefix.Incoming
       ? `  ${prefix} ${method} ${path}`

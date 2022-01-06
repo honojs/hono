@@ -1,7 +1,7 @@
 import makeServiceWorkerEnv from 'service-worker-mock'
 import { Hono, Middleware } from '../../hono'
 
-declare var global: any
+declare let global: any
 Object.assign(global, makeServiceWorkerEnv())
 
 describe('Logger by Middleware', () => {

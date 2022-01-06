@@ -28,7 +28,7 @@ describe('Complex', () => {
 
   it('Named Param', async () => {
     router.add('GET', '/entry/:id', 'get entry')
-    let res = router.match('GET', '/entry/123')
+    const res = router.match('GET', '/entry/123')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('get entry')
     expect(res.params['id']).toBe('123')
@@ -36,7 +36,7 @@ describe('Complex', () => {
 
   it('Wildcard', async () => {
     router.add('GET', '/wild/*/card', 'get wildcard')
-    let res = router.match('GET', '/wild/xxx/card')
+    const res = router.match('GET', '/wild/xxx/card')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('get wildcard')
   })
