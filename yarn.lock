@@ -688,7 +688,7 @@
     "eslint-scope" "^5.1.1"
     "eslint-utils" "^3.0.0"
 
-"@typescript-eslint/parser@^5.0.0":
+"@typescript-eslint/parser@^5.0.0", "@typescript-eslint/parser@^5.9.0":
   "integrity" "sha512-/6pOPz8yAxEt4PLzgbFRDpZmHnXCeZgPDrh/1DaVKOjvn/UPMlWhbx/gA96xRi2JxY1kBl2AmwVbyROUqys5xQ=="
   "resolved" "https://registry.npmjs.org/@typescript-eslint/parser/-/parser-5.9.0.tgz"
   "version" "5.9.0"

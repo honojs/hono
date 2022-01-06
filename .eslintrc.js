@@ -5,15 +5,22 @@ module.exports = defineConfig({
   extends: [
     'eslint:recommended',
     'plugin:node/recommended',
-    'plugin:@typescript-eslint/recommended'
+    'plugin:@typescript-eslint/recommended',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
-    ecmaVersion: 2021
+    ecmaVersion: 2021,
+  },
+  globals: {
+    fetch: false,
+    Response: false,
+    Request: false,
+    addEventListener: false,
   },
   rules: {
-    eqeqeq: ['warn', 'always', { null: 'never' }],
+    quotes: ['error', 'single'],
+    semi: ['error', 'never'],
     'no-debugger': ['error'],
     'no-empty': ['warn', { allowEmptyCatch: true }],
     'no-process-exit': 'off',
@@ -21,10 +28,14 @@ module.exports = defineConfig({
     'prefer-const': [
       'warn',
       {
-        destructuring: 'all'
-      }
+        destructuring: 'all',
+      },
     ],
-
+    '@typescript-eslint/ban-types': ['error', {
+      types: {
+        'Function': false,
+      }
+    }],
     'node/no-missing-import': [
       'error',
       {
@@ -34,16 +45,16 @@ module.exports = defineConfig({
           'testUtils',
           'less',
           'sass',
-          'stylus'
+          'stylus',
         ],
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
-      }
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts'],
+      },
     ],
     'node/no-missing-require': [
       'error',
       {
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
-      }
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts'],
+      },
     ],
     'node/no-deprecated-api': 'off',
     'node/no-unpublished-import': 'off',
@@ -52,14 +63,14 @@ module.exports = defineConfig({
 
     '@typescript-eslint/no-empty-function': [
       'error',
-      { allow: ['arrowFunctions'] }
+      { allow: ['arrowFunctions'] },
     ],
     '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/consistent-type-imports': [
       'error',
-      { prefer: 'type-imports' }
-    ]
+      { prefer: 'type-imports' },
+    ],
   },
 })

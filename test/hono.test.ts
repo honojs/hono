@@ -1,7 +1,7 @@
 import makeServiceWorkerEnv from 'service-worker-mock'
 import { Hono } from '../src/hono'
 
-declare var global: any
+declare let global: any
 Object.assign(global, makeServiceWorkerEnv())
 
 describe('GET Request', () => {
@@ -17,15 +17,15 @@ describe('GET Request', () => {
     })
   }
   it('GET /hello is ok', async () => {
-    let req = new Request('/hello')
-    let res = await app.dispatch(req)
+    const req = new Request('/hello')
+    const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello')
   })
   it('GET / is not found', async () => {
-    let req = new Request('/')
-    let res = await app.dispatch(req)
+    const req = new Request('/')
+    const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
   })
@@ -38,7 +38,7 @@ describe('Routing', () => {
     const appRes = app.get('/', () => new Response('get /'))
     expect(appRes).not.toBeUndefined()
     appRes.delete('/', () => new Response('delete /'))
-    let req = new Request('/', { method: 'DELETE' })
+    const req = new Request('/', { method: 'DELETE' })
     const res = await appRes.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
@@ -85,14 +85,14 @@ describe('params and query', () => {
   })
 
   it('params of /entry/:id is found', async () => {
-    let req = new Request('/entry/123')
-    let res = await app.dispatch(req)
+    const req = new Request('/entry/123')
+    const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('id is 123')
   })
   it('query of /search?name=sam is found', async () => {
-    let req = new Request('/search?name=sam')
-    let res = await app.dispatch(req)
+    const req = new Request('/search?name=sam')
+    const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('name is sam')
   })
@@ -132,8 +132,8 @@ describe('Middleware', () => {
   })
 
   it('logging and custom header', async () => {
-    let req = new Request('/hello')
-    let res = await app.dispatch(req)
+    const req = new Request('/hello')
+    const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello')
     expect(await res.headers.get('x-custom')).toBe('root')
@@ -142,8 +142,8 @@ describe('Middleware', () => {
   })
 
   it('logging and custom header with named params', async () => {
-    let req = new Request('/hello/message')
-    let res = await app.dispatch(req)
+    const req = new Request('/hello/message')
+    const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('message')
     expect(await res.headers.get('x-custom')).toBe('root')
