@@ -1,0 +1,76 @@
+const { defineConfig } = require('eslint-define-config')
+
+module.exports = defineConfig({
+  root: true,
+  extends: [
+    'eslint:recommended',
+    'plugin:node/recommended',
+    'plugin:@typescript-eslint/recommended',
+  ],
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    sourceType: 'module',
+    ecmaVersion: 2021,
+  },
+  globals: {
+    fetch: false,
+    Response: false,
+    Request: false,
+    addEventListener: false,
+  },
+  rules: {
+    quotes: ['error', 'single'],
+    semi: ['error', 'never'],
+    'no-debugger': ['error'],
+    'no-empty': ['warn', { allowEmptyCatch: true }],
+    'no-process-exit': 'off',
+    'no-useless-escape': 'off',
+    'prefer-const': [
+      'warn',
+      {
+        destructuring: 'all',
+      },
+    ],
+    '@typescript-eslint/ban-types': ['error', {
+      types: {
+        'Function': false,
+      }
+    }],
+    'node/no-missing-import': [
+      'error',
+      {
+        allowModules: [
+          'types',
+          'estree',
+          'testUtils',
+          'less',
+          'sass',
+          'stylus',
+        ],
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts'],
+      },
+    ],
+    'node/no-missing-require': [
+      'error',
+      {
+        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts'],
+      },
+    ],
+    'node/no-deprecated-api': 'off',
+    'node/no-unpublished-import': 'off',
+    'node/no-unpublished-require': 'off',
+    'node/no-unsupported-features/es-syntax': 'off',
+
+    '@typescript-eslint/no-empty-function': [
+      'error',
+      { allow: ['arrowFunctions'] },
+    ],
+    '@typescript-eslint/no-empty-interface': 'off',
+    '@typescript-eslint/no-inferrable-types': 'off',
+    '@typescript-eslint/no-var-requires': 'off',
+    '@typescript-eslint/consistent-type-imports': [
+      'error',
+      { prefer: 'type-imports' },
+    ],
+  },
+})
