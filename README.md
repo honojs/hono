@@ -11,11 +11,7 @@ app.get('/', (c) => c.text('Hono!!'))
 app.fire()
 ```
 
-Hono[炎] - _**means flame🔥 in Japanese**_ - is small, fast and simple web flamework for a Service Workers API based serverless service such as **Cloudflare Workers** and **Fastly Compute@Edge**. Because Hono does not depend on any NPM packages, it's easy to install, setup, and deploy. Although Hono has a router, context object, and middleware including builtin. Mostly web application like a Web API can be made.
-
-In the case of Cloudflare Workers, there are `wrangler` and `miniflare`.You can develop the application locally and publish it with few commands.
-
-It's amazing that the experience of writing code with Hono. Enjoy!
+Hono[炎] - _**means flame🔥 in Japanese**_ - is small, fast and simple web flamework for a Service Workers API based serverless service such as **Cloudflare Workers** and **Fastly Compute@Edge**. Hono does not depend on any NPM packages, it's easy to install, setup, and deploy. Although Hono has a router, context object, and middleware including the builtins. Mostly web application like a Web API can be made.
 
 ## Feature
 
@@ -266,7 +262,9 @@ addEventListener('fetch', (event) => {
 
 ## Cloudflare Workers with Hono
 
-Write your first code for Cloudflare Workers with Hono.
+Using `wrangler` or `miniflare`, you can develop the application locally and publish it with few commands.
+
+Let's write your first code for Cloudflare Workers with Hono.
 
 ### 1. Install Wrangler
 
@@ -358,4 +356,4 @@ Yusuke Wada <https://github.com/yusukebe>
 
 ## License
 
-Distributed under the MIT License. See [LICENSE](LISENCE) for more information.
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
