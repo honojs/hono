@@ -65,6 +65,27 @@ describe('Routing', () => {
     res = await app.dispatch(req)
     expect(res.status).toBe(404)
   })
+
+  it('Chained route without route method', async () => {
+    app
+      .get('/without-route', () => new Response('get /without-route'))
+      .post(() => new Response('post /without-route'))
+      .put(() => new Response('put /without-route'))
+
+    let req = new Request('/without-route', { method: 'GET' })
+    let res = await app.dispatch(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /without-route')
+
+    req = new Request('/without-route', { method: 'POST' })
+    res = await app.dispatch(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('post /without-route')
+
+    req = new Request('/without-route', { method: 'DELETE' })
+    res = await app.dispatch(req)
+    expect(res.status).toBe(404)
+  })
 })
 
 describe('params and query', () => {
