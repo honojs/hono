@@ -6,6 +6,13 @@ const app = new Hono()
 // Mount Builtin Middleware
 app.use('*', Middleware.poweredBy())
 app.use('*', Middleware.logger())
+app.use(
+  '/auth/*',
+  Middleware.basicAuth({
+    username: 'hono',
+    password: 'acoolproject',
+  })
+)
 
 // Custom Middleware
 // Add Custom Header
@@ -36,6 +43,7 @@ app.get('/entry/:id', (c) => {
   const id = c.req.params('id')
   return new Response(`Your ID is ${id}`)
 })
+app.get('/auth/*', async (ctx) => ctx.text('You are authorized'))
 
 // Async
 app.get('/fetch-url', async () => {
