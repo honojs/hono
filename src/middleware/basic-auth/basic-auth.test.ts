@@ -13,14 +13,14 @@ describe('Basic Auth by Middleware', () => {
   })
 
   const app = new Hono()
-  const name = 'hono-user-a'
-  const pass = 'hono-pass-a'
+  const username = 'hono-user-a'
+  const password = 'hono-password-a'
 
   app.use(
     '*',
     Middleware.basicAuth({
-      name,
-      pass,
+      username,
+      password,
     })
   )
   app.get('/', () => new Response('root'))
@@ -34,7 +34,7 @@ describe('Basic Auth by Middleware', () => {
   })
 
   it('Authorizated', async () => {
-    const credential = Buffer.from(name + ':' + pass).toString('base64')
+    const credential = Buffer.from(username + ':' + password).toString('base64')
 
     const req = new Request('/')
     req.headers.set('Authorization', `Basic ${credential}`)

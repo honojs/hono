@@ -4,8 +4,8 @@ import { logger } from './middleware/logger/logger'
 import { basicAuth } from './middleware/basic-auth/basic-auth'
 
 export class Middleware {
-  static defaultFilter = defaultFilter;
-  static poweredBy = poweredBy;
-  static logger = logger;
-  static basicAuth = basicAuth;
+  static defaultFilter = defaultFilter
+  static poweredBy = poweredBy
+  static logger = logger
+  static basicAuth = basicAuth
 }

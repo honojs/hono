@@ -7,10 +7,10 @@ const app = new Hono()
 app.use('*', Middleware.poweredBy())
 app.use('*', Middleware.logger())
 app.use(
-  '*',
+  '/auth/*',
   Middleware.basicAuth({
-    name: 'minghe',
-    pass: '2014',
+    username: 'hono',
+    password: 'acoolproject',
   })
 )
 
@@ -43,6 +43,7 @@ app.get('/entry/:id', (c) => {
   const id = c.req.params('id')
   return new Response(`Your ID is ${id}`)
 })
+app.get('/auth/*', async (ctx) => ctx.text('You are authorized'))
 
 // Async
 app.get('/fetch-url', async () => {

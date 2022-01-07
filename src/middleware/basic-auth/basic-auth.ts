@@ -29,7 +29,7 @@ const auth = (req: Request) => {
     return undefined
   }
 
-  return { name: userPass[1], pass: userPass[2] }
+  return { username: userPass[1], password: userPass[2] }
 }
 
 function decodeBase64(str: string) {
@@ -37,8 +37,8 @@ function decodeBase64(str: string) {
 }
 
 export const basicAuth = (options: {
-  name: string;
-  pass: string;
+  username: string;
+  password: string;
   realm?: string;
 }) => {
   if (!options.realm) {
@@ -47,10 +47,10 @@ export const basicAuth = (options: {
 
   return async (ctx: Context, next: Function) => {
     const user = auth(ctx.req)
-    const nameEqual = user && await timingSafeEqual(options.name, user.name)
-    const passEqual = user && await timingSafeEqual(options.pass, user.pass)
+    const usernameEqual = user && await timingSafeEqual(options.username, user.username)
+    const passwordEqual = user && await timingSafeEqual(options.password, user.password)
 
-    if (!user || !nameEqual || !passEqual) {
+    if (!user || !usernameEqual || !passwordEqual) {
       ctx.res = new Response('Unauthorized', {
         status: 401,
         headers: {
