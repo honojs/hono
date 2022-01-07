@@ -12,6 +12,7 @@
     "strictNullChecks": false,
     "types": [
       "jest",
+      "node",
       "@cloudflare/workers-types"
     ]
   },
