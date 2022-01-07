@@ -108,6 +108,7 @@ export class Hono {
   addRoute(method: string, arg: string | Handler, ...args: Handler[]): Hono {
     method = method.toUpperCase()
     if (typeof arg === 'string') {
+      this.tempPath = arg
       this.router.add(method, arg, args)
     } else {
       args.unshift(arg)
