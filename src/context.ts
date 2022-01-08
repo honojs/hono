@@ -11,44 +11,42 @@ export class Context {
     return new Response(body, init)
   }
 
-  text(body: string): Response {
-    if (typeof body !== 'string') {
+  text(text: string, status: number = 200, headers: { [key: string]: string } = {}): Response {
+    if (typeof text !== 'string') {
       throw new TypeError('text method arg must be a string!')
     }
 
-    return this.newResponse(body, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/plain',
-      },
+    headers['Content-Type'] = 'text/plain'
+
+    return this.newResponse(text, {
+      status: status,
+      headers: headers,
     })
   }
 
-  json(object: object, replacer?: (string | number)[], space?: string | number): Response {
+  json(object: object, status: number = 200, headers: { [key: string]: string } = {}): Response {
     if (typeof object !== 'object') {
       throw new TypeError('json method arg must be a object!')
     }
 
-    const body = JSON.stringify(object, replacer, space)
+    const body = JSON.stringify(object)
+    headers['Content-Type'] = 'application/json; charset=UTF-8'
 
     return this.newResponse(body, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
+      status: status,
+      headers: headers,
     })
   }
 
-  html(body: string): Response {
-    if (typeof body !== 'string') {
+  html(html: string, status: number = 200, headers: { [key: string]: string } = {}): Response {
+    if (typeof html !== 'string') {
       throw new TypeError('html method arg must be a string!')
     }
+    headers['Content-Type'] = 'text/html; charset=UTF-8'
 
-    return this.newResponse(body, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/html; charset=UTF-8',
-      },
+    return this.newResponse(html, {
+      status: status,
+      headers: headers,
     })
   }
 }
