@@ -1,16 +1,25 @@
 import { Hono } from '../../../dist/index'
 
-import { renderSSR } from 'nano-jsx'
-import { initSSR } from 'nano-jsx/lib/ssr'
-import { App } from './app'
-
-initSSR()
+import Nano from 'nano-jsx'
+import { App } from './App'
 
 const app = new Hono()
 
+const makeHTML = (body) => {
+  return `
+<!DOCTYPE html>
+ <html>
+  <body>
+    ${body}
+  </body>
+</html>
+`
+}
+
 app.get('/', (c) => {
-  const body = renderSSR(<App />)
-  return c.html(body)
+  const body = Nano.renderSSR(<App />)
+  const html = makeHTML(body)
+  return c.html(html)
 })
 
 app.fire()
