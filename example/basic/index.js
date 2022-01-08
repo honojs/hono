@@ -65,8 +65,10 @@ app.get('/api/posts', (c) => {
     { id: 3, title: 'Good Evening' },
     { id: 4, title: 'Good Night' },
   ]
-  return c.json(posts, null, 2)
+  return c.json(posts)
 })
+// status code
+app.post('/api/posts', (c) => c.json({ message: 'Created!' }, 201))
 
 // addEventListener
 app.fire()
