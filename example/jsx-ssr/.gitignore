@@ -2,4 +2,4 @@ dist
 node_modules
 worker
 package-lock.json
-yarn-lock.json
+yarn.lock
