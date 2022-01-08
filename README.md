@@ -25,7 +25,7 @@ Hono[炎] - _**means flame🔥 in Japanese**_ - is small, fast and simple web fl
 
 **Hono is fastest** compared to other routers for Cloudflare Workers.
 
-```
+```plain
 hono x 758,264 ops/sec ±5.41% (75 runs sampled)
 itty-router x 158,359 ops/sec ±3.21% (89 runs sampled)
 sunder x 297,581 ops/sec ±4.74% (83 runs sampled)
@@ -43,14 +43,14 @@ Below is a demonstration to create an application of Cloudflare Workers with Hon
 
 You can install from npm registry:
 
-```
-$ yarn add hono
+```sh
+yarn add hono
 ```
 
 or
 
 ```sh
-$ npm install hono
+npm install hono
 ```
 
 ## Methods
@@ -288,7 +288,7 @@ Let's write your first code for Cloudflare Workers with Hono.
 Install Cloudflare Command Line "[Wrangler](https://github.com/cloudflare/wrangler)"
 
 ```sh
-$ npm i @cloudflare/wrangler -g
+npm i @cloudflare/wrangler -g
 ```
 
 ### 2. `npm init`
@@ -296,9 +296,9 @@ $ npm i @cloudflare/wrangler -g
 Make npm skeleton directory.
 
 ```sh
-$ mkdir hono-example
-$ ch hono-example
-$ npm init -y
+mkdir hono-example
+ch hono-example
+npm init -y
 ```
 
 ### 3. `wrangler init`
@@ -306,15 +306,15 @@ $ npm init -y
 Init as a wrangler project.
 
 ```sh
-$ wrangler init
+wrangler init
 ```
 
 ### 4. `npm install hono`
 
 Install `hono` from npm registry.
 
-```
-$ npm i hono
+```sh
+npm i hono
 ```
 
 ### 5. Write your app
@@ -335,7 +335,7 @@ app.fire()
 Run the development server locally. Then, access like `http://127.0.0.1:8787/` in your Web browser.
 
 ```sh
-$ wrangler dev
+wrangler dev
 ```
 
 ### Publish
@@ -343,7 +343,7 @@ $ wrangler dev
 Deploy to Cloudflare. That's all!
 
 ```sh
-$ wrangler publish
+wrangler publish
 ```
 
 ## Related projects
