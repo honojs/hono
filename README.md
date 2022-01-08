@@ -133,6 +133,8 @@ const { Hono, Middleware } = require('hono')
 
 ...
 
+app.use('*', Middleware.poweredBy())
+app.use('*', Middleware.logger())
 app.use(
   '/auth/*',
   Middleware.basicAuth({
