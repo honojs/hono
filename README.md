@@ -11,7 +11,7 @@ app.get('/', (c) => c.text('Hono!!'))
 app.fire()
 ```
 
-Hono[炎] - _**means flame🔥 in Japanese**_ - is small, fast and simple web flamework for a Service Workers API based serverless such as **Cloudflare Workers** and **Fastly Compute@Edge**. Hono does not depend on any npm packages. However, Hono has a router, context object, and middleware including the builtins. It's easy to make a web application.
+Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web flamework for a Service Workers API based serverless such as **Cloudflare Workers** and **Fastly Compute@Edge**. Hono does not depend on any npm packages. However, Hono has a router, context object, and middleware including the builtins. It's easy to make a web application.
 
 ## Features
 
@@ -26,11 +26,12 @@ Hono[炎] - _**means flame🔥 in Japanese**_ - is small, fast and simple web fl
 **Hono is fastest** compared to other routers for Cloudflare Workers.
 
 ```plain
-hono x 758,264 ops/sec ±5.41% (75 runs sampled)
-itty-router x 158,359 ops/sec ±3.21% (89 runs sampled)
-sunder x 297,581 ops/sec ±4.74% (83 runs sampled)
+hono x 748,188 ops/sec ±5.40% (77 runs sampled)
+itty-router x 158,817 ops/sec ±3.62% (87 runs sampled)
+sunder x 332,339 ops/sec ±1.11% (95 runs sampled)
+worktop x 205,906 ops/sec ±4.43% (83 runs sampled)
 Fastest is hono
-✨  Done in 42.84s.
+✨  Done in 52.79s.
 ```
 
 ## Hono in 1 minute
@@ -348,13 +349,14 @@ wrangler publish
 
 ## Related projects
 
-Implementation of the router is inspired by [goblin](https://github.com/bmf-san/goblin). API design is inspired by [express](https://github.com/expressjs/express) and [koa](https://github.com/koajs/koa). [itty-router](https://github.com/kwhitley/itty-router) and [Sunder](https://github.com/SunderJS/sunder) are the other routers or frameworks for Cloudflare Workers.
+Implementation of the router is inspired by [goblin](https://github.com/bmf-san/goblin). API design is inspired by [express](https://github.com/expressjs/express) and [koa](https://github.com/koajs/koa). [itty-router](https://github.com/kwhitley/itty-router), [Sunder](https://github.com/SunderJS/sunder), and [worktop](https://github.com/lukeed/worktop) are the other routers or frameworks for Cloudflare Workers.
 
 - express <https://github.com/expressjs/express>
 - koa <https://github.com/koajs/koa>
 - itty-router <https://github.com/kwhitley/itty-router>
 - Sunder <https://github.com/SunderJS/sunder>
 - goblin <https://github.com/bmf-san/goblin>
+- worktop <https://github.com/lukeed/worktop>
 
 ## Contributing
 

@@ -15,5 +15,8 @@
     "edge-mock": "^0.0.15",
     "itty-router": "^2.4.8",
     "sunder": "^0.10.0"
+  },
+  "dependencies": {
+    "worktop": "^0.7.3"
   }
 }
