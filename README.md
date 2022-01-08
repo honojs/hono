@@ -247,11 +247,21 @@ app.get('/say', (c) => {
 
 ### c.json()
 
-Render text as `Content-Type:application/json`:
+Render JSON as `Content-Type:application/json`:
 
 ```js
 app.get('/api', (c) => {
   return c.json({ message: 'Hello!' })
+})
+```
+
+### c.html()
+
+Render HTML as `Content-Type:text/html`:
+
+```js
+app.get('/api', (c) => {
+  return c.html('<h1>Hello! Hono!</h1>')
 })
 ```
 
