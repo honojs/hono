@@ -38,4 +38,17 @@ export class Context {
       },
     })
   }
+
+  html(body: string): Response {
+    if (typeof body !== 'string') {
+      throw new TypeError('html method arg must be a string!')
+    }
+
+    return this.newResponse(body, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=UTF-8',
+      },
+    })
+  }
 }

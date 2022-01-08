@@ -8,13 +8,9 @@ initSSR()
 
 const app = new Hono()
 
-app.get('/', () => {
-  const html = renderSSR(<App />)
-  return new Response(html, {
-    headers: {
-      'Content-Type': 'text/html',
-    },
-  })
+app.get('/', (c) => {
+  const body = renderSSR(<App />)
+  return c.html(body)
 })
 
 app.fire()
