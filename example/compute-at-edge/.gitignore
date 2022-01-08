@@ -2,3 +2,5 @@
 /bin
 /pkg
 fastly.toml
+package-lock.json
+yarn.lock

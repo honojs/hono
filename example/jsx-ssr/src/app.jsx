@@ -1,5 +1,5 @@
 import { Component } from 'nano-jsx'
-import { Link } from './link'
+import { Link } from './Link'
 
 export class App extends Component {
   render() {

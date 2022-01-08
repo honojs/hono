@@ -1,6 +1,7 @@
 import makeServiceWorkerEnv from 'service-worker-mock'
 import { Context } from '../src/context'
 
+// eslint-disable-next-line
 declare let global: any
 Object.assign(global, makeServiceWorkerEnv())
 
