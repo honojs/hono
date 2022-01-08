@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/yusukebe/hono#readme",
   "dependencies": {
-    "hono": "^0.0.11",
+    "hono": "*",
     "nano-jsx": "^0.0.27"
   },
   "devDependencies": {
