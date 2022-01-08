@@ -4,6 +4,8 @@ import { Hono } from '../../dist/index'
 import itty from 'itty-router'
 const { Router: IttyRouter } = itty
 import { Router as SunderRouter, Sunder } from 'sunder'
+import { Router as WorktopRouter } from 'worktop'
+import { resolveSoa } from 'dns'
 
 makeEdgeEnv()
 
@@ -11,7 +13,6 @@ const hono = new Hono()
 hono.get('/user', () => new Response('User'))
 hono.get('/user/comments', () => new Response('User Comments'))
 hono.get('/user/avatar', () => new Response('User Avatar'))
-hono.get('/user/lookup/username/:username', () => new Response('User Lookup Username'))
 hono.get('/user/lookup/email/:address', () => new Response('User Lookup Email Address'))
 hono.get('/event/:id', () => new Response('Event'))
 hono.get('/event/:id/comments', () => new Response('Event Comments'))
@@ -83,6 +84,20 @@ sunderRouter.get('/user/lookup/username/:username', (ctx) => {
 const sunderApp = new Sunder()
 sunderApp.use(sunderRouter.middleware)
 
+// worktop
+const worktopRouter = new WorktopRouter()
+worktopRouter.add('GET', '/', async (req, res) => res.send(200, 'User'))
+worktopRouter.add('GET', '/user/comments', (req, res) => res.send(200, 'User Comments'))
+worktopRouter.add('GET', '/user/avatar', (req, res) => res.send(200, 'User Avatar'))
+worktopRouter.add('GET', '/user/lookup/email/:address', (req, res) => res.send(200, 'User Lookup Email Address'))
+worktopRouter.add('GET', '/event/:id', (req, res) => res.send(200, 'Event'))
+worktopRouter.add('POST', '/event/:id/comments', (req, res) => res.send(200, 'POST Event Comments'))
+worktopRouter.add('POST', '/status', (req, res) => res.send(200, 'Status'))
+worktopRouter.add('GET', '/very/deeply/nested/route/hello/there', (req, res) =>
+  res.send(200, 'Very Deeply Nested Route')
+)
+worktopRouter.add('GET', '/user/lookup/username/:username', (req, res) => res.send(200, `Hello ${req.params.username}`))
+
 // Request Object
 const request = new Request('/user/lookup/username/hey', { method: 'GET' })
 // FetchEvent Object
@@ -94,6 +109,8 @@ const fn = async () => {
   res = await ittyRouter.handle(event.request)
   console.log(await res.text())
   res = await sunderApp.handle(event)
+  console.log(await res.text())
+  res = await worktopRouter.run(event)
   console.log(await res.text())
 }
 fn()
@@ -110,6 +127,9 @@ suite
   })
   .add('sunder', async () => {
     await sunderApp.handle(event)
+  })
+  .add('worktop', async () => {
+    await worktopRouter.run(event)
   })
   .on('cycle', (event) => {
     console.log(String(event.target))
