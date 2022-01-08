@@ -11,9 +11,9 @@ app.get('/', (c) => c.text('Hono!!'))
 app.fire()
 ```
 
-Hono[炎] - _**means flame🔥 in Japanese**_ - is small, fast and simple web flamework for a Service Workers API based serverless service such as **Cloudflare Workers** and **Fastly Compute@Edge**. Hono does not depend on any NPM packages, it's easy to install, setup, and deploy. Although Hono has a router, context object, and middleware including the builtins. Mostly web application like a Web API can be made.
+Hono[炎] - _**means flame🔥 in Japanese**_ - is small, fast and simple web flamework for a Service Workers API based serverless such as **Cloudflare Workers** and **Fastly Compute@Edge**. Hono does not depend on any npm packages. However, Hono has a router, context object, and middleware including the builtins. It's easy to make a web application.
 
-## Feature
+## Features
 
 - **Fast** - the router is implemented with Trie-Tree structure.
 - **Tiny** - zero dependencies, using Web standard API.
@@ -35,13 +35,13 @@ Fastest is hono
 
 ## Hono in 1 minute
 
-Below is demonstration to create an application of Cloudflare Workers with Hono.
+Below is a demonstration to create an application of Cloudflare Workers with Hono.
 
 ![Demo](https://user-images.githubusercontent.com/10682/148223268-2484a891-57c1-472f-9df3-936a5586f002.gif)
 
 ## Install
 
-You can install from npm public registry:
+You can install from npm registry:
 
 ```
 $ yarn add hono
@@ -133,11 +133,16 @@ const { Hono, Middleware } = require('hono')
 
 ...
 
-app.use('*', Middleware.poweredBy())
-app.use('*', Middleware.logger())
+app.use(
+  '/auth/*',
+  Middleware.basicAuth({
+    username: 'hono',
+    password: 'acoolproject',
+  })
+)
 ```
 
-Available builtin middleware are listed on [src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware) directory.
+Available builtin middleware are listed on [src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware).
 
 ### Custom Middleware
 
@@ -150,7 +155,7 @@ app.use('*', async (c, next) => {
   await next()
 })
 
-// Add custom header
+// Add a custom header
 app.use('/message/*', async (c, next) => {
   await next()
   await c.res.headers.add('x-message', 'This is middleware!')
@@ -161,7 +166,7 @@ app.get('/message/hello', () => 'Hello Middleware!')
 
 ### Custom 404 Response
 
-If you want to customize 404 Not Found response:
+You can customize 404 Not Found response:
 
 ```js
 app.use('*', async (c, next) => {
@@ -302,7 +307,7 @@ $ npm i hono
 
 ### 5. Write your app
 
-Only 4 line!!
+Only 4 lines!!
 
 ```js
 const { Hono } = require('hono')
@@ -315,7 +320,7 @@ app.fire()
 
 ### 6. Run
 
-Run the development server locally.
+Run the development server locally. Then, access like `http://127.0.0.1:8787/` in your Web browser.
 
 ```sh
 $ wrangler dev
@@ -347,8 +352,9 @@ Contributions Welcome! You can contribute by the following way:
 - Write code of middleware
 - Fix bugs
 - Refactor the code
+- etc.
 
-If you can, please!
+If you can, let's make Hono together!
 
 ## Author
 
