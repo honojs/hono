@@ -11,7 +11,7 @@ const METHOD_NAME_OF_ALL = 'ALL'
 
 declare global {
   interface Request {
-    params: (key: string) => any
+    params: (key: string) => string
     query: (key: string) => string | null
   }
 }
