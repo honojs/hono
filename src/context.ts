@@ -1,3 +1,5 @@
+import { isAbsoluteURL } from './util'
+
 type Headers = { [key: string]: string }
 
 export class Context {
@@ -52,16 +54,21 @@ export class Context {
     })
   }
 
-  redirect(location: string, status: number = 302, headers: Headers = {}): Response {
+  redirect(location: string, status: number = 302): Response {
     if (typeof location !== 'string') {
       throw new TypeError('location must be a string!')
     }
 
-    headers['Location'] = location
-
-    return this.newResponse('', {
+    if (!isAbsoluteURL(location)) {
+      const url = new URL(this.req.url)
+      url.pathname = location
+      location = url.toString()
+    }
+    return this.newResponse(null, {
       status: status,
-      headers: headers,
+      headers: {
+        Location: location,
+      },
     })
   }
 }

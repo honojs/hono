@@ -1,3 +1,5 @@
+const URL_REGEXP = /^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/
+
 export const splitPath = (path: string): string[] => {
   const paths = path.split(/\//) // faster than path.split('/')
   if (paths[0] === '') {
@@ -21,13 +23,21 @@ export const getPattern = (label: string): string[] | null => {
   return null
 }
 
-export const getPathFromURL = (url: string) => {
+export const getPathFromURL = (url: string): string => {
   // XXX
-  const match = url.match(/^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/)
+  const match = url.match(URL_REGEXP)
   if (match) {
     return match[5]
   }
   return ''
+}
+
+export const isAbsoluteURL = (url: string): boolean => {
+  const match = url.match(URL_REGEXP)
+  if (match && match[1]) {
+    return true
+  }
+  return false
 }
 
 const bufferEqual = (a: ArrayBuffer, b: ArrayBuffer) => {
