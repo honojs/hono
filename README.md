@@ -1,9 +1,9 @@
 # Hono
 
-Hono [炎] - Tiny web framework for Cloudflare Workers and others.
+Hono [炎] - Ultrafast web framework for Cloudflare Workers.
 
 ```js
-const { Hono } = require('hono')
+import { Hono } from 'hono'
 const app = new Hono()
 
 app.get('/', (c) => c.text('Hono!!'))
@@ -11,7 +11,7 @@ app.get('/', (c) => c.text('Hono!!'))
 app.fire()
 ```
 
-Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web flamework for a Service Workers API based serverless such as **Cloudflare Workers** and **Fastly Compute@Edge**. Hono does not depend on any npm packages. However, Hono has a router, context object, and middleware including the builtins. It's easy to make a web application.
+Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web flamework for a Service Workers API based serverless such as **Cloudflare Workers** and **Fastly Compute@Edge**. Hono does not depend on any npm packages. But, Hono has a router, context object, and middleware including the builtins. Easy to make a web application.
 
 ## Features
 
@@ -130,7 +130,7 @@ app.get('/fetch-url', async () => {
 ### Builtin Middleware
 
 ```js
-const { Hono, Middleware } = require('hono')
+import { Hono, Middleware } from 'hono'
 
 ...
 
@@ -323,7 +323,7 @@ npm i hono
 Only 4 lines!!
 
 ```js
-const { Hono } = require('hono')
+import { Hono } from 'hono'
 const app = new Hono()
 
 app.get('/', (c) => c.text('Hello! Hono!'))
