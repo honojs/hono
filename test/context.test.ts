@@ -36,8 +36,11 @@ describe('Context', () => {
   })
 
   it('c.redirect', async () => {
-    const res = c.redirect('/destination')
+    let res = c.redirect('/destination')
     expect(res.status).toBe(302)
-    expect(res.headers.get('Location')).toBe('/destination')
+    expect(res.headers.get('Location')).toMatch(/^https?:\/\/.+\/destination$/)
+    res = c.redirect('https://example.com/destination')
+    expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe('https://example.com/destination')
   })
 })

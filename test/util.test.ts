@@ -1,4 +1,4 @@
-import { splitPath, getPattern, getPathFromURL, timingSafeEqual } from '../src/util'
+import { splitPath, getPattern, getPathFromURL, timingSafeEqual, isAbsoluteURL } from '../src/util'
 
 describe('Utility methods', () => {
   it('splitPath', () => {
@@ -43,6 +43,18 @@ describe('Utility methods', () => {
     expect(path).toBe('/hello/hey')
   })
 
+  describe('isAbsoluteURL', () => {
+    it('absolute url', () => {
+      expect(isAbsoluteURL('https://example.com')).toBeTruthy()
+      expect(isAbsoluteURL('https://example.com/xxx')).toBeTruthy()
+    })
+    it('relative url', () => {
+      expect(isAbsoluteURL('/')).not.toBeTruthy()
+      expect(isAbsoluteURL('/location')).not.toBeTruthy()
+      expect(isAbsoluteURL('')).not.toBeTruthy()
+    })
+  })
+
   describe('timingSafeEqual', () => {
     const crypto = global.crypto
     beforeAll(() => {
@@ -68,18 +80,8 @@ describe('Utility methods', () => {
 
     it('negative', async () => {
       expect(await timingSafeEqual('a', 'b')).toBe(false)
-      expect(
-        await timingSafeEqual(
-          'a',
-          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-        )
-      ).toBe(false)
-      expect(
-        await timingSafeEqual(
-          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-          'a'
-        )
-      ).toBe(false)
+      expect(await timingSafeEqual('a', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')).toBe(false)
+      expect(await timingSafeEqual('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'a')).toBe(false)
       expect(await timingSafeEqual('alpha', 'beta')).toBe(false)
       expect(await timingSafeEqual(false, true)).toBe(false)
       expect(await timingSafeEqual(false, undefined)).toBe(false)
