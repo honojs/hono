@@ -34,4 +34,10 @@ describe('Context', () => {
     expect(await res.text()).toBe('<h1>Hello! Hono!</h1>')
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
+
+  it('c.redirect', async () => {
+    const res = c.redirect('/destination')
+    expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe('/destination')
+  })
 })
