@@ -53,6 +53,10 @@ export class Context {
   }
 
   redirect(location: string, status: number = 302, headers: Headers = {}): Response {
+    if (typeof location !== 'string') {
+      throw new TypeError('location must be a string!')
+    }
+
     headers['Location'] = location
 
     return this.newResponse('', {
