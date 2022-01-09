@@ -1,4 +1,5 @@
-const { Hono } = require('hono')
+import { Hono } from 'hono'
+
 const app = new Hono()
 
 app.use('*', async (c, next) => {
@@ -6,12 +7,10 @@ app.use('*', async (c, next) => {
   next()
 })
 
-app.get('/', () => {
-  return new Response('Hono!! Compute@Edge!!')
-})
+app.get('/', (c) => c.text('Hono!! Compute@Edge!!'))
 
 app.get('/hello/:name', (c) => {
-  return new Response(`Hello ${c.req.params('name')}!!!!!`)
+  return c.text(`Hello ${c.req.params('name')}!!!!!`)
 })
 
 app.fire()
