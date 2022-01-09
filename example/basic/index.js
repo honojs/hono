@@ -1,6 +1,7 @@
-const { Hono, Middleware } = require('../../dist/index')
+import { Hono, Middleware } from '../../dist'
 // or install from npm:
-// const { Hono, Middleware } = require('hono')
+// import { Hono, Middleware } from 'hono'
+
 const app = new Hono()
 
 // Mount Builtin Middleware
@@ -41,7 +42,7 @@ app.get('/', (c) => c.text('Hono!!'))
 app.get('/hello', () => new Response('This is /hello'))
 app.get('/entry/:id', (c) => {
   const id = c.req.params('id')
-  return new Response(`Your ID is ${id}`)
+  return c.text(`Your ID is ${id}`)
 })
 app.get('/auth/*', async (ctx) => ctx.text('You are authorized'))
 

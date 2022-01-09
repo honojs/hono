@@ -11,13 +11,13 @@ const METHOD_NAME_OF_ALL = 'ALL'
 
 declare global {
   interface Request {
-    params: (key: string) => any
+    params: (key: string) => string
     query: (key: string) => string | null
   }
 }
 
-type Handler = (c: Context, next?: Function) => Response | Promise<Response>
-type MiddlwareHandler = (c: Context, next: Function) => Promise<void>
+export type Handler = (c: Context, next?: Function) => Response | Promise<Response>
+export type MiddlwareHandler = (c: Context, next: Function) => Promise<void>
 
 export class Router<T> {
   node: Node<T>
@@ -149,7 +149,7 @@ export class Hono {
       await next()
     }
 
-    middleware.push(Middleware.defaultFilter)
+    middleware.push(Middleware.default)
     middleware.push(wrappedHandler)
 
     const composed = compose(middleware)

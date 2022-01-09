@@ -1,2 +1,2 @@
-export { Hono, Middleware } from './hono'
+export { Hono, Middleware, Handler, MiddlwareHandler } from './hono'
 export { Context } from './context'

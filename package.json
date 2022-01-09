@@ -1,7 +1,7 @@
 {
   "name": "hono",
   "version": "0.0.12",
-  "description": "Tiny web framework for Cloudflare Workers and others.",
+  "description": "Ultrafast web framework for Cloudflare Workers.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
