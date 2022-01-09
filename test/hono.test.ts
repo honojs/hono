@@ -200,3 +200,17 @@ describe('Custom 404', () => {
     expect(await res.text()).toBe('Custom 404 Not Found')
   })
 })
+
+describe('Redirect', () => {
+  const app = new Hono()
+  app.get('/redirect', (c) => {
+    return c.redirect('/')
+  })
+
+  it('Absolute URL', async () => {
+    const req = new Request('https://example.com/redirect')
+    const res = await app.dispatch(req)
+    expect(res.status).toBe(302)
+    expect(await res.headers.get('Location')).toBe('https://example.com/')
+  })
+})
