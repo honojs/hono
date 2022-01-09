@@ -49,4 +49,13 @@ export class Context {
       headers: headers,
     })
   }
+
+  redirect(location: string, status: number = 302, headers: { [key: string]: string } = {}): Response {
+    headers['Location'] = location
+
+    return this.newResponse('', {
+      status: status,
+      headers: headers,
+    })
+  }
 }
