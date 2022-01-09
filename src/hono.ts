@@ -16,8 +16,8 @@ declare global {
   }
 }
 
-type Handler = (c: Context, next?: Function) => Response | Promise<Response>
-type MiddlwareHandler = (c: Context, next: Function) => Promise<void>
+export type Handler = (c: Context, next?: Function) => Response | Promise<Response>
+export type MiddlwareHandler = (c: Context, next: Function) => Promise<void>
 
 export class Router<T> {
   node: Node<T>

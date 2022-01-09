@@ -1,4 +1,5 @@
-const { Hono, Middleware } = require('../../dist/index')
+import { Hono, Middleware } from '../../dist'
+
 // or install from npm:
 // const { Hono, Middleware } = require('hono')
 const app = new Hono()
