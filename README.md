@@ -3,7 +3,7 @@
 Hono [炎] - Tiny web framework for Cloudflare Workers and others.
 
 ```js
-const { Hono } = require('hono')
+import { Hono } from 'hono'
 const app = new Hono()
 
 app.get('/', (c) => c.text('Hono!!'))
@@ -130,7 +130,7 @@ app.get('/fetch-url', async () => {
 ### Builtin Middleware
 
 ```js
-const { Hono, Middleware } = require('hono')
+import { Hono, Middleware } from 'hono'
 
 ...
 
@@ -323,7 +323,7 @@ npm i hono
 Only 4 lines!!
 
 ```js
-const { Hono } = require('hono')
+import { Hono } from 'hono'
 const app = new Hono()
 
 app.get('/', (c) => c.text('Hello! Hono!'))
