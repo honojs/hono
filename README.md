@@ -263,9 +263,18 @@ app.get('/api', (c) => {
 Render HTML as `Content-Type:text/html`:
 
 ```js
-app.get('/api', (c) => {
+app.get('/', (c) => {
   return c.html('<h1>Hello! Hono!</h1>')
 })
+```
+
+### c.redirect()
+
+Redirect, default status code is `302`:
+
+```js
+app.get('/redirect', (c) => c.redirect('/'))
+app.get('/redirect-permanently', (c) => c.redirect('/', 301))
 ```
 
 ## fire

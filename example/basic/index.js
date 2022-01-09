@@ -39,23 +39,29 @@ app.use('*', async (c, next) => {
 
 // Routing
 app.get('/', (c) => c.text('Hono!!'))
+// Use Response object directly
 app.get('/hello', () => new Response('This is /hello'))
+
+// Named parameter
 app.get('/entry/:id', (c) => {
   const id = c.req.params('id')
   return c.text(`Your ID is ${id}`)
 })
-app.get('/auth/*', async (ctx) => ctx.text('You are authorized'))
+// Redirect
+app.get('/redirect', (c) => c.redirect('/'))
+// Authentication required
+app.get('/auth/*', (c) => c.text('You are authorized'))
 
 // Async
-app.get('/fetch-url', async () => {
+app.get('/fetch-url', async (c) => {
   const response = await fetch('https://example.com/')
-  return new Response(`https://example.com/ is ${response.status}`)
+  return c.text(`https://example.com/ is ${response.status}`)
 })
 
 // Request headers
 app.get('/user-agent', (c) => {
   const userAgent = c.req.headers.get('User-Agent')
-  return new Response(`Your UserAgent is ${userAgent}`)
+  return c.text(`Your UserAgent is ${userAgent}`)
 })
 
 // JSON
