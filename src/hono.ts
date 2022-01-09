@@ -149,7 +149,7 @@ export class Hono {
       await next()
     }
 
-    middleware.push(Middleware.defaultFilter)
+    middleware.push(Middleware.default)
     middleware.push(wrappedHandler)
 
     const composed = compose(middleware)

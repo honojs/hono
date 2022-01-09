@@ -1,10 +1,10 @@
-import { defaultFilter } from './middleware/defaultFilter'
-import { poweredBy } from './middleware/poweredBy/poweredBy'
+import { defaultMiddleware } from './middleware/default'
+import { poweredBy } from './middleware/powered-by/powered-by'
 import { logger } from './middleware/logger/logger'
 import { basicAuth } from './middleware/basic-auth/basic-auth'
 
 export class Middleware {
-  static defaultFilter = defaultFilter
+  static default = defaultMiddleware
   static poweredBy = poweredBy
   static logger = logger
   static basicAuth = basicAuth
