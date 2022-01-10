@@ -31,11 +31,11 @@ export const show: Handler = async (c) => {
 
 export const update: Handler = async (c) => {
   const id = c.req.params('id')
-  const param = (await c.req.json()) as Model.Param
   if (!Model.getPost(id)) {
     // 204 No Content
     return c.json({ ok: false }, 204)
   }
+  const param = (await c.req.json()) as Model.Param
   const success = Model.updatePost(id, param)
   return c.json({ ok: success })
 }

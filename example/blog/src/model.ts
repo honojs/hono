@@ -22,8 +22,7 @@ export const getPosts = (): Post[] => {
 }
 
 export const getPost = (id: string): Post | undefined => {
-  const post = posts[id]
-  if (post) return post
+  return posts[id]
 }
 
 export const createPost = (param: Param): Post | undefined => {
