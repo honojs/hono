@@ -7,6 +7,7 @@ const app = new Hono()
 // Mount Builtin Middleware
 app.use('*', Middleware.poweredBy())
 app.use('*', Middleware.logger())
+app.use('/form', Middleware.bodyParse())
 app.use(
   '/auth/*',
   Middleware.basicAuth({
@@ -76,6 +77,11 @@ app.get('/api/posts', (c) => {
 })
 // status code
 app.post('/api/posts', (c) => c.json({ message: 'Created!' }, 201))
+
+app.post('/form', async (ctx) => {
+  return ctx.json(ctx.req.parsedBody || {})
+//return new Response('ok /form')
+})
 
 // addEventListener
 app.fire()

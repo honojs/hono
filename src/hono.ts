@@ -13,6 +13,7 @@ declare global {
   interface Request {
     params: (key: string) => string
     query: (key: string) => string | null
+    parsedBody: any
   }
 }
 
