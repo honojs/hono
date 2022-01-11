@@ -1,8 +1,4 @@
-import makeServiceWorkerEnv from 'service-worker-mock'
 import { Hono, Middleware } from '../src/hono'
-
-declare let global: any
-Object.assign(global, makeServiceWorkerEnv())
 
 describe('Builtin Middleware', () => {
   const app = new Hono()
@@ -11,7 +7,7 @@ describe('Builtin Middleware', () => {
   app.get('/', () => new Response('root'))
 
   it('Builtin Powered By Middleware', async () => {
-    const req = new Request('/')
+    const req = new Request('http://localhost/')
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)

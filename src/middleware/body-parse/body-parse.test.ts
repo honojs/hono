@@ -1,10 +1,4 @@
-import makeServiceWorkerEnv from 'service-worker-mock'
 import { Hono, Middleware } from '../../hono'
-// eslint-disable-next-line node/no-extraneous-require
-const FormData = require('form-data')
-
-declare let global: any
-Object.assign(global, makeServiceWorkerEnv())
 
 describe('Parse Body Middleware', () => {
   const app = new Hono()
@@ -22,7 +16,7 @@ describe('Parse Body Middleware', () => {
 
   it('POST with JSON', async () => {
     const payload = { message: 'hello hono' }
-    const req = new Request('/json', {
+    const req = new Request('http://localhost/json', {
       method: 'POST',
       body: JSON.stringify(payload),
       headers: new Headers({ 'Content-Type': 'application/json' }),
@@ -34,9 +28,9 @@ describe('Parse Body Middleware', () => {
     expect(await res.json()).toEqual(payload)
   })
 
-  it.only('POST with text', async () => {
+  it('POST with text', async () => {
     const payload = 'hello'
-    const req = new Request('/text', {
+    const req = new Request('http://localhost/text', {
       method: 'POST',
       body: 'hello',
       headers: new Headers({ 'Content-Type': 'application/text' }),
@@ -48,16 +42,15 @@ describe('Parse Body Middleware', () => {
     expect(await res.text()).toEqual(payload)
   })
 
-  // NOTE the service-worker-mock does not support req.formData()
-  // so disable this test case, but verify it on live cloudflare worker,
-  // it works, tracked by https://github.com/yusukebe/hono/issues/40
-  it.skip('POST with form', async () => {
-    const formData = new FormData()
+  it('POST with form', async () => {
+    const formData = new URLSearchParams()
     formData.append('message', 'hello')
-    const req = new Request('/form', {
+    const req = new Request('https://localhost/form', {
       method: 'POST',
       body: formData,
-      headers: formData.getHeaders(),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
     })
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()

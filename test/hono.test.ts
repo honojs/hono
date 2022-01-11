@@ -1,8 +1,4 @@
-import makeServiceWorkerEnv from 'service-worker-mock'
 import { Hono } from '../src/hono'
-
-declare let global: any
-Object.assign(global, makeServiceWorkerEnv())
 
 describe('GET Request', () => {
   const app = new Hono()
@@ -17,14 +13,14 @@ describe('GET Request', () => {
     })
   }
   it('GET /hello is ok', async () => {
-    const req = new Request('/hello')
+    const req = new Request('http://localhost/hello')
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello')
   })
   it('GET / is not found', async () => {
-    const req = new Request('/')
+    const req = new Request('http://localhost/')
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
@@ -38,7 +34,7 @@ describe('Routing', () => {
     const appRes = app.get('/', () => new Response('get /'))
     expect(appRes).not.toBeUndefined()
     appRes.delete('/', () => new Response('delete /'))
-    const req = new Request('/', { method: 'DELETE' })
+    const req = new Request('http://localhost/', { method: 'DELETE' })
     const res = await appRes.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
@@ -51,17 +47,17 @@ describe('Routing', () => {
       .get(() => new Response('get /route'))
       .post(() => new Response('post /route'))
       .put(() => new Response('put /route'))
-    let req = new Request('/route', { method: 'GET' })
+    let req = new Request('http://localhost/route', { method: 'GET' })
     let res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('get /route')
 
-    req = new Request('/route', { method: 'POST' })
+    req = new Request('http://localhost/route', { method: 'POST' })
     res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('post /route')
 
-    req = new Request('/route', { method: 'DELETE' })
+    req = new Request('http://localhost/route', { method: 'DELETE' })
     res = await app.dispatch(req)
     expect(res.status).toBe(404)
   })
@@ -72,17 +68,17 @@ describe('Routing', () => {
       .post(() => new Response('post /without-route'))
       .put(() => new Response('put /without-route'))
 
-    let req = new Request('/without-route', { method: 'GET' })
+    let req = new Request('http://localhost/without-route', { method: 'GET' })
     let res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('get /without-route')
 
-    req = new Request('/without-route', { method: 'POST' })
+    req = new Request('http://localhost/without-route', { method: 'POST' })
     res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('post /without-route')
 
-    req = new Request('/without-route', { method: 'DELETE' })
+    req = new Request('http://localhost/without-route', { method: 'DELETE' })
     res = await app.dispatch(req)
     expect(res.status).toBe(404)
   })
@@ -106,13 +102,13 @@ describe('params and query', () => {
   })
 
   it('params of /entry/:id is found', async () => {
-    const req = new Request('/entry/123')
+    const req = new Request('http://localhost/entry/123')
     const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('id is 123')
   })
   it('query of /search?name=sam is found', async () => {
-    const req = new Request('/search?name=sam')
+    const req = new Request('http://localhost/search?name=sam')
     const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('name is sam')
@@ -153,7 +149,7 @@ describe('Middleware', () => {
   })
 
   it('logging and custom header', async () => {
-    const req = new Request('/hello')
+    const req = new Request('http://localhost/hello')
     const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello')
@@ -163,7 +159,7 @@ describe('Middleware', () => {
   })
 
   it('logging and custom header with named params', async () => {
-    const req = new Request('/hello/message')
+    const req = new Request('http://localhost/hello/message')
     const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('message')
@@ -191,10 +187,10 @@ describe('Custom 404', () => {
   })
 
   it('Custom 404 Not Found', async () => {
-    let req = new Request('/hello')
+    let req = new Request('http://localhost/hello')
     let res = await app.dispatch(req)
     expect(res.status).toBe(200)
-    req = new Request('/foo')
+    req = new Request('http://localhost/foo')
     res = await app.dispatch(req)
     expect(res.status).toBe(404)
     expect(await res.text()).toBe('Custom 404 Not Found')

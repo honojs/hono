@@ -1,12 +1,7 @@
-import makeServiceWorkerEnv from 'service-worker-mock'
 import { Context } from '../src/context'
 
-// eslint-disable-next-line
-declare let global: any
-Object.assign(global, makeServiceWorkerEnv())
-
 describe('Context', () => {
-  const req = new Request('/')
+  const req = new Request('http://localhost/')
   const c = new Context(req, new Response())
 
   it('c.text', async () => {

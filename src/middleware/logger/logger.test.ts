@@ -1,8 +1,4 @@
-import makeServiceWorkerEnv from 'service-worker-mock'
 import { Hono, Middleware } from '../../hono'
-
-declare let global: any
-Object.assign(global, makeServiceWorkerEnv())
 
 describe('Logger by Middleware', () => {
   const app = new Hono()
@@ -16,7 +12,7 @@ describe('Logger by Middleware', () => {
   app.get('/', () => new Response('root'))
 
   it('Log status 200', async () => {
-    const req = new Request('/')
+    const req = new Request('http://localhost/')
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
@@ -28,7 +24,7 @@ describe('Logger by Middleware', () => {
       return new Response('Default 404 Nout Found', { status: 404 })
     }
 
-    const req = new Request('/notfound')
+    const req = new Request('http://localhost/notfound')
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)

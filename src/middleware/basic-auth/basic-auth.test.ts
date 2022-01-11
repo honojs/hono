@@ -1,11 +1,8 @@
 import { Hono, Middleware } from '../../hono'
-const makeServiceWorkerEnv = require('service-worker-mock')
 
-declare let global: any
 describe('Basic Auth by Middleware', () => {
   const crypto = global.crypto
   beforeAll(() => {
-    Object.assign(global, makeServiceWorkerEnv())
     global.crypto = require('crypto').webcrypto
   })
   afterAll(() => {
@@ -26,7 +23,7 @@ describe('Basic Auth by Middleware', () => {
   app.get('/', () => new Response('root'))
 
   it('Unauthorized', async () => {
-    const req = new Request('/')
+    const req = new Request('http://localhost/')
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
@@ -36,7 +33,7 @@ describe('Basic Auth by Middleware', () => {
   it('Authorizated', async () => {
     const credential = Buffer.from(username + ':' + password).toString('base64')
 
-    const req = new Request('/')
+    const req = new Request('http://localhost/')
     req.headers.set('Authorization', `Basic ${credential}`)
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
