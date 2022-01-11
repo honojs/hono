@@ -6,8 +6,6 @@ import { Middleware } from './middleware'
 import { Context } from './context'
 import type { Env } from './context'
 
-export { Middleware, Env }
-
 const METHOD_NAME_OF_ALL = 'ALL'
 
 declare global {
