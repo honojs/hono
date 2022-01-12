@@ -3,7 +3,7 @@ import { Hono } from '../../../src/index'
 export class Counter {
   value: number = 0
   state: DurableObjectState
-  app: Hono
+  app: Hono = new Hono()
 
   constructor(state: DurableObjectState) {
     this.state = state
@@ -12,17 +12,15 @@ export class Counter {
       this.value = stored || 0
     })
 
-    this.app = new Hono()
-
     this.app.get('/increment', async (c) => {
       const currentValue = ++this.value
-      this.state.storage?.put('value', this.value)
+      await this.state.storage?.put('value', this.value)
       return c.text(currentValue.toString())
     })
 
     this.app.get('/decrement', async (c) => {
       const currentValue = --this.value
-      this.state.storage?.put('value', this.value)
+      await this.state.storage?.put('value', this.value)
       return c.text(currentValue.toString())
     })
 
@@ -32,6 +30,6 @@ export class Counter {
   }
 
   async fetch(request: Request) {
-    return this.app.dispatch(request)
+    return this.app.fetch(request)
   }
 }

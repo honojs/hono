@@ -3,7 +3,7 @@ const path = require('path')
 module.exports = {
   entry: './src/index.ts',
   output: {
-    filename: 'dist/worker.mjs',
+    filename: 'worker.mjs',
     libraryTarget: 'module',
     path: path.join(__dirname, 'dist'),
   },
