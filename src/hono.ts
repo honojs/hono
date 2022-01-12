@@ -4,8 +4,7 @@ import { compose } from './compose'
 import { getPathFromURL } from './util'
 import { Middleware } from './middleware'
 import { Context } from './context'
-
-export { Middleware }
+import type { Env } from './context'
 
 const METHOD_NAME_OF_ALL = 'ALL'
 
@@ -18,7 +17,7 @@ declare global {
 }
 
 export type Handler = (c: Context, next?: Function) => Response | Promise<Response>
-export type MiddlwareHandler = (c: Context, next: Function) => Promise<void>
+export type MiddlewareHandler = (c: Context, next: Function) => Promise<void>
 
 export class Router<T> {
   node: Node<T>
@@ -38,7 +37,7 @@ export class Router<T> {
 
 export class Hono {
   router: Router<Handler[]>
-  middlewareRouters: Router<MiddlwareHandler>[]
+  middlewareRouters: Router<MiddlewareHandler>[]
   tempPath: string
 
   constructor() {
@@ -95,12 +94,12 @@ export class Hono {
     return this
   }
 
-  use(path: string, middleware: MiddlwareHandler): void {
+  use(path: string, middleware: MiddlewareHandler): void {
     if (middleware.constructor.name !== 'AsyncFunction') {
       throw new TypeError('middleware must be a async function!')
     }
 
-    const router = new Router<MiddlwareHandler>()
+    const router = new Router<MiddlewareHandler>()
     router.add(METHOD_NAME_OF_ALL, path, middleware)
     this.middlewareRouters.push(router)
   }
@@ -122,7 +121,7 @@ export class Hono {
     return this.router.match(method, path)
   }
 
-  async dispatch(request: Request, response?: Response) {
+  async dispatch(request: Request, env?: Env, event?: FetchEvent) {
     const [method, path] = [request.method, getPathFromURL(request.url)]
 
     const result = await this.matchRoute(method, path)
@@ -154,15 +153,18 @@ export class Hono {
     middleware.push(wrappedHandler)
 
     const composed = compose(middleware)
-    const c = new Context(request, response)
-
+    const c = new Context(request, { env: env, event: event, res: null })
     await composed(c)
 
     return c.res
   }
 
   async handleEvent(event: FetchEvent): Promise<Response> {
-    return this.dispatch(event.request)
+    return this.dispatch(event.request, {}, event)
+  }
+
+  async fetch(request: Request, env?: Env, event?: FetchEvent): Promise<Response> {
+    return this.dispatch(request, env, event)
   }
 
   fire() {

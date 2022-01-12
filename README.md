@@ -1,6 +1,6 @@
 # Hono
 
-Hono [炎] - Ultrafast web framework for Cloudflare Workers.
+Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web flamework for a Service Workers API based serverless such as Cloudflare Workers and Fastly Compute@Edge.
 
 ```js
 import { Hono } from 'hono'
@@ -11,15 +11,12 @@ app.get('/', (c) => c.text('Hono!!'))
 app.fire()
 ```
 
-Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web flamework for a Service Workers API based serverless such as **Cloudflare Workers** and **Fastly Compute@Edge**. Hono does not depend on any npm packages. But, Hono has a router, context object, and middleware including the builtins. Easy to make a web application.
-
 ## Features
 
-- **Fast** - the router is implemented with Trie-Tree structure.
-- **Tiny** - zero dependencies, using Web standard API.
-- **Flexible** - you can make your own middleware.
-- **Easy** - simple API, builtin middleware, and written in TypeScript.
-- **Optimized** - for Cloudflare Workers or Fastly Compute@Edge.
+- **Ultra Fast** - the router is implemented with Trie-Tree structure.
+- **Zero dependencies** - using only Web standard API.
+- **Middleware** - builtin middleware, and you can make your own middleware.
+- **Optimized** - for Cloudflare Workers.
 
 ## Benchmark
 
@@ -63,6 +60,7 @@ Instance of `Hono` has these methods:
 - app.**route**(path)
 - app.**use**(path, middleware)
 - app.**fire**()
+- app.**fetch**(request, env, event)
 
 ## Routing
 
@@ -238,6 +236,28 @@ app.use('/', (c, next) => {
 })
 ```
 
+### c.event
+
+```js
+// FetchEvent objest
+app.use('*', async (c, next) => {
+  c.event.waitUntil(
+    ...
+  )
+  await next()
+})
+```
+
+### c.env
+
+```js
+// Environment object for Cloudflare Workers
+app.get('*', async c => {
+  const counter = c.env.COUNTER
+  ...
+})
+```
+
 ### c.text()
 
 Render text as `Content-Type:text/plain`:
@@ -285,6 +305,18 @@ app.get('/redirect-permanently', (c) => c.redirect('/', 301))
 addEventListener('fetch', (event) => {
   event.respondWith(this.handleEvent(event))
 })
+```
+
+## fetch
+
+`app.fetch()` is for Cloudflare Module Worker syntax.
+
+```js
+export default {
+  fetch(request: Request, env: Env, event: FetchEvent) {
+    return app.fetch(request, env, event)
+  },
+}
 ```
 
 ## Cloudflare Workers with Hono

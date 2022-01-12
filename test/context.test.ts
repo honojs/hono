@@ -2,7 +2,7 @@ import { Context } from '../src/context'
 
 describe('Context', () => {
   const req = new Request('http://localhost/')
-  const c = new Context(req, new Response())
+  const c = new Context(req)
 
   it('c.text', async () => {
     const res = c.text('text in c', 201, { 'X-Custom': 'Message' })

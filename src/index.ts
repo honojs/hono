@@ -1,2 +1,5 @@
-export { Hono, Middleware, Handler, MiddlwareHandler } from './hono'
+export { Hono } from './hono'
+export type { Handler, MiddlewareHandler } from './hono'
+export { Middleware } from './middleware'
 export { Context } from './context'
+export type { Env } from './context'
