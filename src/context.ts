@@ -2,13 +2,21 @@ import { isAbsoluteURL } from './util'
 
 type Headers = { [key: string]: string }
 
+export interface Env {}
+
 export class Context {
   req: Request
   res: Response
+  env: Env
+  event: FetchEvent
 
-  constructor(req: Request, res: Response) {
+  constructor(req: Request, opts?: { res: Response; env: Env; event: FetchEvent }) {
     this.req = req
-    this.res = res
+    if (opts) {
+      this.res = opts.res
+      this.env = opts.env
+      this.event = opts.event
+    }
   }
 
   newResponse(body?: BodyInit | null | undefined, init?: ResponseInit | undefined): Response {

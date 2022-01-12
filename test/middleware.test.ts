@@ -1,4 +1,5 @@
-import { Hono, Middleware } from '../src/hono'
+import { Hono } from '../src/hono'
+import { Middleware } from '../src/middleware'
 
 describe('Builtin Middleware', () => {
   const app = new Hono()

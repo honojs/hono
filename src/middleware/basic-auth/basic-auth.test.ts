@@ -1,4 +1,5 @@
-import { Hono, Middleware } from '../../hono'
+import { Hono } from '../../hono'
+import { Middleware } from '../../middleware'
 
 describe('Basic Auth by Middleware', () => {
   const crypto = global.crypto
