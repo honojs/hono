@@ -13,7 +13,7 @@ app.fire()
 
 ## Features
 
-- **Ultra Fast** - the router is implemented with Trie-Tree structure.
+- **Ultra fast** - the router is implemented with Trie-Tree structure.
 - **Zero dependencies** - using only Web standard API.
 - **Middleware** - builtin middleware, and you can make your own middleware.
 - **Optimized** - for Cloudflare Workers.
@@ -70,12 +70,12 @@ Instance of `Hono` has these methods:
 
 ```js
 // HTTP Methods
-app.get('/', () => new Response('GET /'))
-app.post('/', () => new Response('POST /'))
+app.get('/', (c) => c.text('GET /'))
+app.post('/', (c) => c.text('POST /'))
 
 // Wildcard
-app.get('/wild/*/card', () => {
-  return new Response('GET /wild/*/card')
+app.get('/wild/*/card', (c) => {
+  return c.text('GET /wild/*/card')
 })
 ```
 
@@ -83,7 +83,7 @@ app.get('/wild/*/card', () => {
 
 ```js
 // Any HTTP methods
-app.all('/hello', () => new Response('ALL Method /hello'))
+app.all('/hello', (c) => c.text('Any Method /hello'))
 ```
 
 ### Named Parameter
@@ -117,9 +117,9 @@ app
 ## async/await
 
 ```js
-app.get('/fetch-url', async () => {
+app.get('/fetch-url', async (c) => {
   const response = await fetch('https://example.com/')
-  return new Response(`Status is ${response.status}`)
+  return c.text(`Status is ${response.status}`)
 })
 ```
 
@@ -162,7 +162,7 @@ app.use('/message/*', async (c, next) => {
   await c.res.headers.add('x-message', 'This is middleware!')
 })
 
-app.get('/message/hello', () => 'Hello Middleware!')
+app.get('/message/hello', (c) => c.text('Hello Middleware!'))
 ```
 
 ### Custom 404 Response
