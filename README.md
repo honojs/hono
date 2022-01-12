@@ -339,7 +339,7 @@ Make npm skeleton directory.
 
 ```sh
 mkdir hono-example
-ch hono-example
+cd hono-example
 npm init -y
 ```
 
