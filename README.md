@@ -239,7 +239,7 @@ app.use('/', (c, next) => {
 ### c.event
 
 ```js
-// FetchEvent objest
+// FetchEvent object
 app.use('*', async (c, next) => {
   c.event.waitUntil(
     ...
