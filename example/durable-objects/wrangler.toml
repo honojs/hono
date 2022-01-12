@@ -13,11 +13,11 @@ command = "yarn build"
 # The "modules" upload format is required for all projects that export a Durable Objects class
 format = "modules"
 dir = "dist"
-main = "./worker.mjs"
+main = "worker.mjs"
 
 [durable_objects]
 bindings = [{name = "COUNTER", class_name = "Counter"}]
 
 [[migrations]]
 tag = "v1" # Should be unique for each entry
-new_classes = ["CounterTs"]
+new_classes = ["Counter"]
