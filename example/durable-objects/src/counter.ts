@@ -12,24 +12,22 @@ export class Counter {
       this.value = stored || 0
     })
 
-    let currentValue = this.value
-
     this.app = new Hono()
 
     this.app.get('/increment', async (c) => {
-      currentValue = ++this.value
-      await this.state.storage?.put('value', this.value)
+      const currentValue = ++this.value
+      this.state.storage?.put('value', this.value)
       return c.text(currentValue.toString())
     })
 
     this.app.get('/decrement', async (c) => {
-      currentValue = --this.value
-      await this.state.storage?.put('value', this.value)
+      const currentValue = --this.value
+      this.state.storage?.put('value', this.value)
       return c.text(currentValue.toString())
     })
 
     this.app.get('/', async (c) => {
-      return c.text(currentValue.toString())
+      return c.text(this.value.toString())
     })
   }
 
