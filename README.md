@@ -178,6 +178,19 @@ app.use('*', async (c, next) => {
 })
 ```
 
+### Handling Error
+
+```js
+app.use('*', async (c, next) => {
+  try {
+    await next()
+  } catch (err) {
+    console.error(`${err}`)
+    c.res = new Response('Custom Error Message', { status: 500 })
+  }
+})
+```
+
 ### Complex Pattern
 
 You can also do this:
