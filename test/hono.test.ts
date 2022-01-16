@@ -207,6 +207,31 @@ describe('Redirect', () => {
     const req = new Request('https://example.com/redirect')
     const res = await app.dispatch(req)
     expect(res.status).toBe(302)
-    expect(await res.headers.get('Location')).toBe('https://example.com/')
+    expect(res.headers.get('Location')).toBe('https://example.com/')
+  })
+})
+
+describe('Error handle', () => {
+  const app = new Hono()
+
+  app.get('/error', () => {
+    throw 'This is Error'
+  })
+
+  app.use('*', async (c, next) => {
+    try {
+      await next()
+    } catch (err) {
+      c.res = new Response('Custom Error Message', { status: 500 })
+      c.res.headers.append('debug', String(err))
+    }
+  })
+
+  it('Custom Error Message', async () => {
+    const req = new Request('https://example.com/error')
+    const res = await app.dispatch(req)
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe('Custom Error Message')
+    expect(res.headers.get('debug')).toBe('This is Error')
   })
 })

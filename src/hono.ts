@@ -121,7 +121,7 @@ export class Hono {
     return this.router.match(method, path)
   }
 
-  async dispatch(request: Request, env?: Env, event?: FetchEvent) {
+  async dispatch(request: Request, env?: Env, event?: FetchEvent): Promise<Response> {
     const [method, path] = [request.method, getPathFromURL(request.url)]
 
     const result = await this.matchRoute(method, path)
@@ -160,17 +160,26 @@ export class Hono {
   }
 
   async handleEvent(event: FetchEvent): Promise<Response> {
-    return this.dispatch(event.request, {}, event)
+    return this.dispatch(event.request, {}, event).catch((err) => {
+      return this.onError(err)
+    })
   }
 
   async fetch(request: Request, env?: Env, event?: FetchEvent): Promise<Response> {
-    return this.dispatch(request, env, event)
+    return this.dispatch(request, env, event).catch((err) => {
+      return this.onError(err)
+    })
   }
 
   fire() {
     addEventListener('fetch', (event: FetchEvent): void => {
       event.respondWith(this.handleEvent(event))
     })
+  }
+
+  onError(err: any) {
+    console.error(err)
+    return new Response('Internal Server Error', { status: 500 })
   }
 
   notFound() {
