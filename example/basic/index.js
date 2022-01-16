@@ -38,6 +38,16 @@ app.use('*', async (c, next) => {
   await c.res.headers.append('X-Response-Time', `${ms}ms`)
 })
 
+// Handle error
+app.use('*', async (c, next) => {
+  try {
+    await next()
+  } catch (err) {
+    console.error(`${err}`)
+    c.res = new Response('Custom Error Message', { status: 500 })
+  }
+})
+
 // Routing
 app.get('/', (c) => c.text('Hono!!'))
 // Use Response object directly
@@ -80,7 +90,12 @@ app.post('/api/posts', (c) => c.json({ message: 'Created!' }, 201))
 
 app.post('/form', async (ctx) => {
   return ctx.json(ctx.req.parsedBody || {})
-//return new Response('ok /form')
+  //return new Response('ok /form')
+})
+
+// Throw Error
+app.get('/error', () => {
+  throw Error('Error has occurred')
 })
 
 // addEventListener
