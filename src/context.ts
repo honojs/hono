@@ -1,3 +1,4 @@
+import { maxHeaderSize } from 'http'
 import { isAbsoluteURL } from './util'
 
 type Headers = { [key: string]: string }
