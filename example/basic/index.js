@@ -87,6 +87,8 @@ app.get('/api/posts', (c) => {
 })
 // status code
 app.post('/api/posts', (c) => c.json({ message: 'Created!' }, 201))
+// default route
+app.get('/api/*', (c) => c.text('API endpoint is not found', 404))
 
 app.post('/form', async (ctx) => {
   return ctx.json(ctx.req.parsedBody || {})
