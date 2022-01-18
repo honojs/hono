@@ -175,3 +175,19 @@ describe('Special Wildcard deeply', () => {
     expect(res.handler).toBe('match hello')
   })
 })
+
+describe('Default with wildcard', () => {
+  const node = new Node()
+  node.insert('ALL', '/api/abc', 'match api')
+  node.insert('ALL', '/api/*', 'fallback')
+  it('/api/abc', () => {
+    const res = node.search('get', '/api/abc')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('match api')
+  })
+  it('/api/def', () => {
+    const res = node.search('get', '/api/def')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('fallback')
+  })
+})
