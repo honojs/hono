@@ -58,7 +58,8 @@ export class Node<T> {
       const p: string = parts[i]
 
       // '*' => match any path
-      if (curNode.children['*']) {
+      // /api/* => default wildcard match
+      if (curNode.children['*'] && !curNode.children[p]) {
         const astNode = curNode.children['*']
         if (Object.keys(astNode.children).length === 0) {
           curNode = astNode
