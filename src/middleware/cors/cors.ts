@@ -40,7 +40,7 @@ export const cors = (options?: CORSOptions) => {
       set('Access-Control-Allow-Credentials', 'true')
     }
 
-    if (opts.exposeHeaders) {
+    if (opts.exposeHeaders.length) {
       set('Access-Control-Expose-Headers', opts.exposeHeaders.join(','))
     }
 
