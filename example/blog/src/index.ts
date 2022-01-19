@@ -1,7 +1,8 @@
-import { Hono } from '../../../dist'
+import { Hono, Middleware } from '../../../dist'
 import * as Controller from './controller'
 
 export const app = new Hono()
+app.use('/posts/*', Middleware.cors())
 
 app.get('/', Controller.root)
 
