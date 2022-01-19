@@ -16,6 +16,10 @@ describe('Builtin Middleware', () => {
   })
 })
 
+/*
+TODO:
+Content-Length middleware should not be as default...
+
 describe('Default Middleware', () => {
   const app = new Hono()
   app.get('/text', (c) => c.text('abcdefg'))
@@ -30,3 +34,4 @@ describe('Default Middleware', () => {
     expect(res.headers.get('Content-Length')).toBe('3')
   })
 })
+*/
