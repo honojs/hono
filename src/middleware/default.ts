@@ -10,7 +10,8 @@ export const defaultMiddleware = async (c: Context, next: Function) => {
   await next()
 
   if (c.res.body) {
-    const buff = await c.res.clone().arrayBuffer()
+    // Do not clone Response, ex: c.res.clone().arrayBuffer()
+    const buff = await c.res.arrayBuffer()
     c.res.headers.append('Content-Length', buff.byteLength.toString())
   }
 }
