@@ -46,12 +46,13 @@ function log(
   method: string,
   path: string,
   status?: number,
-  elasped?: string
+  elasped?: string,
+  contentLength?: string
 ) {
   const out =
     prefix === LogPrefix.Incoming
       ? `  ${prefix} ${method} ${path}`
-      : `  ${prefix} ${method} ${path} ${colorStatus(status)} ${elasped}`
+      : `  ${prefix} ${method} ${path} ${colorStatus(status)} ${elasped} ${contentLength}`
   fn(out)
 }
 
@@ -71,6 +72,6 @@ export const logger = (fn = console.log) => {
       throw e
     }
 
-    log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start))
+    log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start), c.res.headers.get('Content-Length'))
   }
 }

@@ -12,12 +12,13 @@ describe('Logger by Middleware', () => {
   app.use('*', Middleware.logger(logFn))
   app.get('/', () => new Response('root'))
 
-  it('Log status 200', async () => {
+  it.only('Log status 200', async () => {
     const req = new Request('http://localhost/')
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(log.startsWith('  --> GET / \x1b[32m200\x1b[0m')).toBe(true)
+    expect(log.endsWith(' 4')).toBe(true)
   })
 
   it('Log status 404', async () => {
@@ -30,5 +31,6 @@ describe('Logger by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
     expect(log.startsWith('  --> GET /notfound \x1b[33m404\x1b[0m')).toBe(true)
+    expect(log.endsWith('  4')).toBe(true)
   })
 })
