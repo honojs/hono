@@ -1,5 +1,4 @@
-import { maxHeaderSize } from 'http'
-import { isAbsoluteURL } from './util'
+import { isAbsoluteURL } from './utils/url'
 
 type Headers = { [key: string]: string }
 

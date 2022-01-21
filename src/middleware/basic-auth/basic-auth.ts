@@ -1,5 +1,5 @@
 import type { Context } from '../../context'
-import { timingSafeEqual } from '../../util'
+import { timingSafeEqual } from '../../utils/buffer'
 
 const CREDENTIALS_REGEXP =
   /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/

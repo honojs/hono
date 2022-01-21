@@ -1,7 +1,7 @@
 import type { Result } from './node'
 import { Node } from './node'
 import { compose } from './compose'
-import { getPathFromURL } from './util'
+import { getPathFromURL } from './utils/url'
 import { Middleware } from './middleware'
 import { Context } from './context'
 import type { Env } from './context'
