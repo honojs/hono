@@ -35,6 +35,7 @@ describe('Blog API', () => {
     res = await app.dispatch(req)
     expect(res.status).toBe(200)
     body = (await res.json()) as any
+    expect(body['posts']).not.toBeUndefined()
     expect(body['posts'].length).toBe(1)
 
     req = new Request(`https://localhost/posts/${newPost.id}`)

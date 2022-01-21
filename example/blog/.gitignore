@@ -3,3 +3,4 @@ node_modules
 worker
 package-lock.json
 yarn.lock
+wrangler.toml
