@@ -35,7 +35,7 @@ describe('Logger by Middleware', () => {
     expect(log.endsWith(` ${shortRandomString.length} b`)).toBe(true)
   })
 
-  it.only('Log status 200 with big body', async () => {
+  it('Log status 200 with big body', async () => {
     const req = new Request('http://localhost/long')
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
@@ -44,9 +44,10 @@ describe('Logger by Middleware', () => {
     expect(log.endsWith(` ${longRandomString.length / 1024} kB`)).toBe(true)
   })
 
-  it('Log status 404', async () => {
+  it.only('Log status 404', async () => {
+    const msg = 'Default 404 Nout Found'
     app.notFound = () => {
-      return new Response('Default 404 Nout Found', { status: 404 })
+      return new Response(msg, { status: 404 })
     }
 
     const req = new Request('http://localhost/notfound')
@@ -54,6 +55,6 @@ describe('Logger by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
     expect(log.startsWith('  --> GET /notfound \x1b[33m404\x1b[0m')).toBe(true)
-    expect(log.endsWith('  4')).toBe(true)
+    expect(log.endsWith(` ${msg.length} b`)).toBe(true)
   })
 })
