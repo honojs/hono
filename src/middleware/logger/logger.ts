@@ -78,8 +78,8 @@ export const logger = (fn = console.log) => {
     const contentLength = isNaN(len)
       ? '0'
       : len < 1024
-      ? `${len} b`
-      : `${len / 1024} kB`
+      ? `${len}b`
+      : `${len / 1024}kB`
 
     log(
       fn,
