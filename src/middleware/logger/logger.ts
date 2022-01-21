@@ -1,4 +1,4 @@
-import { getPathFromURL } from '../../util'
+import { getPathFromURL } from '../../utils/url'
 import type { Context } from '../../context'
 
 const humanize = (
