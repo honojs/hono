@@ -1,4 +1,4 @@
-import { splitPath, getPattern } from './util'
+import { splitPath, getPattern } from './utils/url'
 
 const METHOD_NAME_OF_ALL = 'ALL'
 
