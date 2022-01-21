@@ -1,7 +1,8 @@
 # hono-example-blog
 
 - CRUD
-- Using TypeScript
+- KV
+- TypeScript
 - Test with Jest `miniflare environment`
 
 ## Endpoints

@@ -7,3 +7,7 @@ compatibility_flags = []
 workers_dev = true
 compatibility_date = "2022-01-09"
 webpack_config = "webpack.config.js"
+
+kv_namespaces = [
+  { binding = "BLOG_EXAMPLE", preview_id = "", id = "" }
+]
