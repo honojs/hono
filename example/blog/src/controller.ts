@@ -5,14 +5,17 @@ export const root: Handler = (c) => {
   return c.json({ message: 'Hello' })
 }
 
-export const list: Handler = (c) => {
-  const posts = Model.getPosts()
+export const list: Handler = async (c) => {
+  const posts = await Model.getPosts()
   return c.json({ posts: posts, ok: true })
 }
 
 export const create: Handler = async (c) => {
-  const param = (await c.req.json()) as Model.Param
-  const newPost = Model.createPost(param)
+  let newPost: Model.Post | undefined
+  if (c.req.parsedBody) {
+    const param = c.req.parsedBody as Model.Param
+    newPost = await Model.createPost(param)
+  }
   if (!newPost) {
     // Is 200 suitable?
     return c.json({ error: 'Can not create new post', ok: false }, 200)
@@ -22,7 +25,7 @@ export const create: Handler = async (c) => {
 
 export const show: Handler = async (c) => {
   const id = c.req.params('id')
-  const post = Model.getPost(id)
+  const post = await Model.getPost(id)
   if (!post) {
     return c.json({ error: 'Not Found', ok: false }, 404)
   }
@@ -31,21 +34,21 @@ export const show: Handler = async (c) => {
 
 export const update: Handler = async (c) => {
   const id = c.req.params('id')
-  if (!Model.getPost(id)) {
+  if (!(await Model.getPost(id))) {
     // 204 No Content
     return c.json({ ok: false }, 204)
   }
-  const param = (await c.req.json()) as Model.Param
-  const success = Model.updatePost(id, param)
+  const param = c.req.parsedBody as Model.Param
+  const success = await Model.updatePost(id, param)
   return c.json({ ok: success })
 }
 
 export const destroy: Handler = async (c) => {
   const id = c.req.params('id')
-  if (!Model.getPost(id)) {
+  if (!(await Model.getPost(id))) {
     // 204 No Content
     return c.json({ ok: false }, 204)
   }
-  const success = Model.deletePost(id)
+  const success = await Model.deletePost(id)
   return c.json({ ok: success })
 }
