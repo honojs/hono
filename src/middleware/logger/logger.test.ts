@@ -18,7 +18,7 @@ describe('Logger by Middleware', () => {
   app.get('/empty', () => new Response(''))
 
   it('Log status 200 with empty body', async () => {
-    const req = new Request('http://localhost/short')
+    const req = new Request('http://localhost/empty')
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
@@ -44,7 +44,7 @@ describe('Logger by Middleware', () => {
     expect(log.endsWith(` ${longRandomString.length / 1024}kB`)).toBe(true)
   })
 
-  it.only('Log status 404', async () => {
+  it('Log status 404', async () => {
     const msg = 'Default 404 Nout Found'
     app.notFound = () => {
       return new Response(msg, { status: 404 })

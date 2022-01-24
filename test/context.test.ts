@@ -38,4 +38,30 @@ describe('Context', () => {
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe('https://example.com/destination')
   })
+
+  it('c.header', async () => {
+    c.header('X-Foo', 'Bar')
+    const res = c.body('Hi')
+    const foo = res.headers.get('X-Foo')
+    expect(foo).toBe('Bar')
+  })
+
+  it('c.status, c.statusText', async () => {
+    c.status(201)
+    c.statusText('Created!!!!')
+    const res = c.body('Hi')
+    expect(res.status).toBe(201)
+    expect(res.statusText).toBe('Created!!!!')
+  })
+
+  it('Complext pattern', async () => {
+    c.status(404)
+    c.statusText('Hono is Not Found')
+    const res = c.json({ hono: 'great app' })
+    expect(res.status).toBe(404)
+    expect(res.statusText).toBe('Hono is Not Found')
+    expect(res.headers.get('Content-Type')).toMatch(/json/)
+    const obj: { [key: string]: string } = await res.json()
+    expect(obj['hono']).toBe('great app')
+  })
 })

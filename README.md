@@ -90,7 +90,7 @@ app.all('/hello', (c) => c.text('Any Method /hello'))
 
 ```js
 app.get('/user/:name', (c) => {
-  const name = c.req.params('name')
+  const name = c.req.param('name')
   ...
 })
 ```
@@ -99,8 +99,8 @@ app.get('/user/:name', (c) => {
 
 ```js
 app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (c) => {
-  const date = c.req.params('date')
-  const title = c.req.params('title')
+  const date = c.req.param('date')
+  const title = c.req.param('title')
   ...
 ```
 
@@ -226,6 +226,12 @@ app.get('/hello', (c) => {
   ...
 })
 
+// Shortcut
+app.get('/shortcut', (c) => {
+  const userAgent = c.req.header('User-Agent')
+  ...
+})
+
 // Query params
 app.get('/search', (c) => {
   const query = c.req.query('q')
@@ -234,40 +240,20 @@ app.get('/search', (c) => {
 
 // Captured params
 app.get('/entry/:id', (c) => {
-  const id = c.req.params('id')
+  const id = c.req.param('id')
   ...
 })
 ```
 
-### c.res
+### Shortcuts for Response
 
 ```js
-// Response object
-app.use('/', (c, next) => {
-  next()
-  c.res.headers.append('X-Debug', 'Debug message')
-})
-```
-
-### c.event
-
-```js
-// FetchEvent object
-app.use('*', async (c, next) => {
-  c.event.waitUntil(
-    ...
-  )
-  await next()
-})
-```
-
-### c.env
-
-```js
-// Environment object for Cloudflare Workers
-app.get('*', async c => {
-  const counter = c.env.COUNTER
-  ...
+app.get('/welcome', (c) => {
+  c.header('X-Message', 'Hello!')
+  c.header('Content-Type', 'text/plain')
+  c.status(201)
+  c.statusText('201 Content Created')
+  return c.body('Thank you for comming')
 })
 ```
 
@@ -308,6 +294,38 @@ Redirect, default status code is `302`:
 ```js
 app.get('/redirect', (c) => c.redirect('/'))
 app.get('/redirect-permanently', (c) => c.redirect('/', 301))
+```
+
+### c.res
+
+```js
+// Response object
+app.use('/', (c, next) => {
+  next()
+  c.res.headers.append('X-Debug', 'Debug message')
+})
+```
+
+### c.event
+
+```js
+// FetchEvent object
+app.use('*', async (c, next) => {
+  c.event.waitUntil(
+    ...
+  )
+  await next()
+})
+```
+
+### c.env
+
+```js
+// Environment object for Cloudflare Workers
+app.get('*', async c => {
+  const counter = c.env.COUNTER
+  ...
+})
 ```
 
 ## fire
