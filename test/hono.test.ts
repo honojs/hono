@@ -106,7 +106,7 @@ describe('Routing', () => {
   })
 })
 
-describe('params and query', () => {
+describe('param and query', () => {
   const app = new Hono()
 
   app.get('/entry/:id', (c) => {
@@ -130,7 +130,7 @@ describe('params and query', () => {
     })
   })
 
-  it('params of /entry/:id is found', async () => {
+  it('param of /entry/:id is found', async () => {
     const req = new Request('http://localhost/entry/123')
     const res = await app.dispatch(req)
     expect(res.status).toBe(200)
@@ -182,7 +182,7 @@ describe('Middleware', () => {
     return new Response('hello')
   })
   app.get('/hello/:message', (c) => {
-    const message = c.req.params('message')
+    const message = c.req.param('message')
     return new Response(`${message}`)
   })
 
@@ -196,7 +196,7 @@ describe('Middleware', () => {
     expect(await res.headers.get('x-message-2')).toBe('custom-header-2')
   })
 
-  it('logging and custom header with named params', async () => {
+  it('logging and custom header with named param', async () => {
     const req = new Request('http://localhost/hello/message')
     const res = await app.dispatch(req)
     expect(res.status).toBe(200)

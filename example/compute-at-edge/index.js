@@ -10,7 +10,7 @@ app.use('*', async (c, next) => {
 app.get('/', (c) => c.text('Hono!! Compute@Edge!!'))
 
 app.get('/hello/:name', (c) => {
-  return c.text(`Hello ${c.req.params('name')}!!!!!`)
+  return c.text(`Hello ${c.req.param('name')}!!!!!`)
 })
 
 app.fire()
