@@ -3,19 +3,19 @@ import { splitPath, getPattern, getPathFromURL, isAbsoluteURL } from './url'
 describe('url', () => {
   it('splitPath', () => {
     let ps = splitPath('/')
-    expect(ps[0]).toBe('')
+    expect(ps).toStrictEqual([''])
+
     ps = splitPath('/hello')
-    expect(ps[0]).toBe('hello')
+    expect(ps).toStrictEqual(['hello'])
+
     ps = splitPath('*')
-    expect(ps[0]).toBe('*')
+    expect(ps).toStrictEqual(['*'])
+
     ps = splitPath('/wildcard-abc/*/wildcard-efg')
-    expect(ps[0]).toBe('wildcard-abc')
-    expect(ps[1]).toBe('*')
-    expect(ps[2]).toBe('wildcard-efg')
+    expect(ps).toStrictEqual(['wildcard-abc', '*', 'wildcard-efg'])
+
     ps = splitPath('/map/:location/events')
-    expect(ps[0]).toBe('map')
-    expect(ps[1]).toBe(':location')
-    expect(ps[2]).toBe('events')
+    expect(ps).toStrictEqual(['map', ':location', 'events'])
   })
 
   it('getPattern', () => {
