@@ -20,7 +20,7 @@ hono.post('/status', () => new Response('Status'))
 hono.get('/very/deeply/nested/route/hello/there', () => new Response('Very Deeply Nested Route'))
 //hono.get('/static/*', () => new Response('Static'))
 hono.get('/user/lookup/username/:username', (c) => {
-  return c.newResponse(`Hello ${c.req.params('username')}`, {
+  return new Response(`Hello ${c.req.param('username')}`, {
     status: 200,
     headers: {
       'Content-Type': 'text/plain;charset=UTF-8',
