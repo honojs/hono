@@ -24,7 +24,7 @@ export const create: Handler = async (c) => {
 }
 
 export const show: Handler = async (c) => {
-  const id = c.req.params('id')
+  const id = c.req.param('id')
   const post = await Model.getPost(id)
   if (!post) {
     return c.json({ error: 'Not Found', ok: false }, 404)
@@ -33,7 +33,7 @@ export const show: Handler = async (c) => {
 }
 
 export const update: Handler = async (c) => {
-  const id = c.req.params('id')
+  const id = c.req.param('id')
   if (!(await Model.getPost(id))) {
     // 204 No Content
     return c.json({ ok: false }, 204)
@@ -44,7 +44,7 @@ export const update: Handler = async (c) => {
 }
 
 export const destroy: Handler = async (c) => {
-  const id = c.req.params('id')
+  const id = c.req.param('id')
   if (!(await Model.getPost(id))) {
     // 204 No Content
     return c.json({ ok: false }, 204)
