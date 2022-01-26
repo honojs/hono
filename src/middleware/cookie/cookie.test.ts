@@ -1,4 +1,3 @@
-/* eslint-disable quotes */
 import { Hono } from '../../hono'
 import { Middleware } from '../../middleware'
 
