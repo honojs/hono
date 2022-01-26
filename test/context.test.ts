@@ -4,7 +4,7 @@ describe('Context', () => {
   const req = new Request('http://localhost/')
   const c = new Context(req)
 
-  it('c.text', async () => {
+  it('c.text()', async () => {
     const res = c.text('text in c', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
     expect(res.headers.get('Content-Type')).toBe('text/plain')
@@ -12,7 +12,7 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
-  it('c.json', async () => {
+  it('c.json()', async () => {
     const res = c.json({ message: 'Hello' }, 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
     expect(res.headers.get('Content-Type')).toMatch('application/json')
@@ -22,7 +22,7 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
-  it('c.html', async () => {
+  it('c.html()', async () => {
     const res = c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
     expect(res.headers.get('Content-Type')).toMatch('text/html')
@@ -30,7 +30,7 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
-  it('c.redirect', async () => {
+  it('c.redirect()', async () => {
     let res = c.redirect('/destination')
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toMatch(/^https?:\/\/.+\/destination$/)
@@ -39,14 +39,14 @@ describe('Context', () => {
     expect(res.headers.get('Location')).toBe('https://example.com/destination')
   })
 
-  it('c.header', async () => {
+  it('c.header()', async () => {
     c.header('X-Foo', 'Bar')
     const res = c.body('Hi')
     const foo = res.headers.get('X-Foo')
     expect(foo).toBe('Bar')
   })
 
-  it('c.status, c.statusText', async () => {
+  it('c.status() and c.statusText()', async () => {
     c.status(201)
     c.statusText('Created!!!!')
     const res = c.body('Hi')

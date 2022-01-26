@@ -191,9 +191,9 @@ describe('Middleware', () => {
     const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello')
-    expect(await res.headers.get('x-custom')).toBe('root')
-    expect(await res.headers.get('x-message')).toBe('custom-header')
-    expect(await res.headers.get('x-message-2')).toBe('custom-header-2')
+    expect(res.headers.get('x-custom')).toBe('root')
+    expect(res.headers.get('x-message')).toBe('custom-header')
+    expect(res.headers.get('x-message-2')).toBe('custom-header-2')
   })
 
   it('logging and custom header with named param', async () => {
