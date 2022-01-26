@@ -55,7 +55,7 @@ app.get('/hello', () => new Response('This is /hello'))
 
 // Named parameter
 app.get('/entry/:id', (c) => {
-  const id = c.req.params('id')
+  const id = c.req.param('id')
   return c.text(`Your ID is ${id}`)
 })
 // Redirect
@@ -71,7 +71,7 @@ app.get('/fetch-url', async (c) => {
 
 // Request headers
 app.get('/user-agent', (c) => {
-  const userAgent = c.req.headers.get('User-Agent')
+  const userAgent = c.req.header('User-Agent')
   return c.text(`Your UserAgent is ${userAgent}`)
 })
 
@@ -90,8 +90,8 @@ app.post('/api/posts', (c) => c.json({ message: 'Created!' }, 201))
 // default route
 app.get('/api/*', (c) => c.text('API endpoint is not found', 404))
 
-app.post('/form', async (ctx) => {
-  return ctx.json(ctx.req.parsedBody || {})
+app.post('/form', async (c) => {
+  return c.json(c.req.parsedBody || {})
   //return new Response('ok /form')
 })
 

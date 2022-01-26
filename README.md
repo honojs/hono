@@ -35,7 +35,7 @@ Fastest is hono
 
 Below is a demonstration to create an application of Cloudflare Workers with Hono.
 
-![Demo](https://user-images.githubusercontent.com/10682/148223268-2484a891-57c1-472f-9df3-936a5586f002.gif)
+![Demo](https://user-images.githubusercontent.com/10682/151102477-be0f950e-8d23-49c5-b6d8-d8ecb6b7484e.gif)
 
 ## Install
 
@@ -90,7 +90,7 @@ app.all('/hello', (c) => c.text('Any Method /hello'))
 
 ```js
 app.get('/user/:name', (c) => {
-  const name = c.req.params('name')
+  const name = c.req.param('name')
   ...
 })
 ```
@@ -99,8 +99,8 @@ app.get('/user/:name', (c) => {
 
 ```js
 app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (c) => {
-  const date = c.req.params('date')
-  const title = c.req.params('title')
+  const date = c.req.param('date')
+  const title = c.req.param('title')
   ...
 ```
 
@@ -219,10 +219,15 @@ To handle Request and Reponse easily, you can use Context object:
 ### c.req
 
 ```js
-
 // Get Request object
 app.get('/hello', (c) => {
   const userAgent = c.req.headers.get('User-Agent')
+  ...
+})
+
+// Shortcut to get a header value
+app.get('/shortcut', (c) => {
+  const userAgent = c.req.header('User-Agent')
   ...
 })
 
@@ -234,40 +239,31 @@ app.get('/search', (c) => {
 
 // Captured params
 app.get('/entry/:id', (c) => {
-  const id = c.req.params('id')
+  const id = c.req.param('id')
   ...
 })
 ```
 
-### c.res
+### Shortcuts for Response
 
 ```js
-// Response object
-app.use('/', (c, next) => {
-  next()
-  c.res.headers.append('X-Debug', 'Debug message')
-})
-```
-
-### c.event
-
-```js
-// FetchEvent object
-app.use('*', async (c, next) => {
-  c.event.waitUntil(
-    ...
-  )
-  await next()
-})
-```
-
-### c.env
-
-```js
-// Environment object for Cloudflare Workers
-app.get('*', async c => {
-  const counter = c.env.COUNTER
-  ...
+app.get('/welcome', (c) => {
+  c.header('X-Message', 'Hello!')
+  c.header('Content-Type', 'text/plain')
+  c.status(201)
+  c.statusText('201 Content Created')
+  return c.body('Thank you for comming')
+  /*
+  Same as:
+  return new Response('Thank you for comming', {
+    status: 201,
+    statusText: '201 Content Created',
+    headers: {
+      'X-Message': 'Hello',
+      'Content-Type': 'text/plain'
+    }
+  })
+  */
 })
 ```
 
@@ -308,6 +304,38 @@ Redirect, default status code is `302`:
 ```js
 app.get('/redirect', (c) => c.redirect('/'))
 app.get('/redirect-permanently', (c) => c.redirect('/', 301))
+```
+
+### c.res
+
+```js
+// Response object
+app.use('/', (c, next) => {
+  next()
+  c.res.headers.append('X-Debug', 'Debug message')
+})
+```
+
+### c.event
+
+```js
+// FetchEvent object
+app.use('*', async (c, next) => {
+  c.event.waitUntil(
+    ...
+  )
+  await next()
+})
+```
+
+### c.env
+
+```js
+// Environment object for Cloudflare Workers
+app.get('*', async c => {
+  const counter = c.env.COUNTER
+  ...
+})
 ```
 
 ## fire
