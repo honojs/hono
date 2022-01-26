@@ -219,14 +219,13 @@ To handle Request and Reponse easily, you can use Context object:
 ### c.req
 
 ```js
-
 // Get Request object
 app.get('/hello', (c) => {
   const userAgent = c.req.headers.get('User-Agent')
   ...
 })
 
-// Shortcut
+// Shortcut to get a header value
 app.get('/shortcut', (c) => {
   const userAgent = c.req.header('User-Agent')
   ...
@@ -254,6 +253,17 @@ app.get('/welcome', (c) => {
   c.status(201)
   c.statusText('201 Content Created')
   return c.body('Thank you for comming')
+  /*
+  Same as:
+  return new Response('Thank you for comming', {
+    status: 201,
+    statusText: '201 Content Created',
+    headers: {
+      'X-Message': 'Hello',
+      'Content-Type': 'text/plain'
+    }
+  })
+  */
 })
 ```
 
