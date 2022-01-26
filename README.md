@@ -23,12 +23,12 @@ app.fire()
 **Hono is fastest** compared to other routers for Cloudflare Workers.
 
 ```plain
-hono x 748,188 ops/sec ±5.40% (77 runs sampled)
-itty-router x 158,817 ops/sec ±3.62% (87 runs sampled)
-sunder x 332,339 ops/sec ±1.11% (95 runs sampled)
-worktop x 205,906 ops/sec ±4.43% (83 runs sampled)
+hono x 708,671 ops/sec ±2.58% (58 runs sampled)
+itty-router x 159,610 ops/sec ±2.86% (87 runs sampled)
+sunder x 322,846 ops/sec ±2.24% (86 runs sampled)
+worktop x 223,625 ops/sec ±2.01% (95 runs sampled)
 Fastest is hono
-✨  Done in 52.79s.
+✨  Done in 57.83s.
 ```
 
 ## Hono in 1 minute

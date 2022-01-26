@@ -1,5 +1,11 @@
 import type { Context } from '../../context'
 
+declare global {
+  interface Request {
+    parsedBody: any
+  }
+}
+
 export const bodyParse = () => {
   return async (ctx: Context, next: Function) => {
     const contentType = ctx.req.headers.get('Content-Type') || ''
