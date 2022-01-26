@@ -10,8 +10,9 @@ const METHOD_NAME_OF_ALL = 'ALL'
 
 declare global {
   interface Request {
-    params: (key: string) => string
+    param: (key: string) => string
     query: (key: string) => string | null
+    header: (name: string) => string
     parsedBody: any
   }
 }
@@ -126,7 +127,7 @@ export class Hono {
 
     const result = await this.matchRoute(method, path)
 
-    request.params = (key: string): string => {
+    request.param = (key: string): string => {
       if (result) {
         return result.params[key]
       }

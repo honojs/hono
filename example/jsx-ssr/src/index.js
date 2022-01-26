@@ -48,7 +48,7 @@ app.get('/', (c) => {
 })
 
 app.get('/post/:id{[0-9]+}', (c) => {
-  const id = c.req.params('id')
+  const id = c.req.param('id')
   const post = getPost(id)
   if (!post) {
     return c.text('Not Found', 404)
