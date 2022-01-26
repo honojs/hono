@@ -1,8 +1,8 @@
 import { compose } from '../src/compose'
 
-class C {
-  req: { [key: string]: any }
-  res: { [key: string]: any }
+type C = {
+  req: { [key: string]: string }
+  res: { [key: string]: string }
 }
 
 describe('compose middleware', () => {

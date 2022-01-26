@@ -13,7 +13,6 @@ declare global {
     param: (key: string) => string
     query: (key: string) => string | null
     header: (name: string) => string
-    parsedBody: any
   }
 }
 
