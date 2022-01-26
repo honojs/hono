@@ -2,16 +2,26 @@ import { Hono } from '../src/hono'
 
 describe('GET Request', () => {
   const app = new Hono()
+
   app.get('/hello', () => {
     return new Response('hello', {
       status: 200,
     })
   })
+
+  app.get('/hello-with-shortcuts', (c) => {
+    c.header('X-Custom', 'This is Hono')
+    c.statusText('Hono is created')
+    c.status(201)
+    return c.html('<h1>Hono!!!</h1>')
+  })
+
   app.notFound = () => {
     return new Response('not found', {
       status: 404,
     })
   }
+
   it('GET /hello is ok', async () => {
     const req = new Request('http://localhost/hello')
     const res = await app.dispatch(req)
@@ -19,6 +29,18 @@ describe('GET Request', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello')
   })
+
+  it('GET /hell-with-shortcuts is ok', async () => {
+    const req = new Request('http://localhost/hello-with-shortcuts')
+    const res = await app.dispatch(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(201)
+    expect(res.statusText).toBe('Hono is created')
+    expect(res.headers.get('X-Custom')).toBe('This is Hono')
+    expect(res.headers.get('Content-Type')).toMatch(/text\/html/)
+    expect(await res.text()).toBe('<h1>Hono!!!</h1>')
+  })
+
   it('GET / is not found', async () => {
     const req = new Request('http://localhost/')
     const res = await app.dispatch(req)
@@ -84,34 +106,50 @@ describe('Routing', () => {
   })
 })
 
-describe('params and query', () => {
+describe('param and query', () => {
   const app = new Hono()
 
-  app.get('/entry/:id', async (c) => {
-    const id = await c.req.params('id')
+  app.get('/entry/:id', (c) => {
+    const id = c.req.param('id')
     return new Response(`id is ${id}`, {
       status: 200,
     })
   })
 
-  app.get('/search', async (c) => {
-    const name = await c.req.query('name')
+  app.get('/search', (c) => {
+    const name = c.req.query('name')
     return new Response(`name is ${name}`, {
       status: 200,
     })
   })
 
-  it('params of /entry/:id is found', async () => {
+  app.get('/add-header', (c) => {
+    const bar = c.req.header('X-Foo')
+    return new Response(`foo is ${bar}`, {
+      status: 200,
+    })
+  })
+
+  it('param of /entry/:id is found', async () => {
     const req = new Request('http://localhost/entry/123')
     const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('id is 123')
   })
+
   it('query of /search?name=sam is found', async () => {
     const req = new Request('http://localhost/search?name=sam')
     const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('name is sam')
+  })
+
+  it('/add-header header - X-Foo is Bar', async () => {
+    const req = new Request('http://localhost/add-header')
+    req.headers.append('X-Foo', 'Bar')
+    const res = await app.dispatch(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('foo is Bar')
   })
 })
 
@@ -127,24 +165,24 @@ describe('Middleware', () => {
   // Apeend Custom Header
   app.use('*', async (c, next) => {
     await next()
-    await c.res.headers.append('x-custom', 'root')
+    c.res.headers.append('x-custom', 'root')
   })
 
   app.use('/hello', async (c, next) => {
     await next()
-    await c.res.headers.append('x-message', 'custom-header')
+    c.res.headers.append('x-message', 'custom-header')
   })
 
   app.use('/hello/*', async (c, next) => {
     await next()
-    await c.res.headers.append('x-message-2', 'custom-header-2')
+    c.res.headers.append('x-message-2', 'custom-header-2')
   })
 
   app.get('/hello', () => {
     return new Response('hello')
   })
   app.get('/hello/:message', (c) => {
-    const message = c.req.params('message')
+    const message = c.req.param('message')
     return new Response(`${message}`)
   })
 
@@ -153,18 +191,18 @@ describe('Middleware', () => {
     const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello')
-    expect(await res.headers.get('x-custom')).toBe('root')
-    expect(await res.headers.get('x-message')).toBe('custom-header')
-    expect(await res.headers.get('x-message-2')).toBe('custom-header-2')
+    expect(res.headers.get('x-custom')).toBe('root')
+    expect(res.headers.get('x-message')).toBe('custom-header')
+    expect(res.headers.get('x-message-2')).toBe('custom-header-2')
   })
 
-  it('logging and custom header with named params', async () => {
+  it('logging and custom header with named param', async () => {
     const req = new Request('http://localhost/hello/message')
     const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('message')
-    expect(await res.headers.get('x-custom')).toBe('root')
-    expect(await res.headers.get('x-message-2')).toBe('custom-header-2')
+    expect(res.headers.get('x-custom')).toBe('root')
+    expect(res.headers.get('x-message-2')).toBe('custom-header-2')
   })
 })
 

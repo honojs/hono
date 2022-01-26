@@ -9,6 +9,10 @@ export class Context {
   res: Response
   env: Env
   event: FetchEvent
+  private _headers: Headers
+  private _status: number
+  private _statusText: string
+  body: (body: BodyInit, init?: ResponseInit) => Response
 
   constructor(req: Request, opts?: { res: Response; env: Env; event: FetchEvent }) {
     this.req = req
@@ -17,9 +21,26 @@ export class Context {
       this.env = opts.env
       this.event = opts.event
     }
+    this._headers = {}
+    this.body = this.newResponse
   }
 
-  newResponse(body?: BodyInit | null | undefined, init?: ResponseInit | undefined): Response {
+  header(name: string, value: string): void {
+    this._headers[name] = value
+  }
+
+  status(number: number): void {
+    this._status = number
+  }
+
+  statusText(text: string): void {
+    this._statusText = text
+  }
+
+  newResponse(body: BodyInit, init: ResponseInit = {}): Response {
+    init.status = this._status || init.status
+    init.statusText = this._statusText || init.statusText
+    init.headers = { ...init.headers, ...this._headers }
     return new Response(body, init)
   }
 
