@@ -38,17 +38,17 @@ export class Context {
   }
 
   newResponse(data: any, init: ResponseInit = {}): Response {
-    init.status = this._status || init.status
-    init.statusText = this._statusText || init.statusText
+    init.status = init.status || this._status
+    init.statusText = init.statusText || this._statusText
 
     const Encoder = new TextEncoder()
     const length = data ? data.bytelength || Encoder.encode(data).byteLength : 0
-    init.headers = { ...init.headers, ...this._headers, ...{ 'Content-Length': String(length) } }
+    init.headers = { ...this._headers, ...init.headers, ...{ 'Content-Length': String(length) } }
 
     return new Response(data, init)
   }
 
-  text(text: string, status: number = 200, headers: Headers = {}): Response {
+  text(text: string, status: number = this._status, headers: Headers = {}): Response {
     if (typeof text !== 'string') {
       throw new TypeError('text method arg must be a string!')
     }
@@ -61,7 +61,7 @@ export class Context {
     })
   }
 
-  json(object: object, status: number = 200, headers: Headers = {}): Response {
+  json(object: object, status: number = this._status, headers: Headers = {}): Response {
     if (typeof object !== 'object') {
       throw new TypeError('json method arg must be a object!')
     }
@@ -75,7 +75,7 @@ export class Context {
     })
   }
 
-  html(html: string, status: number = 200, headers: Headers = {}): Response {
+  html(html: string, status: number = this._status, headers: Headers = {}): Response {
     if (typeof html !== 'string') {
       throw new TypeError('html method arg must be a string!')
     }

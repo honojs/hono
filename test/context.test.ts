@@ -71,4 +71,23 @@ describe('Context', () => {
     res = c.text('炎')
     expect(res.headers.get('Content-Length')).toBe('3')
   })
+
+  it('Headers', async () => {
+    c.header('X-Custom1', 'Message1')
+    c.header('X-Custom2', 'Message2')
+    c.status(200)
+    c.statusText('OK')
+    const res = c.body('this is body', {
+      status: 201,
+      headers: {
+        'X-Custom3': 'Message3',
+        'X-Custom2': 'Message2-Override',
+      },
+    })
+    expect(res.headers.get('X-Custom1')).toBe('Message1')
+    expect(res.headers.get('X-Custom2')).toBe('Message2-Override')
+    expect(res.headers.get('X-Custom3')).toBe('Message3')
+    expect(res.status).toBe(201)
+    expect(await res.text()).toBe('this is body')
+  })
 })
