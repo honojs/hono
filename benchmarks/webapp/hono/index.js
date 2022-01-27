@@ -1,7 +1,6 @@
 const { Hono } = require('../../../dist/index')
 
 const hono = new Hono()
-
 hono.get('/user', (c) => c.text('User'))
 hono.get('/user/comments', (c) => c.text('User Comments'))
 hono.get('/user/avatar', (c) => c.text('User Avatar'))
