@@ -12,7 +12,6 @@ export class Context {
   private _headers: Headers
   private _status: number
   private _statusText: string
-  body: (body: BodyInit, init?: ResponseInit) => Response
 
   constructor(req: Request, opts?: { res: Response; env: Env; event: FetchEvent }) {
     this.req = req
@@ -22,7 +21,6 @@ export class Context {
       this.event = opts.event
     }
     this._headers = {}
-    this.body = this.newResponse
   }
 
   header(name: string, value: string): void {
@@ -48,17 +46,19 @@ export class Context {
     return new Response(data, init)
   }
 
+  body(data: any, status: number = this._status, headers: Headers = this._headers): Response {
+    return this.newResponse(data, {
+      status: status,
+      headers: headers,
+    })
+  }
+
   text(text: string, status: number = this._status, headers: Headers = {}): Response {
     if (typeof text !== 'string') {
       throw new TypeError('text method arg must be a string!')
     }
-
     headers['Content-Type'] = 'text/plain'
-
-    return this.newResponse(text, {
-      status: status,
-      headers: headers,
-    })
+    return this.body(text, status, headers)
   }
 
   json(object: object, status: number = this._status, headers: Headers = {}): Response {
@@ -68,11 +68,7 @@ export class Context {
 
     const body = JSON.stringify(object)
     headers['Content-Type'] = 'application/json; charset=UTF-8'
-
-    return this.newResponse(body, {
-      status: status,
-      headers: headers,
-    })
+    return this.body(body, status, headers)
   }
 
   html(html: string, status: number = this._status, headers: Headers = {}): Response {
@@ -80,11 +76,7 @@ export class Context {
       throw new TypeError('html method arg must be a string!')
     }
     headers['Content-Type'] = 'text/html; charset=UTF-8'
-
-    return this.newResponse(html, {
-      status: status,
-      headers: headers,
-    })
+    return this.body(html, status, headers)
   }
 
   redirect(location: string, status: number = 302): Response {
