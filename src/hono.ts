@@ -179,10 +179,22 @@ export class Hono {
 
   onError(err: any) {
     console.error(err)
-    return new Response('Internal Server Error', { status: 500 })
+    const message = 'Internal Server Error'
+    return new Response('Internal Server Error', {
+      status: 500,
+      headers: {
+        'Content-Length': message.length.toString(),
+      },
+    })
   }
 
   notFound() {
-    return new Response('Not Found', { status: 404 })
+    const message = 'Not Found'
+    return new Response('Not Found', {
+      status: 404,
+      headers: {
+        'Content-Length': message.length.toString(),
+      },
+    })
   }
 }

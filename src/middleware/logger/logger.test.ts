@@ -13,9 +13,9 @@ describe('Logger by Middleware', () => {
   const longRandomString = 'hono'.repeat(1000)
 
   app.use('*', Middleware.logger(logFn))
-  app.get('/short', () => new Response(shortRandomString))
-  app.get('/long', () => new Response(longRandomString))
-  app.get('/empty', () => new Response(''))
+  app.get('/short', (c) => c.text(shortRandomString))
+  app.get('/long', (c) => c.text(longRandomString))
+  app.get('/empty', (c) => c.text(''))
 
   it('Log status 200 with empty body', async () => {
     const req = new Request('http://localhost/empty')
@@ -46,9 +46,9 @@ describe('Logger by Middleware', () => {
 
   it('Log status 404', async () => {
     const msg = 'Default 404 Nout Found'
-    app.notFound = () => {
-      return new Response(msg, { status: 404 })
-    }
+    app.all('*', (c) => {
+      return c.text(msg, 404)
+    })
 
     const req = new Request('http://localhost/notfound')
     const res = await app.dispatch(req)
