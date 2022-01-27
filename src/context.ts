@@ -37,11 +37,15 @@ export class Context {
     this._statusText = text
   }
 
-  newResponse(body: BodyInit, init: ResponseInit = {}): Response {
+  newResponse(data: any, init: ResponseInit = {}): Response {
     init.status = this._status || init.status
     init.statusText = this._statusText || init.statusText
-    init.headers = { ...init.headers, ...this._headers }
-    return new Response(body, init)
+
+    const Encoder = new TextEncoder()
+    const length = data ? data.bytelength || Encoder.encode(data).byteLength : 0
+    init.headers = { ...init.headers, ...this._headers, ...{ 'Content-Length': String(length) } }
+
+    return new Response(data, init)
   }
 
   text(text: string, status: number = 200, headers: Headers = {}): Response {

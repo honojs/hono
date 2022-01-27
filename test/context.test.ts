@@ -64,4 +64,11 @@ describe('Context', () => {
     const obj: { [key: string]: string } = await res.json()
     expect(obj['hono']).toBe('great app')
   })
+
+  it('Content-Length', async () => {
+    let res = c.text('abcdefg')
+    expect(res.headers.get('Content-Length')).toBe('7')
+    res = c.text('炎')
+    expect(res.headers.get('Content-Length')).toBe('3')
+  })
 })

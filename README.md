@@ -114,6 +114,16 @@ app
     .put(() => {...})
 ```
 
+### Custom 404 Response
+
+You can customize 404 Not Found response:
+
+```js
+app.get('*', (c) => {
+  return c.text('Custom 404 Error', 404)
+})
+```
+
 ## async/await
 
 ```js
@@ -165,19 +175,6 @@ app.use('/message/*', async (c, next) => {
 app.get('/message/hello', (c) => c.text('Hello Middleware!'))
 ```
 
-### Custom 404 Response
-
-You can customize 404 Not Found response:
-
-```js
-app.use('*', async (c, next) => {
-  await next()
-  if (c.res.status === 404) {
-    c.res = new Response('Custom 404 Not Found', { status: 404 })
-  }
-})
-```
-
 ### Handling Error
 
 ```js
@@ -186,7 +183,7 @@ app.use('*', async (c, next) => {
     await next()
   } catch (err) {
     console.error(`${err}`)
-    c.res = new Response('Custom Error Message', { status: 500 })
+    c.res = c.text('Custom Error Message', { status: 500 })
   }
 })
 ```
@@ -260,7 +257,8 @@ app.get('/welcome', (c) => {
     statusText: '201 Content Created',
     headers: {
       'X-Message': 'Hello',
-      'Content-Type': 'text/plain'
+      'Content-Type': 'text/plain',
+      'Content-Length: '22'
     }
   })
   */
