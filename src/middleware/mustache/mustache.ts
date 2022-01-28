@@ -3,7 +3,7 @@ import { getContentFromKVAsset } from '../../utils/cloudflare'
 
 const EXTENSION = '.mustache'
 
-type MustachePartial = { [file: string]: string }
+type Partials = { [file: string]: string }
 
 export const mustache = () => {
   return async (c: Context, next: Function) => {
@@ -17,26 +17,24 @@ export const mustache = () => {
     }
 
     c.render = async (filename, view = {}, options?) => {
-      // TODO: Check if filename has extension or not.
-      const template = await getContentFromKVAsset(`${filename}${EXTENSION}`)
-      if (!template) {
-        throw new Error('Template is undefined')
+      const content = await getContentFromKVAsset(`${filename}${EXTENSION}`)
+      if (!content) {
+        throw new Error(`Template "${filename}${EXTENSION}" is not found`)
       }
-      console.log(`${template}`)
 
       const partialArgs: { [name: string]: string } = {}
       if (options) {
-        const partials = options as MustachePartial
+        const partials = options as Partials
         for (const key of Object.keys(partials)) {
           const partialContent = await getContentFromKVAsset(`${partials[key]}${EXTENSION}`)
           if (!partialContent) {
-            throw new Error('Partial is undefined')
+            throw new Error(`Partial Template "${partials[key]}${EXTENSION}" is not found`)
           }
           partialArgs[key] = partialContent
         }
       }
 
-      const output = Mustache.render(template, view, partialArgs)
+      const output = Mustache.render(content, view, partialArgs)
       return c.html(output)
     }
     await next()

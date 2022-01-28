@@ -17,13 +17,7 @@ export const getContentFromKVAsset = async (path: string): Promise<string> => {
 
   let content: string
 
-  try {
-    content = await ASSET_NAMESPACE.get(key, { type: 'text' })
-  } catch (e) {
-    // XXX
-    console.log(`Error: ${e}`)
-    return
-  }
+  content = await ASSET_NAMESPACE.get(key, { type: 'text' })
 
   if (content) {
     content = content as string

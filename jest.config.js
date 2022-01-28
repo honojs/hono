@@ -6,17 +6,19 @@ module.exports = {
   testPathIgnorePatterns: ['./example'],
   testEnvironment: 'miniflare',
   testEnvironmentOptions: {
+    /*
     bindings: {
       __STATIC_CONTENT: {
         get: (key) => {
-          const table = { 'index.abcdef.mustache': 'This is index' }
+          const table = { 'index.abcdef.index': 'This is index' }
           return table[key]
         },
       },
       __STATIC_CONTENT_MANIFEST: JSON.stringify({
-        'index.mustache': 'index.abcdef.mustache',
+        'index.index': 'index.abcdef.index',
       }),
     },
-    // kvNamespaces: ['TEST_NAMESPACE'],
+    kvNamespaces: ['TEST_NAMESPACE'],
+    */
   },
 }
