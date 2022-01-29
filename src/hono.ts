@@ -178,9 +178,9 @@ export class Hono {
   }
 
   onError(err: any) {
-    console.error(err)
+    console.error(`${err}`)
     const message = 'Internal Server Error'
-    return new Response('Internal Server Error', {
+    return new Response(message, {
       status: 500,
       headers: {
         'Content-Length': message.length.toString(),

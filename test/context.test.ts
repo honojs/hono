@@ -77,7 +77,7 @@ describe('Context', () => {
     c.header('X-Custom2', 'Message2')
     c.status(200)
     c.statusText('OK')
-    const res = c.body('this is body', {
+    const res = c.newResponse('this is body', {
       status: 201,
       headers: {
         'X-Custom3': 'Message3',
