@@ -6,14 +6,16 @@ const EXTENSION = '.mustache'
 type Partials = { [file: string]: string }
 
 export const mustache = () => {
-  return async (c: Context, next: Function) => {
-    let Mustache: any
+  let Mustache: any
+  try {
+    Mustache = require('mustache')
+  } catch {
+    // Do nothing.
+  }
 
-    try {
-      Mustache = await import('mustache')
-    } catch (e) {
-      console.error(`Mustache is not found! ${e}`)
-      throw new Error(`${e}`)
+  return async (c: Context, next: Function) => {
+    if (!Mustache) {
+      throw new Error('If you want to use Mustache Middleware, install mustache module.')
     }
 
     c.render = async (filename, view = {}, options?) => {
@@ -33,7 +35,6 @@ export const mustache = () => {
           partialArgs[key] = partialContent
         }
       }
-
       const output = Mustache.render(content, view, partialArgs)
       return c.html(output)
     }
