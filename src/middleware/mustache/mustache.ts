@@ -6,20 +6,22 @@ const EXTENSION = '.mustache'
 type Partials = { [file: string]: string }
 
 export const mustache = () => {
-  return async (c: Context, next: Function) => {
-    let Mustache: any
+  let Mustache: any
+  try {
+    Mustache = require('mustache')
+  } catch {
+    // Do nothing.
+  }
 
-    try {
-      Mustache = await import('mustache')
-    } catch (e) {
-      console.error(`Mustache is not found! ${e}`)
-      throw new Error(`${e}`)
+  return async (c: Context, next: Function) => {
+    if (!Mustache) {
+      throw new Error('If you want to use Mustache Middleware, install mustache module.')
     }
 
     c.render = async (filename, view = {}, options?) => {
       const content = await getContentFromKVAsset(`${filename}${EXTENSION}`)
       if (!content) {
-        throw new Error(`Template "${filename}${EXTENSION}" is not found`)
+        throw new Error(`Template "${filename}${EXTENSION}" is not found or blank.`)
       }
 
       const partialArgs: { [name: string]: string } = {}
@@ -28,12 +30,11 @@ export const mustache = () => {
         for (const key of Object.keys(partials)) {
           const partialContent = await getContentFromKVAsset(`${partials[key]}${EXTENSION}`)
           if (!partialContent) {
-            throw new Error(`Partial Template "${partials[key]}${EXTENSION}" is not found`)
+            throw new Error(`Partial Template "${partials[key]}${EXTENSION}" is not found or blank.`)
           }
           partialArgs[key] = partialContent
         }
       }
-
       const output = Mustache.render(content, view, partialArgs)
       return c.html(output)
     }
