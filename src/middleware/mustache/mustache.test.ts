@@ -22,10 +22,10 @@ Object.assign(global, {
   },
 })
 
-describe('Mustache by Middleware', () => {
+describe.skip('Mustache by Middleware', () => {
   const app = new Hono()
 
-  app.use('*', Middleware.mustache())
+  //  app.use('*', Middleware.mustache())
   app.get('/', (c) => {
     return c.render(
       'index',
