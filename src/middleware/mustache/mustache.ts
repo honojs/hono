@@ -21,7 +21,7 @@ export const mustache = () => {
     c.render = async (filename, view = {}, options?) => {
       const content = await getContentFromKVAsset(`${filename}${EXTENSION}`)
       if (!content) {
-        throw new Error(`Template "${filename}${EXTENSION}" is not found`)
+        throw new Error(`Template "${filename}${EXTENSION}" is not found or blank.`)
       }
 
       const partialArgs: { [name: string]: string } = {}
@@ -30,7 +30,7 @@ export const mustache = () => {
         for (const key of Object.keys(partials)) {
           const partialContent = await getContentFromKVAsset(`${partials[key]}${EXTENSION}`)
           if (!partialContent) {
-            throw new Error(`Partial Template "${partials[key]}${EXTENSION}" is not found`)
+            throw new Error(`Partial Template "${partials[key]}${EXTENSION}" is not found or blank.`)
           }
           partialArgs[key] = partialContent
         }
