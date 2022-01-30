@@ -70,6 +70,7 @@ export class Hono {
   }
 
   /*
+  We may implement these HTTP methods:
   trace
   copy
   lock
