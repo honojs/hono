@@ -19,25 +19,35 @@ export const mustache = () => {
     }
 
     c.render = async (filename, view = {}, options?) => {
-      const content = await getContentFromKVAsset(`${filename}${EXTENSION}`)
-      if (!content) {
+      const buffer = await getContentFromKVAsset(`${filename}${EXTENSION}`)
+      if (!buffer) {
         throw new Error(`Template "${filename}${EXTENSION}" is not found or blank.`)
       }
+      const content = bufferToString(buffer)
 
-      const partialArgs: { [name: string]: any } = {}
+      const partialArgs: { [name: string]: string } = {}
       if (options) {
         const partials = options as Partials
         for (const key of Object.keys(partials)) {
-          const partialContent = await getContentFromKVAsset(`${partials[key]}${EXTENSION}`)
-          if (!partialContent) {
+          const partialBuffer = await getContentFromKVAsset(`${partials[key]}${EXTENSION}`)
+          if (!partialBuffer) {
             throw new Error(`Partial Template "${partials[key]}${EXTENSION}" is not found or blank.`)
           }
-          partialArgs[key] = partialContent
+          partialArgs[key] = bufferToString(partialBuffer)
         }
       }
+
       const output = Mustache.render(content, view, partialArgs)
       return c.html(output)
     }
     await next()
   }
+}
+
+const bufferToString = (buffer: ArrayBuffer): string => {
+  if (buffer instanceof ArrayBuffer) {
+    const enc = new TextDecoder('utf-8')
+    return enc.decode(buffer)
+  }
+  return buffer
 }
