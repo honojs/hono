@@ -1,6 +1,6 @@
 declare const __STATIC_CONTENT: KVNamespace, __STATIC_CONTENT_MANIFEST: string
 
-export const getContentFromKVAsset = async (path: string): Promise<string> => {
+export const getContentFromKVAsset = async (path: string): Promise<ArrayBuffer> => {
   let ASSET_MANIFEST: { [key: string]: string }
   if (typeof __STATIC_CONTENT_MANIFEST === 'string') {
     ASSET_MANIFEST = JSON.parse(__STATIC_CONTENT_MANIFEST)
@@ -15,12 +15,10 @@ export const getContentFromKVAsset = async (path: string): Promise<string> => {
     return
   }
 
-  let content: string
-
-  content = await ASSET_NAMESPACE.get(key, { type: 'text' })
+  let content = await ASSET_NAMESPACE.get(key, { type: 'arrayBuffer' })
 
   if (content) {
-    content = content as string
+    content = content as ArrayBuffer
   }
   return content
 }

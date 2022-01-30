@@ -1,0 +1,1 @@
+This is hello.txt! You can access: /static/demo/
