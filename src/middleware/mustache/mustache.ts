@@ -24,7 +24,7 @@ export const mustache = () => {
         throw new Error(`Template "${filename}${EXTENSION}" is not found or blank.`)
       }
 
-      const partialArgs: { [name: string]: string } = {}
+      const partialArgs: { [name: string]: any } = {}
       if (options) {
         const partials = options as Partials
         for (const key of Object.keys(partials)) {
