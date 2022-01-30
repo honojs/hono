@@ -40,9 +40,21 @@ export class Context {
     init.status = init.status || this._status
     init.statusText = init.statusText || this._statusText
 
-    const Encoder = new TextEncoder()
-    const length = data ? data.bytelength || Encoder.encode(data).byteLength : 0
-    init.headers = { ...this._headers, ...init.headers, ...{ 'Content-Length': String(length) } }
+    init.headers = { ...this._headers, ...init.headers }
+
+    // Content-Length
+    let length = 0
+    if (data) {
+      if (data instanceof ArrayBuffer) {
+        length = data.byteLength
+      } else if (typeof data == 'string') {
+        const Encoder = new TextEncoder()
+        length = Encoder.encode(data).byteLength || 0
+      } else {
+        length = data.bytelength
+      }
+    }
+    init.headers = { ...init.headers, ...{ 'Content-Length': length.toString() } }
 
     return new Response(data, init)
   }

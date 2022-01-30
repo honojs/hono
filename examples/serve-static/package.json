@@ -2,26 +2,15 @@
   "name": "hono-example-serve-static",
   "version": "0.0.1",
   "description": "",
-  "main": "dist/worker.js",
+  "main": "src/index.js",
   "scripts": {
-    "test": "jest --verbose",
-    "build": "rimraf tsc && wrangler build",
-    "dev": "tsc && npm-run-all --parallel dev:*",
-    "dev:tsc": "tsc --watch",
-    "dev:wrangler": "wrangler dev"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "wrangler dev",
+    "publish": "wrangler publish"
   },
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "license": "MIT",
   "dependencies": {
-    "@cloudflare/kv-asset-handler": "^0.2.0",
     "hono": "*"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^3.3.0",
-    "@cloudflare/wrangler": "^1.19.7",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^4.5.4",
-    "webpack": "^5.65.0",
-    "webpack-cli": "^4.9.1"
   }
 }

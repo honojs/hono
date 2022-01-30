@@ -6,6 +6,7 @@ import { bodyParse } from './middleware/body-parse/body-parse'
 import { cors } from './middleware/cors/cors'
 import { cookie } from './middleware/cookie/cookie'
 import { mustache } from './middleware/mustache/mustache'
+import { serveStatic } from './middleware/serve-static/serve-static'
 
 export class Middleware {
   static default = defaultMiddleware
@@ -16,4 +17,5 @@ export class Middleware {
   static cors = cors
   static cookie = cookie
   static mustache = mustache
+  static serveStatic = serveStatic
 }
