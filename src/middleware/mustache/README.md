@@ -1,16 +1,18 @@
 # Mustache Middleware
 
+Mustache Middleware is available only on Cloudflare Workers.
+
 ## Dependencies
 
 This middleware depends on [mustache.js](https://www.npmjs.com/package/mustache).
 
-```
+```plain
 npm i mustache
 ```
 
 or
 
-```
+```plain
 yarn add mustache
 ```
 

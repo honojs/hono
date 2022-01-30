@@ -358,6 +358,11 @@ export default {
     return app.fetch(request, env, event)
   },
 }
+
+/*
+or just do this:
+export default app
+*/
 ```
 
 ## Cloudflare Workers with Hono
