@@ -1,4 +1,15 @@
 module.exports = {
   target: 'webworker',
-  entry: './dist/index.js',
+  entry: './src/index.ts',
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        loader: 'ts-loader',
+      },
+    ],
+  },
+  resolve: {
+    extensions: ['.ts', '.js'],
+  },
 }

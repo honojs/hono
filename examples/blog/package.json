@@ -5,10 +5,8 @@
   "main": "dist/worker.js",
   "scripts": {
     "test": "jest --verbose",
-    "build": "rimraf tsc && wrangler build",
-    "dev": "tsc && npm-run-all --parallel dev:*",
-    "dev:tsc": "tsc --watch",
-    "dev:wrangler": "wrangler dev"
+    "build": "wrangler build",
+    "dev": "miniflare"
   },
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "license": "MIT",
@@ -21,10 +19,11 @@
     "@types/jest": "^27.4.0",
     "jest": "^27.4.7",
     "jest-environment-miniflare": "^2.0.0",
-    "npm-run-all": "^4.1.5",
+    "miniflare": "2.2.0",
     "ts-jest": "^27.1.2",
+    "ts-loader": "~8.2.0",
     "typescript": "^4.5.4",
-    "webpack": "^5.65.0",
+    "webpack": "~4.44.1",
     "webpack-cli": "^4.9.1"
   }
 }
