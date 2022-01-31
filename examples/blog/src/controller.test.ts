@@ -23,7 +23,11 @@ describe('Blog API', () => {
 
   it('CRUD', async () => {
     let payload = JSON.stringify({ title: 'Morning', body: 'Good Morning' })
-    let req = new Request('http://localhost/posts', { method: 'POST', body: payload })
+    let req = new Request('http://localhost/posts', {
+      method: 'POST',
+      body: payload,
+      headers: { 'Content-Type': 'application/json' },
+    })
     let res = await app.dispatch(req)
     expect(res.status).toBe(201)
     let body = (await res.json()) as any
@@ -50,6 +54,7 @@ describe('Blog API', () => {
     req = new Request(`https://localhost/posts/${post.id}`, {
       method: 'PUT',
       body: payload,
+      headers: { 'Content-Type': 'application/json' },
     })
     res = await app.dispatch(req)
     expect(res.status).toBe(200)
@@ -64,7 +69,9 @@ describe('Blog API', () => {
     expect(post.title).toBe('Night')
     expect(post.body).toBe('Good Night')
 
-    req = new Request(`https://localhost/posts/${post.id}`, { method: 'DELETE' })
+    req = new Request(`https://localhost/posts/${post.id}`, {
+      method: 'DELETE',
+    })
     res = await app.dispatch(req)
     expect(res.status).toBe(200)
     body = (await res.json()) as any
