@@ -2,7 +2,7 @@
 
 Mustache Middleware is available only on Cloudflare Workers.
 
-## Dependencies
+## Requirements
 
 This middleware depends on [mustache.js](https://www.npmjs.com/package/mustache).
 
@@ -22,10 +22,11 @@ index.js:
 
 ```js
 import { Hono, Middleware } from 'hono'
+import { mustache } from 'hono/mustache'
 
 const app = new Hono()
 
-app.use('*', Middleware.mustache())
+app.use('*', mustache())
 
 app.get('/', (c) => {
   return c.render(
