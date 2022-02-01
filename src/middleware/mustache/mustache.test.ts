@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { Middleware } from '../../middleware'
+import { mustache } from './mustache'
 
 // Mock
 const store: { [key: string]: string } = {
@@ -25,7 +25,7 @@ Object.assign(global, {
 describe('Mustache by Middleware', () => {
   const app = new Hono()
 
-  app.use('*', Middleware.mustache())
+  app.use('*', mustache())
   app.get('/', (c) => {
     return c.render(
       'index',

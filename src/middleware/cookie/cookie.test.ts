@@ -1,9 +1,9 @@
 import { Hono } from '../../hono'
-import { Middleware } from '../../middleware'
+import { cookie } from './cookie'
 
 describe('Cookie Middleware', () => {
   const app = new Hono()
-  app.use('/cookie', Middleware.cookie())
+  app.use('/cookie', cookie())
 
   app.get('/cookie', (c) => {
     const yummyCookie = c.req.cookie('yummy_cookie')
@@ -24,7 +24,7 @@ describe('Cookie Middleware', () => {
     expect(res.headers.get('Tasty-Cookie')).toBe('strawberry')
   })
 
-  app.use('/set-cookie', Middleware.cookie())
+  app.use('/set-cookie', cookie())
 
   app.get('/set-cookie', (c) => {
     c.cookie('delicious_cookie', 'macha')
@@ -39,7 +39,7 @@ describe('Cookie Middleware', () => {
     expect(header).toBe('delicious_cookie=macha')
   })
 
-  app.use('/set-cookie-complex', Middleware.cookie())
+  app.use('/set-cookie-complex', cookie())
 
   app.get('/set-cookie-complex', (c) => {
     c.cookie('greate_cookie', 'banana', {

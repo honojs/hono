@@ -35,7 +35,7 @@ Fastest is hono
 
 Below is a demonstration to create an application of Cloudflare Workers with Hono.
 
-![Demo](https://user-images.githubusercontent.com/10682/151102477-be0f950e-8d23-49c5-b6d8-d8ecb6b7484e.gif)
+![Demo](https://user-images.githubusercontent.com/10682/151973526-342644f9-71c5-4fee-81f4-64a7558bb192.gif)
 
 ## Install
 
@@ -138,19 +138,24 @@ app.get('/fetch-url', async (c) => {
 ### Builtin Middleware
 
 ```js
-import { Hono, Middleware } from 'hono'
+import { Hono } from 'hono'
+import { poweredBy } from 'hono/powered-by'
+import { logger } from 'hono/logger'
+import { basicAuth } from 'hono/basicAuth'
 
-...
+const app = new Hono()
 
-app.use('*', Middleware.poweredBy())
-app.use('*', Middleware.logger())
+app.use('*', poweredBy())
+app.use('*', logger())
 app.use(
   '/auth/*',
-  Middleware.basicAuth({
+  basicAuth({
     username: 'hono',
     password: 'acoolproject',
   })
 )
+
+...
 ```
 
 Available builtin middleware are listed on [src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware).

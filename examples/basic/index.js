@@ -1,16 +1,18 @@
-import { Hono, Middleware } from '../../dist'
-// or install from npm:
-// import { Hono, Middleware } from 'hono'
+import { Hono } from '../../dist'
+import { poweredBy } from '../../src/middleware/powered-by/powered-by'
+import { logger } from '../../src/middleware/logger/logger'
+import { bodyParse } from '../../src/middleware/body-parse/body-parse'
+import { basicAuth } from '../../src/middleware/basic-auth/basic-auth'
 
 const app = new Hono()
 
 // Mount Builtin Middleware
-app.use('*', Middleware.poweredBy())
-app.use('*', Middleware.logger())
-app.use('/form', Middleware.bodyParse())
+app.use('*', poweredBy())
+app.use('*', logger())
+app.use('/form', bodyParse())
 app.use(
   '/auth/*',
-  Middleware.basicAuth({
+  basicAuth({
     username: 'hono',
     password: 'acoolproject',
   })

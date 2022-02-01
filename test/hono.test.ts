@@ -1,4 +1,4 @@
-import { Hono } from '../src/hono'
+import { Hono } from '../src/index'
 
 describe('GET Request', () => {
   const app = new Hono()
