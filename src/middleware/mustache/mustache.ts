@@ -6,16 +6,12 @@ const EXTENSION = '.mustache'
 type Partials = { [file: string]: string }
 
 export const mustache = () => {
-  let Mustache: any
-  try {
-    Mustache = require('mustache')
-  } catch {
-    // Do nothing.
-  }
-
   return async (c: Context, next: Function) => {
-    if (!Mustache) {
-      throw new Error('If you want to use Mustache Middleware, install mustache module.')
+    let Mustache: any
+    try {
+      Mustache = require('mustache')
+    } catch {
+      throw new Error('If you want to use Mustache Middleware, install mustache package first.')
     }
 
     c.render = async (filename, view = {}, options?) => {
