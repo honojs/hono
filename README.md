@@ -35,7 +35,7 @@ Fastest is hono
 
 Below is a demonstration to create an application of Cloudflare Workers with Hono.
 
-![Demo](https://user-images.githubusercontent.com/10682/151102477-be0f950e-8d23-49c5-b6d8-d8ecb6b7484e.gif)
+![Demo](https://user-images.githubusercontent.com/10682/151973526-342644f9-71c5-4fee-81f4-64a7558bb192.gif)
 
 ## Install
 
