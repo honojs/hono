@@ -1,8 +1,9 @@
-import { Hono, Middleware } from '../../dist'
+import { Hono } from '../../dist'
+import { mustache } from '../../src/middleware/mustache/mustache'
 
 const app = new Hono()
 
-app.use('*', Middleware.mustache())
+app.use('*', mustache())
 
 app.get('/', (c) => {
   return c.render(
