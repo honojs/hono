@@ -138,19 +138,24 @@ app.get('/fetch-url', async (c) => {
 ### Builtin Middleware
 
 ```js
-import { Hono, Middleware } from 'hono'
+import { Hono } from 'hono'
+import { poweredBy } from 'hono/powered-by'
+import { logger } from 'hono/logger'
+import { basicAuth } from 'hono/basicAuth'
 
-...
+const app = new Hono()
 
-app.use('*', Middleware.poweredBy())
-app.use('*', Middleware.logger())
+app.use('*', poweredBy())
+app.use('*', logger())
 app.use(
   '/auth/*',
-  Middleware.basicAuth({
+  basicAuth({
     username: 'hono',
     password: 'acoolproject',
   })
 )
+
+...
 ```
 
 Available builtin middleware are listed on [src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware).
