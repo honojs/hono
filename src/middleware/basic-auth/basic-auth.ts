@@ -1,8 +1,7 @@
 import type { Context } from '../../context'
 import { timingSafeEqual } from '../../utils/buffer'
 
-const CREDENTIALS_REGEXP =
-  /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
+const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/
 
 const auth = (req: Request) => {
@@ -32,30 +31,40 @@ const auth = (req: Request) => {
   return { username: userPass[1], password: userPass[2] }
 }
 
+let b: BufferConstructor
+
 function decodeBase64(str: string) {
-  return Buffer.from(str, 'base64').toString()
+  return b.from(str, 'base64').toString()
 }
 
-export const basicAuth = (options: {
-  username: string;
-  password: string;
-  realm?: string;
-}) => {
+export const basicAuth = (options: { username: string; password: string; realm?: string }) => {
+  try {
+    b = Buffer
+  } catch {}
+
+  if (b === undefined) {
+    try {
+      const { Buffer } = require('buffer')
+      b = Buffer
+    } catch (e) {
+      throw new Error('If you want to use Basic Auth Middleware, install "buffer" package.')
+    }
+  }
+
   if (!options.realm) {
     options.realm = 'Secure Area'
   }
 
   return async (ctx: Context, next: Function) => {
     const user = auth(ctx.req)
-    const usernameEqual = user && await timingSafeEqual(options.username, user.username)
-    const passwordEqual = user && await timingSafeEqual(options.password, user.password)
+    const usernameEqual = user && (await timingSafeEqual(options.username, user.username))
+    const passwordEqual = user && (await timingSafeEqual(options.password, user.password))
 
     if (!user || !usernameEqual || !passwordEqual) {
       ctx.res = new Response('Unauthorized', {
         status: 401,
         headers: {
-          'WWW-Authenticate':
-            'Basic realm="' + options.realm.replace(/"/g, '\\"') + '"',
+          'WWW-Authenticate': 'Basic realm="' + options.realm.replace(/"/g, '\\"') + '"',
         },
       })
       return

@@ -11,7 +11,7 @@ export const mustache = () => {
     try {
       Mustache = require('mustache')
     } catch {
-      throw new Error('If you want to use Mustache Middleware, install mustache package first.')
+      throw new Error('If you want to use Mustache Middleware, install "mustache" package first.')
     }
 
     c.render = async (filename, view = {}, options?) => {
