@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { Middleware } from '../../middleware'
+import { logger } from './logger'
 
 describe('Logger by Middleware', () => {
   const app = new Hono()
@@ -12,7 +12,7 @@ describe('Logger by Middleware', () => {
   const shortRandomString = 'hono'
   const longRandomString = 'hono'.repeat(1000)
 
-  app.use('*', Middleware.logger(logFn))
+  app.use('*', logger(logFn))
   app.get('/short', (c) => c.text(shortRandomString))
   app.get('/long', (c) => c.text(longRandomString))
   app.get('/empty', (c) => c.text(''))

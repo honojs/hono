@@ -1,10 +1,10 @@
 import { Hono } from '../../hono'
-import { Middleware } from '../../middleware'
+import { bodyParse } from './body-parse'
 
 describe('Parse Body Middleware', () => {
   const app = new Hono()
 
-  app.use('*', Middleware.bodyParse())
+  app.use('*', bodyParse())
   app.post('/json', async (ctx) => {
     return ctx.json(ctx.req.parsedBody, 200)
   })

@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { Middleware } from '../../middleware'
+import { basicAuth } from './basic-auth'
 
 describe('Basic Auth by Middleware', () => {
   const crypto = global.crypto
@@ -16,7 +16,7 @@ describe('Basic Auth by Middleware', () => {
 
   app.use(
     '*',
-    Middleware.basicAuth({
+    basicAuth({
       username,
       password,
     })

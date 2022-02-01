@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { Middleware } from '../../middleware'
+import { serveStatic } from './serve-static'
 
 // Mock
 const store: { [key: string]: string } = {
@@ -27,8 +27,8 @@ Object.assign(global, {
 describe('ServeStatic Middleware', () => {
   const app = new Hono()
 
-  app.use('/static/*', Middleware.serveStatic({ root: './assets' }))
-  app.use('/static-no-root/*', Middleware.serveStatic())
+  app.use('/static/*', serveStatic({ root: './assets' }))
+  app.use('/static-no-root/*', serveStatic())
 
   it('Serve static files', async () => {
     let req = new Request('http://localhost/static/plain.txt')

@@ -1,10 +1,10 @@
 import { Hono } from '../../hono'
-import { Middleware } from '../../middleware'
+import { poweredBy } from './powered-by'
 
 describe('Powered by Middleware', () => {
   const app = new Hono()
 
-  app.use('*', Middleware.poweredBy())
+  app.use('*', poweredBy())
   app.get('/', () => new Response('root'))
 
   it('Response headers include X-Powered-By', async () => {

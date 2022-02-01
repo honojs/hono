@@ -1,12 +1,23 @@
 {
   "name": "hono",
-  "version": "0.2.4",
+  "version": "0.2.5-alpha",
   "description": "[炎] Ultrafast web framework for Cloudflare Workers.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./basic-auth": "./dist/middleware/basic-auth/basic-auth.js",
+    "./body-parse": "./dist/middleware/body-parse/body-parse.js",
+    "./cookie": "./dist/middleware/cookie/cookie.js",
+    "./cors": "./dist/middleware/cors/cors.js",
+    "./logger": "./dist/middleware/logger/logger.js",
+    "./mustache": "./dist/middleware/mustache/mustache.js",
+    "./powered-by": "./dist/middleware/powered-by/powered-by.js",
+    "./serve-static": "./dist/middleware/serve-static/serve-static.js"
+  },
   "scripts": {
     "test": "jest",
     "lint": "eslint --ext js,ts src .eslintrc.js test",
