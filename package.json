@@ -18,6 +18,34 @@
     "./powered-by": "./dist/middleware/powered-by/powered-by.js",
     "./serve-static": "./dist/middleware/serve-static/serve-static.js"
   },
+  "typesVersions": {
+    "*": {
+      "basic-auth": [
+        "./dist/middleware/basic-auth/basic-auth.d.ts"
+      ],
+      "body-parse": [
+        "./dist/middleware/body-parse/body-parse.d.ts"
+      ],
+      "cookie": [
+        "./dist/middleware/cookie/cookie.d.ts"
+      ],
+      "cors": [
+        "./dist/middleware/cors/cors.d.ts"
+      ],
+      "logger": [
+        "./dist/middleware/logger/logger.d.ts"
+      ],
+      "mustache": [
+        "./dist/middleware/mustache/mustache.d.ts"
+      ],
+      "powered-by": [
+        "./dist/middleware/powered-by/powered-by.d.ts"
+      ],
+      "serve-static": [
+        "./dist/middleware/serve-static/serve-static.d.ts"
+      ]
+    }
+  },
   "scripts": {
     "test": "jest",
     "lint": "eslint --ext js,ts src .eslintrc.js test",
@@ -66,7 +94,7 @@
     "mustache": "^4.2.0",
     "rimraf": "^3.0.2",
     "ts-jest": "^27.1.2",
-    "typescript": "^4.5.4"
+    "typescript": "^4.5.5"
   },
   "engines": {
     "node": ">=11.0.0"
