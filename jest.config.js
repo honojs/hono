@@ -3,7 +3,7 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
-  testPathIgnorePatterns: ['./example'],
+  testPathIgnorePatterns: ['./examples'],
   testEnvironment: 'miniflare',
   testEnvironmentOptions: {
     /*

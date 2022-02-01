@@ -1,10 +1,10 @@
 import { Hono } from '../src/hono'
-import { Middleware } from '../src/middleware'
+import { poweredBy } from '../src/middleware/powered-by/powered-by'
 
 describe('Builtin Middleware', () => {
   const app = new Hono()
 
-  app.use('*', Middleware.poweredBy())
+  app.use('*', poweredBy())
   app.get('/', () => new Response('root'))
 
   it('Builtin Powered By Middleware', async () => {
