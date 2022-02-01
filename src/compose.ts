@@ -1,5 +1,6 @@
 // Based on the code in the MIT licensed `koa-compose` package.
 export const compose = (middleware: any) => {
+  const errors: Error[] = []
   return function (context: any, next?: Function) {
     let index = -1
     return dispatch(0)
@@ -10,7 +11,10 @@ export const compose = (middleware: any) => {
       if (i === middleware.length) fn = next
       if (!fn) return Promise.resolve()
       try {
-        return Promise.resolve(fn(context, dispatch.bind(null, i + 1)))
+        return Promise.resolve(fn(context, dispatch.bind(null, i + 1))).catch((e) => {
+          errors.push(e)
+          throw errors[0] // XXX
+        })
       } catch (err) {
         return Promise.reject(err)
       }
