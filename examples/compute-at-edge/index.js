@@ -1,4 +1,4 @@
-import { Hono } from 'hono'
+import { Hono } from '../../dist/hono'
 import { basicAuth } from '../../dist/middleware/basic-auth/basic-auth'
 
 const app = new Hono()

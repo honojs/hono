@@ -29,9 +29,14 @@ export const decodeBase64 = (str: string) => {
     }
     const decoder = new TextDecoder()
     return decoder.decode(bytes)
-  } catch {
+  } catch {}
+
+  try {
     const { Buffer } = require('buffer')
     return Buffer.from(str, 'base64').toString()
+  } catch (e) {
+    console.error('If you want to do "decodeBase64", polyfill "buffer" module.')
+    throw e
   }
 }
 
@@ -45,10 +50,15 @@ export const sha256 = async (a: string): Promise<string> => {
     )
     const hash = Array.prototype.map.call(new Uint8Array(buffer), (x) => ('00' + x.toString(16)).slice(-2)).join('')
     return hash
-  } else {
+  }
+
+  try {
     const crypto = await import('crypto')
     const hash = crypto.createHash('sha256').update(a).digest('hex')
     return hash
+  } catch (e) {
+    console.error('If you want to do "sha256", polyfill "crypto" module.')
+    throw e
   }
 }
 
