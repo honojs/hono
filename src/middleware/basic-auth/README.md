@@ -1,10 +1,5 @@
 # Basic Auth Middleware
 
-## Requirements
-
-- buffer
-- crypto
-
 ## Usage
 
 index.js:
