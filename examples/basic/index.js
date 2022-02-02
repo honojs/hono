@@ -22,14 +22,7 @@ app.use(
 // Add Custom Header
 app.use('/hello/*', async (c, next) => {
   await next()
-  await c.res.headers.append('X-message', 'This is addHeader middleware!')
-})
-
-// Log response time
-app.use('*', async (c, next) => {
-  await next()
-  const responseTime = await c.res.headers.get('X-Response-Time')
-  console.log(`X-Response-Time: ${responseTime}`)
+  c.header('X-message', 'This is addHeader middleware!')
 })
 
 // Add X-Response-Time header
@@ -37,7 +30,7 @@ app.use('*', async (c, next) => {
   const start = Date.now()
   await next()
   const ms = Date.now() - start
-  await c.res.headers.append('X-Response-Time', `${ms}ms`)
+  await c.header('X-Response-Time', `${ms}ms`)
 })
 
 // Handle error
@@ -46,7 +39,7 @@ app.use('*', async (c, next) => {
     await next()
   } catch (err) {
     console.error(`${err}`)
-    c.res = new Response('Custom Error Message', { status: 500 })
+    c.res = c.text('Custom Error Message', 500)
   }
 })
 
