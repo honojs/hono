@@ -32,8 +32,15 @@ const auth = (req: Request) => {
 }
 
 function decodeBase64(str: string) {
-  if (atob && btoa) {
-    return atob(str)
+  if (atob) {
+    const text = atob(str)
+    const length = text.length
+    const bytes = new Uint8Array(length)
+    for (let i = 0; i < length; i++) {
+      bytes[i] = text.charCodeAt(i)
+    }
+    const decoder = new TextDecoder()
+    return decoder.decode(bytes)
   } else {
     const { Buffer } = require('buffer')
     return Buffer.from(str, 'base64').toString()
