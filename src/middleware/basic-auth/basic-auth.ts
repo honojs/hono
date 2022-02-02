@@ -32,7 +32,12 @@ const auth = (req: Request) => {
 }
 
 function decodeBase64(str: string) {
-  return atob(str)
+  if (atob && btoa) {
+    return atob(str)
+  } else {
+    const { Buffer } = require('buffer')
+    return Buffer.from(str, 'base64').toString()
+  }
 }
 
 export const basicAuth = (options: { username: string; password: string; realm?: string }) => {
