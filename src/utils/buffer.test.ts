@@ -1,4 +1,4 @@
-import { timingSafeEqual } from './buffer'
+import { timingSafeEqual, sha256, decodeBase64 } from './buffer'
 
 describe('buffer', () => {
   const crypto = global.crypto
@@ -7,6 +7,16 @@ describe('buffer', () => {
   })
   afterAll(() => {
     global.crypto = crypto
+  })
+
+  it('decodeBaes64', async () => {
+    expect(await decodeBase64('aG9vb29vb29vbw==')).toBe('hooooooooo')
+    expect(await decodeBase64('54KO')).toBe('炎')
+  })
+
+  it('sha256', async () => {
+    expect(await sha256('hono')).toBe('8b3dc17add91b7e8f0b5109a389927d66001139cd9b03fa7b95f83126e1b2b23')
+    expect(await sha256('炎')).toBe('1fddc5a562ee1fbeb4fc6def7d4be4911fcdae4273b02ae3a507b170ba0ea169')
   })
 
   it('positive', async () => {
@@ -25,18 +35,8 @@ describe('buffer', () => {
 
   it('negative', async () => {
     expect(await timingSafeEqual('a', 'b')).toBe(false)
-    expect(
-      await timingSafeEqual(
-        'a',
-        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-      )
-    ).toBe(false)
-    expect(
-      await timingSafeEqual(
-        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-        'a'
-      )
-    ).toBe(false)
+    expect(await timingSafeEqual('a', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')).toBe(false)
+    expect(await timingSafeEqual('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'a')).toBe(false)
     expect(await timingSafeEqual('alpha', 'beta')).toBe(false)
     expect(await timingSafeEqual(false, true)).toBe(false)
     expect(await timingSafeEqual(false, undefined)).toBe(false)

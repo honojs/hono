@@ -1,13 +1,12 @@
 import { Hono } from 'hono'
+import { basicAuth } from '../../dist/middleware/basic-auth/basic-auth'
 
 const app = new Hono()
 
-app.use('*', async (c, next) => {
-  console.log(`[${c.req.method}] ${c.req.url}`)
-  next()
-})
+app.use('/auth/*', basicAuth({ username: 'hono', password: 'acoolproject' }))
 
 app.get('/', (c) => c.text('Hono!! Compute@Edge!!'))
+app.get('/auth/*', (c) => c.text('Your authorized!'))
 
 app.get('/hello/:name', (c) => {
   return c.text(`Hello ${c.req.param('name')}!!!!!`)

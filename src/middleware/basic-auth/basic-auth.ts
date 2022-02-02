@@ -1,5 +1,5 @@
 import type { Context } from '../../context'
-import { timingSafeEqual } from '../../utils/buffer'
+import { timingSafeEqual, decodeBase64 } from '../../utils/buffer'
 
 const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/
@@ -29,22 +29,6 @@ const auth = (req: Request) => {
   }
 
   return { username: userPass[1], password: userPass[2] }
-}
-
-function decodeBase64(str: string) {
-  if (atob) {
-    const text = atob(str)
-    const length = text.length
-    const bytes = new Uint8Array(length)
-    for (let i = 0; i < length; i++) {
-      bytes[i] = text.charCodeAt(i)
-    }
-    const decoder = new TextDecoder()
-    return decoder.decode(bytes)
-  } else {
-    const { Buffer } = require('buffer')
-    return Buffer.from(str, 'base64').toString()
-  }
 }
 
 export const basicAuth = (options: { username: string; password: string; realm?: string }) => {
