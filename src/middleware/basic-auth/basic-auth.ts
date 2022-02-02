@@ -31,26 +31,11 @@ const auth = (req: Request) => {
   return { username: userPass[1], password: userPass[2] }
 }
 
-let b: BufferConstructor
-
 function decodeBase64(str: string) {
-  return b.from(str, 'base64').toString()
+  return atob(str)
 }
 
 export const basicAuth = (options: { username: string; password: string; realm?: string }) => {
-  try {
-    b = Buffer
-  } catch {}
-
-  if (b === undefined) {
-    try {
-      const { Buffer } = require('buffer')
-      b = Buffer
-    } catch (e) {
-      throw new Error('If you want to use Basic Auth Middleware, install "buffer" package.')
-    }
-  }
-
   if (!options.realm) {
     options.realm = 'Secure Area'
   }
