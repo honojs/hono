@@ -53,7 +53,7 @@ export const sha256 = async (a: string): Promise<string> => {
   }
 
   try {
-    const crypto = await import('crypto')
+    const crypto = require('crypto')
     const hash = crypto.createHash('sha256').update(a).digest('hex')
     return hash
   } catch (e) {
