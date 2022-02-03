@@ -7,7 +7,7 @@ describe('Context', () => {
   it('c.text()', async () => {
     const res = c.text('text in c', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
-    expect(res.headers.get('Content-Type')).toBe('text/plain')
+    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=UTF-8')
     expect(await res.text()).toBe('text in c')
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
@@ -15,7 +15,7 @@ describe('Context', () => {
   it('c.json()', async () => {
     const res = c.json({ message: 'Hello' }, 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
-    expect(res.headers.get('Content-Type')).toMatch('application/json')
+    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
     const text = await res.text()
     const object = JSON.parse(text)
     expect(object.message).toBe('Hello')
@@ -60,7 +60,7 @@ describe('Context', () => {
     const res = c.json({ hono: 'great app' })
     expect(res.status).toBe(404)
     expect(res.statusText).toBe('Hono is Not Found')
-    expect(res.headers.get('Content-Type')).toMatch(/json/)
+    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
     const obj: { [key: string]: string } = await res.json()
     expect(obj['hono']).toBe('great app')
   })
