@@ -1,11 +1,18 @@
 import type { Context } from '../../context'
-import { getContentFromKVAsset } from '../../utils/cloudflare'
+import { getContentFromKVAsset, getKVFilePath } from '../../utils/cloudflare'
 
 const EXTENSION = '.mustache'
+const DEFAULT_DOCUMENT = 'index.mustache'
 
 type Partials = { [file: string]: string }
 
-export const mustache = () => {
+type Options = {
+  root: string
+}
+
+export const mustache = (opt: Options = { root: '' }) => {
+  const { root } = opt
+
   return async (c: Context, next: Function) => {
     let Mustache: any
     try {
@@ -15,9 +22,11 @@ export const mustache = () => {
     }
 
     c.render = async (filename, view = {}, options?) => {
-      const buffer = await getContentFromKVAsset(`${filename}${EXTENSION}`)
+      const path = getKVFilePath({ filename: `${filename}${EXTENSION}`, root: root, defaultDocument: DEFAULT_DOCUMENT })
+
+      const buffer = await getContentFromKVAsset(path)
       if (!buffer) {
-        throw new Error(`Template "${filename}${EXTENSION}" is not found or blank.`)
+        throw new Error(`Template "${path}" is not found or blank.`)
       }
       const content = bufferToString(buffer)
 
@@ -25,9 +34,14 @@ export const mustache = () => {
       if (options) {
         const partials = options as Partials
         for (const key of Object.keys(partials)) {
-          const partialBuffer = await getContentFromKVAsset(`${partials[key]}${EXTENSION}`)
+          const partialPath = getKVFilePath({
+            filename: `${partials[key]}${EXTENSION}`,
+            root: root,
+            defaultDocument: DEFAULT_DOCUMENT,
+          })
+          const partialBuffer = await getContentFromKVAsset(partialPath)
           if (!partialBuffer) {
-            throw new Error(`Partial Template "${partials[key]}${EXTENSION}" is not found or blank.`)
+            throw new Error(`Partial Template "${partialPath}" is not found or blank.`)
           }
           partialArgs[key] = bufferToString(partialBuffer)
         }

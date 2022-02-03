@@ -1,5 +1,5 @@
 import type { Context } from '../../context'
-import { getContentFromKVAsset } from '../../utils/cloudflare'
+import { getContentFromKVAsset, getKVFilePath } from '../../utils/cloudflare'
 import { getMimeType } from '../../utils/mime'
 
 type Options = {
@@ -14,7 +14,7 @@ export const serveStatic = (opt: Options = { root: '' }) => {
     await next()
     const url = new URL(c.req.url)
 
-    const path = getKVPath(url.pathname, opt.root)
+    const path = getKVFilePath({ filename: url.pathname, root: opt.root, defaultDocument: DEFAULT_DOCUMENT })
 
     const content = await getContentFromKVAsset(path)
     if (content) {
@@ -27,25 +27,4 @@ export const serveStatic = (opt: Options = { root: '' }) => {
       // console.debug(`Static file: ${path} is not found`)
     }
   }
-}
-
-const getKVPath = (filename: string, root: string): string => {
-  if (filename.endsWith('/')) {
-    // /top/ => /top/index.html
-    filename = filename.concat(DEFAULT_DOCUMENT)
-  } else if (!getMimeType(filename)) {
-    // /top => /top/index.html
-    filename = filename.concat('/' + DEFAULT_DOCUMENT)
-  }
-  // /foo.html => foo.html
-  filename = filename.replace(/^\//, '')
-
-  // assets/ => assets
-  root = root.replace(/\/$/, '')
-
-  // ./assets/foo.html => assets/foo.html
-  let path = root + '/' + filename
-  path = path.replace(/^\.?\//, '')
-
-  return path
 }
