@@ -70,7 +70,7 @@ export class Context {
     if (typeof text !== 'string') {
       throw new TypeError('text method arg must be a string!')
     }
-    headers['Content-Type'] = 'text/plain'
+    headers['Content-Type'] ||= 'text/plain; charset=UTF-8'
     return this.body(text, status, headers)
   }
 
@@ -80,7 +80,7 @@ export class Context {
     }
 
     const body = JSON.stringify(object)
-    headers['Content-Type'] = 'application/json; charset=UTF-8'
+    headers['Content-Type'] ||= 'application/json; charset=UTF-8'
     return this.body(body, status, headers)
   }
 
@@ -88,7 +88,7 @@ export class Context {
     if (typeof html !== 'string') {
       throw new TypeError('html method arg must be a string!')
     }
-    headers['Content-Type'] = 'text/html; charset=UTF-8'
+    headers['Content-Type'] ||= 'text/html; charset=UTF-8'
     return this.body(html, status, headers)
   }
 
