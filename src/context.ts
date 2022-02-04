@@ -25,6 +25,16 @@ export class Context {
   }
 
   header(name: string, value: string): void {
+    /*
+    XXX:
+    app.use('*', (c, next) => {
+      next()
+      c.header('foo', 'bar') // => c.res.headers.set(...)
+    })
+    */
+    if (this.res) {
+      this.res.headers.set(name, value)
+    }
     this._headers[name] = value
   }
 

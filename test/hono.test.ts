@@ -273,3 +273,44 @@ describe('Error handle', () => {
     expect(res.headers.get('debug')).toBe('This is Error')
   })
 })
+
+describe('Request methods with custom middleware', () => {
+  const app = new Hono()
+
+  app.use('*', async (c, next) => {
+    const query = c.req.query('foo')
+    const param = c.req.param('foo')
+    const header = c.req.header('User-Agent')
+    await next()
+    c.header('X-Query-2', query)
+    c.header('X-Param-2', param)
+    c.header('X-Header-2', header)
+  })
+
+  app.get('/:foo', (c) => {
+    const query = c.req.query('foo')
+    const param = c.req.param('foo')
+    const header = c.req.header('User-Agent')
+    c.header('X-Query', query)
+    c.header('X-Param', param)
+    c.header('X-Header', header)
+    return c.body('Hono')
+  })
+
+  it('query', async () => {
+    const url = new URL('http://localhost/bar')
+    url.searchParams.append('foo', 'bar')
+    const req = new Request(url.toString())
+    req.headers.append('User-Agent', 'bar')
+    const res = await app.dispatch(req)
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Query')).toBe('bar')
+    expect(res.headers.get('X-Param')).toBe('bar')
+    expect(res.headers.get('X-Header')).toBe('bar')
+
+    expect(res.headers.get('X-Query-2')).toBe('bar')
+    expect(res.headers.get('X-Param-2')).toBe('bar')
+    expect(res.headers.get('X-Header-2')).toBe('bar')
+  })
+})

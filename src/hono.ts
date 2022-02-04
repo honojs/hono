@@ -11,7 +11,7 @@ const METHOD_NAME_OF_ALL = 'ALL'
 declare global {
   interface Request {
     param: (key: string) => string
-    query: (key: string) => string | null
+    query: (key: string) => string
     header: (name: string) => string
     parsedBody: any
   }
@@ -128,11 +128,18 @@ export class Hono {
 
     const result = await this.matchRoute(method, path)
 
+    // Methods for Request object
     request.param = (key: string): string => {
       if (result) {
         return result.params[key]
       }
-      return ''
+    }
+    request.header = (name: string): string => {
+      return request.headers.get(name)
+    }
+    request.query = (key: string): string => {
+      const url = new URL(c.req.url)
+      return url.searchParams.get(key)
     }
 
     const handler = result ? result.handler[0] : this.notFound // XXX
@@ -151,7 +158,6 @@ export class Hono {
       await next()
     }
 
-    middleware.push(Middleware.default)
     middleware.push(wrappedHandler)
 
     const composed = compose(middleware)
