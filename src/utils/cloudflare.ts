@@ -1,5 +1,3 @@
-import { getMimeType } from './mime'
-
 declare const __STATIC_CONTENT: KVNamespace, __STATIC_CONTENT_MANIFEST: string
 
 export const getContentFromKVAsset = async (path: string): Promise<ArrayBuffer> => {

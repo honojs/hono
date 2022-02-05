@@ -163,7 +163,7 @@ export class Hono {
 
     middleware.push(wrappedHandler)
 
-    const composed = compose(middleware)
+    const composed = compose<Context>(middleware)
     const c = new Context(request, { env: env, event: event, res: null })
     await composed(c)
 
@@ -171,13 +171,13 @@ export class Hono {
   }
 
   async handleEvent(event: FetchEvent): Promise<Response> {
-    return this.dispatch(event.request, {}, event).catch((err) => {
+    return this.dispatch(event.request, {}, event).catch((err: Error) => {
       return this.onError(err)
     })
   }
 
   async fetch(request: Request, env?: Env, event?: FetchEvent): Promise<Response> {
-    return this.dispatch(request, env, event).catch((err) => {
+    return this.dispatch(request, env, event).catch((err: Error) => {
       return this.onError(err)
     })
   }
@@ -188,7 +188,7 @@ export class Hono {
     })
   }
 
-  onError(err: any) {
+  onError(err: Error) {
     console.error(`${err}`)
     const message = 'Internal Server Error'
     return new Response(message, {
