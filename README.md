@@ -253,7 +253,6 @@ app.get('/welcome', (c) => {
   c.header('X-Message', 'Hello!')
   c.header('Content-Type', 'text/plain')
   c.status(201)
-  c.statusText('201 Content Created')
 
   return c.body('Thank you for comming')
 
@@ -261,7 +260,7 @@ app.get('/welcome', (c) => {
   Same as:
   return new Response('Thank you for comming', {
     status: 201,
-    statusText: '201 Content Created',
+    statusText: 'Created',
     headers: {
       'X-Message': 'Hello',
       'Content-Type': 'text/plain',

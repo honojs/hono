@@ -1,4 +1,5 @@
 import { isAbsoluteURL } from './utils/url'
+import { getStatusText } from './utils/http-status'
 
 type Headers = { [key: string]: string }
 type Data = string | ArrayBuffer | ReadableStream
@@ -46,14 +47,7 @@ export class Context {
       return
     }
     this._status = number
-  }
-
-  statusText(text: string): void {
-    if (this.res) {
-      console.warn('c.res.statusText is already setted.')
-      return
-    }
-    this._statusText = text
+    this._statusText = getStatusText(number)
   }
 
   newResponse(data: Data, init: ResponseInit = {}): Response {

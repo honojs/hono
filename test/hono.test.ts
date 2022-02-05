@@ -6,12 +6,12 @@ describe('GET Request', () => {
   app.get('/hello', () => {
     return new Response('hello', {
       status: 200,
+      statusText: 'Hono is OK',
     })
   })
 
   app.get('/hello-with-shortcuts', (c) => {
     c.header('X-Custom', 'This is Hono')
-    c.statusText('Hono is created')
     c.status(201)
     return c.html('<h1>Hono!!!</h1>')
   })
@@ -27,6 +27,7 @@ describe('GET Request', () => {
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
+    expect(res.statusText).toBe('Hono is OK')
     expect(await res.text()).toBe('hello')
   })
 
@@ -35,7 +36,7 @@ describe('GET Request', () => {
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(201)
-    expect(res.statusText).toBe('Hono is created')
+    expect(res.statusText).toBe('Created')
     expect(res.headers.get('X-Custom')).toBe('This is Hono')
     expect(res.headers.get('Content-Type')).toMatch(/text\/html/)
     expect(await res.text()).toBe('<h1>Hono!!!</h1>')
