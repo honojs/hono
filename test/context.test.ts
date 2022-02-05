@@ -48,18 +48,16 @@ describe('Context', () => {
 
   it('c.status() and c.statusText()', async () => {
     c.status(201)
-    c.statusText('Created!!!!')
     const res = c.body('Hi')
     expect(res.status).toBe(201)
-    expect(res.statusText).toBe('Created!!!!')
+    expect(res.statusText).toBe('Created')
   })
 
   it('Complext pattern', async () => {
     c.status(404)
-    c.statusText('Hono is Not Found')
     const res = c.json({ hono: 'great app' })
     expect(res.status).toBe(404)
-    expect(res.statusText).toBe('Hono is Not Found')
+    expect(res.statusText).toBe('Not Found')
     expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
     const obj: { [key: string]: string } = await res.json()
     expect(obj['hono']).toBe('great app')
@@ -72,11 +70,10 @@ describe('Context', () => {
     expect(res.headers.get('Content-Length')).toBe('3')
   })
 
-  it('Headers', async () => {
+  it('Headers, status, statusText', async () => {
     c.header('X-Custom1', 'Message1')
     c.header('X-Custom2', 'Message2')
     c.status(200)
-    c.statusText('OK')
     const res = c.newResponse('this is body', {
       status: 201,
       headers: {
@@ -89,5 +86,13 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom3')).toBe('Message3')
     expect(res.status).toBe(201)
     expect(await res.text()).toBe('this is body')
+
+    // res is already setted.
+    c.res = res
+    c.header('X-Custom4', 'Message4')
+    c.status(202)
+    expect(c.res.headers.get('X-Custom4')).toBe('Message4')
+    expect(c.res.status).toBe(201)
+    expect(c.res.statusText).toBe('OK')
   })
 })
