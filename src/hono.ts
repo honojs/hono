@@ -153,7 +153,11 @@ export class Hono {
     }
 
     const wrappedHandler = async (context: Context, next: Function) => {
-      context.res = await handler(context)
+      const res = await handler(context)
+      if (!(res instanceof Response)) {
+        throw new TypeError('response must be a instace of Response')
+      }
+      context.res = res
       await next()
     }
 
