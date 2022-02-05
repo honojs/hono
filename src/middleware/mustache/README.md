@@ -21,7 +21,7 @@ yarn add mustache
 index.js:
 
 ```js
-import { Hono, Middleware } from 'hono'
+import { Hono } from 'hono'
 import { mustache } from 'hono/mustache'
 
 const app = new Hono()
