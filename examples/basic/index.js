@@ -94,6 +94,7 @@ app.post('/form', async (c) => {
 app.get('/error', () => {
   throw Error('Error has occurred')
 })
+app.get('/type-error', () => 'return not Response instance')
 
 // addEventListener
 app.fire()

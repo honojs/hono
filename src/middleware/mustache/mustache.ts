@@ -6,6 +6,10 @@ const DEFAULT_DOCUMENT = 'index.mustache'
 
 type Partials = { [file: string]: string }
 
+interface Mustache {
+  render: (content: string, params: object, partials: Partials) => string
+}
+
 type Options = {
   root: string
 }
@@ -14,14 +18,14 @@ export const mustache = (opt: Options = { root: '' }) => {
   const { root } = opt
 
   return async (c: Context, next: Function) => {
-    let Mustache: any
+    let Mustache: Mustache
     try {
       Mustache = require('mustache')
     } catch {
       throw new Error('If you want to use Mustache Middleware, install "mustache" package first.')
     }
 
-    c.render = async (filename, view = {}, options?) => {
+    c.render = async (filename, params = {}, options?) => {
       const path = getKVFilePath({ filename: `${filename}${EXTENSION}`, root: root, defaultDocument: DEFAULT_DOCUMENT })
 
       const buffer = await getContentFromKVAsset(path)
@@ -47,7 +51,7 @@ export const mustache = (opt: Options = { root: '' }) => {
         }
       }
 
-      const output = Mustache.render(content, view, partialArgs)
+      const output = Mustache.render(content, params, partialArgs)
       return c.html(output)
     }
     await next()

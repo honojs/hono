@@ -40,7 +40,7 @@ export const decodeBase64 = (str: string) => {
   }
 }
 
-export const sha256 = async (a: string): Promise<string> => {
+export const sha256 = async (a: string | object | boolean): Promise<string> => {
   if (crypto && crypto.subtle) {
     const buffer = await crypto.subtle.digest(
       {
@@ -62,7 +62,7 @@ export const sha256 = async (a: string): Promise<string> => {
   }
 }
 
-export const timingSafeEqual = async (a: any, b: any) => {
+export const timingSafeEqual = async (a: string | object | boolean, b: string | object | boolean) => {
   const sa = await sha256(a)
   const sb = await sha256(b)
   return sa === sb && a === b
