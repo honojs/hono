@@ -65,7 +65,7 @@ export class Context {
     // Content-Length
     let length = 0
     if (data) {
-      if (data instanceof ArrayBuffer || data instanceof Buffer) {
+      if (data instanceof ArrayBuffer) {
         length = data.byteLength
       } else if (typeof data == 'string') {
         const Encoder = new TextEncoder()
