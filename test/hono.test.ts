@@ -257,7 +257,7 @@ describe('Error handle', () => {
     throw 'This is Error'
   })
 
-  app.use('*', async (c, next) => {
+  app.use('/error', async (c, next) => {
     try {
       await next()
     } catch (err) {
@@ -272,6 +272,14 @@ describe('Error handle', () => {
     expect(res.status).toBe(500)
     expect(await res.text()).toBe('Custom Error Message')
     expect(res.headers.get('debug')).toBe('This is Error')
+  })
+
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  app.get('/text', () => 'text')
+  it('If return not Reponse object', async () => {
+    const req = new Request('https://example.com/text')
+    expect(app.dispatch(req)).rejects.toThrowError(TypeError)
   })
 })
 

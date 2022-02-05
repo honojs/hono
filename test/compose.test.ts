@@ -32,7 +32,7 @@ describe('compose middleware', () => {
 
   it('Request', async () => {
     const c: C = { req: request, res: response }
-    const composed = compose(middleware)
+    const composed = compose<C>(middleware)
     await composed(c)
     expect(c.req['log']).not.toBeNull()
     expect(c.req['log']).toBe('log message')
