@@ -1,6 +1,7 @@
 import { isAbsoluteURL } from './utils/url'
 
 type Headers = { [key: string]: string }
+type Data = string | ArrayBuffer | ReadableStream
 
 export interface Env {}
 
@@ -12,6 +13,7 @@ export class Context {
   private _headers: Headers
   private _status: number
   private _statusText: string
+
   render: (template: string, params?: object, options?: object) => Promise<Response>
 
   constructor(req: Request, opts?: { res: Response; env: Env; event: FetchEvent }) {
@@ -39,14 +41,22 @@ export class Context {
   }
 
   status(number: number): void {
+    if (this.res) {
+      console.warn('c.res.status is already setted.')
+      return
+    }
     this._status = number
   }
 
   statusText(text: string): void {
+    if (this.res) {
+      console.warn('c.res.statusText is already setted.')
+      return
+    }
     this._statusText = text
   }
 
-  newResponse(data: any, init: ResponseInit = {}): Response {
+  newResponse(data: Data, init: ResponseInit = {}): Response {
     init.status = init.status || this._status
     init.statusText = init.statusText || this._statusText
 
@@ -55,13 +65,11 @@ export class Context {
     // Content-Length
     let length = 0
     if (data) {
-      if (data instanceof ArrayBuffer) {
+      if (data instanceof ArrayBuffer || data instanceof Buffer) {
         length = data.byteLength
       } else if (typeof data == 'string') {
         const Encoder = new TextEncoder()
         length = Encoder.encode(data).byteLength || 0
-      } else {
-        length = data.bytelength
       }
     }
     init.headers = { ...init.headers, ...{ 'Content-Length': length.toString() } }
@@ -69,7 +77,7 @@ export class Context {
     return new Response(data, init)
   }
 
-  body(data: any, status: number = this._status, headers: Headers = this._headers): Response {
+  body(data: Data, status: number = this._status, headers: Headers = this._headers): Response {
     return this.newResponse(data, {
       status: status,
       headers: headers,
@@ -88,7 +96,6 @@ export class Context {
     if (typeof object !== 'object') {
       throw new TypeError('json method arg must be a object!')
     }
-
     const body = JSON.stringify(object)
     headers['Content-Type'] ||= 'application/json; charset=UTF-8'
     return this.body(body, status, headers)
@@ -106,7 +113,6 @@ export class Context {
     if (typeof location !== 'string') {
       throw new TypeError('location must be a string!')
     }
-
     if (!isAbsoluteURL(location)) {
       const url = new URL(this.req.url)
       url.pathname = location

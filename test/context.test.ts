@@ -72,7 +72,7 @@ describe('Context', () => {
     expect(res.headers.get('Content-Length')).toBe('3')
   })
 
-  it('Headers', async () => {
+  it('Headers, status, statusText', async () => {
     c.header('X-Custom1', 'Message1')
     c.header('X-Custom2', 'Message2')
     c.status(200)
@@ -89,5 +89,14 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom3')).toBe('Message3')
     expect(res.status).toBe(201)
     expect(await res.text()).toBe('this is body')
+
+    // res is already setted.
+    c.res = res
+    c.header('X-Custom4', 'Message4')
+    c.status(202)
+    c.statusText('Accepted')
+    expect(c.res.headers.get('X-Custom4')).toBe('Message4')
+    expect(c.res.status).toBe(201)
+    expect(c.res.statusText).toBe('OK')
   })
 })
