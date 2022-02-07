@@ -16,7 +16,8 @@
     "./logger": "./dist/middleware/logger/logger.js",
     "./mustache": "./dist/middleware/mustache/mustache.js",
     "./powered-by": "./dist/middleware/powered-by/powered-by.js",
-    "./serve-static": "./dist/middleware/serve-static/serve-static.js"
+    "./serve-static": "./dist/middleware/serve-static/serve-static.js",
+    "./utils/buffer": "./dist/utils/buffer.js"
   },
   "typesVersions": {
     "*": {
