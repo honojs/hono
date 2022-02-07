@@ -1,6 +1,6 @@
 # Hono
 
-Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web flamework for a Service Workers API based serverless such as Cloudflare Workers and Fastly Compute@Edge.
+Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web framework for a Service Workers API based serverless such as Cloudflare Workers and Fastly Compute@Edge.
 
 ```js
 import { Hono } from 'hono'
