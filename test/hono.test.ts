@@ -1,4 +1,4 @@
-import { Hono } from '../src/hono'
+import { Hono } from '../src/index'
 
 describe('GET Request', () => {
   const app = new Hono()
@@ -6,12 +6,12 @@ describe('GET Request', () => {
   app.get('/hello', () => {
     return new Response('hello', {
       status: 200,
+      statusText: 'Hono is OK',
     })
   })
 
   app.get('/hello-with-shortcuts', (c) => {
     c.header('X-Custom', 'This is Hono')
-    c.statusText('Hono is created')
     c.status(201)
     return c.html('<h1>Hono!!!</h1>')
   })
@@ -27,6 +27,7 @@ describe('GET Request', () => {
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
+    expect(res.statusText).toBe('Hono is OK')
     expect(await res.text()).toBe('hello')
   })
 
@@ -35,7 +36,7 @@ describe('GET Request', () => {
     const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(201)
-    expect(res.statusText).toBe('Hono is created')
+    expect(res.statusText).toBe('Created')
     expect(res.headers.get('X-Custom')).toBe('This is Hono')
     expect(res.headers.get('Content-Type')).toMatch(/text\/html/)
     expect(await res.text()).toBe('<h1>Hono!!!</h1>')
@@ -256,7 +257,7 @@ describe('Error handle', () => {
     throw 'This is Error'
   })
 
-  app.use('*', async (c, next) => {
+  app.use('/error', async (c, next) => {
     try {
       await next()
     } catch (err) {
@@ -271,5 +272,54 @@ describe('Error handle', () => {
     expect(res.status).toBe(500)
     expect(await res.text()).toBe('Custom Error Message')
     expect(res.headers.get('debug')).toBe('This is Error')
+  })
+
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  app.get('/text', () => 'text')
+  it('If return not Reponse object', async () => {
+    const req = new Request('https://example.com/text')
+    expect(app.dispatch(req)).rejects.toThrowError(TypeError)
+  })
+})
+
+describe('Request methods with custom middleware', () => {
+  const app = new Hono()
+
+  app.use('*', async (c, next) => {
+    const query = c.req.query('foo')
+    const param = c.req.param('foo')
+    const header = c.req.header('User-Agent')
+    await next()
+    c.header('X-Query-2', query)
+    c.header('X-Param-2', param)
+    c.header('X-Header-2', header)
+  })
+
+  app.get('/:foo', (c) => {
+    const query = c.req.query('foo')
+    const param = c.req.param('foo')
+    const header = c.req.header('User-Agent')
+    c.header('X-Query', query)
+    c.header('X-Param', param)
+    c.header('X-Header', header)
+    return c.body('Hono')
+  })
+
+  it('query', async () => {
+    const url = new URL('http://localhost/bar')
+    url.searchParams.append('foo', 'bar')
+    const req = new Request(url.toString())
+    req.headers.append('User-Agent', 'bar')
+    const res = await app.dispatch(req)
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Query')).toBe('bar')
+    expect(res.headers.get('X-Param')).toBe('bar')
+    expect(res.headers.get('X-Header')).toBe('bar')
+
+    expect(res.headers.get('X-Query-2')).toBe('bar')
+    expect(res.headers.get('X-Param-2')).toBe('bar')
+    expect(res.headers.get('X-Header-2')).toBe('bar')
   })
 })

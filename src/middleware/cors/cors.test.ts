@@ -1,13 +1,13 @@
 import { Hono } from '../../hono'
-import { Middleware } from '../../middleware'
+import { cors } from './cors'
 
 describe('CORS by Middleware', () => {
   const app = new Hono()
 
-  app.use('/api/*', Middleware.cors())
+  app.use('/api/*', cors())
   app.use(
     '/api2/*',
-    Middleware.cors({
+    cors({
       origin: 'http://example.com',
       allowHeaders: ['X-Custom-Header', 'Upgrade-Insecure-Requests'],
       allowMethods: ['POST', 'GET', 'OPTIONS'],

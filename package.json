@@ -1,12 +1,51 @@
 {
   "name": "hono",
-  "version": "0.1.0",
+  "version": "0.3.6",
   "description": "[炎] Ultrafast web framework for Cloudflare Workers.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./basic-auth": "./dist/middleware/basic-auth/basic-auth.js",
+    "./body-parse": "./dist/middleware/body-parse/body-parse.js",
+    "./cookie": "./dist/middleware/cookie/cookie.js",
+    "./cors": "./dist/middleware/cors/cors.js",
+    "./logger": "./dist/middleware/logger/logger.js",
+    "./mustache": "./dist/middleware/mustache/mustache.js",
+    "./powered-by": "./dist/middleware/powered-by/powered-by.js",
+    "./serve-static": "./dist/middleware/serve-static/serve-static.js"
+  },
+  "typesVersions": {
+    "*": {
+      "basic-auth": [
+        "./dist/middleware/basic-auth/basic-auth.d.ts"
+      ],
+      "body-parse": [
+        "./dist/middleware/body-parse/body-parse.d.ts"
+      ],
+      "cookie": [
+        "./dist/middleware/cookie/cookie.d.ts"
+      ],
+      "cors": [
+        "./dist/middleware/cors/cors.d.ts"
+      ],
+      "logger": [
+        "./dist/middleware/logger/logger.d.ts"
+      ],
+      "mustache": [
+        "./dist/middleware/mustache/mustache.d.ts"
+      ],
+      "powered-by": [
+        "./dist/middleware/powered-by/powered-by.d.ts"
+      ],
+      "serve-static": [
+        "./dist/middleware/serve-static/serve-static.d.ts"
+      ]
+    }
+  },
   "scripts": {
     "test": "jest",
     "lint": "eslint --ext js,ts src .eslintrc.js test",
@@ -36,6 +75,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^3.3.0",
     "@types/jest": "^27.4.0",
+    "@types/mustache": "^4.1.2",
     "@types/node": "^17.0.8",
     "@typescript-eslint/eslint-plugin": "^5.9.0",
     "@typescript-eslint/parser": "^5.9.0",
@@ -51,9 +91,10 @@
     "form-data": "^4.0.0",
     "jest": "^27.4.5",
     "jest-environment-miniflare": "^2.0.0",
+    "mustache": "^4.2.0",
     "rimraf": "^3.0.2",
     "ts-jest": "^27.1.2",
-    "typescript": "^4.5.4"
+    "typescript": "^4.5.5"
   },
   "engines": {
     "node": ">=11.0.0"

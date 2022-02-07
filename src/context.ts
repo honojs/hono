@@ -1,6 +1,8 @@
 import { isAbsoluteURL } from './utils/url'
+import { getStatusText } from './utils/http-status'
 
 type Headers = { [key: string]: string }
+type Data = string | ArrayBuffer | ReadableStream
 
 export interface Env {}
 
@@ -12,7 +14,8 @@ export class Context {
   private _headers: Headers
   private _status: number
   private _statusText: string
-  body: (body: BodyInit, init?: ResponseInit) => Response
+
+  render: (template: string, params?: object, options?: object) => Promise<Response>
 
   constructor(req: Request, opts?: { res: Response; env: Env; event: FetchEvent }) {
     this.req = req
@@ -22,72 +25,88 @@ export class Context {
       this.event = opts.event
     }
     this._headers = {}
-    this.body = this.newResponse
   }
 
   header(name: string, value: string): void {
+    /*
+    XXX:
+    app.use('*', (c, next) => {
+      next()
+      c.header('foo', 'bar') // => c.res.headers.set(...)
+    })
+    */
+    if (this.res) {
+      this.res.headers.set(name, value)
+    }
     this._headers[name] = value
   }
 
   status(number: number): void {
+    if (this.res) {
+      console.warn('c.res.status is already setted.')
+      return
+    }
     this._status = number
+    this._statusText = getStatusText(number)
   }
 
-  statusText(text: string): void {
-    this._statusText = text
+  newResponse(data: Data, init: ResponseInit = {}): Response {
+    init.status = init.status || this._status
+    init.statusText = init.statusText || this._statusText
+
+    init.headers = { ...this._headers, ...init.headers }
+
+    // Content-Length
+    let length = 0
+    if (data) {
+      if (data instanceof ArrayBuffer) {
+        length = data.byteLength
+      } else if (typeof data == 'string') {
+        const Encoder = new TextEncoder()
+        length = Encoder.encode(data).byteLength || 0
+      }
+    }
+    init.headers = { ...init.headers, ...{ 'Content-Length': length.toString() } }
+
+    return new Response(data, init)
   }
 
-  newResponse(body: BodyInit, init: ResponseInit = {}): Response {
-    init.status = this._status || init.status
-    init.statusText = this._statusText || init.statusText
-    init.headers = { ...init.headers, ...this._headers }
-    return new Response(body, init)
+  body(data: Data, status: number = this._status, headers: Headers = this._headers): Response {
+    return this.newResponse(data, {
+      status: status,
+      headers: headers,
+    })
   }
 
-  text(text: string, status: number = 200, headers: Headers = {}): Response {
+  text(text: string, status: number = this._status, headers: Headers = {}): Response {
     if (typeof text !== 'string') {
       throw new TypeError('text method arg must be a string!')
     }
-
-    headers['Content-Type'] = 'text/plain'
-
-    return this.newResponse(text, {
-      status: status,
-      headers: headers,
-    })
+    headers['Content-Type'] ||= 'text/plain; charset=UTF-8'
+    return this.body(text, status, headers)
   }
 
-  json(object: object, status: number = 200, headers: Headers = {}): Response {
+  json(object: object, status: number = this._status, headers: Headers = {}): Response {
     if (typeof object !== 'object') {
       throw new TypeError('json method arg must be a object!')
     }
-
     const body = JSON.stringify(object)
-    headers['Content-Type'] = 'application/json; charset=UTF-8'
-
-    return this.newResponse(body, {
-      status: status,
-      headers: headers,
-    })
+    headers['Content-Type'] ||= 'application/json; charset=UTF-8'
+    return this.body(body, status, headers)
   }
 
-  html(html: string, status: number = 200, headers: Headers = {}): Response {
+  html(html: string, status: number = this._status, headers: Headers = {}): Response {
     if (typeof html !== 'string') {
       throw new TypeError('html method arg must be a string!')
     }
-    headers['Content-Type'] = 'text/html; charset=UTF-8'
-
-    return this.newResponse(html, {
-      status: status,
-      headers: headers,
-    })
+    headers['Content-Type'] ||= 'text/html; charset=UTF-8'
+    return this.body(html, status, headers)
   }
 
   redirect(location: string, status: number = 302): Response {
     if (typeof location !== 'string') {
       throw new TypeError('location must be a string!')
     }
-
     if (!isAbsoluteURL(location)) {
       const url = new URL(this.req.url)
       url.pathname = location

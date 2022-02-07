@@ -2,7 +2,6 @@ import type { Result } from './node'
 import { Node } from './node'
 import { compose } from './compose'
 import { getPathFromURL } from './utils/url'
-import { Middleware } from './middleware'
 import { Context } from './context'
 import type { Env } from './context'
 
@@ -11,7 +10,7 @@ const METHOD_NAME_OF_ALL = 'ALL'
 declare global {
   interface Request {
     param: (key: string) => string
-    query: (key: string) => string | null
+    query: (key: string) => string
     header: (name: string) => string
     parsedBody: any
   }
@@ -71,6 +70,7 @@ export class Hono {
   }
 
   /*
+  We may implement these HTTP methods:
   trace
   copy
   lock
@@ -127,11 +127,18 @@ export class Hono {
 
     const result = await this.matchRoute(method, path)
 
+    // Methods for Request object
     request.param = (key: string): string => {
       if (result) {
         return result.params[key]
       }
-      return ''
+    }
+    request.header = (name: string): string => {
+      return request.headers.get(name)
+    }
+    request.query = (key: string): string => {
+      const url = new URL(c.req.url)
+      return url.searchParams.get(key)
     }
 
     const handler = result ? result.handler[0] : this.notFound // XXX
@@ -146,14 +153,17 @@ export class Hono {
     }
 
     const wrappedHandler = async (context: Context, next: Function) => {
-      context.res = await handler(context)
+      const res = await handler(context)
+      if (!(res instanceof Response)) {
+        throw new TypeError('response must be a instace of Response')
+      }
+      context.res = res
       await next()
     }
 
-    middleware.push(Middleware.default)
     middleware.push(wrappedHandler)
 
-    const composed = compose(middleware)
+    const composed = compose<Context>(middleware)
     const c = new Context(request, { env: env, event: event, res: null })
     await composed(c)
 
@@ -161,13 +171,13 @@ export class Hono {
   }
 
   async handleEvent(event: FetchEvent): Promise<Response> {
-    return this.dispatch(event.request, {}, event).catch((err) => {
+    return this.dispatch(event.request, {}, event).catch((err: Error) => {
       return this.onError(err)
     })
   }
 
   async fetch(request: Request, env?: Env, event?: FetchEvent): Promise<Response> {
-    return this.dispatch(request, env, event).catch((err) => {
+    return this.dispatch(request, env, event).catch((err: Error) => {
       return this.onError(err)
     })
   }
@@ -178,12 +188,24 @@ export class Hono {
     })
   }
 
-  onError(err: any) {
-    console.error(err)
-    return new Response('Internal Server Error', { status: 500 })
+  onError(err: Error) {
+    console.error(`${err}`)
+    const message = 'Internal Server Error'
+    return new Response(message, {
+      status: 500,
+      headers: {
+        'Content-Length': message.length.toString(),
+      },
+    })
   }
 
   notFound() {
-    return new Response('Not Found', { status: 404 })
+    const message = 'Not Found'
+    return new Response('Not Found', {
+      status: 404,
+      headers: {
+        'Content-Length': message.length.toString(),
+      },
+    })
   }
 }

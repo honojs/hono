@@ -23,19 +23,19 @@ app.fire()
 **Hono is fastest** compared to other routers for Cloudflare Workers.
 
 ```plain
-hono x 748,188 ops/sec ±5.40% (77 runs sampled)
-itty-router x 158,817 ops/sec ±3.62% (87 runs sampled)
-sunder x 332,339 ops/sec ±1.11% (95 runs sampled)
-worktop x 205,906 ops/sec ±4.43% (83 runs sampled)
+hono x 708,671 ops/sec ±2.58% (58 runs sampled)
+itty-router x 159,610 ops/sec ±2.86% (87 runs sampled)
+sunder x 322,846 ops/sec ±2.24% (86 runs sampled)
+worktop x 223,625 ops/sec ±2.01% (95 runs sampled)
 Fastest is hono
-✨  Done in 52.79s.
+✨  Done in 57.83s.
 ```
 
 ## Hono in 1 minute
 
 Below is a demonstration to create an application of Cloudflare Workers with Hono.
 
-![Demo](https://user-images.githubusercontent.com/10682/148223268-2484a891-57c1-472f-9df3-936a5586f002.gif)
+![Demo](https://user-images.githubusercontent.com/10682/151973526-342644f9-71c5-4fee-81f4-64a7558bb192.gif)
 
 ## Install
 
@@ -114,6 +114,16 @@ app
     .put(() => {...})
 ```
 
+### Custom 404 Response
+
+You can customize 404 Not Found response:
+
+```js
+app.get('*', (c) => {
+  return c.text('Custom 404 Error', 404)
+})
+```
+
 ## async/await
 
 ```js
@@ -128,19 +138,24 @@ app.get('/fetch-url', async (c) => {
 ### Builtin Middleware
 
 ```js
-import { Hono, Middleware } from 'hono'
+import { Hono } from 'hono'
+import { poweredBy } from 'hono/powered-by'
+import { logger } from 'hono/logger'
+import { basicAuth } from 'hono/basicAuth'
 
-...
+const app = new Hono()
 
-app.use('*', Middleware.poweredBy())
-app.use('*', Middleware.logger())
+app.use('*', poweredBy())
+app.use('*', logger())
 app.use(
   '/auth/*',
-  Middleware.basicAuth({
+  basicAuth({
     username: 'hono',
     password: 'acoolproject',
   })
 )
+
+...
 ```
 
 Available builtin middleware are listed on [src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware).
@@ -165,19 +180,6 @@ app.use('/message/*', async (c, next) => {
 app.get('/message/hello', (c) => c.text('Hello Middleware!'))
 ```
 
-### Custom 404 Response
-
-You can customize 404 Not Found response:
-
-```js
-app.use('*', async (c, next) => {
-  await next()
-  if (c.res.status === 404) {
-    c.res = new Response('Custom 404 Not Found', { status: 404 })
-  }
-})
-```
-
 ### Handling Error
 
 ```js
@@ -186,7 +188,7 @@ app.use('*', async (c, next) => {
     await next()
   } catch (err) {
     console.error(`${err}`)
-    c.res = new Response('Custom Error Message', { status: 500 })
+    c.res = c.text('Custom Error Message', { status: 500 })
   }
 })
 ```
@@ -251,16 +253,18 @@ app.get('/welcome', (c) => {
   c.header('X-Message', 'Hello!')
   c.header('Content-Type', 'text/plain')
   c.status(201)
-  c.statusText('201 Content Created')
+
   return c.body('Thank you for comming')
+
   /*
   Same as:
   return new Response('Thank you for comming', {
     status: 201,
-    statusText: '201 Content Created',
+    statusText: 'Created',
     headers: {
       'X-Message': 'Hello',
-      'Content-Type': 'text/plain'
+      'Content-Type': 'text/plain',
+      'Content-Length: '22'
     }
   })
   */
@@ -358,6 +362,11 @@ export default {
     return app.fetch(request, env, event)
   },
 }
+
+/*
+or just do this:
+export default app
+*/
 ```
 
 ## Cloudflare Workers with Hono
