@@ -1,0 +1,16 @@
+{
+  "name": "hono-example-serve-static",
+  "version": "0.0.1",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "wrangler dev",
+    "publish": "wrangler publish"
+  },
+  "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
+  "license": "MIT",
+  "dependencies": {
+    "hono": "*"
+  }
+}

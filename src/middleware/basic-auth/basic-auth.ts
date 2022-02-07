@@ -1,8 +1,7 @@
 import type { Context } from '../../context'
-import { timingSafeEqual } from '../../utils/buffer'
+import { timingSafeEqual, decodeBase64 } from '../../utils/buffer'
 
-const CREDENTIALS_REGEXP =
-  /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
+const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/
 
 const auth = (req: Request) => {
@@ -32,30 +31,21 @@ const auth = (req: Request) => {
   return { username: userPass[1], password: userPass[2] }
 }
 
-function decodeBase64(str: string) {
-  return Buffer.from(str, 'base64').toString()
-}
-
-export const basicAuth = (options: {
-  username: string;
-  password: string;
-  realm?: string;
-}) => {
+export const basicAuth = (options: { username: string; password: string; realm?: string }) => {
   if (!options.realm) {
     options.realm = 'Secure Area'
   }
 
   return async (ctx: Context, next: Function) => {
     const user = auth(ctx.req)
-    const usernameEqual = user && await timingSafeEqual(options.username, user.username)
-    const passwordEqual = user && await timingSafeEqual(options.password, user.password)
+    const usernameEqual = user && (await timingSafeEqual(options.username, user.username))
+    const passwordEqual = user && (await timingSafeEqual(options.password, user.password))
 
     if (!user || !usernameEqual || !passwordEqual) {
       ctx.res = new Response('Unauthorized', {
         status: 401,
         headers: {
-          'WWW-Authenticate':
-            'Basic realm="' + options.realm.replace(/"/g, '\\"') + '"',
+          'WWW-Authenticate': 'Basic realm="' + options.realm.replace(/"/g, '\\"') + '"',
         },
       })
       return

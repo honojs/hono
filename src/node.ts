@@ -21,7 +21,7 @@ export class Node<T> {
   children: { [key: string]: Node<T> }
   middlewares: []
 
-  constructor(method?: string, handler?: any, children?: { [key: string]: Node<T> }) {
+  constructor(method?: string, handler?: T, children?: { [key: string]: Node<T> }) {
     this.children = children || {}
     this.method = {}
     if (method && handler) {

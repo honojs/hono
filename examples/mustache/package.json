@@ -1,0 +1,9 @@
+{
+  "name": "hono-example-mustache",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "mustache": "^4.2.0"
+  }
+}

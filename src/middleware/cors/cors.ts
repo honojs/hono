@@ -67,6 +67,9 @@ export const cors = (options?: CORSOptions) => {
         set('Vary', 'Access-Control-Request-Headers')
       }
 
+      c.res.headers.delete('Content-Length')
+      c.res.headers.delete('Content-Type')
+
       c.res = new Response(null, {
         headers: c.res.headers,
         status: 204,

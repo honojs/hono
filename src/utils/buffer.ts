@@ -19,20 +19,51 @@ export const equal = (a: ArrayBuffer, b: ArrayBuffer) => {
   return true
 }
 
-export const timingSafeEqual = async (a: any, b: any) => {
-  const sa = await crypto.subtle.digest(
-    {
-      name: 'SHA-256',
-    },
-    new TextEncoder().encode(String(a))
-  )
+export const decodeBase64 = (str: string) => {
+  try {
+    const text = atob(str)
+    const length = text.length
+    const bytes = new Uint8Array(length)
+    for (let i = 0; i < length; i++) {
+      bytes[i] = text.charCodeAt(i)
+    }
+    const decoder = new TextDecoder()
+    return decoder.decode(bytes)
+  } catch {}
 
-  const sb = await crypto.subtle.digest(
-    {
-      name: 'SHA-256',
-    },
-    new TextEncoder().encode(String(b))
-  )
+  try {
+    const { Buffer } = require('buffer')
+    return Buffer.from(str, 'base64').toString()
+  } catch (e) {
+    console.error('If you want to do "decodeBase64", polyfill "buffer" module.')
+    throw e
+  }
+}
 
-  return equal(sa, sb) && a === b
+export const sha256 = async (a: string | object | boolean): Promise<string> => {
+  if (crypto && crypto.subtle) {
+    const buffer = await crypto.subtle.digest(
+      {
+        name: 'SHA-256',
+      },
+      new TextEncoder().encode(String(a))
+    )
+    const hash = Array.prototype.map.call(new Uint8Array(buffer), (x) => ('00' + x.toString(16)).slice(-2)).join('')
+    return hash
+  }
+
+  try {
+    const crypto = require('crypto')
+    const hash = crypto.createHash('sha256').update(a).digest('hex')
+    return hash
+  } catch (e) {
+    console.error('If you want to do "sha256", polyfill "crypto" module.')
+    throw e
+  }
+}
+
+export const timingSafeEqual = async (a: string | object | boolean, b: string | object | boolean) => {
+  const sa = await sha256(a)
+  const sb = await sha256(b)
+  return sa === sb && a === b
 }
