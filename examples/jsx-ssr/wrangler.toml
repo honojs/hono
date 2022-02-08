@@ -1,9 +1,10 @@
 name = "hono-example-jsx-ssr"
-type = "webpack"
-route = ''
-zone_id = ''
-usage_model = ''
-compatibility_flags = []
-workers_dev = true
+type = "javascript"
+
 compatibility_date = "2022-01-08"
-webpack_config = "webpack.config.js"
+
+[build]
+command = "yarn run build"
+
+[build.upload]
+format = "service-worker"

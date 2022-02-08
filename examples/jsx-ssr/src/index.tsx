@@ -1,24 +1,19 @@
-import { Hono } from '../../../dist/index'
+import { Hono } from 'hono'
 import Nano from 'nano-jsx'
-import { Post } from './Post'
-import { Top } from './Top'
+import { render } from './renderer'
+import { Page } from './pages/page'
+import { Top } from './pages/top'
 
 const app = new Hono()
 
-// View
-const makeHTML = (body) => {
-  return `
-<!DOCTYPE html>
- <html>
-  <body>
-    ${body}
-  </body>
-</html>
-`
+// Model
+export type Post = {
+  id: string
+  title: string
+  body: string
 }
 
-// Model
-const posts = [
+const posts: Post[] = [
   { id: '1', title: 'Good Morning', body: 'Let us eat breakfast' },
   { id: '2', title: 'Good Afternoon', body: 'Let us eat Lunch' },
   { id: '3', title: 'Good Evening', body: 'Let us eat Dinner' },
@@ -31,19 +26,14 @@ const getPosts = () => {
   return posts
 }
 
-const getPost = (id) => {
-  for (const post of posts) {
-    if (post.id === id) {
-      return post
-    }
-  }
+const getPost = (id: string) => {
+  return posts.find((post) => post.id == id)
 }
 
 // Controller
 app.get('/', (c) => {
   const posts = getPosts()
-  const body = Nano.renderSSR(<Top posts={posts} />)
-  const html = makeHTML(body)
+  const html = render(<Top posts={posts} />)
   return c.html(html)
 })
 
@@ -53,8 +43,7 @@ app.get('/post/:id{[0-9]+}', (c) => {
   if (!post) {
     return c.text('Not Found', 404)
   }
-  const body = Nano.renderSSR(<Post post={post} />)
-  const html = makeHTML(body)
+  const html = render(<Page post={post} />)
   return c.html(html)
 })
 
