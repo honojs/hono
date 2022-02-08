@@ -201,7 +201,7 @@ export class Hono {
 
   notFound() {
     const message = 'Not Found'
-    return new Response('Not Found', {
+    return new Response(message, {
       status: 404,
       headers: {
         'Content-Length': message.length.toString(),
