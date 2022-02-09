@@ -43,7 +43,7 @@ export class Context {
 
   status(number: number): void {
     if (this.res) {
-      console.warn('c.res.status is already setted.')
+      console.warn('c.res.status is already set.')
       return
     }
     this._status = number
