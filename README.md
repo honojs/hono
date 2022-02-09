@@ -13,7 +13,7 @@ app.fire()
 
 ## Features
 
-- **Ultra fast** - the router is implemented with Trie-Tree structure.
+- **Ultra fast** - the router is implemented with Trie-Tree structure. Not use loops.
 - **Zero dependencies** - using only Web standard API.
 - **Middleware** - builtin middleware, and you can make your own middleware.
 - **Optimized** - for Cloudflare Workers.
@@ -174,7 +174,7 @@ app.use('*', async (c, next) => {
 // Add a custom header
 app.use('/message/*', async (c, next) => {
   await next()
-  await c.res.headers.add('x-message', 'This is middleware!')
+  await c.header('x-message', 'This is middleware!')
 })
 
 app.get('/message/hello', (c) => c.text('Hello Middleware!'))
@@ -193,30 +193,9 @@ app.use('*', async (c, next) => {
 })
 ```
 
-### Complex Pattern
-
-You can also do this:
-
-```js
-// Output response time
-app.use('*', async (c, next) => {
-  await next()
-  const responseTime = await c.res.headers.get('X-Response-Time')
-  console.log(`X-Response-Time: ${responseTime}`)
-})
-
-// Add X-Response-Time header
-app.use('*', async (c, next) => {
-  const start = Date.now()
-  await next()
-  const ms = Date.now() - start
-  await c.res.headers.append('X-Response-Time', `${ms}ms`)
-})
-```
-
 ## Context
 
-To handle Request and Reponse easily, you can use Context object:
+To handle Request and Reponse, you can use Context object:
 
 ### c.req
 
@@ -430,7 +409,7 @@ Run the development server locally. Then, access like `http://127.0.0.1:8787/` i
 wrangler dev
 ```
 
-### Publish
+### 7. Publish
 
 Deploy to Cloudflare. That's all!
 
