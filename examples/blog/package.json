@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "esbuild --bundle --outdir=dist ./src/index.ts",
-    "dev": "miniflare --live-reload --watch --debug",
+    "dev": "miniflare --live-reload --debug",
     "publish": "wrangler publish dist/index.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --verbose"
   },
@@ -21,7 +21,7 @@
     "jest": "^27.5.0",
     "jest-environment-miniflare": "^2.2.0",
     "jest-node-exports-resolver": "^1.1.5",
-    "miniflare": "^2.2.0",
+    "miniflare": "^2.3.0",
     "wrangler": "^0.0.15"
   }
 }
