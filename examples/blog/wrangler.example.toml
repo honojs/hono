@@ -1,13 +1,15 @@
 name = "hono-example-blog"
-type = "webpack"
-route = ''
-zone_id = ''
-usage_model = ''
-compatibility_flags = []
+type = "javascript"
 workers_dev = true
-compatibility_date = "2022-01-09"
-webpack_config = "webpack.config.js"
+
+compatibility_date = "2022-02-03"
 
 kv_namespaces = [
   { binding = "BLOG_EXAMPLE", preview_id = "", id = "" }
 ]
+
+[build]
+command = "yarn run build"
+
+[build.upload]
+format = "service-worker"
