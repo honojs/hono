@@ -2,28 +2,26 @@
   "name": "hono-example-blog",
   "version": "0.0.1",
   "description": "",
-  "main": "dist/worker.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "jest --verbose",
-    "build": "wrangler build",
-    "dev": "miniflare"
+    "build": "esbuild --bundle --outdir=dist ./src/index.ts",
+    "dev": "miniflare --live-reload --watch --debug",
+    "publish": "wrangler publish dist/index.js",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --verbose"
   },
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "license": "MIT",
   "dependencies": {
-    "hono": "*"
+    "hono": "^0.3.7"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^3.3.0",
-    "@cloudflare/wrangler": "^1.19.7",
-    "@types/jest": "^27.4.0",
-    "jest": "^27.4.7",
-    "jest-environment-miniflare": "^2.0.0",
-    "miniflare": "2.2.0",
-    "ts-jest": "^27.1.2",
-    "ts-loader": "~8.2.0",
-    "typescript": "^4.5.4",
-    "webpack": "~4.44.1",
-    "webpack-cli": "^4.9.1"
+    "@cloudflare/workers-types": "^3.3.1",
+    "esbuild": "^0.14.21",
+    "esbuild-jest": "^0.5.0",
+    "jest": "^27.5.0",
+    "jest-environment-miniflare": "^2.2.0",
+    "jest-node-exports-resolver": "^1.1.5",
+    "miniflare": "^2.2.0",
+    "wrangler": "^0.0.15"
   }
 }

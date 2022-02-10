@@ -1,7 +1,8 @@
 module.exports = {
-  testEnvironment: 'miniflare', // ✨
+  testEnvironment: 'miniflare',
   testMatch: ['**/test/**/*.+(ts|tsx|js)', '**/src/**/(*.)+(spec|test).+(ts|tsx|js)'],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': 'esbuild-jest',
   },
+  resolver: 'jest-node-exports-resolver',
 }

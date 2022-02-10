@@ -1,6 +1,7 @@
-import { Hono } from '../../../dist'
-import { bodyParse } from '../../../dist/middleware/body-parse/body-parse'
-import { cors } from '../../../dist/middleware/cors/cors'
+import { Hono } from 'hono'
+
+import { bodyParse } from 'hono/body-parse'
+import { cors } from 'hono/cors'
 
 import * as Controller from './controller'
 
