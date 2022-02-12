@@ -1,19 +1,6 @@
 name = "durable-objects-counter"
-# type = "javascript" is required to use the `[build]` section
 type = "javascript"
-account_id = ""
-workers_dev = true
-route = ""
-zone_id = ""
-compatibility_date = "2022-01-11"
-
-[build]
-command = "yarn build"
-[build.upload]
-# The "modules" upload format is required for all projects that export a Durable Objects class
-format = "modules"
-dir = "dist"
-main = "worker.mjs"
+compatibility_date = "2022-02-12"
 
 [durable_objects]
 bindings = [{name = "COUNTER", class_name = "Counter"}]
