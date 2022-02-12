@@ -8,16 +8,32 @@ import type { Env } from './context'
 const METHOD_NAME_OF_ALL = 'ALL'
 
 declare global {
-  interface Request {
-    param: (key: string) => string
+  interface Request<ParamKeyType = string> {
+    param: (key: ParamKeyType) => string
     query: (key: string) => string
     header: (name: string) => string
     parsedBody: any
   }
 }
 
-export type Handler = (c: Context, next?: Function) => Response | Promise<Response>
+export type Handler<RequestParamKeyType = string> = (
+  c: Context<RequestParamKeyType>,
+  next?: Function
+) => Response | Promise<Response>
 export type MiddlewareHandler = (c: Context, next: Function) => Promise<void>
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer _Pattern}`
+  ? Name
+  : NameWithPattern
+
+type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
+  ? ParamKeyName<NameWithPattern>
+  : never
+
+type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
+  ? ParamKey<Component> | ParamKeys<Rest>
+  : ParamKey<Path>
 
 export class Router<T> {
   node: Node<T>
@@ -47,24 +63,38 @@ export class Hono {
   }
 
   /* HTTP METHODS */
+  get<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
+  get(arg: Handler<never>, ...args: Handler<never>[]): Hono;
   get(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('get', arg, ...args)
   }
+  post<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
+  post(arg: Handler, ...args: Handler[]): Hono;
   post(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('post', arg, ...args)
   }
+  put<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
+  put(arg: Handler, ...args: Handler[]): Hono;
   put(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('put', arg, ...args)
   }
+  head<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
+  head(arg: Handler, ...args: Handler[]): Hono;
   head(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('head', arg, ...args)
   }
+  delete<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
+  delete(arg: Handler, ...args: Handler[]): Hono;
   delete(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('delete', arg, ...args)
   }
+  options<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
+  options(arg: Handler, ...args: Handler[]): Hono;
   options(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('options', arg, ...args)
   }
+  patch<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
+  patch(arg: Handler, ...args: Handler[]): Hono;
   patch(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('patch', arg, ...args)
   }
