@@ -1,5 +1,5 @@
-import { Hono } from '../../dist'
-import { mustache } from '../../src/middleware/mustache/mustache'
+import { Hono } from 'hono'
+import { mustache } from 'hono/mustache'
 
 const app = new Hono()
 
