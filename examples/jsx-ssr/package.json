@@ -8,16 +8,7 @@
     "dev": "miniflare --live-reload --debug",
     "publish": "wrangler publish dist/index.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/yusukebe/hono.git"
-  },
-  "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/yusukebe/hono/issues"
-  },
-  "homepage": "https://github.com/yusukebe/hono#readme",
   "dependencies": {
     "hono": "^0.3.7",
     "nano-jsx": "^0.0.29"
