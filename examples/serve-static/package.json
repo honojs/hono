@@ -5,12 +5,14 @@
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "wrangler dev",
-    "publish": "wrangler publish"
+    "dev": "wrangler dev src/index.js",
+    "publish": "wrangler publish src/index.js"
   },
-  "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "license": "MIT",
   "dependencies": {
-    "hono": "*"
+    "hono": "^0.3.7"
+  },
+  "devDependencies": {
+    "wrangler": "^0.0.16"
   }
 }
