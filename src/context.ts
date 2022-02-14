@@ -6,8 +6,8 @@ type Data = string | ArrayBuffer | ReadableStream
 
 export interface Env {}
 
-export class Context {
-  req: Request
+export class Context<RequestParamKeyType = string> {
+  req: Request<RequestParamKeyType>
   res: Response
   env: Env
   event: FetchEvent
@@ -17,7 +17,7 @@ export class Context {
 
   render: (template: string, params?: object, options?: object) => Promise<Response>
 
-  constructor(req: Request, opts?: { res: Response; env: Env; event: FetchEvent }) {
+  constructor(req: Request<RequestParamKeyType>, opts?: { res: Response; env: Env; event: FetchEvent }) {
     this.req = req
     if (opts) {
       this.res = opts.res
