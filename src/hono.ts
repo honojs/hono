@@ -116,6 +116,8 @@ export class Hono {
   connect
   */
 
+  all<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
+  all(arg: Handler<never>, ...args: Handler<never>[]): Hono;
   all(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('all', arg, ...args)
   }
