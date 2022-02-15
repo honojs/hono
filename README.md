@@ -138,6 +138,8 @@ const app = new Hono({ strict: false })
 app.get('/hello', (c) => c.text('/hello or /hello/'))
 ```
 
+Default is `true`.
+
 ## async/await
 
 ```js
