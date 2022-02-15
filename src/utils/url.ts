@@ -23,7 +23,17 @@ export const getPattern = (label: string): string[] | null => {
   return null
 }
 
-export const getPathFromURL = (url: string): string => {
+type Params = {
+  strict: boolean
+}
+
+export const getPathFromURL = (url: string, params: Params = { strict: true }): string => {
+  // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
+  // default is true
+  if (!params.strict && url.endsWith('/')) {
+    url = url.slice(0, -1)
+  }
+
   const match = url.match(URL_REGEXP)
   if (match) {
     return match[5]

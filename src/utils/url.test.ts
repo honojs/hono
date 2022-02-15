@@ -28,19 +28,35 @@ describe('url', () => {
     expect(res[1]).toBe('([0-9]+)')
   })
 
-  it('getPathFromURL', () => {
-    let path = getPathFromURL('https://example.com/')
-    expect(path).toBe('/')
-    path = getPathFromURL('https://example.com/hello')
-    expect(path).toBe('/hello')
-    path = getPathFromURL('https://example.com/hello/hey')
-    expect(path).toBe('/hello/hey')
-    path = getPathFromURL('https://example.com/hello?name=foo')
-    expect(path).toBe('/hello')
-    path = getPathFromURL('https://example.com/hello/hey?name=foo&name=bar')
-    expect(path).toBe('/hello/hey')
-    path = getPathFromURL('https://example.com/hello/hey#fragment')
-    expect(path).toBe('/hello/hey')
+  describe('getPathFromURL', () => {
+    it('getPathFromURL - no trailing slash', () => {
+      let path = getPathFromURL('https://example.com/')
+      expect(path).toBe('/')
+      path = getPathFromURL('https://example.com/hello')
+      expect(path).toBe('/hello')
+      path = getPathFromURL('https://example.com/hello/hey')
+      expect(path).toBe('/hello/hey')
+      path = getPathFromURL('https://example.com/hello?name=foo')
+      expect(path).toBe('/hello')
+      path = getPathFromURL('https://example.com/hello/hey?name=foo&name=bar')
+      expect(path).toBe('/hello/hey')
+      path = getPathFromURL('https://example.com/hello/hey#fragment')
+      expect(path).toBe('/hello/hey')
+    })
+
+    it('getPathFromURL - with trailing slash', () => {
+      let path = getPathFromURL('https://example.com/hello/')
+      expect(path).toBe('/hello/')
+      path = getPathFromURL('https://example.com/hello/hey/')
+      expect(path).toBe('/hello/hey/')
+    })
+
+    it('getPathFromURL - no strict is false', () => {
+      let path = getPathFromURL('https://example.com/hello/', { strict: false })
+      expect(path).toBe('/hello')
+      path = getPathFromURL('https://example.com/hello/hey/', { strict: false })
+      expect(path).toBe('/hello/hey')
+    })
   })
 
   describe('isAbsoluteURL', () => {

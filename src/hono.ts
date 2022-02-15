@@ -51,50 +51,62 @@ export class Router<T> {
   }
 }
 
+type Init = {
+  strict?: boolean
+}
+
 export class Hono {
   router: Router<Handler[]>
   middlewareRouters: Router<MiddlewareHandler>[]
   tempPath: string
+  strict: boolean
 
-  constructor() {
+  constructor(init: Init = { strict: true }) {
     this.router = new Router()
     this.middlewareRouters = []
     this.tempPath = '/'
+    this.strict = init.strict // strict routing - default is true
   }
 
   /* HTTP METHODS */
-  get<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
-  get(arg: Handler<never>, ...args: Handler<never>[]): Hono;
+  get<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  get(arg: Handler<never>, ...args: Handler<never>[]): Hono
   get(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('get', arg, ...args)
   }
-  post<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
-  post(arg: Handler, ...args: Handler[]): Hono;
+
+  post<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  post(arg: Handler, ...args: Handler[]): Hono
   post(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('post', arg, ...args)
   }
-  put<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
-  put(arg: Handler, ...args: Handler[]): Hono;
+
+  put<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  put(arg: Handler, ...args: Handler[]): Hono
   put(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('put', arg, ...args)
   }
-  head<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
-  head(arg: Handler, ...args: Handler[]): Hono;
+
+  head<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  head(arg: Handler, ...args: Handler[]): Hono
   head(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('head', arg, ...args)
   }
-  delete<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
-  delete(arg: Handler, ...args: Handler[]): Hono;
+
+  delete<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  delete(arg: Handler, ...args: Handler[]): Hono
   delete(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('delete', arg, ...args)
   }
-  options<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
-  options(arg: Handler, ...args: Handler[]): Hono;
+
+  options<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  options(arg: Handler, ...args: Handler[]): Hono
   options(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('options', arg, ...args)
   }
-  patch<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
-  patch(arg: Handler, ...args: Handler[]): Hono;
+
+  patch<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  patch(arg: Handler, ...args: Handler[]): Hono
   patch(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('patch', arg, ...args)
   }
@@ -116,8 +128,8 @@ export class Hono {
   connect
   */
 
-  all<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]) : Hono;
-  all(arg: Handler<never>, ...args: Handler<never>[]): Hono;
+  all<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  all(arg: Handler<never>, ...args: Handler<never>[]): Hono
   all(arg: string | Handler, ...args: Handler[]): Hono {
     return this.addRoute('all', arg, ...args)
   }
@@ -155,7 +167,8 @@ export class Hono {
   }
 
   async dispatch(request: Request, env?: Env, event?: FetchEvent): Promise<Response> {
-    const [method, path] = [request.method, getPathFromURL(request.url)]
+    const path = getPathFromURL(request.url, { strict: this.strict })
+    const method = request.method
 
     const result = await this.matchRoute(method, path)
 
