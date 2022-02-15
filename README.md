@@ -124,6 +124,16 @@ app.get('*', (c) => {
 })
 ```
 
+### no strict
+
+If `strict` is set `false`, `/hello`and`/hello/` are treated the same:
+
+```js
+const app = new Hono({ strict: false })
+
+app.get('/hello', (c) => c.text('/hello or /hello/'))
+```
+
 ## async/await
 
 ```js

@@ -50,6 +50,65 @@ describe('GET Request', () => {
   })
 })
 
+describe('strict parameter', () => {
+  describe('strict is true with not slash', () => {
+    const app = new Hono()
+
+    app.get('/hello', (c) => {
+      return c.text('/hello')
+    })
+
+    it('/hello/ is not found', async () => {
+      let req = new Request('http://localhost/hello')
+      let res = await app.dispatch(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      req = new Request('http://localhost/hello/')
+      res = await app.dispatch(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(404)
+    })
+  })
+
+  describe('strict is true with slash', () => {
+    const app = new Hono()
+
+    app.get('/hello/', (c) => {
+      return c.text('/hello/')
+    })
+
+    it('/hello is not found', async () => {
+      let req = new Request('http://localhost/hello/')
+      let res = await app.dispatch(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      req = new Request('http://localhost/hello')
+      res = await app.dispatch(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(404)
+    })
+  })
+
+  describe('strict is false', () => {
+    const app = new Hono({ strict: false })
+
+    app.get('/hello', (c) => {
+      return c.text('/hello')
+    })
+
+    it('/hello and /hello/ are treated as the same', async () => {
+      let req = new Request('http://localhost/hello')
+      let res = await app.dispatch(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      req = new Request('http://localhost/hello/')
+      res = await app.dispatch(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+    })
+  })
+})
+
 describe('Routing', () => {
   const app = new Hono()
 
