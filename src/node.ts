@@ -1,11 +1,11 @@
 import { splitPath, getPattern } from './utils/url'
 
-const METHOD_NAME_OF_ALL = 'ALL'
+export const METHOD_NAME_OF_ALL = 'ALL'
 
 export class Result<T> {
   handler: T
-  params: { [key: string]: string }
-  constructor(handler: T, params: { [key: string]: string }) {
+  params: Record<string, string>
+  constructor(handler: T, params: Record<string, string>) {
     this.handler = handler
     this.params = params
   }
@@ -16,12 +16,12 @@ const noRoute = (): null => {
 }
 
 export class Node<T> {
-  method: { [key: string]: T }
+  method: Record<string, T>
   handler: T
-  children: { [key: string]: Node<T> }
+  children: Record<string, Node<T>>
   middlewares: []
 
-  constructor(method?: string, handler?: T, children?: { [key: string]: Node<T> }) {
+  constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
     this.children = children || {}
     this.method = {}
     if (method && handler) {
