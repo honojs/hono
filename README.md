@@ -37,9 +37,13 @@ Below is a demonstration to create an application of Cloudflare Workers with Hon
 
 ![Demo](https://user-images.githubusercontent.com/10682/151973526-342644f9-71c5-4fee-81f4-64a7558bb192.gif)
 
+Now, the named path parameter has types.
+
+![Demo](https://user-images.githubusercontent.com/10682/154018316-50456d41-eefd-4ec9-b444-2d6f22def99d.png)
+
 ## Install
 
-You can install from npm registry:
+You can install Hono from npm registry:
 
 ```sh
 yarn add hono
@@ -449,6 +453,10 @@ Contributions Welcome! You can contribute by the following way:
 - etc.
 
 If you can, let's make Hono together!
+
+## Contributors
+
+Thanks to [all contributors](https://github.com/yusukebe/hono/graphs/contributors)!
 
 ## Author
 
