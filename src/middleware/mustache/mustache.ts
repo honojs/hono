@@ -4,18 +4,18 @@ import { getContentFromKVAsset, getKVFilePath } from '../../utils/cloudflare'
 const EXTENSION = '.mustache'
 const DEFAULT_DOCUMENT = 'index.mustache'
 
-type Partials = { [file: string]: string }
+type Partials = Record<string, string>
 
 interface Mustache {
   render: (content: string, params: object, partials: Partials) => string
 }
 
-type Options = {
+type Init = {
   root: string
 }
 
-export const mustache = (opt: Options = { root: '' }) => {
-  const { root } = opt
+export const mustache = (init: Init = { root: '' }) => {
+  const { root } = init
 
   return async (c: Context, next: Function) => {
     let Mustache: Mustache
@@ -26,7 +26,11 @@ export const mustache = (opt: Options = { root: '' }) => {
     }
 
     c.render = async (filename, params = {}, options?) => {
-      const path = getKVFilePath({ filename: `${filename}${EXTENSION}`, root: root, defaultDocument: DEFAULT_DOCUMENT })
+      const path = getKVFilePath({
+        filename: `${filename}${EXTENSION}`,
+        root: root,
+        defaultDocument: DEFAULT_DOCUMENT,
+      })
 
       const buffer = await getContentFromKVAsset(path)
       if (!buffer) {
@@ -34,7 +38,8 @@ export const mustache = (opt: Options = { root: '' }) => {
       }
       const content = bufferToString(buffer)
 
-      const partialArgs: { [name: string]: string } = {}
+      const partialArgs: Record<string, string> = {}
+
       if (options) {
         const partials = options as Partials
         for (const key of Object.keys(partials)) {
@@ -54,6 +59,7 @@ export const mustache = (opt: Options = { root: '' }) => {
       const output = Mustache.render(content, params, partialArgs)
       return c.html(output)
     }
+
     await next()
   }
 }
