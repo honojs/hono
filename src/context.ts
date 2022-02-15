@@ -1,7 +1,7 @@
 import { isAbsoluteURL } from './utils/url'
 import { getStatusText } from './utils/http-status'
 
-type Headers = { [key: string]: string }
+type Headers = Record<string, string>
 type Data = string | ArrayBuffer | ReadableStream
 
 export interface Env {}
@@ -17,7 +17,10 @@ export class Context<RequestParamKeyType = string> {
 
   render: (template: string, params?: object, options?: object) => Promise<Response>
 
-  constructor(req: Request<RequestParamKeyType>, opts?: { res: Response; env: Env; event: FetchEvent }) {
+  constructor(
+    req: Request<RequestParamKeyType>,
+    opts?: { res: Response; env: Env; event: FetchEvent }
+  ) {
     this.req = req
     if (opts) {
       this.res = opts.res

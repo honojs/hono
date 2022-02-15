@@ -1,17 +1,16 @@
 import type { Result } from './node'
-import { Node } from './node'
+import { Node, METHOD_NAME_OF_ALL } from './node'
 import { compose } from './compose'
 import { getPathFromURL } from './utils/url'
 import { Context } from './context'
 import type { Env } from './context'
-
-const METHOD_NAME_OF_ALL = 'ALL'
 
 declare global {
   interface Request<ParamKeyType = string> {
     param: (key: ParamKeyType) => string
     query: (key: string) => string
     header: (name: string) => string
+    // TODO: do not use `any`
     parsedBody: any
   }
 }
