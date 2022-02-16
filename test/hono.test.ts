@@ -123,46 +123,46 @@ describe('Routing', () => {
     expect(await res.text()).toBe('delete /')
   })
 
-  it('Chained route', async () => {
-    app
-      .route('/route')
-      .get(() => new Response('get /route'))
-      .post(() => new Response('post /route'))
-      .put(() => new Response('put /route'))
-    let req = new Request('http://localhost/route', { method: 'GET' })
+  it('Nested route', async () => {
+    const book = app.route('/book')
+    book.get('/', (c) => c.text('get /book'))
+    book.get('/:id', (c) => {
+      return c.text('get /book/' + c.req.param('id'))
+    })
+    book.post('/', (c) => c.text('post /book'))
+
+    const user = app.route('/user')
+    user.get('/login', (c) => c.text('get /user/login'))
+    user.post('/regist', (c) => c.text('post /user/regist'))
+
+    let req = new Request('http://localhost/book', { method: 'GET' })
     let res = await app.dispatch(req)
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('get /route')
+    expect(await res.text()).toBe('get /book')
 
-    req = new Request('http://localhost/route', { method: 'POST' })
+    req = new Request('http://localhost/book/123', { method: 'GET' })
     res = await app.dispatch(req)
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('post /route')
+    expect(await res.text()).toBe('get /book/123')
 
-    req = new Request('http://localhost/route', { method: 'DELETE' })
+    req = new Request('http://localhost/book', { method: 'POST' })
+    res = await app.dispatch(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('post /book')
+
+    req = new Request('http://localhost/book/', { method: 'GET' })
     res = await app.dispatch(req)
     expect(res.status).toBe(404)
-  })
 
-  it('Chained route without route method', async () => {
-    app
-      .get('/without-route', () => new Response('get /without-route'))
-      .post(() => new Response('post /without-route'))
-      .put(() => new Response('put /without-route'))
-
-    let req = new Request('http://localhost/without-route', { method: 'GET' })
-    let res = await app.dispatch(req)
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('get /without-route')
-
-    req = new Request('http://localhost/without-route', { method: 'POST' })
+    req = new Request('http://localhost/user/login', { method: 'GET' })
     res = await app.dispatch(req)
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('post /without-route')
+    expect(await res.text()).toBe('get /user/login')
 
-    req = new Request('http://localhost/without-route', { method: 'DELETE' })
+    req = new Request('http://localhost/user/regist', { method: 'POST' })
     res = await app.dispatch(req)
-    expect(res.status).toBe(404)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('post /user/regist')
   })
 })
 

@@ -1,7 +1,7 @@
 import type { Result } from './node'
 import { Node, METHOD_NAME_OF_ALL } from './node'
 import { compose } from './compose'
-import { getPathFromURL } from './utils/url'
+import { getPathFromURL, mergePath } from './utils/url'
 import { Context } from './context'
 import type { Env } from './context'
 
@@ -63,101 +63,75 @@ export class Hono {
   constructor(init: Init = { strict: true }) {
     this.router = new Router()
     this.middlewareRouters = []
-    this.tempPath = '/'
+    this.tempPath = null
     this.strict = init.strict // strict routing - default is true
   }
 
   /* HTTP METHODS */
-  get<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  get(arg: Handler<never>, ...args: Handler<never>[]): Hono
-  get(arg: string | Handler, ...args: Handler[]): Hono {
-    return this.addRoute('get', arg, ...args)
+  get<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  get(path: string, ...args: Handler[]): Hono {
+    return this.addRoute('get', path, ...args)
   }
 
-  post<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  post(arg: Handler, ...args: Handler[]): Hono
-  post(arg: string | Handler, ...args: Handler[]): Hono {
-    return this.addRoute('post', arg, ...args)
+  post<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  post(path: string, ...args: Handler[]): Hono {
+    return this.addRoute('post', path, ...args)
   }
 
-  put<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  put(arg: Handler, ...args: Handler[]): Hono
-  put(arg: string | Handler, ...args: Handler[]): Hono {
-    return this.addRoute('put', arg, ...args)
+  put<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  put(path: string, ...args: Handler[]): Hono {
+    return this.addRoute('put', path, ...args)
   }
 
-  head<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  head(arg: Handler, ...args: Handler[]): Hono
-  head(arg: string | Handler, ...args: Handler[]): Hono {
-    return this.addRoute('head', arg, ...args)
+  head<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  head(path: string, ...args: Handler[]): Hono {
+    return this.addRoute('head', path, ...args)
   }
 
-  delete<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  delete(arg: Handler, ...args: Handler[]): Hono
-  delete(arg: string | Handler, ...args: Handler[]): Hono {
-    return this.addRoute('delete', arg, ...args)
+  delete<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  delete(path: string, ...args: Handler[]): Hono {
+    return this.addRoute('delete', path, ...args)
   }
 
-  options<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  options(arg: Handler, ...args: Handler[]): Hono
-  options(arg: string | Handler, ...args: Handler[]): Hono {
-    return this.addRoute('options', arg, ...args)
+  options<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  options(path: string, ...args: Handler[]): Hono {
+    return this.addRoute('options', path, ...args)
   }
 
-  patch<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  patch(arg: Handler, ...args: Handler[]): Hono
-  patch(arg: string | Handler, ...args: Handler[]): Hono {
-    return this.addRoute('patch', arg, ...args)
+  patch<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  patch(path: string, ...args: Handler[]): Hono {
+    return this.addRoute('patch', path, ...args)
   }
 
-  /*
-  We may implement these HTTP methods:
-  trace
-  copy
-  lock
-  purge
-  unlock
-  report
-  checkout
-  merge
-  notify
-  subscribe
-  unsubscribe
-  search
-  connect
-  */
-
-  all<Path extends string>(arg: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  all(arg: Handler<never>, ...args: Handler<never>[]): Hono
-  all(arg: string | Handler, ...args: Handler[]): Hono {
-    return this.addRoute('all', arg, ...args)
+  /* Any methods */
+  all<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
+  all(path: string, ...args: Handler[]): Hono {
+    return this.addRoute('all', path, ...args)
   }
 
   route(path: string): Hono {
-    this.tempPath = path
-    return this
+    const newHono: Hono = new Hono()
+    newHono.tempPath = path
+    newHono.router = this.router
+    return newHono
   }
 
   use(path: string, middleware: MiddlewareHandler): void {
     if (middleware.constructor.name !== 'AsyncFunction') {
       throw new TypeError('middleware must be a async function!')
     }
-
     const router = new Router<MiddlewareHandler>()
     router.add(METHOD_NAME_OF_ALL, path, middleware)
     this.middlewareRouters.push(router)
   }
 
   // addRoute('get', '/', handler)
-  addRoute(method: string, arg: string | Handler, ...args: Handler[]): Hono {
+  addRoute(method: string, path: string, ...args: Handler[]): Hono {
     method = method.toUpperCase()
-    if (typeof arg === 'string') {
-      this.tempPath = arg
-      this.router.add(method, arg, args)
-    } else {
-      args.unshift(arg)
-      this.router.add(method, this.tempPath, args)
+    if (this.tempPath) {
+      path = mergePath(this.tempPath, path)
     }
+    this.router.add(method, path, args)
     return this
   }
 
