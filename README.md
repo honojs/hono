@@ -39,7 +39,7 @@ Below is a demonstration to create an application of Cloudflare Workers with Hon
 
 Now, the named path parameter has types.
 
-![Demo](https://user-images.githubusercontent.com/10682/154018316-50456d41-eefd-4ec9-b444-2d6f22def99d.png)
+![Demo](https://user-images.githubusercontent.com/10682/154179671-9e491597-6778-44ac-a8e6-4483d7ad5393.png)
 
 ## Install
 
@@ -57,7 +57,7 @@ npm install hono
 
 ## Methods
 
-Instance of `Hono` has these methods:
+An instance of `Hono` has these methods:
 
 - app.**HTTP_METHOD**(path, handler)
 - app.**all**(path, handler)
@@ -108,14 +108,17 @@ app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (c) => {
   ...
 ```
 
-### Chained Route
+### Nested route
 
 ```js
-app
-  .route('/api/book')
-    .get(() => {...})
-    .post(() => {...})
-    .put(() => {...})
+const book = app.route('/book')
+book.get('/', (c) => c.text('List Books')) // => GET /book
+book.get('/:id', (c) => {
+  // => GET /book/:id
+  const id = c.req.param('id')
+  return c.text('Get Book: ' + id)
+})
+book.post('/', (c) => c.text('Create Book')) // => POST /book
 ```
 
 ### Custom 404 Response
@@ -163,15 +166,7 @@ const app = new Hono()
 
 app.use('*', poweredBy())
 app.use('*', logger())
-app.use(
-  '/auth/*',
-  basicAuth({
-    username: 'hono',
-    password: 'acoolproject',
-  })
-)
-
-...
+app.use('/auth/*', basicAuth({ username: 'hono', password: 'acoolproject' }))
 ```
 
 Available builtin middleware are listed on [src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware).

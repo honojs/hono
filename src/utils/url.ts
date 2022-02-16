@@ -48,3 +48,30 @@ export const isAbsoluteURL = (url: string): boolean => {
   }
   return false
 }
+
+export const mergePath = (...paths: string[]): string => {
+  let p: string = ''
+  let endsWithSlash = false
+
+  for (let path of paths) {
+    /* ['/hey/','/say'] => ['/hey', '/say'] */
+    if (p.endsWith('/')) {
+      p = p.slice(0, -1)
+      endsWithSlash = true
+    }
+
+    /* ['/hey','say'] => ['/hey', '/say'] */
+    if (!path.startsWith('/')) {
+      path = `/${path}`
+    }
+
+    /* ['/hey/', '/'] => `/hey/` */
+    if (path === '/' && endsWithSlash) {
+      p = `${p}/`
+    } else if (path !== '/') {
+      p = `${p}${path}`
+    }
+  }
+
+  return p
+}

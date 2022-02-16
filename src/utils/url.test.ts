@@ -1,4 +1,4 @@
-import { splitPath, getPattern, getPathFromURL, isAbsoluteURL } from './url'
+import { splitPath, getPattern, getPathFromURL, isAbsoluteURL, mergePath } from './url'
 
 describe('url', () => {
   it('splitPath', () => {
@@ -68,6 +68,26 @@ describe('url', () => {
       expect(isAbsoluteURL('/')).not.toBeTruthy()
       expect(isAbsoluteURL('/location')).not.toBeTruthy()
       expect(isAbsoluteURL('')).not.toBeTruthy()
+    })
+  })
+
+  describe('mergePath', () => {
+    it('mergePath', () => {
+      expect(mergePath('/book', '/')).toBe('/book')
+      expect(mergePath('/book/', '/')).toBe('/book/')
+      expect(mergePath('/book', '/hey')).toBe('/book/hey')
+      expect(mergePath('/book/', '/hey')).toBe('/book/hey')
+      expect(mergePath('/book', '/hey/')).toBe('/book/hey/')
+      expect(mergePath('/book/', '/hey/')).toBe('/book/hey/')
+      expect(mergePath('/book', 'hey', 'say')).toBe('/book/hey/say')
+      expect(mergePath('/book', '/hey/', '/say/')).toBe('/book/hey/say/')
+      expect(mergePath('/book', '/hey/', '/say/', '/')).toBe('/book/hey/say/')
+
+      expect(mergePath('book', '/')).toBe('/book')
+      expect(mergePath('book/', '/')).toBe('/book/')
+      expect(mergePath('book', '/hey')).toBe('/book/hey')
+      expect(mergePath('book', 'hey')).toBe('/book/hey')
+      expect(mergePath('book', 'hey/')).toBe('/book/hey/')
     })
   })
 })
