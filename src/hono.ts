@@ -1,9 +1,10 @@
-import type { Result } from './node'
-import { Node, METHOD_NAME_OF_ALL } from './node'
+import { Node } from './node'
 import { compose } from './compose'
 import { getPathFromURL, mergePath } from './utils/url'
 import { Context } from './context'
 import type { Env } from './context'
+import type { Result } from './router'
+import { Router, METHOD_NAME_OF_ALL } from './router'
 
 declare global {
   interface Request<ParamKeyType = string> {
@@ -34,10 +35,11 @@ type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 
-export class Router<T> {
+export class TrieRouter<T> extends Router<T> {
   node: Node<T>
 
   constructor() {
+    super()
     this.node = new Node()
   }
 
@@ -50,21 +52,19 @@ export class Router<T> {
   }
 }
 
-type Init = {
-  strict?: boolean
-}
-
 export class Hono {
+  routerClass: { new (): Router<any> } = TrieRouter
+  strict: boolean = true // strict routing - default is true
   router: Router<Handler>
   middlewareRouters: Router<MiddlewareHandler>[]
   tempPath: string
-  strict: boolean
 
-  constructor(init: Init = { strict: true }) {
-    this.router = new Router()
+  constructor(init: Partial<Pick<Hono, 'routerClass' | 'strict'>> = {}) {
+    Object.assign(this, init)
+
+    this.router = new this.routerClass()
     this.middlewareRouters = []
     this.tempPath = null
-    this.strict = init.strict // strict routing - default is true
   }
 
   /* HTTP METHODS */
@@ -120,7 +120,7 @@ export class Hono {
     if (middleware.constructor.name !== 'AsyncFunction') {
       throw new TypeError('middleware must be a async function!')
     }
-    const router = new Router<MiddlewareHandler>()
+    const router = new this.routerClass()
     router.add(METHOD_NAME_OF_ALL, path, middleware)
     this.middlewareRouters.push(router)
   }

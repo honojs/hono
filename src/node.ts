@@ -1,16 +1,6 @@
 import type { Pattern } from './utils/url'
 import { splitPath, getPattern } from './utils/url'
-
-export const METHOD_NAME_OF_ALL = 'ALL'
-
-export class Result<T> {
-  handler: T
-  params: Record<string, string>
-  constructor(handler: T, params: Record<string, string>) {
-    this.handler = handler
-    this.params = params
-  }
-}
+import { Result, METHOD_NAME_OF_ALL } from './router'
 
 const noRoute = (): null => {
   return null

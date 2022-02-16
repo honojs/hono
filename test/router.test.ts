@@ -1,7 +1,7 @@
-import { Router } from '../src/hono'
+import { TrieRouter } from '../src/hono'
 
 describe('Basic Usage', () => {
-  const router = new Router<string>()
+  const router = new TrieRouter<string>()
 
   router.add('GET', '/hello', 'get hello')
   router.add('POST', '/hello', 'post hello')
@@ -24,7 +24,7 @@ describe('Basic Usage', () => {
 })
 
 describe('Complex', () => {
-  const router = new Router<string>()
+  const router = new TrieRouter<string>()
 
   it('Named Param', async () => {
     router.add('GET', '/entry/:id', 'get entry')
