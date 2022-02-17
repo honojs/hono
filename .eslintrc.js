@@ -6,6 +6,7 @@ module.exports = defineConfig({
     'eslint:recommended',
     'plugin:node/recommended',
     'plugin:@typescript-eslint/recommended',
+    'prettier',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
@@ -31,22 +32,18 @@ module.exports = defineConfig({
         destructuring: 'all',
       },
     ],
-    '@typescript-eslint/ban-types': ['error', {
-      types: {
-        'Function': false,
-      }
-    }],
+    '@typescript-eslint/ban-types': [
+      'error',
+      {
+        types: {
+          Function: false,
+        },
+      },
+    ],
     'node/no-missing-import': [
       'error',
       {
-        allowModules: [
-          'types',
-          'estree',
-          'testUtils',
-          'less',
-          'sass',
-          'stylus',
-        ],
+        allowModules: ['types', 'estree', 'testUtils', 'less', 'sass', 'stylus'],
         tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts'],
       },
     ],
@@ -61,16 +58,10 @@ module.exports = defineConfig({
     'node/no-unpublished-require': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
 
-    '@typescript-eslint/no-empty-function': [
-      'error',
-      { allow: ['arrowFunctions'] },
-    ],
+    '@typescript-eslint/no-empty-function': ['error', { allow: ['arrowFunctions'] }],
     '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
     '@typescript-eslint/no-var-requires': 'off',
-    '@typescript-eslint/consistent-type-imports': [
-      'error',
-      { prefer: 'type-imports' },
-    ],
+    '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
   },
 })

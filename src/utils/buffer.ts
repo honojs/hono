@@ -48,7 +48,9 @@ export const sha256 = async (a: string | object | boolean): Promise<string> => {
       },
       new TextEncoder().encode(String(a))
     )
-    const hash = Array.prototype.map.call(new Uint8Array(buffer), (x) => ('00' + x.toString(16)).slice(-2)).join('')
+    const hash = Array.prototype.map
+      .call(new Uint8Array(buffer), (x) => ('00' + x.toString(16)).slice(-2))
+      .join('')
     return hash
   }
 
@@ -62,7 +64,10 @@ export const sha256 = async (a: string | object | boolean): Promise<string> => {
   }
 }
 
-export const timingSafeEqual = async (a: string | object | boolean, b: string | object | boolean) => {
+export const timingSafeEqual = async (
+  a: string | object | boolean,
+  b: string | object | boolean
+) => {
   const sa = await sha256(a)
   const sb = await sha256(b)
   return sa === sb && a === b
