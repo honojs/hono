@@ -1,3 +1,4 @@
+import type { Pattern } from './utils/url'
 import { splitPath, getPattern } from './utils/url'
 
 export const METHOD_NAME_OF_ALL = 'ALL'
@@ -20,6 +21,7 @@ export class Node<T> {
   handler: T
   children: Record<string, Node<T>>
   middlewares: []
+  patterns: Pattern[]
 
   constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
     this.children = children || {}
@@ -28,6 +30,7 @@ export class Node<T> {
       this.method[method] = handler
     }
     this.middlewares = []
+    this.patterns = []
   }
 
   insert(method: string, path: string, handler: T): Node<T> {
@@ -41,6 +44,11 @@ export class Node<T> {
         continue
       }
       curNode.children[p] = new Node()
+      const pattern = getPattern(p)
+      if (pattern) {
+        curNode.patterns.push(pattern)
+      }
+
       curNode = curNode.children[p]
     }
     curNode.method[method] = handler
@@ -79,31 +87,27 @@ export class Node<T> {
 
       let isWildcard = false
       let isParamMatch = false
-      const keys = Object.keys(curNode.children)
 
-      for (let j = 0, len = keys.length; j < len; j++) {
-        const key: string = keys[j]
+      for (let j = 0, len = curNode.patterns.length; j < len; j++) {
+        const pattern = curNode.patterns[j]
 
         // Wildcard
         // '/hello/*/foo' => match /hello/bar/foo
-        if (key === '*') {
+        if (pattern === '*') {
           curNode = curNode.children['*']
           isWildcard = true
           break
         }
-        const pattern = getPattern(key)
+
         // Named match
-        if (pattern) {
-          const match = p.match(new RegExp(pattern[1]))
-          if (match) {
-            const k: string = pattern[0]
-            params[k] = match[1]
-            curNode = curNode.children[key]
-            isParamMatch = true
-            break
-          }
-          return noRoute()
+        const [key, name, matcher] = pattern
+        if (p !== '' && (matcher === true || matcher.test(p))) {
+          params[name] = p
+          curNode = curNode.children[key]
+          isParamMatch = true
+          break
         }
+        return noRoute()
       }
 
       if (isWildcard && i === len - 1) {

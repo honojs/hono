@@ -1,5 +1,7 @@
 const URL_REGEXP = /^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/
 
+export type Pattern = [string, string, RegExp | true] | '*'
+
 export const splitPath = (path: string): string[] => {
   const paths = path.split(/\//) // faster than path.split('/')
   if (paths[0] === '') {
@@ -8,16 +10,22 @@ export const splitPath = (path: string): string[] => {
   return paths
 }
 
-export const getPattern = (label: string): string[] | null => {
+export const getPattern = (label: string): Pattern | null => {
+  // *            => wildcard
   // :id{[0-9]+}  => ([0-9]+)
   // :id          => (.+)
   //const name = ''
+
+  if (label === '*') {
+    return '*'
+  }
+
   const match = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
   if (match) {
     if (match[2]) {
-      return [match[1], '(' + match[2] + ')']
+      return [label, match[1], new RegExp('^' + match[2] + '$')]
     } else {
-      return [match[1], '(.+)']
+      return [label, match[1], true]
     }
   }
   return null
