@@ -10,7 +10,7 @@ export const splitPath = (path: string): string[] => {
   return paths
 }
 
-const patternCache: {[key: string]: Pattern} = {}
+const patternCache: { [key: string]: Pattern } = {}
 export const getPattern = (label: string): Pattern | null => {
   // *            => wildcard
   // :id{[0-9]+}  => ([0-9]+)
