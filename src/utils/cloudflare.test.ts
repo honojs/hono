@@ -39,7 +39,9 @@ describe('Utils for Cloudflare Workers', () => {
     expect(getKVFilePath({ filename: 'foo.txt', root: 'bar' })).toBe('bar/foo.txt')
 
     expect(getKVFilePath({ filename: 'foo', defaultDocument: 'index.txt' })).toBe('foo/index.txt')
-    expect(getKVFilePath({ filename: 'foo', root: 'bar', defaultDocument: 'index.txt' })).toBe('bar/foo/index.txt')
+    expect(getKVFilePath({ filename: 'foo', root: 'bar', defaultDocument: 'index.txt' })).toBe(
+      'bar/foo/index.txt'
+    )
 
     expect(getKVFilePath({ filename: './foo' })).toBe('foo/index.html')
     expect(getKVFilePath({ filename: 'foo', root: './bar' })).toBe('bar/foo/index.html')

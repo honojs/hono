@@ -1,10 +1,7 @@
 import { getPathFromURL } from '../../utils/url'
 import type { Context } from '../../context'
 
-const humanize = (
-  n: string[],
-  opts?: { delimiter?: string; separator?: string }
-) => {
+const humanize = (n: string[], opts?: { delimiter?: string; separator?: string }) => {
   const options = opts || {}
   const d = options.delimiter || ','
   const s = options.separator || '.'
@@ -15,9 +12,7 @@ const humanize = (
 
 const time = (start: number) => {
   const delta = Date.now() - start
-  return humanize([
-    delta < 10000 ? delta + 'ms' : Math.round(delta / 1000) + 's',
-  ])
+  return humanize([delta < 10000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
 }
 
 const LogPrefix = {
@@ -38,7 +33,7 @@ const colorStatus = (status: number = 0) => {
   }
   return out[(status / 100) | 0]
 }
-type PrintFunc = (str: string, ...rest: string[]) => void;
+type PrintFunc = (str: string, ...rest: string[]) => void
 
 function log(
   fn: PrintFunc,
@@ -52,9 +47,7 @@ function log(
   const out =
     prefix === LogPrefix.Incoming
       ? `  ${prefix} ${method} ${path}`
-      : `  ${prefix} ${method} ${path} ${colorStatus(
-          status
-        )} ${elasped} ${contentLength}`
+      : `  ${prefix} ${method} ${path} ${colorStatus(status)} ${elasped} ${contentLength}`
   fn(out)
 }
 
@@ -75,20 +68,8 @@ export const logger = (fn = console.log) => {
     }
 
     const len = parseFloat(c.res.headers.get('Content-Length'))
-    const contentLength = isNaN(len)
-      ? '0'
-      : len < 1024
-      ? `${len}b`
-      : `${len / 1024}kB`
+    const contentLength = isNaN(len) ? '0' : len < 1024 ? `${len}b` : `${len / 1024}kB`
 
-    log(
-      fn,
-      LogPrefix.Outgoing,
-      method,
-      path,
-      c.res.status,
-      time(start),
-      contentLength
-    )
+    log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start), contentLength)
   }
 }

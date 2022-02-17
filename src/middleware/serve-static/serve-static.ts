@@ -14,7 +14,11 @@ export const serveStatic = (opt: Options = { root: '' }) => {
     await next()
     const url = new URL(c.req.url)
 
-    const path = getKVFilePath({ filename: url.pathname, root: opt.root, defaultDocument: DEFAULT_DOCUMENT })
+    const path = getKVFilePath({
+      filename: url.pathname,
+      root: opt.root,
+      defaultDocument: DEFAULT_DOCUMENT,
+    })
 
     const content = await getContentFromKVAsset(path)
     if (content) {

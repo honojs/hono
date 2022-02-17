@@ -39,7 +39,10 @@ describe('CORS by Middleware', () => {
 
     expect(res.status).toBe(204)
     expect(res.headers.get('Access-Control-Allow-Methods').split(',')[0]).toBe('GET')
-    expect(res.headers.get('Access-Control-Allow-Headers').split(',')).toEqual(['X-PINGOTHER', 'Content-Type'])
+    expect(res.headers.get('Access-Control-Allow-Headers').split(',')).toEqual([
+      'X-PINGOTHER',
+      'Content-Type',
+    ])
   })
 
   it('Preflight with options', async () => {
@@ -52,7 +55,11 @@ describe('CORS by Middleware', () => {
       'X-Custom-Header',
       'Upgrade-Insecure-Requests',
     ])
-    expect(res.headers.get('Access-Control-Allow-Methods').split(/\s*,\s*/)).toEqual(['POST', 'GET', 'OPTIONS'])
+    expect(res.headers.get('Access-Control-Allow-Methods').split(/\s*,\s*/)).toEqual([
+      'POST',
+      'GET',
+      'OPTIONS',
+    ])
     expect(res.headers.get('Access-Control-Expose-Headers').split(/\s*,\s*/)).toEqual([
       'Content-Length',
       'X-Kuma-Revision',
