@@ -55,7 +55,7 @@ type Init = {
 }
 
 export class Hono {
-  router: Router<Handler[]>
+  router: Router<Handler>
   middlewareRouters: Router<MiddlewareHandler>[]
   tempPath: string
   strict: boolean
@@ -68,45 +68,45 @@ export class Hono {
   }
 
   /* HTTP METHODS */
-  get<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  get(path: string, ...args: Handler[]): Hono {
-    return this.addRoute('get', path, ...args)
+  get<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  get(path: string, handler: Handler): Hono {
+    return this.addRoute('get', path, handler)
   }
 
-  post<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  post(path: string, ...args: Handler[]): Hono {
-    return this.addRoute('post', path, ...args)
+  post<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  post(path: string, handler: Handler): Hono {
+    return this.addRoute('post', path, handler)
   }
 
-  put<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  put(path: string, ...args: Handler[]): Hono {
-    return this.addRoute('put', path, ...args)
+  put<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  put(path: string, handler: Handler): Hono {
+    return this.addRoute('put', path, handler)
   }
 
-  head<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  head(path: string, ...args: Handler[]): Hono {
-    return this.addRoute('head', path, ...args)
+  head<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  head(path: string, handler: Handler): Hono {
+    return this.addRoute('head', path, handler)
   }
 
-  delete<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  delete(path: string, ...args: Handler[]): Hono {
-    return this.addRoute('delete', path, ...args)
+  delete<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  delete(path: string, handler: Handler): Hono {
+    return this.addRoute('delete', path, handler)
   }
 
-  options<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  options(path: string, ...args: Handler[]): Hono {
-    return this.addRoute('options', path, ...args)
+  options<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  options(path: string, handler: Handler): Hono {
+    return this.addRoute('options', path, handler)
   }
 
-  patch<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  patch(path: string, ...args: Handler[]): Hono {
-    return this.addRoute('patch', path, ...args)
+  patch<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  patch(path: string, handler: Handler): Hono {
+    return this.addRoute('patch', path, handler)
   }
 
   /* Any methods */
-  all<Path extends string>(path: Path, ...args: Handler<ParamKeys<Path>>[]): Hono
-  all(path: string, ...args: Handler[]): Hono {
-    return this.addRoute('all', path, ...args)
+  all<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  all(path: string, handler: Handler): Hono {
+    return this.addRoute('all', path, handler)
   }
 
   route(path: string): Hono {
@@ -126,16 +126,16 @@ export class Hono {
   }
 
   // addRoute('get', '/', handler)
-  addRoute(method: string, path: string, ...args: Handler[]): Hono {
+  addRoute(method: string, path: string, handler: Handler): Hono {
     method = method.toUpperCase()
     if (this.tempPath) {
       path = mergePath(this.tempPath, path)
     }
-    this.router.add(method, path, args)
+    this.router.add(method, path, handler)
     return this
   }
 
-  async matchRoute(method: string, path: string): Promise<Result<Handler[]>> {
+  async matchRoute(method: string, path: string): Promise<Result<Handler>> {
     return this.router.match(method, path)
   }
 
@@ -159,7 +159,7 @@ export class Hono {
       return url.searchParams.get(key)
     }
 
-    const handler = result ? result.handler[0] : this.notFound // XXX
+    const handler = result ? result.handler : this.notFound // XXX
 
     const middleware = []
 
