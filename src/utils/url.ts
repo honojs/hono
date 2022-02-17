@@ -1,6 +1,6 @@
 const URL_REGEXP = /^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/
 
-export type Pattern = [string, string, RegExp | true] | '*'
+export type Pattern = readonly [string, string, RegExp | true] | '*'
 
 export const splitPath = (path: string): string[] => {
   const paths = path.split(/\//) // faster than path.split('/')
@@ -10,6 +10,7 @@ export const splitPath = (path: string): string[] => {
   return paths
 }
 
+const patternCache: {[key: string]: Pattern} = {}
 export const getPattern = (label: string): Pattern | null => {
   // *            => wildcard
   // :id{[0-9]+}  => ([0-9]+)
@@ -22,12 +23,17 @@ export const getPattern = (label: string): Pattern | null => {
 
   const match = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
   if (match) {
-    if (match[2]) {
-      return [label, match[1], new RegExp('^' + match[2] + '$')]
-    } else {
-      return [label, match[1], true]
+    if (!patternCache[label]) {
+      if (match[2]) {
+        patternCache[label] = [label, match[1], new RegExp('^' + match[2] + '$')]
+      } else {
+        patternCache[label] = [label, match[1], true]
+      }
     }
+
+    return patternCache[label]
   }
+
   return null
 }
 
