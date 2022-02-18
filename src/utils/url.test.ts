@@ -21,11 +21,15 @@ describe('url', () => {
   it('getPattern', () => {
     let res = getPattern(':id')
     expect(res).not.toBeNull()
-    expect(res[0]).toBe('id')
-    expect(res[1]).toBe('(.+)')
+    expect(res[0]).toBe(':id')
+    expect(res[1]).toBe('id')
+    expect(res[2]).toBe(true)
     res = getPattern(':id{[0-9]+}')
-    expect(res[0]).toBe('id')
-    expect(res[1]).toBe('([0-9]+)')
+    expect(res[0]).toBe(':id{[0-9]+}')
+    expect(res[1]).toBe('id')
+    expect(res[2]).toEqual(/^[0-9]+$/)
+    res = getPattern('*')
+    expect(res).toBe('*')
   })
 
   describe('getPathFromURL', () => {
