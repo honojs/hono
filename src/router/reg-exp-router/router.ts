@@ -4,7 +4,7 @@ import { Trie } from './trie'
 
 type Route<T> = [string, T]
 type HandlerData<T> = [T, ParamMap]
-type Matcher<T> = [RegExp, ReplacementMap, HandlerData<T>[]]
+type Matcher<T> = [RegExp | true, ReplacementMap, HandlerData<T>[]]
 
 export class RegExpRouter<T> extends Router<T> {
   routes?: {
@@ -12,7 +12,7 @@ export class RegExpRouter<T> extends Router<T> {
   } = {}
 
   matchers?: {
-    [method: string]: Matcher<T>
+    [method: string]: Matcher<T> | null
   } = null
 
   add(method: string, path: string, handler: T) {
@@ -31,10 +31,20 @@ export class RegExpRouter<T> extends Router<T> {
     }
 
     const [regexp, replacementMap, handlers] = matcher
+    if (regexp === true) {
+      // '*'
+      return new Result(handlers[0][0], {})
+    }
+
     const match = path.match(regexp)
     if (!match) {
       return null
     }
+    if (!replacementMap) {
+      // there is only one route and no capture
+      return new Result(handlers[0][0], {})
+    }
+
     const index = match.indexOf('', 1)
     const [handler, paramMap] = handlers[replacementMap[index]]
     const params: { [key: string]: string } = {}
@@ -66,6 +76,26 @@ export class RegExpRouter<T> extends Router<T> {
       targetMethods.unshift(METHOD_NAME_OF_ALL)
     }
     const routes = targetMethods.flatMap((method) => this.routes[method] || [])
+
+    if (routes.length === 0) {
+      this.matchers[method] = null
+      return
+    }
+
+    if (routes.length === 1 && routes[0][0] === '*') {
+      this.matchers[method] = [true, null, [[routes[0][1], {}]]]
+      return
+    }
+
+    if (routes.length === 1 && !routes[0][0].match(/:/)) {
+      // there is only one route and no capture
+      const tmp = routes[0][0].endsWith('*')
+        ? routes[0][0].replace(/\/\*$/, '(?:$|/)') // /path/to/* => /path/to(?:$|/)
+        : `${routes[0][0]}$` // /path/to/action => /path/to/action$
+      const regExpStr = `^${tmp.replace(/\*/g, '[^/]+')}` // /prefix/*/path/to => /prefix/[^/]+/path/to
+      this.matchers[method] = [new RegExp(regExpStr), null, [[routes[0][1], {}]]]
+      return
+    }
 
     for (let i = 0; i < routes.length; i++) {
       const paramMap = trie.insert(routes[i][0], i)
