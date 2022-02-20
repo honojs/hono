@@ -313,32 +313,30 @@ describe('Error handle', () => {
   const app = new Hono()
 
   app.get('/error', () => {
-    throw 'This is Error'
+    throw new Error('This is Error')
   })
 
-  app.use('/error', async (c, next) => {
-    try {
-      await next()
-    } catch (err) {
-      c.res = new Response('Custom Error Message', { status: 500 })
-      c.res.headers.append('debug', String(err))
-    }
+  app.use('/error-middleware', async () => {
+    throw new Error('This is Middleware Error')
   })
+
+  app.onError = (err, c) => {
+    c.header('debug', err.message)
+    return c.text('Custom Error Message', 500)
+  }
 
   it('Custom Error Message', async () => {
-    const req = new Request('https://example.com/error')
-    const res = await app.dispatch(req)
+    let req = new Request('https://example.com/error')
+    let res = await app.dispatch(req)
     expect(res.status).toBe(500)
     expect(await res.text()).toBe('Custom Error Message')
     expect(res.headers.get('debug')).toBe('This is Error')
-  })
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  app.get('/text', () => 'text')
-  it('If return not Reponse object', async () => {
-    const req = new Request('https://example.com/text')
-    expect(app.dispatch(req)).rejects.toThrowError(TypeError)
+    req = new Request('https://example.com/error-middleware')
+    res = await app.dispatch(req)
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe('Custom Error Message')
+    expect(res.headers.get('debug')).toBe('This is Middleware Error')
   })
 })
 

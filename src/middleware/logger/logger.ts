@@ -60,12 +60,7 @@ export const logger = (fn = console.log) => {
 
     const start = Date.now()
 
-    try {
-      await next()
-    } catch (e) {
-      log(fn, LogPrefix.Error, method, path, c.res.status || 500, time(start))
-      throw e
-    }
+    await next()
 
     const len = parseFloat(c.res.headers.get('Content-Length'))
     const contentLength = isNaN(len) ? '0' : len < 1024 ? `${len}b` : `${len / 1024}kB`
