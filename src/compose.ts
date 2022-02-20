@@ -1,5 +1,7 @@
+import { Context } from './context'
+
 // Based on the code in the MIT licensed `koa-compose` package.
-export const compose = <T>(middleware: Function[]) => {
+export const compose = <T>(middleware: Function[], onError?: Function) => {
   const errors: Error[] = []
   return function (context: T, next?: Function) {
     let index = -1
@@ -13,7 +15,11 @@ export const compose = <T>(middleware: Function[]) => {
       try {
         return Promise.resolve(fn(context, dispatch.bind(null, i + 1))).catch((e) => {
           errors.push(e)
-          throw errors[0] // XXX
+          if (onError && context instanceof Context) {
+            context.res = onError(errors[0], context)
+          } else {
+            throw errors[0]
+          }
         })
       } catch (err) {
         return Promise.reject(err)

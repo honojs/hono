@@ -181,19 +181,6 @@ app.use('/message/*', async (c, next) => {
 app.get('/message/hello', (c) => c.text('Hello Middleware!'))
 ```
 
-### Handling Error
-
-```js
-app.use('*', async (c, next) => {
-  try {
-    await next()
-  } catch (err) {
-    console.error(`${err}`)
-    c.res = c.text('Custom Error Message', { status: 500 })
-  }
-})
-```
-
 ## Context
 
 To handle Request and Reponse, you can use Context object:
@@ -332,13 +319,23 @@ app.get('*', async c => {
 })
 ```
 
-## `404 Not Found` Response
+## Not Found
 
 If you want, you can set the default `404 Not Found` Response:
 
 ```js
 app.notFound = (c) => {
   return c.text('This is default 404 Not Found', 404)
+}
+```
+
+## Error handling
+
+You can handle errors in your way:
+
+```js
+app.onError = (err, c) => {
+  return c.text(`This is error message: ${err.mssage}`, 500)
 }
 ```
 
