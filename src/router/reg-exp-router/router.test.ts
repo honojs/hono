@@ -1,7 +1,7 @@
-import { TrieRouter } from '../src/hono'
+import { RegExpRouter } from './router'
 
 describe('Basic Usage', () => {
-  const router = new TrieRouter<string>()
+  const router = new RegExpRouter<string>()
 
   router.add('GET', '/hello', 'get hello')
   router.add('POST', '/hello', 'post hello')
@@ -24,7 +24,10 @@ describe('Basic Usage', () => {
 })
 
 describe('Complex', () => {
-  const router = new TrieRouter<string>()
+  let router: RegExpRouter<string>
+  beforeEach(() => {
+    router = new RegExpRouter<string>()
+  })
 
   it('Named Param', async () => {
     router.add('GET', '/entry/:id', 'get entry')

@@ -1,0 +1,47 @@
+import type { ParamMap, Context } from './node'
+import { Node } from './node'
+
+export type { ParamMap } from './node'
+export type ReplacementMap = number[]
+
+export class Trie {
+  context: Context = { varIndex: 0 }
+  root: Node = new Node()
+
+  insert(path: string, index: number): ParamMap {
+    const paramMap = {}
+
+    /**
+     *  - pattern (:label, :label{0-9]+}, ...)
+     *  - /* wildcard
+     *  - character
+     */
+    const tokens = path.match(/(?::[^\/]+)|(?:\/\*$)|./g)
+    this.root.insert(tokens, index, paramMap, this.context)
+
+    return paramMap
+  }
+
+  buildRegExp(): [RegExp, ReplacementMap, ReplacementMap] {
+    let regexp = this.root.buildRegExpStr()
+
+    let captureIndex = 0
+    const indexReplacementMap: ReplacementMap = []
+    const paramReplacementMap: ReplacementMap = []
+
+    regexp = regexp.replace(/#(\d+)|@(\d+)|\.\*\$/g, (_, handlerIndex, paramIndex) => {
+      if (typeof handlerIndex !== 'undefined') {
+        indexReplacementMap[++captureIndex] = Number(handlerIndex)
+        return '$()'
+      }
+      if (typeof paramIndex !== 'undefined') {
+        paramReplacementMap[Number(paramIndex)] = ++captureIndex
+        return ''
+      }
+
+      return ''
+    })
+
+    return [new RegExp(`^${regexp}`), indexReplacementMap, paramReplacementMap]
+  }
+}
