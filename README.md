@@ -121,16 +121,6 @@ book.get('/:id', (c) => {
 book.post('/', (c) => c.text('Create Book')) // => POST /book
 ```
 
-### Custom 404 Response
-
-You can customize 404 Not Found response:
-
-```js
-app.get('*', (c) => {
-  return c.text('Custom 404 Error', 404)
-})
-```
-
 ### no strict
 
 If `strict` is set `false`, `/hello`and`/hello/` are treated the same:
@@ -143,7 +133,7 @@ app.get('/hello', (c) => c.text('/hello or /hello/'))
 
 Default is `true`.
 
-## async/await
+### async/await
 
 ```js
 app.get('/fetch-url', async (c) => {
@@ -291,6 +281,16 @@ app.get('/', (c) => {
 })
 ```
 
+### c.notFound()
+
+Return the default `404 Not Found` Response:
+
+```js
+app.get('/notfound', (c) => {
+  return c.notFound()
+})
+```
+
 ### c.redirect()
 
 Redirect, default status code is `302`:
@@ -330,6 +330,16 @@ app.get('*', async c => {
   const counter = c.env.COUNTER
   ...
 })
+```
+
+## `404 Not Found` Response
+
+If you want, you can set the default `404 Not Found` Response:
+
+```js
+app.notFound = (c) => {
+  return c.text('This is default 404 Not Found', 404)
+}
 ```
 
 ## fire

@@ -16,6 +16,7 @@ export class Context<RequestParamKeyType = string> {
   private _statusText: string
 
   render: (template: string, params?: object, options?: object) => Promise<Response>
+  notFound: () => Response
 
   constructor(
     req: Request<RequestParamKeyType>,
