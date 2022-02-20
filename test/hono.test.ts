@@ -266,28 +266,28 @@ describe('Middleware', () => {
   })
 })
 
-describe('Custom 404', () => {
+describe('404 Not Found', () => {
   const app = new Hono()
 
-  app.notFound = () => {
-    return new Response('Default 404 Nout Found', { status: 404 })
+  app.notFound = (c) => {
+    return c.text('Custom 404 Not Found', 404)
   }
 
-  app.use('*', async (c, next) => {
-    await next()
-    if (c.res.status === 404) {
-      c.res = new Response('Custom 404 Not Found', { status: 404 })
-    }
+  app.get('/hello', (c) => {
+    return c.text('hello')
   })
 
-  app.get('/hello', () => {
-    return new Response('hello')
+  app.get('/notfound', (c) => {
+    return c.notFound()
   })
 
   it('Custom 404 Not Found', async () => {
     let req = new Request('http://localhost/hello')
     let res = await app.dispatch(req)
     expect(res.status).toBe(200)
+    req = new Request('http://localhost/notfound')
+    res = await app.dispatch(req)
+    expect(res.status).toBe(404)
     req = new Request('http://localhost/foo')
     res = await app.dispatch(req)
     expect(res.status).toBe(404)

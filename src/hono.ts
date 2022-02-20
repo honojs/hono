@@ -159,7 +159,7 @@ export class Hono {
       return url.searchParams.get(key)
     }
 
-    const handler = result ? result.handler : this.notFound // XXX
+    const handler = result ? result.handler : this.notFound
 
     const middleware = []
 
@@ -183,6 +183,8 @@ export class Hono {
 
     const composed = compose<Context>(middleware)
     const c = new Context(request, { env: env, event: event, res: null })
+    c.notFound = () => this.notFound(c)
+
     await composed(c)
 
     return c.res
@@ -217,13 +219,8 @@ export class Hono {
     })
   }
 
-  notFound() {
+  notFound(c: Context) {
     const message = 'Not Found'
-    return new Response(message, {
-      status: 404,
-      headers: {
-        'Content-Length': message.length.toString(),
-      },
-    })
+    return c.text(message, 404)
   }
 }
