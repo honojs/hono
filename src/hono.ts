@@ -181,7 +181,7 @@ export class Hono {
 
     middleware.push(wrappedHandler)
 
-    const composed = compose<Context>(middleware)
+    const composed = compose<Context>(middleware, this.onError)
     const c = new Context(request, { env: env, event: event, res: null })
     c.notFound = () => this.notFound(c)
 
@@ -191,15 +191,11 @@ export class Hono {
   }
 
   async handleEvent(event: FetchEvent): Promise<Response> {
-    return this.dispatch(event.request, {}, event).catch((err: Error) => {
-      return this.onError(err)
-    })
+    return this.dispatch(event.request, {}, event)
   }
 
   async fetch(request: Request, env?: Env, event?: FetchEvent): Promise<Response> {
-    return this.dispatch(request, env, event).catch((err: Error) => {
-      return this.onError(err)
-    })
+    return this.dispatch(request, env, event)
   }
 
   fire() {
@@ -208,17 +204,14 @@ export class Hono {
     })
   }
 
-  onError(err: Error) {
-    console.error(`${err}`)
+  // Default error Response
+  onError(err: Error, c: Context) {
+    console.error(`${err.message}`)
     const message = 'Internal Server Error'
-    return new Response(message, {
-      status: 500,
-      headers: {
-        'Content-Length': message.length.toString(),
-      },
-    })
+    return c.text(message, 500)
   }
 
+  // Default 404 not found Response
   notFound(c: Context) {
     const message = 'Not Found'
     return c.text(message, 404)
