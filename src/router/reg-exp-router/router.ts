@@ -16,6 +16,10 @@ export class RegExpRouter<T> extends Router<T> {
   } = null
 
   add(method: string, path: string, handler: T) {
+    if (!this.routes) {
+      throw new Error('Can not add a route since the matcher is already built.')
+    }
+
     this.routes[method] ||= []
     this.routes[method].push([path, handler])
   }
