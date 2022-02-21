@@ -16,6 +16,12 @@ describe('Basic Auth by Middleware', () => {
   const password = 'hono-password-a'
   const unicodePassword = '炎'
 
+  const usernameB = 'hono-user-b'
+  const passwordB = 'hono-password-b'
+
+  const usernameC = 'hono-user-c'
+  const passwordC = 'hono-password-c'
+
   app.use(
     '/auth/*',
     basicAuth({
@@ -32,8 +38,23 @@ describe('Basic Auth by Middleware', () => {
     })
   )
 
+  app.use(
+    '/auth-multi/*',
+    basicAuth(
+      {
+        username: usernameB,
+        password: passwordB,
+      },
+      {
+        username: usernameC,
+        password: passwordC,
+      }
+    )
+  )
+
   app.get('/auth/*', () => new Response('auth'))
   app.get('/auth-unicode/*', () => new Response('auth'))
+  app.get('/auth-multi/*', () => new Response('auth'))
 
   it('Unauthorized', async () => {
     const req = new Request('http://localhost/auth/a')
@@ -60,6 +81,25 @@ describe('Basic Auth by Middleware', () => {
     const req = new Request('http://localhost/auth-unicode/a')
     req.headers.set('Authorization', `Basic ${credential}`)
     const res = await app.dispatch(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('auth')
+  })
+
+  it('Authorizated multiple users', async () => {
+    let credential = Buffer.from(usernameB + ':' + passwordB).toString('base64')
+
+    let req = new Request('http://localhost/auth-multi/b')
+    req.headers.set('Authorization', `Basic ${credential}`)
+    let res = await app.dispatch(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('auth')
+
+    credential = Buffer.from(usernameC + ':' + passwordC).toString('base64')
+    req = new Request('http://localhost/auth-multi/c')
+    req.headers.set('Authorization', `Basic ${credential}`)
+    res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('auth')

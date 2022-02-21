@@ -31,25 +31,40 @@ const auth = (req: Request) => {
   return { username: userPass[1], password: userPass[2] }
 }
 
-export const basicAuth = (options: { username: string; password: string; realm?: string }) => {
+export const basicAuth = (
+  options: { username: string; password: string; realm?: string },
+  ...users: { username: string; password: string }[]
+) => {
+  if (!options) {
+    throw new Error('basic auth middleware requires options for "username and password"')
+  }
+
   if (!options.realm) {
     options.realm = 'Secure Area'
   }
 
-  return async (ctx: Context, next: Function) => {
-    const user = auth(ctx.req)
-    const usernameEqual = user && (await timingSafeEqual(options.username, user.username))
-    const passwordEqual = user && (await timingSafeEqual(options.password, user.password))
+  users.unshift({ username: options.username, password: options.password })
 
-    if (!user || !usernameEqual || !passwordEqual) {
-      ctx.res = new Response('Unauthorized', {
-        status: 401,
-        headers: {
-          'WWW-Authenticate': 'Basic realm="' + options.realm.replace(/"/g, '\\"') + '"',
-        },
-      })
-      return
+  return async (ctx: Context, next: Function) => {
+    const requestUser = auth(ctx.req)
+
+    if (requestUser) {
+      for (const user of users) {
+        const usernameEqual = await timingSafeEqual(user.username, requestUser.username)
+        const passwordEqual = await timingSafeEqual(user.password, requestUser.password)
+        if (usernameEqual && passwordEqual) {
+          // Authorized OK
+          return next()
+        }
+      }
     }
-    return next()
+
+    ctx.res = new Response('Unauthorized', {
+      status: 401,
+      headers: {
+        'WWW-Authenticate': 'Basic realm="' + options.realm.replace(/"/g, '\\"') + '"',
+      },
+    })
+    return
   }
 }
