@@ -1,5 +1,13 @@
 # Hono
 
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/yusukebe/hono/ci)](https://github.com/yusukebe/hono/actions)
+[![GitHub](https://img.shields.io/github/license/yusukebe/hono)](https://github.com/yusukebe/hono/blob/master/LICENSE)
+[![npm](https://img.shields.io/npm/v/hono)](https://www.npmjs.com/package/hono)
+[![npm](https://img.shields.io/npm/dw/hono)](https://www.npmjs.com/package/hono)
+[![npm type definitions](https://img.shields.io/npm/types/hono)](https://www.npmjs.com/package/hono)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/yusukebe/hono)](https://github.com/yusukebe/hono/pulse)
+[![GitHub last commit](https://img.shields.io/github/last-commit/yusukebe/hono)](https://github.com/yusukebe/hono/commits/master)
+
 Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web framework for a Service Workers API based serverless such as Cloudflare Workers and Fastly Compute@Edge.
 
 ```js
