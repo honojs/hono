@@ -2,9 +2,7 @@ const LABEL_REG_EXP_STR = '[^/]+'
 const ONLY_WILDCARD_REG_EXP_STR = '.*'
 const TAIL_WILDCARD_REG_EXP_STR = '(?:|/.*)'
 
-export interface ParamMap {
-  [key: string]: number
-}
+export type ParamMap = Array<[string, number]>
 export interface Context {
   varIndex: number
 }
@@ -77,7 +75,7 @@ export class Node {
         }
       }
       if (name !== '') {
-        paramMap[name] = node.varIndex
+        paramMap.push([name, node.varIndex])
       }
     } else {
       node = this.children[token] ||= new Node()
