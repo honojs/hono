@@ -9,7 +9,7 @@ export class Trie {
   root: Node = new Node()
 
   insert(path: string, index: number): ParamMap {
-    const paramMap = {}
+    const paramMap: ParamMap = []
 
     /**
      *  - pattern (:label, :label{0-9]+}, ...)

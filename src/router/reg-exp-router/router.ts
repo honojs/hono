@@ -52,9 +52,8 @@ export class RegExpRouter<T> extends Router<T> {
     const index = match.indexOf('', 1)
     const [handler, paramMap] = handlers[replacementMap[index]]
     const params: { [key: string]: string } = {}
-    const keys = Object.keys(paramMap)
-    for (let i = 0; i < keys.length; i++) {
-      params[keys[i]] = match[paramMap[keys[i]]]
+    for (let i = 0; i < paramMap.length; i++) {
+      params[paramMap[i][0]] = match[paramMap[i][1]]
     }
     return new Result(handler, params)
   }
@@ -87,7 +86,7 @@ export class RegExpRouter<T> extends Router<T> {
     }
 
     if (routes.length === 1 && routes[0][0] === '*') {
-      this.matchers[method] = [true, null, [[routes[0][1], {}]]]
+      this.matchers[method] = [true, null, [[routes[0][1], []]]]
       return
     }
 
@@ -97,7 +96,7 @@ export class RegExpRouter<T> extends Router<T> {
         ? routes[0][0].replace(/\/\*$/, '(?:$|/)') // /path/to/* => /path/to(?:$|/)
         : `${routes[0][0]}$` // /path/to/action => /path/to/action$
       const regExpStr = `^${tmp.replace(/\*/g, '[^/]+')}` // /prefix/*/path/to => /prefix/[^/]+/path/to
-      this.matchers[method] = [new RegExp(regExpStr), null, [[routes[0][1], {}]]]
+      this.matchers[method] = [new RegExp(regExpStr), null, [[routes[0][1], []]]]
       return
     }
 
@@ -109,9 +108,9 @@ export class RegExpRouter<T> extends Router<T> {
     const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp()
     for (let i = 0; i < handlers.length; i++) {
       const paramMap = handlers[i][1]
-      Object.keys(paramMap).forEach((k) => {
-        paramMap[k] = paramReplacementMap[paramMap[k]]
-      })
+      for (let i = 0; i < paramMap.length; i++) {
+        paramMap[i][1] = paramReplacementMap[paramMap[i][1]]
+      }
     }
 
     this.matchers[method] = [new RegExp(regexp), indexReplacementMap, handlers]
