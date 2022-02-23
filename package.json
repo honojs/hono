@@ -7,6 +7,13 @@
   "files": [
     "dist"
   ],
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint --ext js,ts src .eslintrc.js && prettier --check src",
+    "build": "rimraf dist && tsc",
+    "watch": "tsc -w",
+    "prepublishOnly": "yarn build"
+  },
   "exports": {
     ".": "./dist/index.js",
     "./basic-auth": "./dist/middleware/basic-auth/basic-auth.js",
@@ -17,8 +24,7 @@
     "./mustache": "./dist/middleware/mustache/mustache.js",
     "./powered-by": "./dist/middleware/powered-by/powered-by.js",
     "./serve-static": "./dist/middleware/serve-static/serve-static.js",
-    "./utils/buffer": "./dist/utils/buffer.js",
-    "./package.json": "./package.json"
+    "./router/reg-exp-router": "./dist/router/reg-exp-router/index.js"
   },
   "typesVersions": {
     "*": {
@@ -45,15 +51,11 @@
       ],
       "serve-static": [
         "./dist/middleware/serve-static/serve-static.d.ts"
+      ],
+      "router/reg-exp-router": [
+        "./dist/router/reg-exp-router/router.d.ts"
       ]
     }
-  },
-  "scripts": {
-    "test": "jest",
-    "lint": "eslint --ext js,ts src .eslintrc.js && prettier --check src",
-    "build": "rimraf dist && tsc",
-    "watch": "tsc -w",
-    "prepublishOnly": "yarn build"
   },
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "license": "MIT",
