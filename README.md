@@ -3,12 +3,12 @@
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/yusukebe/hono/ci)](https://github.com/yusukebe/hono/actions)
 [![GitHub](https://img.shields.io/github/license/yusukebe/hono)](https://github.com/yusukebe/hono/blob/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/hono)](https://www.npmjs.com/package/hono)
-[![npm](https://img.shields.io/npm/dw/hono)](https://www.npmjs.com/package/hono)
+[![npm](https://img.shields.io/npm/dm/hono)](https://www.npmjs.com/package/hono)
 [![npm type definitions](https://img.shields.io/npm/types/hono)](https://www.npmjs.com/package/hono)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/yusukebe/hono)](https://github.com/yusukebe/hono/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/yusukebe/hono)](https://github.com/yusukebe/hono/commits/master)
 
-Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web framework for a Service Workers API based serverless such as Cloudflare Workers and Fastly Compute@Edge.
+Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web framework for Service Worker based serverless applications like Cloudflare Workers and Fastly Compute@Edge.
 
 ```js
 import { Hono } from 'hono'
@@ -21,9 +21,9 @@ app.fire()
 
 ## Features
 
-- **Ultra fast** - the router is implemented with Trie-Tree structure. Not use loops.
-- **Zero dependencies** - using only Web standard API.
-- **Middleware** - builtin middleware, and you can make your own middleware.
+- **Ultrafast** - the router does not use linear loops.
+- **Zero-dependencies** - using only Web standard API.
+- **Middleware** - builtin middleware and your own middleware.
 - **Optimized** - for Cloudflare Workers.
 
 ## Benchmark
@@ -41,7 +41,7 @@ Fastest is hono
 
 ## Hono in 1 minute
 
-Below is a demonstration to create an application of Cloudflare Workers with Hono.
+A demonstration to create an application of Cloudflare Workers with Hono.
 
 ![Demo](https://user-images.githubusercontent.com/10682/151973526-342644f9-71c5-4fee-81f4-64a7558bb192.gif)
 
@@ -51,21 +51,21 @@ Now, the named path parameter has types.
 
 ## Install
 
-You can install Hono from npm registry:
+You can install Hono from the npm registry.
 
 ```sh
-yarn add hono
+$ yarn add hono
 ```
 
 or
 
 ```sh
-npm install hono
+$ npm install hono
 ```
 
 ## Methods
 
-An instance of `Hono` has these methods:
+An instance of `Hono` has these methods.
 
 - app.**HTTP_METHOD**(path, handler)
 - app.**all**(path, handler)
@@ -78,8 +78,6 @@ An instance of `Hono` has these methods:
 
 ### Basic
 
-`app.HTTP_METHOD`
-
 ```js
 // HTTP Methods
 app.get('/', (c) => c.text('GET /'))
@@ -89,11 +87,7 @@ app.post('/', (c) => c.text('POST /'))
 app.get('/wild/*/card', (c) => {
   return c.text('GET /wild/*/card')
 })
-```
 
-`app.all`
-
-```js
 // Any HTTP methods
 app.all('/hello', (c) => c.text('Any Method /hello'))
 ```
@@ -114,32 +108,31 @@ app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (c) => {
   const date = c.req.param('date')
   const title = c.req.param('title')
   ...
+})
 ```
 
 ### Nested route
 
 ```js
 const book = app.route('/book')
-book.get('/', (c) => c.text('List Books')) // => GET /book
+book.get('/', (c) => c.text('List Books')) // GET /book
 book.get('/:id', (c) => {
-  // => GET /book/:id
+  // GET /book/:id
   const id = c.req.param('id')
   return c.text('Get Book: ' + id)
 })
-book.post('/', (c) => c.text('Create Book')) // => POST /book
+book.post('/', (c) => c.text('Create Book')) // POST /book
 ```
 
 ### no strict
 
-If `strict` is set `false`, `/hello`and`/hello/` are treated the same:
+If `strict` is set `false`, `/hello`and`/hello/` are treated the same. Default is `true`.
 
 ```js
 const app = new Hono({ strict: false })
 
 app.get('/hello', (c) => c.text('/hello or /hello/'))
 ```
-
-Default is `true`.
 
 ### async/await
 
@@ -164,14 +157,20 @@ const app = new Hono()
 
 app.use('*', poweredBy())
 app.use('*', logger())
-app.use('/auth/*', basicAuth({ username: 'hono', password: 'acoolproject' }))
+app.use(
+  '/auth/*',
+  basicAuth({
+    username: 'hono',
+    password: 'acoolproject',
+  })
+)
 ```
 
 Available builtin middleware are listed on [src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware).
 
 ### Custom Middleware
 
-You can write your own middleware:
+You can write your own middleware.
 
 ```js
 // Custom logger
@@ -191,7 +190,7 @@ app.get('/message/hello', (c) => c.text('Hello Middleware!'))
 
 ## Context
 
-To handle Request and Reponse, you can use Context object:
+To handle Request and Reponse, you can use Context object.
 
 ### c.req
 
@@ -230,25 +229,26 @@ app.get('/welcome', (c) => {
   c.status(201)
 
   return c.body('Thank you for comming')
+})
+```
 
-  /*
-  Same as:
-  return new Response('Thank you for comming', {
-    status: 201,
-    statusText: 'Created',
-    headers: {
-      'X-Message': 'Hello',
-      'Content-Type': 'text/plain',
-      'Content-Length: '22'
-    }
-  })
-  */
+The Response is the same as below.
+
+```js
+new Response('Thank you for comming', {
+  status: 201,
+  statusText: 'Created',
+  headers: {
+    'X-Message': 'Hello',
+    'Content-Type': 'text/plain',
+    'Content-Length': '22',
+  },
 })
 ```
 
 ### c.text()
 
-Render text as `Content-Type:text/plain`:
+Render texts as `Content-Type:text/plain`.
 
 ```js
 app.get('/say', (c) => {
@@ -258,7 +258,7 @@ app.get('/say', (c) => {
 
 ### c.json()
 
-Render JSON as `Content-Type:application/json`:
+Render JSON as `Content-Type:application/json`.
 
 ```js
 app.get('/api', (c) => {
@@ -268,7 +268,7 @@ app.get('/api', (c) => {
 
 ### c.html()
 
-Render HTML as `Content-Type:text/html`:
+Render HTML as `Content-Type:text/html`.
 
 ```js
 app.get('/', (c) => {
@@ -278,7 +278,7 @@ app.get('/', (c) => {
 
 ### c.notFound()
 
-Return the default `404 Not Found` Response:
+Return the default `404 Not Found` Response.
 
 ```js
 app.get('/notfound', (c) => {
@@ -288,7 +288,7 @@ app.get('/notfound', (c) => {
 
 ### c.redirect()
 
-Redirect, default status code is `302`:
+Redirect, default status code is `302`.
 
 ```js
 app.get('/redirect', (c) => c.redirect('/'))
@@ -329,7 +329,7 @@ app.get('*', async c => {
 
 ## Not Found
 
-If you want, you can set the default `404 Not Found` Response:
+You can write the default `404 Not Found` Response.
 
 ```js
 app.notFound = (c) => {
@@ -339,7 +339,7 @@ app.notFound = (c) => {
 
 ## Error handling
 
-You can handle errors in your way:
+You can handle errors in your way.
 
 ```js
 app.onError = (err, c) => {
@@ -349,7 +349,7 @@ app.onError = (err, c) => {
 
 ## fire
 
-`app.fire()` do:
+`app.fire()` do this.
 
 ```js
 addEventListener('fetch', (event) => {
@@ -369,7 +369,7 @@ export default {
 }
 
 /*
-or just do this:
+or just do:
 export default app
 */
 ```
@@ -382,15 +382,15 @@ Let's write your first code for Cloudflare Workers with Hono.
 
 ### 1. Install Wrangler
 
-Install Cloudflare Command Line "[Wrangler](https://github.com/cloudflare/wrangler)"
+Install Cloudflare Command Line "[Wrangler](https://github.com/cloudflare/wrangler)".
 
 ```sh
-npm i @cloudflare/wrangler -g
+$ npm i @cloudflare/wrangler -g
 ```
 
 ### 2. `npm init`
 
-Make npm skeleton directory.
+Make a npm skeleton directory.
 
 ```sh
 mkdir hono-example
@@ -403,15 +403,15 @@ npm init -y
 Init as a wrangler project.
 
 ```sh
-wrangler init
+$ wrangler init
 ```
 
 ### 4. `npm install hono`
 
-Install `hono` from npm registry.
+Install `hono` from the npm registry.
 
 ```sh
-npm i hono
+$ npm i hono
 ```
 
 ### 5. Write your app
@@ -429,10 +429,10 @@ app.fire()
 
 ### 6. Run
 
-Run the development server locally. Then, access like `http://127.0.0.1:8787/` in your Web browser.
+Run the development server locally. Then, access `http://127.0.0.1:8787/` in your Web browser.
 
 ```sh
-wrangler dev
+$ wrangler dev
 ```
 
 ### 7. Publish
@@ -440,12 +440,22 @@ wrangler dev
 Deploy to Cloudflare. That's all!
 
 ```sh
-wrangler publish
+$ wrangler publish
+```
+
+## Starter template
+
+You can start making your application of Cloudflare Workers with [the starter template](https://github.com/yusukebe/hono-minimal). It is a realy minimal using TypeScript, esbuild, and Miniflare.
+
+To generate a project skelton, run this command.
+
+```
+$ wrangler generate my-app https://github.com/yusukebe/hono-minimal
 ```
 
 ## Related projects
 
-Implementation of the router is inspired by [goblin](https://github.com/bmf-san/goblin). API design is inspired by [express](https://github.com/expressjs/express) and [koa](https://github.com/koajs/koa). [itty-router](https://github.com/kwhitley/itty-router), [Sunder](https://github.com/SunderJS/sunder), and [worktop](https://github.com/lukeed/worktop) are the other routers or frameworks for Cloudflare Workers.
+Implementation of the original router `TrieRouter` is inspired by [goblin](https://github.com/bmf-san/goblin). `RegExpRouter` is inspired by [Router::Boom](https://github.com/tokuhirom/Router-Boom). API design is inspired by [express](https://github.com/expressjs/express) and [koa](https://github.com/koajs/koa). [itty-router](https://github.com/kwhitley/itty-router), [Sunder](https://github.com/SunderJS/sunder), and [worktop](https://github.com/lukeed/worktop) are the other routers or frameworks for Cloudflare Workers.
 
 - express <https://github.com/expressjs/express>
 - koa <https://github.com/koajs/koa>
@@ -453,10 +463,11 @@ Implementation of the router is inspired by [goblin](https://github.com/bmf-san/
 - Sunder <https://github.com/SunderJS/sunder>
 - goblin <https://github.com/bmf-san/goblin>
 - worktop <https://github.com/lukeed/worktop>
+- Router::Boom <https://github.com/tokuhirom/Router-Boom>
 
 ## Contributing
 
-Contributions Welcome! You can contribute by the following way:
+Contributions Welcome! You can contribute by the following way.
 
 - Write or fix documents
 - Write code of middleware
@@ -464,7 +475,7 @@ Contributions Welcome! You can contribute by the following way:
 - Refactor the code
 - etc.
 
-If you can, let's make Hono together!
+Let's make Hono together!
 
 ## Contributors
 
