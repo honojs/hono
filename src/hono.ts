@@ -1,10 +1,10 @@
-import { Node } from './node'
 import { compose } from './compose'
 import { getPathFromURL, mergePath } from './utils/url'
 import { Context } from './context'
 import type { Env } from './context'
-import type { Result } from './router'
-import { Router, METHOD_NAME_OF_ALL } from './router'
+import type { Result, Router } from './router'
+import { METHOD_NAME_OF_ALL } from './router'
+import { TrieRouter } from './router/trie-router' // Default Router
 
 declare global {
   interface Request<ParamKeyType = string> {
@@ -34,23 +34,6 @@ type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
 type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
-
-export class TrieRouter<T> extends Router<T> {
-  node: Node<T>
-
-  constructor() {
-    super()
-    this.node = new Node()
-  }
-
-  add(method: string, path: string, handler: T) {
-    this.node.insert(method, path, handler)
-  }
-
-  match(method: string, path: string): Result<T> | null {
-    return this.node.search(method, path)
-  }
-}
 
 export class Hono {
   routerClass: { new (): Router<any> } = TrieRouter

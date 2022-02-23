@@ -1,4 +1,4 @@
-import { TrieRouter } from '../src/hono'
+import { TrieRouter } from './router'
 
 describe('Basic Usage', () => {
   const router = new TrieRouter<string>()

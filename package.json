@@ -50,7 +50,7 @@
   },
   "scripts": {
     "test": "jest",
-    "lint": "eslint --ext js,ts src .eslintrc.js test && prettier --check src",
+    "lint": "eslint --ext js,ts src .eslintrc.js && prettier --check src",
     "build": "rimraf dist && tsc",
     "watch": "tsc -w",
     "prepublishOnly": "yarn build"
