@@ -1,4 +1,4 @@
-import { Node } from '../src/node'
+import { Node } from './node'
 
 describe('Root Node', () => {
   const node = new Node()

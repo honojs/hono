@@ -1,4 +1,4 @@
-import { Context } from '../src/context'
+import { Context } from './context'
 
 describe('Context', () => {
   const req = new Request('http://localhost/')

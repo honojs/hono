@@ -1,4 +1,4 @@
-import { compose } from '../src/compose'
+import { compose } from './compose'
 
 type C = {
   req: { [key: string]: string }
