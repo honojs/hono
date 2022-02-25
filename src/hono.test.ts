@@ -16,12 +16,6 @@ describe('GET Request', () => {
     return c.html('<h1>Hono!!!</h1>')
   })
 
-  app.notFound = () => {
-    return new Response('not found', {
-      status: 404,
-    })
-  }
-
   it('GET /hello is ok', async () => {
     const req = new Request('http://localhost/hello')
     const res = await app.dispatch(req)
@@ -266,12 +260,12 @@ describe('Middleware', () => {
   })
 })
 
-describe('404 Not Found', () => {
+describe('Not Found', () => {
   const app = new Hono()
 
-  app.notFound = (c) => {
+  app.notFound((c) => {
     return c.text('Custom 404 Not Found', 404)
-  }
+  })
 
   app.get('/hello', (c) => {
     return c.text('hello')
@@ -320,23 +314,23 @@ describe('Error handle', () => {
     throw new Error('This is Middleware Error')
   })
 
-  app.onError = (err, c) => {
-    c.header('debug', err.message)
+  app.onError((err, c) => {
+    c.header('x-debug', err.message)
     return c.text('Custom Error Message', 500)
-  }
+  })
 
   it('Custom Error Message', async () => {
     let req = new Request('https://example.com/error')
     let res = await app.dispatch(req)
     expect(res.status).toBe(500)
     expect(await res.text()).toBe('Custom Error Message')
-    expect(res.headers.get('debug')).toBe('This is Error')
+    expect(res.headers.get('x-debug')).toBe('This is Error')
 
     req = new Request('https://example.com/error-middleware')
     res = await app.dispatch(req)
     expect(res.status).toBe(500)
     expect(await res.text()).toBe('Custom Error Message')
-    expect(res.headers.get('debug')).toBe('This is Middleware Error')
+    expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
   })
 })
 
