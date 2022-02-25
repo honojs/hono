@@ -21,6 +21,8 @@ export type Handler<RequestParamKeyType = string> = (
   next?: Function
 ) => Response | Promise<Response>
 export type MiddlewareHandler = (c: Context, next: Function) => Promise<void>
+export type NotFoundHandler = (c: Context) => Response
+export type ErrorHandler = (err: Error, c: Context) => Response
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer _Pattern}`
@@ -48,6 +50,17 @@ export class Hono {
     this.router = new this.routerClass()
     this.middlewareRouters = []
     this.tempPath = null
+  }
+
+  notFoundHandler: NotFoundHandler = (c: Context) => {
+    const message = '404 Not Found'
+    return c.text(message, 404)
+  }
+
+  errorHandler: ErrorHandler = (err: Error, c: Context) => {
+    console.error(`${err.message}`)
+    const message = 'Internal Server Error'
+    return c.text(message, 500)
   }
 
   /* HTTP METHODS */
@@ -108,6 +121,16 @@ export class Hono {
     this.middlewareRouters.push(router)
   }
 
+  onError(handler: ErrorHandler): Hono {
+    this.errorHandler = handler
+    return this
+  }
+
+  notFound(handler: NotFoundHandler): Hono {
+    this.notFoundHandler = handler
+    return this
+  }
+
   // addRoute('get', '/', handler)
   addRoute(method: string, path: string, handler: Handler): Hono {
     method = method.toUpperCase()
@@ -142,7 +165,7 @@ export class Hono {
       return url.searchParams.get(key)
     }
 
-    const handler = result ? result.handler : this.notFound
+    const handler = result ? result.handler : this.notFoundHandler
 
     const middleware = []
 
@@ -164,9 +187,9 @@ export class Hono {
 
     middleware.push(wrappedHandler)
 
-    const composed = compose<Context>(middleware, this.onError)
+    const composed = compose<Context>(middleware, this.errorHandler)
     const c = new Context(request, { env: env, event: event, res: null })
-    c.notFound = () => this.notFound(c)
+    c.notFound = () => this.notFoundHandler(c)
 
     const context = await composed(c)
 
@@ -185,18 +208,5 @@ export class Hono {
     addEventListener('fetch', (event: FetchEvent): void => {
       event.respondWith(this.handleEvent(event))
     })
-  }
-
-  // Default error Response
-  onError(err: Error, c: Context) {
-    console.error(`${err.message}`)
-    const message = 'Internal Server Error'
-    return c.text(message, 500)
-  }
-
-  // Default 404 not found Response
-  notFound(c: Context) {
-    const message = 'Not Found'
-    return c.text(message, 404)
   }
 }

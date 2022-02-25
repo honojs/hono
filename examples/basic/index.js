@@ -33,14 +33,15 @@ app.use('*', async (c, next) => {
   await c.header('X-Response-Time', `${ms}ms`)
 })
 
-// Handle error
-app.use('*', async (c, next) => {
-  try {
-    await next()
-  } catch (err) {
-    console.error(`${err}`)
-    c.res = c.text('Custom Error Message', 500)
-  }
+// Custom Not Found Message
+app.notFound((c) => {
+  return c.text('Custom 404 Not Found', 404)
+})
+
+// Error handling
+app.onError((err, c) => {
+  console.error(`${err}`)
+  return c.text('Custom Error Message', 500)
 })
 
 // Routing
