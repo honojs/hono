@@ -71,6 +71,8 @@ An instance of `Hono` has these methods.
 - app.**all**(path, handler)
 - app.**route**(path)
 - app.**use**(path, middleware)
+- app.**notFound**(handler)
+- app.**onError**(err, handler)
 - app.**fire**()
 - app.**fetch**(request, env, event)
 
@@ -126,10 +128,10 @@ book.post('/', (c) => c.text('Create Book')) // POST /book
 
 ### no strict
 
-If `strict` is set `false`, `/hello`and`/hello/` are treated the same. Default is `true`.
+If `strict` is set false, `/hello`and`/hello/` are treated the same.
 
 ```js
-const app = new Hono({ strict: false })
+const app = new Hono({ strict: false }) // Default is true
 
 app.get('/hello', (c) => c.text('/hello or /hello/'))
 ```
@@ -188,6 +190,29 @@ app.use('/message/*', async (c, next) => {
 app.get('/message/hello', (c) => c.text('Hello Middleware!'))
 ```
 
+## Error
+
+### Not Found
+
+`app.notFound` for customizing Not Found Response.
+
+```js
+app.notFound((c) => {
+  return c.text('Custom 404 Message', 404)
+})
+```
+
+### Error Handling
+
+`app.onError` handle the error and return the customized Response.
+
+```js
+app.onError((err, c) => {
+  console.error(`${err}`)
+  return c.text('Custom Error Message', 500)
+})
+```
+
 ## Context
 
 To handle Request and Reponse, you can use Context object.
@@ -224,10 +249,12 @@ app.get('/entry/:id', (c) => {
 
 ```js
 app.get('/welcome', (c) => {
+  // Set headers
   c.header('X-Message', 'Hello!')
   c.header('Content-Type', 'text/plain')
+  // Set HTTP status code
   c.status(201)
-
+  // Return the response body
   return c.body('Thank you for comming')
 })
 ```
@@ -278,7 +305,7 @@ app.get('/', (c) => {
 
 ### c.notFound()
 
-Return the default `404 Not Found` Response.
+Return the `404 Not Found` Response.
 
 ```js
 app.get('/notfound', (c) => {
@@ -327,26 +354,6 @@ app.get('*', async c => {
 })
 ```
 
-## Not Found
-
-You can write the default `404 Not Found` Response.
-
-```js
-app.notFound = (c) => {
-  return c.text('This is default 404 Not Found', 404)
-}
-```
-
-## Error handling
-
-You can handle errors in your way.
-
-```js
-app.onError = (err, c) => {
-  return c.text(`This is error message: ${err.mssage}`, 500)
-}
-```
-
 ## fire
 
 `app.fire()` do this.
@@ -359,7 +366,7 @@ addEventListener('fetch', (event) => {
 
 ## fetch
 
-`app.fetch()` is for Cloudflare Module Worker syntax.
+`app.fetch` for Cloudflare Module Worker syntax.
 
 ```js
 export default {
