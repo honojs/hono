@@ -7,13 +7,8 @@ type HandlerData<T> = [T, ParamMap]
 type Matcher<T> = [RegExp | true, ReplacementMap, HandlerData<T>[]]
 
 export class RegExpRouter<T> extends Router<T> {
-  routes?: {
-    [method: string]: Route<T>[]
-  } = {}
-
-  matchers?: {
-    [method: string]: Matcher<T> | null
-  } = null
+  routes?: Record<string, Route<T>[]> = {}
+  matchers?: Record<string, Matcher<T> | null> = null
 
   add(method: string, path: string, handler: T) {
     if (!this.routes) {
@@ -51,7 +46,7 @@ export class RegExpRouter<T> extends Router<T> {
 
     const index = match.indexOf('', 1)
     const [handler, paramMap] = handlers[replacementMap[index]]
-    const params: { [key: string]: string } = {}
+    const params: Record<string, string> = {}
     for (let i = 0; i < paramMap.length; i++) {
       params[paramMap[i][0]] = match[paramMap[i][1]]
     }

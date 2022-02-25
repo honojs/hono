@@ -42,9 +42,7 @@ function compareKey(a: string, b: string): number {
 export class Node {
   index?: number
   varIndex?: number
-  children: {
-    [key: string]: Node
-  } = {}
+  children: Record<string, Node> = {}
 
   insert(tokens: readonly string[], index: number, paramMap: ParamMap, context: Context): void {
     if (tokens.length === 0) {
