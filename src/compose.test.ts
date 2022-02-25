@@ -1,11 +1,12 @@
 import { compose } from './compose'
+import { Context } from './context'
 
 type C = {
-  req: { [key: string]: string }
-  res: { [key: string]: string }
+  req: Record<string, string>
+  res: Record<string, string>
 }
 
-describe('compose middleware', () => {
+describe('compose', () => {
   const middleware: Function[] = []
 
   const a = async (c: C, next: Function) => {
@@ -16,7 +17,7 @@ describe('compose middleware', () => {
 
   const b = async (c: C, next: Function) => {
     await next()
-    c.res['headers'] = `${c.res.headers}-custom-header`
+    c.res['headers'] = 'custom-header'
   }
   middleware.push(b)
 
@@ -27,21 +28,67 @@ describe('compose middleware', () => {
   }
   middleware.push(handler)
 
-  const request = {}
-  const response = {}
-
   it('Request', async () => {
-    const c: C = { req: request, res: response }
+    const c: C = { req: {}, res: {} }
     const composed = compose<C>(middleware)
-    await composed(c)
-    expect(c.req['log']).not.toBeNull()
-    expect(c.req['log']).toBe('log message')
+    const context = await composed(c)
+    expect(context.req['log']).not.toBeNull()
+    expect(context.req['log']).toBe('log message')
   })
   it('Response', async () => {
-    const c: C = { req: request, res: response }
-    const composed = compose(middleware)
-    await composed(c)
-    expect(c.res['header']).not.toBeNull()
-    expect(c.res['message']).toBe('new response')
+    const c: C = { req: {}, res: {} }
+    const composed = compose<C>(middleware)
+    const context = await composed(c)
+    expect(context.res['headers']).not.toBeNull()
+    expect(context.res['headers']).toBe('custom-header')
+    expect(context.res['message']).toBe('new response')
+  })
+})
+
+describe('compose with Context', () => {
+  const middleware: Function[] = []
+
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+  const onError = (error: Error, c: Context) => {
+    return c.text('onError', 500)
+  }
+
+  it('Error on handler', async () => {
+    const handler = () => {
+      throw new Error()
+    }
+
+    const mHandler = async (c: Context, next: Function) => {
+      await next()
+    }
+
+    middleware.push(mHandler)
+    middleware.push(handler)
+
+    const composed = compose<Context>(middleware, onError)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(500)
+    expect(await context.res.text()).toBe('onError')
+  })
+
+  it('Error on middleware', async () => {
+    const handler = (c: Context) => {
+      return c.text('OK')
+    }
+
+    const mHandler = async () => {
+      throw new Error()
+    }
+
+    middleware.push(mHandler)
+    middleware.push(handler)
+
+    const composed = compose<Context>(middleware, onError)
+    const context = await composed(c)
+    expect(c.res).not.toBeNull()
+    expect(c.res.status).toBe(500)
+    expect(await context.res.text()).toBe('onError')
   })
 })
