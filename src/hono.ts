@@ -168,9 +168,9 @@ export class Hono {
     const c = new Context(request, { env: env, event: event, res: null })
     c.notFound = () => this.notFound(c)
 
-    await composed(c)
+    const context = await composed(c)
 
-    return c.res
+    return context.res
   }
 
   async handleEvent(event: FetchEvent): Promise<Response> {
