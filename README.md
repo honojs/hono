@@ -190,9 +190,7 @@ app.use('/message/*', async (c, next) => {
 app.get('/message/hello', (c) => c.text('Hello Middleware!'))
 ```
 
-## Error
-
-### Not Found
+## Not Found
 
 `app.notFound` for customizing Not Found Response.
 
@@ -202,7 +200,7 @@ app.notFound((c) => {
 })
 ```
 
-### Error Handling
+## Error Handling
 
 `app.onError` handle the error and return the customized Response.
 
