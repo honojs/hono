@@ -3,6 +3,7 @@ import { poweredBy } from '../../src/middleware/powered-by/powered-by'
 import { logger } from '../../src/middleware/logger/logger'
 import { bodyParse } from '../../src/middleware/body-parse/body-parse'
 import { basicAuth } from '../../src/middleware/basic-auth/basic-auth'
+import { etag } from '../../src/middleware/etag/etag'
 
 const app = new Hono()
 
@@ -17,6 +18,7 @@ app.use(
     password: 'acoolproject',
   })
 )
+app.use('/etag/*', etag())
 
 // Custom Middleware
 // Add Custom Header
@@ -68,6 +70,8 @@ book.post('/', (c) => c.text('Create Book'))
 app.get('/redirect', (c) => c.redirect('/'))
 // Authentication required
 app.get('/auth/*', (c) => c.text('You are authorized'))
+// ETag
+app.get('/etag/cached', (c) => c.text('Is this cached?'))
 
 // Async
 app.get('/fetch-url', async (c) => {
