@@ -13,19 +13,27 @@ describe('compose', () => {
     c.req['log'] = 'log'
     await next()
   }
-  middleware.push(a)
 
   const b = async (c: C, next: Function) => {
     await next()
     c.res['headers'] = 'custom-header'
   }
-  middleware.push(b)
+
+  const c = async (c: C, next: Function) => {
+    c.req['xxx'] = 'yyy'
+    await next()
+    c.res['zzz'] = c.req['xxx']
+  }
 
   const handler = async (c: C, next: Function) => {
     c.req['log'] = `${c.req.log} message`
     await next()
     c.res = { message: 'new response' }
   }
+
+  middleware.push(a)
+  middleware.push(b)
+  middleware.push(c)
   middleware.push(handler)
 
   it('Request', async () => {
@@ -34,6 +42,7 @@ describe('compose', () => {
     const context = await composed(c)
     expect(context.req['log']).not.toBeNull()
     expect(context.req['log']).toBe('log message')
+    expect(context.req['xxx']).toBe('yyy')
   })
   it('Response', async () => {
     const c: C = { req: {}, res: {} }
@@ -42,6 +51,7 @@ describe('compose', () => {
     expect(context.res['headers']).not.toBeNull()
     expect(context.res['headers']).toBe('custom-header')
     expect(context.res['message']).toBe('new response')
+    expect(context.res['zzz']).toBe('yyy')
   })
 })
 
