@@ -19,20 +19,14 @@ const initHono = (hono) => {
   hono.post('/event/:id/comments', () => new Response('POST Event Comments'))
   hono.post('/status', () => new Response('Status'))
   hono.get('/very/deeply/nested/route/hello/there', () => new Response('Very Deeply Nested Route'))
-  //hono.get('/static/*', () => new Response('Static'))
   hono.get('/user/lookup/username/:username', (c) => {
-    return new Response(`Hello ${c.req.param('username')}`, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/plain;charset=UTF-8',
-      },
-    })
+    return c.text(`Hello ${c.req.param('username')}`)
   })
   return hono
 }
 
 const hono = initHono(new Hono())
-const honoWithRegExpRouter = initHono(new Hono({routerClass: RegExpRouter}))
+const honoWithRegExpRouter = initHono(new Hono({ routerClass: RegExpRouter }))
 
 const ittyRouter = IttyRouter()
 ittyRouter.get('/user', () => new Response('User'))
@@ -43,7 +37,10 @@ ittyRouter.get('/event/:id', () => new Response('Event'))
 ittyRouter.get('/event/:id/comments', () => new Response('Event Comments'))
 ittyRouter.post('/event/:id/comments', () => new Response('POST Event Comments'))
 ittyRouter.post('/status', () => new Response('Status'))
-ittyRouter.get('/very/deeply/nested/route/hello/there', () => new Response('Very Deeply Nested Route'))
+ittyRouter.get(
+  '/very/deeply/nested/route/hello/there',
+  () => new Response('Very Deeply Nested Route')
+)
 //ittyRouter.get('/static/*', () => new Response('Static'))
 ittyRouter.get('/user/lookup/username/:username', ({ params }) => {
   return new Response(`Hello ${params.username}`, {
@@ -94,14 +91,18 @@ const worktopRouter = new WorktopRouter()
 worktopRouter.add('GET', '/', async (req, res) => res.send(200, 'User'))
 worktopRouter.add('GET', '/user/comments', (req, res) => res.send(200, 'User Comments'))
 worktopRouter.add('GET', '/user/avatar', (req, res) => res.send(200, 'User Avatar'))
-worktopRouter.add('GET', '/user/lookup/email/:address', (req, res) => res.send(200, 'User Lookup Email Address'))
+worktopRouter.add('GET', '/user/lookup/email/:address', (req, res) =>
+  res.send(200, 'User Lookup Email Address')
+)
 worktopRouter.add('GET', '/event/:id', (req, res) => res.send(200, 'Event'))
 worktopRouter.add('POST', '/event/:id/comments', (req, res) => res.send(200, 'POST Event Comments'))
 worktopRouter.add('POST', '/status', (req, res) => res.send(200, 'Status'))
 worktopRouter.add('GET', '/very/deeply/nested/route/hello/there', (req, res) =>
   res.send(200, 'Very Deeply Nested Route')
 )
-worktopRouter.add('GET', '/user/lookup/username/:username', (req, res) => res.send(200, `Hello ${req.params.username}`))
+worktopRouter.add('GET', '/user/lookup/username/:username', (req, res) =>
+  res.send(200, `Hello ${req.params.username}`)
+)
 
 // Request Object
 const request = new Request('/user/lookup/username/hey', { method: 'GET' })
