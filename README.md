@@ -184,7 +184,7 @@ app.use('*', async (c, next) => {
 // Add a custom header
 app.use('/message/*', async (c, next) => {
   await next()
-  await c.header('x-message', 'This is middleware!')
+  c.header('x-message', 'This is middleware!')
 })
 
 app.get('/message/hello', (c) => c.text('Hello Middleware!'))
