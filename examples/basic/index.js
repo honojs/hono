@@ -32,7 +32,7 @@ app.use('*', async (c, next) => {
   const start = Date.now()
   await next()
   const ms = Date.now() - start
-  await c.header('X-Response-Time', `${ms}ms`)
+  c.header('X-Response-Time', `${ms}ms`)
 })
 
 // Custom Not Found Message
