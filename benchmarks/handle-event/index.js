@@ -127,7 +127,6 @@ const suite = new Benchmark.Suite()
 
 suite
   .add('hono', async () => {
-    //  hono.matchRoute('GET', '/user/lookup/username/hey')
     await hono.handleEvent(event)
   })
   .add('hono with RegExpRouter', async () => {
