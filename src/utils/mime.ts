@@ -1,17 +1,15 @@
 export const getMimeType = (filename: string): string => {
   const regexp = /\.([a-zA-Z0-9]+?)$/
   const match = filename.match(regexp)
-  if (!match) {
-    return
-  }
+  if (!match) return
   let mimeType = mimes[match[1]]
-  if (mimeType.startsWith('text') || mimeType === 'application/json') {
+  if ((mimeType && mimeType.startsWith('text')) || mimeType === 'application/json') {
     mimeType += '; charset=utf-8'
   }
   return mimeType
 }
 
-const mimes: { [extension: string]: string } = {
+const mimes: Record<string, string> = {
   aac: 'audio/aac',
   abw: 'application/x-abiword',
   arc: 'application/x-freearc',
@@ -40,6 +38,7 @@ const mimes: { [extension: string]: string } = {
   js: 'text/javascript',
   json: 'application/json',
   jsonld: 'application/ld+json',
+  map: 'application/json',
   mid: 'audio/x-midi',
   midi: 'audio/x-midi',
   mjs: 'text/javascript',
