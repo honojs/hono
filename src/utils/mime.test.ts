@@ -7,5 +7,6 @@ describe('mime', () => {
     expect(getMimeType('hello.json')).toBe('application/json; charset=utf-8')
     expect(getMimeType('good.morning.hello.gif')).toBe('image/gif')
     expect(getMimeType('goodmorninghellogif')).toBeUndefined()
+    expect(getMimeType('indexjs.abcd')).toBeUndefined()
   })
 })
