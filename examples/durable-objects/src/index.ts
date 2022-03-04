@@ -1,8 +1,8 @@
-import { Hono } from '../../../src/index'
+import { Hono } from 'hono'
 
 export { Counter } from './counter'
 
-declare module '../../../src/index' {
+declare module 'hono' {
   interface Env {
     COUNTER: DurableObjectNamespace
   }
