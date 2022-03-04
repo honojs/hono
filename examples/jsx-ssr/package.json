@@ -10,12 +10,12 @@
   },
   "license": "MIT",
   "dependencies": {
-    "hono": "^0.3.7",
+    "hono": "^0.5.1",
     "nano-jsx": "^0.0.29"
   },
   "devDependencies": {
-    "esbuild": "^0.14.20",
-    "miniflare": "^2.2.0",
+    "esbuild": "^0.14.25",
+    "miniflare": "2.2.0",
     "wrangler": "^0.0.16"
   }
 }

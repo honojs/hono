@@ -1,8 +1,5 @@
-name = "ping"
-type = "webpack"
+name = "hono-example-basic"
 route = ''
-zone_id = 'b3177416e15dfbb73416bad76b828c49'
-usage_model = ''
-compatibility_flags = []
+zone_id = ''
 workers_dev = true
 compatibility_date = "2021-12-15"
