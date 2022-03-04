@@ -11,9 +11,9 @@
   "license": "MIT",
   "devDependencies": {
     "@cloudflare/workers-types": "^3.0",
-    "wrangler": "^0.0.16"
+    "wrangler": "^0.0.17"
   },
   "dependencies": {
-    "hono": "^0.3.7"
+    "hono": "^0.5.1"
   }
 }

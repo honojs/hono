@@ -22,9 +22,7 @@ const posts: Post[] = [
 ]
 
 // Logic
-const getPosts = () => {
-  return posts
-}
+const getPosts = () => posts
 
 const getPost = (id: string) => {
   return posts.find((post) => post.id == id)
@@ -40,9 +38,7 @@ app.get('/', (c) => {
 app.get('/post/:id{[0-9]+}', (c) => {
   const id = c.req.param('id')
   const post = getPost(id)
-  if (!post) {
-    return c.text('Not Found', 404)
-  }
+  if (!post) return c.notFound()
   const html = render(<Page post={post} />)
   return c.html(html)
 })

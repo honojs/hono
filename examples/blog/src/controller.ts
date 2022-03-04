@@ -13,12 +13,11 @@ export const list: Handler = async (c: Context) => {
 export const create: Handler = async (c: Context) => {
   let newPost: Model.Post | undefined
   if (c.req.parsedBody) {
-    const param = c.req.parsedBody as Model.Param
+    const param: Model.Param = c.req.parsedBody
     newPost = await Model.createPost(param)
   }
   if (!newPost) {
-    // Is 200 suitable?
-    return c.json({ error: 'Can not create new post', ok: false }, 200)
+    return c.json({ error: 'Can not create new post', ok: false }, 422)
   }
   return c.json({ post: newPost, ok: true }, 201)
 }
