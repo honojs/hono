@@ -23,12 +23,12 @@ app.fire()
 
 - **Ultrafast** - the router does not use linear loops.
 - **Zero-dependencies** - using only Web standard API.
-- **Middleware** - builtin middleware and your own middleware.
+- **Middleware** - built-in middleware and ability to extend with your own middleware.
 - **Optimized** - for Cloudflare Workers.
 
 ## Benchmark
 
-**Hono is fastest** compared to other routers for Cloudflare Workers.
+**Hono is fastest**, compared to other routers for Cloudflare Workers.
 
 ```plain
 hono x 809,503 ops/sec ±6.94% (73 runs sampled)
@@ -41,7 +41,7 @@ Fastest is hono
 
 ## Hono in 1 minute
 
-A demonstration to create an application of Cloudflare Workers with Hono.
+A demonstration to create an application for Cloudflare Workers with Hono.
 
 ![Demo](https://user-images.githubusercontent.com/10682/151973526-342644f9-71c5-4fee-81f4-64a7558bb192.gif)
 
@@ -147,7 +147,7 @@ app.get('/fetch-url', async (c) => {
 
 ## Middleware
 
-### Builtin Middleware
+### Built-in Middleware
 
 ```js
 import { Hono } from 'hono'
@@ -168,7 +168,7 @@ app.use(
 )
 ```
 
-Available builtin middleware are listed on [src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware).
+Available built-in middleware is listed on [src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware).
 
 ### Custom Middleware
 
@@ -273,7 +273,7 @@ new Response('Thank you for comming', {
 
 ### c.text()
 
-Render texts as `Content-Type:text/plain`.
+Render text as `Content-Type:text/plain`.
 
 ```js
 app.get('/say', (c) => {
@@ -462,7 +462,7 @@ $ npx wrangler@beta publish index.js
 
 ## Starter template
 
-You can start making your application of Cloudflare Workers with [the starter template](https://github.com/yusukebe/hono-minimal). It is really minimal using TypeScript, esbuild, and Miniflare.
+You can start making your Cloudflare Workers application with [the starter template](https://github.com/yusukebe/hono-minimal). It is really minimal using TypeScript, esbuild, and Miniflare.
 
 To generate a project skelton, run this command.
 
