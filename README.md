@@ -381,19 +381,22 @@ export default app
 
 ## Cloudflare Workers with Hono
 
-Using `wrangler` or `miniflare`, you can develop the application locally and publish it with few commands.
+Using [Wrangler](https://developers.cloudflare.com/workers/cli-wrangler/) or [Miniflare](https://miniflare.dev), you can develop the application locally and publish it with few commands.
 
 Let's write your first code for Cloudflare Workers with Hono.
 
-### 1. Install Wrangler
+---
 
-Install Cloudflare Command Line "[Wrangler](https://github.com/cloudflare/wrangler)".
+### Caution
 
-```sh
-$ npm i @cloudflare/wrangler -g
-```
+**Wrangler 1.x** does not support importing middleware. We recommend two ways:
 
-### 2. `npm init`
+1. Use [Wragler 2.0 Beta](https://github.com/cloudflare/wrangler2).
+2. Build without webpack 4.x. For example, you can use esbuild. See [the starter template](https://github.com/yusukebe/hono-minimal).
+
+---
+
+### 1. `npm init`
 
 Make a npm skeleton directory.
 
@@ -403,15 +406,23 @@ cd hono-example
 npm init -y
 ```
 
-### 3. `wrangler init`
+### 2. `wrangler init`
 
-Init as a wrangler project.
+Initialize as a wrangler project.
 
-```sh
-$ wrangler init
+```
+$ npx wrangler@beta init
 ```
 
-### 4. `npm install hono`
+Answer the questions. If you want, you can answer `y`.
+
+```
+Would you like to install wrangler into your package.json? (y/n) <--- n
+Would you like to use TypeScript? (y/n) <--- n
+Would you like to create a Worker at src/index.js? (y/n) <--- n
+```
+
+### 3. `npm install hono`
 
 Install `hono` from the npm registry.
 
@@ -419,11 +430,12 @@ Install `hono` from the npm registry.
 $ npm i hono
 ```
 
-### 5. Write your app
+### 4. Write your app
 
 Only 4 lines!!
 
 ```js
+// index.js
 import { Hono } from 'hono'
 const app = new Hono()
 
@@ -432,25 +444,25 @@ app.get('/', (c) => c.text('Hello! Hono!'))
 app.fire()
 ```
 
-### 6. Run
+### 5. Run
 
 Run the development server locally. Then, access `http://127.0.0.1:8787/` in your Web browser.
 
 ```sh
-$ wrangler dev
+$ npx wrangler@beta dev index.js
 ```
 
-### 7. Publish
+### 6. Publish
 
 Deploy to Cloudflare. That's all!
 
 ```sh
-$ wrangler publish
+$ npx wrangler@beta publish index.js
 ```
 
 ## Starter template
 
-You can start making your application of Cloudflare Workers with [the starter template](https://github.com/yusukebe/hono-minimal). It is a realy minimal using TypeScript, esbuild, and Miniflare.
+You can start making your application of Cloudflare Workers with [the starter template](https://github.com/yusukebe/hono-minimal). It is really minimal using TypeScript, esbuild, and Miniflare.
 
 To generate a project skelton, run this command.
 
