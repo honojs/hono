@@ -33,7 +33,7 @@ const auth = (req: Request) => {
 }
 
 export const basicAuth = (
-  options: { username: string; password: string; realm?: string },
+  options: { username: string; password: string; realm?: string; hashFunction?: Function },
   ...users: { username: string; password: string }[]
 ) => {
   if (!options) {
@@ -43,7 +43,6 @@ export const basicAuth = (
   if (!options.realm) {
     options.realm = 'Secure Area'
   }
-
   users.unshift({ username: options.username, password: options.password })
 
   return async (ctx: Context, next: Function) => {
@@ -51,8 +50,16 @@ export const basicAuth = (
 
     if (requestUser) {
       for (const user of users) {
-        const usernameEqual = await timingSafeEqual(user.username, requestUser.username)
-        const passwordEqual = await timingSafeEqual(user.password, requestUser.password)
+        const usernameEqual = await timingSafeEqual(
+          user.username,
+          requestUser.username,
+          options.hashFunction
+        )
+        const passwordEqual = await timingSafeEqual(
+          user.password,
+          requestUser.password,
+          options.hashFunction
+        )
         if (usernameEqual && passwordEqual) {
           // Authorized OK
           return next()
