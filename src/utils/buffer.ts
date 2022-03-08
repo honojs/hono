@@ -23,9 +23,13 @@ export const equal = (a: ArrayBuffer, b: ArrayBuffer) => {
 
 export const timingSafeEqual = async (
   a: string | object | boolean,
-  b: string | object | boolean
+  b: string | object | boolean,
+  hashFunction?: Function
 ) => {
-  const sa = await sha256(a)
-  const sb = await sha256(b)
+  if (!hashFunction) {
+    hashFunction = sha256
+  }
+  const sa = await hashFunction(a)
+  const sb = await hashFunction(b)
   return sa === sb && a === b
 }

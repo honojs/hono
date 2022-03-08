@@ -1,4 +1,5 @@
 import { timingSafeEqual } from './buffer'
+import { SHA256 as sha256CryptoJS } from 'crypto-js'
 
 describe('buffer', () => {
   it('positive', async () => {
@@ -13,6 +14,7 @@ describe('buffer', () => {
     expect(await timingSafeEqual(undefined, undefined)).toBe(true)
     expect(await timingSafeEqual(true, true)).toBe(true)
     expect(await timingSafeEqual(false, false)).toBe(true)
+    expect(await timingSafeEqual(true, true, (d: string) => sha256CryptoJS(d).toString()))
   })
 
   it('negative', async () => {
