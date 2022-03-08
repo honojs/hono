@@ -1,5 +1,6 @@
 import { Hono } from '../../hono'
 import { basicAuth } from './basic-auth'
+import { SHA256 } from 'crypto-js'
 
 describe('Basic Auth by Middleware', () => {
   const crypto = global.crypto
@@ -52,9 +53,19 @@ describe('Basic Auth by Middleware', () => {
     )
   )
 
+  app.use(
+    '/auth-override-func/*',
+    basicAuth({
+      username: username,
+      password: password,
+      hashFunction: (data: string) => SHA256(data).toString(),
+    })
+  )
+
   app.get('/auth/*', () => new Response('auth'))
   app.get('/auth-unicode/*', () => new Response('auth'))
   app.get('/auth-multi/*', () => new Response('auth'))
+  app.get('/auth-override-func/*', () => new Response('auth'))
 
   it('Unauthorized', async () => {
     const req = new Request('http://localhost/auth/a')
@@ -100,6 +111,17 @@ describe('Basic Auth by Middleware', () => {
     req = new Request('http://localhost/auth-multi/c')
     req.headers.set('Authorization', `Basic ${credential}`)
     res = await app.dispatch(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('auth')
+  })
+
+  it('should authorize with sha256 function override', async () => {
+    const credential = Buffer.from(username + ':' + password).toString('base64')
+
+    const req = new Request('http://localhost/auth-override-func/a')
+    req.headers.set('Authorization', `Basic ${credential}`)
+    const res = await app.dispatch(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('auth')
