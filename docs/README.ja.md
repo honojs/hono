@@ -55,13 +55,13 @@ Honoを使って、Cloudflare Workersのアプリケーションを作ってい�
 
 NPMリポジトリからインストールできます。
 
-```sh
+```
 $ yarn add hono
 ```
 
 `yarn`、もしくは`npm`コマンドでインストール。
 
-```sh
+```
 $ npm install hono
 ```
 
@@ -119,13 +119,13 @@ app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (c) => {
 
 ```js
 const book = app.route('/book')
-book.get('/', (c) => c.text('List Books')) // GET /book
+book.get('/', (c) => c.text('List Books')) // GET /book と同じ
 book.get('/:id', (c) => {
-  // GET /book/:id
+  // GET /book/:id と同じ
   const id = c.req.param('id')
   return c.text('Get Book: ' + id)
 })
-book.post('/', (c) => c.text('Create Book')) // POST /book
+book.post('/', (c) => c.text('Create Book')) // POST /book と同じ
 ```
 
 ### 末尾のスラッシュの扱い
@@ -151,6 +151,8 @@ app.get('/fetch-url', async (c) => {
 
 ### ビルトイン・ミドルウェア
 
+備え付けのミドルウェアが用意されています。
+
 ```js
 import { Hono } from 'hono'
 import { poweredBy } from 'hono/powered-by'
@@ -170,7 +172,7 @@ app.use(
 )
 ```
 
-利用可能なビルトインミドルウェアについては[src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware)を参照してください。
+利用可能なビルトイン・ミドルウェアについては[src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware)を参照してください。
 
 ### カスタム・ミドルウェア
 
@@ -215,7 +217,7 @@ app.onError((err, c) => {
 
 ## Context
 
-レスポンス、リクエストを扱うにはContextオブジェクトを使います。
+レスポンス、リクエストを扱うには`Context`を使います。
 
 ### c.req
 
@@ -305,7 +307,7 @@ app.get('/', (c) => {
 
 ### c.notFound()
 
-`404 Not Found`レスポンスを返します。
+`Not Found`レスポンスを返します。
 
 ```js
 app.get('/notfound', (c) => {
@@ -428,7 +430,7 @@ Would you like to create a Worker at src/index.js? (y/n) <--- n
 
 `hono`をNPMレジストリからインストールします。
 
-```sh
+```
 $ npm i hono
 ```
 
@@ -451,7 +453,7 @@ app.fire()
 ローカルで開発サーバーを立ち上げます。
 その後、`http://127.0.0.1:8787/`にブラウザでアクセスしてみましょう。
 
-```sh
+```
 $ npx wrangler@beta dev index.js
 ```
 
@@ -460,7 +462,7 @@ $ npx wrangler@beta dev index.js
 以下のコマンドでCloudflareにデプロイします。
 これで終わりです！
 
-```sh
+```
 $ npx wrangler@beta publish index.js
 ```
 
@@ -491,8 +493,8 @@ $ wrangler generate my-app https://github.com/yusukebe/hono-minimal
 
 コントリビュート歓迎です。以下の方法で貢献できるでしょう。
 
-- ドキュメントを書いたり、修正する
-- ミドルウェアのコードを書く
+- ドキュメントを書いたり、修正する。
+- ミドルウェアのコードを書く。
 - バグフィックス
 - コードのリファクタリング
 - などなど

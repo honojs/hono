@@ -55,13 +55,13 @@ Now, the named path parameter has types.
 
 You can install Hono from the npm registry.
 
-```sh
+```
 $ yarn add hono
 ```
 
 or
 
-```sh
+```
 $ npm install hono
 ```
 
@@ -151,6 +151,8 @@ app.get('/fetch-url', async (c) => {
 
 ### Built-in Middleware
 
+Hono has built-in middleware.
+
 ```js
 import { Hono } from 'hono'
 import { poweredBy } from 'hono/powered-by'
@@ -215,7 +217,7 @@ app.onError((err, c) => {
 
 ## Context
 
-To handle Request and Reponse, you can use Context object.
+To handle Request and Reponse, you can use `Context` object.
 
 ### c.req
 
@@ -305,7 +307,7 @@ app.get('/', (c) => {
 
 ### c.notFound()
 
-Return the `404 Not Found` Response.
+Return the `Not Found` Response.
 
 ```js
 app.get('/notfound', (c) => {
@@ -428,7 +430,7 @@ Would you like to create a Worker at src/index.js? (y/n) <--- n
 
 Install `hono` from the npm registry.
 
-```sh
+```
 $ npm i hono
 ```
 
@@ -450,7 +452,7 @@ app.fire()
 
 Run the development server locally. Then, access `http://127.0.0.1:8787/` in your Web browser.
 
-```sh
+```
 $ npx wrangler@beta dev index.js
 ```
 
@@ -458,7 +460,7 @@ $ npx wrangler@beta dev index.js
 
 Deploy to Cloudflare. That's all!
 
-```sh
+```
 $ npx wrangler@beta publish index.js
 ```
 
