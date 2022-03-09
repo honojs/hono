@@ -1,6 +1,10 @@
 # Hono
 
-[:gb:](https://github.com/yusukebe/hono/blob/master/README.md) [:jp:](https://github.com/yusukebe/hono/blob/master/docs/README.ja.md)
+<p>
+<a href="https://github.com/yusukebe/hono/blob/master/README.md">English</a>
+&#x000B7;
+<a href="https://github.com/yusukebe/hono/blob/master/docs/README.ja.md">日本語</a>
+</p>
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/yusukebe/hono/ci)](https://github.com/yusukebe/hono/actions)
 [![GitHub](https://img.shields.io/github/license/yusukebe/hono)](https://github.com/yusukebe/hono/blob/master/LICENSE)
