@@ -1,5 +1,11 @@
 # Hono
 
+<p>
+<a href="https://github.com/yusukebe/hono/blob/master/README.md">English</a>
+&#x000B7;
+<a href="https://github.com/yusukebe/hono/blob/master/docs/README.ja.md">日本語</a>
+</p>
+
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/yusukebe/hono/ci)](https://github.com/yusukebe/hono/actions)
 [![GitHub](https://img.shields.io/github/license/yusukebe/hono)](https://github.com/yusukebe/hono/blob/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/hono)](https://www.npmjs.com/package/hono)
@@ -8,7 +14,7 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/yusukebe/hono)](https://github.com/yusukebe/hono/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/yusukebe/hono)](https://github.com/yusukebe/hono/commits/master)
 
-Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web framework for Service Worker based serverless applications like Cloudflare Workers and Fastly Compute@Edge.
+Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web framework for Cloudflare Workers and Fastly Compute@Edge.
 
 ```js
 import { Hono } from 'hono'
@@ -22,7 +28,7 @@ app.fire()
 ## Features
 
 - **Ultrafast** - the router does not use linear loops.
-- **Zero-dependencies** - using only Web standard API.
+- **Zero-dependencies** - using only Service Worker and Web standard API.
 - **Middleware** - built-in middleware and ability to extend with your own middleware.
 - **Optimized** - for Cloudflare Workers.
 
@@ -53,13 +59,13 @@ Now, the named path parameter has types.
 
 You can install Hono from the npm registry.
 
-```sh
+```
 $ yarn add hono
 ```
 
 or
 
-```sh
+```
 $ npm install hono
 ```
 
@@ -149,6 +155,8 @@ app.get('/fetch-url', async (c) => {
 
 ### Built-in Middleware
 
+Hono has built-in middleware.
+
 ```js
 import { Hono } from 'hono'
 import { poweredBy } from 'hono/powered-by'
@@ -213,7 +221,7 @@ app.onError((err, c) => {
 
 ## Context
 
-To handle Request and Reponse, you can use Context object.
+To handle Request and Reponse, you can use `Context` object.
 
 ### c.req
 
@@ -303,7 +311,7 @@ app.get('/', (c) => {
 
 ### c.notFound()
 
-Return the `404 Not Found` Response.
+Return the `Not Found` Response.
 
 ```js
 app.get('/notfound', (c) => {
@@ -400,10 +408,10 @@ Let's write your first code for Cloudflare Workers with Hono.
 
 Make a npm skeleton directory.
 
-```sh
-mkdir hono-example
-cd hono-example
-npm init -y
+```
+$ mkdir hono-example
+$ cd hono-example
+$ npm init -y
 ```
 
 ### 2. `wrangler init`
@@ -426,7 +434,7 @@ Would you like to create a Worker at src/index.js? (y/n) <--- n
 
 Install `hono` from the npm registry.
 
-```sh
+```
 $ npm i hono
 ```
 
@@ -448,7 +456,7 @@ app.fire()
 
 Run the development server locally. Then, access `http://127.0.0.1:8787/` in your Web browser.
 
-```sh
+```
 $ npx wrangler@beta dev index.js
 ```
 
@@ -456,7 +464,7 @@ $ npx wrangler@beta dev index.js
 
 Deploy to Cloudflare. That's all!
 
-```sh
+```
 $ npx wrangler@beta publish index.js
 ```
 

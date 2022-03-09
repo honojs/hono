@@ -3,3 +3,4 @@ benchmark
 .github
 tsconfig.json
 src
+docs

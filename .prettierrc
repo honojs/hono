@@ -5,5 +5,11 @@
   "semi": false,
   "singleQuote": true,
   "jsxSingleQuote": true,
-  "endOfLine": "lf"
+  "endOfLine": "lf",
+  "overrides": [
+    {
+      "files": ["*.md"],
+      "options": { "parser": "markdown-nocjsp" }
+    }
+  ]
 }
