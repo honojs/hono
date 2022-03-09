@@ -30,7 +30,7 @@ app.fire()
 
 ## ベンチマーク
 
-他のCloudflare Workers向けのルーターと比べると**Honoが一番速い**のです。
+他のCloudflare Workers向けのルーターと比べると**Honoが一番速い**です。
 
 ```plain
 hono x 809,503 ops/sec ±6.94% (73 runs sampled)
