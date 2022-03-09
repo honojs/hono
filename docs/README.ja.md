@@ -14,7 +14,7 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/yusukebe/hono)](https://github.com/yusukebe/hono/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/yusukebe/hono)](https://github.com/yusukebe/hono/commits/master)
 
-Hono[炎] - _日本語の炎に由来 🔥_ - はCloudflare WorkersやFastly Compute@EdgeのようなService Workerベースのサーバーレス向けの小さくて、シンプルで、めちゃくちゃ速いWebフレームワークです。
+Hono[炎] - _日本語の炎に由来 🔥_ - はCloudflare WorkersやFastly Compute@Edge向けの小さくて、シンプルで、めちゃくちゃ速いWebフレームワークです。
 
 ```js
 import { Hono } from 'hono'
@@ -28,7 +28,7 @@ app.fire()
 ## 特徴
 
 - **めちゃくちゃ速い** - ルーターはぐるぐるループを回しません。
-- **依存ゼロ** - WebスタンダードのAPIしか使っていません。
+- **依存ゼロ** - Service WorkerもしくはWebスタンダードのAPIしか使っていません。
 - **ミドルウェア** - ビルトイン・ミドルウェアに加え自分でミドルウェアを作ることができます。
 - **最適化** - Cloudflare Workersに最適化されています。
 

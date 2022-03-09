@@ -14,7 +14,7 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/yusukebe/hono)](https://github.com/yusukebe/hono/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/yusukebe/hono)](https://github.com/yusukebe/hono/commits/master)
 
-Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web framework for Service Worker based serverless applications like Cloudflare Workers and Fastly Compute@Edge.
+Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web framework for Cloudflare Workers and Fastly Compute@Edge.
 
 ```js
 import { Hono } from 'hono'
@@ -28,7 +28,7 @@ app.fire()
 ## Features
 
 - **Ultrafast** - the router does not use linear loops.
-- **Zero-dependencies** - using only Web standard API.
+- **Zero-dependencies** - using only Service Worker and Web standard API.
 - **Middleware** - built-in middleware and ability to extend with your own middleware.
 - **Optimized** - for Cloudflare Workers.
 
