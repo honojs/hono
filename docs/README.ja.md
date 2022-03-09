@@ -10,7 +10,7 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/yusukebe/hono)](https://github.com/yusukebe/hono/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/yusukebe/hono)](https://github.com/yusukebe/hono/commits/master)
 
-Hono[炎] - _**means flame🔥 in Japanese**_ - is small, simple, and ultrafast web framework for Service Worker based serverless applications like Cloudflare Workers and Fastly Compute@Edge.
+Hono[炎] - _日本語の炎に由来 🔥_ - はCloudflare WorkersやFastly Compute@EdgeのようなService Workerベースのサーバーレス向けの小さくて、シンプルで、めちゃくちゃ速いWebフレームワークです。
 
 ```js
 import { Hono } from 'hono'
@@ -21,16 +21,16 @@ app.get('/', (c) => c.text('Hono!!'))
 app.fire()
 ```
 
-## Features
+## 特徴
 
-- **Ultrafast** - the router does not use linear loops.
-- **Zero-dependencies** - using only Web standard API.
-- **Middleware** - built-in middleware and ability to extend with your own middleware.
-- **Optimized** - for Cloudflare Workers.
+- **めちゃくちゃ速い** - ルーターはぐるぐるループを回しません。
+- **依存ゼロ** - WebスタンダードのAPIしか使っていません。
+- **ミドルウェア** - ビルトイン・ミドルウェアに加え自分でミドルウェアを作ることができます。
+- **最適化** - Cloudflare Workersに最適化されています。
 
-## Benchmark
+## ベンチマーク
 
-**Hono is fastest**, compared to other routers for Cloudflare Workers.
+他のCloudflare Workers向けのルーターと比べると**Honoが一番速い**のです。
 
 ```plain
 hono x 809,503 ops/sec ±6.94% (73 runs sampled)
@@ -41,33 +41,33 @@ Fastest is hono
 ✨  Done in 60.66s.
 ```
 
-## Hono in 1 minute
+## 1分間で分かるHono
 
-A demonstration to create an application for Cloudflare Workers with Hono.
+Honoを使って、Cloudflare Workersのアプリケーションを作っている様子です。
 
 ![Demo](https://user-images.githubusercontent.com/10682/151973526-342644f9-71c5-4fee-81f4-64a7558bb192.gif)
 
-Now, the named path parameter has types.
+名前付きパラメーターにも型がつきます。
 
 ![Demo](https://user-images.githubusercontent.com/10682/154179671-9e491597-6778-44ac-a8e6-4483d7ad5393.png)
 
-## Install
+## インストール
 
-You can install Hono from the npm registry.
+NPMリポジトリからインストールできます。
 
 ```sh
 $ yarn add hono
 ```
 
-or
+`yarn`、もしくは`npm`コマンドでインストール。
 
 ```sh
 $ npm install hono
 ```
 
-## Methods
+## メソッド
 
-An instance of `Hono` has these methods.
+`Hono`のインスタンスには以下のメソッドがあります。
 
 - app.**HTTP_METHOD**(path, handler)
 - app.**all**(path, handler)
@@ -78,25 +78,25 @@ An instance of `Hono` has these methods.
 - app.**fire**()
 - app.**fetch**(request, env, event)
 
-## Routing
+## ルーティング
 
-### Basic
+### 基本
 
 ```js
-// HTTP Methods
+// HTTPメソッド
 app.get('/', (c) => c.text('GET /'))
 app.post('/', (c) => c.text('POST /'))
 
-// Wildcard
+// ワイルドカード
 app.get('/wild/*/card', (c) => {
   return c.text('GET /wild/*/card')
 })
 
-// Any HTTP methods
+// どんなHTTPメソッドも受け付ける
 app.all('/hello', (c) => c.text('Any Method /hello'))
 ```
 
-### Named Parameter
+### URLからパラメーターを受け取る
 
 ```js
 app.get('/user/:name', (c) => {
@@ -105,7 +105,7 @@ app.get('/user/:name', (c) => {
 })
 ```
 
-### Regexp
+### 正規表現
 
 ```js
 app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (c) => {
@@ -115,7 +115,7 @@ app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (c) => {
 })
 ```
 
-### Nested route
+### ネストされたルート
 
 ```js
 const book = app.route('/book')
@@ -128,12 +128,12 @@ book.get('/:id', (c) => {
 book.post('/', (c) => c.text('Create Book')) // POST /book
 ```
 
-### no strict
+### 末尾のスラッシュの扱い
 
-If `strict` is set false, `/hello`and`/hello/` are treated the same.
+`strict`がfalseの場合、`/hello`と`/hello/`は同じように扱われます。
 
 ```js
-const app = new Hono({ strict: false }) // Default is true
+const app = new Hono({ strict: false }) // デフォルトはtrue
 
 app.get('/hello', (c) => c.text('/hello or /hello/'))
 ```
@@ -147,9 +147,9 @@ app.get('/fetch-url', async (c) => {
 })
 ```
 
-## Middleware
+## ミドルウェア
 
-### Built-in Middleware
+### ビルトイン・ミドルウェア
 
 ```js
 import { Hono } from 'hono'
@@ -170,20 +170,20 @@ app.use(
 )
 ```
 
-Available built-in middleware is listed on [src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware).
+利用可能なビルトインミドルウェアについては[src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware)を参照してください。
 
-### Custom Middleware
+### カスタム・ミドルウェア
 
-You can write your own middleware.
+自分でミドルウェアを書くことができます。
 
 ```js
-// Custom logger
+// カスタムロガー
 app.use('*', async (c, next) => {
   console.log(`[${c.req.method}] ${c.req.url}`)
   await next()
 })
 
-// Add a custom header
+// カスタムヘッダーの追加
 app.use('/message/*', async (c, next) => {
   await next()
   c.header('x-message', 'This is middleware!')
@@ -194,7 +194,7 @@ app.get('/message/hello', (c) => c.text('Hello Middleware!'))
 
 ## Not Found
 
-`app.notFound` for customizing Not Found Response.
+「Not Found」レスポンスをカスタマイズした時は`app.notFound`を使います。
 
 ```js
 app.notFound((c) => {
@@ -202,9 +202,9 @@ app.notFound((c) => {
 })
 ```
 
-## Error Handling
+## エラーハンドリング
 
-`app.onError` handle the error and return the customized Response.
+エラーハンドリングには`app.onError`を使います。
 
 ```js
 app.onError((err, c) => {
@@ -215,51 +215,51 @@ app.onError((err, c) => {
 
 ## Context
 
-To handle Request and Reponse, you can use Context object.
+レスポンス、リクエストを扱うにはContextオブジェクトを使います。
 
 ### c.req
 
 ```js
-// Get Request object
+// リクエストオブジェクトへアクセスする
 app.get('/hello', (c) => {
   const userAgent = c.req.headers.get('User-Agent')
   ...
 })
 
-// Shortcut to get a header value
+// ヘッダーの値を取得する
 app.get('/shortcut', (c) => {
   const userAgent = c.req.header('User-Agent')
   ...
 })
 
-// Query params
+// クエリーパラメーター
 app.get('/search', (c) => {
   const query = c.req.query('q')
   ...
 })
 
-// Captured params
+// URLからのパラメーターを受け取る
 app.get('/entry/:id', (c) => {
   const id = c.req.param('id')
   ...
 })
 ```
 
-### Shortcuts for Response
+### レスポンスへのショートカット
 
 ```js
 app.get('/welcome', (c) => {
-  // Set headers
+  // ヘッダーの設定
   c.header('X-Message', 'Hello!')
   c.header('Content-Type', 'text/plain')
-  // Set HTTP status code
+  // HTTPステータスコードの設定
   c.status(201)
-  // Return the response body
+  // レスポンスを返す
   return c.body('Thank you for comming')
 })
 ```
 
-The Response is the same as below.
+上記で返すレスポンスは以下と同じです。
 
 ```js
 new Response('Thank you for comming', {
@@ -275,7 +275,7 @@ new Response('Thank you for comming', {
 
 ### c.text()
 
-Render text as `Content-Type:text/plain`.
+`Content-Type:text/plain`ヘッダーをつけてテキストを返します。
 
 ```js
 app.get('/say', (c) => {
@@ -285,7 +285,7 @@ app.get('/say', (c) => {
 
 ### c.json()
 
-Render JSON as `Content-Type:application/json`.
+`Content-Type:application/json`ヘッダーをつけてJSONを返します。
 
 ```js
 app.get('/api', (c) => {
@@ -295,7 +295,7 @@ app.get('/api', (c) => {
 
 ### c.html()
 
-Render HTML as `Content-Type:text/html`.
+`Content-Type:text/html`ヘッダーをつけてHTMLを返します。
 
 ```js
 app.get('/', (c) => {
@@ -305,7 +305,7 @@ app.get('/', (c) => {
 
 ### c.notFound()
 
-Return the `404 Not Found` Response.
+`404 Not Found`レスポンスを返します。
 
 ```js
 app.get('/notfound', (c) => {
@@ -315,7 +315,7 @@ app.get('/notfound', (c) => {
 
 ### c.redirect()
 
-Redirect, default status code is `302`.
+リダイレクトします。デフォルトのステータスコードは`302`です。
 
 ```js
 app.get('/redirect', (c) => c.redirect('/'))
@@ -325,7 +325,7 @@ app.get('/redirect-permanently', (c) => c.redirect('/', 301))
 ### c.res
 
 ```js
-// Response object
+// レスポンスオブジェクトを取得
 app.use('/', (c, next) => {
   next()
   c.res.headers.append('X-Debug', 'Debug message')
@@ -335,7 +335,7 @@ app.use('/', (c, next) => {
 ### c.event
 
 ```js
-// FetchEvent object
+// FetchEventオブジェクトを取得
 app.use('*', async (c, next) => {
   c.event.waitUntil(
     ...
@@ -347,7 +347,7 @@ app.use('*', async (c, next) => {
 ### c.env
 
 ```js
-// Environment object for Cloudflare Workers
+// Environmentオブジェクトへのアクセス。Cloudflare Workers向けです。
 app.get('*', async c => {
   const counter = c.env.COUNTER
   ...
@@ -356,7 +356,7 @@ app.get('*', async c => {
 
 ## fire
 
-`app.fire()` do this.
+`app.fire()`は以下を実行します。
 
 ```js
 addEventListener('fetch', (event) => {
@@ -366,7 +366,7 @@ addEventListener('fetch', (event) => {
 
 ## fetch
 
-`app.fetch` for Cloudflare Module Worker syntax.
+`app.fetch`はCloudflare Module Workerシンタックス向けのメソッドです。
 
 ```js
 export default {
@@ -376,31 +376,31 @@ export default {
 }
 
 /*
-or just do:
+もしくは、これでもOK。
 export default app
 */
 ```
 
-## Cloudflare Workers with Hono
+## HonoでCloudflare Workersのアプリを作る
 
-Using [Wrangler](https://developers.cloudflare.com/workers/cli-wrangler/) or [Miniflare](https://miniflare.dev), you can develop the application locally and publish it with few commands.
+[Wrangler](https://developers.cloudflare.com/workers/cli-wrangler/)もしくは[Miniflare](https://miniflare.dev)を使えば、ローカル環境での開発から、デプロイ・公開までが数行のコマンドで簡単にできます。
 
-Let's write your first code for Cloudflare Workers with Hono.
+Honoを使って、Cloudflare Workersのアプリケーションを書いてみましょう。
 
 ---
 
-### Caution
+### 注意
 
-**Wrangler 1.x** does not support importing middleware. We recommend two ways:
+**Wrangler 1.x系** はミドルウェアのインポートに対応していません。2つの方法を推奨します。
 
-1. Use [Wragler 2.0 Beta](https://github.com/cloudflare/wrangler2).
-2. Build without webpack 4.x. For example, you can use esbuild. See [the starter template](https://github.com/yusukebe/hono-minimal).
+1. [Wragler 2.0 Beta](https://github.com/cloudflare/wrangler2)を使う。
+2. webpack 4.x系を使わない。例えば[esbuild](https://esbuild.github.io)を利用できます。[スターターテンプレート](https://github.com/yusukebe/hono-minimal)を参考にしてみてください。
 
 ---
 
 ### 1. `npm init`
 
-Make a npm skeleton directory.
+まず、雛形となるプロジェクトを作成します。
 
 ```
 $ mkdir hono-example
@@ -410,13 +410,13 @@ $ npm init -y
 
 ### 2. `wrangler init`
 
-Initialize as a wrangler project.
+Wrangler向けに初期化します。
 
 ```
 $ npx wrangler@beta init
 ```
 
-Answer the questions. If you want, you can answer `y`.
+質問されるので`y`か`n`で答えます。最初、分からないうちは`n`で構いません。
 
 ```
 Would you like to install wrangler into your package.json? (y/n) <--- n
@@ -426,15 +426,15 @@ Would you like to create a Worker at src/index.js? (y/n) <--- n
 
 ### 3. `npm install hono`
 
-Install `hono` from the npm registry.
+`hono`をNPMレジストリからインストールします。
 
 ```sh
 $ npm i hono
 ```
 
-### 4. Write your app
+### 4. コードを書く
 
-Only 4 lines!!
+たった4行書くだけです！
 
 ```js
 // index.js
@@ -446,35 +446,38 @@ app.get('/', (c) => c.text('Hello! Hono!'))
 app.fire()
 ```
 
-### 5. Run
+### 5. 起動させる
 
-Run the development server locally. Then, access `http://127.0.0.1:8787/` in your Web browser.
+ローカルで開発サーバーを立ち上げます。
+その後、`http://127.0.0.1:8787/`にブラウザでアクセスしてみましょう。
 
 ```sh
 $ npx wrangler@beta dev index.js
 ```
 
-### 6. Publish
+### 6. 公開
 
-Deploy to Cloudflare. That's all!
+以下のコマンドでCloudflareにデプロイします。
+これで終わりです！
 
 ```sh
 $ npx wrangler@beta publish index.js
 ```
 
-## Starter template
+## スターターテンプレート
 
-You can start making your Cloudflare Workers application with [the starter template](https://github.com/yusukebe/hono-minimal). It is really minimal using TypeScript, esbuild, and Miniflare.
+Cloudflare Workersのアプリケーションを書き始めるのに[スターターテンプレート](https://github.com/yusukebe/hono-minimal)を使うことができます。
+TypeScript、esbuild、Miniflareを使った最小限のものとなっています。
 
-To generate a project skelton, run this command.
+このテンプレートを使った雛形を生成するには、以下のコマンドを打ちます。
 
 ```
 $ wrangler generate my-app https://github.com/yusukebe/hono-minimal
 ```
 
-## Related projects
+## 関連プロジェクト
 
-Implementation of the original router `TrieRouter` is inspired by [goblin](https://github.com/bmf-san/goblin). `RegExpRouter` is inspired by [Router::Boom](https://github.com/tokuhirom/Router-Boom). API design is inspired by [express](https://github.com/expressjs/express) and [koa](https://github.com/koajs/koa). [itty-router](https://github.com/kwhitley/itty-router), [Sunder](https://github.com/SunderJS/sunder), and [worktop](https://github.com/lukeed/worktop) are the other routers or frameworks for Cloudflare Workers.
+最初に作ったHonoの`TrieRouter`というルーターは[goblin](https://github.com/bmf-san/goblin)を参考にしました。`RegExpRouter`は[Router::Boom](https://github.com/tokuhirom/Router-Boom)にインスパイアされています。APIのデザインは[express](https://github.com/expressjs/express)と[koa](https://github.com/koajs/koa)を参考にしました。同じCloudflare Workersのルーターもしくはフレームワークには[itty-router](https://github.com/kwhitley/itty-router)、[Sunder](https://github.com/SunderJS/sunder)、[worktop](https://github.com/lukeed/worktop)があります。
 
 - express <https://github.com/expressjs/express>
 - koa <https://github.com/koajs/koa>
@@ -484,26 +487,26 @@ Implementation of the original router `TrieRouter` is inspired by [goblin](https
 - worktop <https://github.com/lukeed/worktop>
 - Router::Boom <https://github.com/tokuhirom/Router-Boom>
 
-## Contributing
+## コントリビュート
 
-Contributions Welcome! You can contribute by the following way.
+コントリビュート歓迎です。以下の方法で貢献できるでしょう。
 
-- Write or fix documents
-- Write code of middleware
-- Fix bugs
-- Refactor the code
-- etc.
+- ドキュメントを書いたり、修正する
+- ミドルウェアのコードを書く
+- バグフィックス
+- コードのリファクタリング
+- などなど
 
-Let's make Hono together!
+一緒にHonoを作りましょう！
 
-## Contributors
+## コントリビューターの方々
 
-Thanks to [all contributors](https://github.com/yusukebe/hono/graphs/contributors)!
+[全てのコントリビューター](https://github.com/yusukebe/hono/graphs/contributors)へ。ありがとう！
 
-## Author
+## 作者
 
 Yusuke Wada <https://github.com/yusukebe>
 
-## License
+## ライセンス
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+HonoはMITライセンスのもと開発・公開されています。詳しくは[LICENSE](LICENSE)をご覧ください。
