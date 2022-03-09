@@ -9,23 +9,21 @@
     "url": "https://github.com/yusukebe/hono.git"
   },
   "homepage": "https://github.com/yusukebe/hono",
-  "devDependencies": {
-    "buffer": "^6.0.3",
-    "core-js": "^3.19.1",
-    "crypto-browserify": "^3.12.0",
-    "process": "^0.11.10",
-    "stream-browserify": "^3.0.0",
-    "webpack": "^5.68.0",
-    "webpack-cli": "^4.9.1"
-  },
-  "dependencies": {
-    "@fastly/js-compute": "^0.2.1",
-    "hono": "*"
-  },
   "scripts": {
-    "prebuild": "webpack",
-    "dev": "fastly compute serve",
+    "dev": "fastly compute serve --watch",
+    "prebuild": "node ./build.js",
     "build": "js-compute-runtime --skip-pkg bin/index.js bin/main.wasm",
     "deploy": "npm run build && fastly compute deploy"
+  },
+  "devDependencies": {
+    "@esbuild-plugins/node-globals-polyfill": "^0.1.1",
+    "@esbuild-plugins/node-modules-polyfill": "^0.1.4",
+    "@types/crypto-js": "^4.1.1",
+    "esbuild": "^0.14.25"
+  },
+  "dependencies": {
+    "@fastly/js-compute": "^0.2.4",
+    "crypto-js": "^4.1.1",
+    "hono": "^0.5.2"
   }
 }
