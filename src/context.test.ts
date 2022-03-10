@@ -95,4 +95,10 @@ describe('Context', () => {
     expect(c.res.status).toBe(201)
     expect(c.res.statusText).toBe('OK')
   })
+
+  it('Default status code is 200', async () => {
+    const res = c.text('Text')
+    expect(res.status).toBe(200)
+    expect(res.statusText).toBe('OK')
+  })
 })

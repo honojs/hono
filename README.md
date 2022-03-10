@@ -81,6 +81,7 @@ An instance of `Hono` has these methods.
 - app.**onError**(err, handler)
 - app.**fire**()
 - app.**fetch**(request, env, event)
+- app.**request**(path, option)
 
 ## Routing
 
@@ -385,6 +386,17 @@ export default {
 or just do:
 export default app
 */
+```
+
+## request
+
+`request` is a useful method for testing.
+
+```js
+test('GET /hello is ok', async () => {
+  const res = await app.request('http://localhost/hello')
+  expect(res.status).toBe(200)
+})
 ```
 
 ## Cloudflare Workers with Hono

@@ -55,8 +55,8 @@ export class Context<RequestParamKeyType = string> {
   }
 
   newResponse(data: Data, init: ResponseInit = {}): Response {
-    init.status = init.status || this._status
-    init.statusText = init.statusText || this._statusText
+    init.status = init.status || this._status || 200
+    init.statusText = init.statusText || this._statusText || getStatusText(init.status)
 
     init.headers = { ...this._headers, ...init.headers }
 

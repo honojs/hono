@@ -81,6 +81,7 @@ $ npm install hono
 - app.**onError**(err, handler)
 - app.**fire**()
 - app.**fetch**(request, env, event)
+- app.**request**(path, option)
 
 ## ルーティング
 
@@ -385,6 +386,17 @@ export default {
 もしくは、これでもOK。
 export default app
 */
+```
+
+## request
+
+`request`はテストの時に役に立つメソッドです。
+
+```js
+test('GET /hello is ok', async () => {
+  const res = await app.request('http://localhost/hello')
+  expect(res.status).toBe(200)
+})
 ```
 
 ## HonoでCloudflare Workersのアプリを作る
