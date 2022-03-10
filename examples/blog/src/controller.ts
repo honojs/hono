@@ -1,16 +1,16 @@
-import type { Context, Handler } from 'hono'
+import type { Context } from 'hono'
 import * as Model from './model'
 
-export const root: Handler = (c: Context) => {
+export const root = (c: Context) => {
   return c.json({ message: 'Hello' })
 }
 
-export const list: Handler = async (c: Context) => {
+export const list = async (c: Context) => {
   const posts = await Model.getPosts()
   return c.json({ posts: posts, ok: true })
 }
 
-export const create: Handler = async (c: Context) => {
+export const create = async (c: Context) => {
   let newPost: Model.Post | undefined
   if (c.req.parsedBody) {
     const param: Model.Param = c.req.parsedBody
@@ -22,7 +22,7 @@ export const create: Handler = async (c: Context) => {
   return c.json({ post: newPost, ok: true }, 201)
 }
 
-export const show: Handler = async (c: Context) => {
+export const show = async (c: Context<'id'>) => {
   const id = c.req.param('id')
   const post = await Model.getPost(id)
   if (!post) {
@@ -31,7 +31,7 @@ export const show: Handler = async (c: Context) => {
   return c.json({ post: post, ok: true })
 }
 
-export const update: Handler = async (c: Context) => {
+export const update = async (c: Context<'id'>) => {
   const id = c.req.param('id')
   if (!(await Model.getPost(id))) {
     // 204 No Content
@@ -42,7 +42,7 @@ export const update: Handler = async (c: Context) => {
   return c.json({ ok: success })
 }
 
-export const destroy: Handler = async (c: Context) => {
+export const destroy = async (c: Context<'id'>) => {
   const id = c.req.param('id')
   if (!(await Model.getPost(id))) {
     // 204 No Content
