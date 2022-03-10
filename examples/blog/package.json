@@ -12,7 +12,7 @@
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "license": "MIT",
   "dependencies": {
-    "hono": "^0.5.1"
+    "hono": "^0.5.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^3.3.1",
