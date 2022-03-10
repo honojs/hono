@@ -65,42 +65,50 @@ export class Hono {
 
   /* HTTP METHODS */
   get<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  get(path: string, handler: Handler<string>): Hono
   get(path: string, handler: Handler): Hono {
     return this.addRoute('get', path, handler)
   }
 
   post<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  post(path: string, handler: Handler<string>): Hono
   post(path: string, handler: Handler): Hono {
     return this.addRoute('post', path, handler)
   }
 
   put<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  put(path: string, handler: Handler<string>): Hono
   put(path: string, handler: Handler): Hono {
     return this.addRoute('put', path, handler)
   }
 
   head<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  head(path: string, handler: Handler<string>): Hono
   head(path: string, handler: Handler): Hono {
     return this.addRoute('head', path, handler)
   }
 
   delete<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  delete(path: string, handler: Handler<string>): Hono
   delete(path: string, handler: Handler): Hono {
     return this.addRoute('delete', path, handler)
   }
 
   options<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  options(path: string, handler: Handler<string>): Hono
   options(path: string, handler: Handler): Hono {
     return this.addRoute('options', path, handler)
   }
 
   patch<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  patch(path: string, handler: Handler<string>): Hono
   patch(path: string, handler: Handler): Hono {
     return this.addRoute('patch', path, handler)
   }
 
   /* Any methods */
   all<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
+  all(path: string, handler: Handler<string>): Hono
   all(path: string, handler: Handler): Hono {
     return this.addRoute('all', path, handler)
   }
