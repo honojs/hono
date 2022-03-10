@@ -52,12 +52,12 @@ export class Hono {
     this.tempPath = null
   }
 
-  notFoundHandler: NotFoundHandler = (c: Context) => {
+  private notFoundHandler: NotFoundHandler = (c: Context) => {
     const message = '404 Not Found'
     return c.text(message, 404)
   }
 
-  errorHandler: ErrorHandler = (err: Error, c: Context) => {
+  private errorHandler: ErrorHandler = (err: Error, c: Context) => {
     console.error(`${err.message}`)
     const message = 'Internal Server Error'
     return c.text(message, 500)
@@ -132,7 +132,7 @@ export class Hono {
   }
 
   // addRoute('get', '/', handler)
-  addRoute(method: string, path: string, handler: Handler): Hono {
+  private addRoute(method: string, path: string, handler: Handler): Hono {
     method = method.toUpperCase()
     if (this.tempPath) {
       path = mergePath(this.tempPath, path)
@@ -141,7 +141,7 @@ export class Hono {
     return this
   }
 
-  async matchRoute(method: string, path: string): Promise<Result<Handler>> {
+  private async matchRoute(method: string, path: string): Promise<Result<Handler>> {
     return this.router.match(method, path)
   }
 
@@ -202,6 +202,11 @@ export class Hono {
 
   async fetch(request: Request, env?: Env, event?: FetchEvent): Promise<Response> {
     return this.dispatch(request, env, event)
+  }
+
+  request(input: RequestInfo, requestInit?: RequestInit) {
+    const req = new Request(input, requestInit)
+    return this.dispatch(req)
   }
 
   fire() {
