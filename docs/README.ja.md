@@ -1,4 +1,4 @@
-# Hono
+# Hono\[炎\]
 
 <p>
 <a href="https://github.com/yusukebe/hono/blob/master/README.md">English</a>
