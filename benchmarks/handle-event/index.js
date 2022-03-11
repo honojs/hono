@@ -88,7 +88,7 @@ sunderApp.use(sunderRouter.middleware)
 
 // worktop
 const worktopRouter = new WorktopRouter()
-worktopRouter.add('GET', '/', async (req, res) => res.send(200, 'User'))
+worktopRouter.add('GET', '/user', async (req, res) => res.send(200, 'User'))
 worktopRouter.add('GET', '/user/comments', (req, res) => res.send(200, 'User Comments'))
 worktopRouter.add('GET', '/user/avatar', (req, res) => res.send(200, 'User Avatar'))
 worktopRouter.add('GET', '/user/lookup/email/:address', (req, res) =>
