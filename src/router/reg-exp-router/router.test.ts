@@ -1,4 +1,5 @@
 import { RegExpRouter } from './router'
+import { METHOD_NAME_OF_ALL } from '../../router'
 
 describe('Basic Usage', () => {
   const router = new RegExpRouter<string>()
@@ -66,5 +67,31 @@ describe('Complex', () => {
     expect(res).toBeNull()
     res = router.match('GET', '/post/123/123')
     expect(res).toBeNull()
+  })
+})
+
+describe('Optimization for METHOD_NAME_OF_ALL', () => {
+  let router: RegExpRouter<string>
+  beforeEach(() => {
+    router = new RegExpRouter<string>()
+  })
+
+  it('Apply to all requests', async () => {
+    router.add(METHOD_NAME_OF_ALL, '*', 'OK')
+    const res = router.match('GET', '/entry/123')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('OK')
+    expect(res.params).toMatchObject({})
+  })
+
+  it('Apply to all requests under a specific path', async () => {
+    router.add(METHOD_NAME_OF_ALL, '/path/to/*', 'OK')
+    let res = router.match('GET', '/entry/123')
+    expect(res).toBeNull()
+
+    res = router.match('GET', '/path/to/entry/123')
+    expect(res).not.toBeNull()
+    expect(res.handler).toBe('OK')
+    expect(res.params).toMatchObject({})
   })
 })
