@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "wrangler dev src/index.ts",
-    "publish": "wrangler publish src/index.ts"
+    "deploy": "wrangler publish src/index.ts"
   },
   "license": "MIT",
   "devDependencies": {

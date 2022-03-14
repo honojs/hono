@@ -65,11 +65,11 @@ kv_namespaces = [
 Run a development server:
 
 ```sh
-$ yarn run dev
+$ yarn dev
 ```
 
 Publish:
 
 ```sh
-$ yarn run publih
+$ yarn deploy
 ```

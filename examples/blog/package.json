@@ -6,7 +6,7 @@
   "scripts": {
     "build": "esbuild --bundle --outdir=dist ./src/index.ts",
     "dev": "miniflare --live-reload --debug",
-    "publish": "wrangler publish dist/index.js",
+    "deploy": "wrangler publish dist/index.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --verbose"
   },
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",

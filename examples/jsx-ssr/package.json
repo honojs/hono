@@ -6,7 +6,7 @@
   "scripts": {
     "build": "esbuild --bundle --sourcemap --outdir=dist ./src/index.tsx",
     "dev": "miniflare --live-reload --debug",
-    "publish": "wrangler publish dist/index.js"
+    "deploy": "wrangler publish dist/index.js"
   },
   "license": "MIT",
   "dependencies": {
