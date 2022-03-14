@@ -3,20 +3,18 @@ import type { Post } from './model'
 
 describe('Root', () => {
   it('GET /', async () => {
-    const req = new Request('http://localhost/')
-    const res = await app.dispatch(req)
+    const res = await app.request('http://localhost/')
     expect(res.status).toBe(200)
-    const body = (await res.json()) as any
+    const body = await res.json()
     expect(body['message']).toBe('Hello')
   })
 })
 
 describe('Blog API', () => {
   it('List', async () => {
-    const req = new Request('http://localhost/posts')
-    const res = await app.dispatch(req)
+    const res = await app.request('http://localhost/posts')
     expect(res.status).toBe(200)
-    const body = (await res.json()) as any
+    const body = await res.json()
     expect(body['posts']).not.toBeUndefined()
     expect(body['posts'].length).toBe(0)
   })
@@ -28,57 +26,54 @@ describe('Blog API', () => {
       body: payload,
       headers: { 'Content-Type': 'application/json' },
     })
-    let res = await app.dispatch(req)
+    let res = await app.request(req)
     expect(res.status).toBe(201)
-    let body = (await res.json()) as any
+    let body = await res.json()
     const newPost = body['post'] as Post
     expect(newPost.title).toBe('Morning')
     expect(newPost.body).toBe('Good Morning')
 
-    req = new Request('https://localhost/posts')
-    res = await app.dispatch(req)
+    res = await app.request('https://localhost/posts')
     expect(res.status).toBe(200)
-    body = (await res.json()) as any
+    body = await res.json()
     expect(body['posts']).not.toBeUndefined()
     expect(body['posts'].length).toBe(1)
 
-    req = new Request(`https://localhost/posts/${newPost.id}`)
-    res = await app.dispatch(req)
+    res = await app.request(`https://localhost/posts/${newPost.id}`)
     expect(res.status).toBe(200)
-    body = (await res.json()) as any
+    body = await res.json()
     let post = body['post'] as Post
     expect(post.id).toBe(newPost.id)
     expect(post.title).toBe('Morning')
+    const postId = post.id
 
     payload = JSON.stringify({ title: 'Night', body: 'Good Night' })
-    req = new Request(`https://localhost/posts/${post.id}`, {
+    req = new Request(`https://localhost/posts/${postId}`, {
       method: 'PUT',
       body: payload,
       headers: { 'Content-Type': 'application/json' },
     })
-    res = await app.dispatch(req)
+    res = await app.request(req)
     expect(res.status).toBe(200)
-    body = (await res.json()) as any
+    body = await res.json()
     expect(body['ok']).toBeTruthy()
 
-    req = new Request(`https://localhost/posts/${post.id}`)
-    res = await app.dispatch(req)
+    res = await app.request(`https://localhost/posts/${postId}`)
     expect(res.status).toBe(200)
-    body = (await res.json()) as any
+    body = await res.json()
     post = body['post'] as Post
     expect(post.title).toBe('Night')
     expect(post.body).toBe('Good Night')
 
-    req = new Request(`https://localhost/posts/${post.id}`, {
+    req = new Request(`https://localhost/posts/${postId}`, {
       method: 'DELETE',
     })
-    res = await app.dispatch(req)
+    res = await app.request(req)
     expect(res.status).toBe(200)
-    body = (await res.json()) as any
+    body = await res.json()
     expect(body['ok']).toBeTruthy()
 
-    req = new Request(`https://localhost/posts/${post.id}`)
-    res = await app.dispatch(req)
+    res = await app.request(`https://localhost/posts/${postId}`)
     expect(res.status).toBe(404)
   })
 })
