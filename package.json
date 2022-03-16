@@ -24,6 +24,7 @@
     "./mustache": "./dist/middleware/mustache/mustache.js",
     "./powered-by": "./dist/middleware/powered-by/powered-by.js",
     "./serve-static": "./dist/middleware/serve-static/serve-static.js",
+    "./router/trie-router": "./dist/router/trie-router/router.js",
     "./router/reg-exp-router": "./dist/router/reg-exp-router/index.js"
   },
   "typesVersions": {
@@ -51,6 +52,9 @@
       ],
       "serve-static": [
         "./dist/middleware/serve-static/serve-static.d.ts"
+      ],
+      "router/trie-router": [
+        "./dist/router/trie-router/router.d.ts"
       ],
       "router/reg-exp-router": [
         "./dist/router/reg-exp-router/router.d.ts"
