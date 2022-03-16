@@ -20,6 +20,7 @@
     "./body-parse": "./dist/middleware/body-parse/body-parse.js",
     "./cookie": "./dist/middleware/cookie/cookie.js",
     "./cors": "./dist/middleware/cors/cors.js",
+    "./etag": "./dist/middleware/etag/etag.js",
     "./logger": "./dist/middleware/logger/logger.js",
     "./mustache": "./dist/middleware/mustache/mustache.js",
     "./powered-by": "./dist/middleware/powered-by/powered-by.js",
@@ -40,6 +41,9 @@
       ],
       "cors": [
         "./dist/middleware/cors/cors.d.ts"
+      ],
+      "etag": [
+        "./dist/middleware/etag/etag.d.ts"
       ],
       "logger": [
         "./dist/middleware/logger/logger.d.ts"
