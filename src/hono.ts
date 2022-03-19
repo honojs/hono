@@ -21,7 +21,7 @@ export type Handler<RequestParamKeyType = string> = (
   next?: Function
 ) => Response | Promise<Response>
 export type MiddlewareHandler = (c: Context, next: Function) => Promise<void>
-export type NotFoundHandler = (c: Context) => Response
+export type NotFoundHandler = (c: Context) => Response | Promise<Response>
 export type ErrorHandler = (err: Error, c: Context) => Response
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
