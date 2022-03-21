@@ -8,7 +8,7 @@ app.use('*', mustache())
 app.get('/', (c) => {
   return c.render(
     'index',
-    { name: 'Hono[炎]', title: 'Hono mustache exaple' }, // Parameters
+    { name: 'Hono[炎]', title: 'Hono mustache example' }, // Parameters
     { footer: 'footer', header: 'header' } // Partials
   )
 })
