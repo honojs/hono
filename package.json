@@ -21,11 +21,11 @@
     "./cookie": "./dist/middleware/cookie/cookie.js",
     "./cors": "./dist/middleware/cors/cors.js",
     "./etag": "./dist/middleware/etag/etag.js",
+    "./graphql-server": "./dist/middleware/graphql-server/graphql-server.js",
     "./logger": "./dist/middleware/logger/logger.js",
     "./mustache": "./dist/middleware/mustache/mustache.js",
     "./powered-by": "./dist/middleware/powered-by/powered-by.js",
     "./serve-static": "./dist/middleware/serve-static/serve-static.js",
-    "./graphql-server": "./dist/middleware/graphql/graphql-server.js",
     "./router/trie-router": "./dist/router/trie-router/router.js",
     "./router/reg-exp-router": "./dist/router/reg-exp-router/index.js"
   },
@@ -46,6 +46,9 @@
       "etag": [
         "./dist/middleware/etag/etag.d.ts"
       ],
+      "graphql-server": [
+        "./dist/middleware/graphql-server/graphql-server.d.ts"
+      ],
       "logger": [
         "./dist/middleware/logger/logger.d.ts"
       ],
@@ -57,9 +60,6 @@
       ],
       "serve-static": [
         "./dist/middleware/serve-static/serve-static.d.ts"
-      ],
-      "graphql-server": [
-        "./dist/middleware/graphql/graphql-server.d.ts"
       ],
       "router/trie-router": [
         "./dist/router/trie-router/router.d.ts"
