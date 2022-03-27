@@ -25,6 +25,7 @@
     "./mustache": "./dist/middleware/mustache/mustache.js",
     "./powered-by": "./dist/middleware/powered-by/powered-by.js",
     "./serve-static": "./dist/middleware/serve-static/serve-static.js",
+    "./graphql-server": "./dist/middleware/graphql/graphql-server.js",
     "./router/trie-router": "./dist/router/trie-router/router.js",
     "./router/reg-exp-router": "./dist/router/reg-exp-router/index.js"
   },
@@ -56,6 +57,9 @@
       ],
       "serve-static": [
         "./dist/middleware/serve-static/serve-static.d.ts"
+      ],
+      "graphql-server": [
+        "./dist/middleware/graphql/graphql-server.d.ts"
       ],
       "router/trie-router": [
         "./dist/router/trie-router/router.d.ts"
@@ -102,6 +106,7 @@
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-node": "^11.1.0",
     "form-data": "^4.0.0",
+    "graphql": "^16.3.0",
     "jest": "^27.4.5",
     "jest-environment-miniflare": "^2.0.0",
     "mustache": "^4.2.0",
