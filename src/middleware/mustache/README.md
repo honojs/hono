@@ -65,3 +65,7 @@ footer.mustache:
   </body>
 </html>
 ```
+
+## Example
+
+<https://github.com/yusukebe/hono/tree/master/examples/mustache>
