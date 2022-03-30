@@ -1,4 +1,4 @@
-import { sha256, sha1, decodeBase64 } from './crypto'
+import { sha256, sha1, decodeBase64, encodeBase64 } from './crypto'
 
 describe('crypto', () => {
   it('sha256', async () => {
@@ -15,6 +15,12 @@ describe('crypto', () => {
     expect(await sha1('hono')).toBe('28c7e86f5732391917876b45c06c626c04d77f39')
     expect(await sha1('炎')).toBe('d56e09ae2421b2b8a0b5ee5fdceaed663c8c9472')
     expect(await sha1('abcdedf')).not.toBe('abcdef')
+  })
+
+  it('encodeBaes64', async () => {
+    expect(await encodeBase64('hooooooooo')).toBe('aG9vb29vb29vbw==')
+    expect(await encodeBase64('炎')).toBe('54KO')
+    expect(await encodeBase64('abcdef')).not.toBe('abcdedf')
   })
 
   it('decodeBaes64', async () => {

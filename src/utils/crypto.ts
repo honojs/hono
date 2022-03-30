@@ -41,6 +41,26 @@ export const createHash = async (data: Data, algorithm: Algorithm): Promise<stri
   }
 }
 
+export const encodeBase64 = (str: string) => {
+  try {
+    const encoder = new TextEncoder()
+    const bytes = encoder.encode(str)
+    const length = bytes.byteLength
+    let binary = ''
+    for (let i = 0; i < length; i++) {
+      binary += String.fromCharCode(bytes[i])
+    }
+    return btoa(binary)
+  } catch {}
+  try {
+    const { Buffer } = require('buffer')
+    return Buffer.from(str).toString('base64')
+  } catch (e) {
+    console.error('If you want to do "encodeBase64", polyfill "buffer" module.')
+    throw e
+  }
+}
+
 export const decodeBase64 = (str: string) => {
   try {
     const text = atob(str)
