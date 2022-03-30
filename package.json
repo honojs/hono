@@ -29,6 +29,7 @@
     "./router/trie-router": "./dist/router/trie-router/router.js",
     "./router/reg-exp-router": "./dist/router/reg-exp-router/index.js",
     "./utils/cloudflare": "./dist/utils/cloudflare.js",
+    "./utils/crypto": "./dist/utils/crypto.js",
     "./utils/mime": "./dist/utils/mime.js"
   },
   "typesVersions": {
@@ -71,6 +72,9 @@
       ],
       "utils/cloudflare": [
         "./dist/utils/cloudflare.d.ts"
+      ],
+      "utils/crypto": [
+        "./dist/utils/crypto.d.ts"
       ],
       "utils/mime": [
         "./dist/utils/mime.d.ts"
