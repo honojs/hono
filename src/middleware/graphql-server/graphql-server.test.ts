@@ -546,7 +546,6 @@ describe('Error handling functionality', () => {
         variables: { who: ['John', 'Jane'] },
       }),
     })
-
     expect(res.status).toBe(500)
   })
 

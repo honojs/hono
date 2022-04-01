@@ -12,9 +12,16 @@ import {
   validate,
   specifiedRules,
   getOperationAST,
+  GraphQLError,
 } from 'graphql'
 
-import type { GraphQLSchema, DocumentNode, ValidationRule, FormattedExecutionResult } from 'graphql'
+import type {
+  GraphQLSchema,
+  DocumentNode,
+  ValidationRule,
+  FormattedExecutionResult,
+  GraphQLFormattedError,
+} from 'graphql'
 
 type Options = {
   schema: GraphQLSchema
@@ -47,7 +54,7 @@ export const graphqlServer = (options: Options) => {
       params = await getGraphQLParams(c.req)
     } catch (e) {
       if (e instanceof Error) {
-        c.res = c.json(errorMessages([e.message]), 400)
+        c.res = c.json(errorMessages([e.message], [e]), 400)
       }
       return
     }
@@ -62,7 +69,10 @@ export const graphqlServer = (options: Options) => {
     const schemaValidationErrors = validateSchema(schema)
     if (schemaValidationErrors.length > 0) {
       // Return 500: Internal Server Error if invalid schema.
-      c.res = c.json(errorMessages(['GraphQL schema validation error.']), 500)
+      c.res = c.json(
+        errorMessages(['GraphQL schema validation error.'], schemaValidationErrors),
+        500
+      )
       return
     }
 
@@ -71,7 +81,12 @@ export const graphqlServer = (options: Options) => {
       documentAST = parse(new Source(query, 'GraphQL request'))
     } catch (syntaxError: unknown) {
       // Return 400: Bad Request if any syntax errors errors exist.
-      c.res = c.json(errorMessages(['GraphQL syntax error.']), 400)
+      if (syntaxError instanceof Error) {
+        const e = new GraphQLError(syntaxError.message, {
+          originalError: syntaxError,
+        })
+        c.res = c.json(errorMessages(['GraphQL syntax error.'], [e]), 400)
+      }
       return
     }
 
@@ -80,7 +95,7 @@ export const graphqlServer = (options: Options) => {
 
     if (validationErrors.length > 0) {
       // Return 400: Bad Request if any validation errors exist.
-      c.res = c.json(errorMessages(['GraphQL validation error.']), 400)
+      c.res = c.json(errorMessages(['GraphQL validation error.'], validationErrors), 400)
       return
     }
 
@@ -117,14 +132,20 @@ export const graphqlServer = (options: Options) => {
         variableValues: variables,
         operationName: operationName,
       })
-    } catch (error: unknown) {
-      // Return 400: Bad Request if any execution context errors exist.
-      c.res = c.json(errorMessages(['GraphQL execution context error.']), 400)
+    } catch (contextError: unknown) {
+      if (contextError instanceof Error) {
+        const e = new GraphQLError(contextError.message, {
+          originalError: contextError,
+          nodes: documentAST,
+        })
+        // Return 400: Bad Request if any execution context errors exist.
+        c.res = c.json(errorMessages(['GraphQL execution context error.'], [e]), 400)
+      }
       return
     }
 
     if (result.data == null) {
-      c.res = c.json(errorMessages([result.errors.toString()]), 500)
+      c.res = c.json(errorMessages([result.errors.toString()], result.errors), 500)
       return
     }
 
@@ -196,14 +217,22 @@ export const getGraphQLParams = async (request: Request): Promise<GraphQLParams>
   return params
 }
 
-export const errorMessages = (messages: string[]) => {
-  const errors = messages.map((message) => {
+export const errorMessages = (
+  messages: string[],
+  graphqlErrors?: readonly GraphQLError[] | readonly GraphQLFormattedError[]
+) => {
+  if (graphqlErrors) {
     return {
-      message: message,
+      errors: graphqlErrors,
     }
-  })
+  }
+
   return {
-    errors: errors,
+    errors: messages.map((message) => {
+      return {
+        message: message,
+      }
+    }),
   }
 }
 
