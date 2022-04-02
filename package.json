@@ -25,6 +25,7 @@
     "./logger": "./dist/middleware/logger/logger.js",
     "./mustache": "./dist/middleware/mustache/mustache.js",
     "./powered-by": "./dist/middleware/powered-by/powered-by.js",
+    "./pretty-json": "./dist/middleware/pretty-json/pretty-json.js",
     "./serve-static": "./dist/middleware/serve-static/serve-static.js",
     "./router/trie-router": "./dist/router/trie-router/router.js",
     "./router/reg-exp-router": "./dist/router/reg-exp-router/index.js",
@@ -60,6 +61,9 @@
       ],
       "powered-by": [
         "./dist/middleware/powered-by/powered-by.d.ts"
+      ],
+      "pretty-json": [
+        "./dist/middleware/pretty-json/pretty-json.d.ts"
       ],
       "serve-static": [
         "./dist/middleware/serve-static/serve-static.d.ts"
