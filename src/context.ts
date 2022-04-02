@@ -14,6 +14,7 @@ export class Context<RequestParamKeyType = string> {
   private _headers: Headers
   private _status: number
   private _statusText: string
+  private _pretty: boolean
 
   render: (template: string, params?: object, options?: object) => Promise<Response>
   notFound: () => Response | Promise<Response>
@@ -52,6 +53,10 @@ export class Context<RequestParamKeyType = string> {
     }
     this._status = number
     this._statusText = getStatusText(number)
+  }
+
+  pretty(prettyJSON: boolean): void {
+    this._pretty = prettyJSON
   }
 
   newResponse(data: Data, init: ResponseInit = {}): Response {
@@ -94,7 +99,7 @@ export class Context<RequestParamKeyType = string> {
     if (typeof object !== 'object') {
       throw new TypeError('json method arg must be a object!')
     }
-    const body = JSON.stringify(object)
+    const body = this._pretty ? JSON.stringify(object, null, 2) : JSON.stringify(object)
     headers['Content-Type'] ||= 'application/json; charset=UTF-8'
     return this.body(body, status, headers)
   }
