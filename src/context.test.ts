@@ -2,7 +2,11 @@ import { Context } from './context'
 
 describe('Context', () => {
   const req = new Request('http://localhost/')
-  const c = new Context(req)
+
+  let c: Context
+  beforeEach(() => {
+    c = new Context(req)
+  })
 
   it('c.text()', async () => {
     const res = c.text('text in c', 201, { 'X-Custom': 'Message' })
@@ -17,9 +21,17 @@ describe('Context', () => {
     expect(res.status).toBe(201)
     expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
     const text = await res.text()
-    const object = JSON.parse(text)
-    expect(object.message).toBe('Hello')
+    expect(text).toBe('{"message":"Hello"}')
     expect(res.headers.get('X-Custom')).toBe('Message')
+  })
+
+  it('c.json() with pretty', async () => {
+    c.pretty(true)
+    const res = c.json({ message: 'Hello' })
+    const text = await res.text()
+    expect(text).toBe(`{
+  "message": "Hello"
+}`)
   })
 
   it('c.html()', async () => {
@@ -63,14 +75,14 @@ describe('Context', () => {
     expect(obj['hono']).toBe('great app')
   })
 
-  it('Content-Length', async () => {
+  it('Should return `Content-Length`', async () => {
     let res = c.text('abcdefg')
     expect(res.headers.get('Content-Length')).toBe('7')
     res = c.text('炎')
     expect(res.headers.get('Content-Length')).toBe('3')
   })
 
-  it('Headers, status, statusText', async () => {
+  it('Has headers, status, and statusText', async () => {
     c.header('X-Custom1', 'Message1')
     c.header('X-Custom2', 'Message2')
     c.status(200)
@@ -96,7 +108,7 @@ describe('Context', () => {
     expect(c.res.statusText).toBe('OK')
   })
 
-  it('Default status code is 200', async () => {
+  it('Should return 200 response', async () => {
     const res = c.text('Text')
     expect(res.status).toBe(200)
     expect(res.statusText).toBe('OK')
