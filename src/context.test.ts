@@ -25,12 +25,21 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
-  it('c.json() with pretty', async () => {
+  it('c.json() with c.pretty(true)', async () => {
     c.pretty(true)
     const res = c.json({ message: 'Hello' })
     const text = await res.text()
     expect(text).toBe(`{
   "message": "Hello"
+}`)
+  })
+
+  it('c.json() with c.pretty(true, 4)', async () => {
+    c.pretty(true, 4)
+    const res = c.json({ message: 'Hello' })
+    const text = await res.text()
+    expect(text).toBe(`{
+    "message": "Hello"
 }`)
   })
 
