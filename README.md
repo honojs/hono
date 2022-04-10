@@ -30,6 +30,7 @@ app.fire()
 - **Ultrafast** - the router does not use linear loops.
 - **Zero-dependencies** - using only Service Worker and Web standard API.
 - **Middleware** - built-in middleware and ability to extend with your own middleware.
+- **TypeScript** - first-class TypeScript support.
 - **Optimized** - for Cloudflare Workers.
 
 ## Benchmark
