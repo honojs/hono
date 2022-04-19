@@ -41,7 +41,10 @@ export const createHash = async (data: Data, algorithm: Algorithm): Promise<stri
   }
 }
 
-export const encodeBase64 = (str: string) => {
+export const encodeBase64 = (str: string): string => {
+  if (str === null) {
+    throw new TypeError('1st argument of "encodeBase64" should not be null.')
+  }
   try {
     const encoder = new TextEncoder()
     const bytes = encoder.encode(str)
@@ -61,7 +64,10 @@ export const encodeBase64 = (str: string) => {
   }
 }
 
-export const decodeBase64 = (str: string) => {
+export const decodeBase64 = (str: string): string => {
+  if (str === null) {
+    throw new TypeError('1st argument of "decodeBase64" should not be null.')
+  }
   try {
     const text = atob(str)
     const length = text.length
