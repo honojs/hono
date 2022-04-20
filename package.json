@@ -10,63 +10,61 @@
   "scripts": {
     "test": "jest",
     "lint": "eslint --ext js,ts src .eslintrc.js && prettier --check src",
-    "build": "rimraf dist && tsc",
-    "watch": "tsc -w",
+    "build": "rimraf dist && tsc --project tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "watch": "tsc -w --project tsconfig.build.json & tsc-alias -w -p tsconfig.build.json",
     "prepublishOnly": "yarn build"
   },
   "exports": {
     ".": "./dist/index.js",
-    "./basic-auth": "./dist/middleware/basic-auth/basic-auth.js",
-    "./body-parse": "./dist/middleware/body-parse/body-parse.js",
-    "./cookie": "./dist/middleware/cookie/cookie.js",
-    "./cors": "./dist/middleware/cors/cors.js",
-    "./etag": "./dist/middleware/etag/etag.js",
-    "./graphql-server": "./dist/middleware/graphql-server/graphql-server.js",
-    "./logger": "./dist/middleware/logger/logger.js",
-    "./mustache": "./dist/middleware/mustache/mustache.js",
-    "./powered-by": "./dist/middleware/powered-by/powered-by.js",
-    "./pretty-json": "./dist/middleware/pretty-json/pretty-json.js",
-    "./serve-static": "./dist/middleware/serve-static/serve-static.js",
-    "./router/trie-router": "./dist/router/trie-router/router.js",
-    "./router/reg-exp-router": "./dist/router/reg-exp-router/index.js",
-    "./utils/cloudflare": "./dist/utils/cloudflare.js",
-    "./utils/crypto": "./dist/utils/crypto.js",
-    "./utils/mime": "./dist/utils/mime.js"
+    "./basic-auth": "./dist/middleware/basic-auth",
+    "./body-parse": "./dist/middleware/body-parse",
+    "./cookie": "./dist/middleware/cookie",
+    "./cors": "./dist/middleware/cors",
+    "./etag": "./dist/middleware/etag",
+    "./graphql-server": "./dist/middleware/graphql-server",
+    "./logger": "./dist/middleware/logger",
+    "./mustache": "./dist/middleware/mustache",
+    "./powered-by": "./dist/middleware/powered-by",
+    "./pretty-json": "./dist/middleware/pretty-json",
+    "./serve-static": "./dist/middleware/serve-static",
+    "./router/trie-router": "./dist/router/trie-router",
+    "./router/reg-exp-router": "./dist/router/reg-exp-router",
+    "./utils/*": "./dist/utils/*.js"
   },
   "typesVersions": {
     "*": {
       "basic-auth": [
-        "./dist/middleware/basic-auth/basic-auth.d.ts"
+        "./dist/middleware/basic-auth"
       ],
       "body-parse": [
-        "./dist/middleware/body-parse/body-parse.d.ts"
+        "./dist/middleware/body-parse"
       ],
       "cookie": [
-        "./dist/middleware/cookie/cookie.d.ts"
+        "./dist/middleware/cookie"
       ],
       "cors": [
-        "./dist/middleware/cors/cors.d.ts"
+        "./dist/middleware/cors"
       ],
       "etag": [
-        "./dist/middleware/etag/etag.d.ts"
+        "./dist/middleware/etag"
       ],
       "graphql-server": [
-        "./dist/middleware/graphql-server/graphql-server.d.ts"
+        "./dist/middleware/graphql-server"
       ],
       "logger": [
-        "./dist/middleware/logger/logger.d.ts"
+        "./dist/middleware/logger"
       ],
       "mustache": [
-        "./dist/middleware/mustache/mustache.d.ts"
+        "./dist/middleware/mustache"
       ],
       "powered-by": [
-        "./dist/middleware/powered-by/powered-by.d.ts"
+        "./dist/middleware/powered-by"
       ],
       "pretty-json": [
-        "./dist/middleware/pretty-json/pretty-json.d.ts"
+        "./dist/middleware/pretty-json"
       ],
       "serve-static": [
-        "./dist/middleware/serve-static/serve-static.d.ts"
+        "./dist/middleware/serve-static"
       ],
       "router/trie-router": [
         "./dist/router/trie-router/router.d.ts"
@@ -74,14 +72,8 @@
       "router/reg-exp-router": [
         "./dist/router/reg-exp-router/router.d.ts"
       ],
-      "utils/cloudflare": [
-        "./dist/utils/cloudflare.d.ts"
-      ],
-      "utils/crypto": [
-        "./dist/utils/crypto.d.ts"
-      ],
-      "utils/mime": [
-        "./dist/utils/mime.d.ts"
+      "utils/*": [
+        "./dist/utils/*"
       ]
     }
   },
@@ -130,6 +122,7 @@
     "prettier-plugin-md-nocjsp": "^1.2.0",
     "rimraf": "^3.0.2",
     "ts-jest": "^27.1.2",
+    "tsc-alias": "^1.6.6",
     "typescript": "^4.5.5"
   },
   "engines": {

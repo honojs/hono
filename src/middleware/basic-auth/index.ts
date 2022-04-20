@@ -1,6 +1,6 @@
-import type { Context } from '../../context'
-import { timingSafeEqual } from '../../utils/buffer'
-import { decodeBase64 } from '../../utils/crypto'
+import type { Context } from '@/context'
+import { timingSafeEqual } from '@/utils/buffer'
+import { decodeBase64 } from '@/utils/crypto'
 
 const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/

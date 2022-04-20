@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
-import { prettyJSON } from './pretty-json'
+import { Hono } from '@/hono'
+import { prettyJSON } from '@/middleware/pretty-json'
 
 describe('JSON pretty by Middleware', () => {
   const app = new Hono()

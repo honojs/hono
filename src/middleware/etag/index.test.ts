@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
-import { etag } from './etag'
+import { Hono } from '@/hono'
+import { etag } from '@/middleware/etag'
 
 describe('Etag Middleware', () => {
   const app = new Hono()

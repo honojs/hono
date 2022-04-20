@@ -1,5 +1,5 @@
-import { isAbsoluteURL } from './utils/url'
-import { getStatusText } from './utils/http-status'
+import { isAbsoluteURL } from '@/utils/url'
+import { getStatusText } from '@/utils/http-status'
 
 type Headers = Record<string, string>
 type Data = string | ArrayBuffer | ReadableStream

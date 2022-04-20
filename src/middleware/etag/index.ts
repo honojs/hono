@@ -1,6 +1,6 @@
-import { sha1 } from '../../utils/crypto'
-import { parseBody } from '../../utils/body'
-import type { Context } from '../../context'
+import { sha1 } from '@/utils/crypto'
+import { parseBody } from '@/utils/body'
+import type { Context } from '@/context'
 
 type ETagOptions = {
   weak: boolean

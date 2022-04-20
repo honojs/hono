@@ -1,4 +1,4 @@
-import type { Context } from '../../context'
+import type { Context } from '@/context'
 
 declare global {
   interface Request {
@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-declare module '../../context' {
+declare module '@/context' {
   interface Context {
     cookie: (name: string, value: string, options?: CookieOptions) => void
   }
