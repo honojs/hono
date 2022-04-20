@@ -1,4 +1,5 @@
 import type { Context } from '@/context'
+import type { Next } from '@/hono'
 
 declare global {
   interface Request {
@@ -25,7 +26,7 @@ export type CookieOptions = {
 }
 
 export const cookie = () => {
-  return async (c: Context, next: Function) => {
+  return async (c: Context, next: Next) => {
     c.req.cookie = (name: string): string => {
       const cookie = c.req.headers.get('Cookie')
       const obj = parse(cookie)

@@ -1,7 +1,6 @@
 // Based on the code in the `express-graphql` package.
 // https://github.com/graphql/express-graphql/blob/main/src/index.ts
 
-
 import {
   Source,
   parse,
@@ -20,7 +19,9 @@ import type {
   FormattedExecutionResult,
   GraphQLFormattedError,
 } from 'graphql'
+
 import type { Context } from '@/context'
+import type { Next } from '@/hono'
 import { parseBody } from '@/middleware/graphql-server/parse-body'
 
 type Options = {
@@ -38,7 +39,7 @@ export const graphqlServer = (options: Options) => {
   const validationRules = options.validationRules ?? []
   // const showGraphiQL = options.graphiql ?? false
 
-  return async (c: Context, next: Function) => {
+  return async (c: Context, next: Next) => {
     await next()
 
     // GraphQL HTTP only supports GET and POST methods.

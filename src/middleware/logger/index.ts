@@ -1,4 +1,5 @@
 import type { Context } from '@/context'
+import type { Next } from '@/hono'
 import { getPathFromURL } from '@/utils/url'
 
 const humanize = (n: string[], opts?: { delimiter?: string; separator?: string }) => {
@@ -52,7 +53,7 @@ function log(
 }
 
 export const logger = (fn = console.log) => {
-  return async (c: Context, next: Function) => {
+  return async (c: Context, next: Next) => {
     const { method } = c.req
     const path = getPathFromURL(c.req.url)
 
