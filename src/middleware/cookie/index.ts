@@ -79,7 +79,7 @@ const serialize = (name: string, value: string, opt: CookieOptions = {}): string
   }
 
   if (opt.sameSite) {
-    cookie += `; SameSaite=${opt.sameSite}`
+    cookie += `; SameSite=${opt.sameSite}`
   }
 
   return cookie
