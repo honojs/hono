@@ -60,14 +60,14 @@ Now, the named path parameter has types.
 
 You can install Hono from the npm registry.
 
-```
-$ yarn add hono
+```sh
+yarn add hono
 ```
 
 or
 
-```
-$ npm install hono
+```sh
+npm install hono
 ```
 
 ## Methods
@@ -421,18 +421,18 @@ Let's write your first code for Cloudflare Workers with Hono.
 
 Make a npm skeleton directory.
 
-```
-$ mkdir hono-example
-$ cd hono-example
-$ npm init -y
+```sh
+mkdir hono-example
+cd hono-example
+npm init -y
 ```
 
 ### 2. `wrangler init`
 
 Initialize as a wrangler project.
 
-```
-$ npx wrangler@beta init
+```sh
+npx wrangler@beta init
 ```
 
 Answer the questions. If you want, you can answer `y`.
@@ -447,8 +447,8 @@ Would you like to create a Worker at src/index.js? (y/n) <--- n
 
 Install `hono` from the npm registry.
 
-```
-$ npm i hono
+```sh
+npm i hono
 ```
 
 ### 4. Write your app
@@ -469,16 +469,16 @@ app.fire()
 
 Run the development server locally. Then, access `http://127.0.0.1:8787/` in your Web browser.
 
-```
-$ npx wrangler@beta dev index.js
+```sh
+npx wrangler@beta dev index.js
 ```
 
 ### 6. Publish
 
 Deploy to Cloudflare. That's all!
 
-```
-$ npx wrangler@beta publish index.js
+```sh
+npx wrangler@beta publish index.js
 ```
 
 ## Starter template
@@ -487,8 +487,8 @@ You can start making your Cloudflare Workers application with [the starter templ
 
 To generate a project skelton, run this command.
 
-```
-$ wrangler generate my-app https://github.com/yusukebe/hono-minimal
+```sh
+wrangler generate my-app https://github.com/yusukebe/hono-minimal
 ```
 
 ## Related projects

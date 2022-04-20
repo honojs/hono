@@ -59,14 +59,14 @@ Honoを使って、Cloudflare Workersのアプリケーションを作ってい�
 
 NPMリポジトリからインストールできます。
 
-```
-$ yarn add hono
+```sh
+yarn add hono
 ```
 
 `yarn`、もしくは`npm`コマンドでインストール。
 
-```
-$ npm install hono
+```sh
+npm install hono
 ```
 
 ## メソッド
@@ -420,10 +420,10 @@ Honoを使って、Cloudflare Workersのアプリケーションを書いてみ�
 
 まず、雛形となるプロジェクトを作成します。
 
-```
-$ mkdir hono-example
-$ cd hono-example
-$ npm init -y
+```sh
+mkdir hono-example
+cd hono-example
+npm init -y
 ```
 
 ### 2. `wrangler init`
@@ -431,7 +431,7 @@ $ npm init -y
 Wrangler向けに初期化します。
 
 ```
-$ npx wrangler@beta init
+npx wrangler@beta init
 ```
 
 質問されるので`y`か`n`で答えます。最初、分からないうちは`n`で構いません。
@@ -446,8 +446,8 @@ Would you like to create a Worker at src/index.js? (y/n) <--- n
 
 `hono`をNPMレジストリからインストールします。
 
-```
-$ npm i hono
+```sh
+npm i hono
 ```
 
 ### 4. コードを書く
@@ -469,8 +469,8 @@ app.fire()
 ローカルで開発サーバーを立ち上げます。
 その後、`http://127.0.0.1:8787/`にブラウザでアクセスしてみましょう。
 
-```
-$ npx wrangler@beta dev index.js
+```sh
+npx wrangler@beta dev index.js
 ```
 
 ### 6. 公開
@@ -478,8 +478,8 @@ $ npx wrangler@beta dev index.js
 以下のコマンドでCloudflareにデプロイします。
 これで終わりです！
 
-```
-$ npx wrangler@beta publish index.js
+```sh
+npx wrangler@beta publish index.js
 ```
 
 ## スターターテンプレート
@@ -489,8 +489,8 @@ TypeScript、esbuild、Miniflareを使った最小限のものとなっていま
 
 このテンプレートを使った雛形を生成するには、以下のコマンドを打ちます。
 
-```
-$ wrangler generate my-app https://github.com/yusukebe/hono-minimal
+```sh
+wrangler generate my-app https://github.com/yusukebe/hono-minimal
 ```
 
 ## 関連プロジェクト
