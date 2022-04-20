@@ -1,6 +1,6 @@
-import type { Pattern } from '../../utils/url'
-import { splitPath, getPattern } from '../../utils/url'
-import { Result, METHOD_NAME_OF_ALL } from '../../router'
+import type { Pattern } from '@/utils/url'
+import { splitPath, getPattern } from '@/utils/url'
+import { Result, METHOD_NAME_OF_ALL } from '@/router'
 
 const noRoute = (): null => {
   return null

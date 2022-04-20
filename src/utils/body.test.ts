@@ -1,4 +1,4 @@
-import { parseBody } from './body'
+import { parseBody } from '@/utils/body'
 
 describe('Parse Body Middleware', () => {
   it('should parse JSON', async () => {

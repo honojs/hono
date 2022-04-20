@@ -1,8 +1,8 @@
 // Based on the code in the `express-graphql` package.
 // https://github.com/graphql/express-graphql/blob/main/src/index.ts
 
-import { parseBody } from './parse-body'
-import type { Context } from '../../context'
+import { parseBody } from '@/middleware/graphql-server/parse-body'
+import type { Context } from '@/context'
 
 import {
   Source,

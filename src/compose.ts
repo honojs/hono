@@ -1,5 +1,5 @@
-import { Context } from './context'
-import type { ErrorHandler } from './hono'
+import { Context } from '@/context'
+import type { ErrorHandler } from '@/hono'
 
 // Based on the code in the MIT licensed `koa-compose` package.
 export const compose = <C>(middleware: Function[], onError?: ErrorHandler) => {

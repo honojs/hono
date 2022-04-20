@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
-import { mustache } from './mustache'
+import { Hono } from '@/hono'
+import { mustache } from '@/middleware/mustache'
 
 // Mock
 const store: { [key: string]: string } = {

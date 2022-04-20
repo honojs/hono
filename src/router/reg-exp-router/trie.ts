@@ -1,7 +1,7 @@
-import type { ParamMap, Context } from './node'
-import { Node } from './node'
+import type { ParamMap, Context } from '@/router/reg-exp-router/node'
+import { Node } from '@/router/reg-exp-router/node'
 
-export type { ParamMap } from './node'
+export type { ParamMap } from '@/router/reg-exp-router/node'
 export type ReplacementMap = number[]
 
 export class Trie {
