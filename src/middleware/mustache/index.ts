@@ -1,5 +1,5 @@
-import type { Context } from '@/context'
 import { getContentFromKVAsset, getKVFilePath } from '../../utils/cloudflare'
+import type { Context } from '@/context'
 
 const EXTENSION = '.mustache'
 const DEFAULT_DOCUMENT = 'index.mustache'

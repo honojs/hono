@@ -1,5 +1,5 @@
-import { getPathFromURL } from '@/utils/url'
 import type { Context } from '@/context'
+import { getPathFromURL } from '@/utils/url'
 
 const humanize = (n: string[], opts?: { delimiter?: string; separator?: string }) => {
   const options = opts || {}
