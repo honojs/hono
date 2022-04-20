@@ -58,7 +58,7 @@ export class Hono {
   }
 
   private errorHandler: ErrorHandler = (err: Error, c: Context) => {
-    console.error(`${err.message}`)
+    console.error(`${err.stack || err.message}`)
     const message = 'Internal Server Error'
     return c.text(message, 500)
   }
