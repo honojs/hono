@@ -1,5 +1,5 @@
-import { app } from './index'
 import type { Post } from './model'
+import { app } from './index'
 
 describe('Root', () => {
   it('GET /', async () => {

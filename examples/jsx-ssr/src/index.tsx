@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
 import Nano from 'nano-jsx'
-import { render } from './renderer'
 import { Page } from './pages/page'
 import { Top } from './pages/top'
+import { render } from './renderer'
 
 const app = new Hono()
 

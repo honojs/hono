@@ -17,7 +17,7 @@ declare global {
 }
 
 export type Handler<RequestParamKeyType = string> = (
-  c: Context<RequestParamKeyType>,
+  c: Context<RequestParamKeyType | string>,
   next?: Next
 ) => Response | Promise<Response>
 export type MiddlewareHandler = (c: Context, next: Next) => Promise<void>
@@ -38,7 +38,32 @@ type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 
-export class Hono {
+function defineDynamicClass<T extends string[]>(
+  ...methods: T
+): {
+  new (): {
+    [K in T[number]]: <Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>) => Hono
+  } & {
+    methods: T
+  }
+} {
+  return class {
+    get methods() {
+      return methods
+    }
+  } as any
+}
+
+export class Hono extends defineDynamicClass(
+  'get',
+  'post',
+  'put',
+  'delete',
+  'head',
+  'options',
+  'patch',
+  'all'
+) {
   routerClass: { new (): Router<any> } = TrieRouter
   strict: boolean = true // strict routing - default is true
   router: Router<Handler>
@@ -46,6 +71,14 @@ export class Hono {
   tempPath: string
 
   constructor(init: Partial<Pick<Hono, 'routerClass' | 'strict'>> = {}) {
+    super()
+
+    this.methods.map((method) => {
+      this[method] = <Path extends string>(path: Path, handler: Handler) => {
+        return this.addRoute(method, path, handler)
+      }
+    })
+
     Object.assign(this, init)
 
     this.router = new this.routerClass()
@@ -62,56 +95,6 @@ export class Hono {
     console.error(`${err.stack || err.message}`)
     const message = 'Internal Server Error'
     return c.text(message, 500)
-  }
-
-  /* HTTP METHODS */
-  get<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
-  get(path: string, handler: Handler<string>): Hono
-  get(path: string, handler: Handler): Hono {
-    return this.addRoute('get', path, handler)
-  }
-
-  post<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
-  post(path: string, handler: Handler<string>): Hono
-  post(path: string, handler: Handler): Hono {
-    return this.addRoute('post', path, handler)
-  }
-
-  put<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
-  put(path: string, handler: Handler<string>): Hono
-  put(path: string, handler: Handler): Hono {
-    return this.addRoute('put', path, handler)
-  }
-
-  head<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
-  head(path: string, handler: Handler<string>): Hono
-  head(path: string, handler: Handler): Hono {
-    return this.addRoute('head', path, handler)
-  }
-
-  delete<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
-  delete(path: string, handler: Handler<string>): Hono
-  delete(path: string, handler: Handler): Hono {
-    return this.addRoute('delete', path, handler)
-  }
-
-  options<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
-  options(path: string, handler: Handler<string>): Hono
-  options(path: string, handler: Handler): Hono {
-    return this.addRoute('options', path, handler)
-  }
-
-  patch<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
-  patch(path: string, handler: Handler<string>): Hono
-  patch(path: string, handler: Handler): Hono {
-    return this.addRoute('patch', path, handler)
-  }
-
-  /* Any methods */
-  all<Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono
-  all(path: string, handler: Handler<string>): Hono
-  all(path: string, handler: Handler): Hono {
-    return this.addRoute('all', path, handler)
   }
 
   route(path: string): Hono {
@@ -162,9 +145,7 @@ export class Hono {
 
     // Methods for Request object
     request.param = (key: string): string => {
-      if (result) {
-        return result.params[key]
-      }
+      if (result) return result.params[key]
     }
     request.header = (name: string): string => {
       return request.headers.get(name)
@@ -180,9 +161,7 @@ export class Hono {
 
     for (const mr of this.middlewareRouters) {
       const mwResult = mr.match(METHOD_NAME_OF_ALL, path)
-      if (mwResult) {
-        middleware.push(mwResult.handler)
-      }
+      if (mwResult) middleware.push(mwResult.handler)
     }
 
     const wrappedHandler = async (context: Context, next: Next) => {
