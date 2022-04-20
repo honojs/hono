@@ -9,7 +9,8 @@
   ],
   "scripts": {
     "test": "jest",
-    "lint": "eslint --ext js,ts src .eslintrc.js && prettier --check src",
+    "lint": "eslint --ext js,ts src .eslintrc.js",
+    "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix",
     "build": "rimraf dist && tsc --project tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "watch": "tsc -w --project tsconfig.build.json & tsc-alias -w -p tsconfig.build.json",
     "prepublishOnly": "yarn build"
