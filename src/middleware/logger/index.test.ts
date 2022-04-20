@@ -45,7 +45,7 @@ describe('Logger by Middleware', () => {
   })
 
   it('Log status 404', async () => {
-    const msg = 'Default 404 Nout Found'
+    const msg = 'Default 404 Not Found'
     app.all('*', (c) => {
       return c.text(msg, 404)
     })

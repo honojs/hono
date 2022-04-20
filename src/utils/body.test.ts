@@ -34,7 +34,7 @@ describe('Parse Body Middleware', () => {
     expect(await parseBody(req)).toEqual({ message: 'hello' })
   })
 
-  it('should parse Reponse body ', async () => {
+  it('should parse Response body ', async () => {
     const payload = 'hello'
     const res = new Response(payload, {
       headers: {

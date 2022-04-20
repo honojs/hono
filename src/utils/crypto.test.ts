@@ -17,7 +17,7 @@ describe('crypto', () => {
     expect(await sha1('abcdedf')).not.toBe('abcdef')
   })
 
-  it('encodeBaes64', () => {
+  it('encodeBase64', () => {
     expect(encodeBase64('hooooooooo')).toBe('aG9vb29vb29vbw==')
     expect(encodeBase64('炎')).toBe('54KO')
     expect(encodeBase64('abcdef')).not.toBe('abcdedf')
@@ -27,7 +27,7 @@ describe('crypto', () => {
     }).toThrow(TypeError)
   })
 
-  it('decodeBaes64', async () => {
+  it('decodeBase64', async () => {
     expect(decodeBase64('aG9vb29vb29vbw==')).toBe('hooooooooo')
     expect(decodeBase64('54KO')).toBe('炎')
     expect(decodeBase64('abcdedf')).not.toBe('abcdef')

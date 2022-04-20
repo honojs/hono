@@ -42,13 +42,13 @@ function log(
   method: string,
   path: string,
   status?: number,
-  elasped?: string,
+  elapsed?: string,
   contentLength?: string
 ) {
   const out =
     prefix === LogPrefix.Incoming
       ? `  ${prefix} ${method} ${path}`
-      : `  ${prefix} ${method} ${path} ${colorStatus(status)} ${elasped} ${contentLength}`
+      : `  ${prefix} ${method} ${path} ${colorStatus(status)} ${elapsed} ${contentLength}`
   fn(out)
 }
 

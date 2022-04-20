@@ -44,14 +44,14 @@ describe('Mustache by Middleware', () => {
     return c.render('index')
   })
 
-  it('Mustache template redering', async () => {
+  it('Mustache template rendering', async () => {
     const req = new Request('http://localhost/foo')
     const res = await app.dispatch(req)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<html><body>Title: Hono!</body></html>')
   })
 
-  it('Mustache template redering with root', async () => {
+  it('Mustache template rendering with root', async () => {
     const req = new Request('http://localhost/bar')
     const res = await app.dispatch(req)
     expect(res.status).toBe(200)

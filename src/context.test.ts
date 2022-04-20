@@ -74,7 +74,7 @@ describe('Context', () => {
     expect(res.statusText).toBe('Created')
   })
 
-  it('Complext pattern', async () => {
+  it('Complex pattern', async () => {
     c.status(404)
     const res = c.json({ hono: 'great app' })
     expect(res.status).toBe(404)
@@ -108,7 +108,7 @@ describe('Context', () => {
     expect(res.status).toBe(201)
     expect(await res.text()).toBe('this is body')
 
-    // res is already setted.
+    // res is already set.
     c.res = res
     c.header('X-Custom4', 'Message4')
     c.status(202)
