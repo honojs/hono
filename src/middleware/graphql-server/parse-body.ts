@@ -8,6 +8,9 @@ export async function parseBody(req: Request): Promise<{ [param: string]: unknow
       try {
         return await req.json()
       } catch (e) {
+        if (e instanceof Error) {
+          console.error(`${e.stack || e.message}`)
+        }
         throw Error(`POST body sent invalid JSON: ${e}`)
       }
     case 'application/x-www-form-urlencoded':

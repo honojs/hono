@@ -55,6 +55,7 @@ export const graphqlServer = (options: Options) => {
       params = await getGraphQLParams(c.req)
     } catch (e) {
       if (e instanceof Error) {
+        console.error(`${e.stack || e.message}`)
         c.res = c.json(errorMessages([e.message], [e]), 400)
       }
       return
@@ -83,6 +84,7 @@ export const graphqlServer = (options: Options) => {
     } catch (syntaxError: unknown) {
       // Return 400: Bad Request if any syntax errors errors exist.
       if (syntaxError instanceof Error) {
+        console.error(`${syntaxError.stack || syntaxError.message}`)
         const e = new GraphQLError(syntaxError.message, {
           originalError: syntaxError,
         })
@@ -135,6 +137,7 @@ export const graphqlServer = (options: Options) => {
       })
     } catch (contextError: unknown) {
       if (contextError instanceof Error) {
+        console.error(`${contextError.stack || contextError.message}`)
         const e = new GraphQLError(contextError.message, {
           originalError: contextError,
           nodes: documentAST,
@@ -237,4 +240,4 @@ export const errorMessages = (
   }
 }
 
-export const graphiQLResponse = () => {}
+// export const graphiQLResponse = () => {}

@@ -8,6 +8,9 @@ import {
 import { Hono } from '@/hono'
 import { errorMessages, graphqlServer } from '@/middleware/graphql-server'
 
+// Do not show `console.error` messages
+jest.spyOn(console, 'error').mockImplementation()
+
 describe('errorMessages', () => {
   const messages = errorMessages(['message a', 'message b'])
   expect(messages).toEqual({
