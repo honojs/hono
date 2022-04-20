@@ -18,11 +18,12 @@ declare global {
 
 export type Handler<RequestParamKeyType = string> = (
   c: Context<RequestParamKeyType>,
-  next?: Function
+  next?: Next
 ) => Response | Promise<Response>
-export type MiddlewareHandler = (c: Context, next: Function) => Promise<void>
+export type MiddlewareHandler = (c: Context, next: Next) => Promise<void>
 export type NotFoundHandler = (c: Context) => Response | Promise<Response>
 export type ErrorHandler = (err: Error, c: Context) => Response
+export type Next = () => Promise<void>
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer _Pattern}`
@@ -184,7 +185,7 @@ export class Hono {
       }
     }
 
-    const wrappedHandler = async (context: Context, next: Function) => {
+    const wrappedHandler = async (context: Context, next: Next) => {
       const res = await handler(context)
       if (!(res instanceof Response)) {
         throw new TypeError('response must be a instace of Response')
