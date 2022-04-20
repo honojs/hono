@@ -13,6 +13,7 @@ module.exports = defineConfig({
     sourceType: 'module',
     ecmaVersion: 2021,
   },
+  plugins: ['@typescript-eslint', 'import'],
   globals: {
     fetch: false,
     Response: false,
@@ -40,6 +41,9 @@ module.exports = defineConfig({
         },
       },
     ],
+    'sort-imports': 0,
+    'import/order': [2, { alphabetize: { order: 'asc' } }],
+
     'node/no-missing-import': 'off',
     'node/no-missing-require': 'off',
     'node/no-deprecated-api': 'off',

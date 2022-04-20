@@ -1,5 +1,3 @@
-import { Hono } from '@/hono'
-import { errorMessages, graphqlServer } from '@/middleware/graphql-server'
 import {
   buildSchema,
   GraphQLSchema,
@@ -7,6 +5,8 @@ import {
   GraphQLObjectType,
   GraphQLNonNull,
 } from 'graphql'
+import { Hono } from '@/hono'
+import { errorMessages, graphqlServer } from '@/middleware/graphql-server'
 
 describe('errorMessages', () => {
   const messages = errorMessages(['message a', 'message b'])

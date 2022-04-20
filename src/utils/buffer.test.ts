@@ -1,5 +1,5 @@
-import { timingSafeEqual } from '@/utils/buffer'
 import { SHA256 as sha256CryptoJS } from 'crypto-js'
+import { timingSafeEqual } from '@/utils/buffer'
 
 describe('buffer', () => {
   it('positive', async () => {

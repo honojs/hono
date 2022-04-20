@@ -1,10 +1,10 @@
 import { compose } from '@/compose'
-import { getPathFromURL, mergePath } from '@/utils/url'
 import { Context } from '@/context'
-import { METHOD_NAME_OF_ALL } from '@/router'
-import { TrieRouter } from '@/router/trie-router' // Default Router
 import type { Env } from '@/context'
+import { METHOD_NAME_OF_ALL } from '@/router'
 import type { Result, Router } from '@/router'
+import { TrieRouter } from '@/router/trie-router' // Default Router
+import { getPathFromURL, mergePath } from '@/utils/url'
 
 declare global {
   interface Request<ParamKeyType = string> {

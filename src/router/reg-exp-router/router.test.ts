@@ -1,5 +1,5 @@
-import { RegExpRouter } from '@/router/reg-exp-router/router'
 import { METHOD_NAME_OF_ALL } from '@/router'
+import { RegExpRouter } from '@/router/reg-exp-router/router'
 
 describe('Basic Usage', () => {
   const router = new RegExpRouter<string>()

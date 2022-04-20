@@ -1,5 +1,5 @@
-import { parseBody } from '../../utils/body'
-import type { Context } from '../../context'
+import type { Context } from '@/context'
+import { parseBody } from '@/utils/body'
 
 export const bodyParse = () => {
   return async (ctx: Context, next: Function) => {
