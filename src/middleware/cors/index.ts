@@ -1,4 +1,5 @@
 import type { Context } from '@/context'
+import type { Next } from '@/hono'
 
 type CORSOptions = {
   origin: string
@@ -21,7 +22,7 @@ export const cors = (options?: CORSOptions) => {
     ...options,
   }
 
-  return async (c: Context, next: Function) => {
+  return async (c: Context, next: Next) => {
     await next()
 
     function set(key: string, value: string) {

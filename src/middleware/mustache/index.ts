@@ -1,5 +1,6 @@
-import { getContentFromKVAsset, getKVFilePath } from '../../utils/cloudflare'
 import type { Context } from '@/context'
+import type { Next } from '@/hono'
+import { getContentFromKVAsset, getKVFilePath } from '@/utils/cloudflare'
 
 const EXTENSION = '.mustache'
 const DEFAULT_DOCUMENT = 'index.mustache'
@@ -17,7 +18,7 @@ type Init = {
 export const mustache = (init: Init = { root: '' }) => {
   const { root } = init
 
-  return async (c: Context, next: Function) => {
+  return async (c: Context, next: Next) => {
     let Mustache: Mustache
     try {
       Mustache = require('mustache')

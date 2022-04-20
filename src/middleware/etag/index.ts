@@ -1,4 +1,5 @@
 import type { Context } from '@/context'
+import type { Next } from '@/hono'
 import { parseBody } from '@/utils/body'
 import { sha1 } from '@/utils/crypto'
 
@@ -7,7 +8,7 @@ type ETagOptions = {
 }
 
 export const etag = (options: ETagOptions = { weak: false }) => {
-  return async (c: Context, next: Function) => {
+  return async (c: Context, next: Next) => {
     const ifNoneMatch = c.req.header('If-None-Match') || c.req.header('if-none-match')
 
     await next()

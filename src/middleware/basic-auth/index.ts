@@ -1,4 +1,5 @@
 import type { Context } from '@/context'
+import type { Next } from '@/hono'
 import { timingSafeEqual } from '@/utils/buffer'
 import { decodeBase64 } from '@/utils/crypto'
 
@@ -45,7 +46,7 @@ export const basicAuth = (
   }
   users.unshift({ username: options.username, password: options.password })
 
-  return async (ctx: Context, next: Function) => {
+  return async (ctx: Context, next: Next) => {
     const requestUser = auth(ctx.req)
 
     if (requestUser) {
