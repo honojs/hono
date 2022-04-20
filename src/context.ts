@@ -1,4 +1,5 @@
 import { getStatusText } from '@/utils/http-status'
+import type { StatusCode } from '@/utils/http-status'
 import { isAbsoluteURL } from '@/utils/url'
 
 type Headers = Record<string, string>
@@ -12,7 +13,7 @@ export class Context<RequestParamKeyType = string> {
   env: Env
   event: FetchEvent
   private _headers: Headers
-  private _status: number
+  private _status: StatusCode
   private _statusText: string
   private _pretty: boolean
   private _prettySpace: number = 2
@@ -47,13 +48,13 @@ export class Context<RequestParamKeyType = string> {
     this._headers[name] = value
   }
 
-  status(number: number): void {
+  status(status: StatusCode): void {
     if (this.res) {
       console.warn('c.res.status is already set.')
       return
     }
-    this._status = number
-    this._statusText = getStatusText(number)
+    this._status = status
+    this._statusText = getStatusText(status)
   }
 
   pretty(prettyJSON: boolean, space: number = 2): void {
@@ -63,7 +64,8 @@ export class Context<RequestParamKeyType = string> {
 
   newResponse(data: Data, init: ResponseInit = {}): Response {
     init.status = init.status || this._status || 200
-    init.statusText = init.statusText || this._statusText || getStatusText(init.status)
+    init.statusText =
+      init.statusText || this._statusText || getStatusText(init.status as StatusCode)
 
     init.headers = { ...this._headers, ...init.headers }
 
@@ -82,14 +84,14 @@ export class Context<RequestParamKeyType = string> {
     return new Response(data, init)
   }
 
-  body(data: Data, status: number = this._status, headers: Headers = this._headers): Response {
+  body(data: Data, status: StatusCode = this._status, headers: Headers = this._headers): Response {
     return this.newResponse(data, {
       status: status,
       headers: headers,
     })
   }
 
-  text(text: string, status: number = this._status, headers: Headers = {}): Response {
+  text(text: string, status: StatusCode = this._status, headers: Headers = {}): Response {
     if (typeof text !== 'string') {
       throw new TypeError('text method arg must be a string!')
     }
@@ -97,7 +99,7 @@ export class Context<RequestParamKeyType = string> {
     return this.body(text, status, headers)
   }
 
-  json(object: object, status: number = this._status, headers: Headers = {}): Response {
+  json(object: object, status: StatusCode = this._status, headers: Headers = {}): Response {
     if (typeof object !== 'object') {
       throw new TypeError('json method arg must be a object!')
     }
@@ -108,7 +110,7 @@ export class Context<RequestParamKeyType = string> {
     return this.body(body, status, headers)
   }
 
-  html(html: string, status: number = this._status, headers: Headers = {}): Response {
+  html(html: string, status: StatusCode = this._status, headers: Headers = {}): Response {
     if (typeof html !== 'string') {
       throw new TypeError('html method arg must be a string!')
     }
@@ -116,7 +118,7 @@ export class Context<RequestParamKeyType = string> {
     return this.body(html, status, headers)
   }
 
-  redirect(location: string, status: number = 302): Response {
+  redirect(location: string, status: StatusCode = 302): Response {
     if (typeof location !== 'string') {
       throw new TypeError('location must be a string!')
     }
