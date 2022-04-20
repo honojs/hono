@@ -14,12 +14,16 @@
       "jest",
       "node",
       "@cloudflare/workers-types"
-    ]
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
   },
   "include": [
-    "src/**/*"
-  ],
-  "exclude": [
+    "src/**/*",
     "src/**/*.test.ts"
-  ]
+  ],
 }

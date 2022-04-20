@@ -1,6 +1,6 @@
-import { Router, Result, METHOD_NAME_OF_ALL } from '../../router'
-import type { ParamMap } from './trie'
-import { Trie } from './trie'
+import { Router, Result, METHOD_NAME_OF_ALL } from '@/router'
+import type { ParamMap } from '@/router/reg-exp-router/trie'
+import { Trie } from '@/router/reg-exp-router/trie'
 
 type Route<T> = [string, T]
 type HandlerData<T> = [T, ParamMap | null]

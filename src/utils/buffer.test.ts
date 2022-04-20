@@ -1,4 +1,4 @@
-import { timingSafeEqual } from './buffer'
+import { timingSafeEqual } from '@/utils/buffer'
 import { SHA256 as sha256CryptoJS } from 'crypto-js'
 
 describe('buffer', () => {

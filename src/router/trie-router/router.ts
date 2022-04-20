@@ -1,6 +1,6 @@
-import { Router } from '../../router'
-import type { Result } from '../../router'
-import { Node } from './node'
+import { Router } from '@/router'
+import type { Result } from '@/router'
+import { Node } from '@/router/trie-router/node'
 
 export class TrieRouter<T> extends Router<T> {
   node: Node<T>

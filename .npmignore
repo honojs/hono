@@ -2,5 +2,7 @@ examples
 benchmark
 .github
 tsconfig.json
+tsconfig.build.json
 src
 docs
+yarn.lock

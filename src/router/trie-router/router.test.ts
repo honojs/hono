@@ -1,4 +1,4 @@
-import { TrieRouter } from './router'
+import { TrieRouter } from '@/router/trie-router/router'
 
 describe('Basic Usage', () => {
   const router = new TrieRouter<string>()

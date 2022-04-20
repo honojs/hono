@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
-import { cors } from './cors'
+import { Hono } from '@/hono'
+import { cors } from '@/middleware/cors'
 
 describe('CORS by Middleware', () => {
   const app = new Hono()

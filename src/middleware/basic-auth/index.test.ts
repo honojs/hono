@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
-import { basicAuth } from './basic-auth'
+import { Hono } from '@/hono'
+import { basicAuth } from '@/middleware/basic-auth'
 import { SHA256 } from 'crypto-js'
 
 describe('Basic Auth by Middleware', () => {

@@ -1,4 +1,4 @@
-import { Node } from './node'
+import { Node } from '@/router/trie-router/node'
 
 describe('Root Node', () => {
   const node = new Node()

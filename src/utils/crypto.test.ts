@@ -1,4 +1,4 @@
-import { sha256, sha1, decodeBase64, encodeBase64 } from './crypto'
+import { sha256, sha1, decodeBase64, encodeBase64 } from '@/utils/crypto'
 
 describe('crypto', () => {
   it('sha256', async () => {

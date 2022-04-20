@@ -1,5 +1,5 @@
-import { compose } from './compose'
-import { Context } from './context'
+import { compose } from '@/compose'
+import { Context } from '@/context'
 
 type C = {
   req: Record<string, string>

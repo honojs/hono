@@ -1,5 +1,5 @@
-import { Hono } from '../../hono'
-import { errorMessages, graphqlServer } from './graphql-server'
+import { Hono } from '@/hono'
+import { errorMessages, graphqlServer } from '@/middleware/graphql-server'
 import {
   buildSchema,
   GraphQLSchema,

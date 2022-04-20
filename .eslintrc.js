@@ -40,19 +40,8 @@ module.exports = defineConfig({
         },
       },
     ],
-    'node/no-missing-import': [
-      'error',
-      {
-        allowModules: ['types', 'estree', 'testUtils', 'less', 'sass', 'stylus'],
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts'],
-      },
-    ],
-    'node/no-missing-require': [
-      'error',
-      {
-        tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts'],
-      },
-    ],
+    'node/no-missing-import': 'off',
+    'node/no-missing-require': 'off',
     'node/no-deprecated-api': 'off',
     'node/no-unpublished-import': 'off',
     'node/no-unpublished-require': 'off',

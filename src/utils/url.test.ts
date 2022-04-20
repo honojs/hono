@@ -1,4 +1,4 @@
-import { splitPath, getPattern, getPathFromURL, isAbsoluteURL, mergePath } from './url'
+import { splitPath, getPattern, getPathFromURL, isAbsoluteURL, mergePath } from '@/utils/url'
 
 describe('url', () => {
   it('splitPath', () => {
