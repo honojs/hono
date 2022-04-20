@@ -42,7 +42,7 @@ describe('Cookie Middleware', () => {
   app.use('/set-cookie-complex', cookie())
 
   app.get('/set-cookie-complex', (c) => {
-    c.cookie('greate_cookie', 'banana', {
+    c.cookie('great_cookie', 'banana', {
       path: '/',
       secure: true,
       domain: 'example.com',
@@ -60,7 +60,7 @@ describe('Cookie Middleware', () => {
     expect(res.status).toBe(200)
     const header = res.headers.get('Set-Cookie')
     expect(header).toBe(
-      'greate_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSaite=Strict'
+      'great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
     )
   })
 })
