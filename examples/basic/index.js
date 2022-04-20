@@ -1,9 +1,9 @@
 import { Hono } from '../../dist'
-import { poweredBy } from '../../src/middleware/powered-by/powered-by'
-import { logger } from '../../src/middleware/logger/logger'
-import { bodyParse } from '../../src/middleware/body-parse/body-parse'
-import { basicAuth } from '../../src/middleware/basic-auth/basic-auth'
+import { basicAuth } from '../../src/middleware/basic-auth'
+import { bodyParse } from '../../src/middleware/body-parse'
 import { etag } from '../../src/middleware/etag/etag'
+import { logger } from '../../src/middleware/logger'
+import { poweredBy } from '../../src/middleware/powered-by'
 
 const app = new Hono()
 
