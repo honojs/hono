@@ -118,7 +118,7 @@ describe('Routing', () => {
 
     const user = app.route('/user')
     user.get('/login', (c) => c.text('get /user/login'))
-    user.post('/regist', (c) => c.text('post /user/regist'))
+    user.post('/register', (c) => c.text('post /user/register'))
 
     let res = await app.request('http://localhost/book', { method: 'GET' })
     expect(res.status).toBe(200)
@@ -139,9 +139,9 @@ describe('Routing', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('get /user/login')
 
-    res = await app.request('http://localhost/user/regist', { method: 'POST' })
+    res = await app.request('http://localhost/user/register', { method: 'POST' })
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('post /user/regist')
+    expect(await res.text()).toBe('post /user/register')
   })
 })
 
@@ -193,7 +193,7 @@ describe('Middleware', () => {
     await next()
   })
 
-  // Apeend Custom Header
+  // Append Custom Header
   app.use('*', async (c, next) => {
     await next()
     c.res.headers.append('x-custom', 'root')

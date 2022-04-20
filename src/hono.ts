@@ -188,7 +188,7 @@ export class Hono {
     const wrappedHandler = async (context: Context, next: Next) => {
       const res = await handler(context)
       if (!(res instanceof Response)) {
-        throw new TypeError('response must be a instace of Response')
+        throw new TypeError('response must be a instance of Response')
       }
       context.res = res
       await next()
