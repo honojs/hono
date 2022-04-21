@@ -11,7 +11,6 @@ declare global {
     param: (key: ParamKeyType) => string
     query: (key: string) => string
     header: (name: string) => string
-    // TODO: do not use `any`
     parsedBody: any
   }
 }
@@ -64,11 +63,11 @@ export class Hono extends defineDynamicClass(
   'patch',
   'all'
 ) {
-  routerClass: { new (): Router<any> } = TrieRouter
-  strict: boolean = true // strict routing - default is true
-  router: Router<Handler>
-  middlewareRouters: Router<MiddlewareHandler>[]
-  tempPath: string
+  readonly routerClass: { new (): Router<any> } = TrieRouter
+  readonly strict: boolean = true // strict routing - default is true
+  private router: Router<Handler>
+  private middlewareRouters: Router<MiddlewareHandler>[]
+  private tempPath: string
 
   constructor(init: Partial<Pick<Hono, 'routerClass' | 'strict'>> = {}) {
     super()
@@ -137,7 +136,7 @@ export class Hono extends defineDynamicClass(
     return this.router.match(method, path)
   }
 
-  async dispatch(request: Request, env?: Env, event?: FetchEvent): Promise<Response> {
+  private async dispatch(request: Request, env?: Env, event?: FetchEvent): Promise<Response> {
     const path = getPathFromURL(request.url, { strict: this.strict })
     const method = request.method
 
@@ -146,13 +145,6 @@ export class Hono extends defineDynamicClass(
     // Methods for Request object
     request.param = (key: string): string => {
       if (result) return result.params[key]
-    }
-    request.header = (name: string): string => {
-      return request.headers.get(name)
-    }
-    request.query = (key: string): string => {
-      const url = new URL(c.req.url)
-      return url.searchParams.get(key)
     }
 
     const handler = result ? result.handler : this.notFoundHandler
@@ -192,12 +184,12 @@ export class Hono extends defineDynamicClass(
     return this.dispatch(request, env, event)
   }
 
-  request(input: RequestInfo, requestInit?: RequestInit) {
-    const req = new Request(input, requestInit)
+  request(input: RequestInfo, requestInit?: RequestInit): Promise<Response> {
+    const req = input instanceof Request ? input : new Request(input, requestInit)
     return this.dispatch(req)
   }
 
-  fire() {
+  fire(): void {
     addEventListener('fetch', (event: FetchEvent): void => {
       event.respondWith(this.handleEvent(event))
     })

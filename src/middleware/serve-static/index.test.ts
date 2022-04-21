@@ -26,40 +26,40 @@ Object.assign(global, {
 
 describe('ServeStatic Middleware', () => {
   const app = new Hono()
-
   app.use('/static/*', serveStatic({ root: './assets' }))
   app.use('/static-no-root/*', serveStatic())
 
-  it('Serve static files', async () => {
-    let req = new Request('http://localhost/static/plain.txt')
-    let res = await app.dispatch(req)
+  it('Should return plain.txt', async () => {
+    const res = await app.request('http://localhost/static/plain.txt')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('This is plain.txt')
     expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8')
     expect(res.headers.get('Content-Length')).toBe('17')
+  })
 
-    req = new Request('http://localhost/static/hono.html')
-    res = await app.dispatch(req)
+  it('Should return hono.html', async () => {
+    const res = await app.request('http://localhost/static/hono.html')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<h1>Hono!</h1>')
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=utf-8')
     expect(res.headers.get('Content-Length')).toBe('14')
+  })
 
-    req = new Request('http://localhost/static/not-found.html')
-    res = await app.dispatch(req)
+  it('Should return 404 response', async () => {
+    const res = await app.request('http://localhost/static/not-found.html')
     expect(res.status).toBe(404)
+  })
 
-    req = new Request('http://localhost/static-no-root/plain.txt')
-    res = await app.dispatch(req)
+  it('Should return plan.txt', async () => {
+    const res = await app.request('http://localhost/static-no-root/plain.txt')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('That is plain.txt')
     expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8')
     expect(res.headers.get('Content-Length')).toBe('17')
   })
 
-  it('Serve index.html', async () => {
-    const req = new Request('http://localhost/static/top')
-    const res = await app.dispatch(req)
+  it('Should return index.html', async () => {
+    const res = await app.request('http://localhost/static/top')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<h1>Top</h1>')
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=utf-8')

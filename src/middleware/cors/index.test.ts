@@ -25,8 +25,7 @@ describe('CORS by Middleware', () => {
   })
 
   it('GET default', async () => {
-    const req = new Request('http://localhost/api/abc')
-    const res = await app.dispatch(req)
+    const res = await app.request('http://localhost/api/abc')
 
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res.headers.get('Vary')).toBeNull()
@@ -35,7 +34,7 @@ describe('CORS by Middleware', () => {
   it('Preflight default', async () => {
     const req = new Request('https://localhost/api/abc', { method: 'OPTIONS' })
     req.headers.append('Access-Control-Request-Headers', 'X-PINGOTHER, Content-Type')
-    const res = await app.dispatch(req)
+    const res = await app.request(req)
 
     expect(res.status).toBe(204)
     expect(res.headers.get('Access-Control-Allow-Methods').split(',')[0]).toBe('GET')
@@ -47,7 +46,7 @@ describe('CORS by Middleware', () => {
 
   it('Preflight with options', async () => {
     const req = new Request('https://localhost/api2/abc', { method: 'OPTIONS' })
-    const res = await app.dispatch(req)
+    const res = await app.request(req)
 
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
     expect(res.headers.get('Vary').split(/\s*,\s*/)).toEqual(expect.arrayContaining(['Origin']))

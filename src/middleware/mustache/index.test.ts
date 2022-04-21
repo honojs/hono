@@ -45,15 +45,13 @@ describe('Mustache by Middleware', () => {
   })
 
   it('Mustache template rendering', async () => {
-    const req = new Request('http://localhost/foo')
-    const res = await app.dispatch(req)
+    const res = await app.request('http://localhost/foo')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<html><body>Title: Hono!</body></html>')
   })
 
   it('Mustache template rendering with root', async () => {
-    const req = new Request('http://localhost/bar')
-    const res = await app.dispatch(req)
+    const res = await app.request('http://localhost/bar')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<h1>With Root</h1>')
   })

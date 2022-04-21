@@ -25,7 +25,7 @@ export class Context<RequestParamKeyType = string> {
     req: Request<RequestParamKeyType>,
     opts?: { res: Response; env: Env; event: FetchEvent }
   ) {
-    this.req = req
+    this.req = this.initRequest(req)
     if (opts) {
       this.res = opts.res
       this.env = opts.env
@@ -34,14 +34,18 @@ export class Context<RequestParamKeyType = string> {
     this._headers = {}
   }
 
+  private initRequest<T>(req: Request<T>): Request<T> {
+    req.header = (name: string): string => {
+      return req.headers.get(name)
+    }
+    req.query = (key: string): string => {
+      const url = new URL(req.url)
+      return url.searchParams.get(key)
+    }
+    return req
+  }
+
   header(name: string, value: string): void {
-    /*
-    XXX:
-    app.use('*', (c, next) => {
-      next()
-      c.header('foo', 'bar') // => c.res.headers.set(...)
-    })
-    */
     if (this.res) {
       this.res.headers.set(name, value)
     }
@@ -101,7 +105,7 @@ export class Context<RequestParamKeyType = string> {
 
   json(object: object, status: StatusCode = this._status, headers: Headers = {}): Response {
     if (typeof object !== 'object') {
-      throw new TypeError('json method arg must be a object!')
+      throw new TypeError('json method arg must be an object!')
     }
     const body = this._pretty
       ? JSON.stringify(object, null, this._prettySpace)

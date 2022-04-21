@@ -67,42 +67,42 @@ describe('Basic Auth by Middleware', () => {
   app.get('/auth-multi/*', () => new Response('auth'))
   app.get('/auth-override-func/*', () => new Response('auth'))
 
-  it('Unauthorized', async () => {
+  it('Should not authorize', async () => {
     const req = new Request('http://localhost/auth/a')
-    const res = await app.dispatch(req)
+    const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
     expect(await res.text()).toBe('Unauthorized')
   })
 
-  it('Authorizated', async () => {
+  it('Should authorize', async () => {
     const credential = Buffer.from(username + ':' + password).toString('base64')
 
     const req = new Request('http://localhost/auth/a')
     req.headers.set('Authorization', `Basic ${credential}`)
-    const res = await app.dispatch(req)
+    const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('auth')
   })
 
-  it('Authorizated Unicode', async () => {
+  it('Should authorize Unicode', async () => {
     const credential = Buffer.from(username + ':' + unicodePassword).toString('base64')
 
     const req = new Request('http://localhost/auth-unicode/a')
     req.headers.set('Authorization', `Basic ${credential}`)
-    const res = await app.dispatch(req)
+    const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('auth')
   })
 
-  it('Authorizated multiple users', async () => {
+  it('Should authorize multiple users', async () => {
     let credential = Buffer.from(usernameB + ':' + passwordB).toString('base64')
 
     let req = new Request('http://localhost/auth-multi/b')
     req.headers.set('Authorization', `Basic ${credential}`)
-    let res = await app.dispatch(req)
+    let res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('auth')
@@ -110,18 +110,18 @@ describe('Basic Auth by Middleware', () => {
     credential = Buffer.from(usernameC + ':' + passwordC).toString('base64')
     req = new Request('http://localhost/auth-multi/c')
     req.headers.set('Authorization', `Basic ${credential}`)
-    res = await app.dispatch(req)
+    res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('auth')
   })
 
-  it('should authorize with sha256 function override', async () => {
+  it('Should authorize with sha256 function override', async () => {
     const credential = Buffer.from(username + ':' + password).toString('base64')
 
     const req = new Request('http://localhost/auth-override-func/a')
     req.headers.set('Authorization', `Basic ${credential}`)
-    const res = await app.dispatch(req)
+    const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('auth')
