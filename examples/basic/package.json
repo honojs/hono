@@ -11,9 +11,9 @@
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "license": "MIT",
   "dependencies": {
-    "hono": "*"
+    "hono": "^0.5.10"
   },
   "devDependencies": {
-    "wrangler": "^0.0.17"
+    "wrangler": "^0.0.26"
   }
 }
