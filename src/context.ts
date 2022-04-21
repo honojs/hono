@@ -26,11 +26,7 @@ export class Context<RequestParamKeyType = string> {
     opts?: { res: Response; env: Env; event: FetchEvent }
   ) {
     this.req = this.initRequest(req)
-    if (opts) {
-      this.res = opts.res
-      this.env = opts.env
-      this.event = opts.event
-    }
+    Object.assign(this, opts)
     this._headers = {}
   }
 
