@@ -5,11 +5,10 @@ describe('Powered by Middleware', () => {
   const app = new Hono()
 
   app.use('*', poweredBy())
-  app.get('/', () => new Response('root'))
+  app.get('/', (c) => c.text('root'))
 
-  it('Response headers include X-Powered-By', async () => {
-    const req = new Request('http://localhost/')
-    const res = await app.dispatch(req)
+  it('Should return with X-Powered-By header', async () => {
+    const res = await app.request('http://localhost/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('X-Powered-By')).toBe('Hono')

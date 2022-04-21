@@ -10,8 +10,7 @@ describe('JSON pretty by Middleware', () => {
 
   it('Should return pretty JSON output', async () => {
     app.use('*', prettyJSON())
-    const req = new Request('http://localhost/?pretty')
-    const res = await app.dispatch(req)
+    const res = await app.request('http://localhost/?pretty')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe(`{
@@ -21,8 +20,7 @@ describe('JSON pretty by Middleware', () => {
 
   it('Should return pretty JSON output with 4 spaces', async () => {
     app.use('*', prettyJSON({ space: 4 }))
-    const req = new Request('http://localhost/?pretty')
-    const res = await app.dispatch(req)
+    const res = await app.request('http://localhost/?pretty')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe(`{

@@ -18,8 +18,7 @@ describe('Logger by Middleware', () => {
   app.get('/empty', (c) => c.text(''))
 
   it('Log status 200 with empty body', async () => {
-    const req = new Request('http://localhost/empty')
-    const res = await app.dispatch(req)
+    const res = await app.request('http://localhost/empty')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(log.startsWith('  --> GET /empty \x1b[32m200\x1b[0m')).toBe(true)
@@ -27,8 +26,7 @@ describe('Logger by Middleware', () => {
   })
 
   it('Log status 200 with small body', async () => {
-    const req = new Request('http://localhost/short')
-    const res = await app.dispatch(req)
+    const res = await app.request('http://localhost/short')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(log.startsWith('  --> GET /short \x1b[32m200\x1b[0m')).toBe(true)
@@ -36,8 +34,7 @@ describe('Logger by Middleware', () => {
   })
 
   it('Log status 200 with big body', async () => {
-    const req = new Request('http://localhost/long')
-    const res = await app.dispatch(req)
+    const res = await app.request('http://localhost/long')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(log.startsWith('  --> GET /long \x1b[32m200\x1b[0m')).toBe(true)
@@ -49,9 +46,7 @@ describe('Logger by Middleware', () => {
     app.all('*', (c) => {
       return c.text(msg, 404)
     })
-
-    const req = new Request('http://localhost/notfound')
-    const res = await app.dispatch(req)
+    const res = await app.request('http://localhost/notfound')
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
     expect(log.startsWith('  --> GET /notfound \x1b[33m404\x1b[0m')).toBe(true)
