@@ -18,7 +18,7 @@ describe('Cookie Middleware', () => {
     const req = new Request('http://localhost/cookie')
     const cookieString = 'yummy_cookie=choco; tasty_cookie = strawberry '
     req.headers.set('Cookie', cookieString)
-    const res = await app.dispatch(req)
+    const res = await app.request(req)
 
     expect(res.headers.get('Yummy-Cookie')).toBe('choco')
     expect(res.headers.get('Tasty-Cookie')).toBe('strawberry')
@@ -32,8 +32,7 @@ describe('Cookie Middleware', () => {
   })
 
   it('Set cookie on c.cookie', async () => {
-    const req = new Request('http://localhost/set-cookie')
-    const res = await app.dispatch(req)
+    const res = await app.request('http://localhost/set-cookie')
     expect(res.status).toBe(200)
     const header = res.headers.get('Set-Cookie')
     expect(header).toBe('delicious_cookie=macha')
@@ -55,8 +54,7 @@ describe('Cookie Middleware', () => {
   })
 
   it('Complex pattern', async () => {
-    const req = new Request('http://localhost/set-cookie-complex')
-    const res = await app.dispatch(req)
+    const res = await app.request('http://localhost/set-cookie-complex')
     expect(res.status).toBe(200)
     const header = res.headers.get('Set-Cookie')
     expect(header).toBe(

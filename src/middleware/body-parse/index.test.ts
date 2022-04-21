@@ -22,7 +22,7 @@ describe('Parse Body Middleware', () => {
       body: JSON.stringify(payload),
       headers: new Headers({ 'Content-Type': 'application/json' }),
     })
-    const res = await app.dispatch(req)
+    const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(req.parsedBody).toEqual(payload)
@@ -36,7 +36,7 @@ describe('Parse Body Middleware', () => {
       body: 'hello',
       headers: new Headers({ 'Content-Type': 'application/text' }),
     })
-    const res = await app.dispatch(req)
+    const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(req.parsedBody).toEqual(payload)
@@ -53,7 +53,7 @@ describe('Parse Body Middleware', () => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     })
-    const res = await app.dispatch(req)
+    const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(req.parsedBody).toEqual({ message: 'hello' })
