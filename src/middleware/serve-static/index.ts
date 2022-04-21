@@ -29,7 +29,7 @@ export const serveStatic = (opt: Options = { root: '' }) => {
       }
       c.res = c.body(content)
     } else {
-      // console.debug(`Static file: ${path} is not found`)
+      console.warn(`Static file: ${path} is not found`)
     }
   }
 }
