@@ -1,5 +1,6 @@
 import type { Context } from '@/context'
 import type { Next } from '@/hono'
+import { bufferToString } from '@/utils/buffer'
 import { getContentFromKVAsset, getKVFilePath } from '@/utils/cloudflare'
 
 const EXTENSION = '.mustache'
@@ -63,12 +64,4 @@ export const mustache = (init: Init = { root: '' }) => {
 
     await next()
   }
-}
-
-const bufferToString = (buffer: ArrayBuffer): string => {
-  if (buffer instanceof ArrayBuffer) {
-    const enc = new TextDecoder('utf-8')
-    return enc.decode(buffer)
-  }
-  return buffer
 }

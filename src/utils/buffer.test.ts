@@ -1,5 +1,5 @@
 import { SHA256 as sha256CryptoJS } from 'crypto-js'
-import { timingSafeEqual } from '@/utils/buffer'
+import { timingSafeEqual, bufferToString } from '@/utils/buffer'
 
 describe('buffer', () => {
   it('positive', async () => {
@@ -39,5 +39,13 @@ describe('buffer', () => {
     expect(await timingSafeEqual({ a: 1 }, { a: 2 })).toBe(false)
     expect(await timingSafeEqual([1, 2], [1, 2])).toBe(false)
     expect(await timingSafeEqual([1, 2], [1, 2, 3])).toBe(false)
+  })
+})
+
+describe('bufferToString', () => {
+  it('Should return あいうえお', () => {
+    const bytes = [227, 129, 130, 227, 129, 132, 227, 129, 134, 227, 129, 136, 227, 129, 138]
+    const buffer = Uint8Array.from(bytes).buffer
+    expect(bufferToString(buffer)).toBe('あいうえお')
   })
 })

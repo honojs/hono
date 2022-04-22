@@ -11,7 +11,6 @@ declare global {
     param: (key: ParamKeyType) => string
     query: (key: string) => string
     header: (name: string) => string
-    parsedBody: any
   }
 }
 
@@ -65,9 +64,9 @@ export class Hono extends defineDynamicClass(
 ) {
   readonly routerClass: { new (): Router<any> } = TrieRouter
   readonly strict: boolean = true // strict routing - default is true
-  private router: Router<Handler>
-  private middlewareRouters: Router<MiddlewareHandler>[]
-  private tempPath: string
+  #router: Router<Handler>
+  #middlewareRouters: Router<MiddlewareHandler>[]
+  #tempPath: string
 
   constructor(init: Partial<Pick<Hono, 'routerClass' | 'strict'>> = {}) {
     super()
@@ -80,9 +79,9 @@ export class Hono extends defineDynamicClass(
 
     Object.assign(this, init)
 
-    this.router = new this.routerClass()
-    this.middlewareRouters = []
-    this.tempPath = null
+    this.#router = new this.routerClass()
+    this.#middlewareRouters = []
+    this.#tempPath = null
   }
 
   private notFoundHandler: NotFoundHandler = (c: Context) => {
@@ -98,8 +97,8 @@ export class Hono extends defineDynamicClass(
 
   route(path: string): Hono {
     const newHono: Hono = new Hono()
-    newHono.tempPath = path
-    newHono.router = this.router
+    newHono.#tempPath = path
+    newHono.#router = this.#router
     return newHono
   }
 
@@ -109,7 +108,7 @@ export class Hono extends defineDynamicClass(
     }
     const router = new this.routerClass()
     router.add(METHOD_NAME_OF_ALL, path, middleware)
-    this.middlewareRouters.push(router)
+    this.#middlewareRouters.push(router)
   }
 
   onError(handler: ErrorHandler): Hono {
@@ -125,15 +124,15 @@ export class Hono extends defineDynamicClass(
   // addRoute('get', '/', handler)
   private addRoute(method: string, path: string, handler: Handler): Hono {
     method = method.toUpperCase()
-    if (this.tempPath) {
-      path = mergePath(this.tempPath, path)
+    if (this.#tempPath) {
+      path = mergePath(this.#tempPath, path)
     }
-    this.router.add(method, path, handler)
+    this.#router.add(method, path, handler)
     return this
   }
 
   private async matchRoute(method: string, path: string): Promise<Result<Handler>> {
-    return this.router.match(method, path)
+    return this.#router.match(method, path)
   }
 
   private async dispatch(request: Request, env?: Env, event?: FetchEvent): Promise<Response> {
@@ -151,7 +150,7 @@ export class Hono extends defineDynamicClass(
 
     const middleware = []
 
-    for (const mr of this.middlewareRouters) {
+    for (const mr of this.#middlewareRouters) {
       const mwResult = mr.match(METHOD_NAME_OF_ALL, path)
       if (mwResult) middleware.push(mwResult.handler)
     }
