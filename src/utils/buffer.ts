@@ -33,3 +33,11 @@ export const timingSafeEqual = async (
   const sb = await hashFunction(b)
   return sa === sb && a === b
 }
+
+export const bufferToString = (buffer: ArrayBuffer): string => {
+  if (buffer instanceof ArrayBuffer) {
+    const enc = new TextDecoder('utf-8')
+    return enc.decode(buffer)
+  }
+  return buffer
+}
