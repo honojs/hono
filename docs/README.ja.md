@@ -1,4 +1,10 @@
-# Hono\[炎\]
+<div align="center">
+  <a href="https://github.com/yusukebe/hono">
+    <img src="https://raw.githubusercontent.com/yusukebe/hono/master/docs/images/hono-title.png" width="500" height="auto" alt="Hono"/>
+  </a>
+</div>
+
+<hr />
 
 <p>
 <a href="https://github.com/yusukebe/hono/blob/master/README.md">English</a>
@@ -14,7 +20,7 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/yusukebe/hono)](https://github.com/yusukebe/hono/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/yusukebe/hono)](https://github.com/yusukebe/hono/commits/master)
 
-Hono[炎] - _日本語の炎に由来 🔥_ - はCloudflare WorkersやFastly Compute@Edge向けの小さくて、シンプルで、めちゃくちゃ速いWebフレームワークです。
+Hono - _日本語の\[炎\]に由来 🔥_ - はCloudflare WorkersやFastly Compute@Edge向けの小さくて、シンプルで、めちゃくちゃ速いWebフレームワークです。
 
 ```js
 import { Hono } from 'hono'
