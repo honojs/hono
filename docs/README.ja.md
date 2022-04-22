@@ -31,6 +31,7 @@ app.fire()
 - **依存ゼロ** - Service WorkerもしくはWebスタンダードのAPIしか使っていません。
 - **ミドルウェア** - ビルトイン・ミドルウェアに加え自分でミドルウェアを作ることができます。
 - **最適化** - Cloudflare Workersに最適化されています。
+- **TypeScript** - TypeScriptでできています。
 
 ## ベンチマーク
 
