@@ -1,4 +1,4 @@
-export async function parseBody(req: Request): Promise<{ [param: string]: unknown }> {
+export async function parseBody(req: Request): Promise<Record<string, unknown>> {
   const contentType = req.headers.get('content-type')
 
   switch (contentType) {

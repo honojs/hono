@@ -13,7 +13,7 @@ declare module '@/context' {
   }
 }
 
-export type Cookie = { [key: string]: string }
+export type Cookie = Record<string, string>
 export type CookieOptions = {
   domain?: string
   expires?: Date
