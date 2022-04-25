@@ -1,5 +1,5 @@
-import type { Context } from '@/context'
 import { Hono } from '@/hono'
+import { poweredBy } from '@/middleware/powered-by'
 
 describe('GET Request', () => {
   const app = new Hono()
@@ -144,6 +144,32 @@ describe('Routing', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('post /user/register')
   })
+
+  describe('Chained route', () => {
+    app
+      .get('/chained/:abc', (c) => {
+        const abc = c.req.param('abc')
+        return c.text(`GET for ${abc}`)
+      })
+      .post((c) => {
+        const abc = c.req.param('abc')
+        return c.text(`POST for ${abc}`)
+      })
+    it('Should return 200 response from GET request', async () => {
+      const res = await app.request('http://localhost/chained/abc', { method: 'GET' })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET for abc')
+    })
+    it('Should return 200 response from POST request', async () => {
+      const res = await app.request('http://localhost/chained/abc', { method: 'POST' })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('POST for abc')
+    })
+    it('Should return 404 response from PUT request', async () => {
+      const res = await app.request('http://localhost/chained/abc', { method: 'PUT' })
+      expect(res.status).toBe(404)
+    })
+  })
 })
 
 describe('param and query', () => {
@@ -233,6 +259,27 @@ describe('Middleware', () => {
     expect(await res.text()).toBe('message')
     expect(res.headers.get('x-custom')).toBe('root')
     expect(res.headers.get('x-message-2')).toBe('custom-header-2')
+  })
+
+  describe.only('Chained route', () => {
+    app
+      .use('/chained/*', async (c, next) => {
+        c.req.headers.append('x-before', 'abc')
+        await next()
+      })
+      .use(async (c, next) => {
+        await next()
+        c.header('x-after', c.req.header('x-before'))
+      })
+      .get('/chained/abc', (c) => {
+        return c.text('GET chained')
+      })
+  })
+  it('Should return 200 response with chained route', async () => {
+    const res = await app.request('http://localhost/chained/abc')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('GET chained')
+    expect(res.headers.get('x-after')).toBe('abc')
   })
 })
 
