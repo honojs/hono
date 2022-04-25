@@ -127,6 +127,21 @@ app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (c) => {
 })
 ```
 
+### Chained route
+
+```js
+app
+  .get('/endpoint', (c) => {
+    return c.text('GET /endpoint')
+  })
+  .post((c) => {
+    return c.text('POST /endpoint')
+  })
+  .delete((c) => {
+    return c.text('DELETE /endpoint')
+  })
+```
+
 ### Nested route
 
 ```js
@@ -175,6 +190,9 @@ const app = new Hono()
 
 app.use('*', poweredBy())
 app.use('*', logger())
+// Or you can write:
+// app.use('*', poweredBy()).use(logger())
+
 app.use(
   '/auth/*',
   basicAuth({
