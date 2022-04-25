@@ -79,6 +79,7 @@ export class Hono<P extends string> extends defineDynamicClass()<P> {
 
     this.#router = new this.routerClass()
     this.#middlewareRouters = []
+    this.#tempPath = null
   }
 
   private notFoundHandler: NotFoundHandler = (c: Context) => {
