@@ -48,13 +48,9 @@ export const encodeBase64 = (str: string): string => {
   try {
     const encoder = new TextEncoder()
     const bytes = encoder.encode(str)
-    const length = bytes.byteLength
-    let binary = ''
-    for (let i = 0; i < length; i++) {
-      binary += String.fromCharCode(bytes[i])
-    }
-    return btoa(binary)
+    return btoa(String.fromCharCode(...bytes))
   } catch {}
+
   try {
     const { Buffer } = require('buffer')
     return Buffer.from(str).toString('base64')
@@ -70,11 +66,7 @@ export const decodeBase64 = (str: string): string => {
   }
   try {
     const text = atob(str)
-    const length = text.length
-    const bytes = new Uint8Array(length)
-    for (let i = 0; i < length; i++) {
-      bytes[i] = text.charCodeAt(i)
-    }
+    const bytes = new Uint8Array(text.split('').map((c) => c.charCodeAt(0)))
     const decoder = new TextDecoder()
     return decoder.decode(bytes)
   } catch {}
