@@ -20,7 +20,7 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/yusukebe/hono)](https://github.com/yusukebe/hono/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/yusukebe/hono)](https://github.com/yusukebe/hono/commits/master)
 
-Hono - _**[炎] means flame🔥 in Japanese**_ - is small, simple, and ultrafast web framework for Cloudflare Workers and Fastly Compute@Edge.
+Hono - _**[炎] means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework for Cloudflare Workers and Service Worker based serverless such as Fastly Compute@Edge.
 
 ```js
 import { Hono } from 'hono'
@@ -37,7 +37,7 @@ app.fire()
 - **Zero-dependencies** - using only Service Worker and Web standard API.
 - **Middleware** - built-in middleware and ability to extend with your own middleware.
 - **TypeScript** - first-class TypeScript support.
-- **Optimized** - for Cloudflare Workers.
+- **Optimized** - for Cloudflare Workers and Fastly Compute@Edge.
 
 ## Benchmark
 
@@ -58,7 +58,41 @@ A demonstration to create an application for Cloudflare Workers with Hono.
 
 ![Demo](https://user-images.githubusercontent.com/10682/151973526-342644f9-71c5-4fee-81f4-64a7558bb192.gif)
 
-Now, the named path parameter has types.
+## Not only fast
+
+Hono is fast. But not only fast.
+
+### Write Less, do more
+
+Built-in middleware make _"**Write Less, do more**"_ in reality. You can use a lot of middleware without writing code from scratch. Below are examples.
+
+- [Basic Authentication](https://github.com/yusukebe/hono/tree/master/src/middleware/basic-auth/)
+- [Cookie parsing / serializing](https://github.com/yusukebe/hono/tree/master/src/middleware/cookie/)
+- [CORS](https://github.com/yusukebe/hono/tree/master/src/middleware/cors/)
+- [ETag](https://github.com/yusukebe/hono/tree/master/src/middleware/etag/)
+- [GraphQL Server](https://github.com/yusukebe/hono/tree/master/src/middleware/graphql-server/)
+- [Logger](https://github.com/yusukebe/hono/tree/master/src/middleware/logger/)
+- [Mustache template engine](https://github.com/yusukebe/hono/tree/master/src/middleware/mustache/) (Only for Cloudflare Workers)
+- [JSON pretty printing](https://github.com/yusukebe/hono/tree/master/src/middleware/pretty-json/)
+- [Serving static files](https://github.com/yusukebe/hono/tree/master/src/middleware/serve-static/) (Only for Cloudflare Workers)
+
+You can enable logger and CORS middleware with just this code.
+
+```js
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { logger } from 'hono/logger'
+
+const app = new Hono()
+app.use('*', cors()).use(logger())
+```
+
+### Developer Experience
+
+And Hono provides fine _"**Developer Experience**"_. Easy access to Request/Response thanks to the `Context` object.
+Above all, Hono is written in TypeScript. So, Hono has _"**Types**"_!
+
+For example, the named path parameters will be literal types.
 
 ![Demo](https://user-images.githubusercontent.com/10682/154179671-9e491597-6778-44ac-a8e6-4483d7ad5393.png)
 
@@ -80,10 +114,10 @@ npm install hono
 
 An instance of `Hono` has these methods.
 
-- app.**HTTP_METHOD**(path, handler)
-- app.**all**(path, handler)
+- app.**HTTP_METHOD**(\[path,\] handler)
+- app.**all**(\[path,\] handler)
 - app.**route**(path)
-- app.**use**(path, middleware)
+- app.**use**(\[path,\] middleware)
 - app.**notFound**(handler)
 - app.**onError**(err, handler)
 - app.**fire**()
@@ -507,7 +541,7 @@ npx wrangler@beta publish index.js
 
 ## Starter template
 
-You can start making your Cloudflare Workers application with [the starter template](https://github.com/yusukebe/hono-minimal). It is really minimal using TypeScript, esbuild, and Miniflare.
+You can start making your Cloudflare Workers application with [the starter template](https://github.com/yusukebe/hono-minimal). It is really minimal using TypeScript, esbuild, Miniflare, and Jest.
 
 To generate a project skelton, run this command.
 
@@ -529,15 +563,13 @@ Implementation of the original router `TrieRouter` is inspired by [goblin](https
 
 ## Contributing
 
-Contributions Welcome! You can contribute by the following way.
+Contributions Welcome! You can contribute in the following ways.
 
 - Write or fix documents
 - Write code of middleware
 - Fix bugs
 - Refactor the code
 - etc.
-
-Let's make Hono together!
 
 ## Contributors
 

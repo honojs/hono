@@ -20,7 +20,7 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/yusukebe/hono)](https://github.com/yusukebe/hono/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/yusukebe/hono)](https://github.com/yusukebe/hono/commits/master)
 
-Hono - _日本語の\[炎\]に由来 🔥_ - はCloudflare WorkersやFastly Compute@Edge向けの小さくて、シンプルで、めちゃくちゃ速いWebフレームワークです。
+Hono - _日本語の\[炎\]に由来 🔥_ - はCloudflare WorkersやFastly Compute@Edgeなど、Service Workerベースのサーバーレス向けの小さくて、シンプルで、めちゃくちゃ速いWebフレームワークです。
 
 ```js
 import { Hono } from 'hono'
@@ -58,7 +58,42 @@ Honoを使って、Cloudflare Workersのアプリケーションを作ってい�
 
 ![Demo](https://user-images.githubusercontent.com/10682/151973526-342644f9-71c5-4fee-81f4-64a7558bb192.gif)
 
-名前付きパラメーターにも型がつきます。
+## 速いだけじゃない
+
+Honoは速いけど、速いだけではありません。
+
+### Write Less, do more
+
+ビルトイン・ミドルウェアが「**_Write Less, do more_**」を実現します。
+たくさんのミドルウェアを１からコードを書くことなく、使えます。
+例えば、以下のミドルウェアがあります。
+
+- [Basic認証](https://github.com/yusukebe/hono/tree/master/src/middleware/basic-auth/)
+- [Cookieパース/シリアライゼーション](https://github.com/yusukebe/hono/tree/master/src/middleware/cookie/)
+- [CORS](https://github.com/yusukebe/hono/tree/master/src/middleware/cors/)
+- [ETag](https://github.com/yusukebe/hono/tree/master/src/middleware/etag/)
+- [GraphQLサーバー](https://github.com/yusukebe/hono/tree/master/src/middleware/graphql-server/)
+- [ロガー](https://github.com/yusukebe/hono/tree/master/src/middleware/logger/)
+- [Mustacheを使ったテンプレート](https://github.com/yusukebe/hono/tree/master/src/middleware/mustache/) (Cloudflare Workersのみ)
+- [JSON pretty](https://github.com/yusukebe/hono/tree/master/src/middleware/pretty-json/)
+- [静的ファイルのサーブ](https://github.com/yusukebe/hono/tree/master/src/middleware/serve-static/) (Cloudflare Workersのみ)
+
+たったこれだけのコードでロガーとCORSミドルウェアを使うことができます。
+
+```js
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { logger } from 'hono/logger'
+
+const app = new Hono()
+app.use('*', cors()).use(logger())
+```
+
+### Developer Experience
+
+そして、Honoは優れた「**_Developer Experience_**」を提供します。`Context` オブジェクトのおかげで、Request/Responseへのアクセスが簡単です。なにより、HonoはTypeScriptで書かれています。そう、Honoは「**_型_**」を持っているのです！
+
+例えば、名前付きパラメーターにもリテラル型がつきます。
 
 ![Demo](https://user-images.githubusercontent.com/10682/154179671-9e491597-6778-44ac-a8e6-4483d7ad5393.png)
 
@@ -80,10 +115,10 @@ npm install hono
 
 `Hono`のインスタンスには以下のメソッドがあります。
 
-- app.**HTTP_METHOD**(path, handler)
-- app.**all**(path, handler)
+- app.**HTTP_METHOD**(\[path,\] handler)
+- app.**all**(\[path,\] handler)
 - app.**route**(path)
-- app.**use**(path, middleware)
+- app.**use**(\[path,\] middleware)
 - app.**notFound**(handler)
 - app.**onError**(err, handler)
 - app.**fire**()
@@ -125,6 +160,21 @@ app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (c) => {
   const title = c.req.param('title')
   ...
 })
+```
+
+### チェインされたルート
+
+```js
+app
+  .get('/endpoint', (c) => {
+    return c.text('GET /endpoint')
+  })
+  .post((c) => {
+    return c.text('POST /endpoint')
+  })
+  .delete((c) => {
+    return c.text('DELETE /endpoint')
+  })
 ```
 
 ### ネストされたルート
@@ -175,6 +225,9 @@ const app = new Hono()
 
 app.use('*', poweredBy())
 app.use('*', logger())
+// もしくはこのようにも書けます。
+// app.use('*', poweredBy()).use(logger())
+
 app.use(
   '/auth/*',
   basicAuth({
