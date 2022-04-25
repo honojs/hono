@@ -15,7 +15,7 @@ declare global {
 }
 
 export type Handler<RequestParamKeyType = string> = (
-  c: Context<RequestParamKeyType | string>,
+  c: Context<RequestParamKeyType>,
   next?: Next
 ) => Response | Promise<Response>
 export type MiddlewareHandler = (c: Context, next: Next) => Promise<void>
@@ -36,44 +36,42 @@ type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 
-function defineDynamicClass<T extends string[]>(
-  ...methods: T
-): {
-  new (): {
-    [K in T[number]]: <Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>) => Hono
-  } & {
-    methods: T
-  }
-} {
-  return class {
-    get methods() {
-      return methods
-    }
-  } as any
+interface HandlerInterface<T extends string> {
+  <Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono<Path>
+  <Path extends T>(handler: Handler<ParamKeys<T>>): Hono<Path>
 }
 
-export class Hono extends defineDynamicClass(
-  'get',
-  'post',
-  'put',
-  'delete',
-  'head',
-  'options',
-  'patch',
-  'all'
-) {
+const methods = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch', 'all'] as const
+type Methods = typeof methods[number]
+
+function defineDynamicClass(): {
+  new <T extends string>(): {
+    [K in Methods]: HandlerInterface<T>
+  }
+} {
+  return class {} as any
+}
+
+export class Hono<P extends string> extends defineDynamicClass()<P> {
   readonly routerClass: { new (): Router<any> } = TrieRouter
   readonly strict: boolean = true // strict routing - default is true
   #router: Router<Handler>
   #middlewareRouters: Router<MiddlewareHandler>[]
   #tempPath: string
+  private path: string
 
-  constructor(init: Partial<Pick<Hono, 'routerClass' | 'strict'>> = {}) {
+  constructor(init: Partial<Pick<Hono<P>, 'routerClass' | 'strict'>> = {}) {
     super()
-
-    this.methods.map((method) => {
-      this[method] = <Path extends string>(path: Path, handler: Handler) => {
-        return this.addRoute(method, path, handler)
+    methods.map((method) => {
+      this[method] = <Path extends string>(
+        arg1: Path | Handler<ParamKeys<P>>,
+        arg2?: Handler<ParamKeys<Path>>
+      ) => {
+        if (typeof arg1 === 'string') {
+          this.path = arg1
+          return this.addRoute(method, this.path, arg2)
+        }
+        return this.addRoute(method, this.path, arg1)
       }
     })
 
@@ -95,34 +93,43 @@ export class Hono extends defineDynamicClass(
     return c.text(message, 500)
   }
 
-  route(path: string): Hono {
-    const newHono: Hono = new Hono()
+  route(path: string): Hono<P> {
+    const newHono: Hono<P> = new Hono()
     newHono.#tempPath = path
     newHono.#router = this.#router
     return newHono
   }
 
-  use(path: string, middleware: MiddlewareHandler): void {
-    if (middleware.constructor.name !== 'AsyncFunction') {
+  use(path: string, middleware: MiddlewareHandler): Hono<P>
+  use(middleware: MiddlewareHandler): Hono<P>
+  use(arg1: string | MiddlewareHandler, arg2?: MiddlewareHandler): Hono<P> {
+    let handler: MiddlewareHandler
+    if (typeof arg1 === 'string') {
+      this.path = arg1
+      handler = arg2
+    } else {
+      handler = arg1
+    }
+    if (handler.constructor.name !== 'AsyncFunction') {
       throw new TypeError('middleware must be a async function!')
     }
     const router = new this.routerClass()
-    router.add(METHOD_NAME_OF_ALL, path, middleware)
+    router.add(METHOD_NAME_OF_ALL, this.path, handler)
     this.#middlewareRouters.push(router)
+    return this
   }
 
-  onError(handler: ErrorHandler): Hono {
+  onError(handler: ErrorHandler): Hono<P> {
     this.errorHandler = handler
     return this
   }
 
-  notFound(handler: NotFoundHandler): Hono {
+  notFound(handler: NotFoundHandler): Hono<P> {
     this.notFoundHandler = handler
     return this
   }
 
-  // addRoute('get', '/', handler)
-  private addRoute(method: string, path: string, handler: Handler): Hono {
+  private addRoute(method: string, path: string, handler: Handler): Hono<P> {
     method = method.toUpperCase()
     if (this.#tempPath) {
       path = mergePath(this.#tempPath, path)
