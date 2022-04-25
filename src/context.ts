@@ -26,7 +26,7 @@ export class Context<RequestParamKeyType = string> {
     req: Request<RequestParamKeyType>,
     opts?: { res: Response; env: Env; event: FetchEvent }
   ) {
-    this.req = this.initRequest(req)
+    this.req = this.initRequest<RequestParamKeyType>(req)
     Object.assign(this, opts)
     this.#headers = {}
   }

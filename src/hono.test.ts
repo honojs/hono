@@ -1,5 +1,5 @@
-import type { Context } from '@/context'
 import { Hono } from '@/hono'
+import { poweredBy } from '@/middleware/powered-by'
 
 describe('GET Request', () => {
   const app = new Hono()
