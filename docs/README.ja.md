@@ -73,6 +73,7 @@ Honoは速いけど、速いだけではありません。
 - [CORS](https://github.com/honojs/hono/tree/master/src/middleware/cors/)
 - [ETag](https://github.com/honojs/hono/tree/master/src/middleware/etag/)
 - [GraphQLサーバー](https://github.com/honojs/hono/tree/master/src/middleware/graphql-server/)
+- [JWT認証](https://github.com/honojs/hono/tree/master/src/middleware/jwt/)
 - [ロガー](https://github.com/honojs/hono/tree/master/src/middleware/logger/)
 - [Mustacheを使ったテンプレート](https://github.com/honojs/hono/tree/master/src/middleware/mustache/) (Cloudflare Workersのみ)
 - [JSON pretty](https://github.com/honojs/hono/tree/master/src/middleware/pretty-json/)
