@@ -39,4 +39,4 @@ Asset files:
 
 ## Example
 
-<https://github.com/yusukebe/hono/tree/master/examples/serve-static>
+<https://github.com/honojs/hono/tree/master/examples/serve-static>

@@ -1,24 +1,24 @@
 <div align="center">
-  <a href="https://github.com/yusukebe/hono">
-    <img src="https://raw.githubusercontent.com/yusukebe/hono/master/docs/images/hono-title.png" width="500" height="auto" alt="Hono"/>
+  <a href="https://github.com/honojs/hono">
+    <img src="https://raw.githubusercontent.com/honojs/hono/master/docs/images/hono-title.png" width="500" height="auto" alt="Hono"/>
   </a>
 </div>
 
 <hr />
 
 <p>
-<a href="https://github.com/yusukebe/hono/blob/master/README.md">English</a>
+<a href="https://github.com/honojs/hono/blob/master/README.md">English</a>
 &#x000B7;
-<a href="https://github.com/yusukebe/hono/blob/master/docs/README.ja.md">日本語</a>
+<a href="https://github.com/honojs/hono/blob/master/docs/README.ja.md">日本語</a>
 </p>
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/yusukebe/hono/ci)](https://github.com/yusukebe/hono/actions)
-[![GitHub](https://img.shields.io/github/license/yusukebe/hono)](https://github.com/yusukebe/hono/blob/master/LICENSE)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/honojs/hono/ci)](https://github.com/honojs/hono/actions)
+[![GitHub](https://img.shields.io/github/license/honojs/hono)](https://github.com/honojs/hono/blob/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/hono)](https://www.npmjs.com/package/hono)
 [![npm](https://img.shields.io/npm/dm/hono)](https://www.npmjs.com/package/hono)
 [![npm type definitions](https://img.shields.io/npm/types/hono)](https://www.npmjs.com/package/hono)
-[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/yusukebe/hono)](https://github.com/yusukebe/hono/pulse)
-[![GitHub last commit](https://img.shields.io/github/last-commit/yusukebe/hono)](https://github.com/yusukebe/hono/commits/master)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/honojs/hono)](https://github.com/honojs/hono/pulse)
+[![GitHub last commit](https://img.shields.io/github/last-commit/honojs/hono)](https://github.com/honojs/hono/commits/master)
 
 Hono - _日本語の\[炎\]に由来 🔥_ - はCloudflare WorkersやFastly Compute@Edgeなど、Service Workerベースのサーバーレス向けの小さくて、シンプルで、めちゃくちゃ速いWebフレームワークです。
 
@@ -68,15 +68,15 @@ Honoは速いけど、速いだけではありません。
 たくさんのミドルウェアを１からコードを書くことなく、使えます。
 例えば、以下のミドルウェアがあります。
 
-- [Basic認証](https://github.com/yusukebe/hono/tree/master/src/middleware/basic-auth/)
-- [Cookieパース/シリアライゼーション](https://github.com/yusukebe/hono/tree/master/src/middleware/cookie/)
-- [CORS](https://github.com/yusukebe/hono/tree/master/src/middleware/cors/)
-- [ETag](https://github.com/yusukebe/hono/tree/master/src/middleware/etag/)
-- [GraphQLサーバー](https://github.com/yusukebe/hono/tree/master/src/middleware/graphql-server/)
-- [ロガー](https://github.com/yusukebe/hono/tree/master/src/middleware/logger/)
-- [Mustacheを使ったテンプレート](https://github.com/yusukebe/hono/tree/master/src/middleware/mustache/) (Cloudflare Workersのみ)
-- [JSON pretty](https://github.com/yusukebe/hono/tree/master/src/middleware/pretty-json/)
-- [静的ファイルのサーブ](https://github.com/yusukebe/hono/tree/master/src/middleware/serve-static/) (Cloudflare Workersのみ)
+- [Basic認証](https://github.com/honojs/hono/tree/master/src/middleware/basic-auth/)
+- [Cookieパース/シリアライゼーション](https://github.com/honojs/hono/tree/master/src/middleware/cookie/)
+- [CORS](https://github.com/honojs/hono/tree/master/src/middleware/cors/)
+- [ETag](https://github.com/honojs/hono/tree/master/src/middleware/etag/)
+- [GraphQLサーバー](https://github.com/honojs/hono/tree/master/src/middleware/graphql-server/)
+- [ロガー](https://github.com/honojs/hono/tree/master/src/middleware/logger/)
+- [Mustacheを使ったテンプレート](https://github.com/honojs/hono/tree/master/src/middleware/mustache/) (Cloudflare Workersのみ)
+- [JSON pretty](https://github.com/honojs/hono/tree/master/src/middleware/pretty-json/)
+- [静的ファイルのサーブ](https://github.com/honojs/hono/tree/master/src/middleware/serve-static/) (Cloudflare Workersのみ)
 
 たったこれだけのコードでロガーとCORSミドルウェアを使うことができます。
 
@@ -237,7 +237,7 @@ app.use(
 )
 ```
 
-利用可能なビルトイン・ミドルウェアについては[src/middleware](https://github.com/yusukebe/hono/tree/master/src/middleware)を参照してください。
+利用可能なビルトイン・ミドルウェアについては[src/middleware](https://github.com/honojs/hono/tree/master/src/middleware)を参照してください。
 
 ### カスタム・ミドルウェア
 
@@ -472,7 +472,7 @@ Honoを使って、Cloudflare Workersのアプリケーションを書いてみ�
 **Wrangler 1.x系** はミドルウェアのインポートに対応していません。2つの方法を推奨します。
 
 1. [Wragler 2.0 Beta](https://github.com/cloudflare/wrangler2)を使う。
-2. webpack 4.x系を使わない。例えば[esbuild](https://esbuild.github.io)を利用できます。[スターターテンプレート](https://github.com/yusukebe/hono-minimal)を参考にしてみてください。
+2. webpack 4.x系を使わない。例えば[esbuild](https://esbuild.github.io)を利用できます。[スターターテンプレート](https://github.com/honojs/hono-minimal)を参考にしてみてください。
 
 ---
 
@@ -544,13 +544,13 @@ npx wrangler@beta publish index.js
 
 ## スターターテンプレート
 
-Cloudflare Workersのアプリケーションを書き始めるのに[スターターテンプレート](https://github.com/yusukebe/hono-minimal)を使うことができます。
+Cloudflare Workersのアプリケーションを書き始めるのに[スターターテンプレート](https://github.com/honojs/hono-minimal)を使うことができます。
 TypeScript、esbuild、Miniflareを使った最小限のものとなっています。
 
 このテンプレートを使った雛形を生成するには、以下のコマンドを打ちます。
 
 ```sh
-wrangler generate my-app https://github.com/yusukebe/hono-minimal
+wrangler generate my-app https://github.com/honojs/hono-minimal
 ```
 
 ## 関連プロジェクト
@@ -579,7 +579,7 @@ wrangler generate my-app https://github.com/yusukebe/hono-minimal
 
 ## コントリビューターの方々
 
-[全てのコントリビューター](https://github.com/yusukebe/hono/graphs/contributors)へ。ありがとう！
+[全てのコントリビューター](https://github.com/honojs/hono/graphs/contributors)へ。ありがとう！
 
 ## 作者
 
