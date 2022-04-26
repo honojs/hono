@@ -4,11 +4,6 @@
   "main": "index.js",
   "author": "yusuke@kamawada.com",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yusukebe/hono.git"
-  },
-  "homepage": "https://github.com/yusukebe/hono",
   "scripts": {
     "dev": "fastly compute serve --watch",
     "prebuild": "node ./build.js",
