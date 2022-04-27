@@ -1,5 +1,0 @@
-name = "hono-example-serve-static"
-compatibility_date = "2022-02-12"
-
-[site]
-bucket = "./assets"

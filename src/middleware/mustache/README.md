@@ -68,4 +68,4 @@ footer.mustache:
 
 ## Example
 
-<https://github.com/honojs/hono/tree/master/examples/mustache>
+<https://github.com/honojs/examples/tree/master/mustache-template>

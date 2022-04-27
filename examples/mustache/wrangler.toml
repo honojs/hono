@@ -1,5 +1,0 @@
-name = "hono-example-mustache"
-compatibility_date = "2022-02-12"
-
-[site]
-bucket = "./view"
