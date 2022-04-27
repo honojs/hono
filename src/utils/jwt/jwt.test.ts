@@ -38,8 +38,9 @@ describe('JWT', () => {
     expect(authorized).toBe(false)
   })
 
-  it.only('JwtTokenNotBefore', async () => {
-    const tok = 'eyJraWQiOiJFemF7bVZWbnd0TUpUNEFveFVtT0dILWJ0Y2VUVFM3djBYcEJuMm5ZZ2VjIiwiYWxnIjoiSFMyNTYifQ.eyJyb2xlIjoiYXBpX3JvbGUiLCJuYmYiOjE2NjQ1ODI0MDB9.BatadbUj5e41OZ33odEFTAndQFzX0w9aAgpQPgO-zaQ'
+  it('JwtTokenNotBefore', async () => {
+    const tok =
+      'eyJraWQiOiJFemF7bVZWbnd0TUpUNEFveFVtT0dILWJ0Y2VUVFM3djBYcEJuMm5ZZ2VjIiwiYWxnIjoiSFMyNTYifQ.eyJyb2xlIjoiYXBpX3JvbGUiLCJuYmYiOjE2NjQ1ODI0MDB9.BatadbUj5e41OZ33odEFTAndQFzX0w9aAgpQPgO-zaQ'
     const secret = 'a-secret'
     let err: JwtTokenNotBefore
     let authorized = false
@@ -53,7 +54,8 @@ describe('JWT', () => {
   })
 
   it('JwtTokenExpired', async () => {
-    const tok = 'eyJraWQiOiJFemF6bVZWbnd0TUpUNEFveFVtT0dILWJ0Y2VUVFM3djBYcEJuMm5ZZ2VjIiwiYWxnIjoiSFMyNTYifQ.eyJyb2xlIjoiYXBpX3JvbGUiLCJleHAiOjE2MzMwNDY0MDB9.Gmq_dozOnwzqkMUMEm7uny7cMZuF1d0QkCnmRXAbTEk'
+    const tok =
+      'eyJraWQiOiJFemF6bVZWbnd0TUpUNEFveFVtT0dILWJ0Y2VUVFM3djBYcEJuMm5ZZ2VjIiwiYWxnIjoiSFMyNTYifQ.eyJyb2xlIjoiYXBpX3JvbGUiLCJleHAiOjE2MzMwNDY0MDB9.Gmq_dozOnwzqkMUMEm7uny7cMZuF1d0QkCnmRXAbTEk'
     const secret = 'a-secret'
     let err
     let authorized = false
