@@ -84,13 +84,6 @@ describe('Context', () => {
     expect(obj['hono']).toBe('great app')
   })
 
-  it('Should return `Content-Length`', async () => {
-    let res = c.text('abcdefg')
-    expect(res.headers.get('Content-Length')).toBe('7')
-    res = c.text('炎')
-    expect(res.headers.get('Content-Length')).toBe('3')
-  })
-
   it('Has headers, status, and statusText', async () => {
     c.header('X-Custom1', 'Message1')
     c.header('X-Custom2', 'Message2')

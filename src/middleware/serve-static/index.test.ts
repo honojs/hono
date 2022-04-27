@@ -34,7 +34,6 @@ describe('ServeStatic Middleware', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('This is plain.txt')
     expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8')
-    expect(res.headers.get('Content-Length')).toBe('17')
   })
 
   it('Should return hono.html', async () => {
@@ -42,7 +41,6 @@ describe('ServeStatic Middleware', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<h1>Hono!</h1>')
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=utf-8')
-    expect(res.headers.get('Content-Length')).toBe('14')
   })
 
   it('Should return 404 response', async () => {
@@ -55,7 +53,6 @@ describe('ServeStatic Middleware', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('That is plain.txt')
     expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8')
-    expect(res.headers.get('Content-Length')).toBe('17')
   })
 
   it('Should return index.html', async () => {
@@ -63,6 +60,5 @@ describe('ServeStatic Middleware', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<h1>Top</h1>')
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=utf-8')
-    expect(res.headers.get('Content-Length')).toBe('12')
   })
 })

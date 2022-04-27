@@ -42,13 +42,12 @@ function log(
   method: string,
   path: string,
   status?: number,
-  elapsed?: string,
-  contentLength?: string
+  elapsed?: string
 ) {
   const out =
     prefix === LogPrefix.Incoming
       ? `  ${prefix} ${method} ${path}`
-      : `  ${prefix} ${method} ${path} ${colorStatus(status)} ${elapsed} ${contentLength}`
+      : `  ${prefix} ${method} ${path} ${colorStatus(status)} ${elapsed}`
   fn(out)
 }
 
@@ -63,9 +62,6 @@ export const logger = (fn = console.log) => {
 
     await next()
 
-    const len = parseFloat(c.res.headers.get('Content-Length'))
-    const contentLength = isNaN(len) ? '0' : len < 1024 ? `${len}b` : `${len / 1024}kB`
-
-    log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start), contentLength)
+    log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start))
   }
 }
