@@ -261,7 +261,7 @@ describe('Middleware', () => {
     expect(res.headers.get('x-message-2')).toBe('custom-header-2')
   })
 
-  describe.only('Chained route', () => {
+  describe('Chained route', () => {
     app
       .use('/chained/*', async (c, next) => {
         c.req.headers.append('x-before', 'abc')
