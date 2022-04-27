@@ -1,6 +1,7 @@
 import type { Context } from '@/context'
 import type { Next } from '@/hono'
 import { Jwt } from '@/utils/jwt'
+import type { AlgorithmTypes } from '@/utils/jwt/types'
 
 export const jwt = (options: { secret: string; alg?: string }) => {
   if (!options) {
@@ -33,7 +34,7 @@ export const jwt = (options: { secret: string; alg?: string }) => {
     let authorized = false
     let msg = ''
     try {
-      authorized = await Jwt.verify(parts[1], options.secret)
+      authorized = await Jwt.verify(parts[1], options.secret, options.alg as AlgorithmTypes)
     } catch (e) {
       msg = `${e}`
     }
