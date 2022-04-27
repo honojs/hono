@@ -554,17 +554,21 @@ TypeScript、esbuild、Miniflareを使った最小限のものとなっていま
 wrangler generate my-app https://github.com/honojs/hono-minimal
 ```
 
+## 実例集
+
+- Hono Examples - <https://github.com/honojs/examples>
+
 ## 関連プロジェクト
 
 最初に作ったHonoの`TrieRouter`というルーターは[goblin](https://github.com/bmf-san/goblin)を参考にしました。`RegExpRouter`は[Router::Boom](https://github.com/tokuhirom/Router-Boom)にインスパイアされています。APIのデザインは[express](https://github.com/expressjs/express)と[koa](https://github.com/koajs/koa)を参考にしました。同じCloudflare Workersのルーターもしくはフレームワークには[itty-router](https://github.com/kwhitley/itty-router)、[Sunder](https://github.com/SunderJS/sunder)、[worktop](https://github.com/lukeed/worktop)があります。
 
-- express <https://github.com/expressjs/express>
-- koa <https://github.com/koajs/koa>
-- itty-router <https://github.com/kwhitley/itty-router>
-- Sunder <https://github.com/SunderJS/sunder>
-- goblin <https://github.com/bmf-san/goblin>
-- worktop <https://github.com/lukeed/worktop>
-- Router::Boom <https://github.com/tokuhirom/Router-Boom>
+- express - <https://github.com/expressjs/express>
+- koa - <https://github.com/koajs/koa>
+- itty-router - <https://github.com/kwhitley/itty-router>
+- Sunder - <https://github.com/SunderJS/sunder>
+- goblin - <https://github.com/bmf-san/goblin>
+- worktop - <https://github.com/lukeed/worktop>
+- Router::Boom - <https://github.com/tokuhirom/Router-Boom>
 
 ## コントリビュート
 
