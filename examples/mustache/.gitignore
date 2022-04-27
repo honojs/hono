@@ -1,6 +1,0 @@
-dist
-node_modules
-worker
-workers-site
-package-lock.json
-yarn.lock
