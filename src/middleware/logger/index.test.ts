@@ -22,7 +22,7 @@ describe('Logger by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(log.startsWith('  --> GET /empty \x1b[32m200\x1b[0m')).toBe(true)
-    expect(log.endsWith(' 0b')).toBe(true)
+    expect(log).toMatch(/m?s$/)
   })
 
   it('Log status 200 with small body', async () => {
@@ -30,7 +30,7 @@ describe('Logger by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(log.startsWith('  --> GET /short \x1b[32m200\x1b[0m')).toBe(true)
-    expect(log.endsWith(` ${shortRandomString.length}b`)).toBe(true)
+    expect(log).toMatch(/m?s$/)
   })
 
   it('Log status 200 with big body', async () => {
@@ -38,7 +38,7 @@ describe('Logger by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(log.startsWith('  --> GET /long \x1b[32m200\x1b[0m')).toBe(true)
-    expect(log.endsWith(` ${longRandomString.length / 1024}kB`)).toBe(true)
+    expect(log).toMatch(/m?s$/)
   })
 
   it('Log status 404', async () => {
@@ -50,6 +50,6 @@ describe('Logger by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
     expect(log.startsWith('  --> GET /notfound \x1b[33m404\x1b[0m')).toBe(true)
-    expect(log.endsWith(` ${msg.length}b`)).toBe(true)
+    expect(log).toMatch(/m?s$/)
   })
 })

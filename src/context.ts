@@ -67,20 +67,7 @@ export class Context<RequestParamKeyType = string> {
     init.status = init.status || this.#status || 200
     init.statusText =
       init.statusText || this.#statusText || getStatusText(init.status as StatusCode)
-
     init.headers = { ...this.#headers, ...init.headers }
-
-    // Content-Length
-    let length = 0
-    if (data) {
-      if (data instanceof ArrayBuffer) {
-        length = data.byteLength
-      } else if (typeof data == 'string') {
-        const Encoder = new TextEncoder()
-        length = Encoder.encode(data).byteLength || 0
-      }
-    }
-    init.headers = { ...init.headers, ...{ 'Content-Length': length.toString() } }
 
     return new Response(data, init)
   }
