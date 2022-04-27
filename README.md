@@ -550,17 +550,21 @@ To generate a project skelton, run this command.
 wrangler generate my-app https://github.com/honojs/hono-minimal
 ```
 
+## Examples
+
+- Hono Examples - <https://github.com/honojs/examples>
+
 ## Related projects
 
 Implementation of the original router `TrieRouter` is inspired by [goblin](https://github.com/bmf-san/goblin). `RegExpRouter` is inspired by [Router::Boom](https://github.com/tokuhirom/Router-Boom). API design is inspired by [express](https://github.com/expressjs/express) and [koa](https://github.com/koajs/koa). [itty-router](https://github.com/kwhitley/itty-router), [Sunder](https://github.com/SunderJS/sunder), and [worktop](https://github.com/lukeed/worktop) are the other routers or frameworks for Cloudflare Workers.
 
-- express <https://github.com/expressjs/express>
-- koa <https://github.com/koajs/koa>
-- itty-router <https://github.com/kwhitley/itty-router>
-- Sunder <https://github.com/SunderJS/sunder>
-- goblin <https://github.com/bmf-san/goblin>
-- worktop <https://github.com/lukeed/worktop>
-- Router::Boom <https://github.com/tokuhirom/Router-Boom>
+- express - <https://github.com/expressjs/express>
+- koa - <https://github.com/koajs/koa>
+- itty-router - <https://github.com/kwhitley/itty-router>
+- Sunder - <https://github.com/SunderJS/sunder>
+- goblin - <https://github.com/bmf-san/goblin>
+- worktop - <https://github.com/lukeed/worktop>
+- Router::Boom - <https://github.com/tokuhirom/Router-Boom>
 
 ## Contributing
 
