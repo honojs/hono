@@ -100,21 +100,34 @@ export class Hono<P extends string> extends defineDynamicClass()<P> {
     return newHono
   }
 
+  use(method: string, path: string, middleware: MiddlewareHandler): Hono<P>
   use(path: string, middleware: MiddlewareHandler): Hono<P>
   use(middleware: MiddlewareHandler): Hono<P>
-  use(arg1: string | MiddlewareHandler, arg2?: MiddlewareHandler): Hono<P> {
+  use(
+    arg1: string | MiddlewareHandler,
+    arg2?: string | MiddlewareHandler,
+    arg3?: MiddlewareHandler
+  ): Hono<P> {
     let handler: MiddlewareHandler
-    if (typeof arg1 === 'string') {
+    let method = METHOD_NAME_OF_ALL
+    if (typeof arg1 === 'string' &&
+        typeof arg2 === 'string'
+       ) {
+      method = arg1
+      this.path = arg2
+      handler = arg3
+    } else if (typeof arg1 === 'string') {
       this.path = arg1
-      handler = arg2
+      handler = arg2 as MiddlewareHandler
     } else {
-      handler = arg1
+      handler = arg1 as MiddlewareHandler
     }
+
     if (handler.constructor.name !== 'AsyncFunction') {
       throw new TypeError('middleware must be a async function!')
     }
     const router = new this.routerClass()
-    router.add(METHOD_NAME_OF_ALL, this.path, handler)
+    router.add(method, this.path, handler)
     this.#middlewareRouters.push(router)
     return this
   }
@@ -127,6 +140,10 @@ export class Hono<P extends string> extends defineDynamicClass()<P> {
   notFound(handler: NotFoundHandler): Hono<P> {
     this.notFoundHandler = handler
     return this
+  }
+
+  middlewares():  Router<MiddlewareHandler>[] {
+    return this.#middlewareRouters
   }
 
   private addRoute(method: string, path: string, handler: Handler): Hono<P> {
@@ -158,7 +175,7 @@ export class Hono<P extends string> extends defineDynamicClass()<P> {
     const middleware = []
 
     for (const mr of this.#middlewareRouters) {
-      const mwResult = mr.match(METHOD_NAME_OF_ALL, path)
+      const mwResult = mr.match(method, path)
       if (mwResult) middleware.push(mwResult.handler)
     }
 

@@ -1,4 +1,52 @@
+import type { Context } from '@/context'
+import type { Next, MiddlewareHandler } from '@/hono'
 import { Hono } from '@/hono'
+import type { Router, Result } from '@/router'
+
+describe.only('middleware management', () => {
+  it('use with HTTP method', async () => {
+    const app = new Hono()
+
+    const middleware = async (ctx: Context, next: Next) => {
+      ctx.req.headers.append('x-middleware-hit', 'true')
+      next()
+    }
+    app.use('GET', '/hello', middleware)
+
+    const middlewares: Router<MiddlewareHandler>[] = app.middlewares()
+    expect(middlewares.length).toBe(1)
+    const m: Result<MiddlewareHandler> = middlewares[0].match('GET', '/hello')
+    expect(m).not.toEqual(null)
+    expect(m.handler).toEqual(middleware)
+
+    const n: Result<MiddlewareHandler> = middlewares[0].match('POST', '/hello')
+    expect(n).toEqual(null)
+
+    const o: Result<MiddlewareHandler> = middlewares[0].match('DELETE', '/hello')
+    expect(o).toEqual(null)
+  })
+
+  it('use without HTTP method', async () => {
+    const app = new Hono()
+
+    const middleware = async (ctx: Context, next: Next) => {
+      ctx.req.headers.append('x-middleware-hit', 'true')
+      next()
+    }
+    app.use('/hello', middleware)
+
+    const middlewares: Router<MiddlewareHandler>[] = app.middlewares()
+    expect(middlewares.length).toBe(1)
+    const m: Result<MiddlewareHandler> = middlewares[0].match('GET', '/hello')
+    expect(m.handler).toEqual(middleware)
+
+    const n: Result<MiddlewareHandler> = middlewares[0].match('POST', '/hello')
+    expect(n.handler).toEqual(middleware)
+
+    const o: Result<MiddlewareHandler> = middlewares[0].match('DELETE', '/hello')
+    expect(o.handler).toEqual(middleware)
+  })
+})
 
 describe('GET Request', () => {
   const app = new Hono()
