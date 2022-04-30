@@ -1,4 +1,10 @@
-import { decodeBase64, encodeBase64, encodeBase64URL, decodeBase64URL } from '@/utils/encode'
+import {
+  utf8ToUint8Array,
+  decodeBase64,
+  encodeBase64,
+  encodeBase64URL,
+  decodeBase64URL,
+} from '@/utils/encode'
 
 describe('encode', () => {
   describe('base64', () => {
@@ -43,6 +49,14 @@ describe('encode', () => {
       expect(() => {
         decodeBase64URL(null)
       }).toThrowError(TypeError)
+    })
+  })
+
+  describe('utf8ToUint8Array', () => {
+    it.only('should be equal', () => {
+      const k = 'a-secret-key'
+      const arr = utf8ToUint8Array(k)
+      expect(String(arr)).toEqual('97,45,115,101,99,114,101,116,45,107,101,121')
     })
   })
 })
