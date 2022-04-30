@@ -31,6 +31,7 @@
     "./serve-static": "./dist/middleware/serve-static/index.js",
     "./router/trie-router": "./dist/router/trie-router/index.js",
     "./router/reg-exp-router": "./dist/router/reg-exp-router/index.js",
+    "./utils/jwt": "./dist/utils/jwt/index.js",
     "./utils/*": "./dist/utils/*.js"
   },
   "typesVersions": {
@@ -76,6 +77,9 @@
       ],
       "router/reg-exp-router": [
         "./dist/router/reg-exp-router/router.d.ts"
+      ],
+      "utils/jwt": [
+        "./dist/utils/jwt/index.d.ts"
       ],
       "utils/*": [
         "./dist/utils/*"
