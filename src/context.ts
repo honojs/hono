@@ -5,7 +5,9 @@ import { isAbsoluteURL } from '@/utils/url'
 type Headers = Record<string, string>
 type Data = string | ArrayBuffer | ReadableStream
 
-export interface Env {}
+export interface Env {
+  [key: string]: string
+}
 
 export class Context<RequestParamKeyType = string> {
   req: Request<RequestParamKeyType>
