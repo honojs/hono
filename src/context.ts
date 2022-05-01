@@ -5,12 +5,12 @@ import { isAbsoluteURL } from '@/utils/url'
 type Headers = Record<string, string>
 type Data = string | ArrayBuffer | ReadableStream
 
-export interface Env {}
+export type Env = Record<string, any>
 
-export class Context<RequestParamKeyType = string> {
+export class Context<RequestParamKeyType = string, E = Env> {
   req: Request<RequestParamKeyType>
   res: Response
-  env: Env
+  env: E
   event: FetchEvent
 
   #headers: Headers
@@ -24,7 +24,7 @@ export class Context<RequestParamKeyType = string> {
 
   constructor(
     req: Request<RequestParamKeyType>,
-    opts?: { res: Response; env: Env; event: FetchEvent }
+    opts?: { res: Response; env: E; event: FetchEvent }
   ) {
     this.req = this.initRequest<RequestParamKeyType>(req)
     Object.assign(this, opts)
