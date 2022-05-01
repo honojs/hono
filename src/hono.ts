@@ -37,9 +37,9 @@ type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
 
 interface HandlerInterface<T extends string, E = Env> {
   <Path extends string>(path: Path, handler: Handler<ParamKeys<Path>, E>): Hono<E, Path>
-  <Path extends string>(path: Path, handler: Handler<string, E>): Hono<E, Path>
+  (path: string, handler: Handler<string, E>): Hono<E, T>
   <Path extends T>(handler: Handler<ParamKeys<T>, E>): Hono<E, Path>
-  <Path extends T>(handler: Handler<string, E>): Hono<E, Path>
+  (handler: Handler<string, E>): Hono<E, T>
 }
 
 const methods = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch', 'all'] as const
