@@ -1,3 +1,4 @@
+import type { Context } from '@/context'
 import { Hono } from '@/hono'
 
 describe('GET Request', () => {

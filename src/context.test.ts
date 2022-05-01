@@ -115,4 +115,17 @@ describe('Context', () => {
     expect(res.status).toBe(200)
     expect(res.statusText).toBe('OK')
   })
+
+  it('Should be able read env', async () => {
+    const req = new Request('http://localhost/')
+    const key = 'a-secret-key'
+    const ctx = new Context(req, {
+      env: {
+        API_KEY: key,
+      },
+      res: null,
+      event: null,
+    })
+    expect(ctx.env.API_KEY).toBe(key)
+  })
 })

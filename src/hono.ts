@@ -14,13 +14,12 @@ declare global {
   }
 }
 
-export type Handler<RequestParamKeyType = string> = (
-  c: Context<RequestParamKeyType>,
-  next?: Next
+export type Handler<RequestParamKeyType = string, E = Env> = (
+  c: Context<RequestParamKeyType, E>
 ) => Response | Promise<Response>
-export type MiddlewareHandler = (c: Context, next: Next) => Promise<void>
-export type NotFoundHandler = (c: Context) => Response | Promise<Response>
-export type ErrorHandler = (err: Error, c: Context) => Response
+export type MiddlewareHandler<E = Env> = (c: Context<string, E>, next: Next) => Promise<void>
+export type NotFoundHandler<E = Env> = (c: Context<string, E>) => Response | Promise<Response>
+export type ErrorHandler<E = Env> = (err: Error, c: Context<string, E>) => Response
 export type Next = () => Promise<void>
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -36,36 +35,38 @@ type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 
-interface HandlerInterface<T extends string> {
-  <Path extends string>(path: Path, handler: Handler<ParamKeys<Path>>): Hono<Path>
-  <Path extends T>(handler: Handler<ParamKeys<T>>): Hono<Path>
+interface HandlerInterface<T extends string, E = Env> {
+  <Path extends string>(path: Path, handler: Handler<ParamKeys<Path>, E>): Hono<E, Path>
+  (path: string, handler: Handler<string, E>): Hono<E, T>
+  <Path extends T>(handler: Handler<ParamKeys<T>, E>): Hono<E, Path>
+  (handler: Handler<string, E>): Hono<E, T>
 }
 
 const methods = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch', 'all'] as const
 type Methods = typeof methods[number]
 
 function defineDynamicClass(): {
-  new <T extends string>(): {
-    [K in Methods]: HandlerInterface<T>
+  new <E extends Env, T extends string>(): {
+    [K in Methods]: HandlerInterface<T, E>
   }
 } {
   return class {} as any
 }
 
-export class Hono<P extends string> extends defineDynamicClass()<P> {
+export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E, P> {
   readonly routerClass: { new (): Router<any> } = TrieRouter
   readonly strict: boolean = true // strict routing - default is true
-  #router: Router<Handler>
+  #router: Router<Handler<string, E>>
   #middlewareRouters: Router<MiddlewareHandler>[]
   #tempPath: string
   private path: string
 
-  constructor(init: Partial<Pick<Hono<P>, 'routerClass' | 'strict'>> = {}) {
+  constructor(init: Partial<Pick<Hono, 'routerClass' | 'strict'>> = {}) {
     super()
     methods.map((method) => {
       this[method] = <Path extends string>(
-        arg1: Path | Handler<ParamKeys<P>>,
-        arg2?: Handler<ParamKeys<Path>>
+        arg1: Path | Handler<ParamKeys<P>, E>,
+        arg2?: Handler<ParamKeys<Path>, E>
       ) => {
         if (typeof arg1 === 'string') {
           this.path = arg1
@@ -93,17 +94,17 @@ export class Hono<P extends string> extends defineDynamicClass()<P> {
     return c.text(message, 500)
   }
 
-  route(path: string): Hono<P> {
-    const newHono: Hono<P> = new Hono()
+  route(path: string): Hono<E, P> {
+    const newHono: Hono<E, P> = new Hono()
     newHono.#tempPath = path
     newHono.#router = this.#router
     return newHono
   }
 
-  use(path: string, middleware: MiddlewareHandler): Hono<P>
-  use(middleware: MiddlewareHandler): Hono<P>
-  use(arg1: string | MiddlewareHandler, arg2?: MiddlewareHandler): Hono<P> {
-    let handler: MiddlewareHandler
+  use(path: string, middleware: MiddlewareHandler<E>): Hono<E, P>
+  use(middleware: MiddlewareHandler<E>): Hono<E, P>
+  use(arg1: string | MiddlewareHandler<E>, arg2?: MiddlewareHandler<E>): Hono<E, P> {
+    let handler: MiddlewareHandler<E>
     if (typeof arg1 === 'string') {
       this.path = arg1
       handler = arg2
@@ -119,17 +120,17 @@ export class Hono<P extends string> extends defineDynamicClass()<P> {
     return this
   }
 
-  onError(handler: ErrorHandler): Hono<P> {
-    this.errorHandler = handler
+  onError(handler: ErrorHandler<E>): Hono<E, P> {
+    this.errorHandler = handler as ErrorHandler
     return this
   }
 
-  notFound(handler: NotFoundHandler): Hono<P> {
-    this.notFoundHandler = handler
+  notFound(handler: NotFoundHandler<E>): Hono<E, P> {
+    this.notFoundHandler = handler as NotFoundHandler
     return this
   }
 
-  private addRoute(method: string, path: string, handler: Handler): Hono<P> {
+  private addRoute(method: string, path: string, handler: Handler<string, E>): Hono<E, P> {
     method = method.toUpperCase()
     if (this.#tempPath) {
       path = mergePath(this.#tempPath, path)
@@ -138,11 +139,11 @@ export class Hono<P extends string> extends defineDynamicClass()<P> {
     return this
   }
 
-  private async matchRoute(method: string, path: string): Promise<Result<Handler>> {
+  private async matchRoute(method: string, path: string): Promise<Result<Handler<string, E>>> {
     return this.#router.match(method, path)
   }
 
-  private async dispatch(request: Request, env?: Env, event?: FetchEvent): Promise<Response> {
+  private async dispatch(request: Request, event?: FetchEvent, env?: E): Promise<Response> {
     const path = getPathFromURL(request.url, { strict: this.strict })
     const method = request.method
 
@@ -162,7 +163,7 @@ export class Hono<P extends string> extends defineDynamicClass()<P> {
       if (mwResult) middleware.push(mwResult.handler)
     }
 
-    const wrappedHandler = async (context: Context, next: Next) => {
+    const wrappedHandler = async (context: Context<string, E>, next: Next) => {
       const res = await handler(context)
       if (!(res instanceof Response)) {
         throw new TypeError('response must be a instance of Response')
@@ -174,7 +175,7 @@ export class Hono<P extends string> extends defineDynamicClass()<P> {
     middleware.push(wrappedHandler)
 
     const composed = compose<Context>(middleware, this.errorHandler)
-    const c = new Context(request, { env: env, event: event, res: null })
+    const c = new Context<string, E>(request, { env: env, event: event, res: null })
     c.notFound = () => this.notFoundHandler(c)
 
     const context = await composed(c)
@@ -183,11 +184,11 @@ export class Hono<P extends string> extends defineDynamicClass()<P> {
   }
 
   async handleEvent(event: FetchEvent): Promise<Response> {
-    return this.dispatch(event.request, {}, event)
+    return this.dispatch(event.request, event)
   }
 
-  async fetch(request: Request, env?: Env, event?: FetchEvent): Promise<Response> {
-    return this.dispatch(request, env, event)
+  async fetch(request: Request, env?: E, event?: FetchEvent): Promise<Response> {
+    return this.dispatch(request, event, env)
   }
 
   request(input: RequestInfo, requestInit?: RequestInit): Promise<Response> {
