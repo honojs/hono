@@ -231,56 +231,59 @@ describe('param and query', () => {
 })
 
 describe('Middleware', () => {
-  const app = new Hono()
+  describe('Basic', () => {
+    const app = new Hono()
 
-  // Custom Logger
-  app.use('*', async (c, next) => {
-    console.log(`${c.req.method} : ${c.req.url}`)
-    await next()
-  })
+    // Custom Logger
+    app.use('*', async (c, next) => {
+      console.log(`${c.req.method} : ${c.req.url}`)
+      await next()
+    })
 
-  // Append Custom Header
-  app.use('*', async (c, next) => {
-    await next()
-    c.res.headers.append('x-custom', 'root')
-  })
+    // Append Custom Header
+    app.use('*', async (c, next) => {
+      await next()
+      c.res.headers.append('x-custom', 'root')
+    })
 
-  app.use('/hello', async (c, next) => {
-    await next()
-    c.res.headers.append('x-message', 'custom-header')
-  })
+    app.use('/hello', async (c, next) => {
+      await next()
+      c.res.headers.append('x-message', 'custom-header')
+    })
 
-  app.use('/hello/*', async (c, next) => {
-    await next()
-    c.res.headers.append('x-message-2', 'custom-header-2')
-  })
+    app.use('/hello/*', async (c, next) => {
+      await next()
+      c.res.headers.append('x-message-2', 'custom-header-2')
+    })
 
-  app.get('/hello', (c) => {
-    return c.text('hello')
-  })
-  app.get('/hello/:message', (c) => {
-    const message = c.req.param('message')
-    return c.text(`${message}`)
-  })
+    app.get('/hello', (c) => {
+      return c.text('hello')
+    })
+    app.get('/hello/:message', (c) => {
+      const message = c.req.param('message')
+      return c.text(`${message}`)
+    })
 
-  it('logging and custom header', async () => {
-    const res = await app.request('http://localhost/hello')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('hello')
-    expect(res.headers.get('x-custom')).toBe('root')
-    expect(res.headers.get('x-message')).toBe('custom-header')
-    expect(res.headers.get('x-message-2')).toBe('custom-header-2')
-  })
+    it('logging and custom header', async () => {
+      const res = await app.request('http://localhost/hello')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('hello')
+      expect(res.headers.get('x-custom')).toBe('root')
+      expect(res.headers.get('x-message')).toBe('custom-header')
+      expect(res.headers.get('x-message-2')).toBe('custom-header-2')
+    })
 
-  it('logging and custom header with named param', async () => {
-    const res = await app.request('http://localhost/hello/message')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('message')
-    expect(res.headers.get('x-custom')).toBe('root')
-    expect(res.headers.get('x-message-2')).toBe('custom-header-2')
+    it('logging and custom header with named param', async () => {
+      const res = await app.request('http://localhost/hello/message')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('message')
+      expect(res.headers.get('x-custom')).toBe('root')
+      expect(res.headers.get('x-message-2')).toBe('custom-header-2')
+    })
   })
 
   describe('Chained route', () => {
+    const app = new Hono()
     app
       .use('/chained/*', async (c, next) => {
         c.req.headers.append('x-before', 'abc')
@@ -293,12 +296,37 @@ describe('Middleware', () => {
       .get('/chained/abc', (c) => {
         return c.text('GET chained')
       })
+    it('GET /chained/abc', async () => {
+      const res = await app.request('http://localhost/chained/abc')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET chained')
+      expect(res.headers.get('x-after')).toBe('abc')
+    })
   })
-  it('Should return 200 response with chained route', async () => {
-    const res = await app.request('http://localhost/chained/abc')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('GET chained')
-    expect(res.headers.get('x-after')).toBe('abc')
+
+  describe('Multiple handler', () => {
+    const app = new Hono()
+    app
+      .use(
+        '/multiple/*',
+        async (c, next) => {
+          c.req.headers.append('x-before', 'abc')
+          await next()
+        },
+        async (c, next) => {
+          await next()
+          c.header('x-after', c.req.header('x-before'))
+        }
+      )
+      .get('/multiple/abc', (c) => {
+        return c.text('GET multiple')
+      })
+    it('GET /multiple/abc', async () => {
+      const res = await app.request('http://localhost/multiple/abc')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET multiple')
+      expect(res.headers.get('x-after')).toBe('abc')
+    })
   })
 })
 
