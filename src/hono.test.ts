@@ -1,3 +1,4 @@
+import { poweredBy } from './middleware/powered-by'
 import type { Context } from '@/context'
 import { Hono } from '@/hono'
 
@@ -280,6 +281,25 @@ describe('Middleware', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('GET chained')
     expect(res.headers.get('x-after')).toBe('abc')
+  })
+})
+
+describe('Builtin Middleware', () => {
+  const app = new Hono()
+  app.use('/abc', poweredBy())
+  app.use('/def', async (c, next) => {
+    const middleware = poweredBy()
+    await middleware(c, next)
+  })
+
+  it('"powered-by" middleware', async () => {
+    const res = await app.request('http://localhost/abc')
+    expect(res.headers.get('x-powered-by')).toBe('Hono')
+  })
+
+  it('"powered-by" middleware in a handler', async () => {
+    const res = await app.request('http://localhost/def')
+    expect(res.headers.get('x-powered-by')).toBe('Hono')
   })
 })
 
