@@ -44,8 +44,9 @@ interface HandlerInterface<T extends string, E = Env> {
   (...handlers: Handler<string, E>[]): Hono<E, T>
 }
 
-const methods = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch', 'all'] as const
-type Methods = typeof methods[number]
+const all = 'all' as const // <--- app.all()
+const methods = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch'] as const
+type Methods = typeof methods[number] | typeof all
 
 function defineDynamicClass(): {
   new <E extends Env, T extends string>(): {
@@ -66,7 +67,8 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
   constructor(init: Partial<Pick<Hono, 'routerClass' | 'strict'>> = {}) {
     super()
 
-    methods.map((method) => {
+    const allMethods = [...methods, all]
+    allMethods.map((method) => {
       this[method] = <Path extends string>(
         args1: Path | Handler<ParamKeys<Path>, E>,
         ...args: [Handler<ParamKeys<Path>, E>]
