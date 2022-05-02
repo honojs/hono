@@ -6,9 +6,9 @@ export const parseBody = async (
   if (contentType.includes('application/json')) {
     return await r.json()
   } else if (contentType.includes('application/text')) {
-    return r.text()
+    return await r.text()
   } else if (contentType.startsWith('text')) {
-    return r.text()
+    return await r.text()
   } else if (contentType.includes('form')) {
     const form: Record<string, string | File> = {}
     const data = [...(await r.formData())].reduce((acc, cur) => {
