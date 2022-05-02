@@ -112,17 +112,17 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     return newHono
   }
 
-  use(path: string, middleware: Handler<string, E>): Hono<E, P>
-  use(middleware: Handler<string, E>): Hono<E, P>
-  use(arg1: string | Handler<string, E>, arg2?: Handler<string, E>): Hono<E, P> {
-    let handler: Handler<string, E>
+  use(path: string, ...middleware: Handler<string, E>[]): Hono<E, P>
+  use(...middleware: Handler<string, E>[]): Hono<E, P>
+  use(arg1: string | Handler<string, E>, ...args: Handler<string, E>[]): Hono<E, P> {
     if (typeof arg1 === 'string') {
       this.path = arg1
-      handler = arg2
     } else {
-      handler = arg1
+      args.unshift(arg1)
     }
-    this.addMiddlewareRoute(METHOD_NAME_OF_ALL, this.path, handler)
+    args.map((handler) => {
+      this.addMiddlewareRoute(METHOD_NAME_OF_ALL, this.path, handler)
+    })
     return this
   }
 
