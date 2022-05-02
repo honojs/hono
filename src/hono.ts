@@ -146,7 +146,6 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
   private createFakeContext = (): Context<string, E> => {
     const request = new Request('http://localhost/')
     request.param = () => ''
-    request.cookie = () => ''
     const fake = new Context<string, E>(request)
     fake.notFound = () => this.notFoundHandler(fake)
     return fake
