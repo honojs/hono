@@ -151,7 +151,7 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     return fake
   }
 
-  private addRoute(method: string, path: string, handler: Handler<string, E>) {
+  private addRoute(method: string, path: string, handler: Handler<string, E>): void {
     method = method.toUpperCase()
 
     if (this.#tempPath) {
@@ -175,8 +175,6 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     } else {
       this.#router.add(method, path, handler)
     }
-
-    return this
   }
 
   private async matchRoute(method: string, path: string): Promise<Result<Handler<string, E>>> {
