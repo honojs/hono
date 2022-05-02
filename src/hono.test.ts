@@ -188,6 +188,11 @@ describe('param and query', () => {
     return c.text(`id is ${id}`)
   })
 
+  app.get('/date/:date{[0-9]+}', (c) => {
+    const date = c.req.param('date')
+    return c.text(`date is ${date}`)
+  })
+
   app.get('/search', (c) => {
     const name = c.req.query('name')
     return c.text(`name is ${name}`)
@@ -202,6 +207,12 @@ describe('param and query', () => {
     const res = await app.request('http://localhost/entry/123')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('id is 123')
+  })
+
+  it('param of /date/:date is found', async () => {
+    const res = await app.request('http://localhost/date/0401')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('date is 0401')
   })
 
   it('query of /search?name=sam is found', async () => {
