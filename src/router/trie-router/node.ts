@@ -1,4 +1,4 @@
-import { Result, METHOD_NAME_OF_ALL } from '@/router'
+import { Result, METHOD_NAME_ALL } from '@/router'
 import type { Pattern } from '@/utils/url'
 import { splitPath, getPattern } from '@/utils/url'
 
@@ -109,7 +109,7 @@ export class Node<T> {
       }
     }
 
-    const handler = curNode.method[METHOD_NAME_OF_ALL] || curNode.method[method]
+    const handler = curNode.method[METHOD_NAME_ALL] || curNode.method[method]
 
     if (!handler) {
       return noRoute()
