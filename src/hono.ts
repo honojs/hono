@@ -1,8 +1,9 @@
 import { compose } from '@/compose'
 import { Context } from '@/context'
 import type { Env } from '@/context'
-import { METHOD_NAME_OF_ALL } from '@/router'
 import type { Result, Router } from '@/router'
+import { METHOD_NAME_ALL } from '@/router'
+import { METHOD_NAME_ALL_LOWERCASE } from '@/router'
 import { TrieRouter } from '@/router/trie-router' // Default Router
 import { getPathFromURL, mergePath } from '@/utils/url'
 
@@ -44,9 +45,8 @@ interface HandlerInterface<T extends string, E = Env> {
   (...handlers: Handler<string, E>[]): Hono<E, T>
 }
 
-const all = 'all' as const // <--- app.all()
 const methods = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch'] as const
-type Methods = typeof methods[number] | typeof all
+type Methods = typeof methods[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
 function defineDynamicClass(): {
   new <E extends Env, T extends string>(): {
@@ -67,7 +67,7 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
   constructor(init: Partial<Pick<Hono, 'routerClass' | 'strict'>> = {}) {
     super()
 
-    const allMethods = [...methods, all]
+    const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
       this[method] = <Path extends string>(
         args1: Path | Handler<ParamKeys<Path>, E>,
@@ -121,7 +121,7 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
       args.unshift(arg1)
     }
     args.map((handler) => {
-      this.addMiddlewareRoute(METHOD_NAME_OF_ALL, this.path, handler)
+      this.addMiddlewareRoute(METHOD_NAME_ALL, this.path, handler)
     })
     return this
   }

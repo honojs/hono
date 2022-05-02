@@ -1,4 +1,4 @@
-import { Router, Result, METHOD_NAME_OF_ALL } from '@/router'
+import { Router, Result, METHOD_NAME_ALL } from '@/router'
 import type { ParamMap } from '@/router/reg-exp-router/trie'
 import { Trie } from '@/router/reg-exp-router/trie'
 
@@ -28,8 +28,8 @@ export class RegExpRouter<T> extends Router<T> {
 
     // Optimization for middleware
     const methods = Object.keys(matchers)
-    if (methods.length === 1 && methods[0] === METHOD_NAME_OF_ALL) {
-      const [regexp, handlers] = matchers[METHOD_NAME_OF_ALL]
+    if (methods.length === 1 && methods[0] === METHOD_NAME_ALL) {
+      const [regexp, handlers] = matchers[METHOD_NAME_ALL]
       if (handlers.length === 1) {
         const result = new Result(handlers[0][0], emptyParam)
         if (regexp === regExpMatchAll) {
@@ -41,7 +41,7 @@ export class RegExpRouter<T> extends Router<T> {
     }
 
     match ||= (method, path) => {
-      const matcher = matchers[method] || matchers[METHOD_NAME_OF_ALL]
+      const matcher = matchers[method] || matchers[METHOD_NAME_ALL]
       if (!matcher) {
         return null
       }
@@ -84,8 +84,8 @@ export class RegExpRouter<T> extends Router<T> {
     const handlers: HandlerData<T>[] = []
 
     const targetMethods = [method]
-    if (method !== METHOD_NAME_OF_ALL) {
-      targetMethods.unshift(METHOD_NAME_OF_ALL)
+    if (method !== METHOD_NAME_ALL) {
+      targetMethods.unshift(METHOD_NAME_ALL)
     }
     const routes = targetMethods.flatMap((method) => this.routes[method] || [])
 
@@ -93,7 +93,7 @@ export class RegExpRouter<T> extends Router<T> {
       return null
     }
 
-    if (method === METHOD_NAME_OF_ALL) {
+    if (method === METHOD_NAME_ALL) {
       if (routes.length === 1 && routes[0][0] === '*') {
         return [regExpMatchAll, [[routes[0][1], null]]]
       }
