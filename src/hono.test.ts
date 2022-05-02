@@ -1,5 +1,6 @@
 import { poweredBy } from './middleware/powered-by'
 import type { Context } from '@/context'
+import type { Next } from '@/hono'
 import { Hono } from '@/hono'
 
 describe('GET Request', () => {
@@ -101,10 +102,16 @@ describe('Routing', () => {
   const app = new Hono()
 
   it('Return it self', async () => {
-    const appRes = app.get('/', () => new Response('get /'))
-    expect(appRes).not.toBeUndefined()
-    appRes.delete('/', () => new Response('delete /'))
-    const res = await appRes.request('http://localhost/', { method: 'DELETE' })
+    const app2 = app.get('/', () => new Response('get /'))
+    expect(app2).not.toBeUndefined()
+    app2.delete('/', () => new Response('delete /'))
+
+    let res = await app2.request('http://localhost/', { method: 'GET' })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /')
+
+    res = await app2.request('http://localhost/', { method: 'DELETE' })
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('delete /')
@@ -300,6 +307,62 @@ describe('Builtin Middleware', () => {
   it('"powered-by" middleware in a handler', async () => {
     const res = await app.request('http://localhost/def')
     expect(res.headers.get('x-powered-by')).toBe('Hono')
+  })
+})
+
+describe('Middleware with app.HTTP_METHOD', () => {
+  describe('Basic', () => {
+    const app = new Hono()
+
+    app.all('*', async (c, next) => {
+      await next()
+      c.header('x-custom-message', 'hello')
+    })
+
+    const customHeader = async (c: Context, next: Next) => {
+      c.req.headers.append('x-custom-foo', 'bar')
+      await next()
+    }
+
+    const customHeader2 = async (c: Context, next: Next) => {
+      await next()
+      c.header('x-custom-foo-2', 'bar-2')
+    }
+
+    app
+      .get('/abc', customHeader, (c) => {
+        const foo = c.req.header('x-custom-foo') || ''
+        return c.text(foo)
+      })
+      .post(customHeader2, (c) => {
+        return c.text('POST /abc')
+      })
+
+    it('GET /abc', async () => {
+      const res = await app.request('http://localhost/abc')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('x-custom-message')).toBe('hello')
+      expect(await res.text()).toBe('bar')
+    })
+    it('POST /abc', async () => {
+      const res = await app.request('http://localhost/abc', { method: 'POST' })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('POST /abc')
+      expect(res.headers.get('x-custom-foo-2')).toBe('bar-2')
+    })
+  })
+
+  describe('With builtin middleware', () => {
+    const app = new Hono()
+    app.get('/abc', poweredBy(), (c) => {
+      return c.text('GET /abc')
+    })
+    it('GET /abc', async () => {
+      const res = await app.request('http://localhost/abc')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET /abc')
+      expect(res.headers.get('x-powered-by')).toBe('Hono')
+    })
   })
 })
 
