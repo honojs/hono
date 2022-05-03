@@ -154,13 +154,13 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
       if (result) return result.params[key]
     }
 
-    const handler = result ? result.handler : this.notFoundHandler
+    const handler = result ? result.handlers[0] : this.notFoundHandler
 
     const middleware = []
 
     for (const mr of this.#middlewareRouters) {
       const mwResult = mr.match(METHOD_NAME_OF_ALL, path)
-      if (mwResult) middleware.push(mwResult.handler)
+      if (mwResult) middleware.push(mwResult.handlers[0])
     }
 
     const wrappedHandler = async (context: Context<string, E>, next: Next) => {
