@@ -130,30 +130,69 @@ describe('Compose', function () {
     return x && typeof x.then === 'function'
   }
 
-  it('should work', async () => {
+  it('should get executed order one by one', async () => {
     const arr: number[] = []
     const stack = []
+    const called: boolean[] = []
 
     stack.push(async (context: C, next: Function) => {
+      called.push(true)
+
       arr.push(1)
       await next()
       arr.push(6)
     })
 
     stack.push(async (context: C, next: Function) => {
+      called.push(true)
+
       arr.push(2)
       await next()
       arr.push(5)
     })
 
     stack.push(async (context: C, next: Function) => {
+      called.push(true)
+
       arr.push(3)
       await next()
       arr.push(4)
     })
 
     await compose(stack)({})
-    expect(arr).toEqual(expect.arrayContaining([1, 2, 3, 4, 5, 6]))
+    expect(called).toEqual([true, true, true])
+    expect(arr).toEqual([1, 2, 3, 4, 5, 6])
+  })
+
+  it('should not get executed if previous next() not triggered', async () => {
+    const arr: number[] = []
+    const stack = []
+    const called: boolean[] = []
+
+    stack.push(async (context: C, next: Function) => {
+      called.push(true)
+
+      arr.push(1)
+      await next()
+      arr.push(6)
+    })
+
+    stack.push(async (context: C, next: Function) => {
+      called.push(true)
+      arr.push(2)
+    })
+
+    stack.push(async (context: C, next: Function) => {
+      called.push(true)
+
+      arr.push(3)
+      await next()
+      arr.push(4)
+    })
+
+    await compose(stack)({})
+    expect(called).toEqual([true, true])
+    expect(arr).toEqual([1, 2,  6])
   })
 
   it('should be able to be called twice', () => {
