@@ -16,7 +16,12 @@ export const compose = <C>(middleware: Function[], onError?: ErrorHandler) => {
       if (!handler) return Promise.resolve(context)
 
       return Promise.resolve(handler(context, dispatch.bind(null, i + 1)))
-        .then(() => {
+        .then(async (res: Response) => {
+          // If handler return Response like `return c.text('foo')`
+          if (res && context instanceof Context) {
+            context.res = res
+            await dispatch(i + 1) // <--- Call next()
+          }
           return context
         })
         .catch((err) => {

@@ -1,4 +1,4 @@
-import { METHOD_NAME_OF_ALL } from '@/router'
+import { METHOD_NAME_ALL } from '@/router'
 import { RegExpRouter } from '@/router/reg-exp-router/router'
 
 describe('Basic Usage', () => {
@@ -77,7 +77,7 @@ describe('Optimization for METHOD_NAME_OF_ALL', () => {
   })
 
   it('Apply to all requests', async () => {
-    router.add(METHOD_NAME_OF_ALL, '*', 'OK')
+    router.add(METHOD_NAME_ALL, '*', 'OK')
     const res = router.match('GET', '/entry/123')
     expect(res).not.toBeNull()
     expect(res.handler).toBe('OK')
@@ -85,7 +85,7 @@ describe('Optimization for METHOD_NAME_OF_ALL', () => {
   })
 
   it('Apply to all requests under a specific path', async () => {
-    router.add(METHOD_NAME_OF_ALL, '/path/to/*', 'OK')
+    router.add(METHOD_NAME_ALL, '/path/to/*', 'OK')
     let res = router.match('GET', '/entry/123')
     expect(res).toBeNull()
 

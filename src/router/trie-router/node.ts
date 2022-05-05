@@ -1,4 +1,4 @@
-import { Result, METHOD_NAME_OF_ALL } from '@/router'
+import { Result, METHOD_NAME_ALL } from '@/router'
 import type { Pattern } from '@/utils/url'
 import { splitPath, getPattern } from '@/utils/url'
 
@@ -13,16 +13,18 @@ type Next<T> = {
 }
 
 export class Node<T> {
-  method: Record<string, T[]>
+  methods: Record<string, T>[]
   handlers: T[]
   children: Record<string, Node<T>>
   patterns: Pattern[]
 
-  constructor(method?: string, handlers?: T[], children?: Record<string, Node<T>>) {
+  constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
     this.children = children || {}
-    this.method = {}
-    if (method && handlers) {
-      this.method[method] = handlers
+    this.methods = []
+    if (method && handler) {
+      const m: Record<string, T> = {}
+      m[method] = handler
+      this.methods = [m]
     }
     this.patterns = []
   }
@@ -44,17 +46,30 @@ export class Node<T> {
       }
       curNode = curNode.children[p]
     }
-    if (!curNode.method[method]) {
-      curNode.method[method] = []
+    if (!curNode.methods.length) {
+      curNode.methods = []
     }
-    curNode.method[method].push(handler)
+    const m: Record<string, T> = {}
+    m[method] = handler
+    curNode.methods.push(m)
     return curNode
   }
 
   private getHandlers(node: Node<T>, method: string): T[] {
     const handlers: T[] = []
-    if (node.method[method]) handlers.push(...node.method[method])
-    if (node.method[METHOD_NAME_OF_ALL]) handlers.push(...node.method[METHOD_NAME_OF_ALL])
+    node.methods.map((m) => {
+      let handler = m[method]
+      if (handler) {
+        handlers.push(handler)
+        return
+      }
+      handler = m[METHOD_NAME_ALL]
+      if (handler) {
+        handlers.push(handler)
+        return
+      }
+    })
+
     return handlers
   }
 

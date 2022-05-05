@@ -228,8 +228,8 @@ describe('Multi match', () => {
 
   describe('Blog', () => {
     const node = new Node()
-    node.insert('ALL', '*', 'middleware a')
-    node.insert('get', '*', 'middleware b')
+    node.insert('get', '*', 'middleware a')
+    node.insert('ALL', '*', 'middleware b')
     node.insert('get', '/entry', 'get entries')
     node.insert('post', '/entry/*', 'middleware c')
     node.insert('post', '/entry', 'post entry')
@@ -238,25 +238,25 @@ describe('Multi match', () => {
     it('get /entry/123', async () => {
       const res = node.search('get', '/entry/123')
       expect(res).not.toBeNull()
-      expect(res.handlers).toEqual(['middleware b', 'middleware a', 'get entry'])
+      expect(res.handlers).toEqual(['middleware a', 'middleware b', 'get entry'])
       expect(res.params['id']).toBe('123')
     })
     it('get /entry/123/comment/456', async () => {
       const res = node.search('get', '/entry/123/comment/456')
       expect(res).not.toBeNull()
-      expect(res.handlers).toEqual(['middleware b', 'middleware a', 'get comment'])
+      expect(res.handlers).toEqual(['middleware a', 'middleware b', 'get comment'])
       expect(res.params['id']).toBe('123')
       expect(res.params['comment_id']).toBe('456')
     })
     it('post /entry', async () => {
       const res = node.search('post', '/entry')
       expect(res).not.toBeNull()
-      expect(res.handlers).toEqual(['middleware a', 'middleware c', 'post entry'])
+      expect(res.handlers).toEqual(['middleware b', 'middleware c', 'post entry'])
     })
     it('delete /entry', async () => {
       const res = node.search('delete', '/entry')
       expect(res).not.toBeNull()
-      expect(res.handlers).toEqual(['middleware a'])
+      expect(res.handlers).toEqual(['middleware b'])
     })
   })
 
@@ -310,6 +310,17 @@ describe('Multi match', () => {
     it('get /book/', () => {
       const res = node.search('get', '/book/')
       expect(res).toBeNull()
+    })
+  })
+
+  describe('Same path', () => {
+    const node = new Node()
+    node.insert('get', '/hey', 'Middleware A')
+    node.insert('get', '/hey', 'Middleware B')
+    it('get /hey', () => {
+      const res = node.search('get', '/hey')
+      expect(res).not.toBeNull()
+      expect(res.handlers).toEqual(['Middleware A', 'Middleware B'])
     })
   })
 })

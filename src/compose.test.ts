@@ -55,7 +55,136 @@ describe('compose', () => {
   })
 })
 
-describe('compose with Context', () => {
+describe('Handler and middlewares', () => {
+  const middleware: Function[] = []
+
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+
+  const onError = (error: Error, c: Context) => {
+    return c.text('onError', 500)
+  }
+
+  const mHandlerFoo = async (c: Context, next: Function) => {
+    c.req.headers.append('x-header-foo', 'foo')
+    await next()
+  }
+
+  const mHandlerBar = async (c: Context, next: Function) => {
+    await next()
+    c.header('x-header-bar', 'bar')
+  }
+
+  const handler = (c: Context) => {
+    const foo = c.req.header('x-header-foo') || ''
+    return c.text(foo)
+  }
+
+  middleware.push(mHandlerFoo)
+  middleware.push(mHandlerBar)
+  middleware.push(handler)
+
+  it('Should return 200 Response', async () => {
+    const composed = compose<Context>(middleware, onError)
+    const context = await composed(c)
+    const res = context.res
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('foo')
+    expect(res.headers.get('x-header-bar')).toBe('bar')
+  })
+})
+
+describe('compose with Context - 200 success', () => {
+  const middleware: Function[] = []
+
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+  const onError = (error: Error, c: Context) => {
+    return c.text('onError', 500)
+  }
+  const handler = (c: Context) => {
+    return c.text('Hello')
+  }
+  const mHandler = async (c: Context, next: Function) => {
+    await next()
+  }
+
+  middleware.push(handler)
+  middleware.push(mHandler)
+
+  it('Should return 200 Response', async () => {
+    const composed = compose<Context>(middleware, onError)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(200)
+    expect(await context.res.text()).toBe('Hello')
+  })
+})
+
+describe('compose with Context - 401 not authorized', () => {
+  const middleware: Function[] = []
+
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+  const onError = (error: Error, c: Context) => {
+    return c.text('onError', 500)
+  }
+  const handler = (c: Context, next: Function) => {
+    c.text('Hello')
+    next()
+  }
+  const baseHandler = async (c: Context, next: Function) => {
+    c.text('Hello')
+    await next()
+  }
+  const mHandler = async (c: Context, next: Function) => {
+    await next()
+    c.res = new Response('Not authorized', { status: 401 })
+  }
+
+  middleware.push(handler)
+  middleware.push(mHandler)
+
+  it('Should return 401 Response', async () => {
+    const composed = compose<Context>(middleware, onError)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(401)
+    expect(await context.res.text()).toBe('Not authorized')
+  })
+})
+
+describe('compose with Context - next() below', () => {
+  const middleware: Function[] = []
+
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+  const onError = (error: Error, c: Context) => {
+    return c.text('onError', 500)
+  }
+  const handler = (c: Context) => {
+    const message = c.req.header('x-custom') || 'blank'
+    return c.text(message)
+  }
+  const mHandler = async (c: Context, next: Function) => {
+    c.req.headers.append('x-custom', 'foo')
+    await next()
+  }
+
+  middleware.push(mHandler)
+  middleware.push(handler)
+
+  it('Should return 200 Response', async () => {
+    const composed = compose<Context>(middleware, onError)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(200)
+    expect(await context.res.text()).toBe('foo')
+  })
+})
+
+describe('compose with Context - 500 error', () => {
   const middleware: Function[] = []
 
   const req = new Request('http://localhost/')
