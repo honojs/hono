@@ -80,18 +80,18 @@ describe('Multi match', () => {
     it('GET /', async () => {
       const res = router.match('GET', '/')
       expect(res).not.toBeNull()
-      expect(res.handlers).toEqual(['middleware b', 'middleware a'])
+      expect(res.handlers).toEqual(['middleware a', 'middleware b'])
     })
     it('GET /entry/123', async () => {
       const res = router.match('GET', '/entry/123')
       expect(res).not.toBeNull()
-      expect(res.handlers).toEqual(['middleware b', 'middleware a', 'get entry'])
+      expect(res.handlers).toEqual(['middleware a', 'middleware b', 'get entry'])
       expect(res.params['id']).toBe('123')
     })
     it('GET /entry/123/comment/456', async () => {
       const res = router.match('GET', '/entry/123/comment/456')
       expect(res).not.toBeNull()
-      expect(res.handlers).toEqual(['middleware b', 'middleware a', 'get comment'])
+      expect(res.handlers).toEqual(['middleware a', 'middleware b', 'get comment'])
       expect(res.params['id']).toBe('123')
       expect(res.params['comment_id']).toBe('456')
     })
