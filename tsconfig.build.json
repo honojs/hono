@@ -4,6 +4,7 @@
     "src/**/*"
   ],
   "exclude": [
-    "src/**/*.test.ts"
+    "src/**/*.test.ts",
+    "src/router/reg-exp-router/*"
   ]
 }
