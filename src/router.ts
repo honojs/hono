@@ -6,10 +6,10 @@ export abstract class Router<T> {
 }
 
 export class Result<T> {
-  handler: T
+  handlers: T[]
   params: Record<string, string>
-  constructor(handler: T, params: Record<string, string>) {
-    this.handler = handler
+  constructor(handlers: T[], params: Record<string, string>) {
+    this.handlers = handlers
     this.params = params
   }
 }

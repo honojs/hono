@@ -6,20 +6,24 @@ const noRoute = (): null => {
   return null
 }
 
+type Next<T> = {
+  nodes: Node<T>[]
+  handlers: T[]
+  params: Record<string, string>
+}
+
 export class Node<T> {
-  method: Record<string, T>
-  handler: T
+  method: Record<string, T[]>
+  handlers: T[]
   children: Record<string, Node<T>>
-  middlewares: []
   patterns: Pattern[]
 
-  constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
+  constructor(method?: string, handlers?: T[], children?: Record<string, Node<T>>) {
     this.children = children || {}
     this.method = {}
-    if (method && handler) {
-      this.method[method] = handler
+    if (method && handlers) {
+      this.method[method] = handlers
     }
-    this.middlewares = []
     this.patterns = []
   }
 
@@ -38,83 +42,102 @@ export class Node<T> {
       if (pattern) {
         curNode.patterns.push(pattern)
       }
-
       curNode = curNode.children[p]
     }
-    curNode.method[method] = handler
+    if (!curNode.method[method]) {
+      curNode.method[method] = []
+    }
+    curNode.method[method].push(handler)
     return curNode
   }
 
-  search(method: string, path: string): Result<T> {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let curNode: Node<T> = this
+  private getHandlers(node: Node<T>, method: string): T[] {
+    const handlers: T[] = []
+    if (node.method[method]) handlers.push(...node.method[method])
+    if (node.method[METHOD_NAME_OF_ALL]) handlers.push(...node.method[METHOD_NAME_OF_ALL])
+    return handlers
+  }
 
-    const params: { [key: string]: string } = {}
+  private next(node: Node<T>, part: string, method: string, isLast: boolean): Next<T> {
+    const handlers: T[] = []
+    const nextNodes: Node<T>[] = []
+    const params: Record<string, string> = {}
+
+    for (let j = 0, len = node.patterns.length; j < len; j++) {
+      const pattern = node.patterns[j]
+
+      // Wildcard
+      // '/hello/*/foo' => match /hello/bar/foo
+      if (pattern === '*') {
+        handlers.push(...this.getHandlers(node.children['*'], method))
+        if (!node.children[part]) {
+          nextNodes.push(node.children['*'])
+        }
+      }
+
+      // Named match
+      // `/posts/:id` => match /posts/123
+      if (part === '') continue
+      const [key, name, matcher] = pattern
+      if (matcher === true || (matcher instanceof RegExp && matcher.test(part))) {
+        if (typeof key === 'string') {
+          if (isLast) {
+            handlers.push(...this.getHandlers(node.children[key], method))
+          }
+          nextNodes.push(node.children[key])
+        }
+        if (typeof name === 'string') {
+          params[name] = part
+        }
+      }
+    }
+
+    const nextNode = node.children[part]
+    if (nextNode) {
+      if (isLast) {
+        // '/hello/*' => match '/hello'
+        if (nextNode.children['*']) {
+          handlers.push(...this.getHandlers(nextNode.children['*'], method))
+        }
+        handlers.push(...this.getHandlers(nextNode, method))
+      }
+      nextNodes.push(nextNode)
+    }
+
+    const next: Next<T> = {
+      nodes: nextNodes,
+      handlers: handlers,
+      params: params,
+    }
+    return next
+  }
+
+  search(method: string, path: string): Result<T> {
+    const handlers: T[] = []
+    let params: Record<string, string> = {}
+
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const curNode: Node<T> = this
+    let curNodes = [curNode]
     const parts = splitPath(path)
 
-    for (let i = 0, len = parts.length; i < len; i++) {
+    const len = parts.length
+    for (let i = 0; i < len; i++) {
       const p: string = parts[i]
-
-      // '*' => match any path
-      // /api/* => default wildcard match
-      if (curNode.children['*'] && !curNode.children[p]) {
-        const astNode = curNode.children['*']
-        if (Object.keys(astNode.children).length === 0) {
-          curNode = astNode
-          break
-        }
-      }
-
-      const nextNode = curNode.children[p]
-
-      if (nextNode) {
-        curNode = nextNode
-        // '/hello/*' => match '/hello'
-        if (!(i == len - 1 && nextNode.children['*'])) {
+      const isLast = i === len - 1
+      for (let j = 0, len2 = curNodes.length; j < len2; j++) {
+        const res = this.next(curNodes[j], p, method, isLast)
+        if (res.nodes.length === 0) {
           continue
         }
-      }
-
-      let isWildcard = false
-      let isParamMatch = false
-
-      for (let j = 0, len = curNode.patterns.length; j < len; j++) {
-        const pattern = curNode.patterns[j]
-
-        // Wildcard
-        // '/hello/*/foo' => match /hello/bar/foo
-        if (pattern === '*') {
-          curNode = curNode.children['*']
-          isWildcard = true
-          break
-        }
-
-        // Named match
-        const [key, name, matcher] = pattern
-        if (p !== '' && (matcher === true || matcher.test(p))) {
-          params[name] = p
-          curNode = curNode.children[key]
-          isParamMatch = true
-          break
-        }
-        return noRoute()
-      }
-
-      if (isWildcard && i === len - 1) {
-        break
-      }
-
-      if (isWildcard === false && isParamMatch === false) {
-        return noRoute()
+        handlers.push(...res.handlers)
+        params = Object.assign(params, res.params)
+        curNodes = res.nodes
       }
     }
 
-    const handler = curNode.method[METHOD_NAME_OF_ALL] || curNode.method[method]
+    if (!handlers.length) return noRoute()
 
-    if (!handler) {
-      return noRoute()
-    }
-
-    return new Result<T>(handler, params)
+    return new Result<T>(handlers, params)
   }
 }
