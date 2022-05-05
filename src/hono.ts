@@ -60,7 +60,6 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
   readonly routerClass: { new (): Router<any> } = TrieRouter
   readonly strict: boolean = true // strict routing - default is true
   #router: Router<Handler<string, E>>
-  #middlewareRouters: Router<Handler>[]
   #tempPath: string
   private path: string
 
@@ -90,7 +89,6 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     Object.assign(this, init)
 
     this.#router = new this.routerClass()
-    this.#middlewareRouters = []
     this.#tempPath = null
   }
 
@@ -114,25 +112,16 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
 
   use(path: string, ...middleware: Handler<string, E>[]): Hono<E, P>
   use(...middleware: Handler<string, E>[]): Hono<E, P>
-  use(arg1: string | Handler<string, E>, ...args: Handler<string, E>[]): Hono<E, P> {
+  use(arg1: string | Handler<string, E>, ...handlers: Handler<string, E>[]): Hono<E, P> {
     if (typeof arg1 === 'string') {
       this.path = arg1
     } else {
-      args.unshift(arg1)
+      handlers.unshift(arg1)
     }
-    args.map((handler) => {
-      this.addMiddlewareRoute(METHOD_NAME_ALL, this.path, handler)
+    handlers.map((handler) => {
+      this.addRoute(METHOD_NAME_ALL, this.path, handler)
     })
     return this
-  }
-
-  addMiddlewareRoute(method: string, path: string, handler: Handler<string, E>) {
-    if (handler.constructor.name !== 'AsyncFunction') {
-      throw new TypeError('middleware must be a async function!')
-    }
-    const router = new this.routerClass()
-    router.add(method, path, handler)
-    this.#middlewareRouters.push(router)
   }
 
   onError(handler: ErrorHandler<E>): Hono<E, P> {
@@ -145,38 +134,13 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     return this
   }
 
-  private createFakeContext = (): Context<string, E> => {
-    const request = new Request('http://localhost/')
-    request.param = () => ''
-    const fake = new Context<string, E>(request)
-    fake.notFound = () => this.notFoundHandler(fake)
-    return fake
-  }
-
   private addRoute(method: string, path: string, handler: Handler<string, E>): void {
     method = method.toUpperCase()
 
     if (this.#tempPath) {
       path = mergePath(this.#tempPath, path)
     }
-
-    let isMiddlewareHandler = false
-    const next = async () => {
-      isMiddlewareHandler = true
-    }
-
-    ;(async () => {
-      // Detect if handler is middleware with using Fake Context
-      await handler(this.createFakeContext(), next)
-    })().catch(() => {
-      // Do nothing
-    })
-
-    if (isMiddlewareHandler) {
-      this.addMiddlewareRoute(method, path, handler)
-    } else {
-      this.#router.add(method, path, handler)
-    }
+    this.#router.add(method, path, handler)
   }
 
   private async matchRoute(method: string, path: string): Promise<Result<Handler<string, E>>> {
@@ -184,41 +148,30 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
   }
 
   private async dispatch(request: Request, event?: FetchEvent, env?: E): Promise<Response> {
+    // Methods for Request object
     const path = getPathFromURL(request.url, { strict: this.strict })
     const method = request.method
 
     const result = await this.matchRoute(method, path)
-
-    // Methods for Request object
     request.param = (key: string): string => {
       if (result) return result.params[key]
     }
+    const handlers = result ? result.handlers : [this.notFoundHandler]
 
-    const handler = result ? result.handler : this.notFoundHandler
-
-    const middleware = []
-
-    for (const mr of this.#middlewareRouters) {
-      const mwResult = mr.match(method, path)
-      if (mwResult) middleware.push(mwResult.handler)
-    }
-
-    const wrappedHandler = async (context: Context<string, E>, next: Next) => {
-      const res = await handler(context)
-      if (!(res instanceof Response)) {
-        throw new TypeError('response must be a instance of Response')
-      }
-      context.res = res
-      await next()
-    }
-
-    middleware.push(wrappedHandler)
-
-    const composed = compose<Context>(middleware, this.errorHandler)
     const c = new Context<string, E>(request, { env: env, event: event, res: null })
     c.notFound = () => this.notFoundHandler(c)
 
-    const context = await composed(c)
+    const composed = compose<Context>(handlers, this.errorHandler)
+    let context: Context
+    try {
+      context = await composed(c)
+    } catch (err) {
+      if (err instanceof Error) {
+        return this.errorHandler(err, c)
+      }
+    }
+
+    if (!context.res) return context.notFound()
 
     return context.res
   }

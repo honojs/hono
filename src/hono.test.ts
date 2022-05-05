@@ -6,7 +6,7 @@ import { Hono } from '@/hono'
 describe('GET Request', () => {
   const app = new Hono()
 
-  app.get('/hello', () => {
+  app.get('/hello', async () => {
     return new Response('hello', {
       status: 200,
       statusText: 'Hono is OK',
@@ -337,6 +337,8 @@ describe('Builtin Middleware', () => {
     const middleware = poweredBy()
     await middleware(c, next)
   })
+  app.get('/abc', () => new Response())
+  app.get('/def', () => new Response())
 
   it('"powered-by" middleware', async () => {
     const res = await app.request('http://localhost/abc')
@@ -359,8 +361,10 @@ describe('Middleware with app.HTTP_METHOD', () => {
     })
 
     const customHeader = async (c: Context, next: Next) => {
+      console.log('customHeader BEFORE')
       c.req.headers.append('x-custom-foo', 'bar')
       await next()
+      console.log('customHeader AFTER')
     }
 
     const customHeader2 = async (c: Context, next: Next) => {
@@ -370,6 +374,7 @@ describe('Middleware with app.HTTP_METHOD', () => {
 
     app
       .get('/abc', customHeader, (c) => {
+        console.log('GET /abc')
         const foo = c.req.header('x-custom-foo') || ''
         return c.text(foo)
       })

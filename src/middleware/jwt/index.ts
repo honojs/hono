@@ -10,6 +10,9 @@ export const jwt = (options: { secret: string; alg?: string }) => {
 
   return async (ctx: Context, next: Next) => {
     const credentials = ctx.req.headers.get('Authorization')
+
+    await next()
+
     if (!credentials) {
       ctx.res = new Response('Unauthorized', {
         status: 401,
@@ -28,7 +31,6 @@ export const jwt = (options: { secret: string; alg?: string }) => {
           'WWW-Authenticate': 'Basic ${options.secret}',
         },
       })
-      return
     }
 
     let authorized = false
@@ -38,16 +40,14 @@ export const jwt = (options: { secret: string; alg?: string }) => {
     } catch (e) {
       msg = `${e}`
     }
-    if (authorized) {
-      return next()
+    if (!authorized) {
+      ctx.res = new Response('Unauthorized', {
+        status: 401,
+        statusText: msg,
+        headers: {
+          'WWW-Authenticate': 'Bearer ${options.secret}',
+        },
+      })
     }
-    ctx.res = new Response('Unauthorized', {
-      status: 401,
-      statusText: msg,
-      headers: {
-        'WWW-Authenticate': 'Bearer ${options.secret}',
-      },
-    })
-    return
   }
 }
