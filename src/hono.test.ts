@@ -27,7 +27,7 @@ describe('GET Request', () => {
     expect(await res.text()).toBe('hello')
   })
 
-  it('GET /hell-with-shortcuts is ok', async () => {
+  it('GET /hello-with-shortcuts is ok', async () => {
     const res = await app.request('http://localhost/hello-with-shortcuts')
     expect(res).not.toBeNull()
     expect(res.status).toBe(201)
@@ -259,9 +259,18 @@ describe('Middleware', () => {
     app.get('/hello', (c) => {
       return c.text('hello')
     })
+
     app.get('/hello/:message', (c) => {
       const message = c.req.param('message')
       return c.text(`${message}`)
+    })
+
+    app.get('/error', (c) => {
+      throw new Error('Error!')
+    })
+
+    app.notFound((c) => {
+      return c.text('Not Found Foo', 404)
     })
 
     it('logging and custom header', async () => {
@@ -279,6 +288,18 @@ describe('Middleware', () => {
       expect(await res.text()).toBe('message')
       expect(res.headers.get('x-custom')).toBe('root')
       expect(res.headers.get('x-message-2')).toBe('custom-header-2')
+    })
+
+    it('not found', async () => {
+      const res = await app.request('http://localhost/foo')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Not Found Foo')
+    })
+
+    it('internal server error', async () => {
+      const res = await app.request('http://localhost/error')
+      expect(res.status).toBe(500)
+      console.log(await res.text())
     })
   })
 
@@ -361,10 +382,8 @@ describe('Middleware with app.HTTP_METHOD', () => {
     })
 
     const customHeader = async (c: Context, next: Next) => {
-      console.log('customHeader BEFORE')
       c.req.headers.append('x-custom-foo', 'bar')
       await next()
-      console.log('customHeader AFTER')
     }
 
     const customHeader2 = async (c: Context, next: Next) => {
@@ -374,7 +393,6 @@ describe('Middleware with app.HTTP_METHOD', () => {
 
     app
       .get('/abc', customHeader, (c) => {
-        console.log('GET /abc')
         const foo = c.req.header('x-custom-foo') || ''
         return c.text(foo)
       })

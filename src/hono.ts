@@ -19,7 +19,7 @@ export type Handler<RequestParamKeyType = string, E = Env> = (
   c: Context<RequestParamKeyType, E>,
   next?: Next
 ) => Response | Promise<Response> | void | Promise<void>
-export type NotFoundHandler<E = Env> = (c: Context<string, E>) => Response | Promise<Response>
+export type NotFoundHandler<E = Env> = (c: Context<string, E>) => Response
 export type ErrorHandler<E = Env> = (err: Error, c: Context<string, E>) => Response
 export type Next = () => Promise<void>
 
@@ -54,6 +54,28 @@ function defineDynamicClass(): {
   }
 } {
   return class {} as any
+}
+
+interface RouteInterface {
+  // app.get('/', handler, handler...)
+  (path: string, ...handlers: Handler<string>[]): Route
+  // app.get(handler...)
+  (...handlers: Handler<string>[]): Hono
+}
+
+interface Route {
+  path: string
+  method: Methods
+  handler: Handler
+}
+
+class R {
+  routes: Route[]
+  get(path: string, handler: Handler): R {
+    const r: Route = { path: path, method: 'get', handler: handler }
+    this.routes.push(r)
+    return this
+  }
 }
 
 export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E, P> {
@@ -161,7 +183,7 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     const c = new Context<string, E>(request, { env: env, event: event, res: null })
     c.notFound = () => this.notFoundHandler(c)
 
-    const composed = compose<Context>(handlers, this.errorHandler)
+    const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)
     let context: Context
     try {
       context = await composed(c)
