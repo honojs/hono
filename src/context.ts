@@ -50,10 +50,6 @@ export class Context<RequestParamKeyType = string, E = Env> {
   }
 
   status(status: StatusCode): void {
-    if (this.res) {
-      console.warn('c.res.status is already set.')
-      return
-    }
     this.#status = status
     this.#statusText = getStatusText(status)
   }
