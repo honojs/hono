@@ -157,8 +157,7 @@ describe('compose with Context - 401 not authorized', () => {
     return c.text('onError', 500)
   }
   const handler = (c: Context, next: Function) => {
-    c.text('Hello')
-    next()
+    return c.text('Hello')
   }
   const mHandler = async (c: Context, next: Function) => {
     await next()
