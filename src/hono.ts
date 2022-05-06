@@ -36,49 +36,73 @@ type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 
-interface HandlerInterface<T extends string, E = Env> {
+interface HandlerInterface<T extends string, E = Env, U = Hono<E, T>> {
   // app.get('/', handler, handler...)
-  <Path extends string>(path: Path, ...handlers: Handler<ParamKeys<Path>, E>[]): Hono<E, Path>
-  (path: string, ...handlers: Handler<string, E>[]): Hono<E, T>
+  <Path extends string>(
+    path: Path,
+    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E>[]
+  ): U
+  (path: string, ...handlers: Handler<string, E>[]): U
   // app.get(handler...)
-  <Path extends T>(...handlers: Handler<ParamKeys<T>, E>[]): Hono<E, Path>
-  (...handlers: Handler<string, E>[]): Hono<E, T>
+  <Path extends string>(
+    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E>[]
+  ): U
+  (...handlers: Handler<string, E>[]): U
 }
 
 const methods = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch'] as const
 type Methods = typeof methods[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
 function defineDynamicClass(): {
-  new <E extends Env, T extends string>(): {
-    [K in Methods]: HandlerInterface<T, E>
+  new <E extends Env, T extends string, U>(): {
+    [K in Methods]: HandlerInterface<T, E, U>
   }
 } {
   return class {} as any
 }
 
-interface RouteInterface {
-  // app.get('/', handler, handler...)
-  (path: string, ...handlers: Handler<string>[]): Route
-  // app.get(handler...)
-  (...handlers: Handler<string>[]): Hono
-}
-
-interface Route {
+interface Routing<E extends Env> {
   path: string
   method: Methods
-  handler: Handler
+  handler: Handler<string, E>
 }
 
-class R {
-  routes: Route[]
-  get(path: string, handler: Handler): R {
-    const r: Route = { path: path, method: 'get', handler: handler }
+export class Route<E = Env, P extends string = ''> extends defineDynamicClass()<E, P, Route<E, P>> {
+  routes: Routing<E>[] = []
+  #path: string = ''
+
+  constructor() {
+    super()
+    const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
+
+    allMethods.map((method) => {
+      this[method] = <Path extends string>(
+        args1: Path | Handler<ParamKeys<Path>, E>,
+        ...args: [Handler<ParamKeys<Path>, E>]
+      ) => {
+        if (typeof args1 === 'string') {
+          this.#path = args1
+        } else {
+          this.add(method, this.#path, args1)
+        }
+        args.map((handler) => {
+          if (typeof handler !== 'string') {
+            this.add(method, this.#path, handler)
+          }
+        })
+        return this
+      }
+    })
+  }
+
+  private add(method: Methods, path: string, handler: Handler<string, E>): Route<E, P> {
+    const r: Routing<E> = { path: path, method: method, handler: handler }
     this.routes.push(r)
     return this
   }
 }
 
-export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E, P> {
+export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E, P, Hono<E, P>> {
   readonly routerClass: { new (): Router<any> } = TrieRouter
   readonly strict: boolean = true // strict routing - default is true
   #router: Router<Handler<string, E>>
@@ -125,10 +149,17 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     return c.text(message, 500)
   }
 
-  route(path: string): Hono<E, P> {
+  route(path: string, route?: Route): Hono<E, P> {
     const newHono: Hono<E, P> = new Hono()
     newHono.#tempPath = path
     newHono.#router = this.#router
+
+    if (route) {
+      route.routes.map((r) => {
+        newHono.addRoute(r.method, r.path, r.handler)
+      })
+    }
+
     return newHono
   }
 
@@ -158,7 +189,6 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
 
   private addRoute(method: string, path: string, handler: Handler<string, E>): void {
     method = method.toUpperCase()
-
     if (this.#tempPath) {
       path = mergePath(this.#tempPath, path)
     }

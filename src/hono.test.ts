@@ -1,7 +1,7 @@
 import { poweredBy } from './middleware/powered-by'
 import type { Context } from '@/context'
 import type { Next } from '@/hono'
-import { Hono } from '@/hono'
+import { Hono, Route } from '@/hono'
 
 describe('GET Request', () => {
   const app = new Hono()
@@ -265,7 +265,7 @@ describe('Middleware', () => {
       return c.text(`${message}`)
     })
 
-    app.get('/error', (c) => {
+    app.get('/error', () => {
       throw new Error('Error!')
     })
 
@@ -534,5 +534,79 @@ describe('Request methods with custom middleware', () => {
     expect(res.headers.get('X-Query-2')).toBe('bar')
     expect(res.headers.get('X-Param-2')).toBe('bar')
     expect(res.headers.get('X-Header-2')).toBe('bar')
+  })
+})
+
+describe('`Route` with app.route', () => {
+  const app = new Hono()
+  describe('Basic', () => {
+    const route = new Route()
+    route.get('/post', (c) => c.text('GET /POST'))
+    route.post('/post', (c) => c.text('POST /POST'))
+    app.route('/v1', route)
+
+    it('Should return 200 response - GET /v1/post', async () => {
+      const res = await app.request('http://localhost/v1/post')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET /POST')
+    })
+
+    it('Should return 200 response - POST /v1/post', async () => {
+      const res = await app.request('http://localhost/v1/post', { method: 'POST' })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('POST /POST')
+    })
+
+    it('Should return 404 response - DELETE /v1/post', async () => {
+      const res = await app.request('http://localhost/v1/post', { method: 'DELETE' })
+      expect(res.status).toBe(404)
+    })
+
+    it('Should return 404 response - GET /post', async () => {
+      const res = await app.request('http://localhost/post')
+      expect(res.status).toBe(404)
+    })
+  })
+
+  describe('Chaining', () => {
+    const route = new Route()
+    route.get('/post', (c) => c.text('GET /POST v2')).post((c) => c.text('POST /POST v2'))
+    app.route('/v2', route)
+
+    it('Should return 200 response - GET /v2/post', async () => {
+      const res = await app.request('http://localhost/v2/post')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET /POST v2')
+    })
+
+    it('Should return 200 response - POST /v2/post', async () => {
+      const res = await app.request('http://localhost/v2/post', { method: 'POST' })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('POST /POST v2')
+    })
+
+    it('Should return 404 response - DELETE /v2/post', async () => {
+      const res = await app.request('http://localhost/v2/post', { method: 'DELETE' })
+      expect(res.status).toBe(404)
+    })
+  })
+
+  describe('Named parameter', () => {
+    const route = new Route()
+    route.get('/post/:id', (c) => {
+      const id = c.req.param('id')
+      return c.text(`GET /post/${id} v3`)
+    })
+    app.route('/v3', route)
+
+    it('Should return 200 response - GET /v3/post/1', async () => {
+      const res = await app.request('http://localhost/v3/post/1')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET /post/1 v3')
+    })
+    it('Should return 404 response - GET /v3/post', async () => {
+      const res = await app.request('http://localhost/v3/post/abc/def')
+      expect(res.status).toBe(404)
+    })
   })
 })
