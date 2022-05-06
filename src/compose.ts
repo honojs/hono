@@ -17,10 +17,12 @@ export const compose = <C>(
       let handler = middleware[i]
       index = i
       if (i === middleware.length) handler = next
-      if (!handler) return Promise.resolve(context)
 
-      if (onNotFound && context instanceof Context && !context.res) {
-        context.res = onNotFound(context)
+      if (!handler) {
+        if (context instanceof Context && !context.res) {
+          context.res = onNotFound(context)
+        }
+        return Promise.resolve(context)
       }
 
       return Promise.resolve(handler(context, dispatch.bind(null, i + 1)))
