@@ -67,7 +67,6 @@ export const basicAuth = (
         }
       }
     } else {
-      console.log('after next()')
       ctx.res = new Response('Unauthorized', {
         status: 401,
         headers: {

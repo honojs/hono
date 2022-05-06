@@ -122,6 +122,32 @@ describe('compose with Context - 200 success', () => {
   })
 })
 
+describe('compose with Context - 404 not found', () => {
+  const middleware: Function[] = []
+
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+  const onError = (error: Error, c: Context) => {
+    return c.text('onError', 500)
+  }
+  const onNotFound = (c: Context) => {
+    return c.text('onNotFound', 404)
+  }
+  const mHandler = async (c: Context, next: Function) => {
+    await next()
+  }
+
+  middleware.push(mHandler)
+
+  it('Should return 404 Response', async () => {
+    const composed = compose<Context>(middleware, onError, onNotFound)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(404)
+    expect(await context.res.text()).toBe('onNotFound')
+  })
+})
+
 describe('compose with Context - 401 not authorized', () => {
   const middleware: Function[] = []
 
@@ -133,10 +159,6 @@ describe('compose with Context - 401 not authorized', () => {
   const handler = (c: Context, next: Function) => {
     c.text('Hello')
     next()
-  }
-  const baseHandler = async (c: Context, next: Function) => {
-    c.text('Hello')
-    await next()
   }
   const mHandler = async (c: Context, next: Function) => {
     await next()
@@ -321,7 +343,7 @@ describe('Compose', function () {
 
     await compose(stack)({})
     expect(called).toEqual([true, true])
-    expect(arr).toEqual([1, 2,  6])
+    expect(arr).toEqual([1, 2, 6])
   })
 
   it('should be able to be called twice', () => {
