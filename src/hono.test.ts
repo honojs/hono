@@ -118,6 +118,8 @@ describe('Routing', () => {
   })
 
   it('Nested route', async () => {
+    const app = new Hono()
+
     const book = app.route('/book')
     book.get('/', (c) => c.text('get /book'))
     book.get('/:id', (c) => {

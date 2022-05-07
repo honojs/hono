@@ -2,7 +2,7 @@ import { Hono } from '@/hono'
 import { logger } from '@/middleware/logger'
 
 describe('Logger by Middleware', () => {
-  const app = new Hono()
+  let app: Hono
 
   let log = ''
   const logFn = (str: string) => {
@@ -12,10 +12,14 @@ describe('Logger by Middleware', () => {
   const shortRandomString = 'hono'
   const longRandomString = 'hono'.repeat(1000)
 
-  app.use('*', logger(logFn))
-  app.get('/short', (c) => c.text(shortRandomString))
-  app.get('/long', (c) => c.text(longRandomString))
-  app.get('/empty', (c) => c.text(''))
+  beforeEach(() => {
+    app = new Hono()
+
+    app.use('*', logger(logFn))
+    app.get('/short', (c) => c.text(shortRandomString))
+    app.get('/long', (c) => c.text(longRandomString))
+    app.get('/empty', (c) => c.text(''))
+  })
 
   it('Log status 200 with empty body', async () => {
     const res = await app.request('http://localhost/empty')
@@ -42,7 +46,13 @@ describe('Logger by Middleware', () => {
   })
 
   it('Log status 404', async () => {
+    const app = new Hono()
+
     const msg = 'Default 404 Not Found'
+    app.use('*', logger(logFn))
+    app.get('/short', (c) => c.text(shortRandomString))
+    app.get('/long', (c) => c.text(longRandomString))
+    app.get('/empty', (c) => c.text(''))
     app.all('*', (c) => {
       return c.text(msg, 404)
     })

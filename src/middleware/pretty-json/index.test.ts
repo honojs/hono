@@ -2,10 +2,14 @@ import { Hono } from '@/hono'
 import { prettyJSON } from '@/middleware/pretty-json'
 
 describe('JSON pretty by Middleware', () => {
-  const app = new Hono()
+  let app: Hono
 
-  app.get('/', (c) => {
-    return c.json({ message: 'Hono!' })
+  beforeEach(() => {
+    app = new Hono()
+
+    app.get('/', (c) => {
+      return c.json({ message: 'Hono!' })
+    })
   })
 
   it('Should return pretty JSON output', async () => {
