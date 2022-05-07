@@ -3,11 +3,24 @@ import type { ParamMap } from '@/router/reg-exp-router/trie'
 import { Trie } from '@/router/reg-exp-router/trie'
 
 type Route<T> = [string, T]
-type HandlerData<T> = [T, ParamMap | null]
+type HandlerData<T> = [T[], ParamMap | null]
 type Matcher<T> = [RegExp, HandlerData<T>[]]
 
 const regExpMatchAll = new RegExp('')
 const emptyParam = {}
+
+function buildRegExp(path: string): RegExp {
+  if (path === '*') {
+    return regExpMatchAll
+  }
+
+  const tmp = `^${path.replace(/\*(?!$)|:[^\/]+/g, '[^/]+')}` // /prefix/*/path/to or /prefix/:label/path/to => /prefix/[^/]+/path/to
+  const regExpStr = tmp.endsWith('*')
+    ? tmp.replace(/\/\*$/, '(?:$|/)') // /path/to/* => /path/to(?:$|/)
+    : `${tmp}$` // /path/to/action => /path/to/action$
+
+  return new RegExp(regExpStr)
+}
 
 export class RegExpRouter<T> extends Router<T> {
   routes?: Record<string, Route<T>[]> = {}
@@ -94,23 +107,41 @@ export class RegExpRouter<T> extends Router<T> {
     }
 
     if (method === METHOD_NAME_ALL) {
+      const handlerData: HandlerData<T> = [[routes[0][1]], null]
       if (routes.length === 1 && routes[0][0] === '*') {
-        return [regExpMatchAll, [[routes[0][1], null]]]
+        const handlerDataList = [handlerData]
+        handlerDataList[-1] = handlerData // XXX: dirty hack. fail-safe for indexOf returns -1.
+        return [regExpMatchAll, handlerDataList]
       }
 
       if (routes.length === 1 && !routes[0][0].match(/:/)) {
-        // there is only one route and no capture
-        const tmp = routes[0][0].endsWith('*')
-          ? routes[0][0].replace(/\/\*$/, '(?:$|/)') // /path/to/* => /path/to(?:$|/)
-          : `${routes[0][0]}$` // /path/to/action => /path/to/action$
-        const regExpStr = `^${tmp.replace(/\*/g, '[^/]+')}` // /prefix/*/path/to => /prefix/[^/]+/path/to
-        return [new RegExp(regExpStr), [[routes[0][1], null]]]
+        return [buildRegExp(routes[0][0]), [handlerData]]
       }
     }
 
+    const routes2: [RegExp, T][] | undefined = []
     for (let i = 0; i < routes.length; i++) {
-      const paramMap = trie.insert(routes[i][0], i)
-      handlers[i] = [routes[i][1], Object.keys(paramMap).length !== 0 ? paramMap : null]
+      routes2[i] = [buildRegExp(routes[i][0]), routes[i][1]]
+    }
+
+    const routes3: [string, T[]][] = []
+    for (let i = 0; i < routes.length; i++) {
+      const handlers: T[] = []
+
+      for (let j = 0; j <= i; j++) {
+        if (i === j) {
+          handlers.push(routes[i][1])
+        } else if (routes2[j][0].test(routes[i][0])) {
+          handlers.push(routes2[j][1])
+        }
+      }
+
+      routes3[i] = [routes[i][0], handlers]
+    }
+
+    for (let i = 0; i < routes3.length; i++) {
+      const paramMap = trie.insert(routes3[i][0], i)
+      handlers[i] = [routes3[i][1], Object.keys(paramMap).length !== 0 ? paramMap : null]
     }
 
     const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp()

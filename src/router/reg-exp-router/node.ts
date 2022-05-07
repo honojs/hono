@@ -91,7 +91,7 @@ export class Node {
       })
 
     if (typeof this.index === 'number') {
-      strList.push(`#${this.index}`)
+      strList.unshift(`#${this.index}`)
     }
 
     if (strList.length === 0) {
