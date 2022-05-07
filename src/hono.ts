@@ -4,7 +4,7 @@ import type { Env } from '@/context'
 import type { Result, Router } from '@/router'
 import { METHOD_NAME_ALL } from '@/router'
 import { METHOD_NAME_ALL_LOWERCASE } from '@/router'
-import { TrieRouter } from '@/router/trie-router' // Default Router
+import { RegExpRouter } from '@/router/reg-exp-router' // Default Router
 import { getPathFromURL, mergePath } from '@/utils/url'
 
 declare global {
@@ -103,7 +103,7 @@ export class Route<E = Env, P extends string = ''> extends defineDynamicClass()<
 }
 
 export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E, P, Hono<E, P>> {
-  readonly routerClass: { new (): Router<any> } = TrieRouter
+  readonly routerClass: { new (): Router<any> } = RegExpRouter
   readonly strict: boolean = true // strict routing - default is true
   #router: Router<Handler<string, E>>
   #tempPath: string
