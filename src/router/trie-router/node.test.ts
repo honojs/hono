@@ -91,6 +91,20 @@ describe('Name path', () => {
   })
 })
 
+describe('Name path - Multiple route', () => {
+  const node = new Node()
+
+  node.insert('get', '/:type/:id', 'common')
+  node.insert('get', '/posts/:id', 'specialized')
+
+  it('get /posts/123', () => {
+    const res = node.search('get', '/posts/123')
+    expect(res).not.toBeNull()
+    expect(res.handlers).toEqual(['common', 'specialized'])
+    expect(res.params['id']).toBe('123')
+  })
+})
+
 describe('Wildcard', () => {
   const node = new Node()
   node.insert('get', '/wildcard-abc/*/wildcard-efg', 'wildcard')
@@ -107,6 +121,7 @@ describe('Wildcard', () => {
   })
 })
 
+/*
 describe('Regexp', () => {
   const node = new Node()
   node.insert('get', '/regex-abc/:id{[0-9]+}/comment/:comment_id{[a-z]+}', 'regexp')
@@ -175,6 +190,7 @@ describe('Special Wildcard deeply', () => {
     expect(res.handlers).toEqual(['match hello'])
   })
 })
+*/
 
 describe('Default with wildcard', () => {
   const node = new Node()

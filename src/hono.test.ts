@@ -610,3 +610,63 @@ describe('`Route` with app.route', () => {
     })
   })
 })
+
+describe('Multiple handler', () => {
+  describe('handler + handler', () => {
+    const app = new Hono()
+    app.get('/:type/:id', (c) => {
+      return c.text('foo')
+    })
+    app.get('/posts/:id', (c) => {
+      const id = c.req.param('id')
+      return c.text(`id is ${id}`)
+    })
+    it('Should return response from `specialized` route', async () => {
+      const res = await app.request('http://localhost/posts/123')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('id is 123')
+    })
+  })
+
+  describe('handler + middleware', () => {
+    const app = new Hono()
+    app.get('/:id/:action', async (c, next) => {
+      const id = c.req.param('id')
+      const action = c.req.param('action')
+      await next()
+      c.header('x-custom-id', id)
+      c.header('x-custom-action', action)
+    })
+    app.get('/posts/:id', (c) => {
+      const id = c.req.param('id')
+      return c.text(`id is ${id}`)
+    })
+    it('Should return response from both routes - handler route is `specialized`', async () => {
+      const res = await app.request('http://localhost/posts/123')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('id is 123')
+      expect(res.headers.get('x-custom-id')).toBe('123') // <--- this value from `specialized` route
+      expect(res.headers.get('x-custom-action')).toBe('123') // <--- this value from middleware
+    })
+  })
+
+  describe('handler + middleware', () => {
+    const app = new Hono()
+    app.get('/:id/:action', (c) => {
+      const id = c.req.param('id')
+      const action = c.req.param('action')
+      return c.text(`${id} and ${action}`)
+    })
+    app.get('/posts/:id', async (c, next) => {
+      const id = c.req.param('id')
+      await next()
+      c.header('x-custom-id', id)
+    })
+    it('Should return response from both routes - middleware route is `specialized`', async () => {
+      const res = await app.request('http://localhost/posts/123')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('123 and 123') // <--- this value from `specialized` route
+      expect(res.headers.get('x-custom-id')).toBe('123') // <--- this value from `specialized` route
+    })
+  })
+})
