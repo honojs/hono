@@ -84,15 +84,16 @@ export class Node<T> {
       // Wildcard
       // '/hello/*/foo' => match /hello/bar/foo
       if (pattern === '*') {
-        handlers.push(...this.getHandlers(node.children['*'], method))
-        if (!node.children[part]) {
-          nextNodes.push(node.children['*'])
+        const astNode = node.children['*']
+        if (astNode) {
+          handlers.push(...this.getHandlers(astNode, method))
+          nextNodes.push(astNode)
         }
       }
 
+      if (part === '') continue
       // Named match
       // `/posts/:id` => match /posts/123
-      if (part === '') continue
       const [key, name, matcher] = pattern
       if (matcher === true || (matcher instanceof RegExp && matcher.test(part))) {
         if (typeof key === 'string') {
@@ -140,6 +141,8 @@ export class Node<T> {
     for (let i = 0; i < len; i++) {
       const p: string = parts[i]
       const isLast = i === len - 1
+      const tempNodes: Node<T>[] = []
+
       for (let j = 0, len2 = curNodes.length; j < len2; j++) {
         const res = this.next(curNodes[j], p, method, isLast)
         if (res.nodes.length === 0) {
@@ -147,8 +150,10 @@ export class Node<T> {
         }
         handlers.push(...res.handlers)
         params = Object.assign(params, res.params)
-        curNodes = res.nodes
+        tempNodes.push(...res.nodes)
       }
+
+      curNodes = tempNodes
     }
 
     if (!handlers.length) return noRoute()
