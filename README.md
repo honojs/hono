@@ -471,7 +471,7 @@ Let's write your first code for Cloudflare Workers with Hono.
 
 **Wrangler 1.x** does not support importing middleware. We recommend two ways:
 
-1. Use [Wragler 2.0 Beta](https://github.com/cloudflare/wrangler2).
+1. Use [Wragler 2](https://github.com/cloudflare/wrangler2).
 2. Build without webpack 4.x. For example, you can use esbuild. See [the starter template](https://github.com/honojs/hono-minimal).
 
 ---
@@ -491,7 +491,7 @@ npm init -y
 Initialize as a wrangler project.
 
 ```sh
-npx wrangler@beta init
+npx wrangler init
 ```
 
 Answer the questions. If you want, you can answer `y`.
@@ -529,7 +529,7 @@ app.fire()
 Run the development server locally. Then, access `http://127.0.0.1:8787/` in your Web browser.
 
 ```sh
-npx wrangler@beta dev index.js
+npx wrangler dev
 ```
 
 ### 6. Publish
@@ -537,7 +537,7 @@ npx wrangler@beta dev index.js
 Deploy to Cloudflare. That's all!
 
 ```sh
-npx wrangler@beta publish index.js
+npx wrangler publish
 ```
 
 ## Starter template
