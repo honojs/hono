@@ -1,4 +1,4 @@
-const URL_REGEXP = /^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/
+const URL_REGEXP = /^https?:\/\/[a-zA-Z0-9\-\.:]+(\/?[^?#]*)/
 
 export type Pattern = readonly [string, string, RegExp | true] | '*'
 
@@ -44,20 +44,20 @@ type Params = {
 export const getPathFromURL = (url: string, params: Params = { strict: true }): string => {
   // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
   // default is true
-  if (!params.strict && url.endsWith('/')) {
+  if (params.strict === false && url.endsWith('/')) {
     url = url.slice(0, -1)
   }
 
   const match = url.match(URL_REGEXP)
   if (match) {
-    return match[5]
+    return match[1]
   }
   return ''
 }
 
 export const isAbsoluteURL = (url: string): boolean => {
   const match = url.match(URL_REGEXP)
-  if (match && match[1]) {
+  if (match) {
     return true
   }
   return false

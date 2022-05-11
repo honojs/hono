@@ -200,7 +200,6 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
   }
 
   private async dispatch(request: Request, event?: FetchEvent, env?: E): Promise<Response> {
-    // Methods for Request object
     const path = getPathFromURL(request.url, { strict: this.strict })
     const method = request.method
 
@@ -210,7 +209,7 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     }
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
-    const c = new Context<string, E>(request, { env: env, event: event, res: null })
+    const c = new Context<string, E>(request, { env: env, event: event, res: undefined })
     c.notFound = () => this.notFoundHandler(c)
 
     const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)
