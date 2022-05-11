@@ -628,45 +628,67 @@ describe('Multiple handler', () => {
     })
   })
 
-  describe('handler + middleware', () => {
-    const app = new Hono()
-    app.get('/:id/:action', async (c, next) => {
-      const id = c.req.param('id')
-      const action = c.req.param('action')
-      await next()
-      c.header('x-custom-id', id)
-      c.header('x-custom-action', action)
+  describe('Duplicate param name', () => {
+    it('self', () => {
+      const app = new Hono()
+      expect(() => {
+        app.get('/:id/:id', (c) => {
+          const id = c.req.param('id')
+          return c.text(`id is ${id}`)
+        })
+      }).toThrowError(/Duplicate param name/)
     })
-    app.get('/posts/:id', (c) => {
-      const id = c.req.param('id')
-      return c.text(`id is ${id}`)
-    })
-    it('Should return response from both routes - handler route is `specialized`', async () => {
-      const res = await app.request('http://localhost/posts/123')
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe('id is 123')
-      expect(res.headers.get('x-custom-id')).toBe('123') // <--- this value from `specialized` route
-      expect(res.headers.get('x-custom-action')).toBe('123') // <--- this value from middleware
-    })
-  })
 
-  describe('handler + middleware', () => {
-    const app = new Hono()
-    app.get('/:id/:action', (c) => {
-      const id = c.req.param('id')
-      const action = c.req.param('action')
-      return c.text(`${id} and ${action}`)
+    it('parent', () => {
+      const app = new Hono()
+      app.get('/:id/:action', (c) => {
+        return c.text('foo')
+      })
+      expect(() => {
+        app.get('/posts/:id', (c) => {
+          const id = c.req.param('id')
+          return c.text(`id is ${id}`)
+        })
+      }).toThrowError(/Duplicate param name/)
     })
-    app.get('/posts/:id', async (c, next) => {
-      const id = c.req.param('id')
-      await next()
-      c.header('x-custom-id', id)
+
+    it('child', () => {
+      const app = new Hono()
+      app.get('/posts/:id', (c) => {
+        return c.text('foo')
+      })
+      expect(() => {
+        app.get('/:id/:action', (c) => {
+          const id = c.req.param('id')
+          return c.text(`id is ${id}`)
+        })
+      }).toThrowError(/Duplicate param name/)
     })
-    it('Should return response from both routes - middleware route is `specialized`', async () => {
-      const res = await app.request('http://localhost/posts/123')
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe('123 and 123') // <--- this value from `specialized` route
-      expect(res.headers.get('x-custom-id')).toBe('123') // <--- this value from `specialized` route
+
+    it('hierarchy', () => {
+      const app = new Hono()
+      app.get('/posts/:id/comments/:comment_id', (c) => {
+        return c.text('foo')
+      })
+      expect(() => {
+        app.get('/posts/:id', (c) => {
+          const id = c.req.param('id')
+          return c.text(`id is ${id}`)
+        })
+      }).not.toThrow()
+    })
+
+    it('different regular expression', () => {
+      const app = new Hono()
+      app.get('/:id/:action{create|update}', (c) => {
+        return c.text('foo')
+      })
+      expect(() => {
+        app.get('/:id/:action{delete}', (c) => {
+          const id = c.req.param('id')
+          return c.text(`id is ${id}`)
+        })
+      }).not.toThrow()
     })
   })
 })
