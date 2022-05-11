@@ -52,6 +52,10 @@ export class Node<T> {
 
     const parentPatterns: Pattern[] = []
 
+    const errorMessage = (name: string): string => {
+      return `Duplicate param name, use another name instead of '${name}' - ${method} ${path} <--- '${name}'`
+    }
+
     for (let i = 0, len = parts.length; i < len; i++) {
       const p: string = parts[i]
 
@@ -67,11 +71,11 @@ export class Node<T> {
         if (typeof pattern === 'object') {
           for (let j = 0, len = parentPatterns.length; j < len; j++) {
             if (typeof parentPatterns[j] === 'object' && parentPatterns[j][1] === pattern[1]) {
-              throw new Error(`Duplicate param name '${pattern[1]}'`)
+              throw new Error(errorMessage(pattern[1]))
             }
           }
           if (Object.values(curNode.children).some((n) => findParam(n, pattern[1]))) {
-            throw new Error(`Duplicate param name '${pattern[1]}'`)
+            throw new Error(errorMessage(pattern[1]))
           }
         }
         curNode.patterns.push(pattern)
