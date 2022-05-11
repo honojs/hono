@@ -12,6 +12,22 @@ type Next<T> = {
   params: Record<string, string>
 }
 
+function findParam<T>(node: Node<T>, name: string): boolean {
+  for (let i = 0, len = node.patterns.length; i < len; i++) {
+    if (typeof node.patterns[i] === 'object' && node.patterns[i][1] === name) {
+      return true
+    }
+  }
+  const nodes = Object.values(node.children)
+  for (let i = 0, len = nodes.length; i < len; i++) {
+    if (findParam(nodes[i], name)) {
+      return true
+    }
+  }
+
+  return false
+}
+
 export class Node<T> {
   methods: Record<string, T>[]
   handlers: T[]
@@ -33,17 +49,35 @@ export class Node<T> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let curNode: Node<T> = this
     const parts = splitPath(path)
+
+    const parentPatterns: Pattern[] = []
+
     for (let i = 0, len = parts.length; i < len; i++) {
       const p: string = parts[i]
+
       if (Object.keys(curNode.children).includes(p)) {
+        parentPatterns.push(...curNode.patterns)
         curNode = curNode.children[p]
         continue
       }
+
       curNode.children[p] = new Node()
       const pattern = getPattern(p)
       if (pattern) {
+        if (typeof pattern === 'object') {
+          for (let j = 0, len = parentPatterns.length; j < len; j++) {
+            if (typeof parentPatterns[j] === 'object' && parentPatterns[j][1] === pattern[1]) {
+              throw new Error(`Duplicate param name '${pattern[1]}'`)
+            }
+          }
+          if (Object.values(curNode.children).some((n) => findParam(n, pattern[1]))) {
+            throw new Error(`Duplicate param name '${pattern[1]}'`)
+          }
+        }
         curNode.patterns.push(pattern)
+        parentPatterns.push(...curNode.patterns)
       }
+      parentPatterns.push(...curNode.patterns)
       curNode = curNode.children[p]
     }
     if (!curNode.methods.length) {

@@ -121,7 +121,6 @@ describe('Wildcard', () => {
   })
 })
 
-/*
 describe('Regexp', () => {
   const node = new Node()
   node.insert('get', '/regex-abc/:id{[0-9]+}/comment/:comment_id{[a-z]+}', 'regexp')
@@ -190,7 +189,6 @@ describe('Special Wildcard deeply', () => {
     expect(res.handlers).toEqual(['match hello'])
   })
 })
-*/
 
 describe('Default with wildcard', () => {
   const node = new Node()
@@ -338,5 +336,46 @@ describe('Multi match', () => {
       expect(res).not.toBeNull()
       expect(res.handlers).toEqual(['Middleware A', 'Middleware B'])
     })
+  })
+})
+
+describe('Duplicate param name', () => {
+  it('self', () => {
+    const node = new Node()
+    expect(() => {
+      node.insert('get', '/:id/:id', 'foo')
+    }).toThrowError(/Duplicate param name/)
+  })
+
+  it('parent', () => {
+    const node = new Node()
+    node.insert('get', '/:id/:action', 'foo')
+    expect(() => {
+      node.insert('get', '/posts/:id', 'bar')
+    }).toThrowError(/Duplicate param name/)
+  })
+
+  it('child', () => {
+    const node = new Node()
+    node.insert('get', '/posts/:id', 'foo')
+    expect(() => {
+      node.insert('get', '/:id/:action', 'bar')
+    }).toThrowError(/Duplicate param name/)
+  })
+
+  it('hierarchy', () => {
+    const node = new Node()
+    node.insert('get', '/posts/:id/comments/:comment_id', 'foo')
+    expect(() => {
+      node.insert('get', '/posts/:id', 'bar')
+    }).not.toThrowError()
+  })
+
+  it('regular expression', () => {
+    const node = new Node()
+    node.insert('get', '/:id/:action{create|update}', 'foo')
+    expect(() => {
+      node.insert('get', '/:id/:action{delete}', 'bar')
+    }).not.toThrowError()
   })
 })
