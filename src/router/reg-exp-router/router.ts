@@ -101,7 +101,7 @@ function compareRoute<T>(a: Route<T>, b: Route<T>): CompareResult {
 
 function buildMatcherFromPreprocessedRoutes<T>(
   routes: Route<T>[],
-  hasAmbiguous: boolean
+  hasAmbiguous: boolean = false
 ): Matcher<T> {
   const trie = new Trie({ reverse: hasAmbiguous })
   const handlers: HandlerData<T>[] = []
@@ -177,14 +177,15 @@ export class RegExpRouter<T> extends Router<T> {
   }
 
   match(method: string, path: string): Result<T> | null {
-    const [matchers, hasAmbiguous] = this.buildAllMatchers()
+    const [primaryMatchers, secondaryMatchers, hasAmbiguous] = this.buildAllMatchers()
 
     this.match = hasAmbiguous
       ? (method, path) => {
-          const matcher = matchers[method] || matchers[METHOD_NAME_ALL]
+          const matcher = primaryMatchers[method] || primaryMatchers[METHOD_NAME_ALL]
           let match = path.match(matcher[0])
 
           if (!match) {
+            // do not support secondary matchers here.
             return null
           }
 
@@ -223,11 +224,19 @@ export class RegExpRouter<T> extends Router<T> {
           return new Result([...handlers.values()], params)
         }
       : (method, path) => {
-          const matcher = matchers[method] || matchers[METHOD_NAME_ALL]
-          const match = path.match(matcher[0])
+          let matcher = primaryMatchers[method] || primaryMatchers[METHOD_NAME_ALL]
+          let match = path.match(matcher[0])
 
           if (!match) {
-            return null
+            const matchers = secondaryMatchers[method] || secondaryMatchers[METHOD_NAME_ALL]
+            for (let i = 0, len = matchers.length; i < len && !match; i++) {
+              matcher = matchers[i]
+              match = path.match(matcher[0])
+            }
+
+            if (!match) {
+              return null
+            }
           }
 
           const index = match.indexOf('', 1)
@@ -247,7 +256,7 @@ export class RegExpRouter<T> extends Router<T> {
     return this.match(method, path)
   }
 
-  private buildAllMatchers(): [Record<string, Matcher<T>>, boolean] {
+  private buildAllMatchers(): [Record<string, Matcher<T>>, Record<string, Matcher<T>[]>, boolean] {
     this.routeData.routes.sort(({ hint: a }, { hint: b }) => {
       if (a.components !== b.components) {
         return a.componentsLength - b.componentsLength
@@ -273,21 +282,24 @@ export class RegExpRouter<T> extends Router<T> {
       return 0
     })
 
-    const matchers: Record<string, Matcher<T>> = {}
+    const primaryMatchers: Record<string, Matcher<T>> = {}
+    const secondaryMatchers: Record<string, Matcher<T>[]> = {}
     let hasAmbiguous = false
     this.routeData.methods.forEach((method) => {
       let _hasAmbiguous
-      ;[matchers[method], _hasAmbiguous] = this.buildMatcher(method)
+      ;[primaryMatchers[method], secondaryMatchers[method], _hasAmbiguous] =
+        this.buildMatcher(method)
       hasAmbiguous = hasAmbiguous || _hasAmbiguous
     })
-    matchers[METHOD_NAME_ALL] ||= nullMatcher
+    primaryMatchers[METHOD_NAME_ALL] ||= nullMatcher
+    secondaryMatchers[METHOD_NAME_ALL] ||= []
 
     delete this.routeData // to reduce memory usage
 
-    return [matchers, hasAmbiguous]
+    return [primaryMatchers, secondaryMatchers, hasAmbiguous]
   }
 
-  private buildMatcher(method: string): [Matcher<T>, boolean] {
+  private buildMatcher(method: string): [Matcher<T>, Matcher<T>[], boolean] {
     let hasAmbiguous = false
     const targetMethods = new Set([method, METHOD_NAME_ALL])
     const routes = this.routeData.routes.filter(({ method }) => targetMethods.has(method))
@@ -331,6 +343,23 @@ export class RegExpRouter<T> extends Router<T> {
       }
     }
 
-    return [buildMatcherFromPreprocessedRoutes(routes, hasAmbiguous), hasAmbiguous]
+    if (hasAmbiguous) {
+      return [buildMatcherFromPreprocessedRoutes(routes, hasAmbiguous), [], hasAmbiguous]
+    }
+
+    const primaryRoutes = []
+    const secondaryRoutes = []
+    for (let i = 0, len = routes.length; i < len; i++) {
+      if (routes[i].hint.maybeHandler || !routes[i].hint.endWithWildcard) {
+        primaryRoutes.push(routes[i])
+      } else {
+        secondaryRoutes.push(routes[i])
+      }
+    }
+    return [
+      buildMatcherFromPreprocessedRoutes(primaryRoutes, hasAmbiguous),
+      [buildMatcherFromPreprocessedRoutes(secondaryRoutes, hasAmbiguous)],
+      hasAmbiguous,
+    ]
   }
 }
