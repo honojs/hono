@@ -4,9 +4,17 @@ import { Node } from '@/router/reg-exp-router/node'
 export type { ParamMap } from '@/router/reg-exp-router/node'
 export type ReplacementMap = number[]
 
+interface InitOptions {
+  reverse: boolean
+}
+
 export class Trie {
   context: Context = { varIndex: 0 }
-  root: Node = new Node()
+  root: Node
+
+  constructor({ reverse }: InitOptions = { reverse: false }) {
+    this.root = new Node({ reverse })
+  }
 
   insert(path: string, index: number): ParamMap {
     const paramMap: ParamMap = []
