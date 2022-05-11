@@ -2,10 +2,6 @@ import { Result, METHOD_NAME_ALL } from '@/router'
 import type { Pattern } from '@/utils/url'
 import { splitPath, getPattern } from '@/utils/url'
 
-const noRoute = (): null => {
-  return null
-}
-
 type Next<T> = {
   nodes: Node<T>[]
   handlers: T[]
@@ -97,12 +93,12 @@ export class Node<T> {
     const handlers: T[] = []
     node.methods.map((m) => {
       let handler = m[method]
-      if (handler) {
+      if (handler !== undefined) {
         handlers.push(handler)
         return
       }
       handler = m[METHOD_NAME_ALL]
-      if (handler) {
+      if (handler !== undefined) {
         handlers.push(handler)
         return
       }
@@ -130,12 +126,13 @@ export class Node<T> {
       }
 
       if (part === '') continue
+
       // Named match
       // `/posts/:id` => match /posts/123
       const [key, name, matcher] = pattern
       if (matcher === true || (matcher instanceof RegExp && matcher.test(part))) {
         if (typeof key === 'string') {
-          if (isLast) {
+          if (isLast === true) {
             handlers.push(...this.getHandlers(node.children[key], method))
           }
           nextNodes.push(node.children[key])
@@ -148,9 +145,9 @@ export class Node<T> {
 
     const nextNode = node.children[part]
     if (nextNode) {
-      if (isLast) {
+      if (isLast === true) {
         // '/hello/*' => match '/hello'
-        if (nextNode.children['*']) {
+        if (nextNode.children['*'] !== undefined) {
           handlers.push(...this.getHandlers(nextNode.children['*'], method))
         }
         handlers.push(...this.getHandlers(nextNode, method))
@@ -175,8 +172,7 @@ export class Node<T> {
     let curNodes = [curNode]
     const parts = splitPath(path)
 
-    const len = parts.length
-    for (let i = 0; i < len; i++) {
+    for (let i = 0, len = parts.length; i < len; i++) {
       const p: string = parts[i]
       const isLast = i === len - 1
       const tempNodes: Node<T>[] = []
@@ -194,7 +190,7 @@ export class Node<T> {
       curNodes = tempNodes
     }
 
-    if (!handlers.length) return noRoute()
+    if (handlers.length <= 0) return null
 
     return new Result<T>(handlers, params)
   }
