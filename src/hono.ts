@@ -1,8 +1,9 @@
 import { compose } from '@/compose'
 import { Context } from '@/context'
 import type { Env } from '@/context'
-import { METHOD_NAME_OF_ALL } from '@/router'
 import type { Result, Router } from '@/router'
+import { METHOD_NAME_ALL } from '@/router'
+import { METHOD_NAME_ALL_LOWERCASE } from '@/router'
 import { TrieRouter } from '@/router/trie-router' // Default Router
 import { getPathFromURL, mergePath } from '@/utils/url'
 
@@ -15,10 +16,10 @@ declare global {
 }
 
 export type Handler<RequestParamKeyType = string, E = Env> = (
-  c: Context<RequestParamKeyType, E>
-) => Response | Promise<Response>
-export type MiddlewareHandler<E = Env> = (c: Context<string, E>, next: Next) => Promise<void>
-export type NotFoundHandler<E = Env> = (c: Context<string, E>) => Response | Promise<Response>
+  c: Context<RequestParamKeyType, E>,
+  next?: Next
+) => Response | Promise<Response> | void | Promise<void>
+export type NotFoundHandler<E = Env> = (c: Context<string, E>) => Response
 export type ErrorHandler<E = Env> = (err: Error, c: Context<string, E>) => Response
 export type Next = () => Promise<void>
 
@@ -35,51 +36,105 @@ type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 
-interface HandlerInterface<T extends string, E = Env> {
-  <Path extends string>(path: Path, handler: Handler<ParamKeys<Path>, E>): Hono<E, Path>
-  (path: string, handler: Handler<string, E>): Hono<E, T>
-  <Path extends T>(handler: Handler<ParamKeys<T>, E>): Hono<E, Path>
-  (handler: Handler<string, E>): Hono<E, T>
+interface HandlerInterface<T extends string, E = Env, U = Hono<E, T>> {
+  // app.get('/', handler, handler...)
+  <Path extends string>(
+    path: Path,
+    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E>[]
+  ): U
+  (path: string, ...handlers: Handler<string, E>[]): U
+  // app.get(handler...)
+  <Path extends string>(
+    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E>[]
+  ): U
+  (...handlers: Handler<string, E>[]): U
 }
 
-const methods = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch', 'all'] as const
-type Methods = typeof methods[number]
+const methods = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch'] as const
+type Methods = typeof methods[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
 function defineDynamicClass(): {
-  new <E extends Env, T extends string>(): {
-    [K in Methods]: HandlerInterface<T, E>
+  new <E extends Env, T extends string, U>(): {
+    [K in Methods]: HandlerInterface<T, E, U>
   }
 } {
   return class {} as any
 }
 
-export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E, P> {
+interface Routing<E extends Env> {
+  path: string
+  method: Methods
+  handler: Handler<string, E>
+}
+
+export class Route<E = Env, P extends string = ''> extends defineDynamicClass()<E, P, Route<E, P>> {
+  routes: Routing<E>[] = []
+  #path: string = ''
+
+  constructor() {
+    super()
+    const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
+
+    allMethods.map((method) => {
+      this[method] = <Path extends string>(
+        args1: Path | Handler<ParamKeys<Path>, E>,
+        ...args: [Handler<ParamKeys<Path>, E>]
+      ) => {
+        if (typeof args1 === 'string') {
+          this.#path = args1
+        } else {
+          this.add(method, this.#path, args1)
+        }
+        args.map((handler) => {
+          if (typeof handler !== 'string') {
+            this.add(method, this.#path, handler)
+          }
+        })
+        return this
+      }
+    })
+  }
+
+  private add(method: Methods, path: string, handler: Handler<string, E>): Route<E, P> {
+    const r: Routing<E> = { path: path, method: method, handler: handler }
+    this.routes.push(r)
+    return this
+  }
+}
+
+export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E, P, Hono<E, P>> {
   readonly routerClass: { new (): Router<any> } = TrieRouter
   readonly strict: boolean = true // strict routing - default is true
   #router: Router<Handler<string, E>>
-  #middlewareRouters: Router<MiddlewareHandler>[]
   #tempPath: string
   private path: string
 
   constructor(init: Partial<Pick<Hono, 'routerClass' | 'strict'>> = {}) {
     super()
-    methods.map((method) => {
+
+    const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
+    allMethods.map((method) => {
       this[method] = <Path extends string>(
-        arg1: Path | Handler<ParamKeys<P>, E>,
-        arg2?: Handler<ParamKeys<Path>, E>
+        args1: Path | Handler<ParamKeys<Path>, E>,
+        ...args: [Handler<ParamKeys<Path>, E>]
       ) => {
-        if (typeof arg1 === 'string') {
-          this.path = arg1
-          return this.addRoute(method, this.path, arg2)
+        if (typeof args1 === 'string') {
+          this.path = args1
+        } else {
+          this.addRoute(method, this.path, args1)
         }
-        return this.addRoute(method, this.path, arg1)
+        args.map((handler) => {
+          if (typeof handler !== 'string') {
+            this.addRoute(method, this.path, handler)
+          }
+        })
+        return this
       }
     })
 
     Object.assign(this, init)
 
     this.#router = new this.routerClass()
-    this.#middlewareRouters = []
     this.#tempPath = null
   }
 
@@ -94,29 +149,31 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     return c.text(message, 500)
   }
 
-  route(path: string): Hono<E, P> {
+  route(path: string, route?: Route): Hono<E, P> {
     const newHono: Hono<E, P> = new Hono()
     newHono.#tempPath = path
     newHono.#router = this.#router
+
+    if (route) {
+      route.routes.map((r) => {
+        newHono.addRoute(r.method, r.path, r.handler)
+      })
+    }
+
     return newHono
   }
 
-  use(path: string, middleware: MiddlewareHandler<E>): Hono<E, P>
-  use(middleware: MiddlewareHandler<E>): Hono<E, P>
-  use(arg1: string | MiddlewareHandler<E>, arg2?: MiddlewareHandler<E>): Hono<E, P> {
-    let handler: MiddlewareHandler<E>
+  use(path: string, ...middleware: Handler<string, E>[]): Hono<E, P>
+  use(...middleware: Handler<string, E>[]): Hono<E, P>
+  use(arg1: string | Handler<string, E>, ...handlers: Handler<string, E>[]): Hono<E, P> {
     if (typeof arg1 === 'string') {
       this.path = arg1
-      handler = arg2
     } else {
-      handler = arg1
+      handlers.unshift(arg1)
     }
-    if (handler.constructor.name !== 'AsyncFunction') {
-      throw new TypeError('middleware must be a async function!')
-    }
-    const router = new this.routerClass()
-    router.add(METHOD_NAME_OF_ALL, this.path, handler)
-    this.#middlewareRouters.push(router)
+    handlers.map((handler) => {
+      this.addRoute(METHOD_NAME_ALL, this.path, handler)
+    })
     return this
   }
 
@@ -130,13 +187,12 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     return this
   }
 
-  private addRoute(method: string, path: string, handler: Handler<string, E>): Hono<E, P> {
+  private addRoute(method: string, path: string, handler: Handler<string, E>): void {
     method = method.toUpperCase()
     if (this.#tempPath) {
       path = mergePath(this.#tempPath, path)
     }
     this.#router.add(method, path, handler)
-    return this
   }
 
   private async matchRoute(method: string, path: string): Promise<Result<Handler<string, E>>> {
@@ -148,37 +204,25 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     const method = request.method
 
     const result = await this.matchRoute(method, path)
-
-    // Methods for Request object
     request.param = (key: string): string => {
       if (result) return result.params[key]
     }
+    const handlers = result ? result.handlers : [this.notFoundHandler]
 
-    const handler = result ? result.handler : this.notFoundHandler
-
-    const middleware = []
-
-    for (const mr of this.#middlewareRouters) {
-      const mwResult = mr.match(METHOD_NAME_OF_ALL, path)
-      if (mwResult) middleware.push(mwResult.handler)
-    }
-
-    const wrappedHandler = async (context: Context<string, E>, next: Next) => {
-      const res = await handler(context)
-      if (!(res instanceof Response)) {
-        throw new TypeError('response must be a instance of Response')
-      }
-      context.res = res
-      await next()
-    }
-
-    middleware.push(wrappedHandler)
-
-    const composed = compose<Context>(middleware, this.errorHandler)
-    const c = new Context<string, E>(request, { env: env, event: event, res: null })
+    const c = new Context<string, E>(request, { env: env, event: event, res: undefined })
     c.notFound = () => this.notFoundHandler(c)
 
-    const context = await composed(c)
+    const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)
+    let context: Context
+    try {
+      context = await composed(c)
+    } catch (err) {
+      if (err instanceof Error) {
+        return this.errorHandler(err, c)
+      }
+    }
+
+    if (!context.res) return context.notFound()
 
     return context.res
   }
