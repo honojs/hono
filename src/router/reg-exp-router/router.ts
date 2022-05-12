@@ -152,8 +152,10 @@ export class RegExpRouter<T> extends Router<T> {
 
   add(method: string, path: string, handler: T) {
     if (!this.routeData) {
-      throw new Error('Can not add a route since the matcher is already built.')
+      throw new Error('Can not add a route since already prepared.')
     }
+    this.resetMatchMethod()
+
     const { routes, methods } = this.routeData
 
     if (path === '/*') {
@@ -179,6 +181,24 @@ export class RegExpRouter<T> extends Router<T> {
   }
 
   match(method: string, path: string): Result<T> | null {
+    this.prepareMatchMethod()
+    return this.match(method, path)
+  }
+
+  prepare(): void {
+    this.prepareMatchMethod()
+    delete this.routeData // to reduce memory usage
+  }
+
+  private resetMatchMethod(): void {
+    delete this.match
+  }
+
+  private prepareMatchMethod(): void {
+    if (this.match !== this.constructor.prototype.match) {
+      return
+    }
+
     const [primaryMatchers, secondaryMatchers, hasAmbiguous] = this.buildAllMatchers()
 
     this.match = hasAmbiguous
@@ -254,8 +274,6 @@ export class RegExpRouter<T> extends Router<T> {
 
           return new Result(handler, params)
         }
-
-    return this.match(method, path)
   }
 
   private buildAllMatchers(): [Record<string, Matcher<T>>, Record<string, Matcher<T>[]>, boolean] {
@@ -295,8 +313,6 @@ export class RegExpRouter<T> extends Router<T> {
     })
     primaryMatchers[METHOD_NAME_ALL] ||= nullMatcher
     secondaryMatchers[METHOD_NAME_ALL] ||= []
-
-    delete this.routeData // to reduce memory usage
 
     return [primaryMatchers, secondaryMatchers, hasAmbiguous]
   }
