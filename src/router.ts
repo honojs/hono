@@ -1,4 +1,5 @@
-export const METHOD_NAME_OF_ALL = 'ALL'
+export const METHOD_NAME_ALL = 'ALL' as const
+export const METHOD_NAME_ALL_LOWERCASE = 'all' as const
 
 export abstract class Router<T> {
   abstract add(method: string, path: string, handler: T): void
@@ -6,10 +7,10 @@ export abstract class Router<T> {
 }
 
 export class Result<T> {
-  handler: T
+  handlers: T[]
   params: Record<string, string>
-  constructor(handler: T, params: Record<string, string>) {
-    this.handler = handler
+  constructor(handlers: T[], params: Record<string, string>) {
+    this.handlers = handlers
     this.params = params
   }
 }

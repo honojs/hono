@@ -1,11 +1,12 @@
 import { poweredBy } from './middleware/powered-by'
 import type { Context } from '@/context'
-import { Hono } from '@/hono'
+import type { Next } from '@/hono'
+import { Hono, Route } from '@/hono'
 
 describe('GET Request', () => {
   const app = new Hono()
 
-  app.get('/hello', () => {
+  app.get('/hello', async () => {
     return new Response('hello', {
       status: 200,
       statusText: 'Hono is OK',
@@ -26,7 +27,7 @@ describe('GET Request', () => {
     expect(await res.text()).toBe('hello')
   })
 
-  it('GET /hell-with-shortcuts is ok', async () => {
+  it('GET /hello-with-shortcuts is ok', async () => {
     const res = await app.request('http://localhost/hello-with-shortcuts')
     expect(res).not.toBeNull()
     expect(res.status).toBe(201)
@@ -101,10 +102,16 @@ describe('Routing', () => {
   const app = new Hono()
 
   it('Return it self', async () => {
-    const appRes = app.get('/', () => new Response('get /'))
-    expect(appRes).not.toBeUndefined()
-    appRes.delete('/', () => new Response('delete /'))
-    const res = await appRes.request('http://localhost/', { method: 'DELETE' })
+    const app2 = app.get('/', () => new Response('get /'))
+    expect(app2).not.toBeUndefined()
+    app2.delete('/', () => new Response('delete /'))
+
+    let res = await app2.request('http://localhost/', { method: 'GET' })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /')
+
+    res = await app2.request('http://localhost/', { method: 'DELETE' })
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('delete /')
@@ -181,6 +188,11 @@ describe('param and query', () => {
     return c.text(`id is ${id}`)
   })
 
+  app.get('/date/:date{[0-9]+}', (c) => {
+    const date = c.req.param('date')
+    return c.text(`date is ${date}`)
+  })
+
   app.get('/search', (c) => {
     const name = c.req.query('name')
     return c.text(`name is ${name}`)
@@ -195,6 +207,12 @@ describe('param and query', () => {
     const res = await app.request('http://localhost/entry/123')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('id is 123')
+  })
+
+  it('param of /date/:date is found', async () => {
+    const res = await app.request('http://localhost/date/0401')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('date is 0401')
   })
 
   it('query of /search?name=sam is found', async () => {
@@ -213,56 +231,80 @@ describe('param and query', () => {
 })
 
 describe('Middleware', () => {
-  const app = new Hono()
+  describe('Basic', () => {
+    const app = new Hono()
 
-  // Custom Logger
-  app.use('*', async (c, next) => {
-    console.log(`${c.req.method} : ${c.req.url}`)
-    await next()
-  })
+    // Custom Logger
+    app.use('*', async (c, next) => {
+      console.log(`${c.req.method} : ${c.req.url}`)
+      await next()
+    })
 
-  // Append Custom Header
-  app.use('*', async (c, next) => {
-    await next()
-    c.res.headers.append('x-custom', 'root')
-  })
+    // Append Custom Header
+    app.use('*', async (c, next) => {
+      await next()
+      c.res.headers.append('x-custom', 'root')
+    })
 
-  app.use('/hello', async (c, next) => {
-    await next()
-    c.res.headers.append('x-message', 'custom-header')
-  })
+    app.use('/hello', async (c, next) => {
+      await next()
+      c.res.headers.append('x-message', 'custom-header')
+    })
 
-  app.use('/hello/*', async (c, next) => {
-    await next()
-    c.res.headers.append('x-message-2', 'custom-header-2')
-  })
+    app.use('/hello/*', async (c, next) => {
+      await next()
+      c.res.headers.append('x-message-2', 'custom-header-2')
+    })
 
-  app.get('/hello', (c) => {
-    return c.text('hello')
-  })
-  app.get('/hello/:message', (c) => {
-    const message = c.req.param('message')
-    return c.text(`${message}`)
-  })
+    app.get('/hello', (c) => {
+      return c.text('hello')
+    })
 
-  it('logging and custom header', async () => {
-    const res = await app.request('http://localhost/hello')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('hello')
-    expect(res.headers.get('x-custom')).toBe('root')
-    expect(res.headers.get('x-message')).toBe('custom-header')
-    expect(res.headers.get('x-message-2')).toBe('custom-header-2')
-  })
+    app.get('/hello/:message', (c) => {
+      const message = c.req.param('message')
+      return c.text(`${message}`)
+    })
 
-  it('logging and custom header with named param', async () => {
-    const res = await app.request('http://localhost/hello/message')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('message')
-    expect(res.headers.get('x-custom')).toBe('root')
-    expect(res.headers.get('x-message-2')).toBe('custom-header-2')
+    app.get('/error', () => {
+      throw new Error('Error!')
+    })
+
+    app.notFound((c) => {
+      return c.text('Not Found Foo', 404)
+    })
+
+    it('logging and custom header', async () => {
+      const res = await app.request('http://localhost/hello')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('hello')
+      expect(res.headers.get('x-custom')).toBe('root')
+      expect(res.headers.get('x-message')).toBe('custom-header')
+      expect(res.headers.get('x-message-2')).toBe('custom-header-2')
+    })
+
+    it('logging and custom header with named param', async () => {
+      const res = await app.request('http://localhost/hello/message')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('message')
+      expect(res.headers.get('x-custom')).toBe('root')
+      expect(res.headers.get('x-message-2')).toBe('custom-header-2')
+    })
+
+    it('not found', async () => {
+      const res = await app.request('http://localhost/foo')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Not Found Foo')
+    })
+
+    it('internal server error', async () => {
+      const res = await app.request('http://localhost/error')
+      expect(res.status).toBe(500)
+      console.log(await res.text())
+    })
   })
 
   describe('Chained route', () => {
+    const app = new Hono()
     app
       .use('/chained/*', async (c, next) => {
         c.req.headers.append('x-before', 'abc')
@@ -275,12 +317,37 @@ describe('Middleware', () => {
       .get('/chained/abc', (c) => {
         return c.text('GET chained')
       })
+    it('GET /chained/abc', async () => {
+      const res = await app.request('http://localhost/chained/abc')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET chained')
+      expect(res.headers.get('x-after')).toBe('abc')
+    })
   })
-  it('Should return 200 response with chained route', async () => {
-    const res = await app.request('http://localhost/chained/abc')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('GET chained')
-    expect(res.headers.get('x-after')).toBe('abc')
+
+  describe('Multiple handler', () => {
+    const app = new Hono()
+    app
+      .use(
+        '/multiple/*',
+        async (c, next) => {
+          c.req.headers.append('x-before', 'abc')
+          await next()
+        },
+        async (c, next) => {
+          await next()
+          c.header('x-after', c.req.header('x-before'))
+        }
+      )
+      .get('/multiple/abc', (c) => {
+        return c.text('GET multiple')
+      })
+    it('GET /multiple/abc', async () => {
+      const res = await app.request('http://localhost/multiple/abc')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET multiple')
+      expect(res.headers.get('x-after')).toBe('abc')
+    })
   })
 })
 
@@ -291,6 +358,8 @@ describe('Builtin Middleware', () => {
     const middleware = poweredBy()
     await middleware(c, next)
   })
+  app.get('/abc', () => new Response())
+  app.get('/def', () => new Response())
 
   it('"powered-by" middleware', async () => {
     const res = await app.request('http://localhost/abc')
@@ -300,6 +369,62 @@ describe('Builtin Middleware', () => {
   it('"powered-by" middleware in a handler', async () => {
     const res = await app.request('http://localhost/def')
     expect(res.headers.get('x-powered-by')).toBe('Hono')
+  })
+})
+
+describe('Middleware with app.HTTP_METHOD', () => {
+  describe('Basic', () => {
+    const app = new Hono()
+
+    app.all('*', async (c, next) => {
+      await next()
+      c.header('x-custom-message', 'hello')
+    })
+
+    const customHeader = async (c: Context, next: Next) => {
+      c.req.headers.append('x-custom-foo', 'bar')
+      await next()
+    }
+
+    const customHeader2 = async (c: Context, next: Next) => {
+      await next()
+      c.header('x-custom-foo-2', 'bar-2')
+    }
+
+    app
+      .get('/abc', customHeader, (c) => {
+        const foo = c.req.header('x-custom-foo') || ''
+        return c.text(foo)
+      })
+      .post(customHeader2, (c) => {
+        return c.text('POST /abc')
+      })
+
+    it('GET /abc', async () => {
+      const res = await app.request('http://localhost/abc')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('x-custom-message')).toBe('hello')
+      expect(await res.text()).toBe('bar')
+    })
+    it('POST /abc', async () => {
+      const res = await app.request('http://localhost/abc', { method: 'POST' })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('POST /abc')
+      expect(res.headers.get('x-custom-foo-2')).toBe('bar-2')
+    })
+  })
+
+  describe('With builtin middleware', () => {
+    const app = new Hono()
+    app.get('/abc', poweredBy(), (c) => {
+      return c.text('GET /abc')
+    })
+    it('GET /abc', async () => {
+      const res = await app.request('http://localhost/abc')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET /abc')
+      expect(res.headers.get('x-powered-by')).toBe('Hono')
+    })
   })
 })
 
@@ -409,5 +534,161 @@ describe('Request methods with custom middleware', () => {
     expect(res.headers.get('X-Query-2')).toBe('bar')
     expect(res.headers.get('X-Param-2')).toBe('bar')
     expect(res.headers.get('X-Header-2')).toBe('bar')
+  })
+})
+
+describe('`Route` with app.route', () => {
+  const app = new Hono()
+  describe('Basic', () => {
+    const route = new Route()
+    route.get('/post', (c) => c.text('GET /POST'))
+    route.post('/post', (c) => c.text('POST /POST'))
+    app.route('/v1', route)
+
+    it('Should return 200 response - GET /v1/post', async () => {
+      const res = await app.request('http://localhost/v1/post')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET /POST')
+    })
+
+    it('Should return 200 response - POST /v1/post', async () => {
+      const res = await app.request('http://localhost/v1/post', { method: 'POST' })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('POST /POST')
+    })
+
+    it('Should return 404 response - DELETE /v1/post', async () => {
+      const res = await app.request('http://localhost/v1/post', { method: 'DELETE' })
+      expect(res.status).toBe(404)
+    })
+
+    it('Should return 404 response - GET /post', async () => {
+      const res = await app.request('http://localhost/post')
+      expect(res.status).toBe(404)
+    })
+  })
+
+  describe('Chaining', () => {
+    const route = new Route()
+    route.get('/post', (c) => c.text('GET /POST v2')).post((c) => c.text('POST /POST v2'))
+    app.route('/v2', route)
+
+    it('Should return 200 response - GET /v2/post', async () => {
+      const res = await app.request('http://localhost/v2/post')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET /POST v2')
+    })
+
+    it('Should return 200 response - POST /v2/post', async () => {
+      const res = await app.request('http://localhost/v2/post', { method: 'POST' })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('POST /POST v2')
+    })
+
+    it('Should return 404 response - DELETE /v2/post', async () => {
+      const res = await app.request('http://localhost/v2/post', { method: 'DELETE' })
+      expect(res.status).toBe(404)
+    })
+  })
+
+  describe('Named parameter', () => {
+    const route = new Route()
+    route.get('/post/:id', (c) => {
+      const id = c.req.param('id')
+      return c.text(`GET /post/${id} v3`)
+    })
+    app.route('/v3', route)
+
+    it('Should return 200 response - GET /v3/post/1', async () => {
+      const res = await app.request('http://localhost/v3/post/1')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET /post/1 v3')
+    })
+    it('Should return 404 response - GET /v3/post', async () => {
+      const res = await app.request('http://localhost/v3/post/abc/def')
+      expect(res.status).toBe(404)
+    })
+  })
+})
+
+describe('Multiple handler', () => {
+  describe('handler + handler', () => {
+    const app = new Hono()
+    app.get('/:type/:id', (c) => {
+      return c.text('foo')
+    })
+    app.get('/posts/:id', (c) => {
+      const id = c.req.param('id')
+      return c.text(`id is ${id}`)
+    })
+    it('Should return response from `specialized` route', async () => {
+      const res = await app.request('http://localhost/posts/123')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('id is 123')
+    })
+  })
+
+  describe('Duplicate param name', () => {
+    it('self', () => {
+      const app = new Hono()
+      expect(() => {
+        app.get('/:id/:id', (c) => {
+          const id = c.req.param('id')
+          return c.text(`id is ${id}`)
+        })
+      }).toThrowError(/Duplicate param name/)
+    })
+
+    it('parent', () => {
+      const app = new Hono()
+      app.get('/:id/:action', (c) => {
+        return c.text('foo')
+      })
+      expect(() => {
+        app.get('/posts/:id', (c) => {
+          const id = c.req.param('id')
+          return c.text(`id is ${id}`)
+        })
+      }).toThrowError(/Duplicate param name/)
+    })
+
+    it('child', () => {
+      const app = new Hono()
+      app.get('/posts/:id', (c) => {
+        return c.text('foo')
+      })
+      expect(() => {
+        app.get('/:id/:action', (c) => {
+          const id = c.req.param('id')
+          return c.text(`id is ${id}`)
+        })
+      }).toThrowError(/Duplicate param name/)
+    })
+
+    it('hierarchy', () => {
+      const app = new Hono()
+      app.get('/posts/:id/comments/:comment_id', (c) => {
+        return c.text('foo')
+      })
+      expect(() => {
+        app.get('/posts/:id', (c) => {
+          const id = c.req.param('id')
+          return c.text(`id is ${id}`)
+        })
+      }).not.toThrow()
+    })
+
+    it('different regular expression', () => {
+      const app = new Hono()
+      app.get('/:id/:action{create|update}', (c) => {
+        return c.text('foo')
+      })
+      expect(() => {
+        app.get('/:id/:action{delete}', (c) => {
+          const id = c.req.param('id')
+          return c.text(`id is ${id}`)
+        })
+      }).not.toThrow()
+    })
   })
 })

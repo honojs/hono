@@ -63,17 +63,16 @@ export const basicAuth = (
         )
         if (usernameEqual && passwordEqual) {
           // Authorized OK
-          return next()
+          await next()
         }
       }
+    } else {
+      ctx.res = new Response('Unauthorized', {
+        status: 401,
+        headers: {
+          'WWW-Authenticate': 'Basic realm="' + options.realm.replace(/"/g, '\\"') + '"',
+        },
+      })
     }
-
-    ctx.res = new Response('Unauthorized', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="' + options.realm.replace(/"/g, '\\"') + '"',
-      },
-    })
-    return
   }
 }

@@ -55,7 +55,157 @@ describe('compose', () => {
   })
 })
 
-describe('compose with Context', () => {
+describe('Handler and middlewares', () => {
+  const middleware: Function[] = []
+
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+
+  const onError = (error: Error, c: Context) => {
+    return c.text('onError', 500)
+  }
+
+  const mHandlerFoo = async (c: Context, next: Function) => {
+    c.req.headers.append('x-header-foo', 'foo')
+    await next()
+  }
+
+  const mHandlerBar = async (c: Context, next: Function) => {
+    await next()
+    c.header('x-header-bar', 'bar')
+  }
+
+  const handler = (c: Context) => {
+    const foo = c.req.header('x-header-foo') || ''
+    return c.text(foo)
+  }
+
+  middleware.push(mHandlerFoo)
+  middleware.push(mHandlerBar)
+  middleware.push(handler)
+
+  it('Should return 200 Response', async () => {
+    const composed = compose<Context>(middleware, onError)
+    const context = await composed(c)
+    const res = context.res
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('foo')
+    expect(res.headers.get('x-header-bar')).toBe('bar')
+  })
+})
+
+describe('compose with Context - 200 success', () => {
+  const middleware: Function[] = []
+
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+  const onError = (error: Error, c: Context) => {
+    return c.text('onError', 500)
+  }
+  const handler = (c: Context) => {
+    return c.text('Hello')
+  }
+  const mHandler = async (c: Context, next: Function) => {
+    await next()
+  }
+
+  middleware.push(handler)
+  middleware.push(mHandler)
+
+  it('Should return 200 Response', async () => {
+    const composed = compose<Context>(middleware, onError)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(200)
+    expect(await context.res.text()).toBe('Hello')
+  })
+})
+
+describe('compose with Context - 404 not found', () => {
+  const middleware: Function[] = []
+
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+  const onError = (error: Error, c: Context) => {
+    return c.text('onError', 500)
+  }
+  const onNotFound = (c: Context) => {
+    return c.text('onNotFound', 404)
+  }
+  const mHandler = async (c: Context, next: Function) => {
+    await next()
+  }
+
+  middleware.push(mHandler)
+
+  it('Should return 404 Response', async () => {
+    const composed = compose<Context>(middleware, onError, onNotFound)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(404)
+    expect(await context.res.text()).toBe('onNotFound')
+  })
+})
+
+describe('compose with Context - 401 not authorized', () => {
+  const middleware: Function[] = []
+
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+  const onError = (error: Error, c: Context) => {
+    return c.text('onError', 500)
+  }
+  const handler = (c: Context, next: Function) => {
+    return c.text('Hello')
+  }
+  const mHandler = async (c: Context, next: Function) => {
+    await next()
+    c.res = new Response('Not authorized', { status: 401 })
+  }
+
+  middleware.push(handler)
+  middleware.push(mHandler)
+
+  it('Should return 401 Response', async () => {
+    const composed = compose<Context>(middleware, onError)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(401)
+    expect(await context.res.text()).toBe('Not authorized')
+  })
+})
+
+describe('compose with Context - next() below', () => {
+  const middleware: Function[] = []
+
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+  const onError = (error: Error, c: Context) => {
+    return c.text('onError', 500)
+  }
+  const handler = (c: Context) => {
+    const message = c.req.header('x-custom') || 'blank'
+    return c.text(message)
+  }
+  const mHandler = async (c: Context, next: Function) => {
+    c.req.headers.append('x-custom', 'foo')
+    await next()
+  }
+
+  middleware.push(mHandler)
+  middleware.push(handler)
+
+  it('Should return 200 Response', async () => {
+    const composed = compose<Context>(middleware, onError)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(200)
+    expect(await context.res.text()).toBe('foo')
+  })
+})
+
+describe('compose with Context - 500 error', () => {
   const middleware: Function[] = []
 
   const req = new Request('http://localhost/')
@@ -130,30 +280,69 @@ describe('Compose', function () {
     return x && typeof x.then === 'function'
   }
 
-  it('should work', async () => {
+  it('should get executed order one by one', async () => {
     const arr: number[] = []
     const stack = []
+    const called: boolean[] = []
 
     stack.push(async (context: C, next: Function) => {
+      called.push(true)
+
       arr.push(1)
       await next()
       arr.push(6)
     })
 
     stack.push(async (context: C, next: Function) => {
+      called.push(true)
+
       arr.push(2)
       await next()
       arr.push(5)
     })
 
     stack.push(async (context: C, next: Function) => {
+      called.push(true)
+
       arr.push(3)
       await next()
       arr.push(4)
     })
 
     await compose(stack)({})
-    expect(arr).toEqual(expect.arrayContaining([1, 2, 3, 4, 5, 6]))
+    expect(called).toEqual([true, true, true])
+    expect(arr).toEqual([1, 2, 3, 4, 5, 6])
+  })
+
+  it('should not get executed if previous next() not triggered', async () => {
+    const arr: number[] = []
+    const stack = []
+    const called: boolean[] = []
+
+    stack.push(async (context: C, next: Function) => {
+      called.push(true)
+
+      arr.push(1)
+      await next()
+      arr.push(6)
+    })
+
+    stack.push(async (context: C, next: Function) => {
+      called.push(true)
+      arr.push(2)
+    })
+
+    stack.push(async (context: C, next: Function) => {
+      called.push(true)
+
+      arr.push(3)
+      await next()
+      arr.push(4)
+    })
+
+    await compose(stack)({})
+    expect(called).toEqual([true, true])
+    expect(arr).toEqual([1, 2, 6])
   })
 
   it('should be able to be called twice', () => {
