@@ -1,4 +1,5 @@
 dist
+sandbox
 
 # Cloudflare Workers
 worker

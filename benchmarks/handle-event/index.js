@@ -1,6 +1,7 @@
 import Benchmark from 'benchmark'
 import { makeEdgeEnv } from 'edge-mock'
-import { Hono } from '../../dist/index'
+import { Hono } from '../../dist/hono'
+import { Hono as HonoOrig } from '../../dist-orig/hono'
 import { RegExpRouter } from '../../dist/router/reg-exp-router'
 import itty from 'itty-router'
 const { Router: IttyRouter } = itty
@@ -26,6 +27,7 @@ const initHono = (hono) => {
 }
 
 const hono = initHono(new Hono())
+const honoOrig = initHono(new HonoOrig())
 const honoWithRegExpRouter = initHono(new Hono({ routerClass: RegExpRouter }))
 
 const ittyRouter = IttyRouter()
@@ -112,6 +114,8 @@ const event = new FetchEvent('fetch', { request })
 const fn = async () => {
   let res = await hono.handleEvent(event)
   console.log(await res.text())
+  res = await honoOrig.handleEvent(event)
+  console.log(await res.text())
   res = await honoWithRegExpRouter.handleEvent(event)
   console.log(await res.text())
   res = await ittyRouter.handle(event.request)
@@ -126,11 +130,14 @@ fn()
 const suite = new Benchmark.Suite()
 
 suite
-  .add('hono', async () => {
+  .add('hono - trie-router(improved)', async () => {
     await hono.handleEvent(event)
   })
-  .add('hono with RegExpRouter', async () => {
+  .add('hono - regexp-router', async () => {
     await honoWithRegExpRouter.handleEvent(event)
+  })
+  .add('hono - original', async () => {
+    await honoOrig.handleEvent(event)
   })
   .add('itty-router', async () => {
     await ittyRouter.handle(event.request)
