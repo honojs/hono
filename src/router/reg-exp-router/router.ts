@@ -260,7 +260,7 @@ export class RegExpRouter<T> extends Router<T> {
 
   private buildAllMatchers(): [Record<string, Matcher<T>>, Record<string, Matcher<T>[]>, boolean] {
     this.routeData.routes.sort(({ hint: a }, { hint: b }) => {
-      if (a.components !== b.components) {
+      if (a.componentsLength !== b.componentsLength) {
         return a.componentsLength - b.componentsLength
       }
       for (
