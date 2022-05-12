@@ -331,6 +331,11 @@ export class RegExpRouter<T> extends Router<T> {
               routes[j].paramAliasMap[m[1]].push(namedParams[k][1])
             } else {
               components[namedParams[k][0]] = `/:${namedParams[k][1]}{${c.substring(1)}}`
+              routes[j].hint.namedParams.push([
+                namedParams[k][0],
+                namedParams[k][1],
+                c.substring(1),
+              ])
               routes[j].path = components.join('')
             }
           }
