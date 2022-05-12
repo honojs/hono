@@ -17,7 +17,7 @@ interface Route<T> {
   hint: Hint
   handlers: T[]
   middleware: T[]
-  paramAliasMap: Record<string, string>
+  paramAliasMap: Record<string, string[]>
 }
 type HandlerData<T> = [T[], ParamMap | null]
 type Matcher<T> = [RegExp, HandlerData<T>[]]
@@ -127,7 +127,9 @@ function buildMatcherFromPreprocessedRoutes<T>(
 
         const aliasTo = routes[i].paramAliasMap[paramMap[j][0]]
         if (aliasTo) {
-          paramMap.push([aliasTo, paramMap[j][1]])
+          for (let k = 0, len = aliasTo.length; k < len; k++) {
+            paramMap.push([aliasTo[k], paramMap[j][1]])
+          }
         }
       }
     }
@@ -325,7 +327,8 @@ export class RegExpRouter<T> extends Router<T> {
               continue
             }
             if (m) {
-              routes[j].paramAliasMap[m[1]] = namedParams[k][1]
+              routes[j].paramAliasMap[m[1]] ||= []
+              routes[j].paramAliasMap[m[1]].push(namedParams[k][1])
             } else {
               components[namedParams[k][0]] = `/:${namedParams[k][1]}{${c.substring(1)}}`
               routes[j].path = components.join('')
