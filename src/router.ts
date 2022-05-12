@@ -4,6 +4,9 @@ export const METHOD_NAME_ALL_LOWERCASE = 'all' as const
 export abstract class Router<T> {
   abstract add(method: string, path: string, handler: T): void
   abstract match(method: string, path: string): Result<T> | null
+  prepare(): void {
+    // preprocessing, validity checks, etc.
+  }
 }
 
 export class Result<T> {

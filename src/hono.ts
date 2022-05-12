@@ -241,6 +241,7 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
   }
 
   fire(): void {
+    this.#router.prepare()
     addEventListener('fetch', (event: FetchEvent): void => {
       event.respondWith(this.handleEvent(event))
     })
