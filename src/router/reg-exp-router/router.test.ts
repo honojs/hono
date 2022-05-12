@@ -70,6 +70,29 @@ describe('Complex', () => {
   })
 })
 
+describe('Order independent', () => {
+  let router: RegExpRouter<string>
+  beforeEach(() => {
+    router = new RegExpRouter<string>()
+  })
+
+  it('abstract -> concrete', async () => {
+    router.add('GET', '/:id/:action', 'foo')
+    router.add('GET', '/posts/:id', 'bar')
+    const res = router.match('GET', '/posts/123')
+    expect(res).not.toBeNull()
+    expect(res.handlers).toEqual(['foo', 'bar'])
+  })
+
+  it('concrete -> abstract', async () => {
+    router.add('GET', '/posts/:id', 'bar')
+    router.add('GET', '/:id/:action', 'foo')
+    const res = router.match('GET', '/posts/123')
+    expect(res).not.toBeNull()
+    expect(res.handlers).toEqual(['foo', 'bar'])
+  })
+})
+
 describe('Optimization for METHOD_NAME_OF_ALL', () => {
   let router: RegExpRouter<string>
   beforeEach(() => {
@@ -148,6 +171,24 @@ describe('Multi match', () => {
       expect(res.handlers).toEqual(['get user entries', 'get entry'])
       expect(res.params['user']).toBe('entry')
       expect(res.params['name']).toBe('entries')
+    })
+  })
+
+  describe('Multiple handlers', () => {
+    const router = new RegExpRouter<string>()
+
+    router.add('GET', '/:type/:id', ':type')
+    router.add('GET', '/:class/:id', ':class')
+    router.add('GET', '/:model/:id', ':model')
+    router.add('GET', '/entry/:id', 'entry')
+
+    it('GET /entry/123', async () => {
+      const res = router.match('GET', '/entry/123')
+      expect(res).not.toBeNull()
+      expect(res.handlers).toEqual([':type', ':class', ':model', 'entry'])
+      expect(res.params['type']).toBe('entry')
+      expect(res.params['class']).toBe('entry')
+      expect(res.params['model']).toBe('entry')
     })
   })
 })
