@@ -1,8 +1,2 @@
 name = "itty-router-example-for-benchmark"
-type = "webpack"
-route = ''
-zone_id = ''
-usage_model = ''
-compatibility_flags = []
-workers_dev = true
 compatibility_date = "2021-12-27"

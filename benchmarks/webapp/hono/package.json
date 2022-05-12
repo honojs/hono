@@ -8,5 +8,8 @@
     "miniflare": "miniflare --port 8787"
   },
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "hono": "./hono-1.1.1.tgz"
+  }
 }
