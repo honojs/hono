@@ -77,7 +77,7 @@ describe('Order independent', () => {
   })
 
   it('abstract -> concrete', async () => {
-    router.add('GET', '/:id/:action', 'foo')
+    router.add('GET', '/:type/:action', 'foo')
     router.add('GET', '/posts/:id', 'bar')
     const res = router.match('GET', '/posts/123')
     expect(res).not.toBeNull()
@@ -86,7 +86,7 @@ describe('Order independent', () => {
 
   it('concrete -> abstract', async () => {
     router.add('GET', '/posts/:id', 'bar')
-    router.add('GET', '/:id/:action', 'foo')
+    router.add('GET', '/:type/:action', 'foo')
     const res = router.match('GET', '/posts/123')
     expect(res).not.toBeNull()
     expect(res.handlers).toEqual(['foo', 'bar'])
@@ -190,5 +190,52 @@ describe('Multi match', () => {
       expect(res.params['class']).toBe('entry')
       expect(res.params['model']).toBe('entry')
     })
+  })
+})
+
+describe('Duplicate param name', () => {
+  it('self', () => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', '/:id/:id', 'get')
+    expect(() => {
+      router.prepare()
+    }).toThrowError(/Duplicate param name/)
+  })
+
+  it('parent', () => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', '/:id/:action', 'foo')
+    router.add('GET', '/posts/:id', 'bar')
+    expect(() => {
+      router.prepare()
+    }).toThrowError(/Duplicate param name/)
+  })
+
+  it('child', () => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', '/posts/:id', 'foo')
+    router.add('GET', '/:id/:action', 'bar')
+
+    expect(() => {
+      router.prepare()
+    }).toThrowError(/Duplicate param name/)
+  })
+
+  it('hierarchy', () => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', '/posts/:id/comments/:comment_id', 'foo')
+    router.add('GET', '/posts/:id', 'bar')
+    expect(() => {
+      router.prepare()
+    }).not.toThrow()
+  })
+
+  it('different regular expression', () => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', '/:id/:action{create|update}', 'foo')
+    router.add('GET', '/:id/:action{delete}', 'bar')
+    expect(() => {
+      router.prepare()
+    }).not.toThrow()
   })
 })
