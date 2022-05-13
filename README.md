@@ -20,9 +20,9 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/honojs/hono)](https://github.com/honojs/hono/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/honojs/hono)](https://github.com/honojs/hono/commits/master)
 
-Hono - _**[炎] means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework for Cloudflare Workers and Service Worker based serverless such as Fastly Compute@Edge.
+Hono - _**[炎] means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework for Cloudflare Workers or Service Worker based serverless such as Fastly Compute@Edge.
 
-```js
+```ts
 import { Hono } from 'hono'
 const app = new Hono()
 
@@ -34,23 +34,31 @@ app.fire()
 ## Features
 
 - **Ultrafast** - the router does not use linear loops.
-- **Zero-dependencies** - using only Service Worker and Web standard API.
+- **Zero-dependencies** - using only Service Worker and Web Standard API.
 - **Middleware** - built-in middleware and ability to extend with your own middleware.
 - **TypeScript** - first-class TypeScript support.
-- **Optimized** - for Cloudflare Workers and Fastly Compute@Edge.
+- **Optimized** - for Cloudflare Workers.
 
 ## Benchmark
 
 **Hono is fastest**, compared to other routers for Cloudflare Workers.
 
 ```plain
-hono x 809,503 ops/sec ±6.94% (73 runs sampled)
-itty-router x 157,310 ops/sec ±4.31% (87 runs sampled)
-sunder x 328,350 ops/sec ±2.30% (95 runs sampled)
-worktop x 209,758 ops/sec ±4.28% (83 runs sampled)
-Fastest is hono
-✨  Done in 60.66s.
+hono - trie-router(default) x 737,602 ops/sec ±3.65% (67 runs sampled)
+hono - regexp-router x 1,188,203 ops/sec ±6.42% (60 runs sampled)
+itty-router x 163,970 ops/sec ±3.05% (91 runs sampled)
+sunder x 344,468 ops/sec ±0.87% (97 runs sampled)
+worktop x 222,044 ops/sec ±2.13% (85 runs sampled)
+Fastest is hono - regexp-router
+✨  Done in 84.04s.
 ```
+
+## Why so fast?
+
+Routers used in Hono are really smart.
+
+- **TrieRouter**(default) - Implemented with Trie tree structure.
+- **RegExpRouter** - Match routes with one big Regex made before dispatching at once.
 
 ## Hono in 1 minute
 
@@ -77,20 +85,47 @@ Built-in middleware make _"**Write Less, do more**"_ in reality. You can use a l
 - [JSON pretty printing](https://github.com/honojs/hono/tree/master/src/middleware/pretty-json/)
 - [Serving static files](https://github.com/honojs/hono/tree/master/src/middleware/serve-static/) (Only for Cloudflare Workers)
 
-You can enable logger and CORS middleware with just this code.
+To enable logger and Etag middleware with just this code.
 
-```js
+```ts
 import { Hono } from 'hono'
-import { cors } from 'hono/cors'
+import { etag } from 'hono/etag'
 import { logger } from 'hono/logger'
 
 const app = new Hono()
-app.use('*', cors()).use(logger())
+app.use('*', etag(), (logger())
 ```
+
+And, the routing of Hono is so flexible. It's easy to construct large web applications.
+
+```ts
+import { Hono, Route } from 'hono'
+import { cors } from 'hono/cors'
+
+const app = new Hono()
+
+const v1 = new Route()
+v1.get('/posts', (c) => {
+  return c.text('list pots')
+})
+  .post('/posts', cors(), (c) => {
+    return c.text('created!', 201)
+  })
+  .get('/posts/:id', (c) => {
+    const id = c.req.param('id')
+    return c.text(`your id is ${id}`)
+  })
+
+app.route('/v1', v1)
+```
+
+### Web Standard
+
+Request and Response object used in Hono are extensions of the Web Standard [Fetch API](https://developer.mozilla.org/ja/docs/Web/API/Fetch_API). If you are familiar with that, you don't need to know more than that.
 
 ### Developer Experience
 
-And Hono provides fine _"**Developer Experience**"_. Easy access to Request/Response thanks to the `Context` object.
+Hono provides fine _"**Developer Experience**"_. Easy access to Request/Response thanks to the `Context` object.
 Above all, Hono is written in TypeScript. So, Hono has _"**Types**"_!
 
 For example, the named path parameters will be literal types.
@@ -102,12 +137,6 @@ For example, the named path parameters will be literal types.
 You can install Hono from the npm registry.
 
 ```sh
-yarn add hono
-```
-
-or
-
-```sh
 npm install hono
 ```
 
@@ -115,21 +144,21 @@ npm install hono
 
 An instance of `Hono` has these methods.
 
-- app.**HTTP_METHOD**(\[path,\] handler)
-- app.**all**(\[path,\] handler)
-- app.**route**(path)
+- app.**HTTP_METHOD**(\[path,\] handler|middleware...)
+- app.**all**(\[path,\] handler|middleware...)
+- app.**route**(path, \[Route\])
 - app.**use**(\[path,\] middleware)
 - app.**notFound**(handler)
 - app.**onError**(err, handler)
 - app.**fire**()
 - app.**fetch**(request, env, event)
-- app.**request**(path, option)
+- app.**request**(path, options)
 
 ## Routing
 
 ### Basic
 
-```js
+```ts
 // HTTP Methods
 app.get('/', (c) => c.text('GET /'))
 app.post('/', (c) => c.text('POST /'))
@@ -145,7 +174,7 @@ app.all('/hello', (c) => c.text('Any Method /hello'))
 
 ### Named Parameter
 
-```js
+```ts
 app.get('/user/:name', (c) => {
   const name = c.req.param('name')
   ...
@@ -154,7 +183,7 @@ app.get('/user/:name', (c) => {
 
 ### Regexp
 
-```js
+```ts
 app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (c) => {
   const date = c.req.param('date')
   const title = c.req.param('title')
@@ -164,7 +193,7 @@ app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (c) => {
 
 ### Chained route
 
-```js
+```ts
 app
   .get('/endpoint', (c) => {
     return c.text('GET /endpoint')
@@ -177,24 +206,11 @@ app
   })
 ```
 
-### Nested route
-
-```js
-const book = app.route('/book')
-book.get('/', (c) => c.text('List Books')) // GET /book
-book.get('/:id', (c) => {
-  // GET /book/:id
-  const id = c.req.param('id')
-  return c.text('Get Book: ' + id)
-})
-book.post('/', (c) => c.text('Create Book')) // POST /book
-```
-
 ### no strict
 
 If `strict` is set false, `/hello`and`/hello/` are treated the same.
 
-```js
+```ts
 const app = new Hono({ strict: false }) // Default is true
 
 app.get('/hello', (c) => c.text('/hello or /hello/'))
@@ -209,13 +225,38 @@ app.get('/fetch-url', async (c) => {
 })
 ```
 
+## Route
+
+`Route` object enables Nested route.
+
+```ts
+const book = new Route()
+
+book.get('/', (c) => c.text('List Books')) // GET /book
+book.get('/:id', (c) => {
+  // GET /book/:id
+  const id = c.req.param('id')
+  return c.text('Get Book: ' + id)
+})
+book.post('/', (c) => c.text('Create Book')) // POST /book
+
+app.route('/book', book)
+```
+
 ## Middleware
+
+Middleware operate after/before executing Handler. We can get `Response` before dispatching or manipulate `Response` after dispatching.
+
+### Definition of Middleware
+
+- Handler - should return `Response` object.
+- Middleware - should return nothing, do `await next()`
 
 ### Built-in Middleware
 
 Hono has built-in middleware.
 
-```js
+```ts
 import { Hono } from 'hono'
 import { poweredBy } from 'hono/powered-by'
 import { logger } from 'hono/logger'
@@ -225,8 +266,6 @@ const app = new Hono()
 
 app.use('*', poweredBy())
 app.use('*', logger())
-// Or you can write:
-// app.use('*', poweredBy()).use(logger())
 
 app.use(
   '/auth/*',
@@ -243,7 +282,7 @@ Available built-in middleware is listed on [src/middleware](https://github.com/h
 
 You can write your own middleware.
 
-```js
+```ts
 // Custom logger
 app.use('*', async (c, next) => {
   console.log(`[${c.req.method}] ${c.req.url}`)
@@ -282,11 +321,11 @@ app.onError((err, c) => {
 
 ## Context
 
-To handle Request and Reponse, you can use `Context` object.
+To handle Request and Response, you can use `Context` object.
 
 ### c.req
 
-```js
+```ts
 // Get Request object
 app.get('/hello', (c) => {
   const userAgent = c.req.headers.get('User-Agent')
@@ -314,13 +353,15 @@ app.get('/entry/:id', (c) => {
 
 ### Shortcuts for Response
 
-```js
+```ts
 app.get('/welcome', (c) => {
   // Set headers
   c.header('X-Message', 'Hello!')
   c.header('Content-Type', 'text/plain')
+
   // Set HTTP status code
   c.status(201)
+
   // Return the response body
   return c.body('Thank you for comming')
 })
@@ -328,14 +369,13 @@ app.get('/welcome', (c) => {
 
 The Response is the same as below.
 
-```js
+```ts
 new Response('Thank you for comming', {
   status: 201,
   statusText: 'Created',
   headers: {
     'X-Message': 'Hello',
     'Content-Type': 'text/plain',
-    'Content-Length': '22',
   },
 })
 ```
@@ -344,7 +384,7 @@ new Response('Thank you for comming', {
 
 Render text as `Content-Type:text/plain`.
 
-```js
+```ts
 app.get('/say', (c) => {
   return c.text('Hello!')
 })
@@ -354,7 +394,7 @@ app.get('/say', (c) => {
 
 Render JSON as `Content-Type:application/json`.
 
-```js
+```ts
 app.get('/api', (c) => {
   return c.json({ message: 'Hello!' })
 })
@@ -364,7 +404,7 @@ app.get('/api', (c) => {
 
 Render HTML as `Content-Type:text/html`.
 
-```js
+```ts
 app.get('/', (c) => {
   return c.html('<h1>Hello! Hono!</h1>')
 })
@@ -374,7 +414,7 @@ app.get('/', (c) => {
 
 Return the `Not Found` Response.
 
-```js
+```ts
 app.get('/notfound', (c) => {
   return c.notFound()
 })
@@ -384,14 +424,14 @@ app.get('/notfound', (c) => {
 
 Redirect, default status code is `302`.
 
-```js
+```ts
 app.get('/redirect', (c) => c.redirect('/'))
 app.get('/redirect-permanently', (c) => c.redirect('/', 301))
 ```
 
 ### c.res
 
-```js
+```ts
 // Response object
 app.use('/', (c, next) => {
   next()
@@ -401,7 +441,7 @@ app.use('/', (c, next) => {
 
 ### c.event
 
-```js
+```ts
 // FetchEvent object
 app.use('*', async (c, next) => {
   c.event.waitUntil(
@@ -413,7 +453,7 @@ app.use('*', async (c, next) => {
 
 ### c.env
 
-```js
+```ts
 // Environment object for Cloudflare Workers
 app.get('*', async c => {
   const counter = c.env.COUNTER
@@ -425,7 +465,7 @@ app.get('*', async c => {
 
 `app.fire()` do this.
 
-```js
+```ts
 addEventListener('fetch', (event) => {
   event.respondWith(this.handleEvent(event))
 })
@@ -435,17 +475,18 @@ addEventListener('fetch', (event) => {
 
 `app.fetch` for Cloudflare Module Worker syntax.
 
-```js
+```ts
 export default {
   fetch(request: Request, env: Env, event: FetchEvent) {
     return app.fetch(request, env, event)
   },
 }
+```
 
-/*
 or just do:
+
+```ts
 export default app
-*/
 ```
 
 ## request
@@ -461,61 +502,35 @@ test('GET /hello is ok', async () => {
 
 ## Cloudflare Workers with Hono
 
-Using [Wrangler](https://developers.cloudflare.com/workers/cli-wrangler/) or [Miniflare](https://miniflare.dev), you can develop the application locally and publish it with few commands.
+Using [Wrangler](https://developers.cloudflare.com/workers/cli-wrangler/), you can develop the application locally and publish it with few commands.
 
 Let's write your first code for Cloudflare Workers with Hono.
 
----
-
-### Caution
-
-**Wrangler 1.x** does not support importing middleware. We recommend two ways:
-
-1. Use [Wragler 2](https://github.com/cloudflare/wrangler2).
-2. Build without webpack 4.x. For example, you can use esbuild. See [the starter template](https://github.com/honojs/hono-minimal).
-
----
-
-### 1. `npm init`
-
-Make a npm skeleton directory.
-
-```sh
-mkdir hono-example
-cd hono-example
-npm init -y
-```
-
-### 2. `wrangler init`
+### 1. `wrangler init`
 
 Initialize as a wrangler project.
 
-```sh
-npx wrangler init
+```
+mkdir hono-example
+cd hono-example
+npx wrangler init -y
 ```
 
-Answer the questions. If you want, you can answer `y`.
-
-```
-Would you like to install wrangler into your package.json? (y/n) <--- n
-Would you like to use TypeScript? (y/n) <--- n
-Would you like to create a Worker at src/index.js? (y/n) <--- n
-```
-
-### 3. `npm install hono`
+### 2. `npm install hono`
 
 Install `hono` from the npm registry.
 
-```sh
+```
+npm init -y
 npm i hono
 ```
 
-### 4. Write your app
+### 3. Write your app
 
-Only 4 lines!!
+Edit `src/index.ts`. Only 4 lines!!
 
-```js
-// index.js
+```ts
+// src/index.ts
 import { Hono } from 'hono'
 const app = new Hono()
 
@@ -524,20 +539,20 @@ app.get('/', (c) => c.text('Hello! Hono!'))
 app.fire()
 ```
 
-### 5. Run
+### 4. Run
 
 Run the development server locally. Then, access `http://127.0.0.1:8787/` in your Web browser.
 
-```sh
+```
 npx wrangler dev
 ```
 
-### 6. Publish
+### 5. Publish
 
 Deploy to Cloudflare. That's all!
 
-```sh
-npx wrangler publish
+```
+npx wrangler publish index.ts
 ```
 
 ## Starter template
@@ -546,8 +561,8 @@ You can start making your Cloudflare Workers application with [the starter templ
 
 To generate a project skelton, run this command.
 
-```sh
-wrangler generate my-app https://github.com/honojs/hono-minimal
+```
+npx create-cloudflare my-app https://github.com/honojs/hono-minimal
 ```
 
 ## Examples
@@ -578,7 +593,7 @@ Contributions Welcome! You can contribute in the following ways.
 
 ## Contributors
 
-Thanks to [all contributors](https://github.com/honojs/hono/graphs/contributors)!
+Thanks to [all contributors](https://github.com/honojs/hono/graphs/contributors)! Especially, [@metrue](https://github.com/metrue) and [@usualoma](https://github.com/usualoma)!
 
 ## Author
 
