@@ -546,7 +546,7 @@ npx wrangler dev
 Deploy to Cloudflare. That's all!
 
 ```
-npx wrangler publish index.ts
+npx wrangler publish ./src/index.ts
 ```
 
 ## Starter template
