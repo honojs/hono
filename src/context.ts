@@ -18,6 +18,9 @@ export class Context<RequestParamKeyType = string, E = Env> {
   private _statusText: string = ''
   private _pretty: boolean = false
   private _prettySpace: number = 2
+  private _map: {
+    [key: string]: any
+  }
 
   render: (template: string, params?: object, options?: object) => Promise<Response>
   notFound: () => Response | Promise<Response>
@@ -27,6 +30,7 @@ export class Context<RequestParamKeyType = string, E = Env> {
     opts?: { res: Response; env: E; event: FetchEvent }
   ) {
     this.req = this.initRequest<RequestParamKeyType>(req)
+    this._map = {}
     Object.assign(this, opts)
   }
 
@@ -51,6 +55,14 @@ export class Context<RequestParamKeyType = string, E = Env> {
   status(status: StatusCode): void {
     this._status = status
     this._statusText = getStatusText(status)
+  }
+
+  set(key: string, value: any): void {
+    this._map[key] = value
+  }
+
+  get(key: string) {
+    return this._map[key]
   }
 
   pretty(prettyJSON: boolean, space: number = 2): void {
