@@ -6,12 +6,6 @@
 
 <hr />
 
-<p>
-<a href="https://github.com/honojs/hono/blob/master/README.md">English</a>
-&#x000B7;
-<a href="https://github.com/honojs/hono/blob/master/docs/README.ja.md">日本語</a>
-</p>
-
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/honojs/hono/ci)](https://github.com/honojs/hono/actions)
 [![GitHub](https://img.shields.io/github/license/honojs/hono)](https://github.com/honojs/hono/blob/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/hono)](https://www.npmjs.com/package/hono)
