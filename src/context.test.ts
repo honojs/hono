@@ -128,4 +128,14 @@ describe('Context', () => {
     })
     expect(ctx.env.API_KEY).toBe(key)
   })
+
+  it('set and set', async () => {
+    const ctx = new Context(req)
+    expect(ctx.get('k-foo')).toEqual(undefined)
+    ctx.set('k-foo', 'v-foo')
+    expect(ctx.get('k-foo')).toEqual('v-foo')
+    expect(ctx.get('k-bar')).toEqual(undefined)
+    ctx.set('k-bar', { k: 'v' })
+    expect(ctx.get('k-bar')).toEqual({ k: 'v' })
+  })
 })
