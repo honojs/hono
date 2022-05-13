@@ -144,6 +144,39 @@ function buildMatcherFromPreprocessedRoutes<T>(
   return [regexp, handlerMap]
 }
 
+function verifyDuplicateParam<T>(routes: Route<T>[]): boolean {
+  const nameMap: Record<string, number> = {}
+  for (let i = 0, len = routes.length; i < len; i++) {
+    const route = routes[i]
+
+    for (let k = 0, len = route.hint.namedParams.length; k < len; k++) {
+      const [index, name] = route.hint.namedParams[k]
+      if (name in nameMap && index !== nameMap[name]) {
+        return false
+      } else {
+        nameMap[name] = index
+      }
+    }
+
+    const paramAliasMap = route.paramAliasMap
+    const paramAliasMapKeys = Object.keys(paramAliasMap)
+    for (let k = 0, len = paramAliasMapKeys.length; k < len; k++) {
+      const aliasFrom = paramAliasMapKeys[k]
+      for (let l = 0, len = paramAliasMap[aliasFrom].length; l < len; l++) {
+        const aliasTo = paramAliasMap[aliasFrom][l]
+        const index = nameMap[aliasFrom]
+        if (aliasTo in nameMap && index !== nameMap[aliasTo]) {
+          return false
+        } else {
+          nameMap[aliasTo] = index
+        }
+      }
+    }
+  }
+
+  return true
+}
+
 export class RegExpRouter<T> extends Router<T> {
   routeData?: {
     routes: Route<T>[]
@@ -345,7 +378,15 @@ export class RegExpRouter<T> extends Router<T> {
         } else if (compareResult === 2) {
           // ambiguous
           hasAmbiguous = true
+
+          if (!verifyDuplicateParam([routes[i], routes[j]])) {
+            throw new Error('Duplicate param name')
+          }
         }
+      }
+
+      if (!verifyDuplicateParam([routes[i]])) {
+        throw new Error('Duplicate param name')
       }
     }
 
