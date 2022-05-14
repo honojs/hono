@@ -87,7 +87,7 @@ import { etag } from 'hono/etag'
 import { logger } from 'hono/logger'
 
 const app = new Hono()
-app.use('*', etag(), (logger())
+app.use('*', etag(), logger())
 ```
 
 And, the routing of Hono is so flexible. It's easy to construct large web applications.
