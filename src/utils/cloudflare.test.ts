@@ -1,4 +1,4 @@
-import { getContentFromKVAsset, getKVFilePath } from '@/utils/cloudflare'
+import { getContentFromKVAsset, getKVFilePath } from './cloudflare'
 
 // Mock
 const store: { [key: string]: string } = {

@@ -4,7 +4,7 @@ import {
   encodeBase64,
   encodeBase64URL,
   decodeBase64URL,
-} from '@/utils/encode'
+} from './encode'
 
 describe('encode', () => {
   describe('base64', () => {

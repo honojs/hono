@@ -1,5 +1,5 @@
-import { Hono } from '@/hono'
-import { serveStatic } from '@/middleware/serve-static'
+import { Hono } from '../../hono'
+import { serveStatic } from '.'
 
 // Mock
 const store: { [key: string]: string } = {

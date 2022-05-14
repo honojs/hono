@@ -1,7 +1,7 @@
-import type { Context } from '@/context'
-import type { Next } from '@/hono'
-import { bufferToString } from '@/utils/buffer'
-import { getContentFromKVAsset, getKVFilePath } from '@/utils/cloudflare'
+import type { Context } from '../../context'
+import type { Next } from '../../hono'
+import { bufferToString } from '../../utils/buffer'
+import { getContentFromKVAsset, getKVFilePath } from '../../utils/cloudflare'
 
 const EXTENSION = '.mustache'
 const DEFAULT_DOCUMENT = 'index.mustache'

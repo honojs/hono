@@ -1,6 +1,6 @@
-import type { Context } from '@/context'
-import type { Next } from '@/hono'
-import { parseBody } from '@/utils/body'
+import type { Context } from '../../context'
+import type { Next } from '../../hono'
+import { parseBody } from '../../utils/body'
 
 declare global {
   interface Request {

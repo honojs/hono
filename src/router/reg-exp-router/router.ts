@@ -1,6 +1,6 @@
-import { Router, Result, METHOD_NAME_ALL } from '@/router'
-import type { ParamMap } from '@/router/reg-exp-router/trie'
-import { Trie } from '@/router/reg-exp-router/trie'
+import { Router, Result, METHOD_NAME_ALL } from '../../router'
+import type { ParamMap } from './trie'
+import { Trie } from './trie'
 
 interface Hint {
   components: string[]
