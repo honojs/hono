@@ -62,10 +62,17 @@ describe('Basic Auth by Middleware', () => {
     })
   )
 
+  app.use('/nested/*', async (c, next) => {
+    const auth = basicAuth({ username: username, password: password })
+    await auth(c, next)
+  })
+
   app.get('/auth/*', () => new Response('auth'))
   app.get('/auth-unicode/*', () => new Response('auth'))
   app.get('/auth-multi/*', () => new Response('auth'))
   app.get('/auth-override-func/*', () => new Response('auth'))
+
+  app.get('/nested/*', () => new Response('nested'))
 
   it('Should not authorize', async () => {
     const req = new Request('http://localhost/auth/a')
@@ -125,5 +132,27 @@ describe('Basic Auth by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('auth')
+  })
+
+  it('Should authorize - nested', async () => {
+    const credential = Buffer.from(username + ':' + password).toString('base64')
+
+    const req = new Request('http://localhost/nested')
+    req.headers.set('Authorization', `Basic ${credential}`)
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('nested')
+  })
+
+  it('Should not authorize - nested', async () => {
+    const credential = Buffer.from('foo' + ':' + 'bar').toString('base64')
+
+    const req = new Request('http://localhost/nested')
+    req.headers.set('Authorization', `Basic ${credential}`)
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(await res.text()).toBe('Unauthorized')
   })
 })
