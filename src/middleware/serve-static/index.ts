@@ -1,7 +1,7 @@
-import type { Context } from '@/context'
-import type { Next } from '@/hono'
-import { getContentFromKVAsset, getKVFilePath } from '@/utils/cloudflare'
-import { getMimeType } from '@/utils/mime'
+import type { Context } from '../../context'
+import type { Next } from '../../hono'
+import { getContentFromKVAsset, getKVFilePath } from '../../utils/cloudflare'
+import { getMimeType } from '../../utils/mime'
 
 type Options = {
   root: string

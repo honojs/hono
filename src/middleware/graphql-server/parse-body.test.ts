@@ -1,4 +1,4 @@
-import { parseBody } from '@/middleware/graphql-server/parse-body'
+import { parseBody } from './parse-body'
 
 describe('parseBody', () => {
   it('Should return a blank JSON object', async () => {

@@ -1,5 +1,5 @@
-import { Hono } from '@/hono'
-import { cookie } from '@/middleware/cookie'
+import { Hono } from '../../hono'
+import { cookie } from '.'
 
 describe('Cookie Middleware', () => {
   const app = new Hono()

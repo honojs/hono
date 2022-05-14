@@ -3,10 +3,6 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
-  modulePaths: ['<rootDir>/src'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-  },
   testPathIgnorePatterns: ['./examples'],
   testEnvironment: 'miniflare',
   testEnvironmentOptions: {

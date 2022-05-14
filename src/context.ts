@@ -1,6 +1,6 @@
-import type { StatusCode } from '@/utils/http-status'
-import { getStatusText } from '@/utils/http-status'
-import { isAbsoluteURL } from '@/utils/url'
+import type { StatusCode } from './utils/http-status'
+import { getStatusText } from './utils/http-status'
+import { isAbsoluteURL } from './utils/url'
 
 type Headers = Record<string, string>
 type Data = string | ArrayBuffer | ReadableStream

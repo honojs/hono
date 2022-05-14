@@ -1,4 +1,4 @@
-import { sha256 } from '@/utils/crypto'
+import { sha256 } from './crypto'
 
 export const equal = (a: ArrayBuffer, b: ArrayBuffer) => {
   if (a === b) {

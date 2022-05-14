@@ -1,4 +1,4 @@
-import { getStatusText } from '@/utils/http-status'
+import { getStatusText } from './http-status'
 
 describe('http-status utility', () => {
   it('getStatusText', () => {

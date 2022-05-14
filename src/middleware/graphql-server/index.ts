@@ -20,9 +20,9 @@ import type {
   GraphQLFormattedError,
 } from 'graphql'
 
-import type { Context } from '@/context'
-import type { Next } from '@/hono'
-import { parseBody } from '@/middleware/graphql-server/parse-body'
+import type { Context } from '../../context'
+import type { Next } from '../../hono'
+import { parseBody } from './parse-body'
 
 type Options = {
   schema: GraphQLSchema

@@ -1,5 +1,5 @@
-import { Hono } from '@/hono'
-import { bodyParse } from '@/middleware/body-parse'
+import { Hono } from '../../hono'
+import { bodyParse } from '.'
 
 describe('Parse Body Middleware', () => {
   const app = new Hono()

@@ -15,12 +15,6 @@
       "node",
       "@cloudflare/workers-types"
     ],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    },
   },
   "include": [
     "src/**/*",

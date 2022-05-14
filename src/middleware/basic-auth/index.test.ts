@@ -1,6 +1,6 @@
 import { SHA256 } from 'crypto-js'
-import { Hono } from '@/hono'
-import { basicAuth } from '@/middleware/basic-auth'
+import { Hono } from '../../hono'
+import { basicAuth } from '.'
 
 describe('Basic Auth by Middleware', () => {
   const crypto = global.crypto
