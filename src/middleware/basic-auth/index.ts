@@ -48,7 +48,6 @@ export const basicAuth = (
 
   return async (ctx: Context, next: Next) => {
     const requestUser = auth(ctx.req)
-
     if (requestUser) {
       for (const user of users) {
         const usernameEqual = await timingSafeEqual(
@@ -64,15 +63,15 @@ export const basicAuth = (
         if (usernameEqual && passwordEqual) {
           // Authorized OK
           await next()
+          return
         }
       }
-    } else {
-      ctx.res = new Response('Unauthorized', {
-        status: 401,
-        headers: {
-          'WWW-Authenticate': 'Basic realm="' + options.realm.replace(/"/g, '\\"') + '"',
-        },
-      })
     }
+    ctx.res = new Response('Unauthorized', {
+      status: 401,
+      headers: {
+        'WWW-Authenticate': 'Basic realm="' + options.realm.replace(/"/g, '\\"') + '"',
+      },
+    })
   }
 }
