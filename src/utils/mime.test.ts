@@ -1,4 +1,4 @@
-import { getMimeType } from '@/utils/mime'
+import { getMimeType } from './mime'
 
 describe('mime', () => {
   it('getMimeType', () => {

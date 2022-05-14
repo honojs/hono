@@ -1,7 +1,7 @@
+import type { Context } from './context'
+import type { Next } from './hono'
+import { Hono, Route } from './hono'
 import { poweredBy } from './middleware/powered-by'
-import type { Context } from '@/context'
-import type { Next } from '@/hono'
-import { Hono, Route } from '@/hono'
 
 describe('GET Request', () => {
   const app = new Hono()

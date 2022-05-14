@@ -1,7 +1,7 @@
-import type { Context } from '@/context'
-import type { Next } from '@/hono'
-import { Jwt } from '@/utils/jwt'
-import type { AlgorithmTypes } from '@/utils/jwt/types'
+import type { Context } from '../../context'
+import type { Next } from '../../hono'
+import { Jwt } from '../../utils/jwt'
+import type { AlgorithmTypes } from '../../utils/jwt/types'
 
 export const jwt = (options: { secret: string; alg?: string }) => {
   if (!options) {

@@ -1,5 +1,5 @@
-import type { Context } from '@/context'
-import type { Next } from '@/hono'
+import type { Context } from '../../context'
+import type { Next } from '../../hono'
 
 type CORSOptions = {
   origin: string

@@ -11,8 +11,8 @@
     "test": "jest",
     "lint": "eslint --ext js,ts src .eslintrc.js",
     "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix",
-    "build": "rimraf dist && tsc --project tsconfig.build.json && tsc-alias -p tsconfig.build.json",
-    "watch": "tsc -w --project tsconfig.build.json & tsc-alias -w -p tsconfig.build.json",
+    "build": "rimraf dist && tsc",
+    "watch": "tsc -w",
     "prepublishOnly": "yarn build"
   },
   "exports": {
@@ -131,7 +131,6 @@
     "prettier-plugin-md-nocjsp": "^1.2.0",
     "rimraf": "^3.0.2",
     "ts-jest": "^27.1.4",
-    "tsc-alias": "^1.6.7",
     "typescript": "^4.6.3"
   },
   "engines": {

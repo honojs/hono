@@ -5,8 +5,8 @@ import {
   GraphQLObjectType,
   GraphQLNonNull,
 } from 'graphql'
-import { Hono } from '@/hono'
-import { errorMessages, graphqlServer } from '@/middleware/graphql-server'
+import { Hono } from '../../hono'
+import { errorMessages, graphqlServer } from '.'
 
 // Do not show `console.error` messages
 jest.spyOn(console, 'error').mockImplementation()
