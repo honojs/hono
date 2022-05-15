@@ -17,7 +17,7 @@ declare global {
 
 export type Handler<RequestParamKeyType = string, E = Env> = (
   c: Context<RequestParamKeyType, E>,
-  next?: Next
+  next: Next
 ) => Response | Promise<Response> | void | Promise<void>
 export type NotFoundHandler<E = Env> = (c: Context<string, E>) => Response
 export type ErrorHandler<E = Env> = (err: Error, c: Context<string, E>) => Response
