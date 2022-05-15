@@ -14,7 +14,7 @@ export class TrieRouter<T> extends Router<T> {
     this.node.insert(method, path, handler)
   }
 
-  match(method: string, path: string): Result<T> {
+  match(method: string, path: string): Result<T> | null {
     return this.node.search(method, path)
   }
 }

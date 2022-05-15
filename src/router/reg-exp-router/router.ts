@@ -101,7 +101,7 @@ function compareRoute<T>(a: Route<T>, b: Route<T>): CompareResult {
 
 function buildMatcherFromPreprocessedRoutes<T>(
   routes: Route<T>[],
-  hasAmbiguous: boolean = false
+  hasAmbiguous = false
 ): Matcher<T> {
   const trie = new Trie({ reverse: hasAmbiguous })
   const handlers: HandlerData<T>[] = []

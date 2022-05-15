@@ -12,6 +12,7 @@ module.exports = defineConfig({
   parserOptions: {
     sourceType: 'module',
     ecmaVersion: 2021,
+    project: './tsconfig.json',
   },
   plugins: ['@typescript-eslint', 'import'],
   globals: {
@@ -43,7 +44,6 @@ module.exports = defineConfig({
     ],
     'sort-imports': 0,
     'import/order': [2, { alphabetize: { order: 'asc' } }],
-
     'node/no-missing-import': 'off',
     'node/no-missing-require': 'off',
     'node/no-deprecated-api': 'off',
@@ -51,10 +51,10 @@ module.exports = defineConfig({
     'node/no-unpublished-require': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
 
-    '@typescript-eslint/no-empty-function': ['error', { allow: ['arrowFunctions'] }],
-    '@typescript-eslint/no-empty-interface': 'off',
-    '@typescript-eslint/no-inferrable-types': 'off',
-    '@typescript-eslint/no-var-requires': 'off',
-    '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
+    // '@typescript-eslint/no-empty-function': ['error', { allow: ['arrowFunctions'] }],
+    // '@typescript-eslint/no-empty-interface': 'off',
+    // '@typescript-eslint/no-inferrable-types': 'off',
+    // '@typescript-eslint/no-var-requires': 'off',
+    // '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
   },
 })

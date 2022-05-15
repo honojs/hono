@@ -9,25 +9,29 @@ export type Env = Record<string, any>
 
 export class Context<RequestParamKeyType = string, E = Env> {
   req: Request<RequestParamKeyType>
-  res: Response = undefined
-  env: E
-  event: FetchEvent
+  res: Response | undefined
+  env: E | undefined
+  event: FetchEvent | undefined
 
   private _headers: Headers = {}
   private _status: StatusCode = 200
-  private _statusText: string = ''
-  private _pretty: boolean = false
-  private _prettySpace: number = 2
+  private _statusText = ''
+  private _pretty = false
+  private _prettySpace = 2
   private _map: {
     [key: string]: any
   }
 
-  render: (template: string, params?: object, options?: object) => Promise<Response>
-  notFound: () => Response | Promise<Response>
+  render: ((template: string, params?: object, options?: object) => Promise<Response>) | undefined
+  notFound = () => new Response('Not Found', { status: 404 })
 
   constructor(
     req: Request<RequestParamKeyType>,
-    opts?: { res: Response; env: E; event: FetchEvent }
+    opts?: {
+      res?: Response
+      env?: E
+      event?: FetchEvent
+    }
   ) {
     this.req = this.initRequest<RequestParamKeyType>(req)
     this._map = {}
@@ -36,11 +40,11 @@ export class Context<RequestParamKeyType = string, E = Env> {
 
   private initRequest<T>(req: Request<T>): Request<T> {
     req.header = (name: string): string => {
-      return req.headers.get(name)
+      return req.headers.get(name) || ''
     }
     req.query = (key: string): string => {
       const url = new URL(req.url)
-      return url.searchParams.get(key)
+      return url.searchParams.get(key) || ''
     }
     return req
   }
@@ -65,7 +69,7 @@ export class Context<RequestParamKeyType = string, E = Env> {
     return this._map[key]
   }
 
-  pretty(prettyJSON: boolean, space: number = 2): void {
+  pretty(prettyJSON: boolean, space = 2): void {
     this._pretty = prettyJSON
     this._prettySpace = space
   }
@@ -122,7 +126,7 @@ export class Context<RequestParamKeyType = string, E = Env> {
       url.pathname = location
       location = url.toString()
     }
-    return this.newResponse(null, {
+    return this.newResponse('', {
       status: status,
       headers: {
         Location: location,

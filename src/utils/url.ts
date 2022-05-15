@@ -64,7 +64,7 @@ export const isAbsoluteURL = (url: string): boolean => {
 }
 
 export const mergePath = (...paths: string[]): string => {
-  let p: string = ''
+  let p = ''
   let endsWithSlash = false
 
   for (let path of paths) {

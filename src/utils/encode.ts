@@ -61,7 +61,7 @@ export const utf8ToUint8Array = (str: string): Uint8Array => {
   return encoder.encode(str)
 }
 
-export const arrayBufferToBase64 = async (buf: ArrayBuffer): Promise<string> => {
+export const arrayBufferToBase64 = async (buf: ArrayBuffer): Promise<string | undefined> => {
   if (typeof btoa === 'function') {
     return btoa(String.fromCharCode(...new Uint8Array(buf)))
   }
@@ -70,9 +70,14 @@ export const arrayBufferToBase64 = async (buf: ArrayBuffer): Promise<string> => 
     const { Buffer } = await import('buffer')
     return Buffer.from(String.fromCharCode(...new Uint8Array(buf))).toString('base64')
   } catch (e) {}
+
+  return
 }
 
 export const arrayBufferToBase64URL = async (buf: ArrayBuffer) => {
-  return (await arrayBufferToBase64(buf)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+  const base64 = await arrayBufferToBase64(buf)
+  if (base64) {
+    return base64.replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+  }
+  return
 }
-

@@ -16,10 +16,10 @@ export const compose = <C>(
       }
       let handler = middleware[i]
       index = i
-      if (i === middleware.length) handler = next
+      if (i === middleware.length && next) handler = next
 
       if (handler === undefined) {
-        if (context instanceof Context && context.res === undefined) {
+        if (context instanceof Context && context.res && onNotFound) {
           context.res = onNotFound(context)
         }
         return Promise.resolve(context)

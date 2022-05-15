@@ -1,7 +1,7 @@
-export const getMimeType = (filename: string): string => {
+export const getMimeType = (filename: string): string | undefined => {
   const regexp = /\.([a-zA-Z0-9]+?)$/
   const match = filename.match(regexp)
-  if (!match) return
+  if (!match) return undefined
   let mimeType = mimes[match[1]]
   if ((mimeType && mimeType.startsWith('text')) || mimeType === 'application/json') {
     mimeType += '; charset=utf-8'

@@ -22,7 +22,7 @@ const LogPrefix = {
   Error: 'xxx',
 }
 
-const colorStatus = (status: number = 0) => {
+const colorStatus = (status = 0) => {
   const out: { [key: number]: string } = {
     7: `\x1b[35m${status}\x1b[0m`,
     5: `\x1b[31m${status}\x1b[0m`,
@@ -62,6 +62,8 @@ export const logger = (fn = console.log) => {
 
     await next()
 
-    log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start))
+    if (c.res) {
+      log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start))
+    }
   }
 }

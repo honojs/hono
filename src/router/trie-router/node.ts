@@ -26,7 +26,7 @@ function findParam<T>(node: Node<T>, name: string): boolean {
 
 export class Node<T> {
   methods: Record<string, T>[]
-  handlers: T[]
+  handlers: T[] = []
   children: Record<string, Node<T>>
   patterns: Pattern[]
 
@@ -163,7 +163,7 @@ export class Node<T> {
     return next
   }
 
-  search(method: string, path: string): Result<T> {
+  search(method: string, path: string): Result<T> | null {
     const handlers: T[] = []
     let params: Record<string, string> = {}
 
