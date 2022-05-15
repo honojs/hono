@@ -12,6 +12,7 @@
     "lint": "eslint --ext js,ts src .eslintrc.js",
     "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix",
     "build": "rimraf dist && tsc",
+    "denoify": "rimraf deno_lib && denoify",
     "watch": "tsc -w",
     "prepublishOnly": "yarn build"
   },
@@ -114,6 +115,7 @@
     "@typescript-eslint/eslint-plugin": "^5.21.0",
     "@typescript-eslint/parser": "^5.21.0",
     "crypto-js": "^4.1.1",
+    "denoify": "^0.11.0",
     "eslint": "^8.14.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-define-config": "^1.4.0",
@@ -131,7 +133,7 @@
     "prettier-plugin-md-nocjsp": "^1.2.0",
     "rimraf": "^3.0.2",
     "ts-jest": "^27.1.4",
-    "typescript": "^4.6.3"
+    "typescript": "^4.6.4"
   },
   "engines": {
     "node": ">=11.0.0"

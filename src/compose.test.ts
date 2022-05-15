@@ -1,5 +1,6 @@
 import { compose } from './compose'
 import { Context } from './context'
+import type { Next } from './hono'
 
 type C = {
   req: Record<string, string>
@@ -156,10 +157,10 @@ describe('compose with Context - 401 not authorized', () => {
   const onError = (error: Error, c: Context) => {
     return c.text('onError', 500)
   }
-  const handler = (c: Context, next: Function) => {
+  const handler = (c: Context) => {
     return c.text('Hello')
   }
-  const mHandler = async (c: Context, next: Function) => {
+  const mHandler = async (c: Context, next: Next) => {
     await next()
     c.res = new Response('Not authorized', { status: 401 })
   }
@@ -327,7 +328,7 @@ describe('Compose', function () {
       arr.push(6)
     })
 
-    stack.push(async (context: C, next: Function) => {
+    stack.push(async () => {
       called.push(true)
       arr.push(2)
     })
@@ -473,7 +474,7 @@ describe('Compose', function () {
       arr.push(3)
     })
 
-    stack.push(async (ctx: C, next: Function) => {
+    stack.push(async () => {
       arr.push(4)
       throw new Error()
     })
