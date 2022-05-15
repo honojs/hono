@@ -149,7 +149,7 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     return c.text(message, 500)
   }
 
-  route(path: string, route?: Route): Hono<E, P> {
+  route(path: string, route?: Route<any>): Hono<E, P> {
     const newHono: Hono<E, P> = new Hono()
     newHono.#tempPath = path
     newHono.#router = this.#router
