@@ -8,14 +8,23 @@ import { TrieRouter } from './router/trie-router' // Default Router
 import { getPathFromURL, mergePath } from './utils/url'
 
 declare global {
-  interface Request<ParamKeyType = string> {
-    param: (key: ParamKeyType) => string
-    query: (key: string) => string
-    header: (name: string) => string
+  interface Request<ParamKeyType extends string = string> {
+    param: {
+      (key: ParamKeyType): string
+      (): Record<ParamKeyType, string>
+    }
+    query: {
+      (key: string): string
+      (): Record<string, string>
+    }
+    header: {
+      (name: string): string
+      (): Record<string, string>
+    }
   }
 }
 
-export type Handler<RequestParamKeyType = string, E = Env> = (
+export type Handler<RequestParamKeyType extends string = string, E = Env> = (
   c: Context<RequestParamKeyType, E>,
   next: Next
 ) => Response | Promise<Response> | void | Promise<void>
@@ -204,9 +213,15 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     const method = request.method
 
     const result = await this.matchRoute(method, path)
-    request.param = (key: string): string => {
-      if (result) return result.params[key]
-    }
+    request.param = ((key?: string): string | Record<string, string> => {
+      if (result) {
+        if (key) {
+          return result.params[key]
+        } else {
+          return result.params
+        }
+      }
+    }) as typeof request.param
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
     const c = new Context<string, E>(request, { env: env, event: event, res: undefined })

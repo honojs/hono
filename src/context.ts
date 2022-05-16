@@ -7,7 +7,7 @@ type Data = string | ArrayBuffer | ReadableStream
 
 export type Env = Record<string, any>
 
-export class Context<RequestParamKeyType = string, E = Env> {
+export class Context<RequestParamKeyType extends string = string, E = Env> {
   req: Request<RequestParamKeyType>
   res: Response = undefined
   env: E
@@ -34,14 +34,31 @@ export class Context<RequestParamKeyType = string, E = Env> {
     Object.assign(this, opts)
   }
 
-  private initRequest<T>(req: Request<T>): Request<T> {
-    req.header = (name: string): string => {
-      return req.headers.get(name)
-    }
-    req.query = (key: string): string => {
+  private initRequest<T extends string>(req: Request<T>): Request<T> {
+    req.header = ((name?: string): string | Record<string, string> => {
+      if (name) {
+        return req.headers.get(name)
+      } else {
+        const result: Record<string, string> = {}
+        for (const [key, value] of req.headers) {
+          result[key] = value
+        }
+        return result
+      }
+    }) as typeof req.header
+
+    req.query = ((key?: string): string | Record<string, string> => {
       const url = new URL(req.url)
-      return url.searchParams.get(key)
-    }
+      if (key) {
+        return url.searchParams.get(key)
+      } else {
+        const result: Record<string, string> = {}
+        for (const [key, value] of url.searchParams) {
+          result[key] = value
+        }
+        return result
+      }
+    }) as typeof req.query
     return req
   }
 

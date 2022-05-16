@@ -181,52 +181,87 @@ describe('Routing', () => {
 })
 
 describe('param and query', () => {
-  const app = new Hono()
+  const apps: Record<string, Hono> = {}
+  apps['get by name'] = (() => {
+    const app = new Hono()
 
-  app.get('/entry/:id', (c) => {
-    const id = c.req.param('id')
-    return c.text(`id is ${id}`)
-  })
+    app.get('/entry/:id', (c) => {
+      const id = c.req.param('id')
+      return c.text(`id is ${id}`)
+    })
 
-  app.get('/date/:date{[0-9]+}', (c) => {
-    const date = c.req.param('date')
-    return c.text(`date is ${date}`)
-  })
+    app.get('/date/:date{[0-9]+}', (c) => {
+      const date = c.req.param('date')
+      return c.text(`date is ${date}`)
+    })
 
-  app.get('/search', (c) => {
-    const name = c.req.query('name')
-    return c.text(`name is ${name}`)
-  })
+    app.get('/search', (c) => {
+      const name = c.req.query('name')
+      return c.text(`name is ${name}`)
+    })
 
-  app.get('/add-header', (c) => {
-    const bar = c.req.header('X-Foo')
-    return c.text(`foo is ${bar}`)
-  })
+    app.get('/add-header', (c) => {
+      const bar = c.req.header('X-Foo')
+      return c.text(`foo is ${bar}`)
+    })
 
-  it('param of /entry/:id is found', async () => {
-    const res = await app.request('http://localhost/entry/123')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('id is 123')
-  })
+    return app
+  })()
 
-  it('param of /date/:date is found', async () => {
-    const res = await app.request('http://localhost/date/0401')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('date is 0401')
-  })
+  apps['get all as an object'] = (() => {
+    const app = new Hono()
 
-  it('query of /search?name=sam is found', async () => {
-    const res = await app.request('http://localhost/search?name=sam')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('name is sam')
-  })
+    app.get('/entry/:id', (c) => {
+      const { id } = c.req.param()
+      return c.text(`id is ${id}`)
+    })
 
-  it('/add-header header - X-Foo is Bar', async () => {
-    const req = new Request('http://localhost/add-header')
-    req.headers.append('X-Foo', 'Bar')
-    const res = await app.request(req)
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('foo is Bar')
+    app.get('/date/:date{[0-9]+}', (c) => {
+      const { date } = c.req.param()
+      return c.text(`date is ${date}`)
+    })
+
+    app.get('/search', (c) => {
+      const { name } = c.req.query()
+      return c.text(`name is ${name}`)
+    })
+
+    app.get('/add-header', (c) => {
+      const { 'x-foo': bar } = c.req.header()
+      return c.text(`foo is ${bar}`)
+    })
+
+    return app
+  })()
+
+  describe.each(Object.keys(apps))('%s', (name) => {
+    const app = apps[name]
+
+    it('param of /entry/:id is found', async () => {
+      const res = await app.request('http://localhost/entry/123')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('id is 123')
+    })
+
+    it('param of /date/:date is found', async () => {
+      const res = await app.request('http://localhost/date/0401')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('date is 0401')
+    })
+
+    it('query of /search?name=sam is found', async () => {
+      const res = await app.request('http://localhost/search?name=sam')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('name is sam')
+    })
+
+    it('/add-header header - X-Foo is Bar', async () => {
+      const req = new Request('http://localhost/add-header')
+      req.headers.append('X-Foo', 'Bar')
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('foo is Bar')
+    })
   })
 })
 
