@@ -3,7 +3,10 @@ import type { Next } from '../../hono'
 
 declare global {
   interface Request {
-    cookie: (name: string) => string
+    cookie: {
+      (name: string): string
+      (): Record<string, string>
+    }
   }
 }
 
@@ -27,12 +30,16 @@ export type CookieOptions = {
 
 export const cookie = () => {
   return async (c: Context, next: Next) => {
-    c.req.cookie = (name: string): string => {
+    c.req.cookie = ((name?: string): string | Record<string, string> => {
       const cookie = c.req.headers.get('Cookie')
       const obj = parse(cookie)
-      const value = obj[name]
-      return value
-    }
+      if (name) {
+        const value = obj[name]
+        return value
+      } else {
+        return obj
+      }
+    }) as typeof c.req.cookie
     c.cookie = (name: string, value: string, opt?: CookieOptions) => {
       const cookie = serialize(name, value, opt)
       c.header('Set-Cookie', cookie)
