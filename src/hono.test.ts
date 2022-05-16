@@ -1,6 +1,6 @@
 import type { Context } from './context'
 import type { Next } from './hono'
-import { Hono, Route } from './hono'
+import { Hono } from './hono'
 import { poweredBy } from './middleware/powered-by'
 
 describe('GET Request', () => {
@@ -537,39 +537,66 @@ describe('Request methods with custom middleware', () => {
   })
 })
 
-describe('`Route` with app.route', () => {
-  const app = new Hono()
+describe('Hono with `app.route`', () => {
   describe('Basic', () => {
-    const route = new Route()
-    route.get('/post', (c) => c.text('GET /POST'))
-    route.post('/post', (c) => c.text('POST /POST'))
-    app.route('/v1', route)
+    const app = new Hono()
+    const api = new Hono()
+    const middleware = new Hono()
+    api.get('/posts', (c) => c.text('List'))
+    api.post('/posts', (c) => c.text('Create'))
+    api.get('/posts/:id', (c) => c.text(`GET ${c.req.param('id')}`))
+    api.use('*', async (c, next) => {
+      await next()
+      c.res.headers.append('x-custom-a', 'a')
+    })
+    app.route('/api', api)
 
-    it('Should return 200 response - GET /v1/post', async () => {
-      const res = await app.request('http://localhost/v1/post')
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe('GET /POST')
+    middleware.use('*', async (c, next) => {
+      await next()
+      c.res.headers.append('x-custom-b', 'b')
     })
 
-    it('Should return 200 response - POST /v1/post', async () => {
-      const res = await app.request('http://localhost/v1/post', { method: 'POST' })
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe('POST /POST')
-    })
+    app.route('/api', middleware)
 
-    it('Should return 404 response - DELETE /v1/post', async () => {
-      const res = await app.request('http://localhost/v1/post', { method: 'DELETE' })
+    it('Should return not found response', async () => {
+      const res = await app.request('http://localhost/')
       expect(res.status).toBe(404)
     })
 
-    it('Should return 404 response - GET /post', async () => {
-      const res = await app.request('http://localhost/post')
+    it('Should return not found response', async () => {
+      const res = await app.request('http://localhost/posts')
       expect(res.status).toBe(404)
+    })
+
+    test('GET /api/posts', async () => {
+      const res = await app.request('http://localhost/api/posts')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('List')
+    })
+
+    test('Custom header by middleware', async () => {
+      const res = await app.request('http://localhost/api/posts')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('x-custom-a')).toBe('a')
+      expect(res.headers.get('x-custom-b')).toBe('b')
+    })
+
+    test('POST /api/posts', async () => {
+      const res = await app.request('http://localhost/api/posts', { method: 'POST' })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('Create')
+    })
+
+    test('GET /api/posts/123', async () => {
+      const res = await app.request('http://localhost/api/posts/123')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET 123')
     })
   })
 
   describe('Chaining', () => {
-    const route = new Route()
+    const app = new Hono()
+    const route = new Hono()
     route.get('/post', (c) => c.text('GET /POST v2')).post((c) => c.text('POST /POST v2'))
     app.route('/v2', route)
 
@@ -591,22 +618,42 @@ describe('`Route` with app.route', () => {
     })
   })
 
-  describe('Named parameter', () => {
-    const route = new Route()
-    route.get('/post/:id', (c) => {
-      const id = c.req.param('id')
-      return c.text(`GET /post/${id} v3`)
-    })
-    app.route('/v3', route)
+  describe('Nested', () => {
+    const app = new Hono()
+    const api = new Hono()
+    const book = new Hono()
 
-    it('Should return 200 response - GET /v3/post/1', async () => {
-      const res = await app.request('http://localhost/v3/post/1')
+    book.get('/', (c) => c.text('list books'))
+    book.get('/:id', (c) => c.text(`book ${c.req.param('id')}`))
+
+    api.get('/', (c) => c.text('this is API'))
+    api.route('/book', book)
+
+    app.get('/', (c) => c.text('root'))
+    app.route('/v2', api)
+
+    it('Should return 200 response - GET /', async () => {
+      const res = await app.request('http://localhost/')
       expect(res.status).toBe(200)
-      expect(await res.text()).toBe('GET /post/1 v3')
+      expect(await res.text()).toBe('root')
     })
-    it('Should return 404 response - GET /v3/post', async () => {
-      const res = await app.request('http://localhost/v3/post/abc/def')
-      expect(res.status).toBe(404)
+
+    it('Should return 200 response - GET /v2', async () => {
+      const res = await app.request('http://localhost/v2')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('this is API')
+    })
+
+    it('Should return 200 response - GET /v2/book', async () => {
+      const res = await app.request('http://localhost/v2/book')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('list books')
+    })
+
+    it('Should return 200 response - GET /v2/book/123', async () => {
+      const res = await app.request('http://localhost/v2/book/123')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('book 123')
     })
   })
 })
