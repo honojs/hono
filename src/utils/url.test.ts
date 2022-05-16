@@ -93,5 +93,14 @@ describe('url', () => {
       expect(mergePath('book', 'hey')).toBe('/book/hey')
       expect(mergePath('book', 'hey/')).toBe('/book/hey/')
     })
+    it('Should be `/book`', () => {
+      expect(mergePath('/', 'book')).toBe('/book')
+    })
+    it('Should be `/book`', () => {
+      expect(mergePath('/', '/book')).toBe('/book')
+    })
+    it('Should be `/`', () => {
+      expect(mergePath('/', '/')).toBe('/')
+    })
   })
 })
