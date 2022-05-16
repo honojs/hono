@@ -76,12 +76,12 @@ interface Route<E extends Env> {
   handler: Handler<string, E>
 }
 
-export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E, P, Hono<E, P>> {
+export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<E, P, Hono<E, P>> {
   readonly routerClass: { new (): Router<any> } = TrieRouter
   readonly strict: boolean = true // strict routing - default is true
   private _router: Router<Handler<string, E>>
   private _tempPath: string
-  private path: string
+  private path: string = '/'
 
   routes: Route<E>[] = []
 
