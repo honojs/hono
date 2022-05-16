@@ -52,7 +52,7 @@ Fastest is hono - regexp-router
 Routers used in Hono are really smart.
 
 - **TrieRouter**(default) - Implemented with Trie tree structure.
-- **RegExpRouter** - Match routes with one big Regex made before dispatching at once.
+- **RegExpRouter** - Match the route with using one big Regex made before dispatch.
 
 ## Hono in 1 minute
 
@@ -93,16 +93,14 @@ app.use('*', etag(), logger())
 And, the routing of Hono is so flexible. It's easy to construct large web applications.
 
 ```ts
-import { Hono, Route } from 'hono'
-import { cors } from 'hono/cors'
+import { Hono } from 'hono'
+import { basicAuth } from 'hono/basic-auth'
 
-const app = new Hono()
-
-const v1 = new Route()
+const v1 = new Hono()
 v1.get('/posts', (c) => {
   return c.text('list pots')
 })
-  .post('/posts', cors(), (c) => {
+  .post(basicAuth({ username, password }), (c) => {
     return c.text('created!', 201)
   })
   .get('/posts/:id', (c) => {
@@ -110,6 +108,7 @@ v1.get('/posts', (c) => {
     return c.text(`your id is ${id}`)
   })
 
+const app = new Hono()
 app.route('/v1', v1)
 ```
 
@@ -140,7 +139,7 @@ An instance of `Hono` has these methods.
 
 - app.**HTTP_METHOD**(\[path,\] handler|middleware...)
 - app.**all**(\[path,\] handler|middleware...)
-- app.**route**(path, \[Route\])
+- app.**route**(path, \[app\])
 - app.**use**(\[path,\] middleware)
 - app.**notFound**(handler)
 - app.**onError**(err, handler)
@@ -156,6 +155,8 @@ An instance of `Hono` has these methods.
 // HTTP Methods
 app.get('/', (c) => c.text('GET /'))
 app.post('/', (c) => c.text('POST /'))
+app.put('/', (c) => c.text('PUT /'))
+app.delete('/', (c) => c.text('DELETE /'))
 
 // Wildcard
 app.get('/wild/*/card', (c) => {
@@ -175,12 +176,20 @@ app.get('/user/:name', (c) => {
 })
 ```
 
+or all parameters at once:
+
+```ts
+app.get('/posts/:id/comment/:comment_id', (c) => {
+  const { id, comment_id } = c.req.param()
+  ...
+})
+```
+
 ### Regexp
 
 ```ts
 app.get('/post/:date{[0-9]+}/:title{[a-z]+}', (c) => {
-  const date = c.req.param('date')
-  const title = c.req.param('title')
+  const { date, title } = c.req.param()
   ...
 })
 ```
@@ -219,12 +228,12 @@ app.get('/fetch-url', async (c) => {
 })
 ```
 
-## Route
+## Grouping
 
-`Route` object enables Nested route.
+Group the routes with `Hono` instance and add them to the main app with `route` method.
 
 ```ts
-const book = new Route()
+const book = new Hono()
 
 book.get('/', (c) => c.text('List Books')) // GET /book
 book.get('/:id', (c) => {
@@ -234,6 +243,7 @@ book.get('/:id', (c) => {
 })
 book.post('/', (c) => c.text('Create Book')) // POST /book
 
+const app = new Hono()
 app.route('/book', book)
 ```
 
@@ -338,6 +348,12 @@ app.get('/search', (c) => {
   ...
 })
 
+// Get all params at once
+app.get('/search', (c) => {
+  const { q, limit, offset } = c.req.query()
+  ...
+})
+
 // Captured params
 app.get('/entry/:id', (c) => {
   const id = c.req.param('id')
@@ -427,8 +443,8 @@ app.get('/redirect-permanently', (c) => c.redirect('/', 301))
 
 ```ts
 // Response object
-app.use('/', (c, next) => {
-  next()
+app.use('/', async (c, next) => {
+  await next()
   c.res.headers.append('X-Debug', 'Debug message')
 })
 ```
@@ -437,11 +453,11 @@ app.use('/', (c, next) => {
 
 ```ts
 // FetchEvent object
-app.use('*', async (c, next) => {
+app.get('/foo', async (c) => {
   c.event.waitUntil(
-    ...
+    c.env.KV.put(key, data)
   )
-  await next()
+  ...
 })
 ```
 
@@ -559,7 +575,62 @@ To generate a project skelton, run this command.
 npx create-cloudflare my-app https://github.com/honojs/hono-minimal
 ```
 
-## Examples
+## Practical Example
+
+How about writing web API with Hono?
+
+```ts
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { basicAuth } from 'hono/basic-auth'
+import { prettyJSON } from 'hono/pretty-json'
+import { getPosts, getPosts, createPost } from './model'
+
+const app = new Hono()
+app.get('/', (c) => c.text('Pretty Blog API'))
+app.use('*', prettyJSON())
+app.notFound((c) => c.json({ message: 'Not Found', ok: false }, 404))
+
+export interface Bindings {
+  USERNAME: string
+  PASSWORD: string
+}
+
+const api = new Hono<Bindings>()
+
+api.get('/posts', (c) => {
+  const { limit, offset } = c.req.query()
+  const posts = getPosts({ limit, offset })
+  return c.json({ posts })
+})
+
+api.get('/posts/:id', (c) => {
+  const id = c.req.param('id')
+  const post = getPost({ id })
+  return c.json({ post })
+})
+
+api.post(
+  '/posts',
+  async (c, next) => {
+    const auth = basicAuth({ username: c.env.USERNAME, password: c.env.PASSWORD })
+    await auth(c, next)
+  },
+  async (c) => {
+    const post = await c.req.json<POST>()
+    const ok = createPost({ post })
+    return c.json({ ok })
+  }
+)
+
+app.use('/posts/*', cors())
+
+app.route('/api', api)
+
+export default app
+```
+
+## Other Examples
 
 - Hono Examples - <https://github.com/honojs/examples>
 
