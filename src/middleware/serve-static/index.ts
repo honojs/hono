@@ -12,7 +12,11 @@ const DEFAULT_DOCUMENT = 'index.html'
 // This middleware is available only on Cloudflare Workers.
 export const serveStatic = (opt: Options = { root: '' }) => {
   return async (c: Context, next: Next) => {
-    await next()
+    // Do nothing if Response is already set
+    if (c.res) {
+      await next()
+    }
+
     const url = new URL(c.req.url)
 
     const path = getKVFilePath({
@@ -27,9 +31,11 @@ export const serveStatic = (opt: Options = { root: '' }) => {
       if (mimeType) {
         c.header('Content-Type', mimeType)
       }
-      c.res = c.body(content)
+      // Return Response object
+      return c.body(content)
     } else {
       console.warn(`Static file: ${path} is not found`)
+      await next()
     }
   }
 }
