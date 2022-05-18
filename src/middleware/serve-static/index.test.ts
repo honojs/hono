@@ -1,3 +1,5 @@
+import type { Context } from '../../context'
+import type { Next } from '../../hono'
 import { Hono } from '../../hono'
 import { serveStatic } from '.'
 
@@ -60,5 +62,39 @@ describe('ServeStatic Middleware', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<h1>Top</h1>')
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=utf-8')
+  })
+})
+
+describe('With middleware', () => {
+  const app = new Hono()
+  const md1 = async (c: Context, next: Next) => {
+    await next()
+    c.res.headers.append('x-foo', 'bar')
+  }
+  const md2 = async (c: Context, next: Next) => {
+    await next()
+    c.res.headers.append('x-foo2', 'bar2')
+  }
+
+  app.use('/static/*', md1)
+  app.use('/static/*', serveStatic({ root: './assets' }))
+  app.use('/static/*', md2)
+  app.get('/static/foo', (c) => {
+    return c.text('bar')
+  })
+
+  it('Should return plain.txt with correct headers', async () => {
+    const res = await app.request('http://localhost/static/plain.txt')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('This is plain.txt')
+    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8')
+    expect(res.headers.get('x-foo')).toBe('bar')
+    expect(res.headers.get('x-foo2')).toBe('bar2')
+  })
+
+  it('Should return 200 Response', async () => {
+    const res = await app.request('http://localhost/static/foo')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('bar')
   })
 })
