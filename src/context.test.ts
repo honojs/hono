@@ -116,6 +116,14 @@ describe('Context', () => {
     expect(res.statusText).toBe('OK')
   })
 
+  it('Should return 204 response', async () => {
+    c.status(204)
+    const res = c.body(null)
+    expect(res.status).toBe(204)
+    expect(res.statusText).toBe('No Content')
+    expect(await res.text()).toBe('')
+  })
+
   it('Should be able read env', async () => {
     const req = new Request('http://localhost/')
     const key = 'a-secret-key'
