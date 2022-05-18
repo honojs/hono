@@ -96,7 +96,11 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
     return new Response(data, init)
   }
 
-  body(data: Data, status: StatusCode = this._status, headers: Headers = this._headers): Response {
+  body(
+    data: Data | null,
+    status: StatusCode = this._status,
+    headers: Headers = this._headers
+  ): Response {
     return this.newResponse(data, {
       status: status,
       headers: headers,
