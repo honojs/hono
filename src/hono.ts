@@ -131,6 +131,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
       app.routes.map((r) => {
         this.addRoute(r.method, r.path, r.handler)
       })
+      this._tempPath = null
     }
 
     return this
