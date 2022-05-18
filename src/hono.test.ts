@@ -586,6 +586,8 @@ describe('Hono with `app.route`', () => {
     })
     app.route('/api', api)
 
+    app.get('/foo', (c) => c.text('bar'))
+
     middleware.use('*', async (c, next) => {
       await next()
       c.res.headers.append('x-custom-b', 'b')
@@ -626,6 +628,12 @@ describe('Hono with `app.route`', () => {
       const res = await app.request('http://localhost/api/posts/123')
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('GET 123')
+    })
+
+    test('GET /foo', async () => {
+      const res = await app.request('http://localhost/foo')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('bar')
     })
   })
 
