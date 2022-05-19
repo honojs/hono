@@ -1,21 +1,44 @@
-declare const __STATIC_CONTENT: KVNamespace, __STATIC_CONTENT_MANIFEST: string
+declare const __STATIC_CONTENT: KVNamespace
+declare const __STATIC_CONTENT_MANIFEST: string
 
-export const getContentFromKVAsset = async (path: string): Promise<ArrayBuffer | undefined> => {
-  let ASSET_MANIFEST: Record<string, string>
-  if (typeof __STATIC_CONTENT_MANIFEST === 'string') {
-    ASSET_MANIFEST = JSON.parse(__STATIC_CONTENT_MANIFEST)
+export type KVAssetOptions = {
+  manifest?: object | string
+  namespace?: KVNamespace
+}
+
+export const getContentFromKVAsset = async (
+  path: string,
+  options?: KVAssetOptions
+): Promise<ArrayBuffer> => {
+  let ASSET_MANIFEST: Record<string, string> = {}
+
+  if (options && options.manifest) {
+    if (typeof options.manifest === 'string') {
+      ASSET_MANIFEST = JSON.parse(options.manifest)
+    } else {
+      ASSET_MANIFEST = options.manifest as Record<string, string>
+    }
   } else {
-    ASSET_MANIFEST = __STATIC_CONTENT_MANIFEST
+    if (typeof __STATIC_CONTENT_MANIFEST === 'string') {
+      ASSET_MANIFEST = JSON.parse(__STATIC_CONTENT_MANIFEST)
+    } else {
+      ASSET_MANIFEST = __STATIC_CONTENT_MANIFEST
+    }
   }
 
-  const ASSET_NAMESPACE = __STATIC_CONTENT
+  let ASSET_NAMESPACE: KVNamespace
+  if (options && options.namespace) {
+    ASSET_NAMESPACE = options.namespace
+  } else {
+    ASSET_NAMESPACE = __STATIC_CONTENT
+  }
 
   const key = ASSET_MANIFEST[path] || path
   if (!key) {
     return
   }
 
-  let content = (await ASSET_NAMESPACE.get(key, { type: 'arrayBuffer' })) || undefined
+  let content = await ASSET_NAMESPACE.get(key, { type: 'arrayBuffer' })
 
   if (content) {
     content = content as ArrayBuffer
@@ -23,16 +46,16 @@ export const getContentFromKVAsset = async (path: string): Promise<ArrayBuffer |
   return content
 }
 
-type Options = {
+type FilePathOptions = {
   filename: string
   root?: string
   defaultDocument?: string
 }
 
-export const getKVFilePath = (opt: Options): string => {
-  let filename = opt.filename
-  let root = opt.root || ''
-  const defaultDocument = opt.defaultDocument || 'index.html'
+export const getKVFilePath = (options: FilePathOptions): string => {
+  let filename = options.filename
+  let root = options.root || ''
+  const defaultDocument = options.defaultDocument || 'index.html'
 
   if (filename.endsWith('/')) {
     // /top/ => /top/index.html

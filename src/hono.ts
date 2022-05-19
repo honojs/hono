@@ -8,14 +8,23 @@ import { TrieRouter } from './router/trie-router' // Default Router
 import { getPathFromURL, mergePath } from './utils/url'
 
 declare global {
-  interface Request<ParamKeyType = string> {
-    param: (key: ParamKeyType) => string
-    query: (key: string) => string
-    header: (name: string) => string
+  interface Request<ParamKeyType extends string = string> {
+    param: {
+      (key: ParamKeyType): string
+      (): Record<ParamKeyType, string>
+    }
+    query: {
+      (key: string): string
+      (): Record<string, string>
+    }
+    header: {
+      (name: string): string
+      (): Record<string, string>
+    }
   }
 }
 
-export type Handler<RequestParamKeyType = string, E = Env> = (
+export type Handler<RequestParamKeyType extends string = string, E = Env> = (
   c: Context<RequestParamKeyType, E>,
   next: Next
 ) => Response | Promise<Response> | void | Promise<void>
@@ -61,53 +70,20 @@ function defineDynamicClass(): {
   return class {} as any
 }
 
-interface Routing<E extends Env> {
+interface Route<E extends Env> {
   path: string
-  method: Methods
+  method: string
   handler: Handler<string, E>
 }
 
-export class Route<E = Env, P extends string = ''> extends defineDynamicClass()<E, P, Route<E, P>> {
-  routes: Routing<E>[] = []
-  _path = ''
-
-  constructor() {
-    super()
-    const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
-
-    allMethods.map((method) => {
-      this[method] = <Path extends string>(
-        args1: Path | Handler<ParamKeys<Path>, E>,
-        ...args: [Handler<ParamKeys<Path>, E>]
-      ) => {
-        if (typeof args1 === 'string') {
-          this._path = args1
-        } else {
-          this.add(method, this._path, args1)
-        }
-        args.map((handler) => {
-          if (typeof handler !== 'string') {
-            this.add(method, this._path, handler)
-          }
-        })
-        return this
-      }
-    })
-  }
-
-  private add(method: Methods, path: string, handler: Handler<string, E>): Route<E, P> {
-    const r: Routing<E> = { path: path, method: method, handler: handler }
-    this.routes.push(r)
-    return this
-  }
-}
-
-export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E, P, Hono<E, P>> {
+export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<E, P, Hono<E, P>> {
   readonly routerClass: { new (): Router<any> } = TrieRouter
   readonly strict: boolean = true // strict routing - default is true
   private _router: Router<Handler<string, E>>
-  private _tempPath = ''
-  private _path = ''
+  private _tempPath: string
+  private _path = '/'
+
+  routes: Route<E>[] = []
 
   constructor(init: Partial<Pick<Hono, 'routerClass' | 'strict'>> = {}) {
     super()
@@ -135,7 +111,7 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     Object.assign(this, init)
 
     this._router = new this.routerClass()
-    this._tempPath = ''
+    this._tempPath = null
   }
 
   private notFoundHandler: NotFoundHandler = (c: Context) => {
@@ -149,18 +125,16 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     return c.text(message, 500)
   }
 
-  route(path: string, route?: Route): Hono<E, P> {
-    const newHono: Hono<E, P> = new Hono()
-    newHono._tempPath = path
-    newHono._router = this._router
-
-    if (route) {
-      route.routes.map((r) => {
-        newHono.addRoute(r.method, r.path, r.handler)
+  route(path: string, app?: Hono<any>): Hono<E, P> {
+    this._tempPath = path
+    if (app) {
+      app.routes.map((r) => {
+        this.addRoute(r.method, r.path, r.handler)
       })
+      this._tempPath = null
     }
 
-    return newHono
+    return this
   }
 
   use(path: string, ...middleware: Handler<string, E>[]): Hono<E, P>
@@ -193,12 +167,11 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
       path = mergePath(this._tempPath, path)
     }
     this._router.add(method, path, handler)
+    const r: Route<E> = { path: path, method: method, handler: handler }
+    this.routes.push(r)
   }
 
-  private async matchRoute(
-    method: string,
-    path: string
-  ): Promise<Result<Handler<string, E>> | null> {
+  private async matchRoute(method: string, path: string): Promise<Result<Handler<string, E>>> {
     return this._router.match(method, path)
   }
 
@@ -207,12 +180,15 @@ export class Hono<E = Env, P extends string = ''> extends defineDynamicClass()<E
     const method = request.method
 
     const result = await this.matchRoute(method, path)
-    request.param = (key: string): string => {
+    request.param = ((key?: string): string | Record<string, string> => {
       if (result) {
-        return result.params[key]
+        if (key) {
+          return result.params[key]
+        } else {
+          return result.params
+        }
       }
-      return ''
-    }
+    }) as typeof request.param
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
     const c = new Context<string, E>(request, {

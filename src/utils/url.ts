@@ -85,6 +85,11 @@ export const mergePath = (...paths: string[]): string => {
     } else if (path !== '/') {
       p = `${p}${path}`
     }
+
+    /* ['/', '/'] => `/` */
+    if (path === '/' && p === '') {
+      p = '/'
+    }
   }
 
   return p

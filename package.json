@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "1.2.1",
+  "version": "1.3.4",
   "description": "Ultrafast web framework for Cloudflare Workers.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,9 +11,9 @@
     "test": "jest",
     "lint": "eslint --ext js,ts src .eslintrc.js",
     "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix",
-    "build": "rimraf dist && tsc",
     "denoify": "rimraf deno_lib && denoify",
-    "watch": "tsc -w",
+    "build": "rimraf dist && tsc --project tsconfig.build.json && tsc --project tsconfig.build.esm.json",
+    "watch": "tsc --project tsconfig.build.json -w",
     "prepublishOnly": "yarn build"
   },
   "exports": {
@@ -27,9 +27,11 @@
     "./jwt": "./dist/middleware/jwt/index.js",
     "./logger": "./dist/middleware/logger/index.js",
     "./mustache": "./dist/middleware/mustache/index.js",
+    "./mustache.module": "./dist/middleware/mustache/module.mjs",
     "./powered-by": "./dist/middleware/powered-by/index.js",
     "./pretty-json": "./dist/middleware/pretty-json/index.js",
     "./serve-static": "./dist/middleware/serve-static/index.js",
+    "./serve-static.module": "./dist/middleware/serve-static/module.mjs",
     "./router/trie-router": "./dist/router/trie-router/index.js",
     "./router/reg-exp-router": "./dist/router/reg-exp-router/index.js",
     "./utils/jwt": "./dist/utils/jwt/index.js",
@@ -64,6 +66,9 @@
       "mustache": [
         "./dist/middleware/mustache"
       ],
+      "mustache.module": [
+        "./dist/middleware/mustache/module.d.mts"
+      ],
       "powered-by": [
         "./dist/middleware/powered-by"
       ],
@@ -71,7 +76,10 @@
         "./dist/middleware/pretty-json"
       ],
       "serve-static": [
-        "./dist/middleware/serve-static"
+        "./dist/middleware/serve-static/index.d.ts"
+      ],
+      "serve-static.module": [
+        "./dist/middleware/serve-static/module.d.mts"
       ],
       "router/trie-router": [
         "./dist/router/trie-router/router.d.ts"
