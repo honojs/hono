@@ -510,6 +510,16 @@ test('GET /hello is ok', async () => {
 })
 ```
 
+## routerClass
+
+The `routerClass` option specify which router is used inside. The default router is `TrieRouter`. If you want to use `RexExpRouter`, write like this:
+
+```ts
+import { RegExpRouter } from 'hono/router/reg-exp-router'
+
+const app = new Hono({ routerClass: RegExpRouter })
+```
+
 ## Cloudflare Workers with Hono
 
 Using [Wrangler](https://developers.cloudflare.com/workers/cli-wrangler/), you can develop the application locally and publish it with few commands.
@@ -584,7 +594,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { basicAuth } from 'hono/basic-auth'
 import { prettyJSON } from 'hono/pretty-json'
-import { getPosts, getPosts, createPost } from './model'
+import { getPosts, getPost, createPost, Post } from './model'
 
 const app = new Hono()
 app.get('/', (c) => c.text('Pretty Blog API'))
@@ -617,7 +627,7 @@ api.post(
     await auth(c, next)
   },
   async (c) => {
-    const post = await c.req.json<POST>()
+    const post = await c.req.json<Post>()
     const ok = createPost({ post })
     return c.json({ ok })
   }
