@@ -4,11 +4,12 @@ import { Hono } from '../../hono'
 import { serveStatic } from '.'
 
 // Mock
-const store: { [key: string]: string } = {
+const store: Record<string, string> = {
   'assets/static/plain.abcdef.txt': 'This is plain.txt',
   'assets/static/hono.abcdef.html': '<h1>Hono!</h1>',
   'assets/static/top/index.abcdef.html': '<h1>Top</h1>',
   'static-no-root/plain.abcdef.txt': 'That is plain.txt',
+  'assets/static/options/foo.abcdef.txt': 'With options',
 }
 const manifest = JSON.stringify({
   'assets/static/plain.txt': 'assets/static/plain.abcdef.txt',
@@ -62,6 +63,22 @@ describe('ServeStatic Middleware', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<h1>Top</h1>')
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=utf-8')
+  })
+})
+
+describe('With options', () => {
+  const manifest = {
+    'assets/static/options/foo.txt': 'assets/static/options/foo.abcdef.txt',
+  }
+
+  const app = new Hono()
+  app.use('/static/*', serveStatic({ root: './assets', manifest: manifest }))
+
+  it('Should return foo.txt', async () => {
+    const res = await app.request('http://localhost/static/options/foo.txt')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('With options')
+    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8')
   })
 })
 

@@ -1,12 +1,12 @@
 # Serve Static Middleware
 
-Mustache Middleware is available only on Cloudflare Workers.
+Serve Static Middleware is available only on Cloudflare Workers.
 
 ## Usage
 
-index.js:
+index.ts:
 
-```js
+```ts
 import { Hono } from 'hono'
 import { serveStatic } from 'hono/serve-static'
 
@@ -16,6 +16,18 @@ app.use('/static/*', serveStatic({ root: './' }))
 app.get('/', (c) => c.text('This is Home! You can access: /static/hello.txt'))
 
 app.fire()
+```
+
+In Module Worker mode:
+
+```ts
+import { Hono } from 'hono'
+import { serveStatic } from 'hono/serve-static.module' // <---
+
+const app = new Hono()
+//...
+
+export default app
 ```
 
 wrangler.toml:
