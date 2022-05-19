@@ -18,9 +18,9 @@ yarn add mustache
 
 ## Usage
 
-index.js:
+index.ts:
 
-```js
+```ts
 import { Hono } from 'hono'
 import { mustache } from 'hono/mustache'
 
@@ -37,6 +37,19 @@ app.get('/', (c) => {
 })
 
 app.fire()
+```
+
+In Module Worker mode:
+
+```ts
+import { Hono } from 'hono'
+import { mustache } from 'hono/mustache.module' // <---
+
+const app = new Hono()
+app.use('*', mustache())
+// ...
+
+export default app
 ```
 
 index.mustache:
