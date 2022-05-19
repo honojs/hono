@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { mustache } from '.'
+import { mustache } from './mustache'
 
 // Mock
 const store: { [key: string]: string } = {
@@ -7,6 +7,7 @@ const store: { [key: string]: string } = {
   'header.abcdef.mustache': '<html><body>',
   'footer.abcdef.mustache': '</body></html>',
   'view/index.abcdef.mustache': '<h1>With Root</h1>',
+  'view/options.abcdef.mustache': '<h1>With Options</h1>',
 }
 const manifest = JSON.stringify({
   'index.mustache': 'index.abcdef.mustache',
@@ -44,6 +45,14 @@ describe('Mustache by Middleware', () => {
     return c.render('index')
   })
 
+  const manifest = {
+    'view/options.mustache': 'view/options.abcdef.mustache',
+  }
+  app.use('/options', mustache({ root: 'view', manifest: manifest }))
+  app.get('/options', (c) => {
+    return c.render('options')
+  })
+
   it('Mustache template rendering', async () => {
     const res = await app.request('http://localhost/foo')
     expect(res.status).toBe(200)
@@ -54,5 +63,11 @@ describe('Mustache by Middleware', () => {
     const res = await app.request('http://localhost/bar')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<h1>With Root</h1>')
+  })
+
+  it('Mustache template rendering with options', async () => {
+    const res = await app.request('http://localhost/options')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('<h1>With Options</h1>')
   })
 })

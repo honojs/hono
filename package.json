@@ -26,6 +26,7 @@
     "./jwt": "./dist/middleware/jwt/index.js",
     "./logger": "./dist/middleware/logger/index.js",
     "./mustache": "./dist/middleware/mustache/index.js",
+    "./mustache.module": "./dist/middleware/mustache/module.mjs",
     "./powered-by": "./dist/middleware/powered-by/index.js",
     "./pretty-json": "./dist/middleware/pretty-json/index.js",
     "./serve-static": "./dist/middleware/serve-static/index.js",
@@ -64,6 +65,9 @@
       "mustache": [
         "./dist/middleware/mustache"
       ],
+      "mustache.module": [
+        "./dist/middleware/mustache/module.d.mts"
+      ],
       "powered-by": [
         "./dist/middleware/powered-by"
       ],
@@ -74,7 +78,7 @@
         "./dist/middleware/serve-static/index.d.ts"
       ],
       "serve-static.module": [
-        "./dist/middleware/serve-static/module.d.ts"
+        "./dist/middleware/serve-static/module.d.mts"
       ],
       "router/trie-router": [
         "./dist/router/trie-router/router.d.ts"
