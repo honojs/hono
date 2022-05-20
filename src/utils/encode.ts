@@ -28,7 +28,6 @@ export const decodeBase64 = (str: string): string => {
   } catch {}
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     return Buffer.from(str, 'base64').toString()
   } catch (e) {
     console.error('If you want to do "decodeBase64", polyfill "Buffer" module.')
