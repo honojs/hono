@@ -30,13 +30,4 @@ export const createHash = async (data: Data, algorithm: Algorithm): Promise<stri
       .join('')
     return hash
   }
-
-  try {
-    const crypto = require('crypto')
-    const hash = crypto.createHash(algorithm.alias).update(data).digest('hex')
-    return hash
-  } catch (e) {
-    console.error(`If you want to create hash ${algorithm.name}, polyfill "crypto" module.`)
-    throw e
-  }
 }
