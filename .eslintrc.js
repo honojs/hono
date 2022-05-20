@@ -51,11 +51,14 @@ module.exports = {
     'node/no-unsupported-features/es-syntax': 'off',
 
     '@typescript-eslint/no-var-requires': 'off',
-
-    // '@typescript-eslint/no-empty-function': ['error', { allow: ['arrowFunctions'] }],
-    // '@typescript-eslint/no-empty-interface': 'off',
-    // '@typescript-eslint/no-inferrable-types': 'off',
-    // '@typescript-eslint/no-var-requires': 'off',
-    // '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
+    '@typescript-eslint/await-thenable': 'off',
+    '@typescript-eslint/no-unsafe-assignment': 'warn',
+    '@typescript-eslint/restrict-plus-operands': 'off',
+    '@typescript-eslint/no-unsafe-return': 'off',
+    '@typescript-eslint/no-for-in-array': 'off',
+    '@typescript-eslint/no-unsafe-member-access': 'warn',
+    '@typescript-eslint/no-unsafe-call': 'warn',
+    '@typescript-eslint/restrict-template-expressions': 'off',
+    '@typescript-eslint/no-floating-promises': 'off',
   },
 }

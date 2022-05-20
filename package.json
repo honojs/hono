@@ -9,8 +9,7 @@
   ],
   "scripts": {
     "test": "jest",
-    "lint": "eslint --ext js,ts src .eslintrc.js",
-    "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix",
+    "lint": "eslint --ext js,ts,mts --ignore-pattern *.test.ts src .eslintrc.js",
     "denoify": "rimraf deno_lib && denoify",
     "build": "rimraf dist && tsc --project tsconfig.build.json && tsc --project tsconfig.build.esm.json",
     "watch": "tsc --project tsconfig.build.json -w",
