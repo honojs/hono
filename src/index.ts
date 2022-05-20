@@ -9,9 +9,9 @@ declare module './hono' {
   }
 }
 
-Hono.prototype.fire = () => {
+Hono.prototype.fire = function () {
   addEventListener('fetch', (event: FetchEvent): void => {
-    event.respondWith(Hono.prototype.handleEvent(event))
+    void event.respondWith(this.handleEvent(event))
   })
 }
 

@@ -229,12 +229,4 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
     const req = input instanceof Request ? input : new Request(input, requestInit)
     return this.dispatch(req)
   }
-
-  /*
-  fire(): void {
-    addEventListener('fetch', (event: FetchEvent): void => {
-      event.respondWith(this.handleEvent(event))
-    })
-  }
-  */
 }

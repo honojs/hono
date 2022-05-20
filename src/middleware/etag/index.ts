@@ -13,8 +13,10 @@ export const etag = (options: ETagOptions = { weak: false }) => {
 
     await next()
 
+    if (!c.res) return
+
     const clone = c.res.clone()
-    const body = await parseBody(c.res)
+    const body = (await parseBody(c.res)) as string
     const hash = await sha1(body)
 
     const etag = options.weak ? `W/"${hash}"` : `"${hash}"`

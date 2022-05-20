@@ -92,7 +92,8 @@ export const sign = async (
 
   const partialToken = `${encodedHeader}.${encodedPayload}`
 
-  const signature: string = await arrayBufferToBase64URL(await signing(partialToken, secret, alg))
+  const signature: string =
+    (await arrayBufferToBase64URL(await signing(partialToken, secret, alg))) || ''
 
   return `${partialToken}.${signature}`
 }
@@ -115,9 +116,9 @@ export const verify = async (
     throw new JwtTokenExpired(token)
   }
 
-  const signature: string = await arrayBufferToBase64URL(
-    await signing(tokenParts.slice(0, 2).join('.'), secret, alg)
-  )
+  const signature: string =
+    (await arrayBufferToBase64URL(await signing(tokenParts.slice(0, 2).join('.'), secret, alg))) ||
+    ''
   if (signature !== tokenParts[2]) {
     throw new JwtTokenSignatureMismatched(token)
   }

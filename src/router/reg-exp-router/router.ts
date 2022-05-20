@@ -107,6 +107,7 @@ function buildMatcherFromPreprocessedRoutes<T>(
   const handlers: HandlerData<T>[] = []
 
   if (routes.length === 0) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return nullMatcher
   }
 
@@ -137,6 +138,7 @@ function buildMatcherFromPreprocessedRoutes<T>(
 
   const handlerMap: HandlerData<T>[] = []
   // using `in` because indexReplacementMap is a sparse array
+  // eslint-disable-next-line @typescript-eslint/no-for-in-array
   for (const i in indexReplacementMap) {
     handlerMap[i] = handlers[indexReplacementMap[i]]
   }
@@ -212,7 +214,10 @@ export class RegExpRouter<T> extends Router<T> {
   }
 
   match(method: string, path: string): Result<T> | null {
-    const [primaryMatchers, secondaryMatchers, hasAmbiguous] = this.buildAllMatchers()
+    if (!this.routeData) return null
+    const matcher = this.buildAllMatchers()
+    if (!matcher) return null
+    const [primaryMatchers, secondaryMatchers, hasAmbiguous] = matcher
 
     this.match = hasAmbiguous
       ? (method, path) => {
@@ -291,7 +296,10 @@ export class RegExpRouter<T> extends Router<T> {
     return this.match(method, path)
   }
 
-  private buildAllMatchers(): [Record<string, Matcher<T>>, Record<string, Matcher<T>[]>, boolean] {
+  private buildAllMatchers():
+    | [Record<string, Matcher<T>>, Record<string, Matcher<T>[]>, boolean]
+    | null {
+    if (!this.routeData) return null
     this.routeData.routes.sort(({ hint: a }, { hint: b }) => {
       if (a.componentsLength !== b.componentsLength) {
         return a.componentsLength - b.componentsLength
@@ -320,12 +328,16 @@ export class RegExpRouter<T> extends Router<T> {
     const primaryMatchers: Record<string, Matcher<T>> = {}
     const secondaryMatchers: Record<string, Matcher<T>[]> = {}
     let hasAmbiguous = false
-    this.routeData.methods.forEach((method) => {
-      let _hasAmbiguous
-      ;[primaryMatchers[method], secondaryMatchers[method], _hasAmbiguous] =
-        this.buildMatcher(method)
-      hasAmbiguous = hasAmbiguous || _hasAmbiguous
-    })
+    if (this.routeData) {
+      this.routeData.methods.forEach((method) => {
+        let _hasAmbiguous
+        const matcher = this.buildMatcher(method)
+        if (matcher !== null) {
+          ;[primaryMatchers[method], secondaryMatchers[method], _hasAmbiguous] = matcher
+          hasAmbiguous = hasAmbiguous || _hasAmbiguous
+        }
+      })
+    }
     primaryMatchers[METHOD_NAME_ALL] ||= nullMatcher
     secondaryMatchers[METHOD_NAME_ALL] ||= []
 
@@ -334,9 +346,10 @@ export class RegExpRouter<T> extends Router<T> {
     return [primaryMatchers, secondaryMatchers, hasAmbiguous]
   }
 
-  private buildMatcher(method: string): [Matcher<T>, Matcher<T>[], boolean] {
+  private buildMatcher(method: string): [Matcher<T>, Matcher<T>[], boolean] | null {
     let hasAmbiguous = false
     const targetMethods = new Set([method, METHOD_NAME_ALL])
+    if (!this.routeData) return null
     const routes = this.routeData.routes.filter(({ method }) => targetMethods.has(method))
 
     // Reset temporary data per method

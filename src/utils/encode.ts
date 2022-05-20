@@ -9,16 +9,9 @@ export const encodeBase64 = (str: string): string => {
   } catch {}
 
   try {
-    let base64 = ''
-    void (async () => {
-      const { Buffer } = await import('buffer')
-      return Buffer.from(str).toString('base64')
-    })().then((b) => {
-      base64 = b
-    })
-    return base64
+    return Buffer.from(str).toString('base64')
   } catch (e) {
-    console.error('If you want to do "encodeBase64", polyfill "buffer" module.')
+    console.error('If you want to do "encodeBase64", polyfill "Buffer" module.')
     throw e
   }
 }
@@ -35,16 +28,10 @@ export const decodeBase64 = (str: string): string => {
   } catch {}
 
   try {
-    let res = ''
-    void (async () => {
-      const { Buffer } = await import('buffer')
-      return Buffer.from(str, 'base64').toString()
-    })().then((b) => {
-      res = b
-    })
-    return res
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return Buffer.from(str, 'base64').toString()
   } catch (e) {
-    console.error('If you want to do "decodeBase64", polyfill "buffer" module.')
+    console.error('If you want to do "decodeBase64", polyfill "Buffer" module.')
     throw e
   }
 }
@@ -79,7 +66,6 @@ export const arrayBufferToBase64 = async (buf: ArrayBuffer): Promise<string | nu
   }
 
   try {
-    const { Buffer } = await import('buffer')
     return Buffer.from(String.fromCharCode(...new Uint8Array(buf))).toString('base64')
   } catch (e) {}
 

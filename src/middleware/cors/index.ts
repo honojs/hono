@@ -25,8 +25,12 @@ export const cors = (options?: CORSOptions) => {
   return async (c: Context, next: Next) => {
     await next()
 
+    if (!c.res) return
+
     function set(key: string, value: string) {
-      c.res.headers.append(key, value)
+      if (c.res) {
+        c.res.headers.append(key, value)
+      }
     }
 
     set('Access-Control-Allow-Origin', opts.origin)
@@ -41,7 +45,7 @@ export const cors = (options?: CORSOptions) => {
       set('Access-Control-Allow-Credentials', 'true')
     }
 
-    if (opts.exposeHeaders.length) {
+    if (opts.exposeHeaders) {
       set('Access-Control-Expose-Headers', opts.exposeHeaders.join(','))
     }
 
@@ -52,18 +56,18 @@ export const cors = (options?: CORSOptions) => {
         set('Access-Control-Max-Age', opts.maxAge.toString())
       }
 
-      if (opts.allowMethods.length) {
+      if (opts.allowMethods) {
         set('Access-Control-Allow-Methods', opts.allowMethods.join(','))
       }
 
       let headers = opts.allowHeaders
-      if (!headers.length) {
+      if (headers && !headers.length) {
         const requestHeaders = c.req.headers.get('Access-Control-Request-Headers')
         if (requestHeaders) {
           headers = requestHeaders.split(/\s*,\s*/)
         }
       }
-      if (headers.length) {
+      if (headers) {
         set('Access-Control-Allow-Headers', headers.join(','))
         set('Vary', 'Access-Control-Request-Headers')
       }

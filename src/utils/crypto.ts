@@ -3,7 +3,7 @@ type Algorithm = {
   alias: string
 }
 
-type Data = string | object | boolean
+type Data = string
 
 export const sha256 = async (data: Data) => {
   const algorithm: Algorithm = { name: 'SHA-256', alias: 'sha256' }
@@ -17,7 +17,7 @@ export const sha1 = async (data: Data) => {
   return hash
 }
 
-export const createHash = async (data: Data, algorithm: Algorithm): Promise<string> => {
+export const createHash = async (data: Data, algorithm: Algorithm): Promise<string | null> => {
   if (crypto && crypto.subtle) {
     const buffer = await crypto.subtle.digest(
       {
@@ -26,17 +26,10 @@ export const createHash = async (data: Data, algorithm: Algorithm): Promise<stri
       new TextEncoder().encode(String(data))
     )
     const hash = Array.prototype.map
+
       .call(new Uint8Array(buffer), (x) => ('00' + x.toString(16)).slice(-2))
       .join('')
     return hash
   }
-
-  try {
-    const crypto = require('crypto')
-    const hash = crypto.createHash(algorithm.alias).update(data).digest('hex')
-    return hash
-  } catch (e) {
-    console.error(`If you want to create hash ${algorithm.name}, polyfill "crypto" module.`)
-    throw e
-  }
+  return null
 }

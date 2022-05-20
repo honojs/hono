@@ -148,7 +148,7 @@ export const graphqlServer = (options: Options) => {
       return
     }
 
-    if (result.data == null) {
+    if (result.data == null && result.errors != null) {
       c.res = c.json(errorMessages([result.errors.toString()], result.errors), 500)
       return
     }

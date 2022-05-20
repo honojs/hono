@@ -6,7 +6,7 @@ import { decodeBase64 } from '../../utils/encode'
 const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/
 
-const auth = (req: Request) => {
+const auth = async (req: Request) => {
   if (!req) {
     throw new TypeError('argument req is required')
   }
@@ -19,7 +19,7 @@ const auth = (req: Request) => {
     throw new TypeError('argument req is required to have headers property')
   }
 
-  const match = CREDENTIALS_REGEXP.exec(req.headers.get('Authorization'))
+  const match = CREDENTIALS_REGEXP.exec(req.headers.get('Authorization') || '')
   if (!match) {
     return undefined
   }
@@ -47,7 +47,7 @@ export const basicAuth = (
   users.unshift({ username: options.username, password: options.password })
 
   return async (ctx: Context, next: Next) => {
-    const requestUser = auth(ctx.req)
+    const requestUser = await auth(ctx.req)
     if (requestUser) {
       for (const user of users) {
         const usernameEqual = await timingSafeEqual(
@@ -70,7 +70,7 @@ export const basicAuth = (
     ctx.res = new Response('Unauthorized', {
       status: 401,
       headers: {
-        'WWW-Authenticate': 'Basic realm="' + options.realm.replace(/"/g, '\\"') + '"',
+        'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"',
       },
     })
   }

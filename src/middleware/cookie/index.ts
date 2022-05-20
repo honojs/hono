@@ -30,8 +30,9 @@ export type CookieOptions = {
 
 export const cookie = () => {
   return async (c: Context, next: Next) => {
-    c.req.cookie = ((name?: string): string | Record<string, string> => {
+    c.req.cookie = ((name?: string): string | Record<string, string> | null => {
       const cookie = c.req.headers.get('Cookie')
+      if (!cookie) return null
       const obj = parse(cookie)
       if (name) {
         const value = obj[name]

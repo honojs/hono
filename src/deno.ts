@@ -5,7 +5,7 @@ export type { Env } from './context'
 
 declare global {
   interface FetchEvent extends Event {
-    request: Request
+    readonly request: Request
     respondWith(response: Promise<Response> | Response): Promise<Response>
   }
 }

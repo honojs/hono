@@ -4,7 +4,6 @@ module.exports = {
     'eslint:recommended',
     'plugin:node/recommended',
     'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'prettier',
   ],
   parser: '@typescript-eslint/parser',
@@ -50,6 +49,7 @@ module.exports = {
     'node/no-unpublished-require': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
 
+    /*
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/await-thenable': 'off',
     '@typescript-eslint/no-unsafe-assignment': 'warn',
@@ -60,5 +60,6 @@ module.exports = {
     '@typescript-eslint/no-unsafe-call': 'warn',
     '@typescript-eslint/restrict-template-expressions': 'off',
     '@typescript-eslint/no-floating-promises': 'off',
+    */
   },
 }

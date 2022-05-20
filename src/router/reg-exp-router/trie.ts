@@ -25,7 +25,9 @@ export class Trie {
      *  - character
      */
     const tokens = path.match(/(?::[^\/]+)|(?:\/\*$)|./g)
-    this.root.insert(tokens, index, paramMap, this.context)
+    if (tokens) {
+      this.root.insert(tokens, index, paramMap, this.context)
+    }
 
     return paramMap
   }
