@@ -51,7 +51,7 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
-  it('c.redirect()', async () => {
+  it('c.redirect()', () => {
     let res = c.redirect('/destination')
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toMatch(/^https?:\/\/.+\/destination$/)
@@ -60,14 +60,14 @@ describe('Context', () => {
     expect(res.headers.get('Location')).toBe('https://example.com/destination')
   })
 
-  it('c.header()', async () => {
+  it('c.header()', () => {
     c.header('X-Foo', 'Bar')
     const res = c.body('Hi')
     const foo = res.headers.get('X-Foo')
     expect(foo).toBe('Bar')
   })
 
-  it('c.status() and c.statusText()', async () => {
+  it('c.status() and c.statusText()', () => {
     c.status(201)
     const res = c.body('Hi')
     expect(res.status).toBe(201)
@@ -110,7 +110,7 @@ describe('Context', () => {
     expect(c.res.statusText).toBe('OK')
   })
 
-  it('Should return 200 response', async () => {
+  it('Should return 200 response', () => {
     const res = c.text('Text')
     expect(res.status).toBe(200)
     expect(res.statusText).toBe('OK')
@@ -124,7 +124,7 @@ describe('Context', () => {
     expect(await res.text()).toBe('')
   })
 
-  it('Should be able read env', async () => {
+  it('Should be able read env', () => {
     const req = new Request('http://localhost/')
     const key = 'a-secret-key'
     const ctx = new Context(req, {
@@ -137,7 +137,7 @@ describe('Context', () => {
     expect(ctx.env.API_KEY).toBe(key)
   })
 
-  it('set and set', async () => {
+  it('set and set', () => {
     const ctx = new Context(req)
     expect(ctx.get('k-foo')).toEqual(undefined)
     ctx.set('k-foo', 'v-foo')

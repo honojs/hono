@@ -8,6 +8,7 @@ import { mustache } from './mustache'
 const module = (options: MustacheOptions = { root: '' }) => {
   return mustache({
     root: options.root,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     manifest: options.manifest ? options.manifest : manifest,
   })
 }

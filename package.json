@@ -16,6 +16,9 @@
     "watch": "tsc --project tsconfig.build.json -w",
     "prepublishOnly": "yarn build"
   },
+  "denoify": {
+    "index": "src/deno.ts"
+  },
   "exports": {
     ".": "./dist/index.js",
     "./basic-auth": "./dist/middleware/basic-auth/index.js",

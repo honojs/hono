@@ -9,23 +9,10 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noImplicitUseStrict": false,
-    "noStrictGenericChecks": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "preserveConstEnums": false,
-    "removeComments": false,
-    "resolveJsonModule": true,
-    "strictBindCallApply": true,
-    "strictFunctionTypes": true,
+    "strictPropertyInitialization": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "strictNullChecks": true,
-    "strictPropertyInitialization": true,
-    "suppressExcessPropertyErrors": false,
-    "suppressImplicitAnyIndexErrors": false,
-    "useDefineForClassFields": false,
     "types": [
       "jest",
       "node",
@@ -34,6 +21,10 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.test.ts"
+    "src/**/*.mts",
+    "src/**/*.test.ts",
+  ],
+  "exclude": [
+    "deno_dist/",
   ]
 }

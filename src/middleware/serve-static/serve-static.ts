@@ -13,7 +13,7 @@ const DEFAULT_DOCUMENT = 'index.html'
 
 // This middleware is available only on Cloudflare Workers.
 export const serveStatic = (options: ServeStaticOptions = { root: '' }): Handler => {
-  return async (c: Context, next: Next) => {
+  return async (c: Context, next: Next): Promise<Response | null> => {
     // Do nothing if Response is already set
     if (c.res) {
       await next()
@@ -29,6 +29,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Handler
 
     const content = await getContentFromKVAsset(path, {
       manifest: options.manifest,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       namespace: options.namespace ? options.namespace : c.env ? c.env.__STATIC_CONTENT : undefined,
     })
     if (content) {
@@ -42,5 +43,6 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Handler
       console.warn(`Static file: ${path} is not found`)
       await next()
     }
+    return null
   }
 }

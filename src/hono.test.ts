@@ -6,7 +6,7 @@ import { poweredBy } from './middleware/powered-by'
 describe('GET Request', () => {
   const app = new Hono()
 
-  app.get('/hello', async () => {
+  app.get('/hello', () => {
     return new Response('hello', {
       status: 200,
       statusText: 'Hono is OK',
@@ -509,7 +509,7 @@ describe('Error handle', () => {
     throw new Error('This is Error')
   })
 
-  app.use('/error-middleware', async () => {
+  app.use('/error-middleware', () => {
     throw new Error('This is Middleware Error')
   })
 

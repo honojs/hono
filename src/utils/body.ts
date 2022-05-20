@@ -1,6 +1,6 @@
 export const parseBody = async (
   r: Request | Response
-): Promise<string | object | Record<string, string | File> | undefined> => {
+): Promise<string | object | Record<string, string | File> | null> => {
   const contentType = r.headers.get('Content-Type') || ''
 
   if (contentType.includes('application/json')) {
@@ -17,5 +17,5 @@ export const parseBody = async (
     }, form)
     return data
   }
-  return
+  return null
 }

@@ -4,6 +4,7 @@
     "src/**/*.ts"
   ],
   "exclude": [
+    "src/**/*.mts",
     "src/**/*.test.ts"
   ]
 }

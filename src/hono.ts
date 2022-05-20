@@ -67,6 +67,7 @@ function defineDynamicClass(): {
     [K in Methods]: HandlerInterface<T, E, U>
   }
 } {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return class {} as any
 }
 
@@ -110,8 +111,9 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
 
     Object.assign(this, init)
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this._router = new this.routerClass()
-    this._tempPath = null
+    this._tempPath = ''
   }
 
   private notFoundHandler: NotFoundHandler = (c: Context) => {
@@ -131,7 +133,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
       app.routes.map((r) => {
         this.addRoute(r.method, r.path, r.handler)
       })
-      this._tempPath = null
+      this._tempPath = ''
     }
 
     return this
@@ -171,7 +173,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
     this.routes.push(r)
   }
 
-  private async matchRoute(method: string, path: string): Promise<Result<Handler<string, E>>> {
+  private matchRoute(method: string, path: string): Result<Handler<string, E>> | null {
     return this._router.match(method, path)
   }
 
@@ -179,8 +181,8 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
     const path = getPathFromURL(request.url, { strict: this.strict })
     const method = request.method
 
-    const result = await this.matchRoute(method, path)
-    request.param = ((key?: string): string | Record<string, string> => {
+    const result = this.matchRoute(method, path)
+    request.param = ((key?: string): string | Record<string, string> | null => {
       if (result) {
         if (key) {
           return result.params[key]
@@ -188,6 +190,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
           return result.params
         }
       }
+      return null
     }) as typeof request.param
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
@@ -227,9 +230,11 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
     return this.dispatch(req)
   }
 
+  /*
   fire(): void {
     addEventListener('fetch', (event: FetchEvent): void => {
       event.respondWith(this.handleEvent(event))
     })
   }
+  */
 }

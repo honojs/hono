@@ -16,10 +16,10 @@ export const compose = <C>(
       }
       let handler = middleware[i]
       index = i
-      if (i === middleware.length) handler = next
+      if (i === middleware.length && next) handler = next
 
       if (handler === undefined) {
-        if (context instanceof Context && context.res === undefined) {
+        if (context instanceof Context && context.res === undefined && onNotFound) {
           context.res = onNotFound(context)
         }
         return Promise.resolve(context)
@@ -30,7 +30,7 @@ export const compose = <C>(
           // If handler return Response like `return c.text('foo')`
           if (res && context instanceof Context) {
             context.res = res
-            dispatch(i + 1) // <--- Call next()
+            await dispatch(i + 1) // <--- Call next()
           }
           return context
         })

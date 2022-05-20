@@ -1,3 +1,4 @@
+import Mustache from 'mustache'
 import type { Context } from '../../context'
 import type { Handler, Next } from '../../hono'
 import { bufferToString } from '../../utils/buffer'
@@ -23,13 +24,6 @@ export const mustache = (init: MustacheOptions = { root: '' }): Handler => {
   const { root } = init
 
   return async (c: Context, next: Next) => {
-    let Mustache: Mustache
-    try {
-      Mustache = require('mustache')
-    } catch {
-      throw new Error('If you want to use Mustache Middleware, install "mustache" package first.')
-    }
-
     c.render = async (filename, params = {}, options?) => {
       const path = getKVFilePath({
         filename: `${filename}${EXTENSION}`,
@@ -39,6 +33,7 @@ export const mustache = (init: MustacheOptions = { root: '' }): Handler => {
 
       const kvAssetOptions: KVAssetOptions = {
         manifest: init.manifest,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         namespace: init.namespace ? init.namespace : c.env ? c.env.__STATIC_CONTENT : undefined,
       }
 

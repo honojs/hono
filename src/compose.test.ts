@@ -88,8 +88,9 @@ describe('Handler and middlewares', () => {
   it('Should return 200 Response', async () => {
     const composed = compose<Context>(middleware, onError)
     const context = await composed(c)
+    expect(context).not.toBeUndefined()
     const res = context.res
-    expect(res).not.toBeNull()
+    expect(res).not.toBeUndefined()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('foo')
     expect(res.headers.get('x-header-bar')).toBe('bar')
@@ -117,7 +118,8 @@ describe('compose with Context - 200 success', () => {
   it('Should return 200 Response', async () => {
     const composed = compose<Context>(middleware, onError)
     const context = await composed(c)
-    expect(context.res).not.toBeNull()
+    expect(context).not.toBeUndefined()
+    expect(context.res).not.toBeUndefined()
     expect(context.res.status).toBe(200)
     expect(await context.res.text()).toBe('Hello')
   })
@@ -143,6 +145,7 @@ describe('compose with Context - 404 not found', () => {
   it('Should return 404 Response', async () => {
     const composed = compose<Context>(middleware, onError, onNotFound)
     const context = await composed(c)
+    expect(context).not.toBeUndefined()
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(404)
     expect(await context.res.text()).toBe('onNotFound')
@@ -171,6 +174,7 @@ describe('compose with Context - 401 not authorized', () => {
   it('Should return 401 Response', async () => {
     const composed = compose<Context>(middleware, onError)
     const context = await composed(c)
+    expect(context).not.toBeUndefined()
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(401)
     expect(await context.res.text()).toBe('Not authorized')
@@ -200,6 +204,7 @@ describe('compose with Context - next() below', () => {
   it('Should return 200 Response', async () => {
     const composed = compose<Context>(middleware, onError)
     const context = await composed(c)
+    expect(context).not.toBeUndefined()
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(200)
     expect(await context.res.text()).toBe('foo')
@@ -239,7 +244,7 @@ describe('compose with Context - 500 error', () => {
       return c.text('OK')
     }
 
-    const mHandler = async () => {
+    const mHandler = () => {
       throw new Error()
     }
 
@@ -270,7 +275,7 @@ describe('compose with Context - 500 error', () => {
         await next()
       },
     ]
-    const composed = await compose(middlewares)
+    const composed = compose(middlewares)
     await composed(ctx)
     expect(stack).toEqual([0, 1, 2])
   })
@@ -278,7 +283,8 @@ describe('compose with Context - 500 error', () => {
 
 describe('Compose', function () {
   function isPromise(x: any) {
-    return x && typeof x.then === 'function'
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return x && x instanceof Promise
   }
 
   it('should get executed order one by one', async () => {
@@ -328,7 +334,7 @@ describe('Compose', function () {
       arr.push(6)
     })
 
-    stack.push(async () => {
+    stack.push(() => {
       called.push(true)
       arr.push(2)
     })
@@ -385,8 +391,8 @@ describe('Compose', function () {
       })
   })
 
-  it('should create next functions that return a Promise', function () {
-    const stack: any[] = []
+  it('should create next functions that return a Promise', async () => {
+    const stack: Function[] = []
     const arr: any[] = []
     for (let i = 0; i < 5; i++) {
       stack.push((context: C, next: Function) => {
@@ -394,7 +400,7 @@ describe('Compose', function () {
       })
     }
 
-    compose(stack)({})
+    await compose(stack)({})
 
     for (const next of arr) {
       expect(isPromise(next)).toBe(true)
@@ -474,7 +480,7 @@ describe('Compose', function () {
       arr.push(3)
     })
 
-    stack.push(async () => {
+    stack.push(() => {
       arr.push(4)
       throw new Error()
     })
@@ -486,7 +492,7 @@ describe('Compose', function () {
   it('should compose w/ next', () => {
     let called = false
 
-    return compose([])({}, async () => {
+    return compose([])({}, () => {
       called = true
     }).then(function () {
       expect(called).toBe(true)
@@ -518,16 +524,16 @@ describe('Compose', function () {
       compose([
         (ctx: C, next: Function) => {
           called.push(1)
-          return next()
+          next()
         },
         (ctx: C, next: Function) => {
           called.push(2)
-          return next()
+          next()
         },
       ]),
       (ctx: C, next: Function) => {
         called.push(3)
-        return next()
+        next()
       },
     ])({}).then(() => expect(called).toEqual([1, 2, 3]))
   })
@@ -543,7 +549,9 @@ describe('Compose', function () {
         throw new Error('boom')
       },
       (err) => {
-        expect(/multiple times/.test(err.message)).toBe(true)
+        if (err instanceof Error) {
+          expect(/multiple times/.test(err.message)).toBe(true)
+        }
       }
     )
   })
@@ -554,16 +562,16 @@ describe('Compose', function () {
       compose([
         (ctx: C, next: Function) => {
           val++
-          return next()
+          next()
         },
         (ctx: C, next: Function) => {
           val++
-          return next()
+          next()
         },
       ]),
       (ctx: C, next: Function) => {
         val++
-        return next()
+        next()
       },
     ])({}).then(function () {
       expect(val).toEqual(3)
@@ -595,7 +603,7 @@ describe('Compose', function () {
   it('should not affect the original middleware array', () => {
     const middleware = []
     const fn1 = (ctx: C, next: Function) => {
-      return next()
+      next()
     }
     middleware.push(fn1)
 
@@ -619,7 +627,7 @@ describe('Compose', function () {
     const middleware = [
       (ctx: C, next: Function) => {
         ctx.middleware++
-        return next()
+        next()
       },
     ]
     const ctx = {
@@ -629,7 +637,7 @@ describe('Compose', function () {
 
     return compose(middleware)(ctx, (ctx: C, next: Function) => {
       ctx.next++
-      return next()
+      next()
     }).then(() => {
       expect(ctx).toEqual({ middleware: 1, next: 1 })
     })

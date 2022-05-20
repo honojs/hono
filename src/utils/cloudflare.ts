@@ -9,18 +9,18 @@ export type KVAssetOptions = {
 export const getContentFromKVAsset = async (
   path: string,
   options?: KVAssetOptions
-): Promise<ArrayBuffer> => {
+): Promise<ArrayBuffer | null> => {
   let ASSET_MANIFEST: Record<string, string> = {}
 
   if (options && options.manifest) {
     if (typeof options.manifest === 'string') {
-      ASSET_MANIFEST = JSON.parse(options.manifest)
+      ASSET_MANIFEST = JSON.parse(options.manifest) as Record<string, string>
     } else {
       ASSET_MANIFEST = options.manifest as Record<string, string>
     }
   } else {
     if (typeof __STATIC_CONTENT_MANIFEST === 'string') {
-      ASSET_MANIFEST = JSON.parse(__STATIC_CONTENT_MANIFEST)
+      ASSET_MANIFEST = JSON.parse(__STATIC_CONTENT_MANIFEST) as Record<string, string>
     } else {
       ASSET_MANIFEST = __STATIC_CONTENT_MANIFEST
     }
@@ -35,14 +35,11 @@ export const getContentFromKVAsset = async (
 
   const key = ASSET_MANIFEST[path] || path
   if (!key) {
-    return
+    return null
   }
 
-  let content = await ASSET_NAMESPACE.get(key, { type: 'arrayBuffer' })
+  const content = await ASSET_NAMESPACE.get(key, { type: 'arrayBuffer' })
 
-  if (content) {
-    content = content as ArrayBuffer
-  }
   return content
 }
 

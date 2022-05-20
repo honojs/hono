@@ -39,7 +39,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   }
 
   private initRequest<T extends string>(req: Request<T>): Request<T> {
-    req.header = ((name?: string): string | Record<string, string> => {
+    req.header = ((name?: string): string | Record<string, string> | null => {
       if (name) {
         return req.headers.get(name)
       } else {
@@ -51,7 +51,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
       }
     }) as typeof req.header
 
-    req.query = ((key?: string): string | Record<string, string> => {
+    req.query = ((key?: string): string | Record<string, string> | null => {
       const url = new URL(req.url)
       if (key) {
         return url.searchParams.get(key)
@@ -79,10 +79,12 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   }
 
   set(key: string, value: any): void {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this._map[key] = value
   }
 
   get(key: string) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this._map[key]
   }
 
@@ -91,7 +93,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
     this._prettySpace = space
   }
 
-  newResponse(data: Data, init: ResponseInit = {}): Response {
+  newResponse(data: Data | null, init: ResponseInit = {}): Response {
     init.status = init.status || this._status || 200
     init.statusText =
       init.statusText || this._statusText || getStatusText(init.status as StatusCode)

@@ -13,7 +13,7 @@ const humanize = (n: string[], opts?: { delimiter?: string; separator?: string }
 
 const time = (start: number) => {
   const delta = Date.now() - start
-  return humanize([delta < 10000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
+  return humanize([delta < 10000 ? `${delta}ms` : `${Math.round(delta / 1000)}s`])
 }
 
 const LogPrefix = {
@@ -47,7 +47,7 @@ function log(
   const out =
     prefix === LogPrefix.Incoming
       ? `  ${prefix} ${method} ${path}`
-      : `  ${prefix} ${method} ${path} ${colorStatus(status)} ${elapsed}`
+      : `  ${prefix} ${method} ${path} ${colorStatus(status)} ${elapsed || ''}`
   fn(out)
 }
 

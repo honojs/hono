@@ -3,22 +3,12 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
+  globals: {
+    'ts-jest': {
+      tsconfig: 'tsconfig.test.json',
+    },
+  },
   testPathIgnorePatterns: ['./examples'],
   testEnvironment: 'miniflare',
-  testEnvironmentOptions: {
-    /*
-    bindings: {
-      __STATIC_CONTENT: {
-        get: (key) => {
-          const table = { 'index.abcdef.index': 'This is index' }
-          return table[key]
-        },
-      },
-      __STATIC_CONTENT_MANIFEST: JSON.stringify({
-        'index.index': 'index.abcdef.index',
-      }),
-    },
-    kvNamespaces: ['TEST_NAMESPACE'],
-    */
-  },
+  testEnvironmentOptions: {},
 }
