@@ -9,7 +9,6 @@ export const encodeBase64 = (str: string): string => {
   } catch {}
 
   try {
-    const { Buffer } = require('buffer')
     return Buffer.from(str).toString('base64')
   } catch (e) {
     console.error('If you want to do "encodeBase64", polyfill "buffer" module.')
@@ -29,7 +28,6 @@ export const decodeBase64 = (str: string): string => {
   } catch {}
 
   try {
-    const { Buffer } = require('buffer')
     return Buffer.from(str, 'base64').toString()
   } catch (e) {
     console.error('If you want to do "decodeBase64", polyfill "buffer" module.')
@@ -67,7 +65,6 @@ export const arrayBufferToBase64 = async (buf: ArrayBuffer): Promise<string> => 
   }
 
   try {
-    const { Buffer } = await import('buffer')
     return Buffer.from(String.fromCharCode(...new Uint8Array(buf))).toString('base64')
   } catch (e) {}
 }
@@ -75,4 +72,3 @@ export const arrayBufferToBase64 = async (buf: ArrayBuffer): Promise<string> => 
 export const arrayBufferToBase64URL = async (buf: ArrayBuffer) => {
   return (await arrayBufferToBase64(buf)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
 }
-
