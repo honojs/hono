@@ -780,3 +780,23 @@ describe('Multiple handler', () => {
     })
   })
 })
+
+describe('Multiple handler - async', () => {
+  describe('handler + handler', () => {
+    const app = new Hono()
+    app.get('/:type/:id', async (c) => {
+      await new Promise((resolve) => setTimeout(resolve, 1))
+      return c.text('foo')
+    })
+    app.get('/posts/:id', async (c) => {
+      await new Promise((resolve) => setTimeout(resolve, 1))
+      const id = c.req.param('id')
+      return c.text(`id is ${id}`)
+    })
+    it('Should return response from `specialized` route', async () => {
+      const res = await app.request('http://localhost/posts/123')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('id is 123')
+    })
+  })
+})
