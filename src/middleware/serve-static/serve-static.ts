@@ -15,7 +15,7 @@ const DEFAULT_DOCUMENT = 'index.html'
 export const serveStatic = (options: ServeStaticOptions = { root: '' }): Handler => {
   return async (c: Context, next: Next) => {
     // Do nothing if Response is already set
-    if (c.res) {
+    if (c.res && c.res.finalized) {
       await next()
     }
 
