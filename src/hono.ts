@@ -22,6 +22,9 @@ declare global {
       (): Record<string, string>
     }
   }
+  interface Response {
+    finalized: boolean
+  }
 }
 
 export type Handler<RequestParamKeyType extends string = string, E = Env> = (
@@ -83,6 +86,8 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
   private _tempPath: string
   private path: string = '/'
 
+  private _cacheResponse: Response
+
   routes: Route<E>[] = []
 
   constructor(init: Partial<Pick<Hono, 'routerClass' | 'strict'>> = {}) {
@@ -112,6 +117,9 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
 
     this._router = new this.routerClass()
     this._tempPath = null
+
+    this._cacheResponse = new Response(null, { status: 404 })
+    this._cacheResponse.finalized = false
   }
 
   private notFoundHandler: NotFoundHandler = (c: Context) => {
@@ -191,7 +199,11 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
     }) as typeof request.param
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
-    const c = new Context<string, E>(request, { env: env, event: event, res: undefined })
+    const c = new Context<string, E>(request, {
+      env: env,
+      event: event,
+      res: this._cacheResponse,
+    })
     c.notFound = () => this.notFoundHandler(c)
 
     const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)

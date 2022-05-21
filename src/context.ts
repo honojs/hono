@@ -9,7 +9,7 @@ export type Env = Record<string, any>
 
 export class Context<RequestParamKeyType extends string = string, E = Env> {
   req: Request<RequestParamKeyType>
-  res: Response = undefined
+  res: Response
   env: E
   event: FetchEvent
 
@@ -27,11 +27,17 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
 
   constructor(
     req: Request<RequestParamKeyType>,
-    opts?: { res: Response; env: E; event: FetchEvent }
+    opts?: { env: E; event: FetchEvent; res?: Response }
   ) {
     this.req = this.initRequest<RequestParamKeyType>(req)
     this._map = {}
     Object.assign(this, opts)
+
+    if (!this.res) {
+      const res = new Response(null, { status: 404 })
+      res.finalized = false
+      this.res = res
+    }
   }
 
   private initRequest<T extends string>(req: Request<T>): Request<T> {

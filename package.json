@@ -11,7 +11,7 @@
     "test": "jest",
     "lint": "eslint --ext js,ts src .eslintrc.js",
     "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix",
-    "build": "rimraf dist && tsc --project tsconfig.build.json && tsc --project tsconfig.build.esm.json",
+    "build": "rimraf dist && tsc --project tsconfig.build.esm.json && tsc --project tsconfig.build.json",
     "watch": "tsc --project tsconfig.build.json -w",
     "prepublishOnly": "yarn build"
   },

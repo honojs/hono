@@ -131,7 +131,6 @@ describe('Context', () => {
       env: {
         API_KEY: key,
       },
-      res: null,
       event: null,
     })
     expect(ctx.env.API_KEY).toBe(key)
