@@ -137,15 +137,15 @@ npm install hono
 
 An instance of `Hono` has these methods.
 
-- app.**HTTP_METHOD**(\[path,\] handler|middleware...)
-- app.**all**(\[path,\] handler|middleware...)
-- app.**route**(path, \[app\])
-- app.**use**(\[path,\] middleware)
+- app.**HTTP_METHOD**(\[パス,\]handler|middleware...)
+- app.**all**(\[パス,\]handler|middleware...)
+- app.**route**(パス, \[app\])
+- app.**use**(\[パス,\]middleware)
 - app.**notFound**(handler)
 - app.**onError**(err, handler)
 - app.**fire**()
 - app.**fetch**(request, env, event)
-- app.**request**(path, options)
+- app.**request**(パス, options)
 
 ## Routing
 
@@ -351,6 +351,14 @@ app.get('/search', (c) => {
 // Get all params at once
 app.get('/search', (c) => {
   const { q, limit, offset } = c.req.query()
+  ...
+})
+
+// Multiple query values
+app.get('/search', (c) => {
+  const queries = c.req.queries('q')
+  // ---> GET search?q=foo&q=bar
+  // queries[0] => foo, queries[1] => bar
   ...
 })
 
