@@ -17,6 +17,10 @@ declare global {
       (key: string): string
       (): Record<string, string>
     }
+    queries: {
+      (key: string): string[]
+      (): Record<string, string[]>
+    }
     header: {
       (name: string): string
       (): Record<string, string>

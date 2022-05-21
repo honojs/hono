@@ -198,6 +198,12 @@ describe('param and query', () => {
       return c.text(`name is ${name}`)
     })
 
+    app.get('/multiple-values', (c) => {
+      const queries = c.req.queries('q')
+      const limit = c.req.queries('limit')
+      return c.text(`q is ${queries[0]} and ${queries[1]}, limit is ${limit[0]}`)
+    })
+
     app.get('/add-header', (c) => {
       const bar = c.req.header('X-Foo')
       return c.text(`foo is ${bar}`)
@@ -222,6 +228,11 @@ describe('param and query', () => {
     app.get('/search', (c) => {
       const { name } = c.req.query()
       return c.text(`name is ${name}`)
+    })
+
+    app.get('/multiple-values', (c) => {
+      const { q, limit } = c.req.queries()
+      return c.text(`q is ${q[0]} and ${q[1]}, limit is ${limit[0]}`)
     })
 
     app.get('/add-header', (c) => {
@@ -251,6 +262,18 @@ describe('param and query', () => {
       const res = await app.request('http://localhost/search?name=sam')
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('name is sam')
+    })
+
+    it('query of /search?name=sam&name=tom is found', async () => {
+      const res = await app.request('http://localhost/search?name=sam&name=tom')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('name is sam')
+    })
+
+    it('query of /multiple-values?q=foo&q=bar&limit=10 is found', async () => {
+      const res = await app.request('http://localhost/multiple-values?q=foo&q=bar&limit=10')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('q is foo and bar, limit is 10')
     })
 
     it('/add-header header - X-Foo is Bar', async () => {

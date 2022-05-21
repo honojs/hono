@@ -57,12 +57,26 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
         return url.searchParams.get(key)
       } else {
         const result: Record<string, string> = {}
-        for (const [key, value] of url.searchParams) {
-          result[key] = value
+        for (const key of url.searchParams.keys()) {
+          result[key] = url.searchParams.get(key)
         }
         return result
       }
     }) as typeof req.query
+
+    req.queries = ((key?: string): string[] | Record<string, string[]> => {
+      const url = new URL(req.url)
+      if (key) {
+        return url.searchParams.getAll(key)
+      } else {
+        const result: Record<string, string[]> = {}
+        for (const key of url.searchParams.keys()) {
+          result[key] = url.searchParams.getAll(key)
+        }
+        return result
+      }
+    }) as typeof req.queries
+
     return req
   }
 
