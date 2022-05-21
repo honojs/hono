@@ -1,5 +1,4 @@
 import type { StatusCode } from './utils/http-status'
-import { getStatusText } from './utils/http-status'
 import { isAbsoluteURL } from './utils/url'
 
 type Headers = Record<string, string>
@@ -15,7 +14,6 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
 
   private _headers: Headers = {}
   private _status: StatusCode = 200
-  private _statusText: string = ''
   private _pretty: boolean = false
   private _prettySpace: number = 2
   private _map: {
@@ -77,7 +75,6 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
 
   status(status: StatusCode): void {
     this._status = status
-    this._statusText = getStatusText(status)
   }
 
   set(key: string, value: any): void {
@@ -95,8 +92,6 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
 
   newResponse(data: Data, init: ResponseInit = {}): Response {
     init.status = init.status || this._status || 200
-    init.statusText =
-      init.statusText || this._statusText || getStatusText(init.status as StatusCode)
     init.headers = { ...this._headers, ...init.headers }
 
     return new Response(data, init)
