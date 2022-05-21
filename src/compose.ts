@@ -32,7 +32,7 @@ export const compose = <C>(
           if (res && context instanceof Context) {
             context.res = res
             context.res.finalized = true
-            dispatch(i + 1) // <--- Call next()
+            await dispatch(i + 1) // <--- Call next()
           }
           return context
         })
