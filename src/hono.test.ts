@@ -31,7 +31,6 @@ describe('GET Request', () => {
     const res = await app.request('http://localhost/hello-with-shortcuts')
     expect(res).not.toBeNull()
     expect(res.status).toBe(201)
-    expect(res.statusText).toBe('Created')
     expect(res.headers.get('X-Custom')).toBe('This is Hono')
     expect(res.headers.get('Content-Type')).toMatch(/text\/html/)
     expect(await res.text()).toBe('<h1>Hono!!!</h1>')
@@ -41,7 +40,6 @@ describe('GET Request', () => {
     const res = await app.request('http://localhost/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
-    expect(res.statusText).toBe('Not Found')
   })
 })
 

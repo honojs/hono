@@ -67,24 +67,22 @@ describe('Context', () => {
     expect(foo).toBe('Bar')
   })
 
-  it('c.status() and c.statusText()', async () => {
+  it('c.status()', async () => {
     c.status(201)
     const res = c.body('Hi')
     expect(res.status).toBe(201)
-    expect(res.statusText).toBe('Created')
   })
 
   it('Complex pattern', async () => {
     c.status(404)
     const res = c.json({ hono: 'great app' })
     expect(res.status).toBe(404)
-    expect(res.statusText).toBe('Not Found')
     expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
     const obj: { [key: string]: string } = await res.json()
     expect(obj['hono']).toBe('great app')
   })
 
-  it('Has headers, status, and statusText', async () => {
+  it('Has headers and status', async () => {
     c.header('X-Custom1', 'Message1')
     c.header('X-Custom2', 'Message2')
     c.status(200)
@@ -107,20 +105,17 @@ describe('Context', () => {
     c.status(202)
     expect(c.res.headers.get('X-Custom4')).toBe('Message4')
     expect(c.res.status).toBe(201)
-    expect(c.res.statusText).toBe('OK')
   })
 
   it('Should return 200 response', async () => {
     const res = c.text('Text')
     expect(res.status).toBe(200)
-    expect(res.statusText).toBe('OK')
   })
 
   it('Should return 204 response', async () => {
     c.status(204)
     const res = c.body(null)
     expect(res.status).toBe(204)
-    expect(res.statusText).toBe('No Content')
     expect(await res.text()).toBe('')
   })
 
