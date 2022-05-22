@@ -151,7 +151,7 @@ describe('Context', () => {
     ctx.header('foo2', 'bar2')
     const res = ctx.body('after')
     expect(res.status).toBe(200)
-    expect(res.headers.get('foo')).toBe('bar')
+    expect(res.headers.get('foo')).toBeNull()
     expect(res.headers.get('foo2')).toBe('bar2')
   })
 })
