@@ -108,6 +108,9 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
     init.status = init.status || this._status || 200
     init.headers = { ...this._headers, ...init.headers }
 
+    // Initialize
+    this._status = 200
+    this._headers = {}
     return new Response(data, init)
   }
 
