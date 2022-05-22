@@ -137,15 +137,15 @@ npm install hono
 
 An instance of `Hono` has these methods.
 
-- app.**HTTP_METHOD**(\[パス,\]handler|middleware...)
-- app.**all**(\[パス,\]handler|middleware...)
-- app.**route**(パス, \[app\])
-- app.**use**(\[パス,\]middleware)
+- app.**HTTP_METHOD**(\[path,\]handler|middleware...)
+- app.**all**(\[path,\]handler|middleware...)
+- app.**route**(path, \[app\])
+- app.**use**(\[path,\]middleware)
 - app.**notFound**(handler)
 - app.**onError**(err, handler)
 - app.**fire**()
 - app.**fetch**(request, env, event)
-- app.**request**(パス, options)
+- app.**request**(path, options)
 
 ## Routing
 
