@@ -140,4 +140,18 @@ describe('Context', () => {
     ctx.set('k-bar', { k: 'v' })
     expect(ctx.get('k-bar')).toEqual({ k: 'v' })
   })
+
+  it('flash status and header after return Response', async () => {
+    const ctx = new Context(req)
+    ctx.status(404)
+    ctx.header('foo', 'bar')
+    // return Response
+    ctx.body('body')
+
+    ctx.header('foo2', 'bar2')
+    const res = ctx.body('after')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('foo')).toBe('bar')
+    expect(res.headers.get('foo2')).toBe('bar2')
+  })
 })

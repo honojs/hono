@@ -726,16 +726,21 @@ describe('Multiple handler', () => {
   describe('handler + handler', () => {
     const app = new Hono()
     app.get('/:type/:id', (c) => {
+      c.status(404)
+      c.header('foo', 'bar')
       return c.text('foo')
     })
     app.get('/posts/:id', (c) => {
       const id = c.req.param('id')
+      c.header('foo2', 'bar2')
       return c.text(`id is ${id}`)
     })
     it('Should return response from `specialized` route', async () => {
       const res = await app.request('http://localhost/posts/123')
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('id is 123')
+      expect(res.headers.get('foo')).toBeNull()
+      expect(res.headers.get('foo2')).toBe('bar2')
     })
   })
 
@@ -809,10 +814,13 @@ describe('Multiple handler - async', () => {
     const app = new Hono()
     app.get('/:type/:id', async (c) => {
       await new Promise((resolve) => setTimeout(resolve, 1))
+      c.header('foo', 'bar')
+      c.status(404)
       return c.text('foo')
     })
     app.get('/posts/:id', async (c) => {
       await new Promise((resolve) => setTimeout(resolve, 1))
+      c.header('foo2', 'bar2')
       const id = c.req.param('id')
       return c.text(`id is ${id}`)
     })
@@ -820,6 +828,8 @@ describe('Multiple handler - async', () => {
       const res = await app.request('http://localhost/posts/123')
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('id is 123')
+      expect(res.headers.get('foo')).toBeNull()
+      expect(res.headers.get('foo2')).toBe('bar2')
     })
   })
 })
