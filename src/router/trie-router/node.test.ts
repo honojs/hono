@@ -387,7 +387,7 @@ describe('Sort Order', () => {
     node.insert('get', '/page', '/page')
     node.insert('get', '/:slug', '/:slug')
 
-    it('get /page', async () => {
+    it('get /page', () => {
       const res = node.search('get', '/page')
       expect(res).not.toBeNull()
       expect(res.handlers).toEqual(['a', '/page', '/:slug'])
@@ -400,7 +400,7 @@ describe('Sort Order', () => {
     node.insert('get', '/posts/:id', '/posts/:id')
     node.insert('get', '/:type/:id', '/:type/:id')
 
-    it('get /posts/123', async () => {
+    it('get /posts/123', () => {
       const res = node.search('get', '/posts/123')
       expect(res).not.toBeNull()
       expect(res.handlers).toEqual(['a', '/posts/:id', '/:type/:id'])
@@ -412,7 +412,7 @@ describe('Sort Order', () => {
     node.insert('get', '/posts', '/posts') // 1.1
     node.insert('get', '/posts/*', '/posts/*') // 2.1
 
-    it('get /posts/123', async () => {
+    it('get /posts/123', () => {
       const res = node.search('get', '/posts')
       expect(res).not.toBeNull()
       expect(res.handlers).toEqual(['/posts', '/posts/*'])
@@ -426,7 +426,7 @@ describe('Sort Order', () => {
     node.insert('get', '/api/posts/:id', '3rd')
     node.insert('get', '/api/*', '4th')
 
-    it('get /api/posts/123', async () => {
+    it('get /api/posts/123', () => {
       const res = node.search('get', '/api/posts/123')
       expect(res).not.toBeNull()
       expect(res.handlers).toEqual(['1st', '2nd', '4th', '3rd'])
@@ -444,7 +444,7 @@ describe('Sort Order', () => {
     node.insert('get', '*', 'a') // score 1.7
     node.insert('get', '*', 'b') // score 1.8
 
-    it('get /api/posts/123', async () => {
+    it('get /api/posts/123', () => {
       const res = node.search('get', '/api/posts/123')
       // ---> will match => c, d, e, f, b, a, b
       // ---> sort by score => a, b, c, d, e, f, g
