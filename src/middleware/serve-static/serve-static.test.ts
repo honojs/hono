@@ -94,8 +94,8 @@ describe('With middleware', () => {
   }
 
   app.use('/static/*', md1)
-  app.use('/static/*', serveStatic({ root: './assets' }))
   app.use('/static/*', md2)
+  app.use('/static/*', serveStatic({ root: './assets' }))
   app.get('/static/foo', (c) => {
     return c.text('bar')
   })

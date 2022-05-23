@@ -99,7 +99,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
 
     const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
-      this[method] = <Path extends string>(
+      this[method] = <Path extends string = ''>(
         args1: Path | Handler<ParamKeys<Path>, E>,
         ...args: [Handler<ParamKeys<Path>, E>]
       ) => {

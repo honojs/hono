@@ -42,8 +42,8 @@ describe('Complex', () => {
   })
 
   it('Default', async () => {
-    router.add('GET', '/api/abc', 'get api')
     router.add('GET', '/api/*', 'fallback')
+    router.add('GET', '/api/abc', 'get api')
     let res = router.match('GET', '/api/abc')
     expect(res).not.toBeNull()
     expect(res.handlers).toEqual(['fallback', 'get api'])
