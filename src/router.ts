@@ -6,11 +6,7 @@ export interface Router<T> {
   match(method: string, path: string): Result<T> | null
 }
 
-export class Result<T> {
+export interface Result<T> {
   handlers: T[]
   params: Record<string, string>
-  constructor(handlers: T[], params: Record<string, string>) {
-    this.handlers = handlers
-    this.params = params
-  }
 }

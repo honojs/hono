@@ -1,4 +1,5 @@
-import { Result, METHOD_NAME_ALL } from '../../router'
+import type { Result } from '../../router'
+import { METHOD_NAME_ALL } from '../../router'
 import type { Pattern } from '../../utils/url'
 import { splitPath, getPattern } from '../../utils/url'
 
@@ -192,6 +193,6 @@ export class Node<T> {
 
     if (handlers.length <= 0) return null
 
-    return new Result<T>(handlers, params)
+    return { handlers, params }
   }
 }

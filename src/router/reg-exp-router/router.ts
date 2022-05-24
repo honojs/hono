@@ -1,5 +1,5 @@
-import type { Router } from '../../router'
-import { Result, METHOD_NAME_ALL } from '../../router'
+import type { Router, Result } from '../../router'
+import { METHOD_NAME_ALL } from '../../router'
 import type { ParamMap } from './trie'
 import { Trie } from './trie'
 
@@ -257,7 +257,7 @@ export class RegExpRouter<T> implements Router<T> {
             match = path.match(new RegExp(regExpSrc))
           }
 
-          return new Result([...handlers.values()], params)
+          return { handlers: [...handlers.values()], params }
         }
       : (method, path) => {
           let matcher = primaryMatchers[method] || primaryMatchers[METHOD_NAME_ALL]
@@ -276,9 +276,9 @@ export class RegExpRouter<T> implements Router<T> {
           }
 
           const index = match.indexOf('', 1)
-          const [handler, paramMap] = matcher[1][index]
+          const [handlers, paramMap] = matcher[1][index]
           if (!paramMap) {
-            return new Result(handler, emptyParam)
+            return { handlers, params: emptyParam }
           }
 
           const params: Record<string, string> = {}
@@ -286,7 +286,7 @@ export class RegExpRouter<T> implements Router<T> {
             params[paramMap[i][0]] = match[paramMap[i][1]]
           }
 
-          return new Result(handler, params)
+          return { handlers, params }
         }
 
     return this.match(method, path)
