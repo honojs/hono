@@ -108,16 +108,15 @@ describe('Multi match', () => {
   })
 })
 
-describe('Blog - special Wildcard', () => {
+describe('Fallback', () => {
   const router = new TrieRouter<string>()
 
-  router.add('POST', '/entry', 'post entry') // 1.01
-  // /entry/* will match /entry*
-  router.add('POST', '/entry/*', 'special') // 1.00
+  router.add('POST', '/entry', 'post entry')
+  router.add('POST', '/entry/*', 'fallback')
   router.add('GET', '/entry/:id', 'get entry')
   it('POST /entry', async () => {
     const res = router.match('POST', '/entry')
     expect(res).not.toBeNull()
-    expect(res.handlers).toEqual(['special', 'post entry'])
+    expect(res.handlers).toEqual(['post entry', 'fallback'])
   })
 })

@@ -64,23 +64,13 @@ export class Node<T> {
     }
 
     for (let i = 0, len = parts.length; i < len; i++) {
-      const order = this.order / 100 + len
       const p: string = parts[i]
 
       if (Object.keys(curNode.children).includes(p)) {
         parentPatterns.push(...curNode.patterns)
-
         curNode = curNode.children[p]
-
-        if (path === '*') {
-          curNode.order = order
-          curNode.name = this.name
-        }
-
         continue
       }
-
-      //console.log(this.name, order)
 
       curNode.children[p] = new Node()
 
@@ -102,10 +92,11 @@ export class Node<T> {
 
       parentPatterns.push(...curNode.patterns)
       curNode = curNode.children[p]
-
-      curNode.order = order
-      curNode.name = this.name
     }
+
+    const order = parts.length + this.order * 0.01
+    curNode.order = order
+    curNode.name = this.name
 
     if (!curNode.methods.length) {
       curNode.methods = []
@@ -177,7 +168,7 @@ export class Node<T> {
         // '/hello/*' => match '/hello'
         if (nextNode.children['*']) {
           const astNode = nextNode.children['*']
-          astNode.order = --astNode.order - 0.01 // Magic number
+          astNode.order = --astNode.order
           handlerSets.push(...this.getHandlerSets(astNode, method))
         }
         handlerSets.push(...this.getHandlerSets(nextNode, method))

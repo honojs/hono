@@ -242,13 +242,13 @@ describe('Multi match', () => {
 
   describe('Blog', () => {
     const node = new Node()
-    node.insert('get', '*', 'middleware a')
-    node.insert('ALL', '*', 'middleware b') // 1.1
-    node.insert('get', '/entry', 'get entries')
-    node.insert('post', '/entry/*', 'middleware c') // 3.1
-    node.insert('post', '/entry', 'post entry') // 2.1
-    node.insert('get', '/entry/:id', 'get entry')
-    node.insert('get', '/entry/:id/comment/:comment_id', 'get comment')
+    node.insert('get', '*', 'middleware a') // 0.1
+    node.insert('ALL', '*', 'middleware b') // 0.2 <===
+    node.insert('get', '/entry', 'get entries') // 1.3
+    node.insert('post', '/entry/*', 'middleware c') // 1.4 <===
+    node.insert('post', '/entry', 'post entry') // 1.5 <===
+    node.insert('get', '/entry/:id', 'get entry') // 2.6
+    node.insert('get', '/entry/:id/comment/:comment_id', 'get comment') // 4.7
     it('get /entry/123', async () => {
       const res = node.search('get', '/entry/123')
       expect(res).not.toBeNull()
@@ -424,14 +424,14 @@ describe('Sort Order', () => {
   describe('With special Wildcard', () => {
     const node = new Node()
     node.insert('get', '/posts', '/posts') // 1.1
-    node.insert('get', '/posts/*', '/posts/*') // 2.1
-    node.insert('get', '/posts/:id', '/posts/:id') // 2.2
+    node.insert('get', '/posts/*', '/posts/*') // 1.2
+    node.insert('get', '/posts/:id', '/posts/:id') // 2.3
 
     it('get /posts', () => {
       const res = node.search('get', '/posts')
-      console.log(res)
+
       expect(res).not.toBeNull()
-      expect(res.handlers).toEqual(['/posts/*', '/posts'])
+      expect(res.handlers).toEqual(['/posts', '/posts/*'])
     })
   })
 
@@ -458,14 +458,28 @@ describe('Sort Order', () => {
 
   describe('Multi match', () => {
     const node = new Node()
-    node.insert('get', '*', 'GET *') // 1.1
-    node.insert('get', '/abc/*', 'GET /abc/*') // 2.2
+    node.insert('get', '*', 'GET *') // 0.1
+    node.insert('get', '/abc/*', 'GET /abc/*') // 1.2
     node.insert('get', '/abc/edf', 'GET /abc/edf') // 2.3
     node.insert('get', '/abc/*/ghi/jkl', 'GET /abc/*/ghi/jkl') // 4.4
     it('get /abc/edf', () => {
       const res = node.search('get', '/abc/edf')
       expect(res).not.toBeNull()
       expect(res.handlers).toEqual(['GET *', 'GET /abc/*', 'GET /abc/edf'])
+    })
+  })
+
+  describe('fallback', () => {
+    describe('Blog - failed', () => {
+      const node = new Node()
+      node.insert('post', '/entry', 'post entry') // 1.1
+      node.insert('post', '/entry/*', 'fallback') // 1.2
+      node.insert('get', '/entry/:id', 'get entry') // 2.3
+      it('post /entry', async () => {
+        const res = node.search('post', '/entry')
+        expect(res).not.toBeNull()
+        expect(res.handlers).toEqual(['post entry', 'fallback'])
+      })
     })
   })
 })
