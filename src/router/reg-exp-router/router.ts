@@ -1,4 +1,5 @@
-import { Router, Result, METHOD_NAME_ALL } from '../../router'
+import type { Router } from '../../router'
+import { Result, METHOD_NAME_ALL } from '../../router'
 import type { ParamMap } from './trie'
 import { Trie } from './trie'
 
@@ -177,7 +178,7 @@ function verifyDuplicateParam<T>(routes: Route<T>[]): boolean {
   return true
 }
 
-export class RegExpRouter<T> extends Router<T> {
+export class RegExpRouter<T> implements Router<T> {
   routeData?: {
     routes: Route<T>[]
     methods: Set<string>
