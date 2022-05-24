@@ -51,7 +51,7 @@ export class Node<T> {
 
   insert(method: string, path: string, handler: T): Node<T> {
     this.name = `${method} ${path}`
-    ++this.order
+    this.order = ++this.order
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let curNode: Node<T> = this
@@ -64,20 +64,23 @@ export class Node<T> {
     }
 
     for (let i = 0, len = parts.length; i < len; i++) {
-      const order = this.order / 10 + len
+      const order = this.order / 100 + len
       const p: string = parts[i]
 
       if (Object.keys(curNode.children).includes(p)) {
         parentPatterns.push(...curNode.patterns)
+
         curNode = curNode.children[p]
 
-        if (curNode.children['*']) {
+        if (path === '*') {
           curNode.order = order
           curNode.name = this.name
         }
 
         continue
       }
+
+      //console.log(this.name, order)
 
       curNode.children[p] = new Node()
 
@@ -174,10 +177,9 @@ export class Node<T> {
         // '/hello/*' => match '/hello'
         if (nextNode.children['*']) {
           const astNode = nextNode.children['*']
-          astNode.order = --astNode.order
+          astNode.order = --astNode.order - 0.01 // Magic number
           handlerSets.push(...this.getHandlerSets(astNode, method))
         }
-
         handlerSets.push(...this.getHandlerSets(nextNode, method))
       }
       nextNodes.push(nextNode)

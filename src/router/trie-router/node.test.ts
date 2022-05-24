@@ -243,10 +243,10 @@ describe('Multi match', () => {
   describe('Blog', () => {
     const node = new Node()
     node.insert('get', '*', 'middleware a')
-    node.insert('ALL', '*', 'middleware b')
+    node.insert('ALL', '*', 'middleware b') // 1.1
     node.insert('get', '/entry', 'get entries')
-    node.insert('post', '/entry/*', 'middleware c')
-    node.insert('post', '/entry', 'post entry')
+    node.insert('post', '/entry/*', 'middleware c') // 3.1
+    node.insert('post', '/entry', 'post entry') // 2.1
     node.insert('get', '/entry/:id', 'get entry')
     node.insert('get', '/entry/:id/comment/:comment_id', 'get comment')
     it('get /entry/123', async () => {
@@ -407,18 +407,6 @@ describe('Sort Order', () => {
     })
   })
 
-  describe('With special Wildcard', () => {
-    const node = new Node()
-    node.insert('get', '/posts', '/posts') // 1.1
-    node.insert('get', '/posts/*', '/posts/*') // 2.1
-
-    it('get /posts/123', () => {
-      const res = node.search('get', '/posts')
-      expect(res).not.toBeNull()
-      expect(res.handlers).toEqual(['/posts', '/posts/*'])
-    })
-  })
-
   describe('With Wildcards', () => {
     const node = new Node()
     node.insert('get', '/api/*', '1st')
@@ -433,20 +421,36 @@ describe('Sort Order', () => {
     })
   })
 
+  describe('With special Wildcard', () => {
+    const node = new Node()
+    node.insert('get', '/posts', '/posts') // 1.1
+    node.insert('get', '/posts/*', '/posts/*') // 2.1
+    node.insert('get', '/posts/:id', '/posts/:id') // 2.2
+
+    it('get /posts', () => {
+      const res = node.search('get', '/posts')
+      console.log(res)
+      expect(res).not.toBeNull()
+      expect(res.handlers).toEqual(['/posts/*', '/posts'])
+    })
+  })
+
   describe('Complex', () => {
     const node = new Node()
-    node.insert('get', '/api/*', 'c') // score 2.1
-    node.insert('get', '/api/:type/:id', 'd') // score 3.2
-    node.insert('get', '/api/posts/:id', 'e') // score 3.3
-    node.insert('get', '/api/posts/123', 'f') // score 3.4
-    node.insert('get', '/*/*/:id', 'g') // score 3.5
-    node.insert('get', '/api/posts/*/comment', 'h') // score 4.6 - not match
-    node.insert('get', '*', 'a') // score 1.7
-    node.insert('get', '*', 'b') // score 1.8
+    node.insert('get', '/api', 'x') // score 1.1
+    node.insert('get', '/api/*', 'c') // score 2.2
+    node.insert('get', '/api/:type', 'y') // score 2.3
+    node.insert('get', '/api/:type/:id', 'd') // score 3.4
+    node.insert('get', '/api/posts/:id', 'e') // score 3.5
+    node.insert('get', '/api/posts/123', 'f') // score 3.6
+    node.insert('get', '/*/*/:id', 'g') // score 3.7
+    node.insert('get', '/api/posts/*/comment', 'z') // score 4.8 - not match
+    node.insert('get', '*', 'a') // score 1.9
+    node.insert('get', '*', 'b') // score 1.10
 
     it('get /api/posts/123', () => {
       const res = node.search('get', '/api/posts/123')
-      // ---> will match => c, d, e, f, b, a, b
+      // ---> will match => c, d, e, e, f, g, a, b
       // ---> sort by score => a, b, c, d, e, f, g
       expect(res.handlers).toEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g'])
     })
