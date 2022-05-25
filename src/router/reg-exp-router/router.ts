@@ -290,7 +290,7 @@ export class RegExpRouter<T> implements Router<T> {
             match = path.match(new RegExp(regExpSrc))
           }
 
-          return { handlers: [...handlers.values()], params }
+          return { handlers: getSortedHandlers(handlers.values()), params }
         }
       : (method, path) => {
           let matcher = (primaryMatchers[method] || primaryMatchers[METHOD_NAME_ALL]) as Matcher<T>
