@@ -1,4 +1,5 @@
-import { Router, Result, METHOD_NAME_ALL } from '../../router'
+import type { Router, Result } from '../../router'
+import { METHOD_NAME_ALL } from '../../router'
 import type { ParamMap } from './trie'
 import { Trie } from './trie'
 
@@ -200,7 +201,7 @@ function verifyDuplicateParam<T>(routes: Route<T>[]): boolean {
   return true
 }
 
-export class RegExpRouter<T> extends Router<T> {
+export class RegExpRouter<T> implements Router<T> {
   routeData?: {
     index: number
     routes: Route<T>[]
@@ -289,7 +290,7 @@ export class RegExpRouter<T> extends Router<T> {
             match = path.match(new RegExp(regExpSrc))
           }
 
-          return new Result(getSortedHandlers(handlers.values()), params)
+          return { handlers: getSortedHandlers(handlers.values()), params }
         }
       : (method, path) => {
           let matcher = (primaryMatchers[method] || primaryMatchers[METHOD_NAME_ALL]) as Matcher<T>
@@ -310,7 +311,7 @@ export class RegExpRouter<T> extends Router<T> {
           const index = match.indexOf('', 1)
           const [handlers, paramMap] = matcher[1][index]
           if (!paramMap) {
-            return new Result(handlers, emptyParam)
+            return { handlers, params: emptyParam }
           }
 
           const params: Record<string, string> = {}
@@ -318,7 +319,7 @@ export class RegExpRouter<T> extends Router<T> {
             params[paramMap[i][0]] = match[paramMap[i][1]]
           }
 
-          return new Result(handlers, params)
+          return { handlers, params }
         }
 
     return this.match(method, path)

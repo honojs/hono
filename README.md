@@ -518,14 +518,14 @@ test('GET /hello is ok', async () => {
 })
 ```
 
-## routerClass
+## router
 
-The `routerClass` option specify which router is used inside. The default router is `TrieRouter`. If you want to use `RexExpRouter`, write like this:
+The `router` option specify which router is used inside. The default router is `TrieRouter`. If you want to use `RexExpRouter`, write like this:
 
 ```ts
 import { RegExpRouter } from 'hono/router/reg-exp-router'
 
-const app = new Hono({ routerClass: RegExpRouter })
+const app = new Hono({ router: new RegExpRouter() })
 ```
 
 ## Cloudflare Workers with Hono
