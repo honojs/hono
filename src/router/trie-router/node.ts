@@ -1,4 +1,5 @@
-import { Result, METHOD_NAME_ALL } from '../../router'
+import type { Result } from '../../router'
+import { METHOD_NAME_ALL } from '../../router'
 import type { Pattern } from '../../utils/url'
 import { splitPath, getPattern } from '../../utils/url'
 
@@ -10,7 +11,7 @@ type Next<T> = {
 
 type HandlerSet<T> = {
   handler: T
-  order: number
+  score: number
   name: string // For debug
 }
 
@@ -31,7 +32,7 @@ function findParam<T>(node: Node<T>, name: string): boolean {
 }
 
 export class Node<T> {
-  methods: Record<string, T>[]
+  methods: Record<string, HandlerSet<T>>[]
 
   children: Record<string, Node<T>>
   patterns: Pattern[]
@@ -42,8 +43,8 @@ export class Node<T> {
     this.children = children || {}
     this.methods = []
     if (method && handler) {
-      const m: Record<string, T> = {}
-      m[method] = handler
+      const m: Record<string, HandlerSet<T>> = {}
+      m[method] = { handler: handler, score: 0, name: this.name }
       this.methods = [m]
     }
     this.patterns = []
@@ -94,31 +95,38 @@ export class Node<T> {
       curNode = curNode.children[p]
     }
 
-    const order = parts.length + this.order * 0.01
-    curNode.order = order
-    curNode.name = this.name
+    let score = 1
+
+    if (path === '*') {
+      score = score + this.order * 0.01
+    } else {
+      score = parts.length + 1 + this.order * 0.01
+    }
 
     if (!curNode.methods.length) {
       curNode.methods = []
     }
-    const m: Record<string, T> = {}
-    m[method] = handler
+
+    const m: Record<string, HandlerSet<T>> = {}
+
+    const handlerSet: HandlerSet<T> = { handler: handler, name: this.name, score: score }
+
+    m[method] = handlerSet
     curNode.methods.push(m)
 
     return curNode
   }
 
-  private getHandlerSets(node: Node<T>, method: string): HandlerSet<T>[] {
+  private getHandlerSets(node: Node<T>, method: string, wildcard?: boolean): HandlerSet<T>[] {
     const handlerSets: HandlerSet<T>[] = []
     node.methods.map((m) => {
-      let handler = m[method]
-      if (handler !== undefined) {
-        handlerSets.push({ handler: handler, order: node.order, name: node.name })
-        return
-      }
-      handler = m[METHOD_NAME_ALL]
-      if (handler !== undefined) {
-        handlerSets.push({ handler: handler, order: node.order, name: node.name })
+      const handlerSet = m[method] || m[METHOD_NAME_ALL]
+      if (handlerSet !== undefined) {
+        const hs = { ...handlerSet }
+        if (wildcard) {
+          hs.score = handlerSet.score - 1
+        }
+        handlerSets.push(hs)
         return
       }
     })
@@ -139,7 +147,11 @@ export class Node<T> {
       if (pattern === '*') {
         const astNode = node.children['*']
         if (astNode) {
-          handlerSets.push(...this.getHandlerSets(astNode, method))
+          let wildcard = false
+          if (!Object.keys(astNode.children).length) {
+            wildcard = true
+          }
+          handlerSets.push(...this.getHandlerSets(astNode, method, wildcard))
           nextNodes.push(astNode)
         }
       }
@@ -163,13 +175,12 @@ export class Node<T> {
     }
 
     const nextNode = node.children[part]
+
     if (nextNode) {
       if (isLast === true) {
         // '/hello/*' => match '/hello'
         if (nextNode.children['*']) {
-          const astNode = nextNode.children['*']
-          astNode.order = --astNode.order
-          handlerSets.push(...this.getHandlerSets(astNode, method))
+          handlerSets.push(...this.getHandlerSets(nextNode.children['*'], method, true))
         }
         handlerSets.push(...this.getHandlerSets(nextNode, method))
       }
@@ -215,12 +226,12 @@ export class Node<T> {
 
     const handlers = handlerSets
       .sort((a, b) => {
-        return a.order - b.order
+        return a.score - b.score
       })
       .map((s) => {
         return s.handler
       })
 
-    return new Result<T>(handlers, params)
+    return { handlers, params }
   }
 }

@@ -81,13 +81,11 @@ interface Route<E extends Env> {
   path: string
   method: string
   handler: Handler<string, E>
-  order: number
 }
 
 export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<E, P, Hono<E, P>> {
-  readonly routerClass: { new (): Router<any> } = TrieRouter
+  readonly router: Router<Handler<string, E>> = new TrieRouter()
   readonly strict: boolean = true // strict routing - default is true
-  private _router: Router<Handler<string, E>>
   private _tempPath: string
   private path: string = '/'
 
@@ -95,7 +93,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
 
   routes: Route<E>[] = []
 
-  constructor(init: Partial<Pick<Hono, 'routerClass' | 'strict'>> = {}) {
+  constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
     super()
 
     const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
@@ -120,7 +118,6 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
 
     Object.assign(this, init)
 
-    this._router = new this.routerClass()
     this._tempPath = null
 
     this._cacheResponse = new Response(null, { status: 404 })
@@ -139,25 +136,13 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
   }
 
   route(path: string, app?: Hono<any>): Hono<E, P> {
-    if (!app) {
-      this._tempPath = path
-      return this
+    this._tempPath = path
+    if (app) {
+      app.routes.map((r) => {
+        this.addRoute(r.method, r.path, r.handler)
+      })
+      this._tempPath = null
     }
-
-    app.routes.map((r) => {
-      r.path = mergePath(path, r.path)
-    })
-    const routes = [...this.routes, ...app.routes]
-    this._router = new this.routerClass()
-
-    routes
-      .sort((a, b) => {
-        return a.order - b.order
-      })
-      .map((r) => {
-        const path = r.path
-        this.addRoute(r.method, path, r.handler)
-      })
 
     return this
   }
@@ -191,13 +176,13 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
     if (this._tempPath) {
       path = mergePath(this._tempPath, path)
     }
-    this._router.add(method, path, handler)
-    const r: Route<E> = { path: path, method: method, handler: handler, order: this.routes.length }
+    this.router.add(method, path, handler)
+    const r: Route<E> = { path: path, method: method, handler: handler }
     this.routes.push(r)
   }
 
   private async matchRoute(method: string, path: string): Promise<Result<Handler<string, E>>> {
-    return this._router.match(method, path)
+    return this.router.match(method, path)
   }
 
   private async dispatch(request: Request, event?: FetchEvent, env?: E): Promise<Response> {
