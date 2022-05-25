@@ -81,6 +81,7 @@ interface Route<E extends Env> {
   path: string
   method: string
   handler: Handler<string, E>
+  order: number
 }
 
 export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<E, P, Hono<E, P>> {
@@ -138,13 +139,25 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
   }
 
   route(path: string, app?: Hono<any>): Hono<E, P> {
-    this._tempPath = path
-    if (app) {
-      app.routes.map((r) => {
-        this.addRoute(r.method, r.path, r.handler)
-      })
-      this._tempPath = null
+    if (!app) {
+      this._tempPath = path
+      return this
     }
+
+    app.routes.map((r) => {
+      r.path = mergePath(path, r.path)
+    })
+    const routes = [...this.routes, ...app.routes]
+    this._router = new this.routerClass()
+
+    routes
+      .sort((a, b) => {
+        return a.order - b.order
+      })
+      .map((r) => {
+        const path = r.path
+        this.addRoute(r.method, path, r.handler)
+      })
 
     return this
   }
@@ -179,7 +192,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
       path = mergePath(this._tempPath, path)
     }
     this._router.add(method, path, handler)
-    const r: Route<E> = { path: path, method: method, handler: handler }
+    const r: Route<E> = { path: path, method: method, handler: handler, order: this.routes.length }
     this.routes.push(r)
   }
 
