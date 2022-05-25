@@ -4,8 +4,14 @@ import { splitPath, getPattern } from '../../utils/url'
 
 type Next<T> = {
   nodes: Node<T>[]
-  handlers: T[]
+  handlerSets: HandlerSet<T>[]
   params: Record<string, string>
+}
+
+type HandlerSet<T> = {
+  handler: T
+  order: number
+  name: string // For debug
 }
 
 function findParam<T>(node: Node<T>, name: string): boolean {
@@ -26,9 +32,11 @@ function findParam<T>(node: Node<T>, name: string): boolean {
 
 export class Node<T> {
   methods: Record<string, T>[]
-  handlers: T[]
+
   children: Record<string, Node<T>>
   patterns: Pattern[]
+  order: number = 0
+  name: string
 
   constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
     this.children = children || {}
@@ -42,6 +50,9 @@ export class Node<T> {
   }
 
   insert(method: string, path: string, handler: T): Node<T> {
+    this.name = `${method} ${path}`
+    this.order = ++this.order
+
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let curNode: Node<T> = this
     const parts = splitPath(path)
@@ -62,6 +73,7 @@ export class Node<T> {
       }
 
       curNode.children[p] = new Node()
+
       const pattern = getPattern(p)
       if (pattern) {
         if (typeof pattern === 'object') {
@@ -77,38 +89,45 @@ export class Node<T> {
         curNode.patterns.push(pattern)
         parentPatterns.push(...curNode.patterns)
       }
+
       parentPatterns.push(...curNode.patterns)
       curNode = curNode.children[p]
     }
+
+    const order = parts.length + this.order * 0.01
+    curNode.order = order
+    curNode.name = this.name
+
     if (!curNode.methods.length) {
       curNode.methods = []
     }
     const m: Record<string, T> = {}
     m[method] = handler
     curNode.methods.push(m)
+
     return curNode
   }
 
-  private getHandlers(node: Node<T>, method: string): T[] {
-    const handlers: T[] = []
+  private getHandlerSets(node: Node<T>, method: string): HandlerSet<T>[] {
+    const handlerSets: HandlerSet<T>[] = []
     node.methods.map((m) => {
       let handler = m[method]
       if (handler !== undefined) {
-        handlers.push(handler)
+        handlerSets.push({ handler: handler, order: node.order, name: node.name })
         return
       }
       handler = m[METHOD_NAME_ALL]
       if (handler !== undefined) {
-        handlers.push(handler)
+        handlerSets.push({ handler: handler, order: node.order, name: node.name })
         return
       }
     })
 
-    return handlers
+    return handlerSets
   }
 
   private next(node: Node<T>, part: string, method: string, isLast: boolean): Next<T> {
-    const handlers: T[] = []
+    const handlerSets: HandlerSet<T>[] = []
     const nextNodes: Node<T>[] = []
     const params: Record<string, string> = {}
 
@@ -120,7 +139,7 @@ export class Node<T> {
       if (pattern === '*') {
         const astNode = node.children['*']
         if (astNode) {
-          handlers.push(...this.getHandlers(astNode, method))
+          handlerSets.push(...this.getHandlerSets(astNode, method))
           nextNodes.push(astNode)
         }
       }
@@ -133,7 +152,7 @@ export class Node<T> {
       if (matcher === true || (matcher instanceof RegExp && matcher.test(part))) {
         if (typeof key === 'string') {
           if (isLast === true) {
-            handlers.push(...this.getHandlers(node.children[key], method))
+            handlerSets.push(...this.getHandlerSets(node.children[key], method))
           }
           nextNodes.push(node.children[key])
         }
@@ -147,24 +166,26 @@ export class Node<T> {
     if (nextNode) {
       if (isLast === true) {
         // '/hello/*' => match '/hello'
-        if (nextNode.children['*'] !== undefined) {
-          handlers.push(...this.getHandlers(nextNode.children['*'], method))
+        if (nextNode.children['*']) {
+          const astNode = nextNode.children['*']
+          astNode.order = --astNode.order
+          handlerSets.push(...this.getHandlerSets(astNode, method))
         }
-        handlers.push(...this.getHandlers(nextNode, method))
+        handlerSets.push(...this.getHandlerSets(nextNode, method))
       }
       nextNodes.push(nextNode)
     }
 
     const next: Next<T> = {
       nodes: nextNodes,
-      handlers: handlers,
+      handlerSets: handlerSets,
       params: params,
     }
     return next
   }
 
   search(method: string, path: string): Result<T> {
-    const handlers: T[] = []
+    const handlerSets: HandlerSet<T>[] = []
     let params: Record<string, string> = {}
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -182,7 +203,7 @@ export class Node<T> {
         if (res.nodes.length === 0) {
           continue
         }
-        handlers.push(...res.handlers)
+        handlerSets.push(...res.handlerSets)
         params = Object.assign(params, res.params)
         tempNodes.push(...res.nodes)
       }
@@ -190,7 +211,15 @@ export class Node<T> {
       curNodes = tempNodes
     }
 
-    if (handlers.length <= 0) return null
+    if (handlerSets.length <= 0) return null
+
+    const handlers = handlerSets
+      .sort((a, b) => {
+        return a.order - b.order
+      })
+      .map((s) => {
+        return s.handler
+      })
 
     return new Result<T>(handlers, params)
   }

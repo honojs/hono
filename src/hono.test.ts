@@ -598,13 +598,15 @@ describe('Hono with `app.route`', () => {
     const app = new Hono()
     const api = new Hono()
     const middleware = new Hono()
-    api.get('/posts', (c) => c.text('List'))
-    api.post('/posts', (c) => c.text('Create'))
-    api.get('/posts/:id', (c) => c.text(`GET ${c.req.param('id')}`))
+
     api.use('*', async (c, next) => {
       await next()
       c.res.headers.append('x-custom-a', 'a')
     })
+
+    api.get('/posts', (c) => c.text('List'))
+    api.post('/posts', (c) => c.text('Create'))
+    api.get('/posts/:id', (c) => c.text(`GET ${c.req.param('id')}`))
     app.route('/api', api)
 
     app.get('/foo', (c) => c.text('bar'))
@@ -725,22 +727,24 @@ describe('Hono with `app.route`', () => {
 describe('Multiple handler', () => {
   describe('handler + handler', () => {
     const app = new Hono()
-    app.get('/:type/:id', (c) => {
-      c.status(404)
-      c.header('foo', 'bar')
-      return c.text('foo')
-    })
+
     app.get('/posts/:id', (c) => {
       const id = c.req.param('id')
-      c.header('foo2', 'bar2')
+      c.header('foo', 'bar')
       return c.text(`id is ${id}`)
+    })
+
+    app.get('/:type/:id', (c) => {
+      c.status(404)
+      c.header('foo2', 'bar2')
+      return c.text('foo')
     })
     it('Should return response from `specialized` route', async () => {
       const res = await app.request('http://localhost/posts/123')
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('id is 123')
-      expect(res.headers.get('foo')).toBeNull()
-      expect(res.headers.get('foo2')).toBe('bar2')
+      expect(res.headers.get('foo')).toBe('bar')
+      expect(res.headers.get('foo2')).toBeNull()
     })
   })
 
@@ -812,18 +816,19 @@ describe('Multiple handler', () => {
 describe('Multiple handler - async', () => {
   describe('handler + handler', () => {
     const app = new Hono()
-    app.get('/:type/:id', async (c) => {
-      await new Promise((resolve) => setTimeout(resolve, 1))
-      c.header('foo', 'bar')
-      c.status(404)
-      return c.text('foo')
-    })
     app.get('/posts/:id', async (c) => {
       await new Promise((resolve) => setTimeout(resolve, 1))
       c.header('foo2', 'bar2')
       const id = c.req.param('id')
       return c.text(`id is ${id}`)
     })
+    app.get('/:type/:id', async (c) => {
+      await new Promise((resolve) => setTimeout(resolve, 1))
+      c.header('foo', 'bar')
+      c.status(404)
+      return c.text('foo')
+    })
+
     it('Should return response from `specialized` route', async () => {
       const res = await app.request('http://localhost/posts/123')
       expect(res.status).toBe(200)
