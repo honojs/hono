@@ -42,8 +42,8 @@ describe('Complex', () => {
   })
 
   it('Default', async () => {
-    router.add('GET', '/api/abc', 'get api')
     router.add('GET', '/api/*', 'fallback')
+    router.add('GET', '/api/abc', 'get api')
     let res = router.match('GET', '/api/abc')
     expect(res).not.toBeNull()
     expect(res.handlers).toEqual(['fallback', 'get api'])
@@ -105,5 +105,18 @@ describe('Multi match', () => {
       expect(res).not.toBeNull()
       expect(res.handlers).toEqual(['middleware a'])
     })
+  })
+})
+
+describe('Fallback', () => {
+  const router = new TrieRouter<string>()
+
+  router.add('POST', '/entry', 'post entry')
+  router.add('POST', '/entry/*', 'fallback')
+  router.add('GET', '/entry/:id', 'get entry')
+  it('POST /entry', async () => {
+    const res = router.match('POST', '/entry')
+    expect(res).not.toBeNull()
+    expect(res.handlers).toEqual(['post entry', 'fallback'])
   })
 })
