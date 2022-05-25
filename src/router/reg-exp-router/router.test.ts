@@ -50,7 +50,7 @@ describe('Complex', () => {
     router.add('GET', '/api/*', 'fallback')
     let res = router.match('GET', '/api/abc')
     expect(res).not.toBeNull()
-    expect(res.handlers).toEqual(['fallback', 'get api'])
+    expect(res.handlers).toEqual(['get api', 'fallback'])
     res = router.match('GET', '/api/def')
     expect(res).not.toBeNull()
     expect(res.handlers).toEqual(['fallback'])
@@ -68,9 +68,24 @@ describe('Complex', () => {
     res = router.match('GET', '/post/123/123')
     expect(res).toBeNull()
   })
+
+  it('/*', async () => {
+    router.add('GET', '/api/*', 'auth middleware')
+    router.add('GET', '/api', 'top')
+    router.add('GET', '/api/posts', 'posts')
+    router.add('GET', '/api/*', 'fallback')
+
+    let res = router.match('GET', '/api')
+    expect(res).not.toBeNull()
+    expect(res.handlers).toEqual(['auth middleware', 'top', 'fallback'])
+
+    res = router.match('GET', '/api/posts')
+    expect(res).not.toBeNull()
+    expect(res.handlers).toEqual(['auth middleware', 'posts', 'fallback'])
+  })
 })
 
-describe('Order independent', () => {
+describe('Registration order', () => {
   let router: RegExpRouter<string>
   beforeEach(() => {
     router = new RegExpRouter<string>()
@@ -89,7 +104,7 @@ describe('Order independent', () => {
     router.add('GET', '/:type/:action', 'foo')
     const res = router.match('GET', '/posts/123')
     expect(res).not.toBeNull()
-    expect(res.handlers).toEqual(['foo', 'bar'])
+    expect(res.handlers).toEqual(['bar', 'foo'])
   })
 })
 
