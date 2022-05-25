@@ -469,6 +469,20 @@ describe('Sort Order', () => {
     })
   })
 
+  describe('Multi match', () => {
+    const node = new Node()
+
+    node.insert('get', '/api/*', 'a') // 1.1
+    node.insert('get', '/api/entry', 'entry') // 2.2
+    node.insert('ALL', '/api/*', 'b') // 1.2
+
+    it('get /api/entry', async () => {
+      const res = node.search('get', '/api/entry')
+      expect(res).not.toBeNull()
+      expect(res.handlers).toEqual(['a', 'b', 'entry'])
+    })
+  })
+
   describe('fallback', () => {
     describe('Blog - failed', () => {
       const node = new Node()
@@ -481,5 +495,19 @@ describe('Sort Order', () => {
         expect(res.handlers).toEqual(['post entry', 'fallback'])
       })
     })
+  })
+})
+
+describe('Multi match', () => {
+  const node = new Node()
+
+  node.insert('get', '/api/*', 'a') // 1.1
+  node.insert('get', '/api/entry', 'entry') // 2.2
+  node.insert('ALL', '/api/*', 'b') // 1.2
+
+  it('get /api/entry', async () => {
+    const res = node.search('get', '/api/entry')
+    expect(res).not.toBeNull()
+    expect(res.handlers).toEqual(['a', 'b', 'entry'])
   })
 })
