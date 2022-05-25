@@ -11,16 +11,24 @@ interface Hint {
   maybeHandler: boolean
   namedParams: [number, string, string][]
 }
+interface HandlerWithSortIndex<T> {
+  handler: T
+  index: number
+  componentsLength: number
+}
 interface Route<T> {
   method: string
   path: string
   hint: Hint
-  handlers: T[]
-  middleware: T[]
+  handlers: HandlerWithSortIndex<T>[]
+  middleware: HandlerWithSortIndex<T>[]
   paramAliasMap: Record<string, string[]>
 }
 type HandlerData<T> = [T[], ParamMap | null]
 type Matcher<T> = [RegExp, HandlerData<T>[]]
+type HandlerDataWithSortIndex<T> = [HandlerWithSortIndex<T>[], ParamMap | null]
+type MatcherWithSortIndex<T> = [RegExp, HandlerDataWithSortIndex<T>[]]
+type AnyMatcher<T> = Matcher<T> | MatcherWithSortIndex<T>
 
 type CompareResult =
   | 0 // different
@@ -99,12 +107,24 @@ function compareRoute<T>(a: Route<T>, b: Route<T>): CompareResult {
   return i === b.hint.regExpComponents.length || a.hint.endWithWildcard ? 1 : 0
 }
 
+function compareHandler(a: HandlerWithSortIndex<any>, b: HandlerWithSortIndex<any>) {
+  return a.componentsLength !== b.componentsLength
+    ? a.componentsLength - b.componentsLength
+    : a.index - b.index
+}
+
+function getSortedHandlers<T>(
+  handlers: HandlerWithSortIndex<T>[] | IterableIterator<HandlerWithSortIndex<T>>
+): T[] {
+  return [...handlers].sort(compareHandler).map((h) => h.handler)
+}
+
 function buildMatcherFromPreprocessedRoutes<T>(
   routes: Route<T>[],
   hasAmbiguous: boolean = false
-): Matcher<T> {
+): AnyMatcher<T> {
   const trie = new Trie({ reverse: hasAmbiguous })
-  const handlers: HandlerData<T>[] = []
+  const handlers: HandlerData<T>[] | HandlerDataWithSortIndex<T>[] = []
 
   if (routes.length === 0) {
     return nullMatcher
@@ -116,6 +136,9 @@ function buildMatcherFromPreprocessedRoutes<T>(
       [...routes[i].middleware, ...routes[i].handlers],
       Object.keys(paramMap).length !== 0 ? paramMap : null,
     ]
+    if (!hasAmbiguous) {
+      handlers[i][0] = getSortedHandlers(handlers[i][0] as HandlerWithSortIndex<T>[])
+    }
   }
 
   const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp()
@@ -135,13 +158,13 @@ function buildMatcherFromPreprocessedRoutes<T>(
     }
   }
 
-  const handlerMap: HandlerData<T>[] = []
+  const handlerMap: HandlerData<T>[] | HandlerDataWithSortIndex<T>[] = []
   // using `in` because indexReplacementMap is a sparse array
   for (const i in indexReplacementMap) {
     handlerMap[i] = handlers[indexReplacementMap[i]]
   }
 
-  return [regexp, handlerMap]
+  return [regexp, handlerMap] as AnyMatcher<T>
 }
 
 function verifyDuplicateParam<T>(routes: Route<T>[]): boolean {
@@ -179,23 +202,32 @@ function verifyDuplicateParam<T>(routes: Route<T>[]): boolean {
 
 export class RegExpRouter<T> extends Router<T> {
   routeData?: {
+    index: number
     routes: Route<T>[]
     methods: Set<string>
-  } = { routes: [], methods: new Set() }
+  } = { index: 0, routes: [], methods: new Set() }
 
   add(method: string, path: string, handler: T) {
     if (!this.routeData) {
       throw new Error('Can not add a route since the matcher is already built.')
     }
-    const { routes, methods } = this.routeData
+    this.routeData.index++
+    const { index, routes, methods } = this.routeData
 
     if (path === '/*') {
       path = '*'
     }
 
+    const hint = initHint(path)
+    const handlerWithSortIndex = {
+      index,
+      handler,
+      componentsLength: hint.components.length,
+    }
+
     for (let i = 0, len = routes.length; i < len; i++) {
       if (routes[i].method === method && routes[i].path === path) {
-        routes[i].handlers.push(handler)
+        routes[i].handlers.push(handlerWithSortIndex)
         return
       }
     }
@@ -204,8 +236,8 @@ export class RegExpRouter<T> extends Router<T> {
     routes.push({
       method,
       path,
-      handlers: [handler],
-      hint: initHint(path),
+      hint,
+      handlers: [handlerWithSortIndex],
       middleware: [],
       paramAliasMap: {},
     })
@@ -216,7 +248,8 @@ export class RegExpRouter<T> extends Router<T> {
 
     this.match = hasAmbiguous
       ? (method, path) => {
-          const matcher = primaryMatchers[method] || primaryMatchers[METHOD_NAME_ALL]
+          const matcher = (primaryMatchers[method] ||
+            primaryMatchers[METHOD_NAME_ALL]) as MatcherWithSortIndex<T>
           let match = path.match(matcher[0])
 
           if (!match) {
@@ -225,7 +258,7 @@ export class RegExpRouter<T> extends Router<T> {
           }
 
           const params: Record<string, string> = {}
-          const handlers: Set<T> = new Set()
+          const handlers: Set<HandlerWithSortIndex<T>> = new Set()
           let regExpSrc = matcher[0].source
           while (match) {
             let index = match.indexOf('', 1)
@@ -256,16 +289,16 @@ export class RegExpRouter<T> extends Router<T> {
             match = path.match(new RegExp(regExpSrc))
           }
 
-          return new Result([...handlers.values()], params)
+          return new Result(getSortedHandlers(handlers.values()), params)
         }
       : (method, path) => {
-          let matcher = primaryMatchers[method] || primaryMatchers[METHOD_NAME_ALL]
+          let matcher = (primaryMatchers[method] || primaryMatchers[METHOD_NAME_ALL]) as Matcher<T>
           let match = path.match(matcher[0])
 
           if (!match) {
             const matchers = secondaryMatchers[method] || secondaryMatchers[METHOD_NAME_ALL]
             for (let i = 0, len = matchers.length; i < len && !match; i++) {
-              matcher = matchers[i]
+              matcher = matchers[i] as Matcher<T>
               match = path.match(matcher[0])
             }
 
@@ -275,9 +308,9 @@ export class RegExpRouter<T> extends Router<T> {
           }
 
           const index = match.indexOf('', 1)
-          const [handler, paramMap] = matcher[1][index]
+          const [handlers, paramMap] = matcher[1][index]
           if (!paramMap) {
-            return new Result(handler, emptyParam)
+            return new Result(handlers, emptyParam)
           }
 
           const params: Record<string, string> = {}
@@ -285,13 +318,17 @@ export class RegExpRouter<T> extends Router<T> {
             params[paramMap[i][0]] = match[paramMap[i][1]]
           }
 
-          return new Result(handler, params)
+          return new Result(handlers, params)
         }
 
     return this.match(method, path)
   }
 
-  private buildAllMatchers(): [Record<string, Matcher<T>>, Record<string, Matcher<T>[]>, boolean] {
+  private buildAllMatchers(): [
+    Record<string, AnyMatcher<T>>,
+    Record<string, AnyMatcher<T>[]>,
+    boolean
+  ] {
     this.routeData.routes.sort(({ hint: a }, { hint: b }) => {
       if (a.componentsLength !== b.componentsLength) {
         return a.componentsLength - b.componentsLength
@@ -317,8 +354,8 @@ export class RegExpRouter<T> extends Router<T> {
       return 0
     })
 
-    const primaryMatchers: Record<string, Matcher<T>> = {}
-    const secondaryMatchers: Record<string, Matcher<T>[]> = {}
+    const primaryMatchers: Record<string, AnyMatcher<T>> = {}
+    const secondaryMatchers: Record<string, AnyMatcher<T>[]> = {}
     let hasAmbiguous = false
     this.routeData.methods.forEach((method) => {
       let _hasAmbiguous
@@ -334,7 +371,7 @@ export class RegExpRouter<T> extends Router<T> {
     return [primaryMatchers, secondaryMatchers, hasAmbiguous]
   }
 
-  private buildMatcher(method: string): [Matcher<T>, Matcher<T>[], boolean] {
+  private buildMatcher(method: string): [AnyMatcher<T>, AnyMatcher<T>[], boolean] {
     let hasAmbiguous = false
     const targetMethods = new Set([method, METHOD_NAME_ALL])
     const routes = this.routeData.routes.filter(({ method }) => targetMethods.has(method))
@@ -373,7 +410,19 @@ export class RegExpRouter<T> extends Router<T> {
             }
           }
 
-          routes[j].middleware.push(...routes[i].handlers)
+          if (routes[j].hint.components.length < routes[i].hint.components.length) {
+            const componentsLength = routes[j].hint.components.length
+            routes[j].middleware.push(
+              ...routes[i].handlers.map((h) => ({
+                componentsLength,
+                index: h.index,
+                handler: h.handler,
+              }))
+            )
+          } else {
+            routes[j].middleware.push(...routes[i].handlers)
+          }
+
           routes[i].hint.maybeHandler = false
         } else if (compareResult === 2) {
           // ambiguous
