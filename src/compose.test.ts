@@ -164,8 +164,8 @@ describe('compose with Context - 401 not authorized', () => {
     c.res = new Response('Not authorized', { status: 401 })
   }
 
-  middleware.push(handler)
   middleware.push(mHandler)
+  middleware.push(handler)
 
   it('Should return 401 Response', async () => {
     const composed = compose<Context>(middleware, onError)
