@@ -223,7 +223,7 @@ export class RegExpRouter<T> implements Router<T> {
     const handlerWithSortIndex = {
       index,
       handler,
-      componentsLength: hint.components.length,
+      componentsLength: hint.components.length || 1,
     }
 
     for (let i = 0, len = routes.length; i < len; i++) {
@@ -412,7 +412,7 @@ export class RegExpRouter<T> implements Router<T> {
           }
 
           if (routes[j].hint.components.length < routes[i].hint.components.length) {
-            const componentsLength = routes[j].hint.components.length
+            const componentsLength = routes[j].hint.components.length || 1
             routes[j].middleware.push(
               ...routes[i].handlers.map((h) => ({
                 componentsLength,
