@@ -9,8 +9,10 @@ ittyRouter.get('/event/:id', () => new Response('Event'))
 ittyRouter.get('/event/:id/comments', () => new Response('Event Comments'))
 ittyRouter.post('/event/:id/comments', () => new Response('POST Event Comments'))
 ittyRouter.post('/status', () => new Response('Status'))
-ittyRouter.get('/very/deeply/nested/route/hello/there', () => new Response('Very Deeply Nested Route'))
-//ittyRouter.get('/static/*', () => new Response('Static'))
+ittyRouter.get(
+  '/very/deeply/nested/route/hello/there',
+  () => new Response('Very Deeply Nested Route')
+)
 ittyRouter.get('/user/lookup/username/:username', ({ params }) => {
   return new Response(`Hello ${params.username}`, {
     status: 200,
