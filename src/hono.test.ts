@@ -433,6 +433,7 @@ describe('Middleware with app.HTTP_METHOD', () => {
     const app = new Hono()
 
     app.all('*', async (c, next) => {
+      c.header('x-before-dispatch', 'foo')
       await next()
       c.header('x-custom-message', 'hello')
     })
@@ -460,6 +461,7 @@ describe('Middleware with app.HTTP_METHOD', () => {
       const res = await app.request('http://localhost/abc')
       expect(res.status).toBe(200)
       expect(res.headers.get('x-custom-message')).toBe('hello')
+      expect(res.headers.get('x-before-dispatch')).toBe('foo')
       expect(await res.text()).toBe('bar')
     })
     it('POST /abc', async () => {
@@ -607,16 +609,16 @@ describe('Hono with `app.route`', () => {
     api.get('/posts', (c) => c.text('List'))
     api.post('/posts', (c) => c.text('Create'))
     api.get('/posts/:id', (c) => c.text(`GET ${c.req.param('id')}`))
-    app.route('/api', api)
-
-    app.get('/foo', (c) => c.text('bar'))
 
     middleware.use('*', async (c, next) => {
       await next()
       c.res.headers.append('x-custom-b', 'b')
     })
 
+    app.route('/api', api)
     app.route('/api', middleware)
+
+    app.get('/foo', (c) => c.text('bar'))
 
     it('Should return not found response', async () => {
       const res = await app.request('http://localhost/')
