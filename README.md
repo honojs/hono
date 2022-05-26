@@ -38,13 +38,13 @@ app.fire()
 **Hono is fastest**, compared to other routers for Cloudflare Workers.
 
 ```plain
-hono - trie-router(default) x 737,602 ops/sec ±3.65% (67 runs sampled)
-hono - regexp-router x 1,188,203 ops/sec ±6.42% (60 runs sampled)
-itty-router x 163,970 ops/sec ±3.05% (91 runs sampled)
-sunder x 344,468 ops/sec ±0.87% (97 runs sampled)
-worktop x 222,044 ops/sec ±2.13% (85 runs sampled)
-Fastest is hono - regexp-router
-✨  Done in 84.04s.
+hono - trie-router(default) x 725,892 ops/sec ±4.02% (74 runs sampled)
+hono - regexp-router x 733,494 ops/sec ±3.00% (67 runs sampled)
+itty-router x 167,167 ops/sec ±1.25% (91 runs sampled)
+sunder x 327,697 ops/sec ±2.45% (92 runs sampled)
+worktop x 216,468 ops/sec ±3.01% (85 runs sampled)
+Fastest is hono - regexp-router,hono - trie-router(default)
+✨  Done in 69.57s.
 ```
 
 ## Why so fast?
@@ -249,12 +249,37 @@ app.route('/book', book)
 
 ## Middleware
 
-Middleware operate after/before executing Handler. We can get `Response` before dispatching or manipulate `Response` after dispatching.
+Middleware works after/before Handler. We can get `Request` before dispatching or manipulate `Response` after dispatching.
 
 ### Definition of Middleware
 
-- Handler - should return `Response` object.
-- Middleware - should return nothing, do `await next()`
+- Handler - should return `Response` object. Only one handler will be called.
+- Middleware - should return nothing, will be proceeded to next middleware with `await next()`
+
+The user can register middleware using `c.use` or using `c.HTTP_METHOD` as well as the handlers. For this feature, it's easy to specify the path and the method.
+
+```ts
+// match any method, all routes
+app.use('*', logger())
+
+// specify path
+app.use('/posts/*', cors())
+
+// specify method and path
+app.post('/posts/*', basicAuth(), bodyParse())
+```
+
+If the handler returns `Response`, it will be used for the end-user, and stopping the processing.
+
+```ts
+app.post('/posts', (c) => c.text('Created!', 201))
+```
+
+In this case, four middleware are processed before dispatching like this:
+
+```ts
+logger() -> cors() -> basicAuth() -> bodyParse() -> *handler*
+```
 
 ### Built-in Middleware
 
@@ -390,7 +415,6 @@ The Response is the same as below.
 ```ts
 new Response('Thank you for comming', {
   status: 201,
-  statusText: 'Created',
   headers: {
     'X-Message': 'Hello',
     'Content-Type': 'text/plain',
@@ -528,6 +552,39 @@ import { RegExpRouter } from 'hono/router/reg-exp-router'
 const app = new Hono({ router: new RegExpRouter() })
 ```
 
+## Routing Ordering
+
+The routing priority is decided by the order of registration. Only one handler will be dispatched.
+
+```ts
+app.get('/book/a', (c) => c.text('a')) // a
+app.get('/book/:slug', (c) => c.text('common')) // common
+```
+
+```http
+GET /book/a ---> `a` // common will not be dispatched
+GET /book/b ---> `common` // a will not be dispatched
+```
+
+All scoring rules:
+
+```ts
+app.get('/api/*', 'c') // score 1.1 <--- `/*` is special wildcard
+app.get('/api/:type/:id', 'd') // score 3.2
+app.get('/api/posts/:id', 'e') // score 3.3
+app.get('/api/posts/123', 'f') // score 3.4
+app.get('/*/*/:id', 'g') // score 3.5
+app.get('/api/posts/*/comment', 'h') // score 4.6 - not match
+app.get('*', 'a') // score 0.7
+app.get('*', 'b') // score 0.8
+```
+
+```plain
+GET /api/posts/123
+---> will match => c, d, e, f, b, a, b
+---> sort by score => a, b, c, d, e, f, g
+```
+
 ## Cloudflare Workers with Hono
 
 Using [Wrangler](https://developers.cloudflare.com/workers/cli-wrangler/), you can develop the application locally and publish it with few commands.
@@ -615,6 +672,7 @@ export interface Bindings {
 }
 
 const api = new Hono<Bindings>()
+api.use('/posts/*', cors())
 
 api.get('/posts', (c) => {
   const { limit, offset } = c.req.query()
@@ -640,8 +698,6 @@ api.post(
     return c.json({ ok })
   }
 )
-
-app.use('/posts/*', cors())
 
 app.route('/api', api)
 
