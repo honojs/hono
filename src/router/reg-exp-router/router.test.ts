@@ -254,3 +254,26 @@ describe('Check for duplicate parameter names', () => {
     }).not.toThrow()
   })
 })
+
+describe('star', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('GET', '/', '/')
+  router.add('GET', '/*', '/*')
+  router.add('GET', '*', '*')
+
+  router.add('GET', '/x', '/x')
+  router.add('GET', '/x/*', '/x/*')
+
+  it('top', async () => {
+    const res = router.match('GET', '/')
+    expect(res).not.toBeNull()
+    expect(res.handlers).toEqual(['/', '/*', '*'])
+  })
+
+  it('Under a certain path', async () => {
+    const res = router.match('GET', '/x')
+    expect(res).not.toBeNull()
+    expect(res.handlers).toEqual(['/*', '*', '/x', '/x/*'])
+  })
+})
