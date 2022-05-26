@@ -89,7 +89,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
   private _tempPath: string
   private path: string = '/'
 
-  private _cacheResponse: Response
+  private _cachedResponse: Response
 
   routes: Route<E>[] = []
 
@@ -120,8 +120,8 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
 
     this._tempPath = null
 
-    this._cacheResponse = new Response(null, { status: 404 })
-    this._cacheResponse.finalized = false
+    this._cachedResponse = new Response(null, { status: 404 })
+    this._cachedResponse.finalized = false
   }
 
   private notFoundHandler: NotFoundHandler = (c: Context) => {
@@ -190,6 +190,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
     const method = request.method
 
     const result = await this.matchRoute(method, path)
+
     request.param = ((key?: string): string | Record<string, string> => {
       if (result) {
         if (key) {
@@ -204,7 +205,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
     const c = new Context<string, E>(request, {
       env: env,
       event: event,
-      res: this._cacheResponse,
+      res: this._cachedResponse,
     })
     c.notFound = () => this.notFoundHandler(c)
 

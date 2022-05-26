@@ -83,19 +83,19 @@ describe('Context', () => {
   })
 
   it('Has headers and status', async () => {
-    c.header('X-Custom1', 'Message1')
-    c.header('X-Custom2', 'Message2')
+    c.header('x-custom1', 'Message1')
+    c.header('x-custom2', 'Message2')
     c.status(200)
     const res = c.newResponse('this is body', {
       status: 201,
       headers: {
-        'X-Custom3': 'Message3',
-        'X-Custom2': 'Message2-Override',
+        'x-custom3': 'Message3',
+        'x-custom2': 'Message2-Override',
       },
     })
-    expect(res.headers.get('X-Custom1')).toBe('Message1')
-    expect(res.headers.get('X-Custom2')).toBe('Message2-Override')
-    expect(res.headers.get('X-Custom3')).toBe('Message3')
+    expect(res.headers.get('x-Custom1')).toBe('Message1')
+    expect(res.headers.get('x-Custom2')).toBe('Message2-Override')
+    expect(res.headers.get('x-Custom3')).toBe('Message3')
     expect(res.status).toBe(201)
     expect(await res.text()).toBe('this is body')
 
@@ -141,17 +141,11 @@ describe('Context', () => {
     expect(ctx.get('k-bar')).toEqual({ k: 'v' })
   })
 
-  it('flash status and header after return Response', async () => {
-    const ctx = new Context(req)
-    ctx.status(404)
-    ctx.header('foo', 'bar')
-    // return Response
-    ctx.body('body')
-
-    ctx.header('foo2', 'bar2')
-    const res = ctx.body('after')
-    expect(res.status).toBe(200)
-    expect(res.headers.get('foo')).toBeNull()
-    expect(res.headers.get('foo2')).toBe('bar2')
+  it('has res object by default', async () => {
+    c = new Context(req)
+    c.res.headers.append('foo', 'bar')
+    const res = c.text('foo')
+    expect(res.headers.get('foo')).not.toBeNull()
+    expect(res.headers.get('foo')).toBe('bar')
   })
 })

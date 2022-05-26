@@ -12,7 +12,6 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   env: E
   event: FetchEvent
 
-  private _headers: Headers = {}
   private _status: StatusCode = 200
   private _pretty: boolean = false
   private _prettySpace: number = 2
@@ -29,6 +28,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   ) {
     this.req = this.initRequest<RequestParamKeyType>(req)
     this._map = {}
+
     Object.assign(this, opts)
 
     if (!this.res) {
@@ -81,10 +81,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   }
 
   header(name: string, value: string): void {
-    if (this.res) {
-      this.res.headers.set(name, value)
-    }
-    this._headers[name] = value
+    this.res.headers.set(name, value)
   }
 
   status(status: StatusCode): void {
@@ -106,19 +103,17 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
 
   newResponse(data: Data, init: ResponseInit = {}): Response {
     init.status = init.status || this._status || 200
-    init.headers = { ...this._headers, ...init.headers }
+    let headers: Record<string, string> = {}
+    this.res.headers.forEach((v, k) => {
+      headers[k] = v
+    })
+    init.headers = Object.assign(headers, init.headers)
+    headers = {}
 
-    // Initialize
-    this._status = 200
-    this._headers = {}
     return new Response(data, init)
   }
 
-  body(
-    data: Data | null,
-    status: StatusCode = this._status,
-    headers: Headers = this._headers
-  ): Response {
+  body(data: Data | null, status: StatusCode = this._status, headers: Headers = {}): Response {
     return this.newResponse(data, {
       status: status,
       headers: headers,
