@@ -1,0 +1,15 @@
+{
+  "name": "webapp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start:hono": "wrangler dev hono.js --local --port 8787",
+    "start:itty-router": "wrangler dev itty-router.js --local --port 8788",
+    "start:sunder": "wrangler dev sunder.js --local --port 8789"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "itty-router": "^2.6.1",
+    "sunder": "^0.10.1"
+  }
+}
