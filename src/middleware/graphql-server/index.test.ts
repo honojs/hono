@@ -39,6 +39,7 @@ describe('GraphQL Middleware - Simple way', () => {
   }
 
   const app = new Hono()
+
   app.use(
     '/graphql',
     graphqlServer({
@@ -46,6 +47,11 @@ describe('GraphQL Middleware - Simple way', () => {
       rootValue,
     })
   )
+
+  app.all('*', (c) => {
+    c.header('foo', 'bar')
+    return c.text('fallback')
+  })
 
   it('Should return GraphQL response', async () => {
     const query = 'query { hello }'
@@ -63,6 +69,7 @@ describe('GraphQL Middleware - Simple way', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('{"data":{"hello":"Hello world!"}}')
+    expect(res.headers.get('foo')).toBeNull() // GraphQL Server middleware should be Handler
   })
 })
 

@@ -40,14 +40,11 @@ export const graphqlServer = (options: Options) => {
   // const showGraphiQL = options.graphiql ?? false
 
   return async (c: Context, next: Next) => {
-    await next()
-
     // GraphQL HTTP only supports GET and POST methods.
     if (c.req.method !== 'GET' && c.req.method !== 'POST') {
-      c.res = c.json(errorMessages(['GraphQL only supports GET and POST requests.']), 405, {
+      return c.json(errorMessages(['GraphQL only supports GET and POST requests.']), 405, {
         Allow: 'GET, POST',
       })
-      return
     }
 
     let params: GraphQLParams
@@ -56,26 +53,23 @@ export const graphqlServer = (options: Options) => {
     } catch (e) {
       if (e instanceof Error) {
         console.error(`${e.stack || e.message}`)
-        c.res = c.json(errorMessages([e.message], [e]), 400)
+        return c.json(errorMessages([e.message], [e]), 400)
       }
-      return
     }
 
     const { query, variables, operationName } = params
 
     if (query == null) {
-      c.res = c.json(errorMessages(['Must provide query string.']), 400)
-      return
+      return c.json(errorMessages(['Must provide query string.']), 400)
     }
 
     const schemaValidationErrors = validateSchema(schema)
     if (schemaValidationErrors.length > 0) {
       // Return 500: Internal Server Error if invalid schema.
-      c.res = c.json(
+      return c.json(
         errorMessages(['GraphQL schema validation error.'], schemaValidationErrors),
         500
       )
-      return
     }
 
     let documentAST: DocumentNode
@@ -88,9 +82,8 @@ export const graphqlServer = (options: Options) => {
         const e = new GraphQLError(syntaxError.message, {
           originalError: syntaxError,
         })
-        c.res = c.json(errorMessages(['GraphQL syntax error.'], [e]), 400)
+        return c.json(errorMessages(['GraphQL syntax error.'], [e]), 400)
       }
-      return
     }
 
     // Validate AST, reporting any errors.
@@ -98,8 +91,7 @@ export const graphqlServer = (options: Options) => {
 
     if (validationErrors.length > 0) {
       // Return 400: Bad Request if any validation errors exist.
-      c.res = c.json(errorMessages(['GraphQL validation error.'], validationErrors), 400)
-      return
+      return c.json(errorMessages(['GraphQL validation error.'], validationErrors), 400)
     }
 
     if (c.req.method === 'GET') {
@@ -114,14 +106,13 @@ export const graphqlServer = (options: Options) => {
         */
 
         // Otherwise, report a 405: Method Not Allowed error.
-        c.res = c.json(
+        return c.json(
           errorMessages([
             `Can only perform a ${operationAST.operation} operation from a POST request.`,
           ]),
           405,
           { Allow: 'POST' }
         )
-        return
       }
     }
 
@@ -143,14 +134,12 @@ export const graphqlServer = (options: Options) => {
           nodes: documentAST,
         })
         // Return 400: Bad Request if any execution context errors exist.
-        c.res = c.json(errorMessages(['GraphQL execution context error.'], [e]), 400)
+        return c.json(errorMessages(['GraphQL execution context error.'], [e]), 400)
       }
-      return
     }
 
     if (result.data == null) {
-      c.res = c.json(errorMessages([result.errors.toString()], result.errors), 500)
-      return
+      return c.json(errorMessages([result.errors.toString()], result.errors), 500)
     }
 
     /*
@@ -161,13 +150,14 @@ export const graphqlServer = (options: Options) => {
 
     if (pretty) {
       const payload = JSON.stringify(result, null, pretty ? 2 : 0)
-      c.res = c.text(payload, 200, {
+      return c.text(payload, 200, {
         'Content-Type': 'application/json',
       })
     } else {
-      c.res = c.json(result)
+      return c.json(result)
     }
-    return
+
+    await next() // XXX
   }
 }
 
