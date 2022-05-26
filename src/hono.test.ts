@@ -615,8 +615,8 @@ describe('Hono with `app.route`', () => {
       c.res.headers.append('x-custom-b', 'b')
     })
 
-    app.route('/api', api)
     app.route('/api', middleware)
+    app.route('/api', api)
 
     app.get('/foo', (c) => c.text('bar'))
 

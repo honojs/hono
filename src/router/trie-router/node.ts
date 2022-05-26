@@ -147,11 +147,7 @@ export class Node<T> {
       if (pattern === '*') {
         const astNode = node.children['*']
         if (astNode) {
-          let wildcard = false
-          if (astNode.methods.length) {
-            wildcard = true
-          }
-          handlerSets.push(...this.getHandlerSets(astNode, method, wildcard))
+          handlerSets.push(...this.getHandlerSets(astNode, method))
           nextNodes.push(astNode)
         }
       }

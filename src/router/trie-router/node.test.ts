@@ -472,14 +472,14 @@ describe('Sort Order', () => {
   describe('Multi match', () => {
     const node = new Node()
 
-    node.insert('get', '/api/*', 'a') // 1.1
+    node.insert('get', '/api/*', 'a') // 2.1 for /api/entry
     node.insert('get', '/api/entry', 'entry') // 2.2
-    node.insert('ALL', '/api/*', 'b') // 1.2
+    node.insert('ALL', '/api/*', 'b') // 2.3 for /api/entry
 
     it('get /api/entry', async () => {
       const res = node.search('get', '/api/entry')
       expect(res).not.toBeNull()
-      expect(res.handlers).toEqual(['a', 'b', 'entry'])
+      expect(res.handlers).toEqual(['a', 'entry', 'b'])
     })
   })
 
@@ -496,19 +496,15 @@ describe('Sort Order', () => {
       })
     })
   })
-})
-
-describe('Multi match', () => {
-  const node = new Node()
-
-  node.insert('get', '/api/*', 'a') // 1.1
-  node.insert('get', '/api/entry', 'entry') // 2.2
-  node.insert('ALL', '/api/*', 'b') // 1.2
-
-  it('get /api/entry', async () => {
-    const res = node.search('get', '/api/entry')
-    expect(res).not.toBeNull()
-    expect(res.handlers).toEqual(['a', 'b', 'entry'])
+  describe('page', () => {
+    const node = new Node()
+    node.insert('get', '/page', 'page') // 1.1
+    node.insert('ALL', '/*', 'fallback') // 1.2
+    it('get /page', async () => {
+      const res = node.search('get', '/page')
+      expect(res).not.toBeNull()
+      expect(res.handlers).toEqual(['page', 'fallback'])
+    })
   })
 })
 
@@ -524,12 +520,12 @@ describe('star', () => {
   it('top', async () => {
     const res = node.search('get', '/')
     expect(res).not.toBeNull()
-    expect(res.handlers).toEqual(['/*', '*', '/']) // =>  failed ['*', '/*', '/']
+    expect(res.handlers).toEqual(['/', '/*', '*']) // =>  failed ['*', '/*', '/']
   })
 
   it('Under a certain path', async () => {
     const res = node.search('get', '/x')
     expect(res).not.toBeNull()
-    expect(res.handlers).toEqual(['/*', '*', '/x', '/x/*']) // =>  failed ['*', '/*', '/x', '/x/*']
+    expect(res.handlers).toEqual(['/*', '*', '/x', '/x/*'])
   })
 })
