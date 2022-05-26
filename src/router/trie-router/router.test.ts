@@ -110,7 +110,6 @@ describe('Multi match', () => {
 
 describe('Fallback', () => {
   const router = new TrieRouter<string>()
-
   router.add('POST', '/entry', 'post entry')
   router.add('POST', '/entry/*', 'fallback')
   router.add('GET', '/entry/:id', 'get entry')
@@ -118,5 +117,15 @@ describe('Fallback', () => {
     const res = router.match('POST', '/entry')
     expect(res).not.toBeNull()
     expect(res.handlers).toEqual(['post entry', 'fallback'])
+  })
+})
+
+describe('page', () => {
+  const router = new TrieRouter<string>()
+  router.add('GET', '/page', 'page')
+  router.add('ALL', '*', 'fallback') // or '*'
+  it('GET /page', async () => {
+    const res = router.match('GET', '/page')
+    expect(res.handlers).toEqual(['page', 'fallback'])
   })
 })
