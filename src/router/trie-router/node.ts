@@ -100,7 +100,7 @@ export class Node<T> {
     if (path === '*') {
       score = score + this.order * 0.01
     } else {
-      score = parts.length + 1 + this.order * 0.01
+      score = parts.length + this.order * 0.01
     }
 
     if (!curNode.methods.length) {
@@ -148,7 +148,7 @@ export class Node<T> {
         const astNode = node.children['*']
         if (astNode) {
           let wildcard = false
-          if (!Object.keys(astNode.children).length) {
+          if (astNode.methods.length) {
             wildcard = true
           }
           handlerSets.push(...this.getHandlerSets(astNode, method, wildcard))

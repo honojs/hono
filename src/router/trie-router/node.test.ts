@@ -511,3 +511,25 @@ describe('Multi match', () => {
     expect(res.handlers).toEqual(['a', 'b', 'entry'])
   })
 })
+
+describe('star', () => {
+  const node = new Node()
+  node.insert('get', '/', '/')
+  node.insert('get', '/*', '/*')
+  node.insert('get', '*', '*')
+
+  node.insert('get', '/x', '/x')
+  node.insert('get', '/x/*', '/x/*')
+
+  it('top', async () => {
+    const res = node.search('get', '/')
+    expect(res).not.toBeNull()
+    expect(res.handlers).toEqual(['/*', '*', '/']) // =>  failed ['*', '/*', '/']
+  })
+
+  it('Under a certain path', async () => {
+    const res = node.search('get', '/x')
+    expect(res).not.toBeNull()
+    expect(res.handlers).toEqual(['/*', '*', '/x', '/x/*']) // =>  failed ['*', '/*', '/x', '/x/*']
+  })
+})
