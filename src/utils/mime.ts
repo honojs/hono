@@ -1,4 +1,4 @@
-export const getMimeType = (filename: string): string => {
+export const getMimeType = (filename: string): string | undefined => {
   const regexp = /\.([a-zA-Z0-9]+?)$/
   const match = filename.match(regexp)
   if (!match) return

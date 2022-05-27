@@ -1,4 +1,4 @@
-import type { Context } from '../../context'
+import type { Context, Env } from '../../context'
 import type { Handler, Next } from '../../hono'
 import { getContentFromKVAsset, getKVFilePath } from '../../utils/cloudflare'
 import { getMimeType } from '../../utils/mime'
@@ -12,10 +12,10 @@ export type ServeStaticOptions = {
 const DEFAULT_DOCUMENT = 'index.html'
 
 // This middleware is available only on Cloudflare Workers.
-export const serveStatic = (options: ServeStaticOptions = { root: '' }): Handler => {
-  return async (c: Context, next: Next) => {
+export const serveStatic = (options: ServeStaticOptions = { root: '' }): Handler<string, Env> => {
+  return async (c: Context, next: Next): Promise<Response | undefined> => {
     // Do nothing if Response is already set
-    if (c.res && c.res.finalized) {
+    if (c.res && c.res._finalized) {
       await next()
     }
 
@@ -42,5 +42,6 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Handler
       console.warn(`Static file: ${path} is not found`)
       await next()
     }
+    return
   }
 }

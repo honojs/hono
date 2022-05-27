@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { Router, Result } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 import type { ParamMap } from './trie'
@@ -330,6 +331,7 @@ export class RegExpRouter<T> implements Router<T> {
     Record<string, AnyMatcher<T>[]>,
     boolean
   ] {
+    // @ts-ignore
     this.routeData.routes.sort(({ hint: a }, { hint: b }) => {
       if (a.componentsLength !== b.componentsLength) {
         return a.componentsLength - b.componentsLength
@@ -358,6 +360,7 @@ export class RegExpRouter<T> implements Router<T> {
     const primaryMatchers: Record<string, AnyMatcher<T>> = {}
     const secondaryMatchers: Record<string, AnyMatcher<T>[]> = {}
     let hasAmbiguous = false
+    // @ts-ignore
     this.routeData.methods.forEach((method) => {
       let _hasAmbiguous
       ;[primaryMatchers[method], secondaryMatchers[method], _hasAmbiguous] =
@@ -375,6 +378,7 @@ export class RegExpRouter<T> implements Router<T> {
   private buildMatcher(method: string): [AnyMatcher<T>, AnyMatcher<T>[], boolean] {
     let hasAmbiguous = false
     const targetMethods = new Set([method, METHOD_NAME_ALL])
+    // @ts-ignore
     const routes = this.routeData.routes.filter(({ method }) => targetMethods.has(method))
 
     // Reset temporary data per method

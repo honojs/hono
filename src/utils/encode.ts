@@ -67,6 +67,8 @@ export const arrayBufferToBase64 = async (buf: ArrayBuffer): Promise<string> => 
   try {
     return Buffer.from(String.fromCharCode(...new Uint8Array(buf))).toString('base64')
   } catch (e) {}
+
+  return ''
 }
 
 export const arrayBufferToBase64URL = async (buf: ArrayBuffer) => {

@@ -37,7 +37,7 @@ describe('Etag Middleware', () => {
     let res = await app.request('http://localhost/etag/abc')
     expect(res.status).toBe(200)
     expect(res.headers.get('ETag')).not.toBeFalsy()
-    const etag = res.headers.get('Etag')
+    const etag = res.headers.get('Etag') || ''
 
     const req = new Request('http://localhost/etag/abc', {
       headers: {

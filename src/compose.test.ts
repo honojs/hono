@@ -61,10 +61,6 @@ describe('Handler and middlewares', () => {
   const req = new Request('http://localhost/')
   const c: Context = new Context(req)
 
-  const onError = (error: Error, c: Context) => {
-    return c.text('onError', 500)
-  }
-
   const mHandlerFoo = async (c: Context, next: Function) => {
     c.req.headers.append('x-header-foo', 'foo')
     await next()
@@ -85,7 +81,7 @@ describe('Handler and middlewares', () => {
   middleware.push(handler)
 
   it('Should return 200 Response', async () => {
-    const composed = compose<Context>(middleware, onError)
+    const composed = compose<Context>(middleware)
     const context = await composed(c)
     const res = context.res
     expect(res).not.toBeNull()
@@ -100,13 +96,10 @@ describe('compose with Context - 200 success', () => {
 
   const req = new Request('http://localhost/')
   const c: Context = new Context(req)
-  const onError = (error: Error, c: Context) => {
-    return c.text('onError', 500)
-  }
   const handler = (c: Context) => {
     return c.text('Hello')
   }
-  const mHandler = async (c: Context, next: Function) => {
+  const mHandler = async (_c: Context, next: Function) => {
     await next()
   }
 
@@ -114,11 +107,11 @@ describe('compose with Context - 200 success', () => {
   middleware.push(mHandler)
 
   it('Should return 200 Response', async () => {
-    const composed = compose<Context>(middleware, onError)
+    const composed = compose<Context>(middleware)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(200)
-    expect(await context.res.text()).toBe('Hello')
+    expect(await context.res!.text()).toBe('Hello')
   })
 })
 
@@ -127,13 +120,13 @@ describe('compose with Context - 404 not found', () => {
 
   const req = new Request('http://localhost/')
   const c: Context = new Context(req)
-  const onError = (error: Error, c: Context) => {
+  const onError = (_error: Error, c: Context) => {
     return c.text('onError', 500)
   }
   const onNotFound = (c: Context) => {
     return c.text('onNotFound', 404)
   }
-  const mHandler = async (c: Context, next: Function) => {
+  const mHandler = async (_c: Context, next: Function) => {
     await next()
   }
 
@@ -153,10 +146,10 @@ describe('compose with Context - 401 not authorized', () => {
 
   const req = new Request('http://localhost/')
   const c: Context = new Context(req)
-  const onError = (error: Error, c: Context) => {
+  const onError = (_error: Error, c: Context) => {
     return c.text('onError', 500)
   }
-  const handler = (c: Context, next: Function) => {
+  const handler = (c: Context, _next: Function) => {
     return c.text('Hello')
   }
   const mHandler = async (c: Context, next: Function) => {
@@ -181,7 +174,7 @@ describe('compose with Context - next() below', () => {
 
   const req = new Request('http://localhost/')
   const c: Context = new Context(req)
-  const onError = (error: Error, c: Context) => {
+  const onError = (_error: Error, c: Context) => {
     return c.text('onError', 500)
   }
   const handler = (c: Context) => {
@@ -210,7 +203,7 @@ describe('compose with Context - 500 error', () => {
 
   const req = new Request('http://localhost/')
   const c: Context = new Context(req)
-  const onError = (error: Error, c: Context) => {
+  const onError = (_error: Error, c: Context) => {
     return c.text('onError', 500)
   }
 
@@ -219,7 +212,7 @@ describe('compose with Context - 500 error', () => {
       throw new Error()
     }
 
-    const mHandler = async (c: Context, next: Function) => {
+    const mHandler = async (_c: Context, next: Function) => {
       await next()
     }
 
@@ -256,20 +249,20 @@ describe('compose with Context - 500 error', () => {
     const ctx: C = { req: {}, res: {} }
     const stack: number[] = []
     const middlewares = [
-      async (ctx: C, next: Function) => {
+      async (_ctx: C, next: Function) => {
         stack.push(0)
         await next()
       },
-      async (ctx: C, next: Function) => {
+      async (_ctx: C, next: Function) => {
         stack.push(1)
         await next()
       },
-      async (ctx: C, next: Function) => {
+      async (_ctx: C, next: Function) => {
         stack.push(2)
         await next()
       },
     ]
-    const composed = await compose(middlewares)
+    const composed = compose(middlewares)
     await composed(ctx)
     expect(stack).toEqual([0, 1, 2])
   })
@@ -285,7 +278,7 @@ describe('Compose', function () {
     const stack = []
     const called: boolean[] = []
 
-    stack.push(async (context: C, next: Function) => {
+    stack.push(async (_context: C, next: Function) => {
       called.push(true)
 
       arr.push(1)
@@ -293,7 +286,7 @@ describe('Compose', function () {
       arr.push(6)
     })
 
-    stack.push(async (context: C, next: Function) => {
+    stack.push(async (_context: C, next: Function) => {
       called.push(true)
 
       arr.push(2)
@@ -301,7 +294,7 @@ describe('Compose', function () {
       arr.push(5)
     })
 
-    stack.push(async (context: C, next: Function) => {
+    stack.push(async (_context: C, next: Function) => {
       called.push(true)
 
       arr.push(3)
@@ -319,7 +312,7 @@ describe('Compose', function () {
     const stack = []
     const called: boolean[] = []
 
-    stack.push(async (context: C, next: Function) => {
+    stack.push(async (_context: C, next: Function) => {
       called.push(true)
 
       arr.push(1)
@@ -327,12 +320,12 @@ describe('Compose', function () {
       arr.push(6)
     })
 
-    stack.push(async (context: C, next: Function) => {
+    stack.push(async () => {
       called.push(true)
       arr.push(2)
     })
 
-    stack.push(async (context: C, next: Function) => {
+    stack.push(async (_context: C, next: Function) => {
       called.push(true)
 
       arr.push(3)
@@ -388,7 +381,7 @@ describe('Compose', function () {
     const stack: any[] = []
     const arr: any[] = []
     for (let i = 0; i < 5; i++) {
-      stack.push((context: C, next: Function) => {
+      stack.push((_context: C, next: Function) => {
         arr.push(next())
       })
     }
@@ -408,7 +401,7 @@ describe('Compose', function () {
     const stack = []
     let called = false
 
-    stack.push(async (ctx: C, next: Function) => {
+    stack.push(async (_ctx: C, next: Function) => {
       await next()
       called = true
     })
@@ -461,7 +454,7 @@ describe('Compose', function () {
     const arr: any[] = []
     const stack = []
 
-    stack.push(async (ctx: C, next: Function) => {
+    stack.push(async (_ctx: C, next: Function) => {
       arr.push(1)
       try {
         arr.push(6)
@@ -473,7 +466,7 @@ describe('Compose', function () {
       arr.push(3)
     })
 
-    stack.push(async (ctx: C, next: Function) => {
+    stack.push(async () => {
       arr.push(4)
       throw new Error()
     })
@@ -515,16 +508,16 @@ describe('Compose', function () {
 
     return compose([
       compose([
-        (ctx: C, next: Function) => {
+        (_ctx: C, next: Function) => {
           called.push(1)
           return next()
         },
-        (ctx: C, next: Function) => {
+        (_ctx: C, next: Function) => {
           called.push(2)
           return next()
         },
       ]),
-      (ctx: C, next: Function) => {
+      (_ctx: C, next: Function) => {
         called.push(3)
         return next()
       },
@@ -533,7 +526,7 @@ describe('Compose', function () {
 
   it('should throw if next() is called multiple times', () => {
     return compose([
-      async (ctx: C, next: Function) => {
+      async (_ctx: C, next: Function) => {
         await next()
         await next()
       },
@@ -551,16 +544,16 @@ describe('Compose', function () {
     let val = 0
     return compose([
       compose([
-        (ctx: C, next: Function) => {
+        (_ctx: C, next: Function) => {
           val++
           return next()
         },
-        (ctx: C, next: Function) => {
+        (_ctx: C, next: Function) => {
           val++
           return next()
         },
       ]),
-      (ctx: C, next: Function) => {
+      (_ctx: C, next: Function) => {
         val++
         return next()
       },
@@ -593,7 +586,7 @@ describe('Compose', function () {
 
   it('should not affect the original middleware array', () => {
     const middleware = []
-    const fn1 = (ctx: C, next: Function) => {
+    const fn1 = (_ctx: C, next: Function) => {
       return next()
     }
     middleware.push(fn1)
@@ -609,7 +602,7 @@ describe('Compose', function () {
     }
   })
 
-  it('should not get stuck on the passed in next', () => {
+  it('should not get stuck on the passed in next', async () => {
     type C = {
       middleware: number
       next: number

@@ -17,4 +17,6 @@ export const parseBody = async (
     }, form)
     return data
   }
+
+  return r.arrayBuffer()
 }
