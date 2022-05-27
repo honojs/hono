@@ -11,6 +11,8 @@ describe('buffer', () => {
     ).toBe(true)
     expect(await timingSafeEqual('a', 'a')).toBe(true)
     expect(await timingSafeEqual('', '')).toBe(true)
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     expect(await timingSafeEqual(undefined, undefined)).toBe(true)
     expect(await timingSafeEqual(true, true)).toBe(true)
     expect(await timingSafeEqual(false, false)).toBe(true)
@@ -27,6 +29,8 @@ describe('buffer', () => {
     ).toBe(false)
     expect(await timingSafeEqual('alpha', 'beta')).toBe(false)
     expect(await timingSafeEqual(false, true)).toBe(false)
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     expect(await timingSafeEqual(false, undefined)).toBe(false)
     expect(
       await timingSafeEqual(

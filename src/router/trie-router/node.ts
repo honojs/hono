@@ -191,7 +191,7 @@ export class Node<T> {
     return next
   }
 
-  search(method: string, path: string): Result<T> {
+  search(method: string, path: string): Result<T> | null {
     const handlerSets: HandlerSet<T>[] = []
     let params: Record<string, string> = {}
 

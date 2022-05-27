@@ -9,7 +9,7 @@ export type KVAssetOptions = {
 export const getContentFromKVAsset = async (
   path: string,
   options?: KVAssetOptions
-): Promise<ArrayBuffer> => {
+): Promise<ArrayBuffer | null> => {
   let ASSET_MANIFEST: Record<string, string> = {}
 
   if (options && options.manifest) {
@@ -35,7 +35,7 @@ export const getContentFromKVAsset = async (
 
   const key = ASSET_MANIFEST[path] || path
   if (!key) {
-    return
+    return null
   }
 
   let content = await ASSET_NAMESPACE.get(key, { type: 'arrayBuffer' })

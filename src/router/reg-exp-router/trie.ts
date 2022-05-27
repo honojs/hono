@@ -25,6 +25,8 @@ export class Trie {
      *  - character
      */
     const tokens = path.match(/(?::[^\/]+)|(?:\/\*$)|./g)
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     this.root.insert(tokens, index, paramMap, this.context)
 
     return paramMap

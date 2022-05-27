@@ -27,14 +27,14 @@ declare global {
     }
   }
   interface Response {
-    finalized: boolean
+    _finalized: boolean
   }
 }
 
 export type Handler<RequestParamKeyType extends string = string, E = Env> = (
   c: Context<RequestParamKeyType, E>,
   next: Next
-) => Response | Promise<Response> | void | Promise<void>
+) => Response | Promise<Response> | Promise<void> | Promise<Response | undefined>
 export type NotFoundHandler<E = Env> = (c: Context<string, E>) => Response
 export type ErrorHandler<E = Env> = (err: Error, c: Context<string, E>) => Response
 export type Next = () => Promise<void>
@@ -89,8 +89,6 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
   private _tempPath: string
   private path: string = '/'
 
-  private _cachedResponse: Response
-
   routes: Route<E>[] = []
 
   constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
@@ -118,10 +116,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
 
     Object.assign(this, init)
 
-    this._tempPath = null
-
-    this._cachedResponse = new Response(null, { status: 404 })
-    this._cachedResponse.finalized = false
+    this._tempPath = ''
   }
 
   private notFoundHandler: NotFoundHandler = (c: Context) => {
@@ -141,7 +136,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
       app.routes.map((r) => {
         this.addRoute(r.method, r.path, r.handler)
       })
-      this._tempPath = null
+      this._tempPath = ''
     }
 
     return this
@@ -181,7 +176,10 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
     this.routes.push(r)
   }
 
-  private async matchRoute(method: string, path: string): Promise<Result<Handler<string, E>>> {
+  private async matchRoute(
+    method: string,
+    path: string
+  ): Promise<Result<Handler<string, E>> | null> {
     return this.router.match(method, path)
   }
 
@@ -191,7 +189,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
 
     const result = await this.matchRoute(method, path)
 
-    request.param = ((key?: string): string | Record<string, string> => {
+    request.param = ((key?: string): string | Record<string, string> | null => {
       if (result) {
         if (key) {
           return result.params[key]
@@ -199,13 +197,13 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
           return result.params
         }
       }
+      return null
     }) as typeof request.param
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
     const c = new Context<string, E>(request, {
       env: env,
       event: event,
-      res: this._cachedResponse,
     })
     c.notFound = () => this.notFoundHandler(c)
 
@@ -217,6 +215,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
       if (err instanceof Error) {
         return this.errorHandler(err, c)
       }
+      throw err
     }
 
     if (!context.res) return context.notFound()

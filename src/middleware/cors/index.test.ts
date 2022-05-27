@@ -37,8 +37,8 @@ describe('CORS by Middleware', () => {
     const res = await app.request(req)
 
     expect(res.status).toBe(204)
-    expect(res.headers.get('Access-Control-Allow-Methods').split(',')[0]).toBe('GET')
-    expect(res.headers.get('Access-Control-Allow-Headers').split(',')).toEqual([
+    expect(res.headers.get('Access-Control-Allow-Methods')?.split(',')[0]).toBe('GET')
+    expect(res.headers.get('Access-Control-Allow-Headers')?.split(',')).toEqual([
       'X-PINGOTHER',
       'Content-Type',
     ])
@@ -49,17 +49,17 @@ describe('CORS by Middleware', () => {
     const res = await app.request(req)
 
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
-    expect(res.headers.get('Vary').split(/\s*,\s*/)).toEqual(expect.arrayContaining(['Origin']))
-    expect(res.headers.get('Access-Control-Allow-Headers').split(/\s*,\s*/)).toEqual([
+    expect(res.headers.get('Vary')?.split(/\s*,\s*/)).toEqual(expect.arrayContaining(['Origin']))
+    expect(res.headers.get('Access-Control-Allow-Headers')?.split(/\s*,\s*/)).toEqual([
       'X-Custom-Header',
       'Upgrade-Insecure-Requests',
     ])
-    expect(res.headers.get('Access-Control-Allow-Methods').split(/\s*,\s*/)).toEqual([
+    expect(res.headers.get('Access-Control-Allow-Methods')?.split(/\s*,\s*/)).toEqual([
       'POST',
       'GET',
       'OPTIONS',
     ])
-    expect(res.headers.get('Access-Control-Expose-Headers').split(/\s*,\s*/)).toEqual([
+    expect(res.headers.get('Access-Control-Expose-Headers')?.split(/\s*,\s*/)).toEqual([
       'Content-Length',
       'X-Kuma-Revision',
     ])

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import * as JWT from './jwt'
 import {
   AlgorithmTypes,
@@ -21,6 +22,7 @@ describe('JWT', () => {
       err = e as JwtAlorithmNotImplemented
     }
     expect(tok).toBe('')
+    // @ts-ignore
     expect(err).toEqual(new JwtAlorithmNotImplemented(alg))
   })
 
@@ -34,6 +36,7 @@ describe('JWT', () => {
     } catch (e) {
       err = e as JwtTokenInvalid
     }
+    // @ts-ignore
     expect(err).toEqual(new JwtTokenInvalid(tok))
     expect(authorized).toBe(false)
   })
@@ -49,6 +52,7 @@ describe('JWT', () => {
     } catch (e) {
       err = e as JwtTokenNotBefore
     }
+    // @ts-ignore
     expect(err).toEqual(new JwtTokenNotBefore(tok))
     expect(authorized).toBe(false)
   })

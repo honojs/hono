@@ -16,12 +16,12 @@ export const compose = <C>(
       }
       let handler = middleware[i]
       index = i
-      if (i === middleware.length) handler = next
+      if (i === middleware.length && next) handler = next
 
-      if (handler === undefined) {
-        if (context instanceof Context && context.res.finalized === false) {
+      if (!handler) {
+        if (context instanceof Context && context.res._finalized === false && onNotFound) {
           context.res = onNotFound(context)
-          context.res.finalized = true
+          context.res._finalized = true
         }
         return Promise.resolve(context)
       }
@@ -31,15 +31,15 @@ export const compose = <C>(
           // If handler return Response like `return c.text('foo')`
           if (res && context instanceof Context) {
             context.res = res
-            context.res.finalized = true
+            context.res._finalized = true
           }
           return context
         })
         .catch((err) => {
-          if (onError && context instanceof Context) {
+          if (context instanceof Context && onError) {
             if (err instanceof Error) {
               context.res = onError(err, context)
-              context.res.finalized = true
+              context.res._finalized = true
             }
             return context
           } else {

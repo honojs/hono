@@ -2,7 +2,7 @@ import type { StatusCode } from './utils/http-status'
 import { isAbsoluteURL } from './utils/url'
 
 type Headers = Record<string, string>
-type Data = string | ArrayBuffer | ReadableStream
+export type Data = string | ArrayBuffer | ReadableStream
 
 export type Env = Record<string, any>
 
@@ -10,7 +10,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   req: Request<RequestParamKeyType>
   res: Response
   env: E
-  event: FetchEvent
+  event: FetchEvent | undefined
 
   private _status: StatusCode = 200
   private _pretty: boolean = false
@@ -24,7 +24,11 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
 
   constructor(
     req: Request<RequestParamKeyType>,
-    opts?: { env: E; event: FetchEvent; res?: Response }
+    opts: { env?: Env; event?: FetchEvent; res?: Response } = {
+      env: {},
+      event: undefined,
+      res: undefined,
+    }
   ) {
     this.req = this.initRequest<RequestParamKeyType>(req)
     this._map = {}
@@ -33,13 +37,13 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
 
     if (!this.res) {
       const res = new Response(null, { status: 404 })
-      res.finalized = false
+      res._finalized = false
       this.res = res
     }
   }
 
   private initRequest<T extends string>(req: Request<T>): Request<T> {
-    req.header = ((name?: string): string | Record<string, string> => {
+    req.header = ((name?: string): string | Record<string, string> | null => {
       if (name) {
         return req.headers.get(name)
       } else {
@@ -51,14 +55,14 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
       }
     }) as typeof req.header
 
-    req.query = ((key?: string): string | Record<string, string> => {
+    req.query = ((key?: string): string | Record<string, string> | null => {
       const url = new URL(req.url)
       if (key) {
         return url.searchParams.get(key)
       } else {
         const result: Record<string, string> = {}
         for (const key of url.searchParams.keys()) {
-          result[key] = url.searchParams.get(key)
+          result[key] = url.searchParams.get(key) || ''
         }
         return result
       }
@@ -101,14 +105,13 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
     this._prettySpace = space
   }
 
-  newResponse(data: Data, init: ResponseInit = {}): Response {
+  newResponse(data: Data | null, init: ResponseInit = {}): Response {
     init.status = init.status || this._status || 200
-    let headers: Record<string, string> = {}
+    const headers: Record<string, string> = {}
     this.res.headers.forEach((v, k) => {
       headers[k] = v
     })
     init.headers = Object.assign(headers, init.headers)
-    headers = {}
 
     return new Response(data, init)
   }

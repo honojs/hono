@@ -19,7 +19,7 @@ const auth = (req: Request) => {
     throw new TypeError('argument req is required to have headers property')
   }
 
-  const match = CREDENTIALS_REGEXP.exec(req.headers.get('Authorization'))
+  const match = CREDENTIALS_REGEXP.exec(req.headers.get('Authorization') || '')
   if (!match) {
     return undefined
   }
@@ -70,7 +70,7 @@ export const basicAuth = (
     ctx.res = new Response('Unauthorized', {
       status: 401,
       headers: {
-        'WWW-Authenticate': 'Basic realm="' + options.realm.replace(/"/g, '\\"') + '"',
+        'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"',
       },
     })
   }
