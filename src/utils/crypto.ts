@@ -17,7 +17,7 @@ export const sha1 = async (data: Data) => {
   return hash
 }
 
-export const createHash = async (data: Data, algorithm: Algorithm): Promise<string> => {
+export const createHash = async (data: Data, algorithm: Algorithm): Promise<string | null> => {
   if (crypto && crypto.subtle) {
     const buffer = await crypto.subtle.digest(
       {
@@ -30,4 +30,5 @@ export const createHash = async (data: Data, algorithm: Algorithm): Promise<stri
       .join('')
     return hash
   }
+  return null
 }

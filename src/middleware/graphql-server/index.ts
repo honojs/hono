@@ -55,6 +55,7 @@ export const graphqlServer = (options: Options) => {
         console.error(`${e.stack || e.message}`)
         return c.json(errorMessages([e.message], [e]), 400)
       }
+      throw e
     }
 
     const { query, variables, operationName } = params
@@ -84,6 +85,7 @@ export const graphqlServer = (options: Options) => {
         })
         return c.json(errorMessages(['GraphQL syntax error.'], [e]), 400)
       }
+      throw syntaxError
     }
 
     // Validate AST, reporting any errors.
@@ -136,10 +138,13 @@ export const graphqlServer = (options: Options) => {
         // Return 400: Bad Request if any execution context errors exist.
         return c.json(errorMessages(['GraphQL execution context error.'], [e]), 400)
       }
+      throw contextError
     }
 
-    if (result.data == null) {
-      return c.json(errorMessages([result.errors.toString()], result.errors), 500)
+    if (!result.data) {
+      if (result.errors) {
+        return c.json(errorMessages([result.errors.toString()], result.errors), 500)
+      }
     }
 
     /*

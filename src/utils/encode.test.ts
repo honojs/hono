@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   utf8ToUint8Array,
   decodeBase64,
@@ -14,6 +15,7 @@ describe('encode', () => {
       expect(encodeBase64('abcdef')).not.toBe('abcdedf')
       expect(encodeBase64('')).toBe('')
       expect(() => {
+        // @ts-ignore
         encodeBase64(null)
       }).toThrow(TypeError)
     })
@@ -24,6 +26,7 @@ describe('encode', () => {
       expect(decodeBase64('abcdedf')).not.toBe('abcdef')
       expect(decodeBase64('')).toBe('')
       expect(() => {
+        // @ts-ignore
         decodeBase64(null)
       }).toThrowError(TypeError)
     })
@@ -38,6 +41,7 @@ describe('encode', () => {
       expect(encodeBase64URL('abcdef')).not.toBe('abcdedf')
       expect(encodeBase64URL('')).toBe('')
       expect(() => {
+        // @ts-ignore
         encodeBase64URL(null)
       }).toThrow(TypeError)
     })
@@ -51,6 +55,7 @@ describe('encode', () => {
       expect(decodeBase64URL('abcdedf')).not.toBe('abcdef')
       expect(decodeBase64URL('')).toBe('')
       expect(() => {
+        // @ts-ignore
         decodeBase64URL(null)
       }).toThrowError(TypeError)
     })

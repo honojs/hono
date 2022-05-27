@@ -46,7 +46,7 @@ export class Node {
   reverse: boolean
 
   constructor({ reverse }: Partial<Node> = { reverse: false }) {
-    this.reverse = reverse
+    this.reverse = reverse as boolean
   }
 
   newChildNode(): Node {
@@ -82,7 +82,7 @@ export class Node {
         }
       }
       if (name !== '') {
-        paramMap.push([name, node.varIndex])
+        paramMap.push([name, node.varIndex as number])
       }
     } else {
       node = this.children[token] ||= this.newChildNode()
