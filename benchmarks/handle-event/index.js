@@ -26,7 +26,7 @@ const initHono = (hono) => {
 }
 
 const hono = initHono(new Hono())
-const honoWithRegExpRouter = initHono(new Hono({ routerClass: RegExpRouter }))
+const honoWithRegExpRouter = initHono(new Hono({ router: new RegExpRouter() }))
 
 const ittyRouter = IttyRouter()
 ittyRouter.get('/user', () => new Response('User'))
