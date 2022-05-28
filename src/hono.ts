@@ -2,8 +2,7 @@ import { compose } from './compose'
 import { Context } from './context'
 import type { Env } from './context'
 import type { Result, Router } from './router'
-import { METHOD_NAME_ALL } from './router'
-import { METHOD_NAME_ALL_LOWERCASE } from './router'
+import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import { TrieRouter } from './router/trie-router' // Default Router
 import { getPathFromURL, mergePath } from './utils/url'
 
@@ -86,7 +85,7 @@ interface Route<E extends Env> {
 export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<E, P, Hono<E, P>> {
   readonly router: Router<Handler<string, E>> = new TrieRouter()
   readonly strict: boolean = true // strict routing - default is true
-  private _tempPath: string
+  private _tempPath: string = ''
   private path: string = '/'
 
   routes: Route<E>[] = []
@@ -115,8 +114,6 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
     })
 
     Object.assign(this, init)
-
-    this._tempPath = ''
   }
 
   private notFoundHandler: NotFoundHandler = (c: Context) => {
@@ -199,6 +196,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
       }
       return null
     }) as typeof request.param
+
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
     const c = new Context<string, E>(request, {
