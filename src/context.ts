@@ -1,3 +1,4 @@
+import { HonoResponse } from './response'
 import type { StatusCode } from './utils/http-status'
 import { isAbsoluteURL } from './utils/url'
 
@@ -24,7 +25,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
 
   constructor(
     req: Request<RequestParamKeyType>,
-    opts: { env?: Env; event?: FetchEvent; res?: Response } = {
+    opts: { env?: Env; event?: FetchEvent; res?: Response | HonoResponse } = {
       env: {},
       event: undefined,
       res: undefined,
@@ -36,7 +37,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
     Object.assign(this, opts)
 
     if (!this.res) {
-      const res = new Response(null, { status: 404 })
+      const res = new HonoResponse(null, { status: 404 })
       res._finalized = false
       this.res = res
     }
