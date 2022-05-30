@@ -98,7 +98,7 @@ import { basicAuth } from 'hono/basic-auth'
 
 const v1 = new Hono()
 v1.get('/posts', (c) => {
-  return c.text('list pots')
+  return c.text('list posts')
 })
   .post(basicAuth({ username, password }), (c) => {
     return c.text('created!', 201)
@@ -644,7 +644,7 @@ npx wrangler publish ./src/index.ts
 
 You can start making your Cloudflare Workers application with [the starter template](https://github.com/honojs/hono-minimal). It is really minimal using TypeScript, esbuild, Miniflare, and Jest.
 
-To generate a project skelton, run this command.
+To generate a project skeleton, run this command.
 
 ```
 npx create-cloudflare my-app https://github.com/honojs/hono-minimal
