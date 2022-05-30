@@ -173,10 +173,10 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
     this.routes.push(r)
   }
 
-  private async matchRoute(
+  private matchRoute(
     method: string,
     path: string
-  ): Promise<Result<Handler<string, E>> | null> {
+  ): Result<Handler<string, E>> | null {
     return this.router.match(method, path)
   }
 
@@ -184,7 +184,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
     const path = getPathFromURL(request.url, { strict: this.strict })
     const method = request.method
 
-    const result = await this.matchRoute(method, path)
+    const result = this.matchRoute(method, path)
 
     request.param = ((key?: string): string | Record<string, string> | null => {
       if (result) {
