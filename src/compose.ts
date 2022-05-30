@@ -26,7 +26,7 @@ export const compose = <C>(
         return Promise.resolve(context)
       }
 
-      return Promise.resolve(handler(context, dispatch.bind(null, i + 1)))
+      return Promise.resolve(handler(context, () => dispatch(i + 1)))
         .then(async (res: Response) => {
           // If handler return Response like `return c.text('foo')`
           if (res && context instanceof Context) {
