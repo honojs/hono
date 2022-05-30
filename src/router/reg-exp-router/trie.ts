@@ -52,6 +52,6 @@ export class Trie {
       return ''
     })
 
-    return [new RegExp(`^${regexp}`), indexReplacementMap, paramReplacementMap]
+    return [new RegExp(`^https?:\/\/[a-zA-Z0-9\-\.:]+${regexp}`), indexReplacementMap, paramReplacementMap]
   }
 }

@@ -56,7 +56,7 @@ export class Node<T> {
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let curNode: Node<T> = this
-    const parts = splitPath(path)
+    const parts = splitPath(`https://dummyhostname${path === '*' ? '/*' : path}`)
 
     const parentPatterns: Pattern[] = []
 

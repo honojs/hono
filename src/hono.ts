@@ -4,7 +4,7 @@ import type { Env } from './context'
 import type { Result, Router } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import { TrieRouter } from './router/trie-router' // Default Router
-import { getPathFromURL, mergePath } from './utils/url'
+import { mergePath } from './utils/url'
 
 declare global {
   interface Request<ParamKeyType extends string = string> {
@@ -181,10 +181,12 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
   }
 
   private async dispatch(request: Request, event?: FetchEvent, env?: E): Promise<Response> {
-    const path = getPathFromURL(request.url, { strict: this.strict })
     const method = request.method
 
-    const result = this.matchRoute(method, path)
+    const result = this.matchRoute(
+      method,
+      this.strict ? request.url : request.url.replace(/\/(?=\?|$)/, '')
+    )
 
     request.param = ((key?: string): string | Record<string, string> | null => {
       if (result) {

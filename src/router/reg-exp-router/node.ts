@@ -67,7 +67,7 @@ export class Node {
           : ['', '', LABEL_REG_EXP_STR]
         : token === '/*'
         ? ['', '', TAIL_WILDCARD_REG_EXP_STR] // '/path/to/*' is /\/path\/to(?:|/.*)$
-        : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
+        : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?(?:$|\?)/)
 
     let node
     if (pattern) {
