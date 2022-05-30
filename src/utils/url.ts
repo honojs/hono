@@ -2,11 +2,17 @@ const URL_REGEXP = /^https?:\/\/[a-zA-Z0-9\-\.:]+(\/?[^?#]*)/
 
 export type Pattern = readonly [string, string, RegExp | true] | '*'
 
+const splitPathCache: Record<string, string[]> = {}
 export const splitPath = (path: string): string[] => {
-  const paths = path.split(/\//) // faster than path.split('/')
+  let paths = splitPathCache[path]
+  if (paths) {
+    return paths
+  }
+  paths = path.split(/\//) // faster than path.split('/')
   if (paths[0] === '') {
     paths.shift()
   }
+  splitPathCache[path] = paths
   return paths
 }
 
@@ -41,6 +47,7 @@ type Params = {
   strict: boolean
 }
 
+const pathFromURLCache: Record<string, string> = {}
 export const getPathFromURL = (url: string, params: Params = { strict: true }): string => {
   // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
   // default is true
@@ -48,11 +55,13 @@ export const getPathFromURL = (url: string, params: Params = { strict: true }): 
     url = url.slice(0, -1)
   }
 
+  let path = pathFromURLCache[url]
+  if (path) return path
+
   const match = url.match(URL_REGEXP)
-  if (match) {
-    return match[1]
-  }
-  return ''
+  path = match ? match[1] : ''
+  pathFromURLCache[url] = path
+  return path
 }
 
 export const isAbsoluteURL = (url: string): boolean => {
