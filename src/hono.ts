@@ -216,8 +216,6 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
       throw err
     }
 
-    if (!context.res) return context.notFound()
-
     return context.res
   }
 
