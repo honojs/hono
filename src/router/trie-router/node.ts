@@ -150,6 +150,7 @@ export class Node<T> {
           handlerSets.push(...this.getHandlerSets(astNode, method))
           nextNodes.push(astNode)
         }
+        continue
       }
 
       if (part === '') continue
@@ -211,7 +212,7 @@ export class Node<T> {
           continue
         }
         handlerSets.push(...res.handlerSets)
-        params = Object.assign(params, res.params)
+        params = { ...params, ...res.params }
         tempNodes.push(...res.nodes)
       }
 
