@@ -241,11 +241,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
-    const c = new Context<string, E>(request, {
-      env: env,
-      event: event,
-    })
-    c.notFound = () => this.notFoundHandler(c)
+    const c = new Context<string, E>(request, env, event, this.notFoundHandler)
 
     const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)
     let context: Context
