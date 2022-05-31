@@ -73,7 +73,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   }
 
   newResponse(data: Data | null, status: StatusCode, headers: Headers = {}): Response {
-    const _headers = Object.assign({}, this._headers, headers)
+    const _headers = { ...this._headers, ...headers }
     if (this._res) {
       this._res.headers.forEach((v, k) => {
         _headers[k] = v
