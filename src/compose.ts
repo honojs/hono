@@ -5,18 +5,21 @@ const defaultContextNext: Function = () => {}
 // Based on the code in the MIT licensed `koa-compose` package.
 export const compose = <C>(
   middleware: Function[],
-  onError?: ErrorHandler,
+  onError: ErrorHandler = (err) => {
+    throw err
+  },
   onNotFound?: NotFoundHandler
 ) => {
   let context: C
   let contextNext: Function = defaultContextNext
-  let composed: () => void = async () => {
-    if ((context as any).finalized === false && onNotFound) {
-      ;(context as any).res = onNotFound(context as any) as any
-      ;(context as any).finalized = true
-    }
-    return context
-  }
+  let composed: () => void = onNotFound
+    ? async () => {
+        if ((context as any).finalized === false) {
+          ;(context as any).res = onNotFound(context as any) as any
+        }
+      }
+    : async () => {}
+
   composed = ((prev) => async () => {
     const next = () => prev()
 
@@ -26,8 +29,10 @@ export const compose = <C>(
         ;(context as any).res = r
       }
     } catch (err) {
-      if (onError) {
-        ;(context as any).res = onError(err as Error, context as any)
+      if (err instanceof Error) {
+        ;(context as any).res = onError(err, context as any)
+      } else {
+        throw err
       }
     }
   })(composed)
@@ -43,10 +48,8 @@ export const compose = <C>(
           ;(context as any).res = r
         }
       } catch (err) {
-        if (onError) {
-          if (err instanceof Error) {
-            ;(context as any).res = onError(err as Error, context as any)
-          }
+        if (err instanceof Error) {
+          ;(context as any).res = onError(err, context as any)
         } else {
           throw err
         }
