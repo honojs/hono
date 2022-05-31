@@ -19,22 +19,24 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   private _map: {
     [key: string]: any
   }
+  private notFoundHandler: (c: Context<string, E>) => Response
 
   render: (template: string, params?: object, options?: object) => Promise<Response>
-  notFound: () => Response | Promise<Response>
 
   constructor(
     req: Request<RequestParamKeyType>,
-    opts: { env?: Env; event?: FetchEvent; res?: Response | HonoResponse } = {
-      env: {},
-      event: undefined,
-      res: undefined,
-    }
+    env: E | undefined,
+    event: FetchEvent | undefined,
+    notFoundHandler: (c: Context<string, E>) => Response
   ) {
     this.req = req
     this._map = {}
 
-    Object.assign(this, opts)
+    if (env) {
+      this.env = env
+    }
+    this.event = event
+    this.notFoundHandler = notFoundHandler
 
     if (!this.res) {
       const res = new HonoResponse(null, { status: 404 })
@@ -124,5 +126,9 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
         Location: location,
       },
     })
+  }
+
+  notFound(): Response | Promise<Response> {
+    return this.notFoundHandler(this as any)
   }
 }
