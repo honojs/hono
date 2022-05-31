@@ -19,9 +19,9 @@ export const compose = <C>(
       if (i === middleware.length && next) handler = next
 
       if (!handler) {
-        if (context instanceof Context && context.res._finalized === false && onNotFound) {
+        if (context instanceof Context && context.finalized === false && onNotFound) {
           context.res = onNotFound(context)
-          context.res._finalized = true
+          context.finalized = true
         }
         return Promise.resolve(context)
       }
@@ -31,7 +31,7 @@ export const compose = <C>(
           // If handler return Response like `return c.text('foo')`
           if (res && context instanceof Context) {
             context.res = res
-            context.res._finalized = true
+            context.finalized = true
           }
           return context
         })
@@ -39,7 +39,7 @@ export const compose = <C>(
           if (context instanceof Context && onError) {
             if (err instanceof Error) {
               context.res = onError(err, context)
-              context.res._finalized = true
+              context.finalized = true
             }
             return context
           } else {

@@ -1,4 +1,3 @@
-import { HonoResponse } from './response'
 import type { StatusCode } from './utils/http-status'
 import { isAbsoluteURL } from './utils/url'
 
@@ -9,9 +8,9 @@ export type Env = Record<string, any>
 
 export class Context<RequestParamKeyType extends string = string, E = Env> {
   req: Request<RequestParamKeyType>
-  res: Response
   env: E
   event: FetchEvent | undefined
+  finalized: boolean
 
   private _status: StatusCode = 200
   private _pretty: boolean = false
@@ -19,6 +18,8 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   private _map: {
     [key: string]: any
   }
+  private _headers: Record<string, string>
+  private _res: Response | undefined
   private notFoundHandler: (c: Context<string, E>) => Response
 
   render: (template: string, params?: object, options?: object) => Promise<Response>
@@ -37,16 +38,19 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
     }
     this.event = event
     this.notFoundHandler = notFoundHandler
+    this.finalized = false
+  }
 
-    if (!this.res) {
-      const res = new HonoResponse(null, { status: 404 })
-      res._finalized = false
-      this.res = res
-    }
+  get res(): Response {
+    return (this._res ||= new Response())
+  }
+
+  set res(_res: Response) {
+    this._res = _res
   }
 
   header(name: string, value: string): void {
-    this.res.headers.set(name, value)
+    this._headers[name] = value
   }
 
   status(status: StatusCode): void {
@@ -66,22 +70,21 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
     this._prettySpace = space
   }
 
-  newResponse(data: Data | null, init: ResponseInit = {}): Response {
-    init.status = init.status || this._status || 200
-    const headers: Record<string, string> = {}
-    this.res.headers.forEach((v, k) => {
-      headers[k] = v
+  newResponse(data: Data | null, status: StatusCode, headers: Headers = {}): Response {
+    const _headers = Object.assign({}, this._headers, headers)
+    if (this._res) {
+      this._res.headers.forEach((v, k) => {
+        _headers[k] = v
+      })
+    }
+    return new Response(data, {
+      status: status || this._status || 200,
+      headers: _headers,
     })
-    init.headers = Object.assign(headers, init.headers)
-
-    return new Response(data, init)
   }
 
   body(data: Data | null, status: StatusCode = this._status, headers: Headers = {}): Response {
-    return this.newResponse(data, {
-      status: status,
-      headers: headers,
-    })
+    return this.newResponse(data, status, headers)
   }
 
   text(text: string, status: StatusCode = this._status, headers: Headers = {}): Response {
@@ -120,11 +123,8 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
       url.pathname = location
       location = url.toString()
     }
-    return this.newResponse(null, {
-      status: status,
-      headers: {
-        Location: location,
-      },
+    return this.newResponse(null, status, {
+      Location: location,
     })
   }
 
