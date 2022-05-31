@@ -46,6 +46,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   }
 
   set res(_res: Response) {
+    this.finalized = true
     this._res = _res
   }
 

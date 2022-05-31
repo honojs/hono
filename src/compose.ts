@@ -1,5 +1,6 @@
-import { Context } from './context'
 import type { ErrorHandler, NotFoundHandler } from './hono'
+
+const defaultContextNext: Function = () => {}
 
 // Based on the code in the MIT licensed `koa-compose` package.
 export const compose = <C>(
@@ -7,45 +8,55 @@ export const compose = <C>(
   onError?: ErrorHandler,
   onNotFound?: NotFoundHandler
 ) => {
-  return async (context: C, next?: Function) => {
-    let index = -1
-    return dispatch(0)
-    async function dispatch(i: number): Promise<C> {
-      if (i <= index) {
-        return Promise.reject(new Error('next() called multiple times'))
-      }
-      let handler = middleware[i]
-      index = i
-      if (i === middleware.length && next) handler = next
-
-      if (!handler) {
-        if (context instanceof Context && context.finalized === false && onNotFound) {
-          context.res = onNotFound(context)
-          context.finalized = true
-        }
-        return Promise.resolve(context)
-      }
-
-      return Promise.resolve(handler(context, () => dispatch(i + 1)))
-        .then(async (res: Response) => {
-          // If handler return Response like `return c.text('foo')`
-          if (res && context instanceof Context) {
-            context.res = res
-            context.finalized = true
-          }
-          return context
-        })
-        .catch((err) => {
-          if (context instanceof Context && onError) {
-            if (err instanceof Error) {
-              context.res = onError(err, context)
-              context.finalized = true
-            }
-            return context
-          } else {
-            throw err
-          }
-        })
+  let context: C
+  let contextNext: Function = defaultContextNext
+  let composed: () => void = async () => {
+    if ((context as any).finalized === false && onNotFound) {
+      ;(context as any).res = onNotFound(context as any) as any
+      ;(context as any).finalized = true
     }
+    return context
+  }
+  composed = ((prev) => async () => {
+    const next = () => prev()
+
+    try {
+      const r = await contextNext(context, next)
+      if (r) {
+        ;(context as any).res = r
+      }
+    } catch (err) {
+      if (onError) {
+        ;(context as any).res = onError(err as Error, context as any)
+      }
+    }
+  })(composed)
+
+  for (let i = middleware.length - 1; i >= 0; i--) {
+    const m = middleware[i]
+    const prev = composed
+    const next = () => prev()
+    composed = async () => {
+      try {
+        const r = await m(context, next)
+        if (r) {
+          ;(context as any).res = r
+        }
+      } catch (err) {
+        if (onError) {
+          if (err instanceof Error) {
+            ;(context as any).res = onError(err as Error, context as any)
+          }
+        } else {
+          throw err
+        }
+      }
+    }
+  }
+
+  return (_context: C, _next?: Function) => {
+    context = _context
+    contextNext = _next || defaultContextNext
+    return composed()
   }
 }

@@ -26,9 +26,6 @@ declare global {
       (): Record<string, string>
     }
   }
-  interface Response {
-    _finalized: boolean
-  }
 }
 
 export type Handler<RequestParamKeyType extends string = string, E = Env> = (
@@ -243,10 +240,13 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
 
     const c = new Context<string, E>(request, env, event, this.notFoundHandler)
 
-    const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)
-    let context: Context
+    ;(handlers as any).composed ||= compose<Context>(
+      handlers,
+      this.errorHandler,
+      this.notFoundHandler
+    )
     try {
-      context = await composed(c)
+      await (handlers as any).composed(c)
     } catch (err) {
       if (err instanceof Error) {
         return this.errorHandler(err, c)
@@ -254,7 +254,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
       throw err
     }
 
-    return context.res
+    return c.res
   }
 
   async handleEvent(event: FetchEvent): Promise<Response> {
