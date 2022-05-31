@@ -219,7 +219,7 @@ export class Node<T> {
 
     if (handlerSets.length <= 0) return null
 
-    const handlers = (this.handlersCache[matchedParts.join('/')] ||= handlerSets
+    const handlers = (this.handlersCache[`${method}:${matchedParts.join('/')}`] ||= handlerSets
       .sort((a, b) => {
         return a.score - b.score
       })
