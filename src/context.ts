@@ -31,7 +31,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
       res: undefined,
     }
   ) {
-    this.req = this.initRequest<RequestParamKeyType>(req)
+    this.req = req
     this._map = {}
 
     Object.assign(this, opts)
@@ -41,48 +41,6 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
       res._finalized = false
       this.res = res
     }
-  }
-
-  private initRequest<T extends string>(req: Request<T>): Request<T> {
-    req.header = ((name?: string): string | Record<string, string> | null => {
-      if (name) {
-        return req.headers.get(name)
-      } else {
-        const result: Record<string, string> = {}
-        for (const [key, value] of req.headers) {
-          result[key] = value
-        }
-        return result
-      }
-    }) as typeof req.header
-
-    req.query = ((key?: string): string | Record<string, string> | null => {
-      const url = new URL(req.url)
-      if (key) {
-        return url.searchParams.get(key)
-      } else {
-        const result: Record<string, string> = {}
-        for (const key of url.searchParams.keys()) {
-          result[key] = url.searchParams.get(key) || ''
-        }
-        return result
-      }
-    }) as typeof req.query
-
-    req.queries = ((key?: string): string[] | Record<string, string[]> => {
-      const url = new URL(req.url)
-      if (key) {
-        return url.searchParams.getAll(key)
-      } else {
-        const result: Record<string, string[]> = {}
-        for (const key of url.searchParams.keys()) {
-          result[key] = url.searchParams.getAll(key)
-        }
-        return result
-      }
-    }) as typeof req.queries
-
-    return req
   }
 
   header(name: string, value: string): void {
