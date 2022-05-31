@@ -91,17 +91,11 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   }
 
   text(text: string, status: StatusCode = this._status, headers: Headers = {}): Response {
-    if (typeof text !== 'string') {
-      throw new TypeError('text method arg must be a string!')
-    }
     headers['Content-Type'] ||= 'text/plain; charset=UTF-8'
     return this.body(text, status, headers)
   }
 
   json(object: object, status: StatusCode = this._status, headers: Headers = {}): Response {
-    if (typeof object !== 'object') {
-      throw new TypeError('json method arg must be an object!')
-    }
     const body = this._pretty
       ? JSON.stringify(object, null, this._prettySpace)
       : JSON.stringify(object)
@@ -110,17 +104,11 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   }
 
   html(html: string, status: StatusCode = this._status, headers: Headers = {}): Response {
-    if (typeof html !== 'string') {
-      throw new TypeError('html method arg must be a string!')
-    }
     headers['Content-Type'] ||= 'text/html; charset=UTF-8'
     return this.body(html, status, headers)
   }
 
   redirect(location: string, status: StatusCode = 302): Response {
-    if (typeof location !== 'string') {
-      throw new TypeError('location must be a string!')
-    }
     if (!isAbsoluteURL(location)) {
       const url = new URL(this.req.url)
       url.pathname = location
