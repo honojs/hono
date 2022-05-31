@@ -173,18 +173,13 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
     this.routes.push(r)
   }
 
-  private matchRoute(
-    method: string,
-    path: string
-  ): Result<Handler<string, E>> | null {
+  private matchRoute(method: string, path: string): Result<Handler<string, E>> | null {
     return this.router.match(method, path)
   }
 
   private async dispatch(request: Request, event?: FetchEvent, env?: E): Promise<Response> {
-    const method = request.method
-
     const result = this.matchRoute(
-      method,
+      request.method,
       this.strict ? request.url : request.url.replace(/\/(?=\?|$)/, '')
     )
 
