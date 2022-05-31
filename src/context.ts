@@ -15,10 +15,8 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   private _status: StatusCode = 200
   private _pretty: boolean = false
   private _prettySpace: number = 2
-  private _map: {
-    [key: string]: any
-  }
-  private _headers: Record<string, string>
+  private _map: Record<string, any> | undefined
+  private _headers: Record<string, string> | undefined
   private _res: Response | undefined
   private notFoundHandler: (c: Context<string, E>) => Response
 
@@ -31,7 +29,6 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
     notFoundHandler: (c: Context<string, E>) => Response
   ) {
     this.req = req
-    this._map = {}
 
     if (env) {
       this.env = env
@@ -51,6 +48,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   }
 
   header(name: string, value: string): void {
+    this._headers ||= {}
     this._headers[name] = value
   }
 
@@ -59,10 +57,14 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   }
 
   set(key: string, value: any): void {
+    this._map ||= {}
     this._map[key] = value
   }
 
   get(key: string) {
+    if (!this._map) {
+      return undefined
+    }
     return this._map[key]
   }
 
