@@ -1,11 +1,12 @@
 import Benchmark from 'benchmark'
-import { makeEdgeEnv } from 'edge-mock'
-import { Hono } from '../../dist/hono'
-import { RegExpRouter } from '../../dist/router/reg-exp-router'
 import itty from 'itty-router'
 const { Router: IttyRouter } = itty
+import { makeEdgeEnv } from 'edge-mock'
+import { Request, Response } from 'node-fetch'
 import { Router as SunderRouter, Sunder } from 'sunder'
 import { Router as WorktopRouter } from 'worktop'
+import { Hono } from '../../dist/hono'
+import { RegExpRouter } from '../../dist/router/reg-exp-router'
 
 makeEdgeEnv()
 
@@ -20,7 +21,7 @@ const initHono = (hono) => {
   hono.post('/status', () => new Response('Status'))
   hono.get('/very/deeply/nested/route/hello/there', () => new Response('Very Deeply Nested Route'))
   hono.get('/user/lookup/username/:username', (c) => {
-    return c.text(`Hello ${c.req.param('username')}`)
+    return new Response(`Hello ${c.req.param('username')}`)
   })
   return hono
 }
@@ -28,6 +29,7 @@ const initHono = (hono) => {
 const hono = initHono(new Hono())
 const honoWithRegExpRouter = initHono(new Hono({ router: new RegExpRouter() }))
 
+// itty-router
 const ittyRouter = IttyRouter()
 ittyRouter.get('/user', () => new Response('User'))
 ittyRouter.get('/user/comments', () => new Response('User Comments'))
@@ -41,7 +43,6 @@ ittyRouter.get(
   '/very/deeply/nested/route/hello/there',
   () => new Response('Very Deeply Nested Route')
 )
-//ittyRouter.get('/static/*', () => new Response('Static'))
 ittyRouter.get('/user/lookup/username/:username', ({ params }) => {
   return new Response(`Hello ${params.username}`, {
     status: 200,
@@ -51,6 +52,7 @@ ittyRouter.get('/user/lookup/username/:username', ({ params }) => {
   })
 })
 
+// Sunder
 const sunderRouter = new SunderRouter()
 sunderRouter.get('/user', (ctx) => {
   ctx.response.body = 'User'
@@ -105,11 +107,17 @@ worktopRouter.add('GET', '/user/lookup/username/:username', (req, res) =>
 )
 
 // Request Object
-const request = new Request('/user/lookup/username/hey', { method: 'GET' })
+const request = new Request('http://localhost/user/lookup/username/hey', { method: 'GET' })
 // FetchEvent Object
 const event = new FetchEvent('fetch', { request })
 
+const minimalHandler = async () => {
+  return new Response('foo')
+}
+
 const fn = async () => {
+  //let res = await minimalHandler(event)
+  //console.log(await res.text())
   let res = await hono.handleEvent(event)
   console.log(await res.text())
   res = await honoWithRegExpRouter.handleEvent(event)
@@ -126,6 +134,11 @@ fn()
 const suite = new Benchmark.Suite()
 
 suite
+  /*
+  .add('minimal handler', async () => {
+    await minimalHandler(event)
+  })
+  */
   .add('hono - trie-router(default)', async () => {
     await hono.handleEvent(event)
   })

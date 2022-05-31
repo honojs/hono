@@ -13,8 +13,9 @@
   "devDependencies": {
     "benchmark": "^2.1.4",
     "edge-mock": "^0.0.15",
-    "itty-router": "^2.4.8",
-    "sunder": "^0.10.0",
+    "itty-router": "^2.6.1",
+    "node-fetch": "^3.2.4",
+    "sunder": "^0.10.1",
     "worktop": "^0.7.3"
   }
 }
