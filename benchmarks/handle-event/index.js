@@ -20,7 +20,7 @@ const initHono = (hono) => {
   hono.post('/status', () => new Response('Status'))
   hono.get('/very/deeply/nested/route/hello/there', () => new Response('Very Deeply Nested Route'))
   hono.get('/user/lookup/username/:username', (c) => {
-    return c.text(`Hello ${c.req.param('username')}`)
+    return c.text(`Hello ${c.req.paramData.username}`) // XXX: Get from raw data
   })
   return hono
 }
