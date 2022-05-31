@@ -3,10 +3,9 @@ const URL_REGEXP = /^https?:\/\/[a-zA-Z0-9\-\.:]+(\/?[^?#]*)/
 export type Pattern = readonly [string, string, RegExp | true] | '*'
 
 export const splitPath = (path: string): string[] => {
-  const paths = path.match(/^https?:\/\/[a-zA-Z0-9\-\.:]+|(?<=\/)([^/?#]*)|\?.*/g) || []
-  paths.shift()
-  if (paths.length >= 1 && paths[paths.length - 1].startsWith('?')) {
-    paths.pop()
+  const paths = path.split(/\//) // faster than path.split('/')
+  if (paths[0] === '') {
+    paths.shift()
   }
   return paths
 }

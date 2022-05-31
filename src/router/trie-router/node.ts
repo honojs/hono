@@ -56,7 +56,7 @@ export class Node<T> {
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let curNode: Node<T> = this
-    const parts = splitPath(`https://dummyhostname${path === '*' ? '/*' : path}`)
+    const parts = splitPath(path)
 
     const parentPatterns: Pattern[] = []
 
@@ -199,7 +199,8 @@ export class Node<T> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const curNode: Node<T> = this
     let curNodes = [curNode]
-    const parts = splitPath(path)
+    const parts = path.match(/^https?:\/\/[a-zA-Z0-9\-\.:]+|(?<=\/)[^/?]*/g) || []
+    parts.shift()
 
     for (let i = 0, len = parts.length; i < len; i++) {
       const p: string = parts[i]
