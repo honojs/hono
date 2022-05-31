@@ -26,9 +26,6 @@ declare global {
       (): Record<string, string>
     }
   }
-  interface Response {
-    _finalized: boolean
-  }
 }
 
 export type Handler<RequestParamKeyType extends string = string, E = Env> = (
