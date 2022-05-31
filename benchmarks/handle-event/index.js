@@ -10,6 +10,9 @@ import { RegExpRouter } from '../../dist/router/reg-exp-router'
 
 makeEdgeEnv()
 
+globalThis.Request = Request
+globalThis.Response = Response
+
 const initHono = (hono) => {
   hono.get('/user', () => new Response('User'))
   hono.get('/user/comments', () => new Response('User Comments'))
@@ -134,11 +137,9 @@ fn()
 const suite = new Benchmark.Suite()
 
 suite
-  /*
   .add('minimal handler', async () => {
     await minimalHandler(event)
   })
-  */
   .add('hono - trie-router(default)', async () => {
     await hono.handleEvent(event)
   })
