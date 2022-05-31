@@ -12,6 +12,7 @@ declare global {
       (key: ParamKeyType): string
       (): Record<ParamKeyType, string>
     }
+    paramData?: Record<ParamKeyType, string>
     query: {
       (key: string): string
       (): Record<string, string>
@@ -82,6 +83,57 @@ interface Route<E extends Env> {
   handler: Handler<string, E>
 }
 
+function extendsRequestPrototype() {
+  Request.prototype.param = function (this: Request, key?: string) {
+    if (this.paramData) {
+      if (key) {
+        return this.paramData[key]
+      } else {
+        return this.paramData
+      }
+    }
+    return null
+  } as InstanceType<typeof Request>['param']
+
+  Request.prototype.header = function (this: Request, name?: string) {
+    if (name) {
+      return this.headers.get(name)
+    } else {
+      const result: Record<string, string> = {}
+      for (const [key, value] of this.headers) {
+        result[key] = value
+      }
+      return result
+    }
+  } as InstanceType<typeof Request>['header']
+
+  Request.prototype.query = function (this: Request, key?: string) {
+    const url = new URL(this.url)
+    if (key) {
+      return url.searchParams.get(key)
+    } else {
+      const result: Record<string, string> = {}
+      for (const key of url.searchParams.keys()) {
+        result[key] = url.searchParams.get(key) || ''
+      }
+      return result
+    }
+  } as InstanceType<typeof Request>['query']
+
+  Request.prototype.queries = function (this: Request, key?: string) {
+    const url = new URL(this.url)
+    if (key) {
+      return url.searchParams.getAll(key)
+    } else {
+      const result: Record<string, string[]> = {}
+      for (const key of url.searchParams.keys()) {
+        result[key] = url.searchParams.getAll(key)
+      }
+      return result
+    }
+  } as InstanceType<typeof Request>['queries']
+}
+
 export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<E, P, Hono<E, P>> {
   readonly router: Router<Handler<string, E>> = new TrieRouter()
   readonly strict: boolean = true // strict routing - default is true
@@ -92,6 +144,8 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
 
   constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
     super()
+
+    extendsRequestPrototype() // FIXME
 
     const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
@@ -183,16 +237,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
       this.strict ? request.url : request.url.replace(/\/(?=\?|$)/, '')
     )
 
-    request.param = ((key?: string): string | Record<string, string> | null => {
-      if (result) {
-        if (key) {
-          return result.params[key]
-        } else {
-          return result.params
-        }
-      }
-      return null
-    }) as typeof request.param
+    request.paramData = result?.params
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
