@@ -51,8 +51,6 @@ describe('url', () => {
       expect(path).toBe('/hello')
       path = getPathFromURL('https://example.com/hello/hey?name=foo&name=bar')
       expect(path).toBe('/hello/hey')
-      path = getPathFromURL('https://example.com/hello/hey#fragment')
-      expect(path).toBe('/hello/hey')
     })
 
     it('getPathFromURL - with trailing slash', () => {
@@ -63,9 +61,9 @@ describe('url', () => {
     })
 
     it('getPathFromURL - no strict is false', () => {
-      let path = getPathFromURL('https://example.com/hello/', { strict: false })
+      let path = getPathFromURL('https://example.com/hello/', false)
       expect(path).toBe('/hello')
-      path = getPathFromURL('https://example.com/hello/hey/', { strict: false })
+      path = getPathFromURL('https://example.com/hello/hey/', false)
       expect(path).toBe('/hello/hey')
     })
   })

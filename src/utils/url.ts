@@ -43,25 +43,17 @@ export const getPattern = (label: string): Pattern | null => {
   return null
 }
 
-type Params = {
-  strict: boolean
-}
+export const getPathFromURL = (url: string, strict: boolean = true): string => {
+  const queryIndex = url.indexOf('?')
+  const result = url.substring(url.indexOf('/', 8), queryIndex === -1 ? url.length : queryIndex)
 
-const pathFromURLCache: Record<string, string> = {}
-export const getPathFromURL = (url: string, params: Params = { strict: true }): string => {
   // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
   // default is true
-  if (params.strict === false && url.endsWith('/')) {
-    url = url.slice(0, -1)
+  if (strict === false && result.endsWith('/')) {
+    return result.slice(0, -1)
   }
 
-  let path = pathFromURLCache[url]
-  if (path) return path
-
-  const match = url.match(URL_REGEXP)
-  path = match ? match[1] : ''
-  pathFromURLCache[url] = path
-  return path
+  return result
 }
 
 export const isAbsoluteURL = (url: string): boolean => {
