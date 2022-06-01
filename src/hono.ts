@@ -1,32 +1,11 @@
 import { compose } from './compose'
 import { Context } from './context'
 import type { Env } from './context'
+import { extendRequestPrototype } from './request'
 import type { Router } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import { TrieRouter } from './router/trie-router' // Default Router
 import { getPathFromURL, mergePath } from './utils/url'
-
-declare global {
-  interface Request<ParamKeyType extends string = string> {
-    param: {
-      (key: ParamKeyType): string
-      (): Record<ParamKeyType, string>
-    }
-    paramData?: Record<ParamKeyType, string>
-    query: {
-      (key: string): string
-      (): Record<string, string>
-    }
-    queries: {
-      (key: string): string[]
-      (): Record<string, string[]>
-    }
-    header: {
-      (name: string): string
-      (): Record<string, string>
-    }
-  }
-}
 
 export type Handler<RequestParamKeyType extends string = string, E = Env> = (
   c: Context<RequestParamKeyType, E>,
@@ -80,62 +59,6 @@ interface Route<E extends Env> {
   handler: Handler<string, E>
 }
 
-function extendsRequestPrototype() {
-  if (!!Request.prototype.param as boolean) {
-    // already extended
-    return
-  }
-
-  Request.prototype.param = function (this: Request, key?: string) {
-    if (this.paramData) {
-      if (key) {
-        return this.paramData[key]
-      } else {
-        return this.paramData
-      }
-    }
-    return null
-  } as InstanceType<typeof Request>['param']
-
-  Request.prototype.header = function (this: Request, name?: string) {
-    if (name) {
-      return this.headers.get(name)
-    } else {
-      const result: Record<string, string> = {}
-      for (const [key, value] of this.headers) {
-        result[key] = value
-      }
-      return result
-    }
-  } as InstanceType<typeof Request>['header']
-
-  Request.prototype.query = function (this: Request, key?: string) {
-    const url = new URL(this.url)
-    if (key) {
-      return url.searchParams.get(key)
-    } else {
-      const result: Record<string, string> = {}
-      for (const key of url.searchParams.keys()) {
-        result[key] = url.searchParams.get(key) || ''
-      }
-      return result
-    }
-  } as InstanceType<typeof Request>['query']
-
-  Request.prototype.queries = function (this: Request, key?: string) {
-    const url = new URL(this.url)
-    if (key) {
-      return url.searchParams.getAll(key)
-    } else {
-      const result: Record<string, string[]> = {}
-      for (const key of url.searchParams.keys()) {
-        result[key] = url.searchParams.getAll(key)
-      }
-      return result
-    }
-  } as InstanceType<typeof Request>['queries']
-}
-
 export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<E, P, Hono<E, P>> {
   readonly router: Router<Handler<string, E>> = new TrieRouter()
   readonly strict: boolean = true // strict routing - default is true
@@ -147,7 +70,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
   constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
     super()
 
-    extendsRequestPrototype() // FIXME: should be executed at a better timing
+    extendRequestPrototype() // FIXME: should be executed at a better timing
 
     const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
