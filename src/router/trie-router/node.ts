@@ -3,12 +3,6 @@ import { METHOD_NAME_ALL } from '../../router'
 import type { Pattern } from '../../utils/url'
 import { splitPath, getPattern } from '../../utils/url'
 
-type Next<T> = {
-  nodes: Node<T>[]
-  handlerSets: HandlerSet<T>[]
-  params: Record<string, string>
-}
-
 type HandlerSet<T> = {
   handler: T
   score: number
@@ -38,6 +32,8 @@ export class Node<T> {
   patterns: Pattern[]
   order: number = 0
   name: string
+  handlersCache: Record<string, T[]>
+  handlerSetCache: Record<string, HandlerSet<T>[]>
 
   constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
     this.children = children || {}
@@ -48,6 +44,8 @@ export class Node<T> {
       this.methods = [m]
     }
     this.patterns = []
+    this.handlerSetCache = {}
+    this.handlersCache = {}
   }
 
   insert(method: string, path: string, handler: T): Node<T> {
@@ -118,83 +116,27 @@ export class Node<T> {
   }
 
   private getHandlerSets(node: Node<T>, method: string, wildcard?: boolean): HandlerSet<T>[] {
-    const handlerSets: HandlerSet<T>[] = []
-    node.methods.map((m) => {
-      const handlerSet = m[method] || m[METHOD_NAME_ALL]
-      if (handlerSet !== undefined) {
-        const hs = { ...handlerSet }
-        if (wildcard) {
-          hs.score = handlerSet.score - 1
-        }
-        handlerSets.push(hs)
-        return
-      }
-    })
-
-    return handlerSets
-  }
-
-  private next(node: Node<T>, part: string, method: string, isLast: boolean): Next<T> {
-    const handlerSets: HandlerSet<T>[] = []
-    const nextNodes: Node<T>[] = []
-    const params: Record<string, string> = {}
-
-    for (let j = 0, len = node.patterns.length; j < len; j++) {
-      const pattern = node.patterns[j]
-
-      // Wildcard
-      // '/hello/*/foo' => match /hello/bar/foo
-      if (pattern === '*') {
-        const astNode = node.children['*']
-        if (astNode) {
-          handlerSets.push(...this.getHandlerSets(astNode, method))
-          nextNodes.push(astNode)
-        }
-        continue
-      }
-
-      if (part === '') continue
-
-      // Named match
-      // `/posts/:id` => match /posts/123
-      const [key, name, matcher] = pattern
-      if (matcher === true || (matcher instanceof RegExp && matcher.test(part))) {
-        if (typeof key === 'string') {
-          if (isLast === true) {
-            handlerSets.push(...this.getHandlerSets(node.children[key], method))
+    return (node.handlerSetCache[`${method}:${wildcard ? '1' : '0'}`] ||= (() => {
+      const handlerSets: HandlerSet<T>[] = []
+      node.methods.map((m) => {
+        const handlerSet = m[method] || m[METHOD_NAME_ALL]
+        if (handlerSet !== undefined) {
+          const hs = { ...handlerSet }
+          if (wildcard) {
+            hs.score = handlerSet.score - 1
           }
-          nextNodes.push(node.children[key])
+          handlerSets.push(hs)
+          return
         }
-        if (typeof name === 'string') {
-          params[name] = part
-        }
-      }
-    }
+      })
 
-    const nextNode = node.children[part]
-
-    if (nextNode) {
-      if (isLast === true) {
-        // '/hello/*' => match '/hello'
-        if (nextNode.children['*']) {
-          handlerSets.push(...this.getHandlerSets(nextNode.children['*'], method, true))
-        }
-        handlerSets.push(...this.getHandlerSets(nextNode, method))
-      }
-      nextNodes.push(nextNode)
-    }
-
-    const next: Next<T> = {
-      nodes: nextNodes,
-      handlerSets: handlerSets,
-      params: params,
-    }
-    return next
+      return handlerSets
+    })())
   }
 
   search(method: string, path: string): Result<T> | null {
     const handlerSets: HandlerSet<T>[] = []
-    let params: Record<string, string> = {}
+    const params: Record<string, string> = {}
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const curNode: Node<T> = this
@@ -202,18 +144,57 @@ export class Node<T> {
     const parts = splitPath(path)
 
     for (let i = 0, len = parts.length; i < len; i++) {
-      const p: string = parts[i]
+      const part: string = parts[i]
       const isLast = i === len - 1
       const tempNodes: Node<T>[] = []
 
       for (let j = 0, len2 = curNodes.length; j < len2; j++) {
-        const res = this.next(curNodes[j], p, method, isLast)
-        if (res.nodes.length === 0) {
-          continue
+        const node = curNodes[j]
+
+        for (let k = 0, len3 = node.patterns.length; k < len3; k++) {
+          const pattern = node.patterns[k]
+
+          // Wildcard
+          // '/hello/*/foo' => match /hello/bar/foo
+          if (pattern === '*') {
+            const astNode = node.children['*']
+            if (astNode) {
+              handlerSets.push(...this.getHandlerSets(astNode, method))
+              tempNodes.push(astNode)
+            }
+            continue
+          }
+
+          if (part === '') continue
+
+          // Named match
+          // `/posts/:id` => match /posts/123
+          const [key, name, matcher] = pattern
+          if (matcher === true || (matcher instanceof RegExp && matcher.test(part))) {
+            if (typeof key === 'string') {
+              if (isLast === true) {
+                handlerSets.push(...this.getHandlerSets(node.children[key], method))
+              }
+              tempNodes.push(node.children[key])
+            }
+            if (typeof name === 'string') {
+              params[name] = part
+            }
+          }
         }
-        handlerSets.push(...res.handlerSets)
-        params = { ...params, ...res.params }
-        tempNodes.push(...res.nodes)
+
+        const nextNode = node.children[part]
+
+        if (nextNode) {
+          if (isLast === true) {
+            // '/hello/*' => match '/hello'
+            if (nextNode.children['*']) {
+              handlerSets.push(...this.getHandlerSets(nextNode.children['*'], method, true))
+            }
+            handlerSets.push(...this.getHandlerSets(nextNode, method))
+          }
+          tempNodes.push(nextNode)
+        }
       }
 
       curNodes = tempNodes
