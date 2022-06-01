@@ -24,9 +24,9 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
 
   constructor(
     req: Request<RequestParamKeyType>,
-    env: E | undefined,
-    event: FetchEvent | undefined,
-    notFoundHandler: (c: Context<string, E>) => Response
+    env: E | undefined = undefined,
+    event: FetchEvent | undefined = undefined,
+    notFoundHandler: (c: Context<string, E>) => Response = () => new Response()
   ) {
     this.req = req
 
