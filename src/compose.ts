@@ -21,7 +21,6 @@ export const compose = <C>(
       if (!handler) {
         if (context instanceof Context && context.finalized === false && onNotFound) {
           context.res = onNotFound(context)
-          context.finalized = true
         }
         return Promise.resolve(context)
       }
@@ -31,7 +30,6 @@ export const compose = <C>(
           // If handler return Response like `return c.text('foo')`
           if (res && context instanceof Context) {
             context.res = res
-            context.finalized = true
           }
           return context
         })
@@ -39,7 +37,6 @@ export const compose = <C>(
           if (context instanceof Context && onError) {
             if (err instanceof Error) {
               context.res = onError(err, context)
-              context.finalized = true
             }
             return context
           } else {

@@ -44,11 +44,15 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
 
   set res(_res: Response) {
     this._res = _res
+    this.finalized = true
   }
 
   header(name: string, value: string): void {
     this._headers ||= {}
     this._headers[name] = value
+    if (this.finalized) {
+      this.res.headers.set(name, value)
+    }
   }
 
   status(status: StatusCode): void {
