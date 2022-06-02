@@ -28,7 +28,7 @@ type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 
-interface HandlerInterface<T extends string, E = Env, U = Hono<E, T>> {
+interface HandlerInterface<T extends string, E extends Env = Env, U = Hono<E, T>> {
   // app.get('/', handler, handler...)
   <Path extends string>(
     path: Path,
@@ -59,7 +59,11 @@ interface Route<E extends Env> {
   handler: Handler<string, E>
 }
 
-export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<E, P, Hono<E, P>> {
+export class Hono<E extends Env = Env, P extends string = '/'> extends defineDynamicClass()<
+  E,
+  P,
+  Hono<E, P>
+> {
   readonly router: Router<Handler<string, E>> = new TrieRouter()
   readonly strict: boolean = true // strict routing - default is true
   private _tempPath: string = ''
