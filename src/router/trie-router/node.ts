@@ -32,7 +32,6 @@ export class Node<T> {
   patterns: Pattern[]
   order: number = 0
   name: string
-  handlersCache: Record<string, T[]>
   handlerSetCache: Record<string, HandlerSet<T>[]>
 
   constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
@@ -45,7 +44,6 @@ export class Node<T> {
     }
     this.patterns = []
     this.handlerSetCache = {}
-    this.handlersCache = {}
   }
 
   insert(method: string, path: string, handler: T): Node<T> {
