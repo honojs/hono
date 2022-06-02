@@ -13,9 +13,9 @@ export const jwt = (options: { secret: string; alg?: string }) => {
 
     if (!credentials) {
       ctx.res = new Response('Unauthorized', {
-        status: 401,
+        status: 400,
         headers: {
-          'WWW-Authenticate': 'Basic ${options.secret}',
+          'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="no authorization included in request"`,
         },
       })
       return
@@ -24,9 +24,9 @@ export const jwt = (options: { secret: string; alg?: string }) => {
     const parts = credentials.split(/\s+/)
     if (parts.length !== 2) {
       ctx.res = new Response('Unauthorized', {
-        status: 401,
+        status: 400,
         headers: {
-          'WWW-Authenticate': 'Basic ${options.secret}',
+          'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="no authorization included in request"`,
         },
       })
       return
@@ -44,12 +44,12 @@ export const jwt = (options: { secret: string; alg?: string }) => {
         status: 401,
         statusText: msg,
         headers: {
-          'WWW-Authenticate': 'Bearer ${options.secret}',
+          'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_token",error_description="token verification failure"`,
         },
       })
       return
     }
-    
+
     await next()
   }
 }
