@@ -157,7 +157,7 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
   }
 
   private async dispatch(request: Request, event?: FetchEvent, env?: E): Promise<Response> {
-    const path = getPathFromURL(request.url, { strict: this.strict })
+    const path = getPathFromURL(request.url, this.strict)
     const method = request.method
 
     const result = this.matchRoute(method, path)
