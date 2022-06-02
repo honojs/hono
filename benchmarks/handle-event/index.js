@@ -1,14 +1,12 @@
 import Benchmark from 'benchmark'
+import { makeEdgeEnv } from 'edge-mock'
 import itty from 'itty-router'
 const { Router: IttyRouter } = itty
-import { makeEdgeEnv } from 'edge-mock'
 import { Request, Response } from 'node-fetch'
 import { Router as SunderRouter, Sunder } from 'sunder'
 import { Router as WorktopRouter } from 'worktop'
 import { Hono } from '../../dist/hono'
 import { RegExpRouter } from '../../dist/router/reg-exp-router'
-
-makeEdgeEnv()
 
 globalThis.Request = Request
 globalThis.Response = Response
@@ -111,16 +109,13 @@ worktopRouter.add('GET', '/user/lookup/username/:username', (req, res) =>
 
 // Request Object
 const request = new Request('http://localhost/user/lookup/username/hey', { method: 'GET' })
+
+makeEdgeEnv()
+
 // FetchEvent Object
 const event = new FetchEvent('fetch', { request })
 
-const minimalHandler = async () => {
-  return new Response('foo')
-}
-
 const fn = async () => {
-  //let res = await minimalHandler(event)
-  //console.log(await res.text())
   let res = await hono.handleEvent(event)
   console.log(await res.text())
   res = await honoWithRegExpRouter.handleEvent(event)
@@ -137,9 +132,6 @@ fn()
 const suite = new Benchmark.Suite()
 
 suite
-  .add('minimal handler', async () => {
-    await minimalHandler(event)
-  })
   .add('hono - trie-router(default)', async () => {
     await hono.handleEvent(event)
   })
