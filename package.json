@@ -133,7 +133,7 @@
     "form-data": "^4.0.0",
     "graphql": "^16.4.0",
     "jest": "27.5.1",
-    "jest-environment-miniflare": "^2.4.0",
+    "jest-environment-miniflare": "^2.5.0",
     "mustache": "^4.2.0",
     "prettier": "^2.6.2",
     "prettier-plugin-md-nocjsp": "^1.2.0",
