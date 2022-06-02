@@ -33,7 +33,7 @@ describe('Jwt Auth by Middleware', () => {
     const req = new Request('http://localhost/auth/a')
     const res = await app.request(req)
     expect(res).not.toBeNull()
-    expect(res.status).toBe(401)
+    expect(res.status).toBe(400)
     expect(await res.text()).toBe('Unauthorized')
     expect(res.headers.get('x-foo')).toBeFalsy()
   })
@@ -67,21 +67,29 @@ describe('Jwt Auth by Middleware', () => {
     const invalidToken =
       'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
 
-    const req = new Request('http://localhost/auth-unicode/a')
+    const url = 'http://localhost/auth-unicode/a'
+    const req = new Request(url)
     req.headers.set('Authorization', `Basic ${invalidToken}`)
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
+    expect(res.headers.get('www-authenticate')).toEqual(
+      `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
+    )
     expect(res.headers.get('x-foo')).toBeFalsy()
   })
 
   it('Should not authorize', async () => {
     const invalid_token = 'invalid token'
-    const req = new Request('http://localhost/auth/a')
+    const url = 'http://localhost/auth/a'
+    const req = new Request(url)
     req.headers.set('Authorization', `Bearer ${invalid_token}`)
     const res = await app.request(req)
     expect(res).not.toBeNull()
-    expect(res.status).toBe(401)
+    expect(res.status).toBe(400)
+    expect(res.headers.get('www-authenticate')).toEqual(
+      `Bearer realm="${url}",error="invalid_request",error_description="no authorization included in request"`
+    )
     expect(res.headers.get('x-foo')).toBeFalsy()
   })
 })
