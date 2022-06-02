@@ -86,12 +86,9 @@ describe('Context', () => {
     c.header('x-custom1', 'Message1')
     c.header('x-custom2', 'Message2')
     c.status(200)
-    const res = c.newResponse('this is body', {
-      status: 201,
-      headers: {
-        'x-custom3': 'Message3',
-        'x-custom2': 'Message2-Override',
-      },
+    const res = c.newResponse('this is body', 201, {
+      'x-custom3': 'Message3',
+      'x-custom2': 'Message2-Override',
     })
     expect(res.headers.get('x-Custom1')).toBe('Message1')
     expect(res.headers.get('x-Custom2')).toBe('Message2-Override')
@@ -123,9 +120,7 @@ describe('Context', () => {
     const req = new Request('http://localhost/')
     const key = 'a-secret-key'
     const ctx = new Context(req, {
-      env: {
-        API_KEY: key,
-      },
+      API_KEY: key,
     })
     expect(ctx.env.API_KEY).toBe(key)
   })

@@ -2,17 +2,11 @@ const URL_REGEXP = /^https?:\/\/[a-zA-Z0-9\-\.:]+(\/?[^?#]*)/
 
 export type Pattern = readonly [string, string, RegExp | true] | '*'
 
-const splitPathCache: Record<string, string[]> = {}
 export const splitPath = (path: string): string[] => {
-  let paths = splitPathCache[path]
-  if (paths) {
-    return paths
-  }
-  paths = path.split(/\//) // faster than path.split('/')
+  const paths = path.split(/\//) // faster than path.split('/')
   if (paths[0] === '') {
     paths.shift()
   }
-  splitPathCache[path] = paths
   return paths
 }
 

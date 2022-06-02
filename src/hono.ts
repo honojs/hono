@@ -1,34 +1,11 @@
 import { compose } from './compose'
 import { Context } from './context'
 import type { Env } from './context'
+import { extendRequestPrototype } from './request'
 import type { Router } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import { TrieRouter } from './router/trie-router' // Default Router
 import { getPathFromURL, mergePath } from './utils/url'
-
-declare global {
-  interface Request<ParamKeyType extends string = string> {
-    param: {
-      (key: ParamKeyType): string
-      (): Record<ParamKeyType, string>
-    }
-    query: {
-      (key: string): string
-      (): Record<string, string>
-    }
-    queries: {
-      (key: string): string[]
-      (): Record<string, string[]>
-    }
-    header: {
-      (name: string): string
-      (): Record<string, string>
-    }
-  }
-  interface Response {
-    _finalized: boolean
-  }
-}
 
 export type Handler<RequestParamKeyType extends string = string, E = Env> = (
   c: Context<RequestParamKeyType, E>,
@@ -92,6 +69,8 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
 
   constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
     super()
+
+    extendRequestPrototype() // FIXME: should be executed at a better timing
 
     const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
@@ -183,24 +162,11 @@ export class Hono<E = Env, P extends string = '/'> extends defineDynamicClass()<
 
     const result = this.matchRoute(method, path)
 
-    request.param = ((key?: string): string | Record<string, string> | null => {
-      if (result) {
-        if (key) {
-          return result.params[key]
-        } else {
-          return result.params
-        }
-      }
-      return null
-    }) as typeof request.param
+    request.paramData = result?.params
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
-    const c = new Context<string, E>(request, {
-      env: env,
-      event: event,
-    })
-    c.notFound = () => this.notFoundHandler(c)
+    const c = new Context<string, E>(request, env, event, this.notFoundHandler)
 
     const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)
     let context: Context

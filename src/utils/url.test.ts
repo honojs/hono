@@ -8,10 +8,6 @@ describe('url', () => {
     ps = splitPath('/hello')
     expect(ps).toStrictEqual(['hello'])
 
-    // Is cache OK?
-    ps = splitPath('/hello')
-    expect(ps).toStrictEqual(['hello'])
-
     ps = splitPath('*')
     expect(ps).toStrictEqual(['*'])
 
@@ -40,9 +36,6 @@ describe('url', () => {
     it('getPathFromURL - no trailing slash', () => {
       let path = getPathFromURL('https://example.com/')
       expect(path).toBe('/')
-      path = getPathFromURL('https://example.com/hello')
-      expect(path).toBe('/hello')
-      // Is cache OK?
       path = getPathFromURL('https://example.com/hello')
       expect(path).toBe('/hello')
       path = getPathFromURL('https://example.com/hello/hey')
