@@ -33,7 +33,7 @@ describe('Jwt Auth by Middleware', () => {
     const req = new Request('http://localhost/auth/a')
     const res = await app.request(req)
     expect(res).not.toBeNull()
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(401)
     expect(await res.text()).toBe('Unauthorized')
     expect(res.headers.get('x-foo')).toBeFalsy()
   })
@@ -86,7 +86,7 @@ describe('Jwt Auth by Middleware', () => {
     req.headers.set('Authorization', `Bearer ${invalid_token}`)
     const res = await app.request(req)
     expect(res).not.toBeNull()
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(401)
     expect(res.headers.get('www-authenticate')).toEqual(
       `Bearer realm="${url}",error="invalid_request",error_description="no authorization included in request"`
     )
