@@ -13,7 +13,7 @@ export const jwt = (options: { secret: string; alg?: string }) => {
 
     if (!credentials) {
       ctx.res = new Response('Unauthorized', {
-        status: 400,
+        status: 401,
         headers: {
           'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="no authorization included in request"`,
         },
@@ -24,7 +24,7 @@ export const jwt = (options: { secret: string; alg?: string }) => {
     const parts = credentials.split(/\s+/)
     if (parts.length !== 2) {
       ctx.res = new Response('Unauthorized', {
-        status: 400,
+        status: 401,
         headers: {
           'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="no authorization included in request"`,
         },
