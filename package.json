@@ -18,6 +18,7 @@
   "exports": {
     ".": "./dist/index.js",
     "./basic-auth": "./dist/middleware/basic-auth/index.js",
+    "./bearer-auth": "./dist/middleware/bearer-auth/index.js",
     "./body-parse": "./dist/middleware/body-parse/index.js",
     "./cookie": "./dist/middleware/cookie/index.js",
     "./cors": "./dist/middleware/cors/index.js",
@@ -40,6 +41,9 @@
     "*": {
       "basic-auth": [
         "./dist/middleware/basic-auth"
+      ],
+      "bearer-auth": [
+        "./dist/middleware/bearer-auth"
       ],
       "body-parse": [
         "./dist/middleware/body-parse"
