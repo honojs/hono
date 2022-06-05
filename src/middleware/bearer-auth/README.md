@@ -25,7 +25,7 @@ app.fire()
 app.use(
   '/auth/*',
   bearerAuth({
-    token: 'acoolproject', // Required
+    token: 'honoisacool', // Required
     realm: 'example.com',
     prefix: 'Bot'
     hashFunction: (d: string) => SHA256(d).toString(), // For Fastly Compute@Edge
