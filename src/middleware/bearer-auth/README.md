@@ -18,3 +18,17 @@ app.get('/auth/page', (c) => {
 
 app.fire()
 ```
+
+## Options
+
+```ts
+app.use(
+  '/auth/*',
+  bearerAuth({
+    token: 'acoolproject', // Required
+    realm: 'example.com',
+    prefix: 'Bot'
+    hashFunction: (d: string) => SHA256(d).toString(), // For Fastly Compute@Edge
+  })
+)
+```

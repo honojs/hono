@@ -2,14 +2,23 @@ import type { Context } from '../../context'
 import type { Next } from '../../hono'
 import { timingSafeEqual } from '../../utils/buffer'
 
-const TOKEN_REGEXP = /^Bearer ([A-Za-z0-9._~+/-]+=*) *$/
+const TOKEN_STRINGS = '[A-Za-z0-9._~+/-]+=*'
+const PREFIX = 'Bearer'
 
-export const bearerAuth = (options: { token: string; realm?: string; hashFunction?: Function }) => {
+export const bearerAuth = (options: {
+  token: string
+  realm?: string
+  prefix?: string
+  hashFunction?: Function
+}) => {
   if (!options.token) {
     throw new Error('bearer auth middleware requires options for "token"')
   }
   if (!options.realm) {
     options.realm = ''
+  }
+  if (!options.prefix) {
+    options.prefix = PREFIX
   }
 
   const realm = options.realm?.replace(/"/g, '\\"')
@@ -22,17 +31,18 @@ export const bearerAuth = (options: { token: string; realm?: string; hashFunctio
       c.res = new Response('Unauthorized', {
         status: 401,
         headers: {
-          'WWW-Authenticate': 'Bearer realm="' + realm + '"',
+          'WWW-Authenticate': `${options.prefix} realm="` + realm + '"',
         },
       })
     } else {
-      const match = TOKEN_REGEXP.exec(headerToken)
+      const regexp = new RegExp('^' + options.prefix + ' +(' + TOKEN_STRINGS + ') *$')
+      const match = regexp.exec(headerToken)
       if (!match) {
         // Invalid Request
         c.res = new Response('Bad Request', {
           status: 400,
           headers: {
-            'WWW-Authenticate': 'Bearer error="invalid_request"',
+            'WWW-Authenticate': `${options.prefix} error="invalid_request"`,
           },
         })
       } else {
@@ -42,7 +52,7 @@ export const bearerAuth = (options: { token: string; realm?: string; hashFunctio
           c.res = new Response('Unauthorized', {
             status: 401,
             headers: {
-              'WWW-Authenticate': 'Bearer error="invalid_token"',
+              'WWW-Authenticate': `${options.prefix} error="invalid_token"`,
             },
           })
         } else {
