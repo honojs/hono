@@ -840,3 +840,62 @@ describe('Multiple handler - async', () => {
     })
   })
 })
+
+describe('Multiple handler', () => {
+  describe('handler + handler', () => {
+    const app = new Hono()
+
+    app.get('/posts/:id', (c) => {
+      const id = c.req.param('id')
+      c.header('foo', 'bar')
+      return c.text(`id is ${id}`)
+    })
+
+    app.get('/:type/:id', (c) => {
+      c.status(404)
+      c.header('foo2', 'bar2')
+      return c.text('foo')
+    })
+    it('Should return response from `specialized` route', async () => {
+      const res = await app.request('http://localhost/posts/123')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('id is 123')
+      expect(res.headers.get('foo')).toBe('bar')
+      expect(res.headers.get('foo2')).toBeNull()
+    })
+  })
+
+  describe('Context is not finalized', () => {
+    it('should throw error - lack `await next()`', async () => {
+      const app = new Hono()
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      app.use('*', () => {})
+      app.get('/foo', (c) => {
+        return c.text('foo')
+      })
+      app.onError((err, c) => {
+        return c.text(err.message, 500)
+      })
+      const res = await app.request('http://localhost/foo')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toMatch(/^Context is not finalized/)
+    })
+
+    it('should throw error - lack `returning Response`', async () => {
+      const app = new Hono()
+      app.use('*', async (_c, next) => {
+        await next()
+      })
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      app.get('/foo', () => {})
+      app.onError((err, c) => {
+        return c.text(err.message, 500)
+      })
+      const res = await app.request('http://localhost/foo')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toMatch(/^Context is not finalized/)
+    })
+  })
+})

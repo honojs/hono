@@ -176,6 +176,11 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
     let context: Context
     try {
       context = await composed(c)
+      if (!context.finalized) {
+        throw new Error(
+          'Context is not finalized. You may forget returning Response object or `await next()`'
+        )
+      }
     } catch (err) {
       if (err instanceof Error) {
         return this.errorHandler(err, c)
