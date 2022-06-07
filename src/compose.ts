@@ -20,7 +20,7 @@ export const compose = <C>(
 
       if (!handler) {
         if (context instanceof Context && context.finalized === false && onNotFound) {
-          context.res = onNotFound(context)
+          context.res = await onNotFound(context)
         }
         return Promise.resolve(context)
       }

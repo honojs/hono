@@ -1,3 +1,4 @@
+import type { NotFoundHandler } from './hono'
 import type { StatusCode } from './utils/http-status'
 import { isAbsoluteURL } from './utils/url'
 
@@ -18,7 +19,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   private _map: Record<string, any> | undefined
   private _headers: Record<string, string> | undefined
   private _res: Response | undefined
-  private notFoundHandler: (c: Context<string, E>) => Response
+  private notFoundHandler: NotFoundHandler
 
   render: (template: string, params?: object, options?: object) => Promise<Response>
 
@@ -26,7 +27,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
     req: Request<RequestParamKeyType>,
     env: E | undefined = undefined,
     event: FetchEvent | undefined = undefined,
-    notFoundHandler: (c: Context<string, E>) => Response = () => new Response()
+    notFoundHandler: NotFoundHandler = () => new Response()
   ) {
     this.req = req
 

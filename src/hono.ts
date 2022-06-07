@@ -11,7 +11,7 @@ export type Handler<RequestParamKeyType extends string = string, E = Env> = (
   c: Context<RequestParamKeyType, E>,
   next: Next
 ) => Response | Promise<Response> | Promise<void> | Promise<Response | undefined>
-export type NotFoundHandler<E = Env> = (c: Context<string, E>) => Response
+export type NotFoundHandler<E = Env> = (c: Context<string, E>) => Response | Promise<Response>
 export type ErrorHandler<E = Env> = (err: Error, c: Context<string, E>) => Response
 export type Next = () => Promise<void>
 
