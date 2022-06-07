@@ -495,6 +495,8 @@ app.get('/foo', async (c) => {
 
 ### c.env
 
+Environment variables, secrets, and KV namespaces are known as bindings. Regardless of type, bindings are always available as global variables and can be accessed via the context `c.env.BINDING_KEY`.
+
 ```ts
 // Environment object for Cloudflare Workers
 app.get('*', async c => {
