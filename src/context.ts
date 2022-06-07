@@ -21,7 +21,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   private _res: Response | undefined
   private notFoundHandler: NotFoundHandler
 
-  render: (template: string, params?: object, options?: object) => Promise<Response>
+  render: (content: string, params?: object, options?: object) => Response | Promise<Response>
 
   constructor(
     req: Request<RequestParamKeyType>,
