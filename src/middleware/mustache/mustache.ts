@@ -1,6 +1,6 @@
 import Mustache from 'mustache'
 import type { Context } from '../../context'
-import type { Handler, Next } from '../../hono'
+import type { Next } from '../../hono'
 import { bufferToString } from '../../utils/buffer'
 import type { KVAssetOptions } from '../../utils/cloudflare'
 import { getContentFromKVAsset, getKVFilePath } from '../../utils/cloudflare'
@@ -20,11 +20,11 @@ export type MustacheOptions = {
   namespace?: KVNamespace
 }
 
-export const mustache = (init: MustacheOptions = { root: '' }): Handler => {
+export const mustache = (init: MustacheOptions = { root: '' }) => {
   const { root } = init
 
   return async (c: Context, next: Next) => {
-    c.render = async (filename, params = {}, options?) => {
+    c.render = async (filename, params = {}, options?): Promise<Response> => {
       const path = getKVFilePath({
         filename: `${filename}${EXTENSION}`,
         root: root,
