@@ -141,6 +141,7 @@ describe('compose with Context - 404 not found', () => {
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(404)
     expect(await context.res.text()).toBe('onNotFound')
+    expect(context.finalized).toBe(true)
   })
 })
 
@@ -169,6 +170,7 @@ describe('compose with Context - 401 not authorized', () => {
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(401)
     expect(await context.res.text()).toBe('Not authorized')
+    expect(context.finalized).toBe(true)
   })
 })
 
@@ -198,6 +200,7 @@ describe('compose with Context - next() below', () => {
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(200)
     expect(await context.res.text()).toBe('foo')
+    expect(context.finalized).toBe(true)
   })
 })
 
@@ -227,6 +230,7 @@ describe('compose with Context - 500 error', () => {
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(500)
     expect(await context.res.text()).toBe('onError')
+    expect(context.finalized).toBe(true)
   })
 
   it('Error on middleware', async () => {
@@ -246,6 +250,7 @@ describe('compose with Context - 500 error', () => {
     expect(c.res).not.toBeNull()
     expect(c.res.status).toBe(500)
     expect(await context.res.text()).toBe('onError')
+    expect(context.finalized).toBe(true)
   })
 
   it('Run all the middlewares', async () => {
@@ -268,6 +273,45 @@ describe('compose with Context - 500 error', () => {
     const composed = compose(middlewares)
     await composed(ctx)
     expect(stack).toEqual([0, 1, 2])
+  })
+})
+describe('compose with Context - not finalized', () => {
+  const req = new Request('http://localhost/')
+  const c: Context = new Context(req)
+
+  const onError = (_error: Error, c: Context) => {
+    return c.text('onError', 500)
+  }
+  const onNotFound = (c: Context) => {
+    return c.text('onNotFound', 404)
+  }
+
+  it('Should not be finalized - lack `next()`', async () => {
+    const middleware: Function[] = []
+    const mHandler = async (_c: Context, next: Function) => {
+      await next()
+    }
+    const mHandler2 = async () => {}
+
+    middleware.push(mHandler)
+    middleware.push(mHandler2)
+    const composed = compose<Context>(middleware, onError, onNotFound)
+    const context = await composed(c)
+    expect(context.finalized).toBe(false)
+  })
+
+  it('Should not be finalized - lack `return Response`', async () => {
+    const middleware2: Function[] = []
+    const mHandler3 = async (_c: Context, next: Function) => {
+      await next()
+    }
+    const handler = async () => {}
+    middleware2.push(mHandler3)
+    middleware2.push(handler)
+
+    const composed = compose<Context>(middleware2, onError, onNotFound)
+    const context = await composed(c)
+    expect(context.finalized).toBe(false)
   })
 })
 

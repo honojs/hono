@@ -840,3 +840,37 @@ describe('Multiple handler - async', () => {
     })
   })
 })
+
+describe('Context is not finalized', () => {
+  it('should throw error - lack `await next()`', async () => {
+    const app = new Hono()
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    app.use('*', () => {})
+    app.get('/foo', (c) => {
+      return c.text('foo')
+    })
+    app.onError((err, c) => {
+      return c.text(err.message, 500)
+    })
+    const res = await app.request('http://localhost/foo')
+    expect(res.status).toBe(500)
+    expect(await res.text()).toMatch(/^Context is not finalized/)
+  })
+
+  it('should throw error - lack `returning Response`', async () => {
+    const app = new Hono()
+    app.use('*', async (_c, next) => {
+      await next()
+    })
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    app.get('/foo', () => {})
+    app.onError((err, c) => {
+      return c.text(err.message, 500)
+    })
+    const res = await app.request('http://localhost/foo')
+    expect(res.status).toBe(500)
+    expect(await res.text()).toMatch(/^Context is not finalized/)
+  })
+})
