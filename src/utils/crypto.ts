@@ -17,6 +17,12 @@ export const sha1 = async (data: Data) => {
   return hash
 }
 
+export const md5 = async (data: Data) => {
+  const algorithm: Algorithm = { name: 'MD5', alias: 'md5' }
+  const hash = await createHash(data, algorithm)
+  return hash
+}
+
 export const createHash = async (data: Data, algorithm: Algorithm): Promise<string | null> => {
   if (crypto && crypto.subtle) {
     const buffer = await crypto.subtle.digest(
