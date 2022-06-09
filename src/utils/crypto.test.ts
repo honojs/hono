@@ -16,4 +16,10 @@ describe('crypto', () => {
     expect(await sha1('炎')).toBe('d56e09ae2421b2b8a0b5ee5fdceaed663c8c9472')
     expect(await sha1('abcdedf')).not.toBe('abcdef')
   })
+  
+  it('md5', async () => {
+    expect(await md5('hono')).toBe('cf22a160789a91dd5f737cd3b2640cc2')
+    expect(await md5('炎')).toBe('f620d89a5a782c22b4420acb39121be3')
+    expect(await md5('abcdedf')).not.toBe('abcdef')
+  })
 })
