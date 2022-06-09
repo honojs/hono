@@ -1,8 +1,11 @@
+const entityMap: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+}
+const escapeRe = new RegExp(`[${Object.keys(entityMap).join('')}]`, 'g')
+const replaceFn = (m: string) => entityMap[m]
 export const escape = (str: string): string => {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+  return str.replace(escapeRe, replaceFn)
 }
