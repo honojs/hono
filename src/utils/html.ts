@@ -1,3 +1,5 @@
+export type HtmlEscapedString = string & { isEscaped: true }
+
 const entityMap: Record<string, string> = {
   '&': '&amp;',
   '<': '&lt;',
