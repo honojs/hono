@@ -29,21 +29,42 @@ export const h = (
   ...children: (string | EscapedString)[]
 ): EscapedString => {
   if (typeof tag === 'function') {
-    return tag.call(null, { ...props, children })
+    return tag.call(null, { ...props, children: children.length <= 1 ? children[0] : children })
   }
-  let attrs = ''
+
+  let result = `<${tag}`
+
   const propsKeys = Object.keys(props || {})
   for (let i = 0, len = propsKeys.length; i < len; i++) {
-    attrs += ` ${propsKeys[i]}="${escape(props[propsKeys[i]])}"`
+    const v = props[propsKeys[i]]
+    if (v === null || v === undefined) {
+      continue
+    }
+    else if (v === null || v === undefined) {
+      continue
+    }
+
+    result += ` ${propsKeys[i]}="${escape(v.toString())}"`
   }
 
-  const res: any = new String(
-    `<${tag}${attrs}>${children
-      .flat()
-      .map((c) => ((c as any).isEscaped ? c : escape(c as string)))
-      .join('')}</${tag}>`
-  )
-  res.isEscaped = true
+  result += '>'
 
-  return res
+  const flattenChildren = children.flat(Infinity)
+  for (let i = 0, len = flattenChildren.length; i < len; i++) {
+    const child = flattenChildren[i]
+    if (typeof child === 'boolean' || child === null || child === undefined) {
+      continue
+    } else if (typeof child === 'object' && (child as any).isEscaped) {
+      result += child
+    } else {
+      result += escape(child.toString())
+    }
+  }
+
+  result += `</${tag}>`
+
+  const escapedString = new String(result) as EscapedString
+  escapedString.isEscaped = true
+
+  return escapedString
 }
