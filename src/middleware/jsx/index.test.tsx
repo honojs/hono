@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { h, jsx, memo } from '.'
+import { h, jsx, memo, Fragment } from '.'
 
 describe('JSX middleware', () => {
   const app = new Hono()
@@ -146,8 +146,8 @@ describe('memo', () => {
 
   it('custom propsAreEqual', () => {
     const Body = memo(
-      ({ counter }: { counter: number, refresh?: boolean }) => <span>{counter}</span>,
-      (_, nextProps) => typeof nextProps.refresh == 'undefined' ? true : !nextProps.refresh
+      ({ counter }: { counter: number; refresh?: boolean }) => <span>{counter}</span>,
+      (_, nextProps) => (typeof nextProps.refresh == 'undefined' ? true : !nextProps.refresh)
     )
 
     let template = <Body counter={0} />
@@ -158,5 +158,27 @@ describe('memo', () => {
 
     template = <Body counter={2} refresh={true} />
     expect(template.toString()).toBe('<span>2</span>')
+  })
+})
+
+describe('Fragment', () => {
+  it('Should render children', () => {
+    const template = (
+      <>
+        <p>1</p>
+        <p>2</p>
+      </>
+    )
+    expect(template.toString()).toBe('<p>1</p><p>2</p>')
+  })
+
+  it('Should render nothing for empty Fragment', () => {
+    const template = <></>
+    expect(template.toString()).toBe('')
+  })
+
+  it('Should render nothing for undefined', () => {
+    const template = <>{undefined}</>
+    expect(template.toString()).toBe('')
   })
 })
