@@ -38,6 +38,19 @@ describe('render to string', () => {
     expect(template.toString()).toBe('<span>Hello</span>')
   })
 
+  describe('dangerouslySetInnerHTML', () => {
+    it('Should render dangerouslySetInnerHTML', () => {
+      const template = <span dangerouslySetInnerHTML={{ __html: '" is allowed here' }}></span>
+      expect(template.toString()).toBe('<span>" is allowed here</span>')
+    })
+
+    it('Should get an error if both dangerouslySetInnerHTML and children are specified', () => {
+      expect(() => (
+        <span dangerouslySetInnerHTML={{ __html: '" is allowed here' }}>Hello</span>
+      )).toThrow()
+    })
+  })
+
   // https://en.reactjs.org/docs/jsx-in-depth.html#booleans-null-and-undefined-are-ignored
   describe('Booleans, Null, and Undefined Are Ignored', () => {
     it.each([true, false, undefined, null])('%s', (item) => {

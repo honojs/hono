@@ -6,7 +6,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace h.JSX {
     interface IntrinsicElements {
-      [tagName: string]: Record<string, string>
+      [tagName: string]: Record<string, any>
     }
   }
 }
@@ -37,7 +37,14 @@ export const h = (
   const propsKeys = Object.keys(props || {})
   for (let i = 0, len = propsKeys.length; i < len; i++) {
     const v = props[propsKeys[i]]
-    if (v === null || v === undefined) {
+    if (propsKeys[i] === 'dangerouslySetInnerHTML') {
+      if (children.length > 0) {
+        throw 'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
+      }
+
+      const escapedString = new String(v.__html) as EscapedString
+      escapedString.isEscaped = true
+      children = [escapedString]
       continue
     }
     else if (v === null || v === undefined) {
