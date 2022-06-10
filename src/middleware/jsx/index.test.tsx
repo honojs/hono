@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { h, jsx } from '.'
+import { h, jsx, memo } from '.'
 
 describe('JSX middleware', () => {
   const app = new Hono()
@@ -95,5 +95,68 @@ describe('render to string', () => {
         '<div><div key="0">This is item 0 in the list</div><div key="1">This is item 1 in the list</div><div key="2">This is item 2 in the list</div><div key="3">This is item 3 in the list</div><div key="4">This is item 4 in the list</div><div key="5">This is item 5 in the list</div><div key="6">This is item 6 in the list</div><div key="7">This is item 7 in the list</div><div key="8">This is item 8 in the list</div><div key="9">This is item 9 in the list</div></div>'
       )
     })
+  })
+})
+
+describe('memo', () => {
+  it('memoized', () => {
+    let counter = 0
+    const Header = memo(() => <title>Test Site {counter}</title>)
+    const Body = () => <span>{counter}</span>
+
+    let template = (
+      <html>
+        <head>
+          <Header />
+        </head>
+        <body>
+          <Body />
+        </body>
+      </html>
+    )
+    expect(template.toString()).toBe(
+      '<html><head><title>Test Site 0</title></head><body><span>0</span></body></html>'
+    )
+
+    counter++
+    template = (
+      <html>
+        <head>
+          <Header />
+        </head>
+        <body>
+          <Body />
+        </body>
+      </html>
+    )
+    expect(template.toString()).toBe(
+      '<html><head><title>Test Site 0</title></head><body><span>1</span></body></html>'
+    )
+  })
+
+  it('props are updated', () => {
+    const Body = memo(({ counter }: { counter: number }) => <span>{counter}</span>)
+
+    let template = <Body counter={0} />
+    expect(template.toString()).toBe('<span>0</span>')
+
+    template = <Body counter={1} />
+    expect(template.toString()).toBe('<span>1</span>')
+  })
+
+  it('custom propsAreEqual', () => {
+    const Body = memo(
+      ({ counter }: { counter: number, refresh?: boolean }) => <span>{counter}</span>,
+      (_, nextProps) => typeof nextProps.refresh == 'undefined' ? true : !nextProps.refresh
+    )
+
+    let template = <Body counter={0} />
+    expect(template.toString()).toBe('<span>0</span>')
+
+    template = <Body counter={1} />
+    expect(template.toString()).toBe('<span>0</span>')
+
+    template = <Body counter={2} refresh={true} />
+    expect(template.toString()).toBe('<span>2</span>')
   })
 })
