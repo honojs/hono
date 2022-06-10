@@ -46,8 +46,7 @@ export const h = (
       escapedString.isEscaped = true
       children = [escapedString]
       continue
-    }
-    else if (v === null || v === undefined) {
+    } else if (v === null || v === undefined) {
       continue
     }
 
@@ -74,4 +73,41 @@ export const h = (
   escapedString.isEscaped = true
 
   return escapedString
+}
+
+type FC<T = Record<string, any>> = (props: T) => EscapedString
+
+const shallowEqual = (a: Record<string, any>, b: Record<string, any>): boolean => {
+  if (a === b) {
+    return true
+  }
+
+  const aKeys = Object.keys(a)
+  const bKeys = Object.keys(b)
+  if (aKeys.length !== bKeys.length) {
+    return false
+  }
+
+  for (let i = 0, len = aKeys.length; i < len; i++) {
+    if (a[aKeys[i]] !== b[aKeys[i]]) {
+      return false
+    }
+  }
+
+  return true
+}
+
+export const memo = <T>(
+  component: FC<T>,
+  propsAreEqual: (prevProps: Readonly<T>, nextProps: Readonly<T>) => boolean = shallowEqual
+): FC<T> => {
+  let computed = undefined
+  let prevProps: T | undefined = undefined
+  return ((props: T): EscapedString => {
+    if (prevProps && !propsAreEqual(prevProps, props)) {
+      computed = undefined
+    }
+    prevProps = props
+    return (computed ||= component(props))
+  }) as FC<T>
 }
