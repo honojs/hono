@@ -104,7 +104,7 @@ export const memo = <T>(
   let computed = undefined
   let prevProps: T | undefined = undefined
   return ((props: T): EscapedString => {
-    if (propsAreEqual && prevProps && !propsAreEqual(prevProps, props)) {
+    if (prevProps && !propsAreEqual(prevProps, props)) {
       computed = undefined
     }
     prevProps = props
