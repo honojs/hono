@@ -32,7 +32,7 @@ export const h = (
     return tag.call(null, { ...props, children: children.length <= 1 ? children[0] : children })
   }
 
-  let result = `<${tag}`
+  let result = tag !== '' ? `<${tag}` : ''
 
   const propsKeys = Object.keys(props || {})
   for (let i = 0, len = propsKeys.length; i < len; i++) {
@@ -53,7 +53,9 @@ export const h = (
     result += ` ${propsKeys[i]}="${escape(v.toString())}"`
   }
 
-  result += '>'
+  if (tag !== '') {
+    result += '>'
+  }
 
   const flattenChildren = children.flat(Infinity)
   for (let i = 0, len = flattenChildren.length; i < len; i++) {
@@ -67,7 +69,9 @@ export const h = (
     }
   }
 
-  result += `</${tag}>`
+  if (tag !== '') {
+    result += `</${tag}>`
+  }
 
   const escapedString = new String(result) as EscapedString
   escapedString.isEscaped = true
@@ -110,4 +114,8 @@ export const memo = <T>(
     prevProps = props
     return (computed ||= component(props))
   }) as FC<T>
+}
+
+export const Fragment = (props: { key?: string; children?: any }): EscapedString => {
+  return h('', {}, ...(props.children || []))
 }

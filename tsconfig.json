@@ -20,6 +20,7 @@
     ],
     "jsx": "react",
     "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment",
   },
   "include": [
     "src/**/*.ts",
