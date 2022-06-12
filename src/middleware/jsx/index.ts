@@ -115,6 +115,6 @@ export const memo = <T>(
   }) as FC<T>
 }
 
-export const Fragment = (props: { key?: string; children?: any }): EscapedString => {
+export const Fragment = (props: { key?: string; children?: any }): HtmlEscapedString => {
   return h('', {}, ...(props.children || []))
 }
