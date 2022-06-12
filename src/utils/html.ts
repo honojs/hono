@@ -12,6 +12,13 @@ export const escape = (str: string): string => {
   return str.replace(escapeRe, replaceFn)
 }
 
+export const raw = (value: any): HtmlEscapedString => {
+  const escapedString = new String(value) as HtmlEscapedString
+  escapedString.isEscaped = true
+
+  return escapedString
+}
+
 export const html = (strings: TemplateStringsArray, ...values: any[]): HtmlEscapedString => {
   let result = ''
 
@@ -32,8 +39,5 @@ export const html = (strings: TemplateStringsArray, ...values: any[]): HtmlEscap
   }
   result += strings[strings.length - 1]
 
-  const escapedString = new String(result) as HtmlEscapedString
-  escapedString.isEscaped = true
-
-  return escapedString
+  return raw(result)
 }
