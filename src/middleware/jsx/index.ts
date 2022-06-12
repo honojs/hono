@@ -1,6 +1,7 @@
 import type { Context } from '../../context'
 import type { Next } from '../../hono'
 import { escape } from '../../utils/html'
+import type { HtmlEscapedString } from '../../utils/html'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -21,13 +22,11 @@ export const jsx = () => {
   }
 }
 
-type EscapedString = string & { isEscaped: true }
-
 export const h = (
   tag: string | Function,
   props: Record<string, any>,
-  ...children: (string | EscapedString)[]
-): EscapedString => {
+  ...children: (string | HtmlEscapedString)[]
+): HtmlEscapedString => {
   if (typeof tag === 'function') {
     return tag.call(null, { ...props, children: children.length <= 1 ? children[0] : children })
   }
@@ -42,7 +41,7 @@ export const h = (
         throw 'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
       }
 
-      const escapedString = new String(v.__html) as EscapedString
+      const escapedString = new String(v.__html) as HtmlEscapedString
       escapedString.isEscaped = true
       children = [escapedString]
       continue
@@ -73,13 +72,13 @@ export const h = (
     result += `</${tag}>`
   }
 
-  const escapedString = new String(result) as EscapedString
+  const escapedString = new String(result) as HtmlEscapedString
   escapedString.isEscaped = true
 
   return escapedString
 }
 
-type FC<T = Record<string, any>> = (props: T) => EscapedString
+type FC<T = Record<string, any>> = (props: T) => HtmlEscapedString
 
 const shallowEqual = (a: Record<string, any>, b: Record<string, any>): boolean => {
   if (a === b) {
@@ -107,7 +106,7 @@ export const memo = <T>(
 ): FC<T> => {
   let computed = undefined
   let prevProps: T | undefined = undefined
-  return ((props: T): EscapedString => {
+  return ((props: T): HtmlEscapedString => {
     if (prevProps && !propsAreEqual(prevProps, props)) {
       computed = undefined
     }
@@ -116,6 +115,6 @@ export const memo = <T>(
   }) as FC<T>
 }
 
-export const Fragment = (props: { key?: string; children?: any }): EscapedString => {
+export const Fragment = (props: { key?: string; children?: any }): HtmlEscapedString => {
   return h('', {}, ...(props.children || []))
 }
