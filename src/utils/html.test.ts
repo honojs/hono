@@ -1,4 +1,4 @@
-import { escape, html } from './html'
+import { escape, html, raw } from './html'
 
 describe('HTML escape', () => {
   it('Should escape special characters', () => {
@@ -33,5 +33,12 @@ describe('Tagged Template Literals', () => {
     expect(html`<p>${values}</p>`.toString()).toBe(
       '<p>Name:John &quot;Johnny&quot; Smith Contact:<a href=\"http://example.com/\">My Website</a></p>'
     )
+  })
+})
+
+describe('raw', () => {
+  it('Should be marked as escaped.', () => {
+    const name = 'John &quot;Johnny&quot; Smith'
+    expect(html`<p>I'm ${raw(name)}.</p>`.toString()).toBe('<p>I\'m John &quot;Johnny&quot; Smith.</p>')
   })
 })
