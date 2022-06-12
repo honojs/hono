@@ -12,4 +12,26 @@ describe('Tagged Template Literals', () => {
     const name = 'John "Johnny" Smith'
     expect(html`<p>I'm ${name}.</p>`.toString()).toBe('<p>I\'m John &quot;Johnny&quot; Smith.</p>')
   })
+
+  describe('Booleans, Null, and Undefined Are Ignored', () => {
+    it.each([true, false, undefined, null])('%s', (item) => {
+      expect(html`${item}`.toString()).toBe('')
+    })
+
+    it('falsy value', () => {
+      expect(html`${0}`.toString()).toBe('0')
+    })
+  })
+
+  it('Should call $array.flat(Infinity)', () => {
+    const values = [
+      'Name:',
+      ['John "Johnny" Smith', undefined, null],
+      ' Contact:',
+      [html`<a href="http://example.com/">My Website</a>`],
+    ]
+    expect(html`<p>${values}</p>`.toString()).toBe(
+      '<p>Name:John &quot;Johnny&quot; Smith Contact:<a href=\"http://example.com/\">My Website</a></p>'
+    )
+  })
 })

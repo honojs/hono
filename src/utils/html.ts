@@ -18,13 +18,16 @@ export const html = (strings: TemplateStringsArray, ...values: any[]): HtmlEscap
   for (let i = 0, len = strings.length - 1; i < len; i++) {
     result += strings[i]
 
-    const value = values[i]
-    if (typeof value === 'boolean' || value === null || value === undefined) {
-      continue
-    } else if (typeof value === 'object' && (value as any).isEscaped) {
-      result += value
-    } else {
-      result += escape(value.toString())
+    const children = values[i] instanceof Array ? values[i].flat(Infinity) : [values[i]]
+    for (let i = 0, len = children.length; i < len; i++) {
+      const child = children[i]
+      if (typeof child === 'boolean' || child === null || child === undefined) {
+        continue
+      } else if (typeof child === 'object' && (child as any).isEscaped) {
+        result += child
+      } else {
+        result += escape(child.toString())
+      }
     }
   }
   result += strings[strings.length - 1]
