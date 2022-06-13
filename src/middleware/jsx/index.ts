@@ -1,28 +1,16 @@
-import type { Context } from '../../context'
-import type { Next } from '../../hono'
 import { escape } from '../../utils/html'
 import type { HtmlEscapedString } from '../../utils/html'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace h.JSX {
+  namespace jsx.JSX {
     interface IntrinsicElements {
       [tagName: string]: Record<string, any>
     }
   }
 }
 
-export const jsx = () => {
-  return async (c: Context, next: Next) => {
-    c.render = (content: string) => {
-      const output = `<!doctype html>${content.toString()}`
-      return c.html(output)
-    }
-    await next()
-  }
-}
-
-export const h = (
+export const jsx = (
   tag: string | Function,
   props: Record<string, any>,
   ...children: (string | HtmlEscapedString)[]
@@ -116,5 +104,5 @@ export const memo = <T>(
 }
 
 export const Fragment = (props: { key?: string; children?: any }): HtmlEscapedString => {
-  return h('', {}, ...(props.children || []))
+  return jsx('', {}, ...(props.children || []))
 }

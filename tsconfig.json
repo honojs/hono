@@ -19,7 +19,7 @@
       "@cloudflare/workers-types"
     ],
     "jsx": "react",
-    "jsxFactory": "h",
+    "jsxFactory": "jsx",
     "jsxFragmentFactory": "Fragment",
   },
   "include": [
