@@ -165,5 +165,6 @@ package.json:
 wrangler.toml:
 
 ```toml
-command = "yarn run build"
+[build]
+command = "yarn build"
 ```
