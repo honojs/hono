@@ -73,6 +73,7 @@ Built-in middleware make _"**Write Less, do more**"_ in reality. You can use a l
 - [CORS](https://github.com/honojs/hono/tree/master/src/middleware/cors/)
 - [ETag](https://github.com/honojs/hono/tree/master/src/middleware/etag/)
 - [GraphQL Server](https://github.com/honojs/hono/tree/master/src/middleware/graphql-server/)
+- [html](https://github.com/honojs/hono/tree/master/src/middleware/html/)
 - [JSX](https://github.com/honojs/hono/tree/master/src/middleware/jsx/)
 - [JWT Authentication](https://github.com/honojs/hono/tree/master/src/middleware/jwt/)
 - [Logger](https://github.com/honojs/hono/tree/master/src/middleware/logger/)
