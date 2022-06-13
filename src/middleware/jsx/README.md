@@ -2,7 +2,7 @@
 
 JSX Middleware enable rendering HTML with JSX syntax.
 It's just for Sever-Side-Rendering. No virtual DOM.
-This middleware supports only for TypeScript.
+This middleware is only for writing with TypeScript.
 
 ## Settings
 
@@ -12,7 +12,8 @@ tsconfig.json:
 {
   "compilerOptions": {
     "jsx": "react",
-    "jsxFactory": "h"
+    "jsxFactory": "jsx",
+    "jsxFragmentFactory": "Fragment"
   }
 }
 ```
@@ -23,11 +24,9 @@ index.tsx:
 
 ```tsx
 import { Hono } from 'hono'
-import { h, jsx } from 'hono/jsx'
+import { jsx } from 'hono/jsx'
 
 const app = new Hono()
-
-app.use('*', jsx())
 
 const Layout = (props: { children?: string }) => {
   return (
@@ -52,7 +51,7 @@ const Top = (props: { messages: string[] }) => {
 
 app.get('/', (c) => {
   const messages = ['Good Morning', 'Good Evening', 'Good Night']
-  return c.render(<Top messages={messages} />)
+  return c.htm(<Top messages={messages} />)
 })
 
 app.fire()
@@ -60,11 +59,45 @@ app.fire()
 
 ## dangerouslySetInnerHTML
 
+`dangerouslySetInnerHTML` allows you to set HTML directly.
+
 ```tsx
 app.get('/foo', (c) => {
-  const html = { __html: 'JSX &middot; SSR' }
-  return c.render(<div dangerouslySetInnerHTML={html} />)
+  const inner = { __html: 'JSX &middot; SSR' }
+  const Div = <div dangerouslySetInnerHTML={inner} />
 })
+```
+
+## memo
+
+You can memorize calculated strings of the component with `memo`.
+
+```tsx
+import { jsx, memo } from 'hono/jsx'
+
+const Header = memo(() => <header>Welcome to Hono</header>)
+const Footer = memo(() => <footer>Powered by Hono</footer>)
+const Layout = (
+  <div>
+    <Header />
+    <p>Hono is cool!</p>
+    <Footer />
+  </div>
+)
+```
+
+## Fragment
+
+```tsx
+import { jsx, Fragment } from 'hono/jsx'
+
+const List = () => (
+  <Fragment>
+    <p>first child</p>
+    <p>second child</p>
+    <p>third child</p>
+  </Fragment>
+)
 ```
 
 ## Tips for Cloudflare Workers
