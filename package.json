@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "description": "Ultrafast web framework for Cloudflare Workers.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
