@@ -24,6 +24,7 @@
     "./cors": "./dist/middleware/cors/index.js",
     "./etag": "./dist/middleware/etag/index.js",
     "./graphql-server": "./dist/middleware/graphql-server/index.js",
+    "./html": "./dist/middleware/html/index.js",
     "./jsx": "./dist/middleware/jsx/index.js",
     "./jwt": "./dist/middleware/jwt/index.js",
     "./logger": "./dist/middleware/logger/index.js",
@@ -60,6 +61,9 @@
       ],
       "graphql-server": [
         "./dist/middleware/graphql-server"
+      ],
+      "html": [
+        "./dist/middleware/html"
       ],
       "jsx": [
         "./dist/middleware/jsx"
