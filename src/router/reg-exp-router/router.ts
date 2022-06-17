@@ -16,7 +16,6 @@ interface Hint {
 interface HandlerWithSortIndex<T> {
   handler: T
   index: number
-  componentsLength: number
 }
 interface Route<T> {
   method: string
@@ -110,9 +109,7 @@ function compareRoute<T>(a: Route<T>, b: Route<T>): CompareResult {
 }
 
 function compareHandler(a: HandlerWithSortIndex<any>, b: HandlerWithSortIndex<any>) {
-  return a.componentsLength !== b.componentsLength
-    ? a.componentsLength - b.componentsLength
-    : a.index - b.index
+  return a.index - b.index
 }
 
 function getSortedHandlers<T>(
@@ -224,7 +221,6 @@ export class RegExpRouter<T> implements Router<T> {
     const handlerWithSortIndex = {
       index,
       handler,
-      componentsLength: hint.components.length || 1,
     }
 
     for (let i = 0, len = routes.length; i < len; i++) {
@@ -416,10 +412,8 @@ export class RegExpRouter<T> implements Router<T> {
           }
 
           if (routes[j].hint.components.length < routes[i].hint.components.length) {
-            const componentsLength = routes[j].hint.components.length || 1
             routes[j].middleware.push(
               ...routes[i].handlers.map((h) => ({
-                componentsLength,
                 index: h.index,
                 handler: h.handler,
               }))
