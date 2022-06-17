@@ -91,21 +91,13 @@ export class Node<T> {
       curNode = curNode.children[p]
     }
 
-    let score = 1
-
-    if (path === '*') {
-      score = score + this.order * 0.01
-    } else {
-      score = parts.length + this.order * 0.01
-    }
-
     if (!curNode.methods.length) {
       curNode.methods = []
     }
 
     const m: Record<string, HandlerSet<T>> = {}
 
-    const handlerSet: HandlerSet<T> = { handler: handler, name: this.name, score: score }
+    const handlerSet: HandlerSet<T> = { handler: handler, name: this.name, score: this.order }
 
     m[method] = handlerSet
     curNode.methods.push(m)
@@ -120,9 +112,6 @@ export class Node<T> {
         const handlerSet = m[method] || m[METHOD_NAME_ALL]
         if (handlerSet !== undefined) {
           const hs = { ...handlerSet }
-          if (wildcard) {
-            hs.score = handlerSet.score - 1
-          }
           handlerSets.push(hs)
           return
         }
