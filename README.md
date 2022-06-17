@@ -483,10 +483,22 @@ app.use('/', async (c, next) => {
 })
 ```
 
+### c.executionCtx
+
+```ts
+// ExecutionContext object
+app.get('/foo', async (c) => {
+  c.executionCtx.waitUntil(
+    c.env.KV.put(key, data)
+  )
+  ...
+})
+```
+
 ### c.event
 
 ```ts
-// FetchEvent object
+// FetchEvent object (only set when using Service Worker syntax)
 app.get('/foo', async (c) => {
   c.event.waitUntil(
     c.env.KV.put(key, data)
@@ -523,8 +535,8 @@ addEventListener('fetch', (event) => {
 
 ```ts
 export default {
-  fetch(request: Request, env: Env, event: FetchEvent) {
-    return app.fetch(request, env, event)
+  fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    return app.fetch(request, env, ctx)
   },
 }
 ```
