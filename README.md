@@ -556,9 +556,9 @@ import { RegExpRouter } from 'hono/router/reg-exp-router'
 const app = new Hono({ router: new RegExpRouter() })
 ```
 
-## Routing Ordering
+## Routing priority
 
-The routing priority is decided by the order of registration. Only one handler will be dispatched.
+Handlers or middleware will be executed in registration order.
 
 ```ts
 app.get('/book/a', (c) => c.text('a')) // a
@@ -566,27 +566,37 @@ app.get('/book/:slug', (c) => c.text('common')) // common
 ```
 
 ```http
-GET /book/a ---> `a` // common will not be dispatched
-GET /book/b ---> `common` // a will not be dispatched
+GET /book/a ---> `a`
+GET /book/b ---> `common`
 ```
 
-All scoring rules:
+When a handler is executed, the process will be stopped.
 
 ```ts
-app.get('/api/*', 'c') // score 1.1 <--- `/*` is special wildcard
-app.get('/api/:type/:id', 'd') // score 3.2
-app.get('/api/posts/:id', 'e') // score 3.3
-app.get('/api/posts/123', 'f') // score 3.4
-app.get('/*/*/:id', 'g') // score 3.5
-app.get('/api/posts/*/comment', 'h') // score 4.6 - not match
-app.get('*', 'a') // score 0.7
-app.get('*', 'b') // score 0.8
+app.get('*', (c) => c.text('common')) // common
+app.get('/foo', (c) => c.text('foo')) // foo
 ```
 
-```plain
-GET /api/posts/123
----> will match => c, d, e, f, b, a, b
----> sort by score => a, b, c, d, e, f, g
+```http
+GET /foo ---> `common` // foo will not be dispatched
+```
+
+If you have the middleware that you want to execute, write the code above the handler.
+
+```ts
+app.use('*', logger())
+app.get('/foo', (c) => c.text('foo'))
+```
+
+If you want a "_fallback_" handler, write the code below the other handler.
+
+```ts
+app.get('/foo', (c) => c.text('foo')) // foo
+app.get('*', (c) => c.text('fallback')) // fallback
+```
+
+```http
+GET /bar ---> `fallback`
 ```
 
 ## Cloudflare Workers with Hono
