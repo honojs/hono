@@ -106,6 +106,22 @@ describe('Registration order', () => {
     expect(res).not.toBeNull()
     expect(res?.handlers).toEqual(['bar', 'foo'])
   })
+
+  it('middleware -> handler', async () => {
+    router.add('GET', '*', 'bar')
+    router.add('GET', '/:type/:action', 'foo')
+    const res = router.match('GET', '/posts/123')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['bar', 'foo'])
+  })
+
+  it('handler -> fallback', async () => {
+    router.add('GET', '/:type/:action', 'foo')
+    router.add('GET', '*', 'fallback')
+    const res = router.match('GET', '/posts/123')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['foo', 'fallback'])
+  })
 })
 
 describe('Optimization for METHOD_NAME_OF_ALL', () => {
