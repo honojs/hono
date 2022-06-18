@@ -11,6 +11,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   req: Request<RequestParamKeyType>
   env: E
   event: FetchEvent | undefined
+  executionCtx: ExecutionContext | undefined
   finalized: boolean
 
   private _status: StatusCode = 200
@@ -26,7 +27,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   constructor(
     req: Request<RequestParamKeyType>,
     env: E | undefined = undefined,
-    event: FetchEvent | undefined = undefined,
+    eventOrExecutionCtx: FetchEvent | ExecutionContext | undefined = undefined,
     notFoundHandler: NotFoundHandler = () => new Response()
   ) {
     this.req = req
@@ -34,7 +35,13 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
     if (env) {
       this.env = env
     }
-    this.event = event
+
+    this.executionCtx = eventOrExecutionCtx
+
+    if (eventOrExecutionCtx && 'respondWith' in eventOrExecutionCtx) {
+      this.event = eventOrExecutionCtx
+    }
+
     this.notFoundHandler = notFoundHandler
     this.finalized = false
   }

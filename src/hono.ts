@@ -160,7 +160,7 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
     return this.router.match(method, path)
   }
 
-  private async dispatch(request: Request, event?: FetchEvent, env?: E): Promise<Response> {
+  private async dispatch(request: Request, executionCtx?: ExecutionContext, env?: E): Promise<Response> {
     const path = getPathFromURL(request.url, this.strict)
     const method = request.method
 
@@ -170,7 +170,7 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
-    const c = new Context<string, E>(request, env, event, this.notFoundHandler)
+    const c = new Context<string, E>(request, env, executionCtx, this.notFoundHandler)
 
     const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)
     let context: Context
@@ -195,8 +195,8 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
     return this.dispatch(event.request, event)
   }
 
-  async fetch(request: Request, env?: E, event?: FetchEvent): Promise<Response> {
-    return this.dispatch(request, event, env)
+  async fetch(request: Request, env?: E, executionCtx?: ExecutionContext): Promise<Response> {
+    return this.dispatch(request, executionCtx, env)
   }
 
   request(input: RequestInfo, requestInit?: RequestInit): Promise<Response> {
