@@ -51,7 +51,7 @@ const Top = (props: { messages: string[] }) => {
 
 app.get('/', (c) => {
   const messages = ['Good Morning', 'Good Evening', 'Good Night']
-  return c.htm(<Top messages={messages} />)
+  return c.html(<Top messages={messages} />)
 })
 
 app.fire()
