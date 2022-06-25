@@ -4,7 +4,8 @@ import { getContentFromKVAsset, getKVFilePath } from '../../utils/cloudflare'
 import { getMimeType } from '../../utils/mime'
 
 export type ServeStaticOptions = {
-  root: string
+  root?: string
+  path?: string
   manifest?: object | string
   namespace?: KVNamespace
 }
@@ -22,7 +23,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Handler
     const url = new URL(c.req.url)
 
     const path = getKVFilePath({
-      filename: url.pathname,
+      filename: options.path ?? url.pathname,
       root: options.root,
       defaultDocument: DEFAULT_DOCUMENT,
     })

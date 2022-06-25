@@ -66,7 +66,7 @@ export const getKVFilePath = (options: FilePathOptions): string => {
   }
 
   // /foo.html => foo.html
-  filename = filename.replace(/^\//, '')
+  filename = filename.replace(/^\.?\//, '')
 
   // assets/ => assets
   root = root.replace(/\/$/, '')

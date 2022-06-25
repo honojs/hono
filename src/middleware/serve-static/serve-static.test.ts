@@ -82,6 +82,24 @@ describe('With options', () => {
   })
 })
 
+describe('With `file` options', () => {
+  const app = new Hono()
+  app.get('/foo/*', serveStatic({ path: './assets/static/hono.html' }))
+  app.get('/bar/*', serveStatic({ path: './static/hono.html', root: './assets' }))
+
+  it('Should return hono.html', async () => {
+    const res = await app.request('http://localhost/foo/fallback')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('<h1>Hono!</h1>')
+  })
+
+  it('Should return hono.html - with `root` option', async () => {
+    const res = await app.request('http://localhost/bar/fallback')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('<h1>Hono!</h1>')
+  })
+})
+
 describe('With middleware', () => {
   const app = new Hono()
   const md1 = async (c: Context, next: Next) => {
