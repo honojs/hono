@@ -1,8 +1,5 @@
 import { compose } from './compose'
 import { Context } from './context'
-import { extendRequestPrototype } from './request'
-
-extendRequestPrototype()
 
 type C = {
   req: Record<string, string>

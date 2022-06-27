@@ -1,4 +1,6 @@
 import { Hono } from '../../hono'
+import type { HonoRequest } from '../../request'
+import { extendHonoRequest } from '../../request'
 import { bodyParse } from '.'
 
 describe('Parse Body Middleware', () => {
@@ -25,7 +27,7 @@ describe('Parse Body Middleware', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(req.parsedBody).toEqual(payload)
+    expect(extendHonoRequest(req as HonoRequest).parsedBody).toEqual(payload)
     expect(await res.json()).toEqual(payload)
   })
 
@@ -39,7 +41,7 @@ describe('Parse Body Middleware', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(req.parsedBody).toEqual(payload)
+    expect(extendHonoRequest(req as HonoRequest).parsedBody).toEqual(payload)
     expect(await res.text()).toEqual(payload)
   })
 
@@ -56,7 +58,7 @@ describe('Parse Body Middleware', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(req.parsedBody).toEqual({ message: 'hello' })
+    expect(extendHonoRequest(req as HonoRequest).parsedBody).toEqual({ message: 'hello' })
     expect(await res.json()).toEqual({ message: 'hello' })
   })
 })
