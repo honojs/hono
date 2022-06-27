@@ -2,8 +2,8 @@ import type { Context } from '../../context'
 import type { Next } from '../../hono'
 import { parseBody } from '../../utils/body'
 
-declare global {
-  interface Request {
+declare module '../../request' {
+  interface HonoRequest {
     parsedBody: any
   }
 }

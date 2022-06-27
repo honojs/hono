@@ -1,7 +1,8 @@
 import { compose } from './compose'
 import { Context } from './context'
 import type { Env } from './context'
-import { extendRequestPrototype } from './request'
+import type { HonoRequest } from './request'
+import { extendHonoRequest } from './request'
 import type { Router } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import { TrieRouter } from './router/trie-router' // Default Router
@@ -73,8 +74,6 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
 
   constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
     super()
-
-    extendRequestPrototype() // FIXME: should be executed at a better timing
 
     const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
@@ -160,13 +159,17 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
     return this.router.match(method, path)
   }
 
-  private async dispatch(request: Request, executionCtx?: ExecutionContext, env?: E): Promise<Response> {
+  private async dispatch(
+    request: Request,
+    executionCtx?: ExecutionContext,
+    env?: E
+  ): Promise<Response> {
+    request = extendHonoRequest(request as HonoRequest)
     const path = getPathFromURL(request.url, this.strict)
     const method = request.method
 
     const result = this.matchRoute(method, path)
-
-    request.paramData = result?.params
+    ;(request as HonoRequest).paramData = result?.params
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
