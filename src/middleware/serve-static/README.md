@@ -14,6 +14,7 @@ const app = new Hono()
 
 app.use('/static/*', serveStatic({ root: './' }))
 app.get('/', (c) => c.text('This is Home! You can access: /static/hello.txt'))
+app.get('*', serveStatic({ path: './static/fallback.txt' }))
 
 app.fire()
 ```
@@ -45,6 +46,7 @@ Asset files:
     ├── demo
     │   └── index.html
     ├── hello.txt
+    ├── fallback.txt
     └── images
         └── dinotocat.png
 ```
