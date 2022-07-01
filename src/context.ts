@@ -1,6 +1,4 @@
 import type { NotFoundHandler } from './hono'
-import { extendHonoRequest } from './request'
-import type { HonoRequest } from './request'
 import type { StatusCode } from './utils/http-status'
 import { isAbsoluteURL } from './utils/url'
 
@@ -10,7 +8,7 @@ export type Data = string | ArrayBuffer | ReadableStream
 export type Env = Record<string, any>
 
 export class Context<RequestParamKeyType extends string = string, E = Env> {
-  req: HonoRequest<RequestParamKeyType>
+  req: Request<RequestParamKeyType>
   env: E
   event: FetchEvent | undefined
   executionCtx: ExecutionContext | undefined
@@ -24,28 +22,19 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
   private _res: Response | undefined
   private notFoundHandler: NotFoundHandler
 
-  render: (content: string, params?: object, options?: object) => Response | Promise<Response>
-
   constructor(
-    req: HonoRequest | Request,
+    req: Request,
     env: E | undefined = undefined,
     eventOrExecutionCtx: FetchEvent | ExecutionContext | undefined = undefined,
     notFoundHandler: NotFoundHandler = () => new Response()
   ) {
-    if (req instanceof Request) {
-      this.req = extendHonoRequest(req as HonoRequest)
-    } else {
-      this.req = req
-    }
-
-    if (env) {
-      this.env = env
-    }
-
-    this.executionCtx = eventOrExecutionCtx
+    this.req = req
+    this.env = env ? env : ({} as E)
 
     if (eventOrExecutionCtx && 'respondWith' in eventOrExecutionCtx) {
       this.event = eventOrExecutionCtx
+    } else {
+      this.executionCtx = eventOrExecutionCtx
     }
 
     this.notFoundHandler = notFoundHandler

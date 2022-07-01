@@ -1,8 +1,7 @@
 import { compose } from './compose'
 import { Context } from './context'
 import type { Env } from './context'
-import type { HonoRequest } from './request'
-import { extendHonoRequest } from './request'
+import { extendRequestPrototype } from './request'
 import type { Router } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import { TrieRouter } from './router/trie-router' // Default Router
@@ -74,6 +73,8 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
 
   constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
     super()
+
+    extendRequestPrototype()
 
     const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
@@ -161,19 +162,18 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
 
   private async dispatch(
     request: Request,
-    executionCtx?: ExecutionContext,
+    eventOrExecutionCtx?: ExecutionContext | FetchEvent,
     env?: E
   ): Promise<Response> {
-    request = extendHonoRequest(request as HonoRequest)
     const path = getPathFromURL(request.url, this.strict)
     const method = request.method
 
     const result = this.matchRoute(method, path)
-    ;(request as HonoRequest).paramData = result?.params
+    request.paramData = result?.params
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
-    const c = new Context<string, E>(request, env, executionCtx, this.notFoundHandler)
+    const c = new Context<string, E>(request, env, eventOrExecutionCtx, this.notFoundHandler)
 
     const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)
     let context: Context
@@ -205,11 +205,5 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
   request(input: RequestInfo, requestInit?: RequestInit): Promise<Response> {
     const req = input instanceof Request ? input : new Request(input, requestInit)
     return this.dispatch(req)
-  }
-
-  fire(): void {
-    addEventListener('fetch', (event: FetchEvent): void => {
-      event.respondWith(this.handleEvent(event))
-    })
   }
 }
