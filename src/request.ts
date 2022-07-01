@@ -1,25 +1,32 @@
-export class HonoRequest<ParamKeyType extends string = string> extends Request {
-  param: {
-    (key: ParamKeyType): string
-    (): Record<ParamKeyType, string>
-  }
-  paramData?: Record<ParamKeyType, string>
-  query: {
-    (key: string): string
-    (): Record<string, string>
-  }
-  queries: {
-    (key: string): string[]
-    (): Record<string, string[]>
-  }
-  header: {
-    (name: string): string
-    (): Record<string, string>
+declare global {
+  interface Request<ParamKeyType extends string = string> {
+    param: {
+      (key: ParamKeyType): string
+      (): Record<ParamKeyType, string>
+    }
+    paramData?: Record<ParamKeyType, string>
+    query: {
+      (key: string): string
+      (): Record<string, string>
+    }
+    queries: {
+      (key: string): string[]
+      (): Record<string, string[]>
+    }
+    header: {
+      (name: string): string
+      (): Record<string, string>
+    }
   }
 }
 
-export function extendHonoRequest(request: HonoRequest): HonoRequest {
-  request.param = function (this: HonoRequest, key?: string) {
+export function extendRequestPrototype() {
+  if (!!Request.prototype.param as boolean) {
+    // already extended
+    return
+  }
+
+  Request.prototype.param = function (this: Request, key?: string) {
     if (this.paramData) {
       if (key) {
         return this.paramData[key]
@@ -28,9 +35,9 @@ export function extendHonoRequest(request: HonoRequest): HonoRequest {
       }
     }
     return null
-  } as InstanceType<typeof HonoRequest>['param']
+  } as InstanceType<typeof Request>['param']
 
-  request.header = function (this: HonoRequest, name?: string) {
+  Request.prototype.header = function (this: Request, name?: string) {
     if (name) {
       return this.headers.get(name)
     } else {
@@ -40,9 +47,9 @@ export function extendHonoRequest(request: HonoRequest): HonoRequest {
       }
       return result
     }
-  } as InstanceType<typeof HonoRequest>['header']
+  } as InstanceType<typeof Request>['header']
 
-  request.query = function (this: HonoRequest, key?: string) {
+  Request.prototype.query = function (this: Request, key?: string) {
     const url = new URL(this.url)
     if (key) {
       return url.searchParams.get(key)
@@ -53,9 +60,9 @@ export function extendHonoRequest(request: HonoRequest): HonoRequest {
       }
       return result
     }
-  } as InstanceType<typeof HonoRequest>['query']
+  } as InstanceType<typeof Request>['query']
 
-  request.queries = function (this: HonoRequest, key?: string) {
+  Request.prototype.queries = function (this: Request, key?: string) {
     const url = new URL(this.url)
     if (key) {
       return url.searchParams.getAll(key)
@@ -66,7 +73,5 @@ export function extendHonoRequest(request: HonoRequest): HonoRequest {
       }
       return result
     }
-  } as InstanceType<typeof HonoRequest>['queries']
-
-  return request
+  } as InstanceType<typeof Request>['queries']
 }

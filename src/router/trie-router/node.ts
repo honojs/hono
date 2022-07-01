@@ -37,6 +37,7 @@ export class Node<T> {
   constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
     this.children = children || {}
     this.methods = []
+    this.name = ''
     if (method && handler) {
       const m: Record<string, HandlerSet<T>> = {}
       m[method] = { handler: handler, score: 0, name: this.name }

@@ -1,8 +1,8 @@
 import type { Context } from '../../context'
 import type { Next } from '../../hono'
 
-declare module '../../request' {
-  interface HonoRequest {
+declare global {
+  interface Request {
     cookie: {
       (name: string): string
       (): Record<string, string>

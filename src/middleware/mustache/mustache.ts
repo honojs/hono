@@ -14,6 +14,12 @@ interface Mustache {
   render: (content: string, params: object, partials: Partials) => string
 }
 
+declare module '../../context' {
+  interface Context {
+    render: (content: string, params?: object, options?: object) => Response | Promise<Response>
+  }
+}
+
 export type MustacheOptions = {
   root: string
   manifest?: object | string
