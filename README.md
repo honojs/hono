@@ -763,23 +763,16 @@ Hono also works with Deno. This feature is still experimental.
 ```tsx
 /** @jsx jsx */
 import { serve } from 'https://deno.land/std@0.146.0/http/server.ts'
-import { Hono, logger, poweredBy, basicAuth, jsx } from 'https://deno.land/x/hono/mod.ts'
+import { Hono, logger, poweredBy, serveStatic, jsx } from 'https://deno.land/x/hono/mod.ts'
 
 const app = new Hono()
 
 app.use('*', logger(), poweredBy())
-app.get(
-  '/auth/*',
-  basicAuth({
-    username: 'deno',
-    password: 'iscool',
-  })
-)
 
+app.get('/favicon.ico', serveStatic({ path: './public/favicon.ico' }))
 app.get('/', (c) => {
   return c.html(<h1>Hello Deno!</h1>)
 })
-app.get('/auth/abc', (c) => c.text('You are authorized'))
 
 serve(app.fire())
 ```

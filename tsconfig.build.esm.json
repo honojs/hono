@@ -11,6 +11,8 @@
   ],
   "exclude": [
     "src/**/*.ts",
-    "src/**/*.test.ts"
+    "src/**/*.test.ts",
+    "src/mod.ts",
+    "src/deno/**/*.ts",
   ]
 }
