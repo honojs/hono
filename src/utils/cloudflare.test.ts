@@ -1,4 +1,4 @@
-import { getContentFromKVAsset, getKVFilePath } from './cloudflare'
+import { getContentFromKVAsset } from './cloudflare'
 
 // Mock
 const store: { [key: string]: string } = {
@@ -29,21 +29,5 @@ describe('Utils for Cloudflare Workers', () => {
     content = await getContentFromKVAsset('assets/static/plain.txt')
     expect(content).not.toBeUndefined()
     expect(content).toBe('Asset text')
-  })
-
-  it('getKVFilePath', async () => {
-    expect(getKVFilePath({ filename: 'foo' })).toBe('foo/index.html')
-    expect(getKVFilePath({ filename: 'foo.txt' })).toBe('foo.txt')
-
-    expect(getKVFilePath({ filename: 'foo', root: 'bar' })).toBe('bar/foo/index.html')
-    expect(getKVFilePath({ filename: 'foo.txt', root: 'bar' })).toBe('bar/foo.txt')
-
-    expect(getKVFilePath({ filename: 'foo', defaultDocument: 'index.txt' })).toBe('foo/index.txt')
-    expect(getKVFilePath({ filename: 'foo', root: 'bar', defaultDocument: 'index.txt' })).toBe(
-      'bar/foo/index.txt'
-    )
-
-    expect(getKVFilePath({ filename: './foo' })).toBe('foo/index.html')
-    expect(getKVFilePath({ filename: 'foo', root: './bar' })).toBe('bar/foo/index.html')
   })
 })

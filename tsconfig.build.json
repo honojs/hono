@@ -5,6 +5,7 @@
   ],
   "exclude": [
     "src/mod.ts",
+    "src/deno/**/*.ts",
     "src/**/*.test.ts"
   ]
 }

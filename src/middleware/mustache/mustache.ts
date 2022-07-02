@@ -3,7 +3,8 @@ import type { Context } from '../../context'
 import type { Next } from '../../hono'
 import { bufferToString } from '../../utils/buffer'
 import type { KVAssetOptions } from '../../utils/cloudflare'
-import { getContentFromKVAsset, getKVFilePath } from '../../utils/cloudflare'
+import { getContentFromKVAsset } from '../../utils/cloudflare'
+import { getFilePath } from '../../utils/filepath'
 
 const EXTENSION = '.mustache'
 const DEFAULT_DOCUMENT = 'index.mustache'
@@ -31,7 +32,7 @@ export const mustache = (init: MustacheOptions = { root: '' }) => {
 
   return async (c: Context, next: Next) => {
     c.render = async (filename, params = {}, options?): Promise<Response> => {
-      const path = getKVFilePath({
+      const path = getFilePath({
         filename: `${filename}${EXTENSION}`,
         root: root,
         defaultDocument: DEFAULT_DOCUMENT,
@@ -53,7 +54,7 @@ export const mustache = (init: MustacheOptions = { root: '' }) => {
       if (options) {
         const partials = options as Partials
         for (const key of Object.keys(partials)) {
-          const partialPath = getKVFilePath({
+          const partialPath = getFilePath({
             filename: `${partials[key]}${EXTENSION}`,
             root: root,
             defaultDocument: DEFAULT_DOCUMENT,
