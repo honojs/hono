@@ -101,7 +101,7 @@ export class Context<RequestParamKeyType extends string = string, E = Env> {
     return this.body(text, status, headers)
   }
 
-  json(object: object, status: StatusCode = this._status, headers: Headers = {}): Response {
+  json<T>(object: T, status: StatusCode = this._status, headers: Headers = {}): Response {
     const body = this._pretty
       ? JSON.stringify(object, null, this._prettySpace)
       : JSON.stringify(object)
