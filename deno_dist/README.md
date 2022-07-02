@@ -32,8 +32,14 @@ app.fire()
 - **Middleware** - built-in middleware and ability to extend with your own middleware.
 - **TypeScript** - first-class TypeScript support.
 - **Optimized** - for Cloudflare Workers.
+- **Deno** - support for Deno (Experimental).
 
-## Benchmark
+## Benchmarks
+
+### Cloudflare Workers
+
+- Machine: Apple MacBook Pro, 32 GiB, M1 Pro
+- Scripts: [benchmarks/handle-event](https://github.com/honojs/hono/tree/master/benchmarks/handle-event)
 
 **Hono is fastest**, compared to other routers for Cloudflare Workers.
 
@@ -46,6 +52,22 @@ worktop x 191,218 ops/sec ±2.70% (91 runs sampled)
 Fastest is hono - regexp-router
 ✨  Done in 43.56s.
 ```
+
+### Deno
+
+- Machine: Apple MacBook Pro, 32 GiB, M1 Pro, Deno v1.22.0
+- Scripts: [benchmarks/deno](https://github.com/honojs/hono/tree/master/benchmarks/deno)
+- Method: `autocannon -c 100 -d 40 -p 10 'http://127.0.0.1:8000/user/lookup/username/foo'`
+
+**Hono is fastest**, compared to other frameworks for Deno.
+
+| Framework                     | Version |                                   Results |
+| ----------------------------- | :-----: | ----------------------------------------: |
+| **Hono - RegExpRouter**       |  1.6.0  | **5118k requests in 40.02s, 865 MB read** |
+| **Hono - TriRouter(default)** |  1.6.0  | **4932k requests in 40.02s, 833 MB read** |
+| Faster                        |   5.7   |     3579k requests in 40.02s, 551 MB read |
+| oak                           | 10.5.1  |     2385k requests in 40.02s, 403 MB read |
+| opine                         |  2.2.0  |     1491k requests in 40.02s, 346 MB read |
 
 ## Why so fast?
 
@@ -733,6 +755,34 @@ export default app
 ## Other Examples
 
 - Hono Examples - <https://github.com/honojs/examples>
+
+## Deno
+
+Hono also works with Deno. This feature is still experimental.
+
+```tsx
+/** @jsx jsx */
+import { serve } from 'https://deno.land/std@0.146.0/http/server.ts'
+import { Hono, logger, poweredBy, basicAuth, jsx } from 'https://deno.land/x/hono/mod.ts'
+
+const app = new Hono()
+
+app.use('*', logger(), poweredBy())
+app.get(
+  '/auth/*',
+  basicAuth({
+    username: 'deno',
+    password: 'isacool',
+  })
+)
+
+app.get('/', (c) => {
+  return c.html(<h1>Hello Deno!</h1>)
+})
+app.get('/auth/abc', (c) => c.text('You are authorized'))
+
+serve(app.fire())
+```
 
 ## Related projects
 
