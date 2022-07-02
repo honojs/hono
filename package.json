@@ -11,10 +11,11 @@
     "test": "jest",
     "lint": "eslint --ext js,ts src .eslintrc.js",
     "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix",
-    "prebuild": "rimraf dist && rimraf deno_dist",
-    "build": "denoify && tsc --project tsconfig.build.esm.json && tsc --project tsconfig.build.json",
+    "denoify": "rimraf deno_dist && denoify",
+    "build": "rimraf dist && tsc --project tsconfig.build.esm.json && tsc --project tsconfig.build.json",
     "watch": "tsc --project tsconfig.build.json -w",
-    "release": "yarn build && np"
+    "prerelease": "yarn denoify && yarn build",
+    "release": "np"
   },
   "exports": {
     ".": "./dist/index.js",
