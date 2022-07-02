@@ -14,7 +14,7 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/honojs/hono)](https://github.com/honojs/hono/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/honojs/hono)](https://github.com/honojs/hono/commits/master)
 
-Hono - _**[炎] means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework for Cloudflare Workers or Service Worker based serverless such as Fastly Compute@Edge.
+Hono - _**[炎] means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework for Cloudflare Workers, Deno, and others.
 
 ```ts
 import { Hono } from 'hono'
@@ -31,8 +31,7 @@ app.fire()
 - **Zero-dependencies** - using only Service Worker and Web Standard API.
 - **Middleware** - built-in middleware and ability to extend with your own middleware.
 - **TypeScript** - first-class TypeScript support.
-- **Optimized** - for Cloudflare Workers.
-- **Deno** - support for Deno (Experimental).
+- **Multi-platform** - works on Cloudflare Workers, Fastly Compute@Edge, or Deno.
 
 ## Benchmarks
 
@@ -772,7 +771,7 @@ app.get(
   '/auth/*',
   basicAuth({
     username: 'deno',
-    password: 'isacool',
+    password: 'iscool',
   })
 )
 
