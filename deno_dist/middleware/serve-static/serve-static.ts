@@ -1,6 +1,7 @@
 import type { Context, Env } from '../../context.ts'
 import type { Handler, Next } from '../../hono.ts'
-import { getContentFromKVAsset, getKVFilePath } from '../../utils/cloudflare.ts'
+import { getContentFromKVAsset } from '../../utils/cloudflare.ts'
+import { getFilePath } from '../../utils/filepath.ts'
 import { getMimeType } from '../../utils/mime.ts'
 
 export type ServeStaticOptions = {
@@ -22,7 +23,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Handler
 
     const url = new URL(c.req.url)
 
-    const path = getKVFilePath({
+    const path = getFilePath({
       filename: options.path ?? url.pathname,
       root: options.root,
       defaultDocument: DEFAULT_DOCUMENT,
