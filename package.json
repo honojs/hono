@@ -11,10 +11,10 @@
     "test": "jest",
     "lint": "eslint --ext js,ts src .eslintrc.js",
     "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix",
-    "denoify": "rimraf deno_dist && denoify",
-    "build": "rimraf dist && tsc --project tsconfig.build.esm.json && tsc --project tsconfig.build.json",
+    "prebuild": "rimraf dist && rimraf deno_dist",
+    "build": "denoify && tsc --project tsconfig.build.esm.json && tsc --project tsconfig.build.json",
     "watch": "tsc --project tsconfig.build.json -w",
-    "prepublishOnly": "yarn build"
+    "release": "yarn build && np"
   },
   "exports": {
     ".": "./dist/index.js",
@@ -113,6 +113,9 @@
     "type": "git",
     "url": "https://github.com/honojs/hono.git"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
   "homepage": "https://github.com/honojs/hono",
   "keywords": [
     "web",
@@ -149,6 +152,7 @@
     "jest": "27.5.1",
     "jest-environment-miniflare": "^2.5.1",
     "mustache": "^4.2.0",
+    "np": "^7.6.2",
     "prettier": "^2.6.2",
     "prettier-plugin-md-nocjsp": "^1.2.0",
     "rimraf": "^3.0.2",
