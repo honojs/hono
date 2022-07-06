@@ -11,23 +11,6 @@ declare global {
   }
 }
 
-interface ConnInfo {
-  readonly localAddr: Deno.Addr
-  readonly remoteAddr: Deno.Addr
-}
-
-declare module './hono.ts' {
-  interface Hono {
-    fire(): (req: Request, connInfo?: ConnInfo) => Response | Promise<Response>
-  }
-}
-
-Hono.prototype.fire = function () {
-  return (req: Request, _connInfo?: ConnInfo): Response | Promise<Response> => {
-    return this.request(req)
-  }
-}
-
 export type { Handler, Next } from './hono.ts'
 export { Context } from './context.ts'
 export type { Env } from './context.ts'

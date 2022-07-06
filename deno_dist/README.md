@@ -774,7 +774,7 @@ app.get('/', (c) => {
   return c.html(<h1>Hello Deno!</h1>)
 })
 
-serve(app.fire())
+serve((req) => app.fetch(req))
 ```
 
 ## Related projects
