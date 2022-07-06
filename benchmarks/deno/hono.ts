@@ -16,4 +16,4 @@ app.get('/user/lookup/username/:username', (c) => {
   return c.json({ message: `Hello ${c.req.param('username')}` })
 })
 
-serve(app.fire())
+serve((req) => app.fetch(req))
