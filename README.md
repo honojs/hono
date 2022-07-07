@@ -762,7 +762,7 @@ Hono also works with Deno. This feature is still experimental.
 
 ```tsx
 /** @jsx jsx */
-import { serve } from 'https://deno.land/std@0.146.0/http/server.ts'
+import { serve } from 'https://deno.land/std/http/server.ts'
 import { Hono, logger, poweredBy, serveStatic, jsx } from 'https://deno.land/x/hono/mod.ts'
 
 const app = new Hono()
@@ -774,7 +774,7 @@ app.get('/', (c) => {
   return c.html(<h1>Hello Deno!</h1>)
 })
 
-serve((req) => app.fetch(req))
+serve(app.fetch)
 ```
 
 ## Related projects
