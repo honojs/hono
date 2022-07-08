@@ -15,7 +15,7 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/honojs/hono)](https://github.com/honojs/hono/commits/master)
 [![Deno badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fdeno-visualizer.danopia.net%2Fshields%2Flatest-version%2Fx%2Fhono%2Fmod.ts)](https://doc.deno.land/https/deno.land/x/hono/mod.ts)
 
-Hono - _**[炎] means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework for Cloudflare Workers, Deno, and others.
+Hono - _**[炎] means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework for Cloudflare Workers, Deno, Bun, and others.
 
 ```ts
 import { Hono } from 'hono'
@@ -32,7 +32,7 @@ app.fire()
 - **Zero-dependencies** - using only Service Worker and Web Standard API.
 - **Middleware** - built-in middleware and ability to extend with your own middleware.
 - **TypeScript** - first-class TypeScript support.
-- **Multi-platform** - works on Cloudflare Workers, Fastly Compute@Edge, or Deno.
+- **Multi-platform** - works on Cloudflare Workers, Fastly Compute@Edge, Deno, or Bun.
 
 ## Benchmarks
 
@@ -69,6 +69,8 @@ Fastest is hono - regexp-router
 | oak                           | 10.5.1  |     2385k requests in 40.02s, 403 MB read |
 | opine                         |  2.2.0  |     1491k requests in 40.02s, 346 MB read |
 
+Another benchmark result: [denosaurs/bench](https://github.com/denosaurs/bench)
+
 ## Why so fast?
 
 Routers used in Hono are really smart.
@@ -101,7 +103,7 @@ Built-in middleware make _"**Write Less, do more**"_ in reality. You can use a l
 - [Logger](https://github.com/honojs/hono/tree/master/src/middleware/logger/)
 - [Mustache template engine](https://github.com/honojs/hono/tree/master/src/middleware/mustache/) (Only for Cloudflare Workers)
 - [JSON pretty printing](https://github.com/honojs/hono/tree/master/src/middleware/pretty-json/)
-- [Serving static files](https://github.com/honojs/hono/tree/master/src/middleware/serve-static/) (Only for Cloudflare Workers)
+- [Serving static files](https://github.com/honojs/hono/tree/master/src/middleware/serve-static/) (Only for Cloudflare Workers and Deno)
 
 To enable logger and Etag middleware with just this code.
 
@@ -758,7 +760,7 @@ export default app
 
 ## Deno
 
-Hono also works with Deno. This feature is still experimental.
+Hono also works on Deno. This feature is still experimental.
 
 ```tsx
 /** @jsx jsx */
@@ -775,6 +777,25 @@ app.get('/', (c) => {
 })
 
 serve(app.fetch)
+```
+
+## Bun
+
+Hono also works on Bun. This feature is still experimental.
+
+```ts
+import { Hono } from 'hono'
+
+const app = new Hono()
+
+app.get('/', (c) => {
+  c.json({ message: 'Hello Bun!' })
+})
+
+export default {
+  port: 3000,
+  fetch: app.fetch,
+}
 ```
 
 ## Related projects
