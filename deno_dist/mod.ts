@@ -13,7 +13,6 @@ declare global {
 
 export type { Handler, Next } from './hono.ts'
 export { Context } from './context.ts'
-export type { Env } from './context.ts'
 export { Hono }
 
 // Router
