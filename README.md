@@ -30,7 +30,7 @@ app.fire()
 
 - **Ultrafast** - the router does not use linear loops.
 - **Zero-dependencies** - using only Service Worker and Web Standard API.
-- **Middleware** - built-in middleware and ability to extend with your own middleware.
+- **Middleware** - built-in middleware, custom middleware, and third-party middleware.
 - **TypeScript** - first-class TypeScript support.
 - **Multi-platform** - works on Cloudflare Workers, Fastly Compute@Edge, Deno, or Bun.
 
@@ -93,17 +93,15 @@ Hono is fast. But not only fast.
 Built-in middleware make _"**Write Less, do more**"_ in reality. You can use a lot of middleware without writing code from scratch. Below are examples.
 
 - [Basic Authentication](https://github.com/honojs/hono/tree/master/src/middleware/basic-auth/)
-- [Cookie parsing / serializing](https://github.com/honojs/hono/tree/master/src/middleware/cookie/)
 - [CORS](https://github.com/honojs/hono/tree/master/src/middleware/cors/)
 - [ETag](https://github.com/honojs/hono/tree/master/src/middleware/etag/)
-- [GraphQL Server](https://github.com/honojs/hono/tree/master/src/middleware/graphql-server/)
 - [html](https://github.com/honojs/hono/tree/master/src/middleware/html/)
 - [JSX](https://github.com/honojs/hono/tree/master/src/middleware/jsx/)
 - [JWT Authentication](https://github.com/honojs/hono/tree/master/src/middleware/jwt/)
 - [Logger](https://github.com/honojs/hono/tree/master/src/middleware/logger/)
-- [Mustache template engine](https://github.com/honojs/hono/tree/master/src/middleware/mustache/) (Only for Cloudflare Workers)
 - [JSON pretty printing](https://github.com/honojs/hono/tree/master/src/middleware/pretty-json/)
 - [Serving static files](https://github.com/honojs/hono/tree/master/src/middleware/serve-static/) (Only for Cloudflare Workers and Deno)
+- GraphQL (coming soon)
 
 To enable logger and Etag middleware with just this code.
 
@@ -353,6 +351,10 @@ app.use('/message/*', async (c, next) => {
 app.get('/message/hello', (c) => c.text('Hello Middleware!'))
 ```
 
+### Third-party middleware
+
+There are third-party middleware that depends other libraries such as _graphql-server_.
+
 ## Not Found
 
 `app.notFound` for customizing Not Found Response.
@@ -418,6 +420,12 @@ app.get('/entry/:id', (c) => {
   const id = c.req.param('id')
   ...
 })
+
+// Parse cookie
+app.get('/entry/:id', (c) => {
+  const value = c.req.cookie('name')
+  ...
+})
 ```
 
 ### Shortcuts for Response
@@ -475,6 +483,17 @@ Render HTML as `Content-Type:text/html`.
 ```ts
 app.get('/', (c) => {
   return c.html('<h1>Hello! Hono!</h1>')
+})
+```
+
+### c.cookie()
+
+Set cookie for Response.
+
+```ts
+app.get('/', (c) => {
+  c.cookie('delicious_cookie', 'choco')
+  return c.text('Do you like cookie?')
 })
 ```
 
@@ -765,7 +784,8 @@ Hono also works on Deno. This feature is still experimental.
 ```tsx
 /** @jsx jsx */
 import { serve } from 'https://deno.land/std/http/server.ts'
-import { Hono, logger, poweredBy, serveStatic, jsx } from 'https://deno.land/x/hono/mod.ts'
+import { Hono } from 'https://deno.land/x/hono/mod.ts'
+import { logger, poweredBy, serveStatic, jsx } from 'https://deno.land/x/hono/middleware.ts'
 
 const app = new Hono()
 
