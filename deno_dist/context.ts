@@ -1,4 +1,6 @@
 import type { NotFoundHandler } from './hono.ts'
+import type { CookieOptions } from './utils/cookie.ts'
+import { serialize } from './utils/cookie.ts'
 import type { StatusCode } from './utils/http-status.ts'
 import { isAbsoluteURL } from './utils/url.ts'
 
@@ -26,6 +28,7 @@ export interface Context<RequestParamKeyType extends string = string, E = Env> {
   json: <T>(object: T, status?: StatusCode, headers?: Headers) => Response
   html: (html: string, status?: StatusCode, headers?: Headers) => Response
   redirect: (location: string, status?: StatusCode) => Response
+  cookie: (name: string, value: string, options?: CookieOptions) => void
   notFound: () => Response | Promise<Response>
 }
 
@@ -147,6 +150,11 @@ export class HonoContext<RequestParamKeyType extends string = string, E = Env>
     return this.newResponse(null, status, {
       Location: location,
     })
+  }
+
+  cookie(name: string, value: string, opt?: CookieOptions): void {
+    const cookie = serialize(name, value, opt)
+    this.header('Set-Cookie', cookie)
   }
 
   notFound(): Response | Promise<Response> {
