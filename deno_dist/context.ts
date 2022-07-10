@@ -6,14 +6,39 @@ type Headers = Record<string, string>
 export type Data = string | ArrayBuffer | ReadableStream
 type Env = Record<string, any>
 
-export class Context<RequestParamKeyType extends string = string, E = Env> {
+export interface Context<RequestParamKeyType extends string = string, E = Env> {
   req: Request<RequestParamKeyType>
   env: E
   event: FetchEvent | undefined
   executionCtx: ExecutionContext | undefined
   finalized: boolean
 
-  private _status: StatusCode = 200
+  get res(): Response
+  set res(_res: Response)
+  header: (name: string, value: string) => void
+  status: (status: StatusCode) => void
+  set: (key: string, value: any) => void
+  get: (key: string) => any
+  pretty: (prettyJSON: boolean, space?: number) => void
+  newResponse: (data: Data | null, status: StatusCode, headers: Headers) => Response
+  body: (data: Data | null, status?: StatusCode, headers?: Headers) => Response
+  text: (text: string, status?: StatusCode, headers?: Headers) => Response
+  json: <T>(object: T, status?: StatusCode, headers?: Headers) => Response
+  html: (html: string, status?: StatusCode, headers?: Headers) => Response
+  redirect: (location: string, status?: StatusCode) => Response
+  notFound: () => Response | Promise<Response>
+}
+
+export class HonoContext<RequestParamKeyType extends string = string, E = Env>
+  implements Context<RequestParamKeyType, E>
+{
+  req: Request<RequestParamKeyType>
+  env: E
+  event: FetchEvent | undefined
+  executionCtx: ExecutionContext | undefined
+  finalized: boolean
+
+  _status: StatusCode = 200
   private _pretty: boolean = false
   private _prettySpace: number = 2
   private _map: Record<string, any> | undefined
