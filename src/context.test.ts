@@ -1,11 +1,12 @@
-import { Context } from './context'
+import type { Context } from './context'
+import { HonoContext } from './context'
 
 describe('Context', () => {
   const req = new Request('http://localhost/')
 
   let c: Context
   beforeEach(() => {
-    c = new Context(req)
+    c = new HonoContext(req)
   })
 
   it('c.text()', async () => {
@@ -119,14 +120,14 @@ describe('Context', () => {
   it('Should be able read env', async () => {
     const req = new Request('http://localhost/')
     const key = 'a-secret-key'
-    const ctx = new Context(req, {
+    const ctx = new HonoContext(req, {
       API_KEY: key,
     })
     expect(ctx.env.API_KEY).toBe(key)
   })
 
   it('set and set', async () => {
-    const ctx = new Context(req)
+    const ctx = new HonoContext(req)
     expect(ctx.get('k-foo')).toEqual(undefined)
     ctx.set('k-foo', 'v-foo')
     expect(ctx.get('k-foo')).toEqual('v-foo')
@@ -136,7 +137,7 @@ describe('Context', () => {
   })
 
   it('has res object by default', async () => {
-    c = new Context(req)
+    c = new HonoContext(req)
     c.res.headers.append('foo', 'bar')
     const res = c.text('foo')
     expect(res.headers.get('foo')).not.toBeNull()

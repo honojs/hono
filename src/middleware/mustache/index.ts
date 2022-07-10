@@ -1,1 +1,0 @@
-export { mustache } from './mustache'
