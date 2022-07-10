@@ -3,7 +3,7 @@
 
 import { Hono } from './hono.ts'
 export type { Handler, Next } from './hono.ts'
-export { Context } from './context.ts'
+export type { Context } from './context.ts'
 
 declare module './hono.ts' {
   interface Hono {
