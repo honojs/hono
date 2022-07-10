@@ -4,8 +4,7 @@ import { isAbsoluteURL } from './utils/url.ts'
 
 type Headers = Record<string, string>
 export type Data = string | ArrayBuffer | ReadableStream
-
-export type Env = Record<string, any>
+type Env = Record<string, any>
 
 export class Context<RequestParamKeyType extends string = string, E = Env> {
   req: Request<RequestParamKeyType>
