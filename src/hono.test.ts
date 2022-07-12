@@ -959,3 +959,63 @@ describe('Cookie', () => {
     })
   })
 })
+
+describe('Parse Body', () => {
+  const app = new Hono()
+
+  app.post('/json', async (c) => {
+    return c.json(await c.req.parseBody(), 200)
+  })
+  app.post('/text', async (c) => {
+    return c.text(await c.req.parseBody(), 200)
+  })
+  app.post('/form', async (c) => {
+    return c.json(await c.req.parseBody(), 200)
+  })
+
+  it('POST with JSON', async () => {
+    const payload = { message: 'hello hono' }
+    const req = new Request('http://localhost/json', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
+    })
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await req.parseBody()).toEqual(payload)
+    expect(await res.json()).toEqual(payload)
+  })
+
+  it('POST with text', async () => {
+    const payload = 'hello'
+    const req = new Request('http://localhost/text', {
+      method: 'POST',
+      body: 'hello',
+      headers: new Headers({ 'Content-Type': 'application/text' }),
+    })
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await req.parseBody()).toEqual(payload)
+    expect(await res.text()).toEqual(payload)
+  })
+
+  it('POST with form', async () => {
+    const formData = new URLSearchParams()
+    formData.append('message', 'hello')
+    const req = new Request('https://localhost/form', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    })
+
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await req.parseBody()).toEqual({ message: 'hello' })
+    expect(await res.json()).toEqual({ message: 'hello' })
+  })
+})
