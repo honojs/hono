@@ -24,3 +24,12 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm test
+
+  deno:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - run: deno test --allow-read deno_test
