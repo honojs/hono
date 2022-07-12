@@ -15,7 +15,7 @@
     "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.ts'",
     "build": "rimraf dist && tsc --project tsconfig.build.esm.json && tsc --project tsconfig.build.json",
     "watch": "tsc --project tsconfig.build.json -w",
-    "prerelease": "yarn denoify && yarn build",
+    "prerelease": "yarn denoify && yarn test:deno && yarn build",
     "release": "np"
   },
   "exports": {
