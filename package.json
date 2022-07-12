@@ -22,7 +22,6 @@
     ".": "./dist/index.js",
     "./basic-auth": "./dist/middleware/basic-auth/index.js",
     "./bearer-auth": "./dist/middleware/bearer-auth/index.js",
-    "./body-parse": "./dist/middleware/body-parse/index.js",
     "./cors": "./dist/middleware/cors/index.js",
     "./etag": "./dist/middleware/etag/index.js",
     "./html": "./dist/middleware/html/index.js",
@@ -46,9 +45,6 @@
       "bearer-auth": [
         "./dist/middleware/bearer-auth"
       ],
-      "body-parse": [
-        "./dist/middleware/body-parse"
-      ],
       "cookie": [
         "./dist/middleware/cookie"
       ],
@@ -57,9 +53,6 @@
       ],
       "etag": [
         "./dist/middleware/etag"
-      ],
-      "graphql-server": [
-        "./dist/middleware/graphql-server"
       ],
       "html": [
         "./dist/middleware/html"
@@ -149,7 +142,6 @@
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
     "form-data": "^4.0.0",
-    "graphql": "^16.4.0",
     "jest": "27.5.1",
     "jest-environment-miniflare": "^2.5.1",
     "mustache": "^4.2.0",
