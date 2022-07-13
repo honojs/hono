@@ -10,6 +10,7 @@
   "scripts": {
     "test": "jest",
     "test:deno": "deno test --allow-read deno_test",
+    "test:bun": "bun run ./bun_test/hono.test.ts",
     "lint": "eslint --ext js,ts src .eslintrc.js",
     "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix",
     "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.ts'",
@@ -31,6 +32,7 @@
     "./powered-by": "./dist/middleware/powered-by/index.js",
     "./pretty-json": "./dist/middleware/pretty-json/index.js",
     "./serve-static": "./dist/middleware/serve-static/index.js",
+    "./serve-static.bun": "./dist/middleware/serve-static/bun.js",
     "./serve-static.module": "./dist/middleware/serve-static/module.mjs",
     "./router/trie-router": "./dist/router/trie-router/index.js",
     "./router/reg-exp-router": "./dist/router/reg-exp-router/index.js",
@@ -66,12 +68,6 @@
       "logger": [
         "./dist/middleware/logger"
       ],
-      "mustache": [
-        "./dist/middleware/mustache"
-      ],
-      "mustache.module": [
-        "./dist/middleware/mustache/module.d.mts"
-      ],
       "powered-by": [
         "./dist/middleware/powered-by"
       ],
@@ -80,6 +76,9 @@
       ],
       "serve-static": [
         "./dist/middleware/serve-static/index.d.ts"
+      ],
+      "serve-static.bun": [
+        "./dist/middleware/serve-static/bun.d.ts"
       ],
       "serve-static.module": [
         "./dist/middleware/serve-static/module.d.mts"
