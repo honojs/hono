@@ -33,3 +33,14 @@ jobs:
         with:
           deno-version: v1.x
       - run: deno test --allow-read deno_test
+
+  bun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+      - run: curl -fsSL https://bun.sh/install | bash
+      - run: echo "${HOME}/.bun/bin" >> $GITHUB_PATH
+      - run: npm run test:bun
