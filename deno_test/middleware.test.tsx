@@ -1,6 +1,6 @@
 /** @jsx jsx */
 /** @jsxFrag Fragment */
-import { basicAuth, jsx, Fragment, serveStatic } from '../deno_dist/middleware.ts'
+import { basicAuth, jsx, Fragment, serveStatic, jwt } from '../deno_dist/middleware.ts'
 import { Hono } from '../deno_dist/mod.ts'
 import { assertEquals } from './deps.ts'
 
@@ -62,4 +62,32 @@ Deno.test('Serve Static middleware', async () => {
   const res = await app.request('http://localhost/favicon.ico')
   assertEquals(res.status, 200)
   assertEquals(res.headers.get('Content-Type'), 'image/vnd.microsoft.icon')
+})
+
+Deno.test('JWT Authentication middleware', async () => {
+  const app = new Hono()
+  app.use('/*', async (c, next) => {
+    await next()
+    c.header('x-foo', c.get('x-foo') || '')
+  })
+  app.use('/auth/*', jwt({ secret: 'a-secret' }))
+  app.get('/auth/*', (c) => {
+    c.set('x-foo', 'bar')
+    return new Response('auth')
+  })
+
+  const req = new Request('http://localhost/auth/a')
+  const res = await app.request(req)
+  assertEquals(res.status, 401)
+  assertEquals(await res.text(), 'Unauthorized')
+  assertEquals(res.headers.get('x-foo'), '')
+
+  const credential =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+  const reqOK = new Request('http://localhost/auth/a')
+  reqOK.headers.set('Authorization', `Bearer ${credential}`)
+  const resOK = await app.request(reqOK)
+  assertEquals(resOK.status, 200)
+  assertEquals(await resOK.text(), 'auth')
+  assertEquals(resOK.headers.get('x-foo'), 'bar')
 })
