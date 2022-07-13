@@ -1,3 +1,4 @@
+// @denoify-ignore
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { Context } from '../../context'
 import type { Next } from '../../hono'
