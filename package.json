@@ -119,6 +119,7 @@
   },
   "homepage": "https://github.com/honojs/hono",
   "keywords": [
+    "hono",
     "web",
     "app",
     "http",
@@ -128,7 +129,9 @@
     "cloudflare",
     "workers",
     "fastly",
-    "compute@edge"
+    "compute@edge",
+    "deno",
+    "bun"
   ],
   "devDependencies": {
     "@cloudflare/workers-types": "^3.7.1",
