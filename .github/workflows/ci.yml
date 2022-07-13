@@ -43,4 +43,4 @@ jobs:
           node-version: 16.x
       - run: curl -fsSL https://bun.sh/install | bash
       - run: echo "${HOME}/.bun/bin" >> $GITHUB_PATH
-      - run: npm run test
+      - run: npm run test:bun
