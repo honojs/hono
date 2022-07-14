@@ -26,7 +26,7 @@ const emptyTags = [
   'source',
   'track',
   'wbr',
-];
+]
 
 export const jsx = (
   tag: string | Function,
@@ -74,7 +74,7 @@ export const jsx = (
     }
   }
 
-  if (tag !== '' && !emptyTags.includes(taga)) {
+  if (tag !== '' && !emptyTags.includes(tag)) {
     result += `</${tag}>`
   }
 
