@@ -10,6 +10,24 @@ declare global {
   }
 }
 
+const emptyTags = [
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'keygen',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr',
+]
+
 export const jsx = (
   tag: string | Function,
   props: Record<string, any>,
@@ -41,6 +59,9 @@ export const jsx = (
   }
 
   if (tag !== '') {
+    if (emptyTags.includes(tag)) {
+      result += '/'
+    }
     result += '>'
   }
 
@@ -56,7 +77,7 @@ export const jsx = (
     }
   }
 
-  if (tag !== '') {
+  if (tag !== '' && !emptyTags.includes(tag)) {
     result += `</${tag}>`
   }
 
