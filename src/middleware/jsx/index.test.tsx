@@ -27,6 +27,11 @@ describe('render to string', () => {
     expect(template.toString()).toBe('<p><span>a</span><span>b</span></p>')
   })
 
+  it('Empty elements are rended withtout closing tag', () => {
+    const template = (<input/>)
+    expect(template.toString()).toBe('<input/>')
+  })
+
   it('Props value is null', () => {
     const template = <span data-hello={null}>Hello</span>
     expect(template.toString()).toBe('<span>Hello</span>')
