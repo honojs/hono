@@ -59,6 +59,9 @@ export const jsx = (
   }
 
   if (tag !== '') {
+    if (emptyTags.includes(tag)) {
+      result += '/'
+    }
     result += '>'
   }
 

@@ -28,8 +28,8 @@ describe('render to string', () => {
   })
 
   it('Empty elements are rended withtout closing tag', () => {
-    const template = (<input />)
-    expect(template.toString()).toBe('<input>')
+    const template = (<input/>)
+    expect(template.toString()).toBe('<input/>')
   })
 
   it('Props value is null', () => {
