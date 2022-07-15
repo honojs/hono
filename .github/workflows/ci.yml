@@ -13,7 +13,14 @@ jobs:
       matrix:
         node-version: [16.x, 18.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
+        include:
+          - node-version: 18.x
+            env:
+              COVERAGE: 1
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: write
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
@@ -23,4 +30,11 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: npm run lint
       - run: npm run build
-      - run: npm test
+      - name: Run Tests on Node.js ${{ matrix.node-version }}
+        if: ${{ matrix.env.COVERAGE != '1' }}
+        run: npm test
+      - name: Run Tests w/Coverage on Node.js ${{ matrix.node-version }}
+        if: ${{ matrix.env.COVERAGE == '1' }}
+        uses: ArtiomTr/jest-coverage-report-action@v2
+        with:
+          test-script: npm test
