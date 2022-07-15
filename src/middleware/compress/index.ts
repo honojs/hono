@@ -1,7 +1,5 @@
-import * as WebStreams from 'node:stream/web'
 import type { Context } from '../../context'
 import type { Next } from '../../hono'
-const { CompressionStream } = WebStreams as any
 
 interface CompressionOptions {
     encoding?: 'gzip' | 'deflate'
