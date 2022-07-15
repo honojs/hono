@@ -743,7 +743,7 @@ api.post(
     await auth(c, next)
   },
   async (c) => {
-    const post = await c.req.json<Post>()
+    const post = await c.req.json() as Post;
     const ok = createPost({ post })
     return c.json({ ok })
   }
