@@ -2,12 +2,12 @@ import type { Context } from '../../context'
 import type { Next } from '../../hono'
 
 interface CompressionOptions {
-    encoding?: "gzip" | "deflate"
+    encoding?: 'gzip' | 'deflate'
 }
 
 export const compress = (options: CompressionOptions) => {
   return async (ctx: Context, next: Next) => {
-    const accepted = ctx.req.headers.get("Accept-Encoding")
+    const accepted = ctx.req.headers.get('Accept-Encoding')
     if (!accepted) {
         await next()
         return
@@ -28,7 +28,7 @@ export const compress = (options: CompressionOptions) => {
     const encoding = match[0]
     const stream = new CompressionStream(encoding)
     ctx.res = new Response(ctx.res.body.pipeThrough(stream), ctx.res.clone())
-    ctx.res.headers.set("Content-Encoding", encoding)
+    ctx.res.headers.set('Content-Encoding', encoding)
     await next()
   }
 }
