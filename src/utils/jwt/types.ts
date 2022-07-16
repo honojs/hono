@@ -7,9 +7,9 @@ export class JwtAlgorithmNotImplemented extends Error {
 
 /**
  * Export for backward compatibility
- * @deprecated
+ * @deprecated Use JwtAlgorithmNotImplemented instead
 **/
-export const JwtAlorithmNotImplemented = JwtAlgorithmNotImplemented;
+export const JwtAlorithmNotImplemented = JwtAlgorithmNotImplemented
 
 export class JwtTokenInvalid extends Error {
   constructor(token: string) {
