@@ -2,20 +2,24 @@ import { Hono } from '../../hono'
 import { logger } from '.'
 
 describe('Logger by Middleware', () => {
-  const app = new Hono()
+  let app: Hono
+  let log: string
 
-  let log = ''
-  const logFn = (str: string) => {
-    log = str
-  }
+  beforeEach(() => {
+    app = new Hono()
 
-  const shortRandomString = 'hono'
-  const longRandomString = 'hono'.repeat(1000)
-
-  app.use('*', logger(logFn))
-  app.get('/short', (c) => c.text(shortRandomString))
-  app.get('/long', (c) => c.text(longRandomString))
-  app.get('/empty', (c) => c.text(''))
+    const logFn = (str: string) => {
+      log = str
+    }
+  
+    const shortRandomString = 'hono'
+    const longRandomString = 'hono'.repeat(1000)
+  
+    app.use('*', logger(logFn))
+    app.get('/short', (c) => c.text(shortRandomString))
+    app.get('/long', (c) => c.text(longRandomString))
+    app.get('/empty', (c) => c.text(''))
+  })
 
   it('Log status 200 with empty body', async () => {
     const res = await app.request('http://localhost/empty')
