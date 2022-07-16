@@ -7,18 +7,6 @@ const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) 
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/
 
 const auth = (req: Request) => {
-  if (!req) {
-    throw new TypeError('argument req is required')
-  }
-
-  if (typeof req !== 'object') {
-    throw new TypeError('argument req is required to be an object')
-  }
-
-  if (!req.headers || typeof req.headers !== 'object') {
-    throw new TypeError('argument req is required to have headers property')
-  }
-
   const match = CREDENTIALS_REGEXP.exec(req.headers.get('Authorization') || '')
   if (!match) {
     return undefined
