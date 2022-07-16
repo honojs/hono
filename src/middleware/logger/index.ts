@@ -18,7 +18,7 @@ const humanize = (times: string[]) => {
 
 const time = (start: number) => {
   const delta = Date.now() - start
-  return humanize([delta < 10000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
+  return humanize([delta < 1000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
 }
 
 

@@ -5,7 +5,11 @@ describe('Logger by Middleware', () => {
   let app: Hono
   let log: string
 
-  beforeEach(() => {
+  beforeEach(() => {    
+    function sleep (time: number) {
+      return new Promise((resolve) => setTimeout(resolve, time))
+    }
+
     app = new Hono()
 
     const logFn = (str: string) => {
@@ -18,6 +22,11 @@ describe('Logger by Middleware', () => {
     app.use('*', logger(logFn))
     app.get('/short', (c) => c.text(shortRandomString))
     app.get('/long', (c) => c.text(longRandomString))
+    app.get('/seconds', async (c) => {
+      await sleep(1000)
+
+      return c.text(longRandomString)
+    })
     app.get('/empty', (c) => c.text(''))
   })
 
@@ -43,6 +52,14 @@ describe('Logger by Middleware', () => {
     expect(res.status).toBe(200)
     expect(log.startsWith('  --> GET /long \x1b[32m200\x1b[0m')).toBe(true)
     expect(log).toMatch(/m?s$/)
+  })
+
+  it('Time in seconds', async () => {
+    const res = await app.request('http://localhost/seconds')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(log.startsWith('  --> GET /seconds \x1b[32m200\x1b[0m')).toBe(true)
+    expect(log).toMatch(/1s/)
   })
 
   it('Log status 404', async () => {
