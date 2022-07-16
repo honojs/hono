@@ -8,6 +8,10 @@ export const jwt = (options: { secret: string; alg?: string }) => {
     throw new Error('JWT auth middleware requires options for "secret')
   }
 
+  if (!crypto.subtle || !crypto.subtle.importKey) {
+    throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
+  }
+
   return async (ctx: Context, next: Next) => {
     const credentials = ctx.req.headers.get('Authorization')
 
