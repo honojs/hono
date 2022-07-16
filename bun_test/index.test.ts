@@ -1,7 +1,6 @@
 import assert from 'node:assert'
 import { Hono } from '../src/index'
-// Currently, Basic Auth middleware is not available on Bun
-// import { basicAuth } from '../src/middleware/basic-auth'
+import { basicAuth } from '../src/middleware/basic-auth'
 import { serveStatic } from '../src/middleware/serve-static/bun'
 
 // Test just only minimal patterns.
@@ -21,7 +20,6 @@ assert.strictEqual(await res.text(), 'Hello Deno!')
 assert.strictEqual(res.headers.get('x-param'), 'foo')
 assert.strictEqual(res.headers.get('x-query'), 'bar')
 
-/*
 // Basic Auth
 const username = 'hono-user-a'
 const password = 'hono-password-a'
@@ -36,18 +34,17 @@ app.use(
 
 app.get('/auth/*', () => new Response('auth'))
 
-const req = new Request('http://localhost/auth/a')
-const res = await app.request(req)
-assert.strictEqual(res.status, 401)
-assert.strictEqual(await res.text(), 'Unauthorized')
+const reqAuth = new Request('http://localhost/auth/a')
+const resNG = await app.request(reqAuth)
+assert.strictEqual(resNG.status, 401)
+assert.strictEqual(await resNG.text(), 'Unauthorized')
 
 const credential = 'aG9uby11c2VyLWE6aG9uby1wYXNzd29yZC1h'
 
-req.headers.set('Authorization', `Basic ${credential}`)
-const resOK = await app.request(req)
+reqAuth.headers.set('Authorization', `Basic ${credential}`)
+const resOK = await app.request(reqAuth)
 assert.strictEqual(resOK.status, 200)
 assert.strictEqual(await resOK.text(), 'auth')
-*/
 
 // Serve Static
 app.all('/favicon.ico', serveStatic({ path: './bun_test/favicon.ico' }))

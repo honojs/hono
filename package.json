@@ -10,7 +10,7 @@
   "scripts": {
     "test": "jest",
     "test:deno": "deno test --allow-read deno_test",
-    "test:bun": "bun run ./bun_test/hono.test.ts",
+    "test:bun": "bun run ./bun_test/index.test.ts",
     "lint": "eslint --ext js,ts src .eslintrc.js",
     "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix",
     "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.ts'",
