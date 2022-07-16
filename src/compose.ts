@@ -7,7 +7,7 @@ export const compose = <C>(
   onError?: ErrorHandler,
   onNotFound?: NotFoundHandler
 ) => {
-  return async (context: C, next?: Function) => {
+  return (context: C, next?: Function) => {
     let index = -1
     return dispatch(0)
     async function dispatch(i: number): Promise<C> {
@@ -26,7 +26,7 @@ export const compose = <C>(
       }
 
       return Promise.resolve(handler(context, () => dispatch(i + 1)))
-        .then(async (res: Response) => {
+        .then((res: Response) => {
           // If handler return Response like `return c.text('foo')`
           if (res && context instanceof HonoContext) {
             context.res = res
