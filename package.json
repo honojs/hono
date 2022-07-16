@@ -142,7 +142,7 @@
     "eslint-plugin-node": "^11.1.0",
     "form-data": "^4.0.0",
     "jest": "27.5.1",
-    "jest-environment-miniflare": "^2.5.1",
+    "jest-environment-miniflare": "^2.6.0",
     "mustache": "^4.2.0",
     "np": "^7.6.2",
     "prettier": "^2.6.2",
