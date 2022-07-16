@@ -2,13 +2,6 @@ import { Hono } from '../../hono'
 import { compress } from '.'
 
 describe('Parse Compress Middleware', () => {
-  
-  if (parseInt(process.versions.node.split('.')[0]) < 17) {
-    it('node version', () => {
-      expect(parseInt(process.versions.node.split('.')[0])).toBeLessThan(17)
-    })
-    return
-  }
 
   const app = new Hono()
 
