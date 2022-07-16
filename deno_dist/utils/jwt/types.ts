@@ -1,9 +1,15 @@
-export class JwtAlorithmNotImplemented extends Error {
+export class JwtAlgorithmNotImplemented extends Error {
   constructor(token: string) {
     super(`invalid JWT token: ${token}`)
-    this.name = 'JwtAlorithmNotImplemented'
+    this.name = 'JwtAlgorithmNotImplemented'
   }
 }
+
+/**
+ * Export for backward compatibility
+ * @deprecated Use JwtAlgorithmNotImplemented instead
+**/
+export const JwtAlorithmNotImplemented = JwtAlgorithmNotImplemented
 
 export class JwtTokenInvalid extends Error {
   constructor(token: string) {
