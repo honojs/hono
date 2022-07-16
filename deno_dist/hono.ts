@@ -1,5 +1,6 @@
 import { compose } from './compose.ts'
-import { Context } from './context.ts'
+import type { Context } from './context.ts'
+import { HonoContext } from './context.ts'
 import { extendRequestPrototype } from './request.ts'
 import type { Router } from './router.ts'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router.ts'
@@ -173,10 +174,10 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
-    const c = new Context<string, E>(request, env, eventOrExecutionCtx, this.notFoundHandler)
+    const c = new HonoContext<string, E>(request, env, eventOrExecutionCtx, this.notFoundHandler)
 
-    const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)
-    let context: Context
+    const composed = compose<HonoContext>(handlers, this.errorHandler, this.notFoundHandler)
+    let context: HonoContext
     try {
       context = await composed(c)
       if (!context.finalized) {

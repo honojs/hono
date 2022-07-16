@@ -1,3 +1,7 @@
+import { parseBody } from './utils/body.ts'
+import type { Cookie } from './utils/cookie.ts'
+import { parse } from './utils/cookie.ts'
+
 declare global {
   interface Request<ParamKeyType extends string = string> {
     param: {
@@ -16,6 +20,14 @@ declare global {
     header: {
       (name: string): string
       (): Record<string, string>
+    }
+    cookie: {
+      (name: string): string
+      (): Cookie
+    }
+    parsedBody?: Promise<any>
+    parseBody: {
+      (): Promise<any>
     }
   }
 }
@@ -74,4 +86,22 @@ export function extendRequestPrototype() {
       return result
     }
   } as InstanceType<typeof Request>['queries']
+
+  Request.prototype.cookie = function (this: Request, key?: string) {
+    const cookie = this.headers.get('Cookie') || ''
+    const obj = parse(cookie)
+    if (key) {
+      const value = obj[key]
+      return value
+    } else {
+      return obj
+    }
+  } as InstanceType<typeof Request>['cookie']
+
+  Request.prototype.parseBody = function (this: Request) {
+    if (!this.parsedBody) {
+      this.parsedBody = parseBody(this)
+    }
+    return this.parsedBody
+  } as InstanceType<typeof Request>['parseBody']
 }
