@@ -3,27 +3,27 @@ import * as JWT from './jwt'
 import {
   AlgorithmTypes,
   JwtTokenSignatureMismatched,
-  JwtAlorithmNotImplemented,
+  JwtAlgorithmNotImplemented,
   JwtTokenInvalid,
   JwtTokenNotBefore,
   JwtTokenExpired,
 } from './types'
 
 describe('JWT', () => {
-  it('JwtAlorithmNotImplemented', async () => {
+  it('JwtAlgorithmNotImplemented', async () => {
     const payload = { message: 'hello world' }
     const secret = 'a-secret'
     const alg = ''
     let tok = ''
-    let err: JwtAlorithmNotImplemented
+    let err: JwtAlgorithmNotImplemented
     try {
       tok = await JWT.sign(payload, secret, alg as AlgorithmTypes)
     } catch (e) {
-      err = e as JwtAlorithmNotImplemented
+      err = e as JwtAlgorithmNotImplemented
     }
     expect(tok).toBe('')
     // @ts-ignore
-    expect(err).toEqual(new JwtAlorithmNotImplemented(alg))
+    expect(err).toEqual(new JwtAlgorithmNotImplemented(alg))
   })
 
   it('JwtTokenInvalid', async () => {

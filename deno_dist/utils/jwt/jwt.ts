@@ -10,7 +10,7 @@ import {
   JwtTokenNotBefore,
   JwtTokenExpired,
   JwtTokenSignatureMismatched,
-  JwtAlorithmNotImplemented,
+  JwtAlgorithmNotImplemented,
 } from './types.ts'
 
 interface AlgorithmParams {
@@ -63,7 +63,7 @@ const param = (name: AlgorithmTypes): AlgorithmParams => {
         },
       }
     default:
-      throw new JwtAlorithmNotImplemented(name)
+      throw new JwtAlgorithmNotImplemented(name)
   }
 }
 
