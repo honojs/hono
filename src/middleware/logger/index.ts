@@ -2,28 +2,28 @@ import type { Context } from '../../context'
 import type { Next } from '../../hono'
 import { getPathFromURL } from '../../utils/url'
 
-const humanize = (n: string[], opts?: { delimiter?: string; separator?: string }) => {
-  const options = opts || {}
-  const d = options.delimiter || ','
-  const s = options.separator || '.'
-  n = n.toString().split('.')
-  n[0] = n[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1' + d)
-  return n.join(s)
+enum LogPrefix {
+  Outgoing = '-->',
+  Incoming ='<--',
+  Error = 'xxx',
+}
+
+const humanize = (times: string[]) => {
+  const [delimiter, separator] = [',', '.']
+
+  const orderTimes = times.map(v => v.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1' + delimiter))
+  
+  return orderTimes.join(separator)
 }
 
 const time = (start: number) => {
   const delta = Date.now() - start
-  return humanize([delta < 10000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
+  return humanize([delta < 1000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
 }
 
-const LogPrefix = {
-  Outgoing: '-->',
-  Incoming: '<--',
-  Error: 'xxx',
-}
 
-const colorStatus = (status: number = 0) => {
-  const out: { [key: number]: string } = {
+const colorStatus = (status: number) => {
+  const out: { [key: string]: string } = {
     7: `\x1b[35m${status}\x1b[0m`,
     5: `\x1b[31m${status}\x1b[0m`,
     4: `\x1b[33m${status}\x1b[0m`,
@@ -32,8 +32,12 @@ const colorStatus = (status: number = 0) => {
     1: `\x1b[32m${status}\x1b[0m`,
     0: `\x1b[33m${status}\x1b[0m`,
   }
-  return out[(status / 100) | 0]
+
+  const calculateStatus = (status / 100 | 0)
+
+  return out[calculateStatus]
 }
+
 type PrintFunc = (str: string, ...rest: string[]) => void
 
 function log(
@@ -41,7 +45,7 @@ function log(
   prefix: string,
   method: string,
   path: string,
-  status?: number,
+  status: number = 0,
   elapsed?: string
 ) {
   const out =
@@ -51,7 +55,7 @@ function log(
   fn(out)
 }
 
-export const logger = (fn = console.log) => {
+export const logger = (fn: PrintFunc) => {
   return async (c: Context, next: Next) => {
     const { method } = c.req
     const path = getPathFromURL(c.req.url)
