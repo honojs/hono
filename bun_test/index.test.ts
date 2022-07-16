@@ -1,6 +1,7 @@
 import assert from 'node:assert'
 import { Hono } from '../src/index'
 import { basicAuth } from '../src/middleware/basic-auth'
+import { jwt } from '../src/middleware/jwt'
 import { serveStatic } from '../src/middleware/serve-static/bun'
 
 // Test just only minimal patterns.
@@ -52,3 +53,9 @@ const resStatic = await app.request(new Request('http://localhost/favicon.ico'))
 await resStatic.arrayBuffer()
 assert.strictEqual(resStatic.status, 200)
 assert.strictEqual(resStatic.headers.get('Content-Type'), 'image/vnd.microsoft.icon')
+
+// JWT is not available for Bun
+// It throw the Error
+assert.throws(() => {
+  app.use('/jwt/*', jwt({ secret: 'a-secret' }))
+})
