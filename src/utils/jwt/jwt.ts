@@ -72,6 +72,10 @@ const signing = async (
   secret: string,
   alg: AlgorithmTypes = AlgorithmTypes.HS256
 ): Promise<ArrayBuffer> => {
+  if (!crypto.subtle || !crypto.subtle.importKey) {
+    throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
+  }
+
   const cryptoKey = await crypto.subtle.importKey(
     CryptoKeyFormat.RAW,
     utf8ToUint8Array(secret),
