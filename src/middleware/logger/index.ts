@@ -54,7 +54,7 @@ function log(
   fn(out)
 }
 
-export const logger = (fn: PrintFunc) => {
+export const logger = (fn: PrintFunc = console.log) => {
   return async (c: Context, next: Next) => {
     const { method } = c.req
     const path = getPathFromURL(c.req.url)
