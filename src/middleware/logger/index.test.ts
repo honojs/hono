@@ -5,8 +5,8 @@ describe('Logger by Middleware', () => {
   let app: Hono
   let log: string
 
-  beforeEach(() => {    
-    function sleep (time: number) {
+  beforeEach(() => {
+    function sleep(time: number) {
       return new Promise((resolve) => setTimeout(resolve, time))
     }
 
@@ -15,10 +15,10 @@ describe('Logger by Middleware', () => {
     const logFn = (str: string) => {
       log = str
     }
-  
+
     const shortRandomString = 'hono'
     const longRandomString = 'hono'.repeat(1000)
-  
+
     app.use('*', logger(logFn))
     app.get('/short', (c) => c.text(shortRandomString))
     app.get('/long', (c) => c.text(longRandomString))
