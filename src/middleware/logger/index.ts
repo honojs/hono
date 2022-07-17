@@ -4,15 +4,15 @@ import { getPathFromURL } from '../../utils/url'
 
 enum LogPrefix {
   Outgoing = '-->',
-  Incoming ='<--',
+  Incoming = '<--',
   Error = 'xxx',
 }
 
 const humanize = (times: string[]) => {
   const [delimiter, separator] = [',', '.']
 
-  const orderTimes = times.map(v => v.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1' + delimiter))
-  
+  const orderTimes = times.map((v) => v.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1' + delimiter))
+
   return orderTimes.join(separator)
 }
 
@@ -20,7 +20,6 @@ const time = (start: number) => {
   const delta = Date.now() - start
   return humanize([delta < 1000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
 }
-
 
 const colorStatus = (status: number) => {
   const out: { [key: string]: string } = {
@@ -33,7 +32,7 @@ const colorStatus = (status: number) => {
     0: `\x1b[33m${status}\x1b[0m`,
   }
 
-  const calculateStatus = (status / 100 | 0)
+  const calculateStatus = (status / 100) | 0
 
   return out[calculateStatus]
 }
