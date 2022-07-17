@@ -20,7 +20,7 @@ export interface Context<RequestParamKeyType extends string = string, E = Env> {
   header: (name: string, value: string) => void
   status: (status: StatusCode) => void
   set: (key: string, value: any) => void
-  get: (key: string) => any
+  get: <T = any>(key: string) => T
   pretty: (prettyJSON: boolean, space?: number) => void
   newResponse: (data: Data | null, status: StatusCode, headers: Headers) => Response
   body: (data: Data | null, status?: StatusCode, headers?: Headers) => Response
