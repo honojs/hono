@@ -195,11 +195,11 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
     return context.res
   }
 
-  async handleEvent(event: FetchEvent): Promise<Response> {
+  handleEvent(event: FetchEvent): Promise<Response> {
     return this.dispatch(event.request, event)
   }
 
-  fetch = async (request: Request, env?: E, executionCtx?: ExecutionContext) => {
+  fetch = (request: Request, env?: E, executionCtx?: ExecutionContext) => {
     return this.dispatch(request, executionCtx, env)
   }
 
