@@ -11,8 +11,8 @@ type Env = Record<string, any>
 export interface Context<RequestParamKeyType extends string = string, E = Env> {
   req: Request<RequestParamKeyType>
   env: E
-  event: FetchEvent | undefined
-  executionCtx: ExecutionContext | undefined
+  event: FetchEvent
+  executionCtx: ExecutionContext
   finalized: boolean
 
   get res(): Response
@@ -37,11 +37,10 @@ export class HonoContext<RequestParamKeyType extends string = string, E = Env>
 {
   req: Request<RequestParamKeyType>
   env: E
-  event: FetchEvent | undefined
-  executionCtx: ExecutionContext | undefined
   finalized: boolean
 
   _status: StatusCode = 200
+  private _executionCtx: FetchEvent | ExecutionContext | undefined
   private _pretty: boolean = false
   private _prettySpace: number = 2
   private _map: Record<string, any> | undefined
@@ -52,20 +51,31 @@ export class HonoContext<RequestParamKeyType extends string = string, E = Env>
   constructor(
     req: Request,
     env: E | undefined = undefined,
-    eventOrExecutionCtx: FetchEvent | ExecutionContext | undefined = undefined,
+    executionCtx: FetchEvent | ExecutionContext | undefined = undefined,
     notFoundHandler: NotFoundHandler = () => new Response()
   ) {
+    this._executionCtx = executionCtx
     this.req = req
     this.env = env ? env : ({} as E)
 
-    if (eventOrExecutionCtx && 'respondWith' in eventOrExecutionCtx) {
-      this.event = eventOrExecutionCtx
-    } else {
-      this.executionCtx = eventOrExecutionCtx
-    }
-
     this.notFoundHandler = notFoundHandler
     this.finalized = false
+  }
+
+  get event(): FetchEvent {
+    if (this._executionCtx instanceof FetchEvent) {
+      return this._executionCtx
+    } else {
+      throw Error('This context has no FetchEvent')
+    }
+  }
+
+  get executionCtx(): ExecutionContext {
+    if (this._executionCtx) {
+      return this._executionCtx
+    } else {
+      throw Error('This context has no ExecutionContext')
+    }
   }
 
   get res(): Response {
