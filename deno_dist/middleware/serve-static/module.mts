@@ -8,6 +8,7 @@ import { serveStatic } from './serve-static'
 const module = (options: ServeStaticOptions = { root: '' }) => {
   return serveStatic({
     root: options.root,
+    path: options.path,
     manifest: options.manifest ? options.manifest : manifest,
   })
 }
