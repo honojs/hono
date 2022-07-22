@@ -14,7 +14,7 @@ This project is started by Yusuke Wada ([@yusukebe](https://github.com/yusukebe)
 It was just for fun. For now, this stance has not been changed basically.
 I want to write the code as I like.
 So, if you propose great ideas, but I do not appropriate them, the idea may not be accepted.
-Although, don't worry! Hono is tested well and used by many developers. And I'll try my best to make Hono cool, beautiful, and ultrafast.
+Although, don't worry! Hono is tested well, polished by the contributors, and used by many developers. And I'll try my best to make Hono cool, beautiful, and ultrafast.
 
 ## Third-party middleware
 
