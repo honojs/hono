@@ -61,19 +61,19 @@ The documentation is available on [honojs.dev](https://honojs.dev).
 
 ## Migration
 
-Migration guide is available on [docs/MIGRATION.md](docs/MIGRATION.md)
+Migration guide is available on [docs/MIGRATION.md](docs/MIGRATION.md).
 
 ## Contributing
 
 Contributions Welcome! You can contribute in the following ways.
 
-- Fix bugs.
-- Create built-in or third-party middleware.
-- Propose new feature.
-- Refactor the code.
-- Write an article about Hono on your Blog.
-- Fix a typo.
-- etc.
+- Create an Issue - Propose a new feature. Report a bug.
+- Pull Request - Fix a bug and typo. Refactor the code.
+- Create third-party middleware - Instruct below.
+- Share - Share your thoughts on the Blog, Twitter, and others.
+- Make your application - Please try to use Hono.
+
+For more details, see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ## Contributors
 
