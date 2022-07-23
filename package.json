@@ -52,9 +52,6 @@
       "cache": [
         "./dist/middleware/cache"
       ],
-      "cookie": [
-        "./dist/middleware/cookie"
-      ],
       "compress": [
         "./dist/middleware/compress"
       ],
