@@ -1,6 +1,7 @@
 // Middleware
 export * from './middleware/basic-auth/index.ts'
 export * from './middleware/bearer-auth/index.ts'
+export * from './middleware/cache/index.ts'
 export * from './middleware/compress/index.ts'
 export * from './middleware/cors/index.ts'
 export * from './middleware/etag/index.ts'
