@@ -1,7 +1,6 @@
 // Middleware
 export * from './middleware/basic-auth'
 export * from './middleware/bearer-auth'
-export * from './middleware/cache'
 export * from './middleware/compress'
 export * from './middleware/cors'
 export * from './middleware/etag'
