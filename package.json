@@ -23,6 +23,7 @@
     ".": "./dist/index.js",
     "./basic-auth": "./dist/middleware/basic-auth/index.js",
     "./bearer-auth": "./dist/middleware/bearer-auth/index.js",
+    "./cache": "./dist/middleware/cache/index.js",
     "./compress": "./dist/middleware/compress/index.js",
     "./cors": "./dist/middleware/cors/index.js",
     "./etag": "./dist/middleware/etag/index.js",
@@ -47,6 +48,9 @@
       ],
       "bearer-auth": [
         "./dist/middleware/bearer-auth"
+      ],
+      "cache": [
+        "./dist/middleware/cache"
       ],
       "cookie": [
         "./dist/middleware/cookie"
