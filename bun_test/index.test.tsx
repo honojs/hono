@@ -88,8 +88,27 @@ describe('JWT Middleware (Not supported yet)', () => {
 // set "jsxImportSource": "hono/jsx" in the tsconfig.json
 describe('JSX Middleware', () => {
   const app = new Hono()
+
+  const Layout = (props: { children?: string }) => {
+    return <html>{props.children}</html>
+  }
+
   app.get('/', (c) => {
     return c.html(<h1>Hello</h1>)
+  })
+  app.get('/nest', (c) => {
+    return c.html(
+      <h1>
+        <a href='/top'>Hello</a>
+      </h1>
+    )
+  })
+  app.get('/layout', (c) => {
+    return c.html(
+      <Layout>
+        <p>hello</p>
+      </Layout>
+    )
   })
 
   it('Should return rendered HTML', async () => {
@@ -97,5 +116,19 @@ describe('JSX Middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
     expect(await res.text()).toBe('<h1>Hello</h1>')
+  })
+
+  it('Should return rendered HTML with nest', async () => {
+    const res = await app.request(new Request('http://localhost/nest'))
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(await res.text()).toBe('<h1><a href="/top">Hello</a></h1>')
+  })
+
+  it('Should return rendered HTML with Layout', async () => {
+    const res = await app.request(new Request('http://localhost/layout'))
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(await res.text()).toBe('<html><p>hello</p></html>')
   })
 })
