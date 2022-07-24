@@ -10,7 +10,8 @@
   "scripts": {
     "test": "jest",
     "test:deno": "deno test --allow-read deno_test",
-    "test:bun": "bun wiptest bun_test/index.test.ts",
+    "test:bun": "bun wiptest --jsx-import-source ../src/middleware/jsx/jsx-dev-runtime bun_test/index.test.tsx",
+    "test:all": "yarn test && yarn test:deno && yarn test:bun",
     "lint": "eslint --ext js,ts src .eslintrc.js",
     "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix",
     "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.ts'",
@@ -29,6 +30,8 @@
     "./etag": "./dist/middleware/etag/index.js",
     "./html": "./dist/middleware/html/index.js",
     "./jsx": "./dist/middleware/jsx/index.js",
+    "./jsx/jsx-dev-runtime": "./dist/middleware/jsx/jsx-dev-runtime.js",
+    "./jsx/jsx-runtime": "./dist/middleware/jsx/jsx-runtime.js",
     "./jwt": "./dist/middleware/jwt/index.js",
     "./logger": "./dist/middleware/logger/index.js",
     "./powered-by": "./dist/middleware/powered-by/index.js",
@@ -66,6 +69,12 @@
       ],
       "jsx": [
         "./dist/middleware/jsx"
+      ],
+      "jsx-runtime": [
+        "./dist/middleware/jsx/jsx-runtime"
+      ],
+      "jsx-dev-runtime": [
+        "./dist/middleware/jsx/jsx-dev-runtime"
       ],
       "jwt": [
         "./dist/middleware/jwt"

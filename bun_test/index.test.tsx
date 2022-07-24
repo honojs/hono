@@ -83,3 +83,19 @@ describe('JWT Middleware (Not supported yet)', () => {
     expect(t).toBe(true)
   })
 })
+
+// To enable JSX middleware,
+// set "jsxImportSource": "hono/jsx" in the tsconfig.json
+describe('JSX Middleware', () => {
+  const app = new Hono()
+  app.get('/', (c) => {
+    return c.html(<h1>Hello</h1>)
+  })
+
+  it('Should return rendered HTML', async () => {
+    const res = await app.request(new Request('http://localhost/'))
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(await res.text()).toBe('<h1>Hello</h1>')
+  })
+})

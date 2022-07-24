@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { jsx, memo, Fragment } from '.'
+import { jsx, memo, Fragment } from './index'
 
 describe('JSX middleware', () => {
   const app = new Hono()
@@ -28,7 +28,7 @@ describe('render to string', () => {
   })
 
   it('Empty elements are rended withtout closing tag', () => {
-    const template = (<input/>)
+    const template = <input />
     expect(template.toString()).toBe('<input/>')
   })
 

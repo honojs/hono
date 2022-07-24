@@ -28,7 +28,7 @@ describe('render to string', () => {
   })
 
   it('Empty elements are rended withtout closing tag', () => {
-    const template = (<input/>)
+    const template = <input />
     expect(template.toString()).toBe('<input/>')
   })
 
