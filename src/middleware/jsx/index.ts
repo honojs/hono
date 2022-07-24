@@ -28,7 +28,8 @@ const emptyTags = [
   'wbr',
 ]
 
-export const jsx = (
+export { jsxFn as jsx }
+const jsxFn = (
   tag: string | Function,
   props: Record<string, any>,
   ...children: (string | HtmlEscapedString)[]
@@ -125,5 +126,5 @@ export const memo = <T>(
 }
 
 export const Fragment = (props: { key?: string; children?: any }): HtmlEscapedString => {
-  return jsx('', {}, ...(props.children || []))
+  return jsxFn('', {}, ...(props.children || []))
 }
