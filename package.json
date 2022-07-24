@@ -71,10 +71,10 @@
         "./dist/middleware/jsx"
       ],
       "jsx-runtime": [
-        "./dist/middleware/jsx/jsx-runtime"
+        "./dist/middleware/jsx/jsx-runtime.d.ts"
       ],
       "jsx-dev-runtime": [
-        "./dist/middleware/jsx/jsx-dev-runtime"
+        "./dist/middleware/jsx/jsx-dev-runtime.d.ts"
       ],
       "jwt": [
         "./dist/middleware/jwt"
