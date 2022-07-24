@@ -129,3 +129,19 @@ describe('page', () => {
     expect(res?.handlers).toEqual(['page', 'fallback'])
   })
 })
+
+describe('routing order with named parameters', () => {
+  const router = new TrieRouter<string>()
+  router.add('GET', '/book/a', 'no-slug')
+  router.add('GET', '/book/:slug', 'slug')
+  it('GET /book/a', async () => {
+    const res = router.match('GET', '/book/a')
+    expect(res?.handlers).toEqual(['no-slug', 'slug'])
+    expect(res?.params['slug']).toBeUndefined()
+  })
+  it('GET /book/foo', async () => {
+    const res = router.match('GET', '/book/foo')
+    expect(res?.handlers).toEqual(['slug'])
+    expect(res?.params['slug']).toBe('foo')
+  })
+})
