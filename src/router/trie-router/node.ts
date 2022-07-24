@@ -135,9 +135,23 @@ export class Node<T> {
       const part: string = parts[i]
       const isLast = i === len - 1
       const tempNodes: Node<T>[] = []
+      let matched = false
 
       for (let j = 0, len2 = curNodes.length; j < len2; j++) {
         const node = curNodes[j]
+        const nextNode = node.children[part]
+
+        if (nextNode) {
+          if (isLast === true) {
+            // '/hello/*' => match '/hello'
+            if (nextNode.children['*']) {
+              handlerSets.push(...this.getHandlerSets(nextNode.children['*'], method, true))
+            }
+            handlerSets.push(...this.getHandlerSets(nextNode, method))
+            matched = true
+          }
+          tempNodes.push(nextNode)
+        }
 
         for (let k = 0, len3 = node.patterns.length; k < len3; k++) {
           const pattern = node.patterns[k]
@@ -165,23 +179,15 @@ export class Node<T> {
               }
               tempNodes.push(node.children[key])
             }
-            if (typeof name === 'string') {
+
+            // '/book/a'     => not-slug
+            // '/book/:slug' => slug
+            // GET /book/a   ~> no-slug, param['slug'] => undefined
+            // GET /book/foo ~> slug, param['slug'] => foo
+            if (typeof name === 'string' && !matched) {
               params[name] = part
             }
           }
-        }
-
-        const nextNode = node.children[part]
-
-        if (nextNode) {
-          if (isLast === true) {
-            // '/hello/*' => match '/hello'
-            if (nextNode.children['*']) {
-              handlerSets.push(...this.getHandlerSets(nextNode.children['*'], method, true))
-            }
-            handlerSets.push(...this.getHandlerSets(nextNode, method))
-          }
-          tempNodes.push(nextNode)
         }
       }
 
