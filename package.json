@@ -164,5 +164,8 @@
   },
   "engines": {
     "node": ">=11.0.0"
+  },
+  "dependencies": {
+    "@cfworker/json-schema": "^1.12.3"
   }
 }
