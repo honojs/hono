@@ -19,7 +19,10 @@ export interface Context<RequestParamKeyType extends string = string, E = Env> {
   set res(_res: Response)
   header: (name: string, value: string) => void
   status: (status: StatusCode) => void
-  set: (key: string, value: any) => void
+  set: {
+    <Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
+    (key: string, value: any): void
+  }
   get: {
     <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
     <T = any>(key: string): T
