@@ -75,6 +75,50 @@ describe('render to string', () => {
     })
   })
 
+  describe('Special case for input "checked" and "selected" params', () => {
+    it('default prop value for checked', () => {
+      const template = <input type='checkbox' checked />
+      expect(template.toString()).toBe('<input type="checkbox" checked="checked"/>')
+    })
+
+    it('default prop value for checked={true}', () => {
+      const template = <input type='checkbox' checked={true} />
+      expect(template.toString()).toBe('<input type="checkbox" checked="checked"/>')
+    })
+
+    it('no prop for checked={false}', () => {
+      const template = <input type='checkbox' checked={false} />
+      expect(template.toString()).toBe('<input type="checkbox"/>')
+    })
+
+    it('default prop value for selected', () => {
+      const template = (
+        <option value='test' selected>
+          Test
+        </option>
+      )
+      expect(template.toString()).toBe('<option value="test" selected="selected">Test</option>')
+    })
+
+    it('default prop value for selected={true}', () => {
+      const template = (
+        <option value='test' selected={true}>
+          Test
+        </option>
+      )
+      expect(template.toString()).toBe('<option value="test" selected="selected">Test</option>')
+    })
+
+    it('no prop for selected={false}', () => {
+      const template = (
+        <option value='test' selected={false}>
+          Test
+        </option>
+      )
+      expect(template.toString()).toBe('<option value="test">Test</option>')
+    })
+  })
+
   // https://en.reactjs.org/docs/jsx-in-depth.html#functions-as-children
   describe('Functions as Children', () => {
     it('Function', () => {

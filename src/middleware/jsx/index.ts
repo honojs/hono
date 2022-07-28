@@ -54,6 +54,11 @@ const jsxFn = (
       continue
     } else if (v === null || v === undefined) {
       continue
+    } else if (['checked', 'selected'].includes(propsKeys[i]) && v === false) {
+      continue
+    } else if (['checked', 'selected'].includes(propsKeys[i]) && (!v || v === true)) {
+      result += ` ${propsKeys[i]}="${propsKeys[i].toString().toLowerCase()}"`
+      continue
     }
 
     result += ` ${propsKeys[i]}="${escape(v.toString())}"`
