@@ -41,7 +41,14 @@ describe('Parse Body Middleware', () => {
         'Content-Type': 'text/plain',
       },
     })
-    console.log(res.headers.get('Content-Type'))
     expect(await parseBody(res)).toEqual(payload)
+  })
+
+  it('should return blank object if JSON body is nothing', async () => {
+    const req = new Request('http://localhost/json', {
+      method: 'POST',
+      headers: new Headers({ 'Content-Type': 'application/json' }),
+    })
+    expect(await parseBody(req)).toEqual({})
   })
 })
