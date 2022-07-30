@@ -28,6 +28,12 @@ const emptyTags = [
   'wbr',
 ]
 
+const newHtmlEscapedString = (str: string): HtmlEscapedString => {
+  const escapedString = new String(str) as HtmlEscapedString
+  escapedString.isEscaped = true
+  return escapedString
+}
+
 export { jsxFn as jsx }
 const jsxFn = (
   tag: string | Function,
@@ -66,10 +72,12 @@ const jsxFn = (
     result += ` ${propsKeys[i]}="${escape(v.toString())}"`
   }
 
+  if (emptyTags.includes(tag)) {
+    result += '/>'
+    return newHtmlEscapedString(result)
+  }
+
   if (tag !== '') {
-    if (emptyTags.includes(tag)) {
-      result += '/'
-    }
     result += '>'
   }
 
@@ -85,14 +93,11 @@ const jsxFn = (
     }
   }
 
-  if (tag !== '' && !emptyTags.includes(tag)) {
+  if (tag !== '') {
     result += `</${tag}>`
   }
 
-  const escapedString = new String(result) as HtmlEscapedString
-  escapedString.isEscaped = true
-
-  return escapedString
+  return newHtmlEscapedString(result)
 }
 
 type FC<T = Record<string, any>> = (props: T) => HtmlEscapedString
