@@ -1,4 +1,4 @@
-import type { NotFoundHandler } from './hono'
+import type { ContextVariableMap, NotFoundHandler } from './hono'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'
@@ -19,8 +19,14 @@ export interface Context<RequestParamKeyType extends string = string, E = Env> {
   set res(_res: Response)
   header: (name: string, value: string) => void
   status: (status: StatusCode) => void
-  set: (key: string, value: any) => void
-  get: <T = any>(key: string) => T
+  set: {
+    <Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
+    (key: string, value: any): void
+  }
+  get: {
+    <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
+    <T = any>(key: string): T
+  }
   pretty: (prettyJSON: boolean, space?: number) => void
   newResponse: (data: Data | null, status: StatusCode, headers: Headers) => Response
   body: (data: Data | null, status?: StatusCode, headers?: Headers) => Response
