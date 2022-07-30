@@ -41,6 +41,8 @@ const jsxFn = (
   let result = tag !== '' ? `<${tag}` : ''
 
   const propsKeys = Object.keys(props || {})
+  const booleanKeys = ['checked', 'selected', 'disabled', 'readonly', 'multiple']
+
   for (let i = 0, len = propsKeys.length; i < len; i++) {
     const v = props[propsKeys[i]]
     if (propsKeys[i] === 'dangerouslySetInnerHTML') {
@@ -53,6 +55,11 @@ const jsxFn = (
       children = [escapedString]
       continue
     } else if (v === null || v === undefined) {
+      continue
+    } else if (booleanKeys.includes(propsKeys[i]) && v === false) {
+      continue
+    } else if (booleanKeys.includes(propsKeys[i]) && (!v || v === true)) {
+      result += ` ${propsKeys[i]}=""`
       continue
     }
 

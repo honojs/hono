@@ -75,6 +75,112 @@ describe('render to string', () => {
     })
   })
 
+  describe('Special case for input boolean params', () => {
+    it('default prop value for checked', () => {
+      const template = <input type='checkbox' checked />
+      expect(template.toString()).toBe('<input type="checkbox" checked=""/>')
+    })
+
+    it('default prop value for checked={true}', () => {
+      const template = <input type='checkbox' checked={true} />
+      expect(template.toString()).toBe('<input type="checkbox" checked=""/>')
+    })
+
+    it('no prop for checked={false}', () => {
+      const template = <input type='checkbox' checked={false} />
+      expect(template.toString()).toBe('<input type="checkbox"/>')
+    })
+
+    it('default prop value for disabled', () => {
+      const template = <input type='checkbox' disabled />
+      expect(template.toString()).toBe('<input type="checkbox" disabled=""/>')
+    })
+
+    it('default prop value for disabled={true}', () => {
+      const template = <input type='checkbox' disabled={true} />
+      expect(template.toString()).toBe('<input type="checkbox" disabled=""/>')
+    })
+
+    it('no prop for disabled={false}', () => {
+      const template = <input type='checkbox' disabled={false} />
+      expect(template.toString()).toBe('<input type="checkbox"/>')
+    })
+
+    it('default prop value for readonly', () => {
+      const template = <input type='checkbox' readonly />
+      expect(template.toString()).toBe('<input type="checkbox" readonly=""/>')
+    })
+
+    it('default prop value for readonly={true}', () => {
+      const template = <input type='checkbox' readonly={true} />
+      expect(template.toString()).toBe('<input type="checkbox" readonly=""/>')
+    })
+
+    it('no prop for readonly={false}', () => {
+      const template = <input type='checkbox' readonly={false} />
+      expect(template.toString()).toBe('<input type="checkbox"/>')
+    })
+
+    it('default prop value for selected', () => {
+      const template = (
+        <option value='test' selected>
+          Test
+        </option>
+      )
+      expect(template.toString()).toBe('<option value="test" selected="">Test</option>')
+    })
+
+    it('default prop value for selected={true}', () => {
+      const template = (
+        <option value='test' selected={true}>
+          Test
+        </option>
+      )
+      expect(template.toString()).toBe('<option value="test" selected="">Test</option>')
+    })
+
+    it('no prop for selected={false}', () => {
+      const template = (
+        <option value='test' selected={false}>
+          Test
+        </option>
+      )
+      expect(template.toString()).toBe('<option value="test">Test</option>')
+    })
+
+    it('default prop value for multiple select', () => {
+      const template = (
+        <select multiple>
+          <option>test</option>
+        </select>
+      )
+      expect(template.toString()).toBe('<select multiple=""><option>test</option></select>')
+    })
+
+    it('default prop value for select multiple={true}', () => {
+      const template = (
+        <select multiple={true}>
+          <option>test</option>
+        </select>
+      )
+      expect(template.toString()).toBe('<select multiple=""><option>test</option></select>')
+    })
+
+    it('no prop for select multiple={false}', () => {
+      const template = (
+        <select multiple={false}>
+          <option>test</option>
+        </select>
+      )
+      expect(template.toString()).toBe('<select><option>test</option></select>')
+    })
+
+    it('should render "false" value properly for other non-defined keys', () => {
+      const template = <input type='checkbox' testkey={false} />
+      expect(template.toString()).toBe('<input type="checkbox" testkey="false"/>')
+    })
+  })
+
   // https://en.reactjs.org/docs/jsx-in-depth.html#functions-as-children
   describe('Functions as Children', () => {
     it('Function', () => {
