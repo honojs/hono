@@ -7,6 +7,8 @@ import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router.ts'
 import { TrieRouter } from './router/trie-router/index.ts' // Default Router
 import { getPathFromURL, mergePath } from './utils/url.ts'
 
+export interface ContextVariableMap {}
+
 type Env = Record<string, any>
 export type Handler<RequestParamKeyType extends string = string, E = Env> = (
   c: Context<RequestParamKeyType, E>,
