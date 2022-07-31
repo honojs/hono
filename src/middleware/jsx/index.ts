@@ -27,6 +27,13 @@ const emptyTags = [
   'track',
   'wbr',
 ]
+const booleanAttributes = ['checked', 'selected', 'disabled', 'readonly', 'multiple']
+
+const newHtmlEscapedString = (str: string): HtmlEscapedString => {
+  const escapedString = new String(str) as HtmlEscapedString
+  escapedString.isEscaped = true
+  return escapedString
+}
 
 export { jsxFn as jsx }
 const jsxFn = (
@@ -41,35 +48,36 @@ const jsxFn = (
   let result = tag !== '' ? `<${tag}` : ''
 
   const propsKeys = Object.keys(props || {})
-  const booleanKeys = ['checked', 'selected', 'disabled', 'readonly', 'multiple']
 
   for (let i = 0, len = propsKeys.length; i < len; i++) {
     const v = props[propsKeys[i]]
-    if (propsKeys[i] === 'dangerouslySetInnerHTML') {
+    if (typeof v === 'string') {
+      result += ` ${propsKeys[i]}="${escape(v)}"`
+    } else if (typeof v === 'number') {
+      result += ` ${propsKeys[i]}="${v}"`
+    } else if (v === null || v === undefined) {
+      // Do nothing
+    } else if (typeof v === 'boolean' && booleanAttributes.includes(propsKeys[i])) {
+      if (v) {
+        result += ` ${propsKeys[i]}=""`
+      }
+    } else if (propsKeys[i] === 'dangerouslySetInnerHTML') {
       if (children.length > 0) {
         throw 'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
       }
 
-      const escapedString = new String(v.__html) as HtmlEscapedString
-      escapedString.isEscaped = true
-      children = [escapedString]
-      continue
-    } else if (v === null || v === undefined) {
-      continue
-    } else if (booleanKeys.includes(propsKeys[i]) && v === false) {
-      continue
-    } else if (booleanKeys.includes(propsKeys[i]) && (!v || v === true)) {
-      result += ` ${propsKeys[i]}=""`
-      continue
+      children = [newHtmlEscapedString(v.__html)]
+    } else {
+      result += ` ${propsKeys[i]}="${escape(v.toString())}"`
     }
+  }
 
-    result += ` ${propsKeys[i]}="${escape(v.toString())}"`
+  if (emptyTags.includes(tag)) {
+    result += '/>'
+    return newHtmlEscapedString(result)
   }
 
   if (tag !== '') {
-    if (emptyTags.includes(tag)) {
-      result += '/'
-    }
     result += '>'
   }
 
@@ -85,14 +93,11 @@ const jsxFn = (
     }
   }
 
-  if (tag !== '' && !emptyTags.includes(tag)) {
+  if (tag !== '') {
     result += `</${tag}>`
   }
 
-  const escapedString = new String(result) as HtmlEscapedString
-  escapedString.isEscaped = true
-
-  return escapedString
+  return newHtmlEscapedString(result)
 }
 
 type FC<T = Record<string, any>> = (props: T) => HtmlEscapedString
