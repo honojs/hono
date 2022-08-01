@@ -3,7 +3,7 @@ import type { Next } from '../../hono'
 import { Jwt } from '../../utils/jwt'
 import type { AlgorithmTypes } from '../../utils/jwt/types'
 
-export const jwt = (options: { secret: string; alg?: string }) => {
+export const jwt = (options: { secret: string; cookie?: string; alg?: string }) => {
   if (!options) {
     throw new Error('JWT auth middleware requires options for "secret')
   }
@@ -14,19 +14,25 @@ export const jwt = (options: { secret: string; alg?: string }) => {
 
   return async (ctx: Context, next: Next) => {
     const credentials = ctx.req.headers.get('Authorization')
-
-    if (!credentials) {
-      ctx.res = new Response('Unauthorized', {
-        status: 401,
-        headers: {
-          'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="no authorization included in request"`,
-        },
-      })
-      return
+    let token
+    if (credentials) {
+      const parts = credentials.split(/\s+/)
+      if (parts.length !== 2) {
+        ctx.res = new Response('Unauthorized', {
+          status: 401,
+          headers: {
+            'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="invalid credentials structure"`,
+          },
+        })
+        return
+      } else {
+        token = parts[1]
+      }
+    } else if (options.cookie) {
+      token = ctx.req.cookie(options.cookie)
     }
 
-    const parts = credentials.split(/\s+/)
-    if (parts.length !== 2) {
+    if (!token) {
       ctx.res = new Response('Unauthorized', {
         status: 401,
         headers: {
@@ -39,7 +45,7 @@ export const jwt = (options: { secret: string; alg?: string }) => {
     let authorized = false
     let msg = ''
     try {
-      authorized = await Jwt.verify(parts[1], options.secret, options.alg as AlgorithmTypes)
+      authorized = await Jwt.verify(token, options.secret, options.alg as AlgorithmTypes)
     } catch (e) {
       msg = `${e}`
     }
