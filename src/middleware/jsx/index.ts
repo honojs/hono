@@ -1,5 +1,5 @@
-import { escape } from '../../utils/html'
-import type { HtmlEscapedString } from '../../utils/html'
+import { escapeToBuffer } from '../../utils/html'
+import type { Buffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -29,10 +29,116 @@ const emptyTags = [
 ]
 const booleanAttributes = ['checked', 'selected', 'disabled', 'readonly', 'multiple']
 
-const newHtmlEscapedString = (str: string): HtmlEscapedString => {
-  const escapedString = new String(str) as HtmlEscapedString
-  escapedString.isEscaped = true
-  return escapedString
+const childrenToStringToBuffer = (children: Child[], buffer: Buffer): void => {
+  for (let i = 0, len = children.length; i < len; i++) {
+    const child = children[i]
+    if (typeof child === 'string') {
+      escapeToBuffer(child, buffer)
+    } else if (typeof child === 'boolean' || child === null || child === undefined) {
+      continue
+    } else if (child instanceof JSXNode) {
+      child.toStringToBuffer(buffer)
+    } else if (typeof child === 'number' || (child as any).isEscaped) {
+      buffer[0] += child
+    } else {
+      // `child` type is `Child[]`, so stringify recursively
+      childrenToStringToBuffer(child, buffer)
+    }
+  }
+}
+
+type Child = string | number | JSXNode | Child[]
+export class JSXNode implements HtmlEscaped {
+  tag: string | Function
+  props: Record<string, any>
+  children: Child[]
+  isEscaped: true = true
+  constructor(tag: string | Function, props: Record<string, any>, children: Child[]) {
+    this.tag = tag
+    this.props = props
+    this.children = children
+  }
+
+  toString(): string {
+    const buffer: Buffer = ['']
+    this.toStringToBuffer(buffer)
+    return buffer[0]
+  }
+
+  toStringToBuffer(buffer: Buffer): void {
+    const tag = this.tag as string
+    const props = this.props
+    let { children } = this
+
+    buffer[0] += `<${tag}`
+
+    const propsKeys = Object.keys(props || {})
+
+    for (let i = 0, len = propsKeys.length; i < len; i++) {
+      const v = props[propsKeys[i]]
+      if (typeof v === 'string') {
+        buffer[0] += ` ${propsKeys[i]}="`
+        escapeToBuffer(v, buffer)
+        buffer[0] += '"'
+      } else if (typeof v === 'number') {
+        buffer[0] += ` ${propsKeys[i]}="${v}"`
+      } else if (v === null || v === undefined) {
+        // Do nothing
+      } else if (typeof v === 'boolean' && booleanAttributes.includes(propsKeys[i])) {
+        if (v) {
+          buffer[0] += ` ${propsKeys[i]}=""`
+        }
+      } else if (propsKeys[i] === 'dangerouslySetInnerHTML') {
+        if (children.length > 0) {
+          throw 'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
+        }
+
+        const escapedString = new String(v.__html) as HtmlEscapedString
+        escapedString.isEscaped = true
+        children = [escapedString]
+      } else {
+        buffer[0] += ` ${propsKeys[i]}="`
+        escapeToBuffer(v.toString(), buffer)
+        buffer[0] += '"'
+      }
+    }
+
+    if (emptyTags.includes(tag as string)) {
+      buffer[0] += '/>'
+      return
+    }
+
+    buffer[0] += '>'
+
+    childrenToStringToBuffer(children, buffer)
+
+    buffer[0] += `</${tag}>`
+  }
+}
+
+class JSXFunctionNode extends JSXNode {
+  toStringToBuffer(buffer: Buffer): void {
+    const { children } = this
+
+    const res = (this.tag as Function).call(null, {
+      ...this.props,
+      children: children.length <= 1 ? children[0] : children,
+    })
+
+    if (res instanceof JSXNode) {
+      res.toStringToBuffer(buffer)
+    } else if (typeof res === 'number' || (res as HtmlEscaped).isEscaped) {
+      buffer[0] += res
+    } else {
+      escapeToBuffer(res, buffer)
+    }
+  }
+}
+
+class JSXFragmentNode extends JSXNode {
+  toStringToBuffer(buffer: Buffer): void {
+    childrenToStringToBuffer(this.children, buffer)
+  }
 }
 
 export { jsxFn as jsx }
@@ -40,64 +146,12 @@ const jsxFn = (
   tag: string | Function,
   props: Record<string, any>,
   ...children: (string | HtmlEscapedString)[]
-): HtmlEscapedString => {
+): JSXNode => {
   if (typeof tag === 'function') {
-    return tag.call(null, { ...props, children: children.length <= 1 ? children[0] : children })
+    return new JSXFunctionNode(tag, props, children)
+  } else {
+    return new JSXNode(tag, props, children)
   }
-
-  let result = tag !== '' ? `<${tag}` : ''
-
-  const propsKeys = Object.keys(props || {})
-
-  for (let i = 0, len = propsKeys.length; i < len; i++) {
-    const v = props[propsKeys[i]]
-    if (typeof v === 'string') {
-      result += ` ${propsKeys[i]}="${escape(v)}"`
-    } else if (typeof v === 'number') {
-      result += ` ${propsKeys[i]}="${v}"`
-    } else if (v === null || v === undefined) {
-      // Do nothing
-    } else if (typeof v === 'boolean' && booleanAttributes.includes(propsKeys[i])) {
-      if (v) {
-        result += ` ${propsKeys[i]}=""`
-      }
-    } else if (propsKeys[i] === 'dangerouslySetInnerHTML') {
-      if (children.length > 0) {
-        throw 'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
-      }
-
-      children = [newHtmlEscapedString(v.__html)]
-    } else {
-      result += ` ${propsKeys[i]}="${escape(v.toString())}"`
-    }
-  }
-
-  if (emptyTags.includes(tag)) {
-    result += '/>'
-    return newHtmlEscapedString(result)
-  }
-
-  if (tag !== '') {
-    result += '>'
-  }
-
-  const flattenChildren = children.flat(Infinity)
-  for (let i = 0, len = flattenChildren.length; i < len; i++) {
-    const child = flattenChildren[i]
-    if (typeof child === 'boolean' || child === null || child === undefined) {
-      continue
-    } else if (typeof child === 'object' && (child as any).isEscaped) {
-      result += child
-    } else {
-      result += escape(child.toString())
-    }
-  }
-
-  if (tag !== '') {
-    result += `</${tag}>`
-  }
-
-  return newHtmlEscapedString(result)
 }
 
 type FC<T = Record<string, any>> = (props: T) => HtmlEscapedString
@@ -137,6 +191,6 @@ export const memo = <T>(
   }) as FC<T>
 }
 
-export const Fragment = (props: { key?: string; children?: any }): HtmlEscapedString => {
-  return jsxFn('', {}, ...(props.children || []))
+export const Fragment = (props: { key?: string; children?: any }): JSXNode => {
+  return new JSXFragmentNode('', {}, props.children || [])
 }
