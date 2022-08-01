@@ -1,8 +1,18 @@
 import { Hono } from '../../hono'
+import { html } from '../html/index'
 import { jsx, memo, Fragment } from './index'
 
+interface SiteData {
+  title: string
+  children?: any
+}
+
 describe('JSX middleware', () => {
-  const app = new Hono()
+  let app: Hono
+
+  beforeEach(() => {
+    app = new Hono()
+  })
 
   it('Should render HTML strings', async () => {
     app.get('/', (c) => {
@@ -12,6 +22,46 @@ describe('JSX middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
     expect(await res.text()).toBe('<h1>Hello</h1>')
+  })
+
+  it('Should be able to be used with html middleware', async () => {
+    const Layout = (props: SiteData) => html`<!DOCTYPE html>
+      <html>
+        <head>
+          <title>${props.title}</title>
+        </head>
+        <body>
+          ${props.children}
+        </body>
+      </html>`
+
+    const Content = (props: { siteData: SiteData; name: string }) => (
+      <Layout {...props.siteData}>
+        <h1>{props.name}</h1>
+      </Layout>
+    )
+
+    app.get('/', (c) => {
+      const props = {
+        name: 'JSX',
+        siteData: {
+          title: 'with html middleware',
+        },
+      }
+      return c.html(<Content {...props} />)
+    })
+    const res = await app.request('http://localhost/')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(await res.text()).toBe(`<!DOCTYPE html>
+      <html>
+        <head>
+          <title>with html middleware</title>
+        </head>
+        <body>
+          <h1>JSX</h1>
+        </body>
+      </html>`)
   })
 })
 
@@ -49,9 +99,9 @@ describe('render to string', () => {
     })
 
     it('Should get an error if both dangerouslySetInnerHTML and children are specified', () => {
-      expect(() => (
-        <span dangerouslySetInnerHTML={{ __html: '" is allowed here' }}>Hello</span>
-      )).toThrow()
+      expect(() =>
+        (<span dangerouslySetInnerHTML={{ __html: '" is allowed here' }}>Hello</span>).toString()
+      ).toThrow()
     })
   })
 

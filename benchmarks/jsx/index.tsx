@@ -25,11 +25,11 @@ const buildPage = ({ jsx, Fragment }: { jsx: any; Fragment: any }) => {
 
   const Form = () => (
     <form>
-      <input type='text' value='a' readonly tabindex={1} />
-      <input type='checkbox' value='b' checked={true} tabindex={2} />
-      <input type='checkbox' value='c' checked={true} tabindex={3} />
-      <input type='checkbox' value='d' checked={false} tabindex={4} />
-      <input type='checkbox' value='e' checked={false} tabindex={5} />
+      <input type='text' value='1234567890 < 1234567891' readonly tabindex={1} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={true} tabindex={2} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={true} tabindex={3} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={false} tabindex={4} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={false} tabindex={5} />
     </form>
   )
 
