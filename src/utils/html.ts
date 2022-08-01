@@ -1,4 +1,5 @@
-export type HtmlEscapedString = string & { isEscaped: true }
+export type HtmlEscaped = { isEscaped: true }
+export type HtmlEscapedString = string & HtmlEscaped
 export type Buffer = [string]
 
 // The `escape` and `escapeToBuffer` implementations are based on code from the MIT licensed `react-dom` package.
