@@ -27,7 +27,33 @@ const emptyTags = [
   'track',
   'wbr',
 ]
-const booleanAttributes = ['checked', 'selected', 'disabled', 'readonly', 'multiple']
+const booleanAttributes = [
+  'allowfullscreen',
+  'async',
+  'autofocus',
+  'autoplay',
+  'checked',
+  'controls',
+  'default',
+  'defer',
+  'disabled',
+  'formnovalidate',
+  'hidden',
+  'inert',
+  'ismap',
+  'itemscope',
+  'loop',
+  'multiple',
+  'muted',
+  'nomodule',
+  'novalidate',
+  'open',
+  'playsinline',
+  'readonly',
+  'required',
+  'reversed',
+  'selected',
+]
 
 const childrenToStringToBuffer = (children: Child[], buffer: Buffer): void => {
   for (let i = 0, len = children.length; i < len; i++) {

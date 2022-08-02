@@ -125,7 +125,8 @@ describe('render to string', () => {
     })
   })
 
-  describe('Special case for input boolean params', () => {
+  // https://html.spec.whatwg.org/#attributes-3
+  describe('Boolean attribute', () => {
     it('default prop value for checked', () => {
       const template = <input type='checkbox' checked />
       expect(template.toString()).toBe('<input type="checkbox" checked=""/>')
@@ -228,6 +229,17 @@ describe('render to string', () => {
     it('should render "false" value properly for other non-defined keys', () => {
       const template = <input type='checkbox' testkey={false} />
       expect(template.toString()).toBe('<input type="checkbox" testkey="false"/>')
+    })
+
+    it('should support attributes for elements other than input', () => {
+      const template = (
+        <video controls autoplay>
+          <source src='movie.mp4' type='video/mp4' />
+        </video>
+      )
+      expect(template.toString()).toBe(
+        '<video controls="" autoplay=""><source src="movie.mp4" type="video/mp4"/></video>'
+      )
     })
   })
 
