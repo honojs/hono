@@ -2,23 +2,10 @@ export type HtmlEscaped = { isEscaped: true }
 export type HtmlEscapedString = string & HtmlEscaped
 export type StringBuffer = [string]
 
-// The `escape` and `escapeToBuffer` implementations are based on code from the MIT licensed `react-dom` package.
+// The `escapeToBuffer` implementation is based on code from the MIT licensed `react-dom` package.
 // https://github.com/facebook/react/blob/main/packages/react-dom/src/server/escapeTextForBrowser.js
 
 const escapeRe = /[&<>"]/
-
-export const escape = (str: string): string => {
-  // This function is an alias for `escapeToBuffer`,
-  // but returns immediately if `str` does not contain the character to be escaped.
-  const match = str.search(escapeRe)
-  if (match === -1) {
-    return str
-  }
-
-  const buffer: StringBuffer = ['']
-  escapeToBuffer(str, buffer)
-  return buffer[0]
-}
 
 export const escapeToBuffer = (str: string, buffer: StringBuffer): void => {
   const match = str.search(escapeRe)
