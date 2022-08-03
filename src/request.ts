@@ -1,4 +1,5 @@
 import { parseBody } from './utils/body'
+import type { Body } from './utils/body'
 import type { Cookie } from './utils/cookie'
 import { parse } from './utils/cookie'
 
@@ -25,9 +26,9 @@ declare global {
       (name: string): string
       (): Cookie
     }
-    parsedBody?: Promise<any>
+    parsedBody?: Promise<Body>
     parseBody: {
-      (): Promise<any>
+      (): Promise<Body>
     }
   }
 }

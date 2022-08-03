@@ -967,7 +967,7 @@ describe('Parse Body', () => {
     return c.json(await c.req.parseBody(), 200)
   })
   app.post('/text', async (c) => {
-    return c.text(await c.req.parseBody(), 200)
+    return c.text((await c.req.parseBody()) as string, 200)
   })
   app.post('/form', async (c) => {
     return c.json(await c.req.parseBody(), 200)
