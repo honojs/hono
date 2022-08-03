@@ -1,6 +1,6 @@
 export type HtmlEscaped = { isEscaped: true }
 export type HtmlEscapedString = string & HtmlEscaped
-export type Buffer = [string]
+export type StringBuffer = [string]
 
 // The `escape` and `escapeToBuffer` implementations are based on code from the MIT licensed `react-dom` package.
 // https://github.com/facebook/react/blob/main/packages/react-dom/src/server/escapeTextForBrowser.js
@@ -15,12 +15,12 @@ export const escape = (str: string): string => {
     return str
   }
 
-  const buffer: Buffer = ['']
+  const buffer: StringBuffer = ['']
   escapeToBuffer(str, buffer)
   return buffer[0]
 }
 
-export const escapeToBuffer = (str: string, buffer: Buffer): void => {
+export const escapeToBuffer = (str: string, buffer: StringBuffer): void => {
   const match = str.search(escapeRe)
   if (match === -1) {
     buffer[0] += str

@@ -1,5 +1,5 @@
 import { escapeToBuffer } from '../../utils/html'
-import type { Buffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html'
+import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html'
 
 export const raw = (value: any): HtmlEscapedString => {
   const escapedString = new String(value) as HtmlEscapedString
@@ -9,7 +9,7 @@ export const raw = (value: any): HtmlEscapedString => {
 }
 
 export const html = (strings: TemplateStringsArray, ...values: any[]): HtmlEscapedString => {
-  const buffer: Buffer = ['']
+  const buffer: StringBuffer = ['']
 
   for (let i = 0, len = strings.length - 1; i < len; i++) {
     buffer[0] += strings[i]
