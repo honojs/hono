@@ -1,6 +1,6 @@
-export const parseBody = async (
-  r: Request | Response
-): Promise<string | object | Record<string, string | File>> => {
+export type Body = string | object | Record<string, string | File>
+
+export const parseBody = async (r: Request | Response): Promise<Body> => {
   const contentType = r.headers.get('Content-Type') || ''
 
   if (contentType.includes('application/json')) {

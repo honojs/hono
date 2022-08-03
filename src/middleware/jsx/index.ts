@@ -1,5 +1,5 @@
 import { escapeToBuffer } from '../../utils/html'
-import type { Buffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html'
+import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -55,7 +55,7 @@ const booleanAttributes = [
   'selected',
 ]
 
-const childrenToStringToBuffer = (children: Child[], buffer: Buffer): void => {
+const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void => {
   for (let i = 0, len = children.length; i < len; i++) {
     const child = children[i]
     if (typeof child === 'string') {
@@ -86,12 +86,12 @@ export class JSXNode implements HtmlEscaped {
   }
 
   toString(): string {
-    const buffer: Buffer = ['']
+    const buffer: StringBuffer = ['']
     this.toStringToBuffer(buffer)
     return buffer[0]
   }
 
-  toStringToBuffer(buffer: Buffer): void {
+  toStringToBuffer(buffer: StringBuffer): void {
     const tag = this.tag as string
     const props = this.props
     let { children } = this
@@ -143,7 +143,7 @@ export class JSXNode implements HtmlEscaped {
 }
 
 class JSXFunctionNode extends JSXNode {
-  toStringToBuffer(buffer: Buffer): void {
+  toStringToBuffer(buffer: StringBuffer): void {
     const { children } = this
 
     const res = (this.tag as Function).call(null, {
@@ -162,7 +162,7 @@ class JSXFunctionNode extends JSXNode {
 }
 
 class JSXFragmentNode extends JSXNode {
-  toStringToBuffer(buffer: Buffer): void {
+  toStringToBuffer(buffer: StringBuffer): void {
     childrenToStringToBuffer(this.children, buffer)
   }
 }
