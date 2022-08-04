@@ -1,4 +1,11 @@
-export type Body = string | object | Record<string, string | File>
+type JsonPrimitive = boolean | number | string | null
+type JsonArray = JsonPrimitive[] | JsonObject[]
+type JsonObject = {
+  [key: string]: JsonPrimitive | JsonObject | JsonArray
+}
+export type Json = JsonPrimitive | JsonArray | JsonObject
+
+export type Body = string | Json | Record<string, string | File> | ArrayBuffer
 
 export const parseBody = async (r: Request | Response): Promise<Body> => {
   const contentType = r.headers.get('Content-Type') || ''
