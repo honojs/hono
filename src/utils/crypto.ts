@@ -26,9 +26,6 @@ export const md5 = async (data: Data) => {
 }
 
 export const createHash = async (data: Data, algorithm: Algorithm): Promise<string | null> => {
-  if (typeof data === 'object') {
-    data = JSON.stringify(data)
-  }
   if (crypto && crypto.subtle) {
     const buffer = await crypto.subtle.digest(
       {
