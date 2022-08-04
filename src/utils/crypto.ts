@@ -1,9 +1,11 @@
+import type { Json } from './body'
+
 type Algorithm = {
   name: string
   alias: string
 }
 
-type Data = string | object | boolean
+type Data = string | object | boolean | Json
 
 export const sha256 = async (data: Data) => {
   const algorithm: Algorithm = { name: 'SHA-256', alias: 'sha256' }
