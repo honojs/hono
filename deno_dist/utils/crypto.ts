@@ -3,7 +3,7 @@ type Algorithm = {
   alias: string
 }
 
-type Data = string | object | boolean
+type Data = string | boolean | number | object | ArrayBufferView | ArrayBuffer
 
 export const sha256 = async (data: Data) => {
   const algorithm: Algorithm = { name: 'SHA-256', alias: 'sha256' }
@@ -24,12 +24,23 @@ export const md5 = async (data: Data) => {
 }
 
 export const createHash = async (data: Data, algorithm: Algorithm): Promise<string | null> => {
+  let sourceBuffer: ArrayBufferView | ArrayBuffer
+
+  if (ArrayBuffer.isView(data) || data instanceof ArrayBuffer) {
+    sourceBuffer = data
+  } else {
+    if (typeof data === 'object') {
+      data = JSON.stringify(data)
+    }
+    sourceBuffer = new TextEncoder().encode(String(data))
+  }
+
   if (crypto && crypto.subtle) {
     const buffer = await crypto.subtle.digest(
       {
         name: algorithm.name,
       },
-      new TextEncoder().encode(String(data))
+      sourceBuffer
     )
     const hash = Array.prototype.map
       .call(new Uint8Array(buffer), (x) => ('00' + x.toString(16)).slice(-2))

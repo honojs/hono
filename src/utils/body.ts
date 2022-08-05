@@ -1,4 +1,4 @@
-export type Body = string | object | Record<string, string | File>
+export type Body = string | object | Record<string, string | File> | ArrayBuffer
 
 export const parseBody = async (r: Request | Response): Promise<Body> => {
   const contentType = r.headers.get('Content-Type') || ''
@@ -22,5 +22,6 @@ export const parseBody = async (r: Request | Response): Promise<Body> => {
     return data
   }
 
-  return r.arrayBuffer()
+  const arrayBuffer = await r.arrayBuffer()
+  return arrayBuffer
 }

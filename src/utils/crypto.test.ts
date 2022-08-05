@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { sha256, sha1, md5 } from './crypto'
 
 describe('crypto', () => {
@@ -16,10 +17,24 @@ describe('crypto', () => {
     expect(await sha1('炎')).toBe('d56e09ae2421b2b8a0b5ee5fdceaed663c8c9472')
     expect(await sha1('abcdedf')).not.toBe('abcdef')
   })
-  
+
   it('md5', async () => {
     expect(await md5('hono')).toBe('cf22a160789a91dd5f737cd3b2640cc2')
     expect(await md5('炎')).toBe('f620d89a5a782c22b4420acb39121be3')
     expect(await md5('abcdedf')).not.toBe('abcdef')
+  })
+
+  it('Should not be the same values - compare difference objects', async () => {
+    expect(await sha256({ foo: 'bar' })).not.toEqual(
+      await sha256({
+        bar: 'foo',
+      })
+    )
+  })
+
+  it('Should create hash for Buffer', async () => {
+    const hash = createHash('sha256').update(new Uint8Array(1)).digest('hex')
+    expect(await sha256(new Uint8Array(1))).toBe(hash)
+    expect(await sha256(new Uint8Array(1))).not.toEqual(await sha256(new Uint8Array(2)))
   })
 })
