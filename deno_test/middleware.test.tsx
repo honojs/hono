@@ -61,7 +61,7 @@ Deno.test('Serve Static middleware', async () => {
   app.all('/favicon.ico', serveStatic({ path: './deno_test/favicon.ico' }))
   const res = await app.request('http://localhost/favicon.ico')
   assertEquals(res.status, 200)
-  assertEquals(res.headers.get('Content-Type'), 'image/vnd.microsoft.icon')
+  assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
 })
 
 Deno.test('JWT Authentication middleware', async () => {
