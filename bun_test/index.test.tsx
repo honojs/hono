@@ -65,7 +65,7 @@ describe('Serve Static Middleware', () => {
     const res = await app.request(new Request('http://localhost/favicon.ico'))
     await res.arrayBuffer()
     expect(res.status).toBe(200)
-    expect(res.headers.get('Content-Type')).toBe('image/vnd.microsoft.icon')
+    expect(res.headers.get('Content-Type')).toBe('image/x-icon')
   })
 })
 
