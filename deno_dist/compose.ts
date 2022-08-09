@@ -7,6 +7,7 @@ export const compose = <C>(
   onError?: ErrorHandler,
   onNotFound?: NotFoundHandler
 ) => {
+  const middlewareLength = middleware.length
   return (context: C, next?: Function) => {
     let index = -1
     return dispatch(0)
@@ -16,7 +17,7 @@ export const compose = <C>(
       }
       let handler = middleware[i]
       index = i
-      if (i === middleware.length && next) handler = next
+      if (i === middlewareLength && next) handler = next
 
       if (!handler) {
         if (context instanceof HonoContext && context.finalized === false && onNotFound) {
