@@ -1,6 +1,5 @@
 import type { Context } from '../../context'
 import type { Next } from '../../hono'
-import { parseBody } from '../../utils/body'
 import { sha1 } from '../../utils/crypto'
 
 type ETagOptions = {
@@ -15,8 +14,7 @@ export const etag = (options: ETagOptions = { weak: false }) => {
 
     const res = c.res as Response
     const clone = res.clone()
-    const body = await parseBody(res)
-    const hash = await sha1(body)
+    const hash = await sha1(res.body || '')
 
     const etag = options.weak ? `W/"${hash}"` : `"${hash}"`
 
