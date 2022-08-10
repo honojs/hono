@@ -95,7 +95,7 @@ export class HonoContext<RequestParamKeyType extends string = string, E = Env>
 
   header(name: string, value: string): void {
     this._headers ||= {}
-    this._headers[name] = value
+    this._headers[name.toLowerCase()] = value
     if (this.finalized) {
       this.res.headers.set(name, value)
     }
@@ -123,7 +123,7 @@ export class HonoContext<RequestParamKeyType extends string = string, E = Env>
   }
 
   newResponse(data: Data | null, status: StatusCode, headers: Headers = {}): Response {
-    const _headers = { ...this._headers, ...headers }
+    const _headers = { ...this._headers }
     if (this._res) {
       this._res.headers.forEach((v, k) => {
         _headers[k] = v
@@ -131,7 +131,7 @@ export class HonoContext<RequestParamKeyType extends string = string, E = Env>
     }
     return new Response(data, {
       status: status || this._status || 200,
-      headers: _headers,
+      headers: { ..._headers, ...headers },
     })
   }
 
@@ -140,7 +140,7 @@ export class HonoContext<RequestParamKeyType extends string = string, E = Env>
   }
 
   text(text: string, status: StatusCode = this._status, headers: Headers = {}): Response {
-    headers['Content-Type'] ||= 'text/plain; charset=UTF-8'
+    headers['content-type'] = 'text/plain; charset=UTF-8'
     return this.body(text, status, headers)
   }
 
@@ -148,12 +148,12 @@ export class HonoContext<RequestParamKeyType extends string = string, E = Env>
     const body = this._pretty
       ? JSON.stringify(object, null, this._prettySpace)
       : JSON.stringify(object)
-    headers['Content-Type'] ||= 'application/json; charset=UTF-8'
+    headers['content-type'] = 'application/json; charset=UTF-8'
     return this.body(body, status, headers)
   }
 
   html(html: string, status: StatusCode = this._status, headers: Headers = {}): Response {
-    headers['Content-Type'] ||= 'text/html; charset=UTF-8'
+    headers['content-type'] = 'text/html; charset=UTF-8'
     return this.body(html, status, headers)
   }
 
@@ -170,7 +170,7 @@ export class HonoContext<RequestParamKeyType extends string = string, E = Env>
 
   cookie(name: string, value: string, opt?: CookieOptions): void {
     const cookie = serialize(name, value, opt)
-    this.header('Set-Cookie', cookie)
+    this.header('set-cookie', cookie)
   }
 
   notFound(): Response | Promise<Response> {
