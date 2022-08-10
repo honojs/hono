@@ -1019,3 +1019,21 @@ describe('Parse Body', () => {
     expect(await res.json()).toEqual({ message: 'hello' })
   })
 })
+
+describe('Both two middleware returning response', () => {
+  it('Should return correct Content-Type`', async () => {
+    const app = new Hono()
+    app.use('*', async (c, next) => {
+      await next()
+      return c.html('Foo')
+    })
+    app.get('/', (c) => {
+      return c.text('Bar')
+    })
+    const res = await app.request('http://localhost/')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Foo')
+    expect(res.headers.get('content-type')).toBe('text/html; charset=UTF-8')
+  })
+})
