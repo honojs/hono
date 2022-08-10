@@ -144,3 +144,23 @@ describe('Context', () => {
     expect(res.headers.get('foo')).toBe('bar')
   })
 })
+
+describe('Context header', () => {
+  const req = new Request('http://localhost/')
+  let c: Context
+  beforeEach(() => {
+    c = new HonoContext(req)
+  })
+  it('Should return only one content-type value', async () => {
+    c.header('Content-Type', 'foo')
+    c.header('content-type', 'foo')
+    const res = c.html('foo')
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(res.headers.get('content-type')).toBe('text/html; charset=UTF-8')
+  })
+  it('Should rewrite header values correctly', async () => {
+    c.res = c.html('foo')
+    const res = c.text('foo')
+    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=UTF-8')
+  })
+})
