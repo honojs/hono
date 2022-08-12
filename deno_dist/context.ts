@@ -105,11 +105,15 @@ export class HonoContext<RequestParamKeyType extends string = string, E = Env>
     this._status = status
   }
 
+  set<Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
+  set(key: string, value: any): void
   set(key: string, value: any): void {
     this._map ||= {}
     this._map[key] = value
   }
 
+  get<Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
+  get<T = any>(key: string): T
   get(key: string) {
     if (!this._map) {
       return undefined
