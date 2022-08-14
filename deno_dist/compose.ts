@@ -11,9 +11,10 @@ export const compose = <C>(
   return (context: C, next?: Function) => {
     let index = -1
     return dispatch(0)
+
     async function dispatch(i: number): Promise<C> {
       if (i <= index) {
-        return Promise.reject(new Error('next() called multiple times'))
+        throw new Error('next() called multiple times')
       }
       let handler = middleware[i]
       index = i
@@ -23,27 +24,41 @@ export const compose = <C>(
         if (context instanceof HonoContext && context.finalized === false && onNotFound) {
           context.res = await onNotFound(context)
         }
-        return Promise.resolve(context)
+        return context
       }
 
-      return Promise.resolve(handler(context, () => dispatch(i + 1)))
-        .then((res: Response) => {
-          // If handler return Response like `return c.text('foo')`
-          if (res && context instanceof HonoContext) {
-            context.res = res
+      let res!: Response
+      let isError: boolean = false
+
+      try {
+        if (isPromise(handler)) {
+          res = await handler(context, () => dispatch(i + 1))
+        } else {
+          res = handler(context, () => dispatch(i + 1))
+        }
+      } catch (err) {
+        if (context instanceof HonoContext && onError) {
+          if (err instanceof Error) {
+            isError = true
+            res = onError(err, context)
           }
-          return context
-        })
-        .catch((err) => {
-          if (context instanceof HonoContext && onError) {
-            if (err instanceof Error) {
-              context.res = onError(err, context)
-            }
-            return context
-          } else {
-            throw err
-          }
-        })
+        }
+        if (!res) {
+          throw err
+        }
+      }
+
+      if (res && context instanceof HonoContext && (!context.finalized || isError)) {
+        context.res = res
+      }
+      return context
     }
   }
+}
+
+function isPromise(p: Function) {
+  if (typeof p === 'function' && p.constructor.name === 'AsyncFunction') {
+    return true
+  }
+  return false
 }
