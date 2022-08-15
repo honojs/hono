@@ -59,6 +59,26 @@ describe('compose', () => {
   })
 })
 
+describe('compose with returning a promise, non-async funciton', () => {
+  const handlers: Function[] = [
+    (c: C) => {
+      return new Promise((resolve) =>
+        setTimeout(() => {
+          c.res = { message: 'new response' }
+          resolve(true)
+        }, 1)
+      )
+    },
+  ]
+
+  it('Response', async () => {
+    const c: C = { req: {}, res: {} }
+    const composed = compose<C>(handlers)
+    const context = await composed(c)
+    expect(context.res['message']).toBe('new response')
+  })
+})
+
 describe('Handler and middlewares', () => {
   const middleware: Function[] = []
 
