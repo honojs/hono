@@ -31,11 +31,8 @@ export const compose = <C>(
       let isError: boolean = false
 
       try {
-        if (isPromise(handler)) {
-          res = await handler(context, () => dispatch(i + 1))
-        } else {
-          res = handler(context, () => dispatch(i + 1))
-        }
+        const tmp = handler(context, () => dispatch(i + 1))
+        res = tmp instanceof Promise ? await tmp : tmp
       } catch (err) {
         if (context instanceof HonoContext && onError) {
           if (err instanceof Error) {
@@ -54,11 +51,4 @@ export const compose = <C>(
       return context
     }
   }
-}
-
-function isPromise(p: Function) {
-  if (typeof p === 'function' && p.constructor.name === 'AsyncFunction') {
-    return true
-  }
-  return false
 }
