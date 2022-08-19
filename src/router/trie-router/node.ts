@@ -109,15 +109,13 @@ export class Node<T> {
   private getHandlerSets(node: Node<T>, method: string, wildcard?: boolean): HandlerSet<T>[] {
     return (node.handlerSetCache[`${method}:${wildcard ? '1' : '0'}`] ||= (() => {
       const handlerSets: HandlerSet<T>[] = []
-      node.methods.map((m) => {
+      for (let i = 0, len = node.methods.length; i < len; i++) {
+        const m = node.methods[i]
         const handlerSet = m[method] || m[METHOD_NAME_ALL]
         if (handlerSet !== undefined) {
-          const hs = { ...handlerSet }
-          handlerSets.push(hs)
-          return
+          handlerSets.push(handlerSet)
         }
-      })
-
+      }
       return handlerSets
     })())
   }
@@ -149,8 +147,9 @@ export class Node<T> {
             }
             handlerSets.push(...this.getHandlerSets(nextNode, method))
             matched = true
+          } else {
+            tempNodes.push(nextNode)
           }
-          tempNodes.push(nextNode)
         }
 
         for (let k = 0, len3 = node.patterns.length; k < len3; k++) {
@@ -176,8 +175,9 @@ export class Node<T> {
             if (typeof key === 'string') {
               if (isLast === true) {
                 handlerSets.push(...this.getHandlerSets(node.children[key], method))
+              } else {
+                tempNodes.push(node.children[key])
               }
-              tempNodes.push(node.children[key])
             }
 
             // '/book/a'     => not-slug
@@ -187,6 +187,7 @@ export class Node<T> {
             if (typeof name === 'string' && !matched) {
               params[name] = part
             }
+            break
           }
         }
       }
@@ -194,7 +195,9 @@ export class Node<T> {
       curNodes = tempNodes
     }
 
-    if (handlerSets.length <= 0) return null
+    const len = handlerSets.length
+    if (len === 0) return null
+    if (len === 1) return { handlers: [handlerSets[0].handler], params }
 
     const handlers = handlerSets
       .sort((a, b) => {
