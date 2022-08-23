@@ -16,7 +16,7 @@ declare global {
   }
 }
 
-export type { Handler, Next } from './hono.ts'
+export type { Handler, Next, ContextVariableMap } from './hono.ts'
 export type { Context } from './context.ts'
 export { Hono }
 
