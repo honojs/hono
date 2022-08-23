@@ -9,13 +9,30 @@ import { getPathFromURL, mergePath } from './utils/url'
 
 export interface ContextVariableMap {}
 
-type Env = Record<string, any>
-export type Handler<RequestParamKeyType extends string = string, E = Env> = (
+export type Bindings = Record<string, any> // For Cloudflare Workers
+export type Variables = Record<string, any> // For c.set/c.get functions
+export type Environment = {
+  Bindings: Bindings
+  Variables: Variables
+}
+
+export type Handler<
+  RequestParamKeyType extends string = string,
+  E extends Partial<Environment> = Environment
+> = (
   c: Context<RequestParamKeyType, E>,
   next: Next
 ) => Response | Promise<Response> | Promise<void> | Promise<Response | undefined>
-export type NotFoundHandler<E = Env> = (c: Context<string, E>) => Response | Promise<Response>
-export type ErrorHandler<E = Env> = (err: Error, c: Context<string, E>) => Response
+
+export type NotFoundHandler<E extends Partial<Environment> = Environment> = (
+  c: Context<string, E>
+) => Response | Promise<Response>
+
+export type ErrorHandler<E extends Partial<Environment> = Environment> = (
+  err: Error,
+  c: Context<string, E>
+) => Response
+
 export type Next = () => Promise<void>
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -31,7 +48,11 @@ type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 
-interface HandlerInterface<T extends string, E extends Env = Env, U = Hono<E, T>> {
+interface HandlerInterface<
+  T extends string,
+  E extends Partial<Environment> = Environment,
+  U = Hono<E, T>
+> {
   // app.get('/', handler, handler...)
   <Path extends string>(
     path: Path,
@@ -49,24 +70,23 @@ const methods = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch'] as 
 type Methods = typeof methods[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
 function defineDynamicClass(): {
-  new <E extends Env, T extends string, U>(): {
+  new <E extends Partial<Environment> = Environment, T extends string = string, U = Hono>(): {
     [K in Methods]: HandlerInterface<T, E, U>
   }
 } {
   return class {} as any
 }
 
-interface Route<E extends Env> {
+interface Route<E extends Partial<Environment> = Environment> {
   path: string
   method: string
   handler: Handler<string, E>
 }
 
-export class Hono<E extends Env = Env, P extends string = '/'> extends defineDynamicClass()<
-  E,
-  P,
-  Hono<E, P>
-> {
+export class Hono<
+  E extends { Bindings?: Bindings; Variables?: Variables } = Environment,
+  P extends string = '/'
+> extends defineDynamicClass()<E, P, Hono<E, P>> {
   readonly router: Router<Handler<string, E>> = new TrieRouter()
   readonly strict: boolean = true // strict routing - default is true
   private _tempPath: string = ''
@@ -139,13 +159,13 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
     return this
   }
 
-  onError(handler: ErrorHandler<E>): Hono<E, P> {
+  onError(handler: ErrorHandler): Hono<E, P> {
     this.errorHandler = handler as ErrorHandler
     return this
   }
 
-  notFound(handler: NotFoundHandler<E>): Hono<E, P> {
-    this.notFoundHandler = handler as NotFoundHandler
+  notFound(handler: NotFoundHandler): Hono<E, P> {
+    this.notFoundHandler = handler
     return this
   }
 
@@ -166,7 +186,7 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
   private async dispatch(
     request: Request,
     eventOrExecutionCtx?: ExecutionContext | FetchEvent,
-    env?: E
+    env?: E['Bindings']
   ): Promise<Response> {
     const path = getPathFromURL(request.url, this.strict)
     const method = request.method
@@ -178,8 +198,12 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
 
     const c = new HonoContext<string, E>(request, env, eventOrExecutionCtx, this.notFoundHandler)
 
-    const composed = compose<HonoContext>(handlers, this.errorHandler, this.notFoundHandler)
-    let context: HonoContext
+    const composed = compose<HonoContext<string, E>>(
+      handlers,
+      this.errorHandler,
+      this.notFoundHandler
+    )
+    let context: HonoContext<string, E>
     try {
       context = await composed(c)
       if (!context.finalized) {
@@ -201,8 +225,8 @@ export class Hono<E extends Env = Env, P extends string = '/'> extends defineDyn
     return this.dispatch(event.request, event)
   }
 
-  fetch = (request: Request, env?: E, executionCtx?: ExecutionContext) => {
-    return this.dispatch(request, executionCtx, env)
+  fetch = (request: Request, Environment?: E['Bindings'], executionCtx?: ExecutionContext) => {
+    return this.dispatch(request, executionCtx, Environment)
   }
 
   request(input: RequestInfo, requestInit?: RequestInit): Promise<Response> {
