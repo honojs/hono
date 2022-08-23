@@ -1,4 +1,4 @@
-import type { ContextVariableMap, NotFoundHandler } from './hono'
+import type { Environment, NotFoundHandler, ContextVariableMap, Bindings } from './hono'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'
@@ -6,11 +6,13 @@ import { isAbsoluteURL } from './utils/url'
 
 type Headers = Record<string, string>
 export type Data = string | ArrayBuffer | ReadableStream
-type Env = Record<string, any>
 
-export interface Context<RequestParamKeyType extends string = string, E = Env> {
+export interface Context<
+  RequestParamKeyType extends string = string,
+  E extends Partial<Environment> = Environment
+> {
   req: Request<RequestParamKeyType>
-  env: E
+  env: E['Bindings'] | Bindings
   event: FetchEvent
   executionCtx: ExecutionContext
   finalized: boolean
@@ -21,10 +23,12 @@ export interface Context<RequestParamKeyType extends string = string, E = Env> {
   status: (status: StatusCode) => void
   set: {
     <Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
+    <Key extends keyof E['Variables']>(key: Key, value: E['Variables'][Key]): void
     (key: string, value: any): void
   }
   get: {
     <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
+    <Key extends keyof E['Variables']>(key: Key): E['Variables'][Key]
     <T = any>(key: string): T
   }
   pretty: (prettyJSON: boolean, space?: number) => void
@@ -38,11 +42,13 @@ export interface Context<RequestParamKeyType extends string = string, E = Env> {
   notFound: () => Response | Promise<Response>
 }
 
-export class HonoContext<RequestParamKeyType extends string = string, E = Env>
-  implements Context<RequestParamKeyType, E>
+export class HonoContext<
+  RequestParamKeyType extends string = string,
+  E extends Partial<Environment> = Environment
+> implements Context<RequestParamKeyType, E>
 {
   req: Request<RequestParamKeyType>
-  env: E
+  env: Environment['Bindings']
   finalized: boolean
 
   _status: StatusCode = 200
@@ -56,13 +62,13 @@ export class HonoContext<RequestParamKeyType extends string = string, E = Env>
 
   constructor(
     req: Request,
-    env: E | undefined = undefined,
+    env: E['Bindings'] | undefined = undefined,
     executionCtx: FetchEvent | ExecutionContext | undefined = undefined,
     notFoundHandler: NotFoundHandler = () => new Response()
   ) {
     this._executionCtx = executionCtx
     this.req = req
-    this.env = env ? env : ({} as E)
+    this.env = env ? env : ({} as Bindings)
 
     this.notFoundHandler = notFoundHandler
     this.finalized = false
@@ -106,6 +112,7 @@ export class HonoContext<RequestParamKeyType extends string = string, E = Env>
   }
 
   set<Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
+  set<Key extends keyof E['Variables']>(key: Key, value: E['Variables'][Key]): void
   set(key: string, value: any): void
   set(key: string, value: any): void {
     this._map ||= {}
@@ -113,6 +120,7 @@ export class HonoContext<RequestParamKeyType extends string = string, E = Env>
   }
 
   get<Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
+  get<Key extends keyof E['Variables']>(key: Key): E['Variables'][Key]
   get<T = any>(key: string): T
   get(key: string) {
     if (!this._map) {
