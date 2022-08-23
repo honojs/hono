@@ -186,7 +186,7 @@ export class Hono<
   private async dispatch(
     request: Request,
     eventOrExecutionCtx?: ExecutionContext | FetchEvent,
-    Environment?: E['Bindings']
+    env?: E['Bindings']
   ): Promise<Response> {
     const path = getPathFromURL(request.url, this.strict)
     const method = request.method
@@ -196,12 +196,7 @@ export class Hono<
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
-    const c = new HonoContext<string, E>(
-      request,
-      Environment,
-      eventOrExecutionCtx,
-      this.notFoundHandler
-    )
+    const c = new HonoContext<string, E>(request, env, eventOrExecutionCtx, this.notFoundHandler)
 
     const composed = compose<HonoContext<string, E>>(
       handlers,
