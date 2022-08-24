@@ -1,5 +1,4 @@
 import { parseBody } from './utils/body.ts'
-import type { Body } from './utils/body.ts'
 import type { Cookie } from './utils/cookie.ts'
 import { parse } from './utils/cookie.ts'
 
@@ -26,9 +25,9 @@ declare global {
       (name: string): string
       (): Cookie
     }
-    parsedBody?: Promise<Body>
+    parsedBody?: Promise<any>
     parseBody: {
-      (): Promise<Body>
+      <T = any>(): Promise<T>
     }
   }
 }
@@ -99,10 +98,14 @@ export function extendRequestPrototype() {
     }
   } as InstanceType<typeof Request>['cookie']
 
-  Request.prototype.parseBody = function (this: Request) {
+  Request.prototype.parseBody = function <T = any>(this: Request): Promise<T> {
+    let body: Promise<T>
     if (!this.parsedBody) {
-      this.parsedBody = parseBody(this)
+      body = parseBody<T>(this)
+      this.parsedBody = body
+    } else {
+      body = this.parsedBody
     }
-    return this.parsedBody
+    return body
   } as InstanceType<typeof Request>['parseBody']
 }
