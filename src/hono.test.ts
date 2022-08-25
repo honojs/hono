@@ -963,6 +963,10 @@ describe('Cookie', () => {
 describe('Parse Body', () => {
   const app = new Hono()
 
+  type Payload = {
+    message: string
+  }
+
   app.post('/json', async (c) => {
     return c.json(await c.req.parseBody(), 200)
   })
@@ -974,7 +978,7 @@ describe('Parse Body', () => {
   })
 
   it('POST with JSON', async () => {
-    const payload = { message: 'hello hono' }
+    const payload: Payload = { message: 'hello hono' }
     const req = new Request('http://localhost/json', {
       method: 'POST',
       body: JSON.stringify(payload),
@@ -983,8 +987,9 @@ describe('Parse Body', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await req.parseBody()).toEqual(payload)
-    expect(await res.json()).toEqual(payload)
+    const body = await req.parseBody<Payload>()
+    expect(body.message).toBe('hello hono')
+    expect(body).toEqual(payload)
   })
 
   it('POST with text', async () => {
