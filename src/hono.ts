@@ -49,19 +49,19 @@ type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   : ParamKey<Path>
 
 interface HandlerInterface<
-  T extends string,
+  T extends string = string,
   E extends Partial<Environment> = Environment,
   U = Hono<E, T>
 > {
   // app.get('/', handler, handler...)
-  <Path extends string>(
+  <Path extends string, Env extends Partial<Environment> = E>(
     path: Path,
-    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E>[]
+    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, Env>[]
   ): U
   (path: string, ...handlers: Handler<string, E>[]): U
   // app.get(handler...)
-  <Path extends string>(
-    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E>[]
+  <Path extends string, Env extends Partial<Environment> = E>(
+    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, Env>[]
   ): U
   (...handlers: Handler<string, E>[]): U
 }
@@ -104,7 +104,7 @@ export class Hono<
       this[method] = <Path extends string = ''>(
         args1: Path | Handler<ParamKeys<Path>, E>,
         ...args: [Handler<ParamKeys<Path>, E>]
-      ) => {
+      ): this => {
         if (typeof args1 === 'string') {
           this.path = args1
         } else {
@@ -145,8 +145,13 @@ export class Hono<
     return this
   }
 
-  use(path: string, ...middleware: Handler<string, E>[]): Hono<E, P>
-  use(...middleware: Handler<string, E>[]): Hono<E, P>
+  use<Path extends string = string, Env extends Partial<Environment> = E>(
+    ...middleware: Handler<Path, Env>[]
+  ): Hono<Env, Path>
+  use<Path extends string = string, Env extends Partial<Environment> = E>(
+    arg1: string,
+    ...middleware: Handler<Path, Env>[]
+  ): Hono<Env, Path>
   use(arg1: string | Handler<string, E>, ...handlers: Handler<string, E>[]): Hono<E, P> {
     if (typeof arg1 === 'string') {
       this.path = arg1
@@ -160,7 +165,7 @@ export class Hono<
   }
 
   onError(handler: ErrorHandler): Hono<E, P> {
-    this.errorHandler = handler as ErrorHandler
+    this.errorHandler = handler
     return this
   }
 
@@ -213,7 +218,7 @@ export class Hono<
       }
     } catch (err) {
       if (err instanceof Error) {
-        return this.errorHandler(err, c)
+        return this.errorHandler(err, c as Context<string, Environment>)
       }
       throw err
     }
