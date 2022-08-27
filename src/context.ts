@@ -12,7 +12,7 @@ export interface Context<
   E extends Partial<Environment> = Environment
 > {
   req: Request<RequestParamKeyType>
-  env: E['Bindings'] | Bindings
+  env: E['Bindings']
   event: FetchEvent
   executionCtx: ExecutionContext
   finalized: boolean
@@ -48,7 +48,7 @@ export class HonoContext<
 > implements Context<RequestParamKeyType, E>
 {
   req: Request<RequestParamKeyType>
-  env: Environment['Bindings']
+  env: E['Bindings']
   finalized: boolean
 
   _status: StatusCode = 200
