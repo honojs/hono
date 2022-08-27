@@ -25,9 +25,9 @@ declare global {
       (name: string): string
       (): Cookie
     }
-    parsedBody?: Promise<any>
+    parsedBody?: Promise<Record<string, string | File>>
     parseBody: {
-      <T = any>(): Promise<T>
+      (): Promise<Record<string, string | File>>
     }
   }
 }
@@ -98,10 +98,10 @@ export function extendRequestPrototype() {
     }
   } as InstanceType<typeof Request>['cookie']
 
-  Request.prototype.parseBody = function <T = any>(this: Request): Promise<T> {
-    let body: Promise<T>
+  Request.prototype.parseBody = function (this: Request): Promise<Record<string, string | File>> {
+    let body: Promise<Record<string, string | File>>
     if (!this.parsedBody) {
-      body = parseBody<T>(this)
+      body = parseBody(this)
       this.parsedBody = body
     } else {
       body = this.parsedBody
