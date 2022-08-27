@@ -1,5 +1,53 @@
 # Migration Guide
 
+## v2.0.9 to v2.1.0
+
+There are two BREAKING CHANGES.
+
+### `c.req.parseBody` does not parse JSON, text, and ArrayBuffer
+
+**DO NOT** use `c.req.parseBody` for parsing **JSON**, **text**, or **ArrayBuffer**.
+
+`c.req.parseBody` now only parses FormData with content type `multipart/form` or `application/x-www-form-urlencoded`. If you want to parse JSON, text, or ArrayBuffer, use `c.req.json()`, `c.req.text()`, or `c.req.arrayBuffer()`.
+
+```ts
+// `multipart/form` or `application/x-www-form-urlencoded`
+const data = await c.req.parseBody()
+
+const jsonData = await c.req.json() // for JSON body
+const text = await c.req.text() // for text body
+const arrayBuffer = await c.req.arrayBuffer() // for ArrayBuffer
+```
+
+### The arguments of Generics for `new Hono` have been changed
+
+Now, the constructor of "Hono" receives `Variables` and `Bindings`.
+"Bindings" is for types of environment variables for Cloudflare Workers. "Variables" is for types of `c.set`/`c.get`
+
+```ts
+type Bindings = {
+  KV: KVNamespace
+  Storage: R2Bucket
+}
+
+type WebClient = {
+  user: string
+  pass: string
+}
+
+type Variables = {
+  client: WebClient
+}
+
+const app = new Hono<{ Variables: Variables; Bindings: Bindings }>()
+
+app.get('/foo', (c) => {
+  const client = c.get('client') // client is WebClient
+  const kv = c.env.KV // kv is KVNamespace
+  //...
+})
+```
+
 ## v1.6.4 to v2.0.0
 
 There are many BREAKING CHANGES. Please follow instructions below.
