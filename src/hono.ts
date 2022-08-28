@@ -84,7 +84,7 @@ interface Route<E extends Partial<Environment> = Environment> {
 }
 
 export class Hono<
-  E extends { Bindings?: Bindings; Variables?: Variables } = Environment,
+  E extends Partial<Environment> = Environment,
   P extends string = '/'
 > extends defineDynamicClass()<E, P, Hono<E, P>> {
   readonly router: Router<Handler<string, E>> = new TrieRouter()
