@@ -9,7 +9,7 @@ export type Data = string | ArrayBuffer | ReadableStream
 
 export interface Context<
   RequestParamKeyType extends string = string,
-  E extends Partial<Environment> = Environment
+  E extends Partial<Environment> = any
 > {
   req: Request<RequestParamKeyType>
   env: E['Bindings']
@@ -68,7 +68,7 @@ export class HonoContext<
   ) {
     this._executionCtx = executionCtx
     this.req = req
-    this.env = env ? env : ({} as Bindings)
+    this.env = env || ({} as Bindings)
 
     this.notFoundHandler = notFoundHandler
     this.finalized = false
