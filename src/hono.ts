@@ -53,17 +53,17 @@ interface HandlerInterface<
   E extends Partial<Environment> = Environment,
   U = Hono<E, T>
 > {
+  // app.get(handler...)
+  <Path extends string, Env extends Partial<Environment> = E>(
+    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, Env>[]
+  ): U
+  (...handlers: Handler<string, E>[]): U
   // app.get('/', handler, handler...)
   <Path extends string, Env extends Partial<Environment> = E>(
     path: Path,
     ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, Env>[]
   ): U
   (path: string, ...handlers: Handler<string, E>[]): U
-  // app.get(handler...)
-  <Path extends string, Env extends Partial<Environment> = E>(
-    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, Env>[]
-  ): U
-  (...handlers: Handler<string, E>[]): U
 }
 
 const methods = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch'] as const
