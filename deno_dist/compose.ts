@@ -26,7 +26,7 @@ export const compose = <C>(middleware: Function[], onNotFound?: NotFoundHandler)
       const tmp = handler(context, () => dispatch(i + 1))
       const res = tmp instanceof Promise ? await tmp : tmp
 
-      if (res && context instanceof HonoContext && !context.finalized) {
+      if (res && context instanceof HonoContext && context.finalized === false) {
         context.res = res
       }
       return context
