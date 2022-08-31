@@ -1,12 +1,8 @@
 import { HonoContext } from './context'
-import type { ErrorHandler, NotFoundHandler } from './hono'
+import type { NotFoundHandler } from './hono'
 
 // Based on the code in the MIT licensed `koa-compose` package.
-export const compose = <C>(
-  middleware: Function[],
-  onError?: ErrorHandler,
-  onNotFound?: NotFoundHandler
-) => {
+export const compose = <C>(middleware: Function[], onNotFound?: NotFoundHandler) => {
   const middlewareLength = middleware.length
   return (context: C, next?: Function) => {
     let index = -1
@@ -27,25 +23,10 @@ export const compose = <C>(
         return context
       }
 
-      let res!: Response
-      let isError: boolean = false
+      const tmp = handler(context, () => dispatch(i + 1))
+      const res = tmp instanceof Promise ? await tmp : tmp
 
-      try {
-        const tmp = handler(context, () => dispatch(i + 1))
-        res = tmp instanceof Promise ? await tmp : tmp
-      } catch (err) {
-        if (context instanceof HonoContext && onError) {
-          if (err instanceof Error) {
-            isError = true
-            res = onError(err, context)
-          }
-        }
-        if (!res) {
-          throw err
-        }
-      }
-
-      if (res && context instanceof HonoContext && (!context.finalized || isError)) {
+      if (res && context instanceof HonoContext && !context.finalized) {
         context.res = res
       }
       return context

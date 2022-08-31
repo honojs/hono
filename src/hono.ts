@@ -203,11 +203,7 @@ export class Hono<
 
     const c = new HonoContext<string, E>(request, env, eventOrExecutionCtx, this.notFoundHandler)
 
-    const composed = compose<HonoContext<string, E>>(
-      handlers,
-      this.errorHandler,
-      this.notFoundHandler
-    )
+    const composed = compose<HonoContext<string, E>>(handlers, this.notFoundHandler)
     let context: HonoContext<string, E>
     try {
       context = await composed(c)

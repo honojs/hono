@@ -144,9 +144,6 @@ describe('compose with Context - 404 not found', () => {
 
   const req = new Request('http://localhost/')
   const c: Context = new HonoContext(req)
-  const onError = (_error: Error, c: Context) => {
-    return c.text('onError', 500)
-  }
   const onNotFound = (c: Context) => {
     return c.text('onNotFound', 404)
   }
@@ -157,7 +154,7 @@ describe('compose with Context - 404 not found', () => {
   middleware.push(mHandler)
 
   it('Should return 404 Response', async () => {
-    const composed = compose<Context>(middleware, onError, onNotFound)
+    const composed = compose<Context>(middleware, onNotFound)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(404)
@@ -171,9 +168,6 @@ describe('compose with Context - 401 not authorized', () => {
 
   const req = new Request('http://localhost/')
   const c: Context = new HonoContext(req)
-  const onError = (_error: Error, c: Context) => {
-    return c.text('onError', 500)
-  }
   const handler = (c: Context, _next: Function) => {
     return c.text('Hello')
   }
@@ -186,7 +180,7 @@ describe('compose with Context - 401 not authorized', () => {
   middleware.push(handler)
 
   it('Should return 401 Response', async () => {
-    const composed = compose<Context>(middleware, onError)
+    const composed = compose<Context>(middleware)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(401)
@@ -200,9 +194,6 @@ describe('compose with Context - next() below', () => {
 
   const req = new Request('http://localhost/')
   const c: Context = new HonoContext(req)
-  const onError = (_error: Error, c: Context) => {
-    return c.text('onError', 500)
-  }
   const handler = (c: Context) => {
     const message = c.req.header('x-custom') || 'blank'
     return c.text(message)
@@ -216,7 +207,7 @@ describe('compose with Context - next() below', () => {
   middleware.push(handler)
 
   it('Should return 200 Response', async () => {
-    const composed = compose<Context>(middleware, onError)
+    const composed = compose<Context>(middleware)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(200)
@@ -230,9 +221,6 @@ describe('compose with Context - 500 error', () => {
 
   const req = new Request('http://localhost/')
   const c: Context = new HonoContext(req)
-  const onError = (_error: Error, c: Context) => {
-    return c.text('onError', 500)
-  }
 
   it('Error on handler', async () => {
     const handler = () => {
@@ -240,36 +228,20 @@ describe('compose with Context - 500 error', () => {
     }
 
     const mHandler = async (_c: Context, next: Function) => {
-      await next()
+      try {
+        await next()
+      } catch {
+        return c.text('onError', 500)
+      }
     }
 
     middleware.push(mHandler)
     middleware.push(handler)
 
-    const composed = compose<Context>(middleware, onError)
+    const composed = compose<Context>(middleware)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(500)
-    expect(await context.res.text()).toBe('onError')
-    expect(context.finalized).toBe(true)
-  })
-
-  it('Error on middleware', async () => {
-    const handler = (c: Context) => {
-      return c.text('OK')
-    }
-
-    const mHandler = async () => {
-      throw new Error()
-    }
-
-    middleware.push(mHandler)
-    middleware.push(handler)
-
-    const composed = compose<Context>(middleware, onError)
-    const context = await composed(c)
-    expect(c.res).not.toBeNull()
-    expect(c.res.status).toBe(500)
     expect(await context.res.text()).toBe('onError')
     expect(context.finalized).toBe(true)
   })
@@ -299,10 +271,6 @@ describe('compose with Context - 500 error', () => {
 describe('compose with Context - not finalized', () => {
   const req = new Request('http://localhost/')
   const c: Context = new HonoContext(req)
-
-  const onError = (_error: Error, c: Context) => {
-    return c.text('onError', 500)
-  }
   const onNotFound = (c: Context) => {
     return c.text('onNotFound', 404)
   }
@@ -316,7 +284,7 @@ describe('compose with Context - not finalized', () => {
 
     middleware.push(mHandler)
     middleware.push(mHandler2)
-    const composed = compose<Context>(middleware, onError, onNotFound)
+    const composed = compose<Context>(middleware, onNotFound)
     const context = await composed(c)
     expect(context.finalized).toBe(false)
   })
@@ -330,7 +298,7 @@ describe('compose with Context - not finalized', () => {
     middleware2.push(mHandler3)
     middleware2.push(handler)
 
-    const composed = compose<Context>(middleware2, onError, onNotFound)
+    const composed = compose<Context>(middleware2, onNotFound)
     const context = await composed(c)
     expect(context.finalized).toBe(false)
   })
