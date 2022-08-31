@@ -554,6 +554,29 @@ describe('Error handle', () => {
   })
 })
 
+describe('Error handling in middleware', () => {
+  const app = new Hono()
+
+  app.get('/handle-error-in-middleware', async (c, next) => {
+    try {
+      await next()
+    } catch {
+      c.res = c.text('Handle the error in middleware', 500)
+    }
+  })
+
+  app.get('/handle-error-in-middleware', () => {
+    console.log('throw new Error')
+    throw new Error('This is Error')
+  })
+
+  it('Should handle the error in middleware', async () => {
+    const res = await app.request('https://example.com/handle-error-in-middleware')
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe('Handle the error in middleware')
+  })
+})
+
 describe('Request methods with custom middleware', () => {
   const app = new Hono()
 
