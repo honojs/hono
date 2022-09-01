@@ -199,9 +199,26 @@ export class Hono<
     const result = this.matchRoute(method, path)
     request.paramData = result?.params
 
-    const handlers = result ? result.handlers : [this.notFoundHandler]
-
     const c = new HonoContext<string, E>(request, env, eventOrExecutionCtx, this.notFoundHandler)
+
+    // Do not `compose` if it has only one handler
+    if (result && result.handlers.length === 1) {
+      const handler = result.handlers[0]
+      try {
+        const response = handler(c, async () => {})
+        if (response) {
+          if (response instanceof Promise) {
+            const awaited = await response
+            if (awaited) return awaited
+          } else {
+            return response
+          }
+        }
+        // Do nothing
+      } catch {}
+    }
+
+    const handlers = result ? result.handlers : [this.notFoundHandler]
 
     const composed = compose<HonoContext<string, E>>(handlers, this.notFoundHandler)
     let context: HonoContext<string, E>
