@@ -35,6 +35,8 @@ export type ErrorHandler<E extends Partial<Environment> = Environment> = (
 
 export type Next = () => Promise<void>
 
+export const defaultNotFoundMessage = '404 Not Found'
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer _Pattern}`
   ? Name
@@ -123,7 +125,7 @@ export class Hono<
   }
 
   private notFoundHandler: NotFoundHandler = (c: Context) => {
-    const message = '404 Not Found'
+    const message = defaultNotFoundMessage
     return c.text(message, 404)
   }
 
@@ -214,6 +216,7 @@ export class Hono<
             return response
           }
         }
+        return this.notFoundHandler(c as Context)
         // Do nothing
       } catch {}
     }
