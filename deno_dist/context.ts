@@ -1,4 +1,5 @@
 import type { Environment, NotFoundHandler, ContextVariableMap, Bindings } from './hono.ts'
+import { defaultNotFoundMessage } from './hono.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
 import type { StatusCode } from './utils/http-status.ts'
@@ -91,7 +92,7 @@ export class HonoContext<
   }
 
   get res(): Response {
-    return (this._res ||= new Response())
+    return (this._res ||= new Response(defaultNotFoundMessage, { status: 404 }))
   }
 
   set res(_res: Response) {
