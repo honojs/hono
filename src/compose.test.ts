@@ -8,7 +8,10 @@ extendRequestPrototype()
 type C = {
   req: Record<string, string>
   res: Record<string, string>
+  finalized: boolean
 }
+
+class ExpectedError extends Error {}
 
 describe('compose', () => {
   const middleware: Function[] = []
@@ -41,7 +44,7 @@ describe('compose', () => {
   middleware.push(handler)
 
   it('Request', async () => {
-    const c: C = { req: {}, res: {} }
+    const c: C = { req: {}, res: {}, finalized: false }
     const composed = compose<C>(middleware)
     const context = await composed(c)
     expect(context.req['log']).not.toBeNull()
@@ -49,7 +52,7 @@ describe('compose', () => {
     expect(context.req['xxx']).toBe('yyy')
   })
   it('Response', async () => {
-    const c: C = { req: {}, res: {} }
+    const c: C = { req: {}, res: {}, finalized: false }
     const composed = compose<C>(middleware)
     const context = await composed(c)
     expect(context.res['headers']).not.toBeNull()
@@ -61,18 +64,17 @@ describe('compose', () => {
 
 describe('compose with returning a promise, non-async funciton', () => {
   const handlers: Function[] = [
-    (c: C) => {
+    () => {
       return new Promise((resolve) =>
         setTimeout(() => {
-          c.res = { message: 'new response' }
-          resolve(true)
+          resolve({ message: 'new response' })
         }, 1)
       )
     },
   ]
 
   it('Response', async () => {
-    const c: C = { req: {}, res: {} }
+    const c: C = { req: {}, res: {}, finalized: false }
     const composed = compose<C>(handlers)
     const context = await composed(c)
     expect(context.res['message']).toBe('new response')
@@ -247,7 +249,7 @@ describe('compose with Context - 500 error', () => {
   })
 
   it('Run all the middlewares', async () => {
-    const ctx: C = { req: {}, res: {} }
+    const ctx: C = { req: {}, res: {}, finalized: false }
     const stack: number[] = []
     const middlewares = [
       async (_ctx: C, next: Function) => {
@@ -338,7 +340,7 @@ describe('Compose', function () {
       arr.push(4)
     })
 
-    await compose(stack)({})
+    await compose(stack)({ res: null, finalized: false })
     expect(called).toEqual([true, true, true])
     expect(arr).toEqual([1, 2, 3, 4, 5, 6])
   })
@@ -369,12 +371,12 @@ describe('Compose', function () {
       arr.push(4)
     })
 
-    await compose(stack)({})
+    await compose(stack)({ res: null, finalized: false })
     expect(called).toEqual([true, true])
     expect(arr).toEqual([1, 2, 6])
   })
 
-  it('should be able to be called twice', () => {
+  it('should be able to be called twice', async () => {
     type C = {
       arr: number[]
     }
@@ -399,21 +401,19 @@ describe('Compose', function () {
     })
 
     const fn = compose(stack)
-    const ctx1 = { arr: [] as number[] }
-    const ctx2 = { arr: [] as number[] }
+    const ctx1 = { arr: [] as number[], res: null, finalized: false }
+    const ctx2 = { arr: [] as number[], res: null, finalized: false }
     const out = [1, 2, 3, 4, 5, 6]
 
-    return fn(ctx1)
-      .then(() => {
-        expect(out).toEqual(ctx1.arr)
-        return fn(ctx2)
-      })
-      .then(() => {
-        expect(out).toEqual(ctx2.arr)
-      })
+    await fn(ctx1)
+
+    expect(out).toEqual(ctx1.arr)
+    await fn(ctx2)
+
+    expect(out).toEqual(ctx2.arr)
   })
 
-  it('should create next functions that return a Promise', function () {
+  it('should create next functions that return a Promise', async () => {
     const stack: any[] = []
     const arr: any[] = []
     for (let i = 0; i < 5; i++) {
@@ -422,15 +422,15 @@ describe('Compose', function () {
       })
     }
 
-    compose(stack)({})
+    await compose(stack)({ res: null, finalized: false })
 
     for (const next of arr) {
       expect(isPromise(next)).toBe(true)
     }
   })
 
-  it('should work with 0 middleware', function () {
-    return compose([])({})
+  it('should work with 0 middleware', async () => {
+    await compose([])({ res: null, finalized: false })
   })
 
   it('should work when yielding at the end of the stack', async () => {
@@ -442,29 +442,27 @@ describe('Compose', function () {
       called = true
     })
 
-    await compose(stack)({})
+    await compose(stack)({ res: null, finalized: false })
     expect(called).toBe(true)
   })
 
-  it('should reject on errors in middleware', () => {
+  it('should reject on errors in middleware', async () => {
     const stack = []
 
     stack.push(() => {
-      throw new Error()
+      throw new ExpectedError()
     })
 
-    return compose(stack)({}).then(
-      () => {
-        throw new Error('promise was not rejected')
-      },
-      (e) => {
-        expect(e).toBeInstanceOf(Error)
-      }
-    )
+    try {
+      await compose(stack)({ res: null, finalized: false })
+      throw new Error('promise was not rejected')
+    } catch (e) {
+      expect(e).toBeInstanceOf(ExpectedError)
+    }
   })
 
-  it('should keep the context', () => {
-    const ctx = {}
+  it('should keep the context', async () => {
+    const ctx = { res: null, finalized: false }
 
     const stack = []
 
@@ -483,7 +481,7 @@ describe('Compose', function () {
       expect(ctx2).toEqual(ctx)
     })
 
-    return compose(stack)(ctx)
+    await compose(stack)(ctx)
   })
 
   it('should catch downstream errors', async () => {
@@ -507,42 +505,39 @@ describe('Compose', function () {
       throw new Error()
     })
 
-    await compose(stack)({})
+    await compose(stack)({ res: null, finalized: false })
     expect(arr).toEqual([1, 6, 4, 2, 3])
   })
 
-  it('should compose w/ next', () => {
+  it('should compose w/ next', async () => {
     let called = false
 
-    return compose([])({}, async () => {
+    await compose([])({ res: null, finalized: false }, async () => {
       called = true
-    }).then(function () {
-      expect(called).toBe(true)
     })
+    expect(called).toBe(true)
   })
 
-  it('should handle errors in wrapped non-async functions', () => {
+  it('should handle errors in wrapped non-async functions', async () => {
     const stack = []
 
     stack.push(function () {
-      throw new Error()
+      throw new ExpectedError()
     })
 
-    return compose(stack)({}).then(
-      () => {
-        throw new Error('promise was not rejected')
-      },
-      (e) => {
-        expect(e).toBeInstanceOf(Error)
-      }
-    )
+    try {
+      await compose(stack)({ res: null, finalized: false })
+      throw new Error('promise was not rejected')
+    } catch (e) {
+      expect(e).toBeInstanceOf(ExpectedError)
+    }
   })
 
   // https://github.com/koajs/compose/pull/27#issuecomment-143109739
-  it('should compose w/ other compositions', () => {
+  it('should compose w/ other compositions', async () => {
     const called: number[] = []
 
-    return compose([
+    await compose([
       compose([
         (_ctx: C, next: Function) => {
           called.push(1)
@@ -557,28 +552,28 @@ describe('Compose', function () {
         called.push(3)
         return next()
       },
-    ])({}).then(() => expect(called).toEqual([1, 2, 3]))
+    ])({ res: null, finalized: false })
+
+    expect(called).toEqual([1, 2, 3])
   })
 
-  it('should throw if next() is called multiple times', () => {
-    return compose([
-      async (_ctx: C, next: Function) => {
-        await next()
-        await next()
-      },
-    ])({}).then(
-      () => {
-        throw new Error('boom')
-      },
-      (err) => {
-        expect(/multiple times/.test(err.message)).toBe(true)
-      }
-    )
+  it('should throw if next() is called multiple times', async () => {
+    try {
+      await compose([
+        async (_ctx: C, next: Function) => {
+          await next()
+          await next()
+        },
+      ])({ res: null, finalized: false })
+      throw new Error('boom')
+    } catch (err) {
+      expect(err instanceof Error && /multiple times/.test(err.message)).toBe(true)
+    }
   })
 
-  it('should return a valid middleware', () => {
+  it('should return a valid middleware', async () => {
     let val = 0
-    return compose([
+    await compose([
       compose([
         (_ctx: C, next: Function) => {
           val++
@@ -593,14 +588,16 @@ describe('Compose', function () {
         val++
         return next()
       },
-    ])({}).then(function () {
-      expect(val).toEqual(3)
-    })
+    ])({ res: null, finalized: false })
+
+    expect(val).toEqual(3)
   })
 
   it('should return last return value', async () => {
     type C = {
       val: number
+      finalized: boolean
+      res: any
     }
     const stack = []
 
@@ -616,8 +613,8 @@ describe('Compose', function () {
       expect(ctx.val).toEqual(2)
     })
 
-    const res = await compose(stack)({ val: 0 })
-    expect(res).toEqual({ val: 1 })
+    const res = await compose<C>(stack)({ val: 0, res: null, finalized: false })
+    expect(res.val).toEqual(1)
   })
 
   it('should not affect the original middleware array', () => {
@@ -642,6 +639,8 @@ describe('Compose', function () {
     type C = {
       middleware: number
       next: number
+      finalized: boolean
+      res: any
     }
 
     const middleware = [
@@ -653,13 +652,16 @@ describe('Compose', function () {
     const ctx = {
       middleware: 0,
       next: 0,
+      finalized: false,
+      res: null,
     }
 
-    return compose(middleware)(ctx, (ctx: C, next: Function) => {
+    await compose<C>(middleware)(ctx, (ctx: C, next: Function) => {
       ctx.next++
       return next()
-    }).then(() => {
-      expect(ctx).toEqual({ middleware: 1, next: 1 })
     })
+
+    expect(ctx.middleware).toEqual(1)
+    expect(ctx.next).toEqual(1)
   })
 })
