@@ -226,7 +226,8 @@ export class Hono<
     const composed = compose<HonoContext<string, E>>(handlers, this.notFoundHandler)
     let context: HonoContext<string, E>
     try {
-      context = await composed(c)
+      const tmp = composed(c)
+      context = tmp instanceof Promise ? await tmp : tmp
       if (!context.finalized) {
         throw new Error(
           'Context is not finalized. You may forget returning Response object or `await next()`'
