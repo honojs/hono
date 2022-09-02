@@ -35,6 +35,8 @@ export type ErrorHandler<E extends Partial<Environment> = Environment> = (
 
 export type Next = () => Promise<void>
 
+export const defaultNotFoundMessage = '404 Not Found'
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer _Pattern}`
   ? Name
@@ -123,7 +125,7 @@ export class Hono<
   }
 
   private notFoundHandler: NotFoundHandler = (c: Context) => {
-    const message = '404 Not Found'
+    const message = defaultNotFoundMessage
     return c.text(message, 404)
   }
 
@@ -205,17 +207,18 @@ export class Hono<
     if (result && result.handlers.length === 1) {
       const handler = result.handlers[0]
       try {
-        const response = handler(c, async () => {})
-        if (response) {
-          if (response instanceof Promise) {
-            const awaited = await response
-            if (awaited) return awaited
-          } else {
-            return response
-          }
+        const res = handler(c, async () => {})
+        if (res) {
+          const awaited = res instanceof Promise ? await res : res
+          if (awaited) return awaited
         }
-        // Do nothing
-      } catch {}
+        return this.notFoundHandler(c as Context)
+      } catch (err) {
+        if (err instanceof Error) {
+          return this.errorHandler(err, c as Context)
+        }
+        throw err
+      }
     }
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
@@ -231,7 +234,7 @@ export class Hono<
       }
     } catch (err) {
       if (err instanceof Error) {
-        return this.errorHandler(err, c as Context<string, Environment>)
+        return this.errorHandler(err, c as Context)
       }
       throw err
     }

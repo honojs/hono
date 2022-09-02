@@ -1,6 +1,7 @@
 import type { Context } from './context'
 import type { Next } from './hono'
 import { Hono } from './hono'
+import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
 
 describe('GET Request', () => {
@@ -1055,5 +1056,40 @@ describe('Both two middleware returning response', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Bar')
     expect(res.headers.get('content-type')).toBe('text/plain; charset=UTF-8')
+  })
+})
+
+describe('Count of logger called', () => {
+  // It will be added `2` each time the logger is called once.
+  let count = 0
+  let log = ''
+
+  const app = new Hono()
+
+  const logFn = (str: string) => {
+    count++
+    log = str
+  }
+
+  app.use('*', logger(logFn))
+  app.get('/', (c) => c.text('foo'))
+
+  it('Should be called two times', async () => {
+    const res = await app.request('http://localhost/not-found')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('404 Not Found')
+    expect(count).toBe(2)
+    expect(log).toMatch(/404/)
+  })
+
+  it('Should be called two times / Custom Not Found', async () => {
+    app.notFound((c) => c.text('Custom Not Found', 404))
+    const res = await app.request('http://localhost/custom-not-found')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('Custom Not Found')
+    expect(count).toBe(4)
+    expect(log).toMatch(/404/)
   })
 })

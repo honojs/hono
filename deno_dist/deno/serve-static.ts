@@ -13,7 +13,7 @@ const DEFAULT_DOCUMENT = 'index.html'
 export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
   return async (c: Context, next: Next): Promise<Response | undefined> => {
     // Do nothing if Response is already set
-    if (c.res && c.finalized) {
+    if (c.finalized) {
       await next()
     }
 
