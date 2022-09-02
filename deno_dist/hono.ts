@@ -207,18 +207,18 @@ export class Hono<
     if (result && result.handlers.length === 1) {
       const handler = result.handlers[0]
       try {
-        const response = handler(c, async () => {})
-        if (response) {
-          if (response instanceof Promise) {
-            const awaited = await response
-            if (awaited) return awaited
-          } else {
-            return response
-          }
+        const res = handler(c, async () => {})
+        if (res) {
+          const awaited = res instanceof Promise ? await res : res
+          if (awaited) return awaited
         }
         return this.notFoundHandler(c as Context)
-        // Do nothing
-      } catch {}
+      } catch (err) {
+        if (err instanceof Error) {
+          return this.errorHandler(err, c as Context)
+        }
+        throw err
+      }
     }
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
@@ -234,7 +234,7 @@ export class Hono<
       }
     } catch (err) {
       if (err instanceof Error) {
-        return this.errorHandler(err, c as Context<string, Environment>)
+        return this.errorHandler(err, c as Context)
       }
       throw err
     }
