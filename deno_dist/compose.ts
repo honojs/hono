@@ -31,7 +31,10 @@ export const compose = <C extends ComposeContext>(
           res = onNotFound(context)
         }
       } else {
-        res = handler(context, async () => dispatch(i + 1))
+        res = handler(context, () => {
+          const dispatchRes = dispatch(i + 1)
+          return dispatchRes instanceof Promise ? dispatchRes : Promise.resolve(dispatchRes)
+        })
       }
 
       if (!(res instanceof Promise)) {
