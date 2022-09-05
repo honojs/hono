@@ -1,4 +1,11 @@
-import { splitPath, getPattern, getPathFromURL, isAbsoluteURL, mergePath } from './url'
+import {
+  splitPath,
+  getPattern,
+  getPathFromURL,
+  isAbsoluteURL,
+  mergePath,
+  getQueryStringFromURL,
+} from './url'
 
 describe('url', () => {
   it('splitPath', () => {
@@ -58,6 +65,23 @@ describe('url', () => {
       expect(path).toBe('/hello')
       path = getPathFromURL('https://example.com/hello/hey/', false)
       expect(path).toBe('/hello/hey')
+    })
+  })
+
+  describe('getQueryStringFromURL', () => {
+    it('should return strings of query params', () => {
+      let queryString = getQueryStringFromURL('https://example.com/?foo=bar')
+      expect(queryString).toBe('?foo=bar')
+      queryString = getQueryStringFromURL('https://example.com/?foo=bar&foo2=bar2')
+      expect(queryString).toBe('?foo=bar&foo2=bar2')
+      queryString = getQueryStringFromURL('https://example.com/')
+      expect(queryString).toBe('')
+      // This specification allows the fragments as query strings
+      queryString = getQueryStringFromURL('https://example.com/?#foo=#bar&#foo2=#bar2')
+      expect(queryString).toBe('?#foo=#bar&#foo2=#bar2')
+      // This specification allows that the string includes two `?` or more
+      queryString = getQueryStringFromURL('https://example.com/?foo=bar?foo2=bar2')
+      expect(queryString).toBe('?foo=bar?foo2=bar2')
     })
   })
 

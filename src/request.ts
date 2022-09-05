@@ -1,6 +1,7 @@
 import { parseBody } from './utils/body'
 import type { Cookie } from './utils/cookie'
 import { parse } from './utils/cookie'
+import { getQueryStringFromURL } from './utils/url'
 
 declare global {
   interface Request<ParamKeyType extends string = string> {
@@ -62,26 +63,28 @@ export function extendRequestPrototype() {
   } as InstanceType<typeof Request>['header']
 
   Request.prototype.query = function (this: Request, key?: string) {
-    const url = new URL(this.url)
+    const queryString = getQueryStringFromURL(this.url)
+    const searchParams = new URLSearchParams(queryString)
     if (key) {
-      return url.searchParams.get(key)
+      return searchParams.get(key)
     } else {
       const result: Record<string, string> = {}
-      for (const key of url.searchParams.keys()) {
-        result[key] = url.searchParams.get(key) || ''
+      for (const key of searchParams.keys()) {
+        result[key] = searchParams.get(key) || ''
       }
       return result
     }
   } as InstanceType<typeof Request>['query']
 
   Request.prototype.queries = function (this: Request, key?: string) {
-    const url = new URL(this.url)
+    const queryString = getQueryStringFromURL(this.url)
+    const searchParams = new URLSearchParams(queryString)
     if (key) {
-      return url.searchParams.getAll(key)
+      return searchParams.getAll(key)
     } else {
       const result: Record<string, string[]> = {}
-      for (const key of url.searchParams.keys()) {
-        result[key] = url.searchParams.getAll(key)
+      for (const key of searchParams.keys()) {
+        result[key] = searchParams.getAll(key)
       }
       return result
     }
