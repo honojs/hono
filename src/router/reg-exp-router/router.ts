@@ -327,7 +327,10 @@ export class RegExpRouter<T> implements Router<T> {
     Record<string, AnyMatcher<T>[]>,
     boolean
   ] {
-    // @ts-ignore
+    if (!this.routeData) {
+      throw new Error('Can not call the buildAllMatchers since the matcher is already built.')
+    }
+
     this.routeData.routes.sort(({ hint: a }, { hint: b }) => {
       if (a.componentsLength !== b.componentsLength) {
         return a.componentsLength - b.componentsLength
@@ -356,13 +359,22 @@ export class RegExpRouter<T> implements Router<T> {
     const primaryMatchers: Record<string, AnyMatcher<T>> = {}
     const secondaryMatchers: Record<string, AnyMatcher<T>[]> = {}
     let hasAmbiguous = false
-    // @ts-ignore
+
     this.routeData.methods.forEach((method) => {
       let _hasAmbiguous
       ;[primaryMatchers[method], secondaryMatchers[method], _hasAmbiguous] =
         this.buildMatcher(method)
       hasAmbiguous = hasAmbiguous || _hasAmbiguous
     })
+    if (hasAmbiguous) {
+      // rebuild all matchers with ambiguous flag
+      this.routeData.methods.forEach((method) => {
+        ;[primaryMatchers[method], secondaryMatchers[method]] = this.buildMatcher(
+          method,
+          hasAmbiguous
+        )
+      })
+    }
     primaryMatchers[METHOD_NAME_ALL] ||= nullMatcher
     secondaryMatchers[METHOD_NAME_ALL] ||= []
 
@@ -371,8 +383,10 @@ export class RegExpRouter<T> implements Router<T> {
     return [primaryMatchers, secondaryMatchers, hasAmbiguous]
   }
 
-  private buildMatcher(method: string): [AnyMatcher<T>, AnyMatcher<T>[], boolean] {
-    let hasAmbiguous = false
+  private buildMatcher(
+    method: string,
+    hasAmbiguous: boolean = false
+  ): [AnyMatcher<T>, AnyMatcher<T>[], boolean] {
     const targetMethods = new Set([method, METHOD_NAME_ALL])
     // @ts-ignore
     const routes = this.routeData.routes.filter(({ method }) => targetMethods.has(method))
