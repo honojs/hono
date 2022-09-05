@@ -11,3 +11,5 @@ export interface Result<T> {
   handlers: T[]
   params: Record<string, string>
 }
+
+export class UnsupportedPathError extends Error {}
