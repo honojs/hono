@@ -3,6 +3,7 @@ import type { Context } from './context'
 import { HonoContext } from './context'
 import { extendRequestPrototype } from './request'
 import type { Router } from './router'
+import { METHODS } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import { TrieRouter } from './router/trie-router' // Default Router
 import { getPathFromURL, mergePath } from './utils/url'
@@ -68,8 +69,7 @@ interface HandlerInterface<
   (path: string, ...handlers: Handler<string, E>[]): U
 }
 
-const methods = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch'] as const
-type Methods = typeof methods[number] | typeof METHOD_NAME_ALL_LOWERCASE
+type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
 function defineDynamicClass(): {
   new <E extends Partial<Environment> = Environment, T extends string = string, U = Hono>(): {
@@ -101,7 +101,7 @@ export class Hono<
 
     extendRequestPrototype()
 
-    const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
+    const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
       this[method] = <Path extends string = ''>(
         args1: Path | Handler<ParamKeys<Path>, E>,
