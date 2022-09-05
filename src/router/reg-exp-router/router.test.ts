@@ -196,12 +196,20 @@ describe('Multi match', () => {
 
     router.add('GET', '/:user/entries', 'get user entries')
     router.add('GET', '/entry/:name', 'get entry')
+    router.add('POST', '/entry', 'create entry')
+
     it('GET /entry/entry', async () => {
       const res = router.match('GET', '/entry/entries')
       expect(res).not.toBeNull()
       expect(res?.handlers).toEqual(['get user entries', 'get entry'])
       expect(res?.params['user']).toBe('entry')
       expect(res?.params['name']).toBe('entries')
+    })
+
+    it('POST /entry', async () => {
+      const res = router.match('POST', '/entry')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['create entry'])
     })
   })
 
