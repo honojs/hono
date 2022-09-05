@@ -5,7 +5,10 @@ import { extendRequestPrototype } from './request'
 import type { Router } from './router'
 import { METHODS } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
-import { TrieRouter } from './router/trie-router' // Default Router
+import { RegExpRouter } from './router/reg-exp-router'
+import { SmartRouter } from './router/smart-router'
+import { StaticRouter } from './router/static-router'
+import { TrieRouter } from './router/trie-router'
 import { getPathFromURL, mergePath } from './utils/url'
 
 export interface ContextVariableMap {}
@@ -89,7 +92,9 @@ export class Hono<
   E extends Partial<Environment> = Environment,
   P extends string = '/'
 > extends defineDynamicClass()<E, P, Hono<E, P>> {
-  readonly router: Router<Handler<string, E>> = new TrieRouter()
+  readonly router: Router<Handler<string, E>> = new SmartRouter({
+    routers: [new StaticRouter(), new RegExpRouter({ allowAmbiguous: false }), new TrieRouter()],
+  })
   readonly strict: boolean = true // strict routing - default is true
   private _tempPath: string = ''
   private path: string = '/'
