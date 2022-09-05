@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { Router, Result } from '../../router'
-import { METHOD_NAME_ALL } from '../../router'
+import { METHOD_NAME_ALL, UnsupportedPathError } from '../../router'
 import type { ParamMap } from './trie'
 import { Trie } from './trie'
 
@@ -200,11 +200,16 @@ function verifyDuplicateParam<T>(routes: Route<T>[]): boolean {
 }
 
 export class RegExpRouter<T> implements Router<T> {
+  allowAmbiguous: boolean = true
   routeData?: {
     index: number
     routes: Route<T>[]
     methods: Set<string>
   } = { index: 0, routes: [], methods: new Set() }
+
+  constructor(init: Partial<Pick<RegExpRouter<T>, 'allowAmbiguous'>> = {}) {
+    Object.assign(this, init)
+  }
 
   add(method: string, path: string, handler: T) {
     if (!this.routeData) {
@@ -424,6 +429,9 @@ export class RegExpRouter<T> implements Router<T> {
 
           routes[i].hint.maybeHandler = false
         } else if (compareResult === 2) {
+          if (!this.allowAmbiguous) {
+            throw new UnsupportedPathError(routes[i].path)
+          }
           // ambiguous
           hasAmbiguous = true
 
