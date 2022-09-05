@@ -52,11 +52,7 @@ export const getPathFromURL = (url: string, strict: boolean = true): string => {
 
 export const getQueryStringFromURL = (url: string): string => {
   const queryIndex = url.indexOf('?')
-  const fragmentIndex = url.indexOf('#')
-  const result =
-    queryIndex !== -1
-      ? url.substring(queryIndex, fragmentIndex !== -1 ? fragmentIndex : undefined)
-      : ''
+  const result = queryIndex !== -1 ? url.substring(queryIndex) : ''
   return result
 }
 

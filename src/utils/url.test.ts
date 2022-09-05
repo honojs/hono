@@ -76,8 +76,9 @@ describe('url', () => {
       expect(queryString).toBe('?foo=bar&foo2=bar2')
       queryString = getQueryStringFromURL('https://example.com/')
       expect(queryString).toBe('')
-      queryString = getQueryStringFromURL('https://example.com/?foo=bar#fragment')
-      expect(queryString).toBe('?foo=bar')
+      // This specification allows the fragments as query strings
+      queryString = getQueryStringFromURL('https://example.com/?#foo=#bar&#foo2=#bar2')
+      expect(queryString).toBe('?#foo=#bar&#foo2=#bar2')
       // This specification allows that the string includes two `?` or more
       queryString = getQueryStringFromURL('https://example.com/?foo=bar?foo2=bar2')
       expect(queryString).toBe('?foo=bar?foo2=bar2')
