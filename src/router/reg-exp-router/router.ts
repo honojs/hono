@@ -366,6 +366,15 @@ export class RegExpRouter<T> implements Router<T> {
         this.buildMatcher(method)
       hasAmbiguous = hasAmbiguous || _hasAmbiguous
     })
+    if (hasAmbiguous) {
+      // rebuild all matchers with ambiguous flag
+      this.routeData.methods.forEach((method) => {
+        ;[primaryMatchers[method], secondaryMatchers[method]] = this.buildMatcher(
+          method,
+          hasAmbiguous
+        )
+      })
+    }
     primaryMatchers[METHOD_NAME_ALL] ||= nullMatcher
     secondaryMatchers[METHOD_NAME_ALL] ||= []
 
@@ -374,8 +383,10 @@ export class RegExpRouter<T> implements Router<T> {
     return [primaryMatchers, secondaryMatchers, hasAmbiguous]
   }
 
-  private buildMatcher(method: string): [AnyMatcher<T>, AnyMatcher<T>[], boolean] {
-    let hasAmbiguous = false
+  private buildMatcher(
+    method: string,
+    hasAmbiguous: boolean = false
+  ): [AnyMatcher<T>, AnyMatcher<T>[], boolean] {
     const targetMethods = new Set([method, METHOD_NAME_ALL])
     // @ts-ignore
     const routes = this.routeData.routes.filter(({ method }) => targetMethods.has(method))
