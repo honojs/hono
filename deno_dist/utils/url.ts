@@ -50,6 +50,12 @@ export const getPathFromURL = (url: string, strict: boolean = true): string => {
   return result
 }
 
+export const getQueryStringFromURL = (url: string): string => {
+  const queryIndex = url.indexOf('?')
+  const result = queryIndex !== -1 ? url.substring(queryIndex) : ''
+  return result
+}
+
 export const isAbsoluteURL = (url: string): boolean => {
   const match = url.match(URL_REGEXP)
   if (match) {
