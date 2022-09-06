@@ -3,7 +3,7 @@ import type { Router, Result } from '../../router'
 import { UnsupportedPathError } from '../../router'
 
 export class SmartRouter<T> implements Router<T> {
-  routers?: Router<T>[] = []
+  routers: Router<T>[] = []
   routes?: [string, string, T][] = []
 
   constructor(init: Pick<SmartRouter<T>, 'routers'>) {
@@ -19,7 +19,7 @@ export class SmartRouter<T> implements Router<T> {
   }
 
   match(method: string, path: string): Result<T> | null {
-    if (!this.routers || !this.routes) {
+    if (!this.routes) {
       throw new Error('Fatal error')
     }
 
@@ -56,7 +56,7 @@ export class SmartRouter<T> implements Router<T> {
   }
 
   get activeRouter() {
-    if (this.routes || !this.routers) {
+    if (this.routes || this.routers.length !== 1) {
       throw new Error('No active router has been determined yet.')
     }
 
