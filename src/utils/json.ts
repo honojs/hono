@@ -1,17 +1,33 @@
-export const JSONPath = (data: object, path: string) => {
+export const JSONPathCopy = (src: object, dst: object, path: string) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let val: any = data
+  let srcVal: any = src
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let dstVal: any = dst
   const parts = path.split('.')
   const length = parts.length
-  for (let i = 0; i < length && val !== undefined; i++) {
+  for (let i = 0; i < length && srcVal !== undefined; i++) {
     const p = parts[i]
     if (p !== '') {
-      if (typeof val === 'object') {
-        val = val[p]
+      if (typeof srcVal === 'object') {
+        if (typeof srcVal[p] === 'object') {
+          dstVal[p] ||= new srcVal[p].constructor()
+        }
+        else if (p in srcVal) {
+          dstVal[p] = srcVal[p]
+        }
+        else {
+          return undefined
+        }
+        srcVal = srcVal[p]
+        dstVal = dstVal[p]
       } else {
-        val = undefined
+        return undefined
       }
     }
   }
-  return val
+
+  if (typeof srcVal === 'object') {
+    Object.assign(dstVal, srcVal)
+  }
+  return srcVal
 }

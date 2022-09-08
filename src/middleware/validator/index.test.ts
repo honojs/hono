@@ -314,7 +314,7 @@ describe('JSON object should not be stringified', () => {
   })
 })
 
-describe('additionalProperties', () => {
+describe('additional properties', () => {
   const app = new Hono()
   // query
   app.get(
@@ -324,14 +324,13 @@ describe('additionalProperties', () => {
         q: v.optional,
         page: v.isNumeric,
       },
-      additionalProperties: false,
     })),
     (c) => {
-      return c.text('Valid')
+      return c.json(c.req.query())
     }
   )
 
-  it('Should return 400 response - additionalProperties', async () => {
+  it('Should only return validated params', async () => {
     const searchParams = new URLSearchParams({
       q: 'foobar',
       page: '3',
@@ -339,8 +338,8 @@ describe('additionalProperties', () => {
     })
     const req = new Request(`http://localhost/foo?${searchParams.toString()}`)
     const res = await app.request(req)
-    expect(res.status).toBe(400)
-    expect(await res.text()).toBe(['Additional query parameter "foo" is not allowed'].join('\n'))
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ q: 'foobar', page: '3' })
   })
 
   // JSON
@@ -350,14 +349,13 @@ describe('additionalProperties', () => {
       json: {
         'post.author.name': v.isAlpha,
       },
-      additionalProperties: false,
     })),
-    (c) => {
-      return c.text('Valid')
+    async (c) => {
+      return c.json(await c.req.json())
     }
   )
 
-  it('Should return 400 response - JSON', async () => {
+  it('Should only return validated JSON data', async () => {
     const json = {
       post: {
         title: 'Hello',
@@ -372,9 +370,7 @@ describe('additionalProperties', () => {
       body: JSON.stringify(json),
     })
     const res = await app.request(req)
-    expect(res.status).toBe(400)
-    expect(await res.text()).toBe(
-      ['Additional JSON property "post.author.age" is not allowed'].join('\n')
-    )
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ post: { author: { name: 'abcdef' } } })
   })
 })
