@@ -18,9 +18,10 @@ export type Environment = {
 
 export type Handler<
   RequestParamKeyType extends string = string,
-  E extends Partial<Environment> = Environment
+  E extends Partial<Environment> = Environment,
+  CustomData extends Record<string, any> = Record<string, any>
 > = (
-  c: Context<RequestParamKeyType, E>,
+  c: Context<RequestParamKeyType, E, CustomData>,
   next: Next
 ) => Response | Promise<Response> | Promise<void> | Promise<Response | undefined>
 

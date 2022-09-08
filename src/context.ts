@@ -10,13 +10,15 @@ export type Data = string | ArrayBuffer | ReadableStream
 
 export interface Context<
   RequestParamKeyType extends string = string,
-  E extends Partial<Environment> = any
+  E extends Partial<Environment> = any,
+  CustomData extends Record<string, any> = Record<string, any>
 > {
   req: Request<RequestParamKeyType>
   env: E['Bindings']
   event: FetchEvent
   executionCtx: ExecutionContext
   finalized: boolean
+  data: CustomData
 
   get res(): Response
   set res(_res: Response)
@@ -45,12 +47,14 @@ export interface Context<
 
 export class HonoContext<
   RequestParamKeyType extends string = string,
-  E extends Partial<Environment> = Environment
+  E extends Partial<Environment> = Environment,
+  CustomData extends Record<string, any> = Record<string, any>
 > implements Context<RequestParamKeyType, E>
 {
   req: Request<RequestParamKeyType>
   env: E['Bindings']
   finalized: boolean
+  data: CustomData
 
   _status: StatusCode = 200
   private _executionCtx: FetchEvent | ExecutionContext | undefined
@@ -65,11 +69,13 @@ export class HonoContext<
     req: Request,
     env: E['Bindings'] | undefined = undefined,
     executionCtx: FetchEvent | ExecutionContext | undefined = undefined,
-    notFoundHandler: NotFoundHandler = () => new Response()
+    notFoundHandler: NotFoundHandler = () => new Response(),
+    data: CustomData = {} as CustomData
   ) {
     this._executionCtx = executionCtx
     this.req = req
     this.env = env || ({} as Bindings)
+    this.data = data
 
     this.notFoundHandler = notFoundHandler
     this.finalized = false

@@ -143,6 +143,11 @@ describe('Context', () => {
     expect(res.headers.get('foo')).not.toBeNull()
     expect(res.headers.get('foo')).toBe('bar')
   })
+
+  it('should support data passing', async () => {
+    c = new HonoContext(req, undefined, undefined, undefined, { foo: 'bar' })
+    expect(c.data.foo).toBe('bar')
+  })
 })
 
 describe('Context header', () => {
