@@ -26,9 +26,13 @@ declare global {
       (name: string): string
       (): Cookie
     }
-    parsedBody?: Promise<Record<string, string | File>>
+    bodyData?: Record<string, string | File>
     parseBody: {
       (): Promise<Record<string, string | File>>
+    }
+    jsonData?: any
+    json: {
+      <T>(): Promise<T>
     }
   }
 }
@@ -101,14 +105,29 @@ export function extendRequestPrototype() {
     }
   } as InstanceType<typeof Request>['cookie']
 
-  Request.prototype.parseBody = function (this: Request): Promise<Record<string, string | File>> {
-    let body: Promise<Record<string, string | File>>
-    if (!this.parsedBody) {
-      body = parseBody(this)
-      this.parsedBody = body
+  Request.prototype.parseBody = async function (
+    this: Request
+  ): Promise<Record<string, string | File>> {
+    // Cache the parsed body
+    let body: Record<string, string | File>
+    if (!this.bodyData) {
+      body = await parseBody(this)
+      this.bodyData = body
     } else {
-      body = this.parsedBody
+      body = this.bodyData
     }
     return body
   } as InstanceType<typeof Request>['parseBody']
+
+  Request.prototype.json = async function <T = any>(this: Request): Promise<T> {
+    // Cache the JSON body
+    let jsonData: T
+    if (!this.jsonData) {
+      jsonData = JSON.parse(await this.text())
+      this.jsonData = jsonData
+    } else {
+      jsonData = this.jsonData
+    }
+    return jsonData as T
+  } as InstanceType<typeof Request>['jsonData']
 }
