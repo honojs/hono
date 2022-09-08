@@ -32,7 +32,7 @@ declare global {
     }
     jsonData?: any
     json: {
-      <T>(): Promise<T>
+      (): Promise<any>
     }
   }
 }
@@ -119,15 +119,15 @@ export function extendRequestPrototype() {
     return body
   } as InstanceType<typeof Request>['parseBody']
 
-  Request.prototype.json = async function <T = any>(this: Request): Promise<T> {
+  Request.prototype.json = async function (this: Request): Promise<any> {
     // Cache the JSON body
-    let jsonData: T
+    let jsonData: any
     if (!this.jsonData) {
       jsonData = JSON.parse(await this.text())
       this.jsonData = jsonData
     } else {
       jsonData = this.jsonData
     }
-    return jsonData as T
+    return jsonData
   } as InstanceType<typeof Request>['jsonData']
 }
