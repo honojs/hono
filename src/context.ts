@@ -59,13 +59,13 @@ export class HonoContext<
   private _map: Record<string, any> | undefined
   private _headers: Record<string, string> | undefined
   private _res: Response | undefined
-  private notFoundHandler: NotFoundHandler
+  private notFoundHandler: NotFoundHandler<E>
 
   constructor(
     req: Request,
     env: E['Bindings'] | undefined = undefined,
     executionCtx: FetchEvent | ExecutionContext | undefined = undefined,
-    notFoundHandler: NotFoundHandler = () => new Response()
+    notFoundHandler: NotFoundHandler<E> = () => new Response()
   ) {
     this._executionCtx = executionCtx
     this.req = req
