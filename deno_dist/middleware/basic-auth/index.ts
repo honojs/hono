@@ -49,7 +49,6 @@ export const basicAuth = (
           options.hashFunction
         )
         if (usernameEqual && passwordEqual) {
-          // Authorized OK
           await next()
           return
         }
@@ -61,5 +60,6 @@ export const basicAuth = (
         'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"',
       },
     })
+    await next()
   }
 }
