@@ -30,6 +30,11 @@ describe('Basic Auth by Middleware', () => {
       password,
     })
   )
+  // Test multiple handlers
+  app.use('/auth/*', async (c, next) => {
+    c.header('x-custom', 'foo')
+    await next()
+  })
 
   app.use(
     '/auth-unicode/*',
@@ -67,12 +72,12 @@ describe('Basic Auth by Middleware', () => {
     await auth(c, next)
   })
 
-  app.get('/auth/*', () => new Response('auth'))
-  app.get('/auth-unicode/*', () => new Response('auth'))
-  app.get('/auth-multi/*', () => new Response('auth'))
-  app.get('/auth-override-func/*', () => new Response('auth'))
+  app.get('/auth/*', (c) => c.text('auth'))
+  app.get('/auth-unicode/*', (c) => c.text('auth'))
+  app.get('/auth-multi/*', (c) => c.text('auth'))
+  app.get('/auth-override-func/*', (c) => c.text('auth'))
 
-  app.get('/nested/*', () => new Response('nested'))
+  app.get('/nested/*', (c) => c.text('nested'))
 
   it('Should not authorize', async () => {
     const req = new Request('http://localhost/auth/a')
@@ -80,6 +85,7 @@ describe('Basic Auth by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
     expect(await res.text()).toBe('Unauthorized')
+    expect(res.headers.get('x-custom')).toBe('foo')
   })
 
   it('Should authorize', async () => {
@@ -91,6 +97,7 @@ describe('Basic Auth by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('auth')
+    expect(res.headers.get('x-custom')).toBe('foo')
   })
 
   it('Should authorize Unicode', async () => {

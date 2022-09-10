@@ -55,12 +55,9 @@ export const bearerAuth = (options: {
               'WWW-Authenticate': `${options.prefix} error="invalid_token"`,
             },
           })
-        } else {
-          // Authorize OK
-          await next()
-          return
         }
       }
     }
+    await next()
   }
 }
