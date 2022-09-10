@@ -124,12 +124,12 @@ export class Hono<
     Object.assign(this, init)
   }
 
-  private notFoundHandler: NotFoundHandler = (c: Context) => {
+  private notFoundHandler: NotFoundHandler<E> = (c: Context<string, E>) => {
     const message = defaultNotFoundMessage
     return c.text(message, 404)
   }
 
-  private errorHandler: ErrorHandler = (err: Error, c: Context) => {
+  private errorHandler: ErrorHandler<E> = (err: Error, c: Context<string, E>) => {
     console.error(`${err.stack || err.message}`)
     const message = 'Internal Server Error'
     return c.text(message, 500)
@@ -166,12 +166,12 @@ export class Hono<
     return this
   }
 
-  onError(handler: ErrorHandler): Hono<E, P> {
+  onError(handler: ErrorHandler<E>): Hono<E, P> {
     this.errorHandler = handler
     return this
   }
 
-  notFound(handler: NotFoundHandler): Hono<E, P> {
+  notFound(handler: NotFoundHandler<E>): Hono<E, P> {
     this.notFoundHandler = handler
     return this
   }
@@ -212,10 +212,10 @@ export class Hono<
           const awaited = res instanceof Promise ? await res : res
           if (awaited) return awaited
         }
-        return this.notFoundHandler(c as Context)
+        return this.notFoundHandler(c)
       } catch (err) {
         if (err instanceof Error) {
-          return this.errorHandler(err, c as Context)
+          return this.errorHandler(err, c)
         }
         throw err
       }
@@ -223,7 +223,7 @@ export class Hono<
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
 
-    const composed = compose<HonoContext<string, E>>(handlers, this.notFoundHandler)
+    const composed = compose<HonoContext<string, E>, E>(handlers, this.notFoundHandler)
     let context: HonoContext<string, E>
     try {
       const tmp = composed(c)
@@ -235,7 +235,7 @@ export class Hono<
       }
     } catch (err) {
       if (err instanceof Error) {
-        return this.errorHandler(err, c as Context)
+        return this.errorHandler(err, c)
       }
       throw err
     }

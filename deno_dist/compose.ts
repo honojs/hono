@@ -1,5 +1,5 @@
 import { HonoContext } from './context.ts'
-import type { NotFoundHandler } from './hono.ts'
+import type { Environment, NotFoundHandler } from './hono.ts'
 
 interface ComposeContext {
   finalized: boolean
@@ -7,9 +7,9 @@ interface ComposeContext {
 }
 
 // Based on the code in the MIT licensed `koa-compose` package.
-export const compose = <C extends ComposeContext>(
+export const compose = <C extends ComposeContext, E extends Partial<Environment> = Environment>(
   middleware: Function[],
-  onNotFound?: NotFoundHandler
+  onNotFound?: NotFoundHandler<E>
 ) => {
   const middlewareLength = middleware.length
   return (context: C, next?: Function) => {
