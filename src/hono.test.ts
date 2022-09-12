@@ -98,9 +98,9 @@ describe('strict parameter', () => {
 })
 
 describe('Routing', () => {
-  const app = new Hono()
-
   it('Return it self', async () => {
+    const app = new Hono()
+
     const app2 = app.get('/', () => new Response('get /'))
     expect(app2).not.toBeUndefined()
     app2.delete('/', () => new Response('delete /'))
@@ -117,6 +117,8 @@ describe('Routing', () => {
   })
 
   it('Nested route', async () => {
+    const app = new Hono()
+
     const book = app.route('/book')
     book.get('/', (c) => c.text('get /book'))
     book.get('/:id', (c) => {
@@ -153,6 +155,8 @@ describe('Routing', () => {
   })
 
   describe('Chained route', () => {
+    const app = new Hono()
+
     app
       .get('/chained/:abc', (c) => {
         const abc = c.req.param('abc')
@@ -775,40 +779,43 @@ describe('Multiple handler', () => {
   })
 
   describe('Duplicate param name', () => {
-    it('self', () => {
+    it('self', async () => {
       const app = new Hono()
-      expect(() => {
-        app.get('/:id/:id', (c) => {
-          const id = c.req.param('id')
-          return c.text(`id is ${id}`)
-        })
-      }).toThrowError(/Duplicate param name/)
+      app.get('/:id/:id', (c) => {
+        const id = c.req.param('id')
+        return c.text(`id is ${id}`)
+      })
+      await expect(async () => {
+        await app.request('http://localhost/')
+      }).rejects.toThrowError(/Duplicate param name/)
     })
 
-    it('parent', () => {
+    it('parent', async () => {
       const app = new Hono()
       app.get('/:id/:action', (c) => {
         return c.text('foo')
       })
-      expect(() => {
-        app.get('/posts/:id', (c) => {
-          const id = c.req.param('id')
-          return c.text(`id is ${id}`)
-        })
-      }).toThrowError(/Duplicate param name/)
+      app.get('/posts/:id', (c) => {
+        const id = c.req.param('id')
+        return c.text(`id is ${id}`)
+      })
+      await expect(async () => {
+        await app.request('http://localhost/')
+      }).rejects.toThrowError(/Duplicate param name/)
     })
 
-    it('child', () => {
+    it('child', async () => {
       const app = new Hono()
       app.get('/posts/:id', (c) => {
         return c.text('foo')
       })
-      expect(() => {
-        app.get('/:id/:action', (c) => {
-          const id = c.req.param('id')
-          return c.text(`id is ${id}`)
-        })
-      }).toThrowError(/Duplicate param name/)
+      app.get('/:id/:action', (c) => {
+        const id = c.req.param('id')
+        return c.text(`id is ${id}`)
+      })
+      await expect(async () => {
+        await app.request('http://localhost/')
+      }).rejects.toThrowError(/Duplicate param name/)
     })
 
     it('hierarchy', () => {
