@@ -76,6 +76,16 @@ export const validator = {
     return value === comparison
   },
 
+  isIn(value: string, options: string[]): boolean {
+    if (!isString(value)) return false
+    if (typeof options === 'object') {
+      for (const elem of options) {
+        if (elem === value) return true
+      }
+    }
+    return false
+  },
+
   trim(value: string): string {
     return isString(value) ? value.trim() : value
   },
