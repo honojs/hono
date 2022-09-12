@@ -1,5 +1,4 @@
-import type { Context } from '../../context'
-import type { Next } from '../../hono'
+import type { MiddlewareHandler } from '../../hono'
 import { timingSafeEqual } from '../../utils/buffer'
 
 const TOKEN_STRINGS = '[A-Za-z0-9._~+/-]+=*'
@@ -10,7 +9,7 @@ export const bearerAuth = (options: {
   realm?: string
   prefix?: string
   hashFunction?: Function
-}) => {
+}): MiddlewareHandler => {
   if (!options.token) {
     throw new Error('bearer auth middleware requires options for "token"')
   }
@@ -23,7 +22,7 @@ export const bearerAuth = (options: {
 
   const realm = options.realm?.replace(/"/g, '\\"')
 
-  return async (c: Context, next: Next) => {
+  return async (c, next) => {
     const headerToken = c.req.headers.get('Authorization')
 
     if (!headerToken) {

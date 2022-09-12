@@ -1,8 +1,7 @@
-import type { Context } from '../../context'
-import type { Next } from '../../hono'
+import type { MiddlewareHandler } from '../../hono'
 
-export const poweredBy = () => {
-  return async (c: Context, next: Next) => {
+export const poweredBy = (): MiddlewareHandler => {
+  return async (c, next) => {
     await next()
     c.res.headers.append('X-Powered-By', 'Hono')
   }
