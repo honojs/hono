@@ -4,6 +4,10 @@
 // Copyright (c) 2018 Chris O'Hara <cohara87@gmail.com>
 // https://github.com/validatorjs/validator.js
 
+const isString = (value: any) => {
+  return typeof value === 'string'
+}
+
 export const validator = {
   required(value: unknown): boolean {
     if (value) {
@@ -17,11 +21,11 @@ export const validator = {
   },
 
   isAlpha(value: string): boolean {
-    return value.match(/^[A-Z]+$/i) ? true : false
+    return isString(value) && value.match(/^[A-Z]+$/i) ? true : false
   },
 
   isNumeric(value: string): boolean {
-    return value.match(/^[0-9]+$/) ? true : false
+    return isString(value) && value.match(/^[0-9]+$/) ? true : false
   },
 
   isEmpty(
@@ -30,10 +34,11 @@ export const validator = {
       ignore_whitespace: boolean
     } = { ignore_whitespace: false }
   ): boolean {
-    return (options.ignore_whitespace ? value.trim().length : value.length) === 0
+    return (isString(value) && options.ignore_whitespace ? value.trim().length : value.length) === 0
   },
 
   isLength(value: string, options: Partial<{ min: number; max: number }> | number, arg2?: number) {
+    if (!isString(value)) return false
     let min: number
     let max: number | undefined
     if (typeof options === 'object') {
@@ -60,6 +65,7 @@ export const validator = {
   ): boolean {
     options.ignoreCase ||= false
     options.minOccurrences ||= 1
+    if (!isString(value) || !isString(elem)) return false
     if (options.ignoreCase) {
       return value.toLowerCase().split(elem.toLowerCase()).length > options.minOccurrences
     }
@@ -71,6 +77,6 @@ export const validator = {
   },
 
   trim(value: string): string {
-    return value.trim()
+    return isString(value) ? value.trim() : value
   },
 }
