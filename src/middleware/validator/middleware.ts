@@ -51,11 +51,12 @@ export const validatorMiddleware = <Validator>(validator: Validator) => {
   return (
     validatorFunction: (
       validator: Validator,
-      message: (value: string) => ValidatorMessage
+      message: (value: string) => ValidatorMessage,
+      context: Context
     ) => Partial<RuleSet>
   ): Handler => {
     return async (c, next) => {
-      const validations = validatorFunction(validator, message)
+      const validations = validatorFunction(validator, message, c)
 
       const result: ResultSet = {
         hasError: false,

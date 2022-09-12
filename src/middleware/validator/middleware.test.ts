@@ -287,6 +287,39 @@ describe('Clone Request object if validate JSON or body', () => {
   })
 })
 
+describe('Check duplicate values', () => {
+  const app = new Hono()
+  app.post(
+    '/bar',
+    async (c, next) => {
+      const data = await c.req.parseBody()
+      // Use `c.set`/`c.get`
+      c.set('mail2', data['mail2'])
+      await next()
+    },
+    validation((v, _, c) => ({
+      body: {
+        mail1: [v.equals, c.get('mail2')],
+      },
+    })),
+    (c) => {
+      return c.text('Valid')
+    }
+  )
+
+  it('Should return 200 response - duplicate values', async () => {
+    const formData = new FormData()
+    formData.append('mail1', 'foo@honojs.dev')
+    formData.append('mail2', 'foo@honojs.dev')
+    const req = new Request('http://localhost/bar', {
+      method: 'POST',
+      body: formData,
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+  })
+})
+
 describe('JSON object should not be stringified', () => {
   const app = new Hono()
 
