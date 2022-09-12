@@ -3,8 +3,12 @@ import type { Context } from './context'
 import { HonoContext } from './context'
 import { extendRequestPrototype } from './request'
 import type { Router } from './router'
+import { METHODS } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
-import { TrieRouter } from './router/trie-router' // Default Router
+import { RegExpRouter } from './router/reg-exp-router'
+import { SmartRouter } from './router/smart-router'
+import { StaticRouter } from './router/static-router'
+import { TrieRouter } from './router/trie-router'
 import { getPathFromURL, mergePath } from './utils/url'
 
 export interface ContextVariableMap {}
@@ -68,8 +72,7 @@ interface HandlerInterface<
   (path: string, ...handlers: Handler<string, E>[]): U
 }
 
-const methods = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch'] as const
-type Methods = typeof methods[number] | typeof METHOD_NAME_ALL_LOWERCASE
+type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
 function defineDynamicClass(): {
   new <E extends Partial<Environment> = Environment, T extends string = string, U = Hono>(): {
@@ -89,7 +92,9 @@ export class Hono<
   E extends Partial<Environment> = Environment,
   P extends string = '/'
 > extends defineDynamicClass()<E, P, Hono<E, P>> {
-  readonly router: Router<Handler<string, E>> = new TrieRouter()
+  readonly router: Router<Handler<string, E>> = new SmartRouter({
+    routers: [new StaticRouter(), new RegExpRouter({ allowAmbiguous: false }), new TrieRouter()],
+  })
   readonly strict: boolean = true // strict routing - default is true
   private _tempPath: string = ''
   private path: string = '/'
@@ -101,7 +106,7 @@ export class Hono<
 
     extendRequestPrototype()
 
-    const allMethods = [...methods, METHOD_NAME_ALL_LOWERCASE]
+    const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
       this[method] = <Path extends string = ''>(
         args1: Path | Handler<ParamKeys<Path>, E>,
