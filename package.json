@@ -39,6 +39,7 @@
     "./serve-static": "./dist/middleware/serve-static/index.js",
     "./serve-static.bun": "./dist/middleware/serve-static/bun.js",
     "./serve-static.module": "./dist/middleware/serve-static/module.mjs",
+    "./validator": "./dist/middleware/validator/index.js",
     "./router/trie-router": "./dist/router/trie-router/index.js",
     "./router/reg-exp-router": "./dist/router/reg-exp-router/index.js",
     "./utils/jwt": "./dist/utils/jwt/index.js",
@@ -96,6 +97,9 @@
       ],
       "serve-static.module": [
         "./dist/middleware/serve-static/module.d.mts"
+      ],
+      "validator": [
+        "./dist/middleware/validator"
       ],
       "router/trie-router": [
         "./dist/router/trie-router/router.d.ts"
