@@ -1,4 +1,4 @@
-import { RegExpLiteRouter } from '../reg-exp-lite-router'
+import { RegExpRouter } from '../reg-exp-router'
 import { StaticRouter } from '../static-router'
 import { TrieRouter } from '../trie-router'
 import { SmartRouter } from './router'
@@ -6,7 +6,7 @@ import { SmartRouter } from './router'
 describe('StaticRouter', () => {
   describe('Basic Usage', () => {
     const router = new SmartRouter<string>({
-      routers: [new StaticRouter(), new RegExpLiteRouter(), new TrieRouter()],
+      routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
     })
 
     router.add('GET', '/hello', 'get hello')
@@ -34,7 +34,7 @@ describe('StaticRouter', () => {
   describe('Multi match', () => {
     describe('Blog', () => {
       const router = new SmartRouter<string>({
-        routers: [new StaticRouter(), new RegExpLiteRouter(), new TrieRouter()],
+        routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
       })
 
       router.add('ALL', '*', 'middleware a')
@@ -60,12 +60,12 @@ describe('StaticRouter', () => {
   })
 })
 
-describe('RegExpLiteRouter', () => {
+describe('RegExpRouter', () => {
   describe('Complex', () => {
     let router: SmartRouter<string>
     beforeEach(() => {
       router = new SmartRouter<string>({
-        routers: [new StaticRouter(), new RegExpLiteRouter(), new TrieRouter()],
+        routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
       })
     })
   
@@ -75,7 +75,7 @@ describe('RegExpLiteRouter', () => {
       expect(res).not.toBeNull()
       expect(res?.handlers).toEqual(['get entry'])
       expect(res?.params['id']).toBe('123')
-      expect(router.activeRouter).toBeInstanceOf(RegExpLiteRouter)
+      expect(router.activeRouter).toBeInstanceOf(RegExpRouter)
     })
   
     it('Wildcard', async () => {
@@ -128,7 +128,7 @@ describe('RegExpLiteRouter', () => {
 
 describe('TrieRouter', () => {
   const router = new SmartRouter<string>({
-    routers: [new StaticRouter(), new RegExpLiteRouter(), new TrieRouter()],
+    routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
   })
 
   router.add('GET', '/:user/entries', 'get user entries')

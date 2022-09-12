@@ -1,4 +1,4 @@
-import { METHOD_NAME_ALL } from '../../router'
+import { UnsupportedPathError } from '../../router'
 import { RegExpRouter } from './router'
 
 describe('Basic Usage', () => {
@@ -91,22 +91,6 @@ describe('Registration order', () => {
     router = new RegExpRouter<string>()
   })
 
-  it('abstract -> concrete', async () => {
-    router.add('GET', '/:type/:action', 'foo')
-    router.add('GET', '/posts/:id', 'bar')
-    const res = router.match('GET', '/posts/123')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['foo', 'bar'])
-  })
-
-  it('concrete -> abstract', async () => {
-    router.add('GET', '/posts/:id', 'bar')
-    router.add('GET', '/:type/:action', 'foo')
-    const res = router.match('GET', '/posts/123')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['bar', 'foo'])
-  })
-
   it('middleware -> handler', async () => {
     router.add('GET', '*', 'bar')
     router.add('GET', '/:type/:action', 'foo')
@@ -121,32 +105,6 @@ describe('Registration order', () => {
     const res = router.match('GET', '/posts/123')
     expect(res).not.toBeNull()
     expect(res?.handlers).toEqual(['foo', 'fallback'])
-  })
-})
-
-describe('Optimization for METHOD_NAME_OF_ALL', () => {
-  let router: RegExpRouter<string>
-  beforeEach(() => {
-    router = new RegExpRouter<string>()
-  })
-
-  it('Apply to all requests', async () => {
-    router.add(METHOD_NAME_ALL, '*', 'OK')
-    const res = router.match('GET', '/entry/123')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['OK'])
-    expect(res?.params).toMatchObject({})
-  })
-
-  it('Apply to all requests under a specific path', async () => {
-    router.add(METHOD_NAME_ALL, '/path/to/*', 'OK')
-    let res = router.match('GET', '/entry/123')
-    expect(res).toBeNull()
-
-    res = router.match('GET', '/path/to/entry/123')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['OK'])
-    expect(res?.params).toMatchObject({})
   })
 })
 
@@ -191,44 +149,13 @@ describe('Multi match', () => {
     })
   })
 
-  describe('Ambiguous', () => {
+  it('hierarchy', () => {
     const router = new RegExpRouter<string>()
-
-    router.add('GET', '/:user/entries', 'get user entries')
-    router.add('GET', '/entry/:name', 'get entry')
-    router.add('POST', '/entry', 'create entry')
-
-    it('GET /entry/entry', async () => {
-      const res = router.match('GET', '/entry/entries')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['get user entries', 'get entry'])
-      expect(res?.params['user']).toBe('entry')
-      expect(res?.params['name']).toBe('entries')
-    })
-
-    it('POST /entry', async () => {
-      const res = router.match('POST', '/entry')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['create entry'])
-    })
-  })
-
-  describe('Multiple handlers', () => {
-    const router = new RegExpRouter<string>()
-
-    router.add('GET', '/:type/:id', ':type')
-    router.add('GET', '/:class/:id', ':class')
-    router.add('GET', '/:model/:id', ':model')
-    router.add('GET', '/entry/:id', 'entry')
-
-    it('GET /entry/123', async () => {
-      const res = router.match('GET', '/entry/123')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual([':type', ':class', ':model', 'entry'])
-      expect(res?.params['type']).toBe('entry')
-      expect(res?.params['class']).toBe('entry')
-      expect(res?.params['model']).toBe('entry')
-    })
+    router.add('GET', '/posts/:id/comments/:comment_id', 'foo')
+    router.add('GET', '/posts/:id', 'bar')
+    expect(() => {
+      router.match('GET', '/')
+    }).not.toThrow()
   })
 })
 
@@ -240,6 +167,36 @@ describe('Check for duplicate parameter names', () => {
       router.match('GET', '/') // check parameter names on the first `match` call
     }).toThrowError(/Duplicate param name/)
   })
+})
+
+describe('UnsupportedPathError', () => {
+  describe('Ambiguous', () => {
+    const router = new RegExpRouter<string>()
+
+    router.add('GET', '/:user/entries', 'get user entries')
+    router.add('GET', '/entry/:name', 'get entry')
+    router.add('POST', '/entry', 'create entry')
+
+    it('GET /entry/entry', async () => {
+      expect(() => {
+        router.match('GET', '/entry/entries')
+      }).toThrowError(UnsupportedPathError)
+    })
+  })
+
+  describe('Multiple handlers with different label', () => {
+    const router = new RegExpRouter<string>()
+
+    router.add('GET', '/:type/:id', ':type')
+    router.add('GET', '/:class/:id', ':class')
+    router.add('GET', '/:model/:id', ':model')
+
+    it('GET /entry/123', async () => {
+      expect(() => {
+        router.match('GET', '/entry/123')
+      }).toThrowError(UnsupportedPathError)
+    })
+  })
 
   it('parent', () => {
     const router = new RegExpRouter<string>()
@@ -247,7 +204,7 @@ describe('Check for duplicate parameter names', () => {
     router.add('GET', '/posts/:id', 'bar')
     expect(() => {
       router.match('GET', '/')
-    }).toThrowError(/Duplicate param name/)
+    }).toThrowError(UnsupportedPathError)
   })
 
   it('child', () => {
@@ -257,16 +214,7 @@ describe('Check for duplicate parameter names', () => {
 
     expect(() => {
       router.match('GET', '/')
-    }).toThrowError(/Duplicate param name/)
-  })
-
-  it('hierarchy', () => {
-    const router = new RegExpRouter<string>()
-    router.add('GET', '/posts/:id/comments/:comment_id', 'foo')
-    router.add('GET', '/posts/:id', 'bar')
-    expect(() => {
-      router.match('GET', '/')
-    }).not.toThrow()
+    }).toThrowError(UnsupportedPathError)
   })
 
   it('different regular expression', () => {
@@ -275,7 +223,7 @@ describe('Check for duplicate parameter names', () => {
     router.add('GET', '/:id/:action{delete}', 'bar')
     expect(() => {
       router.match('GET', '/')
-    }).not.toThrow()
+    }).toThrowError(UnsupportedPathError)
   })
 })
 

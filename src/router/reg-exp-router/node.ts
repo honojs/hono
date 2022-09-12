@@ -1,6 +1,7 @@
 const LABEL_REG_EXP_STR = '[^/]+'
 const ONLY_WILDCARD_REG_EXP_STR = '.*'
 const TAIL_WILDCARD_REG_EXP_STR = '(?:|/.*)'
+export const PATH_ERROR = Symbol()
 
 export type ParamMap = Array<[string, number]>
 export interface Context {
@@ -43,18 +44,13 @@ export class Node {
   index?: number
   varIndex?: number
   children: Record<string, Node> = {}
-  reverse: boolean
-
-  constructor({ reverse }: Partial<Node> = { reverse: false }) {
-    this.reverse = reverse as boolean
-  }
-
-  newChildNode(): Node {
-    return new Node({ reverse: this.reverse })
-  }
 
   insert(tokens: readonly string[], index: number, paramMap: ParamMap, context: Context): void {
     if (tokens.length === 0) {
+      if (this.index !== undefined) {
+        throw PATH_ERROR
+      }
+
       this.index = index
       return
     }
@@ -76,26 +72,44 @@ export class Node {
 
       node = this.children[regexpStr]
       if (!node) {
-        node = this.children[regexpStr] = this.newChildNode()
+        if (
+          Object.keys(this.children).some(
+            (k) => k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR
+          )
+        ) {
+          throw PATH_ERROR
+        }
+        node = this.children[regexpStr] = new Node()
         if (name !== '') {
           node.varIndex = context.varIndex++
         }
       }
       if (name !== '') {
+        if (paramMap.some((p) => p[0] === name)) {
+          throw new Error('Duplicate param name')
+        }
         paramMap.push([name, node.varIndex as number])
       }
     } else {
-      node = this.children[token] ||= this.newChildNode()
+      node = this.children[token]
+      if (!node) {
+        if (
+          Object.keys(this.children).some(
+            (k) =>
+              k.length > 1 && k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR
+          )
+        ) {
+          throw PATH_ERROR
+        }
+        node = this.children[token] = new Node()
+      }
     }
 
     node.insert(restTokens, index, paramMap, context)
   }
 
   buildRegExpStr(): string {
-    let childKeys = Object.keys(this.children).sort(compareKey)
-    if (this.reverse) {
-      childKeys = childKeys.reverse()
-    }
+    const childKeys = Object.keys(this.children).sort(compareKey)
 
     const strList = childKeys.map((k) => {
       const c = this.children[k]
