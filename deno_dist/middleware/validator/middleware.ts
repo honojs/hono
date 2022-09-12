@@ -1,6 +1,6 @@
 import type { Context } from '../../context.ts'
 import type { Handler } from '../../hono.ts'
-import { JSONPath } from '../../utils/json.ts'
+import { JSONPathCopy } from '../../utils/json.ts'
 
 type Param =
   | string
@@ -14,12 +14,12 @@ type Rules = Rule | Rule[]
 type Done = (resultSet: ResultSet, context: Context) => Response | undefined
 
 type RuleSet = {
-  body?: Record<string, Rules>
-  json?: Record<string, Rules>
-  header?: Record<string, Rules>
-  query?: Record<string, Rules>
-  done?: Done
-  additionalProperties?: boolean
+  body: Record<string, Rules>
+  json: Record<string, Rules>
+  header: Record<string, Rules>
+  query: Record<string, Rules>
+  done: Done
+  removeAdditional: boolean
 }
 
 type ResultSet = {
@@ -52,7 +52,7 @@ export const validatorMiddleware = <Validator>(validator: Validator) => {
     validatorFunction: (
       validator: Validator,
       message: (value: string) => ValidatorMessage
-    ) => RuleSet
+    ) => Partial<RuleSet>
   ): Handler => {
     return async (c, next) => {
       const validations = validatorFunction(validator, message)
@@ -63,12 +63,9 @@ export const validatorMiddleware = <Validator>(validator: Validator) => {
       }
 
       const v = validations
-      const additionalProperties = v.additionalProperties
-      if (additionalProperties === undefined) {
-        v.additionalProperties = true
-      }
+      v.removeAdditional = v.removeAdditional === undefined ? true : v.removeAdditional // default value is `true`
 
-      const validate = (rules: Rules, value: string, messageFunc: (ruleName: string) => string) => {
+      function validate(rules: Rules, value: string, messageFunc: (ruleName: string) => string) {
         value ||= ''
 
         let count = 0
@@ -129,20 +126,16 @@ export const validatorMiddleware = <Validator>(validator: Validator) => {
       if (v.query) {
         const query = v.query
         const realQueries = c.req.query()
+        const validatedQueries: Record<string, string> = {}
 
         Object.keys(query).map((key) => {
-          const value = realQueries[key]
-          delete realQueries[key]
+          validatedQueries[key] = realQueries[key] || ''
           const message = (name: string) =>
             `Invalid Value: the query parameter "${key}" is invalid - ${name}`
-          validate(query[key], value, message)
+          validate(query[key], validatedQueries[key], message)
         })
-
-        if (v.additionalProperties === false) {
-          Object.keys(realQueries).map((key) => {
-            result.hasError = true
-            result.messages.push(`Additional query parameter "${key}" is not allowed`)
-          })
+        if (!result.hasError && v.removeAdditional) {
+          c.req.queryData = validatedQueries
         }
       }
 
@@ -152,72 +145,51 @@ export const validatorMiddleware = <Validator>(validator: Validator) => {
         for (const key of c.req.headers.keys()) {
           realHeaders[key] = c.req.headers.get(key) || ''
         }
+        const validatedHeaders: Record<string, string> = {}
 
         Object.keys(header).map((key) => {
-          const value = realHeaders[key]
-          delete realHeaders[key]
+          validatedHeaders[key] = realHeaders[key] || ''
           const message = (name: string) =>
             `Invalid Value: the request header "${key}" is invalid - ${name}`
-          validate(header[key], value, message)
+          validate(header[key], validatedHeaders[key], message)
         })
-
-        if (v.additionalProperties === false) {
-          Object.keys(realHeaders).map((key) => {
-            result.hasError = true
-            result.messages.push(`Additional header value "${key}" is not allowed`)
-          })
+        if (!result.hasError && v.removeAdditional) {
+          c.req.headerData = validatedHeaders
         }
       }
 
       if (v.body) {
         const field = v.body
         const parsedBody = (await c.req.parseBody()) as Record<string, string>
-        const kv = Object.assign({}, parsedBody)
-        Object.keys(parsedBody).map((key) => {
-          kv[key] = parsedBody[key]
-        })
+        const kv = { ...parsedBody }
+        const validatedKv: Record<string, string> = {}
 
         Object.keys(field).map(async (key) => {
-          const value = kv[key]
-          delete kv[key]
+          validatedKv[key] = kv[key] || ''
           const message = (name: string) =>
             `Invalid Value: the request body "${key}" is invalid - ${name}`
-          validate(field[key], value, message)
+          validate(field[key], validatedKv[key], message)
         })
-
-        if (v.additionalProperties === false) {
-          Object.keys(kv).map((key) => {
-            result.hasError = true
-            result.messages.push(`Additional body property "${key}" is not allowed`)
-          })
+        if (!result.hasError && v.removeAdditional) {
+          c.req.bodyData = validatedKv
         }
       }
 
       if (v.json) {
         const field = v.json
         const json = (await c.req.json()) as object
+        const validatedJson: object = new (json as any).constructor()
 
         Object.keys(field).map(async (key) => {
-          const value = JSONPath(json, key) || ''
+          const value = JSONPathCopy(json, validatedJson, key)
           const message = (name: string) =>
             `Invalid Value: the JSON body "${key}" is invalid - ${name}`
           validate(field[key], value, message)
-
-          // Check additional properties
-          // In JSON format, only values in the same directory are validated
-          if (v.additionalProperties === false) {
-            const parts = key.split('.')
-            const parentPath = parts.slice(0, parts.length - 1).join('.')
-            const parent = JSONPath(json, parentPath)
-            Object.keys(parent).map((additionalKey) => {
-              const additionalPath = `${parentPath}.${additionalKey}`
-              if (additionalPath !== key) {
-                result.hasError = true
-                result.messages.push(`Additional JSON property "${additionalPath}" is not allowed`)
-              }
-            })
-          }
         })
+
+        if (!result.hasError && v.removeAdditional) {
+          c.req.jsonData = validatedJson
+        }
       }
 
       if (v.done) {

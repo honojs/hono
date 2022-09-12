@@ -314,7 +314,7 @@ describe('JSON object should not be stringified', () => {
   })
 })
 
-describe('additional properties', () => {
+describe('Remove additional properties', () => {
   const app = new Hono()
   // query
   app.get(
@@ -372,5 +372,32 @@ describe('additional properties', () => {
     const res = await app.request(req)
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ post: { author: { name: 'abcdef' } } })
+  })
+
+  // `removeAdditional` option is false
+  app.get(
+    '/with-additional',
+    validation((v) => ({
+      query: {
+        q: v.optional,
+        page: v.isNumeric,
+      },
+      removeAdditional: false,
+    })),
+    (c) => {
+      return c.json(c.req.query())
+    }
+  )
+
+  it('Should only return validated params', async () => {
+    const searchParams = new URLSearchParams({
+      q: 'foobar',
+      page: '3',
+      foo: 'additional query',
+    })
+    const req = new Request(`http://localhost/with-additional?${searchParams.toString()}`)
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ q: 'foobar', page: '3', foo: 'additional query' })
   })
 })

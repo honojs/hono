@@ -5,11 +5,12 @@ import { getQueryStringFromURL } from './utils/url.ts'
 
 declare global {
   interface Request<ParamKeyType extends string = string> {
+    paramData?: Record<ParamKeyType, string>
     param: {
       (key: ParamKeyType): string
       (): Record<ParamKeyType, string>
     }
-    paramData?: Record<ParamKeyType, string>
+    queryData?: Record<string, string>
     query: {
       (key: string): string
       (): Record<string, string>
@@ -18,6 +19,7 @@ declare global {
       (key: string): string[]
       (): Record<string, string[]>
     }
+    headerData?: Record<string, string>
     header: {
       (name: string): string
       (): Record<string, string>
@@ -55,28 +57,32 @@ export function extendRequestPrototype() {
   } as InstanceType<typeof Request>['param']
 
   Request.prototype.header = function (this: Request, name?: string) {
-    if (name) {
-      return this.headers.get(name)
-    } else {
-      const result: Record<string, string> = {}
+    if (!this.headerData) {
+      this.headerData = {}
       for (const [key, value] of this.headers) {
-        result[key] = value
+        this.headerData[key] = value
       }
-      return result
+    }
+    if (name) {
+      return this.headerData[name.toLowerCase()]
+    } else {
+      return this.headerData
     }
   } as InstanceType<typeof Request>['header']
 
   Request.prototype.query = function (this: Request, key?: string) {
     const queryString = getQueryStringFromURL(this.url)
     const searchParams = new URLSearchParams(queryString)
-    if (key) {
-      return searchParams.get(key)
-    } else {
-      const result: Record<string, string> = {}
+    if (!this.queryData) {
+      this.queryData = {}
       for (const key of searchParams.keys()) {
-        result[key] = searchParams.get(key) || ''
+        this.queryData[key] = searchParams.get(key) || ''
       }
-      return result
+    }
+    if (key) {
+      return this.queryData[key]
+    } else {
+      return this.queryData
     }
   } as InstanceType<typeof Request>['query']
 

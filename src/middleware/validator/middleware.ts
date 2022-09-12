@@ -14,11 +14,12 @@ type Rules = Rule | Rule[]
 type Done = (resultSet: ResultSet, context: Context) => Response | undefined
 
 type RuleSet = {
-  body?: Record<string, Rules>
-  json?: Record<string, Rules>
-  header?: Record<string, Rules>
-  query?: Record<string, Rules>
-  done?: Done
+  body: Record<string, Rules>
+  json: Record<string, Rules>
+  header: Record<string, Rules>
+  query: Record<string, Rules>
+  done: Done
+  removeAdditional: boolean
 }
 
 type ResultSet = {
@@ -51,7 +52,7 @@ export const validatorMiddleware = <Validator>(validator: Validator) => {
     validatorFunction: (
       validator: Validator,
       message: (value: string) => ValidatorMessage
-    ) => RuleSet
+    ) => Partial<RuleSet>
   ): Handler => {
     return async (c, next) => {
       const validations = validatorFunction(validator, message)
@@ -62,8 +63,9 @@ export const validatorMiddleware = <Validator>(validator: Validator) => {
       }
 
       const v = validations
+      v.removeAdditional = v.removeAdditional === undefined ? true : v.removeAdditional // default value is `true`
 
-      const validate = (rules: Rules, value: string, messageFunc: (ruleName: string) => string) => {
+      function validate(rules: Rules, value: string, messageFunc: (ruleName: string) => string) {
         value ||= ''
 
         let count = 0
@@ -132,7 +134,7 @@ export const validatorMiddleware = <Validator>(validator: Validator) => {
             `Invalid Value: the query parameter "${key}" is invalid - ${name}`
           validate(query[key], validatedQueries[key], message)
         })
-        if (!result.hasError) {
+        if (!result.hasError && v.removeAdditional) {
           c.req.queryData = validatedQueries
         }
       }
@@ -151,7 +153,7 @@ export const validatorMiddleware = <Validator>(validator: Validator) => {
             `Invalid Value: the request header "${key}" is invalid - ${name}`
           validate(header[key], validatedHeaders[key], message)
         })
-        if (!result.hasError) {
+        if (!result.hasError && v.removeAdditional) {
           c.req.headerData = validatedHeaders
         }
       }
@@ -168,7 +170,7 @@ export const validatorMiddleware = <Validator>(validator: Validator) => {
             `Invalid Value: the request body "${key}" is invalid - ${name}`
           validate(field[key], validatedKv[key], message)
         })
-        if (!result.hasError) {
+        if (!result.hasError && v.removeAdditional) {
           c.req.bodyData = validatedKv
         }
       }
@@ -185,7 +187,7 @@ export const validatorMiddleware = <Validator>(validator: Validator) => {
           validate(field[key], value, message)
         })
 
-        if (!result.hasError) {
+        if (!result.hasError && v.removeAdditional) {
           c.req.jsonData = validatedJson
         }
       }
