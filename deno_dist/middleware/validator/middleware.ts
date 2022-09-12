@@ -177,7 +177,12 @@ export const validatorMiddleware = <Validator>(validator: Validator) => {
 
       if (v.json) {
         const field = v.json
-        const json = (await c.req.json()) as object
+        let json: object
+        try {
+          json = await c.req.json()
+        } catch {
+          json = {}
+        }
         const validatedJson: object = new (json as any).constructor()
 
         Object.keys(field).map(async (key) => {
