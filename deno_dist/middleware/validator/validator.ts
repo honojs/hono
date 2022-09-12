@@ -11,15 +11,19 @@ export const validator = {
     }
     return false
   },
+
   optional(): boolean {
     return true
   },
+
   isAlpha(value: string): boolean {
     return value.match(/^[A-Z]+$/i) ? true : false
   },
+
   isNumeric(value: string): boolean {
     return value.match(/^[0-9]+$/) ? true : false
   },
+
   isEmpty(
     value: string,
     options: {
@@ -28,6 +32,7 @@ export const validator = {
   ): boolean {
     return (options.ignore_whitespace ? value.trim().length : value.length) === 0
   },
+
   isLength(value: string, options: Partial<{ min: number; max: number }> | number, arg2?: number) {
     let min: number
     let max: number | undefined
@@ -44,6 +49,7 @@ export const validator = {
     const len = value.length - presentationSequences.length - surrogatePairs.length
     return len >= min && (typeof max === 'undefined' || len <= max)
   },
+
   contains(
     value: string,
     elem: string,
@@ -59,9 +65,11 @@ export const validator = {
     }
     return value.split(elem).length > options.minOccurrences
   },
+
   equals(value: string, comparison: string): boolean {
     return value === comparison
   },
+
   trim(value: string): string {
     return value.trim()
   },
