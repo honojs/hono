@@ -5,11 +5,12 @@ import { getQueryStringFromURL } from './utils/url'
 
 declare global {
   interface Request<ParamKeyType extends string = string> {
+    paramData?: Record<ParamKeyType, string>
     param: {
       (key: ParamKeyType): string
       (): Record<ParamKeyType, string>
     }
-    paramData?: Record<ParamKeyType, string>
+    queryData?: Record<string, string>
     query: {
       (key: string): string
       (): Record<string, string>
@@ -18,6 +19,7 @@ declare global {
       (key: string): string[]
       (): Record<string, string[]>
     }
+    headerData?: Record<string, string>
     header: {
       (name: string): string
       (): Record<string, string>
@@ -26,9 +28,13 @@ declare global {
       (name: string): string
       (): Cookie
     }
-    parsedBody?: Promise<Record<string, string | File>>
+    bodyData?: Record<string, string | File>
     parseBody: {
       (): Promise<Record<string, string | File>>
+    }
+    jsonData?: any
+    json: {
+      (): Promise<any>
     }
   }
 }
@@ -51,28 +57,32 @@ export function extendRequestPrototype() {
   } as InstanceType<typeof Request>['param']
 
   Request.prototype.header = function (this: Request, name?: string) {
-    if (name) {
-      return this.headers.get(name)
-    } else {
-      const result: Record<string, string> = {}
+    if (!this.headerData) {
+      this.headerData = {}
       for (const [key, value] of this.headers) {
-        result[key] = value
+        this.headerData[key] = value
       }
-      return result
+    }
+    if (name) {
+      return this.headerData[name.toLowerCase()]
+    } else {
+      return this.headerData
     }
   } as InstanceType<typeof Request>['header']
 
   Request.prototype.query = function (this: Request, key?: string) {
     const queryString = getQueryStringFromURL(this.url)
     const searchParams = new URLSearchParams(queryString)
-    if (key) {
-      return searchParams.get(key)
-    } else {
-      const result: Record<string, string> = {}
+    if (!this.queryData) {
+      this.queryData = {}
       for (const key of searchParams.keys()) {
-        result[key] = searchParams.get(key) || ''
+        this.queryData[key] = searchParams.get(key) || ''
       }
-      return result
+    }
+    if (key) {
+      return this.queryData[key]
+    } else {
+      return this.queryData
     }
   } as InstanceType<typeof Request>['query']
 
@@ -101,14 +111,29 @@ export function extendRequestPrototype() {
     }
   } as InstanceType<typeof Request>['cookie']
 
-  Request.prototype.parseBody = function (this: Request): Promise<Record<string, string | File>> {
-    let body: Promise<Record<string, string | File>>
-    if (!this.parsedBody) {
-      body = parseBody(this)
-      this.parsedBody = body
+  Request.prototype.parseBody = async function (
+    this: Request
+  ): Promise<Record<string, string | File>> {
+    // Cache the parsed body
+    let body: Record<string, string | File>
+    if (!this.bodyData) {
+      body = await parseBody(this)
+      this.bodyData = body
     } else {
-      body = this.parsedBody
+      body = this.bodyData
     }
     return body
   } as InstanceType<typeof Request>['parseBody']
+
+  Request.prototype.json = async function (this: Request): Promise<any> {
+    // Cache the JSON body
+    let jsonData: any
+    if (!this.jsonData) {
+      jsonData = JSON.parse(await this.text())
+      this.jsonData = jsonData
+    } else {
+      jsonData = this.jsonData
+    }
+    return jsonData
+  } as InstanceType<typeof Request>['jsonData']
 }
