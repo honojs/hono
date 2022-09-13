@@ -5,7 +5,7 @@ import { extendRequestPrototype } from './request'
 import type { Router } from './router'
 import { METHODS } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
-import { RegExpLiteRouter } from './router/reg-exp-lite-router'
+import { RegExpRouter } from './router/reg-exp-router'
 import { SmartRouter } from './router/smart-router'
 import { StaticRouter } from './router/static-router'
 import { TrieRouter } from './router/trie-router'
@@ -93,7 +93,7 @@ export class Hono<
   P extends string = '/'
 > extends defineDynamicClass()<E, P, Hono<E, P>> {
   readonly router: Router<Handler<string, E>> = new SmartRouter({
-    routers: [new StaticRouter(), new RegExpLiteRouter(), new TrieRouter()],
+    routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
   })
   readonly strict: boolean = true // strict routing - default is true
   private _tempPath: string = ''
