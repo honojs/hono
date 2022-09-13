@@ -11,7 +11,7 @@ type Param =
   | ValidatorMessage
 type Rule = Function | [Function, ...Param[]]
 type Rules = Rule | Rule[]
-type Done = (resultSet: ResultSet, context: Context) => Response | undefined
+type Done = (resultSet: ResultSet, context: Context) => Response | void
 
 type RuleSet = {
   body: Record<string, Rules>

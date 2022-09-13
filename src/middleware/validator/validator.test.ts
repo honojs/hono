@@ -3,10 +3,26 @@ import { validator } from './validator'
 describe('Test the validator rules', () => {
   test('required', () => {
     expect(validator.required('a')).toBeTruthy()
+    expect(validator.required(0)).toBeTruthy()
+    expect(validator.required(undefined)).toBeFalsy()
+    expect(validator.required('')).toBeFalsy()
   })
 
   test('optional', () => {
     expect(validator.optional).toBeTruthy()
+  })
+
+  test('isFalsy', () => {
+    expect(validator.isFalsy(undefined)).toBeTruthy()
+    expect(validator.isFalsy(0)).toBeTruthy()
+    expect(validator.isFalsy('')).toBeTruthy()
+    expect(validator.isFalsy(null)).toBeTruthy()
+  })
+
+  test('isNotFalsy', () => {
+    expect(validator.isNotFalsy('abc')).toBeTruthy()
+    expect(validator.isNotFalsy(123)).toBeTruthy()
+    expect(validator.isNotFalsy(true)).toBeTruthy()
   })
 
   test('isAlpha', () => {
