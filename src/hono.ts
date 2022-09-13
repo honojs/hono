@@ -93,7 +93,7 @@ export class Hono<
   P extends string = '/'
 > extends defineDynamicClass()<E, P, Hono<E, P>> {
   readonly router: Router<Handler<string, E>> = new SmartRouter({
-    routers: [new StaticRouter(), new RegExpRouter({ allowAmbiguous: false }), new TrieRouter()],
+    routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
   })
   readonly strict: boolean = true // strict routing - default is true
   private _tempPath: string = ''

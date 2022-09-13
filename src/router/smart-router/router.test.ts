@@ -6,7 +6,7 @@ import { SmartRouter } from './router'
 describe('StaticRouter', () => {
   describe('Basic Usage', () => {
     const router = new SmartRouter<string>({
-      routers: [new StaticRouter(), new RegExpRouter({ allowAmbiguous: false }), new TrieRouter()],
+      routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
     })
 
     router.add('GET', '/hello', 'get hello')
@@ -34,7 +34,7 @@ describe('StaticRouter', () => {
   describe('Multi match', () => {
     describe('Blog', () => {
       const router = new SmartRouter<string>({
-        routers: [new StaticRouter(), new RegExpRouter({ allowAmbiguous: false }), new TrieRouter()],
+        routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
       })
 
       router.add('ALL', '*', 'middleware a')
@@ -65,7 +65,7 @@ describe('RegExpRouter', () => {
     let router: SmartRouter<string>
     beforeEach(() => {
       router = new SmartRouter<string>({
-        routers: [new StaticRouter(), new RegExpRouter({ allowAmbiguous: false }), new TrieRouter()],
+        routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
       })
     })
   
@@ -128,7 +128,7 @@ describe('RegExpRouter', () => {
 
 describe('TrieRouter', () => {
   const router = new SmartRouter<string>({
-    routers: [new StaticRouter(), new RegExpRouter({ allowAmbiguous: false }), new TrieRouter()],
+    routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
   })
 
   router.add('GET', '/:user/entries', 'get user entries')
