@@ -28,6 +28,11 @@ export type Handler<
   next: Next
 ) => Response | Promise<Response> | Promise<void> | Promise<Response | undefined>
 
+export type MiddlewareHandler = <E extends Partial<Environment> = Environment>(
+  c: Context<string, E>,
+  next: Next
+) => Promise<void> | Promise<Response | undefined>
+
 export type NotFoundHandler<E extends Partial<Environment> = Environment> = (
   c: Context<string, E>
 ) => Response | Promise<Response>

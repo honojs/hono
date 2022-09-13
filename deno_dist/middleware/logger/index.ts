@@ -1,5 +1,4 @@
-import type { Context } from '../../context.ts'
-import type { Next } from '../../hono.ts'
+import type { MiddlewareHandler } from '../../hono.ts'
 import { getPathFromURL } from '../../utils/url.ts'
 
 enum LogPrefix {
@@ -54,8 +53,8 @@ function log(
   fn(out)
 }
 
-export const logger = (fn: PrintFunc = console.log) => {
-  return async (c: Context, next: Next) => {
+export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
+  return async (c, next) => {
     const { method } = c.req
     const path = getPathFromURL(c.req.url)
 

@@ -1,9 +1,12 @@
-import type { Context } from '../../context.ts'
-import type { Next } from '../../hono.ts'
+import type { MiddlewareHandler } from '../../hono.ts'
 import { Jwt } from '../../utils/jwt/index.ts'
 import type { AlgorithmTypes } from '../../utils/jwt/types.ts'
 
-export const jwt = (options: { secret: string; cookie?: string; alg?: string }) => {
+export const jwt = (options: {
+  secret: string
+  cookie?: string
+  alg?: string
+}): MiddlewareHandler => {
   if (!options) {
     throw new Error('JWT auth middleware requires options for "secret')
   }
@@ -12,7 +15,7 @@ export const jwt = (options: { secret: string; cookie?: string; alg?: string }) 
     throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
   }
 
-  return async (ctx: Context, next: Next) => {
+  return async (ctx, next) => {
     const credentials = ctx.req.headers.get('Authorization')
     let token
     if (credentials) {

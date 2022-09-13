@@ -1,5 +1,4 @@
-import type { Context } from '../../context.ts'
-import type { Next } from '../../hono.ts'
+import type { MiddlewareHandler } from '../../hono.ts'
 
 type EncodingType = 'gzip' | 'deflate'
 
@@ -7,8 +6,8 @@ interface CompressionOptions {
   encoding?: EncodingType
 }
 
-export const compress = (options?: CompressionOptions) => {
-  return async (ctx: Context, next: Next) => {
+export const compress = (options?: CompressionOptions): MiddlewareHandler => {
+  return async (ctx, next) => {
     await next()
     const accepted = ctx.req.headers.get('Accept-Encoding')
     const pattern = options?.encoding ?? /gzip|deflate/
