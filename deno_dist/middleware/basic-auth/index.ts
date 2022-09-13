@@ -1,5 +1,4 @@
-import type { Context } from '../../context.ts'
-import type { Next } from '../../hono.ts'
+import type { MiddlewareHandler } from '../../hono.ts'
 import { timingSafeEqual } from '../../utils/buffer.ts'
 import { decodeBase64 } from '../../utils/encode.ts'
 
@@ -24,7 +23,7 @@ const auth = (req: Request) => {
 export const basicAuth = (
   options: { username: string; password: string; realm?: string; hashFunction?: Function },
   ...users: { username: string; password: string }[]
-) => {
+): MiddlewareHandler => {
   if (!options) {
     throw new Error('basic auth middleware requires options for "username and password"')
   }
@@ -34,7 +33,7 @@ export const basicAuth = (
   }
   users.unshift({ username: options.username, password: options.password })
 
-  return async (ctx: Context, next: Next) => {
+  return async (ctx, next) => {
     const requestUser = auth(ctx.req)
     if (requestUser) {
       for (const user of users) {

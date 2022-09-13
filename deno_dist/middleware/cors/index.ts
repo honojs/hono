@@ -1,5 +1,4 @@
-import type { Context } from '../../context.ts'
-import type { Next } from '../../hono.ts'
+import type { MiddlewareHandler } from '../../hono.ts'
 
 type CORSOptions = {
   origin: string
@@ -10,7 +9,7 @@ type CORSOptions = {
   exposeHeaders?: string[]
 }
 
-export const cors = (options?: CORSOptions) => {
+export const cors = (options?: CORSOptions): MiddlewareHandler => {
   const defaults: CORSOptions = {
     origin: '*',
     allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH'],
@@ -22,7 +21,7 @@ export const cors = (options?: CORSOptions) => {
     ...options,
   }
 
-  return async (c: Context, next: Next) => {
+  return async (c, next) => {
     await next()
 
     function set(key: string, value: string) {

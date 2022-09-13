@@ -1,5 +1,5 @@
 import type { Context } from '../../context.ts'
-import type { Handler } from '../../hono.ts'
+import type { MiddlewareHandler } from '../../hono.ts'
 import { JSONPathCopy } from '../../utils/json.ts'
 
 type Param =
@@ -54,7 +54,7 @@ export const validatorMiddleware = <Validator>(validator: Validator) => {
       message: (value: string) => ValidatorMessage,
       context: Context
     ) => Partial<RuleSet>
-  ): Handler => {
+  ): MiddlewareHandler => {
     return async (c, next) => {
       const validations = validatorFunction(validator, message, c)
 

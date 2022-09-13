@@ -1,13 +1,12 @@
-import type { Context } from '../../context'
-import type { Next } from '../../hono'
+import type { MiddlewareHandler } from '../../hono'
 import { sha1 } from '../../utils/crypto'
 
 type ETagOptions = {
   weak: boolean
 }
 
-export const etag = (options: ETagOptions = { weak: false }) => {
-  return async (c: Context, next: Next) => {
+export const etag = (options: ETagOptions = { weak: false }): MiddlewareHandler => {
+  return async (c, next) => {
     const ifNoneMatch = c.req.header('If-None-Match') || c.req.header('if-none-match')
 
     await next()
