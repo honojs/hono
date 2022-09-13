@@ -10,14 +10,21 @@ const isString = (value: any) => {
 
 export const validator = {
   required(value: unknown): boolean {
-    if (value) {
-      return true
-    }
-    return false
+    if (value === undefined) return false
+    if (isString(value) && value === '') return false
+    return true
   },
 
   optional(): boolean {
     return true
+  },
+
+  isFalsy(value: unknown): boolean {
+    return !value
+  },
+
+  isNotFalsy(value: unknown): boolean {
+    return !!value
   },
 
   isAlpha(value: string): boolean {

@@ -253,6 +253,8 @@ describe('Clone Request object if validate JSON or body', () => {
     validation((v) => ({
       json: {
         value: v.required,
+        foo: v.isFalsy,
+        bar: v.isNotFalsy,
       },
     })),
     async (c) => {
@@ -276,6 +278,8 @@ describe('Clone Request object if validate JSON or body', () => {
   it('Should return 200 response - clone body/JSON', async () => {
     const json = {
       value: 'foo',
+      foo: false,
+      bar: true,
     }
     const req = new Request('http://localhost/json', {
       method: 'POST',
