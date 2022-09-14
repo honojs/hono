@@ -36,7 +36,7 @@
     },
     "./cache": {
       "import": "./dist/middleware/cache/index.js",
-      "require": "./dist/csj/middleware/cache/index.js"
+      "require": "./dist/cjs/middleware/cache/index.js"
     },
     "./compress": {
       "import": "./dist/middleware/compress/index.js",
