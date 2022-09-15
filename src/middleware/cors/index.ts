@@ -1,5 +1,4 @@
 import type { MiddlewareHandler } from '../../hono'
-import { getDomainFromURL } from '../../utils/url'
 
 type CORSOptions = {
   origin: string | string[]
@@ -31,25 +30,10 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
 
     if (typeof opts.origin === 'string') {
       set('Access-Control-Allow-Origin', opts.origin)
-    } else {
-      const length = opts.origin.length
-      if (length) {
-        let origin = opts.origin[0]
-        const referer = c.req.headers.get('referer')
-        if (referer) {
-          const domain = getDomainFromURL(referer)
-          if (domain) {
-            for (let i = 0; i < length; i++) {
-              const optDomain = getDomainFromURL(opts.origin[i])
-              if (optDomain && optDomain === domain) {
-                origin = opts.origin[i]
-                break
-              }
-            }
-          }
-        }
-        set('Access-Control-Allow-Origin', origin)
-      }
+    } else if (opts.origin.length > 0) {
+      const origin = c.req.headers.get('origin')
+      const allowedOrigin = origin && opts.origin.includes(origin) ? origin : opts.origin[0]
+      set('Access-Control-Allow-Origin', allowedOrigin)
     }
 
     // Suppose the server sends a response with an Access-Control-Allow-Origin value with an explicit origin (rather than the "*" wildcard).

@@ -5,7 +5,6 @@ import {
   isAbsoluteURL,
   mergePath,
   getQueryStringFromURL,
-  getDomainFromURL,
 } from './url'
 
 describe('url', () => {
@@ -66,17 +65,6 @@ describe('url', () => {
       expect(path).toBe('/hello')
       path = getPathFromURL('https://example.com/hello/hey/', false)
       expect(path).toBe('/hello/hey')
-    })
-
-    it('getDomainFromURL', () => {
-      let domain = getDomainFromURL('https://example.com/hello/')
-      expect(domain).toBe('example.com')
-      domain = getDomainFromURL('https://example.com/')
-      expect(domain).toBe('example.com')
-      domain = getDomainFromURL('https://example.com')
-      expect(domain).toBe('example.com')
-      domain = getDomainFromURL('https://example.com#fragment')
-      expect(domain).toBe('example.com')
     })
   })
 
