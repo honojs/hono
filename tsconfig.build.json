@@ -1,7 +1,14 @@
 {
   "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "es2020",
+    "rootDir": "./src/",
+    "outDir": "./dist/",
+  },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "src/**/*.mts"
   ],
   "exclude": [
     "src/mod.ts",
