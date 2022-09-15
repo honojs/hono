@@ -3,6 +3,7 @@
   "version": "2.1.4",
   "description": "Ultrafast web framework for Cloudflare Workers.",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
@@ -15,35 +16,111 @@
     "lint": "eslint --ext js,ts src .eslintrc.js",
     "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix",
     "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.ts'",
-    "build": "rimraf dist && tsc --project tsconfig.build.esm.json && tsc --project tsconfig.build.json",
+    "build": "rimraf dist && tsc --project tsconfig.build.json && tsc --project tsconfig.build.cjs.json",
     "watch": "tsc --project tsconfig.build.json -w",
     "prerelease": "yarn denoify && yarn test:deno && yarn build",
     "release": "np"
   },
   "exports": {
-    ".": "./dist/index.js",
-    "./basic-auth": "./dist/middleware/basic-auth/index.js",
-    "./bearer-auth": "./dist/middleware/bearer-auth/index.js",
-    "./cache": "./dist/middleware/cache/index.js",
-    "./compress": "./dist/middleware/compress/index.js",
-    "./cors": "./dist/middleware/cors/index.js",
-    "./etag": "./dist/middleware/etag/index.js",
-    "./html": "./dist/middleware/html/index.js",
-    "./jsx": "./dist/middleware/jsx/index.js",
-    "./jsx/jsx-dev-runtime": "./dist/middleware/jsx/jsx-dev-runtime.js",
-    "./jsx/jsx-runtime": "./dist/middleware/jsx/jsx-runtime.js",
-    "./jwt": "./dist/middleware/jwt/index.js",
-    "./logger": "./dist/middleware/logger/index.js",
-    "./powered-by": "./dist/middleware/powered-by/index.js",
-    "./pretty-json": "./dist/middleware/pretty-json/index.js",
-    "./serve-static": "./dist/middleware/serve-static/index.js",
-    "./serve-static.bun": "./dist/middleware/serve-static/bun.js",
-    "./serve-static.module": "./dist/middleware/serve-static/module.mjs",
-    "./validator": "./dist/middleware/validator/index.js",
-    "./router/trie-router": "./dist/router/trie-router/index.js",
-    "./router/reg-exp-router": "./dist/router/reg-exp-router/index.js",
-    "./utils/jwt": "./dist/utils/jwt/index.js",
-    "./utils/*": "./dist/utils/*.js"
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./basic-auth": {
+      "import": "./dist/middleware/basic-auth/index.js",
+      "require": "./dist/cjs/middleware/basic-auth/index.js"
+    },
+    "./bearer-auth": {
+      "import": "./dist/middleware/bearer-auth/index.js",
+      "require": "./dist/cjs/middleware/bearer-auth/index.js"
+    },
+    "./cache": {
+      "import": "./dist/middleware/cache/index.js",
+      "require": "./dist/cjs/middleware/cache/index.js"
+    },
+    "./compress": {
+      "import": "./dist/middleware/compress/index.js",
+      "require": "./dist/cjs/middleware/compress/index.js"
+    },
+    "./cors": {
+      "import": "./dist/middleware/cors/index.js",
+      "require": "./dist/cjs/middleware/cors/index.js"
+    },
+    "./etag": {
+      "import": "./dist/middleware/etag/index.js",
+      "require": "./dist/cjs/middleware/etag/index.js"
+    },
+    "./html": {
+      "import": "./dist/middleware/html/index.js",
+      "require": "./dist/cjs/middleware/html/index.js"
+    },
+    "./jsx": {
+      "import": "./dist/middleware/jsx/index.js",
+      "require": "./dist/cjs/middleware/jsx/index.js"
+    },
+    "./jsx/jsx-dev-runtime": {
+      "import": "./dist/middleware/jsx/jsx-dev-runtime.js",
+      "require": "./dist/cjs/middleware/jsx/jsx-dev-runtime.js"
+    },
+    "./jsx/jsx-runtime": {
+      "import": "./dist/middleware/jsx/jsx-runtime.js",
+      "require": "./dist/cjs/middleware/jsx/jsx-runtime.js"
+    },
+    "./jwt": {
+      "import": "./dist/middleware/jwt/index.js",
+      "require": "./dist/cjs/middleware/jwt/index.js"
+    },
+    "./logger": {
+      "import": "./dist/middleware/logger/index.js",
+      "require": "./dist/cjs/middleware/logger/index.js"
+    },
+    "./powered-by": {
+      "import": "./dist/middleware/powered-by/index.js",
+      "require": "./dist/cjs/middleware/powered-by/index.js"
+    },
+    "./pretty-json": {
+      "import": "./dist/middleware/pretty-json/index.js",
+      "require": "./dist/cjs/middleware/pretty-json/index.js"
+    },
+    "./serve-static": {
+      "import": "./dist/middleware/serve-static/index.js",
+      "require": "./dist/cjs/middleware/serve-static/index.js"
+    },
+    "./serve-static.bun": {
+      "import": "./dist/middleware/serve-static/bun.js",
+      "require": "./dist/cjs/middleware/serve-static/bun.js"
+    },
+    "./serve-static.module": {
+      "import": "./dist/middleware/serve-static/module.mjs"
+    },
+    "./validator": {
+      "import": "./dist/middleware/validator/index.js",
+      "require": "./dist/cjs/middleware/validator/index.js"
+    },
+    "./router/reg-exp-router": {
+      "import": "./dist/router/reg-exp-router/index.js",
+      "require": "./dist/cjs/router/reg-exp-router/index.js"
+    },
+    "./router/smart-router": {
+      "import": "./dist/router/smart-router/index.js",
+      "require": "./dist/cjs/router/smart-router/index.js"
+    },
+    "./router/static-router": {
+      "import": "./dist/router/static-router/index.js",
+      "require": "./dist/cjs/router/static-router/index.js"
+    },
+    "./router/trie-router": {
+      "import": "./dist/router/trie-router/index.js",
+      "require": "./dist/cjs/router/trie-router/index.js"
+    },
+    "./utils/jwt": {
+      "import": "./dist/utils/jwt/index.js",
+      "require": "./dist/cjs/utils/jwt/index.js"
+    },
+    "./utils/*": {
+      "import": "./dist/utils/*.js",
+      "require": "./dist/cjs/utils/*.js"
+    }
   },
   "typesVersions": {
     "*": {
@@ -101,11 +178,17 @@
       "validator": [
         "./dist/middleware/validator"
       ],
-      "router/trie-router": [
-        "./dist/router/trie-router/router.d.ts"
-      ],
       "router/reg-exp-router": [
         "./dist/router/reg-exp-router/router.d.ts"
+      ],
+      "router/smart-router": [
+        "./dist/router/smart-router/router.d.ts"
+      ],
+      "router/static-router": [
+        "./dist/router/static-router/router.d.ts"
+      ],
+      "router/trie-router": [
+        "./dist/router/trie-router/router.d.ts"
       ],
       "utils/jwt": [
         "./dist/utils/jwt/index.d.ts"
