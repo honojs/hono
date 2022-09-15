@@ -12,6 +12,16 @@ describe('Test the validator rules', () => {
     expect(validator.optional).toBeTruthy()
   })
 
+  test('isBoolean', () => {
+    expect(validator.isBoolean(true)).toBeTruthy()
+    expect(validator.isBoolean('abc')).toBeFalsy()
+  })
+
+  test('isNumber', () => {
+    expect(validator.isNumber(123)).toBeTruthy()
+    expect(validator.isNumber('123')).toBeFalsy()
+  })
+
   test('isFalsy', () => {
     expect(validator.isFalsy(undefined)).toBeTruthy()
     expect(validator.isFalsy(0)).toBeTruthy()
@@ -78,6 +88,8 @@ describe('Test the validator rules', () => {
   test('equals', () => {
     expect(validator.equals('foo', 'foo')).toBeTruthy()
     expect(validator.equals('foo', 'bar')).toBeFalsy()
+    expect(validator.equals(123, 123)).toBeTruthy()
+    expect(validator.equals(123, '123')).toBeFalsy()
   })
 
   test('isIn', () => {
