@@ -17,10 +17,20 @@ describe('CORS by Middleware', () => {
     })
   )
 
+  app.use(
+    '/api3/*',
+    cors({
+      origin: ['http://example.com', 'http://example.org', 'http://example.dev'],
+    })
+  )
+
   app.all('/api/abc', (c) => {
     return c.json({ success: true })
   })
   app.all('/api2/abc', (c) => {
+    return c.json({ success: true })
+  })
+  app.all('/api3/abc', (c) => {
     return c.json({ success: true })
   })
 
@@ -65,5 +75,27 @@ describe('CORS by Middleware', () => {
     ])
     expect(res.headers.get('Access-Control-Max-Age')).toBe('600')
     expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+  })
+
+  it('Allow multiple origins', async () => {
+    let req = new Request('http://localhost/api3/abc', {
+      headers: {
+        Referer: 'http://example.org/',
+      },
+    })
+    let res = await app.request(req)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.org')
+
+    req = new Request('http://localhost/api3/abc')
+    res = await app.request(req)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+
+    req = new Request('http://localhost/api3/abc', {
+      headers: {
+        Referer: 'http://example.net/',
+      },
+    })
+    res = await app.request(req)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
   })
 })
