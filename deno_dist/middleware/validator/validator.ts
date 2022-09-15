@@ -19,6 +19,14 @@ export const validator = {
     return true
   },
 
+  isBoolean(value: unknown): boolean {
+    return typeof value === 'boolean'
+  },
+
+  isNumber(value: unknown): boolean {
+    return typeof value === 'number'
+  },
+
   isFalsy(value: unknown): boolean {
     return !value
   },
@@ -79,7 +87,7 @@ export const validator = {
     return value.split(elem).length > options.minOccurrences
   },
 
-  equals(value: string, comparison: string): boolean {
+  equals(value: unknown, comparison: unknown): boolean {
     return value === comparison
   },
 
