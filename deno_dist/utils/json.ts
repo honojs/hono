@@ -11,11 +11,9 @@ export const JSONPathCopy = (src: object, dst: object, path: string) => {
       if (typeof srcVal === 'object') {
         if (typeof srcVal[p] === 'object') {
           dstVal[p] ||= new srcVal[p].constructor()
-        }
-        else if (p in srcVal) {
+        } else if (p in srcVal) {
           dstVal[p] = srcVal[p]
-        }
-        else {
+        } else {
           return undefined
         }
         srcVal = srcVal[p]
