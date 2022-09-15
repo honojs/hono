@@ -24,6 +24,13 @@ describe('CORS by Middleware', () => {
     })
   )
 
+  app.use(
+    '/api4/*',
+    cors({
+      origin: (origin) => (origin.endsWith('.example.com') ? origin : 'http://example.com'),
+    })
+  )
+
   app.all('/api/abc', (c) => {
     return c.json({ success: true })
   })
@@ -31,6 +38,9 @@ describe('CORS by Middleware', () => {
     return c.json({ success: true })
   })
   app.all('/api3/abc', (c) => {
+    return c.json({ success: true })
+  })
+  app.all('/api4/abc', (c) => {
     return c.json({ success: true })
   })
 
@@ -93,6 +103,28 @@ describe('CORS by Middleware', () => {
     req = new Request('http://localhost/api3/abc', {
       headers: {
         Referer: 'http://example.net/',
+      },
+    })
+    res = await app.request(req)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+  })
+
+  it('Allow origins by function', async () => {
+    let req = new Request('http://localhost/api4/abc', {
+      headers: {
+        Origin: 'http://subdomain.example.com',
+      },
+    })
+    let res = await app.request(req)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://subdomain.example.com')
+
+    req = new Request('http://localhost/api4/abc')
+    res = await app.request(req)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+
+    req = new Request('http://localhost/api4/abc', {
+      headers: {
+        Referer: 'http://evil-example.com/',
       },
     })
     res = await app.request(req)
