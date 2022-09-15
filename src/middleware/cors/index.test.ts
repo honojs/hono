@@ -80,7 +80,7 @@ describe('CORS by Middleware', () => {
   it('Allow multiple origins', async () => {
     let req = new Request('http://localhost/api3/abc', {
       headers: {
-        Referer: 'http://example.org/',
+        Origin: 'http://example.org',
       },
     })
     let res = await app.request(req)

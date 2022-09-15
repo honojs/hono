@@ -50,14 +50,6 @@ export const getPathFromURL = (url: string, strict: boolean = true): string => {
   return result
 }
 
-export const getDomainFromURL = (url: string): string | null => {
-  const match = url.match(/^https?:\/\/([a-zA-Z0-9\-\.:]+)(:?\/|\#)?/)
-  if (match) {
-    return match[1]
-  }
-  return null
-}
-
 export const getQueryStringFromURL = (url: string): string => {
   const queryIndex = url.indexOf('?')
   const result = queryIndex !== -1 ? url.substring(queryIndex) : ''
