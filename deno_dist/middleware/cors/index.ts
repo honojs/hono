@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from '../../hono.ts'
 
 type CORSOptions = {
-  origin: string | string[]
+  origin: string | string[] | ((origin: string) => string | undefined | null)
   allowMethods?: string[]
   allowHeaders?: string[]
   maxAge?: number
@@ -21,6 +21,16 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
     ...options,
   }
 
+  const findAllowOrigin = ((optsOrigin) => {
+    if (typeof optsOrigin === 'string') {
+      return () => optsOrigin
+    } else if (typeof optsOrigin === 'function') {
+      return optsOrigin
+    } else {
+      return (origin: string) => (optsOrigin.includes(origin) ? origin : optsOrigin[0])
+    }
+  })(opts.origin)
+
   return async (c, next) => {
     await next()
 
@@ -28,12 +38,9 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       c.res.headers.append(key, value)
     }
 
-    if (typeof opts.origin === 'string') {
-      set('Access-Control-Allow-Origin', opts.origin)
-    } else if (opts.origin.length > 0) {
-      const origin = c.req.headers.get('origin')
-      const allowedOrigin = origin && opts.origin.includes(origin) ? origin : opts.origin[0]
-      set('Access-Control-Allow-Origin', allowedOrigin)
+    const allowOrigin = findAllowOrigin(c.req.headers.get('origin') || '')
+    if (allowOrigin) {
+      set('Access-Control-Allow-Origin', allowOrigin)
     }
 
     // Suppose the server sends a response with an Access-Control-Allow-Origin value with an explicit origin (rather than the "*" wildcard).
