@@ -22,6 +22,12 @@ export type ValidateResult = {
   value: Type
 }
 
+type VOption = {
+  target: Target
+  key: string
+  type?: 'string' | 'number' | 'boolean' | 'object'
+}
+
 export abstract class VBase {
   type: 'string' | 'number' | 'boolean' | 'object'
   target: Target
@@ -30,11 +36,7 @@ export abstract class VBase {
   sanitizers: Sanitizer[]
   private _message: string | undefined
 
-  constructor(option: {
-    target: Target
-    key: string
-    type?: 'string' | 'number' | 'boolean' | 'object'
-  }) {
+  constructor(option: VOption) {
     this.target = option.target
     this.key = option.key
     this.type = option.type || 'string'
@@ -71,19 +73,16 @@ export abstract class VBase {
 
   asNumber = () => {
     const newVNumber = new VNumber(this)
-    newVNumber.type = 'number'
     return newVNumber
   }
 
   asBoolean = () => {
     const newVBoolean = new VBoolean(this)
-    newVBoolean.type = 'boolean'
     return newVBoolean
   }
 
   asObject = () => {
     const newVObject = new VObject(this)
-    newVObject.type = 'object'
     return newVObject
   }
 
@@ -164,7 +163,10 @@ export abstract class VBase {
 }
 
 export class VString extends VBase {
-  type!: 'string'
+  constructor(option: VOption) {
+    super(option)
+    this.type = 'string'
+  }
 
   isEmpty = (
     options: {
@@ -210,7 +212,10 @@ export class VString extends VBase {
 }
 
 export class VNumber extends VBase {
-  type!: 'number'
+  constructor(option: VOption) {
+    super(option)
+    this.type = 'number'
+  }
 
   isGte = (min: number) => {
     return this.addRule((value) => rule.isGte(value as number, min))
@@ -222,7 +227,10 @@ export class VNumber extends VBase {
 }
 
 export class VBoolean extends VBase {
-  type!: 'boolean'
+  constructor(option: VOption) {
+    super(option)
+    this.type = 'boolean'
+  }
 
   isTrue = () => {
     return this.addRule((value) => rule.isTrue(value as boolean))
@@ -234,5 +242,8 @@ export class VBoolean extends VBase {
 }
 
 export class VObject extends VBase {
-  type!: 'object'
+  constructor(option: VOption) {
+    super(option)
+    this.type = 'object'
+  }
 }
