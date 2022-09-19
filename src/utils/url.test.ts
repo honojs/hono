@@ -5,6 +5,7 @@ import {
   isAbsoluteURL,
   mergePath,
   getQueryStringFromURL,
+  checkOptionalRoute,
 } from './url'
 
 describe('url', () => {
@@ -123,6 +124,20 @@ describe('url', () => {
     })
     it('Should be `/`', () => {
       expect(mergePath('/', '/')).toBe('/')
+    })
+  })
+
+  describe('checkOptionalRoute', () => {
+    it('checkOptionalRoute', () => {
+      expect(checkOptionalRoute('/api/animals/:type?')).toEqual([
+        '/api/animals',
+        '/api/animals/:type',
+      ])
+      expect(checkOptionalRoute('/api/animals/type?')).toBeNull()
+      expect(checkOptionalRoute('/api/animals/:type')).toBeNull()
+      expect(checkOptionalRoute('/api/animals')).toBeNull()
+      expect(checkOptionalRoute('/api/:animals?/type')).toBeNull()
+      expect(checkOptionalRoute('/api/animals/:type?/')).toBeNull()
     })
   })
 })
