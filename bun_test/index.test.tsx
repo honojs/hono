@@ -67,6 +67,11 @@ describe('Serve Static Middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/x-icon')
   })
+
+  it('Should return 404 response', async () => {
+    const res = await app.request(new Request('http://localhost/favicon-notfound.ico'))
+    expect(res.status).toBe(404)
+  })
 })
 
 // JWT is not available for Bun
