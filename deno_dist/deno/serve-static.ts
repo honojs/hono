@@ -25,7 +25,16 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Middlew
     })
 
     path = `./${path}`
-    const content = await Deno.readFile(path)
+
+    let content
+
+    try {
+      content = await Deno.readFile(path)
+    } catch (e) {
+      console.warn(`${e}`)
+      await next()
+    }
+
     if (content) {
       const mimeType = getMimeType(path)
       if (mimeType) {
