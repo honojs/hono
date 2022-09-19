@@ -22,7 +22,7 @@ export type ValidateResult = {
   value: Type
 }
 
-type VOption = {
+type VOptions = {
   target: Target
   key: string
   type?: 'string' | 'number' | 'boolean' | 'object'
@@ -36,10 +36,10 @@ export abstract class VBase {
   sanitizers: Sanitizer[]
   private _message: string | undefined
 
-  constructor(option: VOption) {
-    this.target = option.target
-    this.key = option.key
-    this.type = option.type || 'string'
+  constructor(options: VOptions) {
+    this.target = options.target
+    this.key = options.key
+    this.type = options.type || 'string'
     this.rules = []
     this.sanitizers = []
   }
@@ -163,8 +163,8 @@ export abstract class VBase {
 }
 
 export class VString extends VBase {
-  constructor(option: VOption) {
-    super(option)
+  constructor(options: VOptions) {
+    super(options)
     this.type = 'string'
   }
 
@@ -212,8 +212,8 @@ export class VString extends VBase {
 }
 
 export class VNumber extends VBase {
-  constructor(option: VOption) {
-    super(option)
+  constructor(options: VOptions) {
+    super(options)
     this.type = 'number'
   }
 
@@ -227,8 +227,8 @@ export class VNumber extends VBase {
 }
 
 export class VBoolean extends VBase {
-  constructor(option: VOption) {
-    super(option)
+  constructor(options: VOptions) {
+    super(options)
     this.type = 'boolean'
   }
 
@@ -242,8 +242,8 @@ export class VBoolean extends VBase {
 }
 
 export class VObject extends VBase {
-  constructor(option: VOption) {
-    super(option)
+  constructor(options: VOptions) {
+    super(options)
     this.type = 'object'
   }
 }
