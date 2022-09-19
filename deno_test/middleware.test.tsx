@@ -2,7 +2,7 @@
 /** @jsxFrag Fragment */
 import { basicAuth, jsx, Fragment, serveStatic, jwt } from '../deno_dist/middleware.ts'
 import { Hono } from '../deno_dist/mod.ts'
-import { assertEquals } from './deps.ts'
+import { assertEquals, assertMatch } from './deps.ts'
 
 // Test just only minimal patterns.
 // Because others are already tested well in Cloudflare Workers environment.
@@ -59,9 +59,12 @@ Deno.test('JSX middleware', async () => {
 Deno.test('Serve Static middleware', async () => {
   const app = new Hono()
   app.all('/favicon.ico', serveStatic({ path: './deno_test/favicon.ico' }))
-  const res = await app.request('http://localhost/favicon.ico')
+  let res = await app.request('http://localhost/favicon.ico')
   assertEquals(res.status, 200)
   assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
+  res = await app.request('http://localhost/favicon-notfound.ico')
+  assertEquals(res.status, 404)
+  assertMatch(res.headers.get('Content-Type') || '', /^text\/plain/)
 })
 
 Deno.test('JWT Authentication middleware', async () => {
