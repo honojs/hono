@@ -37,11 +37,11 @@ export const rule = {
   },
 
   isAlpha: (value: string): boolean => {
-    return value.match(/^[A-Z]+$/i) ? true : false
+    return /^[A-Z]+$/i.test(value)
   },
 
   isNumeric: (value: string): boolean => {
-    return value.match(/^[0-9]+$/) ? true : false
+    return /^[0-9]+$/.test(value)
   },
 
   contains: (
@@ -70,7 +70,7 @@ export const rule = {
   },
 
   match: (value: string, regExp: RegExp): boolean => {
-    return value.match(regExp) ? true : false
+    return regExp.test(value)
   },
 
   // number
