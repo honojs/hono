@@ -5,7 +5,7 @@ import {
   isAbsoluteURL,
   mergePath,
   getQueryStringFromURL,
-  checkOptionalRoute,
+  checkOptionalParameter,
 } from './url'
 
 describe('url', () => {
@@ -127,17 +127,17 @@ describe('url', () => {
     })
   })
 
-  describe('checkOptionalRoute', () => {
-    it('checkOptionalRoute', () => {
-      expect(checkOptionalRoute('/api/animals/:type?')).toEqual([
+  describe('checkOptionalParameter', () => {
+    it('checkOptionalParameter', () => {
+      expect(checkOptionalParameter('/api/animals/:type?')).toEqual([
         '/api/animals',
         '/api/animals/:type',
       ])
-      expect(checkOptionalRoute('/api/animals/type?')).toBeNull()
-      expect(checkOptionalRoute('/api/animals/:type')).toBeNull()
-      expect(checkOptionalRoute('/api/animals')).toBeNull()
-      expect(checkOptionalRoute('/api/:animals?/type')).toBeNull()
-      expect(checkOptionalRoute('/api/animals/:type?/')).toBeNull()
+      expect(checkOptionalParameter('/api/animals/type?')).toBeNull()
+      expect(checkOptionalParameter('/api/animals/:type')).toBeNull()
+      expect(checkOptionalParameter('/api/animals')).toBeNull()
+      expect(checkOptionalParameter('/api/:animals?/type')).toBeNull()
+      expect(checkOptionalParameter('/api/animals/:type?/')).toBeNull()
     })
   })
 })

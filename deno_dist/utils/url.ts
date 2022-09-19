@@ -96,7 +96,7 @@ export const mergePath = (...paths: string[]): string => {
   return p
 }
 
-export const checkOptionalRoute = (path: string): string[] | null => {
+export const checkOptionalParameter = (path: string): string[] | null => {
   /*
    If path is `/api/animals/:type?` it will return:
    [`/api/animals`, `/api/animals/:type`]
