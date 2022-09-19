@@ -126,3 +126,34 @@ describe('Basic - JSON', () => {
     expect(res.message).toBe(messages.join('\n'))
   })
 })
+
+describe('Handling types error', () => {
+  const v = new Validator()
+
+  const post = {
+    id: '1234',
+    title: 'This is title',
+    published: 'true',
+  }
+
+  const req = new Request('http://localhost/', {
+    method: 'POST',
+    body: JSON.stringify(post),
+  })
+
+  it('Should be invalid - "1234" is not number', async () => {
+    const validator = v.json('id').asNumber().isEqual(1234)
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(false)
+    const messages = ['Invalid Value: the JSON body "id" is invalid - 1234']
+    expect(res.message).toBe(messages.join('\n'))
+  })
+
+  it('Should be invalid - "true" is not boolean', async () => {
+    const validator = v.json('published').asBoolean()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(false)
+    const messages = ['Invalid Value: the JSON body "published" is invalid - true']
+    expect(res.message).toBe(messages.join('\n'))
+  })
+})
