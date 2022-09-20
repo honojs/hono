@@ -1,4 +1,5 @@
 import { parseBody } from './utils/body.ts'
+import type { BodyData } from './utils/body.ts'
 import type { Cookie } from './utils/cookie.ts'
 import { parse } from './utils/cookie.ts'
 import { getQueryStringFromURL } from './utils/url.ts'
@@ -33,14 +34,10 @@ declare global {
       (name: string): string
       (): Cookie
     }
-    bodyData?: Record<string, string | File>
-    parseBody: {
-      (): Promise<Record<string, string | File>>
-    }
+    bodyData?: BodyData
+    parseBody<BodyType extends BodyData>(): Promise<BodyType>
     jsonData?: any
-    json: {
-      (): Promise<any>
-    }
+    json<JSONData = any>(): Promise<JSONData>
     data: Data
     valid: {
       (key: string, value: any): Data
@@ -121,23 +118,23 @@ export function extendRequestPrototype() {
     }
   } as InstanceType<typeof Request>['cookie']
 
-  Request.prototype.parseBody = async function (
+  Request.prototype.parseBody = async function <BodyType extends BodyData>(
     this: Request
-  ): Promise<Record<string, string | File>> {
+  ): Promise<BodyType> {
     // Cache the parsed body
-    let body: Record<string, string | File>
+    let body: BodyType
     if (!this.bodyData) {
-      body = await parseBody(this)
+      body = await parseBody<BodyType>(this)
       this.bodyData = body
     } else {
-      body = this.bodyData
+      body = this.bodyData as BodyType
     }
     return body
   } as InstanceType<typeof Request>['parseBody']
 
-  Request.prototype.json = async function (this: Request): Promise<any> {
+  Request.prototype.json = async function <JSONData>(this: Request): Promise<JSONData> {
     // Cache the JSON body
-    let jsonData: any
+    let jsonData: JSONData
     if (!this.jsonData) {
       jsonData = JSON.parse(await this.text())
       this.jsonData = jsonData
