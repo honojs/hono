@@ -36,24 +36,23 @@ export default app
 
 ## Features
 
-- **Ultrafast** - the router does not use linear loops.
-- **Zero-dependencies** - using only Service Worker and Web Standard API.
-- **Middleware** - built-in middleware, custom middleware, and third-party middleware.
-- **TypeScript** - first-class TypeScript support.
-- **Multi-platform** - works on Cloudflare Workers, Fastly Compute@Edge, Deno, or Bun.
+- **Ultrafast** - The routers are really smart. Not using linear loops. The fastest one will be selected from three routers.
+- **Zero-dependencies** - Using only Web Standard API. Does not depend on other npm or Deno libraries.
+- **Middleware** - Hono has built-in middleware, custom middleware, and third-party middleware. Batteries included.
+- **TypeScript** - First-class TypeScript support. Now, we've got "Types".
+- **Multi-runtime** - Works on Cloudflare Workers, Fastly Compute@Edge, Deno, Bun, or Node.js. The same code runs on all platforms.
 
 ## Benchmarks
 
 **Hono is fastest**, compared to other routers for Cloudflare Workers.
 
 ```plain
-hono - trie-router(default) x 482,004 ops/sec ±5.00% (79 runs sampled)
-hono - regexp-router x 604,006 ops/sec ±4.80% (81 runs sampled)
-itty-router x 203,623 ops/sec ±2.10% (94 runs sampled)
-sunder x 306,457 ops/sec ±2.49% (89 runs sampled)
-worktop x 189,450 ops/sec ±3.14% (88 runs sampled)
-Fastest is hono - regexp-router
-✨  Done in 36.79s.
+Hono x 616,464 ops/sec ±4.76% (83 runs sampled)
+itty-router x 203,074 ops/sec ±3.66% (88 runs sampled)
+sunder x 314,306 ops/sec ±2.28% (87 runs sampled)
+worktop x 194,111 ops/sec ±2.78% (81 runs sampled)
+Fastest is Hono
+✨  Done in 30.77s.
 ```
 
 ## Documentation
