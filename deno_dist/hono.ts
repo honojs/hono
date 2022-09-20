@@ -20,11 +20,14 @@ export type Environment = {
   Variables: Variables
 }
 
+export type ValidatedData = Record<string, any> // For validated data
+
 export type Handler<
   RequestParamKeyType extends string = string,
-  E extends Partial<Environment> = Environment
+  E extends Partial<Environment> = Environment,
+  D extends ValidatedData = ValidatedData
 > = (
-  c: Context<RequestParamKeyType, E>,
+  c: Context<RequestParamKeyType, E, D>,
   next: Next
 ) => Response | Promise<Response> | Promise<void> | Promise<Response | undefined>
 
@@ -60,51 +63,61 @@ type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   : ParamKey<Path>
 
 interface HandlerInterface<
-  T extends string = string,
-  E extends Partial<Environment> = Environment,
-  U = Hono<E, T>
+  T extends string,
+  E extends Partial<Environment>,
+  D extends ValidatedData,
+  U = Hono<E, T, D>
 > {
   // app.get(handler...)
-  <Path extends string, Env extends Partial<Environment> = E>(
-    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, Env>[]
+  <Path extends string, Env extends Partial<Environment>, Data extends ValidatedData = D>(
+    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, Env, Data>[]
   ): U
-  (...handlers: Handler<string, E>[]): U
+  (...handlers: Handler<string, E, D>[]): U
   // app.get('/', handler, handler...)
-  <Path extends string, Env extends Partial<Environment> = E>(
+  <Path extends string, Env extends Partial<Environment> = E, Data extends ValidatedData = D>(
     path: Path,
-    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, Env>[]
+    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, Env, Data>[]
   ): U
-  (path: string, ...handlers: Handler<string, E>[]): U
+  (path: string, ...handlers: Handler<string, E, D>[]): U
 }
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
 function defineDynamicClass(): {
-  new <E extends Partial<Environment> = Environment, T extends string = string, U = Hono>(): {
-    [K in Methods]: HandlerInterface<T, E, U>
+  new <
+    E extends Partial<Environment> = Environment,
+    T extends string = string,
+    D extends ValidatedData = ValidatedData,
+    U = Hono<E, T, D>
+  >(): {
+    [K in Methods]: HandlerInterface<T, E, D, U>
   }
 } {
   return class {} as any
 }
 
-interface Route<E extends Partial<Environment> = Environment> {
+interface Route<
+  E extends Partial<Environment> = Environment,
+  D extends ValidatedData = ValidatedData
+> {
   path: string
   method: string
-  handler: Handler<string, E>
+  handler: Handler<string, E, D>
 }
 
 export class Hono<
   E extends Partial<Environment> = Environment,
-  P extends string = '/'
-> extends defineDynamicClass()<E, P, Hono<E, P>> {
-  readonly router: Router<Handler<string, E>> = new SmartRouter({
+  P extends string = '/',
+  D extends ValidatedData = ValidatedData
+> extends defineDynamicClass()<E, P, D, Hono<E, P, D>> {
+  readonly router: Router<Handler<string, E, D>> = new SmartRouter({
     routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
   })
   readonly strict: boolean = true // strict routing - default is true
   private _tempPath: string = ''
   private path: string = '/'
 
-  routes: Route<E>[] = []
+  routes: Route<E, D>[] = []
 
   constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
     super()
@@ -114,8 +127,8 @@ export class Hono<
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
       this[method] = <Path extends string = ''>(
-        args1: Path | Handler<ParamKeys<Path>, E>,
-        ...args: [Handler<ParamKeys<Path>, E>]
+        args1: Path | Handler<ParamKeys<Path>, E, D>,
+        ...args: [Handler<ParamKeys<Path>, E, D>]
       ): this => {
         if (typeof args1 === 'string') {
           this.path = args1
@@ -145,7 +158,7 @@ export class Hono<
     return c.text(message, 500)
   }
 
-  route(path: string, app?: Hono<any>): Hono<E, P> {
+  route(path: string, app?: Hono<any>): Hono<E, P, D> {
     this._tempPath = path
     if (app) {
       app.routes.map((r) => {
@@ -157,14 +170,17 @@ export class Hono<
     return this
   }
 
-  use<Path extends string = string, Env extends Partial<Environment> = E>(
-    ...middleware: Handler<Path, Env>[]
-  ): Hono<Env, Path>
-  use<Path extends string = string, Env extends Partial<Environment> = E>(
-    arg1: string,
-    ...middleware: Handler<Path, Env>[]
-  ): Hono<Env, Path>
-  use(arg1: string | Handler<string, E>, ...handlers: Handler<string, E>[]): Hono<E, P> {
+  use<
+    Path extends string = string,
+    Env extends Partial<Environment> = E,
+    Data extends ValidatedData = D
+  >(...middleware: Handler<Path, Env, Data>[]): Hono<Env, Path, Data>
+  use<
+    Path extends string = string,
+    Env extends Partial<Environment> = E,
+    Data extends ValidatedData = D
+  >(arg1: string, ...middleware: Handler<Path, Env, Data>[]): Hono<Env, Path, D>
+  use(arg1: string | Handler<string, E, D>, ...handlers: Handler<string, E, D>[]): Hono<E, P, D> {
     if (typeof arg1 === 'string') {
       this.path = arg1
     } else {
@@ -176,23 +192,23 @@ export class Hono<
     return this
   }
 
-  onError(handler: ErrorHandler<E>): Hono<E, P> {
+  onError(handler: ErrorHandler<E>): Hono<E, P, D> {
     this.errorHandler = handler
     return this
   }
 
-  notFound(handler: NotFoundHandler<E>): Hono<E, P> {
+  notFound(handler: NotFoundHandler<E>): Hono<E, P, D> {
     this.notFoundHandler = handler
     return this
   }
 
-  private addRoute(method: string, path: string, handler: Handler<string, E>): void {
+  private addRoute(method: string, path: string, handler: Handler<string, E, D>): void {
     method = method.toUpperCase()
     if (this._tempPath) {
       path = mergePath(this._tempPath, path)
     }
     this.router.add(method, path, handler)
-    const r: Route<E> = { path: path, method: method, handler: handler }
+    const r: Route<E, D> = { path: path, method: method, handler: handler }
     this.routes.push(r)
   }
 
@@ -211,7 +227,7 @@ export class Hono<
     const result = this.matchRoute(method, path)
     request.paramData = result?.params
 
-    const c = new HonoContext<string, E>(request, env, eventOrExecutionCtx, this.notFoundHandler)
+    const c = new HonoContext<string, E, D>(request, env, eventOrExecutionCtx, this.notFoundHandler)
 
     // Do not `compose` if it has only one handler
     if (result && result.handlers.length === 1) {

@@ -1,12 +1,4 @@
-import {
-  splitPath,
-  getPattern,
-  getPathFromURL,
-  isAbsoluteURL,
-  mergePath,
-  getQueryStringFromURL,
-  checkOptionalParameter,
-} from './url'
+import { splitPath, getPattern, getPathFromURL, mergePath, getQueryStringFromURL } from './url'
 
 describe('url', () => {
   it('splitPath', () => {
@@ -83,18 +75,6 @@ describe('url', () => {
       // This specification allows that the string includes two `?` or more
       queryString = getQueryStringFromURL('https://example.com/?foo=bar?foo2=bar2')
       expect(queryString).toBe('?foo=bar?foo2=bar2')
-    })
-  })
-
-  describe('isAbsoluteURL', () => {
-    it('absolute url', () => {
-      expect(isAbsoluteURL('https://example.com')).toBeTruthy()
-      expect(isAbsoluteURL('https://example.com/xxx')).toBeTruthy()
-    })
-    it('relative url', () => {
-      expect(isAbsoluteURL('/')).not.toBeTruthy()
-      expect(isAbsoluteURL('/location')).not.toBeTruthy()
-      expect(isAbsoluteURL('')).not.toBeTruthy()
     })
   })
 
