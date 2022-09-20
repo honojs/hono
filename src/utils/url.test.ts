@@ -1,4 +1,11 @@
-import { splitPath, getPattern, getPathFromURL, mergePath, getQueryStringFromURL } from './url'
+import {
+  splitPath,
+  getPattern,
+  getPathFromURL,
+  mergePath,
+  getQueryStringFromURL,
+  checkOptionalParameter,
+} from './url'
 
 describe('url', () => {
   it('splitPath', () => {
