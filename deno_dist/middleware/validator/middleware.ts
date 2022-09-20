@@ -1,11 +1,13 @@
 import type { Context } from '../../context.ts'
 import type { Environment, Handler } from '../../hono.ts'
-import { Validator } from './validator.ts'
+import { VBase, Validator } from './validator.ts'
 import type { VString, VNumber, VBoolean, VObject, ValidateResult } from './validator.ts'
 
 type ValidationFunction<T> = (v: Validator, c: Context) => T
 
-type Schema = Record<string, VString | VNumber | VBoolean | VObject>
+type Schema = {
+  [key: string]: VString | VNumber | VBoolean | VObject | Schema
+}
 type SchemaToProp<T> = {
   [K in keyof T]: T[K] extends VNumber
     ? number
@@ -15,6 +17,8 @@ type SchemaToProp<T> = {
     ? string
     : T[K] extends VObject
     ? object
+    : T[K] extends Schema
+    ? SchemaToProp<T[K]>
     : never
 }
 
@@ -25,6 +29,21 @@ type ResultSet = {
 }
 
 type Done = (resultSet: ResultSet, context: Context) => Response | void
+
+function getValidatorList<T extends Schema>(schema: T): [string[], VBase][] {
+  const map: [string[], VBase][] = []
+  for (const [key, value] of Object.entries(schema)) {
+    if (value instanceof VBase) {
+      map.push([[key], value])
+    } else {
+      const children = getValidatorList(value)
+      for (const [keys, validator] of children) {
+        map.push([[key, ...keys], validator])
+      }
+    }
+  }
+  return map
+}
 
 export const validatorMiddleware = <T extends Schema>(
   validationFunction: ValidationFunction<T>,
@@ -39,14 +58,13 @@ export const validatorMiddleware = <T extends Schema>(
       results: [],
     }
 
-    const schema = validationFunction(v, c)
+    const validatorList = getValidatorList(validationFunction(v, c))
 
-    for (const key of Object.keys(schema)) {
-      const validator = schema[key]
+    for (const [keys, validator] of validatorList) {
       const result = await validator.validate(c.req)
       if (result.isValid) {
         // Set data on request object
-        c.req.valid(key, result.value)
+        c.req.valid(keys, result.value)
       } else {
         resultSet.hasError = true
         if (result.message !== undefined) {
