@@ -1,7 +1,7 @@
 import type { Context } from '../../context.ts'
 import type { Environment, Handler } from '../../hono.ts'
 import { Validator } from './validator.ts'
-import type { VBase, VString, VNumber, VBoolean, VObject, ValidateResult } from './validator.ts'
+import type { VString, VNumber, VBoolean, VObject, ValidateResult } from './validator.ts'
 
 type ValidationFunction<T> = (v: Validator, c: Context) => T
 

@@ -1,7 +1,7 @@
 import type { Context } from '../../context'
 import type { Environment, Handler } from '../../hono'
 import { Validator } from './validator'
-import type { VBase, VString, VNumber, VBoolean, VObject, ValidateResult } from './validator'
+import type { VString, VNumber, VBoolean, VObject, ValidateResult } from './validator'
 
 type ValidationFunction<T> = (v: Validator, c: Context) => T
 
