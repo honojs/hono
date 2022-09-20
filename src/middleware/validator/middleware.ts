@@ -1,20 +1,20 @@
 import type { Context } from '../../context'
 import type { Environment, Handler } from '../../hono'
 import { Validator } from './validator'
-import type { VBase, VString, VNumber, VBoolean, VObject, ValidateResult } from './validator'
+import type { VString, VNumber, VBoolean, VObject, ValidateResult } from './validator'
 
 type ValidationFunction<T> = (v: Validator, c: Context) => T
 
 type Schema = Record<string, VString | VNumber | VBoolean | VObject>
 type SchemaToProp<T> = {
-  [K in keyof T]: T[K] extends VBase
-    ? T[K]['type'] extends 'number'
-      ? number
-      : T[K]['type'] extends 'boolean'
-      ? boolean
-      : T[K]['type'] extends 'string'
-      ? string
-      : never
+  [K in keyof T]: T[K] extends VNumber
+    ? number
+    : T[K] extends VBoolean
+    ? boolean
+    : T[K] extends VString
+    ? string
+    : T[K] extends VObject
+    ? object
     : never
 }
 
