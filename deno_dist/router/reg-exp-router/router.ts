@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { Router, Result } from '../../router.ts'
 import { METHOD_NAME_ALL, METHODS, UnsupportedPathError } from '../../router.ts'
-import { checkOptionalParameter } from '../../utils/url.ts'
 import { PATH_ERROR } from './node.ts'
 import type { ParamMap } from './trie.ts'
 import { Trie } from './trie.ts'
@@ -114,24 +113,19 @@ export class RegExpRouter<T> implements Router<T> {
       return
     }
 
-    const paths = checkOptionalParameter(path) || [path]
-    for (let i = 0, len = paths.length; i < len; i++) {
-      const path = paths[i]
+    routes[method] ||= {}
+    routes[method][path] ||= [
+      ...(routes[METHOD_NAME_ALL][path] ||
+        findMiddleware(middleware[method], path) ||
+        findMiddleware(middleware[METHOD_NAME_ALL], path) ||
+        []),
+    ]
 
-      routes[method] ||= {}
-      routes[method][path] ||= [
-        ...(routes[METHOD_NAME_ALL][path] ||
-          findMiddleware(middleware[method], path) ||
-          findMiddleware(middleware[METHOD_NAME_ALL], path) ||
-          []),
-      ]
-
-      Object.keys(routes).forEach((m) => {
-        ;(method === METHOD_NAME_ALL || method === m) &&
-          routes[m][path] &&
-          routes[m][path].push(handler)
-      })
-    }
+    Object.keys(routes).forEach((m) => {
+      ;(method === METHOD_NAME_ALL || method === m) &&
+        routes[m][path] &&
+        routes[m][path].push(handler)
+    })
   }
 
   match(method: string, path: string): Result<T> | null {
