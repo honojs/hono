@@ -1,18 +1,25 @@
-import type { Environment, NotFoundHandler, ContextVariableMap, Bindings } from './hono'
+import type {
+  Environment,
+  NotFoundHandler,
+  ContextVariableMap,
+  Bindings,
+  ValidatedData,
+} from './hono'
 import { defaultNotFoundMessage } from './hono'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'
-import { isAbsoluteURL } from './utils/url'
 
-type Headers = Record<string, string>
+type HeaderField = [string, string]
+type Headers = Record<string, string | string[]>
 export type Data = string | ArrayBuffer | ReadableStream
 
 export interface Context<
   RequestParamKeyType extends string = string,
-  E extends Partial<Environment> = any
+  E extends Partial<Environment> = any,
+  D extends ValidatedData = ValidatedData
 > {
-  req: Request<RequestParamKeyType>
+  req: Request<RequestParamKeyType, D>
   env: E['Bindings']
   event: FetchEvent
   executionCtx: ExecutionContext
@@ -20,7 +27,7 @@ export interface Context<
 
   get res(): Response
   set res(_res: Response)
-  header: (name: string, value: string) => void
+  header: (name: string, value: string, options?: { append?: boolean }) => void
   status: (status: StatusCode) => void
   set: {
     <Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
@@ -45,10 +52,11 @@ export interface Context<
 
 export class HonoContext<
   RequestParamKeyType extends string = string,
-  E extends Partial<Environment> = Environment
-> implements Context<RequestParamKeyType, E>
+  E extends Partial<Environment> = Environment,
+  D extends ValidatedData = ValidatedData
+> implements Context<RequestParamKeyType, E, D>
 {
-  req: Request<RequestParamKeyType>
+  req: Request<RequestParamKeyType, D>
   env: E['Bindings']
   finalized: boolean
 
@@ -57,18 +65,18 @@ export class HonoContext<
   private _pretty: boolean = false
   private _prettySpace: number = 2
   private _map: Record<string, any> | undefined
-  private _headers: Record<string, string> | undefined
+  private _headers: Record<string, string[]> | undefined
   private _res: Response | undefined
   private notFoundHandler: NotFoundHandler<E>
 
   constructor(
-    req: Request,
+    req: Request<RequestParamKeyType>,
     env: E['Bindings'] | undefined = undefined,
     executionCtx: FetchEvent | ExecutionContext | undefined = undefined,
     notFoundHandler: NotFoundHandler<E> = () => new Response()
   ) {
     this._executionCtx = executionCtx
-    this.req = req
+    this.req = req as Request<RequestParamKeyType, D>
     this.env = env || ({} as Bindings)
 
     this.notFoundHandler = notFoundHandler
@@ -100,11 +108,30 @@ export class HonoContext<
     this.finalized = true
   }
 
-  header(name: string, value: string): void {
+  header(name: string, value: string, options?: { append?: boolean }): void {
     this._headers ||= {}
-    this._headers[name.toLowerCase()] = value
+    const key = name.toLowerCase()
+
+    let shouldAppend = false
+    if (options && options.append) {
+      const vAlreadySet = this._headers[key]
+      if (vAlreadySet && vAlreadySet.length) {
+        shouldAppend = true
+      }
+    }
+
+    if (shouldAppend) {
+      this._headers[key].push(value)
+    } else {
+      this._headers[key] = [value]
+    }
+
     if (this.finalized) {
-      this.res.headers.set(name, value)
+      if (shouldAppend) {
+        this.res.headers.append(name, value)
+      } else {
+        this.res.headers.set(name, value)
+      }
     }
   }
 
@@ -136,16 +163,39 @@ export class HonoContext<
   }
 
   newResponse(data: Data | null, status: StatusCode, headers: Headers = {}): Response {
-    const _headers = { ...this._headers }
-    if (this._res) {
-      this._res.headers.forEach((v, k) => {
-        _headers[k] = v
-      })
-    }
     return new Response(data, {
       status: status || this._status || 200,
-      headers: { ..._headers, ...headers },
+      headers: this._finalizeHeaders(headers),
     })
+  }
+
+  private _finalizeHeaders(incomingHeaders: Headers): HeaderField[] {
+    const finalizedHeaders: HeaderField[] = []
+    const headersKv = this._headers || {}
+    // If Response is already set
+    if (this._res) {
+      this._res.headers.forEach((v, k) => {
+        headersKv[k] = [v]
+      })
+    }
+    for (const key of Object.keys(incomingHeaders)) {
+      const value = incomingHeaders[key]
+      if (typeof value === 'string') {
+        finalizedHeaders.push([key, value])
+      } else {
+        for (const v of value) {
+          finalizedHeaders.push([key, v])
+        }
+      }
+      delete headersKv[key]
+    }
+    for (const key of Object.keys(headersKv)) {
+      for (const value of headersKv[key]) {
+        const kv: HeaderField = [key, value]
+        finalizedHeaders.push(kv)
+      }
+    }
+    return finalizedHeaders
   }
 
   body(data: Data | null, status: StatusCode = this._status, headers: Headers = {}): Response {
@@ -171,11 +221,6 @@ export class HonoContext<
   }
 
   redirect(location: string, status: StatusCode = 302): Response {
-    if (!isAbsoluteURL(location)) {
-      const url = new URL(this.req.url)
-      url.pathname = location
-      location = url.toString()
-    }
     return this.newResponse(null, status, {
       Location: location,
     })
@@ -183,7 +228,7 @@ export class HonoContext<
 
   cookie(name: string, value: string, opt?: CookieOptions): void {
     const cookie = serialize(name, value, opt)
-    this.header('set-cookie', cookie)
+    this.header('set-cookie', cookie, { append: true })
   }
 
   notFound(): Response | Promise<Response> {

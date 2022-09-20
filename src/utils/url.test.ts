@@ -2,9 +2,9 @@ import {
   splitPath,
   getPattern,
   getPathFromURL,
-  isAbsoluteURL,
   mergePath,
   getQueryStringFromURL,
+  checkOptionalParameter,
 } from './url'
 
 describe('url', () => {
@@ -85,18 +85,6 @@ describe('url', () => {
     })
   })
 
-  describe('isAbsoluteURL', () => {
-    it('absolute url', () => {
-      expect(isAbsoluteURL('https://example.com')).toBeTruthy()
-      expect(isAbsoluteURL('https://example.com/xxx')).toBeTruthy()
-    })
-    it('relative url', () => {
-      expect(isAbsoluteURL('/')).not.toBeTruthy()
-      expect(isAbsoluteURL('/location')).not.toBeTruthy()
-      expect(isAbsoluteURL('')).not.toBeTruthy()
-    })
-  })
-
   describe('mergePath', () => {
     it('mergePath', () => {
       expect(mergePath('/book', '/')).toBe('/book')
@@ -123,6 +111,20 @@ describe('url', () => {
     })
     it('Should be `/`', () => {
       expect(mergePath('/', '/')).toBe('/')
+    })
+  })
+
+  describe('checkOptionalParameter', () => {
+    it('checkOptionalParameter', () => {
+      expect(checkOptionalParameter('/api/animals/:type?')).toEqual([
+        '/api/animals',
+        '/api/animals/:type',
+      ])
+      expect(checkOptionalParameter('/api/animals/type?')).toBeNull()
+      expect(checkOptionalParameter('/api/animals/:type')).toBeNull()
+      expect(checkOptionalParameter('/api/animals')).toBeNull()
+      expect(checkOptionalParameter('/api/:animals?/type')).toBeNull()
+      expect(checkOptionalParameter('/api/animals/:type?/')).toBeNull()
     })
   })
 })

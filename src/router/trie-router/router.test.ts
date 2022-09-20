@@ -145,3 +145,18 @@ describe('routing order with named parameters', () => {
     expect(res?.params['slug']).toBe('foo')
   })
 })
+
+describe('Optional route', () => {
+  const router = new TrieRouter<string>()
+  router.add('GET', '/api/animals/:type?', 'animals')
+  it('GET /api/animals/dog', async () => {
+    const res = router.match('GET', '/api/animals/dog')
+    expect(res?.handlers).toEqual(['animals'])
+    expect(res?.params['type']).toBe('dog')
+  })
+  it('GET /api/animals', async () => {
+    const res = router.match('GET', '/api/animals')
+    expect(res?.handlers).toEqual(['animals'])
+    expect(res?.params['type']).toBeUndefined()
+  })
+})

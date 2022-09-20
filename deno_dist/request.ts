@@ -4,8 +4,13 @@ import type { Cookie } from './utils/cookie.ts'
 import { parse } from './utils/cookie.ts'
 import { getQueryStringFromURL } from './utils/url.ts'
 
+type ValidatedData = Record<string, any>
+
 declare global {
-  interface Request<ParamKeyType extends string = string> {
+  interface Request<
+    ParamKeyType extends string = string,
+    Data extends ValidatedData = ValidatedData
+  > {
     paramData?: Record<ParamKeyType, string>
     param: {
       (key: ParamKeyType): string
@@ -32,7 +37,12 @@ declare global {
     bodyData?: BodyData
     parseBody<BodyType extends BodyData>(): Promise<BodyType>
     jsonData?: any
-    json<JSONData = unknown>(): Promise<JSONData>
+    json<JSONData = any>(): Promise<JSONData>
+    data: Data
+    valid: {
+      (key: string, value: any): Data
+      (): Data
+    }
   }
 }
 
@@ -117,7 +127,7 @@ export function extendRequestPrototype() {
       body = await parseBody<BodyType>(this)
       this.bodyData = body
     } else {
-      body = this.bodyData as unknown as BodyType
+      body = this.bodyData as BodyType
     }
     return body
   } as InstanceType<typeof Request>['parseBody']
@@ -133,4 +143,14 @@ export function extendRequestPrototype() {
     }
     return jsonData
   } as InstanceType<typeof Request>['jsonData']
+
+  Request.prototype.valid = function (this: Request, key?: string, value?: any) {
+    if (!this.data) {
+      this.data = {}
+    }
+    if (key && value) {
+      this.data[key] = value
+    }
+    return this.data
+  } as InstanceType<typeof Request>['valid']
 }

@@ -1,5 +1,3 @@
-const URL_REGEXP = /^https?:\/\/[a-zA-Z0-9\-\.:]+(\/?[^?#]*)/
-
 export type Pattern = readonly [string, string, RegExp | true] | '*'
 
 export const splitPath = (path: string): string[] => {
@@ -56,14 +54,6 @@ export const getQueryStringFromURL = (url: string): string => {
   return result
 }
 
-export const isAbsoluteURL = (url: string): boolean => {
-  const match = url.match(URL_REGEXP)
-  if (match) {
-    return true
-  }
-  return false
-}
-
 export const mergePath = (...paths: string[]): string => {
   let p: string = ''
   let endsWithSlash = false
@@ -94,4 +84,18 @@ export const mergePath = (...paths: string[]): string => {
   }
 
   return p
+}
+
+export const checkOptionalParameter = (path: string): string[] | null => {
+  /*
+   If path is `/api/animals/:type?` it will return:
+   [`/api/animals`, `/api/animals/:type`]
+   in other cases it will return null
+   */
+  const match = path.match(/(^.+)(\/\:[^\/]+)\?$/)
+  if (!match) return null
+
+  const base = match[1]
+  const optional = base + match[2]
+  return [base, optional]
 }

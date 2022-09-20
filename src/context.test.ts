@@ -55,7 +55,7 @@ describe('Context', () => {
   it('c.redirect()', async () => {
     let res = c.redirect('/destination')
     expect(res.status).toBe(302)
-    expect(res.headers.get('Location')).toMatch(/^https?:\/\/.+\/destination$/)
+    expect(res.headers.get('Location')).toBe('/destination')
     res = c.redirect('https://example.com/destination')
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe('https://example.com/destination')
@@ -66,6 +66,22 @@ describe('Context', () => {
     const res = c.body('Hi')
     const foo = res.headers.get('X-Foo')
     expect(foo).toBe('Bar')
+  })
+
+  it('c.header() - append', async () => {
+    c.header('X-Foo', 'Bar')
+    c.header('X-Foo', 'Buzz', { append: true })
+    const res = c.body('Hi')
+    const foo = res.headers.get('X-Foo')
+    expect(foo).toBe('Bar, Buzz')
+  })
+
+  it('c.body() - multiple header', async () => {
+    const res = c.body('Hi', 200, {
+      'X-Foo': ['Bar', 'Buzz'],
+    })
+    const foo = res.headers.get('X-Foo')
+    expect(foo).toBe('Bar, Buzz')
   })
 
   it('c.status()', async () => {

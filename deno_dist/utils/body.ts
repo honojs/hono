@@ -16,5 +16,5 @@ export async function parseBody<BodyType extends BodyData>(
       return acc
     }, form)
   }
-  return body as Record<string, string | File> as BodyType
+  return body as BodyType
 }

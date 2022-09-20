@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from '../../hono.ts'
 
 type CORSOptions = {
-  origin: string
+  origin: string | string[] | ((origin: string) => string | undefined | null)
   allowMethods?: string[]
   allowHeaders?: string[]
   maxAge?: number
@@ -21,6 +21,16 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
     ...options,
   }
 
+  const findAllowOrigin = ((optsOrigin) => {
+    if (typeof optsOrigin === 'string') {
+      return () => optsOrigin
+    } else if (typeof optsOrigin === 'function') {
+      return optsOrigin
+    } else {
+      return (origin: string) => (optsOrigin.includes(origin) ? origin : optsOrigin[0])
+    }
+  })(opts.origin)
+
   return async (c, next) => {
     await next()
 
@@ -28,7 +38,10 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       c.res.headers.append(key, value)
     }
 
-    set('Access-Control-Allow-Origin', opts.origin)
+    const allowOrigin = findAllowOrigin(c.req.headers.get('origin') || '')
+    if (allowOrigin) {
+      set('Access-Control-Allow-Origin', allowOrigin)
+    }
 
     // Suppose the server sends a response with an Access-Control-Allow-Origin value with an explicit origin (rather than the "*" wildcard).
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin

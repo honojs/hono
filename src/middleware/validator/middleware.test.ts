@@ -1,24 +1,19 @@
 import { Hono } from '../../hono'
-import { validation } from './index'
+import { validator } from './index'
 
-describe('Basic', () => {
+describe('Basic - query', () => {
   const app = new Hono()
   // query
   app.get(
     '/foo',
-    validation((v) => ({
-      query: {
-        page: [v.required, v.isNumeric],
-        q: v.isAlpha,
-        q2: [v.isAlpha, [v.contains, 'abc']],
-        q3: [[v.contains, 'abc'], v.isAlpha],
-        q4: [
-          [v.contains, 'abc'],
-          [v.isLength, 1, 10],
-        ],
-        q5: [v.isEmpty, v.required],
-        q6: [[v.contains, 'abc'], v.required, [v.isLength, 5, 100]],
-      },
+    validator((v) => ({
+      page: v.query('page').isRequired().isNumeric(),
+      q: v.query('q').isAlpha(),
+      q2: v.query('q2').isAlpha().contains('abc'),
+      q3: v.query('q3').contains('abc').isAlpha(),
+      q4: v.query('q4').contains('abc').isLength(1, 10),
+      q5: v.query('q5').isEmpty().isRequired(),
+      q6: v.query('q6').contains('abc').isRequired().isLength(5, 100),
     })),
     (c) => {
       return c.text('Valid')
@@ -39,43 +34,59 @@ describe('Basic', () => {
     expect(res.status).toBe(400)
     expect(await res.text()).toBe(
       [
-        'Invalid Value: the query parameter "page" is invalid - required',
-        'Invalid Value: the query parameter "q5" is invalid - isEmpty',
+        'Invalid Value: the query parameter "page" is invalid - undefined',
+        'Invalid Value: the query parameter "q5" is invalid - 123',
       ].join('\n')
     )
   })
+})
 
-  // body
-  app.post(
-    '/bar',
-    validation((v) => ({
-      body: {
-        num: [v.trim, v.isNumeric],
-      },
-    })),
-    (c) => {
-      return c.text('Valid')
-    }
-  )
+describe('Basic - body', () => {
+  const app = new Hono()
+
+  const middleware = validator((v) => ({
+    title: v.body('title').isRequired(),
+  }))
+
+  app.post('/posts', middleware, (c) => {
+    const data = c.req.valid()
+    c.header('x-title', data.title)
+    return c.text('Valid!')
+  })
 
   it('Should return 200 response - body', async () => {
-    const formData = new FormData()
-    formData.append('num', '1234 ')
-    const req = new Request('http://localhost/bar', {
+    const body = new FormData()
+    body.append('title', 'This is Title')
+    const req = new Request('http://localhost/posts', {
       method: 'POST',
-      body: formData,
+      body: body,
     })
     const res = await app.request(req)
     expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Valid!')
+    expect(res.headers.get('x-title')).toBe('This is Title')
   })
 
+  it('Should return 400 response - body', async () => {
+    const body = new FormData()
+    const req = new Request('http://localhost/posts', {
+      method: 'POST',
+      body: body,
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(400)
+    const messages = ['Invalid Value: the request body "title" is invalid - undefined']
+    expect(await res.text()).toBe(messages.join('\n'))
+  })
+})
+
+describe('Basic - header & custom message', () => {
+  const app = new Hono()
   // header & custom error message
   app.get(
     '/',
-    validation((v, message) => ({
-      header: {
-        'x-header': [v.required, message('CUSTOM MESSAGE')],
-      },
+    validator((v) => ({
+      xHeader: v.header('x-header').isRequired().message('CUSTOM MESSAGE'),
     })),
     (c) => {
       return c.text('Valid')
@@ -87,14 +98,15 @@ describe('Basic', () => {
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('CUSTOM MESSAGE')
   })
+})
 
+describe('Basic - JSON', () => {
+  const app = new Hono()
   // JSON
   app.post(
     '/json',
-    validation((v) => ({
-      json: {
-        'post.author.name': v.isAlpha,
-      },
+    validator((v) => ({
+      name: v.json('post.author.name').isAlpha(),
     })),
     (c) => {
       return c.text('Valid')
@@ -125,16 +137,18 @@ describe('Custom Error Handling', () => {
   app.get(
     '/custom-error',
     // Custom Error handler should be above.
-    validation((v) => ({
-      query: {
-        userId: v.required,
-      },
-      done: (result, c) => {
-        if (result.hasError) {
-          return c.json({ ERROR: true }, 404)
-        }
-      },
-    })),
+    validator(
+      (v) => ({
+        userId: v.query('userId').isRequired(),
+      }),
+      {
+        done: (result, c) => {
+          if (result.hasError) {
+            return c.json({ ERROR: true }, 404)
+          }
+        },
+      }
+    ),
     (c) => {
       c.header('x-valid', 'OK')
       return c.text('Valid')
@@ -154,15 +168,15 @@ describe('Custom Validation', () => {
   const app = new Hono()
 
   // Custom Validator
-  const passwordValidator = (value: string) => {
-    return value.match(/^[a-zA-Z0-9]+$/) ? true : false
-  }
   app.post(
     '/custom-validator',
-    validation((_, message) => ({
-      body: {
-        password: [passwordValidator, message('password is wrong')],
-      },
+    validator((v) => ({
+      password: v.body('password').addRule((value) => {
+        if (typeof value === 'string') {
+          return value.match(/^[a-zA-Z0-9]+$/) ? true : false
+        }
+        return false
+      }),
     })),
     (c) => {
       return c.text('Valid')
@@ -179,18 +193,6 @@ describe('Custom Validation', () => {
     const res = await app.request(req)
     expect(res.status).toBe(200)
   })
-
-  it('Should return 400 response - custom validator', async () => {
-    const formData = new FormData()
-    formData.append('password', 'abcd_+123$')
-    const req = new Request('http://localhost/custom-validator', {
-      method: 'POST',
-      body: formData,
-    })
-    const res = await app.request(req)
-    expect(res.status).toBe(400)
-    expect(await res.text()).toBe('password is wrong')
-  })
 })
 
 describe('Array parameter', () => {
@@ -199,10 +201,8 @@ describe('Array parameter', () => {
   // Array parameter
   app.post(
     '/array-parameter',
-    validation((v) => ({
-      body: {
-        value: [v.required, [v.equals, 'valid']],
-      },
+    validator((v) => ({
+      foo: v.body('value').isRequired().isEqual('valid'),
     })),
     (c) => {
       return c.text('Valid')
@@ -238,28 +238,24 @@ describe('Clone Request object if validate JSON or body', () => {
 
   app.post(
     '/body',
-    validation((v) => ({
-      body: {
-        value: v.required,
-      },
+    validator((v) => ({
+      value: v.body('value').isRequired(),
     })),
     async (c) => {
-      const data = await c.req.parseBody()
+      const data = c.req.valid()
       return c.text((data['value'] as string) || '')
     }
   )
   app.post(
     '/json',
-    validation((v) => ({
-      json: {
-        value: v.required,
-        foo: v.isFalsy,
-        bar: v.isNotFalsy,
-      },
+    validator((v) => ({
+      value: v.json('value').isRequired(),
+      foo: v.json('foo').asBoolean().isFalse(),
+      bar: v.json('bar').asBoolean().isTrue(),
     })),
     async (c) => {
-      const json = (await c.req.json()) as { value: string }
-      return c.text(json.value)
+      const data = c.req.valid()
+      return c.text(data.value)
     }
   )
 
@@ -301,10 +297,8 @@ describe('Check duplicate values', () => {
       c.set('mail2', data['mail2'])
       await next()
     },
-    validation((v, _, c) => ({
-      body: {
-        mail1: [v.equals, c.get('mail2')],
-      },
+    validator((v, c) => ({
+      mail: v.body('mail1').isEqual(c.get('mail2')),
     })),
     (c) => {
       return c.text('Valid')
@@ -324,46 +318,17 @@ describe('Check duplicate values', () => {
   })
 })
 
-describe('JSON object should not be stringified', () => {
-  const app = new Hono()
-
-  // JSON
-  app.post(
-    '/json',
-    validation((v) => ({
-      json: {
-        'post.author.email': v.required,
-      },
-    })),
-    (c) => {
-      return c.text('Valid')
-    }
-  )
-
-  it('Should return 400 response - JSON', async () => {
-    const json = {}
-    const req = new Request('http://localhost/json', {
-      method: 'POST',
-      body: JSON.stringify(json),
-    })
-    const res = await app.request(req)
-    expect(res.status).toBe(400)
-  })
-})
-
 describe('Remove additional properties', () => {
   const app = new Hono()
   // query
   app.get(
     '/foo',
-    validation((v) => ({
-      query: {
-        q: v.optional,
-        page: v.isNumeric,
-      },
+    validator((v) => ({
+      q: v.query('q').isOptional(),
+      page: v.query('page').isNumeric(),
     })),
     (c) => {
-      return c.json(c.req.query())
+      return c.json(c.req.valid())
     }
   )
 
@@ -382,13 +347,11 @@ describe('Remove additional properties', () => {
   // JSON
   app.post(
     '/json',
-    validation((v) => ({
-      json: {
-        'post.author.name': v.isAlpha,
-      },
+    validator((v) => ({
+      name: v.json('post.author.name').isAlpha(),
     })),
     async (c) => {
-      return c.json(await c.req.json())
+      return c.json(c.req.valid())
     }
   )
 
@@ -408,33 +371,6 @@ describe('Remove additional properties', () => {
     })
     const res = await app.request(req)
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ post: { author: { name: 'abcdef' } } })
-  })
-
-  // `removeAdditional` option is false
-  app.get(
-    '/with-additional',
-    validation((v) => ({
-      query: {
-        q: v.optional,
-        page: v.isNumeric,
-      },
-      removeAdditional: false,
-    })),
-    (c) => {
-      return c.json(c.req.query())
-    }
-  )
-
-  it('Should only return validated params', async () => {
-    const searchParams = new URLSearchParams({
-      q: 'foobar',
-      page: '3',
-      foo: 'additional query',
-    })
-    const req = new Request(`http://localhost/with-additional?${searchParams.toString()}`)
-    const res = await app.request(req)
-    expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ q: 'foobar', page: '3', foo: 'additional query' })
+    expect(await res.json()).toEqual({ name: 'abcdef' })
   })
 })
