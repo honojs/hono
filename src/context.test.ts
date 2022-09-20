@@ -68,6 +68,22 @@ describe('Context', () => {
     expect(foo).toBe('Bar')
   })
 
+  it('c.header() - append', async () => {
+    c.header('X-Foo', 'Bar')
+    c.header('X-Foo', 'Buzz', { append: true })
+    const res = c.body('Hi')
+    const foo = res.headers.get('X-Foo')
+    expect(foo).toBe('Bar, Buzz')
+  })
+
+  it('c.body() - multiple header', async () => {
+    const res = c.body('Hi', 200, {
+      'X-Foo': ['Bar', 'Buzz'],
+    })
+    const foo = res.headers.get('X-Foo')
+    expect(foo).toBe('Bar, Buzz')
+  })
+
   it('c.status()', async () => {
     c.status(201)
     const res = c.body('Hi')
