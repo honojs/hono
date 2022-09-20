@@ -1,4 +1,10 @@
-import type { Environment, NotFoundHandler, ContextVariableMap, Bindings } from './hono.ts'
+import type {
+  Environment,
+  NotFoundHandler,
+  ContextVariableMap,
+  Bindings,
+  ValidatedData,
+} from './hono.ts'
 import { defaultNotFoundMessage } from './hono.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
@@ -10,9 +16,10 @@ export type Data = string | ArrayBuffer | ReadableStream
 
 export interface Context<
   RequestParamKeyType extends string = string,
-  E extends Partial<Environment> = any
+  E extends Partial<Environment> = any,
+  D extends ValidatedData = ValidatedData
 > {
-  req: Request<RequestParamKeyType>
+  req: Request<RequestParamKeyType, D>
   env: E['Bindings']
   event: FetchEvent
   executionCtx: ExecutionContext
@@ -45,10 +52,11 @@ export interface Context<
 
 export class HonoContext<
   RequestParamKeyType extends string = string,
-  E extends Partial<Environment> = Environment
-> implements Context<RequestParamKeyType, E>
+  E extends Partial<Environment> = Environment,
+  D extends ValidatedData = ValidatedData
+> implements Context<RequestParamKeyType, E, D>
 {
-  req: Request<RequestParamKeyType>
+  req: Request<RequestParamKeyType, D>
   env: E['Bindings']
   finalized: boolean
 
@@ -62,13 +70,13 @@ export class HonoContext<
   private notFoundHandler: NotFoundHandler<E>
 
   constructor(
-    req: Request,
+    req: Request<RequestParamKeyType>,
     env: E['Bindings'] | undefined = undefined,
     executionCtx: FetchEvent | ExecutionContext | undefined = undefined,
     notFoundHandler: NotFoundHandler<E> = () => new Response()
   ) {
     this._executionCtx = executionCtx
-    this.req = req
+    this.req = req as Request<RequestParamKeyType, D>
     this.env = env || ({} as Bindings)
 
     this.notFoundHandler = notFoundHandler
