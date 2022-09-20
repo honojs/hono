@@ -526,7 +526,7 @@ describe('Redirect', () => {
   it('Absolute URL', async () => {
     const res = await app.request('https://example.com/redirect')
     expect(res.status).toBe(302)
-    expect(res.headers.get('Location')).toBe('https://example.com/')
+    expect(res.headers.get('Location')).toBe('/')
   })
 })
 

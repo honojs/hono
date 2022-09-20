@@ -1,5 +1,3 @@
-const URL_REGEXP = /^https?:\/\/[a-zA-Z0-9\-\.:]+(\/?[^?#]*)/
-
 export type Pattern = readonly [string, string, RegExp | true] | '*'
 
 export const splitPath = (path: string): string[] => {
@@ -54,14 +52,6 @@ export const getQueryStringFromURL = (url: string): string => {
   const queryIndex = url.indexOf('?')
   const result = queryIndex !== -1 ? url.substring(queryIndex) : ''
   return result
-}
-
-export const isAbsoluteURL = (url: string): boolean => {
-  const match = url.match(URL_REGEXP)
-  if (match) {
-    return true
-  }
-  return false
 }
 
 export const mergePath = (...paths: string[]): string => {
