@@ -1,4 +1,11 @@
-import { splitPath, getPattern, getPathFromURL, mergePath, getQueryStringFromURL } from './url'
+import {
+  splitPath,
+  getPattern,
+  getPathFromURL,
+  mergePath,
+  getQueryStringFromURL,
+  checkOptionalParameter,
+} from './url'
 
 describe('url', () => {
   it('splitPath', () => {
@@ -104,6 +111,20 @@ describe('url', () => {
     })
     it('Should be `/`', () => {
       expect(mergePath('/', '/')).toBe('/')
+    })
+  })
+
+  describe('checkOptionalParameter', () => {
+    it('checkOptionalParameter', () => {
+      expect(checkOptionalParameter('/api/animals/:type?')).toEqual([
+        '/api/animals',
+        '/api/animals/:type',
+      ])
+      expect(checkOptionalParameter('/api/animals/type?')).toBeNull()
+      expect(checkOptionalParameter('/api/animals/:type')).toBeNull()
+      expect(checkOptionalParameter('/api/animals')).toBeNull()
+      expect(checkOptionalParameter('/api/:animals?/type')).toBeNull()
+      expect(checkOptionalParameter('/api/animals/:type?/')).toBeNull()
     })
   })
 })
