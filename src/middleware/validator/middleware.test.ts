@@ -243,7 +243,7 @@ describe('Clone Request object if validate JSON or body', () => {
     })),
     async (c) => {
       const data = c.req.valid()
-      return c.text((data['value'] as string) || '')
+      return c.text(data.value || '')
     }
   )
   app.post(
