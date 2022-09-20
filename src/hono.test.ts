@@ -988,6 +988,19 @@ describe('Cookie', () => {
         'great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
       )
     })
+
+    app.get('/set-cookie-multiple', (c) => {
+      c.cookie('delicious_cookie', 'macha')
+      c.cookie('delicious_cookie', 'choco')
+      return c.text('Give cookie')
+    })
+
+    it('Multiple values', async () => {
+      const res = await app.request('http://localhost/set-cookie-multiple')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe('delicious_cookie=macha, delicious_cookie=choco')
+    })
   })
 })
 
