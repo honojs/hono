@@ -5,9 +5,7 @@ const { Router: IttyRouter } = itty
 import { Request, Response } from 'node-fetch'
 import { Router as SunderRouter, Sunder } from 'sunder'
 import { Router as WorktopRouter } from 'worktop'
-import { Hono } from '../../dist/hono'
-import { RegExpRouter } from '../../dist/router/reg-exp-router'
-import { TrieRouter } from '../../dist/router/trie-router'
+import { Hono } from '../../dist/cjs/hono'
 
 globalThis.Request = Request
 globalThis.Response = Response
@@ -29,8 +27,6 @@ const initHono = (hono) => {
 }
 
 const hono = initHono(new Hono())
-const honoWithTrieRouter = initHono(new Hono({ router: new TrieRouter() }))
-const honoWithRegExpRouter = initHono(new Hono({ router: new RegExpRouter() }))
 
 // itty-router
 const ittyRouter = IttyRouter()
@@ -120,10 +116,6 @@ const event = new FetchEvent('fetch', { request })
 const fn = async () => {
   let res = await hono.handleEvent(event)
   console.log(await res.text())
-  res = await honoWithTrieRouter.handleEvent(event)
-  console.log(await res.text())
-  res = await honoWithRegExpRouter.handleEvent(event)
-  console.log(await res.text())
   res = await ittyRouter.handle(event.request)
   console.log(await res.text())
   res = await sunderApp.handle(event)
@@ -136,14 +128,8 @@ fn()
 const suite = new Benchmark.Suite()
 
 suite
-  .add('hono - smart-router(default)', async () => {
+  .add('Hono', async () => {
     await hono.handleEvent(event)
-  })
-  .add('hono - trie-router', async () => {
-    await honoWithTrieRouter.handleEvent(event)
-  })
-  .add('hono - regexp-router', async () => {
-    await honoWithRegExpRouter.handleEvent(event)
   })
   .add('itty-router', async () => {
     await ittyRouter.handle(event.request)
