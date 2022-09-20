@@ -9,7 +9,6 @@ import { defaultNotFoundMessage } from './hono'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'
-import { isAbsoluteURL } from './utils/url'
 
 type Headers = Record<string, string>
 export type Data = string | ArrayBuffer | ReadableStream
@@ -179,11 +178,6 @@ export class HonoContext<
   }
 
   redirect(location: string, status: StatusCode = 302): Response {
-    if (!isAbsoluteURL(location)) {
-      const url = new URL(this.req.url)
-      url.pathname = location
-      location = url.toString()
-    }
     return this.newResponse(null, status, {
       Location: location,
     })
