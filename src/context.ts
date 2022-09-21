@@ -5,7 +5,6 @@ import type {
   Bindings,
   ValidatedData,
 } from './hono'
-import { defaultNotFoundMessage } from './hono'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'
@@ -100,7 +99,7 @@ export class HonoContext<
   }
 
   get res(): Response {
-    return (this._res ||= new Response(defaultNotFoundMessage, { status: 404 }))
+    return (this._res ||= new Response('404 Not Found', { status: 404 }))
   }
 
   set res(_res: Response) {
