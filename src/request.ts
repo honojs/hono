@@ -40,7 +40,7 @@ declare global {
     json<JSONData = any>(): Promise<JSONData>
     data: Data
     valid: {
-      (key: string, value: any): Data
+      (key: string | string[], value: any): Data
       (): Data
     }
   }
@@ -144,12 +144,19 @@ export function extendRequestPrototype() {
     return jsonData
   } as InstanceType<typeof Request>['jsonData']
 
-  Request.prototype.valid = function (this: Request, key?: string, value?: any) {
+  Request.prototype.valid = function (this: Request, keys?: string | string[], value?: any) {
     if (!this.data) {
       this.data = {}
     }
-    if (key && value) {
-      this.data[key] = value
+    if (keys !== undefined) {
+      if (typeof keys === 'string') {
+        keys = [keys]
+      }
+      let data = this.data
+      for (let i = 0; i < keys.length - 1; i++) {
+        data = data[keys[i]] ||= {}
+      }
+      data[keys[keys.length - 1]] = value
     }
     return this.data
   } as InstanceType<typeof Request>['valid']
