@@ -374,3 +374,60 @@ describe('Remove additional properties', () => {
     expect(await res.json()).toEqual({ name: 'abcdef' })
   })
 })
+
+describe('Structured data', () => {
+  const app = new Hono()
+
+  app.post(
+    '/post',
+    validator((v) => ({
+      header: {
+        'x-foo': v.header('x-foo').isAlpha(),
+      },
+      post: {
+        title: v.json('post.title').isAlpha(),
+        content: v.json('post.content'),
+      }
+    })),
+    (c) => {
+      const header = c.req.valid().header
+      const post = c.req.valid().post
+      return c.json({header, post})
+    }
+  )
+
+  it('Should return 200 response', async () => {
+    const json = {
+      post: {
+        title: 'Hello',
+        content: 'World',
+      },
+    }
+    const headers = {
+      'x-foo': 'bar',
+    }
+    const req = new Request('http://localhost/post', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(json),
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({header: headers, post: json.post})
+  })
+
+  it('Should return 400 response - missing a required header', async () => {
+    const json = {
+      post: {
+        title: 'Hello',
+        content: 'World',
+      },
+    }
+    const req = new Request('http://localhost/post', {
+      method: 'POST',
+      body: JSON.stringify(json),
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(400)
+  })
+})
