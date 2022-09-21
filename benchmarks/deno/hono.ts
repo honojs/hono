@@ -1,4 +1,3 @@
-import { serve } from 'https://deno.land/std@0.146.0/http/server.ts'
 import { Hono } from '../../deno_dist/mod.ts'
 
 const app = new Hono()
@@ -16,4 +15,6 @@ app.get('/user/lookup/username/:username', (c) => {
   return c.json({ message: `Hello ${c.req.param('username')}` })
 })
 
-serve((req) => app.fetch(req))
+Deno.serve(app.fetch, {
+  port: 8000,
+})
