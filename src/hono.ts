@@ -60,35 +60,25 @@ type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 
-interface HandlerInterface<
-  T extends string,
-  E extends Partial<Environment>,
-  D extends ValidatedData,
-  U = Hono<E, T, D>
-> {
+interface HandlerInterface<T extends string, E extends Partial<Environment>, U = Hono<E, T>> {
   // app.get(handler...)
-  <Path extends string, Env extends Partial<Environment>, Data extends ValidatedData = D>(
-    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, Env, Data>[]
+  <Path extends string, Data extends ValidatedData>(
+    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E, Data>[]
   ): U
-  (...handlers: Handler<string, E, D>[]): U
+  (...handlers: Handler<string, E>[]): U
   // app.get('/', handler, handler...)
-  <Path extends string, Env extends Partial<Environment> = E, Data extends ValidatedData = D>(
+  <Path extends string, Data extends ValidatedData>(
     path: Path,
-    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, Env, Data>[]
+    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E, Data>[]
   ): U
-  (path: string, ...handlers: Handler<string, E, D>[]): U
+  (path: string, ...handlers: Handler<string, E>[]): U
 }
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
 function defineDynamicClass(): {
-  new <
-    E extends Partial<Environment> = Environment,
-    T extends string = string,
-    D extends ValidatedData = ValidatedData,
-    U = Hono<E, T, D>
-  >(): {
-    [K in Methods]: HandlerInterface<T, E, D, U>
+  new <E extends Partial<Environment> = Environment, T extends string = string, U = Hono<E, T>>(): {
+    [K in Methods]: HandlerInterface<T, E, U>
   }
 } {
   return class {} as any
@@ -107,7 +97,7 @@ export class Hono<
   E extends Partial<Environment> = Environment,
   P extends string = '/',
   D extends ValidatedData = ValidatedData
-> extends defineDynamicClass()<E, P, D, Hono<E, P, D>> {
+> extends defineDynamicClass()<E, P, Hono<E, P, D>> {
   readonly router: Router<Handler<string, E, D>> = new SmartRouter({
     routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
   })
@@ -167,16 +157,13 @@ export class Hono<
     return this
   }
 
-  use<
-    Path extends string = string,
-    Env extends Partial<Environment> = E,
-    Data extends ValidatedData = D
-  >(...middleware: Handler<Path, Env, Data>[]): Hono<Env, Path, Data>
-  use<
-    Path extends string = string,
-    Env extends Partial<Environment> = E,
-    Data extends ValidatedData = D
-  >(arg1: string, ...middleware: Handler<Path, Env, Data>[]): Hono<Env, Path, D>
+  use<Path extends string = string, Data extends ValidatedData = D>(
+    ...middleware: Handler<Path, E, Data>[]
+  ): Hono<E, Path, Data>
+  use<Path extends string = string, Data extends ValidatedData = D>(
+    arg1: string,
+    ...middleware: Handler<Path, E, Data>[]
+  ): Hono<E, Path, D>
   use(arg1: string | Handler<string, E, D>, ...handlers: Handler<string, E, D>[]): Hono<E, P, D> {
     if (typeof arg1 === 'string') {
       this.path = arg1
