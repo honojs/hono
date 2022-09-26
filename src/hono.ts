@@ -140,7 +140,7 @@ export class Hono<
   }
 
   private errorHandler: ErrorHandler<E> = (err: Error, c: Context<string, E>) => {
-    console.error(`${err.stack || err.message}`)
+    console.trace(err.message)
     const message = 'Internal Server Error'
     return c.text(message, 500)
   }
