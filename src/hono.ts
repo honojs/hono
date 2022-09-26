@@ -213,11 +213,18 @@ export class Hono<
     return this.router.match(method, path)
   }
 
-  private async dispatch(
+  private handleError(err: unknown, c: Context) {
+    if (err instanceof Error) {
+      return this.errorHandler(err, c)
+    }
+    throw err
+  }
+
+  private dispatch(
     request: Request,
     eventOrExecutionCtx?: ExecutionContext | FetchEvent,
     env?: E['Bindings']
-  ): Promise<Response> {
+  ) {
     const path = getPathFromURL(request.url, this.strict)
     const method = request.method
 
@@ -229,53 +236,60 @@ export class Hono<
     // Do not `compose` if it has only one handler
     if (result && result.handlers.length === 1) {
       const handler = result.handlers[0]
+      let res: ReturnType<Handler>
+
       try {
-        const res = handler(c, async () => {})
-        if (res) {
-          const awaited = res instanceof Promise ? await res : res
-          if (awaited) return awaited
-        }
-        return this.notFoundHandler(c)
+        res = handler(c, async () => {})
+        if (!res) return this.notFoundHandler(c)
       } catch (err) {
-        if (err instanceof Error) {
-          return this.errorHandler(err, c)
-        }
-        throw err
+        return this.handleError(err, c)
       }
+
+      if (res instanceof Response) return res
+
+      return (async () => {
+        let awaited: Response | undefined | void
+        try {
+          awaited = await res
+        } catch (err) {
+          return this.handleError(err, c)
+        }
+        if (!awaited) {
+          return this.notFoundHandler(c)
+        }
+        return awaited
+      })()
     }
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
-
     const composed = compose<HonoContext<string, E>, E>(handlers, this.notFoundHandler)
-    let context: HonoContext<string, E>
-    try {
-      const tmp = composed(c)
-      context = tmp instanceof Promise ? await tmp : tmp
-      if (!context.finalized) {
-        throw new Error(
-          'Context is not finalized. You may forget returning Response object or `await next()`'
-        )
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        return this.errorHandler(err, c)
-      }
-      throw err
-    }
 
-    return context.res
+    return (async () => {
+      try {
+        const tmp = composed(c)
+        const context = tmp instanceof Promise ? await tmp : tmp
+        if (!context.finalized) {
+          throw new Error(
+            'Context is not finalized. You may forget returning Response object or `await next()`'
+          )
+        }
+        return context.res
+      } catch (err) {
+        return this.handleError(err, c)
+      }
+    })()
   }
 
-  handleEvent(event: FetchEvent): Promise<Response> {
-    return this.dispatch(event.request, event)
+  handleEvent = (event: FetchEvent) => {
+    return this.fetch(event.request, event)
   }
 
   fetch = (request: Request, Environment?: E['Bindings'], executionCtx?: ExecutionContext) => {
     return this.dispatch(request, executionCtx, Environment)
   }
 
-  request(input: RequestInfo, requestInit?: RequestInit): Promise<Response> {
+  request = async (input: RequestInfo, requestInit?: RequestInit) => {
     const req = input instanceof Request ? input : new Request(input, requestInit)
-    return this.dispatch(req)
+    return await this.fetch(req)
   }
 }
