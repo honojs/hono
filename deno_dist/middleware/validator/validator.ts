@@ -35,6 +35,7 @@ export abstract class VBase {
   rules: Rule[]
   sanitizers: Sanitizer[]
   private _message: string | undefined
+  private _optional: boolean
 
   constructor(options: VOptions) {
     this.target = options.target
@@ -42,6 +43,7 @@ export abstract class VBase {
     this.type = options.type || 'string'
     this.rules = []
     this.sanitizers = []
+    this._optional = false
   }
 
   addRule = (rule: Rule) => {
@@ -62,6 +64,7 @@ export abstract class VBase {
   }
 
   isOptional = () => {
+    this._optional = true
     return this.addRule(() => true)
   }
 
@@ -145,7 +148,12 @@ export abstract class VBase {
   private validateValue = (value: Type): boolean => {
     // Check type
     if (typeof value !== this.type) {
-      return false
+      if (this._optional && typeof value === 'undefined') {
+        // Do nothing.
+        // The value is allowed to be `undefined` if it is `optional`
+      } else {
+        return false
+      }
     }
 
     // Sanitize
