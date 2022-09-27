@@ -3,7 +3,7 @@ import { rule } from './rule'
 import { sanitizer } from './sanitizer'
 
 type Target = 'query' | 'header' | 'body' | 'json'
-type Type = string | number | boolean | object | undefined
+type Type = string | number | boolean | object | null | undefined
 type Rule = (value: Type) => boolean
 type Sanitizer = (value: Type) => Type
 
