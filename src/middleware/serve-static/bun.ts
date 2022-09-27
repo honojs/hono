@@ -16,7 +16,7 @@ export type ServeStaticOptions = {
 const DEFAULT_DOCUMENT = 'index.html'
 
 export const serveStatic = (options: ServeStaticOptions = { root: '' }): MiddlewareHandler => {
-  return async (c, next): Promise<Response | undefined> => {
+  return async (c, next) => {
     // Do nothing if Response is already set
     if (c.res && c.finalized) {
       await next()

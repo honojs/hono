@@ -14,7 +14,7 @@ const DEFAULT_DOCUMENT = 'index.html'
 
 // This middleware is available only on Cloudflare Workers.
 export const serveStatic = (options: ServeStaticOptions = { root: '' }): MiddlewareHandler => {
-  return async (c, next): Promise<Response | undefined> => {
+  return async (c, next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
       await next()
