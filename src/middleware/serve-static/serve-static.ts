@@ -1,4 +1,5 @@
-import type { MiddlewareHandler } from '../../hono'
+import type { Context } from '../../context'
+import type { Next } from '../../hono'
 import { getContentFromKVAsset } from '../../utils/cloudflare'
 import { getFilePath } from '../../utils/filepath'
 import { getMimeType } from '../../utils/mime'
@@ -13,8 +14,8 @@ export type ServeStaticOptions = {
 const DEFAULT_DOCUMENT = 'index.html'
 
 // This middleware is available only on Cloudflare Workers.
-export const serveStatic = (options: ServeStaticOptions = { root: '' }): MiddlewareHandler => {
-  return async (c, next): Promise<Response | undefined> => {
+export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
+  return async (c: Context, next: Next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
       await next()
