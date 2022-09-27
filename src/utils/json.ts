@@ -1,9 +1,12 @@
-export const JSONPath = (data: object, path: string) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let val: any = data
+export type JSONPrimative = string | boolean | number | null
+export type JSONObject = { [key: string]: JSONPrimative }
+export type JSONValue = JSONObject | JSONPrimative
+
+export const JSONPath = (data: JSONObject, path: string) => {
+  let val: JSONValue | undefined = data
   const parts = path.split('.')
   const length = parts.length
-  for (let i = 0; i < length && val !== undefined; i++) {
+  for (let i = 0; i < length && val !== undefined && val !== null; i++) {
     const p = parts[i]
     if (p !== '') {
       if (typeof val === 'object') {
