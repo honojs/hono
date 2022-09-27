@@ -1,4 +1,5 @@
-import type { MiddlewareHandler } from '../hono.ts'
+import type { Context } from '../context.ts'
+import type { Next } from '../hono.ts'
 import { getFilePath } from '../utils/filepath.ts'
 import { getMimeType } from '../utils/mime.ts'
 
@@ -9,8 +10,8 @@ export type ServeStaticOptions = {
 
 const DEFAULT_DOCUMENT = 'index.html'
 
-export const serveStatic = (options: ServeStaticOptions = { root: '' }): MiddlewareHandler => {
-  return async (c, next) => {
+export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
+  return async (c: Context, next: Next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
       await next()
