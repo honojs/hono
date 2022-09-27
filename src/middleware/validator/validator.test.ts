@@ -127,6 +127,20 @@ describe('Basic - JSON', () => {
   })
 })
 
+describe('Handle optional values', () => {
+  const v = new Validator()
+
+  const req = new Request('http://localhost/', {
+    method: 'POST',
+  })
+
+  it('Should be valid - `comment` is optional', async () => {
+    const validator = v.body('comment').isOptional()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(true)
+  })
+})
+
 describe('Handling types error', () => {
   const v = new Validator()
 
