@@ -58,7 +58,7 @@ export abstract class VBase {
 
   isRequired = () => {
     return this.addRule((value: unknown) => {
-      if (value) return true
+      if (value !== undefined && value !== null && value !== '') return true
       return false
     })
   }
@@ -115,7 +115,7 @@ export abstract class VBase {
       value = body[this.key]
     }
     if (this.target === 'json') {
-      const obj = await req.json()
+      const obj = (await req.json()) as JSONObject
       value = JSONPath(obj, this.key)
     }
 
