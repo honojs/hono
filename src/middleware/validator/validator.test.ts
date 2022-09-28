@@ -199,3 +199,70 @@ describe('Handling types error', () => {
     expect(res.message).toBe(messages.join('\n'))
   })
 })
+
+describe('Handle array paths', () => {
+  const v = new Validator()
+
+  const body = {
+    posts: [
+      {
+        id: 12411,
+        title: 'This is title #1',
+        published: true,
+        rating: [true, 'cool'],
+      },
+      {
+        id: 12412,
+        title: 'This is title #2',
+        published: true,
+        rating: [false],
+      },
+      {
+        id: 12413,
+        title: 'This is title #3',
+        published: false,
+        rating: [true, 'lame'],
+      },
+    ],
+  }
+
+  const req = new Request('http://localhost/', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+
+  it('Should validate targeted path in array', async () => {
+    const validator = v.json('posts[*].published').asBoolean().isRequired()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(true)
+    expect(res.message).toBeUndefined()
+    expect(res.value).toEqual([true, true, false])
+  })
+
+  it('Should allow nested array paths', async () => {
+    const validator = v.json('posts[*].rating[0]').asBoolean().isRequired()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(true)
+    expect(res.message).toBeUndefined()
+    expect(res.value).toEqual([true, false, true])
+  })
+
+  it('Should allow optional array paths', async () => {
+    const validator = v.json('posts[*].rating[1]').isOptional()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(true)
+    expect(res.message).toBeUndefined()
+    expect(res.value).toEqual(['cool', undefined, 'lame'])
+  })
+
+  it('Should allow error with invalid array paths', async () => {
+    const validator = v.json('posts[*].rating[3]')
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(false)
+    const messages = [
+      'Invalid Value: the JSON body "posts[*].rating[3]" is invalid - [undefined, undefined, undefined]',
+    ]
+    expect(res.message).toBe(messages.join('\n'))
+    expect(res.value).toEqual([undefined, undefined, undefined])
+  })
+})

@@ -1,9 +1,10 @@
 import { JSONPath } from '../../utils/json'
+import type { JSONObject, JSONPrimative, JSONArray } from '../../utils/json'
 import { rule } from './rule'
 import { sanitizer } from './sanitizer'
 
 type Target = 'query' | 'header' | 'body' | 'json'
-type Type = string | number | boolean | object | null | undefined
+type Type = JSONPrimative | JSONObject | JSONArray | File
 type Rule = (value: Type) => boolean
 type Sanitizer = (value: Type) => Type
 
@@ -126,18 +127,21 @@ export abstract class VBase {
       if (this._message) {
         result.message = this._message
       } else {
+        const valToStr = Array.isArray(value)
+          ? `[${value.map((val) => (val === undefined ? 'undefined' : val)).join(', ')}]`
+          : value
         switch (this.target) {
           case 'query':
-            result.message = `Invalid Value: the query parameter "${this.key}" is invalid - ${value}`
+            result.message = `Invalid Value: the query parameter "${this.key}" is invalid - ${valToStr}`
             break
           case 'header':
-            result.message = `Invalid Value: the request header "${this.key}" is invalid - ${value}`
+            result.message = `Invalid Value: the request header "${this.key}" is invalid - ${valToStr}`
             break
           case 'body':
-            result.message = `Invalid Value: the request body "${this.key}" is invalid - ${value}`
+            result.message = `Invalid Value: the request body "${this.key}" is invalid - ${valToStr}`
             break
           case 'json':
-            result.message = `Invalid Value: the JSON body "${this.key}" is invalid - ${value}`
+            result.message = `Invalid Value: the JSON body "${this.key}" is invalid - ${valToStr}`
             break
         }
       }
@@ -147,26 +151,51 @@ export abstract class VBase {
 
   private validateValue = (value: Type): boolean => {
     // Check type
-    if (typeof value !== this.type) {
-      if (this._optional && typeof value === 'undefined') {
-        // Do nothing.
-        // The value is allowed to be `undefined` if it is `optional`
-      } else {
-        return false
+    if (Array.isArray(value)) {
+      if (!value[0] || typeof value[0] !== this.type) {
+        if (this._optional && typeof value[0] === 'undefined') {
+          // Do nothing.
+          // The value is allowed to be `undefined` if it is `optional`
+        } else {
+          return false
+        }
       }
-    }
 
-    // Sanitize
-    for (const sanitizer of this.sanitizers) {
-      value = sanitizer(value)
-    }
-
-    for (const rule of this.rules) {
-      if (!rule(value)) {
-        return false
+      // Sanitize
+      for (const sanitizer of this.sanitizers) {
+        value = value.map((innerVal) => sanitizer(innerVal)) as JSONArray
       }
+
+      for (const rule of this.rules) {
+        for (const val of value) {
+          if (!rule(val)) {
+            return false
+          }
+        }
+      }
+      return true
+    } else {
+      if (typeof value !== this.type) {
+        if (this._optional && typeof value === 'undefined') {
+          // Do nothing.
+          // The value is allowed to be `undefined` if it is `optional`
+        } else {
+          return false
+        }
+      }
+
+      // Sanitize
+      for (const sanitizer of this.sanitizers) {
+        value = sanitizer(value)
+      }
+
+      for (const rule of this.rules) {
+        if (!rule(value)) {
+          return false
+        }
+      }
+      return true
     }
-    return true
   }
 }
 
