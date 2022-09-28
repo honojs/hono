@@ -127,6 +127,34 @@ describe('Basic - JSON', () => {
   })
 })
 
+describe('Handle required values', () => {
+  const v = new Validator()
+
+  const req = new Request('http://localhost/', {
+    method: 'POST',
+    body: JSON.stringify({ comment: null, name: 'John', admin: false }),
+  })
+
+  it('Should be valid - `name` is required', async () => {
+    const validator = v.json('name').isRequired()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(true)
+  })
+
+  it('Should be invalid - `comment` is required but missing', async () => {
+    const validator = v.json('comment').isRequired()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(false)
+  })
+
+  it('Should be valid - `admin` is required and present, although falsey', async () => {
+    const validator = v.json('admin').asBoolean().isRequired()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(true)
+    expect(res.value).toBe(false)
+  })
+})
+
 describe('Handle optional values', () => {
   const v = new Validator()
 
