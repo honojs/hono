@@ -1,10 +1,10 @@
 const ARRAY_NOTATION_REGEX = /\[([0-9\*])\]/
 const ANY_INDEX = '*'
 
-export type JSONPrimative = string | boolean | number | null | undefined
-export type JSONArray = (JSONPrimative | JSONObject | JSONArray)[]
-export type JSONObject = { [key: string]: JSONPrimative | JSONArray | JSONObject }
-export type JSONValue = JSONObject | JSONArray | JSONPrimative
+export type JSONPrimitive = string | boolean | number | null | undefined
+export type JSONArray = (JSONPrimitive | JSONObject | JSONArray)[]
+export type JSONObject = { [key: string]: JSONPrimitive | JSONArray | JSONObject }
+export type JSONValue = JSONObject | JSONArray | JSONPrimitive
 
 export type AnyIndex = typeof ANY_INDEX
 
@@ -33,7 +33,7 @@ const fromPath = (data: JSONObject, parts: string[]): JSONValue | undefined => {
     if (p !== '') {
       if (isArraySubpath(p)) {
         const arrName = p.replace(ARRAY_NOTATION_REGEX, '')
-        const arr = (val as JSONObject)[arrName] as JSONObject[] | JSONPrimative[]
+        const arr = (val as JSONObject)[arrName] as JSONObject[] | JSONPrimitive[]
         if (Array.isArray(arr)) {
           const subIdx = getArrSubpathIndex(p)
           if (typeof subIdx === 'number') {

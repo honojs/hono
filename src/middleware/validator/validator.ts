@@ -1,10 +1,10 @@
 import { JSONPath } from '../../utils/json'
-import type { JSONObject, JSONPrimative, JSONArray } from '../../utils/json'
+import type { JSONObject, JSONPrimitive, JSONArray } from '../../utils/json'
 import { rule } from './rule'
 import { sanitizer } from './sanitizer'
 
 type Target = 'query' | 'header' | 'body' | 'json'
-type Type = JSONPrimative | JSONObject | JSONArray | File
+type Type = JSONPrimitive | JSONObject | JSONArray | File
 type Rule = (value: Type) => boolean
 type Sanitizer = (value: Type) => Type
 

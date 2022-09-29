@@ -1,10 +1,10 @@
 import { JSONPath } from '../../utils/json.ts'
-import type { JSONObject, JSONPrimative, JSONArray } from '../../utils/json.ts'
+import type { JSONObject, JSONPrimitive, JSONArray } from '../../utils/json.ts'
 import { rule } from './rule.ts'
 import { sanitizer } from './sanitizer.ts'
 
 type Target = 'query' | 'header' | 'body' | 'json'
-type Type = JSONPrimative | JSONObject | JSONArray | File
+type Type = JSONPrimitive | JSONObject | JSONArray | File
 type Rule = (value: Type) => boolean
 type Sanitizer = (value: Type) => Type
 
