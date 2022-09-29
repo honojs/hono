@@ -152,12 +152,11 @@ export abstract class VBase {
   private validateValue = (value: Type): boolean => {
     // Check type
     if (Array.isArray(value)) {
-      if (!value[0] || typeof value[0] !== this.type) {
-        if (this._optional && typeof value[0] === 'undefined') {
-          // Do nothing.
-          // The value is allowed to be `undefined` if it is `optional`
-        } else {
-          return false
+      for (const val of value) {
+        if (typeof val !== this.type) {
+          // Value is of wrong type here
+          // If not optional, or optional and not undefined, return false
+          if (!this._optional || typeof val !== 'undefined') return false
         }
       }
 
