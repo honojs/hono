@@ -289,3 +289,36 @@ describe('Handle array paths', () => {
     expect(res.value).toEqual([false, true, undefined])
   })
 })
+
+describe('Validate with asArray', () => {
+  const v = new Validator()
+  const json = {
+    post: {
+      title: ['Hello'],
+      comment: [
+        {
+          title: 'abc',
+        },
+        {
+          title: 'def',
+        },
+      ],
+    },
+  }
+
+  const req = new Request('http://localhost/', {
+    method: 'POST',
+    body: JSON.stringify(json),
+  })
+
+  it('Should validate array values', async () => {
+    const validator = v.json('post.title').asArray().isAlpha()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(true)
+  })
+  it('Should validate array values - specify with `*`', async () => {
+    const validator = v.json('post.comment[*].title').asArray().isAlpha()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(true)
+  })
+})

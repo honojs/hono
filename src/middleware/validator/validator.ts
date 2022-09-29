@@ -37,7 +37,6 @@ export abstract class VBase {
   sanitizers: Sanitizer[]
   private _message: string | undefined
   private _optional: boolean
-
   constructor(options: VOptions) {
     this.target = options.target
     this.key = options.key
@@ -208,6 +207,10 @@ export class VString extends VBase {
     this.type = 'string'
   }
 
+  asArray = () => {
+    return new VStringArray(this)
+  }
+
   isEmpty = (
     options: {
       ignore_whitespace: boolean
@@ -257,6 +260,10 @@ export class VNumber extends VBase {
     this.type = 'number'
   }
 
+  asArray = () => {
+    return new VNumberArray(this)
+  }
+
   isGte = (min: number) => {
     return this.addRule((value) => rule.isGte(value as number, min))
   }
@@ -270,6 +277,10 @@ export class VBoolean extends VBase {
   constructor(options: VOptions) {
     super(options)
     this.type = 'boolean'
+  }
+
+  asArray = () => {
+    return new VBooleanArray(this)
   }
 
   isTrue = () => {
@@ -286,4 +297,14 @@ export class VObject extends VBase {
     super(options)
     this.type = 'object'
   }
+}
+
+export class VNumberArray extends VNumber {
+  isArray = true
+}
+export class VStringArray extends VString {
+  isArray = true
+}
+export class VBooleanArray extends VBoolean {
+  isArray = true
 }
