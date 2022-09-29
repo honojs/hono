@@ -210,18 +210,23 @@ describe('Handle array paths', () => {
         title: 'This is title #1',
         published: true,
         rating: [true, 'cool'],
+        awesome: true,
+        testing: false,
       },
       {
         id: 12412,
         title: 'This is title #2',
         published: true,
         rating: [false],
+        awesome: 'true',
+        testing: true,
       },
       {
         id: 12413,
         title: 'This is title #3',
         published: false,
         rating: [true, 'lame'],
+        awesome: false,
       },
     ],
   }
@@ -255,7 +260,7 @@ describe('Handle array paths', () => {
     expect(res.value).toEqual(['cool', undefined, 'lame'])
   })
 
-  it('Should allow error with invalid array paths', async () => {
+  it('Should provide error with invalid array paths', async () => {
     const validator = v.json('posts[*].rating[3]')
     const res = await validator.validate(req)
     expect(res.isValid).toBe(false)
@@ -264,5 +269,23 @@ describe('Handle array paths', () => {
     ]
     expect(res.message).toBe(messages.join('\n'))
     expect(res.value).toEqual([undefined, undefined, undefined])
+  })
+
+  it('Should prevent invalid types within array', async () => {
+    const validator = v.json('posts[*].awesome').asBoolean()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(false)
+    const messages = [
+      'Invalid Value: the JSON body "posts[*].awesome" is invalid - [true, "true", false]',
+    ]
+    expect(res.message).toBe(messages.join('\n'))
+    expect(res.value).toEqual([true, 'true', false])
+  })
+
+  it('Should allow undefined values when optional', async () => {
+    const validator = v.json('posts[*].testing').asBoolean().isOptional()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(true)
+    expect(res.value).toEqual([false, true, undefined])
   })
 })

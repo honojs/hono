@@ -128,7 +128,11 @@ export abstract class VBase {
         result.message = this._message
       } else {
         const valToStr = Array.isArray(value)
-          ? `[${value.map((val) => (val === undefined ? 'undefined' : val)).join(', ')}]`
+          ? `[${value
+              .map((val) =>
+                val === undefined ? 'undefined' : typeof val === 'string' ? `"${val}"` : val
+              )
+              .join(', ')}]`
           : value
         switch (this.target) {
           case 'query':
