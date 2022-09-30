@@ -27,6 +27,7 @@ type VOptions = {
   target: Target
   key: string
   type?: 'string' | 'number' | 'boolean' | 'object'
+  isArray?: boolean
 }
 
 export abstract class VBase {
@@ -35,15 +36,16 @@ export abstract class VBase {
   key: string
   rules: Rule[]
   sanitizers: Sanitizer[]
+  isArray: boolean
   private _message: string | undefined
   private _optional: boolean
-
   constructor(options: VOptions) {
     this.target = options.target
     this.key = options.key
     this.type = options.type || 'string'
     this.rules = []
     this.sanitizers = []
+    this.isArray = options.isArray || false
     this._optional = false
   }
 
@@ -123,7 +125,7 @@ export abstract class VBase {
     result.value = value
     result.isValid = this.validateValue(value)
 
-    if (result.isValid == false) {
+    if (result.isValid === false) {
       if (this._message) {
         result.message = this._message
       } else {
@@ -155,7 +157,11 @@ export abstract class VBase {
 
   private validateValue = (value: Type): boolean => {
     // Check type
-    if (Array.isArray(value)) {
+    if (this.isArray) {
+      if (!Array.isArray(value)) {
+        return false
+      }
+
       for (const val of value) {
         if (typeof val !== this.type) {
           // Value is of wrong type here
@@ -208,6 +214,10 @@ export class VString extends VBase {
     this.type = 'string'
   }
 
+  asArray = () => {
+    return new VStringArray(this)
+  }
+
   isEmpty = (
     options: {
       ignore_whitespace: boolean
@@ -257,6 +267,10 @@ export class VNumber extends VBase {
     this.type = 'number'
   }
 
+  asArray = () => {
+    return new VNumberArray(this)
+  }
+
   isGte = (min: number) => {
     return this.addRule((value) => rule.isGte(value as number, min))
   }
@@ -272,6 +286,10 @@ export class VBoolean extends VBase {
     this.type = 'boolean'
   }
 
+  asArray = () => {
+    return new VBooleanArray(this)
+  }
+
   isTrue = () => {
     return this.addRule((value) => rule.isTrue(value as boolean))
   }
@@ -285,5 +303,27 @@ export class VObject extends VBase {
   constructor(options: VOptions) {
     super(options)
     this.type = 'object'
+  }
+}
+
+export class VNumberArray extends VNumber {
+  isArray: true
+  constructor(options: VOptions) {
+    super(options)
+    this.isArray = true
+  }
+}
+export class VStringArray extends VString {
+  isArray: true
+  constructor(options: VOptions) {
+    super(options)
+    this.isArray = true
+  }
+}
+export class VBooleanArray extends VBoolean {
+  isArray: true
+  constructor(options: VOptions) {
+    super(options)
+    this.isArray = true
   }
 }
