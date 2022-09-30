@@ -187,7 +187,6 @@ export class Node<T> {
             if (typeof name === 'string' && !matched) {
               params[name] = part
             }
-            break
           }
         }
       }

@@ -105,6 +105,28 @@ describe('Name path - Multiple route', () => {
   })
 })
 
+describe('Param prefix', () => {
+  const node = new Node()
+
+  node.insert('get', '/:foo', 'onepart')
+  node.insert('get', '/:bar/:baz', 'twopart')
+
+  it('get /hello', () => {
+    const res = node.search('get', '/hello')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['onepart'])
+    expect(res?.params['foo']).toBe('hello')
+  })
+
+  it('get /hello/world', () => {
+    const res = node.search('get', '/hello/world')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['twopart'])
+    expect(res?.params['bar']).toBe('hello')
+    expect(res?.params['baz']).toBe('world')
+  })
+})
+
 describe('Wildcard', () => {
   const node = new Node()
   node.insert('get', '/wildcard-abc/*/wildcard-efg', 'wildcard')
