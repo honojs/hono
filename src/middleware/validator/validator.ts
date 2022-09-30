@@ -307,18 +307,21 @@ export class VObject extends VBase {
 }
 
 export class VNumberArray extends VNumber {
+  isArray: true
   constructor(options: VOptions) {
     super(options)
     this.isArray = true
   }
 }
 export class VStringArray extends VString {
+  isArray: true
   constructor(options: VOptions) {
     super(options)
     this.isArray = true
   }
 }
 export class VBooleanArray extends VBoolean {
+  isArray: true
   constructor(options: VOptions) {
     super(options)
     this.isArray = true
