@@ -19,7 +19,7 @@ const DEFAULT_DOCUMENT = 'index.html'
 export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
   return async (c: Context, next: Next) => {
     // Do nothing if Response is already set
-    if (c.res && c.finalized) {
+    if (c.finalized) {
       await next()
     }
     const url = new URL(c.req.url)
