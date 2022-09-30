@@ -268,7 +268,7 @@ export class Hono<
   }
 
   handleEvent = (event: FetchEvent) => {
-    return this.fetch(event.request, event)
+    return this.dispatch(event.request, event)
   }
 
   fetch = (request: Request, Environment?: E['Bindings'], executionCtx?: ExecutionContext) => {
