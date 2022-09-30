@@ -1,9 +1,10 @@
 import { JSONPath } from '../../utils/json'
+import type { JSONObject, JSONPrimitive, JSONArray } from '../../utils/json'
 import { rule } from './rule'
 import { sanitizer } from './sanitizer'
 
 type Target = 'query' | 'header' | 'body' | 'json'
-type Type = string | number | boolean | object | undefined
+type Type = JSONPrimitive | JSONObject | JSONArray | File
 type Rule = (value: Type) => boolean
 type Sanitizer = (value: Type) => Type
 
@@ -26,6 +27,7 @@ type VOptions = {
   target: Target
   key: string
   type?: 'string' | 'number' | 'boolean' | 'object'
+  isArray?: boolean
 }
 
 export abstract class VBase {
@@ -34,15 +36,16 @@ export abstract class VBase {
   key: string
   rules: Rule[]
   sanitizers: Sanitizer[]
+  isArray: boolean
   private _message: string | undefined
   private _optional: boolean
-
   constructor(options: VOptions) {
     this.target = options.target
     this.key = options.key
     this.type = options.type || 'string'
     this.rules = []
     this.sanitizers = []
+    this.isArray = options.isArray || false
     this._optional = false
   }
 
@@ -58,7 +61,7 @@ export abstract class VBase {
 
   isRequired = () => {
     return this.addRule((value: unknown) => {
-      if (value) return true
+      if (value !== undefined && value !== null && value !== '') return true
       return false
     })
   }
@@ -115,29 +118,36 @@ export abstract class VBase {
       value = body[this.key]
     }
     if (this.target === 'json') {
-      const obj = await req.json()
+      const obj = (await req.json()) as JSONObject
       value = JSONPath(obj, this.key)
     }
 
     result.value = value
     result.isValid = this.validateValue(value)
 
-    if (result.isValid == false) {
+    if (result.isValid === false) {
       if (this._message) {
         result.message = this._message
       } else {
+        const valToStr = Array.isArray(value)
+          ? `[${value
+              .map((val) =>
+                val === undefined ? 'undefined' : typeof val === 'string' ? `"${val}"` : val
+              )
+              .join(', ')}]`
+          : value
         switch (this.target) {
           case 'query':
-            result.message = `Invalid Value: the query parameter "${this.key}" is invalid - ${value}`
+            result.message = `Invalid Value: the query parameter "${this.key}" is invalid - ${valToStr}`
             break
           case 'header':
-            result.message = `Invalid Value: the request header "${this.key}" is invalid - ${value}`
+            result.message = `Invalid Value: the request header "${this.key}" is invalid - ${valToStr}`
             break
           case 'body':
-            result.message = `Invalid Value: the request body "${this.key}" is invalid - ${value}`
+            result.message = `Invalid Value: the request body "${this.key}" is invalid - ${valToStr}`
             break
           case 'json':
-            result.message = `Invalid Value: the JSON body "${this.key}" is invalid - ${value}`
+            result.message = `Invalid Value: the JSON body "${this.key}" is invalid - ${valToStr}`
             break
         }
       }
@@ -147,26 +157,54 @@ export abstract class VBase {
 
   private validateValue = (value: Type): boolean => {
     // Check type
-    if (typeof value !== this.type) {
-      if (this._optional && typeof value === 'undefined') {
-        // Do nothing.
-        // The value is allowed to be `undefined` if it is `optional`
-      } else {
+    if (this.isArray) {
+      if (!Array.isArray(value)) {
         return false
       }
-    }
 
-    // Sanitize
-    for (const sanitizer of this.sanitizers) {
-      value = sanitizer(value)
-    }
-
-    for (const rule of this.rules) {
-      if (!rule(value)) {
-        return false
+      for (const val of value) {
+        if (typeof val !== this.type) {
+          // Value is of wrong type here
+          // If not optional, or optional and not undefined, return false
+          if (!this._optional || typeof val !== 'undefined') return false
+        }
       }
+
+      // Sanitize
+      for (const sanitizer of this.sanitizers) {
+        value = value.map((innerVal) => sanitizer(innerVal)) as JSONArray
+      }
+
+      for (const rule of this.rules) {
+        for (const val of value) {
+          if (!rule(val)) {
+            return false
+          }
+        }
+      }
+      return true
+    } else {
+      if (typeof value !== this.type) {
+        if (this._optional && typeof value === 'undefined') {
+          // Do nothing.
+          // The value is allowed to be `undefined` if it is `optional`
+        } else {
+          return false
+        }
+      }
+
+      // Sanitize
+      for (const sanitizer of this.sanitizers) {
+        value = sanitizer(value)
+      }
+
+      for (const rule of this.rules) {
+        if (!rule(value)) {
+          return false
+        }
+      }
+      return true
     }
-    return true
   }
 }
 
@@ -174,6 +212,10 @@ export class VString extends VBase {
   constructor(options: VOptions) {
     super(options)
     this.type = 'string'
+  }
+
+  asArray = () => {
+    return new VStringArray(this)
   }
 
   isEmpty = (
@@ -225,6 +267,10 @@ export class VNumber extends VBase {
     this.type = 'number'
   }
 
+  asArray = () => {
+    return new VNumberArray(this)
+  }
+
   isGte = (min: number) => {
     return this.addRule((value) => rule.isGte(value as number, min))
   }
@@ -240,6 +286,10 @@ export class VBoolean extends VBase {
     this.type = 'boolean'
   }
 
+  asArray = () => {
+    return new VBooleanArray(this)
+  }
+
   isTrue = () => {
     return this.addRule((value) => rule.isTrue(value as boolean))
   }
@@ -253,5 +303,27 @@ export class VObject extends VBase {
   constructor(options: VOptions) {
     super(options)
     this.type = 'object'
+  }
+}
+
+export class VNumberArray extends VNumber {
+  isArray: true
+  constructor(options: VOptions) {
+    super(options)
+    this.isArray = true
+  }
+}
+export class VStringArray extends VString {
+  isArray: true
+  constructor(options: VOptions) {
+    super(options)
+    this.isArray = true
+  }
+}
+export class VBooleanArray extends VBoolean {
+  isArray: true
+  constructor(options: VOptions) {
+    super(options)
+    this.isArray = true
   }
 }

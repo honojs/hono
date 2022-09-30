@@ -1,14 +1,37 @@
 import type { Context } from '../../context.ts'
 import type { Environment, Next, ValidatedData } from '../../hono.ts'
 import { VBase, Validator } from './validator.ts'
-import type { VString, VNumber, VBoolean, VObject, ValidateResult } from './validator.ts'
+import type {
+  VString,
+  VNumber,
+  VBoolean,
+  VObject,
+  VNumberArray,
+  VStringArray,
+  VBooleanArray,
+  ValidateResult,
+} from './validator.ts'
 
 type Schema = {
-  [key: string]: VString | VNumber | VBoolean | VObject | Schema
+  [key: string]:
+    | VString
+    | VNumber
+    | VBoolean
+    | VObject
+    | VStringArray
+    | VNumberArray
+    | VBooleanArray
+    | Schema
 }
 
 type SchemaToProp<T> = {
-  [K in keyof T]: T[K] extends VNumber
+  [K in keyof T]: T[K] extends VNumberArray
+    ? number[]
+    : T[K] extends VBooleanArray
+    ? boolean[]
+    : T[K] extends VStringArray
+    ? string[]
+    : T[K] extends VNumber
     ? number
     : T[K] extends VBoolean
     ? boolean

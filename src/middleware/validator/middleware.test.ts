@@ -387,12 +387,12 @@ describe('Structured data', () => {
       post: {
         title: v.json('post.title').isAlpha(),
         content: v.json('post.content'),
-      }
+      },
     })),
     (c) => {
       const header = c.req.valid().header
       const post = c.req.valid().post
-      return c.json({header, post})
+      return c.json({ header, post })
     }
   )
 
@@ -413,7 +413,7 @@ describe('Structured data', () => {
     })
     const res = await app.request(req)
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({header: headers, post: json.post})
+    expect(await res.json()).toEqual({ header: headers, post: json.post })
   })
 
   it('Should return 400 response - missing a required header', async () => {
@@ -429,5 +429,40 @@ describe('Structured data', () => {
     })
     const res = await app.request(req)
     expect(res.status).toBe(400)
+  })
+})
+
+describe('Array values', () => {
+  const app = new Hono()
+  app.post(
+    '/post',
+    validator((v) => ({
+      post: {
+        title: v.json('post.title').isAlpha(),
+        tags: v.json('post.tags').asArray().isRequired(),
+        ids: v.json('post.ids').asNumber().asArray(),
+      },
+    })),
+    (c) => {
+      const res = c.req.valid()
+      return c.json({ tag1: res.post.tags[0] })
+    }
+  )
+
+  it('Should return 200 response', async () => {
+    const json = {
+      post: {
+        title: 'foo',
+        tags: ['Workers', 'Deno', 'Bun'],
+        ids: [1, 3, 5],
+      },
+    }
+    const req = new Request('http://localhost/post', {
+      method: 'POST',
+      body: JSON.stringify(json),
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ tag1: 'Workers' })
   })
 })
