@@ -109,7 +109,11 @@ describe('JSONPath', () => {
   })
 
   it('Should return undefined if there is no matching path.', () => {
-    expect(JSONPath(data, 'releases[*].i386')).toBe(undefined)
+    expect(JSONPath(data, 'post.category')).toEqual(undefined)
+  })
+
+  it('Should return array of undefined if there is no matching path within array', () => {
+    expect(JSONPath(data, 'releases[*].i386')).toEqual([undefined, undefined, undefined])
   })
 
   it('Should return value from nested array', () => {

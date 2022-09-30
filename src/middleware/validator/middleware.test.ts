@@ -432,7 +432,7 @@ describe('Structured data', () => {
   })
 })
 
-describe('', () => {
+describe('Array values', () => {
   const app = new Hono()
   app.post(
     '/post',

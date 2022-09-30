@@ -237,7 +237,7 @@ describe('Handle array paths', () => {
   })
 
   it('Should validate targeted path in array', async () => {
-    const validator = v.json('posts[*].published').asBoolean().isRequired()
+    const validator = v.json('posts[*].published').asArray().asBoolean().isRequired()
     const res = await validator.validate(req)
     expect(res.isValid).toBe(true)
     expect(res.message).toBeUndefined()
@@ -245,7 +245,7 @@ describe('Handle array paths', () => {
   })
 
   it('Should allow nested array paths', async () => {
-    const validator = v.json('posts[*].rating[0]').asBoolean().isRequired()
+    const validator = v.json('posts[*].rating[0]').asArray().asBoolean().isRequired()
     const res = await validator.validate(req)
     expect(res.isValid).toBe(true)
     expect(res.message).toBeUndefined()
@@ -253,7 +253,7 @@ describe('Handle array paths', () => {
   })
 
   it('Should allow optional array paths', async () => {
-    const validator = v.json('posts[*].rating[1]').isOptional()
+    const validator = v.json('posts[*].rating[1]').asArray().isOptional()
     const res = await validator.validate(req)
     expect(res.isValid).toBe(true)
     expect(res.message).toBeUndefined()
@@ -261,7 +261,7 @@ describe('Handle array paths', () => {
   })
 
   it('Should provide error with invalid array paths', async () => {
-    const validator = v.json('posts[*].rating[3]')
+    const validator = v.json('posts[*].rating[3]').asArray()
     const res = await validator.validate(req)
     expect(res.isValid).toBe(false)
     const messages = [
@@ -272,7 +272,7 @@ describe('Handle array paths', () => {
   })
 
   it('Should prevent invalid types within array', async () => {
-    const validator = v.json('posts[*].awesome').asBoolean()
+    const validator = v.json('posts[*].awesome').asArray().asBoolean()
     const res = await validator.validate(req)
     expect(res.isValid).toBe(false)
     const messages = [
@@ -283,7 +283,7 @@ describe('Handle array paths', () => {
   })
 
   it('Should allow undefined values when optional', async () => {
-    const validator = v.json('posts[*].testing').asBoolean().isOptional()
+    const validator = v.json('posts[*].testing').asArray().asBoolean().isOptional()
     const res = await validator.validate(req)
     expect(res.isValid).toBe(true)
     expect(res.value).toEqual([false, true, undefined])
@@ -295,12 +295,19 @@ describe('Validate with asArray', () => {
   const json = {
     post: {
       title: ['Hello'],
-      comment: [
+      flags: [true, false],
+      published: [true],
+      comments: [
         {
           title: 'abc',
+          author: 'John',
+          category: 'Heroes',
+          flags: [true, false],
         },
         {
           title: 'def',
+          author: 'Dave',
+          flags: [false, true],
         },
       ],
     },
@@ -316,9 +323,45 @@ describe('Validate with asArray', () => {
     const res = await validator.validate(req)
     expect(res.isValid).toBe(true)
   })
+
   it('Should validate array values - specify with `*`', async () => {
-    const validator = v.json('post.comment[*].title').asArray().isAlpha()
+    const validator = v.json('post.comments[*].title').asArray().isAlpha()
     const res = await validator.validate(req)
     expect(res.isValid).toBe(true)
+  })
+
+  it('Should return the same result for `.asArray().as{Type}()` and `.as{Type}().asArray()', async () => {
+    const validator1 = v.json('post.flags').asArray().asBoolean().isRequired()
+    const validator2 = v.json('post.flags').asBoolean().asArray().isRequired()
+    const res1 = await validator1.validate(req)
+    const res2 = await validator2.validate(req)
+
+    expect(res1.isValid).toBe(true)
+    expect(res1.message).toBeUndefined()
+    expect(res1.value).toEqual([true, false])
+
+    // Entire responses should be equal
+    expect(res1).toEqual(res2)
+  })
+
+  it('Should fail validation if value is array but `.asArray()` not called', async () => {
+    const validator = v.json('post.flags').asBoolean().isRequired()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(false)
+    const messages = ['Invalid Value: the JSON body "post.flags" is invalid - [true, false]']
+    expect(res.message).toBe(messages.join('\n'))
+    expect(res.value).toEqual([true, false])
+  })
+
+  it('Should pass validation if `isRequired` and path has no missing entries', async () => {
+    const validator = v.json('post.comments[*].author').asArray().isRequired()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(true)
+  })
+
+  it('Should fail validation if `isRequired` and missing entry for path', async () => {
+    const validator = v.json('post.comments[*].heroes').asArray().isRequired()
+    const res = await validator.validate(req)
+    expect(res.isValid).toBe(false)
   })
 })
