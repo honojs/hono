@@ -25,13 +25,7 @@ type Schema = {
 }
 
 type SchemaToProp<T> = {
-  [K in keyof T]: T[K] extends VNumberArray
-    ? number[]
-    : T[K] extends VBooleanArray
-    ? boolean[]
-    : T[K] extends VStringArray
-    ? string[]
-    : T[K] extends VNumber
+  [K in keyof T]: T[K] extends VNumber
     ? number
     : T[K] extends VBoolean
     ? boolean
@@ -39,6 +33,12 @@ type SchemaToProp<T> = {
     ? string
     : T[K] extends VObject
     ? object
+    : T[K] extends VNumberArray
+    ? number[]
+    : T[K] extends VBooleanArray
+    ? boolean[]
+    : T[K] extends VStringArray
+    ? string[]
     : T[K] extends Schema
     ? SchemaToProp<T[K]>
     : never
