@@ -43,7 +43,7 @@ describe('JWT', () => {
 
   it('JwtTokenNotBefore', async () => {
     const tok =
-      'eyJraWQiOiJFemF7bVZWbnd0TUpUNEFveFVtT0dILWJ0Y2VUVFM3djBYcEJuMm5ZZ2VjIiwiYWxnIjoiSFMyNTYifQ.eyJyb2xlIjoiYXBpX3JvbGUiLCJuYmYiOjE2NjQ1ODI0MDB9.BatadbUj5e41OZ33odEFTAndQFzX0w9aAgpQPgO-zaQ'
+      'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NjQ2MDYzMzQsImV4cCI6MTY2NDYwOTkzNCwibmJmIjoiMzEwNDYwNjI2NCJ9.hpSDT_cfkxeiLWEpWVT8TDxFP3dFi27q1K7CcMcLXHc'
     const secret = 'a-secret'
     let err: JwtTokenNotBefore
     let authorized = false
