@@ -3,6 +3,7 @@ import type { Next } from './hono'
 import { Hono } from './hono'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
+import { HttpError, getStatusText } from './utils/http-status'
 
 describe('GET Request', () => {
   const app = new Hono()
@@ -530,11 +531,39 @@ describe('Redirect', () => {
   })
 })
 
+describe('Default error handler', () => {
+  const app = new Hono()
+
+  app.get('/generic-error', () => {
+    throw new Error('Random error!')
+  })
+
+  app.get('/bad-request', () => {
+    throw new HttpError(400)
+  })
+
+  it('Should return HTTP 500 on generic error', async () => {
+    const res = await app.request('https://example.com/generic-error')
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe(getStatusText(500))
+  })
+
+  it('Should return HTTP 400 Bad Request when route throws HttpError(400)', async () => {
+    const res = await app.request('https://example.com/bad-request')
+    expect(res.status).toBe(400)
+    expect(await res.text()).toBe(getStatusText(400))
+  })
+})
+
 describe('Error handle', () => {
   const app = new Hono()
 
   app.get('/error', () => {
     throw new Error('This is Error')
+  })
+
+  app.get('/bad-request', () => {
+    throw new HttpError(400)
   })
 
   app.use('/error-middleware', async () => {

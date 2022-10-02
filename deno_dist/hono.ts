@@ -9,6 +9,8 @@ import { RegExpRouter } from './router/reg-exp-router/index.ts'
 import { SmartRouter } from './router/smart-router/index.ts'
 import { StaticRouter } from './router/static-router/index.ts'
 import { TrieRouter } from './router/trie-router/index.ts'
+import { getStatusText, HttpError } from './utils/http-status.ts'
+import type { StatusCode } from './utils/http-status.ts'
 import { getPathFromURL, mergePath } from './utils/url.ts'
 
 export interface ContextVariableMap {}
@@ -139,10 +141,18 @@ export class Hono<
     return c.text('404 Not Found', 404)
   }
 
+  // ErrorTranslator
+  // registerErrorTranslation
+  // translateInternalError
   private errorHandler: ErrorHandler<E> = (err: Error, c: Context<string, E>) => {
     console.trace(err.message)
-    const message = 'Internal Server Error'
-    return c.text(message, 500)
+    let message = getStatusText(500)
+    let statusCode: StatusCode = 500
+    if (err instanceof HttpError) {
+      message = err.message
+      statusCode = err.statusCode
+    }
+    return c.text(message, statusCode)
   }
 
   route(path: string, app?: Hono<any>): Hono<E, P, D> {

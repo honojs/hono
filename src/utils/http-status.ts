@@ -118,3 +118,12 @@ const statuses: Record<StatusCode | number, string> = {
   505: 'HTTP Version Not Supported',
   507: 'Insufficient Storage',
 }
+
+export class HttpError extends Error {
+  statusCode: StatusCode
+  constructor(statusCode: StatusCode) {
+    super(getStatusText(statusCode))
+    this.name = getStatusText(statusCode)
+    this.statusCode = statusCode
+  }
+}
