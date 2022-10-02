@@ -1,3 +1,4 @@
+import { HttpError } from '../../utils/http-status'
 import { JSONPath } from '../../utils/json'
 import type { JSONObject, JSONPrimitive, JSONArray } from '../../utils/json'
 import { rule } from './rule'
@@ -118,8 +119,12 @@ export abstract class VBase {
       value = body[this.key]
     }
     if (this.target === 'json') {
-      const obj = (await req.json()) as JSONObject
-      value = JSONPath(obj, this.key)
+      try {
+        const obj = (await req.json()) as JSONObject
+        value = JSONPath(obj, this.key)
+      } catch (e) {
+        throw new HttpError(400)
+      }
     }
 
     result.value = value
