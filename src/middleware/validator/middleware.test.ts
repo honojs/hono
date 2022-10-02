@@ -1,4 +1,5 @@
 import { Hono } from '../../hono'
+import { getStatusText } from '../../utils/http-status'
 import { validator } from './index'
 
 describe('Basic - query', () => {
@@ -127,6 +128,24 @@ describe('Basic - JSON', () => {
     })
     const res = await app.request(req)
     expect(res.status).toBe(200)
+  })
+
+  it('Should return 400 Bad Request when given an invalid JSON body', async () => {
+    const req1 = new Request('http://localhost/json', {
+      method: 'POST',
+      body: 'Not json!',
+    })
+    const req2 = new Request('http://localhost/json', {
+      method: 'POST',
+    })
+
+    const res1 = await app.request(req1)
+    expect(res1.status).toBe(400)
+    expect(await res1.text()).toBe(getStatusText(400))
+
+    const res2 = await app.request(req2)
+    expect(res2.status).toBe(400)
+    expect(await res2.text()).toBe(getStatusText(400))
   })
 })
 

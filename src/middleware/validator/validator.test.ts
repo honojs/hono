@@ -365,3 +365,40 @@ describe('Validate with asArray', () => {
     expect(res.isValid).toBe(false)
   })
 })
+
+describe('Invalid HTTP request handling', () => {
+  const v = new Validator()
+
+  it('Should throw malformed error when JSON body absent', async () => {
+    const req = new Request('http://localhost/', {
+      method: 'POST',
+    })
+
+    let error
+    try {
+      const validator = v.json('post.title').isRequired()
+      await validator.validate(req)
+    } catch (e) {
+      error = e
+    }
+    expect(error instanceof Error).toBe(true)
+    expect((error as Error).message).toBe('Malformed JSON in request body')
+  })
+
+  it('Should throw malformed error when a JSON body is not valid JSON', async () => {
+    const req = new Request('http://localhost/', {
+      method: 'POST',
+      body: 'Not json!',
+    })
+
+    let error
+    try {
+      const validator = v.json('post.title').isRequired()
+      await validator.validate(req)
+    } catch (e) {
+      error = e
+    }
+    expect(error instanceof Error).toBe(true)
+    expect((error as Error).message).toBe('Malformed JSON in request body')
+  })
+})
