@@ -119,17 +119,17 @@ export class RegExpRouter<T> implements Router<T> {
       const path = paths[i]
 
       routes[method] ||= {}
-      routes[method][path] ||= [
-        ...(routes[METHOD_NAME_ALL][path] ||
-          findMiddleware(middleware[method], path) ||
-          findMiddleware(middleware[METHOD_NAME_ALL], path) ||
-          []),
-      ]
 
       Object.keys(routes).forEach((m) => {
-        ;(method === METHOD_NAME_ALL || method === m) &&
-          routes[m][path] &&
+        if (method === METHOD_NAME_ALL || method === m) {
+          routes[m][path] ||= [
+            ...(routes[METHOD_NAME_ALL][path] ||
+              findMiddleware(middleware[method], path) ||
+              findMiddleware(middleware[METHOD_NAME_ALL], path) ||
+              []),
+          ]
           routes[m][path].push(handler)
+        }
       })
     }
   }

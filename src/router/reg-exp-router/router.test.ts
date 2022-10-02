@@ -264,3 +264,15 @@ describe('Optional route', () => {
     expect(res?.params['type']).toBeUndefined()
   })
 })
+
+describe('All', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('GET', '/hello', 'get hello')
+  router.add('ALL', '/all', 'get all')
+
+  it('get, all hello', async () => {
+    const res = router.match('GET', '/all')
+    expect(res).not.toBeNull()
+  })
+})
