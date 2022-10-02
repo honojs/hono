@@ -23,6 +23,7 @@ export interface Context<
   event: FetchEvent
   executionCtx: ExecutionContext
   finalized: boolean
+  error: Error | undefined
 
   get res(): Response
   set res(_res: Response)
@@ -58,6 +59,7 @@ export class HonoContext<
   req: Request<RequestParamKeyType, D>
   env: E['Bindings']
   finalized: boolean
+  error: Error | undefined = undefined
 
   _status: StatusCode = 200
   private _executionCtx: FetchEvent | ExecutionContext | undefined

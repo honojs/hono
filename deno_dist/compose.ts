@@ -1,5 +1,5 @@
 import { HonoContext } from './context.ts'
-import type { Environment, NotFoundHandler } from './hono.ts'
+import type { Environment, NotFoundHandler, ErrorHandler } from './hono.ts'
 
 interface ComposeContext {
   finalized: boolean
@@ -9,7 +9,8 @@ interface ComposeContext {
 // Based on the code in the MIT licensed `koa-compose` package.
 export const compose = <C extends ComposeContext, E extends Partial<Environment> = Environment>(
   middleware: Function[],
-  onNotFound?: NotFoundHandler<E>
+  onNotFound?: NotFoundHandler<E>,
+  onError?: ErrorHandler<E>
 ) => {
   const middlewareLength = middleware.length
   return (context: C, next?: Function) => {
@@ -25,20 +26,31 @@ export const compose = <C extends ComposeContext, E extends Partial<Environment>
       if (i === middlewareLength && next) handler = next
 
       let res
+      let isError = false
 
       if (!handler) {
         if (context instanceof HonoContext && context.finalized === false && onNotFound) {
           res = onNotFound(context)
         }
       } else {
-        res = handler(context, () => {
-          const dispatchRes = dispatch(i + 1)
-          return dispatchRes instanceof Promise ? dispatchRes : Promise.resolve(dispatchRes)
-        })
+        try {
+          res = handler(context, () => {
+            const dispatchRes = dispatch(i + 1)
+            return dispatchRes instanceof Promise ? dispatchRes : Promise.resolve(dispatchRes)
+          })
+        } catch (err) {
+          if (err instanceof Error && context instanceof HonoContext && onError) {
+            context.error = err
+            res = onError(err, context)
+            isError = true
+          } else {
+            throw err
+          }
+        }
       }
 
       if (!(res instanceof Promise)) {
-        if (res && context.finalized === false) {
+        if (res && (context.finalized === false || isError)) {
           context.res = res
         }
         return context
