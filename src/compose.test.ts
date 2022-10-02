@@ -230,17 +230,16 @@ describe('compose with Context - 500 error', () => {
     }
 
     const mHandler = async (_c: Context, next: Function) => {
-      try {
-        await next()
-      } catch {
-        return c.text('onError', 500)
-      }
+      await next()
     }
 
     middleware.push(mHandler)
     middleware.push(handler)
 
-    const composed = compose<Context>(middleware)
+    const onNotFound = (c: Context) => c.text('NotFound', 404)
+    const onError = (_error: Error, c: Context) => c.text('onError', 500)
+
+    const composed = compose<Context>(middleware, onNotFound, onError)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(500)
