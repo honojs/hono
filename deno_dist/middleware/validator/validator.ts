@@ -118,8 +118,12 @@ export abstract class VBase {
       value = body[this.key]
     }
     if (this.target === 'json') {
-      const obj = (await req.json()) as JSONObject
-      value = JSONPath(obj, this.key)
+      try {
+        const obj = (await req.json()) as JSONObject
+        value = JSONPath(obj, this.key)
+      } catch (e) {
+        throw new Error('Malformed JSON in request body')
+      }
     }
 
     result.value = value
