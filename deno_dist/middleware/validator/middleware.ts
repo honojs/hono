@@ -1,5 +1,6 @@
 import type { Context } from '../../context.ts'
 import type { Environment, Next, ValidatedData } from '../../hono.ts'
+import { getStatusText } from '../../utils/http-status.ts'
 import { VBase, Validator } from './validator.ts'
 import type {
   VString,
@@ -80,7 +81,13 @@ export const validatorMiddleware = <T extends Schema, Env extends Partial<Enviro
     const validatorList = getValidatorList(validationFunction(v, c))
 
     for (const [keys, validator] of validatorList) {
-      const result = await validator.validate(c.req)
+      let result
+      try {
+        result = await validator.validate(c.req)
+      } catch (e) {
+        // Invalid JSON request
+        return c.text(getStatusText(400), 400)
+      }
       if (result.isValid) {
         // Set data on request object
         c.req.valid(keys, result.value)
