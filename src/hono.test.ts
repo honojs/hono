@@ -570,7 +570,22 @@ describe('Error handling in middleware', () => {
     }
   })
 
+  app.get('/handle-error-in-middleware-async', async (c, next) => {
+    await next()
+    if (c.error) {
+      const message = c.error.message
+      c.res = c.text(
+        `Handle the error in middleware with async, original message is ${message}`,
+        500
+      )
+    }
+  })
+
   app.get('/handle-error-in-middleware', () => {
+    throw new Error('Error message')
+  })
+
+  app.get('/handle-error-in-middleware-async', async () => {
     throw new Error('Error message')
   })
 
@@ -579,6 +594,14 @@ describe('Error handling in middleware', () => {
     expect(res.status).toBe(500)
     expect(await res.text()).toBe(
       'Handle the error in middleware, original message is Error message'
+    )
+  })
+
+  it('Should handle the error in middleware - async', async () => {
+    const res = await app.request('https://example.com/handle-error-in-middleware-async')
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe(
+      'Handle the error in middleware with async, original message is Error message'
     )
   })
 })
