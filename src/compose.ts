@@ -55,12 +55,21 @@ export const compose = <C extends ComposeContext, E extends Partial<Environment>
         }
         return context
       } else {
-        return res.then((res) => {
-          if (res && context.finalized === false) {
-            context.res = res
-          }
-          return context
-        })
+        return res
+          .then((res) => {
+            if (res && context.finalized === false) {
+              context.res = res
+            }
+            return context
+          })
+          .catch((err) => {
+            if (err instanceof Error && context instanceof HonoContext && onError) {
+              context.error = err
+              context.res = onError(err, context)
+              return context
+            }
+            throw err
+          })
       }
     }
   }
