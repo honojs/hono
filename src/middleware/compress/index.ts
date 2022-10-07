@@ -17,7 +17,7 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
     }
     const encoding = match[0]
     const stream = new CompressionStream(encoding as EncodingType)
-    ctx.res = new Response(ctx.res.body.pipeThrough(stream), ctx.res.clone())
+    ctx.res = new Response(ctx.res.body.pipeThrough(stream), ctx.res)
     ctx.res.headers.set('Content-Encoding', encoding)
   }
 }
