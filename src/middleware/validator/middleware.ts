@@ -1,7 +1,8 @@
 import type { Context } from '../../context'
 import type { Environment, Next, ValidatedData } from '../../hono'
 import { getStatusText } from '../../utils/http-status'
-import { VBase, Validator } from './validator'
+import { mergeObjects } from '../../utils/object'
+import { VBase, Validator, VObjectBase } from './validator'
 import type {
   VString,
   VNumber,
@@ -11,18 +12,20 @@ import type {
   VStringArray,
   VBooleanArray,
   ValidateResult,
+  VArray,
 } from './validator'
 
-type Schema = {
+export type Schema = {
   [key: string]:
     | VString
     | VNumber
     | VBoolean
-    | VObject
     | VStringArray
     | VNumberArray
     | VBooleanArray
     | Schema
+    | VObject<Schema>
+    | VArray<Schema>
 }
 
 type SchemaToProp<T> = {
@@ -38,11 +41,21 @@ type SchemaToProp<T> = {
     ? boolean
     : T[K] extends VString
     ? string
-    : T[K] extends VObject
-    ? object
-    : T[K] extends Schema
-    ? SchemaToProp<T[K]>
-    : never
+    : T[K] extends VObjectBase<Schema>
+    ? T[K]['container'] extends VNumber
+      ? number
+      : T[K]['container'] extends VString
+      ? string
+      : T[K]['container'] extends VBoolean
+      ? boolean
+      : T[K] extends VArray<Schema>
+      ? SchemaToProp<ReadonlyArray<T[K]['container']>>
+      : T[K] extends VObject<Schema>
+      ? SchemaToProp<T[K]['container']>
+      : T[K] extends Schema
+      ? SchemaToProp<T[K]>
+      : never
+    : SchemaToProp<T[K]>
 }
 
 type ResultSet = {
@@ -78,10 +91,12 @@ export const validatorMiddleware = <T extends Schema, Env extends Partial<Enviro
       results: [],
     }
 
-    const validatorList = getValidatorList(validationFunction(v, c))
+    const schema = validationFunction(v, c)
+    const validatorList = getValidatorList(schema)
+    let data: any = {}
 
     for (const [keys, validator] of validatorList) {
-      let result
+      let result: ValidateResult
       try {
         result = await validator.validate(c.req)
       } catch (e) {
@@ -90,7 +105,13 @@ export const validatorMiddleware = <T extends Schema, Env extends Partial<Enviro
       }
       if (result.isValid) {
         // Set data on request object
-        c.req.valid(keys, result.value)
+        if (result.jsonData) {
+          const dst = data
+          mergeObjects(dst, result.jsonData)
+          data = dst
+        } else {
+          c.req.valid(keys, result.value)
+        }
       } else {
         resultSet.hasError = true
         if (result.message !== undefined) {
@@ -98,6 +119,12 @@ export const validatorMiddleware = <T extends Schema, Env extends Partial<Enviro
         }
       }
       resultSet.results.push(result)
+    }
+
+    if (!resultSet.hasError) {
+      Object.keys(data).map((key) => {
+        c.req.valid(key, data[key])
+      })
     }
 
     if (options && options.done) {
@@ -115,13 +142,18 @@ export const validatorMiddleware = <T extends Schema, Env extends Partial<Enviro
   return handler
 }
 
-function getValidatorList<T extends Schema>(schema: T): [string[], VBase][] {
+function getValidatorList<T extends Schema>(schema: T) {
   const map: [string[], VBase][] = []
   for (const [key, value] of Object.entries(schema)) {
-    if (value instanceof VBase) {
+    if (value instanceof VObjectBase) {
+      const validators = value.getValidators()
+      for (const validator of validators) {
+        map.push([value.keys, validator])
+      }
+    } else if (value instanceof VBase) {
       map.push([[key], value])
     } else {
-      const children = getValidatorList(value)
+      const children = getValidatorList(value as Schema)
       for (const [keys, validator] of children) {
         map.push([[key, ...keys], validator])
       }
