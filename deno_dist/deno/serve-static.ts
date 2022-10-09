@@ -15,6 +15,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
     // Do nothing if Response is already set
     if (c.finalized) {
       await next()
+      return
     }
 
     const url = new URL(c.req.url)
@@ -33,7 +34,6 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
       content = await Deno.readFile(path)
     } catch (e) {
       console.warn(`${e}`)
-      await next()
     }
 
     if (content) {
