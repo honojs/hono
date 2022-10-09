@@ -59,12 +59,18 @@ Deno.test('JSX middleware', async () => {
 Deno.test('Serve Static middleware', async () => {
   const app = new Hono()
   app.all('/favicon.ico', serveStatic({ path: './deno_test/favicon.ico' }))
+  app.all('/favicon-notfound.ico', serveStatic({ path: './deno_test/favicon-notfound.ico' }))
+  app.use('/favicon-notfound.ico', async (c, next) => {
+    await next()
+    c.header('X-Custom', 'Deno')
+  })
   let res = await app.request('http://localhost/favicon.ico')
   assertEquals(res.status, 200)
   assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
   res = await app.request('http://localhost/favicon-notfound.ico')
   assertEquals(res.status, 404)
   assertMatch(res.headers.get('Content-Type') || '', /^text\/plain/)
+  assertEquals(res.headers.get('X-Custom'), 'Deno')
 })
 
 Deno.test('JWT Authentication middleware', async () => {
