@@ -19,6 +19,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
     // Do nothing if Response is already set
     if (c.finalized) {
       await next()
+      return
     }
 
     const url = new URL(c.req.url)
