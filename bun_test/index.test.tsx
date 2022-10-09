@@ -60,6 +60,11 @@ describe('Basic Auth Middleware', () => {
 describe('Serve Static Middleware', () => {
   const app = new Hono()
   app.all('/favicon.ico', serveStatic({ path: './bun_test/favicon.ico' }))
+  app.all('/favicon-notfound.ico', serveStatic({ path: './bun_test/favicon-notfound.ico' }))
+  app.use('/favicon-notfound.ico', async (c, next) => {
+    await next()
+    c.header('X-Custom', 'Bun')
+  })
 
   it('Should return static file correctly', async () => {
     const res = await app.request(new Request('http://localhost/favicon.ico'))
@@ -71,6 +76,7 @@ describe('Serve Static Middleware', () => {
   it('Should return 404 response', async () => {
     const res = await app.request(new Request('http://localhost/favicon-notfound.ico'))
     expect(res.status).toBe(404)
+    expect(res.headers.get('X-Custom')).toBe('Bun')
   })
 })
 
