@@ -107,8 +107,7 @@ export const validatorMiddleware = <T extends Schema, Env extends Partial<Enviro
         // Set data on request object
         if (result.jsonData) {
           const dst = data
-          mergeObjects(dst, result.jsonData)
-          data = dst
+          data = mergeObjects(dst, result.jsonData)
         } else {
           c.req.valid(keys, result.value)
         }
