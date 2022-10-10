@@ -403,41 +403,6 @@ describe('Invalid HTTP request handling', () => {
   })
 })
 
-describe('Validate with asArray', () => {
-  const v = new Validator()
-  const json = {
-    post: {
-      title: ['Hello'],
-      flags: [true, false],
-      published: [true],
-      comments: [
-        {
-          title: 'abc',
-          author: 'John',
-          category: 'Heroes',
-          flags: [true, false],
-        },
-        {
-          title: 'def',
-          author: 'Dave',
-          flags: [false, true],
-        },
-      ],
-    },
-  }
-
-  const req = new Request('http://localhost/', {
-    method: 'POST',
-    body: JSON.stringify(json),
-  })
-
-  it('Should validate array values', async () => {
-    const validator = v.json('post.comments[0].title').isAlpha()
-    const res = await validator.validate(req)
-    expect(res.isValid).toBe(true)
-  })
-})
-
 describe('Nested objects', () => {
   const json = {
     posts: [
