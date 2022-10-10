@@ -1,18 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+export const isObject = (val: any): boolean => val && typeof val === 'object' && !Array.isArray(val)
+
 export const mergeObjects = (target: any, source: any) => {
-  if (Array.isArray(source)) {
-    for (let i = 0, len = source.length; i < len; i++) {
-      if (!target) target = []
-      Object.assign(source[i], mergeObjects(target[i], source[i]))
-    }
-  } else {
+  const merged = Object.assign({}, target)
+  if (isObject(target) && isObject(source)) {
     for (const key of Object.keys(source)) {
-      if (source[key] instanceof Object) {
-        if (!target) target = {}
-        Object.assign(source[key], mergeObjects(target[key], source[key]))
+      if (isObject(source[key])) {
+        if (target[key] === undefined) Object.assign(merged, { [key]: source[key] })
+        else merged[key] = mergeObjects(target[key], source[key])
+      } else if (Array.isArray(source[key]) && Array.isArray(target[key])) {
+        const srcArr = source[key]
+        const tgtArr = target[key]
+        const outArr = [] as any[]
+        for (let i = 0; i < srcArr.length; i += 1) {
+          // If corresponding index for both arrays is an object, then merge them
+          // Otherwise just copy src arr index into out arr index
+          if (isObject(srcArr[i]) && isObject(tgtArr[i])) {
+            outArr[i] = mergeObjects(tgtArr[i], srcArr[i])
+          } else {
+            outArr[i] = srcArr[i]
+          }
+        }
+        Object.assign(merged, { [key]: outArr })
+      } else {
+        Object.assign(merged, { [key]: source[key] })
       }
     }
   }
-  Object.assign(target || {}, source)
-  return target
+  return merged
 }
