@@ -402,3 +402,215 @@ describe('Invalid HTTP request handling', () => {
     expect((error as Error).message).toBe('Malformed JSON in request body')
   })
 })
+
+describe('Nested objects', () => {
+  const json = {
+    posts: [
+      {
+        id: 123,
+        title: 'JavaScript',
+        authors: [
+          {
+            name: 'Superman',
+            age: 20,
+            like: {
+              food: 'fish',
+            },
+          },
+        ],
+        tags: [
+          {
+            name: 'Node.js',
+          },
+          {
+            name: 'Deno',
+          },
+          {
+            name: 'Bun',
+          },
+        ],
+      },
+      {
+        id: 456,
+        title: 'Framework',
+        tags: [
+          {
+            name: 'Hono',
+          },
+          {
+            name: 'Express',
+          },
+        ],
+      },
+    ],
+    pager: {
+      prev: true,
+      next: false,
+      meta: {
+        perPage: 10,
+        pages: [
+          {
+            num: 1,
+          },
+        ],
+      },
+    },
+  }
+
+  const req = new Request('http://localhost/', {
+    method: 'POST',
+    body: JSON.stringify(json),
+  })
+
+  it('Should validate nested array values', async () => {
+    const v = new Validator()
+    const vArray = v.array('posts', (v) => ({
+      id: v.json('id').asNumber(),
+      title: v.json('title'),
+      authors: v
+        .array('authors', (v) => ({
+          name: v.json('name'),
+          age: v.json('age').asNumber(),
+          like: v.object('like', (v) => ({
+            food: v.json('food').isRequired(),
+          })),
+        }))
+        .isOptional(),
+      tags: v
+        .array('tags', (v) => ({
+          name: v.json('name'),
+        }))
+        .isOptional(),
+    }))
+    for (const validator of vArray.getValidators()) {
+      const res = await validator.validate(req)
+      expect(res.isValid).toBe(true)
+      expect(res.message).toBeUndefined()
+    }
+  })
+
+  it('Should validate nested object values', async () => {
+    const v = new Validator()
+    const vObject = v.object('pager', (v) => ({
+      prev: v.json('prev').asBoolean(),
+      next: v.json('next').asBoolean(),
+      meta: v.object('meta', (v) => ({
+        totalCount: v.json('perPage').asNumber(),
+        pages: v.array('pages', (v) => ({
+          num: v.json('num').asNumber(),
+        })),
+      })),
+    }))
+
+    for (const validator of vObject.getValidators()) {
+      const res = await validator.validate(req)
+      expect(res.isValid).toBe(true)
+      expect(res.message).toBeUndefined()
+    }
+  })
+
+  it('Should validate nested array values', async () => {
+    let v = new Validator()
+    const vArray = v.array('posts', (v) => ({
+      id: v.json('id'),
+    }))
+
+    for (const validator of vArray.getValidators()) {
+      const res = await validator.validate(req)
+      expect(res.isValid).toBe(false)
+      const messages = ['Invalid Value: the JSON body "posts.[*].id" is invalid - [123, 456]']
+      expect(res.message).toBe(messages.join('\n'))
+    }
+
+    v = new Validator()
+    const vArray2 = v.array('posts', (v) => ({
+      optionalProperty: v.json('optional-property').isOptional(),
+    }))
+    for (const validator of vArray2.getValidators()) {
+      const res = await validator.validate(req)
+      expect(res.isValid).toBe(true)
+      expect(res.message).toBeUndefined()
+    }
+  })
+
+  it('Should validate nested array values with `isOptional`', async () => {
+    const v = new Validator()
+    const vArray = v.array('posts', (v) => ({
+      title: v.json('optional-title').isOptional(),
+      comments: v
+        .array('comments', (v) => ({
+          body: v.json('body'),
+        }))
+        .isOptional(),
+    }))
+
+    for (const validator of vArray.getValidators()) {
+      const res = await validator.validate(req)
+      expect(res.isValid).toBe(true)
+      expect(res.message).toBeUndefined()
+    }
+
+    const vArray2 = v
+      .array('posts', (v) => ({
+        title: v.json('title').asNumber(),
+      }))
+      .isOptional()
+
+    for (const validator of vArray2.getValidators()) {
+      const res = await validator.validate(req)
+      expect(res.isValid).toBe(false)
+      const messages = [
+        'Invalid Value: the JSON body "posts.[*].title" is invalid - ["JavaScript", "Framework"]',
+      ]
+      expect(res.message).toBe(messages.join('\n'))
+    }
+  })
+
+  it('Should validate nested object values with `isOptional`', async () => {
+    const v = new Validator()
+    const vObject = v.object('pager', (v) => ({
+      current: v.json('optional-value').isOptional(),
+      method: v
+        .object('method', (v) => ({
+          name: v.json('name'),
+        }))
+        .isOptional(),
+    }))
+
+    for (const validator of vObject.getValidators()) {
+      const res = await validator.validate(req)
+      expect(res.isValid).toBe(true)
+      expect(res.message).toBeUndefined()
+    }
+  })
+
+  it('Should only allow `v.json()` in nested array or object', async () => {
+    const v = new Validator()
+    const vArray = v.array('posts', (v) => ({
+      id: v.header('id').asNumber().isRequired(),
+    }))
+
+    for (const validator of vArray.getValidators()) {
+      const res = await validator.validate(req)
+      expect(res.isValid).toBe(false)
+      const messages = ['Invalid Value: the request header "id" is invalid - undefined']
+      expect(res.message).toBe(messages.join('\n'))
+    }
+
+    const vObject = v.object('pager', (v) => ({
+      prev: v.query('prev').asBoolean(),
+      next: v.body('next').asBoolean(),
+    }))
+
+    const messages = [
+      'Invalid Value: the query parameter "prev" is invalid - undefined',
+      'Invalid Value: the request body "next" is invalid - undefined',
+    ]
+
+    for (const [i, validator] of vObject.getValidators().entries()) {
+      const res = await validator.validate(req)
+      expect(res.isValid).toBe(false)
+      expect(res.message).toBe(`${messages[i]}`)
+    }
+  })
+})

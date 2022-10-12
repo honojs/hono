@@ -485,3 +485,97 @@ describe('Array values', () => {
     expect(await res.json()).toEqual({ tag1: 'Workers' })
   })
 })
+
+describe('Nested structured data', () => {
+  const json = {
+    posts: [
+      {
+        id: 123,
+        title: 'JavaScript',
+        tags: [
+          {
+            name: 'Node.js',
+          },
+          {
+            name: 'Deno',
+          },
+          {
+            name: 'Bun',
+          },
+        ],
+      },
+      {
+        id: 456,
+        title: 'Framework',
+        tags: [
+          {
+            name: 'Hono',
+          },
+          {
+            name: 'Express',
+          },
+          {
+            name: 'Fastify',
+          },
+        ],
+      },
+    ],
+    meta: {
+      pager: 'pager',
+    },
+  }
+
+  it('Should return 200 response - nested objects', async () => {
+    const app = new Hono()
+    app.post(
+      '/posts',
+      validator((v) => ({
+        posts: v.array('posts', (v) => ({
+          id: v.json('id').asNumber(),
+          title: v.json('title').isRequired(),
+          tags: v.array('tags', (v) => ({
+            name: v.json('name'),
+          })),
+        })),
+        meta: v.object('meta', (v) => ({
+          pager: v.json('pager'),
+        })),
+      })),
+      (c) => {
+        const res = c.req.valid()
+        return c.json({ posts: res.posts })
+      }
+    )
+    const req = new Request('http://localhost/posts', {
+      method: 'POST',
+      body: JSON.stringify(json),
+    })
+
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ posts: json.posts })
+  })
+
+  it('Should return 400 response - nested objects', async () => {
+    const app = new Hono()
+    app.post(
+      '/posts-invalid',
+      validator((v) => ({
+        posts: v.array('posts', (v) => ({
+          id: v.json('ids').asArray().asNumber(),
+        })),
+      })),
+      (c) => {
+        const res = c.req.valid()
+        return c.json({ posts: res.posts })
+      }
+    )
+    const req = new Request('http://localhost/posts-invalid', {
+      method: 'POST',
+      body: JSON.stringify(json),
+    })
+
+    const res = await app.request(req)
+    expect(res.status).toBe(400)
+  })
+})

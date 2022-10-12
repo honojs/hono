@@ -1,5 +1,6 @@
-import { JSONPath } from '../../utils/json'
+import { JSONPathCopy } from '../../utils/json'
 import type { JSONObject, JSONPrimitive, JSONArray } from '../../utils/json'
+import type { Schema } from './middleware'
 import { rule } from './rule'
 import { sanitizer } from './sanitizer'
 
@@ -8,11 +9,90 @@ type Type = JSONPrimitive | JSONObject | JSONArray | File
 type Rule = (value: Type) => boolean
 type Sanitizer = (value: Type) => Type
 
+export abstract class VObjectBase<T extends Schema> {
+  container: T
+  keys: string[] = []
+  protected _isOptional: boolean = false
+  constructor(container: T, key: string) {
+    this.container = container
+    if (this instanceof VArray) {
+      this.keys.push(key, '[*]')
+    } else if (this instanceof VObject) {
+      this.keys.push(key)
+    }
+  }
+  isOptional() {
+    this._isOptional = true
+    return this
+  }
+
+  getValidators = (): VBase[] => {
+    const validators: VBase[] = []
+    const thisKeys: string[] = []
+    Object.assign(thisKeys, this.keys)
+
+    const walk = (container: T, keys: string[], isOptional: boolean) => {
+      for (const v of Object.values(container)) {
+        if (v instanceof VArray || v instanceof VObject) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          isOptional ||= v._isOptional
+          keys.push(...v.keys)
+          walk(v.container as T, keys, isOptional)
+          const tmp: string[] = []
+          Object.assign(tmp, thisKeys)
+          keys = tmp
+        } else if (v instanceof VBase) {
+          if (isOptional) v.isOptional()
+          v.baseKeys.push(...keys)
+          validators.push(v)
+        }
+      }
+    }
+
+    walk(this.container, this.keys, this._isOptional)
+
+    return validators
+  }
+}
+
+export class VObject<T extends Schema> extends VObjectBase<T> {
+  constructor(container: T, key: string) {
+    super(container, key)
+  }
+}
+
+export class VArray<T extends Schema> extends VObjectBase<T> {
+  type: 'array' = 'array'
+  constructor(container: T, key: string) {
+    super(container, key)
+  }
+}
+
 export class Validator {
+  isArray: boolean = false
+  isOptional: boolean = false
   query = (key: string): VString => new VString({ target: 'query', key: key })
   header = (key: string): VString => new VString({ target: 'header', key: key })
   body = (key: string): VString => new VString({ target: 'body', key: key })
-  json = (key: string): VString => new VString({ target: 'json', key: key })
+  json = (key: string) => {
+    if (this.isArray) {
+      return new VStringArray({ target: 'json', key: key })
+    } else {
+      return new VString({ target: 'json', key: key })
+    }
+  }
+  array = <T extends Schema>(path: string, validator: (v: Validator) => T): VArray<T> => {
+    this.isArray = true
+    const res = validator(this)
+    const arr = new VArray(res, path)
+    return arr
+  }
+  object = <T extends Schema>(path: string, validator: (v: Validator) => T): VObject<T> => {
+    const res = validator(this)
+    const obj = new VObject(res, path)
+    return obj
+  }
 }
 
 export type ValidateResult = {
@@ -21,6 +101,7 @@ export type ValidateResult = {
   target: Target
   key: string
   value: Type
+  jsonData: JSONObject | undefined
 }
 
 type VOptions = {
@@ -33,6 +114,7 @@ type VOptions = {
 export abstract class VBase {
   type: 'string' | 'number' | 'boolean' | 'object'
   target: Target
+  baseKeys: string[] = []
   key: string
   rules: Rule[]
   sanitizers: Sanitizer[]
@@ -48,6 +130,8 @@ export abstract class VBase {
     this.isArray = options.isArray || false
     this._optional = false
   }
+
+  private _nested = () => (this.baseKeys.length ? true : false)
 
   addRule = (rule: Rule) => {
     this.rules.push(rule)
@@ -87,11 +171,6 @@ export abstract class VBase {
     return newVBoolean
   }
 
-  asObject = () => {
-    const newVObject = new VObject(this)
-    return newVObject
-  }
-
   message(value: string) {
     this._message = value
     return this
@@ -104,6 +183,7 @@ export abstract class VBase {
       target: this.target,
       key: this.key,
       value: undefined,
+      jsonData: undefined,
     }
 
     let value: Type = undefined
@@ -118,16 +198,30 @@ export abstract class VBase {
       value = body[this.key]
     }
     if (this.target === 'json') {
+      if (this._nested()) {
+        this.key = `${this.baseKeys.join('.')}.${this.key}`
+      }
+      let obj = {}
       try {
-        const obj = (await req.json()) as JSONObject
-        value = JSONPath(obj, this.key)
+        obj = (await req.json()) as JSONObject
       } catch (e) {
         throw new Error('Malformed JSON in request body')
       }
+      const dst = {}
+      value = JSONPathCopy(obj, dst, this.key)
+      if (this.isArray && !Array.isArray(value)) {
+        value = [value]
+      }
+      if (this._nested()) result.jsonData = dst
     }
 
     result.value = value
-    result.isValid = this.validateValue(value)
+
+    if (this._nested() && this.target != 'json') {
+      result.isValid = false
+    } else {
+      result.isValid = this.validateValue(value)
+    }
 
     if (result.isValid === false) {
       if (this._message) {
@@ -167,16 +261,21 @@ export abstract class VBase {
       }
 
       for (const val of value) {
-        if (typeof val !== this.type) {
-          // Value is of wrong type here
-          // If not optional, or optional and not undefined, return false
-          if (!this._optional || typeof val !== 'undefined') return false
+        if (typeof val === 'undefined' && this._nested()) {
+          value.pop()
+        }
+        for (const val of value) {
+          if (typeof val !== this.type) {
+            // Value is of wrong type here
+            // If not optional, or optional and not undefined, return false
+            if (!this._optional || typeof val !== 'undefined') return false
+          }
         }
       }
 
       // Sanitize
       for (const sanitizer of this.sanitizers) {
-        value = value.map((innerVal) => sanitizer(innerVal)) as JSONArray
+        value = value.map((innerVal: any) => sanitizer(innerVal)) as JSONArray
       }
 
       for (const rule of this.rules) {
@@ -300,13 +399,6 @@ export class VBoolean extends VBase {
 
   isFalse = () => {
     return this.addRule((value) => rule.isFalse(value as boolean))
-  }
-}
-
-export class VObject extends VBase {
-  constructor(options: VOptions) {
-    super(options)
-    this.type = 'object'
   }
 }
 
