@@ -35,8 +35,9 @@ describe('Basic - query', () => {
     expect(res.status).toBe(400)
     expect(await res.text()).toBe(
       [
-        'Invalid Value: the query parameter "page" is invalid - undefined',
-        'Invalid Value: the query parameter "q5" is invalid - 123',
+        'Invalid Value [undefined]: the query parameter "page" is invalid - isRequired',
+        'Invalid Value [undefined]: the query parameter "page" is invalid - isNumeric',
+        'Invalid Value [123]: the query parameter "q5" is invalid - isEmpty',
       ].join('\n')
     )
   })
@@ -76,7 +77,7 @@ describe('Basic - body', () => {
     })
     const res = await app.request(req)
     expect(res.status).toBe(400)
-    const messages = ['Invalid Value: the request body "title" is invalid - undefined']
+    const messages = ['Invalid Value [undefined]: the request body "title" is invalid - isRequired']
     expect(await res.text()).toBe(messages.join('\n'))
   })
 })
