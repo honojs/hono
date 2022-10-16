@@ -1,3 +1,4 @@
+export * from './Exception'
 export * from './HttpException'
 export * from './BadGatewayException'
 export * from './BadRequestException'

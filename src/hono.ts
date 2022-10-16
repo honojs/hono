@@ -1,7 +1,7 @@
 import { compose } from './compose'
 import type { Context } from './context'
 import { HonoContext } from './context'
-import { Exception } from './exceptions/exception'
+import { Exception } from './exceptions/Exception'
 import { extendRequestPrototype } from './request'
 import type { Router } from './router'
 import { METHODS } from './router'

@@ -1,5 +1,5 @@
 import { getStatusText } from '../utils/http-status'
-import { Exception } from './exception'
+import { Exception } from './Exception'
 
 export class UnauthorizedException extends Exception implements Exception {
   constructor(message?: string) {
