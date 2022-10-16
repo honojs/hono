@@ -50,6 +50,10 @@
       "import": "./dist/middleware/etag/index.js",
       "require": "./dist/cjs/middleware/etag/index.js"
     },
+    "./exceptions": {
+      "import": "./dist/exceptions/index.js",
+      "require": "./dist/cjs/exceptions/index.js"
+    },
     "./html": {
       "import": "./dist/middleware/html/index.js",
       "require": "./dist/cjs/middleware/html/index.js"
