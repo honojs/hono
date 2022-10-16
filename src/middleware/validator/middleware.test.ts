@@ -215,6 +215,56 @@ describe('Custom Validation', () => {
   })
 })
 
+describe('Result objects', () => {
+  const app = new Hono()
+
+  app.post(
+    '/posts',
+    validator(
+      (v) => ({
+        title: v.body('title').isLength({ max: 5 }),
+      }),
+      {
+        done: (res, c) => {
+          return c.json(res['results'])
+        },
+      }
+    ),
+    (c) => {
+      return c.text('Valid')
+    }
+  )
+
+  it('Should return the result objects', async () => {
+    const formData = new FormData()
+    formData.append('title', 'abcdef')
+    const req = new Request('http://localhost/posts', {
+      method: 'POST',
+      body: formData,
+    })
+    const res = await app.request(req)
+    expect(await res.json()).toEqual([
+      {
+        isValid: true,
+        key: 'title',
+        ruleName: 'should be "string"',
+        ruleType: 'type',
+        target: 'body',
+        value: 'abcdef',
+      },
+      {
+        isValid: false,
+        key: 'title',
+        message: 'Invalid Value [abcdef]: the request body "title" is invalid - isLength',
+        ruleName: 'isLength',
+        ruleType: 'value',
+        target: 'body',
+        value: 'abcdef',
+      },
+    ])
+  })
+})
+
 describe('Array parameter', () => {
   const app = new Hono()
 
