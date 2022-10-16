@@ -1,4 +1,5 @@
 import type { Context } from './context'
+import { HttpException, UnauthorizedException, ForbiddenException } from './exceptions'
 import type { Next } from './hono'
 import { Hono } from './hono'
 import { logger } from './middleware/logger'
@@ -556,6 +557,38 @@ describe('Error handle', () => {
     expect(res.status).toBe(500)
     expect(await res.text()).toBe('Custom Error Message')
     expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
+  })
+})
+
+describe('Exception handle', () => {
+  const app = new Hono()
+
+  app.get('/custom-exception', () => {
+    throw new HttpException('I am a teapot', 418)
+  })
+
+  app.get('/unauthorized', () => {
+    throw new UnauthorizedException()
+  })
+
+  app.get('/exception-with-message', () => {
+    throw new ForbiddenException('You do not have access to this page')
+  })
+
+  it('Custom exception', async () => {
+    const res = await app.request('https://example.com/custom-exception')
+    expect(res.status).toBe(418)
+    expect(await res.text()).toBe('I am a teapot')
+  })
+
+  it('Exception handler', async () => {
+    let res = await app.request('https://example.com/unauthorized')
+    expect(res.status).toBe(401)
+    expect(await res.text()).toBe('Unauthorized')
+
+    res = await app.request('https://example.com/exception-with-message')
+    expect(res.status).toBe(403)
+    expect(await res.text()).toBe('You do not have access to this page')
   })
 })
 
