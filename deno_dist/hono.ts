@@ -1,6 +1,7 @@
 import { compose } from './compose.ts'
 import type { Context } from './context.ts'
 import { HonoContext } from './context.ts'
+import { Exception } from './exceptions/exception.ts'
 import { extendRequestPrototype } from './request.ts'
 import type { Router } from './router.ts'
 import { METHODS } from './router.ts'
@@ -140,6 +141,11 @@ export class Hono<
   }
 
   private errorHandler: ErrorHandler<E> = (err: Error, c: Context<string, E>) => {
+    if (err instanceof Exception) {
+      c.status(err.status)
+      return c.text(err.message)
+    }
+
     console.trace(err.message)
     const message = 'Internal Server Error'
     return c.text(message, 500)
