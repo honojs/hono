@@ -53,12 +53,11 @@ export const basicAuth = (
         }
       }
     }
-    ctx.res = new Response('Unauthorized', {
+    return new Response('Unauthorized', {
       status: 401,
       headers: {
         'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"',
       },
     })
-    await next()
   }
 }
