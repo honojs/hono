@@ -6,8 +6,25 @@ import { sanitizer } from './sanitizer'
 
 type Target = 'query' | 'header' | 'body' | 'json'
 type Type = JSONPrimitive | JSONObject | JSONArray | File
-type Rule = (value: Type) => boolean
+type RuleFunc = (value: Type) => boolean
+type Rule = {
+  name: string
+  func: RuleFunc
+  customMessage?: string
+  type: 'type' | 'value'
+}
 type Sanitizer = (value: Type) => Type
+
+export type ValidateResult = {
+  isValid: boolean
+  message: string | undefined
+  target: Target
+  key: string
+  value: Type
+  ruleName: string
+  ruleType: 'type' | 'value'
+  jsonData?: JSONObject
+}
 
 export abstract class VObjectBase<T extends Schema> {
   container: T
@@ -21,6 +38,7 @@ export abstract class VObjectBase<T extends Schema> {
       this.keys.push(key)
     }
   }
+
   isOptional() {
     this._isOptional = true
     return this
@@ -71,7 +89,6 @@ export class VArray<T extends Schema> extends VObjectBase<T> {
 
 export class Validator {
   isArray: boolean = false
-  isOptional: boolean = false
   query = (key: string): VString => new VString({ target: 'query', key: key })
   header = (key: string): VString => new VString({ target: 'header', key: key })
   body = (key: string): VString => new VString({ target: 'body', key: key })
@@ -89,19 +106,11 @@ export class Validator {
     return arr
   }
   object = <T extends Schema>(path: string, validator: (v: Validator) => T): VObject<T> => {
+    this.isArray = false
     const res = validator(this)
     const obj = new VObject(res, path)
     return obj
   }
-}
-
-export type ValidateResult = {
-  isValid: boolean
-  message: string | undefined
-  target: Target
-  key: string
-  value: Type
-  jsonData: JSONObject | undefined
 }
 
 type VOptions = {
@@ -119,22 +128,33 @@ export abstract class VBase {
   rules: Rule[]
   sanitizers: Sanitizer[]
   isArray: boolean
-  private _message: string | undefined
   private _optional: boolean
   constructor(options: VOptions) {
     this.target = options.target
     this.key = options.key
     this.type = options.type || 'string'
-    this.rules = []
+    this.rules = [
+      {
+        name: this.getTypeRuleName(),
+        type: 'type',
+        func: this.validateType,
+      },
+    ]
     this.sanitizers = []
-    this.isArray = options.isArray || false
     this._optional = false
+    this.isArray = options.isArray || false
   }
 
   private _nested = () => (this.baseKeys.length ? true : false)
 
-  addRule = (rule: Rule) => {
-    this.rules.push(rule)
+  addRule(func: RuleFunc): this
+  addRule(name: string, func: RuleFunc): this
+  addRule(arg: string | RuleFunc, func?: RuleFunc) {
+    if (typeof arg === 'string' && func) {
+      this.rules.push({ name: arg, func, type: 'value' })
+    } else if (arg instanceof Function) {
+      this.rules.push({ name: arg.name, func: arg, type: 'value' })
+    }
     return this
   }
 
@@ -143,8 +163,16 @@ export abstract class VBase {
     return this
   }
 
+  message = (text: string) => {
+    const len = this.rules.length
+    if (len >= 1) {
+      this.rules[len - 1].customMessage = text
+    }
+    return this
+  }
+
   isRequired = () => {
-    return this.addRule((value: unknown) => {
+    return this.addRule('isRequired', (value: unknown) => {
       if (value !== undefined && value !== null && value !== '') return true
       return false
     })
@@ -152,41 +180,39 @@ export abstract class VBase {
 
   isOptional = () => {
     this._optional = true
-    return this.addRule(() => true)
+    return this.addRule('isOptional', () => true)
   }
 
   isEqual = (comparison: unknown) => {
-    return this.addRule((value: unknown) => {
+    return this.addRule('isEqual', (value: unknown) => {
       return value === comparison
     })
   }
 
-  asNumber = () => {
-    const newVNumber = new VNumber(this)
+  asNumber = (): VNumber | VNumberArray => {
+    const newVNumber = new VNumber({ ...this, type: 'number' })
+    if (this.isArray) return newVNumber.asArray()
     return newVNumber
   }
 
-  asBoolean = () => {
-    const newVBoolean = new VBoolean(this)
+  asBoolean = (): VBoolean | VBooleanArray => {
+    const newVBoolean = new VBoolean({ ...this, type: 'boolean' })
+    if (this.isArray) return newVBoolean.asArray()
     return newVBoolean
   }
 
-  message(value: string) {
-    this._message = value
+  get(value: string) {
+    const len = this.rules.length
+    if (len > 0) {
+      this.rules[this.rules.length - 1].customMessage = value
+    }
     return this
   }
 
-  validate = async (req: Request): Promise<ValidateResult> => {
-    const result: ValidateResult = {
-      isValid: true,
-      message: undefined,
-      target: this.target,
-      key: this.key,
-      value: undefined,
-      jsonData: undefined,
-    }
-
+  validate = async (req: Request): Promise<ValidateResult[]> => {
     let value: Type = undefined
+    let jsonData: JSONObject | undefined = undefined
+
     if (this.target === 'query') {
       value = req.query(this.key)
     }
@@ -209,57 +235,68 @@ export abstract class VBase {
       }
       const dst = {}
       value = JSONPathCopy(obj, dst, this.key)
-      if (this.isArray && !Array.isArray(value)) {
-        value = [value]
-      }
-      if (this._nested()) result.jsonData = dst
+      if (this._nested()) jsonData = dst
     }
 
-    result.value = value
+    const results: ValidateResult[] = []
+
+    let typeRule = this.rules.shift()
+
+    for (const rule of this.rules) {
+      if (rule.type === 'type') {
+        typeRule = rule
+      } else if (rule.type === 'value') {
+        const result = this.validateRule(rule, value)
+        result.jsonData ||= jsonData
+        results.push(result)
+      }
+    }
+
+    if (typeRule) {
+      const typeResult = this.validateRule(typeRule, value)
+      typeResult.jsonData ||= jsonData
+      results.unshift(typeResult)
+    }
+
+    return results
+  }
+
+  protected getTypeRuleName(): string {
+    const prefix = 'should be'
+    return this.isArray ? `${prefix} "${this.type}[]"` : `${prefix} "${this.type}"`
+  }
+
+  private validateRule(rule: Rule, value: Type): ValidateResult {
+    let isValid: boolean = false
 
     if (this._nested() && this.target != 'json') {
-      result.isValid = false
-    } else {
-      result.isValid = this.validateValue(value)
+      isValid = false
+    } else if (rule.type === 'value') {
+      isValid = this.validateValue(rule.func, value)
+    } else if (rule.type === 'type') {
+      isValid = this.validateType(value)
     }
 
-    if (result.isValid === false) {
-      if (this._message) {
-        result.message = this._message
-      } else {
-        const valToStr = Array.isArray(value)
-          ? `[${value
-              .map((val) =>
-                val === undefined ? 'undefined' : typeof val === 'string' ? `"${val}"` : val
-              )
-              .join(', ')}]`
-          : value
-        switch (this.target) {
-          case 'query':
-            result.message = `Invalid Value: the query parameter "${this.key}" is invalid - ${valToStr}`
-            break
-          case 'header':
-            result.message = `Invalid Value: the request header "${this.key}" is invalid - ${valToStr}`
-            break
-          case 'body':
-            result.message = `Invalid Value: the request body "${this.key}" is invalid - ${valToStr}`
-            break
-          case 'json':
-            result.message = `Invalid Value: the JSON body "${this.key}" is invalid - ${valToStr}`
-            break
-        }
-      }
+    const message = isValid
+      ? undefined
+      : rule.customMessage || this.getMessage({ ruleName: rule.name, value })
+    const result = {
+      isValid: isValid,
+      message: message,
+      target: this.target,
+      key: this.key,
+      value,
+      ruleName: rule.name,
+      ruleType: rule.type,
     }
     return result
   }
 
-  private validateValue = (value: Type): boolean => {
-    // Check type
+  private validateType = (value: Type): boolean => {
     if (this.isArray) {
       if (!Array.isArray(value)) {
         return false
       }
-
       for (const val of value) {
         if (typeof val === 'undefined' && this._nested()) {
           value.pop()
@@ -267,47 +304,72 @@ export abstract class VBase {
         for (const val of value) {
           if (typeof val !== this.type) {
             // Value is of wrong type here
-            // If not optional, or optional and not undefined, return false
+            // If it is not optional and not undefined, return false
             if (!this._optional || typeof val !== 'undefined') return false
           }
         }
       }
-
-      // Sanitize
-      for (const sanitizer of this.sanitizers) {
-        value = value.map((innerVal: any) => sanitizer(innerVal)) as JSONArray
-      }
-
-      for (const rule of this.rules) {
-        for (const val of value) {
-          if (!rule(val)) {
-            return false
-          }
-        }
-      }
-      return true
     } else {
       if (typeof value !== this.type) {
-        if (this._optional && typeof value === 'undefined') {
+        if (this._optional && (typeof value === 'undefined' || Array.isArray(value))) {
           // Do nothing.
-          // The value is allowed to be `undefined` if it is `optional`
+          // If it is optional it's OK to be `undefined` or Array
         } else {
           return false
         }
       }
+    }
+    return true
+  }
 
+  private validateValue = (func: (value: Type) => boolean, value: Type): boolean => {
+    if (Array.isArray(value)) {
       // Sanitize
       for (const sanitizer of this.sanitizers) {
-        value = sanitizer(value)
+        value = value.map((innerVal: any) => sanitizer(innerVal)) as JSONArray
       }
-
-      for (const rule of this.rules) {
-        if (!rule(value)) {
+      for (const val of value) {
+        if (!func(val)) {
           return false
         }
       }
       return true
+    } else {
+      // Sanitize
+      for (const sanitizer of this.sanitizers) {
+        value = sanitizer(value)
+      }
+      if (!func(value)) {
+        return false
+      }
+      return true
     }
+  }
+
+  private getMessage = (opts: { ruleName: string; value: Type }): string => {
+    let keyText: string
+    const valueText = Array.isArray(opts.value)
+      ? `${opts.value
+          .map((val) =>
+            val === undefined ? 'undefined' : typeof val === 'string' ? `"${val}"` : val
+          )
+          .join(', ')}`
+      : opts.value
+    switch (this.target) {
+      case 'query':
+        keyText = `the query parameter "${this.key}"`
+        break
+      case 'header':
+        keyText = `the request header "${this.key}"`
+        break
+      case 'body':
+        keyText = `the request body "${this.key}"`
+        break
+      case 'json':
+        keyText = `the JSON body "${this.key}"`
+        break
+    }
+    return `Invalid Value [${valueText}]: ${keyText} is invalid - ${opts.ruleName}`
   }
 }
 
@@ -326,19 +388,19 @@ export class VString extends VBase {
       ignore_whitespace: boolean
     } = { ignore_whitespace: false }
   ) => {
-    return this.addRule((value) => rule.isEmpty(value as string, options))
+    return this.addRule('isEmpty', (value) => rule.isEmpty(value as string, options))
   }
 
   isLength = (options: Partial<{ min: number; max: number }> | number, arg2?: number) => {
-    return this.addRule((value) => rule.isLength(value as string, options, arg2))
+    return this.addRule('isLength', (value) => rule.isLength(value as string, options, arg2))
   }
 
   isAlpha = () => {
-    return this.addRule((value) => rule.isAlpha(value as string))
+    return this.addRule('isAlpha', (value) => rule.isAlpha(value as string))
   }
 
   isNumeric = () => {
-    return this.addRule((value) => rule.isNumeric(value as string))
+    return this.addRule('isNumeric', (value) => rule.isNumeric(value as string))
   }
 
   contains = (
@@ -348,15 +410,15 @@ export class VString extends VBase {
       minOccurrences: 1,
     }
   ) => {
-    return this.addRule((value) => rule.contains(value as string, elem, options))
+    return this.addRule('contains', (value) => rule.contains(value as string, elem, options))
   }
 
   isIn = (options: string[]) => {
-    return this.addRule((value) => rule.isIn(value as string, options))
+    return this.addRule('isIn', (value) => rule.isIn(value as string, options))
   }
 
   match = (regExp: RegExp) => {
-    return this.addRule((value) => rule.match(value as string, regExp))
+    return this.addRule('match', (value) => rule.match(value as string, regExp))
   }
 
   trim = () => {
@@ -375,11 +437,11 @@ export class VNumber extends VBase {
   }
 
   isGte = (min: number) => {
-    return this.addRule((value) => rule.isGte(value as number, min))
+    return this.addRule('isGte', (value) => rule.isGte(value as number, min))
   }
 
   isLte = (min: number) => {
-    return this.addRule((value) => rule.isLte(value as number, min))
+    return this.addRule('isLte', (value) => rule.isLte(value as number, min))
   }
 }
 
@@ -394,11 +456,11 @@ export class VBoolean extends VBase {
   }
 
   isTrue = () => {
-    return this.addRule((value) => rule.isTrue(value as boolean))
+    return this.addRule('isTrue', (value) => rule.isTrue(value as boolean))
   }
 
   isFalse = () => {
-    return this.addRule((value) => rule.isFalse(value as boolean))
+    return this.addRule('isFalse', (value) => rule.isFalse(value as boolean))
   }
 }
 
@@ -407,6 +469,7 @@ export class VNumberArray extends VNumber {
   constructor(options: VOptions) {
     super(options)
     this.isArray = true
+    this.rules[0].name = this.getTypeRuleName()
   }
 }
 export class VStringArray extends VString {
@@ -414,6 +477,7 @@ export class VStringArray extends VString {
   constructor(options: VOptions) {
     super(options)
     this.isArray = true
+    this.rules[0].name = this.getTypeRuleName()
   }
 }
 export class VBooleanArray extends VBoolean {
@@ -421,5 +485,6 @@ export class VBooleanArray extends VBoolean {
   constructor(options: VOptions) {
     super(options)
     this.isArray = true
+    this.rules[0].name = this.getTypeRuleName()
   }
 }

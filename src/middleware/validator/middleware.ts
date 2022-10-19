@@ -96,28 +96,39 @@ export const validatorMiddleware = <T extends Schema, Env extends Partial<Enviro
     let data: any = {}
 
     for (const [keys, validator] of validatorList) {
-      let result: ValidateResult
+      let results: ValidateResult[]
       try {
-        result = await validator.validate(c.req)
+        results = await validator.validate(c.req)
       } catch (e) {
         // Invalid JSON request
         return c.text(getStatusText(400), 400)
       }
-      if (result.isValid) {
-        // Set data on request object
-        if (result.jsonData) {
-          const dst = data
-          data = mergeObjects(dst, result.jsonData)
-        } else {
-          c.req.valid(keys, result.value)
+
+      let isValid = true
+      const value = results[0].value
+      const jsonData = results[0].jsonData
+
+      for (const result of results) {
+        if (!result.isValid) {
+          isValid = false
+          resultSet.hasError = true
+          if (result.ruleType === 'value' && result.message !== undefined) {
+            resultSet.messages.push(result.message)
+          }
         }
-      } else {
-        resultSet.hasError = true
-        if (result.message !== undefined) {
-          resultSet.messages.push(result.message)
+        resultSet.results.push(result)
+      }
+
+      // Set data on request object
+      if (isValid) {
+        // Set data on request object
+        if (jsonData) {
+          const dst = data
+          data = mergeObjects(dst, jsonData)
+        } else {
+          c.req.valid(keys, value)
         }
       }
-      resultSet.results.push(result)
     }
 
     if (!resultSet.hasError) {

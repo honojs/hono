@@ -35,8 +35,9 @@ describe('Basic - query', () => {
     expect(res.status).toBe(400)
     expect(await res.text()).toBe(
       [
-        'Invalid Value: the query parameter "page" is invalid - undefined',
-        'Invalid Value: the query parameter "q5" is invalid - 123',
+        'Invalid Value [undefined]: the query parameter "page" is invalid - isRequired',
+        'Invalid Value [undefined]: the query parameter "page" is invalid - isNumeric',
+        'Invalid Value [123]: the query parameter "q5" is invalid - isEmpty',
       ].join('\n')
     )
   })
@@ -76,7 +77,7 @@ describe('Basic - body', () => {
     })
     const res = await app.request(req)
     expect(res.status).toBe(400)
-    const messages = ['Invalid Value: the request body "title" is invalid - undefined']
+    const messages = ['Invalid Value [undefined]: the request body "title" is invalid - isRequired']
     expect(await res.text()).toBe(messages.join('\n'))
   })
 })
@@ -211,6 +212,133 @@ describe('Custom Validation', () => {
     })
     const res = await app.request(req)
     expect(res.status).toBe(200)
+  })
+})
+
+describe('Result objects', () => {
+  const app = new Hono()
+
+  app.post(
+    '/posts',
+    validator(
+      (v) => ({
+        title: v.body('title').isLength({ max: 5 }),
+      }),
+      {
+        done: (res, c) => {
+          return c.json(res['results'])
+        },
+      }
+    ),
+    (c) => {
+      return c.text('Valid')
+    }
+  )
+
+  app.post(
+    '/multiple-posts',
+    validator(
+      (v) => ({
+        posts: v.array('posts', (v) => ({
+          title: v.json('title').isRequired(),
+        })),
+      }),
+      {
+        done: (res, c) => {
+          return c.json(res['results'])
+        },
+      }
+    ),
+    (c) => {
+      return c.text('Valid')
+    }
+  )
+
+  it('Should return the result objects', async () => {
+    const formData = new FormData()
+    formData.append('title', 'abcdef')
+    const req = new Request('http://localhost/posts', {
+      method: 'POST',
+      body: formData,
+    })
+    const res = await app.request(req)
+    expect(await res.json()).toEqual([
+      {
+        isValid: true,
+        key: 'title',
+        ruleName: 'should be "string"',
+        ruleType: 'type',
+        target: 'body',
+        value: 'abcdef',
+      },
+      {
+        isValid: false,
+        key: 'title',
+        message: 'Invalid Value [abcdef]: the request body "title" is invalid - isLength',
+        ruleName: 'isLength',
+        ruleType: 'value',
+        target: 'body',
+        value: 'abcdef',
+      },
+    ])
+  })
+
+  it('Should return all elements of the array path', async () => {
+    const body = {
+      posts: [{ title: 'Post #1' }, {}, { title: 'Post #3' }, {}],
+    }
+    const req = new Request('http://localhost/multiple-posts', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+    const res = await app.request(req)
+    const body1 = await res.json()
+    expect(body1).toEqual([
+      {
+        isValid: false,
+        message:
+          'Invalid Value ["Post #1", undefined, "Post #3", undefined]: the JSON body "posts.[*].title" is invalid - should be "string[]"',
+        target: 'json',
+        key: 'posts.[*].title',
+        value: ['Post #1', null, 'Post #3', null],
+        ruleName: 'should be "string[]"',
+        ruleType: 'type',
+        jsonData: {
+          posts: [
+            {
+              title: 'Post #1',
+            },
+            {},
+            {
+              title: 'Post #3',
+            },
+            {},
+          ],
+        },
+      },
+      {
+        isValid: false,
+        message:
+          'Invalid Value ["Post #1", undefined, "Post #3", undefined]: the JSON body "posts.[*].title" is invalid - isRequired',
+        target: 'json',
+        key: 'posts.[*].title',
+        value: ['Post #1', null, 'Post #3', null],
+        ruleName: 'isRequired',
+        ruleType: 'value',
+        jsonData: {
+          posts: [
+            {
+              title: 'Post #1',
+            },
+            {},
+            {
+              title: 'Post #3',
+            },
+            {},
+          ],
+        },
+      },
+    ])
   })
 })
 
