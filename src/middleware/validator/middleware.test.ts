@@ -293,7 +293,6 @@ describe('Result objects', () => {
     })
     const res = await app.request(req)
     const body1 = await res.json()
-    console.log(JSON.stringify(body1, null, 2))
     expect(body1).toEqual([
       {
         isValid: false,
