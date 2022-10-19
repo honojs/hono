@@ -29,7 +29,7 @@ export type Handler<
 > = (
   c: Context<RequestParamKeyType, E, D>,
   next: Next
-) => Response | Promise<Response> | Promise<void> | Promise<Response | undefined>
+) => Response | Promise<Response> | Promise<void> | Promise<Response | undefined | void>
 
 export type MiddlewareHandler = <E extends Partial<Environment> = Environment>(
   c: Context<string, E>,

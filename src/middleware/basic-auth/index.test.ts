@@ -12,7 +12,7 @@ describe('Basic Auth by Middleware', () => {
     global.crypto = crypto
   })
   beforeEach(() => {
-      handlerExecuted = false
+    handlerExecuted = false
   })
 
   const app = new Hono()
@@ -71,34 +71,32 @@ describe('Basic Auth by Middleware', () => {
     })
   )
 
-  // To Hono maintainers: I don't think we can support nested middleware when the middleware returns early
-  // since `next()` is never called in this case. Feel free to correct me
-  /* app.use('/nested/*', async (c, next) => {
+  app.use('/nested/*', async (c, next) => {
     const auth = basicAuth({ username: username, password: password })
-    await auth(c, next)
-  }) */
+    return auth(c, next)
+  })
 
   app.get('/auth/*', (c) => {
-      handlerExecuted = true
-      return c.text('auth')
+    handlerExecuted = true
+    return c.text('auth')
   })
   app.get('/auth-unicode/*', (c) => {
-      handlerExecuted = true
-      return c.text('auth')
+    handlerExecuted = true
+    return c.text('auth')
   })
   app.get('/auth-multi/*', (c) => {
-      handlerExecuted = true
-      return c.text('auth')
+    handlerExecuted = true
+    return c.text('auth')
   })
   app.get('/auth-override-func/*', (c) => {
-      handlerExecuted = true
-      return c.text('auth')
+    handlerExecuted = true
+    return c.text('auth')
   })
 
-  /* app.get('/nested/*', (c) => {
-      handlerExecuted = true
-      return c.text('nested')
-  }) */
+  app.get('/nested/*', (c) => {
+    handlerExecuted = true
+    return c.text('nested')
+  })
 
   it('Should not authorize', async () => {
     const req = new Request('http://localhost/auth/a')
@@ -146,7 +144,7 @@ describe('Basic Auth by Middleware', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('auth')
 
-    handlerExecuted = false;
+    handlerExecuted = false
     credential = Buffer.from(usernameC + ':' + passwordC).toString('base64')
     req = new Request('http://localhost/auth-multi/c')
     req.headers.set('Authorization', `Basic ${credential}`)
@@ -169,7 +167,7 @@ describe('Basic Auth by Middleware', () => {
     expect(await res.text()).toBe('auth')
   })
 
-  /* it('Should authorize - nested', async () => {
+  it('Should authorize - nested', async () => {
     const credential = Buffer.from(username + ':' + password).toString('base64')
 
     const req = new Request('http://localhost/nested')
@@ -191,5 +189,5 @@ describe('Basic Auth by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
     expect(await res.text()).toBe('Unauthorized')
-  }) */
+  })
 })
