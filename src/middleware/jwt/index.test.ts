@@ -1,34 +1,40 @@
 import { Hono } from '../../hono'
 import { jwt } from '.'
 
-
 describe('JWT', () => {
   describe('Credentials in header', () => {
     const crypto = global.crypto
+    let handlerExecuted: boolean
     beforeAll(() => {
       global.crypto = require('crypto').webcrypto
     })
     afterAll(() => {
       global.crypto = crypto
     })
+    beforeEach(() => {
+      handlerExecuted = false
+    })
 
     const app = new Hono()
 
-    app.use('/*', async (c, next) => {
-      await next()
-      c.header('x-foo', c.get('x-foo') || '')
-    })
-
     app.use('/auth/*', jwt({ secret: 'a-secret' }))
     app.use('/auth-unicode/*', jwt({ secret: 'a-secret' }))
+    app.use('/nested/*', async (c, next) => {
+      const auth = jwt({ secret: 'a-secret' })
+      return auth(c, next)
+    })
 
     app.get('/auth/*', (c) => {
-      c.set('x-foo', 'bar')
-      return new Response('auth')
+      handlerExecuted = true
+      return c.text('auth')
     })
     app.get('/auth-unicode/*', (c) => {
-      c.set('x-foo', 'bar')
-      return new Response('auth')
+      handlerExecuted = true
+      return c.text('auth')
+    })
+    app.get('/nested/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
     })
 
     it('Should not authorize', async () => {
@@ -37,7 +43,7 @@ describe('JWT', () => {
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
       expect(await res.text()).toBe('Unauthorized')
-      expect(res.headers.get('x-foo')).toBeFalsy()
+      expect(handlerExecuted).toBeFalsy()
     })
 
     it('Should authorize', async () => {
@@ -49,7 +55,7 @@ describe('JWT', () => {
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('auth')
-      expect(res.headers.get('x-foo')).toBe('bar')
+      expect(handlerExecuted).toBeTruthy()
     })
 
     it('Should authorize Unicode', async () => {
@@ -62,7 +68,7 @@ describe('JWT', () => {
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('auth')
-      expect(res.headers.get('x-foo')).toBe('bar')
+      expect(handlerExecuted).toBeTruthy()
     })
 
     it('Should not authorize Unicode', async () => {
@@ -78,7 +84,7 @@ describe('JWT', () => {
       expect(res.headers.get('www-authenticate')).toEqual(
         `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
       )
-      expect(res.headers.get('x-foo')).toBeFalsy()
+      expect(handlerExecuted).toBeFalsy()
     })
 
     it('Should not authorize', async () => {
@@ -92,36 +98,56 @@ describe('JWT', () => {
       expect(res.headers.get('www-authenticate')).toEqual(
         `Bearer realm="${url}",error="invalid_request",error_description="invalid credentials structure"`
       )
-      expect(res.headers.get('x-foo')).toBeFalsy()
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize - nested', async () => {
+      const req = new Request('http://localhost/nested/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize - nested', async () => {
+      const credential =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+      const req = new Request('http://localhost/nested/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('auth')
+      expect(handlerExecuted).toBeTruthy()
     })
   })
 
   describe('Credentials in cookie', () => {
     const crypto = global.crypto
+    let handlerExecuted: boolean
     beforeAll(() => {
       global.crypto = require('crypto').webcrypto
     })
     afterAll(() => {
       global.crypto = crypto
     })
+    beforeEach(() => {
+      handlerExecuted = false
+    })
 
     const app = new Hono()
-
-    app.use('/*', async (c, next) => {
-      await next()
-      c.header('x-foo', c.get('x-foo') || '')
-    })
 
     app.use('/auth/*', jwt({ secret: 'a-secret', cookie: 'access_token' }))
     app.use('/auth-unicode/*', jwt({ secret: 'a-secret', cookie: 'access_token' }))
 
     app.get('/auth/*', (c) => {
-      c.set('x-foo', 'bar')
-      return new Response('auth')
+      handlerExecuted = true
+      return c.text('auth')
     })
     app.get('/auth-unicode/*', (c) => {
-      c.set('x-foo', 'bar')
-      return new Response('auth')
+      handlerExecuted = true
+      return c.text('auth')
     })
 
     it('Should not authorize', async () => {
@@ -130,7 +156,7 @@ describe('JWT', () => {
       expect(res).not.toBeNull()
       expect(res.status).toBe(401)
       expect(await res.text()).toBe('Unauthorized')
-      expect(res.headers.get('x-foo')).toBeFalsy()
+      expect(handlerExecuted).toBeFalsy()
     })
 
     it('Should authorize', async () => {
@@ -139,14 +165,14 @@ describe('JWT', () => {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
       const req = new Request(url, {
         headers: new Headers({
-          'Cookie': `access_token=${credential}`,
-        })
+          Cookie: `access_token=${credential}`,
+        }),
       })
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(await res.text()).toBe('auth')
       expect(res.status).toBe(200)
-      expect(res.headers.get('x-foo')).toBe('bar')
+      expect(handlerExecuted).toBeTruthy()
     })
 
     it('Should authorize Unicode', async () => {
@@ -155,14 +181,14 @@ describe('JWT', () => {
 
       const req = new Request('http://localhost/auth-unicode/a', {
         headers: new Headers({
-          'Cookie': `access_token=${credential}`,
-        })
+          Cookie: `access_token=${credential}`,
+        }),
       })
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('auth')
-      expect(res.headers.get('x-foo')).toBe('bar')
+      expect(handlerExecuted).toBeTruthy()
     })
 
     it('Should not authorize Unicode', async () => {
@@ -178,7 +204,7 @@ describe('JWT', () => {
       expect(res.headers.get('www-authenticate')).toEqual(
         `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
       )
-      expect(res.headers.get('x-foo')).toBeFalsy()
+      expect(handlerExecuted).toBeFalsy()
     })
 
     it('Should not authorize', async () => {
@@ -192,7 +218,7 @@ describe('JWT', () => {
       expect(res.headers.get('www-authenticate')).toEqual(
         `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
       )
-      expect(res.headers.get('x-foo')).toBeFalsy()
+      expect(handlerExecuted).toBeFalsy()
     })
   })
 })
