@@ -235,6 +235,25 @@ describe('Result objects', () => {
     }
   )
 
+  app.post(
+    '/multiple-posts',
+    validator(
+      (v) => ({
+        posts: v.array('posts', (v) => ({
+          title: v.json('title').isRequired(),
+        })),
+      }),
+      {
+        done: (res, c) => {
+          return c.json(res['results'])
+        },
+      }
+    ),
+    (c) => {
+      return c.text('Valid')
+    }
+  )
+
   it('Should return the result objects', async () => {
     const formData = new FormData()
     formData.append('title', 'abcdef')
@@ -260,6 +279,65 @@ describe('Result objects', () => {
         ruleType: 'value',
         target: 'body',
         value: 'abcdef',
+      },
+    ])
+  })
+
+  it('Should return all elements of the array path', async () => {
+    const body = {
+      posts: [{ title: 'Post #1' }, {}, { title: 'Post #3' }, {}],
+    }
+    const req = new Request('http://localhost/multiple-posts', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+    const res = await app.request(req)
+    const body1 = await res.json()
+    console.log(JSON.stringify(body1, null, 2))
+    expect(body1).toEqual([
+      {
+        isValid: false,
+        message:
+          'Invalid Value ["Post #1", undefined, "Post #3", undefined]: the JSON body "posts.[*].title" is invalid - should be "string[]"',
+        target: 'json',
+        key: 'posts.[*].title',
+        value: ['Post #1', null, 'Post #3', null],
+        ruleName: 'should be "string[]"',
+        ruleType: 'type',
+        jsonData: {
+          posts: [
+            {
+              title: 'Post #1',
+            },
+            {},
+            {
+              title: 'Post #3',
+            },
+            {},
+          ],
+        },
+      },
+      {
+        isValid: false,
+        message:
+          'Invalid Value ["Post #1", undefined, "Post #3", undefined]: the JSON body "posts.[*].title" is invalid - isRequired',
+        target: 'json',
+        key: 'posts.[*].title',
+        value: ['Post #1', null, 'Post #3', null],
+        ruleName: 'isRequired',
+        ruleType: 'value',
+        jsonData: {
+          posts: [
+            {
+              title: 'Post #1',
+            },
+            {},
+            {
+              title: 'Post #3',
+            },
+            {},
+          ],
+        },
       },
     ])
   })
