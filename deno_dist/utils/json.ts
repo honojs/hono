@@ -80,11 +80,12 @@ const JSONPathCopyInternal = (
 
 export const JSONPathCopy = (src: JSONObject, dst: JSONObject, path: string) => {
   const results: JSONArray = []
+  const parts = path.replace(/\.?\[(.*?)\]/g, '.$1').split(/\./)
   try {
-    JSONPathCopyInternal(src, dst, path.replace(/\.?\[(.*?)\]/g, '.$1').split(/\./), results)
+    JSONPathCopyInternal(src, dst, parts, results)
     if (results.length === 0) {
       return undefined
-    } else if (results.length === 1) {
+    } else if (results.length === 1 && !parts.includes('*')) {
       return results[0]
     }
     return results
