@@ -74,12 +74,6 @@ type ValidationFunction<P extends string, Env extends Partial<Environment>, T> =
   c: Context<P, Env>
 ) => T
 
-/*
-type MiddlewareHandler<
-  Data extends ValidatedData = ValidatedData,
-  Env extends Partial<Environment> = Environment
-> = (c: Context<string, Env, Data>, next: Next) => Promise<void> | Promise<Response | undefined>
-*/
 export const validatorMiddleware = <
   P extends string,
   T extends Schema,
