@@ -119,6 +119,16 @@ export const validatorMiddleware = <T extends Schema, Env extends Partial<Enviro
         resultSet.results.push(result)
       }
 
+      // If it's invalid but it has no "value" messages, have to set the "type" messages.
+      // This approach is verbose, but if do not so, the response body will be empty.
+      if (!isValid && resultSet.messages.length === 0) {
+        resultSet.results.map((r) => {
+          if (!r.isValid && r.ruleType === 'type' && r.message) {
+            resultSet.messages.push(r.message)
+          }
+        })
+      }
+
       // Set data on request object
       if (isValid) {
         // Set data on request object
