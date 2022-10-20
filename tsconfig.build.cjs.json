@@ -5,6 +5,8 @@
     "declaration": false,
     "rootDir": "./src/",
     "outDir": "./dist/cjs/",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
   },
   "include": [
     "src/**/*.ts"

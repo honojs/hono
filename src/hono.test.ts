@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import type { Context } from './context'
 import type { Next } from './hono'
 import { Hono } from './hono'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
+import type { Expect, Equal } from './utils/types'
 
 describe('GET Request', () => {
   const app = new Hono()
@@ -1135,5 +1137,51 @@ describe('Count of logger called', () => {
     expect(await res.text()).toBe('Custom Not Found')
     expect(count).toBe(4)
     expect(log).toMatch(/404/)
+  })
+})
+
+describe('Context set/get variables', () => {
+  type Variables = {
+    id: number
+    title: string
+  }
+
+  const app = new Hono<{ Variables: Variables }>()
+
+  it('Should set and get variables with correct types', async () => {
+    app.use('*', async (c, next) => {
+      c.set('id', 123)
+      c.set('title', 'Hello')
+      await next()
+    })
+    app.get('/', (c) => {
+      const id = c.get('id')
+      const title = c.get('title')
+      type verifyID = Expect<Equal<typeof id, number>>
+      type verifyTitle = Expect<Equal<typeof title, string>>
+      return c.text(`${id} is ${title}`)
+    })
+    const res = await app.request('http://localhost/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('123 is Hello')
+  })
+})
+
+describe('Context binding variables', () => {
+  type Bindings = {
+    USER_ID: number
+    USER_NAME: string
+  }
+
+  const app = new Hono<{ Bindings: Bindings }>()
+
+  it('Should get binding variables with correct types', async () => {
+    app.get('/', (c) => {
+      type verifyID = Expect<Equal<typeof c.env.USER_ID, number>>
+      type verifyName = Expect<Equal<typeof c.env.USER_NAME, string>>
+      return c.text('These are verified')
+    })
+    const res = await app.request('http://localhost/')
+    expect(res.status).toBe(200)
   })
 })

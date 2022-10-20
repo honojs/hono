@@ -1,3 +1,4 @@
+import type { ValidatedData } from '../../hono.ts'
 import { JSONPathCopy } from '../../utils/json.ts'
 import type { JSONObject, JSONPrimitive, JSONArray } from '../../utils/json.ts'
 import type { Schema } from './middleware.ts'
