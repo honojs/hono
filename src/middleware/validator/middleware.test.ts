@@ -720,6 +720,29 @@ describe('Nested structured data', () => {
   })
 })
 
+describe('Special case', () => {
+  const app = new Hono()
+  app.get(
+    '/search',
+    validator((v) => ({
+      q: v.query('q').isRequired(),
+      page: v.query('page').asNumber(),
+    })),
+    (c) => {
+      return c.text('Valid')
+    }
+  )
+  it('Should show the type message error if it does not have "value" errors', async () => {
+    const res = await app.request('http://localhost/search?q=foo')
+    expect(res.status).toBe(400)
+    expect(await res.text()).toBe(
+      [
+        'Invalid Value [undefined]: the query parameter "page" is invalid - should be "number"',
+      ].join('\n')
+    )
+  })
+})
+
 describe('Type check in special case', () => {
   it('Should return 200 response with correct types', async () => {
     const app = new Hono()
