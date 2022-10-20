@@ -323,6 +323,8 @@ export abstract class VBase {
   }
 
   private validateValue = (func: (value: Type) => boolean, value: Type): boolean => {
+    if (this._optional && typeof value === 'undefined') return true
+
     if (Array.isArray(value)) {
       // Sanitize
       for (const sanitizer of this.sanitizers) {
