@@ -184,16 +184,23 @@ describe('Handle required values', () => {
 })
 
 describe('Handle optional values', () => {
-  const v = new Validator()
-
-  const req = new Request('http://localhost/', {
-    method: 'POST',
-  })
-
   it('Should be valid - `comment` is optional', async () => {
+    const v = new Validator()
+    const req = new Request('http://localhost/', {
+      method: 'POST',
+    })
     const validator = v.body('comment').isOptional()
     const results = await validator.validate(req)
     expect(results[0].isValid).toBe(true)
+  })
+  it('Should be valid - "isNumeric" but "isOptional"', async () => {
+    const v = new Validator()
+    const validator = v.query('page').isNumeric().isOptional()
+    const req = new Request('http://localhost/')
+    const results = await validator.validate(req)
+    expect(results[0].isValid).toBe(true)
+    expect(results[1].isValid).toBe(true)
+    expect(results[1].message).toBeUndefined()
   })
 })
 
