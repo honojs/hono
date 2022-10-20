@@ -1,4 +1,3 @@
-import type { ValidatedData } from '../../hono'
 import { JSONPathCopy } from '../../utils/json'
 import type { JSONObject, JSONPrimitive, JSONArray } from '../../utils/json'
 import type { Schema } from './middleware'
