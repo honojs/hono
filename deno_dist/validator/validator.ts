@@ -1,8 +1,8 @@
-import { JSONPathCopy } from '../../utils/json'
-import type { JSONObject, JSONPrimitive, JSONArray } from '../../utils/json'
-import type { Schema } from './middleware'
-import { rule } from './rule'
-import { sanitizer } from './sanitizer'
+import { JSONPathCopy } from './../utils/json.ts'
+import type { JSONObject, JSONPrimitive, JSONArray } from './../utils/json.ts'
+import { rule } from './rule.ts'
+import { sanitizer } from './sanitizer.ts'
+import type { Schema } from './schema.ts'
 
 type Target = 'query' | 'header' | 'body' | 'json'
 type Type = JSONPrimitive | JSONObject | JSONArray | File

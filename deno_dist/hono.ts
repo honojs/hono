@@ -1,7 +1,6 @@
 import { compose } from './compose.ts'
 import type { Context } from './context.ts'
 import { HonoContext } from './context.ts'
-import type { Schema } from './middleware/validator/middleware.ts'
 import { extendRequestPrototype } from './request.ts'
 import type { Router } from './router.ts'
 import { METHODS } from './router.ts'
@@ -11,6 +10,7 @@ import { SmartRouter } from './router/smart-router/index.ts'
 import { StaticRouter } from './router/static-router/index.ts'
 import { TrieRouter } from './router/trie-router/index.ts'
 import { getPathFromURL, mergePath } from './utils/url.ts'
+import type { Schema } from './validator/schema.ts'
 
 export interface ContextVariableMap {}
 

@@ -1,6 +1,6 @@
 import { HonoContext } from './context.ts'
 import type { Environment, NotFoundHandler, ErrorHandler } from './hono.ts'
-import type { Schema } from './middleware/validator/middleware.ts'
+import type { Schema } from './validator/schema.ts'
 
 interface ComposeContext {
   finalized: boolean

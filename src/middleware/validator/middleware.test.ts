@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { Handler } from '../../hono'
 import { Hono } from '../../hono'
 import { getStatusText } from '../../utils/http-status'
 import type { Expect, Equal } from '../../utils/types'
-import type { SchemaToProp } from './middleware'
-import type { VString } from './validator'
 import { validator } from './index'
 
 describe('Basic - query', () => {

@@ -1,8 +1,8 @@
 import type { Environment, NotFoundHandler, ContextVariableMap, Bindings } from './hono.ts'
-import type { Schema, SchemaToProp } from './middleware/validator/middleware.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
 import type { StatusCode } from './utils/http-status.ts'
+import type { Schema, SchemaToProp } from './validator/schema.ts'
 
 type HeaderField = [string, string]
 type Headers = Record<string, string | string[]>
