@@ -11,9 +11,9 @@ export type Data = string | ArrayBuffer | ReadableStream
 export interface Context<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  D extends Partial<Schema> = Schema
+  S extends Partial<Schema> = Schema
 > {
-  req: Request<P, SchemaToProp<D>>
+  req: Request<P, SchemaToProp<S>>
   env: E['Bindings']
   event: FetchEvent
   executionCtx: ExecutionContext
@@ -48,10 +48,10 @@ export interface Context<
 export class HonoContext<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  D extends Partial<Schema> = Schema
-> implements Context<P, E, D>
+  S extends Partial<Schema> = Schema
+> implements Context<P, E, S>
 {
-  req: Request<P, SchemaToProp<D>>
+  req: Request<P, SchemaToProp<S>>
   env: E['Bindings']
   finalized: boolean
   error: Error | undefined = undefined
@@ -63,16 +63,16 @@ export class HonoContext<
   private _map: Record<string, unknown> | undefined
   private _headers: Record<string, string[]> | undefined
   private _res: Response | undefined
-  private notFoundHandler: NotFoundHandler<P, E, D>
+  private notFoundHandler: NotFoundHandler<P, E, S>
 
   constructor(
     req: Request<P>,
     env: E['Bindings'] = {},
     executionCtx: FetchEvent | ExecutionContext | undefined = undefined,
-    notFoundHandler: NotFoundHandler<P, E, D> = () => new Response()
+    notFoundHandler: NotFoundHandler<P, E, S> = () => new Response()
   ) {
     this._executionCtx = executionCtx
-    this.req = req as Request<P, SchemaToProp<D>>
+    this.req = req as Request<P, SchemaToProp<S>>
     this.env = env || ({} as Bindings)
 
     this.notFoundHandler = notFoundHandler
