@@ -1,5 +1,20 @@
 # Migration Guide
 
+## v2.2.5 to v2.3.0
+
+There is a braking change associated to the security update.
+
+### Basic Auth Middleware and Bearer Auth Middleware
+
+If you are using Basic Auth and Bearer Auth in your Handler (nested), change as follows:
+
+```ts
+app.use('/auth/*', async (c, next) => {
+  const auth = basicAuth({ username: c.env.USERNAME, password: c.env.PASSWORD })
+  return auth(c, next) // Older: `await auth(c, next)`
+})
+```
+
 ## v2.0.9 to v2.1.0
 
 There are two BREAKING CHANGES.
