@@ -2,6 +2,7 @@
 import { Hono } from '../../hono'
 import { getStatusText } from '../../utils/http-status'
 import type { Expect, Equal } from '../../utils/types'
+import type { Schema } from '../../validator/schema'
 import { validator } from './index'
 
 describe('Basic - query', () => {
@@ -805,5 +806,35 @@ describe('Type check in special case', () => {
     })
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('123 is Hello')
+  })
+
+  it('Should return 200 response with correct types - Context in validator function', async () => {
+    type Env = { Bindings: { FOO: 'abc' } }
+
+    const app = new Hono<Env>()
+
+    app.get(
+      '/search',
+      validator(
+        (v) => ({
+          foo: v.query('foo'),
+        }),
+        {
+          done: (_, c) => {
+            type verifyBindings = Expect<Equal<typeof c.env.FOO, 'abc'>>
+          },
+        }
+      ),
+      (c) => {
+        const { foo } = c.req.valid()
+        type verifyBindings = Expect<Equal<typeof c.env.FOO, 'abc'>>
+        type verify = Expect<Equal<typeof foo, string>>
+        return c.text(foo)
+      }
+    )
+
+    const res = await app.request('http://localhost/search?foo=bar')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('bar')
   })
 })

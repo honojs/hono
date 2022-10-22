@@ -12,22 +12,27 @@ type ResultSet = {
   results: ValidateResult[]
 }
 
-type Done<P extends string, E extends Partial<Environment>, S extends Schema> = (
+type Done<P extends string, E extends Partial<Environment> = Environment> = (
   resultSet: ResultSet,
-  context: Context<P, E, S>
+  c: Context<P, E>
 ) => Response | void
 
-type ValidationFunction<Path extends string, E extends Partial<Environment>, S extends Schema> = (
-  v: Validator,
-  c: Context<Path, E, S>
-) => S
+type ValidationFunction<
+  P extends string,
+  E extends Partial<Environment> = Environment,
+  S extends Schema = Schema
+> = (v: Validator, c: Context<P, E>) => S
 
-export const validatorMiddleware = <P extends string, S extends Schema, E extends Environment>(
+export const validatorMiddleware = <
+  P extends string,
+  E extends Partial<Environment> = Environment,
+  S extends Schema = Schema
+>(
   validationFunction: ValidationFunction<P, E, S>,
-  options?: { done?: Done<P, E, S> }
+  options?: { done?: Done<P, E> }
 ) => {
   const v = new Validator()
-  const handler: MiddlewareHandler<P, E, S> = async (c, next) => {
+  const handler: MiddlewareHandler<string, E, S> = async (c, next) => {
     const resultSet: ResultSet = {
       hasError: false,
       messages: [],
