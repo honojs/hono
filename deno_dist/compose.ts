@@ -1,5 +1,6 @@
 import { HonoContext } from './context.ts'
 import type { Environment, NotFoundHandler, ErrorHandler, ValidatedData } from './hono.ts'
+import type { Schema } from './middleware/validator/middleware.ts'
 
 interface ComposeContext {
   finalized: boolean
@@ -11,7 +12,7 @@ export const compose = <
   C extends ComposeContext,
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  D extends ValidatedData = ValidatedData
+  D extends Partial<Schema> = Schema
 >(
   middleware: Function[],
   onNotFound?: NotFoundHandler<P, E, D>,

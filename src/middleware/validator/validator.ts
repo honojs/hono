@@ -209,7 +209,7 @@ export abstract class VBase {
     return this
   }
 
-  validate = async (req: Request): Promise<ValidateResult[]> => {
+  validate = async <R extends Request>(req: R): Promise<ValidateResult[]> => {
     let value: Type = undefined
     let jsonData: JSONObject | undefined = undefined
 

@@ -1,10 +1,5 @@
-import type {
-  Environment,
-  NotFoundHandler,
-  ContextVariableMap,
-  Bindings,
-  ValidatedData,
-} from './hono'
+import type { Environment, NotFoundHandler, ContextVariableMap, Bindings } from './hono'
+import type { Schema, SchemaToProp } from './middleware/validator/middleware'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'
@@ -16,9 +11,9 @@ export type Data = string | ArrayBuffer | ReadableStream
 export interface Context<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  D extends ValidatedData = ValidatedData
+  D extends Partial<Schema> = Schema
 > {
-  req: Request<P, D>
+  req: Request<P, SchemaToProp<D>>
   env: E['Bindings']
   event: FetchEvent
   executionCtx: ExecutionContext
@@ -53,10 +48,10 @@ export interface Context<
 export class HonoContext<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  D extends ValidatedData = ValidatedData
+  D extends Partial<Schema> = Schema
 > implements Context<P, E, D>
 {
-  req: Request<P, D>
+  req: Request<P, SchemaToProp<D>>
   env: E['Bindings']
   finalized: boolean
   error: Error | undefined = undefined
@@ -77,7 +72,7 @@ export class HonoContext<
     notFoundHandler: NotFoundHandler<P, E, D> = () => new Response()
   ) {
     this._executionCtx = executionCtx
-    this.req = req as Request<P, D>
+    this.req = req as Request<P, SchemaToProp<D>>
     this.env = env || ({} as Bindings)
 
     this.notFoundHandler = notFoundHandler

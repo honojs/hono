@@ -1,5 +1,5 @@
 import type { Context } from '../../context'
-import type { Environment, MiddlewareHandler, ValidatedData } from '../../hono'
+import type { Environment, MiddlewareHandler } from '../../hono'
 import { getStatusText } from '../../utils/http-status'
 import { mergeObjects } from '../../utils/object'
 import { VBase, Validator, VObjectBase } from './validator'
@@ -28,7 +28,7 @@ export type Schema = {
     | VArray<Schema>
 }
 
-type SchemaToProp<T> = {
+export type SchemaToProp<T> = {
   [K in keyof T]: T[K] extends VNumberArray
     ? number[]
     : T[K] extends VBooleanArray
@@ -64,26 +64,22 @@ type ResultSet = {
   results: ValidateResult[]
 }
 
-type Done<P extends string, E extends Partial<Environment>, D extends ValidatedData> = (
+type Done<P extends string, E extends Partial<Environment>, S extends Schema> = (
   resultSet: ResultSet,
-  context: Context<P, E, D>
+  context: Context<P, E, S>
 ) => Response | void
 
-type ValidationFunction<P extends string, Env extends Partial<Environment>, T> = (
+type ValidationFunction<Path extends string, E extends Partial<Environment>, S extends Schema> = (
   v: Validator,
-  c: Context<P, Env>
-) => T
+  c: Context<Path, E, S>
+) => S
 
-export const validatorMiddleware = <
-  P extends string,
-  T extends Schema,
-  Env extends Partial<Environment>
->(
-  validationFunction: ValidationFunction<P, Env, T>,
-  options?: { done?: Done<P, Env, SchemaToProp<T>> }
+export const validatorMiddleware = <P extends string, S extends Schema, E extends Environment>(
+  validationFunction: ValidationFunction<P, E, S>,
+  options?: { done?: Done<P, E, S> }
 ) => {
   const v = new Validator()
-  const handler: MiddlewareHandler<P, Env, SchemaToProp<T>> = async (c, next) => {
+  const handler: MiddlewareHandler<P, E, S> = async (c, next) => {
     const resultSet: ResultSet = {
       hasError: false,
       messages: [],

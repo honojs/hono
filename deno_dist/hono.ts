@@ -1,6 +1,8 @@
 import { compose } from './compose.ts'
 import type { Context } from './context.ts'
 import { HonoContext } from './context.ts'
+import type { Schema, SchemaToProp } from './middleware/validator/middleware.ts'
+import type { VString } from './middleware/validator/validator.ts'
 import { extendRequestPrototype } from './request.ts'
 import type { Router } from './router.ts'
 import { METHODS } from './router.ts'
@@ -19,30 +21,35 @@ export type Environment = {
   Bindings: Bindings
   Variables: Variables
 }
-export type ValidatedData = Record<string, any> // For validated data
+
+//export type ValidatedData = Record<string, any> // For validated data
+
+export type ValidatedData<S = unknown> = SchemaToProp<S>
+//? SchemaToProp<S>
+//: SchemaToProp<{ [key: string]: any }>
 
 export type Handler<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  D extends ValidatedData = ValidatedData
+  D extends Partial<Schema> = Schema
 > = (c: Context<P, E, D>, next: Next) => Response | Promise<Response | undefined | void>
 
 export type MiddlewareHandler<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  D extends ValidatedData = ValidatedData
+  D extends Partial<Schema> = Schema
 > = (c: Context<P, E, D>, next: Next) => Promise<Response | undefined | void>
 
 export type NotFoundHandler<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  D extends ValidatedData = ValidatedData
+  D extends Partial<Schema> = Schema
 > = (c: Context<P, E, D>) => Response | Promise<Response>
 
 export type ErrorHandler<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  D extends ValidatedData = ValidatedData
+  D extends Partial<Schema> = Schema
 > = (err: Error, c: Context<P, E, D>) => Response
 
 export type Next = () => Promise<void>
@@ -56,28 +63,29 @@ type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
   ? ParamKeyName<NameWithPattern>
   : never
 
-type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
+export type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 
 interface HandlerInterface<
   P extends string,
   E extends Partial<Environment>,
-  D extends ValidatedData = ValidatedData,
+  D extends Partial<Schema>,
   U = Hono<E, P, D>
 > {
   // app.get(handler...)
-  <Path extends string, Data extends ValidatedData = D>(
+  <Path extends string, Data extends Schema>(
     ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E, Data>[]
   ): U
-  (...handlers: Handler<P, E, D>[]): U
+  (...handlers: Handler<string, E, D>[]): U
 
   // app.get('/', handler, handler...)
-  <Path extends string, Data extends ValidatedData = D>(
+  <Path extends string, Data extends Partial<Schema> = Schema>(
     path: Path,
     ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E, Data>[]
   ): U
-  (path: string, ...handlers: Handler<P, E, D>[]): U
+  <Path extends string, Data extends Schema>(path: Path, ...handlers: Handler<string, E, Data>[]): U
+  (path: string, ...handlers: Handler<string, E, D>[]): U
 }
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
@@ -86,7 +94,7 @@ function defineDynamicClass(): {
   new <
     E extends Partial<Environment> = Environment,
     P extends string = string,
-    D extends ValidatedData = ValidatedData,
+    D extends Partial<Schema> = Schema,
     U = Hono<E, P, D>
   >(): {
     [K in Methods]: HandlerInterface<P, E, D, U>
@@ -98,7 +106,7 @@ function defineDynamicClass(): {
 interface Route<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  D extends ValidatedData = ValidatedData
+  D extends Partial<Schema> = Schema
 > {
   path: string
   method: string
@@ -108,7 +116,7 @@ interface Route<
 export class Hono<
   E extends Partial<Environment> = Environment,
   P extends string = '/',
-  D extends ValidatedData = ValidatedData
+  D extends Partial<Schema> = Schema
 > extends defineDynamicClass()<E, P, D, Hono<E, P, D>> {
   readonly router: Router<Handler<P, E, D>> = new SmartRouter({
     routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
@@ -126,7 +134,7 @@ export class Hono<
 
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
-      this[method] = <Path extends string, Env extends Environment, Data extends ValidatedData>(
+      this[method] = <Path extends string, Env extends Environment, Data extends Schema>(
         args1: Path | Handler<ParamKeys<Path>, Env, Data>,
         ...args: [Handler<ParamKeys<Path>, Env, Data>]
       ): this => {
@@ -168,13 +176,13 @@ export class Hono<
     return this
   }
 
-  use<Path extends string = string, Data extends ValidatedData = D>(
+  use<Path extends string = string, Data extends Partial<Schema> = Schema>(
     ...middleware: Handler<Path, E, Data>[]
-  ): Hono<E, Path, Data>
-  use<Path extends string = string, Data extends ValidatedData = D>(
+  ): Hono<E, Path, D>
+  use<Path extends string = string, Data extends Partial<Schema> = Schema>(
     arg1: string,
     ...middleware: Handler<Path, E, Data>[]
-  ): Hono<E, Path, Data>
+  ): Hono<E, Path, D>
   use(arg1: string | Handler<P, E, D>, ...handlers: Handler<P, E, D>[]) {
     if (typeof arg1 === 'string') {
       this.path = arg1

@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import type { Handler } from '../../hono'
 import { Hono } from '../../hono'
 import { getStatusText } from '../../utils/http-status'
 import type { Expect, Equal } from '../../utils/types'
+import type { SchemaToProp } from './middleware'
+import type { VString } from './validator'
 import { validator } from './index'
 
 describe('Basic - query', () => {
@@ -766,6 +769,43 @@ describe('Type check in special case', () => {
       body: body,
     })
     const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('123 is Hello')
+  })
+
+  it('Should return 200 response with correct types - validator and named parameter', async () => {
+    const app = new Hono()
+
+    const vm = validator((v) => ({
+      title: v.body('title').isRequired(),
+    }))
+
+    app.post('/posts', vm, (c) => {
+      const { title } = c.req.valid()
+      type verify = Expect<Equal<typeof title, string>>
+      return c.text(title)
+    })
+
+    app.post('/posts/:id', vm, (c) => {
+      const id = c.req.param('id')
+      const { title } = c.req.valid()
+      type verify = Expect<Equal<typeof title, string>>
+      return c.text(`${id} is ${title}`)
+    })
+
+    const body = new FormData()
+    body.append('title', 'Hello')
+
+    let res = await app.request('http://localhost/posts', {
+      method: 'POST',
+      body: body,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Hello')
+    res = await app.request('http://localhost/posts/123?title=foo', {
+      method: 'POST',
+      body: body,
+    })
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('123 is Hello')
   })

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { Context } from './context'
-import type { Next } from './hono'
+import type { Handler, Next } from './hono'
 import { Hono } from './hono'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
@@ -1183,5 +1183,21 @@ describe('Context binding variables', () => {
     })
     const res = await app.request('http://localhost/')
     expect(res.status).toBe(200)
+  })
+})
+
+describe('Handler as variables', () => {
+  const app = new Hono()
+
+  it('Should be typed correctly', async () => {
+    const handler: Handler = (c) => {
+      const id = c.req.param('id')
+      return c.text(`Post id is ${id}`)
+    }
+    app.get('/posts/:id', handler)
+
+    const res = await app.request('http://localhost/posts/123')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Post id is 123')
   })
 })

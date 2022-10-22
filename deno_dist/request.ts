@@ -1,9 +1,10 @@
-import type { ValidatedData } from './hono.ts'
 import { parseBody } from './utils/body.ts'
 import type { BodyData } from './utils/body.ts'
 import type { Cookie } from './utils/cookie.ts'
 import { parse } from './utils/cookie.ts'
 import { getQueryStringFromURL } from './utils/url.ts'
+
+type ValidatedData = Record<string, any>
 
 declare global {
   interface Request<
@@ -38,7 +39,7 @@ declare global {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     jsonData?: any
     json<JSONData = unknown>(): Promise<Partial<JSONData>>
-    data: Partial<Data>
+    data: Data
     valid: {
       (key: string | string[], value: unknown): Data
       (): Data
