@@ -1,4 +1,4 @@
-import { extendRequestPrototype } from '../../request'
+import { extendRequestPrototype } from '../request'
 import { Validator } from './validator'
 
 extendRequestPrototype()

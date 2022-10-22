@@ -1,62 +1,10 @@
 import type { Context } from '../../context.ts'
-import type { Environment, Next, ValidatedData } from '../../hono.ts'
+import type { Environment, MiddlewareHandler } from '../../hono.ts'
 import { getStatusText } from '../../utils/http-status.ts'
 import { mergeObjects } from '../../utils/object.ts'
-import { VBase, Validator, VObjectBase } from './validator.ts'
-import type {
-  VString,
-  VNumber,
-  VBoolean,
-  VObject,
-  VNumberArray,
-  VStringArray,
-  VBooleanArray,
-  ValidateResult,
-  VArray,
-} from './validator.ts'
-
-export type Schema = {
-  [key: string]:
-    | VString
-    | VNumber
-    | VBoolean
-    | VStringArray
-    | VNumberArray
-    | VBooleanArray
-    | Schema
-    | VObject<Schema>
-    | VArray<Schema>
-}
-
-type SchemaToProp<T> = {
-  [K in keyof T]: T[K] extends VNumberArray
-    ? number[]
-    : T[K] extends VBooleanArray
-    ? boolean[]
-    : T[K] extends VStringArray
-    ? string[]
-    : T[K] extends VNumber
-    ? number
-    : T[K] extends VBoolean
-    ? boolean
-    : T[K] extends VString
-    ? string
-    : T[K] extends VObjectBase<Schema>
-    ? T[K]['container'] extends VNumber
-      ? number
-      : T[K]['container'] extends VString
-      ? string
-      : T[K]['container'] extends VBoolean
-      ? boolean
-      : T[K] extends VArray<Schema>
-      ? SchemaToProp<ReadonlyArray<T[K]['container']>>
-      : T[K] extends VObject<Schema>
-      ? SchemaToProp<T[K]['container']>
-      : T[K] extends Schema
-      ? SchemaToProp<T[K]>
-      : never
-    : SchemaToProp<T[K]>
-}
+import type { Schema } from '../../validator/schema.ts'
+import type { ValidateResult } from '../../validator/validator.ts'
+import { Validator, VBase, VObjectBase } from '../../validator/validator.ts'
 
 type ResultSet = {
   hasError: boolean
@@ -64,27 +12,27 @@ type ResultSet = {
   results: ValidateResult[]
 }
 
-type Done<Env extends Partial<Environment>> = (
+type Done<P extends string, E extends Partial<Environment> = Environment> = (
   resultSet: ResultSet,
-  context: Context<string, Env>
+  c: Context<P, E>
 ) => Response | void
 
-type ValidationFunction<T, Env extends Partial<Environment>> = (
-  v: Validator,
-  c: Context<string, Env>
-) => T
+type ValidationFunction<
+  P extends string,
+  E extends Partial<Environment> = Environment,
+  S extends Schema = Schema
+> = (v: Validator, c: Context<P, E>) => S
 
-type MiddlewareHandler<
-  Data extends ValidatedData = ValidatedData,
-  Env extends Partial<Environment> = Environment
-> = (c: Context<string, Env, Data>, next: Next) => Promise<void> | Promise<Response | undefined>
-
-export const validatorMiddleware = <T extends Schema, Env extends Partial<Environment>>(
-  validationFunction: ValidationFunction<T, Env>,
-  options?: { done?: Done<Env> }
+export const validatorMiddleware = <
+  P extends string,
+  E extends Partial<Environment> = Environment,
+  S extends Schema = Schema
+>(
+  validationFunction: ValidationFunction<P, E, S>,
+  options?: { done?: Done<P, E> }
 ) => {
   const v = new Validator()
-  const handler: MiddlewareHandler<SchemaToProp<T>, Env> = async (c, next) => {
+  const handler: MiddlewareHandler<string, E, S> = async (c, next) => {
     const resultSet: ResultSet = {
       hasError: false,
       messages: [],
@@ -98,7 +46,7 @@ export const validatorMiddleware = <T extends Schema, Env extends Partial<Enviro
     for (const [keys, validator] of validatorList) {
       let results: ValidateResult[]
       try {
-        results = await validator.validate(c.req)
+        results = await validator.validate(c.req as Request)
       } catch (e) {
         // Invalid JSON request
         return c.text(getStatusText(400), 400)

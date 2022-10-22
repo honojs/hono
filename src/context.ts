@@ -1,24 +1,19 @@
-import type {
-  Environment,
-  NotFoundHandler,
-  ContextVariableMap,
-  Bindings,
-  ValidatedData,
-} from './hono'
+import type { Environment, NotFoundHandler, ContextVariableMap, Bindings } from './hono'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'
+import type { Schema, SchemaToProp } from './validator/schema'
 
 type HeaderField = [string, string]
 type Headers = Record<string, string | string[]>
 export type Data = string | ArrayBuffer | ReadableStream
 
 export interface Context<
-  RequestParamKeyType extends string = string,
-  E extends Partial<Environment> = any,
-  D extends ValidatedData = ValidatedData
+  P extends string = string,
+  E extends Partial<Environment> = Environment,
+  S extends Partial<Schema> = Schema
 > {
-  req: Request<RequestParamKeyType, D>
+  req: Request<P, SchemaToProp<S>>
   env: E['Bindings']
   event: FetchEvent
   executionCtx: ExecutionContext
@@ -32,7 +27,7 @@ export interface Context<
   set: {
     <Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
     <Key extends keyof E['Variables']>(key: Key, value: E['Variables'][Key]): void
-    (key: string, value: any): void
+    (key: string, value: unknown): void
   }
   get: {
     <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
@@ -51,12 +46,12 @@ export interface Context<
 }
 
 export class HonoContext<
-  RequestParamKeyType extends string = string,
+  P extends string = string,
   E extends Partial<Environment> = Environment,
-  D extends ValidatedData = ValidatedData
-> implements Context<RequestParamKeyType, E, D>
+  S extends Partial<Schema> = Schema
+> implements Context<P, E, S>
 {
-  req: Request<RequestParamKeyType, D>
+  req: Request<P, SchemaToProp<S>>
   env: E['Bindings']
   finalized: boolean
   error: Error | undefined = undefined
@@ -65,19 +60,19 @@ export class HonoContext<
   private _executionCtx: FetchEvent | ExecutionContext | undefined
   private _pretty: boolean = false
   private _prettySpace: number = 2
-  private _map: Record<string, any> | undefined
+  private _map: Record<string, unknown> | undefined
   private _headers: Record<string, string[]> | undefined
   private _res: Response | undefined
-  private notFoundHandler: NotFoundHandler<E>
+  private notFoundHandler: NotFoundHandler<P, E, S>
 
   constructor(
-    req: Request<RequestParamKeyType>,
-    env: E['Bindings'] | undefined = undefined,
+    req: Request<P>,
+    env: E['Bindings'] = {},
     executionCtx: FetchEvent | ExecutionContext | undefined = undefined,
-    notFoundHandler: NotFoundHandler<E> = () => new Response()
+    notFoundHandler: NotFoundHandler<P, E, S> = () => new Response()
   ) {
     this._executionCtx = executionCtx
-    this.req = req as Request<RequestParamKeyType, D>
+    this.req = req as Request<P, SchemaToProp<S>>
     this.env = env || ({} as Bindings)
 
     this.notFoundHandler = notFoundHandler
@@ -142,15 +137,15 @@ export class HonoContext<
 
   set<Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
   set<Key extends keyof E['Variables']>(key: Key, value: E['Variables'][Key]): void
-  set(key: string, value: any): void
-  set(key: string, value: any): void {
+  set(key: string, value: unknown): void
+  set(key: string, value: unknown): void {
     this._map ||= {}
     this._map[key] = value
   }
 
   get<Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
   get<Key extends keyof E['Variables']>(key: Key): E['Variables'][Key]
-  get<T = any>(key: string): T
+  get<T>(key: string): T
   get(key: string) {
     if (!this._map) {
       return undefined
@@ -233,6 +228,6 @@ export class HonoContext<
   }
 
   notFound(): Response | Promise<Response> {
-    return this.notFoundHandler(this as any)
+    return this.notFoundHandler(this)
   }
 }

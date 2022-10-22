@@ -1,16 +1,22 @@
 import { HonoContext } from './context'
 import type { Environment, NotFoundHandler, ErrorHandler } from './hono'
+import type { Schema } from './validator/schema'
 
 interface ComposeContext {
   finalized: boolean
-  res: any
+  res: unknown
 }
 
 // Based on the code in the MIT licensed `koa-compose` package.
-export const compose = <C extends ComposeContext, E extends Partial<Environment> = Environment>(
+export const compose = <
+  C extends ComposeContext,
+  P extends string = string,
+  E extends Partial<Environment> = Environment,
+  D extends Partial<Schema> = Schema
+>(
   middleware: Function[],
-  onNotFound?: NotFoundHandler<E>,
-  onError?: ErrorHandler<E>
+  onNotFound?: NotFoundHandler<P, E, D>,
+  onError?: ErrorHandler<P, E, D>
 ) => {
   const middlewareLength = middleware.length
   return (context: C, next?: Function) => {

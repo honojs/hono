@@ -1,8 +1,8 @@
-import { JSONPathCopy } from '../../utils/json.ts'
-import type { JSONObject, JSONPrimitive, JSONArray } from '../../utils/json.ts'
-import type { Schema } from './middleware.ts'
+import { JSONPathCopy } from './../utils/json.ts'
+import type { JSONObject, JSONPrimitive, JSONArray } from './../utils/json.ts'
 import { rule } from './rule.ts'
 import { sanitizer } from './sanitizer.ts'
+import type { Schema } from './schema.ts'
 
 type Target = 'query' | 'header' | 'body' | 'json'
 type Type = JSONPrimitive | JSONObject | JSONArray | File
@@ -209,7 +209,7 @@ export abstract class VBase {
     return this
   }
 
-  validate = async (req: Request): Promise<ValidateResult[]> => {
+  validate = async <R extends Request>(req: R): Promise<ValidateResult[]> => {
     let value: Type = undefined
     let jsonData: JSONObject | undefined = undefined
 
