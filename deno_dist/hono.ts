@@ -1,8 +1,7 @@
 import { compose } from './compose.ts'
 import type { Context } from './context.ts'
 import { HonoContext } from './context.ts'
-import type { Schema, SchemaToProp } from './middleware/validator/middleware.ts'
-import type { VString } from './middleware/validator/validator.ts'
+import type { Schema } from './middleware/validator/middleware.ts'
 import { extendRequestPrototype } from './request.ts'
 import type { Router } from './router.ts'
 import { METHODS } from './router.ts'
@@ -21,12 +20,6 @@ export type Environment = {
   Bindings: Bindings
   Variables: Variables
 }
-
-//export type ValidatedData = Record<string, any> // For validated data
-
-export type ValidatedData<S = unknown> = SchemaToProp<S>
-//? SchemaToProp<S>
-//: SchemaToProp<{ [key: string]: any }>
 
 export type Handler<
   P extends string = string,
@@ -63,7 +56,7 @@ type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
   ? ParamKeyName<NameWithPattern>
   : never
 
-export type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
+type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 

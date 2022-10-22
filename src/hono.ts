@@ -1,7 +1,7 @@
 import { compose } from './compose'
 import type { Context } from './context'
 import { HonoContext } from './context'
-import type { Schema, SchemaToProp } from './middleware/validator/middleware'
+import type { Schema } from './middleware/validator/middleware'
 import { extendRequestPrototype } from './request'
 import type { Router } from './router'
 import { METHODS } from './router'
@@ -20,8 +20,6 @@ export type Environment = {
   Bindings: Bindings
   Variables: Variables
 }
-
-export type ValidatedData<S = unknown> = SchemaToProp<S>
 
 export type Handler<
   P extends string = string,

@@ -1,10 +1,4 @@
-import type {
-  Environment,
-  NotFoundHandler,
-  ContextVariableMap,
-  Bindings,
-  ValidatedData,
-} from './hono.ts'
+import type { Environment, NotFoundHandler, ContextVariableMap, Bindings } from './hono.ts'
 import type { Schema, SchemaToProp } from './middleware/validator/middleware.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
