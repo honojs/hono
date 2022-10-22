@@ -36,11 +36,12 @@ declare global {
     }
     bodyData?: BodyData
     parseBody<BodyType extends BodyData>(): Promise<BodyType>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     jsonData?: any
-    json<JSONData = any>(): Promise<JSONData>
+    json<JSONData = unknown>(): Promise<Partial<JSONData>>
     data: Data
     valid: {
-      (key: string | string[], value: any): Data
+      (key: string | string[], value: unknown): Data
       (): Data
     }
   }
@@ -132,9 +133,9 @@ export function extendRequestPrototype() {
     return body
   } as InstanceType<typeof Request>['parseBody']
 
-  Request.prototype.json = async function <JSONData>(this: Request): Promise<JSONData> {
+  Request.prototype.json = async function <JSONData = unknown>(this: Request) {
     // Cache the JSON body
-    let jsonData: JSONData
+    let jsonData: Partial<JSONData>
     if (!this.jsonData) {
       jsonData = JSON.parse(await this.text())
       this.jsonData = jsonData
@@ -144,7 +145,7 @@ export function extendRequestPrototype() {
     return jsonData
   } as InstanceType<typeof Request>['jsonData']
 
-  Request.prototype.valid = function (this: Request, keys?: string | string[], value?: any) {
+  Request.prototype.valid = function (this: Request, keys?: string | string[], value?: unknown) {
     if (!this.data) {
       this.data = {}
     }

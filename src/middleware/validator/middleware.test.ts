@@ -1,5 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Hono } from '../../hono'
 import { getStatusText } from '../../utils/http-status'
+import type { Expect, Equal } from '../../utils/types'
+import type { Schema } from '../../validator/schema'
 import { validator } from './index'
 
 describe('Basic - query', () => {
@@ -102,15 +105,19 @@ describe('Basic - header & custom message', () => {
   })
 })
 
-describe('Basic - JSON', () => {
+describe('Basic - JSON with type check', () => {
   const app = new Hono()
   // JSON
   app.post(
     '/json',
     validator((v) => ({
+      id: v.json('post.author.id').asNumber(),
       name: v.json('post.author.name').isAlpha(),
     })),
     (c) => {
+      const { id, name } = c.req.valid()
+      type verifyID = Expect<Equal<typeof id, number>>
+      type verifyName = Expect<Equal<typeof name, string>>
       return c.text('Valid')
     }
   )
@@ -119,6 +126,7 @@ describe('Basic - JSON', () => {
     const json = {
       post: {
         author: {
+          id: 123,
           name: 'abcdef',
         },
       },
@@ -579,7 +587,7 @@ describe('Structured data', () => {
   })
 })
 
-describe('Array values', () => {
+describe('Array values with type check', () => {
   const app = new Hono()
   app.post(
     '/post',
@@ -591,8 +599,13 @@ describe('Array values', () => {
       },
     })),
     (c) => {
-      const res = c.req.valid()
-      return c.json({ tag1: res.post.tags[0] })
+      const { post } = c.req.valid()
+
+      type verifyTitle = Expect<Equal<typeof post.title, string>>
+      type verifyTags = Expect<Equal<typeof post.tags, string[]>>
+      type verifyIDs = Expect<Equal<typeof post.ids, number[]>>
+
+      return c.json({ tag1: post.tags[0] })
     }
   )
 
@@ -728,5 +741,100 @@ describe('Special case', () => {
         'Invalid Value [undefined]: the query parameter "page" is invalid - should be "number"',
       ].join('\n')
     )
+  })
+})
+
+describe('Type check in special case', () => {
+  it('Should return 200 response with correct types', async () => {
+    const app = new Hono()
+    app.post(
+      '/posts/:id',
+      validator((v) => ({
+        title: v.body('title').isRequired(),
+      })),
+      (c) => {
+        const res = c.req.valid()
+        const id = c.req.param('id')
+        type verifyTitle = Expect<Equal<typeof res.title, string>>
+        type verifyId = Expect<Equal<typeof id, string>>
+        return c.text(`${id} is ${res.title}`)
+      }
+    )
+    const body = new FormData()
+    body.append('title', 'Hello')
+    const req = new Request('http://localhost/posts/123', {
+      method: 'POST',
+      body: body,
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('123 is Hello')
+  })
+
+  it('Should return 200 response with correct types - validator and named parameter', async () => {
+    const app = new Hono()
+
+    const vm = validator((v) => ({
+      title: v.body('title').isRequired(),
+    }))
+
+    app.post('/posts', vm, (c) => {
+      const { title } = c.req.valid()
+      type verify = Expect<Equal<typeof title, string>>
+      return c.text(title)
+    })
+
+    app.post('/posts/:id', vm, (c) => {
+      const id = c.req.param('id')
+      const { title } = c.req.valid()
+      type verify = Expect<Equal<typeof title, string>>
+      return c.text(`${id} is ${title}`)
+    })
+
+    const body = new FormData()
+    body.append('title', 'Hello')
+
+    let res = await app.request('http://localhost/posts', {
+      method: 'POST',
+      body: body,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Hello')
+    res = await app.request('http://localhost/posts/123?title=foo', {
+      method: 'POST',
+      body: body,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('123 is Hello')
+  })
+
+  it('Should return 200 response with correct types - Context in validator function', async () => {
+    type Env = { Bindings: { FOO: 'abc' } }
+
+    const app = new Hono<Env>()
+
+    app.get(
+      '/search',
+      validator(
+        (v) => ({
+          foo: v.query('foo'),
+        }),
+        {
+          done: (_, c) => {
+            type verifyBindings = Expect<Equal<typeof c.env.FOO, 'abc'>>
+          },
+        }
+      ),
+      (c) => {
+        const { foo } = c.req.valid()
+        type verifyBindings = Expect<Equal<typeof c.env.FOO, 'abc'>>
+        type verify = Expect<Equal<typeof foo, string>>
+        return c.text(foo)
+      }
+    )
+
+    const res = await app.request('http://localhost/search?foo=bar')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('bar')
   })
 })

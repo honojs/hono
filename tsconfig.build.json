@@ -4,6 +4,8 @@
     "module": "ES2020",
     "rootDir": "./src/",
     "outDir": "./dist/",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
   },
   "include": [
     "src/**/*.ts",
