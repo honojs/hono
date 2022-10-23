@@ -256,6 +256,7 @@ export abstract class VBase {
       const typeResult = this.validateRule(typeRule, value)
       typeResult.jsonData ||= jsonData
       results.unshift(typeResult)
+      this.rules.unshift(typeRule)
     }
 
     return results

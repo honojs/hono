@@ -730,3 +730,44 @@ describe('Custom message', () => {
     expect(results[0].message).toBe([customMessage].join('\n'))
   })
 })
+
+describe('Custom rule', () => {
+  const v = new Validator()
+  const validator = v.body('screenName').addRule('should be screen name', (value) => {
+    if (typeof value === 'string') {
+      return /^[0-9a-zA-Z\_]+$/.test(value)
+    }
+    return false
+  })
+
+  it('Should be valid - custom rule', async () => {
+    const body = new FormData()
+    body.append('screenName', 'honojs_honojs_honojs_honojs_honojs')
+
+    const req = new Request('http://localhost/', {
+      method: 'POST',
+      body: body,
+    })
+    const results = await validator.validate(req)
+    expect(results[0].isValid).toBe(true)
+    expect(results[1].isValid).toBe(true)
+  })
+
+  it('Should be invalid - custom rule', async () => {
+    const body = new FormData()
+    body.append('screenName', 'honojs+honojs')
+
+    const req = new Request('http://localhost/', {
+      method: 'POST',
+      body: body,
+    })
+    const results = await validator.validate(req)
+    expect(results[0].isValid).toBe(true)
+    expect(results[1].isValid).toBe(false)
+    expect(results[1].message).toBe(
+      [
+        'Invalid Value [honojs+honojs]: the request body "screenName" is invalid - should be screen name',
+      ].join('\n')
+    )
+  })
+})
