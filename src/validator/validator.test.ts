@@ -742,7 +742,7 @@ describe('Custom rule', () => {
 
   it('Should be valid - custom rule', async () => {
     const body = new FormData()
-    body.append('screenName', 'honojshonojshonojshonojs')
+    body.append('screenName', 'honojs_honojs_honojs_honojs_honojs')
 
     const req = new Request('http://localhost/', {
       method: 'POST',
