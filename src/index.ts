@@ -5,6 +5,7 @@
 import { Hono } from './hono'
 export type { Handler, Next, ContextVariableMap } from './hono'
 export type { Context } from './context'
+export type { Validator } from './validator/validator'
 
 declare module './hono' {
   interface Hono {
