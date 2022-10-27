@@ -252,6 +252,7 @@
     "prettier": "^2.6.2",
     "rimraf": "^3.0.2",
     "ts-jest": "^29.0.1",
+    "tsx": "^3.11.0",
     "typescript": "^4.8.3"
   },
   "engines": {
