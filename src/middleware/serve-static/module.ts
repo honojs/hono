@@ -1,3 +1,4 @@
+// @denoify-ignore
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 // For ES module mode
