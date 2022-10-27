@@ -2,7 +2,8 @@
   "name": "hono",
   "version": "2.3.2",
   "description": "Ultrafast web framework for Cloudflare Workers.",
-  "main": "dist/index.js",
+  "main": "dist/cjs/index.js",
+  "type": "module",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -13,11 +14,12 @@
     "test:deno": "deno test --allow-read deno_test",
     "test:bun": "bun wiptest --jsx-import-source ../src/middleware/jsx/jsx-dev-runtime bun_test/index.test.tsx",
     "test:all": "yarn test && yarn test:deno && yarn test:bun",
-    "lint": "eslint --ext js,ts src .eslintrc.js",
-    "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix",
+    "lint": "eslint --ext js,ts src .eslintrc.cjs",
+    "lint:fix": "eslint --ext js,ts src .eslintrc.cjs --fix",
     "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.ts'",
-    "build": "rimraf dist && tsc --project tsconfig.build.json && tsc --project tsconfig.build.cjs.json",
-    "watch": "tsc --project tsconfig.build.json -w",
+    "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json",
+    "build": "rimraf dist && tsx ./build.ts && yarn copy:package.cjs.json",
+    "watch": "rimraf dist && tsx ./build.ts --watch && yarn copy:package.cjs.json",
     "prerelease": "yarn denoify && yarn test:deno && yarn build",
     "release": "np"
   },
@@ -91,7 +93,7 @@
       "require": "./dist/cjs/middleware/serve-static/bun.js"
     },
     "./serve-static.module": {
-      "import": "./dist/middleware/serve-static/module.mjs"
+      "import": "./dist/middleware/serve-static/module.js"
     },
     "./validator": {
       "import": "./dist/middleware/validator/index.js",
@@ -173,7 +175,7 @@
         "./dist/middleware/serve-static/bun.d.ts"
       ],
       "serve-static.module": [
-        "./dist/middleware/serve-static/module.d.mts"
+        "./dist/middleware/serve-static/module.d.ts"
       ],
       "validator": [
         "./dist/middleware/validator"
@@ -226,12 +228,15 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^3.16.0",
     "@types/crypto-js": "^4.1.1",
+    "@types/glob": "^8.0.0",
     "@types/jest": "^29.0.2",
     "@types/node": "^17.0.29",
     "@typescript-eslint/eslint-plugin": "^5.21.0",
     "@typescript-eslint/parser": "^5.21.0",
+    "arg": "^5.0.2",
     "crypto-js": "^4.1.1",
     "denoify": "^1.1.1",
+    "esbuild": "^0.15.12",
     "eslint": "^8.14.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-define-config": "^1.4.0",
