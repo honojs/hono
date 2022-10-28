@@ -80,18 +80,28 @@ describe('Serve Static Middleware', () => {
   })
 })
 
-// JWT is not available for Bun
-// It throw the Error
-describe('JWT Middleware (Not supported yet)', () => {
+// Bun support WebCrypto since v0.2.2
+// So, JWT middleware works well.
+describe('JWT Auth Middleware', () => {
   const app = new Hono()
-  let t = false
-  try {
-    app.use('/jwt/*', jwt({ secret: 'a-secret' }))
-  } catch {
-    t = true
-  }
-  it('Throw the error', () => {
-    expect(t).toBe(true)
+  app.use('/jwt/*', jwt({ secret: 'a-secret' }))
+  app.get('/jwt/a', (c) => c.text('auth'))
+
+  it('Should not authorize, return 401 Response', async () => {
+    const req = new Request('http://localhost/jwt/a')
+    const res = await app.request(req)
+    expect(res.status).toBe(401)
+    expect(await res.text()).toBe('Unauthorized')
+  })
+
+  it('Should authorize, return 200 Response', async () => {
+    const credential =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+    const req = new Request('http://localhost/jwt/a')
+    req.headers.set('Authorization', `Bearer ${credential}`)
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('auth')
   })
 })
 
