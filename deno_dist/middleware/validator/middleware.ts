@@ -1,5 +1,5 @@
 import type { Context } from '../../context.ts'
-import type { Environment, MiddlewareHandler } from '../../hono.ts'
+import type { Environment, MiddlewareHandler } from '../../types.ts'
 import { getStatusText } from '../../utils/http-status.ts'
 import { mergeObjects } from '../../utils/object.ts'
 import type { Schema } from '../../validator/schema.ts'

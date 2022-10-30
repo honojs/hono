@@ -1,4 +1,4 @@
-import type { Environment, NotFoundHandler, ContextVariableMap, Bindings } from './hono'
+import type { Environment, NotFoundHandler, ContextVariableMap, Bindings } from './types'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'

@@ -3,62 +3,14 @@ import type { Context } from './context.ts'
 import { HonoContext } from './context.ts'
 import { extendRequestPrototype } from './request.ts'
 import type { Router } from './router.ts'
-import { METHODS } from './router.ts'
-import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router.ts'
+import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router.ts'
 import { RegExpRouter } from './router/reg-exp-router/index.ts'
 import { SmartRouter } from './router/smart-router/index.ts'
 import { StaticRouter } from './router/static-router/index.ts'
 import { TrieRouter } from './router/trie-router/index.ts'
+import type { Handler, Environment, ParamKeys, ErrorHandler, NotFoundHandler } from './types.ts'
 import { getPathFromURL, mergePath } from './utils/url.ts'
 import type { Schema } from './validator/schema.ts'
-
-export interface ContextVariableMap {}
-
-export type Bindings = Record<string, any> // For Cloudflare Workers
-export type Variables = Record<string, any> // For c.set/c.get functions
-export type Environment = {
-  Bindings: Bindings
-  Variables: Variables
-}
-
-export type Handler<
-  P extends string = string,
-  E extends Partial<Environment> = Environment,
-  S extends Partial<Schema> = Schema
-> = (c: Context<P, E, S>, next: Next) => Response | Promise<Response | undefined | void>
-
-export type MiddlewareHandler<
-  P extends string = string,
-  E extends Partial<Environment> = Environment,
-  S extends Partial<Schema> = Schema
-> = (c: Context<P, E, S>, next: Next) => Promise<Response | undefined | void>
-
-export type NotFoundHandler<
-  P extends string = string,
-  E extends Partial<Environment> = Environment,
-  S extends Partial<Schema> = Schema
-> = (c: Context<P, E, S>) => Response | Promise<Response>
-
-export type ErrorHandler<
-  P extends string = string,
-  E extends Partial<Environment> = Environment,
-  S extends Partial<Schema> = Schema
-> = (err: Error, c: Context<P, E, S>) => Response
-
-export type Next = () => Promise<void>
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer _Pattern}`
-  ? Name
-  : NameWithPattern
-
-type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
-  ? ParamKeyName<NameWithPattern>
-  : never
-
-type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
-  ? ParamKey<Component> | ParamKeys<Rest>
-  : ParamKey<Path>
 
 interface HandlerInterface<
   P extends string,
@@ -198,7 +150,7 @@ export class Hono<
     return this
   }
 
-  private addRoute(method: string, path: string, handler: Handler<P, E, S>): void {
+  private addRoute(method: string, path: string, handler: Handler<P, E, S>) {
     method = method.toUpperCase()
     if (this._tempPath) {
       path = mergePath(this._tempPath, path)

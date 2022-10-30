@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '../../hono'
+import type { MiddlewareHandler } from '../../types'
 import { getPathFromURL } from '../../utils/url'
 
 enum LogPrefix {

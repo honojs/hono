@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '../../hono'
+import type { MiddlewareHandler } from '../../types'
 
 export const cache = (options: {
   cacheName: string

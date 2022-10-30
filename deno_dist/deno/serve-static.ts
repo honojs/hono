@@ -1,5 +1,5 @@
 import type { Context } from '../context.ts'
-import type { Next } from '../hono.ts'
+import type { Next } from '../types.ts'
 import { getFilePath } from '../utils/filepath.ts'
 import { getMimeType } from '../utils/mime.ts'
 
