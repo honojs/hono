@@ -18,9 +18,9 @@ type Sanitizer = (value: Type) => Type
 export type ValidateResult = {
   isValid: boolean
   message: string | undefined
-  target: Target
-  key: string
-  value: Type
+  target: Target | 'unknown'
+  key: string | null
+  value: Type | null
   ruleName: string
   ruleType: 'type' | 'value'
   jsonData?: JSONObject

@@ -49,7 +49,15 @@ export const validatorMiddleware = <
         results = await validator.validate(c.req as Request)
       } catch (e) {
         // Invalid JSON request
-        return c.text(getStatusText(400), 400)
+        if (e instanceof Error) {
+          const result = getErrorResult(e)
+          resultSet.hasError = true
+          resultSet.messages = [result.message || '']
+          resultSet.results = [result]
+          break
+        } else {
+          return c.text(getStatusText(400), 400)
+        }
       }
 
       let isValid = true
@@ -128,4 +136,17 @@ function getValidatorList<T extends Schema>(schema: T) {
     }
   }
   return map
+}
+
+const getErrorResult = (e: Error) => {
+  const result: ValidateResult = {
+    isValid: false,
+    message: e.message,
+    target: 'unknown',
+    key: null,
+    value: null,
+    ruleName: e.message,
+    ruleType: 'value',
+  }
+  return result
 }
