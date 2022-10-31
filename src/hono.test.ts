@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { Context } from './context'
-import type { Handler, Next } from './hono'
 import { Hono } from './hono'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
+import type { Handler, Next } from './types'
 import type { Expect, Equal } from './utils/types'
 
 describe('GET Request', () => {

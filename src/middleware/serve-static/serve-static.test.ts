@@ -1,6 +1,6 @@
 import type { Context } from '../../context'
-import type { Next } from '../../hono'
 import { Hono } from '../../hono'
+import type { Next } from '../../types'
 import { serveStatic } from '.'
 
 // Mock

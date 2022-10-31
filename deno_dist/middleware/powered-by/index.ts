@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '../../hono.ts'
+import type { MiddlewareHandler } from '../../types.ts'
 
 export const poweredBy = (): MiddlewareHandler => {
   return async (c, next) => {

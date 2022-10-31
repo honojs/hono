@@ -1,5 +1,5 @@
 import type { Context } from '../context'
-import type { Next } from '../hono'
+import type { Next } from '../types'
 import { getFilePath } from '../utils/filepath'
 import { getMimeType } from '../utils/mime'
 
