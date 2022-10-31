@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '../../hono'
+import type { MiddlewareHandler } from '../../types'
 import { timingSafeEqual } from '../../utils/buffer'
 
 const TOKEN_STRINGS = '[A-Za-z0-9._~+/-]+=*'

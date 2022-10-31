@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '../../hono'
+import type { MiddlewareHandler } from '../../types'
 import { Jwt } from '../../utils/jwt'
 import type { AlgorithmTypes } from '../../utils/jwt/types'
 

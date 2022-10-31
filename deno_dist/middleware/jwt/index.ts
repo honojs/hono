@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '../../hono.ts'
+import type { MiddlewareHandler } from '../../types.ts'
 import { Jwt } from '../../utils/jwt/index.ts'
 import type { AlgorithmTypes } from '../../utils/jwt/types.ts'
 

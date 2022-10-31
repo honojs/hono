@@ -3,9 +3,11 @@
 /// <reference path="./request.ts" /> Import "declare global" for the Request interface.
 
 import { Hono } from './hono'
-export type { Handler, Next, ContextVariableMap } from './hono'
+export type { Next, ContextVariableMap, MiddlewareHandler } from './types'
 export type { Context } from './context'
 export type { Validator } from './validator/validator'
+import type { CustomHandler } from './types'
+export type { CustomHandler as Handler }
 
 declare module './hono' {
   interface Hono {

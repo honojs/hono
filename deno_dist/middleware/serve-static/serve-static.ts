@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '../../hono.ts'
+import type { MiddlewareHandler } from '../../types.ts'
 import { getContentFromKVAsset } from '../../utils/cloudflare.ts'
 import { getFilePath } from '../../utils/filepath.ts'
 import { getMimeType } from '../../utils/mime.ts'

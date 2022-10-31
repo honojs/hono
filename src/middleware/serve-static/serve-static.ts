@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '../../hono'
+import type { MiddlewareHandler } from '../../types'
 import { getContentFromKVAsset } from '../../utils/cloudflare'
 import { getFilePath } from '../../utils/filepath'
 import { getMimeType } from '../../utils/mime'
