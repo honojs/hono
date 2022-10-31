@@ -154,6 +154,70 @@ describe('Routing', () => {
     res = await app.request('http://localhost/user/register', { method: 'POST' })
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('post /user/register')
+
+    describe('order matters', () => {
+      let one: Hono, two: Hono, three: Hono
+  
+      beforeEach(() => {
+        one = new Hono()
+        two = new Hono()
+        three = new Hono()
+      })
+  
+      it('only works with correct order', async () => {
+        three.get('/hi', (c) => c.text('hi'))
+        two.route('/three', three)
+        one.route('/two', two)
+  
+        const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
+        expect(status).toBe(200)
+      })
+  
+      it('fails with incorrect order 1', async () => {
+        three.get('/hi', (c) => c.text('hi'))
+        one.route('/two', two)
+        two.route('/three', three)
+    
+        const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
+        expect(status).toBe(404)
+      })
+  
+      it('fails with incorrect order 2', async () => {
+        two.route('/three', three)
+        three.get('/hi', (c) => c.text('hi'))
+        one.route('/two', two)
+    
+        const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
+        expect(status).toBe(404)
+      })
+  
+      it('fails with incorrect order 3', async () => {
+        two.route('/three', three)
+        one.route('/two', two)
+        three.get('/hi', (c) => c.text('hi'))
+    
+        const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
+        expect(status).toBe(404)
+      })
+  
+      it('fails with incorrect order 4', async () => {
+        one.route('/two', two)
+        three.get('/hi', (c) => c.text('hi'))
+        two.route('/three', three)
+    
+        const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
+        expect(status).toBe(404)
+      })
+  
+      it('fails with incorrect order 5', async () => {
+        one.route('/two', two)
+        two.route('/three', three)
+        three.get('/hi', (c) => c.text('hi'))
+    
+        const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
+        expect(status).toBe(404)
+      })
+    })
   })
 
   describe('Chained route', () => {
