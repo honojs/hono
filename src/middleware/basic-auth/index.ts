@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '../../hono'
+import type { MiddlewareHandler } from '../../types'
 import { timingSafeEqual } from '../../utils/buffer'
 import { decodeBase64 } from '../../utils/encode'
 

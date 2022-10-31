@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '../../hono'
+import type { MiddlewareHandler } from '../../types'
 import { sha1 } from '../../utils/crypto'
 
 type ETagOptions = {

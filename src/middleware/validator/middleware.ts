@@ -1,5 +1,5 @@
 import type { Context } from '../../context'
-import type { Environment, MiddlewareHandler } from '../../hono'
+import type { Environment, MiddlewareHandler } from '../../types'
 import { getStatusText } from '../../utils/http-status'
 import { mergeObjects } from '../../utils/object'
 import type { Schema } from '../../validator/schema'

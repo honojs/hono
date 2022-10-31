@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '../../hono'
+import type { MiddlewareHandler } from '../../types'
 
 type CORSOptions = {
   origin: string | string[] | ((origin: string) => string | undefined | null)
