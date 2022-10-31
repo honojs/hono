@@ -148,13 +148,15 @@ describe('Basic - JSON with type check', () => {
       method: 'POST',
     })
 
+    const messages = ['Malformed JSON in request body']
+
     const res1 = await app.request(req1)
     expect(res1.status).toBe(400)
-    expect(await res1.text()).toBe(getStatusText(400))
+    expect(await res1.text()).toBe(messages.join('\n'))
 
     const res2 = await app.request(req2)
     expect(res2.status).toBe(400)
-    expect(await res2.text()).toBe(getStatusText(400))
+    expect(await res2.text()).toBe(messages.join('\n'))
   })
 })
 
