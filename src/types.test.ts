@@ -26,6 +26,8 @@ describe('Test types of CustomHandler', () => {
 
   test('No arguments', async () => {
     const handler: Handler = (c) => {
+      const data = c.req.valid()
+      type verifySchema = Expect<Equal<typeof data['foo'], any>>
       return c.text('Hi')
     }
     app.get('/', handler)
@@ -36,7 +38,9 @@ describe('Test types of CustomHandler', () => {
   test('Path', async () => {
     const handler: Handler<'id'> = (c) => {
       const id = c.req.param('id')
-      type verify = Expect<Equal<typeof id, string>>
+      type verifyPath = Expect<Equal<typeof id, string>>
+      const data = c.req.valid()
+      type verifySchema = Expect<Equal<typeof data['foo'], any>>
       return c.text('Hi')
     }
     app.get('/', handler)
@@ -50,6 +54,8 @@ describe('Test types of CustomHandler', () => {
       type verifyPath = Expect<Equal<typeof id, string>>
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<typeof foo, string>>
+      const data = c.req.valid()
+      type verifySchema = Expect<Equal<typeof data['foo'], any>>
       return c.text('Hi')
     }
     app.get('/', handler)
@@ -113,7 +119,9 @@ describe('Test types of CustomHandler', () => {
     const app = new Hono<Env>()
     const handler: Handler<Env> = (c) => {
       const foo = c.get('foo')
-      type verify = Expect<Equal<typeof foo, string>>
+      type verifyEnv = Expect<Equal<typeof foo, string>>
+      const data = c.req.valid()
+      type verifySchema = Expect<Equal<typeof data['foo'], any>>
       return c.text(foo)
     }
     app.get(
