@@ -52,7 +52,7 @@ export type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
 // This is not used for internally
 // Will be used by users as `Handler`
 export interface CustomHandler<
-  P extends string | Partial<Environment> | Partial<Schema> = string,
+  P extends string | Partial<Environment> | Schema = string,
   E = Partial<Environment> | Partial<Schema>,
   S = Partial<Schema>
 > {
@@ -70,18 +70,20 @@ export interface CustomHandler<
         : P extends Partial<Schema>
         ? Partial<Environment>
         : E extends Partial<Environment>
-        ? E
+        ? E extends Partial<Schema>
+          ? Environment
+          : E
         : E extends Partial<Schema>
         ? Partial<Environment>
-        : never,
+        : Environment,
       P extends Partial<Schema>
         ? P
         : E extends Partial<Schema>
         ? P extends Partial<Environment>
           ? E extends Partial<Environment>
-            ? never
+            ? unknown
             : E
-          : never
+          : unknown
         : S extends Partial<Schema>
         ? S
         : never
