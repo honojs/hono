@@ -1,5 +1,6 @@
 import { jsx } from '.'
 import type { JSXNode } from '.'
+export { Fragment } from '.'
 
 export function jsxDEV(tag: string | Function, props: Record<string, any>): JSXNode {
   const children = props.children ?? []
