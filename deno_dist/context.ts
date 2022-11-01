@@ -11,9 +11,9 @@ export type Data = string | ArrayBuffer | ReadableStream
 export interface Context<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  S extends Partial<Schema> = Schema
+  S extends Partial<Schema> | unknown = Schema
 > {
-  req: Request<P, SchemaToProp<S>>
+  req: Request<P, S extends Schema ? SchemaToProp<S> : any>
   env: E['Bindings']
   event: FetchEvent
   executionCtx: ExecutionContext
@@ -51,7 +51,7 @@ export class HonoContext<
   S extends Partial<Schema> = Schema
 > implements Context<P, E, S>
 {
-  req: Request<P, SchemaToProp<S>>
+  req: Request<P, S extends Schema ? SchemaToProp<S> : any>
   env: E['Bindings']
   finalized: boolean
   error: Error | undefined = undefined
@@ -72,7 +72,7 @@ export class HonoContext<
     notFoundHandler: NotFoundHandler<P, E, S> = () => new Response()
   ) {
     this._executionCtx = executionCtx
-    this.req = req as Request<P, SchemaToProp<S>>
+    this.req = req as Request<P, S extends Schema ? SchemaToProp<S> : any>
     this.env = env || ({} as Bindings)
 
     this.notFoundHandler = notFoundHandler
