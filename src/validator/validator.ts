@@ -4,7 +4,7 @@ import { rule } from './rule'
 import { sanitizer } from './sanitizer'
 import type { Schema } from './schema'
 
-type Target = 'query' | 'header' | 'body' | 'json'
+type Target = 'query' | 'queries' | 'header' | 'body' | 'json'
 type Type = JSONPrimitive | JSONObject | JSONArray | File
 type RuleFunc = (value: Type) => boolean
 type Rule = {
@@ -90,6 +90,7 @@ export class VArray<T extends Schema> extends VObjectBase<T> {
 export class Validator {
   isArray: boolean = false
   query = (key: string): VString => new VString({ target: 'query', key: key })
+  queries = (key: string): VStringArray => new VStringArray({ target: 'queries', key: key })
   header = (key: string): VString => new VString({ target: 'header', key: key })
   body = (key: string): VString => new VString({ target: 'body', key: key })
   json = (key: string) => {
@@ -216,6 +217,9 @@ export abstract class VBase {
     if (this.target === 'query') {
       value = req.query(this.key)
     }
+    if (this.target === 'queries') {
+      value = req.queries(this.key)
+    }
     if (this.target === 'header') {
       value = req.header(this.key)
     }
@@ -327,6 +331,7 @@ export abstract class VBase {
     if (this._optional && typeof value === 'undefined') return true
 
     if (Array.isArray(value)) {
+      if (value.length === 0 && !this._optional) return false
       // Sanitize
       for (const sanitizer of this.sanitizers) {
         value = value.map((innerVal: any) => sanitizer(innerVal)) as JSONArray
@@ -361,6 +366,9 @@ export abstract class VBase {
     switch (this.target) {
       case 'query':
         keyText = `the query parameter "${this.key}"`
+        break
+      case 'queries':
+        keyText = `the query parameters "${this.key}"`
         break
       case 'header':
         keyText = `the request header "${this.key}"`

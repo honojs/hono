@@ -46,6 +46,43 @@ describe('Basic - query', () => {
   })
 })
 
+describe('Basic - queries', () => {
+  const app = new Hono()
+
+  app.get(
+    '/',
+    validator((v) => ({
+      ids: v.queries('id').isNumeric().isRequired(),
+      tags: v.queries('tag').isOptional(),
+    })),
+    (c) => {
+      return c.text('Valid')
+    }
+  )
+
+  it('Should return 200 response', async () => {
+    const res = await app.request('http://localhost/?id=123&id=456')
+    expect(res.status).toBe(200)
+  })
+
+  it('Should return 400 response - id is not set', async () => {
+    const res = await app.request('http://localhost/')
+    expect(res.status).toBe(400)
+    const messages = [
+      'Invalid Value []: the query parameters "id" is invalid - isNumeric',
+      'Invalid Value []: the query parameters "id" is invalid - isRequired',
+    ]
+    expect(await res.text()).toBe(messages.join('\n'))
+  })
+
+  it('Should return 400 response - is is not numeric', async () => {
+    const res = await app.request('http://localhost/?id=one')
+    expect(res.status).toBe(400)
+    const messages = ['Invalid Value ["one"]: the query parameters "id" is invalid - isNumeric']
+    expect(await res.text()).toBe(messages.join('\n'))
+  })
+})
+
 describe('Basic - body', () => {
   const app = new Hono()
 

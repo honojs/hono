@@ -43,6 +43,51 @@ describe('Basic - query', () => {
   })
 })
 
+describe('Basic - queries', () => {
+  const v = new Validator()
+
+  const req = new Request('http://localhost/?tag=foo&tag=bar&id=123&id=456')
+
+  it('Should be valid - tag', async () => {
+    const validator = v.queries('tag').isRequired()
+    const results = await validator.validate(req)
+    expect(results[0].isValid).toBe(true)
+    expect(results[0].message).toBeUndefined()
+    expect(results[0].value).toEqual(['foo', 'bar'])
+    expect(results[1].isValid).toBe(true)
+    expect(results[1].message).toBeUndefined()
+  })
+
+  it('Should be invalid - ids', async () => {
+    const validator = v.queries('ids').isRequired()
+    const results = await validator.validate(req)
+    console.log(results)
+    expect(results[0].isValid).toBe(true)
+    expect(results[1].isValid).toBe(false)
+    expect(results[1].message).toBe(
+      'Invalid Value []: the query parameters "ids" is invalid - isRequired'
+    )
+  })
+
+  it('Should be valid - id', async () => {
+    const validator = v.queries('id').isNumeric()
+    const results = await validator.validate(req)
+    expect(results[0].isValid).toBe(true)
+    expect(results[0].message).toBeUndefined()
+    expect(results[1].isValid).toBe(true)
+    expect(results[1].message).toBeUndefined()
+  })
+
+  it('Should be valid - comment is options', async () => {
+    const validator = v.queries('comment').isOptional()
+    const results = await validator.validate(req)
+    expect(results[0].isValid).toBe(true)
+    expect(results[0].message).toBeUndefined()
+    expect(results[1].isValid).toBe(true)
+    expect(results[1].message).toBeUndefined()
+  })
+})
+
 describe('Basic - header', () => {
   const v = new Validator()
 
