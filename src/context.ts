@@ -257,6 +257,10 @@ export class HonoContext<
       return 'fastly'
     }
 
+    if (typeof global?.EdgeRuntime !== 'string') {
+      return 'vercel'
+    }
+
     return 'other'
   }
 }
