@@ -159,6 +159,11 @@ describe('Context', () => {
     expect(res.headers.get('foo')).not.toBeNull()
     expect(res.headers.get('foo')).toBe('bar')
   })
+
+  it('returns current platform (node)', async () => {
+    c = new HonoContext(req)
+    expect(c.platform).toBe('node')
+  })
 })
 
 describe('Context header', () => {

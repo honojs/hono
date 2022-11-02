@@ -7,6 +7,7 @@ import type { Schema, SchemaToProp } from './validator/schema.ts'
 type HeaderField = [string, string]
 type Headers = Record<string, string | string[]>
 export type Data = string | ArrayBuffer | ReadableStream
+export type Platform = 'node' | 'deno' | 'bun' | 'cloudflare' | 'fastly'
 
 export interface Context<
   P extends string = string,
@@ -43,6 +44,7 @@ export interface Context<
   redirect: (location: string, status?: StatusCode) => Response
   cookie: (name: string, value: string, options?: CookieOptions) => void
   notFound: () => Response | Promise<Response>
+  get platform(): Platform
 }
 
 export class HonoContext<
@@ -229,5 +231,28 @@ export class HonoContext<
 
   notFound(): Response | Promise<Response> {
     return this.notFoundHandler(this)
+  }
+
+  get platform(): Platform {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const global = globalThis as any
+
+    if (global?.process?.title === 'node') {
+      return 'node'
+    }
+
+    if (global?.Deno !== undefined) {
+      return 'deno'
+    }
+
+    if (global?.Bun !== undefined) {
+      return 'bun'
+    }
+
+    if (typeof global?.WebSocketPair === 'function') {
+      return 'cloudflare'
+    }
+
+    return 'fastly'
   }
 }
