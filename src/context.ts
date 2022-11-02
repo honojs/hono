@@ -7,7 +7,7 @@ import type { Schema, SchemaToProp } from './validator/schema'
 type HeaderField = [string, string]
 type Headers = Record<string, string | string[]>
 export type Data = string | ArrayBuffer | ReadableStream
-export type Platform = 'node' | 'deno' | 'bun' | 'cloudflare' | 'fastly'
+export type Platform = 'node' | 'deno' | 'bun' | 'cloudflare' | 'fastly' | 'vercel' | 'other'
 
 export interface Context<
   P extends string = string,
@@ -253,6 +253,10 @@ export class HonoContext<
       return 'cloudflare'
     }
 
-    return 'fastly'
+    if (global?.fastly !== undefined) {
+      return 'fastly'
+    }
+
+    return 'other'
   }
 }
