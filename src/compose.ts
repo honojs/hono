@@ -1,6 +1,5 @@
-import { HonoContext } from './context'
+import { Context } from './context'
 import type { Environment, NotFoundHandler, ErrorHandler } from './types'
-import type { Schema } from './validator/schema'
 
 interface ComposeContext {
   finalized: boolean
@@ -8,15 +7,10 @@ interface ComposeContext {
 }
 
 // Based on the code in the MIT licensed `koa-compose` package.
-export const compose = <
-  C extends ComposeContext,
-  P extends string = string,
-  E extends Partial<Environment> = Environment,
-  D extends Partial<Schema> = Schema
->(
+export const compose = <C extends ComposeContext, E extends Partial<Environment> = Environment>(
   middleware: Function[],
-  onNotFound?: NotFoundHandler<P, E, D>,
-  onError?: ErrorHandler<P, E, D>
+  onNotFound?: NotFoundHandler<E>,
+  onError?: ErrorHandler<E>
 ) => {
   const middlewareLength = middleware.length
   return (context: C, next?: Function) => {
@@ -35,7 +29,7 @@ export const compose = <
       let isError = false
 
       if (!handler) {
-        if (context instanceof HonoContext && context.finalized === false && onNotFound) {
+        if (context instanceof Context && context.finalized === false && onNotFound) {
           res = onNotFound(context)
         }
       } else {
@@ -45,7 +39,7 @@ export const compose = <
             return dispatchRes instanceof Promise ? dispatchRes : Promise.resolve(dispatchRes)
           })
         } catch (err) {
-          if (err instanceof Error && context instanceof HonoContext && onError) {
+          if (err instanceof Error && context instanceof Context && onError) {
             context.error = err
             res = onError(err, context)
             isError = true
@@ -69,7 +63,7 @@ export const compose = <
             return context
           })
           .catch((err) => {
-            if (err instanceof Error && context instanceof HonoContext && onError) {
+            if (err instanceof Error && context instanceof Context && onError) {
               context.error = err
               context.res = onError(err, context)
               return context

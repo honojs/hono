@@ -22,17 +22,14 @@ export type MiddlewareHandler<
   S extends Partial<Schema> = Schema
 > = (c: Context<P, E, S>, next: Next) => Promise<Response | undefined | void>
 
-export type NotFoundHandler<
-  P extends string = string,
-  E extends Partial<Environment> = Environment,
-  S extends Partial<Schema> = Schema
-> = (c: Context<P, E, S>) => Response | Promise<Response>
+export type NotFoundHandler<E extends Partial<Environment> = Environment> = (
+  c: Context<string, E>
+) => Response | Promise<Response>
 
-export type ErrorHandler<
-  P extends string = string,
-  E extends Partial<Environment> = Environment,
-  S extends Partial<Schema> = Schema
-> = (err: Error, c: Context<P, E, S>) => Response
+export type ErrorHandler<E extends Partial<Environment> = Environment> = (
+  err: Error,
+  c: Context<string, E>
+) => Response
 
 export type Next = () => Promise<void>
 

@@ -1,12 +1,12 @@
-import type { Context } from './context'
-import { HonoContext } from './context'
+//import type { Context } from './context'
+import { Context } from './context'
 
 describe('Context', () => {
   const req = new Request('http://localhost/')
 
   let c: Context
   beforeEach(() => {
-    c = new HonoContext(req)
+    c = new Context(req)
   })
 
   it('c.text()', async () => {
@@ -136,14 +136,14 @@ describe('Context', () => {
   it('Should be able read env', async () => {
     const req = new Request('http://localhost/')
     const key = 'a-secret-key'
-    const ctx = new HonoContext(req, {
+    const ctx = new Context(req, {
       API_KEY: key,
     })
     expect(ctx.env.API_KEY).toBe(key)
   })
 
   it('set and set', async () => {
-    const ctx = new HonoContext(req)
+    const ctx = new Context(req)
     expect(ctx.get('k-foo')).toEqual(undefined)
     ctx.set('k-foo', 'v-foo')
     expect(ctx.get('k-foo')).toEqual('v-foo')
@@ -153,7 +153,7 @@ describe('Context', () => {
   })
 
   it('has res object by default', async () => {
-    c = new HonoContext(req)
+    c = new Context(req)
     c.res.headers.append('foo', 'bar')
     const res = c.text('foo')
     expect(res.headers.get('foo')).not.toBeNull()
@@ -165,7 +165,7 @@ describe('Context header', () => {
   const req = new Request('http://localhost/')
   let c: Context
   beforeEach(() => {
-    c = new HonoContext(req)
+    c = new Context(req)
   })
   it('Should return only one content-type value', async () => {
     c.header('Content-Type', 'foo')

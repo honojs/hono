@@ -1,6 +1,5 @@
 import { compose } from './compose.ts'
-import type { Context } from './context.ts'
-import { HonoContext } from './context.ts'
+import { Context } from './context.ts'
 import { extendRequestPrototype } from './request.ts'
 import type { Router } from './router.ts'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router.ts'
@@ -100,21 +99,22 @@ export class Hono<
     Object.assign(this, init)
   }
 
-  private notFoundHandler: NotFoundHandler<P, E, S> = (c: Context<P, E, S>) => {
+  private notFoundHandler: NotFoundHandler<E> = (c: Context<string, E>) => {
     return c.text('404 Not Found', 404)
   }
 
-  private errorHandler: ErrorHandler<P, E, S> = (err: Error, c: Context<P, E, S>) => {
+  private errorHandler: ErrorHandler<E> = (err: Error, c: Context<string, E>) => {
     console.trace(err.message)
     const message = 'Internal Server Error'
     return c.text(message, 500)
   }
 
-  route(path: string, app?: Hono<E, P, S>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  route(path: string, app?: Hono<any>) {
     this._tempPath = path
     if (app) {
       app.routes.map((r) => {
-        this.addRoute(r.method, r.path, r.handler)
+        this.addRoute(r.method, r.path, r.handler as unknown as Handler<P, E>)
       })
       this._tempPath = ''
     }
@@ -140,12 +140,12 @@ export class Hono<
     return this
   }
 
-  onError(handler: ErrorHandler<P, E, S>) {
+  onError(handler: ErrorHandler<E>) {
     this.errorHandler = handler
     return this
   }
 
-  notFound(handler: NotFoundHandler<P, E, S>) {
+  notFound(handler: NotFoundHandler<E>) {
     this.notFoundHandler = handler
     return this
   }
@@ -164,7 +164,7 @@ export class Hono<
     return this.router.match(method, path)
   }
 
-  private handleError(err: unknown, c: Context<P, E, S>) {
+  private handleError(err: unknown, c: Context<string, E, S>) {
     if (err instanceof Error) {
       return this.errorHandler(err, c)
     }
@@ -182,7 +182,7 @@ export class Hono<
     const result = this.matchRoute(method, path)
     request.paramData = result?.params
 
-    const c = new HonoContext<P, E, S>(request, env, eventOrExecutionCtx, this.notFoundHandler)
+    const c = new Context<string, E, S>(request, env, eventOrExecutionCtx, this.notFoundHandler)
 
     // Do not `compose` if it has only one handler
     if (result && result.handlers.length === 1) {
@@ -213,11 +213,7 @@ export class Hono<
     }
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
-    const composed = compose<HonoContext<P, E, S>, P, E, S>(
-      handlers,
-      this.notFoundHandler,
-      this.errorHandler
-    )
+    const composed = compose<Context<P, E, S>, E>(handlers, this.notFoundHandler, this.errorHandler)
 
     return (async () => {
       try {

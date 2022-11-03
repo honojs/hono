@@ -61,7 +61,6 @@ describe('Basic - queries', () => {
   it('Should be invalid - ids', async () => {
     const validator = v.queries('ids').isRequired()
     const results = await validator.validate(req)
-    console.log(results)
     expect(results[0].isValid).toBe(true)
     expect(results[1].isValid).toBe(false)
     expect(results[1].message).toBe(

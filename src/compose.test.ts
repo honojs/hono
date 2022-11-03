@@ -1,6 +1,5 @@
 import { compose } from './compose'
-import type { Context } from './context'
-import { HonoContext } from './context'
+import { Context } from './context'
 import { extendRequestPrototype } from './request'
 
 extendRequestPrototype()
@@ -85,7 +84,7 @@ describe('Handler and middlewares', () => {
   const middleware: Function[] = []
 
   const req = new Request('http://localhost/')
-  const c: Context = new HonoContext(req)
+  const c: Context = new Context(req)
 
   const mHandlerFoo = async (c: Context, next: Function) => {
     c.req.headers.append('x-header-foo', 'foo')
@@ -121,7 +120,7 @@ describe('compose with Context - 200 success', () => {
   const middleware: Function[] = []
 
   const req = new Request('http://localhost/')
-  const c: Context = new HonoContext(req)
+  const c: Context = new Context(req)
   const handler = (c: Context) => {
     return c.text('Hello')
   }
@@ -145,7 +144,7 @@ describe('compose with Context - 404 not found', () => {
   const middleware: Function[] = []
 
   const req = new Request('http://localhost/')
-  const c: Context = new HonoContext(req)
+  const c: Context = new Context(req)
   const onNotFound = (c: Context) => {
     return c.text('onNotFound', 404)
   }
@@ -169,7 +168,7 @@ describe('compose with Context - 401 not authorized', () => {
   const middleware: Function[] = []
 
   const req = new Request('http://localhost/')
-  const c: Context = new HonoContext(req)
+  const c: Context = new Context(req)
   const handler = (c: Context, _next: Function) => {
     return c.text('Hello')
   }
@@ -195,7 +194,7 @@ describe('compose with Context - next() below', () => {
   const middleware: Function[] = []
 
   const req = new Request('http://localhost/')
-  const c: Context = new HonoContext(req)
+  const c: Context = new Context(req)
   const handler = (c: Context) => {
     const message = c.req.header('x-custom') || 'blank'
     return c.text(message)
@@ -222,7 +221,7 @@ describe('compose with Context - 500 error', () => {
   const middleware: Function[] = []
 
   const req = new Request('http://localhost/')
-  const c: Context = new HonoContext(req)
+  const c: Context = new Context(req)
 
   it('Error on handler', async () => {
     const handler = () => {
@@ -271,7 +270,7 @@ describe('compose with Context - 500 error', () => {
 })
 describe('compose with Context - not finalized', () => {
   const req = new Request('http://localhost/')
-  const c: Context = new HonoContext(req)
+  const c: Context = new Context(req)
   const onNotFound = (c: Context) => {
     return c.text('onNotFound', 404)
   }
