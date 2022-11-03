@@ -1,3 +1,4 @@
+import { HonoContext } from '../deno_dist/context.ts'
 import { Hono } from '../deno_dist/mod.ts'
 import { assertEquals } from './deps.ts'
 
@@ -16,4 +17,10 @@ Deno.test('Hello World', async () => {
   assertEquals(await res.text(), 'Hello Deno!')
   assertEquals(res.headers.get('x-param'), 'foo')
   assertEquals(res.headers.get('x-query'), 'bar')
+})
+
+
+Deno.test('runtime', async () => {
+  const c = new HonoContext(new Request('http://localhost/'))
+  assertEquals(c.runtime, 'deno')
 })
