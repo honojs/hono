@@ -178,7 +178,7 @@ describe('Routing', () => {
       three.get('/hi', (c) => c.text('hi'))
       one.route('/two', two)
       two.route('/three', three)
-  
+
       const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
       expect(status).toBe(404)
     })
@@ -187,7 +187,7 @@ describe('Routing', () => {
       two.route('/three', three)
       three.get('/hi', (c) => c.text('hi'))
       one.route('/two', two)
-  
+
       const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
       expect(status).toBe(404)
     })
@@ -196,7 +196,7 @@ describe('Routing', () => {
       two.route('/three', three)
       one.route('/two', two)
       three.get('/hi', (c) => c.text('hi'))
-  
+
       const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
       expect(status).toBe(404)
     })
@@ -205,7 +205,7 @@ describe('Routing', () => {
       one.route('/two', two)
       three.get('/hi', (c) => c.text('hi'))
       two.route('/three', three)
-  
+
       const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
       expect(status).toBe(404)
     })
@@ -214,7 +214,7 @@ describe('Routing', () => {
       one.route('/two', two)
       two.route('/three', three)
       three.get('/hi', (c) => c.text('hi'))
-  
+
       const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
       expect(status).toBe(404)
     })
@@ -1263,5 +1263,16 @@ describe('Handler as variables', () => {
     const res = await app.request('http://localhost/posts/123')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Post id is 123')
+  })
+})
+
+describe.only('Show routes', () => {
+  const app = new Hono()
+  jest.spyOn(console, 'log')
+  it('Should call `console.log()` with `app.showRoutes()`', async () => {
+    app.get('/', (c) => c.text('/'))
+    app.get('/foo', (c) => c.text('/'))
+    app.showRoutes()
+    expect(console.log).toBeCalled()
   })
 })
