@@ -198,10 +198,6 @@ export class Context<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const global = globalThis as any
 
-    if (global?.process?.title === 'node') {
-      return 'node'
-    }
-
     if (global?.Deno !== undefined) {
       return 'deno'
     }
@@ -220,6 +216,10 @@ export class Context<
 
     if (typeof global?.EdgeRuntime !== 'string') {
       return 'vercel'
+    }
+
+    if (global?.process?.title === 'node') {
+      return 'node'
     }
 
     return 'other'
