@@ -38,7 +38,7 @@ declare global {
     parseBody<BodyType extends BodyData>(): Promise<BodyType>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     jsonData?: any
-    json<JSONData = unknown>(): Promise<Partial<JSONData>>
+    json<T>(): Promise<T>
     data: Data
     valid: {
       (key: string | string[], value: unknown): Data
