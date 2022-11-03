@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test'
+import { HonoContext } from '../src/context'
 import { Hono } from '../src/index'
 import { basicAuth } from '../src/middleware/basic-auth'
 import { jwt } from '../src/middleware/jwt'
@@ -22,6 +23,11 @@ describe('Basic', () => {
     expect(await res.text()).toBe('Hello Deno!')
     expect(res.headers.get('x-param')).toBe('foo')
     expect(res.headers.get('x-query')).toBe('bar')
+  })
+
+  it('returns current runtime (bun)', async () => {
+    const c = new HonoContext(new Request('http://localhost/'))
+    expect(c.runtime).toBe('bun')
   })
 })
 
