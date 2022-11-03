@@ -9,50 +9,11 @@ type Headers = Record<string, string | string[]>
 type Runtime = 'node' | 'deno' | 'bun' | 'cloudflare' | 'fastly' | 'vercel' | 'other'
 export type Data = string | ArrayBuffer | ReadableStream
 
-export interface Context<
+export class Context<
   P extends string = string,
   E extends Partial<Environment> = Environment,
   S extends Partial<Schema> | unknown = Schema
 > {
-  req: Request<P, S extends Schema ? SchemaToProp<S> : any>
-  env: E['Bindings']
-  event: FetchEvent
-  executionCtx: ExecutionContext
-  finalized: boolean
-  error: Error | undefined
-
-  get res(): Response
-  set res(_res: Response)
-  header: (name: string, value: string, options?: { append?: boolean }) => void
-  status: (status: StatusCode) => void
-  set: {
-    <Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
-    <Key extends keyof E['Variables']>(key: Key, value: E['Variables'][Key]): void
-    (key: string, value: unknown): void
-  }
-  get: {
-    <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
-    <Key extends keyof E['Variables']>(key: Key): E['Variables'][Key]
-    <T = any>(key: string): T
-  }
-  pretty: (prettyJSON: boolean, space?: number) => void
-  newResponse: (data: Data | null, status: StatusCode, headers: Headers) => Response
-  body: (data: Data | null, status?: StatusCode, headers?: Headers) => Response
-  text: (text: string, status?: StatusCode, headers?: Headers) => Response
-  json: <T>(object: T, status?: StatusCode, headers?: Headers) => Response
-  html: (html: string, status?: StatusCode, headers?: Headers) => Response
-  redirect: (location: string, status?: StatusCode) => Response
-  cookie: (name: string, value: string, options?: CookieOptions) => void
-  notFound: () => Response | Promise<Response>
-  get runtime(): Runtime
-}
-
-export class HonoContext<
-  P extends string = string,
-  E extends Partial<Environment> = Environment,
-  S extends Partial<Schema> = Schema
-> implements Context<P, E, S>
-{
   req: Request<P, S extends Schema ? SchemaToProp<S> : any>
   env: E['Bindings']
   finalized: boolean
@@ -65,13 +26,13 @@ export class HonoContext<
   private _map: Record<string, unknown> | undefined
   private _headers: Record<string, string[]> | undefined
   private _res: Response | undefined
-  private notFoundHandler: NotFoundHandler<P, E, S>
+  private notFoundHandler: NotFoundHandler<E>
 
   constructor(
     req: Request<P>,
     env: E['Bindings'] = {},
     executionCtx: FetchEvent | ExecutionContext | undefined = undefined,
-    notFoundHandler: NotFoundHandler<P, E, S> = () => new Response()
+    notFoundHandler: NotFoundHandler<E> = () => new Response()
   ) {
     this._executionCtx = executionCtx
     this.req = req as Request<P, S extends Schema ? SchemaToProp<S> : any>
@@ -230,7 +191,7 @@ export class HonoContext<
   }
 
   notFound(): Response | Promise<Response> {
-    return this.notFoundHandler(this)
+    return this.notFoundHandler(this as unknown as Context<string, E>)
   }
 
   get runtime(): Runtime {
