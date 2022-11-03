@@ -20,7 +20,7 @@ Deno.test('Hello World', async () => {
 })
 
 
-Deno.test('platform', async () => {
+Deno.test('runtime', async () => {
   const c = new HonoContext(new Request('http://localhost/'))
-  assertEquals(c.platform, 'deno')
+  assertEquals(c.runtime, 'deno')
 })

@@ -25,9 +25,9 @@ describe('Basic', () => {
     expect(res.headers.get('x-query')).toBe('bar')
   })
 
-  it('returns current platform (bun)', async () => {
+  it('returns current runtime (bun)', async () => {
     const c = new HonoContext(new Request('http://localhost/'))
-    expect(c.platform).toBe('bun')
+    expect(c.runtime).toBe('bun')
   })
 })
 

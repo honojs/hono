@@ -160,9 +160,9 @@ describe('Context', () => {
     expect(res.headers.get('foo')).toBe('bar')
   })
 
-  it('returns current platform (node)', async () => {
+  it('returns current runtime (node)', async () => {
     c = new HonoContext(req)
-    expect(c.platform).toBe('node')
+    expect(c.runtime).toBe('node')
   })
 })
 
