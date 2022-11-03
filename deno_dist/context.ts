@@ -6,6 +6,7 @@ import type { Schema, SchemaToProp } from './validator/schema.ts'
 
 type HeaderField = [string, string]
 type Headers = Record<string, string | string[]>
+type Runtime = 'node' | 'deno' | 'bun' | 'cloudflare' | 'fastly' | 'vercel' | 'other'
 export type Data = string | ArrayBuffer | ReadableStream
 
 export class Context<
@@ -191,5 +192,36 @@ export class Context<
 
   notFound(): Response | Promise<Response> {
     return this.notFoundHandler(this as unknown as Context<string, E>)
+  }
+
+  get runtime(): Runtime {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const global = globalThis as any
+
+    if (global?.process?.title === 'node') {
+      return 'node'
+    }
+
+    if (global?.Deno !== undefined) {
+      return 'deno'
+    }
+
+    if (global?.Bun !== undefined) {
+      return 'bun'
+    }
+
+    if (typeof global?.WebSocketPair === 'function') {
+      return 'cloudflare'
+    }
+
+    if (global?.fastly !== undefined) {
+      return 'fastly'
+    }
+
+    if (typeof global?.EdgeRuntime !== 'string') {
+      return 'vercel'
+    }
+
+    return 'other'
   }
 }

@@ -239,7 +239,7 @@ export class Hono<
     return this.dispatch(request, executionCtx, Environment)
   }
 
-  request = async (input: RequestInfo, requestInit?: RequestInit) => {
+  request = async (input: Request | string, requestInit?: RequestInit) => {
     const req = input instanceof Request ? input : new Request(input, requestInit)
     return await this.fetch(req)
   }

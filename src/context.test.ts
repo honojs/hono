@@ -159,6 +159,11 @@ describe('Context', () => {
     expect(res.headers.get('foo')).not.toBeNull()
     expect(res.headers.get('foo')).toBe('bar')
   })
+
+  it('returns current runtime (node)', async () => {
+    c = new Context(req)
+    expect(c.runtime).toBe('node')
+  })
 })
 
 describe('Context header', () => {
