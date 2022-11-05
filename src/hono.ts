@@ -150,6 +150,15 @@ export class Hono<
     return this
   }
 
+  showRoutes() {
+    const length = 8
+    this.routes.map((route) => {
+      console.log(
+        `\x1b[32m${route.method}\x1b[0m ${' '.repeat(length - route.method.length)} ${route.path}`
+      )
+    })
+  }
+
   private addRoute(method: string, path: string, handler: Handler<P, E, S>) {
     method = method.toUpperCase()
     if (this._tempPath) {
