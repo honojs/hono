@@ -1285,3 +1285,14 @@ describe('Handler as variables', () => {
     expect(await res.text()).toBe('Post id is 123')
   })
 })
+
+describe.only('Show routes', () => {
+  const app = new Hono()
+  jest.spyOn(console, 'log')
+  it('Should call `console.log()` with `app.showRoutes()`', async () => {
+    app.get('/', (c) => c.text('/'))
+    app.get('/foo', (c) => c.text('/'))
+    app.showRoutes()
+    expect(console.log).toBeCalled()
+  })
+})
