@@ -88,7 +88,7 @@ export class RegExpRouter<T> implements Router<T> {
       throw new Error('Can not add a route since the matcher is already built.')
     }
 
-    if (!methodNames.find((m) => m === method)) methodNames.push(method.toLocaleUpperCase())
+    if (!methodNames.includes(method)) methodNames.push(method)
 
     if (path === '/*') {
       path = '*'
