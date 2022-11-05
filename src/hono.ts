@@ -202,11 +202,11 @@ export class Hono<
         let awaited: Response | undefined | void
         try {
           awaited = await res
+          if (!awaited) {
+            return this.notFoundHandler(c)
+          }
         } catch (err) {
           return this.handleError(err, c)
-        }
-        if (!awaited) {
-          return this.notFoundHandler(c)
         }
         return awaited
       })()

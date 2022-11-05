@@ -178,7 +178,7 @@ describe('Routing', () => {
       three.get('/hi', (c) => c.text('hi'))
       one.route('/two', two)
       two.route('/three', three)
-  
+
       const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
       expect(status).toBe(404)
     })
@@ -187,7 +187,7 @@ describe('Routing', () => {
       two.route('/three', three)
       three.get('/hi', (c) => c.text('hi'))
       one.route('/two', two)
-  
+
       const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
       expect(status).toBe(404)
     })
@@ -196,7 +196,7 @@ describe('Routing', () => {
       two.route('/three', three)
       one.route('/two', two)
       three.get('/hi', (c) => c.text('hi'))
-  
+
       const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
       expect(status).toBe(404)
     })
@@ -205,7 +205,7 @@ describe('Routing', () => {
       one.route('/two', two)
       three.get('/hi', (c) => c.text('hi'))
       two.route('/three', three)
-  
+
       const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
       expect(status).toBe(404)
     })
@@ -214,7 +214,7 @@ describe('Routing', () => {
       one.route('/two', two)
       two.route('/three', three)
       three.get('/hi', (c) => c.text('hi'))
-  
+
       const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
       expect(status).toBe(404)
     })
@@ -669,6 +669,26 @@ describe('Error handling in middleware', () => {
     expect(await res.text()).toBe(
       'Handle the error in middleware with async, original message is Error message'
     )
+  })
+
+  describe('Error in `notFound()`', () => {
+    const app = new Hono()
+
+    app.use('*', async () => {})
+
+    app.notFound(() => {
+      throw new Error('Error in Not Found')
+    })
+
+    app.onError((err, c) => {
+      return c.text(err.message, 400)
+    })
+
+    it('Should handle the error thrown in `notFound()``', async () => {
+      const res = await app.request('http://localhost/')
+      expect(res.status).toBe(400)
+      expect(await res.text()).toBe('Error in Not Found')
+    })
   })
 })
 
