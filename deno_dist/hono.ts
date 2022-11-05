@@ -140,6 +140,15 @@ export class Hono<
     return this
   }
 
+  on(method: string, path: string, ...handlers: Handler<P, E, S>[]) {
+    if (!method) return this
+    this.path = path
+    handlers.map((handler) => {
+      this.addRoute(method.toUpperCase(), this.path, handler)
+    })
+    return this
+  }
+
   onError(handler: ErrorHandler<E>) {
     this.errorHandler = handler
     return this

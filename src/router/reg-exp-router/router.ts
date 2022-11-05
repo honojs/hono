@@ -6,7 +6,7 @@ import { PATH_ERROR } from './node'
 import type { ParamMap } from './trie'
 import { Trie } from './trie'
 
-const METHOD_NAMES = [METHOD_NAME_ALL, ...METHODS].map((method) => method.toUpperCase())
+const methodNames = [METHOD_NAME_ALL, ...METHODS].map((method) => method.toUpperCase())
 
 type HandlerData<T> = [T[], ParamMap | null]
 type Matcher<T> = [RegExp, HandlerData<T>[]]
@@ -88,6 +88,8 @@ export class RegExpRouter<T> implements Router<T> {
       throw new Error('Can not add a route since the matcher is already built.')
     }
 
+    if (!methodNames.find((m) => m === method)) methodNames.push(method.toLocaleUpperCase())
+
     if (path === '/*') {
       path = '*'
     }
@@ -164,7 +166,7 @@ export class RegExpRouter<T> implements Router<T> {
   private buildAllMatchers(): Record<string, Matcher<T>> {
     const matchers: Record<string, Matcher<T>> = {}
 
-    METHOD_NAMES.forEach((method) => {
+    methodNames.forEach((method) => {
       matchers[method] = this.buildMatcher(method) || matchers[METHOD_NAME_ALL]
     })
 

@@ -16,6 +16,8 @@ export class StaticRouter<T> implements Router<T> {
   }
 
   add(method: string, path: string, handler: T) {
+    this.routes[method.toUpperCase()] ||= {}
+
     const { middleware, routes } = this
 
     if (path === '/*') {
