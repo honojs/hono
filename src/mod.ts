@@ -16,7 +16,13 @@ declare global {
   }
 }
 
-export type { Next, ContextVariableMap, MiddlewareHandler } from './types'
+export type {
+  Next,
+  ContextVariableMap,
+  MiddlewareHandler,
+  ErrorHandler,
+  NotFoundHandler,
+} from './types'
 import type { CustomHandler } from './types'
 export type { CustomHandler as Handler }
 export type { Context } from './context'
