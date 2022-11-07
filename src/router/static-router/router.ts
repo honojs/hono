@@ -15,8 +15,23 @@ export class StaticRouter<T> implements Router<T> {
     })
   }
 
+  private newRoute(): Record<string, Result<T>> {
+    const route: Record<string, Result<T>> = {}
+    const routeAll = this.routes[METHOD_NAME_ALL]
+    Object.keys(routeAll).forEach((path) => {
+      route[path] = {
+        handlers: [...routeAll[path].handlers],
+        params: {},
+      }
+    })
+
+    return route
+  }
+
   add(method: string, path: string, handler: T) {
     const { middleware, routes } = this
+
+    routes[method] ||= this.newRoute()
 
     if (path === '/*') {
       path = '*'
