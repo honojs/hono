@@ -6,6 +6,7 @@ describe('Basic Usage', () => {
 
   router.add('GET', '/hello', 'get hello')
   router.add('POST', '/hello', 'post hello')
+  router.add('PURGE', '/hello', 'purge hello')
 
   it('get, post hello', async () => {
     let res = router.match('GET', '/hello')
@@ -15,6 +16,10 @@ describe('Basic Usage', () => {
     res = router.match('POST', '/hello')
     expect(res).not.toBeNull()
     expect(res?.handlers).toEqual(['post hello'])
+
+    res = router.match('PURGE', '/hello')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['purge hello'])
 
     res = router.match('PUT', '/hello')
     expect(res).toBeNull()

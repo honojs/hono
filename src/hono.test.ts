@@ -3,6 +3,9 @@ import type { Context } from './context'
 import { Hono } from './hono'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
+import { RegExpRouter } from './router/reg-exp-router'
+import { StaticRouter } from './router/static-router'
+import { TrieRouter } from './router/trie-router'
 import type { Handler, Next } from './types'
 import type { Expect, Equal } from './utils/types'
 
@@ -864,6 +867,47 @@ describe('Hono with `app.route`', () => {
   })
 })
 
+describe('Using other methods with `app.on`', () => {
+  it('Should handle PURGE method with StaticRouter', async () => {
+    const app = new Hono({ router: new StaticRouter() })
+
+    app.on('PURGE', '/purge', (c) => c.text('Accepted', 202))
+
+    const req = new Request('http://localhost/purge', {
+      method: 'PURGE',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(202)
+    expect(await res.text()).toBe('Accepted')
+  })
+
+  it('Should handle PURGE method with RegExpRouter', async () => {
+    const app = new Hono({ router: new RegExpRouter() })
+
+    app.on('PURGE', '/purge', (c) => c.text('Accepted', 202))
+
+    const req = new Request('http://localhost/purge', {
+      method: 'PURGE',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(202)
+    expect(await res.text()).toBe('Accepted')
+  })
+
+  it('Should handle PURGE method with TrieRouter', async () => {
+    const app = new Hono({ router: new TrieRouter() })
+
+    app.on('PURGE', '/purge', (c) => c.text('Accepted', 202))
+
+    const req = new Request('http://localhost/purge', {
+      method: 'PURGE',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(202)
+    expect(await res.text()).toBe('Accepted')
+  })
+})
+
 describe('Multiple handler', () => {
   describe('handler + handler', () => {
     const app = new Hono()
@@ -1286,7 +1330,7 @@ describe('Handler as variables', () => {
   })
 })
 
-describe.only('Show routes', () => {
+describe('Show routes', () => {
   const app = new Hono()
   jest.spyOn(console, 'log')
   it('Should call `console.log()` with `app.showRoutes()`', async () => {
