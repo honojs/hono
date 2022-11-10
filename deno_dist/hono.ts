@@ -114,7 +114,7 @@ export class Hono<
     this._tempPath = path
     if (app) {
       app.routes.map((r) => {
-        this.addRoute(r.method, r.path, r.handler as unknown as Handler<P, E>)
+        this.addRoute(r.method, r.path, r.handler as unknown as Handler<P, E, S>)
       })
       this._tempPath = ''
     }
@@ -182,7 +182,7 @@ export class Hono<
     return this.router.match(method, path)
   }
 
-  private handleError(err: unknown, c: Context<string, E, S>) {
+  private handleError(err: unknown, c: Context<string, E>) {
     if (err instanceof Error) {
       return this.errorHandler(err, c)
     }
@@ -209,9 +209,9 @@ export class Hono<
 
       try {
         res = handler(c, async () => {})
-        if (!res) return this.notFoundHandler(c)
+        if (!res) return this.notFoundHandler(c as Context)
       } catch (err) {
-        return this.handleError(err, c)
+        return this.handleError(err, c as Context)
       }
 
       if (res instanceof Response) return res
@@ -221,10 +221,10 @@ export class Hono<
         try {
           awaited = await res
           if (!awaited) {
-            return this.notFoundHandler(c)
+            return this.notFoundHandler(c as Context)
           }
         } catch (err) {
-          return this.handleError(err, c)
+          return this.handleError(err, c as Context)
         }
         return awaited
       })()
@@ -244,7 +244,7 @@ export class Hono<
         }
         return context.res
       } catch (err) {
-        return this.handleError(err, c)
+        return this.handleError(err, c as Context)
       }
     })()
   }
