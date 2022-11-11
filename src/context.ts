@@ -12,9 +12,9 @@ export type Data = string | ArrayBuffer | ReadableStream
 export class Context<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  S extends Partial<Schema> | unknown = Schema
+  S extends Partial<Schema> = Schema
 > {
-  req: Request<P, S extends Schema ? SchemaToProp<S> : any>
+  req: Request<P, S extends Schema ? SchemaToProp<S> : S>
   env: E['Bindings']
   finalized: boolean
   error: Error | undefined = undefined
@@ -35,7 +35,7 @@ export class Context<
     notFoundHandler: NotFoundHandler<E> = () => new Response()
   ) {
     this._executionCtx = executionCtx
-    this.req = req as Request<P, S extends Schema ? SchemaToProp<S> : any>
+    this.req = req as Request<P, S extends Schema ? SchemaToProp<S> : S>
     this.env = env || ({} as Bindings)
 
     this.notFoundHandler = notFoundHandler

@@ -73,17 +73,7 @@ export interface CustomHandler<
         : E extends Partial<Schema>
         ? Partial<Environment>
         : Environment,
-      P extends Partial<Schema>
-        ? P
-        : E extends Partial<Schema>
-        ? P extends Partial<Environment>
-          ? E extends Partial<Environment>
-            ? unknown
-            : E
-          : unknown
-        : S extends Partial<Schema>
-        ? S
-        : never
+      S extends Schema ? S : P extends Schema ? P : E extends Schema ? E : any
     >,
     next: Next
   ): Response | Promise<Response | undefined | void>
