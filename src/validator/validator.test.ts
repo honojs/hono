@@ -815,3 +815,43 @@ describe('Custom rule', () => {
     )
   })
 })
+
+describe('Sanitizer', () => {
+  describe('built-in', () => {
+    test('trim', async () => {
+      const v = new Validator()
+  
+      const post = { name: ' a bc ' }
+  
+      const req = new Request('http://localhost/', {
+        method: 'POST',
+        body: JSON.stringify(post),
+      })
+  
+      const validator = v.json('name').trim()
+      const [result] = await validator.validate(req)
+  
+      expect(result.value).toBe('a bc')
+    })
+  })
+
+  test('custom', async () => {
+    const v = new Validator()
+
+    const post = { name: ' a bc ' }
+
+    const req = new Request('http://localhost/', {
+      method: 'POST',
+      body: JSON.stringify(post),
+    })
+
+    const validator = v
+      .json('name')
+      .addSanitizer((s: unknown) => `${s}`.replace(/\s/g, ''))
+      .addSanitizer((s: unknown) => `${s}`.toUpperCase())
+
+    const [results] = await validator.validate(req)
+
+    expect(results.value).toBe('ABC')
+  })
+})

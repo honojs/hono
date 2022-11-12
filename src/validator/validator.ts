@@ -242,6 +242,8 @@ export abstract class VBase {
       if (this._nested()) jsonData = dst
     }
 
+    value = this.sanitizeValue(value)
+
     const results: ValidateResult[] = []
 
     let typeRule = this.rules.shift()
@@ -270,6 +272,13 @@ export abstract class VBase {
     const prefix = 'should be'
     return this.isArray ? `${prefix} "${this.type}[]"` : `${prefix} "${this.type}"`
   }
+
+  private sanitizeValue = (value: Type) => (
+    this.sanitizers.reduce(
+      (acc, sanitizer) => sanitizer(acc),
+      value
+    )
+  )
 
   private validateRule(rule: Rule, value: Type): ValidateResult {
     let isValid: boolean = false
@@ -332,10 +341,6 @@ export abstract class VBase {
 
     if (Array.isArray(value)) {
       if (value.length === 0 && !this._optional) return false
-      // Sanitize
-      for (const sanitizer of this.sanitizers) {
-        value = value.map((innerVal: any) => sanitizer(innerVal)) as JSONArray
-      }
       for (const val of value) {
         if (!func(val)) {
           return false
@@ -343,10 +348,6 @@ export abstract class VBase {
       }
       return true
     } else {
-      // Sanitize
-      for (const sanitizer of this.sanitizers) {
-        value = sanitizer(value)
-      }
       if (!func(value)) {
         return false
       }
