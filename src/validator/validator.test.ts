@@ -816,44 +816,42 @@ describe('Custom rule', () => {
   })
 })
 
-describe.only('Sanitizer', () => {
-  test.only('trim', async () => {
+describe('Sanitizer', () => {
+  describe('built-in', () => {
+    test('trim', async () => {
+      const v = new Validator()
+  
+      const post = { name: ' a bc ' }
+  
+      const req = new Request('http://localhost/', {
+        method: 'POST',
+        body: JSON.stringify(post),
+      })
+  
+      const validator = v.json('name').trim()
+      const [result] = await validator.validate(req)
+  
+      expect(result.value).toBe('a bc')
+    })
+  })
+
+  test('custom', async () => {
     const v = new Validator()
 
-    const post = {
-      name: ' a bc ',
-    }
+    const post = { name: ' a bc ' }
 
     const req = new Request('http://localhost/', {
       method: 'POST',
       body: JSON.stringify(post),
     })
 
-    const validator1 = v.json('name')
-    expect(validator1.rules.length).toBe(1)
-    expect(validator1.sanitizers.length).toBe(0)
+    const validator = v
+      .json('name')
+      .addSanitizer((s: unknown) => `${s}`.replace(/\s/g, ''))
+      .addSanitizer((s: unknown) => `${s}`.toUpperCase())
 
-    const validator2 = v.json('name').trim()
-    expect(validator2.rules.length).toBe(1 + 0)
-    expect(validator2.sanitizers.length).toBe(0 + 1)
+    const [results] = await validator.validate(req)
 
-    const results1 = await validator1.validate(req)
-    const results2 = await validator2.validate(req)
-
-    expect(results1).toEqual(results2)
-    expect(results1).toMatchInlineSnapshot(`
-      [
-        {
-          "isValid": true,
-          "jsonData": undefined,
-          "key": "name",
-          "message": undefined,
-          "ruleName": "should be "string"",
-          "ruleType": "type",
-          "target": "json",
-          "value": " a bc ",
-        },
-      ]
-    `)
+    expect(results.value).toBe('ABC')
   })
 })
