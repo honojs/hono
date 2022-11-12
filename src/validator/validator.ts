@@ -164,13 +164,6 @@ export abstract class VBase {
     return this
   }
 
-  sanitizeValue = (value: Type) => (
-    this.sanitizers.reduce(
-      (acc, sanitizer) => sanitizer(acc),
-      value
-    )
-  )
-
   message = (text: string) => {
     const len = this.rules.length
     if (len >= 1) {
@@ -279,6 +272,13 @@ export abstract class VBase {
     const prefix = 'should be'
     return this.isArray ? `${prefix} "${this.type}[]"` : `${prefix} "${this.type}"`
   }
+
+  private sanitizeValue = (value: Type) => (
+    this.sanitizers.reduce(
+      (acc, sanitizer) => sanitizer(acc),
+      value
+    )
+  )
 
   private validateRule(rule: Rule, value: Type): ValidateResult {
     let isValid: boolean = false
