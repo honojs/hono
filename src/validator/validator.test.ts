@@ -815,3 +815,45 @@ describe('Custom rule', () => {
     )
   })
 })
+
+describe.only('Sanitizer', () => {
+  test.only('trim', async () => {
+    const v = new Validator()
+
+    const post = {
+      name: ' a bc ',
+    }
+
+    const req = new Request('http://localhost/', {
+      method: 'POST',
+      body: JSON.stringify(post),
+    })
+
+    const validator1 = v.json('name')
+    expect(validator1.rules.length).toBe(1)
+    expect(validator1.sanitizers.length).toBe(0)
+
+    const validator2 = v.json('name').trim()
+    expect(validator2.rules.length).toBe(1 + 0)
+    expect(validator2.sanitizers.length).toBe(0 + 1)
+
+    const results1 = await validator1.validate(req)
+    const results2 = await validator2.validate(req)
+
+    expect(results1).toEqual(results2)
+    expect(results1).toMatchInlineSnapshot(`
+      [
+        {
+          "isValid": true,
+          "jsonData": undefined,
+          "key": "name",
+          "message": undefined,
+          "ruleName": "should be "string"",
+          "ruleType": "type",
+          "target": "json",
+          "value": " a bc ",
+        },
+      ]
+    `)
+  })
+})
