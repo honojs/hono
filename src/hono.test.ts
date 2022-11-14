@@ -326,6 +326,12 @@ describe('param and query', () => {
       expect(await res.text()).toBe('id is 123')
     })
 
+    it('param of /entry/:id is decoded', async () => {
+      const res = await app.request('http://localhost/entry/%C3%A7awa%20y%C3%AE%3F')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('id is çawa yî?')
+    })
+
     it('param of /date/:date is found', async () => {
       const res = await app.request('http://localhost/date/0401')
       expect(res.status).toBe(200)
