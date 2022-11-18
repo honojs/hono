@@ -2,7 +2,7 @@
 
 ## v2.2.5 to v2.3.0
 
-There is a braking change associated to the security update.
+There is a breaking change associated to the security update.
 
 ### Basic Auth Middleware and Bearer Auth Middleware
 
