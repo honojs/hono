@@ -123,11 +123,11 @@ export class Hono<
 
   use<Path extends string = string, Data extends Partial<Schema> = Schema>(
     ...middleware: Handler<Path, E, Data>[]
-  ): Hono<E, Path, S>
+  ): Hono<E, P, S>
   use<Path extends string = string, Data extends Partial<Schema> = Schema>(
     arg1: string,
     ...middleware: Handler<Path, E, Data>[]
-  ): Hono<E, Path, S>
+  ): Hono<E, P, S>
   use(arg1: string | Handler<P, E, S>, ...handlers: Handler<P, E, S>[]) {
     if (typeof arg1 === 'string') {
       this.path = arg1
