@@ -159,6 +159,15 @@ describe('Routing', () => {
     expect(await res.text()).toBe('post /user/register')
   })
 
+  describe('Nested route with middleware', () => {
+    const api = new Hono()
+    const api2 = api.use('*', async (_c, next) => await next())
+
+    it('Should mount routes with no type errors', () => {
+      const app = new Hono().route('/api', api2)
+    })
+  })
+
   describe('Grouped route', () => {
     let one: Hono, two: Hono, three: Hono
 
