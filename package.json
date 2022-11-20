@@ -3,7 +3,6 @@
   "version": "2.5.2",
   "description": "Ultrafast web framework for Cloudflare Workers.",
   "main": "dist/cjs/index.js",
-  "type": "module",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -25,85 +24,106 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/cjs/index.js"
     },
     "./basic-auth": {
+      "types": "./dist/middleware/basic-auth/index.d.ts",
       "import": "./dist/middleware/basic-auth/index.js",
       "require": "./dist/cjs/middleware/basic-auth/index.js"
     },
     "./bearer-auth": {
+      "types": "./dist/middleware/bearer-auth/index.d.ts",
       "import": "./dist/middleware/bearer-auth/index.js",
       "require": "./dist/cjs/middleware/bearer-auth/index.js"
     },
     "./cache": {
+      "types": "./dist/middleware/cache/index.d.ts",
       "import": "./dist/middleware/cache/index.js",
       "require": "./dist/cjs/middleware/cache/index.js"
     },
     "./compress": {
+      "types": "./dist/middleware/compress/index.d.ts",
       "import": "./dist/middleware/compress/index.js",
       "require": "./dist/cjs/middleware/compress/index.js"
     },
     "./cors": {
+      "types": "./dist/middleware/cors/index.d.ts",
       "import": "./dist/middleware/cors/index.js",
       "require": "./dist/cjs/middleware/cors/index.js"
     },
     "./etag": {
+      "types": "./dist/middleware/etag/index.d.ts",
       "import": "./dist/middleware/etag/index.js",
       "require": "./dist/cjs/middleware/etag/index.js"
     },
     "./html": {
+      "types": "./dist/middleware/html/index.d.ts",
       "import": "./dist/middleware/html/index.js",
       "require": "./dist/cjs/middleware/html/index.js"
     },
     "./jsx": {
+      "types": "./dist/middleware/jsx/index.d.ts",
       "import": "./dist/middleware/jsx/index.js",
       "require": "./dist/cjs/middleware/jsx/index.js"
     },
     "./jsx/jsx-dev-runtime": {
+      "types": "./dist/middleware/jsx/jsx-dev-runtime.d.ts",
       "import": "./dist/middleware/jsx/jsx-dev-runtime.js",
       "require": "./dist/cjs/middleware/jsx/jsx-dev-runtime.js"
     },
     "./jsx/jsx-runtime": {
+      "types": "./dist/middleware/jsx/jsx-runtime.d.ts",
       "import": "./dist/middleware/jsx/jsx-runtime.js",
       "require": "./dist/cjs/middleware/jsx/jsx-runtime.js"
     },
     "./jwt": {
+      "types": "./dist/middleware/jwt/index.d.ts",
       "import": "./dist/middleware/jwt/index.js",
       "require": "./dist/cjs/middleware/jwt/index.js"
     },
     "./logger": {
+      "types": "./dist/middleware/logger/index.d.ts",
       "import": "./dist/middleware/logger/index.js",
       "require": "./dist/cjs/middleware/logger/index.js"
     },
     "./powered-by": {
+      "types": "./dist/middleware/powered-by/index.d.ts",
       "import": "./dist/middleware/powered-by/index.js",
       "require": "./dist/cjs/middleware/powered-by/index.js"
     },
     "./pretty-json": {
+      "types": "./dist/middleware/pretty-json/index.d.ts",
       "import": "./dist/middleware/pretty-json/index.js",
       "require": "./dist/cjs/middleware/pretty-json/index.js"
     },
     "./serve-static": {
+      "types": "./dist/middleware/serve-static/index.d.ts",
       "import": "./dist/middleware/serve-static/index.js",
       "require": "./dist/cjs/middleware/serve-static/index.js"
     },
     "./serve-static.bun": {
+      "types": "./dist/middleware/serve-static/bun.d.ts",
       "import": "./dist/middleware/serve-static/bun.js",
       "require": "./dist/cjs/middleware/serve-static/bun.js"
     },
     "./serve-static.module": {
+      "types": "./dist/middleware/serve-static/module.d.ts",
       "import": "./dist/middleware/serve-static/module.js"
     },
     "./validator": {
+      "types": "./dist/middleware/validator/index.d.ts",
       "import": "./dist/middleware/validator/index.js",
       "require": "./dist/cjs/middleware/validator/index.js"
     },
     "./router/reg-exp-router": {
+      "types": "./dist/router/reg-exp-router/index.d.ts",
       "import": "./dist/router/reg-exp-router/index.js",
       "require": "./dist/cjs/router/reg-exp-router/index.js"
     },
     "./router/smart-router": {
+      "types": "./dist/router/smart-router/index.d.ts",
       "import": "./dist/router/smart-router/index.js",
       "require": "./dist/cjs/router/smart-router/index.js"
     },
@@ -112,92 +132,19 @@
       "require": "./dist/cjs/router/static-router/index.js"
     },
     "./router/trie-router": {
+      "types": "./dist/router/trie-router/index.d.ts",
       "import": "./dist/router/trie-router/index.js",
       "require": "./dist/cjs/router/trie-router/index.js"
     },
     "./utils/jwt": {
+      "types": "./dist/utils/jwt/index.d.ts",
       "import": "./dist/utils/jwt/index.js",
       "require": "./dist/cjs/utils/jwt/index.js"
     },
     "./utils/*": {
+      "types": "./dist/utils/*.d.ts",
       "import": "./dist/utils/*.js",
       "require": "./dist/cjs/utils/*.js"
-    }
-  },
-  "typesVersions": {
-    "*": {
-      "basic-auth": [
-        "./dist/middleware/basic-auth"
-      ],
-      "bearer-auth": [
-        "./dist/middleware/bearer-auth"
-      ],
-      "cache": [
-        "./dist/middleware/cache"
-      ],
-      "compress": [
-        "./dist/middleware/compress"
-      ],
-      "cors": [
-        "./dist/middleware/cors"
-      ],
-      "etag": [
-        "./dist/middleware/etag"
-      ],
-      "html": [
-        "./dist/middleware/html"
-      ],
-      "jsx": [
-        "./dist/middleware/jsx"
-      ],
-      "jsx/jsx-runtime": [
-        "./dist/middleware/jsx/jsx-runtime.d.ts"
-      ],
-      "jsx/jsx-dev-runtime": [
-        "./dist/middleware/jsx/jsx-dev-runtime.d.ts"
-      ],
-      "jwt": [
-        "./dist/middleware/jwt"
-      ],
-      "logger": [
-        "./dist/middleware/logger"
-      ],
-      "powered-by": [
-        "./dist/middleware/powered-by"
-      ],
-      "pretty-json": [
-        "./dist/middleware/pretty-json"
-      ],
-      "serve-static": [
-        "./dist/middleware/serve-static/index.d.ts"
-      ],
-      "serve-static.bun": [
-        "./dist/middleware/serve-static/bun.d.ts"
-      ],
-      "serve-static.module": [
-        "./dist/middleware/serve-static/module.d.ts"
-      ],
-      "validator": [
-        "./dist/middleware/validator"
-      ],
-      "router/reg-exp-router": [
-        "./dist/router/reg-exp-router/router.d.ts"
-      ],
-      "router/smart-router": [
-        "./dist/router/smart-router/router.d.ts"
-      ],
-      "router/static-router": [
-        "./dist/router/static-router/router.d.ts"
-      ],
-      "router/trie-router": [
-        "./dist/router/trie-router/router.d.ts"
-      ],
-      "utils/jwt": [
-        "./dist/utils/jwt/index.d.ts"
-      ],
-      "utils/*": [
-        "./dist/utils/*"
-      ]
     }
   },
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
