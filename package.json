@@ -147,6 +147,82 @@
       "require": "./dist/cjs/utils/*.js"
     }
   },
+  "typesVersions": {
+    "*": {
+      "basic-auth": [
+        "./dist/middleware/basic-auth"
+      ],
+      "bearer-auth": [
+        "./dist/middleware/bearer-auth"
+      ],
+      "cache": [
+        "./dist/middleware/cache"
+      ],
+      "compress": [
+        "./dist/middleware/compress"
+      ],
+      "cors": [
+        "./dist/middleware/cors"
+      ],
+      "etag": [
+        "./dist/middleware/etag"
+      ],
+      "html": [
+        "./dist/middleware/html"
+      ],
+      "jsx": [
+        "./dist/middleware/jsx"
+      ],
+      "jsx/jsx-runtime": [
+        "./dist/middleware/jsx/jsx-runtime.d.ts"
+      ],
+      "jsx/jsx-dev-runtime": [
+        "./dist/middleware/jsx/jsx-dev-runtime.d.ts"
+      ],
+      "jwt": [
+        "./dist/middleware/jwt"
+      ],
+      "logger": [
+        "./dist/middleware/logger"
+      ],
+      "powered-by": [
+        "./dist/middleware/powered-by"
+      ],
+      "pretty-json": [
+        "./dist/middleware/pretty-json"
+      ],
+      "serve-static": [
+        "./dist/middleware/serve-static/index.d.ts"
+      ],
+      "serve-static.bun": [
+        "./dist/middleware/serve-static/bun.d.ts"
+      ],
+      "serve-static.module": [
+        "./dist/middleware/serve-static/module.d.ts"
+      ],
+      "validator": [
+        "./dist/middleware/validator"
+      ],
+      "router/reg-exp-router": [
+        "./dist/router/reg-exp-router/router.d.ts"
+      ],
+      "router/smart-router": [
+        "./dist/router/smart-router/router.d.ts"
+      ],
+      "router/static-router": [
+        "./dist/router/static-router/router.d.ts"
+      ],
+      "router/trie-router": [
+        "./dist/router/trie-router/router.d.ts"
+      ],
+      "utils/jwt": [
+        "./dist/utils/jwt/index.d.ts"
+      ],
+      "utils/*": [
+        "./dist/utils/*"
+      ]
+    }
+  },
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "license": "MIT",
   "repository": {
