@@ -1,3 +1,5 @@
+/// <reference types="@cloudflare/workers-types" />
+
 import type { MiddlewareHandler } from '../../types.ts'
 import { getContentFromKVAsset } from '../../utils/cloudflare.ts'
 import { getFilePath } from '../../utils/filepath.ts'

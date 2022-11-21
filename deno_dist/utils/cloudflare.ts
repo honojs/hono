@@ -1,3 +1,5 @@
+/// <reference types="@cloudflare/workers-types" />
+
 declare const __STATIC_CONTENT: KVNamespace
 declare const __STATIC_CONTENT_MANIFEST: string
 
@@ -38,10 +40,9 @@ export const getContentFromKVAsset = async (
     return null
   }
 
-  let content = await ASSET_NAMESPACE.get(key, { type: 'arrayBuffer' })
-
-  if (content) {
-    content = content as ArrayBuffer
+  const content = await ASSET_NAMESPACE.get(key, { type: 'arrayBuffer' })
+  if (!content) {
+    return null
   }
-  return content
+  return content as unknown as ArrayBuffer
 }

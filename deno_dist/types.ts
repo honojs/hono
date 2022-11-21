@@ -78,3 +78,8 @@ export interface CustomHandler<
     next: Next
   ): Response | Promise<Response | undefined | void>
 }
+
+export interface ExecutionContext {
+  waitUntil(promise: Promise<any>): void
+  passThroughOnException(): void
+}

@@ -16,6 +16,8 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
       return
     }
     const encoding = match[0]
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const stream = new CompressionStream(encoding as EncodingType)
     ctx.res = new Response(ctx.res.body.pipeThrough(stream), ctx.res)
     ctx.res.headers.set('Content-Encoding', encoding)

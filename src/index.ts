@@ -22,6 +22,8 @@ declare module './hono' {
 }
 
 Hono.prototype.fire = function () {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   addEventListener('fetch', (event: FetchEvent): void => {
     void event.respondWith(this.handleEvent(event))
   })

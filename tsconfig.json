@@ -12,10 +12,12 @@
     "strictNullChecks": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
+    "lib": [
+      "WebWorker"
+    ],
     "types": [
       "jest",
       "node",
-      "@cloudflare/workers-types"
     ],
     "jsx": "react",
     "jsxFactory": "jsx",
