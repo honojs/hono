@@ -1,5 +1,4 @@
-/// <reference types="@cloudflare/workers-types" />
-
+// @denoify-ignore
 declare const __STATIC_CONTENT: KVNamespace
 declare const __STATIC_CONTENT_MANIFEST: string
 
