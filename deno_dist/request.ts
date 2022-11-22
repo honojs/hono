@@ -8,6 +8,8 @@ type ValidatedData = Record<string, any>
 
 declare global {
   interface Request<
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    CfHostMetadata = unknown,
     ParamKeyType extends string = string,
     Data extends ValidatedData = ValidatedData
   > {
@@ -73,9 +75,10 @@ export function extendRequestPrototype() {
   Request.prototype.header = function (this: Request, name?: string) {
     if (!this.headerData) {
       this.headerData = {}
-      for (const [key, value] of this.headers) {
-        this.headerData[key] = value
-      }
+      this.headers.forEach((value, key) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.headerData![key] = value
+      })
     }
     if (name) {
       return this.headerData[name.toLowerCase()]

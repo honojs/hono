@@ -485,10 +485,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@cloudflare/workers-types@^3.16.0":
-  version "3.16.0"
-  resolved "https://registry.yarnpkg.com/@cloudflare/workers-types/-/workers-types-3.16.0.tgz#011658ca3f9810373e0eb4a2b5d6cabe4848d8d6"
-  integrity sha512-gaBUSaKS65mN3iKZEgichbXYEmAa/pXkc5Gbt+1BptYphdGkj09ggdsiE4w8g0F/uI1g36QaTKrzVnBAWMipvQ==
+"@cloudflare/workers-types@^4.20221111.1":
+  version "4.20221111.1"
+  resolved "https://registry.yarnpkg.com/@cloudflare/workers-types/-/workers-types-4.20221111.1.tgz#c3dbb5ef52cf5fab275803ece0424b205c78ad3e"
+  integrity sha512-BNV2wN8V6Zduvo7UzxcdjBbLQ906D2KhS804PDufLgx/sanGJCHVJMOIaLvS/b61JKtot1U7P/l1fjrjZ7/E3A==
 
 "@esbuild-kit/cjs-loader@^2.4.0":
   version "2.4.0"

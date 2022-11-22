@@ -3,14 +3,8 @@ import { Hono } from '../../hono'
 import { basicAuth } from '.'
 
 describe('Basic Auth by Middleware', () => {
-  const crypto = global.crypto
   let handlerExecuted: boolean
-  beforeAll(() => {
-    global.crypto = require('crypto').webcrypto
-  })
-  afterAll(() => {
-    global.crypto = crypto
-  })
+
   beforeEach(() => {
     handlerExecuted = false
   })

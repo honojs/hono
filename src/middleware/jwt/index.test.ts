@@ -3,14 +3,8 @@ import { jwt } from '.'
 
 describe('JWT', () => {
   describe('Credentials in header', () => {
-    const crypto = global.crypto
     let handlerExecuted: boolean
-    beforeAll(() => {
-      global.crypto = require('crypto').webcrypto
-    })
-    afterAll(() => {
-      global.crypto = crypto
-    })
+
     beforeEach(() => {
       handlerExecuted = false
     })
@@ -124,14 +118,8 @@ describe('JWT', () => {
   })
 
   describe('Credentials in cookie', () => {
-    const crypto = global.crypto
     let handlerExecuted: boolean
-    beforeAll(() => {
-      global.crypto = require('crypto').webcrypto
-    })
-    afterAll(() => {
-      global.crypto = crypto
-    })
+
     beforeEach(() => {
       handlerExecuted = false
     })
