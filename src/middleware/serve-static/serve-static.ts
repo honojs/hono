@@ -1,5 +1,4 @@
-/// <reference types="@cloudflare/workers-types" />
-
+// @denoify-ignore
 import type { MiddlewareHandler } from '../../types'
 import { getContentFromKVAsset } from '../../utils/cloudflare'
 import { getFilePath } from '../../utils/filepath'
