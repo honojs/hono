@@ -7,6 +7,7 @@ import { RegExpRouter } from './router/reg-exp-router/index.ts'
 import { SmartRouter } from './router/smart-router/index.ts'
 import { StaticRouter } from './router/static-router/index.ts'
 import { TrieRouter } from './router/trie-router/index.ts'
+import type { ExecutionContext } from './types.ts'
 import type { Handler, Environment, ParamKeys, ErrorHandler, NotFoundHandler } from './types.ts'
 import { getPathFromURL, mergePath } from './utils/url.ts'
 import type { Schema } from './validator/schema.ts'
@@ -78,10 +79,10 @@ export class Hono<
 
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
-      this[method] = <Path extends string, Env extends Environment, Data extends Schema>(
-        args1: Path | Handler<ParamKeys<Path>, Env, Data>,
-        ...args: [Handler<ParamKeys<Path>, Env, Data>]
-      ): this => {
+      this[method] = <Env extends Environment, Data extends Schema>(
+        args1: string | Handler<string, Env, Data>,
+        ...args: Handler<string, Env, Data>[]
+      ) => {
         if (typeof args1 === 'string') {
           this.path = args1
         } else {

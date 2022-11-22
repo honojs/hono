@@ -1,3 +1,4 @@
+import type { ExecutionContext } from './types.ts'
 import type { Environment, NotFoundHandler, ContextVariableMap, Bindings } from './types.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
@@ -14,7 +15,7 @@ export class Context<
   E extends Partial<Environment> = Environment,
   S extends Partial<Schema> = Schema
 > {
-  req: Request<P, S extends Schema ? SchemaToProp<S> : S>
+  req: Request<unknown, P, S extends Schema ? SchemaToProp<S> : S>
   env: E['Bindings']
   finalized: boolean
   error: Error | undefined = undefined
@@ -29,13 +30,13 @@ export class Context<
   private notFoundHandler: NotFoundHandler<E>
 
   constructor(
-    req: Request<P>,
+    req: Request<unknown, P>,
     env: E['Bindings'] = {},
     executionCtx: FetchEvent | ExecutionContext | undefined = undefined,
     notFoundHandler: NotFoundHandler<E> = () => new Response()
   ) {
     this._executionCtx = executionCtx
-    this.req = req as Request<P, S extends Schema ? SchemaToProp<S> : S>
+    this.req = req as unknown as Request<unknown, P, S extends Schema ? SchemaToProp<S> : S>
     this.env = env || ({} as Bindings)
 
     this.notFoundHandler = notFoundHandler
@@ -52,7 +53,7 @@ export class Context<
 
   get executionCtx(): ExecutionContext {
     if (this._executionCtx) {
-      return this._executionCtx
+      return this._executionCtx as ExecutionContext
     } else {
       throw Error('This context has no ExecutionContext')
     }

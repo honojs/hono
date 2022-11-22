@@ -22,12 +22,12 @@ Object.assign(global, {
 describe('Utils for Cloudflare Workers', () => {
   it('getContentFromKVAsset', async () => {
     let content = await getContentFromKVAsset('not-found.txt')
-    expect(content).toBeUndefined()
+    expect(content).toBeFalsy()
     content = await getContentFromKVAsset('index.html')
-    expect(content).not.toBeUndefined()
+    expect(content).toBeTruthy()
     expect(content).toBe('This is index')
     content = await getContentFromKVAsset('assets/static/plain.txt')
-    expect(content).not.toBeUndefined()
+    expect(content).toBeTruthy()
     expect(content).toBe('Asset text')
   })
 })

@@ -11,10 +11,10 @@ export async function parseBody<BodyType extends BodyData>(
       contentType === 'application/x-www-form-urlencoded')
   ) {
     const form: Record<string, string | File> = {}
-    body = [...(await r.formData())].reduce((acc, cur) => {
-      acc[cur[0]] = cur[1]
-      return acc
-    }, form)
+    ;(await r.formData()).forEach((value, key) => {
+      form[key] = value
+    })
+    body = form
   }
   return body as BodyType
 }
