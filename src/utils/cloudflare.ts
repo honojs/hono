@@ -1,4 +1,5 @@
 // @denoify-ignore
+import type { KVNamespace } from '@cloudflare/workers-types'
 declare const __STATIC_CONTENT: KVNamespace
 declare const __STATIC_CONTENT_MANIFEST: string
 
