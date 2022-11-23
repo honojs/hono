@@ -1,5 +1,5 @@
 import type { ExecutionContext } from './types.ts'
-import type { Environment, NotFoundHandler, ContextVariableMap, Bindings } from './types.ts'
+import type { Environment, NotFoundHandler, ContextVariableMap } from './types.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
 import type { StatusCode } from './utils/http-status.ts'
@@ -20,7 +20,7 @@ export class Context<
   finalized: boolean
   error: Error | undefined = undefined
 
-  _status: StatusCode = 200
+  private _status: StatusCode = 200
   private _executionCtx: FetchEvent | ExecutionContext | undefined
   private _pretty: boolean = false
   private _prettySpace: number = 2
@@ -36,8 +36,8 @@ export class Context<
     notFoundHandler: NotFoundHandler<E> = () => new Response()
   ) {
     this._executionCtx = executionCtx
-    this.req = req as unknown as Request<unknown, P, S extends Schema ? SchemaToProp<S> : S>
-    this.env = env || ({} as Bindings)
+    this.req = req as Request<unknown, P, S extends Schema ? SchemaToProp<S> : S>
+    this.env = env
 
     this.notFoundHandler = notFoundHandler
     this.finalized = false
@@ -124,7 +124,7 @@ export class Context<
 
   newResponse(data: Data | null, status: StatusCode, headers: Headers = {}): Response {
     return new Response(data, {
-      status: status || this._status || 200,
+      status,
       headers: this._finalizeHeaders(headers),
     })
   }
@@ -164,7 +164,7 @@ export class Context<
 
   text(text: string, status: StatusCode = this._status, headers: Headers = {}): Response {
     headers['content-type'] = 'text/plain; charset=UTF-8'
-    return this.body(text, status, headers)
+    return this.newResponse(text, status, headers)
   }
 
   json<T>(object: T, status: StatusCode = this._status, headers: Headers = {}): Response {
@@ -172,12 +172,12 @@ export class Context<
       ? JSON.stringify(object, null, this._prettySpace)
       : JSON.stringify(object)
     headers['content-type'] = 'application/json; charset=UTF-8'
-    return this.body(body, status, headers)
+    return this.newResponse(body, status, headers)
   }
 
   html(html: string, status: StatusCode = this._status, headers: Headers = {}): Response {
     headers['content-type'] = 'text/html; charset=UTF-8'
-    return this.body(html, status, headers)
+    return this.newResponse(html, status, headers)
   }
 
   redirect(location: string, status: StatusCode = 302): Response {
