@@ -3,6 +3,7 @@
   "version": "2.5.5",
   "description": "Ultrafast web framework for Cloudflare Workers, Deno, and Bun.",
   "main": "dist/cjs/index.js",
+  "type": "module",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
