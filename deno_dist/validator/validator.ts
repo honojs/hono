@@ -88,27 +88,28 @@ export class VArray<T extends Schema> extends VObjectBase<T> {
 }
 
 export class Validator {
-  isArray: boolean = false
+  constructor(private inArray: boolean = false) {}
+
   query = (key: string): VString => new VString({ target: 'query', key: key })
   queries = (key: string): VStringArray => new VStringArray({ target: 'queries', key: key })
   header = (key: string): VString => new VString({ target: 'header', key: key })
   body = (key: string): VString => new VString({ target: 'body', key: key })
   json = (key: string) => {
-    if (this.isArray) {
+    if (this.inArray) {
       return new VStringArray({ target: 'json', key: key })
     } else {
       return new VString({ target: 'json', key: key })
     }
   }
-  array = <T extends Schema>(path: string, validator: (v: Validator) => T): VArray<T> => {
-    this.isArray = true
-    const res = validator(this)
+  array = <T extends Schema>(path: string, validatorFn: (v: Validator) => T): VArray<T> => {
+    const validator = new Validator(true)
+    const res = validatorFn(validator)
     const arr = new VArray(res, path)
     return arr
   }
-  object = <T extends Schema>(path: string, validator: (v: Validator) => T): VObject<T> => {
-    this.isArray = false
-    const res = validator(this)
+  object = <T extends Schema>(path: string, validatorFn: (v: Validator) => T): VObject<T> => {
+    const validator = new Validator(this.inArray)
+    const res = validatorFn(validator)
     const obj = new VObject(res, path)
     return obj
   }
