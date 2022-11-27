@@ -730,6 +730,76 @@ describe('Nested objects', () => {
       expect(results[0].message).toBe(`${messages[i]}`)
     }
   })
+
+  it('Should threat `v.json()` as a nested array type only inside an array', async () => {
+    const json = {
+      blog: {
+        totalPosts: '3',
+        posts: [
+          {
+            id: 123,
+            title: 'JavaScript',
+            author: {
+              name: 'foo',
+            },
+          },
+          {
+            id: '456',
+            title: 'Framework',
+            author: {
+              name: 'bar',
+            },
+          },
+          {
+            id: 789,
+            title: 'Hono',
+            author: {
+              name: 'baz',
+            },
+          },
+        ],
+        highlightedPostId: '123',
+      }
+    }
+  
+    const req = new Request('http://localhost/', {
+      method: 'POST',
+      body: JSON.stringify(json),
+    })
+
+    const v = new Validator()
+    const vObject = v.object('blog', v => ({
+      totalPosts: v.json('totalPosts').asNumber(),
+      posts: v.array('posts', v => ({
+        id: v.json('id').asNumber(),
+        title: v.json('title'),
+        author: v.object('author', v => ({
+          name: v.json('name'),
+        }))
+      })),
+      highlightedPostId: v.json('highlightedPostId').asNumber(),
+    }))
+
+    const validators = vObject.getValidators()
+
+    const totalPostsResult = await validators[0].validate(req)
+    expect(totalPostsResult[0].isValid).toBe(false)
+    expect(totalPostsResult[0].message).toBe('Invalid Value [3]: the JSON body "blog.totalPosts" is invalid - should be "number"')
+
+    const postsIdResult = await validators[1].validate(req)
+    expect(postsIdResult[0].isValid).toBe(false)
+    expect(postsIdResult[0].message).toBe('Invalid Value [123, "456", 789]: the JSON body "blog.posts.[*].id" is invalid - should be "number[]"')
+
+    const postsTitleResult = await validators[2].validate(req)
+    expect(postsTitleResult[0].isValid).toBe(true)
+
+    const postAuthorResult = await validators[3].validate(req)
+    expect(postAuthorResult[0].isValid).toBe(true)
+
+    const highlightedPostResult = await validators[4].validate(req)
+    expect(highlightedPostResult[0].isValid).toBe(false)
+    expect(highlightedPostResult[0].message).toBe('Invalid Value [123]: the JSON body "blog.highlightedPostId" is invalid - should be "number"')
+  })
 })
 
 describe('Custom message', () => {
