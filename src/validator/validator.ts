@@ -87,8 +87,8 @@ export class VArray<T extends Schema> extends VObjectBase<T> {
   }
 }
 
-class RecursiveValidator {
-  constructor(private inArray: boolean) {}
+export class Validator {
+  constructor(private inArray: boolean = false) {}
 
   query = (key: string): VString => new VString({ target: 'query', key: key })
   queries = (key: string): VStringArray => new VStringArray({ target: 'queries', key: key })
@@ -102,21 +102,17 @@ class RecursiveValidator {
     }
   }
   array = <T extends Schema>(path: string, validatorFn: (v: Validator) => T): VArray<T> => {
-    const validator = new RecursiveValidator(true)
+    const validator = new Validator(true)
     const res = validatorFn(validator)
     const arr = new VArray(res, path)
     return arr
   }
   object = <T extends Schema>(path: string, validatorFn: (v: Validator) => T): VObject<T> => {
-    const validator = new RecursiveValidator(this.inArray)
+    const validator = new Validator(this.inArray)
     const res = validatorFn(validator)
     const obj = new VObject(res, path)
     return obj
   }
-}
-
-export class Validator extends RecursiveValidator {
-  constructor() { super(false) }
 }
 
 type VOptions = {
