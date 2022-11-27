@@ -104,10 +104,10 @@ export class Validator {
     this.isArray = true
     const res = validator(this)
     const arr = new VArray(res, path)
+    this.isArray = false
     return arr
   }
   object = <T extends Schema>(path: string, validator: (v: Validator) => T): VObject<T> => {
-    this.isArray = false
     const res = validator(this)
     const obj = new VObject(res, path)
     return obj
