@@ -106,10 +106,18 @@ export class RegExpRouter<T> implements Router<T> {
       Object.keys(middleware).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
           Object.keys(middleware[m]).forEach((p) => {
-            ;(path === '*' || path === p) && middleware[m][p].push(handler)
+            ;(path === '*' || re.test(p)) && middleware[m][p].push(handler)
           })
         }
       })
+      if (method !== METHOD_NAME_ALL) {
+        Object.keys(middleware[METHOD_NAME_ALL]).forEach((p) => {
+          if (!middleware[method][p] && (path === '*' || re.test(p))) {
+            middleware[method][p] = [...middleware[METHOD_NAME_ALL][p], handler]
+          }
+        })
+      }
+
       Object.keys(routes).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
           Object.keys(routes[m]).forEach(
