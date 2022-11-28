@@ -25,6 +25,8 @@ function buildMatcherFromPreprocessedRoutes<T>(routes: [string, T[]][]): Matcher
     return nullMatcher
   }
 
+  routes = routes.sort(([a], [b]) => a.length - b.length)
+
   for (let i = 0, len = routes.length; i < len; i++) {
     let paramMap
     try {
@@ -97,14 +99,25 @@ export class RegExpRouter<T> implements Router<T> {
     if (/\*$/.test(path)) {
       middleware[method] ||= {}
       const re = buildWildcardRegExp(path)
-      middleware[method][path] ||= findMiddleware(middleware[METHOD_NAME_ALL], path) || []
+      middleware[method][path] ||=
+        findMiddleware(middleware[method], path) ||
+        findMiddleware(middleware[METHOD_NAME_ALL], path) ||
+        []
       Object.keys(middleware).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
           Object.keys(middleware[m]).forEach((p) => {
-            ;(path === '*' || path === p) && middleware[m][p].push(handler)
+            ;(path === '*' || re.test(p)) && middleware[m][p].push(handler)
           })
         }
       })
+      if (method !== METHOD_NAME_ALL) {
+        Object.keys(middleware[METHOD_NAME_ALL]).forEach((p) => {
+          if (!middleware[method][p] && (path === '*' || re.test(p))) {
+            middleware[method][p] = [...middleware[METHOD_NAME_ALL][p], handler]
+          }
+        })
+      }
+
       Object.keys(routes).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
           Object.keys(routes[m]).forEach(
