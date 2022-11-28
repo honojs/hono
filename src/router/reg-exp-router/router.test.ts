@@ -281,3 +281,53 @@ describe('All', () => {
     expect(res).not.toBeNull()
   })
 })
+
+describe('long prefix, then star', () => {
+  describe('GET only', () => {
+    const router = new RegExpRouter<string>()
+
+    router.add('GET', '/long/prefix/*', 'long-prefix')
+    router.add('GET', '/long/*', 'long')
+    router.add('GET', '*', 'star1')
+    router.add('GET', '*', 'star2')
+
+    it('get /', () => {
+      const res = router.match('GET', '/')
+      expect(res?.handlers).toEqual(['star1', 'star2'])
+    })
+
+    it('get /long/prefix', () => {
+      const res = router.match('GET', '/long/prefix')
+      expect(res?.handlers).toEqual(['long-prefix', 'long', 'star1', 'star2'])
+    })
+
+    it('get /long/prefix/test', () => {
+      const res = router.match('GET', '/long/prefix/test')
+      expect(res?.handlers).toEqual(['long-prefix', 'long', 'star1', 'star2'])
+    })
+  })
+
+  describe('ALL and GET', () => {
+    const router = new RegExpRouter<string>()
+
+    router.add('ALL', '/long/prefix/*', 'long-prefix')
+    router.add('ALL', '/long/*', 'long')
+    router.add('GET', '*', 'star1')
+    router.add('GET', '*', 'star2')
+
+    it('get /', () => {
+      const res = router.match('GET', '/')
+      expect(res?.handlers).toEqual(['star1', 'star2'])
+    })
+
+    it('get /long/prefix', () => {
+      const res = router.match('GET', '/long/prefix')
+      expect(res?.handlers).toEqual(['long-prefix', 'long', 'star1', 'star2'])
+    })
+
+    it('get /long/prefix/test', () => {
+      const res = router.match('GET', '/long/prefix/test')
+      expect(res?.handlers).toEqual(['long-prefix', 'long', 'star1', 'star2'])
+    })
+  })
+})
