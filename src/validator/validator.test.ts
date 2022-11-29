@@ -372,6 +372,32 @@ describe('Handle array paths', () => {
     expect(results[0].isValid).toBe(true)
     expect(results[0].value).toEqual([false, true, undefined])
   })
+
+  ;[undefined, []].forEach(value => {
+    it(`Should allow ${value === undefined ? 'undefined' : 'empty'} arrays when optional`, async () => {
+      const req = new Request('http://localhost/', {
+        method: 'POST',
+        body: JSON.stringify({ blog: {
+          ...(value === undefined ? {} : { posts: [] })
+        } }),
+      })
+      const vObject = v.object('blog', v => ({
+        posts: v.array('posts', v => ({
+          id: v.json('id').asNumber().isOptional(),
+          title: v.json('title').isOptional(),
+          author: v.object('author', v => ({
+            name: v.json('name'),
+          })).isOptional()
+        })).isOptional(),
+        highlightedPostId: v.json('highlightedPostId').asNumber(),
+      }))
+      for (const validator of vObject.getValidators()) {
+        const results = await validator.validate(req)
+        expect(results[0].isValid).toBe(true)
+        expect(results[0].message).toBeUndefined()
+      }
+    })
+  })
 })
 
 describe('Validate with asArray', () => {
