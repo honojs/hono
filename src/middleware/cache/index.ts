@@ -19,6 +19,9 @@ export const cache = (options: {
     const response = await cache.match(key)
     if (!response) {
       await next()
+      if (!c.res.ok) {
+        return
+      }
       addHeader(c.res)
       const response = c.res.clone()
       if (options.wait) {
@@ -27,7 +30,7 @@ export const cache = (options: {
         c.executionCtx.waitUntil(cache.put(key, response))
       }
     } else {
-      return response
+      return new Response(await response.blob(), { headers: response.headers })
     }
   }
 }
