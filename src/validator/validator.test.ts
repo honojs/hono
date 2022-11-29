@@ -731,40 +731,54 @@ describe('Nested objects', () => {
     }
   })
 
-  it('Should threat `v.json()` as a nested array type only inside an array', async () => {
-    const json = {
-      blog: {
-        totalPosts: '3',
-        posts: [
-          {
-            id: 123,
-            title: 'JavaScript',
-            author: {
-              name: 'foo',
-            },
+  const blogJson = {
+    blog: {
+      totalPosts: '3',
+      meta: {
+        foo: {
+         bar: 'test',
+        }
+      },
+      posts: [
+        {
+          id: 123,
+          title: 'JavaScript',
+          author: {
+            name: 'foo',
           },
-          {
-            id: '456',
-            title: 'Framework',
-            author: {
-              name: 'bar',
-            },
+          publisher: {
+            name: 'Foo',
           },
-          {
-            id: 789,
-            title: 'Hono',
-            author: {
-              name: 'baz',
-            },
+        },
+        {
+          id: '456',
+          title: 'Framework',
+          author: {
+            name: 'bar',
           },
-        ],
-        highlightedPostId: '123',
-      }
+          publisher: {
+            name: 'Bar',
+          },
+        },
+        {
+          id: 789,
+          title: 'Hono',
+          author: {
+            name: 'baz',
+          },
+          publisher: {
+            name: 'Baz',
+          },
+        },
+      ],
+      highlightedPostId: '123',
     }
-  
+  }
+
+  it('Should threat `v.json()` as a nested array type only inside an array', async () => {
     const req = new Request('http://localhost/', {
       method: 'POST',
-      body: JSON.stringify(json),
+      body: JSON.stringify(blogJson),
     })
 
     const v = new Validator()
@@ -799,6 +813,57 @@ describe('Nested objects', () => {
     const highlightedPostResult = await validators[4].validate(req)
     expect(highlightedPostResult[0].isValid).toBe(false)
     expect(highlightedPostResult[0].message).toBe('Invalid Value [123]: the JSON body "blog.highlightedPostId" is invalid - should be "number"')
+  })
+
+  it('Should correctly handle sequences of nested objects inside an array', async () => {
+    const req = new Request('http://localhost/', {
+      method: 'POST',
+      body: JSON.stringify(blogJson),
+    })
+
+    const v = new Validator()
+    const vObject = v.object('blog', v => ({
+      posts: v.array('posts', v => ({
+        author: v.object('author', v => ({
+          name: v.json('name'),
+        })),
+        publisher: v.object('publisher', v => ({
+          name: v.json('name'),
+        }))
+      })),
+    }))
+
+    for (const validator of vObject.getValidators()) {
+      const results = await validator.validate(req)
+      expect(results[0].isValid).toBe(true)
+      expect(results[0].message).toBeUndefined()
+    }
+  })
+
+  it('Should correctly handle values inside objects and arrays', async () => {
+    const req = new Request('http://localhost/', {
+      method: 'POST',
+      body: JSON.stringify(blogJson),
+    })
+
+    const v = new Validator()
+    const vObject = v.object('blog', (v) => ({
+      meta: v.object('meta', (v) => ({
+        foo: v.object('foo', (v) => ({
+          bar: v.json('bar'),
+        })),
+      })),
+      posts: v.array('posts', (v) => ({
+        author: v.object('author', (v) => ({
+          name: v.json('name'),
+        })),
+      })),
+    }))
+    for (const validator of vObject.getValidators()) {
+      const results = await validator.validate(req)
+      expect(results[0].isValid).toBe(true)
+      expect(results[0].message).toBeUndefined()
+    }
   })
 })
 

@@ -46,8 +46,6 @@ export abstract class VObjectBase<T extends Schema> {
 
   getValidators = (): VBase[] => {
     const validators: VBase[] = []
-    const thisKeys: string[] = []
-    Object.assign(thisKeys, this.keys)
 
     const walk = (container: T, keys: string[], isOptional: boolean) => {
       for (const v of Object.values(container)) {
@@ -55,11 +53,7 @@ export abstract class VObjectBase<T extends Schema> {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           isOptional ||= v._isOptional
-          keys.push(...v.keys)
-          walk(v.container as T, keys, isOptional)
-          const tmp: string[] = []
-          Object.assign(tmp, thisKeys)
-          keys = tmp
+          walk(v.container as T, [...keys, ...v.keys], isOptional)
         } else if (v instanceof VBase) {
           if (isOptional) v.isOptional()
           v.baseKeys.push(...keys)
