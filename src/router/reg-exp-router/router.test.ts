@@ -331,3 +331,15 @@ describe('long prefix, then star', () => {
     })
   })
 })
+
+describe('static routes of ALL and GET', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('ALL', '/foo', 'foo')
+  router.add('GET', '/bar', 'bar')
+
+  it('get /foo', () => {
+    const res = router.match('GET', '/foo')
+    expect(res?.handlers).toEqual(['foo'])
+  })
+})

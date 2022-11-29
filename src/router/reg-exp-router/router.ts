@@ -97,7 +97,13 @@ export class RegExpRouter<T> implements Router<T> {
     }
 
     if (/\*$/.test(path)) {
-      middleware[method] ||= {}
+      if (!middleware[method]) {
+        middleware[method] = {}
+        Object.keys(middleware[METHOD_NAME_ALL]).forEach((p) => {
+          middleware[method][p] = [...middleware[METHOD_NAME_ALL][p]]
+        })
+      }
+
       const re = buildWildcardRegExp(path)
       middleware[method][path] ||=
         findMiddleware(middleware[method], path) ||
@@ -110,13 +116,6 @@ export class RegExpRouter<T> implements Router<T> {
           })
         }
       })
-      if (method !== METHOD_NAME_ALL) {
-        Object.keys(middleware[METHOD_NAME_ALL]).forEach((p) => {
-          if (!middleware[method][p] && (path === '*' || re.test(p))) {
-            middleware[method][p] = [...middleware[METHOD_NAME_ALL][p], handler]
-          }
-        })
-      }
 
       Object.keys(routes).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
@@ -129,11 +128,16 @@ export class RegExpRouter<T> implements Router<T> {
       return
     }
 
+    if (!routes[method]) {
+      routes[method] = {}
+      Object.keys(routes[METHOD_NAME_ALL]).forEach((p) => {
+        routes[method][p] = [...routes[METHOD_NAME_ALL][p]]
+      })
+    }
+
     const paths = checkOptionalParameter(path) || [path]
     for (let i = 0, len = paths.length; i < len; i++) {
       const path = paths[i]
-
-      routes[method] ||= {}
 
       Object.keys(routes).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
