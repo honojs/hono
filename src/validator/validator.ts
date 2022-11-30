@@ -304,7 +304,7 @@ export abstract class VBase {
   private validateType = (value: Type): boolean => {
     if (this.isArray) {
       if (!Array.isArray(value)) {
-        return false
+        return this._optional && typeof value === 'undefined'
       }
       for (const val of value) {
         if (typeof val === 'undefined' && this._nested()) {
