@@ -343,3 +343,16 @@ describe('static routes of ALL and GET', () => {
     expect(res?.handlers).toEqual(['foo'])
   })
 })
+
+describe('ALL and Star', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('ALL', '/x', '/x')
+  router.add('GET', '*', 'star')
+
+  it('Should return /x and star', async () => {
+    const res = router.match('GET', '/x')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['/x', 'star'])
+  })
+})
