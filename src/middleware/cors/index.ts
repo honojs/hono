@@ -12,7 +12,7 @@ type CORSOptions = {
 export const cors = (options?: CORSOptions): MiddlewareHandler => {
   const defaults: CORSOptions = {
     origin: '*',
-    allowMethods: ['GET', 'HEAD'],
+    allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH'],
     allowHeaders: [],
     exposeHeaders: [],
   }
