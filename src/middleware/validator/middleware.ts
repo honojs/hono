@@ -41,7 +41,7 @@ export const validatorMiddleware = <
 
     const schema = validationFunction(v, c)
     const validatorList = getValidatorList(schema)
-    let data: any = {}
+    let data: Record<string, unknown> = {}
 
     for (const [keys, validator] of validatorList) {
       let results: ValidateResult[]
