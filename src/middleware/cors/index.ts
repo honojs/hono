@@ -32,8 +32,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
   })(opts.origin)
 
   return async (c, next) => {
-    await next()
-
+    
     function set(key: string, value: string) {
       c.res.headers.append(key, value)
     }
@@ -57,7 +56,10 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       set('Access-Control-Expose-Headers', opts.exposeHeaders.join(','))
     }
 
-    if (c.req.method === 'OPTIONS') {
+    if (c.req.method !== 'OPTIONS') {
+      await next()
+    }
+    else {
       // Preflight
 
       if (opts.maxAge != null) {
