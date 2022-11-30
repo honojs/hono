@@ -91,19 +91,20 @@ export class RegExpRouter<T> implements Router<T> {
     }
 
     if (!methodNames.includes(method)) methodNames.push(method)
+    if (!middleware[method]) {
+      ;[middleware, routes].forEach((handlerMap) => {
+        handlerMap[method] = {}
+        Object.keys(handlerMap[METHOD_NAME_ALL]).forEach((p) => {
+          handlerMap[method][p] = [...handlerMap[METHOD_NAME_ALL][p]]
+        })
+      })
+    }
 
     if (path === '/*') {
       path = '*'
     }
 
     if (/\*$/.test(path)) {
-      if (!middleware[method]) {
-        middleware[method] = {}
-        Object.keys(middleware[METHOD_NAME_ALL]).forEach((p) => {
-          middleware[method][p] = [...middleware[METHOD_NAME_ALL][p]]
-        })
-      }
-
       const re = buildWildcardRegExp(path)
       middleware[method][path] ||=
         findMiddleware(middleware[method], path) ||
@@ -126,13 +127,6 @@ export class RegExpRouter<T> implements Router<T> {
       })
 
       return
-    }
-
-    if (!routes[method]) {
-      routes[method] = {}
-      Object.keys(routes[METHOD_NAME_ALL]).forEach((p) => {
-        routes[method][p] = [...routes[METHOD_NAME_ALL][p]]
-      })
     }
 
     const paths = checkOptionalParameter(path) || [path]
