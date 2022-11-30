@@ -331,3 +331,43 @@ describe('long prefix, then star', () => {
     })
   })
 })
+
+describe('static routes of ALL and GET', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('ALL', '/foo', 'foo')
+  router.add('GET', '/bar', 'bar')
+
+  it('get /foo', () => {
+    const res = router.match('GET', '/foo')
+    expect(res?.handlers).toEqual(['foo'])
+  })
+})
+
+describe('ALL and Star', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('ALL', '/x', '/x')
+  router.add('GET', '*', 'star')
+
+  it('Should return /x and star', async () => {
+    const res = router.match('GET', '/x')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['/x', 'star'])
+  })
+})
+
+describe('GET star, ALL static, GET star...', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('GET', '*', 'star1')
+  router.add('ALL', '/x', '/x')
+  router.add('GET', '*', 'star2')
+  router.add('GET', '*', 'star3')
+
+  it('Should return /x and star', async () => {
+    const res = router.match('GET', '/x')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['star1', '/x', 'star2', 'star3'])
+  })
+})
