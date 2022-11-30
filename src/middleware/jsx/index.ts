@@ -1,11 +1,14 @@
 import { escapeToBuffer } from '../../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Props = Record<string, any>;
+
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jsx.JSX {
     interface IntrinsicElements {
-      [tagName: string]: Record<string, any>
+      [tagName: string]: Props,
     }
   }
 }
@@ -64,7 +67,7 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
       continue
     } else if (child instanceof JSXNode) {
       child.toStringToBuffer(buffer)
-    } else if (typeof child === 'number' || (child as any).isEscaped) {
+    } else if (typeof child === 'number' || (child as unknown as { isEscaped: boolean }).isEscaped) {
       buffer[0] += child
     } else {
       // `child` type is `Child[]`, so stringify recursively
@@ -76,10 +79,10 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
 type Child = string | number | JSXNode | Child[]
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
-  props: Record<string, any>
+  props: Props
   children: Child[]
   isEscaped: true = true
-  constructor(tag: string | Function, props: Record<string, any>, children: Child[]) {
+  constructor(tag: string | Function, props: Props, children: Child[]) {
     this.tag = tag
     this.props = props
     this.children = children
@@ -170,7 +173,7 @@ class JSXFragmentNode extends JSXNode {
 export { jsxFn as jsx }
 const jsxFn = (
   tag: string | Function,
-  props: Record<string, any>,
+  props: Props,
   ...children: (string | HtmlEscapedString)[]
 ): JSXNode => {
   if (typeof tag === 'function') {
@@ -180,9 +183,9 @@ const jsxFn = (
   }
 }
 
-type FC<T = Record<string, any>> = (props: T) => HtmlEscapedString
+type FC<T = Props> = (props: T) => HtmlEscapedString
 
-const shallowEqual = (a: Record<string, any>, b: Record<string, any>): boolean => {
+const shallowEqual = (a: Props, b: Props): boolean => {
   if (a === b) {
     return true
   }
@@ -217,6 +220,6 @@ export const memo = <T>(
   }) as FC<T>
 }
 
-export const Fragment = (props: { key?: string; children?: any }): JSXNode => {
+export const Fragment = (props: { key?: string; children?: Child[] }): JSXNode => {
   return new JSXFragmentNode('', {}, props.children || [])
 }
