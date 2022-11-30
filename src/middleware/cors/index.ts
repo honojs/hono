@@ -13,8 +13,8 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
   const defaults: CORSOptions = {
     origin: '*',
     allowMethods: ['GET', 'HEAD'],
-    allowHeaders: ['Content-Type'],
-    exposeHeaders: ['Content-Length'],
+    allowHeaders: [],
+    exposeHeaders: [],
   }
   const opts = {
     ...defaults,
