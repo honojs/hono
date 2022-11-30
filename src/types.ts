@@ -3,7 +3,9 @@ import type { Schema } from './validator/schema'
 
 export interface ContextVariableMap {}
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Bindings = Record<string, any> // For Cloudflare Workers
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Variables = Record<string, any> // For c.set/c.get functions
 export type Environment = {
   Bindings: Bindings
@@ -73,6 +75,7 @@ export interface CustomHandler<
         : E extends Partial<Schema>
         ? Partial<Environment>
         : Environment,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       S extends Schema ? S : P extends Schema ? P : E extends Schema ? E : any
     >,
     next: Next
@@ -80,6 +83,6 @@ export interface CustomHandler<
 }
 
 export interface ExecutionContext {
-  waitUntil(promise: Promise<any>): void
+  waitUntil(promise: Promise<void>): void
   passThroughOnException(): void
 }

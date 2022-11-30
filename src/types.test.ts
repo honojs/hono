@@ -27,6 +27,7 @@ describe('Test types of CustomHandler', () => {
   test('No arguments', async () => {
     const handler: Handler = (c) => {
       const data = c.req.valid()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       type verifySchema = Expect<Equal<typeof data['foo'], any>>
       return c.text('Hi')
     }
@@ -40,6 +41,7 @@ describe('Test types of CustomHandler', () => {
       const id = c.req.param('id')
       type verifyPath = Expect<Equal<typeof id, string>>
       const data = c.req.valid()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       type verifySchema = Expect<Equal<typeof data['foo'], any>>
       return c.text('Hi')
     }
@@ -55,6 +57,7 @@ describe('Test types of CustomHandler', () => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<typeof foo, string>>
       const data = c.req.valid()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       type verifySchema = Expect<Equal<typeof data['foo'], any>>
       return c.text('Hi')
     }
@@ -121,6 +124,7 @@ describe('Test types of CustomHandler', () => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<typeof foo, string>>
       const data = c.req.valid()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       type verifySchema = Expect<Equal<typeof data['foo'], any>>
       return c.text(foo)
     }

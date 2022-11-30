@@ -6,7 +6,7 @@ class Context implements ExecutionContext {
   passThroughOnException(): void {
     throw new Error('Method not implemented.')
   }
-  async waitUntil(promise: Promise<any>): Promise<void> {
+  async waitUntil(promise: Promise<unknown>): Promise<void> {
     await promise
   }
 }
