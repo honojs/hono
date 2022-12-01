@@ -219,7 +219,7 @@ export class Context<
       return 'vercel'
     }
 
-    if (global?.process?.title === 'node') {
+    if ((typeof process !== 'undefined') && (process.release.name === 'node')) {
       return 'node'
     }
 
