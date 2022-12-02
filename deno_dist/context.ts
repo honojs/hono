@@ -215,7 +215,7 @@ export class Context<
       return 'fastly'
     }
 
-    if (typeof global?.EdgeRuntime !== 'string') {
+    if (typeof global?.EdgeRuntime === 'string') {
       return 'vercel'
     }
 
