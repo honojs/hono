@@ -3,7 +3,7 @@ import { Hono } from './hono.ts'
 declare global {
   class ExtendableEvent extends Event {
     constructor(type: string, init?: EventInit)
-    waitUntil(promise: Promise<any>): void
+    waitUntil(promise: Promise<void>): void
   }
   abstract class FetchEvent extends ExtendableEvent {
     readonly request: Request
@@ -11,7 +11,7 @@ declare global {
     passThroughOnException(): void
   }
   interface ExecutionContext {
-    waitUntil(promise: Promise<any>): void
+    waitUntil(promise: Promise<void>): void
     passThroughOnException(): void
   }
 }

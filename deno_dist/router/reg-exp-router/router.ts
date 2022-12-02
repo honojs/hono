@@ -12,6 +12,7 @@ type HandlerData<T> = [T[], ParamMap | null]
 type Matcher<T> = [RegExp, HandlerData<T>[]]
 
 const emptyParam = {}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nullMatcher: Matcher<any> = [/^$/, []]
 
 function buildWildcardRegExp(path: string): RegExp {
