@@ -4,7 +4,7 @@ import type { Cookie } from './utils/cookie.ts'
 import { parse } from './utils/cookie.ts'
 import { getQueryStringFromURL } from './utils/url.ts'
 
-type ValidatedData = Record<string, any>
+type ValidatedData = Record<string, unknown>
 
 declare global {
   interface Request<
@@ -164,7 +164,7 @@ export function extendRequestPrototype() {
       }
       let data = this.data
       for (let i = 0; i < keys.length - 1; i++) {
-        data = data[keys[i]] ||= {}
+        data = (data[keys[i]] ||= {}) as ValidatedData
       }
       data[keys[keys.length - 1]] = value
     }

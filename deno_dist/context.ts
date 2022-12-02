@@ -215,11 +215,11 @@ export class Context<
       return 'fastly'
     }
 
-    if (typeof global?.EdgeRuntime !== 'string') {
+    if (typeof global?.EdgeRuntime === 'string') {
       return 'vercel'
     }
 
-    if (global?.process?.title === 'node') {
+    if (global?.process?.release?.name === 'node') {
       return 'node'
     }
 
