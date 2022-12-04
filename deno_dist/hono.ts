@@ -14,22 +14,22 @@ import type { Schema } from './validator/schema.ts'
 
 interface HandlerInterface<
   P extends string,
-  E extends Partial<Environment>,
-  S extends Partial<Schema>,
+  E extends Partial<Environment> = Environment,
+  S = unknown,
   U = Hono<E, P, S>
 > {
   // app.get(handler...)
-  <Path extends string, Data extends Schema>(
+  <Path extends string, Data>(
     ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E, Data>[]
   ): U
   (...handlers: Handler<string, E, S>[]): U
 
   // app.get('/', handler, handler...)
-  <Path extends string, Data extends Partial<Schema> = Schema>(
+  <Path extends string, Data>(
     path: Path,
     ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E, Data>[]
   ): U
-  <Path extends string, Data extends Schema>(path: Path, ...handlers: Handler<string, E, Data>[]): U
+  <Path extends string, Data>(path: Path, ...handlers: Handler<string, E, Data>[]): U
   (path: string, ...handlers: Handler<string, E, S>[]): U
 }
 
@@ -39,7 +39,7 @@ function defineDynamicClass(): {
   new <
     E extends Partial<Environment> = Environment,
     P extends string = string,
-    S extends Partial<Schema> = Schema,
+    S = Schema,
     U = Hono<E, P, S>
   >(): {
     [K in Methods]: HandlerInterface<P, E, S, U>
@@ -51,7 +51,7 @@ function defineDynamicClass(): {
 interface Route<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  S extends Partial<Schema> = Schema
+  S = Schema
 > {
   path: string
   method: string
@@ -61,7 +61,7 @@ interface Route<
 export class Hono<
   E extends Partial<Environment> = Environment,
   P extends string = '/',
-  S extends Partial<Schema> = Schema
+  S = Schema
 > extends defineDynamicClass()<E, P, S, Hono<E, P, S>> {
   readonly router: Router<Handler<P, E, S>> = new SmartRouter({
     routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
@@ -201,7 +201,7 @@ export class Hono<
     const result = this.matchRoute(method, path)
     request.paramData = result?.params
 
-    const c = new Context<string, E, S>(request, env, eventOrExecutionCtx, this.notFoundHandler)
+    const c = new Context<string, E>(request, env, eventOrExecutionCtx, this.notFoundHandler)
 
     // Do not `compose` if it has only one handler
     if (result && result.handlers.length === 1) {
@@ -209,10 +209,10 @@ export class Hono<
       let res: ReturnType<Handler<P>>
 
       try {
-        res = handler(c, async () => {})
-        if (!res) return this.notFoundHandler(c as Context)
+        res = handler(c as unknown as Context<string, E, S>, async () => {})
+        if (!res) return this.notFoundHandler(c)
       } catch (err) {
-        return this.handleError(err, c as Context)
+        return this.handleError(err, c)
       }
 
       if (res instanceof Response) return res
@@ -222,17 +222,17 @@ export class Hono<
         try {
           awaited = await res
           if (!awaited) {
-            return this.notFoundHandler(c as Context)
+            return this.notFoundHandler(c)
           }
         } catch (err) {
-          return this.handleError(err, c as Context)
+          return this.handleError(err, c)
         }
         return awaited
       })()
     }
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
-    const composed = compose<Context<P, E, S>, E>(handlers, this.notFoundHandler, this.errorHandler)
+    const composed = compose<Context<P, E>, E>(handlers, this.notFoundHandler, this.errorHandler)
 
     return (async () => {
       try {
@@ -245,7 +245,7 @@ export class Hono<
         }
         return context.res
       } catch (err) {
-        return this.handleError(err, c as Context)
+        return this.handleError(err, c)
       }
     })()
   }

@@ -13,7 +13,7 @@ export type Data = string | ArrayBuffer | ReadableStream
 export class Context<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  S extends Partial<Schema> = Schema
+  S = Schema
 > {
   req: Request<unknown, P, S extends Schema ? SchemaToProp<S> : S>
   env: E['Bindings']

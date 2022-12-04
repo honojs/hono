@@ -4,14 +4,13 @@ import type { Cookie } from './utils/cookie'
 import { parse } from './utils/cookie'
 import { getQueryStringFromURL } from './utils/url'
 
-type ValidatedData = Record<string, unknown>
-
 declare global {
   interface Request<
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     CfHostMetadata = unknown,
     ParamKeyType extends string = string,
-    Data extends ValidatedData = ValidatedData
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Data = any
   > {
     paramData?: Record<ParamKeyType, string>
     param: {
@@ -43,7 +42,7 @@ declare global {
     json<T>(): Promise<T>
     data: Data
     valid: {
-      (key: string | string[], value: unknown): Data
+      (data: Data): Data
       (): Data
     }
   }
@@ -154,19 +153,12 @@ export function extendRequestPrototype() {
     return jsonData
   } as InstanceType<typeof Request>['jsonData']
 
-  Request.prototype.valid = function (this: Request, keys?: string | string[], value?: unknown) {
+  Request.prototype.valid = function (this: Request, data?: unknown) {
     if (!this.data) {
       this.data = {}
     }
-    if (keys !== undefined) {
-      if (typeof keys === 'string') {
-        keys = [keys]
-      }
-      let data = this.data
-      for (let i = 0; i < keys.length - 1; i++) {
-        data = (data[keys[i]] ||= {}) as ValidatedData
-      }
-      data[keys[keys.length - 1]] = value
+    if (data) {
+      this.data = data
     }
     return this.data
   } as InstanceType<typeof Request>['valid']

@@ -149,4 +149,17 @@ describe('Test types of CustomHandler', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('bar')
   })
+
+  test('Normal types', () => {
+    type User = {
+      name: string
+      age: number
+    }
+
+    const handler: Handler<User> = (c) => {
+      const user = c.req.valid()
+      type verifySchema = Expect<Equal<typeof user, User>>
+      return c.text('Hi')
+    }
+  })
 })

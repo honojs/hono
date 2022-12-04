@@ -20,13 +20,13 @@ type Done<P extends string, E extends Partial<Environment> = Environment> = (
 type ValidationFunction<
   P extends string,
   E extends Partial<Environment> = Environment,
-  S extends Schema = Schema
-> = (v: Validator, c: Context<P, E>) => S
+  S = Schema
+> = (v: Validator, c: Context<P, E, S>) => S
 
 export const validatorMiddleware = <
   P extends string,
   E extends Partial<Environment> = Environment,
-  S extends Schema = Schema
+  S = Schema
 >(
   validationFunction: ValidationFunction<P, E, S>,
   options?: { done?: Done<P, E> }
@@ -40,8 +40,9 @@ export const validatorMiddleware = <
     }
 
     const schema = validationFunction(v, c)
-    const validatorList = getValidatorList(schema)
-    let data: Record<string, unknown> = {}
+    const validatorList = getValidatorList<S>(schema)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let data: any = {}
 
     for (const [keys, validator] of validatorList) {
       let results: ValidateResult[]
@@ -92,19 +93,21 @@ export const validatorMiddleware = <
           const dst = data
           data = mergeObjects(dst, jsonData)
         } else {
-          c.req.valid(keys, value)
+          let tmp = data
+          for (let i = 0; i < keys.length - 1; i++) {
+            tmp = tmp[keys[i]] ||= {}
+          }
+          tmp[keys[keys.length - 1]] = value
         }
       }
     }
 
     if (!resultSet.hasError) {
-      Object.keys(data).map((key) => {
-        c.req.valid(key, data[key])
-      })
+      c.req.valid(data)
     }
 
     if (options && options.done) {
-      const res = options.done(resultSet, c)
+      const res = options.done(resultSet, c as unknown as Context<string, E, Schema>)
       if (res) {
         return res
       }
@@ -118,9 +121,9 @@ export const validatorMiddleware = <
   return handler
 }
 
-function getValidatorList<T extends Schema>(schema: T) {
+function getValidatorList<T>(schema: T) {
   const map: [string[], VBase][] = []
-  for (const [key, value] of Object.entries(schema)) {
+  for (const [key, value] of Object.entries(schema as unknown as Schema)) {
     if (value instanceof VObjectBase) {
       const validators = value.getValidators()
       for (const validator of validators) {
