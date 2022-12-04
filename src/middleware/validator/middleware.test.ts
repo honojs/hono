@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Hono } from '../../hono'
-import { getStatusText } from '../../utils/http-status'
+import type { CustomHandler } from '../../types'
 import type { Expect, Equal } from '../../utils/types'
-import type { Schema } from '../../validator/schema'
 import { validator } from './index'
 
 describe('Basic - query', () => {
@@ -482,19 +481,25 @@ describe('Clone Request object if validate JSON or body', () => {
 })
 
 describe('Check duplicate values', () => {
-  const app = new Hono()
+  type Env = { Variables: { mail2: string } }
+
+  const handler: CustomHandler<Env> = async (c, next) => {
+    const data = await c.req.parseBody()
+    // Use `c.set`/`c.get`
+    c.set('mail2', data['mail2'])
+    await next()
+  }
+
+  const app = new Hono<Env>()
   app.post(
     '/bar',
-    async (c, next) => {
-      const data = await c.req.parseBody()
-      // Use `c.set`/`c.get`
-      c.set('mail2', data['mail2'])
-      await next()
-    },
+    handler,
     validator((v, c) => ({
       mail: v.body('mail1').isEqual(c.get('mail2')),
     })),
     (c) => {
+      const { mail } = c.req.valid()
+      type verifyBindings = Expect<Equal<typeof mail, string>>
       return c.text('Valid')
     }
   )
