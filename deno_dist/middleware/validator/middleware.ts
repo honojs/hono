@@ -21,7 +21,7 @@ type ValidationFunction<
   P extends string,
   E extends Partial<Environment> = Environment,
   S = Schema
-> = (v: Validator, c: Context<P, E, S>) => S
+> = (v: Validator, c: Context<P, E>) => S
 
 export const validatorMiddleware = <
   P extends string,
@@ -107,7 +107,7 @@ export const validatorMiddleware = <
     }
 
     if (options && options.done) {
-      const res = options.done(resultSet, c as unknown as Context<string, E, Schema>)
+      const res = options.done(resultSet, c)
       if (res) {
         return res
       }
