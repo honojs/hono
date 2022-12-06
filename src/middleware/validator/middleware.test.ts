@@ -483,26 +483,28 @@ describe('Clone Request object if validate JSON or body', () => {
 describe('Check duplicate values', () => {
   type Env = { Variables: { mail2: string } }
 
-  const handler: CustomHandler<Env> = async (c, next) => {
-    const data = await c.req.parseBody()
-    // Use `c.set`/`c.get`
-    c.set('mail2', data['mail2'])
-    await next()
-  }
-
   const app = new Hono<Env>()
-  app.post(
-    '/bar',
-    handler,
-    validator((v, c) => ({
-      mail: v.body('mail1').isEqual(c.get('mail2')),
-    })),
-    (c) => {
-      const { mail } = c.req.valid()
-      type verifyBindings = Expect<Equal<typeof mail, string>>
-      return c.text('Valid')
-    }
-  )
+  app
+    .post(
+      '/bar',
+      validator((v) => ({
+        mail2: v.body('mail2').isRequired(),
+      })),
+      async (c, next) => {
+        c.set('mail2', c.req.valid()['mail2'])
+        await next()
+      }
+    )
+    .post(
+      validator((v, c) => ({
+        mail: v.body('mail1').isEqual(c.get('mail2')),
+      })),
+      (c) => {
+        const { mail } = c.req.valid()
+        type verifyBindings = Expect<Equal<typeof mail, string>>
+        return c.text('Valid')
+      }
+    )
 
   it('Should return 200 response - duplicate values', async () => {
     const formData = new FormData()
@@ -514,6 +516,7 @@ describe('Check duplicate values', () => {
     })
     const res = await app.request(req)
     expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Valid')
   })
 })
 

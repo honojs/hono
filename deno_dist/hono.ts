@@ -10,7 +10,6 @@ import { TrieRouter } from './router/trie-router/index.ts'
 import type { ExecutionContext } from './types.ts'
 import type { Handler, Environment, ParamKeys, ErrorHandler, NotFoundHandler } from './types.ts'
 import { getPathFromURL, mergePath } from './utils/url.ts'
-import type { Schema } from './validator/schema.ts'
 
 interface HandlerInterface<
   P extends string,
@@ -19,18 +18,22 @@ interface HandlerInterface<
   U = Hono<E, P, S>
 > {
   // app.get(handler...)
-  <Path extends string, Data>(
+  <Path extends string, Data = S>(
     ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E, Data>[]
-  ): U
-  (...handlers: Handler<string, E, S>[]): U
+  ): Hono<E, Path, Data & S>
+  (...handlers: Handler<P, E, S>[]): U
 
   // app.get('/', handler, handler...)
-  <Path extends string, Data>(
+  <Path extends string, Data = S>(
     path: Path,
     ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E, Data>[]
-  ): U
-  <Path extends string, Data>(path: Path, ...handlers: Handler<string, E, Data>[]): U
-  (path: string, ...handlers: Handler<string, E, S>[]): U
+  ): Hono<E, Path, Data & S>
+  <Path extends string, Data = S>(path: Path, ...handlers: Handler<string, E, Data>[]): Hono<
+    E,
+    string,
+    Data & S
+  >
+  (path: string, ...handlers: Handler<P, E, S>[]): U
 }
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
@@ -39,7 +42,7 @@ function defineDynamicClass(): {
   new <
     E extends Partial<Environment> = Environment,
     P extends string = string,
-    S = Schema,
+    S = unknown,
     U = Hono<E, P, S>
   >(): {
     [K in Methods]: HandlerInterface<P, E, S, U>
@@ -51,7 +54,7 @@ function defineDynamicClass(): {
 interface Route<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  S = Schema
+  S = unknown
 > {
   path: string
   method: string
@@ -61,7 +64,7 @@ interface Route<
 export class Hono<
   E extends Partial<Environment> = Environment,
   P extends string = '/',
-  S = Schema
+  S = unknown
 > extends defineDynamicClass()<E, P, S, Hono<E, P, S>> {
   readonly router: Router<Handler<P, E, S>> = new SmartRouter({
     routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
@@ -79,7 +82,7 @@ export class Hono<
 
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
-      this[method] = <Env extends Environment, Data extends Schema>(
+      this[method] = <Env extends Environment, Data>(
         args1: string | Handler<string, Env, Data>,
         ...args: Handler<string, Env, Data>[]
       ) => {
@@ -93,7 +96,8 @@ export class Hono<
             this.addRoute(method, this.path, handler as unknown as Handler<P, E, S>)
           }
         })
-        return this
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return this as unknown as Hono<E, any, any>
       }
     })
 
@@ -122,10 +126,10 @@ export class Hono<
     return this
   }
 
-  use<Path extends string = string, Data extends Partial<Schema> = Schema>(
+  use<Path extends string = string, Data = unknown>(
     ...middleware: Handler<Path, E, Data>[]
   ): Hono<E, P, S>
-  use<Path extends string = string, Data extends Partial<Schema> = Schema>(
+  use<Path extends string = string, Data = unknown>(
     arg1: string,
     ...middleware: Handler<Path, E, Data>[]
   ): Hono<E, P, S>

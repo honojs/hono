@@ -20,13 +20,13 @@ type Done<P extends string, E extends Partial<Environment> = Environment> = (
 type ValidationFunction<
   P extends string,
   E extends Partial<Environment> = Environment,
-  S = Schema
+  S = unknown
 > = (v: Validator, c: Context<P, E>) => S
 
 export const validatorMiddleware = <
   P extends string,
   E extends Partial<Environment> = Environment,
-  S = Schema
+  S = unknown
 >(
   validationFunction: ValidationFunction<P, E, S>,
   options?: { done?: Done<P, E> }
