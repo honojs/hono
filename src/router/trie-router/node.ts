@@ -33,6 +33,7 @@ export class Node<T> {
   order: number = 0
   name: string
   handlerSetCache: Record<string, HandlerSet<T>[]>
+  shouldCapture: boolean = false
 
   constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
     this.children = children || {}
@@ -56,7 +57,6 @@ export class Node<T> {
     const parts = splitPath(path)
 
     const parentPatterns: Pattern[] = []
-
     const errorMessage = (name: string): string => {
       return `Duplicate param name, use another name instead of '${name}' - ${method} ${path} <--- '${name}'`
     }
@@ -75,6 +75,7 @@ export class Node<T> {
       const pattern = getPattern(p)
       if (pattern) {
         if (typeof pattern === 'object') {
+          this.shouldCapture = true
           for (let j = 0, len = parentPatterns.length; j < len; j++) {
             if (typeof parentPatterns[j] === 'object' && parentPatterns[j][1] === pattern[1]) {
               throw new Error(errorMessage(pattern[1]))
@@ -87,9 +88,9 @@ export class Node<T> {
         curNode.patterns.push(pattern)
         parentPatterns.push(...curNode.patterns)
       }
-
       parentPatterns.push(...curNode.patterns)
       curNode = curNode.children[p]
+      curNode.shouldCapture = this.shouldCapture
     }
 
     if (!curNode.methods.length) {
@@ -180,12 +181,18 @@ export class Node<T> {
               }
             }
 
-            // '/book/a'     => not-slug
-            // '/book/:slug' => slug
+            // `/book/a`     => no-slug
+            // `/book/:slug` => slug
+            // `/book/b`     => no-slug-b
             // GET /book/a   ~> no-slug, param['slug'] => undefined
             // GET /book/foo ~> slug, param['slug'] => foo
+            // GET /book/b   ~> no-slug-b, param['slug'] => b
             if (typeof name === 'string' && !matched) {
               params[name] = part
+            } else {
+              if (node.children[part] && node.children[part].shouldCapture) {
+                params[name] = part
+              }
             }
           }
         }
