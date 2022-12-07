@@ -554,6 +554,7 @@ describe('Routing order With named parameters', () => {
   const node = new Node()
   node.insert('get', '/book/a', 'no-slug')
   node.insert('get', '/book/:slug', 'slug')
+  node.insert('get', '/book/b', 'no-slug-b')
   it('/book/a', () => {
     const res = node.search('get', '/book/a')
     expect(res).not.toBeNull()
@@ -565,5 +566,11 @@ describe('Routing order With named parameters', () => {
     expect(res).not.toBeNull()
     expect(res?.handlers).toEqual(['slug'])
     expect(res?.params['slug']).toBe('foo')
+  })
+  it('/book/b', () => {
+    const res = node.search('get', '/book/b')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['slug', 'no-slug-b'])
+    expect(res?.params['slug']).toBe('b')
   })
 })
