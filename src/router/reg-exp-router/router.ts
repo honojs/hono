@@ -128,9 +128,7 @@ export class RegExpRouter<T> implements Router<T> {
 
       Object.keys(routes).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
-          Object.keys(routes[m]).forEach(
-            (p) => (path === '*' || re.test(p)) && routes[m][p].push(handler)
-          )
+          Object.keys(routes[m]).forEach((p) => re.test(p) && routes[m][p].push(handler))
         }
       })
 
