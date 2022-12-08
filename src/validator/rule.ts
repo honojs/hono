@@ -12,6 +12,7 @@ export const rule = {
       ignore_whitespace: boolean
     } = { ignore_whitespace: false }
   ): boolean {
+    if (value === undefined) return false
     return (options.ignore_whitespace ? value.trim().length : value.length) === 0
   },
 
@@ -20,6 +21,7 @@ export const rule = {
     options: Partial<{ min: number; max: number }> | number,
     arg2?: number
   ) => {
+    if (value === undefined) return false
     let min: number
     let max: number | undefined
     if (typeof options === 'object') {
@@ -37,10 +39,12 @@ export const rule = {
   },
 
   isAlpha: (value: string): boolean => {
+    if (value === undefined) return false
     return /^[A-Z]+$/i.test(value)
   },
 
   isNumeric: (value: string): boolean => {
+    if (value === undefined) return false
     return /^[0-9]+$/.test(value)
   },
 
@@ -52,6 +56,7 @@ export const rule = {
       minOccurrences: 1,
     }
   ): boolean => {
+    if (value === undefined || elem === undefined) return false
     options.ignoreCase ||= false
     options.minOccurrences ||= 1
     if (options.ignoreCase) {
@@ -61,6 +66,7 @@ export const rule = {
   },
 
   isIn: (value: string, options: string[]): boolean => {
+    if (value === undefined) return false
     if (typeof options === 'object') {
       for (const elem of options) {
         if (elem === value) return true
@@ -70,6 +76,7 @@ export const rule = {
   },
 
   match: (value: string, regExp: RegExp): boolean => {
+    if (value === undefined || regExp === undefined) return false
     return regExp.test(value)
   },
 
