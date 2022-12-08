@@ -387,3 +387,19 @@ describe('GET star, GET static, ALL star...', () => {
     expect(res?.handlers).toEqual(['star1', 'star2', 'bar'])
   })
 })
+
+describe('ALL star, ALL star, GET static, ALL star...', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('ALL', '*', 'wildcard')
+  router.add('ALL', '/a/*', 'star1')
+  router.add('GET', '/a/foo', 'foo')
+  router.add('ALL', '/b/*', 'star2')
+  router.add('GET', '/b/bar', 'bar')
+
+  it('Should return wildcard, star2 and bar', async () => {
+    const res = router.match('GET', '/b/bar')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['wildcard', 'star2', 'bar'])
+  })
+})

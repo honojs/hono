@@ -114,14 +114,23 @@ export class RegExpRouter<T> implements Router<T> {
 
     if (/\*$/.test(path)) {
       const re = buildWildcardRegExp(path)
-      middleware[method][path] ||=
-        findMiddleware(middleware[method], path) ||
-        findMiddleware(middleware[METHOD_NAME_ALL], path) ||
-        []
+      if (method === METHOD_NAME_ALL) {
+        Object.keys(middleware).forEach((m) => {
+          middleware[m][path] ||=
+            findMiddleware(middleware[m], path) ||
+            findMiddleware(middleware[METHOD_NAME_ALL], path) ||
+            []
+        })
+      } else {
+        middleware[method][path] ||=
+          findMiddleware(middleware[method], path) ||
+          findMiddleware(middleware[METHOD_NAME_ALL], path) ||
+          []
+      }
       Object.keys(middleware).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
           Object.keys(middleware[m]).forEach((p) => {
-            ;(re.test(p) || buildWildcardRegExp(p).test(path)) && middleware[m][p].push(handler)
+            re.test(p) && middleware[m][p].push(handler)
           })
         }
       })
