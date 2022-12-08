@@ -371,3 +371,35 @@ describe('GET star, ALL static, GET star...', () => {
     expect(res?.handlers).toEqual(['star1', '/x', 'star2', 'star3'])
   })
 })
+
+// https://github.com/honojs/hono/issues/699
+describe('GET star, GET static, ALL star...', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('GET', '/y/*', 'star1')
+  router.add('GET', '/y/a', 'a')
+  router.add('ALL', '/y/b/*', 'star2')
+  router.add('GET', '/y/b/bar', 'bar')
+
+  it('Should return star1, star2, and bar', async () => {
+    const res = router.match('GET', '/y/b/bar')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['star1', 'star2', 'bar'])
+  })
+})
+
+describe('ALL star, ALL star, GET static, ALL star...', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('ALL', '*', 'wildcard')
+  router.add('ALL', '/a/*', 'star1')
+  router.add('GET', '/a/foo', 'foo')
+  router.add('ALL', '/b/*', 'star2')
+  router.add('GET', '/b/bar', 'bar')
+
+  it('Should return wildcard, star2 and bar', async () => {
+    const res = router.match('GET', '/b/bar')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['wildcard', 'star2', 'bar'])
+  })
+})

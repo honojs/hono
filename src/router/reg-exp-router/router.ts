@@ -15,8 +15,15 @@ const emptyParam = {}
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nullMatcher: Matcher<any> = [/^$/, []]
 
+let wildcardRegExpCache: Record<string, RegExp> = {}
 function buildWildcardRegExp(path: string): RegExp {
-  return new RegExp(path === '*' ? '' : `^${path.replace(/\/\*/, '(?:|/.*)')}$`)
+  return (wildcardRegExpCache[path] ??= new RegExp(
+    path === '*' ? '' : `^${path.replace(/\/\*/, '(?:|/.*)')}$`
+  ))
+}
+
+function clearWildcardRegExpCache() {
+  wildcardRegExpCache = {}
 }
 
 function buildMatcherFromPreprocessedRoutes<T>(routes: [string, T[]][]): Matcher<T> {
@@ -107,23 +114,30 @@ export class RegExpRouter<T> implements Router<T> {
 
     if (/\*$/.test(path)) {
       const re = buildWildcardRegExp(path)
-      middleware[method][path] ||=
-        findMiddleware(middleware[method], path) ||
-        findMiddleware(middleware[METHOD_NAME_ALL], path) ||
-        []
+      if (method === METHOD_NAME_ALL) {
+        Object.keys(middleware).forEach((m) => {
+          middleware[m][path] ||=
+            findMiddleware(middleware[m], path) ||
+            findMiddleware(middleware[METHOD_NAME_ALL], path) ||
+            []
+        })
+      } else {
+        middleware[method][path] ||=
+          findMiddleware(middleware[method], path) ||
+          findMiddleware(middleware[METHOD_NAME_ALL], path) ||
+          []
+      }
       Object.keys(middleware).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
           Object.keys(middleware[m]).forEach((p) => {
-            ;(path === '*' || re.test(p)) && middleware[m][p].push(handler)
+            re.test(p) && middleware[m][p].push(handler)
           })
         }
       })
 
       Object.keys(routes).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
-          Object.keys(routes[m]).forEach(
-            (p) => (path === '*' || re.test(p)) && routes[m][p].push(handler)
-          )
+          Object.keys(routes[m]).forEach((p) => re.test(p) && routes[m][p].push(handler))
         }
       })
 
@@ -148,6 +162,8 @@ export class RegExpRouter<T> implements Router<T> {
   }
 
   match(method: string, path: string): Result<T> | null {
+    clearWildcardRegExpCache() // no longer used.
+
     const matchers = this.buildAllMatchers()
 
     this.match = (method, path) => {
