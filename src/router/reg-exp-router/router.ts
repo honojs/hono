@@ -15,8 +15,15 @@ const emptyParam = {}
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nullMatcher: Matcher<any> = [/^$/, []]
 
+let wildcardRegExpCache: Record<string, RegExp> = {}
 function buildWildcardRegExp(path: string): RegExp {
-  return new RegExp(path === '*' ? '' : `^${path.replace(/\/\*/, '(?:|/.*)')}$`)
+  return (wildcardRegExpCache[path] ??= new RegExp(
+    path === '*' ? '' : `^${path.replace(/\/\*/, '(?:|/.*)')}$`
+  ))
+}
+
+function clearWildcardRegExpCache() {
+  wildcardRegExpCache = {}
 }
 
 function buildMatcherFromPreprocessedRoutes<T>(routes: [string, T[]][]): Matcher<T> {
@@ -114,7 +121,7 @@ export class RegExpRouter<T> implements Router<T> {
       Object.keys(middleware).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
           Object.keys(middleware[m]).forEach((p) => {
-            ;(path === '*' || re.test(p)) && middleware[m][p].push(handler)
+            ;(re.test(p) || buildWildcardRegExp(p).test(path)) && middleware[m][p].push(handler)
           })
         }
       })
@@ -148,6 +155,8 @@ export class RegExpRouter<T> implements Router<T> {
   }
 
   match(method: string, path: string): Result<T> | null {
+    clearWildcardRegExpCache() // no longer used.
+
     const matchers = this.buildAllMatchers()
 
     this.match = (method, path) => {
