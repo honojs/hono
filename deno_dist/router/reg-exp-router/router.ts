@@ -136,11 +136,10 @@ export class RegExpRouter<T> implements Router<T> {
 
       Object.keys(routes).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
-          routes[m][path] ||= [
-            ...(findMiddleware(middleware[m], path) ||
-              findMiddleware(middleware[METHOD_NAME_ALL], path) ||
-              []),
-          ]
+          const arr1 = findMiddleware(middleware[METHOD_NAME_ALL], path) || []
+          const arr2 = findMiddleware(middleware[m], path) || []
+          const arrAll = [...new Set([...arr2, ...arr1])]
+          routes[m][path] ||= arrAll
           routes[m][path].push(handler)
         }
       })
