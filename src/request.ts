@@ -33,7 +33,7 @@ declare global {
       (): Record<string, string>
     }
     cookie: {
-      (name: string): string
+      (name: string): string | undefined
       (): Cookie
     }
     bodyData?: BodyData
