@@ -1085,8 +1085,10 @@ describe('Cookie', () => {
         const yummyCookie = c.req.cookie('yummy_cookie')
         const tastyCookie = c.req.cookie('tasty_cookie')
         const res = new Response('Good cookie')
-        res.headers.set('Yummy-Cookie', yummyCookie)
-        res.headers.set('Tasty-Cookie', tastyCookie)
+        if (yummyCookie && tastyCookie) {
+          res.headers.set('Yummy-Cookie', yummyCookie)
+          res.headers.set('Tasty-Cookie', tastyCookie)
+        }
         return res
       })
 
