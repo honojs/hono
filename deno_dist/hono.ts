@@ -63,7 +63,7 @@ interface Route<
 
 export class Hono<
   E extends Partial<Environment> = Environment,
-  P extends string = '/',
+  P extends string = string,
   S = unknown
 > extends defineDynamicClass()<E, P, S, Hono<E, P, S>> {
   readonly router: Router<Handler<P, E, S>> = new SmartRouter({
