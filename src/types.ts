@@ -1,5 +1,4 @@
 import type { Context } from './context'
-import type { Schema } from './validator/schema'
 
 export interface ContextVariableMap {}
 
@@ -15,13 +14,13 @@ export type Environment = {
 export type Handler<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  S extends Partial<Schema> = Schema
+  S = unknown
 > = (c: Context<P, E, S>, next: Next) => Response | Promise<Response | undefined | void>
 
 export type MiddlewareHandler<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  S extends Partial<Schema> = Schema
+  S = unknown
 > = (c: Context<P, E, S>, next: Next) => Promise<Response | undefined | void>
 
 export type NotFoundHandler<E extends Partial<Environment> = Environment> = (
@@ -50,33 +49,23 @@ export type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
 
 // This is not used for internally
 // Will be used by users as `Handler`
-export interface CustomHandler<
-  P extends string | Partial<Environment> | Schema = string,
-  E = Partial<Environment> | Partial<Schema>,
-  S = Partial<Schema>
-> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface CustomHandler<P = string, E = Partial<Environment>, S = any> {
   (
     c: Context<
+      P extends string ? P : string,
+      P extends Partial<Environment> ? P : E extends Partial<Environment> ? E : never,
       P extends string
-        ? P
+        ? E extends Partial<Environment>
+          ? S
+          : P extends Partial<Environment>
+          ? E
+          : never
         : P extends Partial<Environment>
-        ? string
-        : P extends Partial<Schema>
-        ? string
-        : never,
-      P extends Partial<Environment>
-        ? P
-        : P extends Partial<Schema>
-        ? Partial<Environment>
-        : E extends Partial<Environment>
-        ? E extends Partial<Schema>
-          ? Environment
+        ? E extends Partial<Environment>
+          ? S
           : E
-        : E extends Partial<Schema>
-        ? Partial<Environment>
-        : Environment,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      S extends Schema ? S : P extends Schema ? P : E extends Schema ? E : any
+        : P
     >,
     next: Next
   ): Response | Promise<Response | undefined | void>

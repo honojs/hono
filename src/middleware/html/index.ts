@@ -14,9 +14,11 @@ export const html = (strings: TemplateStringsArray, ...values: unknown[]): HtmlE
   for (let i = 0, len = strings.length - 1; i < len; i++) {
     buffer[0] += strings[i]
 
-    const children = values[i] instanceof Array ? (values[i] as Array<unknown>).flat(Infinity) : [values[i]]
+    const children =
+      values[i] instanceof Array ? (values[i] as Array<unknown>).flat(Infinity) : [values[i]]
     for (let i = 0, len = children.length; i < len; i++) {
-      const child = children[i]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const child = children[i] as any
       if (typeof child === 'string') {
         escapeToBuffer(child, buffer)
       } else if (typeof child === 'boolean' || child === null || child === undefined) {
