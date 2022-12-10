@@ -14,13 +14,15 @@ export type Environment = {
 export type Handler<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  S = unknown
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  S = any
 > = (c: Context<P, E, S>, next: Next) => Response | Promise<Response | undefined | void>
 
 export type MiddlewareHandler<
   P extends string = string,
   E extends Partial<Environment> = Environment,
-  S = unknown
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  S = any
 > = (c: Context<P, E, S>, next: Next) => Promise<Response | undefined | void>
 
 export type NotFoundHandler<E extends Partial<Environment> = Environment> = (
