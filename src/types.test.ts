@@ -179,7 +179,6 @@ describe('CustomHandler as middleware', () => {
   }
 
   it('Should not throw Type error', async () => {
-    // Should not throw type error
     app.get('*', mid1(), mid2(), (c) => {
       return c.text('foo')
     })
