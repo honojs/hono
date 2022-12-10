@@ -1,5 +1,4 @@
 import type { Context } from './context.ts'
-import type { Schema } from './validator/schema.ts'
 
 export interface ContextVariableMap {}
 
