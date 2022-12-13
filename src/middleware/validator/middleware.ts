@@ -40,14 +40,14 @@ export const validatorMiddleware = <
     }
 
     const schema = validationFunction(v, c)
-    const validatorList = getValidatorList<S>(schema)
+    const validatorList = getValidatorList(schema)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let data: any = {}
 
     for (const [keys, validator] of validatorList) {
       let results: ValidateResult[]
       try {
-        results = await validator.validate(c.req as Request)
+        results = await validator.validate(c.req)
       } catch (e) {
         // Invalid JSON request
         if (e instanceof Error) {

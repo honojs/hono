@@ -37,7 +37,7 @@ export class Context<
     notFoundHandler: NotFoundHandler<E> = () => new Response()
   ) {
     this._executionCtx = executionCtx
-    this.req = req as Request<unknown, P, S extends Schema ? SchemaToProp<S> : S>
+    this.req = req as Request<unknown, P>
     this.env = env
 
     this.notFoundHandler = notFoundHandler
