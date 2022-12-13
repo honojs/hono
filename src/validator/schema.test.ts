@@ -9,9 +9,14 @@ describe('SchemaToProp', () => {
       title: v.json('title'),
       tags: v.array('tags', (v) => ({
         name: v.json('name'),
+        numbers: v.json('numbers').asArray().asNumber(),
+        strings: v.json('strings').asArray(),
+        booleans: v.json('booleans').asBoolean().asArray(),
       })),
+      authors: v.json('authors').asArray(),
       meta: v.object('meta', (v) => ({
         currentPage: v.json('currentPage').asNumber(),
+        flag: v.json('flag').asBoolean(),
       })),
     },
   })
@@ -24,10 +29,15 @@ describe('SchemaToProp', () => {
         tags: [
           {
             name: 'Daily',
+            numbers: [1, 2, 3],
+            strings: ['one', 'two', 'three'],
+            booleans: [true, false],
           },
         ],
+        authors: ['foo', 'bar'],
         meta: {
           currentPage: 1,
+          flag: true,
         },
       },
     }
