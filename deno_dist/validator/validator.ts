@@ -185,16 +185,12 @@ export abstract class VBase {
     })
   }
 
-  asNumber = (): VNumber | VNumberArray => {
-    const newVNumber = new VNumber({ ...this, type: 'number' })
-    if (this.isArray) return newVNumber.asArray()
-    return newVNumber
+  asNumber = () => {
+    return new VNumber({ ...this, type: 'number' })
   }
 
-  asBoolean = (): VBoolean | VBooleanArray => {
-    const newVBoolean = new VBoolean({ ...this, type: 'boolean' })
-    if (this.isArray) return newVBoolean.asArray()
-    return newVBoolean
+  asBoolean = () => {
+    return new VBoolean({ ...this, type: 'boolean' })
   }
 
   get(value: string) {
@@ -268,12 +264,8 @@ export abstract class VBase {
     return this.isArray ? `${prefix} "${this.type}[]"` : `${prefix} "${this.type}"`
   }
 
-  private sanitizeValue = (value: Type) => (
-    this.sanitizers.reduce(
-      (acc, sanitizer) => sanitizer(acc),
-      value
-    )
-  )
+  private sanitizeValue = (value: Type) =>
+    this.sanitizers.reduce((acc, sanitizer) => sanitizer(acc), value)
 
   private validateRule(rule: Rule, value: Type): ValidateResult {
     let isValid: boolean = false
@@ -478,7 +470,14 @@ export class VNumberArray extends VNumber {
     this.isArray = true
     this.rules[0].name = this.getTypeRuleName()
   }
+  asNumber = () => {
+    return new VNumberArray({ ...this, type: 'number' })
+  }
+  asBoolean = () => {
+    return new VBooleanArray({ ...this, type: 'boolean' })
+  }
 }
+
 export class VStringArray extends VString {
   isArray: true
   constructor(options: VOptions) {
@@ -486,12 +485,25 @@ export class VStringArray extends VString {
     this.isArray = true
     this.rules[0].name = this.getTypeRuleName()
   }
+  asNumber = () => {
+    return new VNumberArray({ ...this, type: 'number' })
+  }
+  asBoolean = () => {
+    return new VBooleanArray({ ...this, type: 'boolean' })
+  }
 }
+
 export class VBooleanArray extends VBoolean {
   isArray: true
   constructor(options: VOptions) {
     super(options)
     this.isArray = true
     this.rules[0].name = this.getTypeRuleName()
+  }
+  asNumber = () => {
+    return new VNumberArray({ ...this, type: 'number' })
+  }
+  asBoolean = () => {
+    return new VBooleanArray({ ...this, type: 'boolean' })
   }
 }

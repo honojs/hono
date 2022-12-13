@@ -3,56 +3,45 @@ import type {
   VNumber,
   VBoolean,
   VObject,
+  VArray,
   VNumberArray,
   VStringArray,
   VBooleanArray,
-  VArray,
-  VObjectBase,
+  VBase,
 } from './validator'
 
 export type Schema = {
-  [key: string]:
-    | VString
-    | VNumber
-    | VBoolean
-    | VStringArray
-    | VNumberArray
-    | VBooleanArray
-    | Schema
-    | VObject<Schema>
-    | VArray<Schema>
+  [key: string]: VString | VNumber | VBoolean | Schema | VObject<Schema> | VArray<Schema>
 }
 
-export type SchemaToProp<T> = T extends VArray<infer R>
-  ? SchemaToProp<R>[]
+type Primitive<T> = T extends VNumberArray
+  ? number[]
+  : T extends VNumber
+  ? number
+  : T extends VStringArray
+  ? string[]
+  : T extends VString
+  ? string
+  : T extends VBooleanArray
+  ? boolean[]
+  : T extends VBoolean
+  ? boolean
+  : T
+
+type P<T> = T extends VArray<infer R>
+  ? P<R>[]
   : T extends VObject<infer R>
-  ? SchemaToProp<R>
+  ? P<R>
   : {
-      [K in keyof T]: T[K] extends VNumberArray
-        ? number[]
-        : T[K] extends VBooleanArray
-        ? boolean[]
-        : T[K] extends VStringArray
-        ? string[]
-        : T[K] extends VString
-        ? string
-        : T[K] extends VNumber
-        ? number
-        : T[K] extends VBoolean
-        ? boolean
-        : T[K] extends VObjectBase<Schema>
-        ? T[K]['container'] extends VNumber
-          ? number
-          : T[K]['container'] extends VString
-          ? string
-          : T[K]['container'] extends VBoolean
-          ? boolean
-          : T[K] extends VArray<infer R>
-          ? SchemaToProp<R>[]
-          : T[K] extends VObject<infer R>
-          ? SchemaToProp<R>
-          : T[K] extends Schema
-          ? SchemaToProp<T[K]>
-          : never
-        : SchemaToProp<T[K]>
+      [K in keyof T]: T[K] extends VBase
+        ? Primitive<T[K]>
+        : T[K] extends VArray<infer R>
+        ? P<R>[]
+        : T[K] extends VObject<infer R>
+        ? P<R>
+        : T[K] extends Schema
+        ? P<T[K]>
+        : never
     }
+
+export type SchemaToProp<T> = P<T>
