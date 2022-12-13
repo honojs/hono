@@ -57,12 +57,15 @@ export function extendRequestPrototype() {
   Request.prototype.param = function (this: Request, key?: string) {
     if (this.paramData) {
       if (key) {
-        return decodeURIComponent(this.paramData[key])
+        const param = this.paramData[key]
+        return param ? decodeURIComponent(param) : undefined
       } else {
         const decoded: Record<string, string> = {}
 
         for (const [key, value] of Object.entries(this.paramData)) {
-          decoded[key] = decodeURIComponent(value)
+          if (value) {
+            decoded[key] = decodeURIComponent(value)
+          }
         }
 
         return decoded
