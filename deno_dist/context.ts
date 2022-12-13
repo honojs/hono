@@ -163,7 +163,14 @@ export class Context<
     return this.newResponse(data, status, headers)
   }
 
-  text(text: string, status: StatusCode = this._status, headers: Headers = {}): Response {
+  text(text: string, status?: StatusCode, headers?: Headers): Response {
+    // If the header is empty, return Response immediately.
+    // Content-Type will be added automatically as `text/plain`.
+    if (!headers && !status && !this._res && !this._headers) {
+      return new Response(text)
+    }
+    status ||= this._status
+    headers ||= {}
     headers['content-type'] = 'text/plain; charset=UTF-8'
     return this.newResponse(text, status, headers)
   }
