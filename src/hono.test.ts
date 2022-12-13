@@ -373,6 +373,21 @@ describe('param and query', () => {
       expect(await res.text()).toBe('foo is Bar')
     })
   })
+
+  describe('param with undefined', () => {
+    const app = new Hono()
+    app.get('/foo/:foo', (c) => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      /* @ts-ignore */
+      const bar = c.req.param('bar')
+      return c.json({ foo: bar })
+    })
+    it('param of /foo/foo should return undefined not "undefined"', async () => {
+      const res = await app.request('http://localhost/foo/foo')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ foo: undefined })
+    })
+  })
 })
 
 describe('Middleware', () => {
@@ -1246,7 +1261,7 @@ describe('Both two middleware returning response', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Bar')
-    expect(res.headers.get('content-type')).toBe('text/plain; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
   })
 })
 
