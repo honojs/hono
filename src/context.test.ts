@@ -12,7 +12,7 @@ describe('Context', () => {
   it('c.text()', async () => {
     const res = c.text('text in c', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
-    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
     expect(await res.text()).toBe('text in c')
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
@@ -182,6 +182,6 @@ describe('Context header', () => {
   it('Should rewrite header values correctly', async () => {
     c.res = c.html('foo')
     const res = c.text('foo')
-    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
   })
 })
