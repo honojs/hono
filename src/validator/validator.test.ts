@@ -1,12 +1,11 @@
-import { extendRequestPrototype } from '../request'
+import { HonoRequest } from '../request'
 import { Validator } from './validator'
-
-extendRequestPrototype()
 
 describe('Basic - query', () => {
   const v = new Validator()
 
-  const req = new Request('http://localhost/?q=foo&page=3')
+  const originalRequest = new Request('http://localhost/?q=foo&page=3')
+  const req = new HonoRequest(originalRequest)
 
   it('Should be valid - page', async () => {
     const validator = v.query('page').trim().isNumeric()
@@ -46,7 +45,8 @@ describe('Basic - query', () => {
 describe('Basic - queries', () => {
   const v = new Validator()
 
-  const req = new Request('http://localhost/?tag=foo&tag=bar&id=123&id=456')
+  const originalRequest = new Request('http://localhost/?tag=foo&tag=bar&id=123&id=456')
+  const req = new HonoRequest(originalRequest)
 
   it('Should be valid - tag', async () => {
     const validator = v.queries('tag').isRequired()
@@ -90,12 +90,14 @@ describe('Basic - queries', () => {
 describe('Basic - header', () => {
   const v = new Validator()
 
-  const req = new Request('http://localhost/', {
+  const originalRequest = new Request('http://localhost/', {
     headers: {
       'x-message': 'hello world!',
       'x-number': '12345',
     },
   })
+
+  const req = new HonoRequest(originalRequest)
 
   it('Should be valid - x-message', async () => {
     const validator = v.header('x-message').isRequired().contains('Hello', { ignoreCase: true })
@@ -124,10 +126,12 @@ describe('Basic - body', () => {
   const body = new FormData()
   body.append('title', '  abcdef ')
   body.append('title2', 'abcdef')
-  const req = new Request('http://localhost/', {
+  const originalRequest = new Request('http://localhost/', {
     method: 'POST',
     body: body,
   })
+
+  const req = new HonoRequest(originalRequest)
 
   it('Should be valid - title', async () => {
     const validator = v.body('title').trim().isLength({ max: 10 }).isRequired()
@@ -163,10 +167,11 @@ describe('Basic - JSON', () => {
     },
   }
 
-  const req = new Request('http://localhost/', {
+  const originalRequest = new Request('http://localhost/', {
     method: 'POST',
     body: JSON.stringify(post),
   })
+  const req = new HonoRequest(originalRequest)
 
   it('Should be valid - id', async () => {
     const validator = v.json('id').asNumber().isEqual(1234)
@@ -199,10 +204,11 @@ describe('Basic - JSON', () => {
 describe('Handle required values', () => {
   const v = new Validator()
 
-  const req = new Request('http://localhost/', {
+  const originalRequest = new Request('http://localhost/', {
     method: 'POST',
     body: JSON.stringify({ comment: null, name: 'John', admin: false }),
   })
+  const req = new HonoRequest(originalRequest)
 
   it('Should be valid - `name` is required', async () => {
     const validator = v.json('name').isRequired()
@@ -230,9 +236,10 @@ describe('Handle required values', () => {
 describe('Handle optional values', () => {
   it('Should be valid - `comment` is optional', async () => {
     const v = new Validator()
-    const req = new Request('http://localhost/', {
+    const originalRequest = new Request('http://localhost/', {
       method: 'POST',
     })
+    const req = new HonoRequest(originalRequest)
     const validator = v.body('comment').isOptional()
     const results = await validator.validate(req)
     expect(results[0].isValid).toBe(true)
@@ -240,7 +247,8 @@ describe('Handle optional values', () => {
   it('Should be valid - "isNumeric" but "isOptional"', async () => {
     const v = new Validator()
     const validator = v.query('page').isNumeric().isOptional()
-    const req = new Request('http://localhost/')
+    const originalRequest = new Request('http://localhost/')
+    const req = new HonoRequest(originalRequest)
     const results = await validator.validate(req)
     expect(results[0].isValid).toBe(true)
     expect(results[1].isValid).toBe(true)
@@ -257,10 +265,11 @@ describe('Handling types error', () => {
     published: 'true',
   }
 
-  const req = new Request('http://localhost/', {
+  const originalRequest = new Request('http://localhost/', {
     method: 'POST',
     body: JSON.stringify(post),
   })
+  const req = new HonoRequest(originalRequest)
 
   it('Should be invalid - "1234" is not number', async () => {
     const validator = v.json('id').asNumber().isEqual(1234)
@@ -312,10 +321,11 @@ describe('Handle array paths', () => {
     ],
   }
 
-  const req = new Request('http://localhost/', {
+  const originalRequest = new Request('http://localhost/', {
     method: 'POST',
     body: JSON.stringify(body),
   })
+  const req = new HonoRequest(originalRequest)
 
   it('Should validate targeted path in array', async () => {
     const validator = v.json('posts[*].published').asArray().asBoolean().isRequired()
@@ -372,23 +382,31 @@ describe('Handle array paths', () => {
     expect(results[0].isValid).toBe(true)
     expect(results[0].value).toEqual([false, true, undefined])
   })
-
-  ;[undefined, []].forEach(value => {
-    it(`Should allow ${value === undefined ? 'undefined' : 'empty'} arrays when optional`, async () => {
-      const req = new Request('http://localhost/', {
+  ;[undefined, []].forEach((value) => {
+    it(`Should allow ${
+      value === undefined ? 'undefined' : 'empty'
+    } arrays when optional`, async () => {
+      const originalRequest = new Request('http://localhost/', {
         method: 'POST',
-        body: JSON.stringify({ blog: {
-          ...(value === undefined ? {} : { posts: [] })
-        } }),
+        body: JSON.stringify({
+          blog: {
+            ...(value === undefined ? {} : { posts: [] }),
+          },
+        }),
       })
-      const vObject = v.object('blog', v => ({
-        posts: v.array('posts', v => ({
-          id: v.json('id').asNumber().isOptional(),
-          title: v.json('title').isOptional(),
-          author: v.object('author', v => ({
-            name: v.json('name'),
-          })).isOptional()
-        })).isOptional(),
+      const req = new HonoRequest(originalRequest)
+      const vObject = v.object('blog', (v) => ({
+        posts: v
+          .array('posts', (v) => ({
+            id: v.json('id').asNumber().isOptional(),
+            title: v.json('title').isOptional(),
+            author: v
+              .object('author', (v) => ({
+                name: v.json('name'),
+              }))
+              .isOptional(),
+          }))
+          .isOptional(),
         highlightedPostId: v.json('highlightedPostId').asNumber(),
       }))
       for (const validator of vObject.getValidators()) {
@@ -426,10 +444,11 @@ describe('Validate with asArray', () => {
     },
   }
 
-  const req = new Request('http://localhost/', {
+  const originalRequest = new Request('http://localhost/', {
     method: 'POST',
     body: JSON.stringify(json),
   })
+  const req = new HonoRequest(originalRequest)
 
   it('Should validate array values', async () => {
     const validator = v.json('post.title').asArray().isAlpha()
@@ -509,9 +528,10 @@ describe('Invalid HTTP request handling', () => {
   const v = new Validator()
 
   it('Should throw malformed error when JSON body absent', async () => {
-    const req = new Request('http://localhost/', {
+    const originalRequest = new Request('http://localhost/', {
       method: 'POST',
     })
+    const req = new HonoRequest(originalRequest)
 
     let error
     try {
@@ -525,10 +545,11 @@ describe('Invalid HTTP request handling', () => {
   })
 
   it('Should throw malformed error when a JSON body is not valid JSON', async () => {
-    const req = new Request('http://localhost/', {
+    const originalRequest = new Request('http://localhost/', {
       method: 'POST',
       body: 'Not json!',
     })
+    const req = new HonoRequest(originalRequest)
 
     let error
     try {
@@ -596,10 +617,11 @@ describe('Nested objects', () => {
     },
   }
 
-  const req = new Request('http://localhost/', {
+  const originalRequest = new Request('http://localhost/', {
     method: 'POST',
     body: JSON.stringify(json),
   })
+  const req = new HonoRequest(originalRequest)
 
   it('Should validate nested array values', async () => {
     const v = new Validator()
@@ -762,8 +784,8 @@ describe('Nested objects', () => {
       totalPosts: '3',
       meta: {
         foo: {
-         bar: 'test',
-        }
+          bar: 'test',
+        },
       },
       posts: [
         {
@@ -798,24 +820,25 @@ describe('Nested objects', () => {
         },
       ],
       highlightedPostId: '123',
-    }
+    },
   }
 
   it('Should threat `v.json()` as a nested array type only inside an array', async () => {
-    const req = new Request('http://localhost/', {
+    const originalRequest = new Request('http://localhost/', {
       method: 'POST',
       body: JSON.stringify(blogJson),
     })
+    const req = new HonoRequest(originalRequest)
 
     const v = new Validator()
-    const vObject = v.object('blog', v => ({
+    const vObject = v.object('blog', (v) => ({
       totalPosts: v.json('totalPosts').asNumber(),
-      posts: v.array('posts', v => ({
+      posts: v.array('posts', (v) => ({
         id: v.json('id').asNumber(),
         title: v.json('title'),
-        author: v.object('author', v => ({
+        author: v.object('author', (v) => ({
           name: v.json('name'),
-        }))
+        })),
       })),
       highlightedPostId: v.json('highlightedPostId').asNumber(),
     }))
@@ -824,11 +847,15 @@ describe('Nested objects', () => {
 
     const totalPostsResult = await validators[0].validate(req)
     expect(totalPostsResult[0].isValid).toBe(false)
-    expect(totalPostsResult[0].message).toBe('Invalid Value [3]: the JSON body "blog.totalPosts" is invalid - should be "number"')
+    expect(totalPostsResult[0].message).toBe(
+      'Invalid Value [3]: the JSON body "blog.totalPosts" is invalid - should be "number"'
+    )
 
     const postsIdResult = await validators[1].validate(req)
     expect(postsIdResult[0].isValid).toBe(false)
-    expect(postsIdResult[0].message).toBe('Invalid Value [123, "456", 789]: the JSON body "blog.posts.[*].id" is invalid - should be "number[]"')
+    expect(postsIdResult[0].message).toBe(
+      'Invalid Value [123, "456", 789]: the JSON body "blog.posts.[*].id" is invalid - should be "number[]"'
+    )
 
     const postsTitleResult = await validators[2].validate(req)
     expect(postsTitleResult[0].isValid).toBe(true)
@@ -838,24 +865,27 @@ describe('Nested objects', () => {
 
     const highlightedPostResult = await validators[4].validate(req)
     expect(highlightedPostResult[0].isValid).toBe(false)
-    expect(highlightedPostResult[0].message).toBe('Invalid Value [123]: the JSON body "blog.highlightedPostId" is invalid - should be "number"')
+    expect(highlightedPostResult[0].message).toBe(
+      'Invalid Value [123]: the JSON body "blog.highlightedPostId" is invalid - should be "number"'
+    )
   })
 
   it('Should correctly handle sequences of nested objects inside an array', async () => {
-    const req = new Request('http://localhost/', {
+    const originalRequest = new Request('http://localhost/', {
       method: 'POST',
       body: JSON.stringify(blogJson),
     })
+    const req = new HonoRequest(originalRequest)
 
     const v = new Validator()
-    const vObject = v.object('blog', v => ({
-      posts: v.array('posts', v => ({
-        author: v.object('author', v => ({
+    const vObject = v.object('blog', (v) => ({
+      posts: v.array('posts', (v) => ({
+        author: v.object('author', (v) => ({
           name: v.json('name'),
         })),
-        publisher: v.object('publisher', v => ({
+        publisher: v.object('publisher', (v) => ({
           name: v.json('name'),
-        }))
+        })),
       })),
     }))
 
@@ -867,10 +897,11 @@ describe('Nested objects', () => {
   })
 
   it('Should correctly handle values inside objects and arrays', async () => {
-    const req = new Request('http://localhost/', {
+    const originalRequest = new Request('http://localhost/', {
       method: 'POST',
       body: JSON.stringify(blogJson),
     })
+    const req = new HonoRequest(originalRequest)
 
     const v = new Validator()
     const vObject = v.object('blog', (v) => ({
@@ -905,10 +936,11 @@ describe('Custom message', () => {
     ],
   }
 
-  const req = new Request('http://localhost/', {
+  const originalRequest = new Request('http://localhost/', {
     method: 'POST',
     body: JSON.stringify(json),
   })
+  const req = new HonoRequest(originalRequest)
 
   it('Should return custom error message - value', async () => {
     const customMessage1 = 'Custom message: not contain!'
@@ -949,10 +981,11 @@ describe('Custom rule', () => {
     const body = new FormData()
     body.append('screenName', 'honojs_honojs_honojs_honojs_honojs')
 
-    const req = new Request('http://localhost/', {
+    const originalRequest = new Request('http://localhost/', {
       method: 'POST',
       body: body,
     })
+    const req = new HonoRequest(originalRequest)
     const results = await validator.validate(req)
     expect(results[0].isValid).toBe(true)
     expect(results[1].isValid).toBe(true)
@@ -962,10 +995,11 @@ describe('Custom rule', () => {
     const body = new FormData()
     body.append('screenName', 'honojs+honojs')
 
-    const req = new Request('http://localhost/', {
+    const originalRequest = new Request('http://localhost/', {
       method: 'POST',
       body: body,
     })
+    const req = new HonoRequest(originalRequest)
     const results = await validator.validate(req)
     expect(results[0].isValid).toBe(true)
     expect(results[1].isValid).toBe(false)
@@ -981,17 +1015,18 @@ describe('Sanitizer', () => {
   describe('built-in', () => {
     test('trim', async () => {
       const v = new Validator()
-  
+
       const post = { name: ' a bc ' }
-  
-      const req = new Request('http://localhost/', {
+
+      const originalRequest = new Request('http://localhost/', {
         method: 'POST',
         body: JSON.stringify(post),
       })
-  
+      const req = new HonoRequest(originalRequest)
+
       const validator = v.json('name').trim()
       const [result] = await validator.validate(req)
-  
+
       expect(result.value).toBe('a bc')
     })
   })
@@ -1001,10 +1036,11 @@ describe('Sanitizer', () => {
 
     const post = { name: ' a bc ' }
 
-    const req = new Request('http://localhost/', {
+    const originalRequest = new Request('http://localhost/', {
       method: 'POST',
       body: JSON.stringify(post),
     })
+    const req = new HonoRequest(originalRequest)
 
     const validator = v
       .json('name')

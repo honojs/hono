@@ -1,3 +1,4 @@
+import { HonoRequest } from './request'
 import type { ExecutionContext } from './types'
 import type { Environment, NotFoundHandler, ContextVariableMap } from './types'
 import type { CookieOptions } from './utils/cookie'
@@ -10,17 +11,24 @@ type Headers = Record<string, string | string[]>
 type Runtime = 'node' | 'deno' | 'bun' | 'cloudflare' | 'fastly' | 'vercel' | 'other'
 export type Data = string | ArrayBuffer | ReadableStream
 
+type ContextOptions<E extends Partial<Environment>> = {
+  env?: E['Bindings']
+  executionCtx?: FetchEvent | ExecutionContext | undefined
+  notFoundHandler?: NotFoundHandler<E>
+  paramData?: Record<string, string>
+}
+
 export class Context<
   P extends string = string,
   E extends Partial<Environment> = Environment,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   S = any
 > {
-  req: Request<unknown, P, S extends Schema ? SchemaToProp<S> : S>
-  env: E['Bindings']
-  finalized: boolean
+  env: E['Bindings'] = {}
+  finalized: boolean = false
   error: Error | undefined = undefined
 
+  private _req?: HonoRequest<P, S extends Schema ? SchemaToProp<S> : S>
   private _status: StatusCode = 200
   private _executionCtx: FetchEvent | ExecutionContext | undefined
   private _pretty: boolean = false
@@ -28,20 +36,32 @@ export class Context<
   private _map: Record<string, unknown> | undefined
   private _headers: Record<string, string[]> | undefined
   private _res: Response | undefined
-  private notFoundHandler: NotFoundHandler<E>
+  private _paramData: Record<string, string> | undefined
+  private originalRequest: Request
+  private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
-  constructor(
-    req: Request<unknown, P>,
-    env: E['Bindings'] = {},
-    executionCtx: FetchEvent | ExecutionContext | undefined = undefined,
-    notFoundHandler: NotFoundHandler<E> = () => new Response()
-  ) {
-    this._executionCtx = executionCtx
-    this.req = req as Request<unknown, P>
-    this.env = env
+  constructor(req: Request, options?: ContextOptions<E>) {
+    this.originalRequest = req
+    if (options) {
+      this._executionCtx = options.executionCtx
+      this._paramData = options.paramData
+      this.env = options.env
+      if (options.notFoundHandler) {
+        this.notFoundHandler = options.notFoundHandler
+      }
+    }
+  }
 
-    this.notFoundHandler = notFoundHandler
-    this.finalized = false
+  get req(): HonoRequest<P, S extends Schema ? SchemaToProp<S> : S> {
+    if (this._req) {
+      return this._req
+    } else {
+      this._req = new HonoRequest<P, S extends Schema ? SchemaToProp<S> : S>(
+        this.originalRequest,
+        this._paramData
+      )
+      return this._req
+    }
   }
 
   get event(): FetchEvent {
