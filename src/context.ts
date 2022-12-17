@@ -1,3 +1,4 @@
+import { HonoRequest } from './request'
 import type { ExecutionContext } from './types'
 import type { Environment, NotFoundHandler, ContextVariableMap } from './types'
 import type { CookieOptions } from './utils/cookie'
@@ -16,7 +17,7 @@ export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   S = any
 > {
-  req: Request<unknown, P, S extends Schema ? SchemaToProp<S> : S>
+  req: HonoRequest<P, S extends Schema ? SchemaToProp<S> : S>
   env: E['Bindings']
   finalized: boolean
   error: Error | undefined = undefined
@@ -31,13 +32,13 @@ export class Context<
   private notFoundHandler: NotFoundHandler<E>
 
   constructor(
-    req: Request<unknown, P>,
+    req: HonoRequest<P, S> | Request,
     env: E['Bindings'] = {},
     executionCtx: FetchEvent | ExecutionContext | undefined = undefined,
     notFoundHandler: NotFoundHandler<E> = () => new Response()
   ) {
     this._executionCtx = executionCtx
-    this.req = req as Request<unknown, P>
+    this.req = req instanceof HonoRequest ? req : new HonoRequest<P, S>(req)
     this.env = env
 
     this.notFoundHandler = notFoundHandler

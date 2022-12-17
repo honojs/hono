@@ -1,6 +1,6 @@
 import { compose } from './compose'
 import { Context } from './context'
-import { extendRequestPrototype } from './request'
+import { HonoRequest } from './request'
 import type { Router } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router'
 import { RegExpRouter } from './router/reg-exp-router'
@@ -77,8 +77,6 @@ export class Hono<
 
   constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
     super()
-
-    extendRequestPrototype()
 
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
@@ -195,10 +193,11 @@ export class Hono<
   }
 
   private dispatch(
-    request: Request,
+    req: Request | HonoRequest,
     eventOrExecutionCtx?: ExecutionContext | FetchEvent,
     env?: E['Bindings']
   ) {
+    const request = req instanceof HonoRequest ? req : new HonoRequest(req)
     const path = getPathFromURL(request.url, this.strict)
     const method = request.method
 
@@ -258,12 +257,18 @@ export class Hono<
     return this.dispatch(event.request, event)
   }
 
-  fetch = (request: Request, Environment?: E['Bindings'], executionCtx?: ExecutionContext) => {
+  fetch = (request: HonoRequest | Request, Environment?: E['Bindings'], executionCtx?: ExecutionContext) => {
     return this.dispatch(request, executionCtx, Environment)
   }
 
-  request = async (input: Request | string, requestInit?: RequestInit) => {
-    const req = input instanceof Request ? input : new Request(input, requestInit)
+  request = async (input: HonoRequest | Request | string, requestInit?: RequestInit) => {
+    const req =
+      input instanceof HonoRequest
+        ? input
+        : input instanceof Request
+        ? new HonoRequest(input)
+        : new HonoRequest(input, requestInit)
+
     return await this.fetch(req)
   }
 }

@@ -4,57 +4,16 @@ import type { Cookie } from './utils/cookie'
 import { parse } from './utils/cookie'
 import { getQueryStringFromURL } from './utils/url'
 
-declare global {
-  interface Request<
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    CfHostMetadata = unknown,
-    ParamKeyType extends string = string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Data = any
-  > {
-    paramData?: Record<ParamKeyType, string>
-    param: {
-      (key: ParamKeyType): string
-      (): Record<ParamKeyType, string>
-    }
-    queryData?: Record<string, string>
-    query: {
-      (key: string): string
-      (): Record<string, string>
-    }
-    queries: {
-      (key: string): string[]
-      (): Record<string, string[]>
-    }
-    headerData?: Record<string, string>
-    header: {
-      (name: string): string
-      (): Record<string, string>
-    }
-    cookie: {
-      (name: string): string | undefined
-      (): Cookie
-    }
-    bodyData?: BodyData
-    parseBody<BodyType extends BodyData>(): Promise<BodyType>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    jsonData?: any
-    json<T>(): Promise<T>
-    data: Data
-    valid: {
-      (data: Data): Data
-      (): Data
-    }
-  }
-}
+export class HonoRequest<
+  ParamKeyType extends string = string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Data = any
+> extends Request {
+  paramData?: Record<ParamKeyType, string>
 
-export function extendRequestPrototype() {
-  if (!!Request.prototype.param as boolean) {
-    // already extended
-    return
-  }
-
-  Request.prototype.param = function (this: Request, key?: string) {
+  param(key: ParamKeyType): string
+  param(): Record<ParamKeyType, string>
+  param(key?: ParamKeyType) {
     if (this.paramData) {
       if (key) {
         const param = this.paramData[key]
@@ -63,7 +22,7 @@ export function extendRequestPrototype() {
         const decoded: Record<string, string> = {}
 
         for (const [key, value] of Object.entries(this.paramData)) {
-          if (value) {
+          if (typeof value === 'string') {
             decoded[key] = decodeURIComponent(value)
           }
         }
@@ -72,9 +31,13 @@ export function extendRequestPrototype() {
       }
     }
     return null
-  } as InstanceType<typeof Request>['param']
+  }
 
-  Request.prototype.header = function (this: Request, name?: string) {
+  headerData?: Record<string, string>
+
+  header(name: string): string
+  header(): Record<string, string>
+  header(name?: string) {
     if (!this.headerData) {
       this.headerData = {}
       this.headers.forEach((value, key) => {
@@ -87,9 +50,12 @@ export function extendRequestPrototype() {
     } else {
       return this.headerData
     }
-  } as InstanceType<typeof Request>['header']
+  }
 
-  Request.prototype.query = function (this: Request, key?: string) {
+  queryData?: Record<string, string>
+  query(key: string): string
+  query(): Record<string, string>
+  query(key?: string) {
     const queryString = getQueryStringFromURL(this.url)
     const searchParams = new URLSearchParams(queryString)
     if (!this.queryData) {
@@ -103,9 +69,11 @@ export function extendRequestPrototype() {
     } else {
       return this.queryData
     }
-  } as InstanceType<typeof Request>['query']
+  }
 
-  Request.prototype.queries = function (this: Request, key?: string) {
+  queries(key: string): string[]
+  queries(): Record<string, string[]>
+  queries(key?: string) {
     const queryString = getQueryStringFromURL(this.url)
     const searchParams = new URLSearchParams(queryString)
     if (key) {
@@ -117,22 +85,25 @@ export function extendRequestPrototype() {
       }
       return result
     }
-  } as InstanceType<typeof Request>['queries']
+  }
 
-  Request.prototype.cookie = function (this: Request, key?: string) {
+  cookie(): Cookie
+  cookie(key: string): string | undefined
+  cookie(key?: string) {
     const cookie = this.headers.get('Cookie') || ''
     const obj = parse(cookie)
+
     if (key) {
       const value = obj[key]
-      return value
-    } else {
-      return obj
+      return value || undefined
     }
-  } as InstanceType<typeof Request>['cookie']
 
-  Request.prototype.parseBody = async function <BodyType extends BodyData>(
-    this: Request
-  ): Promise<BodyType> {
+    return obj
+  }
+
+  bodyData?: BodyData
+
+  async parseBody<BodyType extends BodyData>(): Promise<BodyType> {
     // Cache the parsed body
     let body: BodyType
     if (!this.bodyData) {
@@ -142,9 +113,12 @@ export function extendRequestPrototype() {
       body = this.bodyData as BodyType
     }
     return body
-  } as InstanceType<typeof Request>['parseBody']
+  }
 
-  Request.prototype.json = async function <JSONData = unknown>(this: Request) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  jsonData?: any
+  async json<T>(): Promise<T>
+  async json<JSONData = unknown>() {
     // Cache the JSON body
     let jsonData: Partial<JSONData>
     if (!this.jsonData) {
@@ -154,15 +128,16 @@ export function extendRequestPrototype() {
       jsonData = this.jsonData
     }
     return jsonData
-  } as InstanceType<typeof Request>['jsonData']
+  }
 
-  Request.prototype.valid = function (this: Request, data?: unknown) {
+  data?: Data
+  valid(data?: unknown) {
     if (!this.data) {
-      this.data = {}
+      this.data = {} as Data
     }
     if (data) {
-      this.data = data
+      this.data = data as Data
     }
     return this.data
-  } as InstanceType<typeof Request>['valid']
+  }
 }

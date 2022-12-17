@@ -3,6 +3,7 @@ import type { Context } from './context'
 import { Hono } from './hono'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
+import { HonoRequest } from './request'
 import { RegExpRouter } from './router/reg-exp-router'
 import { StaticRouter } from './router/static-router'
 import { TrieRouter } from './router/trie-router'
@@ -1201,7 +1202,7 @@ describe('Parse Body', () => {
   })
 
   it('POST with JSON', async () => {
-    const req = new Request('http://localhost/json', {
+    const req = new HonoRequest('http://localhost/json', {
       method: 'POST',
       body: JSON.stringify({ message: 'hello hono' }),
       headers: new Headers({ 'Content-Type': 'application/json' }),
@@ -1216,7 +1217,7 @@ describe('Parse Body', () => {
   it('POST with `multipart/form-data`', async () => {
     const formData = new FormData()
     formData.append('message', 'hello')
-    const req = new Request('https://localhost/form', {
+    const req = new HonoRequest('https://localhost/form', {
       method: 'POST',
       body: formData,
     })
@@ -1231,7 +1232,7 @@ describe('Parse Body', () => {
   it('POST with `application/x-www-form-urlencoded`', async () => {
     const searchParam = new URLSearchParams()
     searchParam.append('message', 'hello')
-    const req = new Request('https://localhost/form', {
+    const req = new HonoRequest('https://localhost/form', {
       method: 'POST',
       body: searchParam,
       headers: {

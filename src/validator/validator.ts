@@ -1,3 +1,4 @@
+import type { HonoRequest } from '../request'
 import { JSONPathCopy } from './../utils/json'
 import type { JSONObject, JSONPrimitive, JSONArray } from './../utils/json'
 import { rule } from './rule'
@@ -201,7 +202,7 @@ export abstract class VBase {
     return this
   }
 
-  validate = async <R extends Request>(req: R): Promise<ValidateResult[]> => {
+  validate = async <R extends HonoRequest>(req: R): Promise<ValidateResult[]> => {
     let value: Type = undefined
     let jsonData: JSONObject | undefined = undefined
 

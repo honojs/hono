@@ -1,12 +1,10 @@
-import { extendRequestPrototype } from '../request'
+import { HonoRequest } from '../request'
 import { Validator } from './validator'
-
-extendRequestPrototype()
 
 describe('Basic - query', () => {
   const v = new Validator()
 
-  const req = new Request('http://localhost/?q=foo&page=3')
+  const req = new HonoRequest('http://localhost/?q=foo&page=3')
 
   it('Should be valid - page', async () => {
     const validator = v.query('page').trim().isNumeric()
@@ -46,7 +44,7 @@ describe('Basic - query', () => {
 describe('Basic - queries', () => {
   const v = new Validator()
 
-  const req = new Request('http://localhost/?tag=foo&tag=bar&id=123&id=456')
+  const req = new HonoRequest('http://localhost/?tag=foo&tag=bar&id=123&id=456')
 
   it('Should be valid - tag', async () => {
     const validator = v.queries('tag').isRequired()
@@ -90,7 +88,7 @@ describe('Basic - queries', () => {
 describe('Basic - header', () => {
   const v = new Validator()
 
-  const req = new Request('http://localhost/', {
+  const req = new HonoRequest('http://localhost/', {
     headers: {
       'x-message': 'hello world!',
       'x-number': '12345',
@@ -124,7 +122,7 @@ describe('Basic - body', () => {
   const body = new FormData()
   body.append('title', '  abcdef ')
   body.append('title2', 'abcdef')
-  const req = new Request('http://localhost/', {
+  const req = new HonoRequest('http://localhost/', {
     method: 'POST',
     body: body,
   })
@@ -163,7 +161,7 @@ describe('Basic - JSON', () => {
     },
   }
 
-  const req = new Request('http://localhost/', {
+  const req = new HonoRequest('http://localhost/', {
     method: 'POST',
     body: JSON.stringify(post),
   })
@@ -199,7 +197,7 @@ describe('Basic - JSON', () => {
 describe('Handle required values', () => {
   const v = new Validator()
 
-  const req = new Request('http://localhost/', {
+  const req = new HonoRequest('http://localhost/', {
     method: 'POST',
     body: JSON.stringify({ comment: null, name: 'John', admin: false }),
   })
@@ -230,7 +228,7 @@ describe('Handle required values', () => {
 describe('Handle optional values', () => {
   it('Should be valid - `comment` is optional', async () => {
     const v = new Validator()
-    const req = new Request('http://localhost/', {
+    const req = new HonoRequest('http://localhost/', {
       method: 'POST',
     })
     const validator = v.body('comment').isOptional()
@@ -240,7 +238,7 @@ describe('Handle optional values', () => {
   it('Should be valid - "isNumeric" but "isOptional"', async () => {
     const v = new Validator()
     const validator = v.query('page').isNumeric().isOptional()
-    const req = new Request('http://localhost/')
+    const req = new HonoRequest('http://localhost/')
     const results = await validator.validate(req)
     expect(results[0].isValid).toBe(true)
     expect(results[1].isValid).toBe(true)
@@ -257,7 +255,7 @@ describe('Handling types error', () => {
     published: 'true',
   }
 
-  const req = new Request('http://localhost/', {
+  const req = new HonoRequest('http://localhost/', {
     method: 'POST',
     body: JSON.stringify(post),
   })
@@ -312,7 +310,7 @@ describe('Handle array paths', () => {
     ],
   }
 
-  const req = new Request('http://localhost/', {
+  const req = new HonoRequest('http://localhost/', {
     method: 'POST',
     body: JSON.stringify(body),
   })
@@ -375,7 +373,7 @@ describe('Handle array paths', () => {
 
   ;[undefined, []].forEach(value => {
     it(`Should allow ${value === undefined ? 'undefined' : 'empty'} arrays when optional`, async () => {
-      const req = new Request('http://localhost/', {
+      const req = new HonoRequest('http://localhost/', {
         method: 'POST',
         body: JSON.stringify({ blog: {
           ...(value === undefined ? {} : { posts: [] })
@@ -426,7 +424,7 @@ describe('Validate with asArray', () => {
     },
   }
 
-  const req = new Request('http://localhost/', {
+  const req = new HonoRequest('http://localhost/', {
     method: 'POST',
     body: JSON.stringify(json),
   })
@@ -509,7 +507,7 @@ describe('Invalid HTTP request handling', () => {
   const v = new Validator()
 
   it('Should throw malformed error when JSON body absent', async () => {
-    const req = new Request('http://localhost/', {
+    const req = new HonoRequest('http://localhost/', {
       method: 'POST',
     })
 
@@ -525,7 +523,7 @@ describe('Invalid HTTP request handling', () => {
   })
 
   it('Should throw malformed error when a JSON body is not valid JSON', async () => {
-    const req = new Request('http://localhost/', {
+    const req = new HonoRequest('http://localhost/', {
       method: 'POST',
       body: 'Not json!',
     })
@@ -596,7 +594,7 @@ describe('Nested objects', () => {
     },
   }
 
-  const req = new Request('http://localhost/', {
+  const req = new HonoRequest('http://localhost/', {
     method: 'POST',
     body: JSON.stringify(json),
   })
@@ -802,7 +800,7 @@ describe('Nested objects', () => {
   }
 
   it('Should threat `v.json()` as a nested array type only inside an array', async () => {
-    const req = new Request('http://localhost/', {
+    const req = new HonoRequest('http://localhost/', {
       method: 'POST',
       body: JSON.stringify(blogJson),
     })
@@ -842,7 +840,7 @@ describe('Nested objects', () => {
   })
 
   it('Should correctly handle sequences of nested objects inside an array', async () => {
-    const req = new Request('http://localhost/', {
+    const req = new HonoRequest('http://localhost/', {
       method: 'POST',
       body: JSON.stringify(blogJson),
     })
@@ -867,7 +865,7 @@ describe('Nested objects', () => {
   })
 
   it('Should correctly handle values inside objects and arrays', async () => {
-    const req = new Request('http://localhost/', {
+    const req = new HonoRequest('http://localhost/', {
       method: 'POST',
       body: JSON.stringify(blogJson),
     })
@@ -905,7 +903,7 @@ describe('Custom message', () => {
     ],
   }
 
-  const req = new Request('http://localhost/', {
+  const req = new HonoRequest('http://localhost/', {
     method: 'POST',
     body: JSON.stringify(json),
   })
@@ -949,7 +947,7 @@ describe('Custom rule', () => {
     const body = new FormData()
     body.append('screenName', 'honojs_honojs_honojs_honojs_honojs')
 
-    const req = new Request('http://localhost/', {
+    const req = new HonoRequest('http://localhost/', {
       method: 'POST',
       body: body,
     })
@@ -962,7 +960,7 @@ describe('Custom rule', () => {
     const body = new FormData()
     body.append('screenName', 'honojs+honojs')
 
-    const req = new Request('http://localhost/', {
+    const req = new HonoRequest('http://localhost/', {
       method: 'POST',
       body: body,
     })
@@ -984,7 +982,7 @@ describe('Sanitizer', () => {
   
       const post = { name: ' a bc ' }
   
-      const req = new Request('http://localhost/', {
+      const req = new HonoRequest('http://localhost/', {
         method: 'POST',
         body: JSON.stringify(post),
       })
@@ -1001,7 +999,7 @@ describe('Sanitizer', () => {
 
     const post = { name: ' a bc ' }
 
-    const req = new Request('http://localhost/', {
+    const req = new HonoRequest('http://localhost/', {
       method: 'POST',
       body: JSON.stringify(post),
     })
