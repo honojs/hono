@@ -37,11 +37,11 @@ export class Context<
   private _headers: Record<string, string[]> | undefined
   private _res: Response | undefined
   private _paramData: Record<string, string> | undefined
-  private originalRequest: Request
+  private rawRequest: Request
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
   constructor(req: Request, options?: ContextOptions<E>) {
-    this.originalRequest = req
+    this.rawRequest = req
     if (options) {
       this._executionCtx = options.executionCtx
       this._paramData = options.paramData
@@ -57,7 +57,7 @@ export class Context<
       return this._req
     } else {
       this._req = new HonoRequest<P, S extends Schema ? SchemaToProp<S> : S>(
-        this.originalRequest,
+        this.rawRequest,
         this._paramData
       )
       return this._req

@@ -9,7 +9,7 @@ export class HonoRequest<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Data = any
 > {
-  original: Request
+  raw: Request
 
   private paramData: Record<string, string> | undefined
   private headerData: Record<string, string> | undefined
@@ -20,7 +20,7 @@ export class HonoRequest<
   private data: Data | undefined
 
   constructor(request: Request, paramData?: Record<string, string> | undefined) {
-    this.original = request
+    this.raw = request
     this.paramData = paramData
   }
 
@@ -85,7 +85,7 @@ export class HonoRequest<
   header(name?: string) {
     if (!this.headerData) {
       this.headerData = {}
-      this.original.headers.forEach((value, key) => {
+      this.raw.headers.forEach((value, key) => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.headerData![key] = value
       })
@@ -100,7 +100,7 @@ export class HonoRequest<
   cookie(key: string): string | undefined
   cookie(): Cookie
   cookie(key?: string) {
-    const cookie = this.original.headers.get('Cookie')
+    const cookie = this.raw.headers.get('Cookie')
     if (!cookie) return
     const obj = parse(cookie)
     if (key) {
@@ -115,7 +115,7 @@ export class HonoRequest<
     // Cache the parsed body
     let body: BodyType
     if (!this.bodyData) {
-      body = await parseBody<BodyType>(this.original)
+      body = await parseBody<BodyType>(this.raw)
       this.bodyData = body
     } else {
       body = this.bodyData as BodyType
@@ -127,7 +127,7 @@ export class HonoRequest<
     // Cache the JSON body
     let jsonData: Promise<Partial<JSONData>>
     if (!this.jsonData) {
-      jsonData = this.original.json()
+      jsonData = this.raw.json()
       this.jsonData = jsonData
     } else {
       jsonData = this.jsonData
@@ -136,19 +136,19 @@ export class HonoRequest<
   }
 
   async text() {
-    return this.original.text()
+    return this.raw.text()
   }
 
   async arrayBuffer() {
-    return this.original.arrayBuffer()
+    return this.raw.arrayBuffer()
   }
 
   async blob() {
-    return this.original.blob()
+    return this.raw.blob()
   }
 
   async formData() {
-    return this.original.formData()
+    return this.raw.formData()
   }
 
   valid(data?: unknown) {
@@ -162,45 +162,45 @@ export class HonoRequest<
   }
 
   get url() {
-    return this.original.url
+    return this.raw.url
   }
   get method() {
-    return this.original.method
+    return this.raw.method
   }
   get headers() {
-    return this.original.headers
+    return this.raw.headers
   }
   get redirect() {
-    return this.original.redirect
+    return this.raw.redirect
   }
   get body() {
-    return this.original.body
+    return this.raw.body
   }
   get bodyUsed() {
-    return this.original.bodyUsed
+    return this.raw.bodyUsed
   }
   get cache() {
-    return this.original.cache
+    return this.raw.cache
   }
   get credentials() {
-    return this.original.credentials
+    return this.raw.credentials
   }
   get integrity() {
-    return this.original.integrity
+    return this.raw.integrity
   }
   get keepalive() {
-    return this.original.keepalive
+    return this.raw.keepalive
   }
   get mode() {
-    return this.original.mode
+    return this.raw.mode
   }
   get referrer() {
-    return this.original.referrer
+    return this.raw.referrer
   }
   get refererPolicy() {
-    return this.original.referrerPolicy
+    return this.raw.referrerPolicy
   }
   get signal() {
-    return this.original.signal
+    return this.raw.signal
   }
 }
