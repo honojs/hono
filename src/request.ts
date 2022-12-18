@@ -15,7 +15,8 @@ export class HonoRequest<
   private headerData: Record<string, string> | undefined
   private queryData: Record<string, string> | undefined
   private bodyData: BodyData | undefined
-  private jsonData: any | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private jsonData: Promise<any> | undefined
   private data: Data | undefined
 
   constructor(request: Request, paramData?: Record<string, string> | undefined) {
@@ -124,9 +125,9 @@ export class HonoRequest<
 
   async json<JSONData = unknown>() {
     // Cache the JSON body
-    let jsonData: Partial<JSONData>
+    let jsonData: Promise<Partial<JSONData>>
     if (!this.jsonData) {
-      jsonData = JSON.parse(await this.original.text())
+      jsonData = this.original.json()
       this.jsonData = jsonData
     } else {
       jsonData = this.jsonData
@@ -135,19 +136,19 @@ export class HonoRequest<
   }
 
   async text() {
-    return await this.original.text()
+    return this.original.text()
   }
 
   async arrayBuffer() {
-    return await this.original.arrayBuffer()
+    return this.original.arrayBuffer()
   }
 
   async blob() {
-    return await this.original.blob()
+    return this.original.blob()
   }
 
   async formData() {
-    return await this.original.formData()
+    return this.original.formData()
   }
 
   valid(data?: unknown) {
