@@ -1224,8 +1224,6 @@ describe('Parse Body', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    const body = await req.parseBody()
-    expect(body).toEqual({})
   })
 
   it('POST with `multipart/form-data`', async () => {
@@ -1239,7 +1237,6 @@ describe('Parse Body', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await req.parseBody()).toEqual({ message: 'hello' })
     expect(await res.json()).toEqual({ message: 'hello' })
   })
 
@@ -1257,7 +1254,6 @@ describe('Parse Body', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await req.parseBody()).toEqual({ message: 'hello' })
     expect(await res.json()).toEqual({ message: 'hello' })
   })
 })
