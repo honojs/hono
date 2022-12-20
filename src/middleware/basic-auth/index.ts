@@ -1,3 +1,4 @@
+import type { HonoRequest } from '../../request'
 import type { MiddlewareHandler } from '../../types'
 import { timingSafeEqual } from '../../utils/buffer'
 import { decodeBase64 } from '../../utils/encode'
@@ -5,7 +6,7 @@ import { decodeBase64 } from '../../utils/encode'
 const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/
 
-const auth = (req: Request) => {
+const auth = (req: HonoRequest) => {
   const match = CREDENTIALS_REGEXP.exec(req.headers.get('Authorization') || '')
   if (!match) {
     return undefined
