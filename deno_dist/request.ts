@@ -4,57 +4,29 @@ import type { Cookie } from './utils/cookie.ts'
 import { parse } from './utils/cookie.ts'
 import { getQueryStringFromURL } from './utils/url.ts'
 
-declare global {
-  interface Request<
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    CfHostMetadata = unknown,
-    ParamKeyType extends string = string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Data = any
-  > {
-    paramData?: Record<ParamKeyType, string>
-    param: {
-      (key: ParamKeyType): string
-      (): Record<ParamKeyType, string>
-    }
-    queryData?: Record<string, string>
-    query: {
-      (key: string): string
-      (): Record<string, string>
-    }
-    queries: {
-      (key: string): string[]
-      (): Record<string, string[]>
-    }
-    headerData?: Record<string, string>
-    header: {
-      (name: string): string
-      (): Record<string, string>
-    }
-    cookie: {
-      (name: string): string | undefined
-      (): Cookie
-    }
-    bodyData?: BodyData
-    parseBody<BodyType extends BodyData>(): Promise<BodyType>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    jsonData?: any
-    json<T>(): Promise<T>
-    data: Data
-    valid: {
-      (data: Data): Data
-      (): Data
-    }
-  }
-}
+export class HonoRequest<
+  ParamKey extends string = string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Data = any
+> {
+  raw: Request
 
-export function extendRequestPrototype() {
-  if (!!Request.prototype.param as boolean) {
-    // already extended
-    return
+  private paramData: Record<string, string> | undefined
+  private headerData: Record<string, string> | undefined
+  private queryData: Record<string, string> | undefined
+  private bodyData: BodyData | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private jsonData: Promise<any> | undefined
+  private data: Data | undefined
+
+  constructor(request: Request, paramData?: Record<string, string> | undefined) {
+    this.raw = request
+    this.paramData = paramData
   }
 
-  Request.prototype.param = function (this: Request, key?: string) {
+  param(key: ParamKey): string
+  param(): Record<ParamKey, string>
+  param(key?: string) {
     if (this.paramData) {
       if (key) {
         const param = this.paramData[key]
@@ -63,7 +35,7 @@ export function extendRequestPrototype() {
         const decoded: Record<string, string> = {}
 
         for (const [key, value] of Object.entries(this.paramData)) {
-          if (value) {
+          if (value && typeof value === 'string') {
             decoded[key] = decodeURIComponent(value)
           }
         }
@@ -72,24 +44,11 @@ export function extendRequestPrototype() {
       }
     }
     return null
-  } as InstanceType<typeof Request>['param']
+  }
 
-  Request.prototype.header = function (this: Request, name?: string) {
-    if (!this.headerData) {
-      this.headerData = {}
-      this.headers.forEach((value, key) => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.headerData![key] = value
-      })
-    }
-    if (name) {
-      return this.headerData[name.toLowerCase()]
-    } else {
-      return this.headerData
-    }
-  } as InstanceType<typeof Request>['header']
-
-  Request.prototype.query = function (this: Request, key?: string) {
+  query(key: string): string
+  query(): Record<string, string>
+  query(key?: string) {
     const queryString = getQueryStringFromURL(this.url)
     const searchParams = new URLSearchParams(queryString)
     if (!this.queryData) {
@@ -103,9 +62,11 @@ export function extendRequestPrototype() {
     } else {
       return this.queryData
     }
-  } as InstanceType<typeof Request>['query']
+  }
 
-  Request.prototype.queries = function (this: Request, key?: string) {
+  queries(key: string): string[]
+  queries(): Record<string, string[]>
+  queries(key?: string) {
     const queryString = getQueryStringFromURL(this.url)
     const searchParams = new URLSearchParams(queryString)
     if (key) {
@@ -117,10 +78,30 @@ export function extendRequestPrototype() {
       }
       return result
     }
-  } as InstanceType<typeof Request>['queries']
+  }
 
-  Request.prototype.cookie = function (this: Request, key?: string) {
-    const cookie = this.headers.get('Cookie') || ''
+  header(name: string): string
+  header(): Record<string, string>
+  header(name?: string) {
+    if (!this.headerData) {
+      this.headerData = {}
+      this.raw.headers.forEach((value, key) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.headerData![key] = value
+      })
+    }
+    if (name) {
+      return this.headerData[name.toLowerCase()]
+    } else {
+      return this.headerData
+    }
+  }
+
+  cookie(key: string): string | undefined
+  cookie(): Cookie
+  cookie(key?: string) {
+    const cookie = this.raw.headers.get('Cookie')
+    if (!cookie) return
     const obj = parse(cookie)
     if (key) {
       const value = obj[key]
@@ -128,41 +109,98 @@ export function extendRequestPrototype() {
     } else {
       return obj
     }
-  } as InstanceType<typeof Request>['cookie']
+  }
 
-  Request.prototype.parseBody = async function <BodyType extends BodyData>(
-    this: Request
-  ): Promise<BodyType> {
+  async parseBody<BodyType extends BodyData>(): Promise<BodyType> {
     // Cache the parsed body
     let body: BodyType
     if (!this.bodyData) {
-      body = await parseBody<BodyType>(this)
+      body = await parseBody<BodyType>(this.raw)
       this.bodyData = body
     } else {
       body = this.bodyData as BodyType
     }
     return body
-  } as InstanceType<typeof Request>['parseBody']
+  }
 
-  Request.prototype.json = async function <JSONData = unknown>(this: Request) {
+  async json<JSONData = unknown>() {
     // Cache the JSON body
-    let jsonData: Partial<JSONData>
+    let jsonData: Promise<Partial<JSONData>>
     if (!this.jsonData) {
-      jsonData = JSON.parse(await this.text())
+      jsonData = this.raw.json()
       this.jsonData = jsonData
     } else {
       jsonData = this.jsonData
     }
     return jsonData
-  } as InstanceType<typeof Request>['jsonData']
+  }
 
-  Request.prototype.valid = function (this: Request, data?: unknown) {
+  async text() {
+    return this.raw.text()
+  }
+
+  async arrayBuffer() {
+    return this.raw.arrayBuffer()
+  }
+
+  async blob() {
+    return this.raw.blob()
+  }
+
+  async formData() {
+    return this.raw.formData()
+  }
+
+  valid(data?: unknown) {
     if (!this.data) {
-      this.data = {}
+      this.data = {} as Data
     }
     if (data) {
-      this.data = data
+      this.data = data as Data
     }
     return this.data
-  } as InstanceType<typeof Request>['valid']
+  }
+
+  get url() {
+    return this.raw.url
+  }
+  get method() {
+    return this.raw.method
+  }
+  get headers() {
+    return this.raw.headers
+  }
+  get redirect() {
+    return this.raw.redirect
+  }
+  get body() {
+    return this.raw.body
+  }
+  get bodyUsed() {
+    return this.raw.bodyUsed
+  }
+  get cache() {
+    return this.raw.cache
+  }
+  get credentials() {
+    return this.raw.credentials
+  }
+  get integrity() {
+    return this.raw.integrity
+  }
+  get keepalive() {
+    return this.raw.keepalive
+  }
+  get mode() {
+    return this.raw.mode
+  }
+  get referrer() {
+    return this.raw.referrer
+  }
+  get refererPolicy() {
+    return this.raw.referrerPolicy
+  }
+  get signal() {
+    return this.raw.signal
+  }
 }
