@@ -1,6 +1,5 @@
 import { compose } from './compose'
 import { Context } from './context'
-import { extendRequestPrototype } from './request'
 import type { Router } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router'
 import { RegExpRouter } from './router/reg-exp-router'
@@ -77,8 +76,6 @@ export class Hono<
 
   constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
     super()
-
-    extendRequestPrototype()
 
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
@@ -203,9 +200,14 @@ export class Hono<
     const method = request.method
 
     const result = this.matchRoute(method, path)
-    request.paramData = result?.params
+    const paramData = result?.params
 
-    const c = new Context<string, E>(request, env, eventOrExecutionCtx, this.notFoundHandler)
+    const c = new Context<string, E>(request, {
+      env,
+      executionCtx: eventOrExecutionCtx,
+      notFoundHandler: this.notFoundHandler,
+      paramData,
+    })
 
     // Do not `compose` if it has only one handler
     if (result && result.handlers.length === 1) {
