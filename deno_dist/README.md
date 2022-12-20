@@ -13,7 +13,7 @@
 
 <hr />
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/honojs/hono/ci)](https://github.com/honojs/hono/actions)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/honojs/hono/ci.yml?branch=main)](https://github.com/honojs/hono/actions)
 [![GitHub](https://img.shields.io/github/license/honojs/hono)](https://github.com/honojs/hono/blob/main/LICENSE)
 [![npm](https://img.shields.io/npm/v/hono)](https://www.npmjs.com/package/hono)
 [![npm](https://img.shields.io/npm/dm/hono)](https://www.npmjs.com/package/hono)
