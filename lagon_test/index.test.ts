@@ -97,8 +97,7 @@ describe('Example', () => {
     })
   })
 
-  // TODO: enable when Lagon releases the version supporting SHA1 in CryptoSubtle#digest
-  test.skip('GET /etag/cached', async () => {
+  test('GET /etag/cached', async () => {
     const res = await fetch('http://127.0.0.1:1234/etag/cached')
     expect(res.status).toBe(200)
     expect(res.headers.get('etag')).toBe('"90ea638841fff3c326fc22cbd156f1146ac0ac02"')
