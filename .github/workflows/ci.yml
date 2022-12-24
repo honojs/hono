@@ -53,5 +53,6 @@ jobs:
         with:
           node-version: 18.x
       - run: yarn install --frozen-lockfile
-      - run: npm i -g @lagon/cli esbuild
+      - run: npm run build
+      - run: npm i -g @lagon/cli@latest esbuild@latest
       - run: npm run test:lagon
