@@ -1,7 +1,7 @@
 {
   "name": "hono",
   "version": "2.6.2",
-  "description": "Ultrafast web framework for Cloudflare Workers, Deno, Bun, and Lagon.",
+  "description": "Ultrafast web framework for Cloudflare Workers, Deno, and Bun.",
   "main": "dist/cjs/index.js",
   "type": "module",
   "module": "dist/index.js",
@@ -248,8 +248,7 @@
     "fastly",
     "compute@edge",
     "deno",
-    "bun",
-    "lagon"
+    "bun"
   ],
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20221111.1",
