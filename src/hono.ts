@@ -1,100 +1,71 @@
 import { compose } from './compose'
 import { Context } from './context'
+import type { ExecutionContext } from './context'
 import type { Router } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router'
 import { RegExpRouter } from './router/reg-exp-router'
 import { SmartRouter } from './router/smart-router'
 import { StaticRouter } from './router/static-router'
 import { TrieRouter } from './router/trie-router'
-import type { ExecutionContext } from './types'
-import type { Handler, Environment, ParamKeys, ErrorHandler, NotFoundHandler } from './types'
+import type { ExtractData, HandlerInterface, ToAppType, TypeResponse } from './types'
+import type { Handler, Environment, ErrorHandler, NotFoundHandler } from './types'
 import { getPathFromURL, mergePath } from './utils/url'
 
-interface HandlerInterface<
-  P extends string,
-  E extends Partial<Environment> = Environment,
-  S = unknown,
-  U = Hono<E, P, S>
-> {
-  // app.get(handler...)
-  <Path extends string, Data = S>(
-    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E, Data>[]
-  ): Hono<E, Path, Data & S>
-  (...handlers: Handler<P, E, S>[]): U
-
-  // app.get('/', handler, handler...)
-  <Path extends string, Data = S>(
-    path: Path,
-    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, E, Data>[]
-  ): Hono<E, Path, Data & S>
-  <Path extends string, Data = S>(path: Path, ...handlers: Handler<string, E, Data>[]): Hono<
-    E,
-    string,
-    Data & S
-  >
-  (path: string, ...handlers: Handler<P, E, S>[]): U
-}
-
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
+
+interface Route {
+  path: string
+  method: string
+  handler: Handler
+}
 
 function defineDynamicClass(): {
   new <
     E extends Partial<Environment> = Environment,
     P extends string = string,
     S = unknown,
-    U = Hono<E, P, S>
+    T = unknown,
+    U = Hono<E, P, S, T>
   >(): {
-    [K in Methods]: HandlerInterface<P, E, S, U>
+    [M in Methods]: HandlerInterface<E, P, M, S, T, U>
   }
 } {
   return class {} as never
 }
 
-interface Route<
-  P extends string = string,
-  E extends Partial<Environment> = Environment,
-  S = unknown
-> {
-  path: string
-  method: string
-  handler: Handler<P, E, S>
-}
-
 export class Hono<
   E extends Partial<Environment> = Environment,
   P extends string = string,
-  S = unknown
-> extends defineDynamicClass()<E, P, S, Hono<E, P, S>> {
-  readonly router: Router<Handler<P, E, S>> = new SmartRouter({
+  S = unknown,
+  T = unknown
+> extends defineDynamicClass()<E, P, S, T, Hono<E, P, S, T>> {
+  readonly router: Router<Handler> = new SmartRouter({
     routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
   })
   readonly strict: boolean = true // strict routing - default is true
   private _tempPath: string = ''
   private path: string = '/'
 
-  routes: Route<P, E, S>[] = []
+  routes: Route[] = []
 
   constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
     super()
 
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
-      this[method] = <Env extends Environment, Data>(
-        args1: string | Handler<string, Env, Data>,
-        ...args: Handler<string, Env, Data>[]
-      ) => {
+      this[method] = (args1: string | Handler, ...args: Handler[]) => {
         if (typeof args1 === 'string') {
           this.path = args1
         } else {
-          this.addRoute(method, this.path, args1 as unknown as Handler<P, E, S>)
+          this.addRoute(method, this.path, args1)
         }
         args.map((handler) => {
           if (typeof handler !== 'string') {
-            this.addRoute(method, this.path, handler as unknown as Handler<P, E, S>)
+            this.addRoute(method, this.path, handler)
           }
         })
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return this as unknown as Hono<E, any, any>
+        return this as Hono<E, any, any, any>
       }
     })
 
@@ -116,21 +87,19 @@ export class Hono<
     this._tempPath = path
     if (app) {
       app.routes.map((r) => {
-        this.addRoute(r.method, r.path, r.handler as unknown as Handler<P, E, S>)
+        this.addRoute(r.method, r.path, r.handler)
       })
       this._tempPath = ''
     }
     return this
   }
 
-  use<Path extends string = string, Data = unknown>(
-    ...middleware: Handler<Path, E, Data>[]
-  ): Hono<E, P, S>
-  use<Path extends string = string, Data = unknown>(
+  use<Path extends string = string>(...middleware: Handler<Path, 'all', E>[]): Hono<E, P, S, T>
+  use<Path extends string = string>(
     arg1: string,
-    ...middleware: Handler<Path, E, Data>[]
-  ): Hono<E, P, S>
-  use(arg1: string | Handler<P, E, S>, ...handlers: Handler<P, E, S>[]) {
+    ...middleware: Handler<Path, 'all', E>[]
+  ): Hono<E, P, S, T>
+  use(arg1: string | Handler<P, 'all', E>, ...handlers: Handler<P, 'all', E>[]) {
     if (typeof arg1 === 'string') {
       this.path = arg1
     } else {
@@ -142,13 +111,28 @@ export class Hono<
     return this
   }
 
-  on(method: string, path: string, ...handlers: Handler<P, E, S>[]) {
+  on<Method extends string, Path extends string, Data = S, Type = unknown>(
+    method: Method,
+    path: Path,
+    ...handlers: Handler<string, Method, E, Data, Type>[]
+  ): Hono<E, Path, Data & S, ExtractData<typeof handlers[-1], Type>>
+  on<M extends string, P extends string>(
+    method: M,
+    path: P,
+    ...handlers: Handler<P, M, E, S, T>[]
+  ) {
     if (!method) return this
     this.path = path
     handlers.map((handler) => {
       this.addRoute(method.toUpperCase(), this.path, handler)
     })
     return this
+  }
+
+  build = (): ToAppType<typeof this> => {
+    const app = {} as typeof this
+    type AppType = ToAppType<typeof app>
+    return {} as AppType
   }
 
   onError(handler: ErrorHandler<E>) {
@@ -170,13 +154,13 @@ export class Hono<
     })
   }
 
-  private addRoute(method: string, path: string, handler: Handler<P, E, S>) {
+  private addRoute(method: string, path: string, handler: Handler) {
     method = method.toUpperCase()
     if (this._tempPath) {
       path = mergePath(this._tempPath, path)
     }
     this.router.add(method, path, handler)
-    const r: Route<P, E, S> = { path: path, method: method, handler: handler }
+    const r: Route = { path: path, method: method, handler: handler }
     this.routes.push(r)
   }
 
@@ -195,7 +179,7 @@ export class Hono<
     request: Request,
     eventOrExecutionCtx?: ExecutionContext | FetchEvent,
     env?: E['Bindings']
-  ) {
+  ): Response | Promise<Response> {
     const path = getPathFromURL(request.url, this.strict)
     const method = request.method
 
@@ -215,18 +199,29 @@ export class Hono<
       let res: ReturnType<Handler<P>>
 
       try {
-        res = handler(c as unknown as Context<string, E, S>, async () => {})
-        if (!res) return this.notFoundHandler(c)
+        res = handler(c, async () => {})
+        if (!res) {
+          return this.notFoundHandler(c)
+        }
       } catch (err) {
         return this.handleError(err, c)
       }
 
-      if (res instanceof Response) return res
+      if ('response' in res) {
+        res = res.response
+      }
+
+      if (res instanceof Response) {
+        return res
+      }
 
       return (async () => {
-        let awaited: Response | undefined | void
+        let awaited: Response | TypeResponse | undefined | void
         try {
           awaited = await res
+          if (awaited !== undefined && 'response' in awaited) {
+            awaited = awaited['response'] as Response
+          }
           if (!awaited) {
             return this.notFoundHandler(c)
           }

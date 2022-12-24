@@ -1,14 +1,15 @@
+import type { ValidationTypes } from './types'
 import { parseBody } from './utils/body'
 import type { BodyData } from './utils/body'
 import type { Cookie } from './utils/cookie'
 import { parse } from './utils/cookie'
 import { getQueryStringFromURL } from './utils/url'
 
-export class HonoRequest<
-  ParamKey extends string = string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Data = any
-> {
+type S<T = unknown> = { type: ValidationTypes; data: T }
+//type D<T> = T extends Record<string, S<infer R>> ? R : T
+type D<T> = T extends Record<string, S<infer R>> ? R : T
+
+export class HonoRequest<ParamKey extends string = string, Data = unknown> {
   raw: Request
 
   private paramData: Record<string, string> | undefined
@@ -17,11 +18,12 @@ export class HonoRequest<
   private bodyData: BodyData | undefined
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private jsonData: Promise<any> | undefined
-  private data: Data | undefined
+  private data: D<Data>
 
   constructor(request: Request, paramData?: Record<string, string> | undefined) {
     this.raw = request
     this.paramData = paramData
+    this.data = {} as D<Data>
   }
 
   param(key: ParamKey): string
@@ -153,10 +155,10 @@ export class HonoRequest<
 
   valid(data?: unknown) {
     if (!this.data) {
-      this.data = {} as Data
+      this.data = {} as D<Data>
     }
     if (data) {
-      this.data = data as Data
+      this.data = data as D<Data>
     }
     return this.data
   }
