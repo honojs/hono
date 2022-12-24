@@ -23,7 +23,7 @@
 [![Deno badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fdeno-visualizer.danopia.net%2Fshields%2Flatest-version%2Fx%2Fhono%2Fmod.ts)](https://doc.deno.land/https/deno.land/x/hono/mod.ts)
 [![Discord badge](https://img.shields.io/discord/1011308539819597844?label=Discord&logo=Discord)](https://discord.gg/KMh2eNSdxV)
 
-Hono - _**[炎] means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework for Cloudflare Workers, Deno, Bun, and others.
+Hono - _**[炎] means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework for Cloudflare Workers, Deno, Bun, Lagon, and others.
 
 ```ts
 import { Hono } from 'hono'
@@ -40,7 +40,7 @@ export default app
 - **Zero-dependencies** - Using only Web Standard API. Does not depend on other npm or Deno libraries.
 - **Middleware** - Hono has built-in middleware, custom middleware, and third-party middleware. Batteries included.
 - **TypeScript** - First-class TypeScript support. Now, we've got "Types".
-- **Multi-runtime** - Works on Cloudflare Workers, Fastly Compute@Edge, Deno, Bun, or Node.js. The same code runs on all platforms.
+- **Multi-runtime** - Works on Cloudflare Workers, Fastly Compute@Edge, Deno, Bun, Lagon, or Node.js. The same code runs on all platforms.
 
 ## Benchmarks
 

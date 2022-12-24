@@ -7,7 +7,7 @@ import type { Schema, SchemaToProp } from './validator/schema.ts'
 
 type HeaderField = [string, string]
 type Headers = Record<string, string | string[]>
-type Runtime = 'node' | 'deno' | 'bun' | 'cloudflare' | 'fastly' | 'vercel' | 'other'
+type Runtime = 'node' | 'deno' | 'bun' | 'cloudflare' | 'fastly' | 'vercel' | 'lagon' | 'other'
 export type Data = string | ArrayBuffer | ReadableStream
 
 export class Context<
@@ -229,6 +229,10 @@ export class Context<
 
     if (global?.process?.release?.name === 'node') {
       return 'node'
+    }
+
+    if (global?.__lagon__ !== undefined) {
+      return 'lagon'
     }
 
     return 'other'
