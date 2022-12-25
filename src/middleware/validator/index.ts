@@ -10,8 +10,8 @@ export const validator = <T, U extends ValidationTypes = ValidationTypes, E exte
 
     switch(type) {
       case 'json':
-        value = await c.req.json()
-        break
+          value = await c.req.json()
+          break
         case 'form':
           value = await c.req.parseBody()
           break
