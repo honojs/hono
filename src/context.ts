@@ -24,8 +24,8 @@ type ContextOptions<E extends Partial<Environment>> = {
 }
 
 export class Context<
-  P extends string = string,
   E extends Partial<Environment> = Environment,
+  P extends string = string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   S = any
 > {

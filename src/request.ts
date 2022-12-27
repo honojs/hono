@@ -1,15 +1,11 @@
-import type { ValidationTypes } from './types'
+import type { InputToData } from './types'
 import { parseBody } from './utils/body'
 import type { BodyData } from './utils/body'
 import type { Cookie } from './utils/cookie'
 import { parse } from './utils/cookie'
 import { getQueryStringFromURL } from './utils/url'
 
-type S<T = unknown> = { type: ValidationTypes; data: T }
-//type D<T> = T extends Record<string, S<infer R>> ? R : T
-type D<T> = T extends Record<string, S<infer R>> ? R : T
-
-export class HonoRequest<ParamKey extends string = string, Data = unknown> {
+export class HonoRequest<ParamKey extends string = string, Input = unknown> {
   raw: Request
 
   private paramData: Record<string, string> | undefined
@@ -18,12 +14,12 @@ export class HonoRequest<ParamKey extends string = string, Data = unknown> {
   private bodyData: BodyData | undefined
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private jsonData: Promise<any> | undefined
-  private data: D<Data>
+  private data: InputToData<Input>
 
   constructor(request: Request, paramData?: Record<string, string> | undefined) {
     this.raw = request
     this.paramData = paramData
-    this.data = {} as D<Data>
+    this.data = {} as InputToData<Input>
   }
 
   param(key: ParamKey): string
@@ -155,10 +151,10 @@ export class HonoRequest<ParamKey extends string = string, Data = unknown> {
 
   valid(data?: unknown) {
     if (!this.data) {
-      this.data = {} as D<Data>
+      this.data = {} as InputToData<Input>
     }
     if (data) {
-      this.data = data as D<Data>
+      this.data = data as InputToData<Input>
     }
     return this.data
   }

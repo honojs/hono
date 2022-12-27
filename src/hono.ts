@@ -7,7 +7,7 @@ import { RegExpRouter } from './router/reg-exp-router'
 import { SmartRouter } from './router/smart-router'
 import { StaticRouter } from './router/static-router'
 import { TrieRouter } from './router/trie-router'
-import type { ExtractData, HandlerInterface, ToAppType, TypeResponse } from './types'
+import type { ExtractType, HandlerInterface, GetParamKeys, ToAppType, TypeResponse } from './types'
 import type { Handler, Environment, ErrorHandler, NotFoundHandler } from './types'
 import { getPathFromURL, mergePath } from './utils/url'
 
@@ -21,22 +21,23 @@ interface Route {
 
 function defineDynamicClass(): {
   new <
-    E extends Partial<Environment> = Environment,
+    E extends Partial<Environment> = Partial<Environment>,
     P extends string = string,
     S = unknown,
     T = unknown,
     U = Hono<E, P, S, T>
   >(): {
-    [M in Methods]: HandlerInterface<E, P, M, S, T, U>
+    [M in Methods]: HandlerInterface<E, M, P, S, T, U>
   }
 } {
   return class {} as never
 }
 
 export class Hono<
-  E extends Partial<Environment> = Environment,
+  E extends Partial<Environment> = Partial<Environment>,
   P extends string = string,
-  S = unknown,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  S = any, // should be any
   T = unknown
 > extends defineDynamicClass()<E, P, S, T, Hono<E, P, S, T>> {
   readonly router: Router<Handler> = new SmartRouter({
@@ -72,11 +73,11 @@ export class Hono<
     Object.assign(this, init)
   }
 
-  private notFoundHandler: NotFoundHandler<E> = (c: Context<string, E>) => {
+  private notFoundHandler: NotFoundHandler<E> = (c: Context<E>) => {
     return c.text('404 Not Found', 404)
   }
 
-  private errorHandler: ErrorHandler<E> = (err: Error, c: Context<string, E>) => {
+  private errorHandler: ErrorHandler<E> = (err: Error, c: Context<E>) => {
     console.trace(err)
     const message = 'Internal Server Error'
     return c.text(message, 500)
@@ -94,12 +95,9 @@ export class Hono<
     return this
   }
 
-  use<Path extends string = string>(...middleware: Handler<Path, 'all', E>[]): Hono<E, P, S, T>
-  use<Path extends string = string>(
-    arg1: string,
-    ...middleware: Handler<Path, 'all', E>[]
-  ): Hono<E, P, S, T>
-  use(arg1: string | Handler<P, 'all', E>, ...handlers: Handler<P, 'all', E>[]) {
+  use<Env extends Environment>(...middleware: Handler<Env>[]): Hono<E, P, S, T>
+  use<Env extends Environment>(arg1: string, ...middleware: Handler<Env>[]): Hono<E, P, S, T>
+  use(arg1: string | Handler<E>, ...handlers: Handler<E>[]) {
     if (typeof arg1 === 'string') {
       this.path = arg1
     } else {
@@ -111,15 +109,15 @@ export class Hono<
     return this
   }
 
-  on<Method extends string, Path extends string, Data = S, Type = unknown>(
+  on<Env extends Environment, Method extends string, Path extends string, Data = S, Type = unknown>(
     method: Method,
     path: Path,
-    ...handlers: Handler<string, Method, E, Data, Type>[]
-  ): Hono<E, Path, Data & S, ExtractData<typeof handlers[-1], Type>>
+    ...handlers: Handler<Env, Method, GetParamKeys<Path>, Data, Type>[]
+  ): Hono<E, P, Data & S, ExtractType<typeof handlers[-1], Type>>
   on<M extends string, P extends string>(
     method: M,
     path: P,
-    ...handlers: Handler<P, M, E, S, T>[]
+    ...handlers: Handler<E, M, P, S, T>[]
   ) {
     if (!method) return this
     this.path = path
@@ -168,7 +166,7 @@ export class Hono<
     return this.router.match(method, path)
   }
 
-  private handleError(err: unknown, c: Context<string, E>) {
+  private handleError(err: unknown, c: Context<E>) {
     if (err instanceof Error) {
       return this.errorHandler(err, c)
     }
@@ -186,7 +184,7 @@ export class Hono<
     const result = this.matchRoute(method, path)
     const paramData = result?.params
 
-    const c = new Context<string, E>(request, {
+    const c = new Context<E>(request, {
       env,
       executionCtx: eventOrExecutionCtx,
       notFoundHandler: this.notFoundHandler,
@@ -196,7 +194,7 @@ export class Hono<
     // Do not `compose` if it has only one handler
     if (result && result.handlers.length === 1) {
       const handler = result.handlers[0]
-      let res: ReturnType<Handler<P>>
+      let res: ReturnType<Handler>
 
       try {
         res = handler(c, async () => {})
@@ -233,7 +231,7 @@ export class Hono<
     }
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
-    const composed = compose<Context<P, E>, E>(handlers, this.notFoundHandler, this.errorHandler)
+    const composed = compose<Context<E>, E>(handlers, this.notFoundHandler, this.errorHandler)
 
     return (async () => {
       try {

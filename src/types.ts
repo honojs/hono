@@ -1,5 +1,8 @@
+/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import type { Context } from './context'
 import type { Hono } from './hono'
+import type { UnionToIntersection } from './utils/types'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Bindings = Record<string, any> // For Cloudflare Workers
@@ -12,39 +15,55 @@ export type Environment = {
 type Env = Partial<Environment>
 
 export type Handler<
-  P extends string = string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _ extends string = string,
   E extends Env = Env,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _M extends string = string,
+  P extends string = string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   S = any, // should be any
   T = unknown
 > = (
-  c: Context<P, E, S>,
+  c: Context<E, P, S>,
   next: Next
 ) => Response | Promise<Response | undefined | void> | TypeResponse<T> | Promise<TypeResponse<T>>
 
 export interface HandlerInterface<
   E extends Env = Env,
-  P extends string = string,
   M extends string = string,
+  P extends string = string,
   S = unknown,
   T = unknown,
   U = Hono<E, P, S, T>
 > {
   // app.get(handler...)
-  <Path extends string, S2 = S, E2 extends Env = E>(
-    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, M, E2, S2>[]
-  ): Hono<E2, Path, S2 & S>
-  (...handlers: Handler<P, M, E, S, T>[]): U
+  <
+    Env extends Partial<Environment> = E,
+    Path extends string = P,
+    Schema = S,
+    Type = T
+  >(
+    ...handlers: Handler<Env, M, GetParamKeys<Path>, Schema, Type>[]
+  ): Hono<Env, Path, Schema>
+  (...handlers: Handler<E, M, P, S, T>[]): U
 
   // app.get('/', handler, handler...)
-  <Path extends string, S2 = S, T2 = unknown, E2 extends Env = E>(
+  <
+    Env extends Partial<Environment> = E,
+    Path extends string = P,
+    Schema = S,
+    Type = T
+  >(
     path: Path,
-    ...handlers: Handler<ParamKeys<Path> extends never ? string : ParamKeys<Path>, M, E2, S2, T2>[]
-  ): Hono<E2, Path, S2 & S, ExtractData<ReturnType<typeof handlers[-1]>, T2>>
-  (path: string, ...handlers: Handler<P, M, E, S, T>[]): U
+    ...handlers: Handler<Env, M, GetParamKeys<Path>, Schema, Type>[]
+  ): Hono<Env, Path, Schema, ExtractType<ReturnType<typeof handlers[-1]>, Type>>
+  (path: string, ...handlers: Handler<E, M, P, S, T>[]): U
 }
+
+export type ExtractType<T, U> = T extends TypeResponse<infer R>
+  ? R
+  : T extends Promise<TypeResponse<infer R>>
+  ? R
+  : U
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer _Pattern}`
@@ -55,74 +74,94 @@ type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
   ? ParamKeyName<NameWithPattern>
   : never
 
-export type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
+type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 
-export type ExtractData<T, U> = T extends TypeResponse<infer R>
-  ? R
-  : T extends Promise<TypeResponse<infer R2>>
-  ? R2
-  : U
+export type GetParamKeys<Path> = ParamKeys<Path> extends never ? Path : ParamKeys<Path>
 
 export type MiddlewareHandler<
-  P extends string = string,
   E extends Env = Env,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  P extends string = string,
   S = unknown
-> = (c: Context<P, E, S>, next: Next) => Promise<Response | undefined | void>
+> = (c: Context<E, P, S>, next: Next) => Promise<Response | undefined | void>
 
 export type NotFoundHandler<E extends Env = Env> = (
-  c: Context<string, E>
+  c: Context<E>
 ) => Response | Promise<Response>
 
-export type ErrorHandler<E extends Env = Env> = (err: Error, c: Context<string, E>) => Response
+export type ErrorHandler<E extends Env = Env> = (
+  err: Error,
+  c: Context<E>
+) => Response
 
 export type Next = () => Promise<void>
+
+export type TypeResponse<T = unknown> = {
+  response: Response | Promise<Response>
+  data: T
+  format: 'json' // Currently, support only `json` with `c.jsonT()`
+}
 
 // This is not used for internally
 // Will be used by users as `Handler`
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface CustomHandler<P = string, E = Env, S = any> {
+export interface CustomHandler<E = Env, P = string, S = any> {
   (
     c: Context<
-      P extends string ? P : string,
-      P extends Env ? P : E extends Env ? E : never,
-      P extends string
-        ? E extends Env
+      E extends Env ? E : Env,
+      E extends string ? E : P extends string ? P : never,
+      E extends Env
+        ? P extends string
           ? S
-          : P extends Env
+          : E extends Partial<Environment>
           ? E
           : never
-        : P extends Env
-        ? E extends Env
-          ? S
-          : E
-        : P
+        : E extends string
+        ? P extends Partial<Environment>
+          ? E
+          : P
+        : E
     >,
     next: Next
   ): Response | Promise<Response | undefined | void>
 }
 
+export type ValidationTypes = 'json' | 'form' | 'query' | 'queries'
+
 type Schema = {
   [Method in string]: { type: ValidationTypes; data: unknown }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type ToAppType<T> = T extends Hono<infer _, infer P, infer S, infer T2>
-  ? S extends Schema
-    ? {
-        [K in keyof S]: {
-          [K2 in P]: { input: { [K3 in S[K]['type']]: S[K]['data'] }; output: { json: T2 } }
-        }
-      }
-    : { output: { json: T2 } }
+type RemoveBlank<T> = T extends { [K in string]: infer R }
+  ? R extends { type: ValidationTypes }
+    ? R
+    : never
   : never
 
-export type ValidationTypes = 'json' | 'form' | 'query' | 'queries'
+export type RemoveBlankFromValue<T> = { [K in keyof T]: RemoveBlank<T> }
 
-export type TypeResponse<T = unknown> = {
-  response: Response | Promise<Response>
-  data: T
-  format: 'json'
-}
+type InputToValue<T> = T extends { type?: infer V extends string; data?: infer R } 
+  ? { [K in V]: UnionToIntersection<R> }
+  : T
+
+export type ToAppType<T> = T extends Hono<infer _, infer P, infer S, infer T2>
+  ? ToAppTypeInner<P, S, T2>
+  : never
+
+type ToAppTypeInner<Path extends string, T, U> = RemoveBlankFromValue<T> extends Schema
+  ? {
+      [K in keyof RemoveBlankFromValue<T>]: {
+        [K2 in Path]: RemoveBlankFromValue<T>[K]['type'] extends ValidationTypes
+          ? {
+              input: InputToValue<RemoveBlankFromValue<T>[K]>
+              output: { json: U }
+            }
+          : never
+      }
+    }
+  : { output: { json: U } }
+
+  export type InputToData<T> = T extends { [K in string]: { type?: ValidationTypes; data?: infer R } }
+  ? UnionToIntersection<R>
+  : T
