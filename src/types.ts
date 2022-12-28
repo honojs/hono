@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import type { Context } from './context'
 import type { Hono } from './hono'
 import type { UnionToIntersection } from './utils/types'
@@ -145,6 +143,7 @@ type InputToValue<T> = T extends { type?: infer V extends string; data?: infer R
   ? { [K in V]: UnionToIntersection<R> }
   : T
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type ToAppType<T> = T extends Hono<infer _, infer P, infer S, infer T2>
   ? ToAppTypeInner<P, S, T2>
   : never
