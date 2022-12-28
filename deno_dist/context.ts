@@ -1,15 +1,20 @@
 import { HonoRequest } from './request.ts'
-import type { ExecutionContext } from './types.ts'
-import type { Environment, NotFoundHandler, ContextVariableMap } from './types.ts'
+import type { TypeResponse } from './types.ts'
+import type { Environment, NotFoundHandler } from './types.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
 import type { StatusCode } from './utils/http-status.ts'
-import type { Schema, SchemaToProp } from './validator/schema.ts'
 
+type Runtime = 'node' | 'deno' | 'bun' | 'cloudflare' | 'fastly' | 'vercel' | 'lagon' | 'other'
 type HeaderField = [string, string]
 type Headers = Record<string, string | string[]>
-type Runtime = 'node' | 'deno' | 'bun' | 'cloudflare' | 'fastly' | 'vercel' | 'lagon' | 'other'
-export type Data = string | ArrayBuffer | ReadableStream
+type Data = string | ArrayBuffer | ReadableStream
+
+export interface ExecutionContext {
+  waitUntil(promise: Promise<void>): void
+  passThroughOnException(): void
+}
+export interface ContextVariableMap {}
 
 type ContextOptions<E extends Partial<Environment>> = {
   env?: E['Bindings']
@@ -19,8 +24,8 @@ type ContextOptions<E extends Partial<Environment>> = {
 }
 
 export class Context<
-  P extends string = string,
   E extends Partial<Environment> = Environment,
+  P extends string = string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   S = any
 > {
@@ -28,7 +33,7 @@ export class Context<
   finalized: boolean = false
   error: Error | undefined = undefined
 
-  private _req?: HonoRequest<P, S extends Schema ? SchemaToProp<S> : S>
+  private _req?: HonoRequest<P, S>
   private _status: StatusCode = 200
   private _executionCtx: FetchEvent | ExecutionContext | undefined
   private _pretty: boolean = false
@@ -52,14 +57,11 @@ export class Context<
     }
   }
 
-  get req(): HonoRequest<P, S extends Schema ? SchemaToProp<S> : S> {
+  get req(): HonoRequest<P, S> {
     if (this._req) {
       return this._req
     } else {
-      this._req = new HonoRequest<P, S extends Schema ? SchemaToProp<S> : S>(
-        this.rawRequest,
-        this._paramData
-      )
+      this._req = new HonoRequest<P, S>(this.rawRequest, this._paramData)
       return this._req
     }
   }
@@ -207,7 +209,19 @@ export class Context<
     return this.newResponse(body, status, headers)
   }
 
+<<<<<<< HEAD
   html = (html: string, status: StatusCode = this._status, headers: Headers = {}): Response => {
+=======
+  jsonT<T>(object: T, status: StatusCode = this._status, headers: Headers = {}): TypeResponse<T> {
+    return {
+      response: this.json(object, status, headers),
+      data: object,
+      format: 'json',
+    }
+  }
+
+  html(html: string, status: StatusCode = this._status, headers: Headers = {}): Response {
+>>>>>>> fee7292 (feat: new validator middleware using 3rd-party & current middleware obsolete (#745))
     headers['content-type'] = 'text/html; charset=UTF-8'
     return this.newResponse(html, status, headers)
   }
@@ -223,8 +237,13 @@ export class Context<
     this.header('set-cookie', cookie, { append: true })
   }
 
+<<<<<<< HEAD
   notFound = (): Response | Promise<Response> => {
     return this.notFoundHandler(this as unknown as Context<string, E>)
+=======
+  notFound(): Response | Promise<Response> {
+    return this.notFoundHandler(this)
+>>>>>>> fee7292 (feat: new validator middleware using 3rd-party & current middleware obsolete (#745))
   }
 
   get runtime(): Runtime {

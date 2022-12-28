@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { Buffer } from "https://deno.land/std@0.173.0/node/buffer.ts";
+=======
+import { Buffer } from 'https://deno.land/std@0.171.0/node/buffer.ts'
+>>>>>>> fee7292 (feat: new validator middleware using 3rd-party & current middleware obsolete (#745))
 export const encodeBase64 = (str: string): string => {
   if (str === null) {
     throw new TypeError('1st argument of "encodeBase64" should not be null.')

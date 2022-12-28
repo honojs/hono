@@ -16,16 +16,10 @@ declare global {
   }
 }
 
-export type {
-  Next,
-  ContextVariableMap,
-  MiddlewareHandler,
-  ErrorHandler,
-  NotFoundHandler,
-} from './types'
+export type { Next, MiddlewareHandler, ErrorHandler, NotFoundHandler } from './types'
 import type { CustomHandler } from './types'
 export type { CustomHandler as Handler }
-export type { Context } from './context'
+export type { Context, ContextVariableMap } from './context'
 export { Hono }
 
 // Router
@@ -33,6 +27,3 @@ export { RegExpRouter } from './router/reg-exp-router'
 export { TrieRouter } from './router/trie-router'
 export { StaticRouter } from './router/static-router'
 export { SmartRouter } from './router/smart-router'
-
-// Validator
-export type { Validator } from './validator/validator'

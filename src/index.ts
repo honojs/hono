@@ -1,17 +1,8 @@
 // @denoify-ignore
-// eslint-disable-next-line @typescript-eslint/triple-slash-reference
-/// <reference path="./request.ts" /> Import "declare global" for the Request interface.
 
 import { Hono } from './hono'
-export type {
-  Next,
-  ContextVariableMap,
-  MiddlewareHandler,
-  ErrorHandler,
-  NotFoundHandler,
-} from './types'
-export type { Context } from './context'
-export type { Validator } from './validator/validator'
+export type { Next, MiddlewareHandler, ErrorHandler, NotFoundHandler } from './types'
+export type { Context, ContextVariableMap } from './context'
 import type { CustomHandler } from './types'
 export type { CustomHandler as Handler }
 
