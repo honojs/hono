@@ -1,9 +1,15 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Hono } from './hono'
-import { validator } from './middleware/validator'
-import type { CustomHandler as Handler, MiddlewareHandler } from './types'
+import type {
+  Environment,
+  CustomHandler as Handler,
+  InputToData,
+  MiddlewareHandler,
+  RemoveBlankFromValue,
+  ToAppType,
+} from './types'
 import type { Expect, Equal, NotEqual } from './utils/types'
-import type { Validator } from './validator/validator'
 
 describe('Test types of CustomHandler', () => {
   type Env = {
@@ -18,10 +24,6 @@ describe('Test types of CustomHandler', () => {
     app = new Hono()
   })
 
-  const schema = (v: Validator) => ({
-    query: v.query('q').isRequired(),
-  })
-  type Schema = ReturnType<typeof schema>
   const url = 'http://localhost/'
 
   test('No arguments', async () => {
@@ -36,57 +38,15 @@ describe('Test types of CustomHandler', () => {
     expect(res.status).toBe(200)
   })
 
-  test('Path', async () => {
-    const handler: Handler<'id'> = (c) => {
-      const id = c.req.param('id')
-      type verifyPath = Expect<Equal<typeof id, string>>
-      const data = c.req.valid()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      type verifySchema = Expect<Equal<typeof data['foo'], any>>
-      return c.text('Hi')
-    }
-    app.get('/', handler)
-    const res = await app.request(url)
-    expect(res.status).toBe(200)
-  })
-
-  test('Path, Env', async () => {
-    const handler: Handler<'id', Env> = (c) => {
-      const id = c.req.param('id')
-      type verifyPath = Expect<Equal<typeof id, string>>
-      const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<typeof foo, string>>
-      const data = c.req.valid()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      type verifySchema = Expect<Equal<typeof data['foo'], any>>
-      return c.text('Hi')
-    }
-    app.get('/', handler)
-    const res = await app.request(url)
-    expect(res.status).toBe(200)
-  })
-
-  test('Path, Env, Schema', async () => {
-    const handler: Handler<'id', Env, Schema> = (c) => {
-      const id = c.req.param('id')
-      type verifyPath = Expect<Equal<typeof id, string>>
-      const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<typeof foo, string>>
-      const { query } = c.req.valid()
-      type verifySchema = Expect<Equal<typeof query, string>>
-      return c.text('Hi')
-    }
-    app.get('/', handler)
-    const res = await app.request(url)
-    expect(res.status).toBe(200)
-  })
-
   test('Env', async () => {
     const handler: Handler<Env> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<typeof foo, string>>
-      const { query } = c.req.valid()
-      type verifySchema = Expect<NotEqual<typeof query, string>>
+      const id = c.req.param('id')
+      type verifyPath = Expect<Equal<typeof id, string>>
+      const data = c.req.valid()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      type verifySchema = Expect<Equal<typeof data['foo'], any>>
       return c.text('Hi')
     }
     app.get('/', handler)
@@ -94,68 +54,40 @@ describe('Test types of CustomHandler', () => {
     expect(res.status).toBe(200)
   })
 
-  test('Env, Schema', async () => {
-    const handler: Handler<Env, Schema> = (c) => {
-      const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<typeof foo, string>>
-      const { query } = c.req.valid()
-      type verifySchema = Expect<Equal<typeof query, string>>
-      return c.text('Hi')
-    }
-    app.get('/', handler)
-    const res = await app.request(url)
-    expect(res.status).toBe(200)
-  })
-
-  test('Schema', async () => {
-    const handler: Handler<Schema> = (c) => {
-      const { query } = c.req.valid()
-      type verifySchema = Expect<Equal<typeof query, string>>
-      return c.text('Hi')
-    }
-    app.get('/', handler)
-    const res = await app.request(url)
-    expect(res.status).toBe(200)
-  })
-
-  test('Complex', async () => {
-    const app = new Hono<Env>()
-    const handler: Handler<Env> = (c) => {
+  test('Env, Path', async () => {
+    const handler: Handler<Env, 'id'> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<typeof foo, string>>
       const data = c.req.valid()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       type verifySchema = Expect<Equal<typeof data['foo'], any>>
-      return c.text(foo)
+      return c.text('Hi')
     }
-    app.get(
-      '/',
-      async (c, next) => {
-        c.set('foo', 'bar')
-        await next()
-      },
-      handler
-    )
-    app.get('/v', validator(schema), (c) => {
-      const { query } = c.req.valid()
-      type verify = Expect<Equal<typeof query, string>>
-      return c.text(query)
-    })
-    let res = await app.request(url)
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('bar')
+    app.get('/', handler)
 
-    res = await app.request('http://localhost/?q=bar')
+    const res = await app.request(url)
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('bar')
   })
 
-  test('Normal types', () => {
-    type User = {
-      name: string
-      age: number
-    }
+  type User = {
+    name: string
+    age: number
+  }
 
+  test('Env, Path, Type', async () => {
+    const handler: Handler<Env, 'id', User> = (c) => {
+      const foo = c.get('foo')
+      type verifyEnv = Expect<Equal<typeof foo, string>>
+      const { name, age } = c.req.valid()
+      type verifySchema = Expect<Equal<typeof name, string>>
+      return c.text('Hi')
+    }
+    app.get('/', handler)
+    const res = await app.request(url)
+    expect(res.status).toBe(200)
+  })
+
+  test('Type', () => {
     const handler: Handler<User> = (c) => {
       const user = c.req.valid()
       type verifySchema = Expect<Equal<typeof user, User>>
@@ -184,5 +116,105 @@ describe('CustomHandler as middleware', () => {
     })
     const res = await app.request('http://localhost/')
     expect(res.status).toBe(200)
+  })
+})
+
+describe('Types used in the validator', () => {
+  test('RemoveBlankFromValue', () => {
+    type ValidateResult = {
+      post:
+        | {}
+        | { type: 'query'; data: { page: number } }
+        | { type: 'form'; data: { title: string } }
+    }
+    type ActualType = RemoveBlankFromValue<ValidateResult>
+    type ExpectedType = {
+      post:
+        | {
+            type: 'query'
+            data: {
+              page: number
+            }
+          }
+        | {
+            type: 'form'
+            data: {
+              title: string
+            }
+          }
+    }
+    type verify = Expect<Equal<ExpectedType, ActualType>>
+  })
+
+  test('ToAppType', () => {
+    type SampleHono = Hono<
+      Environment,
+      '/author',
+      {
+        post: {} | { type: 'json'; data: { name: string; age: number } }
+      },
+      { name: string; age: number }
+    >
+    type ActualType = ToAppType<SampleHono>
+    type ExpectedType = {
+      post: {
+        '/author': {
+          input: {
+            json: {
+              name: string
+              age: number
+            }
+          }
+          output: {
+            json: {
+              name: string
+              age: number
+            }
+          }
+        }
+      }
+    }
+    type verify = Expect<Equal<ExpectedType, ActualType>>
+  })
+
+  test('InputToData', () => {
+    type P = {
+      post:
+        | {}
+        | {
+            type: 'json'
+            data: {
+              id: number
+              title: string
+            }
+          }
+    }
+
+    type P2 = {
+      post:
+        | {}
+        | { type: 'query'; data: { page: number } }
+        | { type: 'form'; data: { title: string } }
+    }
+
+    type User = {
+      name: string
+      age: number
+    }
+
+    type ExpectData = {
+      id: number
+      title: string
+    }
+
+    type ExpectData2 = {
+      page: number
+    } & {
+      title: string
+    }
+
+    type verify = Expect<Equal<ExpectData, InputToData<P>>>
+    type verify2 = Expect<Equal<ExpectData2, InputToData<P2>>>
+    type verify3 = Expect<Equal<User, InputToData<User>>>
   })
 })

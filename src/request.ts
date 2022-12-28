@@ -1,14 +1,11 @@
+import type { InputToData } from './types'
 import { parseBody } from './utils/body'
 import type { BodyData } from './utils/body'
 import type { Cookie } from './utils/cookie'
 import { parse } from './utils/cookie'
 import { getQueryStringFromURL } from './utils/url'
 
-export class HonoRequest<
-  ParamKey extends string = string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Data = any
-> {
+export class HonoRequest<ParamKey extends string = string, Input = unknown> {
   raw: Request
 
   private paramData: Record<string, string> | undefined
@@ -17,11 +14,12 @@ export class HonoRequest<
   private bodyData: BodyData | undefined
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private jsonData: Promise<any> | undefined
-  private data: Data | undefined
+  private data: InputToData<Input>
 
   constructor(request: Request, paramData?: Record<string, string> | undefined) {
     this.raw = request
     this.paramData = paramData
+    this.data = {} as InputToData<Input>
   }
 
   param(key: ParamKey): string
@@ -153,10 +151,10 @@ export class HonoRequest<
 
   valid(data?: unknown) {
     if (!this.data) {
-      this.data = {} as Data
+      this.data = {} as InputToData<Input>
     }
     if (data) {
-      this.data = data as Data
+      this.data = data as InputToData<Input>
     }
     return this.data
   }
