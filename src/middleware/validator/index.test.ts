@@ -3,7 +3,7 @@ import type { ZodSchema } from 'zod'
 import { z } from 'zod'
 import type { Context } from '../../context'
 import { Hono } from '../../hono'
-import type { Equal, Expect } from '../../utils/types'
+import type { Equal, Expect, UnionToIntersection } from '../../utils/types'
 import { validator } from '.'
 
 const validatorFunc =
@@ -18,7 +18,7 @@ const validatorFunc =
   }
 
 describe('Validator middleware with Zod validates JSON', () => {
-  const app = new Hono()
+  const app = new Hono<{ Variables: { TOKEN: string } }>()
 
   const schema = z.object({
     id: z.number(),
@@ -28,18 +28,18 @@ describe('Validator middleware with Zod validates JSON', () => {
   const route = app
     .post('/post', validator('json', validatorFunc(schema)), (c) => {
       const post = c.req.valid()
-      type ExpectType = {
+      type Expected = {
         id: number
         title: string
       }
-      type verify = Expect<Equal<ExpectType, typeof post>>
+      type verify = Expect<Equal<Expected, typeof post>>
       return c.jsonT({
         post: post,
       })
     })
     .build()
 
-  type ExpectBuildType = {
+  type Expected = {
     post: {
       '/post': {
         input: {
@@ -60,10 +60,10 @@ describe('Validator middleware with Zod validates JSON', () => {
     }
   }
 
-  type AppType = typeof route
+  type Actual = typeof route
 
-  // We don't get any errors with tsc or VS Code, but with jest we get errors and the test fails, so comment it out.
-  // type verify2 = Expect<Equal<ExpectBuildType, AppType>>
+  // Unless comment it out, Jest test will fail
+  // type verify2 = Expect<Equal<Expected, Actual>>
 
   it('Should validate JSON and return 200 response', async () => {
     const res = await app.request('http://localhost/post', {
@@ -245,9 +245,9 @@ describe('Validator middleware with Zod multiple validators', () => {
     )
     .build()
 
-  type AppType = typeof route
+  type Actual = typeof route
 
-  type ExpectedType = {
+  type Expected = {
     post: {
       '/posts': {
         input:
@@ -271,7 +271,7 @@ describe('Validator middleware with Zod multiple validators', () => {
     }
   }
 
-  //type verify = Expect<Equal<ExpectedType, AppType>>
+  // type verify = Expect<Equal<Expected, Actual>>
 
   it('Should validate both query param and form data and return 200 response', async () => {
     const form = new FormData()

@@ -6,10 +6,9 @@ import type {
   CustomHandler as Handler,
   InputToData,
   MiddlewareHandler,
-  RemoveBlankFromValue,
   ToAppType,
 } from './types'
-import type { Expect, Equal, NotEqual } from './utils/types'
+import type { Expect, Equal } from './utils/types'
 
 describe('Test types of CustomHandler', () => {
   type Env = {
@@ -120,43 +119,21 @@ describe('CustomHandler as middleware', () => {
 })
 
 describe('Types used in the validator', () => {
-  test('RemoveBlankFromValue', () => {
-    type ValidateResult = {
-      post:
-        | {}
-        | { type: 'query'; data: { page: number } }
-        | { type: 'form'; data: { title: string } }
-    }
-    type ActualType = RemoveBlankFromValue<ValidateResult>
-    type ExpectedType = {
-      post:
-        | {
-            type: 'query'
-            data: {
-              page: number
-            }
-          }
-        | {
-            type: 'form'
-            data: {
-              title: string
-            }
-          }
-    }
-    type verify = Expect<Equal<ExpectedType, ActualType>>
-  })
-
   test('ToAppType', () => {
     type SampleHono = Hono<
       Environment,
-      '/author',
       {
-        post: {} | { type: 'json'; data: { name: string; age: number } }
+        path: '/author'
+        method: 'post'
+      },
+      {
+        type: 'json'
+        data: { name: string; age: number }
       },
       { name: string; age: number }
     >
-    type ActualType = ToAppType<SampleHono>
-    type ExpectedType = {
+    type Actual = ToAppType<SampleHono>
+    type Expected = {
       post: {
         '/author': {
           input: {
@@ -174,47 +151,55 @@ describe('Types used in the validator', () => {
         }
       }
     }
-    type verify = Expect<Equal<ExpectedType, ActualType>>
+    type verify = Expect<Equal<Expected, Actual>>
   })
 
   test('InputToData', () => {
-    type P = {
-      post:
-        | {}
-        | {
-            type: 'json'
-            data: {
-              id: number
-              title: string
-            }
-          }
-    }
-
-    type P2 = {
-      post:
-        | {}
-        | { type: 'query'; data: { page: number } }
-        | { type: 'form'; data: { title: string } }
-    }
-
-    type User = {
-      name: string
-      age: number
-    }
-
-    type ExpectData = {
-      id: number
-      title: string
-    }
-
-    type ExpectData2 = {
+    type P =
+      | {}
+      | { type: 'query'; data: { page: number } }
+      | { type: 'form'; data: { title: string } }
+    type Actual = InputToData<P>
+    type Expected = {
       page: number
     } & {
       title: string
     }
-
-    type verify = Expect<Equal<ExpectData, InputToData<P>>>
-    type verify2 = Expect<Equal<ExpectData2, InputToData<P2>>>
-    type verify3 = Expect<Equal<User, InputToData<User>>>
+    type verify = Expect<Equal<Expected, Actual>>
   })
+})
+
+describe('`jsonT()`', () => {
+  const app = new Hono<{ Variables: { foo: string } }>()
+
+  app.get('/post/:id', (c) => {
+    c.req.param('id')
+    const id = c.req.param('id')
+    return c.text('foo')
+  })
+
+  const route = app
+    .get('/hello', (c) => {
+      return c.jsonT({
+        message: 'Hello!',
+      })
+    })
+    .build()
+
+  type Actual = typeof route
+
+  type Expected = {
+    get: {
+      '/hello': {
+        input: never
+        output: {
+          json: {
+            message: string
+          }
+        }
+      }
+    }
+  }
+
+  type verify = Expect<Equal<Expected, Actual>>
 })
