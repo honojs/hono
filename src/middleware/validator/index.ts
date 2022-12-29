@@ -1,11 +1,11 @@
 import type { Context } from '../../context'
-import type { Environment, Handler, Route, ValidationTypes } from '../../types'
+import type { Environment, Next, Route, ValidationTypes } from '../../types'
 import { mergeObjects } from '../../utils/object'
 
-type HandlerFunc<T, E extends Environment> = (
-  value: unknown,
-  c: Context<E>
-) => Promise<Response> | Response | T
+type ValidatorHandler<E extends Partial<Environment>, R extends Route = Route, I = unknown> = (
+  c: Context<E, R, I>,
+  next: Next
+) => Promise<Response | undefined | void> | Response
 
 export const validator = <
   T,
@@ -13,11 +13,11 @@ export const validator = <
   V extends { type: U; data: T },
   // eslint-disable-next-line @typescript-eslint/ban-types
   V2 = {},
-  E extends Environment = Environment
+  E extends Partial<Environment> = Environment
 >(
   type: U,
-  validationFunc: HandlerFunc<T, E>
-): Handler<E, Route, V | V2> => {
+  validationFunc: (value: unknown, c: Context<E>) => T | Response | Promise<Response>
+): ValidatorHandler<E, Route, V | V2> => {
   return async (c, next) => {
     let value = {}
 

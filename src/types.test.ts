@@ -13,7 +13,7 @@ import type { Expect, Equal } from './utils/types'
 describe('Test types of CustomHandler', () => {
   type Env = {
     Variables: {
-      foo: string
+      foo: number
     }
   }
 
@@ -29,7 +29,7 @@ describe('Test types of CustomHandler', () => {
     const handler: Handler = (c) => {
       const data = c.req.valid()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      type verifySchema = Expect<Equal<typeof data['foo'], any>>
+      type verifySchema = Expect<Equal<any, typeof data['foo']>>
       return c.text('Hi')
     }
     app.get('/', handler)
@@ -40,12 +40,12 @@ describe('Test types of CustomHandler', () => {
   test('Env', async () => {
     const handler: Handler<Env> = (c) => {
       const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<typeof foo, string>>
+      type verifyEnv = Expect<Equal<number, typeof foo>>
       const id = c.req.param('id')
-      type verifyPath = Expect<Equal<typeof id, string>>
+      type verifyPath = Expect<Equal<string, typeof id>>
       const data = c.req.valid()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      type verifySchema = Expect<Equal<typeof data['foo'], any>>
+      type verifySchema = Expect<Equal<any, typeof data['foo']>>
       return c.text('Hi')
     }
     app.get('/', handler)
@@ -56,10 +56,10 @@ describe('Test types of CustomHandler', () => {
   test('Env, Path', async () => {
     const handler: Handler<Env, 'id'> = (c) => {
       const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<typeof foo, string>>
+      type verifyEnv = Expect<Equal<number, typeof foo>>
       const data = c.req.valid()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      type verifySchema = Expect<Equal<typeof data['foo'], any>>
+      type verifySchema = Expect<Equal<any, typeof data['foo']>>
       return c.text('Hi')
     }
     app.get('/', handler)
@@ -76,9 +76,9 @@ describe('Test types of CustomHandler', () => {
   test('Env, Path, Type', async () => {
     const handler: Handler<Env, 'id', User> = (c) => {
       const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<typeof foo, string>>
+      type verifyEnv = Expect<Equal<number, typeof foo>>
       const { name, age } = c.req.valid()
-      type verifySchema = Expect<Equal<typeof name, string>>
+      type verifySchema = Expect<Equal<string, typeof name>>
       return c.text('Hi')
     }
     app.get('/', handler)
@@ -89,7 +89,7 @@ describe('Test types of CustomHandler', () => {
   test('Type', () => {
     const handler: Handler<User> = (c) => {
       const user = c.req.valid()
-      type verifySchema = Expect<Equal<typeof user, User>>
+      type verifySchema = Expect<Equal<User, typeof user>>
       return c.text('Hi')
     }
   })

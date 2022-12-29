@@ -130,8 +130,8 @@ export class Context<
     this._map[key] = value
   }
 
-  get<Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
   get<Key extends keyof E['Variables']>(key: Key): E['Variables'][Key]
+  get<Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
   get<T>(key: string): T
   get(key: string) {
     if (!this._map) {

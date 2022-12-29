@@ -3,7 +3,7 @@ import type { ZodSchema } from 'zod'
 import { z } from 'zod'
 import type { Context } from '../../context'
 import { Hono } from '../../hono'
-import type { Equal, Expect, UnionToIntersection } from '../../utils/types'
+import type { Equal, Expect } from '../../utils/types'
 import { validator } from '.'
 
 const validatorFunc =
@@ -18,7 +18,7 @@ const validatorFunc =
   }
 
 describe('Validator middleware with Zod validates JSON', () => {
-  const app = new Hono<{ Variables: { TOKEN: string } }>()
+  const app = new Hono()
 
   const schema = z.object({
     id: z.number(),
@@ -62,8 +62,7 @@ describe('Validator middleware with Zod validates JSON', () => {
 
   type Actual = typeof route
 
-  // Unless comment it out, Jest test will fail
-  // type verify2 = Expect<Equal<Expected, Actual>>
+  type verify2 = Expect<Equal<Expected, Actual>>
 
   it('Should validate JSON and return 200 response', async () => {
     const res = await app.request('http://localhost/post', {
@@ -201,12 +200,13 @@ describe('Validator middleware with Zod validates queries params', () => {
 })
 
 describe('Validator middleware with Zod multiple validators', () => {
-  const app = new Hono()
-
+  const app = new Hono<{ Variables: { id: number } }>()
   const route = app
     .post(
       '/posts',
       validator('query', (value, c) => {
+        const id = c.get('id')
+        type verify = Expect<Equal<number, typeof id>>
         const schema = z.object({
           page: z
             .string()
@@ -225,6 +225,8 @@ describe('Validator middleware with Zod multiple validators', () => {
         return data
       }),
       validator('form', (value, c) => {
+        const id = c.get('id')
+        type verify = Expect<Equal<number, typeof id>>
         const schema = z.object({
           title: z.string(),
         })
@@ -236,6 +238,8 @@ describe('Validator middleware with Zod multiple validators', () => {
         return data
       }),
       (c) => {
+        const id = c.get('id')
+        type verify = Expect<Equal<number, typeof id>>
         const res = c.req.valid()
         return c.jsonT({
           page: res.page,
@@ -271,7 +275,7 @@ describe('Validator middleware with Zod multiple validators', () => {
     }
   }
 
-  // type verify = Expect<Equal<Expected, Actual>>
+  type verify = Expect<Equal<Expected, Actual>>
 
   it('Should validate both query param and form data and return 200 response', async () => {
     const form = new FormData()
