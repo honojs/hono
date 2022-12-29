@@ -1,21 +1,27 @@
 import type { Context } from '../../context.ts'
-import type { Environment, Handler, ValidationTypes } from '../../types.ts'
+import type { Environment, Next, Route, ValidationTypes } from '../../types.ts'
 import { mergeObjects } from '../../utils/object.ts'
 
-type HandlerFunc<T, E extends Environment> = (
-  value: unknown,
-  c: Context<E>
-) => Promise<Response> | Response | T
+type ValidatorHandler<E extends Partial<Environment>, R extends Route = Route, I = unknown> = (
+  c: Context<E, R, I>,
+  next: Next
+) => Promise<Response | undefined | void> | Response
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-export const validator = <T, U extends ValidationTypes, V extends { type: U; data: T }, V2 = {}, E extends Environment = Environment, M extends string = string, P extends string = string>(
+export const validator = <
+  T,
+  U extends ValidationTypes,
+  V extends { type: U; data: T },
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  V2 = {},
+  E extends Partial<Environment> = Environment
+>(
   type: U,
-  validationFunc: HandlerFunc<T, E>
-): Handler<E, M, P, { [K in M]: V | V2 } > => {
-  return async (c, next)=> {
+  validationFunc: (value: unknown, c: Context<E>) => T | Response | Promise<Response>
+): ValidatorHandler<E, Route, V | V2> => {
+  return async (c, next) => {
     let value = {}
 
-    switch(type) {
+    switch (type) {
       case 'json':
         value = await c.req.json()
         break
@@ -32,7 +38,7 @@ export const validator = <T, U extends ValidationTypes, V extends { type: U; dat
 
     const res = validationFunc(value, c)
 
-    if (res instanceof Response || res instanceof Promise<Response>) {
+    if (res instanceof Response || res instanceof Promise) {
       return res
     }
 
