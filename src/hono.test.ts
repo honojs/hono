@@ -1328,8 +1328,8 @@ describe('Context set/get variables', () => {
     app.get('/', (c) => {
       const id = c.get('id')
       const title = c.get('title')
-      type verifyID = Expect<Equal<typeof id, number>>
-      type verifyTitle = Expect<Equal<typeof title, string>>
+      type verifyID = Expect<Equal<number, typeof id>>
+      type verifyTitle = Expect<Equal<string, typeof title>>
       return c.text(`${id} is ${title}`)
     })
     const res = await app.request('http://localhost/')
@@ -1348,8 +1348,8 @@ describe('Context binding variables', () => {
 
   it('Should get binding variables with correct types', async () => {
     app.get('/', (c) => {
-      type verifyID = Expect<Equal<typeof c.env.USER_ID, number>>
-      type verifyName = Expect<Equal<typeof c.env.USER_NAME, string>>
+      type verifyID = Expect<Equal<number, typeof c.env.USER_ID>>
+      type verifyName = Expect<Equal<string, typeof c.env.USER_NAME>>
       return c.text('These are verified')
     })
     const res = await app.request('http://localhost/')
