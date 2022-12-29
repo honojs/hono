@@ -1,5 +1,5 @@
 import { HonoRequest } from './request.ts'
-import type { TypeResponse } from './types.ts'
+import type { TypeResponse, Route } from './types.ts'
 import type { Environment, NotFoundHandler } from './types.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
@@ -16,24 +16,24 @@ export interface ExecutionContext {
 }
 export interface ContextVariableMap {}
 
-type ContextOptions<E extends Partial<Environment>> = {
+type ContextOptions<E extends Partial<Environment>, R extends Route> = {
   env?: E['Bindings']
   executionCtx?: FetchEvent | ExecutionContext | undefined
-  notFoundHandler?: NotFoundHandler<E>
+  notFoundHandler?: NotFoundHandler<E, R>
   paramData?: Record<string, string>
 }
 
 export class Context<
   E extends Partial<Environment> = Environment,
-  P extends string = string,
+  R extends Route = Route,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  S = any
+  I = any
 > {
   env: E['Bindings'] = {}
   finalized: boolean = false
   error: Error | undefined = undefined
 
-  private _req?: HonoRequest<P, S>
+  private _req?: HonoRequest<R, I>
   private _status: StatusCode = 200
   private _executionCtx: FetchEvent | ExecutionContext | undefined
   private _pretty: boolean = false
@@ -43,9 +43,9 @@ export class Context<
   private _res: Response | undefined
   private _paramData: Record<string, string> | undefined
   private rawRequest: Request
-  private notFoundHandler: NotFoundHandler<E> = () => new Response()
+  private notFoundHandler: NotFoundHandler<E, R> = () => new Response()
 
-  constructor(req: Request, options?: ContextOptions<E>) {
+  constructor(req: Request, options?: ContextOptions<E, R>) {
     this.rawRequest = req
     if (options) {
       this._executionCtx = options.executionCtx
@@ -57,11 +57,11 @@ export class Context<
     }
   }
 
-  get req(): HonoRequest<P, S> {
+  get req(): HonoRequest<R, I> {
     if (this._req) {
       return this._req
     } else {
-      this._req = new HonoRequest<P, S>(this.rawRequest, this._paramData)
+      this._req = new HonoRequest<R, I>(this.rawRequest, this._paramData)
       return this._req
     }
   }
@@ -130,8 +130,8 @@ export class Context<
     this._map[key] = value
   }
 
-  get<Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
   get<Key extends keyof E['Variables']>(key: Key): E['Variables'][Key]
+  get<Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
   get<T>(key: string): T
   get(key: string) {
     if (!this._map) {
