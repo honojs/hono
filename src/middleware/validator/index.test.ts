@@ -17,6 +17,49 @@ const validatorFunc =
     return data
   }
 
+describe('Validator middleware', () => {
+  const app = new Hono()
+
+  const route = app
+    .get(
+      '/search',
+      validator('query', (value, c) => {
+        if (!value) {
+          return c.text('Invalid!', 400)
+        }
+      }),
+      (c) => {
+        return c.text('Valid!')
+      }
+    )
+    .build()
+
+  type Expected = {
+    get: {
+      '/search': {
+        input: {
+          query: undefined
+        }
+        output: unknown
+      }
+    }
+  }
+
+  type Actual = typeof route
+
+  type verify = Expect<Equal<Expected, Actual>>
+
+  it('Should return 200 response', async () => {
+    const res = await app.request('http://localhost/search?q=foo')
+    expect(res.status).toBe(200)
+  })
+
+  it('Should return 400 response', async () => {
+    const res = await app.request('http://localhost/search')
+    expect(res.status).toBe(200)
+  })
+})
+
 describe('Validator middleware with Zod validates JSON', () => {
   const app = new Hono()
 
