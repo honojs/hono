@@ -157,11 +157,11 @@ type ToAppTypeInner<R extends Route, I, O> = RemoveBlank<I> extends {
                 : never
               : never
             : never
-          output: { json: O } // Currently, support only JSON
+          output: O extends object ? { json: O } : O // Currently, support only JSON
         }
       }
     }
-  : { output: { json: O } }
+  : { output: O extends object ? { json: O } : O }
 
 export type InputToData<T> = ExtractData<T> extends never
   ? any
