@@ -31,6 +31,9 @@ export const validatorMiddleware = <
   validationFunction: ValidationFunction<P, E, S>,
   options?: { done?: Done<P, E> }
 ) => {
+  console.warn(`Current Validator Middleware will be changed with "breaking changes" at the ext major release "v3".
+  See the migration guide: https://github.com/honojs/hono/blob/main/docs/MIGRATION.md`)
+
   const v = new Validator()
   const handler: MiddlewareHandler<string, E, S> = async (c, next) => {
     const resultSet: ResultSet = {
