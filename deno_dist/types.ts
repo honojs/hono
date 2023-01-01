@@ -148,13 +148,15 @@ type ToAppTypeInner<R extends Route, I, O> = RemoveBlank<I> extends {
   ? {
       [K in R['method']]: {
         [K2 in R['path']]: {
-          input: I extends { type: ValidationTypes; data: unknown }
-            ? I extends { type: infer R }
-              ? R extends string
-                ? { [K in R]: I['data'] }
+          input: UnionToIntersection<
+            I extends { type: ValidationTypes; data: unknown }
+              ? I extends { type: infer R }
+                ? R extends string
+                  ? { [K in R]: I['data'] }
+                  : never
                 : never
               : never
-            : never
+          >
           output: O extends object ? { json: O } : O // Currently, support only JSON
         }
       }
