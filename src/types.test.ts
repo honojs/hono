@@ -191,7 +191,7 @@ describe('`jsonT()`', () => {
   type Expected = {
     get: {
       '/hello': {
-        input: never
+        input: unknown
         output: {
           json: {
             message: string
