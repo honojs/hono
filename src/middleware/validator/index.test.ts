@@ -297,17 +297,15 @@ describe('Validator middleware with Zod multiple validators', () => {
   type Expected = {
     post: {
       '/posts': {
-        input:
-          | {
-              query: {
-                page: number
-              }
-            }
-          | {
-              form: {
-                title: string
-              }
-            }
+        input: {
+          query: {
+            page: number
+          }
+        } & {
+          form: {
+            title: string
+          }
+        }
         output: {
           json: {
             page: number
