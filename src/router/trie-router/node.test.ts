@@ -359,6 +359,30 @@ describe('Multi match', () => {
       expect(res?.handlers).toEqual(['Middleware A', 'Middleware B'])
     })
   })
+
+  describe('Including slashes', () => {
+    const node = new Node()
+    node.insert('get', '/js/:filename{[a-z0-9]+.js}', 'any file')
+    node.insert('get', '/js/main.js', 'main.js')
+
+    it('get /js/main.js', () => {
+      const res = node.search('get', '/js/main.js')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['any file', 'main.js'])
+    })
+
+    it('get /js/chunk/123.js', () => {
+      const res = node.search('get', '/js/chunk/123.js')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['any file'])
+    })
+
+    it('get /js/chunk/nest/123.js', () => {
+      const res = node.search('get', '/js/chunk/nest/123.js')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['any file'])
+    })
+  })
 })
 
 describe('Duplicate param name', () => {

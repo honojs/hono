@@ -172,6 +172,15 @@ export class Node<T> {
           // Named match
           // `/posts/:id` => match /posts/123
           const [key, name, matcher] = pattern
+
+          // `/js/:filename{[a-z]+.js}` => match /js/chunk/123.js
+          const restPathString = parts.slice(i).join('')
+          if (matcher instanceof RegExp && matcher.test(restPathString)) {
+            handlerSets.push(...this.getHandlerSets(node.children[key], method))
+            params[name] = restPathString
+            continue
+          }
+
           if (matcher === true || (matcher instanceof RegExp && matcher.test(part))) {
             if (typeof key === 'string') {
               if (isLast === true) {
