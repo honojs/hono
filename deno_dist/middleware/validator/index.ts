@@ -9,14 +9,14 @@ type ValidatorHandler<E extends Partial<Environment>, R extends Route = Route, I
 
 export const validator = <
   T,
-  U extends ValidationTypes,
+  U extends keyof ValidationTypes,
   V extends { type: U; data: T },
   // eslint-disable-next-line @typescript-eslint/ban-types
   V2 = {},
   E extends Partial<Environment> = Environment
 >(
   type: U,
-  validationFunc: (value: unknown, c: Context<E>) => T | Response | Promise<Response>
+  validationFunc: (value: ValidationTypes[U], c: Context<E>) => T | Response | Promise<Response>
 ): ValidatorHandler<E, Route, V | V2> => {
   return async (c, next) => {
     let value = {}
