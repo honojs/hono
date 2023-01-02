@@ -3,7 +3,7 @@
 import { Hono } from './hono'
 export type { Next, MiddlewareHandler, ErrorHandler, NotFoundHandler } from './types'
 export type { Context, ContextVariableMap } from './context'
-import type { CustomHandler } from './types'
+import type { CustomHandler, ValidationTypes } from './types'
 export type { CustomHandler as Handler }
 
 declare module './hono' {
