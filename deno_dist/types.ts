@@ -3,7 +3,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Context } from './context.ts'
 import type { Hono } from './hono.ts'
-import type { UnionToIntersection } from './utils/types.ts'
 
 export type Bindings = Record<string, any> // For Cloudflare Workers
 export type Variables = Record<string, any> // For c.set/c.get functions
@@ -134,8 +133,6 @@ export interface CustomHandler<E = Env, R = Route, I = any> {
   ): Response | Promise<Response | undefined | void>
 }
 
-//export type ValidationTypes = 'json' | 'form' | 'query' | 'queries'
-
 export type ValidationTypes = {
   json: object
   form: Record<string, string | File>
@@ -180,3 +177,9 @@ type ExtractData<T> = T extends { type: keyof ValidationTypes }
     ? R
     : any
   : T
+
+type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (
+  k: infer I
+) => void
+  ? I
+  : never
