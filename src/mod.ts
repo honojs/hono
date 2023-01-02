@@ -17,7 +17,7 @@ declare global {
 }
 
 export type { Next, MiddlewareHandler, ErrorHandler, NotFoundHandler } from './types'
-import type { CustomHandler } from './types'
+import type { CustomHandler, ValidationTypes } from './types'
 export type { CustomHandler as Handler }
 export type { Context, ContextVariableMap } from './context'
 export { Hono }
