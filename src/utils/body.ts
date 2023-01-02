@@ -1,4 +1,4 @@
-export type BodyData = Record<string, string | number | boolean | File>
+export type BodyData = Record<string, string | File>
 
 export async function parseBody<BodyType extends BodyData>(
   r: Request | Response
