@@ -17,7 +17,7 @@ declare global {
 }
 
 export type { Next, MiddlewareHandler, ErrorHandler, NotFoundHandler } from './types.ts'
-import type { CustomHandler } from './types.ts'
+import type { CustomHandler, ValidationTypes } from './types.ts'
 export type { CustomHandler as Handler }
 export type { Context, ContextVariableMap } from './context.ts'
 export { Hono }
