@@ -1,9 +1,15 @@
 // @denoify-ignore
 
 import { Hono } from './hono'
-export type { Next, MiddlewareHandler, ErrorHandler, NotFoundHandler } from './types'
+export type {
+  Next,
+  MiddlewareHandler,
+  ErrorHandler,
+  NotFoundHandler,
+  ValidationTypes,
+} from './types'
 export type { Context, ContextVariableMap } from './context'
-import type { CustomHandler, ValidationTypes } from './types'
+import type { CustomHandler } from './types'
 export type { CustomHandler as Handler }
 
 declare module './hono' {
