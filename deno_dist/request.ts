@@ -110,14 +110,14 @@ export class HonoRequest<R extends Route = Route, I = any> {
     }
   }
 
-  async parseBody<BodyType extends BodyData>(): Promise<BodyType> {
+  async parseBody(): Promise<BodyData> {
     // Cache the parsed body
-    let body: BodyType
+    let body: BodyData
     if (!this.bodyData) {
-      body = await parseBody<BodyType>(this.raw)
+      body = await parseBody(this.raw)
       this.bodyData = body
     } else {
-      body = this.bodyData as BodyType
+      body = this.bodyData
     }
     return body
   }
