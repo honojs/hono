@@ -134,7 +134,14 @@ export interface CustomHandler<E = Env, R = Route, I = any> {
   ): Response | Promise<Response | undefined | void>
 }
 
-export type ValidationTypes = 'json' | 'form' | 'query' | 'queries'
+//export type ValidationTypes = 'json' | 'form' | 'query' | 'queries'
+
+export type ValidationTypes = {
+  json: object
+  form: Record<string, string | File>
+  query: Record<string, string>
+  queries: Record<string, string[]>
+}
 
 export type ToAppType<T> = T extends Hono<infer _, infer R, infer I, infer O>
   ? ToAppTypeInner<R, I, O>
@@ -151,7 +158,7 @@ type ToAppTypeInner<R extends Route, I, O> = RemoveBlank<I> extends {
       [K in R['method']]: {
         [K2 in R['path']]: {
           input: UnionToIntersection<
-            I extends { type: ValidationTypes; data: unknown }
+            I extends { type: keyof ValidationTypes; data: unknown }
               ? I extends { type: infer R }
                 ? R extends string
                   ? { [K in R]: I['data'] }
@@ -168,8 +175,8 @@ type ToAppTypeInner<R extends Route, I, O> = RemoveBlank<I> extends {
 export type InputToData<T> = ExtractData<T> extends never
   ? any
   : UnionToIntersection<ExtractData<T>>
-type ExtractData<T> = T extends { type: ValidationTypes }
-  ? T extends { type: ValidationTypes; data?: infer R }
+type ExtractData<T> = T extends { type: keyof ValidationTypes }
+  ? T extends { type: keyof ValidationTypes; data?: infer R }
     ? R
     : any
   : T
