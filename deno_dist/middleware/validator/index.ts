@@ -23,7 +23,18 @@ export const validator = <
 
     switch (type) {
       case 'json':
-        value = await c.req.json()
+        try {
+          value = await c.req.json()
+        } catch {
+          console.error('Error: Malformed JSON in request body')
+          return c.json(
+            {
+              success: false,
+              message: 'Malformed JSON in request body',
+            },
+            400
+          )
+        }
         break
       case 'form':
         value = await c.req.parseBody()
