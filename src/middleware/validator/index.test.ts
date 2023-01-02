@@ -60,6 +60,25 @@ describe('Validator middleware', () => {
   })
 })
 
+describe('Malformed JSON', () => {
+  const app = new Hono()
+
+  app.post(
+    '/post',
+    validator('json', (value, c) => {}),
+    (c) => {
+      return c.text('Valid!')
+    }
+  )
+
+  it('Should return 400 response', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+    })
+    expect(res.status).toBe(400)
+  })
+})
+
 describe('Validator middleware with Zod validates JSON', () => {
   const app = new Hono()
 
