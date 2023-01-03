@@ -4,8 +4,8 @@
 import type { Context } from './context'
 import type { Hono } from './hono'
 
-export type Bindings = Record<string, any> // For Cloudflare Workers
-export type Variables = Record<string, any> // For c.set/c.get functions
+export type Bindings = Record<string, unknown>
+export type Variables = Record<string, unknown>
 
 export type Environment = {
   Bindings: Bindings
@@ -13,51 +13,43 @@ export type Environment = {
 }
 
 type Env = Partial<Environment>
+type I = {}
+type O = {}
 
 export type Route = {
   path: string
   method: string
 }
 
-export type Handler<
-  E extends Env = Environment,
-  R extends Route = Route,
-  I = any, // should be any
-  O = unknown
-> = (
+export type Handler<E extends Env = Environment, R extends Route = Route, I = {}, O = {}> = (
   c: Context<E, R, I>,
   next: Next
-) => Response | Promise<Response | undefined | void> | TypeResponse<O> | Promise<TypeResponse<O>>
+) => Response | Promise<Response | void> | TypeResponse<O> | Promise<TypeResponse<O>>
 
 export interface HandlerInterface<
   E extends Env = Env,
   M extends string = string,
   P extends string = string,
-  _I = any,
-  _O = unknown
+  _I = {},
+  _O = {}
 > {
   // app.get(handler...)
-  <I2, O2>(...handlers: Handler<E, { method: M; path: string }, I2, O2>[]): Hono<
-    E,
-    { method: M; path: string },
-    I2,
-    O2
-  >
+  <Input = I, Output = O>(
+    ...handlers: Handler<E, { method: M; path: string }, Input, Output>[]
+  ): Hono<E, { method: M; path: string }, Input, Output>
 
   (...handlers: Handler<any, any>[]): Hono
 
   // app.get('/', handler, handler...)
-  <I2, O2, Path extends string = P>(
+  <Input = I, Output = O, Path extends string = P>(
     path: Path,
-    ...handlers: Handler<E, { method: M; path: Path }, I2, O2>[]
-  ): Hono<E, { method: M; path: Path }, I2, O2>
+    ...handlers: Handler<E, { method: M; path: Path }, Input, Output>[]
+  ): Hono<E, { method: M; path: Path }, Input, Output>
 
-  <I2, O2, Path extends string>(path: Path, ...handlers: Handler<any, any, I2, O2>[]): Hono<
-    E,
-    { method: M; path: Path },
-    I2,
-    O2
-  >
+  <Input = I, Output = O, Path extends string = P>(
+    path: Path,
+    ...handlers: Handler<any, any, Input, Output>[]
+  ): Hono<E, { method: M; path: Path }, Input, Output>
 }
 
 export type ExtractType<T> = T extends TypeResponse<infer R>
@@ -66,7 +58,6 @@ export type ExtractType<T> = T extends TypeResponse<infer R>
   ? R
   : never
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer _Pattern}`
   ? Name
   : NameWithPattern
@@ -148,9 +139,11 @@ type RemoveBlank<T> = {
   [K in keyof T]: T extends { type: ValidationTypes } ? T : never
 }
 
-type ToAppTypeInner<R extends Route, I, O> = RemoveBlank<I> extends {
+type InputSchema = {
   [K in string]: { type: ValidationTypes; data: unknown }
 }
+
+type ToAppTypeInner<R extends Route, I, O> = RemoveBlank<I> extends InputSchema
   ? {
       [K in R['method']]: {
         [K2 in R['path']]: {
@@ -163,11 +156,11 @@ type ToAppTypeInner<R extends Route, I, O> = RemoveBlank<I> extends {
                 : never
               : never
           >
-          output: O extends object ? { json: O } : O // Currently, support only JSON
+          output: O extends Record<string, never> ? unknown : { json: O } // Currently, support only JSON
         }
       }
     }
-  : { output: O extends object ? { json: O } : O }
+  : { output: O extends Record<string, never> ? unknown : { json: O } }
 
 export type InputToData<T> = ExtractData<T> extends never
   ? any
