@@ -74,7 +74,7 @@ Deno.test('Serve Static middleware', async () => {
 })
 
 Deno.test('JWT Authentication middleware', async () => {
-  const app = new Hono()
+  const app = new Hono<{ Variables: { 'x-foo': string } }>()
   app.use('/*', async (c, next) => {
     await next()
     c.header('x-foo', c.get('x-foo') || '')
