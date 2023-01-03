@@ -1,6 +1,5 @@
 // @denoify-ignore
 import type { KVNamespace } from '@cloudflare/workers-types'
-import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 import { getContentFromKVAsset } from '../../utils/cloudflare'
 import { getFilePath } from '../../utils/filepath'
