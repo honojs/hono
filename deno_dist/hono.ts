@@ -29,12 +29,12 @@ interface RouterRoute {
 
 function defineDynamicClass(): {
   new <
-    E extends Partial<Environment> = Partial<Environment>,
+    E extends Partial<Environment> = {},
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _M extends string = string,
     P extends string = string,
-    I = unknown,
-    O = unknown
+    I = {},
+    O = {}
   >(): {
     [M in Methods]: HandlerInterface<E, M, P, I, O>
   }
@@ -43,11 +43,10 @@ function defineDynamicClass(): {
 }
 
 export class Hono<
-  E extends Partial<Environment> = Partial<Environment>,
+  E extends Partial<Environment> = {},
   R extends Route = Route,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  I = any, // should be any
-  O = unknown
+  I = {},
+  O = {}
 > extends defineDynamicClass()<E, R['method'], R['path'], I, O> {
   readonly router: Router<Handler> = new SmartRouter({
     routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
@@ -76,7 +75,6 @@ export class Hono<
             this.addRoute(method, this.path, handler)
           }
         })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return this
       }
     })
@@ -84,7 +82,7 @@ export class Hono<
     Object.assign(this, init)
   }
 
-  private notFoundHandler: NotFoundHandler<E> = (c: Context<E, Route>) => {
+  private notFoundHandler: NotFoundHandler<E> = (c: Context<E>) => {
     return c.text('404 Not Found', 404)
   }
 
@@ -94,8 +92,7 @@ export class Hono<
     return c.text(message, 500)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  route(path: string, app?: Hono<any>) {
+  route(path: string, app?: Hono<{}>) {
     this._tempPath = path
     if (app) {
       app.routes.map((r) => {
@@ -128,8 +125,7 @@ export class Hono<
     path: Path,
     ...handlers: Handler<E, { method: Method; path: Path }>[]
   ): Hono<E, { method: Method; path: Path }, I, O>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  on(method: string, path: string, ...handlers: Handler<E, any>[]) {
+  on(method: string, path: string, ...handlers: Handler<E>[]) {
     if (!method) return this
     this.path = path
     handlers.map((handler) => {
@@ -205,7 +201,7 @@ export class Hono<
 
     // Do not `compose` if it has only one handler
     if (result && result.handlers.length === 1) {
-      const handler = result.handlers[0] as Handler<E>
+      const handler = result.handlers[0] as unknown as Handler<E>
       let res: ReturnType<Handler>
 
       try {
@@ -226,7 +222,7 @@ export class Hono<
       }
 
       return (async () => {
-        let awaited: Response | TypeResponse | undefined | void
+        let awaited: Response | TypeResponse | void
         try {
           awaited = await res
           if (awaited !== undefined && 'response' in awaited) {
