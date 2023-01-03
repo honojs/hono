@@ -15,7 +15,13 @@ export type ServeStaticOptions = {
 const DEFAULT_DOCUMENT = 'index.html'
 
 // This middleware is available only on Cloudflare Workers.
-export const serveStatic = (options: ServeStaticOptions = { root: '' }): MiddlewareHandler => {
+export const serveStatic = (
+  options: ServeStaticOptions = { root: '' }
+): MiddlewareHandler<{
+  Bindings: {
+    __STATIC_CONTENT: KVNamespace
+  }
+}> => {
   return async (c, next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
