@@ -1,11 +1,10 @@
 import Benchmark from 'benchmark'
 import { makeEdgeEnv } from 'edge-mock'
-import itty from 'itty-router'
-const { Router: IttyRouter } = itty
+import { Router as IttyRouter } from 'itty-router'
 import { Request, Response } from 'node-fetch'
 import { Router as SunderRouter, Sunder } from 'sunder'
 import { Router as WorktopRouter } from 'worktop'
-import { Hono } from '../../dist/cjs/hono'
+import { Hono } from '../../dist/hono'
 
 globalThis.Request = Request
 globalThis.Response = Response
