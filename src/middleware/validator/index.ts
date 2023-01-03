@@ -7,17 +7,22 @@ type ValidatorHandler<E extends Partial<Environment>, R extends Route = Route, I
   next: Next
 ) => Promise<Response | undefined | void> | Response
 
+type ValidationTypeKeysWithBody = 'form' | 'json'
+type ValidationTypeByMethod<M> = M extends 'get' | 'head' // GET and HEAD request must not have a body content.
+  ? Exclude<keyof ValidationTypes, ValidationTypeKeysWithBody>
+  : keyof ValidationTypes
+
 export const validator = <
   T,
-  U extends keyof ValidationTypes,
+  Method extends string,
+  U extends ValidationTypeByMethod<Method>,
   V extends { type: U; data: T },
-  // eslint-disable-next-line @typescript-eslint/ban-types
   V2 = {},
   E extends Partial<Environment> = Environment
 >(
   type: U,
   validationFunc: (value: ValidationTypes[U], c: Context<E>) => T | Response | Promise<Response>
-): ValidatorHandler<E, Route, V | V2> => {
+): ValidatorHandler<E, { method: Method; path: string }, V | V2> => {
   return async (c, next) => {
     let value = {}
 
@@ -47,7 +52,8 @@ export const validator = <
         break
     }
 
-    const res = validationFunc(value, c)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = validationFunc(value, c as any)
 
     if (res instanceof Response || res instanceof Promise) {
       return res
