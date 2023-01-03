@@ -38,6 +38,7 @@ module.exports = defineConfig({
       {
         types: {
           Function: false,
+          '{}': false,
         },
       },
     ],
