@@ -16,6 +16,12 @@ export interface ExecutionContext {
 }
 export interface ContextVariableMap {}
 
+type GetVariable<K, E extends Partial<Environment>> = K extends keyof E['Variables']
+  ? E['Variables'][K]
+  : K extends keyof ContextVariableMap
+  ? ContextVariableMap[K]
+  : unknown
+
 type ContextOptions<E extends Partial<Environment>, R extends Route> = {
   env?: E['Bindings']
   executionCtx?: FetchEvent | ExecutionContext | undefined
@@ -122,22 +128,16 @@ export class Context<
     this._status = status
   }
 
-  set<Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
-  set<Key extends keyof E['Variables']>(key: Key, value: E['Variables'][Key]): void
-  set(key: string, value: unknown): void
-  set(key: string, value: unknown): void {
+  set<Key extends keyof E['Variables'] | keyof ContextVariableMap>(
+    key: Key,
+    value: GetVariable<Key, E>
+  ): void {
     this._map ||= {}
-    this._map[key] = value
+    this._map[key as string] = value
   }
 
-  get<Key extends keyof E['Variables']>(key: Key): E['Variables'][Key]
-  get<Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
-  get<T>(key: string): T
-  get(key: string) {
-    if (!this._map) {
-      return undefined
-    }
-    return this._map[key]
+  get<Key extends keyof E['Variables'] | keyof ContextVariableMap>(key: Key): GetVariable<Key, E> {
+    return this._map?.[key as string] as GetVariable<Key, E>
   }
 
   pretty = (prettyJSON: boolean, space: number = 2): void => {
