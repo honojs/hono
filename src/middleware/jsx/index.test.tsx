@@ -20,7 +20,7 @@ describe('JSX middleware', () => {
     })
     const res = await app.request('http://localhost/')
     expect(res.status).toBe(200)
-    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=utf-8')
     expect(await res.text()).toBe('<h1>Hello</h1>')
   })
 
@@ -52,7 +52,7 @@ describe('JSX middleware', () => {
     })
     const res = await app.request('http://localhost/')
     expect(res.status).toBe(200)
-    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=utf-8')
     expect(await res.text()).toBe(`<!DOCTYPE html>
       <html>
         <head>

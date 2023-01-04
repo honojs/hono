@@ -6,8 +6,7 @@ import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'
 
 type Runtime = 'node' | 'deno' | 'bun' | 'cloudflare' | 'fastly' | 'vercel' | 'lagon' | 'other'
-type HeaderField = [string, string]
-type Headers = Record<string, string | string[]>
+type HeaderRecord = Record<string, string | string[]>
 type Data = string | ArrayBuffer | ReadableStream
 
 export interface ExecutionContext {
@@ -45,7 +44,8 @@ export class Context<
   private _pretty: boolean = false
   private _prettySpace: number = 2
   private _map: Record<string, unknown> | undefined
-  private _headers: Record<string, string[]> | undefined
+  private _headers: Headers | undefined = undefined
+  private _preparedHeaders: Record<string, string> | undefined = undefined
   private _res: Response | undefined
   private _paramData: Record<string, string> | undefined
   private rawRequest: Request
@@ -98,25 +98,22 @@ export class Context<
   }
 
   header(name: string, value: string, options?: { append?: boolean }): void {
-    this._headers ||= {}
-    const key = name.toLowerCase()
-
-    let shouldAppend = false
-    if (options && options.append) {
-      const vAlreadySet = this._headers[key]
-      if (vAlreadySet && vAlreadySet.length) {
-        shouldAppend = true
+    if (options?.append) {
+      if (!this._headers) {
+        this._headers = new Headers(this._preparedHeaders)
+      }
+      this._headers.append(name, value)
+    } else {
+      if (this._headers) {
+        this._headers.set(name, value)
+      } else {
+        this._preparedHeaders ??= {}
+        this._preparedHeaders[name.toLowerCase()] = value
       }
     }
 
-    if (shouldAppend) {
-      this._headers[key].push(value)
-    } else {
-      this._headers[key] = [value]
-    }
-
     if (this.finalized) {
-      if (shouldAppend) {
+      if (options?.append) {
         this.res.headers.append(name, value)
       } else {
         this.res.headers.set(name, value)
@@ -145,67 +142,75 @@ export class Context<
     this._prettySpace = space
   }
 
-  newResponse(data: Data | null, status: StatusCode, headers: Headers = {}): Response {
+  newResponse(data: Data | null, status: StatusCode, headers?: HeaderRecord): Response {
+    if (!headers && !this._headers && !this._res) {
+      return new Response(data, {
+        status,
+        headers: this._preparedHeaders,
+      })
+    }
+
+    this._preparedHeaders ??= {}
+
+    if (!this._headers) {
+      this._headers ??= new Headers()
+      for (const [k, v] of Object.entries(this._preparedHeaders)) {
+        this._headers.set(k, v)
+      }
+    }
+
+    if (this._res) {
+      this._res.headers.forEach((v, k) => {
+        this._headers?.set(k, v)
+      })
+      for (const [k, v] of Object.entries(this._preparedHeaders)) {
+        this._headers.set(k, v)
+      }
+    }
+
+    headers ??= {}
+    for (const [k, v] of Object.entries(headers)) {
+      if (typeof v === 'string') {
+        this._headers.set(k, v)
+      } else {
+        this._headers.delete(k)
+        for (const v2 of v) {
+          this._headers.append(k, v2)
+        }
+      }
+    }
+
     return new Response(data, {
       status,
-      headers: this._finalizeHeaders(headers),
+      headers: this._headers,
     })
   }
 
-  private _finalizeHeaders(incomingHeaders: Headers): HeaderField[] {
-    const finalizedHeaders: HeaderField[] = []
-    const headersKv = this._headers || {}
-    // If Response is already set
-    if (this._res) {
-      this._res.headers.forEach((v, k) => {
-        headersKv[k] = [v]
-      })
-    }
-    for (const key of Object.keys(incomingHeaders)) {
-      const value = incomingHeaders[key]
-      if (typeof value === 'string') {
-        finalizedHeaders.push([key, value])
-      } else {
-        for (const v of value) {
-          finalizedHeaders.push([key, v])
-        }
-      }
-      delete headersKv[key]
-    }
-    for (const key of Object.keys(headersKv)) {
-      for (const value of headersKv[key]) {
-        const kv: HeaderField = [key, value]
-        finalizedHeaders.push(kv)
-      }
-    }
-    return finalizedHeaders
-  }
-
-  body(data: Data | null, status: StatusCode = this._status, headers: Headers = {}): Response {
+  body(data: Data | null, status: StatusCode = this._status, headers?: HeaderRecord): Response {
     return this.newResponse(data, status, headers)
   }
 
-  text(text: string, status?: StatusCode, headers?: Headers): Response {
+  text(text: string, status?: StatusCode, headers?: HeaderRecord): Response {
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
-    if (!headers && !status && !this._res && !this._headers) {
+    if (!headers && !status && !this._res && !this._headers && !this._preparedHeaders) {
       return new Response(text)
     }
-    status ||= this._status
-    headers ||= {}
-    headers['content-type'] = 'text/plain; charset=UTF-8'
-    return this.newResponse(text, status, headers)
+    this._preparedHeaders ??= {}
+    this._preparedHeaders['content-type'] = 'text/plain; charset=utf8'
+    return this.newResponse(text, status ?? this._status, headers)
   }
 
-  json<T>(object: T, status: StatusCode = this._status, headers: Headers = {}): Response {
+  json<T>(object: T, status: StatusCode = this._status, headers?: HeaderRecord): Response {
     const body = this._pretty
       ? JSON.stringify(object, null, this._prettySpace)
       : JSON.stringify(object)
-    headers['content-type'] = 'application/json; charset=UTF-8'
+    this._preparedHeaders ??= {}
+    this._preparedHeaders['content-type'] = 'application/json; charset=utf-8'
     return this.newResponse(body, status, headers)
   }
 
-  jsonT<T>(object: T, status: StatusCode = this._status, headers: Headers = {}): TypeResponse<T> {
+  jsonT<T>(object: T, status: StatusCode = this._status, headers?: HeaderRecord): TypeResponse<T> {
     return {
       response: this.json(object, status, headers),
       data: object,
@@ -213,15 +218,16 @@ export class Context<
     }
   }
 
-  html(html: string, status: StatusCode = this._status, headers: Headers = {}): Response {
-    headers['content-type'] = 'text/html; charset=UTF-8'
+  html(html: string, status: StatusCode = this._status, headers?: HeaderRecord): Response {
+    this._preparedHeaders ??= {}
+    this._preparedHeaders['content-type'] = 'text/html; charset=utf-8'
     return this.newResponse(html, status, headers)
   }
 
   redirect(location: string, status: StatusCode = 302): Response {
-    return this.newResponse(null, status, {
-      Location: location,
-    })
+    this._headers ??= new Headers()
+    this._headers.set('Location', location)
+    return this.newResponse(null, status)
   }
 
   cookie(name: string, value: string, opt?: CookieOptions): void {
