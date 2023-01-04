@@ -197,7 +197,7 @@ export class Context<
       return new Response(text)
     }
     this._preparedHeaders ??= {}
-    this._preparedHeaders['content-type'] = 'text/plain; charset=utf8'
+    this._preparedHeaders['content-type'] = 'text/plain; charset=UTF8'
     return this.newResponse(text, status ?? this._status, headers)
   }
 
@@ -206,7 +206,7 @@ export class Context<
       ? JSON.stringify(object, null, this._prettySpace)
       : JSON.stringify(object)
     this._preparedHeaders ??= {}
-    this._preparedHeaders['content-type'] = 'application/json; charset=utf-8'
+    this._preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
     return this.newResponse(body, status, headers)
   }
 
@@ -220,7 +220,7 @@ export class Context<
 
   html(html: string, status: StatusCode = this._status, headers?: HeaderRecord): Response {
     this._preparedHeaders ??= {}
-    this._preparedHeaders['content-type'] = 'text/html; charset=utf-8'
+    this._preparedHeaders['content-type'] = 'text/html; charset=UTF-8'
     return this.newResponse(html, status, headers)
   }
 

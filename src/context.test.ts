@@ -20,7 +20,7 @@ describe('Context', () => {
   it('c.json()', async () => {
     const res = c.json({ message: 'Hello' }, 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=utf-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
     const text = await res.text()
     expect(text).toBe('{"message":"Hello"}')
     expect(res.headers.get('X-Custom')).toBe('Message')
@@ -94,7 +94,7 @@ describe('Context', () => {
     c.status(404)
     const res = c.json({ hono: 'great app' })
     expect(res.status).toBe(404)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=utf-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
     const obj: { [key: string]: string } = await res.json()
     expect(obj['hono']).toBe('great app')
   })
@@ -178,8 +178,8 @@ describe('Context header', () => {
     c.header('Content-Type', 'foo')
     c.header('content-type', 'foo')
     const res = c.html('foo')
-    expect(res.headers.get('Content-Type')).toBe('text/html; charset=utf-8')
-    expect(res.headers.get('content-type')).toBe('text/html; charset=utf-8')
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(res.headers.get('content-type')).toBe('text/html; charset=UTF-8')
   })
   it('Should rewrite header values correctly', async () => {
     c.res = c.html('foo')
