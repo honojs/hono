@@ -187,6 +187,7 @@ export class Hono<
     env?: E['Bindings']
   ): Response | Promise<Response> {
     const [path, queryIndex] = getPathFromURL(request.url, this.strict)
+
     const method = request.method
 
     const result = this.matchRoute(method, path)
