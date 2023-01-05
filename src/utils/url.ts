@@ -8,6 +8,36 @@ export const splitPath = (path: string): string[] => {
   return paths
 }
 
+export const splitRoutingPath = (path: string): string[] => {
+  const groups : string[] = []
+  for (let i = 0;; i++) {
+    let replaced = false
+    path = path.replace(/\{[^}]+\}/, (m) => {
+      groups[i] = m
+      replaced = true
+      return `@${i}`
+    })
+    if (!replaced) {
+      break
+    }
+  }
+
+  const paths = path.split(/\//) // faster than path.split('/')
+  if (paths[0] === '') {
+    paths.shift()
+  }
+  for (let i = groups.length - 1; i >= 0; i--) {
+    for (let j = paths.length - 1; j >= 0; j--) {
+      if (paths[j].match('@' + i)) {
+        paths[j] = paths[j].replace('@' + i, groups[i])
+        break
+      }
+    }
+  }
+
+  return paths
+}
+
 const patternCache: { [key: string]: Pattern } = {}
 export const getPattern = (label: string): Pattern | null => {
   // *            => wildcard
