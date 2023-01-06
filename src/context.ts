@@ -152,9 +152,8 @@ export class Context<
 
   newResponse(data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response {
     // Optimized
-    if (!headers && !this._headers && !this._res) {
+    if (!headers && !this._headers && !this._res && !status) {
       return new Response(data, {
-        status,
         headers: this._preparedHeaders,
       })
     }
