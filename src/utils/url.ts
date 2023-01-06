@@ -141,11 +141,10 @@ export const getQueryParam = (
       strings = queryString.slice(0, andIndex)
     }
 
-    const kv = strings.split('=')
-
-    if (kv.length > 1) {
-      const k = kv[0]
-      const v = kv[1]
+    const eqIndex = strings.indexOf('=')
+    if (eqIndex !== -1) {
+      const v = strings.slice(eqIndex + 1)
+      const k = strings.slice(0, eqIndex)
       if (key === k) {
         return v.indexOf('%') !== -1 ? decodeURI(v) : v
       } else {

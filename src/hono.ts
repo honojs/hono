@@ -202,7 +202,7 @@ export class Hono<
     })
 
     // Do not `compose` if it has only one handler
-    if (result && result.handlers.length === 1) {
+    if (result?.handlers.length === 1) {
       const handler = result.handlers[0] as unknown as Handler<E>
       let res: ReturnType<Handler>
 

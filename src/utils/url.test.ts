@@ -176,27 +176,9 @@ describe('url', () => {
 
   describe('getQueryParam', () => {
     it('Parse URL query strings', () => {
-      // expect(getQueryParam('?name=hey', 'name')).toBe('hey')
-      // expect(getQueryParam('?name=hey#fragment', 'name')).toEqual('hey')
-      // expect(getQueryParam('?name=hey&age=20&tall=170', 'age')).toBe('20')
-      // const searchParams = new URLSearchParams({ name: '炎' })
-      // expect(getQueryParam('?' + searchParams.toString(), 'name')).toBe('炎')
-      // expect(getQueryParam('?name=hey&age=20&tall=170', 'weight')).toBe(null)
-      // expect(getQueryParam('?name=hey&age=20&tall=170')).toEqual({
-      //   name: 'hey',
-      //   age: '20',
-      //   tall: '170',
-      // })
-      // expect(getQueryParam('?pretty', 'pretty')).toBe('')
-      // expect(getQueryParam('?pretty', 'prtt')).toBe(null)
-      // expect(getQueryParam('?name=sam&name=tom', 'name')).toBe('sam')
-      // expect(getQueryParam('?name=sam&name=tom')).toEqual({
-      //   name: 'sam',
-      // })
-
       expect(getQueryParam('name=hey', 'name')).toBe('hey')
       expect(getQueryParam('name=hey&age=20&tall=170', 'age')).toBe('20')
-      const searchParams = new URLSearchParams({ name: '炎' })
+      let searchParams = new URLSearchParams({ name: '炎' })
       expect(getQueryParam(searchParams.toString(), 'name')).toBe('炎')
       expect(getQueryParam('name=hey&age=20&tall=170', 'weight')).toBe(null)
       expect(getQueryParam('name=hey&age=20&tall=170')).toEqual({
@@ -210,6 +192,8 @@ describe('url', () => {
       expect(getQueryParam('name=sam&name=tom')).toEqual({
         name: 'sam',
       })
+      searchParams = new URLSearchParams('?name=sam=tom')
+      expect(getQueryParam('name', searchParams.get('name')?.toString()))
     })
   })
 

@@ -210,15 +210,9 @@ export class Context<
     }
     // If Content-Type is not set, we don't have to set `text/plain`.
     // Fewer the header values, it will be faster.
-    if (!this._preparedHeaders['content-type']) {
-      return new Response(text, {
-        status,
-        headers: this._preparedHeaders,
-      })
+    if (this._preparedHeaders['content-type']) {
+      this._preparedHeaders['content-type'] = 'text/plain; charset=UTF8'
     }
-
-    this._preparedHeaders['content-type'] = 'text/plain; charset=UTF8'
-
     return this.newResponse(text, status, headers)
   }
 
