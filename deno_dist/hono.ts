@@ -186,7 +186,8 @@ export class Hono<
     eventOrExecutionCtx?: ExecutionContext | FetchEvent,
     env?: E['Bindings']
   ): Response | Promise<Response> {
-    const path = getPathFromURL(request.url, this.strict)
+    const [path, queryIndex] = getPathFromURL(request.url, this.strict)
+
     const method = request.method
 
     const result = this.matchRoute(method, path)
@@ -197,10 +198,11 @@ export class Hono<
       executionCtx: eventOrExecutionCtx,
       notFoundHandler: this.notFoundHandler,
       paramData,
+      queryIndex,
     })
 
     // Do not `compose` if it has only one handler
-    if (result && result.handlers.length === 1) {
+    if (result?.handlers.length === 1) {
       const handler = result.handlers[0] as unknown as Handler<E>
       let res: ReturnType<Handler>
 
