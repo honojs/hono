@@ -8,12 +8,10 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [16.x, 18.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
@@ -44,6 +42,17 @@ jobs:
       - run: curl -fsSL https://bun.sh/install | bash
       - run: echo "${HOME}/.bun/bin" >> $GITHUB_PATH
       - run: npm run test:bun
+
+  fastly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 18.x
+      - run: yarn install --frozen-lockfile
+      - run: npm run build
+      - run: npm run test:fastly
 
   lagon:
     runs-on: ubuntu-latest

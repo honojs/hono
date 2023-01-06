@@ -29,8 +29,14 @@ export const timingSafeEqual = async (
   if (!hashFunction) {
     hashFunction = sha256
   }
+
   const sa = await hashFunction(a)
   const sb = await hashFunction(b)
+
+  if (!sa || !sb) {
+    return false
+  }
+
   return sa === sb && a === b
 }
 
