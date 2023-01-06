@@ -7,7 +7,6 @@ import {
   checkOptionalParameter,
   getQueryParam,
   getQueryParams,
-  getPathFromURLWithRegExp,
 } from './url'
 
 describe('url', () => {
@@ -40,44 +39,6 @@ describe('url', () => {
     expect(res?.[2]).toEqual(/^[0-9]+$/)
     res = getPattern('*')
     expect(res).toBe('*')
-  })
-
-  describe('getPathFromURLWithRegex', () => {
-    it('getPathFromURLWithRegex - no trailing slash', () => {
-      let path = getPathFromURLWithRegExp('https://example.com/')
-      expect(path[0]).toBe('/')
-      expect(path[1]).toBe('')
-      path = getPathFromURLWithRegExp('https://example.com/hello')
-      expect(path[0]).toBe('/hello')
-      expect(path[1]).toBe('')
-      path = getPathFromURLWithRegExp('https://example.com/hello/hey')
-      expect(path[0]).toBe('/hello/hey')
-      expect(path[1]).toBe('')
-      path = getPathFromURLWithRegExp('https://example.com/hello?name=foo')
-      expect(path[0]).toBe('/hello')
-      expect(path[1]).toBe('name=foo')
-      path = getPathFromURLWithRegExp('https://example.com/hello/hey?name=foo&name=bar')
-      expect(path[0]).toBe('/hello/hey')
-      expect(path[1]).toBe('name=foo&name=bar')
-    })
-
-    it('getPathFromURLWithRegex - with trailing slash', () => {
-      let path = getPathFromURLWithRegExp('https://example.com/hello/')
-      expect(path[0]).toBe('/hello/')
-      expect(path[1]).toBe('')
-      path = getPathFromURLWithRegExp('https://example.com/hello/hey/')
-      expect(path[0]).toBe('/hello/hey/')
-      expect(path[1]).toBe('')
-    })
-
-    it('getPathFromURLWithRegex - no strict is false', () => {
-      let path = getPathFromURLWithRegExp('https://example.com/hello/', false)
-      expect(path[0]).toBe('/hello')
-      expect(path[1]).toBe('')
-      path = getPathFromURLWithRegExp('https://example.com/hello/hey/', false)
-      expect(path[0]).toBe('/hello/hey')
-      expect(path[1]).toBe('')
-    })
   })
 
   describe('getPathFromURL', () => {

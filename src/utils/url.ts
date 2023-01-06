@@ -35,21 +35,6 @@ export const getPattern = (label: string): Pattern | null => {
   return null
 }
 
-export const getPathFromURLWithRegExp = (url: string, strict: boolean = true): [string, string] => {
-  const regExp = /^https?:\/\/[^/]+(\/[^?]+)\?*([^#]*)$/
-  const match = url.match(regExp)
-
-  if (match) {
-    if (strict === false && match[1].endsWith('/')) {
-      return [match[1].slice(0, -1), match[2]]
-    } else {
-      return [match[1], match[2]]
-    }
-  }
-
-  return ['/', '']
-}
-
 export const getPathFromURL = (url: string, strict: boolean = true): [string, number] => {
   const queryIndex = url.indexOf('?')
   const result = url.substring(url.indexOf('/', 8), queryIndex === -1 ? url.length : queryIndex)
