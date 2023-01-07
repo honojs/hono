@@ -7,11 +7,20 @@ const app = new Hono()
 
 describe('Hello World', () => {
   app.get('/', (c) => c.text('Hello! Compute!'))
+  app.get('/runtime-name', (c) => {
+    return c.text(c.runtime)
+  })
 
   it('Should return 200', async () => {
     const res = await app.request('http://localhost/')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Hello! Compute!')
+  })
+
+  it('Should return the correct runtime name', async () => {
+    const res = await app.request('http://localhost/runtime-name')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('fastly')
   })
 })
 
