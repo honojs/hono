@@ -3,7 +3,7 @@ import { parseBody } from './utils/body'
 import type { BodyData } from './utils/body'
 import type { Cookie } from './utils/cookie'
 import { parse } from './utils/cookie'
-import { getQueryStringFromURL } from './utils/url'
+import { getQueryStringFromURL, getQueryParam, getQueryParams } from './utils/url'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class HonoRequest<R extends Route = Route, I = any> {
@@ -11,17 +11,16 @@ export class HonoRequest<R extends Route = Route, I = any> {
 
   private paramData: Record<string, string> | undefined
   private headerData: Record<string, string> | undefined
-  private queryData: Record<string, string> | undefined
   private bodyData: BodyData | undefined
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private jsonData: Promise<any> | undefined
   private data: InputToData<I>
-  private queryIndex: number | undefined
+  private queryIndex: number
 
   constructor(
     request: Request,
     paramData?: Record<string, string> | undefined,
-    queryIndex?: number
+    queryIndex: number = -1
   ) {
     this.raw = request
     this.paramData = paramData
@@ -35,16 +34,14 @@ export class HonoRequest<R extends Route = Route, I = any> {
     if (this.paramData) {
       if (key) {
         const param = this.paramData[key]
-        return param ? decodeURIComponent(param) : undefined
+        return param ? (param.indexOf('%') !== -1 ? decodeURIComponent(param) : param) : undefined
       } else {
         const decoded: Record<string, string> = {}
-
         for (const [key, value] of Object.entries(this.paramData)) {
           if (value && typeof value === 'string') {
-            decoded[key] = decodeURIComponent(value)
+            decoded[key] = value.indexOf('%') !== -1 ? decodeURIComponent(value) : value
           }
         }
-
         return decoded
       }
     }
@@ -55,34 +52,14 @@ export class HonoRequest<R extends Route = Route, I = any> {
   query(): Record<string, string>
   query(key?: string) {
     const queryString = getQueryStringFromURL(this.url, this.queryIndex)
-    const searchParams = new URLSearchParams(queryString)
-    if (!this.queryData) {
-      this.queryData = {}
-      for (const key of searchParams.keys()) {
-        this.queryData[key] = searchParams.get(key) || ''
-      }
-    }
-    if (key) {
-      return this.queryData[key]
-    } else {
-      return this.queryData
-    }
+    return getQueryParam(queryString, key)
   }
 
   queries(key: string): string[]
   queries(): Record<string, string[]>
   queries(key?: string) {
     const queryString = getQueryStringFromURL(this.url, this.queryIndex)
-    const searchParams = new URLSearchParams(queryString)
-    if (key) {
-      return searchParams.getAll(key)
-    } else {
-      const result: Record<string, string[]> = {}
-      for (const key of searchParams.keys()) {
-        result[key] = searchParams.getAll(key)
-      }
-      return result
-    }
+    return getQueryParams(queryString, key)
   }
 
   header(name: string): string

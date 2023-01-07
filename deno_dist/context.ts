@@ -26,6 +26,7 @@ type ContextOptions<E extends Partial<Environment>, R extends Route> = {
   executionCtx?: FetchEvent | ExecutionContext | undefined
   notFoundHandler?: NotFoundHandler<E, R>
   paramData?: Record<string, string>
+  queryIndex?: number
 }
 
 export class Context<
@@ -47,8 +48,9 @@ export class Context<
   private _headers: Headers | undefined = undefined
   private _preparedHeaders: Record<string, string> | undefined = undefined
   private _res: Response | undefined
-  private _paramData: Record<string, string> | undefined
-  private rawRequest: Request
+  private _paramData?: Record<string, string> | null
+  private _queryIndex: number | undefined
+  private rawRequest?: Request | null
   private notFoundHandler: NotFoundHandler<E, R> = () => new Response()
 
   constructor(req: Request, options?: ContextOptions<E, R>) {
@@ -60,6 +62,7 @@ export class Context<
       if (options.notFoundHandler) {
         this.notFoundHandler = options.notFoundHandler
       }
+      this._queryIndex = options.queryIndex
     }
   }
 
@@ -67,7 +70,12 @@ export class Context<
     if (this._req) {
       return this._req
     } else {
-      this._req = new HonoRequest<R, I>(this.rawRequest, this._paramData)
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this._req = new HonoRequest<R, I>(this.rawRequest!, this._paramData!, this._queryIndex)
+      this.rawRequest = null
+      delete this.rawRequest
+      this._paramData = null
+      delete this._paramData
       return this._req
     }
   }
@@ -142,10 +150,10 @@ export class Context<
     this._prettySpace = space
   }
 
-  newResponse(data: Data | null, status: StatusCode, headers?: HeaderRecord): Response {
-    if (!headers && !this._headers && !this._res) {
+  newResponse(data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response {
+    // Optimized
+    if (!headers && !this._headers && !this._res && !status) {
       return new Response(data, {
-        status,
         headers: this._preparedHeaders,
       })
     }
@@ -153,7 +161,7 @@ export class Context<
     this._preparedHeaders ??= {}
 
     if (!this._headers) {
-      this._headers ??= new Headers()
+      this._headers = new Headers()
       for (const [k, v] of Object.entries(this._preparedHeaders)) {
         this._headers.set(k, v)
       }
@@ -193,12 +201,18 @@ export class Context<
   text(text: string, status?: StatusCode, headers?: HeaderRecord): Response {
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
-    if (!headers && !status && !this._res && !this._headers && !this._preparedHeaders) {
-      return new Response(text)
+    if (!this._preparedHeaders) {
+      if (!headers && !this._res && !this._headers && !status) {
+        return new Response(text)
+      }
+      this._preparedHeaders = {}
     }
-    this._preparedHeaders ??= {}
-    this._preparedHeaders['content-type'] = 'text/plain; charset=UTF8'
-    return this.newResponse(text, status ?? this._status, headers)
+    // If Content-Type is not set, we don't have to set `text/plain`.
+    // Fewer the header values, it will be faster.
+    if (this._preparedHeaders['content-type']) {
+      this._preparedHeaders['content-type'] = 'text/plain; charset=UTF8'
+    }
+    return this.newResponse(text, status, headers)
   }
 
   json<T>(object: T, status: StatusCode = this._status, headers?: HeaderRecord): Response {

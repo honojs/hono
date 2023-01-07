@@ -1,7 +1,7 @@
 export type Pattern = readonly [string, string, RegExp | true] | '*'
 
 export const splitPath = (path: string): string[] => {
-  const paths = path.split(/\//) // faster than path.split('/')
+  const paths = path.split('/')
   if (paths[0] === '') {
     paths.shift()
   }
@@ -48,9 +48,8 @@ export const getPathFromURL = (url: string, strict: boolean = true): [string, nu
   return [result, queryIndex]
 }
 
-export const getQueryStringFromURL = (url: string, queryIndex?: number): string => {
-  queryIndex ||= url.indexOf('?')
-  const result = queryIndex !== -1 ? url.substring(queryIndex) : ''
+export const getQueryStringFromURL = (url: string, queryIndex: number): string => {
+  const result = queryIndex !== -1 ? url.slice(queryIndex + 1) : ''
   return result
 }
 
@@ -98,4 +97,71 @@ export const checkOptionalParameter = (path: string): string[] | null => {
   const base = match[1]
   const optional = base + match[2]
   return [base, optional]
+}
+
+const filterQueryString = (queryString: string): string => {
+  const fragIndex = queryString.indexOf('#')
+  if (fragIndex !== -1) {
+    queryString = queryString.slice(0, fragIndex)
+  }
+  return queryString
+}
+
+// Optimized
+export const getQueryParam = (
+  queryString: string,
+  key?: string
+): string | null | Record<string, string> => {
+  queryString = filterQueryString(queryString)
+
+  const results: Record<string, string> = {}
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const andIndex = queryString.indexOf('&')
+    let strings = ''
+    if (andIndex === -1) {
+      strings = queryString
+    } else {
+      strings = queryString.slice(0, andIndex)
+    }
+
+    const eqIndex = strings.indexOf('=')
+    if (eqIndex !== -1) {
+      const v = strings.slice(eqIndex + 1)
+      const k = strings.slice(0, eqIndex)
+      if (key === k) {
+        return v.indexOf('%') !== -1 ? decodeURI(v) : v
+      } else {
+        results[k] ||= v
+      }
+    } else if (strings === key) {
+      return ''
+    }
+
+    if (andIndex === -1) break
+    queryString = queryString.slice(andIndex + 1, queryString.length)
+  }
+
+  if (key) return null
+  return results
+}
+
+export const getQueryParams = (
+  queryString: string,
+  key?: string
+): string[] | null | Record<string, string[]> => {
+  queryString = filterQueryString(queryString)
+  const results: Record<string, string[]> = {}
+
+  for (const strings of queryString.split('&')) {
+    let [k, v] = strings.split('=')
+    if (v === undefined) v = ''
+    results[k] ||= []
+    results[k].push(v.indexOf('%') !== -1 ? decodeURI(v) : v)
+  }
+
+  if (key) return results[key] ? results[key] : null
+
+  return results
 }

@@ -3,7 +3,7 @@ import { parseBody } from './utils/body.ts'
 import type { BodyData } from './utils/body.ts'
 import type { Cookie } from './utils/cookie.ts'
 import { parse } from './utils/cookie.ts'
-import { getQueryStringFromURL } from './utils/url.ts'
+import { getQueryStringFromURL, getQueryParam, getQueryParams } from './utils/url.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class HonoRequest<R extends Route = Route, I = any> {
@@ -11,16 +11,21 @@ export class HonoRequest<R extends Route = Route, I = any> {
 
   private paramData: Record<string, string> | undefined
   private headerData: Record<string, string> | undefined
-  private queryData: Record<string, string> | undefined
   private bodyData: BodyData | undefined
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private jsonData: Promise<any> | undefined
   private data: InputToData<I>
+  private queryIndex: number
 
-  constructor(request: Request, paramData?: Record<string, string> | undefined) {
+  constructor(
+    request: Request,
+    paramData?: Record<string, string> | undefined,
+    queryIndex: number = -1
+  ) {
     this.raw = request
     this.paramData = paramData
     this.data = {} as InputToData<I>
+    this.queryIndex = queryIndex
   }
 
   param(key: GetParamKeys<R['path']>): string
@@ -29,16 +34,14 @@ export class HonoRequest<R extends Route = Route, I = any> {
     if (this.paramData) {
       if (key) {
         const param = this.paramData[key]
-        return param ? decodeURIComponent(param) : undefined
+        return param ? (param.indexOf('%') !== -1 ? decodeURIComponent(param) : param) : undefined
       } else {
         const decoded: Record<string, string> = {}
-
         for (const [key, value] of Object.entries(this.paramData)) {
           if (value && typeof value === 'string') {
-            decoded[key] = decodeURIComponent(value)
+            decoded[key] = value.indexOf('%') !== -1 ? decodeURIComponent(value) : value
           }
         }
-
         return decoded
       }
     }
@@ -48,35 +51,15 @@ export class HonoRequest<R extends Route = Route, I = any> {
   query(key: string): string
   query(): Record<string, string>
   query(key?: string) {
-    const queryString = getQueryStringFromURL(this.url)
-    const searchParams = new URLSearchParams(queryString)
-    if (!this.queryData) {
-      this.queryData = {}
-      for (const key of searchParams.keys()) {
-        this.queryData[key] = searchParams.get(key) || ''
-      }
-    }
-    if (key) {
-      return this.queryData[key]
-    } else {
-      return this.queryData
-    }
+    const queryString = getQueryStringFromURL(this.url, this.queryIndex)
+    return getQueryParam(queryString, key)
   }
 
   queries(key: string): string[]
   queries(): Record<string, string[]>
   queries(key?: string) {
-    const queryString = getQueryStringFromURL(this.url)
-    const searchParams = new URLSearchParams(queryString)
-    if (key) {
-      return searchParams.getAll(key)
-    } else {
-      const result: Record<string, string[]> = {}
-      for (const key of searchParams.keys()) {
-        result[key] = searchParams.getAll(key)
-      }
-      return result
-    }
+    const queryString = getQueryStringFromURL(this.url, this.queryIndex)
+    return getQueryParams(queryString, key)
   }
 
   header(name: string): string
