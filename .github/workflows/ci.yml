@@ -65,3 +65,15 @@ jobs:
       - run: npm run build
       - run: npm i -g @lagon/cli@latest esbuild@latest
       - run: npm run test:lagon
+
+  node:
+    name: 'Node.js'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 18.x
+      - run: yarn install --frozen-lockfile
+      - run: npm run build
+      - run: npm run test:node
