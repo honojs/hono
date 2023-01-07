@@ -58,8 +58,8 @@ Deno.test('JSX middleware', async () => {
 
 Deno.test('Serve Static middleware', async () => {
   const app = new Hono()
-  app.all('/favicon.ico', serveStatic({ path: './deno_test/favicon.ico' }))
-  app.all('/favicon-notfound.ico', serveStatic({ path: './deno_test/favicon-notfound.ico' }))
+  app.all('/favicon.ico', serveStatic({ path: './test_deno/favicon.ico' }))
+  app.all('/favicon-notfound.ico', serveStatic({ path: './test_deno/favicon-notfound.ico' }))
   app.use('/favicon-notfound.ico', async (c, next) => {
     await next()
     c.header('X-Custom', 'Deno')
