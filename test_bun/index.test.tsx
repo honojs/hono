@@ -65,8 +65,8 @@ describe('Basic Auth Middleware', () => {
 
 describe('Serve Static Middleware', () => {
   const app = new Hono()
-  app.all('/favicon.ico', serveStatic({ path: './bun_test/favicon.ico' }))
-  app.all('/favicon-notfound.ico', serveStatic({ path: './bun_test/favicon-notfound.ico' }))
+  app.all('/favicon.ico', serveStatic({ path: './test_bun/favicon.ico' }))
+  app.all('/favicon-notfound.ico', serveStatic({ path: './test_bun/favicon-notfound.ico' }))
   app.use('/favicon-notfound.ico', async (c, next) => {
     await next()
     c.header('X-Custom', 'Bun')

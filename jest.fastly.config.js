@@ -1,5 +1,5 @@
 export default {
-  testMatch: ['**/fastly_test/**/*.+(ts|tsx|js)'],
+  testMatch: ['**/test_fastly/**/*.+(ts|tsx|js)'],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
