@@ -7,11 +7,11 @@ on:
 
 jobs:
   ci:
+    name: 'Cloudflare Workers (main)'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16.x, 18.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: [18.x]
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
@@ -24,6 +24,7 @@ jobs:
       - run: npm test
 
   deno:
+    name: 'Deno'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -33,17 +34,19 @@ jobs:
       - run: deno test --allow-read deno_test
 
   bun:
+    name: 'Bun'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: 16.x
+          node-version: 18.x
       - run: curl -fsSL https://bun.sh/install | bash
       - run: echo "${HOME}/.bun/bin" >> $GITHUB_PATH
       - run: npm run test:bun
 
   fastly:
+    name: 'Fastly Compute@Edge'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -55,6 +58,7 @@ jobs:
       - run: npm run test:fastly
 
   lagon:
+    name: 'Lagon'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
