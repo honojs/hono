@@ -9,15 +9,11 @@ jobs:
   ci:
     name: 'Cloudflare Workers (main)'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18.x]
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+      - uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 18.x
       - run: yarn install --frozen-lockfile
       - run: npm run lint
       - run: npm run build
@@ -31,7 +27,7 @@ jobs:
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
-      - run: deno test --allow-read deno_test
+      - run: deno test --allow-read test_deno
 
   bun:
     name: 'Bun'
