@@ -32,7 +32,6 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
   })(opts.origin)
 
   return async (c, next) => {
-    
     function set(key: string, value: string) {
       c.res.headers.append(key, value)
     }
@@ -58,8 +57,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
 
     if (c.req.method !== 'OPTIONS') {
       await next()
-    }
-    else {
+    } else {
       // Preflight
 
       if (opts.maxAge != null) {
@@ -85,7 +83,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       c.res.headers.delete('Content-Length')
       c.res.headers.delete('Content-Type')
 
-      c.res = new Response(null, {
+      return new Response(null, {
         headers: c.res.headers,
         status: 204,
         statusText: c.res.statusText,

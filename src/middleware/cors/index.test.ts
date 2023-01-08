@@ -31,16 +31,16 @@ describe('CORS by Middleware', () => {
     })
   )
 
-  app.all('/api/abc', (c) => {
+  app.get('/api/abc', (c) => {
     return c.json({ success: true })
   })
-  app.all('/api2/abc', (c) => {
+  app.get('/api2/abc', (c) => {
     return c.json({ success: true })
   })
-  app.all('/api3/abc', (c) => {
+  app.get('/api3/abc', (c) => {
     return c.json({ success: true })
   })
-  app.all('/api4/abc', (c) => {
+  app.get('/api4/abc', (c) => {
     return c.json({ success: true })
   })
 
