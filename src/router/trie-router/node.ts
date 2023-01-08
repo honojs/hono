@@ -1,7 +1,7 @@
 import type { Result } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 import type { Pattern } from '../../utils/url'
-import { splitPath, getPattern } from '../../utils/url'
+import { splitPath, splitRoutingPath, getPattern } from '../../utils/url'
 
 type HandlerSet<T> = {
   handler: T
@@ -54,7 +54,7 @@ export class Node<T> {
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let curNode: Node<T> = this
-    const parts = splitPath(path)
+    const parts = splitRoutingPath(path)
 
     const parentPatterns: Pattern[] = []
     const errorMessage = (name: string): string => {
@@ -172,6 +172,15 @@ export class Node<T> {
           // Named match
           // `/posts/:id` => match /posts/123
           const [key, name, matcher] = pattern
+
+          // `/js/:filename{[a-z]+.js}` => match /js/chunk/123.js
+          const restPathString = parts.slice(i).join('/')
+          if (matcher instanceof RegExp && matcher.test(restPathString)) {
+            handlerSets.push(...this.getHandlerSets(node.children[key], method))
+            params[name] = restPathString
+            continue
+          }
+
           if (matcher === true || (matcher instanceof RegExp && matcher.test(part))) {
             if (typeof key === 'string') {
               if (isLast === true) {
