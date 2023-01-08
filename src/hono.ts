@@ -8,9 +8,9 @@ import { SmartRouter } from './router/smart-router'
 import { StaticRouter } from './router/static-router'
 import { TrieRouter } from './router/trie-router'
 import type {
+  TypeResponse,
   HandlerInterface,
   ToAppType,
-  TypeResponse,
   Handler,
   ErrorHandler,
   NotFoundHandler,
