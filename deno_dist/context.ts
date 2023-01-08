@@ -341,20 +341,27 @@ export class Context<
       return 'cloudflare'
     }
 
-    if (global?.fastly !== undefined) {
-      return 'fastly'
-    }
-
     if (typeof global?.EdgeRuntime === 'string') {
       return 'vercel'
     }
 
-    if (global?.process?.release?.name === 'node') {
-      return 'node'
+    let onFastly = false
+    try {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const { env } = require('fastly:env')
+      if (env instanceof Function) onFastly = true
+    } catch {}
+    if (onFastly) {
+      return 'fastly'
     }
 
     if (global?.__lagon__ !== undefined) {
       return 'lagon'
+    }
+
+    if (global?.process?.release?.name === 'node') {
+      return 'node'
     }
 
     return 'other'
