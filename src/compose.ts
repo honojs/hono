@@ -49,10 +49,6 @@ export const compose = <C extends ComposeContext, E extends Partial<Environment>
         }
       }
 
-      if (res instanceof Response && 'response' in res) {
-        res = res['response']
-      }
-
       if (!(res instanceof Promise)) {
         if (res !== undefined && 'response' in res) {
           res = res['response']
@@ -64,6 +60,9 @@ export const compose = <C extends ComposeContext, E extends Partial<Environment>
       } else {
         return res
           .then((res) => {
+            if (res !== undefined && 'response' in res) {
+              res = res['response']
+            }
             if (res && context.finalized === false) {
               context.res = res
             }
