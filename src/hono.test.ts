@@ -1368,3 +1368,64 @@ describe('Show routes', () => {
     expect(console.log).toBeCalled()
   })
 })
+
+describe('jsonT', () => {
+  const api = new Hono()
+
+  api.get('/message', (c) => {
+    return c.jsonT({
+      message: 'Hello',
+    })
+  })
+
+  api.get('/message-async', async (c) => {
+    return c.jsonT({
+      message: 'Hello',
+    })
+  })
+
+  describe('Single handler', () => {
+    const app = new Hono()
+    app.route('/api', api)
+
+    it('Should return 200 response', async () => {
+      const res = await app.request('http://localhost/api/message')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        message: 'Hello',
+      })
+    })
+
+    it('Should return 200 response - with async', async () => {
+      const res = await app.request('http://localhost/api/message-async')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        message: 'Hello',
+      })
+    })
+  })
+
+  describe('With middleware', () => {
+    const app = new Hono()
+    app.use('*', async (_c, next) => {
+      await next()
+    })
+    app.route('/api', api)
+
+    it('Should return 200 response', async () => {
+      const res = await app.request('http://localhost/api/message')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        message: 'Hello',
+      })
+    })
+
+    it('Should return 200 response - with async', async () => {
+      const res = await app.request('http://localhost/api/message-async')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        message: 'Hello',
+      })
+    })
+  })
+})
