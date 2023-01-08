@@ -9,13 +9,15 @@ export const splitPath = (path: string): string[] => {
 }
 
 export const splitRoutingPath = (path: string): string[] => {
-  const groups : string[] = []
-  for (let i = 0;; i++) {
+  const groups: [string, string][] = [] // [mark, original string]
+  for (let i = 0; ; ) {
     let replaced = false
-    path = path.replace(/\{[^}]+\}/, (m) => {
-      groups[i] = m
+    path = path.replace(/\{[^}]+\}/g, (m) => {
+      const mark = `@\\${i}`
+      groups[i] = [mark, m]
+      i++
       replaced = true
-      return `@${i}`
+      return mark
     })
     if (!replaced) {
       break
@@ -27,9 +29,10 @@ export const splitRoutingPath = (path: string): string[] => {
     paths.shift()
   }
   for (let i = groups.length - 1; i >= 0; i--) {
+    const [mark] = groups[i]
     for (let j = paths.length - 1; j >= 0; j--) {
-      if (paths[j].match('@' + i)) {
-        paths[j] = paths[j].replace('@' + i, groups[i])
+      if (paths[j].indexOf(mark) !== -1) {
+        paths[j] = paths[j].replace(mark, groups[i][1])
         break
       }
     }

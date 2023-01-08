@@ -38,6 +38,12 @@ describe('url', () => {
 
     ps = splitRoutingPath('/users/:name{[0-9a-zA-Z_-]{3,10}}')
     expect(ps).toStrictEqual(['users', ':name{[0-9a-zA-Z_-]{3,10}}'])
+
+    ps = splitRoutingPath('/users/:@name{[0-9a-zA-Z_-]{3,10}}')
+    expect(ps).toStrictEqual(['users', ':@name{[0-9a-zA-Z_-]{3,10}}'])
+
+    ps = splitRoutingPath('/users/:dept{\\d+}/:@name{[0-9a-zA-Z_-]{3,10}}')
+    expect(ps).toStrictEqual(['users', ':dept{\\d+}', ':@name{[0-9a-zA-Z_-]{3,10}}'])
   })
 
   it('getPattern', () => {
