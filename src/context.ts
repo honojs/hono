@@ -263,6 +263,8 @@ export class Context<
 
     let onFastly = false
     try {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       const { env } = require('fastly:env')
       if (env instanceof Function) onFastly = true
     } catch {}
