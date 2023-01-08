@@ -1,5 +1,6 @@
 import {
   splitPath,
+  splitRoutingPath,
   getPattern,
   getPathFromURL,
   mergePath,
@@ -16,15 +17,35 @@ describe('url', () => {
 
     ps = splitPath('/hello')
     expect(ps).toStrictEqual(['hello'])
+  })
 
-    ps = splitPath('*')
+  it('splitRoutingPath', () => {
+    let ps = splitRoutingPath('/')
+    expect(ps).toStrictEqual([''])
+
+    ps = splitRoutingPath('/hello')
+    expect(ps).toStrictEqual(['hello'])
+
+    ps = splitRoutingPath('*')
     expect(ps).toStrictEqual(['*'])
 
-    ps = splitPath('/wildcard-abc/*/wildcard-efg')
+    ps = splitRoutingPath('/wildcard-abc/*/wildcard-efg')
     expect(ps).toStrictEqual(['wildcard-abc', '*', 'wildcard-efg'])
 
-    ps = splitPath('/map/:location/events')
+    ps = splitRoutingPath('/map/:location/events')
     expect(ps).toStrictEqual(['map', ':location', 'events'])
+
+    ps = splitRoutingPath('/js/:location{[a-z/]+.js}')
+    expect(ps).toStrictEqual(['js', ':location{[a-z/]+.js}'])
+
+    ps = splitRoutingPath('/users/:name{[0-9a-zA-Z_-]{3,10}}')
+    expect(ps).toStrictEqual(['users', ':name{[0-9a-zA-Z_-]{3,10}}'])
+
+    ps = splitRoutingPath('/users/:@name{[0-9a-zA-Z_-]{3,10}}')
+    expect(ps).toStrictEqual(['users', ':@name{[0-9a-zA-Z_-]{3,10}}'])
+
+    ps = splitRoutingPath('/users/:dept{\\d+}/:@name{[0-9a-zA-Z_-]{3,10}}')
+    expect(ps).toStrictEqual(['users', ':dept{\\d+}', ':@name{[0-9a-zA-Z_-]{3,10}}'])
   })
 
   it('getPattern', () => {
