@@ -1,6 +1,5 @@
 import { HonoRequest } from './request.ts'
-import type { TypeResponse, Route } from './types.ts'
-import type { Environment, NotFoundHandler } from './types.ts'
+import type { Environment, NotFoundHandler, Route, TypeResponse } from './types.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
 import type { StatusCode } from './utils/http-status.ts'
@@ -26,6 +25,7 @@ type ContextOptions<E extends Partial<Environment>, R extends Route> = {
   executionCtx?: FetchEvent | ExecutionContext | undefined
   notFoundHandler?: NotFoundHandler<E, R>
   paramData?: Record<string, string>
+  queryIndex?: number
 }
 
 export class Context<
@@ -48,6 +48,7 @@ export class Context<
   private _preparedHeaders: Record<string, string> | undefined = undefined
   private _res: Response | undefined
   private _paramData: Record<string, string> | undefined
+  private _queryIndex: number | undefined
   private rawRequest: Request
   private notFoundHandler: NotFoundHandler<E, R> = () => new Response()
 
@@ -60,6 +61,7 @@ export class Context<
       if (options.notFoundHandler) {
         this.notFoundHandler = options.notFoundHandler
       }
+      this._queryIndex = options.queryIndex
     }
   }
 
@@ -67,7 +69,7 @@ export class Context<
     if (this._req) {
       return this._req
     } else {
-      this._req = new HonoRequest<R, I>(this.rawRequest, this._paramData)
+      this._req = new HonoRequest<R, I>(this.rawRequest, this._paramData, this._queryIndex)
       return this._req
     }
   }
@@ -97,17 +99,6 @@ export class Context<
     this.finalized = true
   }
 
-<<<<<<< HEAD
-  header = (name: string, value: string, options?: { append?: boolean }): void => {
-    this._headers ||= {}
-    const key = name.toLowerCase()
-
-    let shouldAppend = false
-    if (options && options.append) {
-      const vAlreadySet = this._headers[key]
-      if (vAlreadySet && vAlreadySet.length) {
-        shouldAppend = true
-=======
   header(name: string, value: string, options?: { append?: boolean }): void {
     if (options?.append) {
       if (!this._headers) {
@@ -120,7 +111,6 @@ export class Context<
       } else {
         this._preparedHeaders ??= {}
         this._preparedHeaders[name.toLowerCase()] = value
->>>>>>> 8992200 (perf(context): tune up handling headers 3% faster (#778))
       }
     }
 
@@ -154,9 +144,6 @@ export class Context<
     this._prettySpace = space
   }
 
-<<<<<<< HEAD
-  newResponse = (data: Data | null, status: StatusCode, headers: Headers = {}): Response => {
-=======
   newResponse(data: Data | null, status: StatusCode, headers?: HeaderRecord): Response {
     if (!headers && !this._headers && !this._res) {
       return new Response(data, {
@@ -195,59 +182,17 @@ export class Context<
       }
     }
 
->>>>>>> 8992200 (perf(context): tune up handling headers 3% faster (#778))
     return new Response(data, {
       status,
       headers: this._headers,
     })
   }
 
-<<<<<<< HEAD
-  private _finalizeHeaders(incomingHeaders: Headers): HeaderField[] {
-    const finalizedHeaders: HeaderField[] = []
-    const headersKv = this._headers || {}
-    // If Response is already set
-    if (this._res) {
-      this._res.headers.forEach((v, k) => {
-        headersKv[k] = [v]
-      })
-    }
-    for (const key of Object.keys(incomingHeaders)) {
-      const value = incomingHeaders[key]
-      if (typeof value === 'string') {
-        finalizedHeaders.push([key, value])
-      } else {
-        for (const v of value) {
-          finalizedHeaders.push([key, v])
-        }
-      }
-      delete headersKv[key]
-    }
-    for (const key of Object.keys(headersKv)) {
-      for (const value of headersKv[key]) {
-        const kv: HeaderField = [key, value]
-        finalizedHeaders.push(kv)
-      }
-    }
-    return finalizedHeaders
-  }
-
-  body = (
-    data: Data | null,
-    status: StatusCode = this._status,
-    headers: Headers = {}
-  ): Response => {
-    return this.newResponse(data, status, headers)
-  }
-
-  text = (text: string, status?: StatusCode, headers?: Headers): Response => {
-=======
   body(data: Data | null, status: StatusCode = this._status, headers?: HeaderRecord): Response {
     return this.newResponse(data, status, headers)
   }
 
   text(text: string, status?: StatusCode, headers?: HeaderRecord): Response {
->>>>>>> 8992200 (perf(context): tune up handling headers 3% faster (#778))
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
     if (!headers && !status && !this._res && !this._headers && !this._preparedHeaders) {
@@ -258,11 +203,7 @@ export class Context<
     return this.newResponse(text, status ?? this._status, headers)
   }
 
-<<<<<<< HEAD
-  json = <T>(object: T, status: StatusCode = this._status, headers: Headers = {}): Response => {
-=======
   json<T>(object: T, status: StatusCode = this._status, headers?: HeaderRecord): Response {
->>>>>>> 8992200 (perf(context): tune up handling headers 3% faster (#778))
     const body = this._pretty
       ? JSON.stringify(object, null, this._prettySpace)
       : JSON.stringify(object)
@@ -271,14 +212,7 @@ export class Context<
     return this.newResponse(body, status, headers)
   }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-  html = (html: string, status: StatusCode = this._status, headers: Headers = {}): Response => {
-=======
-  jsonT<T>(object: T, status: StatusCode = this._status, headers: Headers = {}): TypeResponse<T> {
-=======
   jsonT<T>(object: T, status: StatusCode = this._status, headers?: HeaderRecord): TypeResponse<T> {
->>>>>>> 8992200 (perf(context): tune up handling headers 3% faster (#778))
     return {
       response: this.json(object, status, headers),
       data: object,
@@ -286,18 +220,6 @@ export class Context<
     }
   }
 
-<<<<<<< HEAD
-  html(html: string, status: StatusCode = this._status, headers: Headers = {}): Response {
->>>>>>> fee7292 (feat: new validator middleware using 3rd-party & current middleware obsolete (#745))
-    headers['content-type'] = 'text/html; charset=UTF-8'
-    return this.newResponse(html, status, headers)
-  }
-
-  redirect = (location: string, status: StatusCode = 302): Response => {
-    return this.newResponse(null, status, {
-      Location: location,
-    })
-=======
   html(html: string, status: StatusCode = this._status, headers?: HeaderRecord): Response {
     this._preparedHeaders ??= {}
     this._preparedHeaders['content-type'] = 'text/html; charset=UTF-8'
@@ -308,7 +230,6 @@ export class Context<
     this._headers ??= new Headers()
     this._headers.set('Location', location)
     return this.newResponse(null, status)
->>>>>>> 8992200 (perf(context): tune up handling headers 3% faster (#778))
   }
 
   cookie = (name: string, value: string, opt?: CookieOptions): void => {
@@ -316,13 +237,8 @@ export class Context<
     this.header('set-cookie', cookie, { append: true })
   }
 
-<<<<<<< HEAD
   notFound = (): Response | Promise<Response> => {
-    return this.notFoundHandler(this as unknown as Context<string, E>)
-=======
-  notFound(): Response | Promise<Response> {
     return this.notFoundHandler(this)
->>>>>>> fee7292 (feat: new validator middleware using 3rd-party & current middleware obsolete (#745))
   }
 
   get runtime(): Runtime {
