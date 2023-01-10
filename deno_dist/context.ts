@@ -26,6 +26,7 @@ type ContextOptions<E extends Partial<Environment>, R extends Route> = {
   executionCtx?: FetchEvent | ExecutionContext | undefined
   notFoundHandler?: NotFoundHandler<E, R>
   paramData?: Record<string, string>
+  queryIndex?: number
 }
 
 export class Context<
@@ -48,6 +49,7 @@ export class Context<
   private _preparedHeaders: Record<string, string> | undefined = undefined
   private _res: Response | undefined
   private _paramData: Record<string, string> | undefined
+  private _queryIndex: number | undefined
   private rawRequest: Request
   private notFoundHandler: NotFoundHandler<E, R> = () => new Response()
 
@@ -60,6 +62,7 @@ export class Context<
       if (options.notFoundHandler) {
         this.notFoundHandler = options.notFoundHandler
       }
+      this._queryIndex = options.queryIndex
     }
   }
 
@@ -67,7 +70,7 @@ export class Context<
     if (this._req) {
       return this._req
     } else {
-      this._req = new HonoRequest<R, I>(this.rawRequest, this._paramData)
+      this._req = new HonoRequest<R, I>(this.rawRequest, this._paramData, this._queryIndex)
       return this._req
     }
   }

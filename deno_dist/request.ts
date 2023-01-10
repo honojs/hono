@@ -16,11 +16,17 @@ export class HonoRequest<R extends Route = Route, I = any> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private jsonData: Promise<any> | undefined
   private data: InputToData<I>
+  private queryIndex: number | undefined
 
-  constructor(request: Request, paramData?: Record<string, string> | undefined) {
+  constructor(
+    request: Request,
+    paramData?: Record<string, string> | undefined,
+    queryIndex?: number
+  ) {
     this.raw = request
     this.paramData = paramData
     this.data = {} as InputToData<I>
+    this.queryIndex = queryIndex
   }
 
   param(key: GetParamKeys<R['path']>): string
@@ -48,7 +54,7 @@ export class HonoRequest<R extends Route = Route, I = any> {
   query(key: string): string
   query(): Record<string, string>
   query(key?: string) {
-    const queryString = getQueryStringFromURL(this.url)
+    const queryString = getQueryStringFromURL(this.url, this.queryIndex)
     const searchParams = new URLSearchParams(queryString)
     if (!this.queryData) {
       this.queryData = {}
@@ -66,7 +72,7 @@ export class HonoRequest<R extends Route = Route, I = any> {
   queries(key: string): string[]
   queries(): Record<string, string[]>
   queries(key?: string) {
-    const queryString = getQueryStringFromURL(this.url)
+    const queryString = getQueryStringFromURL(this.url, this.queryIndex)
     const searchParams = new URLSearchParams(queryString)
     if (key) {
       return searchParams.getAll(key)
