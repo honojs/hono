@@ -92,7 +92,8 @@ export class Hono<
     return c.text(message, 500)
   }
 
-  route(path: string, app?: Hono<{}>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  route(path: string, app?: Hono<any>) {
     this._tempPath = path
     if (app) {
       app.routes.map((r) => {
