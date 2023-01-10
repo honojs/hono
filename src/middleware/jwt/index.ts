@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from '../../types'
+import { HTTPException } from '../../utils/http-exception'
 import { Jwt } from '../../utils/jwt'
 import type { AlgorithmTypes } from '../../utils/jwt/types'
 
@@ -21,12 +22,13 @@ export const jwt = (options: {
     if (credentials) {
       const parts = credentials.split(/\s+/)
       if (parts.length !== 2) {
-        return new Response('Unauthorized', {
+        const res = new Response('Unauthorized', {
           status: 401,
           headers: {
             'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="invalid credentials structure"`,
           },
         })
+        throw new HTTPException(401, { res })
       } else {
         token = parts[1]
       }
@@ -35,12 +37,13 @@ export const jwt = (options: {
     }
 
     if (!token) {
-      return new Response('Unauthorized', {
+      const res = new Response('Unauthorized', {
         status: 401,
         headers: {
           'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="no authorization included in request"`,
         },
       })
+      throw new HTTPException(401, { res })
     }
 
     let authorized = false
@@ -51,13 +54,14 @@ export const jwt = (options: {
       msg = `${e}`
     }
     if (!authorized) {
-      return new Response('Unauthorized', {
+      const res = new Response('Unauthorized', {
         status: 401,
         statusText: msg,
         headers: {
           'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_token",error_description="token verification failure"`,
         },
       })
+      throw new HTTPException(401, { res })
     }
 
     await next()

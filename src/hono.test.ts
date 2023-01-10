@@ -7,6 +7,7 @@ import { RegExpRouter } from './router/reg-exp-router'
 import { StaticRouter } from './router/static-router'
 import { TrieRouter } from './router/trie-router'
 import type { Handler, Next } from './types'
+import { HTTPException } from './utils/http-exception'
 import type { Expect, Equal } from './utils/types'
 
 describe('GET Request', () => {
@@ -655,6 +656,40 @@ describe('Error handle', () => {
     expect(res.status).toBe(500)
     expect(await res.text()).toBe('Custom Error Message')
     expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
+  })
+
+  describe('Handle HTTPException', () => {
+    const app = new Hono()
+
+    app.get('/exception', () => {
+      throw new HTTPException(401)
+    })
+
+    it('Should return 401 response', async () => {
+      const res = await app.request('http://localhost/exception')
+      expect(res.status).toBe(401)
+      expect(res.statusText).toBe('Unauthorized')
+      expect(await res.text()).toBe('Unauthorized')
+    })
+
+    const app2 = new Hono()
+
+    app2.get('/exception', () => {
+      throw new HTTPException(401)
+    })
+
+    app2.onError((err, c) => {
+      if (err instanceof HTTPException && err.status === 401) {
+        return c.text('Custom Error Message', 401)
+      }
+      return c.text('Internal Server Error', 500)
+    })
+
+    it('Should return 401 response with a custom message', async () => {
+      const res = await app2.request('http://localhost/exception')
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Custom Error Message')
+    })
   })
 })
 
