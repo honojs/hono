@@ -92,7 +92,8 @@ export class Hono<
     return c.text(message, 500)
   }
 
-  route(path: string, app?: Hono<{}>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  route(path: string, app?: Hono<any>) {
     this._tempPath = path
     if (app) {
       app.routes.map((r) => {
@@ -186,7 +187,7 @@ export class Hono<
     eventOrExecutionCtx?: ExecutionContext | FetchEvent,
     env?: E['Bindings']
   ): Response | Promise<Response> {
-    const path = getPathFromURL(request.url, this.strict)
+    const [path, queryIndex] = getPathFromURL(request.url, this.strict)
     const method = request.method
 
     const result = this.matchRoute(method, path)
@@ -197,6 +198,7 @@ export class Hono<
       executionCtx: eventOrExecutionCtx,
       notFoundHandler: this.notFoundHandler,
       paramData,
+      queryIndex,
     })
 
     // Do not `compose` if it has only one handler
