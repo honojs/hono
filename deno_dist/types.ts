@@ -24,7 +24,7 @@ export type Route = {
 export type Handler<E extends Env = Environment, R extends Route = Route, I = {}, O = {}> = (
   c: Context<E, R, I>,
   next: Next
-) => Response | Promise<Response | void> | TypeResponse<O> | Promise<TypeResponse<O>>
+) => Response | Promise<Response | void | TypeResponse<O>> | TypeResponse<O>
 
 export interface HandlerInterface<
   E extends Env = Env,
