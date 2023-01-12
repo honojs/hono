@@ -4,6 +4,7 @@ import { bearerAuth } from '../src/middleware/bearer-auth'
 import { etag } from '../src/middleware/etag'
 import { poweredBy } from '../src/middleware/powered-by'
 import { prettyJSON } from '../src/middleware/pretty-json'
+import { HTTPException } from '../src/utils/http-exception'
 
 const app = new Hono()
 
@@ -47,6 +48,9 @@ app.notFound((c) => {
 
 // Error handling
 app.onError((err, c) => {
+  if (err instanceof HTTPException) {
+    return err.getResponse()
+  }
   console.error(`${err}`)
   return c.text('Custom Error Message', 500)
 })

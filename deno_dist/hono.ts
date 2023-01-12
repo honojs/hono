@@ -17,6 +17,7 @@ import type {
   Environment,
   Route,
 } from './types.ts'
+import { HTTPException } from './utils/http-exception.ts'
 import { getPathFromURL, mergePath } from './utils/url.ts'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
@@ -87,6 +88,9 @@ export class Hono<
   }
 
   private errorHandler: ErrorHandler<E> = (err: Error, c: Context<E>) => {
+    if (err instanceof HTTPException) {
+      return err.getResponse()
+    }
     console.trace(err)
     const message = 'Internal Server Error'
     return c.text(message, 500)
