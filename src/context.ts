@@ -1,5 +1,5 @@
 import { HonoRequest } from './request'
-import type { TypeResponse, Route } from './types'
+import type { TypeResponse } from './types'
 import type { Environment, NotFoundHandler } from './types'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
@@ -21,25 +21,27 @@ type GetVariable<K, E extends Partial<Environment>> = K extends keyof E['Variabl
   ? ContextVariableMap[K]
   : unknown
 
-type ContextOptions<E extends Partial<Environment>, R extends Route> = {
+type ContextOptions<E extends Partial<Environment>> = {
   env?: E['Bindings']
   executionCtx?: FetchEvent | ExecutionContext | undefined
-  notFoundHandler?: NotFoundHandler<E, R>
+  notFoundHandler?: NotFoundHandler<E>
   paramData?: Record<string, string>
   queryIndex?: number
 }
 
 export class Context<
-  E extends Partial<Environment> = Environment,
-  R extends Route = Route,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  I = any
+  Env extends Partial<Environment> = any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Path extends string = any,
+  Schema = {}
 > {
-  env: E['Bindings'] = {}
+  env: Env['Bindings'] = {}
   finalized: boolean = false
   error: Error | undefined = undefined
 
-  private _req?: HonoRequest<R, I>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _req?: HonoRequest<any, any>
   private _status: StatusCode = 200
   private _executionCtx: FetchEvent | ExecutionContext | undefined
   private _pretty: boolean = false
@@ -51,9 +53,9 @@ export class Context<
   private _paramData: Record<string, string> | undefined
   private _queryIndex: number | undefined
   private rawRequest: Request
-  private notFoundHandler: NotFoundHandler<E, R> = () => new Response()
+  private notFoundHandler: NotFoundHandler<Env> = () => new Response()
 
-  constructor(req: Request, options?: ContextOptions<E, R>) {
+  constructor(req: Request, options?: ContextOptions<Env>) {
     this.rawRequest = req
     if (options) {
       this._executionCtx = options.executionCtx
@@ -66,11 +68,11 @@ export class Context<
     }
   }
 
-  get req(): HonoRequest<R, I> {
+  get req(): HonoRequest<Path, Schema> {
     if (this._req) {
       return this._req
     } else {
-      this._req = new HonoRequest<R, I>(this.rawRequest, this._paramData, this._queryIndex)
+      this._req = new HonoRequest(this.rawRequest, this._paramData, this._queryIndex)
       return this._req
     }
   }
@@ -128,16 +130,18 @@ export class Context<
     this._status = status
   }
 
-  set<Key extends keyof E['Variables'] | keyof ContextVariableMap>(
+  set<Key extends keyof Env['Variables'] | keyof ContextVariableMap>(
     key: Key,
-    value: GetVariable<Key, E>
+    value: GetVariable<Key, Env>
   ): void {
     this._map ||= {}
     this._map[key as string] = value
   }
 
-  get<Key extends keyof E['Variables'] | keyof ContextVariableMap>(key: Key): GetVariable<Key, E> {
-    return this._map?.[key as string] as GetVariable<Key, E>
+  get<Key extends keyof Env['Variables'] | keyof ContextVariableMap>(
+    key: Key
+  ): GetVariable<Key, Env> {
+    return this._map?.[key as string] as GetVariable<Key, Env>
   }
 
   pretty(prettyJSON: boolean, space: number = 2): void {
@@ -239,6 +243,8 @@ export class Context<
   }
 
   notFound(): Response | Promise<Response> {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     return this.notFoundHandler(this)
   }
 

@@ -17,15 +17,10 @@ describe('Test types of CustomHandler', () => {
     }
   }
 
-  let app: Hono
-
-  beforeEach(() => {
-    app = new Hono()
-  })
-
   const url = 'http://localhost/'
 
   test('No arguments', async () => {
+    const app = new Hono()
     const handler: Handler = (c) => {
       const data = c.req.valid()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,6 +33,7 @@ describe('Test types of CustomHandler', () => {
   })
 
   test('Env', async () => {
+    const app = new Hono<Env>()
     const handler: Handler<Env> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<number, typeof foo>>
@@ -54,7 +50,8 @@ describe('Test types of CustomHandler', () => {
   })
 
   test('Env, Path', async () => {
-    const handler: Handler<Env, 'id'> = (c) => {
+    const app = new Hono<Env>()
+    const handler: Handler<Env, '/'> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<number, typeof foo>>
       const data = c.req.valid()
@@ -74,7 +71,8 @@ describe('Test types of CustomHandler', () => {
   }
 
   test('Env, Path, Type', async () => {
-    const handler: Handler<Env, 'id', User> = (c) => {
+    const app = new Hono<Env>()
+    const handler: Handler<Env, '/', User> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<number, typeof foo>>
       const { name, age } = c.req.valid()
@@ -103,7 +101,7 @@ describe('CustomHandler as middleware', () => {
     }
   }
 
-  const mid2 = (): Handler<{ Foo: string }> => {
+  const mid2 = (): Handler => {
     return async (_c, next) => {
       await next()
     }

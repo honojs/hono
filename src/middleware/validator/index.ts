@@ -1,11 +1,6 @@
 import type { Context } from '../../context'
-import type { Environment, Next, Route, ValidationTypes } from '../../types'
+import type { Environment, ValidationTypes, MiddlewareHandler } from '../../types'
 import { mergeObjects } from '../../utils/object'
-
-type ValidatorHandler<E extends Partial<Environment>, R extends Route = Route, I = unknown> = (
-  c: Context<E, R, I>,
-  next: Next
-) => Promise<Response | undefined | void> | Response
 
 type ValidationTypeKeysWithBody = 'form' | 'json'
 type ValidationTypeByMethod<M> = M extends 'get' | 'head' // GET and HEAD request must not have a body content.
@@ -14,15 +9,17 @@ type ValidationTypeByMethod<M> = M extends 'get' | 'head' // GET and HEAD reques
 
 export const validator = <
   T,
+  Path extends string,
   Method extends string,
   U extends ValidationTypeByMethod<Method>,
   V extends { type: U; data: T },
   V2 = {},
-  E extends Partial<Environment> = Environment
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  E extends Partial<Environment> = any
 >(
   type: U,
   validationFunc: (value: ValidationTypes[U], c: Context<E>) => T | Response | Promise<Response>
-): ValidatorHandler<E, { method: Method; path: string }, V | V2> => {
+): MiddlewareHandler<E, Path, V | V2> => {
   return async (c, next) => {
     let value = {}
 
