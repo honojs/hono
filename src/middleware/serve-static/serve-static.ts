@@ -15,13 +15,7 @@ export type ServeStaticOptions = {
 const DEFAULT_DOCUMENT = 'index.html'
 
 // This middleware is available only on Cloudflare Workers.
-export const serveStatic = (
-  options: ServeStaticOptions = { root: '' }
-): MiddlewareHandler<{
-  Bindings: {
-    __STATIC_CONTENT: KVNamespace
-  }
-}> => {
+export const serveStatic = (options: ServeStaticOptions = { root: '' }): MiddlewareHandler => {
   return async (c, next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
@@ -39,6 +33,8 @@ export const serveStatic = (
 
     const content = await getContentFromKVAsset(path, {
       manifest: options.manifest,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       namespace: options.namespace ? options.namespace : c.env ? c.env.__STATIC_CONTENT : undefined,
     })
     if (content) {

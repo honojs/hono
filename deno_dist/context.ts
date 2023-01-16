@@ -1,5 +1,6 @@
 import { HonoRequest } from './request.ts'
-import type { Environment, NotFoundHandler, Route, TypeResponse } from './types.ts'
+import type { TypeResponse } from './types.ts'
+import type { Env, NotFoundHandler } from './types.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
 import type { StatusCode } from './utils/http-status.ts'
@@ -14,31 +15,33 @@ export interface ExecutionContext {
 }
 export interface ContextVariableMap {}
 
-type GetVariable<K, E extends Partial<Environment>> = K extends keyof E['Variables']
+type GetVariable<K, E extends Env> = K extends keyof E['Variables']
   ? E['Variables'][K]
   : K extends keyof ContextVariableMap
   ? ContextVariableMap[K]
   : unknown
 
-type ContextOptions<E extends Partial<Environment>, R extends Route> = {
-  env?: E['Bindings']
+type ContextOptions<E extends Env> = {
+  env: E['Bindings']
   executionCtx?: FetchEvent | ExecutionContext | undefined
-  notFoundHandler?: NotFoundHandler<E, R>
+  notFoundHandler?: NotFoundHandler<E>
   paramData?: Record<string, string>
   queryIndex?: number
 }
 
 export class Context<
-  E extends Partial<Environment> = Environment,
-  R extends Route = Route,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  I = any
+  E extends Env = any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Path extends string = any,
+  Schema = {}
 > {
   env: E['Bindings'] = {}
   finalized: boolean = false
   error: Error | undefined = undefined
 
-  private _req?: HonoRequest<R, I>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _req?: HonoRequest<any, any>
   private _status: StatusCode = 200
   private _executionCtx: FetchEvent | ExecutionContext | undefined
   private _pretty: boolean = false
@@ -50,9 +53,9 @@ export class Context<
   private _paramData: Record<string, string> | undefined
   private _queryIndex: number | undefined
   private rawRequest: Request
-  private notFoundHandler: NotFoundHandler<E, R> = () => new Response()
+  private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
-  constructor(req: Request, options?: ContextOptions<E, R>) {
+  constructor(req: Request, options?: ContextOptions<E>) {
     this.rawRequest = req
     if (options) {
       this._executionCtx = options.executionCtx
@@ -65,11 +68,11 @@ export class Context<
     }
   }
 
-  get req(): HonoRequest<R, I> {
+  get req(): HonoRequest<Path, Schema> {
     if (this._req) {
       return this._req
     } else {
-      this._req = new HonoRequest<R, I>(this.rawRequest, this._paramData, this._queryIndex)
+      this._req = new HonoRequest(this.rawRequest, this._paramData, this._queryIndex)
       return this._req
     }
   }
@@ -237,7 +240,9 @@ export class Context<
     this.header('set-cookie', cookie, { append: true })
   }
 
-  notFound = (): Response | Promise<Response> => {
+  notFound(): Response | Promise<Response> {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     return this.notFoundHandler(this)
   }
 
