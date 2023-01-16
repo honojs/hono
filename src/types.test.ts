@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Hono } from './hono'
+import { poweredBy } from './middleware/powered-by'
 import type {
-  Environment,
+  Env,
   CustomHandler as Handler,
   InputToData,
   MiddlewareHandler,
@@ -11,21 +12,16 @@ import type {
 import type { Expect, Equal } from './utils/types'
 
 describe('Test types of CustomHandler', () => {
-  type Env = {
+  type E = {
     Variables: {
       foo: number
     }
   }
 
-  let app: Hono
-
-  beforeEach(() => {
-    app = new Hono()
-  })
-
   const url = 'http://localhost/'
 
   test('No arguments', async () => {
+    const app = new Hono()
     const handler: Handler = (c) => {
       const data = c.req.valid()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,7 +34,8 @@ describe('Test types of CustomHandler', () => {
   })
 
   test('Env', async () => {
-    const handler: Handler<Env> = (c) => {
+    const app = new Hono<E>()
+    const handler: Handler<E> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<number, typeof foo>>
       const id = c.req.param('id')
@@ -54,7 +51,8 @@ describe('Test types of CustomHandler', () => {
   })
 
   test('Env, Path', async () => {
-    const handler: Handler<Env, 'id'> = (c) => {
+    const app = new Hono<E>()
+    const handler: Handler<E, '/'> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<number, typeof foo>>
       const data = c.req.valid()
@@ -74,7 +72,8 @@ describe('Test types of CustomHandler', () => {
   }
 
   test('Env, Path, Type', async () => {
-    const handler: Handler<Env, 'id', User> = (c) => {
+    const app = new Hono<E>()
+    const handler: Handler<E, '/', User> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<number, typeof foo>>
       const { name, age } = c.req.valid()
@@ -103,7 +102,7 @@ describe('CustomHandler as middleware', () => {
     }
   }
 
-  const mid2 = (): Handler<{ Foo: string }> => {
+  const mid2 = (): Handler => {
     return async (_c, next) => {
       await next()
     }
@@ -121,7 +120,7 @@ describe('CustomHandler as middleware', () => {
 describe('Types used in the validator', () => {
   test('ToAppType', () => {
     type SampleHono = Hono<
-      Environment,
+      Env,
       {
         path: '/author'
         method: 'post'
@@ -202,4 +201,14 @@ describe('`jsonT()`', () => {
   }
 
   type verify = Expect<Equal<Expected, Actual>>
+})
+
+describe('Env with Middleware', () => {
+  type E = {
+    Variables: {
+      foo: string
+    }
+  }
+  const app = new Hono<E>()
+  app.use('*', poweredBy())
 })
