@@ -1,12 +1,11 @@
-import type { GetParamKeys, InputToData, Route } from './types.ts'
+import type { InputToData, ParamKeys } from './types.ts'
 import { parseBody } from './utils/body.ts'
 import type { BodyData } from './utils/body.ts'
 import type { Cookie } from './utils/cookie.ts'
 import { parse } from './utils/cookie.ts'
 import { getQueryStringFromURL } from './utils/url.ts'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class HonoRequest<R extends Route = Route, I = any> {
+export class HonoRequest<Path extends string = '/', Input = {}> {
   raw: Request
 
   private paramData: Record<string, string> | undefined
@@ -15,7 +14,7 @@ export class HonoRequest<R extends Route = Route, I = any> {
   private bodyData: BodyData | undefined
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private jsonData: Promise<any> | undefined
-  private data: InputToData<I>
+  private data: InputToData<Input>
   private queryIndex: number | undefined
 
   constructor(
@@ -25,12 +24,12 @@ export class HonoRequest<R extends Route = Route, I = any> {
   ) {
     this.raw = request
     this.paramData = paramData
-    this.data = {} as InputToData<I>
+    this.data = {} as InputToData<Input>
     this.queryIndex = queryIndex
   }
 
-  param(key: GetParamKeys<R['path']>): string
-  param(): Record<GetParamKeys<R['path']>, string>
+  param(key: ParamKeys<Path>): string
+  param(): Record<ParamKeys<Path>, string>
   param(key?: string) {
     if (this.paramData) {
       if (key) {
@@ -156,12 +155,12 @@ export class HonoRequest<R extends Route = Route, I = any> {
     return this.raw.formData()
   }
 
-  valid(data?: unknown): InputToData<I> {
+  valid(data?: unknown): InputToData<Input> {
     if (!this.data) {
-      this.data = {} as InputToData<I>
+      this.data = {} as InputToData<Input>
     }
     if (data) {
-      this.data = data as InputToData<I>
+      this.data = data as InputToData<Input>
     }
     return this.data
   }

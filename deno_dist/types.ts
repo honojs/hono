@@ -7,48 +7,33 @@ import type { Hono } from './hono.ts'
 export type Bindings = Record<string, unknown>
 export type Variables = Record<string, unknown>
 
-export type Environment = {
-  Bindings: Bindings
-  Variables: Variables
+export type Env = {
+  Bindings?: Bindings
+  Variables?: Variables
 }
-
-type Env = Partial<Environment>
-type I = {}
-type O = {}
 
 export type Route = {
   path: string
   method: string
 }
 
-export type Handler<E extends Env = Environment, R extends Route = Route, I = {}, O = {}> = (
-  c: Context<E, R, I>,
+export type Handler<E extends Env = any, P extends string = any, I = {}, O = {}> = (
+  c: Context<E, P, I>,
   next: Next
 ) => Response | Promise<Response | void | TypeResponse<O>> | TypeResponse<O>
 
 export interface HandlerInterface<
   E extends Env = Env,
-  M extends string = string,
-  P extends string = string,
-  _I = {},
-  _O = {}
+  M extends string = any,
+  P extends string = any
 > {
-  // app.get(handler...)
-  <Input = I, Output = O>(
-    ...handlers: Handler<E, { method: M; path: string }, Input, Output>[]
-  ): Hono<E, { method: M; path: string }, Input, Output>
+  <Input = {}, Output = {}>(
+    ...handlers: (Handler<E, P, Input, Output> | MiddlewareHandler<E, P, Input>)[]
+  ): Hono<E, { method: M; path: P }, Input, Output>
 
-  (...handlers: Handler<any, any>[]): Hono
-
-  // app.get('/', handler, handler...)
-  <Input = I, Output = O, Path extends string = P>(
+  <Path extends string, Input = {}, Output = {}>(
     path: Path,
-    ...handlers: Handler<E, { method: M; path: Path }, Input, Output>[]
-  ): Hono<E, { method: M; path: Path }, Input, Output>
-
-  <Input = I, Output = O, Path extends string = P>(
-    path: Path,
-    ...handlers: Handler<any, any, Input, Output>[]
+    ...handlers: (Handler<E, Path, Input, Output> | MiddlewareHandler<E, Path, Input>)[]
   ): Hono<E, { method: M; path: Path }, Input, Output>
 }
 
@@ -66,23 +51,18 @@ type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
   ? ParamKeyName<NameWithPattern>
   : never
 
-type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
+export type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 
-export type GetParamKeys<Path> = ParamKeys<Path> extends never ? Path : ParamKeys<Path>
-
-export type MiddlewareHandler<E extends Env = Env, R extends Route = Route, S = unknown> = (
-  c: Context<E, R, S>,
+export type MiddlewareHandler<E extends Env = any, P extends string = any, I = {}> = (
+  c: Context<E, P, I>,
   next: Next
 ) => Promise<Response | undefined | void>
 
-// Default of `E ` should be `Environment`, it will be used in `Context`
-export type NotFoundHandler<E extends Env = Environment, R extends Route = Route> = (
-  c: Context<E, R>
-) => Response | Promise<Response>
+export type NotFoundHandler<E extends Env = any> = (c: Context<E>) => Response | Promise<Response>
 
-export type ErrorHandler<E extends Env = Environment> = (err: Error, c: Context<E>) => Response
+export type ErrorHandler<E extends Env = any> = (err: Error, c: Context<E>) => Response
 
 export type Next = () => Promise<void>
 
@@ -94,28 +74,21 @@ export type TypeResponse<T = unknown> = {
 
 // This is not used for internally
 // Will be used by users as `Handler`
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface CustomHandler<E = Env, R = Route, I = any> {
+export interface CustomHandler<E = Env, P = any, I = any> {
   (
     c: Context<
       E extends Env ? E : Env,
-      E extends Route
-        ? E
-        : R extends Route
-        ? R
-        : R extends string
-        ? { path: R; method: string }
-        : never,
+      E extends string ? E : P extends string ? P : never,
       E extends Env
-        ? R extends Route | string
+        ? P extends string
           ? I
           : E extends Env
           ? E
           : never
         : E extends Route | string
-        ? R extends Env
+        ? P extends Env
           ? E
-          : R
+          : P
         : E
     >,
     next: Next

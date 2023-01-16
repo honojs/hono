@@ -7,25 +7,23 @@ import type { Hono } from './hono'
 export type Bindings = Record<string, unknown>
 export type Variables = Record<string, unknown>
 
-export type Environment = {
-  Bindings: Bindings
-  Variables: Variables
+export type Env = {
+  Bindings?: Bindings
+  Variables?: Variables
 }
-
-type Env = Partial<Environment>
 
 export type Route = {
   path: string
   method: string
 }
 
-export type Handler<E extends Env = {}, P extends string = any, I = {}, O = {}> = (
+export type Handler<E extends Env = any, P extends string = any, I = {}, O = {}> = (
   c: Context<E, P, I>,
   next: Next
 ) => Response | Promise<Response | void | TypeResponse<O>> | TypeResponse<O>
 
 export interface HandlerInterface<
-  E extends Env = {},
+  E extends Env = Env,
   M extends string = any,
   P extends string = any
 > {
@@ -51,20 +49,20 @@ type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${in
 
 type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
   ? ParamKeyName<NameWithPattern>
-  : any
+  : never
 
 export type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
   ? ParamKey<Component> | ParamKeys<Rest>
   : ParamKey<Path>
 
-export type MiddlewareHandler<E extends Env = {}, P extends string = any, I = {}> = (
+export type MiddlewareHandler<E extends Env = any, P extends string = any, I = {}> = (
   c: Context<E, P, I>,
   next: Next
 ) => Promise<Response | undefined | void>
 
-export type NotFoundHandler<E extends Env = {}> = (c: Context<E>) => Response | Promise<Response>
+export type NotFoundHandler<E extends Env = any> = (c: Context<E>) => Response | Promise<Response>
 
-export type ErrorHandler<E extends Env = {}> = (err: Error, c: Context<E>) => Response
+export type ErrorHandler<E extends Env = any> = (err: Error, c: Context<E>) => Response
 
 export type Next = () => Promise<void>
 

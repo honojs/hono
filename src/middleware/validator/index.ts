@@ -1,5 +1,5 @@
 import type { Context } from '../../context'
-import type { Environment, ValidationTypes, MiddlewareHandler } from '../../types'
+import type { Env, ValidationTypes, MiddlewareHandler } from '../../types'
 import { mergeObjects } from '../../utils/object'
 
 type ValidationTypeKeysWithBody = 'form' | 'json'
@@ -15,7 +15,7 @@ export const validator = <
   V extends { type: U; data: T },
   V2 = {},
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  E extends Partial<Environment> = any
+  E extends Env = any
 >(
   type: U,
   validationFunc: (value: ValidationTypes[U], c: Context<E>) => T | Response | Promise<Response>

@@ -14,7 +14,7 @@ import type {
   Handler,
   ErrorHandler,
   NotFoundHandler,
-  Environment,
+  Env,
   Route,
   MiddlewareHandler,
 } from './types'
@@ -31,7 +31,7 @@ interface RouterRoute {
 
 function defineDynamicClass(): {
   new <
-    E extends Partial<Environment> = {},
+    E extends Env = Env,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _M extends string = string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,7 +44,7 @@ function defineDynamicClass(): {
 }
 
 export class Hono<
-  E extends Partial<Environment> = {},
+  E extends Env = {},
   R extends Route = Route,
   I = {},
   O = {}
@@ -267,8 +267,8 @@ export class Hono<
     return this.dispatch(event.request, event)
   }
 
-  fetch = (request: Request, Environment?: E['Bindings'], executionCtx?: ExecutionContext) => {
-    return this.dispatch(request, executionCtx, Environment)
+  fetch = (request: Request, Env?: E['Bindings'], executionCtx?: ExecutionContext) => {
+    return this.dispatch(request, executionCtx, Env)
   }
 
   request = async (input: Request | string, requestInit?: RequestInit) => {

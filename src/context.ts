@@ -1,6 +1,6 @@
 import { HonoRequest } from './request'
 import type { TypeResponse } from './types'
-import type { Environment, NotFoundHandler } from './types'
+import type { Env, NotFoundHandler } from './types'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'
@@ -15,14 +15,14 @@ export interface ExecutionContext {
 }
 export interface ContextVariableMap {}
 
-type GetVariable<K, E extends Partial<Environment>> = K extends keyof E['Variables']
+type GetVariable<K, E extends Env> = K extends keyof E['Variables']
   ? E['Variables'][K]
   : K extends keyof ContextVariableMap
   ? ContextVariableMap[K]
   : unknown
 
-type ContextOptions<E extends Partial<Environment>> = {
-  env?: E['Bindings']
+type ContextOptions<E extends Env> = {
+  env: E['Bindings']
   executionCtx?: FetchEvent | ExecutionContext | undefined
   notFoundHandler?: NotFoundHandler<E>
   paramData?: Record<string, string>
@@ -31,12 +31,12 @@ type ContextOptions<E extends Partial<Environment>> = {
 
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Env extends Partial<Environment> = any,
+  E extends Env = any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Path extends string = any,
   Schema = {}
 > {
-  env: Env['Bindings'] = {}
+  env: E['Bindings'] = {}
   finalized: boolean = false
   error: Error | undefined = undefined
 
@@ -53,9 +53,9 @@ export class Context<
   private _paramData: Record<string, string> | undefined
   private _queryIndex: number | undefined
   private rawRequest: Request
-  private notFoundHandler: NotFoundHandler<Env> = () => new Response()
+  private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
-  constructor(req: Request, options?: ContextOptions<Env>) {
+  constructor(req: Request, options?: ContextOptions<E>) {
     this.rawRequest = req
     if (options) {
       this._executionCtx = options.executionCtx
@@ -130,18 +130,16 @@ export class Context<
     this._status = status
   }
 
-  set<Key extends keyof Env['Variables'] | keyof ContextVariableMap>(
+  set<Key extends keyof E['Variables'] | keyof ContextVariableMap>(
     key: Key,
-    value: GetVariable<Key, Env>
+    value: GetVariable<Key, E>
   ): void {
     this._map ||= {}
     this._map[key as string] = value
   }
 
-  get<Key extends keyof Env['Variables'] | keyof ContextVariableMap>(
-    key: Key
-  ): GetVariable<Key, Env> {
-    return this._map?.[key as string] as GetVariable<Key, Env>
+  get<Key extends keyof E['Variables'] | keyof ContextVariableMap>(key: Key): GetVariable<Key, E> {
+    return this._map?.[key as string] as GetVariable<Key, E>
   }
 
   pretty(prettyJSON: boolean, space: number = 2): void {
