@@ -151,6 +151,11 @@
       "types": "./dist/types/adapter/bun/index.d.ts",
       "import": "./dist/adapter/bun/index.js",
       "require": "./dist/cjs/adapter/bun/index.js"
+    },
+    "./nextjs": {
+      "types": "./dist/types/adapter/nextjs/index.d.ts",
+      "import": "./dist/adapter/nextjs/index.js",
+      "require": "./dist/cjs/adapter/nextjs/index.js"
     }
   },
   "typesVersions": {
@@ -235,6 +240,9 @@
       ],
       "bun": [
         "./dist/types/adapter/bun"
+      ],
+      "nextjs": [
+        "./dist/types/adapter/nextjs"
       ]
     }
   },
