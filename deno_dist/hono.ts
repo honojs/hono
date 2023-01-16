@@ -14,8 +14,9 @@ import type {
   Handler,
   ErrorHandler,
   NotFoundHandler,
-  Environment,
+  Env,
   Route,
+  MiddlewareHandler,
 } from './types.ts'
 import { HTTPException } from './utils/http-exception.ts'
 import { getPathFromURL, mergePath } from './utils/url.ts'
@@ -30,25 +31,24 @@ interface RouterRoute {
 
 function defineDynamicClass(): {
   new <
-    E extends Partial<Environment> = {},
+    E extends Env = Env,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _M extends string = string,
-    P extends string = string,
-    I = {},
-    O = {}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    P extends string = any
   >(): {
-    [M in Methods]: HandlerInterface<E, M, P, I, O>
+    [M in Methods]: HandlerInterface<E, M, P>
   }
 } {
   return class {} as never
 }
 
 export class Hono<
-  E extends Partial<Environment> = {},
+  E extends Env = {},
   R extends Route = Route,
   I = {},
   O = {}
-> extends defineDynamicClass()<E, R['method'], R['path'], I, O> {
+> extends defineDynamicClass()<E, R['method'], R['path']> {
   readonly router: Router<Handler> = new SmartRouter({
     routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
   })
@@ -97,7 +97,7 @@ export class Hono<
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  route(path: string, app?: Hono<any>) {
+  route(path: string, app?: Hono<any, any>) {
     this._tempPath = path
     if (app) {
       app.routes.map((r) => {
@@ -108,12 +108,12 @@ export class Hono<
     return this
   }
 
-  use(...middleware: Handler<E>[]): Hono<E, { method: 'all'; path: string }, I, O>
-  use<Path extends string, E2 extends Partial<Environment> = E>(
+  use(...middleware: MiddlewareHandler<E>[]): Hono<E, { method: 'all'; path: string }, I, O>
+  use<Path extends string>(
     arg1: Path,
-    ...middleware: Handler<E2>[]
+    ...middleware: MiddlewareHandler<E>[]
   ): Hono<E, { method: 'all'; path: Path }, I, O>
-  use(arg1: string | Handler<E>, ...handlers: Handler<E>[]) {
+  use(arg1: string | MiddlewareHandler<E>, ...handlers: MiddlewareHandler<E>[]) {
     if (typeof arg1 === 'string') {
       this.path = arg1
     } else {
@@ -122,13 +122,13 @@ export class Hono<
     handlers.map((handler) => {
       this.addRoute(METHOD_NAME_ALL, this.path, handler)
     })
-    return this
+    return this as unknown
   }
 
   on<Method extends string, Path extends string>(
     method: Method,
     path: Path,
-    ...handlers: Handler<E, { method: Method; path: Path }>[]
+    ...handlers: Handler<E, Path>[]
   ): Hono<E, { method: Method; path: Path }, I, O>
   on(method: string, path: string, ...handlers: Handler<E>[]) {
     if (!method) return this
@@ -207,11 +207,11 @@ export class Hono<
 
     // Do not `compose` if it has only one handler
     if (result && result.handlers.length === 1) {
-      const handler = result.handlers[0] as unknown as Handler<E>
+      const handler = result.handlers[0]
       let res: ReturnType<Handler>
 
       try {
-        res = handler(c, async () => {})
+        res = handler(c as unknown as Context<{}>, async () => {})
         if (!res) {
           return this.notFoundHandler(c)
         }
@@ -245,11 +245,11 @@ export class Hono<
     }
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
-    const composed = compose<Context<E>, E>(handlers, this.notFoundHandler, this.errorHandler)
+    const composed = compose<Context, E>(handlers, this.notFoundHandler, this.errorHandler)
 
     return (async () => {
       try {
-        const tmp = composed(c)
+        const tmp = composed(c as unknown as Context<{}>)
         const context = tmp instanceof Promise ? await tmp : tmp
         if (!context.finalized) {
           throw new Error(
@@ -267,8 +267,8 @@ export class Hono<
     return this.dispatch(event.request, event)
   }
 
-  fetch = (request: Request, Environment?: E['Bindings'], executionCtx?: ExecutionContext) => {
-    return this.dispatch(request, executionCtx, Environment)
+  fetch = (request: Request, Env?: E['Bindings'], executionCtx?: ExecutionContext) => {
+    return this.dispatch(request, executionCtx, Env)
   }
 
   request = async (input: Request | string, requestInit?: RequestInit) => {

@@ -1,5 +1,5 @@
 import { Context } from './context'
-import type { Environment, NotFoundHandler, ErrorHandler } from './types'
+import type { Env, NotFoundHandler, ErrorHandler } from './types'
 
 interface ComposeContext {
   finalized: boolean
@@ -7,7 +7,7 @@ interface ComposeContext {
 }
 
 // Based on the code in the MIT licensed `koa-compose` package.
-export const compose = <C extends ComposeContext, E extends Partial<Environment> = Environment>(
+export const compose = <C extends ComposeContext, E extends Env = Env>(
   middleware: Function[],
   onNotFound?: NotFoundHandler<E>,
   onError?: ErrorHandler<E>
