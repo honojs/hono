@@ -69,7 +69,7 @@ export class Context<
     this.finalized = true
   }
 
-  header(name: string, value: string, options?: { append?: boolean }): void {
+  header = (name: string, value: string, options?: { append?: boolean }): void => {
     this._headers ||= {}
     const key = name.toLowerCase()
 
@@ -96,7 +96,7 @@ export class Context<
     }
   }
 
-  status(status: StatusCode): void {
+  status = (status: StatusCode): void => {
     this._status = status
   }
 
@@ -118,12 +118,12 @@ export class Context<
     return this._map[key]
   }
 
-  pretty(prettyJSON: boolean, space: number = 2): void {
+  pretty = (prettyJSON: boolean, space: number = 2): void => {
     this._pretty = prettyJSON
     this._prettySpace = space
   }
 
-  newResponse(data: Data | null, status: StatusCode, headers: Headers = {}): Response {
+  newResponse = (data: Data | null, status: StatusCode, headers: Headers = {}): Response => {
     return new Response(data, {
       status,
       headers: this._finalizeHeaders(headers),
@@ -159,11 +159,15 @@ export class Context<
     return finalizedHeaders
   }
 
-  body(data: Data | null, status: StatusCode = this._status, headers: Headers = {}): Response {
+  body = (
+    data: Data | null,
+    status: StatusCode = this._status,
+    headers: Headers = {}
+  ): Response => {
     return this.newResponse(data, status, headers)
   }
 
-  text(text: string, status?: StatusCode, headers?: Headers): Response {
+  text = (text: string, status?: StatusCode, headers?: Headers): Response => {
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
     if (!headers && !status && !this._res && !this._headers) {
@@ -175,7 +179,7 @@ export class Context<
     return this.newResponse(text, status, headers)
   }
 
-  json<T>(object: T, status: StatusCode = this._status, headers: Headers = {}): Response {
+  json = <T>(object: T, status: StatusCode = this._status, headers: Headers = {}): Response => {
     const body = this._pretty
       ? JSON.stringify(object, null, this._prettySpace)
       : JSON.stringify(object)
@@ -183,23 +187,23 @@ export class Context<
     return this.newResponse(body, status, headers)
   }
 
-  html(html: string, status: StatusCode = this._status, headers: Headers = {}): Response {
+  html = (html: string, status: StatusCode = this._status, headers: Headers = {}): Response => {
     headers['content-type'] = 'text/html; charset=UTF-8'
     return this.newResponse(html, status, headers)
   }
 
-  redirect(location: string, status: StatusCode = 302): Response {
+  redirect = (location: string, status: StatusCode = 302): Response => {
     return this.newResponse(null, status, {
       Location: location,
     })
   }
 
-  cookie(name: string, value: string, opt?: CookieOptions): void {
+  cookie = (name: string, value: string, opt?: CookieOptions): void => {
     const cookie = serialize(name, value, opt)
     this.header('set-cookie', cookie, { append: true })
   }
 
-  notFound(): Response | Promise<Response> {
+  notFound = (): Response | Promise<Response> => {
     return this.notFoundHandler(this as unknown as Context<string, E>)
   }
 
