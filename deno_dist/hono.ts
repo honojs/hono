@@ -44,7 +44,7 @@ function defineDynamicClass(): {
 }
 
 export class Hono<
-  E extends Env = {},
+  E extends Env = Env,
   R extends Route = Route,
   I = {},
   O = {}
@@ -206,7 +206,7 @@ export class Hono<
     })
 
     // Do not `compose` if it has only one handler
-    if (result && result.handlers.length === 1) {
+    if (result?.handlers.length === 1) {
       const handler = result.handlers[0]
       let res: ReturnType<Handler>
 
