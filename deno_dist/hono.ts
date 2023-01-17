@@ -54,7 +54,7 @@ export class Hono<
   })
   readonly strict: boolean = true // strict routing - default is true
   private _tempPath: string = ''
-  private path: string = '/'
+  private path: string = '*'
 
   routes: RouterRoute[] = []
 
