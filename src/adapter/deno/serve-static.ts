@@ -1,7 +1,7 @@
-import type { Context } from '../context.ts'
-import type { Next } from '../types.ts'
-import { getFilePath } from '../utils/filepath.ts'
-import { getMimeType } from '../utils/mime.ts'
+import type { Context } from '../../context'
+import type { Next } from '../../types'
+import { getFilePath } from '../../utils/filepath'
+import { getMimeType } from '../../utils/mime'
 
 export type ServeStaticOptions = {
   root?: string
