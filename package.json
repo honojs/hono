@@ -103,20 +103,6 @@
       "import": "./dist/middleware/pretty-json/index.js",
       "require": "./dist/cjs/middleware/pretty-json/index.js"
     },
-    "./serve-static": {
-      "types": "./dist/types/middleware/serve-static/index.d.ts",
-      "import": "./dist/middleware/serve-static/index.js",
-      "require": "./dist/cjs/middleware/serve-static/index.js"
-    },
-    "./serve-static.bun": {
-      "types": "./dist/types/middleware/serve-static/bun.d.ts",
-      "import": "./dist/middleware/serve-static/bun.js",
-      "require": "./dist/cjs/middleware/serve-static/bun.js"
-    },
-    "./serve-static.module": {
-      "types": "./dist/types/middleware/serve-static/module.d.ts",
-      "import": "./dist/middleware/serve-static/module.js"
-    },
     "./validator": {
       "types": "./dist/types/middleware/validator/index.d.ts",
       "import": "./dist/middleware/validator/index.js",
@@ -151,6 +137,26 @@
       "types": "./dist/types/utils/*.d.ts",
       "import": "./dist/utils/*.js",
       "require": "./dist/cjs/utils/*.js"
+    },
+    "./cloudflare-workers": {
+      "types": "./dist/types/adapter/cloudflare-workers/index.d.ts",
+      "import": "./dist/adapter/cloudflare-workers/index.js",
+      "require": "./dist/cjs/adapter/cloudflare-workers/index.js"
+    },
+    "./cloudflare-pages": {
+      "types": "./dist/types/adapter/cloudflare-pages/index.d.ts",
+      "import": "./dist/adapter/cloudflare-pages/index.js",
+      "require": "./dist/cjs/adapter/cloudflare-pages/index.js"
+    },
+    "./bun": {
+      "types": "./dist/types/adapter/bun/index.d.ts",
+      "import": "./dist/adapter/bun/index.js",
+      "require": "./dist/cjs/adapter/bun/index.js"
+    },
+    "./nextjs": {
+      "types": "./dist/types/adapter/nextjs/index.d.ts",
+      "import": "./dist/adapter/nextjs/index.js",
+      "require": "./dist/cjs/adapter/nextjs/index.js"
     }
   },
   "typesVersions": {
@@ -226,6 +232,18 @@
       ],
       "utils/*": [
         "./dist/types/utils/*"
+      ],
+      "cloudflare-workers": [
+        "./dist/types/adapter/cloudflare-workers"
+      ],
+      "cloudflare-pages": [
+        "./dist/types/adapter/cloudflare-pages"
+      ],
+      "bun": [
+        "./dist/types/adapter/bun"
+      ],
+      "nextjs": [
+        "./dist/types/adapter/nextjs"
       ]
     }
   },
