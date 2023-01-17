@@ -6,6 +6,8 @@ import {
   mergePath,
   getQueryStringFromURL,
   checkOptionalParameter,
+  getQueryParam,
+  getQueryParams,
 } from './url'
 
 describe('url', () => {
@@ -97,17 +99,17 @@ describe('url', () => {
   describe('getQueryStringFromURL', () => {
     it('should return strings of query params', () => {
       let queryString = getQueryStringFromURL('https://example.com/?foo=bar', 20)
-      expect(queryString).toBe('?foo=bar')
+      expect(queryString).toBe('foo=bar')
       queryString = getQueryStringFromURL('https://example.com/?foo=bar&foo2=bar2', 20)
-      expect(queryString).toBe('?foo=bar&foo2=bar2')
+      expect(queryString).toBe('foo=bar&foo2=bar2')
       queryString = getQueryStringFromURL('https://example.com/', -1)
       expect(queryString).toBe('')
       // This specification allows the fragments as query strings
       queryString = getQueryStringFromURL('https://example.com/?#foo=#bar&#foo2=#bar2', 20)
-      expect(queryString).toBe('?#foo=#bar&#foo2=#bar2')
+      expect(queryString).toBe('#foo=#bar&#foo2=#bar2')
       // This specification allows that the string includes two `?` or more
       queryString = getQueryStringFromURL('https://example.com/?foo=bar?foo2=bar2', 20)
-      expect(queryString).toBe('?foo=bar?foo2=bar2')
+      expect(queryString).toBe('foo=bar?foo2=bar2')
     })
   })
 
@@ -151,6 +153,54 @@ describe('url', () => {
       expect(checkOptionalParameter('/api/animals')).toBeNull()
       expect(checkOptionalParameter('/api/:animals?/type')).toBeNull()
       expect(checkOptionalParameter('/api/animals/:type?/')).toBeNull()
+    })
+  })
+
+  describe('getQueryParam', () => {
+    it('Parse URL query strings', () => {
+      expect(getQueryParam('name=hey', 'name')).toBe('hey')
+      expect(getQueryParam('name=hey&age=20&tall=170', 'age')).toBe('20')
+      let searchParams = new URLSearchParams({ name: '炎' })
+      expect(getQueryParam(searchParams.toString(), 'name')).toBe('炎')
+      expect(getQueryParam('name=hey&age=20&tall=170', 'weight')).toBe(null)
+      expect(getQueryParam('name=hey&age=20&tall=170')).toEqual({
+        name: 'hey',
+        age: '20',
+        tall: '170',
+      })
+      expect(getQueryParam('pretty', 'pretty')).toBe('')
+      expect(getQueryParam('pretty', 'prtt')).toBe(null)
+      expect(getQueryParam('name=sam&name=tom', 'name')).toBe('sam')
+      expect(getQueryParam('name=sam&name=tom')).toEqual({
+        name: 'sam',
+      })
+      searchParams = new URLSearchParams('?name=sam=tom')
+      expect(getQueryParam('name', searchParams.get('name')?.toString()))
+    })
+  })
+
+  describe('getQueryParams', () => {
+    it('Parse URL query strings', () => {
+      expect(getQueryParams('name=hey', 'name')).toEqual(['hey'])
+      expect(getQueryParams('name=hey#fragment', 'name')).toEqual(['hey'])
+      expect(getQueryParams('name=hey&name=foo', 'name')).toEqual(['hey', 'foo'])
+      expect(getQueryParams('name=hey&age=20&tall=170', 'age')).toEqual(['20'])
+      expect(getQueryParams('name=hey&age=20&tall=170&name=foo&age=30', 'age')).toEqual([
+        '20',
+        '30',
+      ])
+      const searchParams = new URLSearchParams()
+      searchParams.append('tag', '炎')
+      searchParams.append('tag', 'ほのお')
+      expect(getQueryParams(searchParams.toString(), 'tag')).toEqual(['炎', 'ほのお'])
+      expect(getQueryParams('name=hey&age=20&tall=170', 'weight')).toEqual(null)
+      expect(getQueryParams('name=hey&age=20&tall=170&name=foo&age=30&tall=180')).toEqual({
+        name: ['hey', 'foo'],
+        age: ['20', '30'],
+        tall: ['170', '180'],
+      })
+      expect(getQueryParams('pretty', 'pretty')).toEqual([''])
+      expect(getQueryParams('pretty', 'prtt')).toBe(null)
     })
   })
 })
