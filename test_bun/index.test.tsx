@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'bun:test'
+import { serveStatic } from '../src/adapter/bun'
 import { Context } from '../src/context'
 import { Hono } from '../src/index'
 import { basicAuth } from '../src/middleware/basic-auth'
 import { jwt } from '../src/middleware/jwt'
-import { serveStatic } from '../src/middleware/serve-static/bun'
 
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.

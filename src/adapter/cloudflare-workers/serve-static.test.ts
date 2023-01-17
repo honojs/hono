@@ -1,7 +1,7 @@
 import type { Context } from '../../context'
 import { Hono } from '../../hono'
 import type { Next } from '../../types'
-import { serveStatic } from '.'
+import { serveStatic } from './serve-static'
 
 // Mock
 const store: Record<string, string> = {
