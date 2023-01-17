@@ -102,6 +102,21 @@ describe('strict parameter', () => {
   })
 })
 
+describe('Destruct functions in context', () => {
+  it('Should return 200 response - text', async () => {
+    const app = new Hono()
+    app.get('/text', ({ text }) => text('foo'))
+    const res = await app.request('http://localhost/text')
+    expect(res.status).toBe(200)
+  })
+  it('Should return 200 response - json', async () => {
+    const app = new Hono()
+    app.get('/json', ({ json }) => json({ foo: 'bar' }))
+    const res = await app.request('http://localhost/json')
+    expect(res.status).toBe(200)
+  })
+})
+
 describe('Routing', () => {
   it('Return it self', async () => {
     const app = new Hono()
