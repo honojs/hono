@@ -107,7 +107,7 @@ export class Context<
     this.finalized = true
   }
 
-  header(name: string, value: string, options?: { append?: boolean }): void {
+  header = (name: string, value: string, options?: { append?: boolean }): void => {
     if (options?.append) {
       if (!this._headers) {
         this._headers = new Headers(this._preparedHeaders)
@@ -135,15 +135,17 @@ export class Context<
     this._status = status
   }
 
-  set<Key extends keyof E['Variables'] | keyof ContextVariableMap>(
+  set = <Key extends keyof E['Variables'] | keyof ContextVariableMap>(
     key: Key,
     value: GetVariable<Key, E>
-  ): void {
+  ): void => {
     this._map ||= {}
     this._map[key as string] = value
   }
 
-  get<Key extends keyof E['Variables'] | keyof ContextVariableMap>(key: Key): GetVariable<Key, E> {
+  get = <Key extends keyof E['Variables'] | keyof ContextVariableMap>(
+    key: Key
+  ): GetVariable<Key, E> => {
     return this._map?.[key as string] as GetVariable<Key, E>
   }
 
@@ -152,7 +154,7 @@ export class Context<
     this._prettySpace = space
   }
 
-  newResponse(data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response {
+  newResponse = (data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response => {
     // Optimized
     if (!headers && !this._headers && !this._res && !status) {
       return new Response(data, {
@@ -196,11 +198,15 @@ export class Context<
     })
   }
 
-  body(data: Data | null, status: StatusCode = this._status, headers?: HeaderRecord): Response {
+  body = (
+    data: Data | null,
+    status: StatusCode = this._status,
+    headers?: HeaderRecord
+  ): Response => {
     return this.newResponse(data, status, headers)
   }
 
-  text(text: string, status?: StatusCode, headers?: HeaderRecord): Response {
+  text = (text: string, status?: StatusCode, headers?: HeaderRecord): Response => {
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
     if (!this._preparedHeaders) {
@@ -217,7 +223,7 @@ export class Context<
     return this.newResponse(text, status, headers)
   }
 
-  json<T>(object: T, status: StatusCode = this._status, headers?: HeaderRecord): Response {
+  json = <T>(object: T, status: StatusCode = this._status, headers?: HeaderRecord): Response => {
     const body = this._pretty
       ? JSON.stringify(object, null, this._prettySpace)
       : JSON.stringify(object)
@@ -226,7 +232,11 @@ export class Context<
     return this.newResponse(body, status, headers)
   }
 
-  jsonT<T>(object: T, status: StatusCode = this._status, headers?: HeaderRecord): TypeResponse<T> {
+  jsonT = <T>(
+    object: T,
+    status: StatusCode = this._status,
+    headers?: HeaderRecord
+  ): TypeResponse<T> => {
     return {
       response: this.json(object, status, headers),
       data: object,
@@ -234,13 +244,13 @@ export class Context<
     }
   }
 
-  html(html: string, status: StatusCode = this._status, headers?: HeaderRecord): Response {
+  html = (html: string, status: StatusCode = this._status, headers?: HeaderRecord): Response => {
     this._preparedHeaders ??= {}
     this._preparedHeaders['content-type'] = 'text/html; charset=UTF-8'
     return this.newResponse(html, status, headers)
   }
 
-  redirect(location: string, status: StatusCode = 302): Response {
+  redirect = (location: string, status: StatusCode = 302): Response => {
     this._headers ??= new Headers()
     this._headers.set('Location', location)
     return this.newResponse(null, status)
@@ -251,7 +261,7 @@ export class Context<
     this.header('set-cookie', cookie, { append: true })
   }
 
-  notFound(): Response | Promise<Response> {
+  notFound = (): Response | Promise<Response> => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return this.notFoundHandler(this)
