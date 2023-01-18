@@ -22,6 +22,7 @@ export type {
   ErrorHandler,
   NotFoundHandler,
   ValidationTypes,
+  Env,
 } from './types'
 import type { CustomHandler } from './types'
 export type { CustomHandler as Handler }
