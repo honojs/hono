@@ -7,6 +7,7 @@ export type {
   ErrorHandler,
   NotFoundHandler,
   ValidationTypes,
+  Env,
 } from './types'
 export type { Context, ContextVariableMap } from './context'
 import type { CustomHandler } from './types'
