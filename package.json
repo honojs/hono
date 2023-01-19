@@ -20,6 +20,7 @@
     "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.ts'",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
     "build": "rimraf dist && tsx ./build.ts && yarn copy:package.cjs.json",
+    "postbuild": "publint",
     "watch": "rimraf dist && tsx ./build.ts --watch && yarn copy:package.cjs.json",
     "prerelease": "yarn denoify && yarn test:deno && yarn build",
     "release": "np"
@@ -276,6 +277,7 @@
     "jest-environment-miniflare": "2.7.1",
     "np": "^7.6.2",
     "prettier": "^2.6.2",
+    "publint": "^0.1.8",
     "rimraf": "^3.0.2",
     "ts-jest": "^29.0.1",
     "tsx": "^3.11.0",
