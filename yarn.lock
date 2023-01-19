@@ -5473,6 +5473,15 @@ ps-tree@1.2.0:
   dependencies:
     event-stream "=3.3.4"
 
+publint@^0.1.8:
+  version "0.1.8"
+  resolved "https://registry.yarnpkg.com/publint/-/publint-0.1.8.tgz#a679fccc67578f232ecffa568acfccf3a7c983c5"
+  integrity sha512-czOfocZAwS3d5RNrx4VyMxJJDyTn9MajMfuzJYlMrztFLrWkM+3KVdPozTfd8ka8aGWfR1cS66tMSDCgF70T+A==
+  dependencies:
+    npm-packlist "^5.1.3"
+    picocolors "^1.0.0"
+    sade "^1.8.1"
+
 pump@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/pump/-/pump-3.0.0.tgz#b4a2116815bde2f4e1ea602354e8c75565107a64"
@@ -5695,6 +5704,13 @@ rxjs@^7.5.4:
   integrity sha512-F2+gxDshqmIub1KdvZkaEfGDwLNpPvk9Fs6LD/MyQxNgMds/WH9OdDDXOmxUZpME+iSK3rQCctkL0DYyytUqMg==
   dependencies:
     tslib "^2.1.0"
+
+sade@^1.8.1:
+  version "1.8.1"
+  resolved "https://registry.yarnpkg.com/sade/-/sade-1.8.1.tgz#0a78e81d658d394887be57d2a409bf703a3b2701"
+  integrity sha512-xal3CZX1Xlo/k4ApwCFrHVACi9fBqJ7V+mwhBsuf/1IOKbBy098Fex+Wa/5QMubw09pSZ/u8EY8PWgevJsXp1A==
+  dependencies:
+    mri "^1.1.0"
 
 safe-buffer@~5.1.1:
   version "5.1.2"
