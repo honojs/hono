@@ -392,15 +392,13 @@ describe('param and query', () => {
   describe('param with undefined', () => {
     const app = new Hono()
     app.get('/foo/:foo', (c) => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      /* @ts-ignore */
       const bar = c.req.param('bar')
       return c.json({ foo: bar })
     })
-    it('param of /foo/foo should return undefined not "undefined"', async () => {
+    it('param of /foo/foo should return ""', async () => {
       const res = await app.request('http://localhost/foo/foo')
       expect(res.status).toBe(200)
-      expect(await res.json()).toEqual({ foo: undefined })
+      expect(await res.json()).toEqual({ foo: '' })
     })
   })
 })
@@ -1385,5 +1383,31 @@ describe('Show routes', () => {
     app.get('/foo', (c) => c.text('/'))
     app.showRoutes()
     expect(console.log).toBeCalled()
+  })
+})
+
+describe('Optional parameters', () => {
+  const app = new Hono()
+  app.get('/api/animal/:type?', (c) => {
+    const type = c.req.param('type')
+    return c.json({
+      type: type,
+    })
+  })
+
+  it('Should match with an optional parameter', async () => {
+    const res = await app.request('http://localhost/api/animal/bird')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      type: 'bird',
+    })
+  })
+
+  it('Should match without an optional parameter', async () => {
+    const res = await app.request('http://localhost/api/animal')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      type: '',
+    })
   })
 })

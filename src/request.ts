@@ -58,7 +58,7 @@ export function extendRequestPrototype() {
     if (this.paramData) {
       if (key) {
         const param = this.paramData[key]
-        return param ? decodeURIComponent(param) : undefined
+        return param ? decodeURIComponent(param) : ''
       } else {
         const decoded: Record<string, string> = {}
 
@@ -71,7 +71,7 @@ export function extendRequestPrototype() {
         return decoded
       }
     }
-    return null
+    return ''
   } as InstanceType<typeof Request>['param']
 
   Request.prototype.header = function (this: Request, name?: string) {
