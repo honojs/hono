@@ -39,7 +39,7 @@ export type Next = () => Promise<void>
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer _Pattern}`
   ? Name
-  : NameWithPattern
+  : string
 
 type ParamKey<Component> = Component extends `:${infer NameWithPattern}?`
   ? ParamKeyName<NameWithPattern>
