@@ -82,10 +82,9 @@ export class Hono<
 
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
-      this[method] = <Env extends Environment, Data>(
-        args1: string | Handler<string, Env, Data>,
-        ...args: Handler<string, Env, Data>[]
-      ) => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this[method] = (args1: string | Handler, ...args: Handler[]) => {
         if (typeof args1 === 'string') {
           this.path = args1
         } else {
@@ -213,7 +212,8 @@ export class Hono<
       let res: ReturnType<Handler<P>>
 
       try {
-        res = handler(c as unknown as Context<string, E, S>, async () => {})
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        res = handler(c as any, async () => {})
         if (!res) return this.notFoundHandler(c)
       } catch (err) {
         return this.handleError(err, c)
@@ -240,7 +240,8 @@ export class Hono<
 
     return (async () => {
       try {
-        const tmp = composed(c)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const tmp = composed(c as any)
         const context = tmp instanceof Promise ? await tmp : tmp
         if (!context.finalized) {
           throw new Error(

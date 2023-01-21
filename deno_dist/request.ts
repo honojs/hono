@@ -2,20 +2,28 @@ import { parseBody } from './utils/body.ts'
 import type { BodyData } from './utils/body.ts'
 import type { Cookie } from './utils/cookie.ts'
 import { parse } from './utils/cookie.ts'
+import type { UnionToIntersection } from './utils/types.ts'
 import { getQueryStringFromURL } from './utils/url.ts'
+
+type RemoveQuestion<T> = T extends `${infer R}?` ? R : T
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | undefined : string
+type ParamKeyToRecord<T extends string> = T extends `${infer R}?`
+  ? Record<R, string | undefined>
+  : Record<T, string>
 
 declare global {
   interface Request<
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     CfHostMetadata = unknown,
-    ParamKeyType extends string = string,
+    ParamKey extends string = string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Data = any
   > {
-    paramData?: Record<ParamKeyType, string>
+    paramData?: Record<ParamKey, string>
     param: {
-      (key: ParamKeyType): string
-      (): Record<ParamKeyType, string>
+      (key: RemoveQuestion<ParamKey>): UndefinedIfHavingQuestion<ParamKey>
+      (): UnionToIntersection<ParamKeyToRecord<ParamKey>>
     }
     queryData?: Record<string, string>
     query: {
