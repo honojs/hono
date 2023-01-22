@@ -249,7 +249,8 @@ export class Hono<
 
     return (async () => {
       try {
-        const tmp = composed(c)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const tmp = composed(c as any)
         const context = tmp instanceof Promise ? await tmp : tmp
         if (!context.finalized) {
           throw new Error(
