@@ -41,9 +41,7 @@ type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${in
   ? Name
   : NameWithPattern
 
-type ParamKey<Component> = Component extends `:${infer NameWithPattern}?`
-  ? ParamKeyName<NameWithPattern>
-  : Component extends `:${infer NameWithPattern}`
+type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
   ? ParamKeyName<NameWithPattern>
   : never
 

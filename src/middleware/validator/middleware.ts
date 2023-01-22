@@ -42,6 +42,8 @@ export const validatorMiddleware = <
       results: [],
     }
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const schema = validationFunction(v, c)
     const validatorList = getValidatorList(schema)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -110,6 +112,8 @@ export const validatorMiddleware = <
     }
 
     if (options && options.done) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       const res = options.done(resultSet, c)
       if (res) {
         return res
