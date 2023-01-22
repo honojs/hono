@@ -10,8 +10,7 @@ export class HTTPException extends Error {
   readonly res?: Response
   readonly status: StatusCode
   constructor(status: StatusCode = 500, options?: HTTPExceptionOptions) {
-    const message = options?.message || getStatusText(status)
-    super(message)
+    super(options?.message || getStatusText(status))
     this.res = options?.res
     this.status = status
   }
