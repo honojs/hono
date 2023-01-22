@@ -2,13 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Hono } from './hono'
 import { poweredBy } from './middleware/powered-by'
-import type {
-  Env,
-  CustomHandler as Handler,
-  InputToData,
-  MiddlewareHandler,
-  ToAppType,
-} from './types'
+import type { Env, CustomHandler as Handler, InputToData, ToAppType } from './types'
 import type { Expect, Equal } from './utils/types'
 
 describe('Test types of CustomHandler', () => {
@@ -94,37 +88,12 @@ describe('Test types of CustomHandler', () => {
   })
 })
 
-describe('CustomHandler as middleware', () => {
-  const app = new Hono()
-  const mid1 = (): MiddlewareHandler => {
-    return async (_c, next) => {
-      await next()
-    }
-  }
-
-  const mid2 = (): Handler => {
-    return async (_c, next) => {
-      await next()
-    }
-  }
-
-  it('Should not throw Type error', async () => {
-    app.get('*', mid1(), mid2(), (c) => {
-      return c.text('foo')
-    })
-    const res = await app.request('http://localhost/')
-    expect(res.status).toBe(200)
-  })
-})
-
 describe('Types used in the validator', () => {
   test('ToAppType', () => {
     type SampleHono = Hono<
       Env,
-      {
-        path: '/author'
-        method: 'post'
-      },
+      '/author',
+      'post',
       {
         type: 'json'
         data: { name: string; age: number }

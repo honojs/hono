@@ -13,29 +13,178 @@ export type Env = {
   Variables?: Variables
 }
 
-export type Route = {
-  path: string
-  method: string
-}
-
 export type Handler<E extends Env = any, P extends string = any, I = {}, O = {}> = (
   c: Context<E, P, I>,
   next: Next
-) => Response | Promise<Response | void | TypeResponse<O>> | TypeResponse<O>
+) => Response | Promise<Response | TypeResponse<O> | void> | TypeResponse<O> | void
+
+export type MiddlewareHandler<E extends Env = any, P extends string = any, I = {}> = (
+  c: Context<E, P, I>,
+  next: Next
+) => Promise<Response | undefined | void>
 
 export interface HandlerInterface<
   E extends Env = Env,
   M extends string = any,
-  P extends string = any
+  S extends string = string
 > {
-  <Input = {}, Output = {}>(
-    ...handlers: (Handler<E, P, Input, Output> | MiddlewareHandler<E, P, Input>)[]
-  ): Hono<E, { method: M; path: P }, Input, Output>
-
-  <Path extends string, Input = {}, Output = {}>(
-    path: Path,
-    ...handlers: (Handler<E, Path, Input, Output> | MiddlewareHandler<E, Path, Input>)[]
-  ): Hono<E, { method: M; path: Path }, Input, Output>
+  // app.get(...handler)
+  <I = {}, O = {}>(...handlers: Handler<E, S, I, O>[]): Hono<E, S, M, I, O>
+  // app.get(path, handler, handler)
+  <P extends string, O = {}, I = {}>(
+    path: P,
+    ...handlers: [Handler<E, P, I, O>, Handler<E, P, I, O>]
+  ): Hono<E, P, M, I, O>
+  // app.get(path, handler x3)
+  <P extends string, O = {}, I = {}, I2 = I, I3 = I | I2>(
+    path: P,
+    ...handlers: [Handler<E, P, I, O>, Handler<E, P, I2, O>, Handler<E, P, I3, O>]
+  ): Hono<E, P, M, I3, O>
+  // app.get(path, handler x4)
+  <P extends string, O = {}, I = {}, I2 = I, I3 = I | I2, I4 = I2 | I3>(
+    path: P,
+    ...handlers: [
+      Handler<E, P, I, O>,
+      Handler<E, P, I2, O>,
+      Handler<E, P, I3, O>,
+      Handler<E, P, I4, O>
+    ]
+  ): Hono<E, P, M, I4, O>
+  // app.get(path, handler x5)
+  <P extends string, O = {}, I = {}, I2 = I, I3 = I | I2, I4 = I2 | I3, I5 = I3 | I4>(
+    path: P,
+    ...handlers: [
+      Handler<E, P, I, O>,
+      Handler<E, P, I2, O>,
+      Handler<E, P, I3, O>,
+      Handler<E, P, I4, O>,
+      Handler<E, P, I5, O>
+    ]
+  ): Hono<E, P, M, I5, O>
+  // app.get(path, handler x6)
+  <P extends string, O = {}, I = {}, I2 = I, I3 = I | I2, I4 = I2 | I3, I5 = I3 | I4, I6 = I4 | I5>(
+    path: P,
+    ...handlers: [
+      Handler<E, P, I, O>,
+      Handler<E, P, I2, O>,
+      Handler<E, P, I3, O>,
+      Handler<E, P, I4, O>,
+      Handler<E, P, I5, O>,
+      Handler<E, P, I6, O>
+    ]
+  ): Hono<E, P, M, I6, O>
+  // app.get(path, handler x7)
+  <
+    P extends string,
+    O = {},
+    I = {},
+    I2 = I,
+    I3 = I | I2,
+    I4 = I2 | I3,
+    I5 = I3 | I4,
+    I6 = I4 | I5,
+    I7 = I5 | I6
+  >(
+    path: P,
+    ...handlers: [
+      Handler<E, P, I, O>,
+      Handler<E, P, I2, O>,
+      Handler<E, P, I3, O>,
+      Handler<E, P, I4, O>,
+      Handler<E, P, I5, O>,
+      Handler<E, P, I6, O>,
+      Handler<E, P, I7, O>
+    ]
+  ): Hono<E, P, M, I7, O>
+  // app.get(path, handler x8)
+  <
+    P extends string,
+    O = {},
+    I = {},
+    I2 = I,
+    I3 = I | I2,
+    I4 = I2 | I3,
+    I5 = I3 | I4,
+    I6 = I4 | I5,
+    I7 = I5 | I6,
+    I8 = I6 | I7
+  >(
+    path: P,
+    ...handlers: [
+      Handler<E, P, I, O>,
+      Handler<E, P, I2, O>,
+      Handler<E, P, I3, O>,
+      Handler<E, P, I4, O>,
+      Handler<E, P, I5, O>,
+      Handler<E, P, I6, O>,
+      Handler<E, P, I7, O>,
+      Handler<E, P, I8, O>
+    ]
+  ): Hono<E, P, M, I8, O>
+  // app.get(path, handler x9)
+  <
+    P extends string,
+    O = {},
+    I = {},
+    I2 = I,
+    I3 = I | I2,
+    I4 = I2 | I3,
+    I5 = I3 | I4,
+    I6 = I4 | I5,
+    I7 = I5 | I6,
+    I8 = I6 | I7,
+    I9 = I7 | I8
+  >(
+    path: P,
+    ...handlers: [
+      Handler<E, P, I, O>,
+      Handler<E, P, I2, O>,
+      Handler<E, P, I3, O>,
+      Handler<E, P, I4, O>,
+      Handler<E, P, I5, O>,
+      Handler<E, P, I6, O>,
+      Handler<E, P, I7, O>,
+      Handler<E, P, I8, O>,
+      Handler<E, P, I9, O>
+    ]
+  ): Hono<E, P, M, I9, O>
+  // app.get(path, handler x10)
+  <
+    P extends string,
+    O = {},
+    I = {},
+    I2 = I,
+    I3 = I | I2,
+    I4 = I2 | I3,
+    I5 = I3 | I4,
+    I6 = I4 | I5,
+    I7 = I5 | I6,
+    I8 = I6 | I7,
+    I9 = I7 | I8,
+    I10 = I8 | I9
+  >(
+    path: P,
+    ...handlers: [
+      Handler<E, P, I, O>,
+      Handler<E, P, I2, O>,
+      Handler<E, P, I3, O>,
+      Handler<E, P, I4, O>,
+      Handler<E, P, I5, O>,
+      Handler<E, P, I6, O>,
+      Handler<E, P, I7, O>,
+      Handler<E, P, I8, O>,
+      Handler<E, P, I9, O>,
+      Handler<E, P, I10, O>
+    ]
+  ): Hono<E, P, M, I10, O>
+  // app.get(path, ...handler)
+  <P extends string, I = {}, O = {}>(path: P, ...handlers: Handler<E, P, I, O>[]): Hono<
+    E,
+    P,
+    M,
+    I,
+    O
+  >
 }
 
 export type ExtractType<T> = T extends TypeResponse<infer R>
@@ -43,11 +192,6 @@ export type ExtractType<T> = T extends TypeResponse<infer R>
   : T extends Promise<TypeResponse<infer R>>
   ? R
   : never
-
-export type MiddlewareHandler<E extends Env = any, P extends string = any, I = {}> = (
-  c: Context<E, P, I>,
-  next: Next
-) => Promise<Response | undefined | void>
 
 export type NotFoundHandler<E extends Env = any> = (c: Context<E>) => Response | Promise<Response>
 
@@ -63,7 +207,7 @@ export type TypeResponse<T = unknown> = {
 
 // This is not used for internally
 // Will be used by users as `Handler`
-export interface CustomHandler<E = Env, P = any, I = any> {
+export interface CustomHandler<E = Env, P = any, I = any, O = any> {
   (
     c: Context<
       E extends Env ? E : Env,
@@ -74,14 +218,14 @@ export interface CustomHandler<E = Env, P = any, I = any> {
           : E extends Env
           ? E
           : never
-        : E extends Route | string
+        : E extends string
         ? P extends Env
           ? E
           : P
         : E
     >,
     next: Next
-  ): Response | Promise<Response | undefined | void>
+  ): Response | Promise<Response | TypeResponse<O>> | TypeResponse<O>
 }
 
 export type ValidationTypes = {
@@ -91,8 +235,8 @@ export type ValidationTypes = {
   queries: Record<string, string[]>
 }
 
-export type ToAppType<T> = T extends Hono<infer _, infer R, infer I, infer O>
-  ? ToAppTypeInner<R, I, O>
+export type ToAppType<T> = T extends Hono<infer _, infer P, infer M, infer I, infer O>
+  ? ToAppTypeInner<P, M, I, O>
   : never
 
 type RemoveBlank<T> = {
@@ -103,10 +247,10 @@ type InputSchema = {
   [K in string]: { type: ValidationTypes; data: unknown }
 }
 
-type ToAppTypeInner<R extends Route, I, O> = RemoveBlank<I> extends InputSchema
+type ToAppTypeInner<P extends string, M extends string, I, O> = RemoveBlank<I> extends InputSchema
   ? {
-      [K in R['method']]: {
-        [K2 in R['path']]: {
+      [K in M]: {
+        [K2 in P]: {
           input: UnionToIntersection<
             I extends { type: keyof ValidationTypes; data: unknown }
               ? I extends { type: infer R }
