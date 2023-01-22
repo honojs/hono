@@ -1387,3 +1387,34 @@ describe('Show routes', () => {
     expect(console.log).toBeCalled()
   })
 })
+
+describe('Optional parameters', () => {
+  const app = new Hono()
+  app.get('/api/:version/animal/:type?', (c) => {
+    const type1 = c.req.param('type')
+    type verify = Expect<Equal<typeof type1, string | undefined>>
+    const { type, version } = c.req.param()
+    type verify2 = Expect<Equal<typeof version, string>>
+    type verify3 = Expect<Equal<typeof type, string | undefined>>
+
+    return c.json({
+      type: type,
+    })
+  })
+
+  it('Should match with an optional parameter', async () => {
+    const res = await app.request('http://localhost/api/v1/animal/bird')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      type: 'bird',
+    })
+  })
+
+  it('Should match without an optional parameter', async () => {
+    const res = await app.request('http://localhost/api/v1/animal')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      type: undefined,
+    })
+  })
+})
