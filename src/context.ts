@@ -74,10 +74,8 @@ export class Context<
     } else {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this._req = new HonoRequest(this.rawRequest!, this._paramData!, this._queryIndex)
-      this.rawRequest = null
-      delete this.rawRequest
-      this._paramData = null
-      delete this._paramData
+      this.rawRequest = undefined
+      this._paramData = undefined
       return this._req
     }
   }

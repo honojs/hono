@@ -69,7 +69,7 @@ export const getPattern = (label: string): Pattern | null => {
 }
 
 export const getPathFromURL = (url: string, strict: boolean = true): [string, number] => {
-  const queryIndex = url.indexOf('?')
+  const queryIndex = url.indexOf('?', 8)
   const result = url.substring(url.indexOf('/', 8), queryIndex === -1 ? url.length : queryIndex)
 
   // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
@@ -132,7 +132,7 @@ export const checkOptionalParameter = (path: string): string[] | null => {
   return [base, optional]
 }
 
-const filterQueryString = (queryString: string): string => {
+const removeFragment = (queryString: string): string => {
   const fragIndex = queryString.indexOf('#')
   if (fragIndex !== -1) {
     queryString = queryString.slice(0, fragIndex)
@@ -145,7 +145,7 @@ export const getQueryParam = (
   queryString: string,
   key?: string
 ): string | null | Record<string, string> => {
-  queryString = filterQueryString(queryString)
+  queryString = removeFragment(queryString)
 
   const results: Record<string, string> = {}
 
@@ -156,15 +156,15 @@ export const getQueryParam = (
     if (andIndex === -1) {
       strings = queryString
     } else {
-      strings = queryString.slice(0, andIndex)
+      strings = queryString.substring(0, andIndex)
     }
 
     const eqIndex = strings.indexOf('=')
     if (eqIndex !== -1) {
-      const v = strings.slice(eqIndex + 1)
-      const k = strings.slice(0, eqIndex)
+      const v = strings.substring(eqIndex + 1)
+      const k = strings.substring(0, eqIndex)
       if (key === k) {
-        return v.indexOf('%') !== -1 ? decodeURI(v) : v
+        return /\%/.test(v) ? decodeURI(v) : v
       } else {
         results[k] ||= v
       }
@@ -173,7 +173,7 @@ export const getQueryParam = (
     }
 
     if (andIndex === -1) break
-    queryString = queryString.slice(andIndex + 1, queryString.length)
+    queryString = queryString.substring(andIndex + 1, queryString.length)
   }
 
   if (key) return null
@@ -184,7 +184,7 @@ export const getQueryParams = (
   queryString: string,
   key?: string
 ): string[] | null | Record<string, string[]> => {
-  queryString = filterQueryString(queryString)
+  queryString = removeFragment(queryString)
   const results: Record<string, string[]> = {}
 
   for (const strings of queryString.split('&')) {
