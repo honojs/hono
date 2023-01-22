@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Context } from './context'
 import type { Hono } from './hono'
+import type { UnionToIntersection } from './utils/types'
 
 export type Bindings = Record<string, unknown>
 export type Variables = Record<string, unknown>
@@ -42,20 +43,6 @@ export type ExtractType<T> = T extends TypeResponse<infer R>
   : T extends Promise<TypeResponse<infer R>>
   ? R
   : never
-
-type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer _Pattern}`
-  ? Name
-  : NameWithPattern
-
-type ParamKey<Component> = Component extends `:${infer NameWithPattern}?`
-  ? ParamKeyName<NameWithPattern>
-  : Component extends `:${infer NameWithPattern}`
-  ? ParamKeyName<NameWithPattern>
-  : never
-
-export type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
-  ? ParamKey<Component> | ParamKeys<Rest>
-  : ParamKey<Path>
 
 export type MiddlewareHandler<E extends Env = any, P extends string = any, I = {}> = (
   c: Context<E, P, I>,
@@ -143,9 +130,3 @@ type ExtractData<T> = T extends { type: keyof ValidationTypes }
     ? R
     : any
   : T
-
-type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (
-  k: infer I
-) => void
-  ? I
-  : never
