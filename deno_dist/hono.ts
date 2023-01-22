@@ -15,7 +15,6 @@ import type {
   ErrorHandler,
   NotFoundHandler,
   Env,
-  Route,
   MiddlewareHandler,
 } from './types.ts'
 import { HTTPException } from './utils/http-exception.ts'
@@ -45,10 +44,11 @@ function defineDynamicClass(): {
 
 export class Hono<
   E extends Env = Env,
-  R extends Route = Route,
+  P extends string = string,
+  M extends string = string,
   I = {},
   O = {}
-> extends defineDynamicClass()<E, R['method'], R['path']> {
+> extends defineDynamicClass()<E, M, P> {
   readonly router: Router<Handler> = new SmartRouter({
     routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
   })
@@ -108,11 +108,11 @@ export class Hono<
     return this
   }
 
-  use(...middleware: MiddlewareHandler<E>[]): Hono<E, { method: 'all'; path: string }, I, O>
+  use(...middleware: MiddlewareHandler<E>[]): Hono<E, string, 'all', I, O>
   use<Path extends string>(
     arg1: Path,
     ...middleware: MiddlewareHandler<E>[]
-  ): Hono<E, { method: 'all'; path: Path }, I, O>
+  ): Hono<E, Path, 'all', I, O>
   use(arg1: string | MiddlewareHandler<E>, ...handlers: MiddlewareHandler<E>[]) {
     if (typeof arg1 === 'string') {
       this.path = arg1
@@ -129,7 +129,7 @@ export class Hono<
     method: Method,
     path: Path,
     ...handlers: Handler<E, Path>[]
-  ): Hono<E, { method: Method; path: Path }, I, O>
+  ): Hono<E, Path, Method, I, O>
   on(method: string, path: string, ...handlers: Handler<E>[]) {
     if (!method) return this
     this.path = path
