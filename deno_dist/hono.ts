@@ -211,7 +211,7 @@ export class Hono<
       let res: ReturnType<Handler>
 
       try {
-        res = handler(c as unknown as Context<{}>, async () => {})
+        res = handler(c, async () => {})
         if (!res) {
           return this.notFoundHandler(c)
         }
@@ -219,13 +219,13 @@ export class Hono<
         return this.handleError(err, c)
       }
 
+      if (res instanceof Response) return res
+
       if ('response' in res) {
         res = res.response
       }
 
-      if (res instanceof Response) {
-        return res
-      }
+      if (res instanceof Response) return res
 
       return (async () => {
         let awaited: Response | TypeResponse | void
@@ -249,7 +249,7 @@ export class Hono<
 
     return (async () => {
       try {
-        const tmp = composed(c as unknown as Context<{}>)
+        const tmp = composed(c)
         const context = tmp instanceof Promise ? await tmp : tmp
         if (!context.finalized) {
           throw new Error(

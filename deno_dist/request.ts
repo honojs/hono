@@ -33,13 +33,13 @@ export class HonoRequest<Path extends string = '/', Input = {}> {
     if (this.paramData) {
       if (key) {
         const param = this.paramData[key]
-        return param ? (param.indexOf('%') !== -1 ? decodeURIComponent(param) : param) : undefined
+        return param ? (/\%/.test(param) ? decodeURIComponent(param) : param) : undefined
       } else {
         const decoded: Record<string, string> = {}
 
         for (const [key, value] of Object.entries(this.paramData)) {
           if (value && typeof value === 'string') {
-            decoded[key] = value.indexOf('%') !== -1 ? decodeURIComponent(value) : value
+            decoded[key] = /\%/.test(value) ? decodeURIComponent(value) : value
           }
         }
 
