@@ -1,8 +1,9 @@
-import type { InputToData } from './types'
+import type { InputToData, InputToTypeData, ValidationTypes } from './types'
 import { parseBody } from './utils/body'
 import type { BodyData } from './utils/body'
 import type { Cookie } from './utils/cookie'
 import { parse } from './utils/cookie'
+import { mergeObjects } from './utils/object'
 import type { UnionToIntersection } from './utils/types'
 import { getQueryStringFromURL, getQueryParam, getQueryParams } from './utils/url'
 
@@ -36,7 +37,7 @@ export class HonoRequest<Path extends string = '/', Input = {}> {
   private bodyData: BodyData | undefined
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private jsonData: Promise<any> | undefined
-  private data: InputToData<Input>
+  private validatedData: { [K in keyof ValidationTypes]?: {} }
   private queryIndex: number
 
   constructor(
@@ -46,8 +47,8 @@ export class HonoRequest<Path extends string = '/', Input = {}> {
   ) {
     this.raw = request
     this.paramData = paramData
-    this.data = {} as InputToData<Input>
     this.queryIndex = queryIndex
+    this.validatedData = {}
   }
 
   param(key: RemoveQuestion<ParamKeys<Path>>): UndefinedIfHavingQuestion<ParamKeys<Path>>
@@ -157,14 +158,25 @@ export class HonoRequest<Path extends string = '/', Input = {}> {
     return this.raw.formData()
   }
 
-  valid(data?: unknown): InputToData<Input> {
-    if (!this.data) {
-      this.data = {} as InputToData<Input>
+  addValidatedData(type: keyof ValidationTypes, data: {}) {
+    const storedData = this.validatedData[type] || {}
+    const merged = mergeObjects(storedData, data)
+    this.validatedData[type] = merged
+  }
+
+  valid(): InputToData<Input>
+  valid<T extends keyof ValidationTypes>(type: T): InputToTypeData<T, Input>
+  valid<T extends keyof ValidationTypes>(type?: T) {
+    if (type) {
+      const data = this.validatedData[type]
+      return data
+    } else {
+      let data: Record<string, unknown> = {}
+      for (const v of Object.values(this.validatedData)) {
+        data = mergeObjects(data, v)
+      }
+      return data
     }
-    if (data) {
-      this.data = data as InputToData<Input>
-    }
-    return this.data
   }
 
   get url() {

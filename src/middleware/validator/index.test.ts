@@ -305,6 +305,8 @@ describe('Validator middleware with Zod multiple validators', () => {
       (c) => {
         const id = c.get('id')
         type verify = Expect<Equal<number, typeof id>>
+        const formValidatedData = c.req.valid('form')
+        type verify2 = Expect<Equal<{ title: string }, typeof formValidatedData>>
         const res = c.req.valid()
         return c.jsonT({
           page: res.page,

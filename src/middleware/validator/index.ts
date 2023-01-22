@@ -1,6 +1,5 @@
 import type { Context } from '../../context'
 import type { Env, ValidationTypes, MiddlewareHandler } from '../../types'
-import { mergeObjects } from '../../utils/object'
 
 type ValidationTypeKeysWithBody = 'form' | 'json'
 type ValidationTypeByMethod<M> = M extends 'get' | 'head' // GET and HEAD request must not have a body content.
@@ -55,10 +54,8 @@ export const validator = <
       return res
     }
 
-    const target = c.req.valid()
-    const newObject = mergeObjects(target, res)
+    c.req.addValidatedData(type, res as {})
 
-    c.req.valid(newObject)
     await next()
   }
 }
