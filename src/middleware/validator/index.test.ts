@@ -23,6 +23,9 @@ describe('Validator middleware', () => {
   const route = app
     .get(
       '/search',
+      async (_c, next) => {
+        await next()
+      },
       validator('query', (value, c) => {
         if (!value) {
           return c.text('Invalid!', 400)

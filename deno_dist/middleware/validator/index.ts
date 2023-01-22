@@ -9,17 +9,16 @@ type ValidationTypeByMethod<M> = M extends 'get' | 'head' // GET and HEAD reques
 
 export const validator = <
   T,
-  Path extends string,
-  Method extends string,
-  U extends ValidationTypeByMethod<Method>,
+  P extends string,
+  M extends string,
+  U extends ValidationTypeByMethod<M>,
   V extends { type: U; data: T },
-  V2 = {},
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any
 >(
   type: U,
   validationFunc: (value: ValidationTypes[U], c: Context<E>) => T | Response | Promise<Response>
-): MiddlewareHandler<E, Path, V | V2> => {
+): MiddlewareHandler<E, P, V> => {
   return async (c, next) => {
     let value = {}
 
