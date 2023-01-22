@@ -121,6 +121,14 @@ describe('Context', () => {
     expect(c.res.status).toBe(201)
   })
 
+  it('Should append the previous headers to new Response', () => {
+    c.res.headers.set('x-Custom1', 'Message1')
+    const res2 = new Response('foo2')
+    res2.headers.set('x-Custom2', 'Message2')
+    c.res = res2
+    expect(c.res.headers.get('x-Custom1')).toBe('Message1')
+  })
+
   it('Should return 200 response', async () => {
     const res = c.text('Text')
     expect(res.status).toBe(200)
