@@ -269,8 +269,16 @@ type ToAppTypeInner<P extends string, M extends string, I, O> = RemoveBlank<I> e
 export type InputToData<T> = ExtractData<T> extends never
   ? any
   : UnionToIntersection<ExtractData<T>>
+
 type ExtractData<T> = T extends { type: keyof ValidationTypes }
   ? T extends { type: keyof ValidationTypes; data?: infer R }
     ? R
     : any
   : T
+
+export type InputToTypeData<K extends keyof ValidationTypes, T> = T extends {
+  type: K
+  data: infer R
+}
+  ? R
+  : never

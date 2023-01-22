@@ -2,7 +2,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Hono } from './hono'
 import { poweredBy } from './middleware/powered-by'
-import type { Env, CustomHandler as Handler, InputToData, ToAppType } from './types'
+import type {
+  Env,
+  CustomHandler as Handler,
+  InputToData,
+  InputToTypeData,
+  ToAppType,
+} from './types'
 import type { Expect, Equal } from './utils/types'
 
 describe('Test types of CustomHandler', () => {
@@ -132,6 +138,18 @@ describe('Types used in the validator', () => {
       page: number
     } & {
       title: string
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('InputToTypeData', () => {
+    type P =
+      | {}
+      | { type: 'query'; data: { page: number } }
+      | { type: 'form'; data: { title: string } }
+    type Actual = InputToTypeData<'query', P>
+    type Expected = {
+      page: number
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
