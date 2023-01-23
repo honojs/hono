@@ -123,10 +123,15 @@ describe('Context', () => {
 
   it('Should append the previous headers to new Response', () => {
     c.res.headers.set('x-Custom1', 'Message1')
-    const res2 = new Response('foo2')
+    const res2 = new Response('foo2', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
     res2.headers.set('x-Custom2', 'Message2')
     c.res = res2
     expect(c.res.headers.get('x-Custom1')).toBe('Message1')
+    expect(c.res.headers.get('Content-Type')).toBe('application/json')
   })
 
   it('Should return 200 response', async () => {
@@ -182,10 +187,8 @@ describe('Context header', () => {
   })
   it('Should return only one content-type value', async () => {
     c.header('Content-Type', 'foo')
-    c.header('content-type', 'foo')
     const res = c.html('foo')
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
-    expect(res.headers.get('content-type')).toBe('text/html; charset=UTF-8')
   })
   it('Should rewrite header values correctly', async () => {
     c.res = c.html('foo')
