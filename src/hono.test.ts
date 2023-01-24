@@ -436,6 +436,25 @@ describe('Middleware', () => {
       return c.text('hello')
     })
 
+    app.use('/json/*', async (c, next) => {
+      c.res.headers.append('foo', 'bar')
+      await next()
+    })
+
+    app.get('/json', (c) => {
+      // With a raw response
+      return new Response(
+        JSON.stringify({
+          message: 'hello',
+        }),
+        {
+          headers: {
+            'content-type': 'application/json',
+          },
+        }
+      )
+    })
+
     app.get('/hello/:message', (c) => {
       const message = c.req.param('message')
       return c.text(`${message}`)
@@ -464,6 +483,12 @@ describe('Middleware', () => {
       expect(await res.text()).toBe('message')
       expect(res.headers.get('x-custom')).toBe('root')
       expect(res.headers.get('x-message-2')).toBe('custom-header-2')
+    })
+
+    it('should return correct the content-type header', async () => {
+      const res = await app.request('http://localhost/json')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('content-type')).toMatch(/^application\/json/)
     })
 
     it('not found', async () => {

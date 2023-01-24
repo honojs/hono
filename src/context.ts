@@ -102,6 +102,7 @@ export class Context<
 
   set res(_res: Response) {
     if (this._res) {
+      this._res.headers.delete('content-type')
       this._res.headers.forEach((v, k) => {
         _res.headers.set(k, v)
       })
