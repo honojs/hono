@@ -1,5 +1,5 @@
 import { Context } from './context.ts'
-import type { Environment, NotFoundHandler, ErrorHandler } from './types.ts'
+import type { Env, NotFoundHandler, ErrorHandler } from './types.ts'
 
 interface ComposeContext {
   finalized: boolean
@@ -7,7 +7,7 @@ interface ComposeContext {
 }
 
 // Based on the code in the MIT licensed `koa-compose` package.
-export const compose = <C extends ComposeContext, E extends Partial<Environment> = Environment>(
+export const compose = <C extends ComposeContext, E extends Env = Env>(
   middleware: Function[],
   onNotFound?: NotFoundHandler<E>,
   onError?: ErrorHandler<E>
@@ -50,6 +50,9 @@ export const compose = <C extends ComposeContext, E extends Partial<Environment>
       }
 
       if (!(res instanceof Promise)) {
+        if (res !== undefined && 'response' in res) {
+          res = res['response']
+        }
         if (res && (context.finalized === false || isError)) {
           context.res = res
         }
@@ -57,6 +60,9 @@ export const compose = <C extends ComposeContext, E extends Partial<Environment>
       } else {
         return res
           .then((res) => {
+            if (res !== undefined && 'response' in res) {
+              res = res['response']
+            }
             if (res && context.finalized === false) {
               context.res = res
             }

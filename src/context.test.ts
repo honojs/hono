@@ -150,7 +150,9 @@ describe('Context', () => {
     const req = new Request('http://localhost/')
     const key = 'a-secret-key'
     const ctx = new Context(req, {
-      API_KEY: key,
+      env: {
+        API_KEY: key,
+      },
     })
     expect(ctx.env.API_KEY).toBe(key)
   })

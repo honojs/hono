@@ -7,6 +7,7 @@ import { RegExpRouter } from './router/reg-exp-router'
 import { StaticRouter } from './router/static-router'
 import { TrieRouter } from './router/trie-router'
 import type { Handler, Next } from './types'
+import { HTTPException } from './utils/http-exception'
 import type { Expect, Equal } from './utils/types'
 
 describe('GET Request', () => {
@@ -696,6 +697,40 @@ describe('Error handle', () => {
     expect(await res.text()).toBe('Custom Error Message')
     expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
   })
+
+  describe('Handle HTTPException', () => {
+    const app = new Hono()
+
+    app.get('/exception', () => {
+      throw new HTTPException(401)
+    })
+
+    it('Should return 401 response', async () => {
+      const res = await app.request('http://localhost/exception')
+      expect(res.status).toBe(401)
+      expect(res.statusText).toBe('Unauthorized')
+      expect(await res.text()).toBe('Unauthorized')
+    })
+
+    const app2 = new Hono()
+
+    app2.get('/exception', () => {
+      throw new HTTPException(401)
+    })
+
+    app2.onError((err, c) => {
+      if (err instanceof HTTPException && err.status === 401) {
+        return c.text('Custom Error Message', 401)
+      }
+      return c.text('Internal Server Error', 500)
+    })
+
+    it('Should return 401 response with a custom message', async () => {
+      const res = await app2.request('http://localhost/exception')
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Custom Error Message')
+    })
+  })
 })
 
 describe('Error handling in middleware', () => {
@@ -1249,8 +1284,6 @@ describe('Parse Body', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    const body = await req.parseBody()
-    expect(body).toEqual({})
   })
 
   it('POST with `multipart/form-data`', async () => {
@@ -1264,7 +1297,6 @@ describe('Parse Body', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await req.parseBody()).toEqual({ message: 'hello' })
     expect(await res.json()).toEqual({ message: 'hello' })
   })
 
@@ -1282,7 +1314,6 @@ describe('Parse Body', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await req.parseBody()).toEqual({ message: 'hello' })
     expect(await res.json()).toEqual({ message: 'hello' })
   })
 })
@@ -1357,8 +1388,8 @@ describe('Context set/get variables', () => {
     app.get('/', (c) => {
       const id = c.get('id')
       const title = c.get('title')
-      type verifyID = Expect<Equal<typeof id, number>>
-      type verifyTitle = Expect<Equal<typeof title, string>>
+      type verifyID = Expect<Equal<number, typeof id>>
+      type verifyTitle = Expect<Equal<string, typeof title>>
       return c.text(`${id} is ${title}`)
     })
     const res = await app.request('http://localhost/')
@@ -1377,8 +1408,8 @@ describe('Context binding variables', () => {
 
   it('Should get binding variables with correct types', async () => {
     app.get('/', (c) => {
-      type verifyID = Expect<Equal<typeof c.env.USER_ID, number>>
-      type verifyName = Expect<Equal<typeof c.env.USER_NAME, string>>
+      type verifyID = Expect<Equal<number, typeof c.env.USER_ID>>
+      type verifyName = Expect<Equal<string, typeof c.env.USER_NAME>>
       return c.text('These are verified')
     })
     const res = await app.request('http://localhost/')
@@ -1410,6 +1441,67 @@ describe('Show routes', () => {
     app.get('/foo', (c) => c.text('/'))
     app.showRoutes()
     expect(console.log).toBeCalled()
+  })
+})
+
+describe('jsonT', () => {
+  const api = new Hono()
+
+  api.get('/message', (c) => {
+    return c.jsonT({
+      message: 'Hello',
+    })
+  })
+
+  api.get('/message-async', async (c) => {
+    return c.jsonT({
+      message: 'Hello',
+    })
+  })
+
+  describe('Single handler', () => {
+    const app = new Hono()
+    app.route('/api', api)
+
+    it('Should return 200 response', async () => {
+      const res = await app.request('http://localhost/api/message')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        message: 'Hello',
+      })
+    })
+
+    it('Should return 200 response - with async', async () => {
+      const res = await app.request('http://localhost/api/message-async')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        message: 'Hello',
+      })
+    })
+  })
+
+  describe('With middleware', () => {
+    const app = new Hono()
+    app.use('*', async (_c, next) => {
+      await next()
+    })
+    app.route('/api', api)
+
+    it('Should return 200 response', async () => {
+      const res = await app.request('http://localhost/api/message')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        message: 'Hello',
+      })
+    })
+
+    it('Should return 200 response - with async', async () => {
+      const res = await app.request('http://localhost/api/message-async')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        message: 'Hello',
+      })
+    })
   })
 })
 

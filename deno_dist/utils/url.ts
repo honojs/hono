@@ -1,10 +1,43 @@
 export type Pattern = readonly [string, string, RegExp | true] | '*'
 
 export const splitPath = (path: string): string[] => {
-  const paths = path.split(/\//) // faster than path.split('/')
+  const paths = path.split('/')
   if (paths[0] === '') {
     paths.shift()
   }
+  return paths
+}
+
+export const splitRoutingPath = (path: string): string[] => {
+  const groups: [string, string][] = [] // [mark, original string]
+  for (let i = 0; ; ) {
+    let replaced = false
+    path = path.replace(/\{[^}]+\}/g, (m) => {
+      const mark = `@\\${i}`
+      groups[i] = [mark, m]
+      i++
+      replaced = true
+      return mark
+    })
+    if (!replaced) {
+      break
+    }
+  }
+
+  const paths = path.split('/')
+  if (paths[0] === '') {
+    paths.shift()
+  }
+  for (let i = groups.length - 1; i >= 0; i--) {
+    const [mark] = groups[i]
+    for (let j = paths.length - 1; j >= 0; j--) {
+      if (paths[j].indexOf(mark) !== -1) {
+        paths[j] = paths[j].replace(mark, groups[i][1])
+        break
+      }
+    }
+  }
+
   return paths
 }
 
@@ -35,22 +68,21 @@ export const getPattern = (label: string): Pattern | null => {
   return null
 }
 
-export const getPathFromURL = (url: string, strict: boolean = true): string => {
-  const queryIndex = url.indexOf('?')
+export const getPathFromURL = (url: string, strict: boolean = true): [string, number] => {
+  const queryIndex = url.indexOf('?', 8)
   const result = url.substring(url.indexOf('/', 8), queryIndex === -1 ? url.length : queryIndex)
 
   // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
   // default is true
   if (strict === false && result.endsWith('/')) {
-    return result.slice(0, -1)
+    return [result.slice(0, -1), queryIndex]
   }
 
-  return result
+  return [result, queryIndex]
 }
 
-export const getQueryStringFromURL = (url: string): string => {
-  const queryIndex = url.indexOf('?')
-  const result = queryIndex !== -1 ? url.substring(queryIndex) : ''
+export const getQueryStringFromURL = (url: string, queryIndex: number): string => {
+  const result = queryIndex !== -1 ? url.slice(queryIndex + 1) : ''
   return result
 }
 
@@ -98,4 +130,71 @@ export const checkOptionalParameter = (path: string): string[] | null => {
   const base = match[1]
   const optional = base + match[2]
   return [base, optional]
+}
+
+const removeFragment = (queryString: string): string => {
+  const fragIndex = queryString.indexOf('#')
+  if (fragIndex !== -1) {
+    queryString = queryString.slice(0, fragIndex)
+  }
+  return queryString
+}
+
+// Optimized
+export const getQueryParam = (
+  queryString: string,
+  key?: string
+): string | null | Record<string, string> => {
+  queryString = removeFragment(queryString)
+
+  const results: Record<string, string> = {}
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const andIndex = queryString.indexOf('&')
+    let strings = ''
+    if (andIndex === -1) {
+      strings = queryString
+    } else {
+      strings = queryString.substring(0, andIndex)
+    }
+
+    const eqIndex = strings.indexOf('=')
+    if (eqIndex !== -1) {
+      const v = strings.substring(eqIndex + 1)
+      const k = strings.substring(0, eqIndex)
+      if (key === k) {
+        return /\%/.test(v) ? decodeURI(v) : v
+      } else {
+        results[k] ||= v
+      }
+    } else if (strings === key) {
+      return ''
+    }
+
+    if (andIndex === -1) break
+    queryString = queryString.substring(andIndex + 1, queryString.length)
+  }
+
+  if (key) return null
+  return results
+}
+
+export const getQueryParams = (
+  queryString: string,
+  key?: string
+): string[] | null | Record<string, string[]> => {
+  queryString = removeFragment(queryString)
+  const results: Record<string, string[]> = {}
+
+  for (const strings of queryString.split('&')) {
+    let [k, v] = strings.split('=')
+    if (v === undefined) v = ''
+    results[k] ||= []
+    results[k].push(v.indexOf('%') !== -1 ? decodeURI(v) : v)
+  }
+
+  if (key) return results[key] ? results[key] : null
+
+  return results
 }

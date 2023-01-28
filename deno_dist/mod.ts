@@ -18,14 +18,15 @@ declare global {
 
 export type {
   Next,
-  ContextVariableMap,
   MiddlewareHandler,
   ErrorHandler,
   NotFoundHandler,
+  ValidationTypes,
+  Env,
 } from './types.ts'
 import type { CustomHandler } from './types.ts'
 export type { CustomHandler as Handler }
-export type { Context } from './context.ts'
+export type { Context, ContextVariableMap } from './context.ts'
 export { Hono }
 
 // Router
@@ -33,6 +34,3 @@ export { RegExpRouter } from './router/reg-exp-router/index.ts'
 export { TrieRouter } from './router/trie-router/index.ts'
 export { StaticRouter } from './router/static-router/index.ts'
 export { SmartRouter } from './router/smart-router/index.ts'
-
-// Validator
-export type { Validator } from './validator/validator.ts'

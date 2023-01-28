@@ -359,6 +359,51 @@ describe('Multi match', () => {
       expect(res?.handlers).toEqual(['Middleware A', 'Middleware B'])
     })
   })
+
+  describe('Including slashes', () => {
+    const node = new Node()
+    node.insert('get', '/js/:filename{[a-z0-9/]+.js}', 'any file')
+    node.insert('get', '/js/main.js', 'main.js')
+
+    it('get /js/main.js', () => {
+      const res = node.search('get', '/js/main.js')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['any file', 'main.js'])
+      expect(res?.params).toEqual({ filename: 'main.js' })
+    })
+
+    it('get /js/chunk/123.js', () => {
+      const res = node.search('get', '/js/chunk/123.js')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['any file'])
+      expect(res?.params).toEqual({ filename: 'chunk/123.js' })
+    })
+
+    it('get /js/chunk/nest/123.js', () => {
+      const res = node.search('get', '/js/chunk/nest/123.js')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['any file'])
+      expect(res?.params).toEqual({ filename: 'chunk/nest/123.js' })
+    })
+  })
+
+  describe('REST API', () => {
+    const node = new Node()
+    node.insert('get', '/users/:username{[a-z]+}', 'profile')
+    node.insert('get', '/users/:username{[a-z]+}/posts', 'posts')
+
+    it('get /users/hono', () => {
+      const res = node.search('get', '/users/hono')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['profile'])
+    })
+
+    it('get /users/hono/posts', () => {
+      const res = node.search('get', '/users/hono/posts')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['posts'])
+    })
+  })
 })
 
 describe('Duplicate param name', () => {

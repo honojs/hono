@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "2.7.5",
+  "version": "3.0.0-rc.8",
   "description": "Ultrafast web framework for Cloudflare Workers, Deno, and Bun.",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -11,10 +11,12 @@
   ],
   "scripts": {
     "test": "jest",
-    "test:deno": "deno test --allow-read deno_test",
-    "test:bun": "bun wiptest --jsx-import-source ../src/middleware/jsx/jsx-dev-runtime bun_test/index.test.tsx",
-    "test:lagon": "npx start-server-and-test \"lagon dev lagon_test/index.ts\" http://127.0.0.1:1234 \"yarn jest lagon_test/index.test.ts --testMatch '**/*.test.ts'\"",
-    "test:all": "yarn test && yarn test:deno && yarn test:bun && yarn test:lagon",
+    "test:deno": "deno test --allow-read test_deno",
+    "test:bun": "bun wiptest --jsx-import-source ../src/middleware/jsx/jsx-dev-runtime test_bun/index.test.tsx",
+    "test:fastly": "jest --config ./jest.fastly.config.js",
+    "test:lagon": "start-server-and-test \"lagon dev test_lagon/index.ts\" http://127.0.0.1:1234 \"yarn jest test_lagon/index.test.ts --testMatch '**/*.test.ts'\"",
+    "test:node": "jest --config ./jest.node.config.js",
+    "test:all": "yarn test && yarn test:deno && yarn test:bun && yarn test:fastly && yarn test:lagon && yarn test:node",
     "lint": "eslint --ext js,ts src .eslintrc.cjs",
     "lint:fix": "eslint --ext js,ts src .eslintrc.cjs --fix",
     "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.ts'",
@@ -101,20 +103,6 @@
       "import": "./dist/middleware/pretty-json/index.js",
       "require": "./dist/cjs/middleware/pretty-json/index.js"
     },
-    "./serve-static": {
-      "types": "./dist/types/middleware/serve-static/index.d.ts",
-      "import": "./dist/middleware/serve-static/index.js",
-      "require": "./dist/cjs/middleware/serve-static/index.js"
-    },
-    "./serve-static.bun": {
-      "types": "./dist/types/middleware/serve-static/bun.d.ts",
-      "import": "./dist/middleware/serve-static/bun.js",
-      "require": "./dist/cjs/middleware/serve-static/bun.js"
-    },
-    "./serve-static.module": {
-      "types": "./dist/types/middleware/serve-static/module.d.ts",
-      "import": "./dist/middleware/serve-static/module.js"
-    },
     "./validator": {
       "types": "./dist/types/middleware/validator/index.d.ts",
       "import": "./dist/middleware/validator/index.js",
@@ -149,6 +137,26 @@
       "types": "./dist/types/utils/*.d.ts",
       "import": "./dist/utils/*.js",
       "require": "./dist/cjs/utils/*.js"
+    },
+    "./cloudflare-workers": {
+      "types": "./dist/types/adapter/cloudflare-workers/index.d.ts",
+      "import": "./dist/adapter/cloudflare-workers/index.js",
+      "require": "./dist/cjs/adapter/cloudflare-workers/index.js"
+    },
+    "./cloudflare-pages": {
+      "types": "./dist/types/adapter/cloudflare-pages/index.d.ts",
+      "import": "./dist/adapter/cloudflare-pages/index.js",
+      "require": "./dist/cjs/adapter/cloudflare-pages/index.js"
+    },
+    "./bun": {
+      "types": "./dist/types/adapter/bun/index.d.ts",
+      "import": "./dist/adapter/bun/index.js",
+      "require": "./dist/cjs/adapter/bun/index.js"
+    },
+    "./nextjs": {
+      "types": "./dist/types/adapter/nextjs/index.d.ts",
+      "import": "./dist/adapter/nextjs/index.js",
+      "require": "./dist/cjs/adapter/nextjs/index.js"
     }
   },
   "typesVersions": {
@@ -224,6 +232,18 @@
       ],
       "utils/*": [
         "./dist/types/utils/*"
+      ],
+      "cloudflare-workers": [
+        "./dist/types/adapter/cloudflare-workers"
+      ],
+      "cloudflare-pages": [
+        "./dist/types/adapter/cloudflare-pages"
+      ],
+      "bun": [
+        "./dist/types/adapter/bun"
+      ],
+      "nextjs": [
+        "./dist/types/adapter/nextjs"
       ]
     }
   },
@@ -254,10 +274,12 @@
   ],
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20221111.1",
+    "@hono/node-server": "^0.2.3",
     "@types/crypto-js": "^4.1.1",
     "@types/glob": "^8.0.0",
     "@types/jest": "^29.0.2",
     "@types/node": "^17.0.29",
+    "@types/supertest": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^5.21.0",
     "@typescript-eslint/parser": "^5.21.0",
     "arg": "^5.0.2",
@@ -275,13 +297,17 @@
     "form-data": "^4.0.0",
     "jest": "^29.0.3",
     "jest-environment-miniflare": "2.7.1",
+    "jest-preset-fastly-js-compute": "^0.6.1",
     "np": "^7.6.2",
     "prettier": "^2.6.2",
     "publint": "^0.1.8",
     "rimraf": "^3.0.2",
+    "start-server-and-test": "^1.15.2",
+    "supertest": "^6.3.3",
     "ts-jest": "^29.0.1",
     "tsx": "^3.11.0",
-    "typescript": "^4.8.3"
+    "typescript": "^4.8.3",
+    "zod": "^3.20.2"
   },
   "engines": {
     "node": ">=16.0.0"
