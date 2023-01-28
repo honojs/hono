@@ -222,6 +222,26 @@ describe('UnsupportedPathError', () => {
     }).toThrowError(UnsupportedPathError)
   })
 
+  it('static and dynamic', () => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', '/reg-exp/router', 'foo')
+    router.add('GET', '/reg-exp/:id', 'bar')
+
+    expect(() => {
+      router.match('GET', '/')
+    }).toThrowError(UnsupportedPathError)
+  })
+
+  it('dynamic and static', () => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', '/reg-exp/:id', 'bar')
+    router.add('GET', '/reg-exp/router', 'foo')
+
+    expect(() => {
+      router.match('GET', '/')
+    }).toThrowError(UnsupportedPathError)
+  })
+
   it('different regular expression', () => {
     const router = new RegExpRouter<string>()
     router.add('GET', '/:id/:action{create|update}', 'foo')

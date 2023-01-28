@@ -37,21 +37,28 @@ function buildMatcherFromPreprocessedRoutes<T>(routes: [string, T[]][]): Matcher
   routes = routes.sort(([a], [b]) => a.length - b.length)
 
   const staticMap: StaticMap<T> = {}
-  for (let i = 0, j = 0, len = routes.length; i < len; i++) {
-    if (!/\*|\/:/.test(routes[i][0])) {
+  for (let i = 0, j = -1, len = routes.length; i < len; i++) {
+    const path = routes[i][0]
+    let pathErrorCheckOnly = false
+    if (!/\*|\/:/.test(path)) {
+      pathErrorCheckOnly = true
       staticMap[routes[i][0]] = routes[i][1]
-      continue
+    } else {
+      j++
     }
 
     let paramMap
     try {
-      paramMap = trie.insert(routes[i][0], j)
+      paramMap = trie.insert(path, j, pathErrorCheckOnly)
     } catch (e) {
-      throw e === PATH_ERROR ? new UnsupportedPathError(routes[i][0]) : e
+      throw e === PATH_ERROR ? new UnsupportedPathError(path) : e
+    }
+
+    if (pathErrorCheckOnly) {
+      continue
     }
 
     handlers[j] = [routes[i][1], paramMap.length !== 0 ? paramMap : null]
-    j++
   }
 
   const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp()

@@ -8,7 +8,7 @@ export class Trie {
   context: Context = { varIndex: 0 }
   root: Node = new Node()
 
-  insert(path: string, index: number): ParamMap {
+  insert(path: string, index: number, pathErrorCheckOnly: boolean): ParamMap {
     const paramMap: ParamMap = []
 
     /**
@@ -19,7 +19,7 @@ export class Trie {
     const tokens = path.match(/(?::[^\/]+)|(?:\/\*$)|./g)
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    this.root.insert(tokens, index, paramMap, this.context)
+    this.root.insert(tokens, index, paramMap, this.context, pathErrorCheckOnly)
 
     return paramMap
   }
