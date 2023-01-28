@@ -182,7 +182,7 @@ describe('UnsupportedPathError', () => {
     router.add('GET', '/entry/:name', 'get entry')
     router.add('POST', '/entry', 'create entry')
 
-    it('GET /entry/entry', async () => {
+    it('GET /entry/entries', async () => {
       expect(() => {
         router.match('GET', '/entry/entries')
       }).toThrowError(UnsupportedPathError)
