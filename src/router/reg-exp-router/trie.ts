@@ -26,6 +26,9 @@ export class Trie {
 
   buildRegExp(): [RegExp, ReplacementMap, ReplacementMap] {
     let regexp = this.root.buildRegExpStr()
+    if (regexp === '') {
+      return [/^$/, [], []] // never match
+    }
 
     let captureIndex = 0
     const indexReplacementMap: ReplacementMap = []
