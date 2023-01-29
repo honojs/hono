@@ -175,9 +175,9 @@ describe('Context', () => {
     expect(res.headers.get('foo')).toBe('bar')
   })
 
-  it('returns current runtime (cloudflare)', async () => {
+  it('returns current runtime (workerd)', async () => {
     c = new Context(req)
-    expect(c.runtime).toBe('cloudflare')
+    expect(c.runtime).toBe('workerd')
   })
 })
 
