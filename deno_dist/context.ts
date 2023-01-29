@@ -5,7 +5,7 @@ import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
 import type { StatusCode } from './utils/http-status.ts'
 
-type Runtime = 'node' | 'deno' | 'bun' | 'cloudflare' | 'fastly' | 'vercel' | 'lagon' | 'other'
+type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'lagon' | 'other'
 type HeaderRecord = Record<string, string | string[]>
 type Data = string | ArrayBuffer | ReadableStream
 
@@ -284,11 +284,11 @@ export class Context<
     }
 
     if (typeof global?.WebSocketPair === 'function') {
-      return 'cloudflare'
+      return 'workerd'
     }
 
     if (typeof global?.EdgeRuntime === 'string') {
-      return 'vercel'
+      return 'edge-light'
     }
 
     let onFastly = false
