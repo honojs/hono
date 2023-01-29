@@ -8,11 +8,11 @@ export class Trie {
   context: Context = { varIndex: 0 }
   root: Node = new Node()
 
-  insert(path: string, index: number): ParamMap {
+  insert(path: string, index: number, pathErrorCheckOnly: boolean): ParamMap {
     const paramMap: ParamMap = []
 
     const groups: [string, string][] = [] // [mark, original string]
-    for (let i = 0;;) {
+    for (let i = 0; ; ) {
       let replaced = false
       path = path.replace(/\{[^}]+\}/g, (m) => {
         const mark = `@\\${i}`
@@ -42,13 +42,16 @@ export class Trie {
       }
     }
 
-    this.root.insert(tokens, index, paramMap, this.context)
+    this.root.insert(tokens, index, paramMap, this.context, pathErrorCheckOnly)
 
     return paramMap
   }
 
   buildRegExp(): [RegExp, ReplacementMap, ReplacementMap] {
     let regexp = this.root.buildRegExpStr()
+    if (regexp === '') {
+      return [/^$/, [], []] // never match
+    }
 
     let captureIndex = 0
     const indexReplacementMap: ReplacementMap = []

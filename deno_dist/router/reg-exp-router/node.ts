@@ -45,10 +45,19 @@ export class Node {
   varIndex?: number
   children: Record<string, Node> = {}
 
-  insert(tokens: readonly string[], index: number, paramMap: ParamMap, context: Context): void {
+  insert(
+    tokens: readonly string[],
+    index: number,
+    paramMap: ParamMap,
+    context: Context,
+    pathErrorCheckOnly: boolean
+  ): void {
     if (tokens.length === 0) {
       if (this.index !== undefined) {
         throw PATH_ERROR
+      }
+      if (pathErrorCheckOnly) {
+        return
       }
 
       this.index = index
@@ -79,12 +88,15 @@ export class Node {
         ) {
           throw PATH_ERROR
         }
+        if (pathErrorCheckOnly) {
+          return
+        }
         node = this.children[regexpStr] = new Node()
         if (name !== '') {
           node.varIndex = context.varIndex++
         }
       }
-      if (name !== '') {
+      if (!pathErrorCheckOnly && name !== '') {
         if (paramMap.some((p) => p[0] === name)) {
           throw new Error('Duplicate param name')
         }
@@ -101,11 +113,14 @@ export class Node {
         ) {
           throw PATH_ERROR
         }
+        if (pathErrorCheckOnly) {
+          return
+        }
         node = this.children[token] = new Node()
       }
     }
 
-    node.insert(restTokens, index, paramMap, context)
+    node.insert(restTokens, index, paramMap, context, pathErrorCheckOnly)
   }
 
   buildRegExpStr(): string {

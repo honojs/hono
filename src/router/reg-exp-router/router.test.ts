@@ -182,7 +182,7 @@ describe('UnsupportedPathError', () => {
     router.add('GET', '/entry/:name', 'get entry')
     router.add('POST', '/entry', 'create entry')
 
-    it('GET /entry/entry', async () => {
+    it('GET /entry/entries', async () => {
       expect(() => {
         router.match('GET', '/entry/entries')
       }).toThrowError(UnsupportedPathError)
@@ -216,6 +216,26 @@ describe('UnsupportedPathError', () => {
     const router = new RegExpRouter<string>()
     router.add('GET', '/posts/:id', 'foo')
     router.add('GET', '/:id/:action', 'bar')
+
+    expect(() => {
+      router.match('GET', '/')
+    }).toThrowError(UnsupportedPathError)
+  })
+
+  it('static and dynamic', () => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', '/reg-exp/router', 'foo')
+    router.add('GET', '/reg-exp/:id', 'bar')
+
+    expect(() => {
+      router.match('GET', '/')
+    }).toThrowError(UnsupportedPathError)
+  })
+
+  it('dynamic and static', () => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', '/reg-exp/:id', 'bar')
+    router.add('GET', '/reg-exp/router', 'foo')
 
     expect(() => {
       router.match('GET', '/')
