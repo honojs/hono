@@ -141,6 +141,19 @@ export interface HandlerInterface<E extends Env = Env, M extends string = any, S
   >
 }
 
+///////////////////////////////////////////////////
+//////////                               //////////
+//////////  MiddlewareHandlerInterface   //////////
+//////////                               //////////
+///////////////////////////////////////////////////
+
+export interface MiddlewareHandlerInterface<E extends Env = Env, S = {}> {
+  //// app.get(...handlers[])
+  (...handlers: MiddlewareHandler<E, ExtractKey<S>>[]): Hono<E, S>
+  //// app.get(path, ...handlers[])
+  <P extends string>(path: P, ...handlers: MiddlewareHandler<E, P>[]): Hono<E, S>
+}
+
 //////////////////////////////////////////
 //////////                      //////////
 //////////  OnHandlerInterface  //////////
@@ -203,7 +216,7 @@ export interface OnHandlerInterface<E extends Env = Env, S = {}> {
   ): Hono<E, S & Schema<M, P, I, O>>
 }
 
-export type ExtractKey<S> = S extends Record<infer Key, unknown>
+type ExtractKey<S> = S extends Record<infer Key, unknown>
   ? Key extends string
     ? Key
     : never

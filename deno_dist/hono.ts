@@ -10,14 +10,12 @@ import { TrieRouter } from './router/trie-router/index.ts'
 import type {
   Env,
   ErrorHandler,
-  ExtractKey,
   Handler,
   HandlerInterface,
-  Input,
   MiddlewareHandler,
+  MiddlewareHandlerInterface,
   NotFoundHandler,
   OnHandlerInterface,
-  Schema,
   TypeResponse,
 } from './types.ts'
 import { HTTPException } from './utils/http-exception.ts'
@@ -36,6 +34,8 @@ function defineDynamicClass(): {
     [M in Methods]: HandlerInterface<E, M, S>
   } & {
     on: OnHandlerInterface<E, S>
+  } & {
+    use: MiddlewareHandlerInterface<E, S>
   }
 } {
   return class {} as never
@@ -82,6 +82,19 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
       return this
     }
 
+    // Implementation of app.use(...handlers[]) or app.get(path, ...handlers[])
+    this.use = (arg1: string | MiddlewareHandler, ...handlers: MiddlewareHandler[]) => {
+      if (typeof arg1 === 'string') {
+        this.path = arg1
+      } else {
+        handlers.unshift(arg1)
+      }
+      handlers.map((handler) => {
+        this.addRoute(METHOD_NAME_ALL, this.path, handler)
+      })
+      return this
+    }
+
     Object.assign(this, init)
   }
 
@@ -108,25 +121,6 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
       this._tempPath = ''
     }
     return this
-  }
-
-  use<I extends Input, O = {}>(
-    ...middleware: MiddlewareHandler<E>[]
-  ): Hono<E, S & Schema<'all', ExtractKey<S>, I, O>>
-  use<P extends string, I extends Input, O = {}>(
-    arg1: P,
-    ...middleware: MiddlewareHandler<E, P, I>[]
-  ): Hono<E, S & Schema<'all', P, I, O>>
-  use(arg1: string | MiddlewareHandler, ...handlers: MiddlewareHandler[]) {
-    if (typeof arg1 === 'string') {
-      this.path = arg1
-    } else {
-      handlers.unshift(arg1)
-    }
-    handlers.map((handler) => {
-      this.addRoute(METHOD_NAME_ALL, this.path, handler)
-    })
-    return this as unknown
   }
 
   onError(handler: ErrorHandler<E>) {
