@@ -1,6 +1,6 @@
 import { HonoRequest } from './request.ts'
 import type { TypeResponse } from './types.ts'
-import type { Env, NotFoundHandler } from './types.ts'
+import type { Env, NotFoundHandler, Input } from './types.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
 import type { StatusCode } from './utils/http-status.ts'
@@ -33,8 +33,8 @@ export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Path extends string = any,
-  Schema = {}
+  P extends string = any,
+  I extends Input = {}
 > {
   env: E['Bindings'] = {}
   finalized: boolean = false
@@ -68,7 +68,7 @@ export class Context<
     }
   }
 
-  get req(): HonoRequest<Path, Schema> {
+  get req(): HonoRequest<P, I> {
     if (this._req) {
       return this._req
     } else {
