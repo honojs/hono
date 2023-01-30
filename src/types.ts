@@ -5,11 +5,11 @@ import type { Context } from './context'
 import type { Hono } from './hono'
 import type { UnionToIntersection } from './utils/types'
 
-//////////////////////////////////////////
-//////////                      //////////
-//////////   Values             //////////
-//////////                      //////////
-//////////////////////////////////////////
+////////////////////////////////////////
+//////                            //////
+//////           Values           //////
+//////                            //////
+////////////////////////////////////////
 
 export type Bindings = Record<string, unknown>
 export type Variables = Record<string, unknown>
@@ -23,11 +23,11 @@ export type Next = () => Promise<void>
 
 export type Input = ValidationTypes | unknown
 
-//////////////////////////////////////////
-//////////                      //////////
-//////////   Handlers           //////////
-//////////                      //////////
-//////////////////////////////////////////
+////////////////////////////////////////
+//////                            //////
+//////          Handlers          //////
+//////                            //////
+////////////////////////////////////////
 
 export type Handler<
   E extends Env = any,
@@ -47,11 +47,11 @@ export type MiddlewareHandler<E extends Env = any, P extends string = any, I ext
 export type NotFoundHandler<E extends Env = any> = (c: Context<E>) => Response | Promise<Response>
 export type ErrorHandler<E extends Env = any> = (err: Error, c: Context<E>) => Response
 
-//////////////////////////////////////////
-//////////                      //////////
-//////////   HandlerInterface   //////////
-//////////                      //////////
-//////////////////////////////////////////
+////////////////////////////////////////
+//////                            //////
+//////     HandlerInterface       //////
+//////                            //////
+////////////////////////////////////////
 
 export interface HandlerInterface<E extends Env = Env, M extends string = any, S = {}> {
   //// app.get(...handlers[])
@@ -141,11 +141,11 @@ export interface HandlerInterface<E extends Env = Env, M extends string = any, S
   >
 }
 
-///////////////////////////////////////////////////
-//////////                               //////////
-//////////  MiddlewareHandlerInterface   //////////
-//////////                               //////////
-///////////////////////////////////////////////////
+////////////////////////////////////////
+//////                            //////
+////// MiddlewareHandlerInterface //////
+//////                            //////
+////////////////////////////////////////
 
 export interface MiddlewareHandlerInterface<E extends Env = Env, S = {}> {
   //// app.get(...handlers[])
@@ -154,11 +154,11 @@ export interface MiddlewareHandlerInterface<E extends Env = Env, S = {}> {
   <P extends string>(path: P, ...handlers: MiddlewareHandler<E, P>[]): Hono<E, S>
 }
 
-//////////////////////////////////////////
-//////////                      //////////
-//////////  OnHandlerInterface  //////////
-//////////                      //////////
-//////////////////////////////////////////
+////////////////////////////////////////
+//////                            //////
+//////     OnHandlerInterface     //////
+//////                            //////
+////////////////////////////////////////
 
 export interface OnHandlerInterface<E extends Env = Env, S = {}> {
   // app.on(method, path, handler, handler)
@@ -222,11 +222,11 @@ type ExtractKey<S> = S extends Record<infer Key, unknown>
     : never
   : string
 
-//////////////////////////////////////////
-//////////                      //////////
-//////////   Schema             //////////
-//////////                      //////////
-//////////////////////////////////////////
+////////////////////////////////////////
+//////                            //////
+//////           Schema           //////
+//////                            //////
+////////////////////////////////////////
 
 export type Schema<M extends string, P extends string, I extends Input, O> = {
   [K in P]: AddDollar<{ [K2 in M]: { input: AddParam<I, P>; output: O } }>
@@ -242,11 +242,11 @@ export type AddDollar<T> = T extends Record<infer K, infer R>
     : never
   : never
 
-//////////////////////////////////////////
-//////////                      //////////
-//////////   TypeResponse       //////////
-//////////                      //////////
-//////////////////////////////////////////
+////////////////////////////////////////
+//////                            //////
+//////        TypeResponse        //////
+//////                            //////
+////////////////////////////////////////
 
 export type TypeResponse<T = unknown> = {
   response: Response | Promise<Response>
@@ -254,11 +254,11 @@ export type TypeResponse<T = unknown> = {
   format: 'json' // Currently, support only `json` with `c.jsonT()`
 }
 
-//////////////////////////////////////////
-//////////                      //////////
-//////////   CustomHandler      //////////
-//////////                      //////////
-//////////////////////////////////////////
+////////////////////////////////////////
+//////                            //////
+//////       CustomHandler        //////
+//////                            //////
+////////////////////////////////////////
 
 // This is not used for internally
 // Will be used by users as `Handler`
@@ -293,11 +293,11 @@ export interface CustomHandler<E = Env, P = any, I = any, O = any> {
   ): Response | Promise<Response | TypeResponse<O>> | TypeResponse<O>
 }
 
-//////////////////////////////////////////
-//////////                      //////////
-//////////   ValidationTypes    //////////
-//////////                      //////////
-//////////////////////////////////////////
+////////////////////////////////////////
+//////                            //////
+//////      ValidationTypes       //////
+//////                            //////
+////////////////////////////////////////
 
 export type ValidationTypes = {
   json: object
@@ -306,11 +306,11 @@ export type ValidationTypes = {
   queries: Record<string, string[]>
 }
 
-//////////////////////////////////////////
-//////////                      //////////
-//////////   Path parameters    //////////
-//////////                      //////////
-//////////////////////////////////////////
+////////////////////////////////////////
+//////                            //////
+//////      Path parameters       //////
+//////                            //////
+////////////////////////////////////////
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer _Pattern}`
@@ -329,11 +329,11 @@ export type ParamKeyToRecord<T extends string> = T extends `${infer R}?`
   ? Record<R, string | undefined>
   : { [K in T]: string }
 
-//////////////////////////////////////////
-//////////                      //////////
-//////////   Input to data      //////////
-//////////                      //////////
-//////////////////////////////////////////
+////////////////////////////////////////
+//////                            //////
+//////       Input to data        //////
+//////                            //////
+////////////////////////////////////////
 
 export type InputToData<T extends Input> = T extends {
   [K in keyof ValidationTypes]?: infer R
@@ -347,10 +347,10 @@ export type InputToDataByType<T extends Input, Type extends keyof ValidationType
   ? R
   : never
 
-//////////////////////////////////////////
-//////////                      //////////
-//////////   Utilities          //////////
-//////////                      //////////
-//////////////////////////////////////////
+////////////////////////////////////////
+//////                            //////
+//////         Utilities          //////
+//////                            //////
+////////////////////////////////////////
 
 export type ExtractSchema<T> = T extends Hono<infer _, infer S> ? S : never
