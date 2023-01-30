@@ -1,4 +1,11 @@
-import type { InputToData, InputToTypeData, ValidationTypes } from './types'
+import type {
+  Input,
+  InputToData,
+  InputToDataByType,
+  ParamKeys,
+  ParamKeyToRecord,
+  ValidationTypes,
+} from './types'
 import { parseBody } from './utils/body'
 import type { BodyData } from './utils/body'
 import type { Cookie } from './utils/cookie'
@@ -7,29 +14,12 @@ import { mergeObjects } from './utils/object'
 import type { UnionToIntersection } from './utils/types'
 import { getQueryStringFromURL, getQueryParam, getQueryParams } from './utils/url'
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer _Pattern}`
-  ? Name
-  : NameWithPattern
-
-type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
-  ? ParamKeyName<NameWithPattern>
-  : never
-
-type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
-  ? ParamKey<Component> | ParamKeys<Rest>
-  : ParamKey<Path>
-
 type RemoveQuestion<T> = T extends `${infer R}?` ? R : T
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | undefined : string
 
-type ParamKeyToRecord<T extends string> = T extends `${infer R}?`
-  ? Record<R, string | undefined>
-  : Record<T, string>
-
-export class HonoRequest<Path extends string = '/', Input = {}> {
+export class HonoRequest<P extends string = '/', I extends Input = {}> {
   raw: Request
 
   private paramData: Record<string, string> | undefined
@@ -51,8 +41,8 @@ export class HonoRequest<Path extends string = '/', Input = {}> {
     this.validatedData = {}
   }
 
-  param(key: RemoveQuestion<ParamKeys<Path>>): UndefinedIfHavingQuestion<ParamKeys<Path>>
-  param(): UnionToIntersection<ParamKeyToRecord<ParamKeys<Path>>>
+  param(key: RemoveQuestion<ParamKeys<P>>): UndefinedIfHavingQuestion<ParamKeys<P>>
+  param(): UnionToIntersection<ParamKeyToRecord<ParamKeys<P>>>
   param(key?: string): unknown {
     if (this.paramData) {
       if (key) {
@@ -164,8 +154,8 @@ export class HonoRequest<Path extends string = '/', Input = {}> {
     this.validatedData[type] = merged
   }
 
-  valid(): InputToData<Input>
-  valid<T extends keyof ValidationTypes>(type: T): InputToTypeData<T, Input>
+  valid(): InputToData<I>
+  valid<T extends keyof ValidationTypes>(type: T): InputToDataByType<I, T>
   valid<T extends keyof ValidationTypes>(type?: T) {
     if (type) {
       const data = this.validatedData[type]
