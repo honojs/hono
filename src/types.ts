@@ -21,7 +21,7 @@ export type Env = {
 
 export type Next = () => Promise<void>
 
-export type Input = ValidationTypes | unknown
+export type Input = unknown
 
 ////////////////////////////////////////
 //////                            //////
@@ -331,7 +331,7 @@ export type ParamKeyToRecord<T extends string> = T extends `${infer R}?`
 
 ////////////////////////////////////////
 //////                            //////
-//////       Input to data        //////
+/////       For HonoRequest       //////
 //////                            //////
 ////////////////////////////////////////
 
@@ -346,6 +346,10 @@ export type InputToDataByType<T extends Input, Type extends keyof ValidationType
 }
   ? R
   : never
+
+export type RemoveQuestion<T> = T extends `${infer R}?` ? R : T
+
+export type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | undefined : string
 
 ////////////////////////////////////////
 //////                            //////

@@ -4,6 +4,8 @@ import type {
   InputToDataByType,
   ParamKeys,
   ParamKeyToRecord,
+  RemoveQuestion,
+  UndefinedIfHavingQuestion,
   ValidationTypes,
 } from './types.ts'
 import { parseBody } from './utils/body.ts'
@@ -13,11 +15,6 @@ import { parse } from './utils/cookie.ts'
 import { mergeObjects } from './utils/object.ts'
 import type { UnionToIntersection } from './utils/types.ts'
 import { getQueryStringFromURL, getQueryParam, getQueryParams } from './utils/url.ts'
-
-type RemoveQuestion<T> = T extends `${infer R}?` ? R : T
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | undefined : string
 
 export class HonoRequest<P extends string = '/', I extends Input = {}> {
   raw: Request
