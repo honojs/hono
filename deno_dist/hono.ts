@@ -8,14 +8,15 @@ import { SmartRouter } from './router/smart-router/index.ts'
 import { StaticRouter } from './router/static-router/index.ts'
 import { TrieRouter } from './router/trie-router/index.ts'
 import type {
-  TypeResponse,
-  HandlerInterface,
-  ToAppType,
-  Handler,
-  ErrorHandler,
-  NotFoundHandler,
   Env,
+  ErrorHandler,
+  Handler,
+  HandlerInterface,
   MiddlewareHandler,
+  MiddlewareHandlerInterface,
+  NotFoundHandler,
+  OnHandlerInterface,
+  TypeResponse,
 } from './types.ts'
 import { HTTPException } from './utils/http-exception.ts'
 import { getPathFromURL, mergePath } from './utils/url.ts'
@@ -29,26 +30,18 @@ interface RouterRoute {
 }
 
 function defineDynamicClass(): {
-  new <
-    E extends Env = Env,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _M extends string = string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    P extends string = any
-  >(): {
-    [M in Methods]: HandlerInterface<E, M, P>
+  new <E extends Env = Env, S = {}>(): {
+    [M in Methods]: HandlerInterface<E, M, S>
+  } & {
+    on: OnHandlerInterface<E, S>
+  } & {
+    use: MiddlewareHandlerInterface<E, S>
   }
 } {
   return class {} as never
 }
 
-export class Hono<
-  E extends Env = Env,
-  P extends string = string,
-  M extends string = string,
-  I = {},
-  O = {}
-> extends defineDynamicClass()<E, M, P> {
+export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S> {
   readonly router: Router<Handler> = new SmartRouter({
     routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
   })
@@ -61,10 +54,9 @@ export class Hono<
   constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
     super()
 
+    // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       this[method] = (args1: string | Handler, ...args: Handler[]) => {
         if (typeof args1 === 'string') {
           this.path = args1
@@ -79,6 +71,29 @@ export class Hono<
         return this
       }
     })
+
+    // Implementation of app.on(method, path, ...handlers[])
+    this.on = (method: string, path: string, ...handlers: Handler[]) => {
+      if (!method) return this
+      this.path = path
+      handlers.map((handler) => {
+        this.addRoute(method.toUpperCase(), this.path, handler)
+      })
+      return this
+    }
+
+    // Implementation of app.use(...handlers[]) or app.get(path, ...handlers[])
+    this.use = (arg1: string | MiddlewareHandler, ...handlers: MiddlewareHandler[]) => {
+      if (typeof arg1 === 'string') {
+        this.path = arg1
+      } else {
+        handlers.unshift(arg1)
+      }
+      handlers.map((handler) => {
+        this.addRoute(METHOD_NAME_ALL, this.path, handler)
+      })
+      return this
+    }
 
     Object.assign(this, init)
   }
@@ -108,43 +123,6 @@ export class Hono<
     return this
   }
 
-  use(...middleware: MiddlewareHandler<E>[]): Hono<E, string, 'all', I, O>
-  use<Path extends string>(
-    arg1: Path,
-    ...middleware: MiddlewareHandler<E>[]
-  ): Hono<E, Path, 'all', I, O>
-  use(arg1: string | MiddlewareHandler<E>, ...handlers: MiddlewareHandler<E>[]) {
-    if (typeof arg1 === 'string') {
-      this.path = arg1
-    } else {
-      handlers.unshift(arg1)
-    }
-    handlers.map((handler) => {
-      this.addRoute(METHOD_NAME_ALL, this.path, handler)
-    })
-    return this as unknown
-  }
-
-  on<Method extends string, Path extends string>(
-    method: Method,
-    path: Path,
-    ...handlers: Handler<E, Path>[]
-  ): Hono<E, Path, Method, I, O>
-  on(method: string, path: string, ...handlers: Handler<E>[]) {
-    if (!method) return this
-    this.path = path
-    handlers.map((handler) => {
-      this.addRoute(method.toUpperCase(), this.path, handler)
-    })
-    return this
-  }
-
-  build = (): ToAppType<typeof this> => {
-    const app = {} as typeof this
-    type AppType = ToAppType<typeof app>
-    return {} as AppType
-  }
-
   onError(handler: ErrorHandler<E>) {
     this.errorHandler = handler
     return this
@@ -164,8 +142,7 @@ export class Hono<
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private addRoute(method: string, path: string, handler: Handler<any, any>) {
+  private addRoute(method: string, path: string, handler: Handler) {
     method = method.toUpperCase()
     if (this._tempPath) {
       path = mergePath(this._tempPath, path)
@@ -249,8 +226,7 @@ export class Hono<
 
     return (async () => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const tmp = composed(c as any)
+        const tmp = composed(c)
         const context = tmp instanceof Promise ? await tmp : tmp
         if (!context.finalized) {
           throw new Error(

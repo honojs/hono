@@ -1,10 +1,14 @@
 import { Hono } from './hono'
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   class ExtendableEvent extends Event {
     constructor(type: string, init?: EventInit)
     waitUntil(promise: Promise<void>): void
   }
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   abstract class FetchEvent extends ExtendableEvent {
     readonly request: Request
     respondWith(promise: Response | Promise<Response>): void
@@ -17,12 +21,12 @@ declare global {
 }
 
 export type {
-  Next,
-  MiddlewareHandler,
+  Env,
   ErrorHandler,
+  MiddlewareHandler,
+  Next,
   NotFoundHandler,
   ValidationTypes,
-  Env,
 } from './types'
 import type { CustomHandler } from './types'
 export type { CustomHandler as Handler }

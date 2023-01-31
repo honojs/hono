@@ -11,7 +11,7 @@ export const validator = <
   P extends string,
   M extends string,
   U extends ValidationTypeByMethod<M>,
-  V extends { type: U; data: T },
+  V extends { [K in U]: T },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any
 >(
@@ -47,8 +47,7 @@ export const validator = <
         break
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const res = validationFunc(value, c as any)
+    const res = validationFunc(value, c)
 
     if (res instanceof Response || res instanceof Promise) {
       return res

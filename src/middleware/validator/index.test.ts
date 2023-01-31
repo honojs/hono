@@ -3,6 +3,7 @@ import type { ZodSchema } from 'zod'
 import { z } from 'zod'
 import type { Context } from '../../context'
 import { Hono } from '../../hono'
+import type { ExtractSchema } from '../../types'
 import type { Equal, Expect } from '../../utils/types'
 import { validator } from '.'
 
@@ -20,35 +21,33 @@ const validatorFunc =
 describe('Validator middleware', () => {
   const app = new Hono()
 
-  const route = app
-    .get(
-      '/search',
-      async (_c, next) => {
-        await next()
-      },
-      validator('query', (value, c) => {
-        if (!value) {
-          return c.text('Invalid!', 400)
-        }
-      }),
-      (c) => {
-        return c.text('Valid!')
+  const route = app.get(
+    '/search',
+    async (_c, next) => {
+      await next()
+    },
+    validator('query', (value, c) => {
+      if (!value) {
+        return c.text('Invalid!', 400)
       }
-    )
-    .build()
+    }),
+    (c) => {
+      return c.text('Valid!')
+    }
+  )
 
   type Expected = {
-    get: {
-      '/search': {
+    '/search': {
+      $get: {
         input: {
           query: undefined
         }
-        output: unknown
+        output: {}
       }
     }
   }
 
-  type Actual = typeof route
+  type Actual = ExtractSchema<typeof route>
 
   type verify = Expect<Equal<Expected, Actual>>
 
@@ -90,23 +89,21 @@ describe('Validator middleware with Zod validates JSON', () => {
     title: z.string(),
   })
 
-  const route = app
-    .post('/post', validator('json', validatorFunc(schema)), (c) => {
-      const post = c.req.valid()
-      type Expected = {
-        id: number
-        title: string
-      }
-      type verify = Expect<Equal<Expected, typeof post>>
-      return c.jsonT({
-        post: post,
-      })
+  const route = app.post('/post', validator('json', validatorFunc(schema)), (c) => {
+    const post = c.req.valid()
+    type Expected = {
+      id: number
+      title: string
+    }
+    type verify = Expect<Equal<Expected, typeof post>>
+    return c.jsonT({
+      post: post,
     })
-    .build()
+  })
 
   type Expected = {
-    post: {
-      '/post': {
+    '/post': {
+      $post: {
         input: {
           json: {
             id: number
@@ -114,18 +111,16 @@ describe('Validator middleware with Zod validates JSON', () => {
           }
         }
         output: {
-          json: {
-            post: {
-              id: number
-              title: string
-            }
+          post: {
+            id: number
+            title: string
           }
         }
       }
     }
   }
 
-  type Actual = typeof route
+  type Actual = ExtractSchema<typeof route>
 
   type verify2 = Expect<Equal<Expected, Actual>>
 
@@ -266,61 +261,59 @@ describe('Validator middleware with Zod validates queries params', () => {
 
 describe('Validator middleware with Zod multiple validators', () => {
   const app = new Hono<{ Variables: { id: number } }>()
-  const route = app
-    .post(
-      '/posts',
-      validator('query', (value, c) => {
-        const id = c.get('id')
-        type verify = Expect<Equal<number, typeof id>>
-        const schema = z.object({
-          page: z
-            .string()
-            .refine((v) => {
-              return !isNaN(Number(v))
-            })
-            .transform((v) => {
-              return Number(v)
-            }),
-        })
-        const parsed = schema.safeParse(value)
-        if (!parsed.success) {
-          return c.text('Invalid!', 400)
-        }
-        const data = parsed.data as z.infer<typeof schema>
-        return data
-      }),
-      validator('form', (value, c) => {
-        const id = c.get('id')
-        type verify = Expect<Equal<number, typeof id>>
-        const schema = z.object({
-          title: z.string(),
-        })
-        const parsed = schema.safeParse(value)
-        if (!parsed.success) {
-          return c.text('Invalid!', 400)
-        }
-        const data = parsed.data as z.infer<typeof schema>
-        return data
-      }),
-      (c) => {
-        const id = c.get('id')
-        type verify = Expect<Equal<number, typeof id>>
-        const formValidatedData = c.req.valid('form')
-        type verify2 = Expect<Equal<{ title: string }, typeof formValidatedData>>
-        const res = c.req.valid()
-        return c.jsonT({
-          page: res.page,
-          title: res.title,
-        })
+  const route = app.post(
+    '/posts',
+    validator('query', (value, c) => {
+      const id = c.get('id')
+      type verify = Expect<Equal<number, typeof id>>
+      const schema = z.object({
+        page: z
+          .string()
+          .refine((v) => {
+            return !isNaN(Number(v))
+          })
+          .transform((v) => {
+            return Number(v)
+          }),
+      })
+      const parsed = schema.safeParse(value)
+      if (!parsed.success) {
+        return c.text('Invalid!', 400)
       }
-    )
-    .build()
+      const data = parsed.data as z.infer<typeof schema>
+      return data
+    }),
+    validator('form', (value, c) => {
+      const id = c.get('id')
+      type verify = Expect<Equal<number, typeof id>>
+      const schema = z.object({
+        title: z.string(),
+      })
+      const parsed = schema.safeParse(value)
+      if (!parsed.success) {
+        return c.text('Invalid!', 400)
+      }
+      const data = parsed.data as z.infer<typeof schema>
+      return data
+    }),
+    (c) => {
+      const id = c.get('id')
+      type verify = Expect<Equal<number, typeof id>>
+      const formValidatedData = c.req.valid('form')
+      type verify2 = Expect<Equal<{ title: string }, typeof formValidatedData>>
+      const res = c.req.valid()
+      return c.jsonT({
+        page: res.page,
+        title: res.title,
+      })
+    }
+  )
 
-  type Actual = typeof route
+  type Actual = ExtractSchema<typeof route>
 
   type Expected = {
-    post: {
-      '/posts': {
+    '/posts': {
+      $post: {
         input: {
           query: {
             page: number
@@ -331,10 +324,8 @@ describe('Validator middleware with Zod multiple validators', () => {
           }
         }
         output: {
-          json: {
-            page: number
-            title: string
-          }
+          page: number
+          title: string
         }
       }
     }
@@ -363,4 +354,129 @@ describe('Validator middleware with Zod multiple validators', () => {
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('Invalid!')
   })
+})
+
+describe('With path parameters', () => {
+  const app = new Hono()
+
+  const route = app.put(
+    '/posts/:id',
+    validator('form', () => {
+      return {
+        title: 'Foo',
+      }
+    }),
+    (c) => {
+      return c.text('Valid!')
+    }
+  )
+
+  type Expected = {
+    '/posts/:id': {
+      $put: {
+        input: {
+          form: {
+            title: string
+          }
+        } & {
+          param: {
+            id: string
+          }
+        }
+        output: {}
+      }
+    }
+  }
+
+  type Actual = ExtractSchema<typeof route>
+  type verify = Expect<Equal<Expected, Actual>>
+})
+
+describe('`on`', () => {
+  const app = new Hono()
+
+  const route = app.on(
+    'PURGE',
+    '/purge',
+    validator('form', () => {
+      return {
+        tag: 'foo',
+      }
+    }),
+    validator('query', () => {
+      return {
+        q: 'bar',
+      }
+    }),
+    (c) => {
+      return c.jsonT({
+        success: true,
+      })
+    }
+  )
+
+  type Expected = {
+    '/purge': {
+      $purge: {
+        input: {
+          form: {
+            tag: string
+          }
+        } & {
+          query: {
+            q: string
+          }
+        }
+        output: {
+          success: boolean
+        }
+      }
+    }
+  }
+
+  type Actual = ExtractSchema<typeof route>
+  type verify = Expect<Equal<Expected, Actual>>
+})
+
+describe('`app.on`', () => {
+  const app = new Hono()
+
+  const route = app
+    .get(
+      '/posts',
+      validator('query', () => {
+        return {
+          page: '2',
+        }
+      }),
+      (c) => {
+        return c.jsonT({
+          posts: [
+            {
+              title: 'foo',
+            },
+          ],
+        })
+      }
+    )
+    .post(
+      validator('json', () => {
+        return {
+          title: 'Hello',
+        }
+      }),
+      validator('query', () => {
+        return {
+          title: 'Hello',
+        }
+      }),
+      (c) => {
+        return c.jsonT({
+          success: true,
+        })
+      }
+    )
+
+  type Actual = ExtractSchema<typeof route>
+  //type verify = Expect<Equal<Expected, Actual>>
 })
