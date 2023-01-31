@@ -935,6 +935,48 @@ describe('Hono with `app.route`', () => {
       expect(await res.text()).toBe('book 123')
     })
   })
+
+  describe('onError', () => {
+    const app = new Hono()
+    const sub = new Hono()
+
+    app.use('*', async (c, next) => {
+      await next()
+      if (c.req.query('app-error')) {
+        throw new Error('This is Error')
+      }
+    })
+
+    app.onError((err, c) => {
+      return c.text('onError by app', 500)
+    })
+
+    sub.get('/ok', (c) => {
+      return c.text('ok')
+    })
+
+    sub.get('/error', () => {
+      throw new Error('This is Error')
+    })
+
+    sub.onError((err, c) => {
+      return c.text('onError by sub', 500)
+    })
+
+    app.route('/sub', sub)
+
+    it('handled by app', async () => {
+      const res = await app.request('https://example.com/sub/ok?app-error=1')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('onError by app')
+    })
+
+    it('handled by sub', async () => {
+      const res = await app.request('https://example.com/sub/error')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('onError by sub')
+    })
+  })
 })
 
 describe('Using other methods with `app.on`', () => {
