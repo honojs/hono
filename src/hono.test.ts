@@ -805,7 +805,9 @@ describe('Request methods with custom middleware', () => {
 
   app.use('*', async (c, next) => {
     const query = c.req.query('foo')
-    const param = c.req.param('foo')
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const param = c.req.param('foo') // This will cause a type error.
     const header = c.req.header('User-Agent')
     await next()
     c.header('X-Query-2', query)
