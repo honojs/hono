@@ -153,9 +153,12 @@ export class HonoRequest<P extends string = '/', I extends Input = {}> {
         ? R
         : never
       : never
-  >(type: T): InputToDataByType<I, T> {
-    const data = this.validatedData[type]
-    return data as never
+  >(type: T): InputToDataByType<I, T>
+  valid(type: never): never
+  valid(type: keyof ValidationTypes) {
+    if (type) {
+      return this.validatedData[type] as unknown
+    }
   }
 
   get url() {
