@@ -335,12 +335,6 @@ export type ParamKeyToRecord<T extends string> = T extends `${infer R}?`
 //////                            //////
 ////////////////////////////////////////
 
-export type InputToData<T extends Input> = T extends {
-  [K in keyof ValidationTypes]?: infer R
-}
-  ? UnionToIntersection<R>
-  : never
-
 export type InputToDataByType<T extends Input, Type extends keyof ValidationTypes> = T extends {
   [K in Type]: infer R
 }
