@@ -1,6 +1,5 @@
 import type {
   Input,
-  InputToData,
   InputToDataByType,
   ParamKeys,
   ParamKeyToRecord,
@@ -12,7 +11,6 @@ import { parseBody } from './utils/body.ts'
 import type { BodyData } from './utils/body.ts'
 import type { Cookie } from './utils/cookie.ts'
 import { parse } from './utils/cookie.ts'
-import { mergeObjects } from './utils/object.ts'
 import type { UnionToIntersection } from './utils/types.ts'
 import { getQueryStringFromURL, getQueryParam, getQueryParams } from './utils/url.ts'
 
@@ -146,23 +144,20 @@ export class HonoRequest<P extends string = '/', I extends Input = {}> {
   }
 
   addValidatedData(type: keyof ValidationTypes, data: {}) {
-    const storedData = this.validatedData[type] || {}
-    const merged = mergeObjects(storedData, data)
-    this.validatedData[type] = merged
+    this.validatedData[type] = data
   }
 
-  valid(): InputToData<I>
-  valid<T extends keyof ValidationTypes>(type: T): InputToDataByType<I, T>
-  valid<T extends keyof ValidationTypes>(type?: T) {
+  valid<
+    T extends keyof ValidationTypes = I extends Record<infer R, unknown>
+      ? R extends keyof ValidationTypes
+        ? R
+        : never
+      : never
+  >(type: T): InputToDataByType<I, T>
+  valid(type: never): never
+  valid(type: keyof ValidationTypes) {
     if (type) {
-      const data = this.validatedData[type]
-      return data
-    } else {
-      let data: Record<string, unknown> = {}
-      for (const v of Object.values(this.validatedData)) {
-        data = mergeObjects(data, v)
-      }
-      return data
+      return this.validatedData[type] as unknown
     }
   }
 

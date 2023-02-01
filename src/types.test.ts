@@ -7,7 +7,6 @@ import type {
   CustomHandler,
   Env,
   ExtractSchema,
-  InputToData,
   InputToDataByType,
   ParamKeys,
   ParamKeyToRecord,
@@ -60,7 +59,7 @@ describe('HandlerInterface', () => {
         })
       })
       app.get(middleware, (c) => {
-        const data = c.req.valid()
+        const data = c.req.valid('json')
         type verify = Expect<Equal<{ foo: string; bar: boolean }, typeof data>>
         return c.jsonT({
           message: 'Hello!',
@@ -117,7 +116,7 @@ describe('OnHandlerInterface', () => {
       await next()
     }
     const route = app.on('PURGE', '/purge', middleware, (c) => {
-      const data = c.req.valid()
+      const data = c.req.valid('form')
       type verify = Expect<Equal<{ id: number }, typeof data>>
       return c.jsonT({
         success: true,
@@ -215,7 +214,6 @@ describe('Test types of CustomHandler', () => {
     const handler: CustomHandler<E, '/'> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<number, typeof foo>>
-      const data = c.req.valid()
       return c.text('Hi')
     }
     app.get('/', handler)
@@ -234,19 +232,15 @@ describe('Test types of CustomHandler', () => {
     const handler: CustomHandler<E, '/', { json: User }> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<number, typeof foo>>
-      const add = c.req.valid()
-      const { name, age } = c.req.valid()
+      const { name } = c.req.valid('json')
       type verifySchema = Expect<Equal<string, typeof name>>
       return c.text('Hi')
     }
-    app.get('/', handler)
-    const res = await app.request(url)
-    expect(res.status).toBe(200)
   })
 
   test('Type', () => {
     const handler: CustomHandler<{ json: User }> = (c) => {
-      const user = c.req.valid()
+      const user = c.req.valid('json')
       type verifySchema = Expect<Equal<User, typeof user>>
       return c.text('Hi')
     }
@@ -317,17 +311,6 @@ describe('For HonoRequest', () => {
       page: string
     }
   }
-
-  test('InputToData', () => {
-    type Actual = InputToData<Input>
-    type Expected = {
-      id: number
-      title: string
-    } & {
-      page: string
-    }
-    type verify = Expect<Equal<Expected, Actual>>
-  })
 
   test('InputToDataByType with value', () => {
     type Actual = InputToDataByType<Input, 'json'>
