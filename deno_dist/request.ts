@@ -132,8 +132,8 @@ export class HonoRequest<P extends string = '/', I extends Input = {}> {
         : never
       : never
   >(type: T): InputToDataByType<I, T>
-  valid(type: never): never
-  valid(type: keyof ValidationTypes) {
+  valid(): never
+  valid(type?: keyof ValidationTypes) {
     if (type) {
       return this.validatedData[type] as unknown
     }
