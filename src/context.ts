@@ -227,7 +227,11 @@ export class Context<
     return this.newResponse(text, status, headers)
   }
 
-  json = <T>(object: T, status: StatusCode = this._status, headers?: HeaderRecord): Response => {
+  json = <T = object>(
+    object: T,
+    status: StatusCode = this._status,
+    headers?: HeaderRecord
+  ): Response => {
     const body = this._pretty
       ? JSON.stringify(object, null, this._prettySpace)
       : JSON.stringify(object)
@@ -236,7 +240,7 @@ export class Context<
     return this.newResponse(body, status, headers)
   }
 
-  jsonT = <T>(
+  jsonT = <T = object>(
     object: T,
     status: StatusCode = this._status,
     headers?: HeaderRecord
