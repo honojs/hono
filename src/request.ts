@@ -18,10 +18,6 @@ export class HonoRequest<P extends string = '/', I extends Input = {}> {
   raw: Request
 
   private paramData: Record<string, string> | undefined
-  private headerData: Record<string, string> | undefined
-  private bodyData: BodyData | undefined
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private jsonData: Promise<any> | undefined
   private validatedData: { [K in keyof ValidationTypes]?: {} }
   private queryIndex: number
 
@@ -75,17 +71,14 @@ export class HonoRequest<P extends string = '/', I extends Input = {}> {
   header(name: string): string
   header(): Record<string, string>
   header(name?: string) {
-    if (!this.headerData) {
-      this.headerData = {}
-      this.raw.headers.forEach((value, key) => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.headerData![key] = value
-      })
-    }
+    const headerData: Record<string, string> = {}
+    this.raw.headers.forEach((value, key) => {
+      headerData[key] = value
+    })
     if (name) {
-      return this.headerData[name.toLowerCase()]
+      return headerData[name.toLowerCase()]
     } else {
-      return this.headerData
+      return headerData
     }
   }
 
@@ -104,27 +97,12 @@ export class HonoRequest<P extends string = '/', I extends Input = {}> {
   }
 
   async parseBody(): Promise<BodyData> {
-    // Cache the parsed body
-    let body: BodyData
-    if (!this.bodyData) {
-      body = await parseBody(this.raw)
-      this.bodyData = body
-    } else {
-      body = this.bodyData
-    }
-    return body
+    return await parseBody(this.raw)
   }
 
-  async json<JSONData = unknown>() {
-    // Cache the JSON body
-    let jsonData: Promise<Partial<JSONData>>
-    if (!this.jsonData) {
-      jsonData = this.raw.json()
-      this.jsonData = jsonData
-    } else {
-      jsonData = this.jsonData
-    }
-    return jsonData
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async json<T = any>(): Promise<T> {
+    return this.raw.json() as T
   }
 
   async text() {
