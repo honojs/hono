@@ -17,7 +17,6 @@ const validatorFunc =
     const data = parsed.data as z.infer<T>
     return data
   }
-
 describe('Validator middleware', () => {
   const app = new Hono()
 
@@ -90,7 +89,7 @@ describe('Validator middleware with Zod validates JSON', () => {
   })
 
   const route = app.post('/post', validator('json', validatorFunc(schema)), (c) => {
-    const post = c.req.valid()
+    const post = c.req.valid('json')
     type Expected = {
       id: number
       title: string
@@ -162,7 +161,7 @@ describe('Validator middleware with Zod validates Form data', () => {
     title: z.string(),
   })
   app.post('/post', validator('form', validatorFunc(schema)), (c) => {
-    const post = c.req.valid()
+    const post = c.req.valid('form')
     return c.jsonT({
       post: post,
     })
@@ -209,7 +208,7 @@ describe('Validator middleware with Zod validates query params', () => {
   })
 
   app.get('/search', validator('query', validatorFunc(schema)), (c) => {
-    const res = c.req.valid()
+    const res = c.req.valid('query')
     return c.jsonT({
       page: res.page,
     })
@@ -238,7 +237,7 @@ describe('Validator middleware with Zod validates queries params', () => {
   })
 
   app.get('/posts', validator('queries', validatorFunc(schema)), (c) => {
-    const res = c.req.valid()
+    const res = c.req.valid('queries')
     return c.jsonT({
       tags: res.tags,
     })
@@ -301,11 +300,9 @@ describe('Validator middleware with Zod multiple validators', () => {
       type verify = Expect<Equal<number, typeof id>>
       const formValidatedData = c.req.valid('form')
       type verify2 = Expect<Equal<{ title: string }, typeof formValidatedData>>
-      const res = c.req.valid()
-      return c.jsonT({
-        page: res.page,
-        title: res.title,
-      })
+      const { page } = c.req.valid('query')
+      const { title } = c.req.valid('form')
+      return c.jsonT({ page, title })
     }
   )
 

@@ -53,7 +53,7 @@ export const validator = <
       return res
     }
 
-    c.req.addValidatedData(type, res as {})
+    c.req.addValidatedData(type, res as never)
 
     await next()
   }
