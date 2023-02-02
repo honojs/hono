@@ -4,16 +4,16 @@ import type { Context } from './context'
 import { Hono } from './hono'
 import { poweredBy } from './middleware/powered-by'
 import type {
-  CustomHandler,
   Env,
   ExtractSchema,
+  Handler,
   InputToDataByType,
+  MiddlewareHandler,
   ParamKeys,
   ParamKeyToRecord,
   RemoveQuestion,
   Schema,
   UndefinedIfHavingQuestion,
-  MiddlewareHandler,
 } from './types'
 import type { Expect, Equal } from './utils/types'
 
@@ -34,6 +34,7 @@ describe('Env', () => {
       type verify = Expect<Equal<string, typeof foo>>
       const FLAG = c.env.FLAG
       type verify2 = Expect<Equal<boolean, typeof FLAG>>
+      return c.text('foo')
     })
   })
 })
@@ -186,7 +187,7 @@ describe('Schema', () => {
   })
 })
 
-describe('Test types of CustomHandler', () => {
+describe('Test types of Handler', () => {
   type E = {
     Variables: {
       foo: number
@@ -197,7 +198,7 @@ describe('Test types of CustomHandler', () => {
 
   test('Env', async () => {
     const app = new Hono<E>()
-    const handler: CustomHandler<E> = (c) => {
+    const handler: Handler<E> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<number, typeof foo>>
       const id = c.req.param('id')
@@ -211,7 +212,7 @@ describe('Test types of CustomHandler', () => {
 
   test('Env, Path', async () => {
     const app = new Hono<E>()
-    const handler: CustomHandler<E, '/'> = (c) => {
+    const handler: Handler<E, '/'> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<number, typeof foo>>
       return c.text('Hi')
@@ -229,19 +230,11 @@ describe('Test types of CustomHandler', () => {
 
   test('Env, Path, Type', async () => {
     const app = new Hono<E>()
-    const handler: CustomHandler<E, '/', { json: User }> = (c) => {
+    const handler: Handler<E, '/', { json: User }> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<number, typeof foo>>
       const { name } = c.req.valid('json')
       type verifySchema = Expect<Equal<string, typeof name>>
-      return c.text('Hi')
-    }
-  })
-
-  test('Type', () => {
-    const handler: CustomHandler<{ json: User }> = (c) => {
-      const user = c.req.valid('json')
-      type verifySchema = Expect<Equal<User, typeof user>>
       return c.text('Hi')
     }
   })

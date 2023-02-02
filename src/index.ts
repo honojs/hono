@@ -2,16 +2,15 @@
 
 import { Hono } from './hono'
 export type {
-  Next,
-  MiddlewareHandler,
+  Env,
   ErrorHandler,
+  Handler,
+  MiddlewareHandler,
+  Next,
   NotFoundHandler,
   ValidationTypes,
-  Env,
 } from './types'
 export type { Context, ContextVariableMap } from './context'
-import type { CustomHandler } from './types'
-export type { CustomHandler as Handler }
 
 declare module './hono' {
   interface Hono {

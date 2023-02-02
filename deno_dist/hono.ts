@@ -10,7 +10,7 @@ import { TrieRouter } from './router/trie-router/index.ts'
 import type {
   Env,
   ErrorHandler,
-  Handler,
+  H,
   HandlerInterface,
   MiddlewareHandler,
   MiddlewareHandlerInterface,
@@ -26,7 +26,7 @@ type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 interface RouterRoute {
   path: string
   method: string
-  handler: Handler
+  handler: H
 }
 
 function defineDynamicClass(): {
@@ -42,7 +42,7 @@ function defineDynamicClass(): {
 }
 
 export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S> {
-  readonly router: Router<Handler> = new SmartRouter({
+  readonly router: Router<H> = new SmartRouter({
     routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
   })
   readonly strict: boolean = true // strict routing - default is true
@@ -57,7 +57,7 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
-      this[method] = (args1: string | Handler, ...args: Handler[]) => {
+      this[method] = (args1: string | H, ...args: H[]) => {
         if (typeof args1 === 'string') {
           this.path = args1
         } else {
@@ -73,7 +73,7 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
     })
 
     // Implementation of app.on(method, path, ...handlers[])
-    this.on = (method: string, path: string, ...handlers: Handler[]) => {
+    this.on = (method: string, path: string, ...handlers: H[]) => {
       if (!method) return this
       this.path = path
       handlers.map((handler) => {
@@ -142,7 +142,7 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
     })
   }
 
-  private addRoute(method: string, path: string, handler: Handler) {
+  private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
     if (this._tempPath) {
       path = mergePath(this._tempPath, path)
@@ -185,7 +185,7 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
     // Do not `compose` if it has only one handler
     if (result?.handlers.length === 1) {
       const handler = result.handlers[0]
-      let res: ReturnType<Handler>
+      let res: ReturnType<H>
 
       try {
         res = handler(c, async () => {})
