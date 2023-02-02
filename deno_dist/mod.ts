@@ -23,13 +23,12 @@ declare global {
 export type {
   Env,
   ErrorHandler,
+  Handler,
   MiddlewareHandler,
   Next,
   NotFoundHandler,
   ValidationTypes,
 } from './types.ts'
-import type { CustomHandler } from './types.ts'
-export type { CustomHandler as Handler }
 export type { Context, ContextVariableMap } from './context.ts'
 export { Hono }
 
