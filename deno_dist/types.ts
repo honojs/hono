@@ -37,12 +37,16 @@ export type Handler<
 > = (
   c: Context<E, P, I>,
   next: Next
-) => Response | Promise<Response | TypeResponse<O> | void> | TypeResponse<O> | void
+) => Response | Promise<Response | TypeResponse<O>> | TypeResponse<O>
 
 export type MiddlewareHandler<E extends Env = any, P extends string = any, I extends Input = {}> = (
   c: Context<E, P, I>,
   next: Next
-) => Promise<Response | undefined | void>
+) => Promise<Response | void>
+
+export type H<E extends Env = any, P extends string = any, I extends Input = {}, O = {}> =
+  | Handler<E, P, I, O>
+  | MiddlewareHandler<E, P, I>
 
 export type NotFoundHandler<E extends Env = any> = (c: Context<E>) => Response | Promise<Response>
 export type ErrorHandler<E extends Env = any> = (err: Error, c: Context<E>) => Response
@@ -57,37 +61,34 @@ export interface HandlerInterface<E extends Env = Env, M extends string = any, S
   //// app.get(...handlers[])
 
   // app.get(handler, handler)
-  <I = {}, O = {}>(
-    ...handlers: [Handler<E, ExtractKey<S>, I, O>, Handler<E, ExtractKey<S>, I, O>]
-  ): Hono<E, S & Schema<M, ExtractKey<S>, I, O>>
+  <I = {}, O = {}>(...handlers: [H<E, ExtractKey<S>, I, O>, H<E, ExtractKey<S>, I, O>]): Hono<
+    E,
+    S & Schema<M, ExtractKey<S>, I, O>
+  >
 
   // app.get(handler x 3)
   <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2>(
-    ...handlers: [
-      Handler<E, ExtractKey<S>, I, O>,
-      Handler<E, ExtractKey<S>, I2, O>,
-      Handler<E, ExtractKey<S>, I3, O>
-    ]
+    ...handlers: [H<E, ExtractKey<S>, I, O>, H<E, ExtractKey<S>, I2, O>, H<E, ExtractKey<S>, I3, O>]
   ): Hono<E, S & Schema<M, ExtractKey<S>, I3, O>>
 
   // app.get(handler x 4)
   <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2, I4 = I2 & I3>(
     ...handlers: [
-      Handler<E, ExtractKey<S>, I, O>,
-      Handler<E, ExtractKey<S>, I2, O>,
-      Handler<E, ExtractKey<S>, I3, O>,
-      Handler<E, ExtractKey<S>, I4, O>
+      H<E, ExtractKey<S>, I, O>,
+      H<E, ExtractKey<S>, I2, O>,
+      H<E, ExtractKey<S>, I3, O>,
+      H<E, ExtractKey<S>, I4, O>
     ]
   ): Hono<E, S & Schema<M, ExtractKey<S>, I4, O>>
 
   // app.get(handler x 5)
   <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2, I4 = I2 & I3, I5 = I3 & I4>(
     ...handlers: [
-      Handler<E, ExtractKey<S>, I, O>,
-      Handler<E, ExtractKey<S>, I2, O>,
-      Handler<E, ExtractKey<S>, I3, O>,
-      Handler<E, ExtractKey<S>, I4, O>,
-      Handler<E, ExtractKey<S>, I5, O>
+      H<E, ExtractKey<S>, I, O>,
+      H<E, ExtractKey<S>, I2, O>,
+      H<E, ExtractKey<S>, I3, O>,
+      H<E, ExtractKey<S>, I4, O>,
+      H<E, ExtractKey<S>, I5, O>
     ]
   ): Hono<E, S & Schema<M, ExtractKey<S>, I5, O>>
 
@@ -100,42 +101,31 @@ export interface HandlerInterface<E extends Env = Env, M extends string = any, S
   ////  app.get(path, ...handlers[])
 
   // app.get(path, handler, handler)
-  <P extends string, O = {}, I = {}>(
-    path: P,
-    ...handlers: [Handler<E, P, I, O>, Handler<E, P, I, O>]
-  ): Hono<E, S & Schema<M, P, I, O>>
+  <P extends string, O = {}, I = {}>(path: P, ...handlers: [H<E, P, I, O>, H<E, P, I, O>]): Hono<
+    E,
+    S & Schema<M, P, I, O>
+  >
 
   // app.get(path, handler x3)
   <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2>(
     path: P,
-    ...handlers: [Handler<E, P, I, O>, Handler<E, P, I2, O>, Handler<E, P, I3, O>]
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>]
   ): Hono<E, S & Schema<M, P, I3, O>>
 
   // app.get(path, handler x4)
   <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2, I4 = I2 & I3>(
     path: P,
-    ...handlers: [
-      Handler<E, P, I, O>,
-      Handler<E, P, I2, O>,
-      Handler<E, P, I3, O>,
-      Handler<E, P, I4, O>
-    ]
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>]
   ): Hono<E, S & Schema<M, P, I4, O>>
 
   // app.get(path, handler x5)
   <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2, I4 = I2 & I3, I5 = I3 & I4>(
     path: P,
-    ...handlers: [
-      Handler<E, P, I, O>,
-      Handler<E, P, I2, O>,
-      Handler<E, P, I3, O>,
-      Handler<E, P, I4, O>,
-      Handler<E, P, I5, O>
-    ]
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>, H<E, P, I5, O>]
   ): Hono<E, S & Schema<M, P, I5, O>>
 
   // app.get(path, ...handlers[])
-  <P extends string, I = {}, O = {}>(path: P, ...handlers: Handler<E, P, I, O>[]): Hono<
+  <P extends string, I = {}, O = {}>(path: P, ...handlers: H<E, P, I, O>[]): Hono<
     E,
     S & Schema<M, P, I, O>
   >
@@ -165,26 +155,21 @@ export interface OnHandlerInterface<E extends Env = Env, S = {}> {
   <M extends string, P extends string, O = {}, I = {}>(
     method: M,
     path: P,
-    ...handlers: [Handler<E, P, I, O>, Handler<E, P, I, O>]
+    ...handlers: [H<E, P, I, O>, H<E, P, I, O>]
   ): Hono<E, S & Schema<M, P, I, O>>
 
   // app.get(method, path, handler x3)
   <M extends string, P extends string, O = {}, I = {}, I2 = I, I3 = I & I2>(
     method: M,
     path: P,
-    ...handlers: [Handler<E, P, I, O>, Handler<E, P, I2, O>, Handler<E, P, I3, O>]
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>]
   ): Hono<E, S & Schema<M, P, I3, O>>
 
   // app.get(method, path, handler x4)
   <M extends string, P extends string, O = {}, I = {}, I2 = I, I3 = I & I2, I4 = I2 & I3>(
     method: M,
     path: P,
-    ...handlers: [
-      Handler<E, P, I, O>,
-      Handler<E, P, I2, O>,
-      Handler<E, P, I3, O>,
-      Handler<E, P, I4, O>
-    ]
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>]
   ): Hono<E, S & Schema<M, P, I4, O>>
 
   // app.get(method, path, handler x5)
@@ -200,19 +185,13 @@ export interface OnHandlerInterface<E extends Env = Env, S = {}> {
   >(
     method: M,
     path: P,
-    ...handlers: [
-      Handler<E, P, I, O>,
-      Handler<E, P, I2, O>,
-      Handler<E, P, I3, O>,
-      Handler<E, P, I4, O>,
-      Handler<E, P, I5, O>
-    ]
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>, H<E, P, I5, O>]
   ): Hono<E, S & Schema<M, P, I5, O>>
 
   <M extends string, P extends string, O extends {} = {}, I = {}>(
     method: M,
     path: P,
-    ...handlers: Handler<E, P, I, O>[]
+    ...handlers: H<E, P, I, O>[]
   ): Hono<E, S & Schema<M, P, I, O>>
 }
 
@@ -256,51 +235,12 @@ export type TypeResponse<T = unknown> = {
 
 ////////////////////////////////////////
 //////                            //////
-//////       CustomHandler        //////
-//////                            //////
-////////////////////////////////////////
-
-// This is not used for internally
-// Will be used by users as `Handler`
-export interface CustomHandler<E = Env, P = any, I = any, O = any> {
-  (
-    c: Context<
-      E extends Env ? E : Env,
-      E extends string ? E : P extends string ? P : never,
-      E extends Env
-        ? P extends string
-          ? I extends Partial<Input>
-            ? I
-            : never
-          : E extends Env
-          ? E extends Partial<Input>
-            ? E
-            : never
-          : never
-        : E extends string
-        ? P extends Env
-          ? E extends Partial<Input>
-            ? E
-            : never
-          : P extends Partial<Input>
-          ? P
-          : never
-        : E extends Partial<Input>
-        ? E
-        : never
-    >,
-    next: Next
-  ): Response | Promise<Response | TypeResponse<O>> | TypeResponse<O>
-}
-
-////////////////////////////////////////
-//////                            //////
 //////      ValidationTypes       //////
 //////                            //////
 ////////////////////////////////////////
 
 export type ValidationTypes = {
-  json: object
+  json: any
   form: Record<string, string | File>
   query: Record<string, string>
   queries: Record<string, string[]>
