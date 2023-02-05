@@ -26,7 +26,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
     const url = new URL(c.req.url)
 
     let path = getFilePath({
-      filename: options.path ?? url.pathname,
+      filename: options.path ?? decodeURI(url.pathname),
       root: options.root,
       defaultDocument: DEFAULT_DOCUMENT,
     })
