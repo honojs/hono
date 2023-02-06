@@ -143,6 +143,9 @@ export class Hono<
         ) as Handler<P, E, S>
         this.addRoute(r.method, r.path, handler)
       })
+      if (app.notFoundHandler !== notFoundHandler) {
+        this.use('*', app.notFoundHandler)
+      }
       this._tempPath = ''
     }
     return this
