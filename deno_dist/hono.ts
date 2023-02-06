@@ -61,6 +61,16 @@ interface Route<
   handler: Handler<P, E, S>
 }
 
+const notFoundHandler = <E extends Partial<Environment>>(c: Context<string, E>) => {
+  return c.text('404 Not Found', 404)
+}
+
+const errorHandler = <E extends Partial<Environment>>(err: Error, c: Context<string, E>) => {
+  console.trace(err)
+  const message = 'Internal Server Error'
+  return c.text(message, 500)
+}
+
 export class Hono<
   E extends Partial<Environment> = Environment,
   P extends string = string,
@@ -103,23 +113,39 @@ export class Hono<
     Object.assign(this, init)
   }
 
-  private notFoundHandler: NotFoundHandler<E> = (c: Context<string, E>) => {
-    return c.text('404 Not Found', 404)
-  }
-
-  private errorHandler: ErrorHandler<E> = (err: Error, c: Context<string, E>) => {
-    console.trace(err)
-    const message = 'Internal Server Error'
-    return c.text(message, 500)
-  }
+  private notFoundHandler: NotFoundHandler<E> = notFoundHandler
+  private errorHandler: ErrorHandler<E> = errorHandler
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   route(path: string, app?: Hono<any>) {
     this._tempPath = path
     if (app) {
       app.routes.map((r) => {
-        this.addRoute(r.method, r.path, r.handler as unknown as Handler<P, E, S>)
+        const handler = (
+          app.notFoundHandler === notFoundHandler && app.errorHandler === errorHandler
+            ? r.handler
+            : async (c, next) => {
+                /* eslint-disable @typescript-eslint/no-explicit-any */
+                try {
+                  const res = await r.handler(c as any, next)
+                  return !res && !c.finalized
+                    ? app.notFoundHandler(c as unknown as Context<string, any, any>)
+                    : res
+                } catch (err) {
+                  if (err instanceof Error) {
+                    c.error = err
+                    return app.handleError(err, c as unknown as Context<string, any, any>)
+                  }
+                  throw err
+                }
+                /* eslint-enable @typescript-eslint/no-explicit-any */
+              }
+        ) as Handler<P, E, S>
+        this.addRoute(r.method, r.path, handler)
       })
+      if (app.notFoundHandler !== notFoundHandler) {
+        this.use('*', app.notFoundHandler)
+      }
       this._tempPath = ''
     }
     return this
