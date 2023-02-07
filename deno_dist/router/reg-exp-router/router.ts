@@ -8,8 +8,8 @@ import { Trie } from './trie.ts'
 
 const methodNames = [METHOD_NAME_ALL, ...METHODS].map((method) => method.toUpperCase())
 
-type HandlerData<T> = [T[], ParamMap | null]
-type StaticMap<T> = Record<string, T[]>
+type HandlerData<T> = [T[], ParamMap] | [Result<T>, null]
+type StaticMap<T> = Record<string, Result<T>>
 type Matcher<T> = [RegExp, HandlerData<T>[], StaticMap<T>]
 
 const emptyParam = {}
@@ -42,7 +42,7 @@ function buildMatcherFromPreprocessedRoutes<T>(routes: [string, T[]][]): Matcher
     let pathErrorCheckOnly = false
     if (!/\*|\/:/.test(path)) {
       pathErrorCheckOnly = true
-      staticMap[routes[i][0]] = routes[i][1]
+      staticMap[routes[i][0]] = { handlers: routes[i][1], params: emptyParam }
     } else {
       j++
     }
@@ -58,7 +58,10 @@ function buildMatcherFromPreprocessedRoutes<T>(routes: [string, T[]][]): Matcher
       continue
     }
 
-    handlers[j] = [routes[i][1], paramMap.length !== 0 ? paramMap : null]
+    handlers[j] =
+      paramMap.length === 0
+        ? [{ handlers: routes[i][1], params: emptyParam }, null]
+        : [routes[i][1], paramMap]
   }
 
   const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp()
@@ -186,7 +189,7 @@ export class RegExpRouter<T> implements Router<T> {
 
       const staticMatch = matcher[2][path]
       if (staticMatch) {
-        return { handlers: staticMatch, params: emptyParam }
+        return staticMatch
       }
 
       const match = path.match(matcher[0])
@@ -197,7 +200,7 @@ export class RegExpRouter<T> implements Router<T> {
       const index = match.indexOf('', 1)
       const [handlers, paramMap] = matcher[1][index]
       if (!paramMap) {
-        return { handlers, params: emptyParam }
+        return handlers
       }
 
       const params: Record<string, string> = {}
