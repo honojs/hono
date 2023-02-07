@@ -17,6 +17,7 @@ const validatorFunc =
     const data = parsed.data as z.infer<T>
     return data
   }
+
 describe('Validator middleware', () => {
   const app = new Hono()
 
