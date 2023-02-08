@@ -236,7 +236,7 @@ export class Hono<
     }
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
-    const composed = compose<Context<P, E>, E>(handlers, this.notFoundHandler, this.errorHandler)
+    const composed = compose<Context<P, E>, E>(handlers, this.errorHandler, this.notFoundHandler)
 
     return (async () => {
       try {
