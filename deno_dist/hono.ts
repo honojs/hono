@@ -5,7 +5,6 @@ import type { Router } from './router.ts'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router.ts'
 import { RegExpRouter } from './router/reg-exp-router/index.ts'
 import { SmartRouter } from './router/smart-router/index.ts'
-import { StaticRouter } from './router/static-router/index.ts'
 import { TrieRouter } from './router/trie-router/index.ts'
 import type {
   Env,
@@ -43,7 +42,7 @@ function defineDynamicClass(): {
 
 export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S> {
   readonly router: Router<H> = new SmartRouter({
-    routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
+    routers: [new RegExpRouter(), new TrieRouter()],
   })
   readonly strict: boolean = true // strict routing - default is true
   private _tempPath: string = ''
