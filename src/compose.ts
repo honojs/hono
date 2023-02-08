@@ -9,8 +9,8 @@ interface ComposeContext {
 // Based on the code in the MIT licensed `koa-compose` package.
 export const compose = <C extends ComposeContext, E extends Partial<Environment> = Environment>(
   middleware: Function[],
-  onNotFound?: NotFoundHandler<E>,
-  onError?: ErrorHandler<E>
+  onError?: ErrorHandler<E>,
+  onNotFound?: NotFoundHandler<E>
 ) => {
   const middlewareLength = middleware.length
   return (context: C, next?: Function) => {
