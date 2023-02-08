@@ -124,11 +124,7 @@ export class Hono<
         const handler =
           app.errorHandler === errorHandler
             ? r.handler
-            : compose<Context<P, E>, E>(
-                [r.handler],
-                notFoundHandler, // This "notFoundHandler" is never called. `this.notFoundHandler` will be called on request
-                app.errorHandler
-              )
+            : compose<Context<P, E>, E>([r.handler], app.errorHandler)
         this.addRoute(r.method, r.path, handler as unknown as Handler<P, E, S>)
       })
       this._tempPath = ''
@@ -247,7 +243,7 @@ export class Hono<
     }
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
-    const composed = compose<Context<P, E>, E>(handlers, this.notFoundHandler, this.errorHandler)
+    const composed = compose<Context<P, E>, E>(handlers, this.errorHandler, this.notFoundHandler)
 
     return (async () => {
       try {
