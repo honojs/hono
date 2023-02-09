@@ -13,6 +13,7 @@ import type {
   HandlerInterface,
   MiddlewareHandler,
   MiddlewareHandlerInterface,
+  Next,
   NotFoundHandler,
   OnHandlerInterface,
   TypeResponse,
@@ -38,6 +39,19 @@ function defineDynamicClass(): {
   }
 } {
   return class {} as never
+}
+
+const notFoundHandler = (c: Context) => {
+  return c.text('404 Not Found', 404)
+}
+
+const errorHandler = (err: Error, c: Context) => {
+  if (err instanceof HTTPException) {
+    return err.getResponse()
+  }
+  console.trace(err)
+  const message = 'Internal Server Error'
+  return c.text(message, 500)
 }
 
 export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S> {
@@ -97,25 +111,20 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
     Object.assign(this, init)
   }
 
-  private notFoundHandler: NotFoundHandler<E> = (c: Context<E>) => {
-    return c.text('404 Not Found', 404)
-  }
-
-  private errorHandler: ErrorHandler<E> = (err: Error, c: Context<E>) => {
-    if (err instanceof HTTPException) {
-      return err.getResponse()
-    }
-    console.trace(err)
-    const message = 'Internal Server Error'
-    return c.text(message, 500)
-  }
+  private notFoundHandler: NotFoundHandler = notFoundHandler
+  private errorHandler: ErrorHandler = errorHandler
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   route(path: string, app?: Hono<any, any>) {
     this._tempPath = path
     if (app) {
       app.routes.map((r) => {
-        this.addRoute(r.method, r.path, r.handler)
+        const handler =
+          app.errorHandler === errorHandler
+            ? r.handler
+            : async (c: Context, next: Next) =>
+                (await compose<Context>([r.handler], app.errorHandler)(c, next)).res
+        this.addRoute(r.method, r.path, handler)
       })
       this._tempPath = ''
     }
@@ -221,7 +230,7 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
     }
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
-    const composed = compose<Context, E>(handlers, this.notFoundHandler, this.errorHandler)
+    const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)
 
     return (async () => {
       try {
