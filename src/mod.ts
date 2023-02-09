@@ -35,5 +35,4 @@ export { Hono }
 // Router
 export { RegExpRouter } from './router/reg-exp-router'
 export { TrieRouter } from './router/trie-router'
-export { StaticRouter } from './router/static-router'
 export { SmartRouter } from './router/smart-router'
