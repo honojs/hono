@@ -61,6 +61,16 @@ interface Route<
   handler: Handler<P, E, S>
 }
 
+const notFoundHandler = <E extends Partial<Environment>>(c: Context<string, E>) => {
+  return c.text('404 Not Found', 404)
+}
+
+const errorHandler = <E extends Partial<Environment>>(err: Error, c: Context<string, E>) => {
+  console.trace(err)
+  const message = 'Internal Server Error'
+  return c.text(message, 500)
+}
+
 export class Hono<
   E extends Partial<Environment> = Environment,
   P extends string = string,
@@ -103,22 +113,21 @@ export class Hono<
     Object.assign(this, init)
   }
 
-  private notFoundHandler: NotFoundHandler<E> = (c: Context<string, E>) => {
-    return c.text('404 Not Found', 404)
-  }
-
-  private errorHandler: ErrorHandler<E> = (err: Error, c: Context<string, E>) => {
-    console.trace(err)
-    const message = 'Internal Server Error'
-    return c.text(message, 500)
-  }
+  private notFoundHandler: NotFoundHandler<E> = notFoundHandler
+  private errorHandler: ErrorHandler<E> = errorHandler
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   route(path: string, app?: Hono<any>) {
     this._tempPath = path
     if (app) {
       app.routes.map((r) => {
-        this.addRoute(r.method, r.path, r.handler as unknown as Handler<P, E, S>)
+        const handler = (
+          app.errorHandler === errorHandler
+            ? r.handler
+            : async (...args) =>
+                (await compose<Context<P, E>, E>([r.handler], app.errorHandler)(...args)).res
+        ) as Handler<P, E, S>
+        this.addRoute(r.method, r.path, handler)
       })
       this._tempPath = ''
     }
@@ -236,7 +245,7 @@ export class Hono<
     }
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
-    const composed = compose<Context<P, E>, E>(handlers, this.notFoundHandler, this.errorHandler)
+    const composed = compose<Context<P, E>, E>(handlers, this.errorHandler, this.notFoundHandler)
 
     return (async () => {
       try {
