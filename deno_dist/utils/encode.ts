@@ -1,4 +1,4 @@
-import { Buffer } from "https://deno.land/std@0.176.0/node/buffer.ts";
+import { Buffer } from "https://deno.land/std@0.177.0/node/buffer.ts";
 export const encodeBase64 = (str: string): string => {
   if (str === null) {
     throw new TypeError('1st argument of "encodeBase64" should not be null.')
