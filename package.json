@@ -104,9 +104,9 @@
       "require": "./dist/cjs/middleware/pretty-json/index.js"
     },
     "./validator": {
-      "types": "./dist/types/middleware/validator/index.d.ts",
-      "import": "./dist/middleware/validator/index.js",
-      "require": "./dist/cjs/middleware/validator/index.js"
+      "types": "./dist/types/validator/index.d.ts",
+      "import": "./dist/validator/index.js",
+      "require": "./dist/cjs/validator/index.js"
     },
     "./router/reg-exp-router": {
       "types": "./dist/types/router/reg-exp-router/index.d.ts",
@@ -213,7 +213,7 @@
         "./dist/types/middleware/serve-static/module.d.ts"
       ],
       "validator": [
-        "./dist/types/middleware/validator"
+        "./dist/types/validator/index.d.ts"
       ],
       "router/reg-exp-router": [
         "./dist/types/router/reg-exp-router/router.d.ts"

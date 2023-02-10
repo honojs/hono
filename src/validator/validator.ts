@@ -1,5 +1,5 @@
-import type { Context } from '../../context'
-import type { Env, ValidationTypes, MiddlewareHandler } from '../../types'
+import type { Context } from '../context'
+import type { Env, ValidationTypes, MiddlewareHandler } from '../types'
 
 type ValidationTypeKeysWithBody = 'form' | 'json'
 type ValidationTypeByMethod<M> = M extends 'get' | 'head' // GET and HEAD request must not have a body content.

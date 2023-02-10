@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { ZodSchema } from 'zod'
 import { z } from 'zod'
-import type { Context } from '../../context'
-import { Hono } from '../../hono'
-import type { ExtractSchema } from '../../types'
-import type { Equal, Expect } from '../../utils/types'
-import { validator } from '.'
+import type { Context } from '../context'
+import { Hono } from '../hono'
+import type { ExtractSchema } from '../types'
+import type { Equal, Expect } from '../utils/types'
+import { validator } from './validator'
 
 const validatorFunc =
   <T extends ZodSchema>(schema: T) =>
