@@ -36,3 +36,10 @@ export { Hono }
 export { RegExpRouter } from './router/reg-exp-router/index.ts'
 export { TrieRouter } from './router/trie-router/index.ts'
 export { SmartRouter } from './router/smart-router/index.ts'
+
+// Validator
+export { validator } from './validator/index.ts'
+
+// Client
+export { hc } from './client/index.ts'
+export type { InferResponseType } from './client/index.ts'
