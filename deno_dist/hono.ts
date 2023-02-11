@@ -1,6 +1,7 @@
 import { compose } from './compose.ts'
 import { Context } from './context.ts'
 import type { ExecutionContext } from './context.ts'
+import { HTTPException } from './http-exception.ts'
 import type { Router } from './router.ts'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router.ts'
 import { RegExpRouter } from './router/reg-exp-router/index.ts'
@@ -18,7 +19,6 @@ import type {
   OnHandlerInterface,
   TypeResponse,
 } from './types.ts'
-import { HTTPException } from './utils/http-exception.ts'
 import { getPathFromURL, mergePath } from './utils/url.ts'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE

@@ -1,10 +1,10 @@
 import { Hono } from '../src'
+import { HTTPException } from '../src/http-exception'
 import { basicAuth } from '../src/middleware/basic-auth'
 import { bearerAuth } from '../src/middleware/bearer-auth'
 import { etag } from '../src/middleware/etag'
 import { poweredBy } from '../src/middleware/powered-by'
 import { prettyJSON } from '../src/middleware/pretty-json'
-import { HTTPException } from '../src/utils/http-exception'
 
 const app = new Hono()
 
