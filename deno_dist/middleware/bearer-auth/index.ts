@@ -1,6 +1,6 @@
+import { HTTPException } from '../../http-exception.ts'
 import type { MiddlewareHandler } from '../../types.ts'
 import { timingSafeEqual } from '../../utils/buffer.ts'
-import { HTTPException } from '../../utils/http-exception.ts'
 
 const TOKEN_STRINGS = '[A-Za-z0-9._~+/-]+=*'
 const PREFIX = 'Bearer'

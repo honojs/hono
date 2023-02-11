@@ -1,5 +1,5 @@
+import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
-import { HTTPException } from '../../utils/http-exception'
 import { Jwt } from '../../utils/jwt'
 import type { AlgorithmTypes } from '../../utils/jwt/types'
 

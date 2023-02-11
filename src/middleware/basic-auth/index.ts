@@ -1,8 +1,8 @@
+import { HTTPException } from '../../http-exception'
 import type { HonoRequest } from '../../request'
 import type { MiddlewareHandler } from '../../types'
 import { timingSafeEqual } from '../../utils/buffer'
 import { decodeBase64 } from '../../utils/encode'
-import { HTTPException } from '../../utils/http-exception'
 
 const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/

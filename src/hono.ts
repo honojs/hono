@@ -1,6 +1,7 @@
 import { compose } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
+import { HTTPException } from './http-exception'
 import type { Router } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router'
 import { RegExpRouter } from './router/reg-exp-router'
@@ -18,7 +19,6 @@ import type {
   OnHandlerInterface,
   TypeResponse,
 } from './types'
-import { HTTPException } from './utils/http-exception'
 import { getPathFromURL, mergePath } from './utils/url'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE

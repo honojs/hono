@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { Context } from './context'
 import { Hono } from './hono'
+import { HTTPException } from './http-exception'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
 import { RegExpRouter } from './router/reg-exp-router'
 import { TrieRouter } from './router/trie-router'
 import type { Handler, Next } from './types'
-import { HTTPException } from './utils/http-exception'
 import type { Expect, Equal } from './utils/types'
 
 describe('GET Request', () => {
