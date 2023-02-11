@@ -1,5 +1,5 @@
-import type { StatusCode } from './http-status.ts'
-import { getStatusText } from './http-status.ts'
+import type { StatusCode } from './utils/http-status.ts'
+import { getStatusText } from './utils/http-status.ts'
 
 type HTTPExceptionOptions = {
   res?: Response

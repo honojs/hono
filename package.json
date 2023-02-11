@@ -33,6 +33,11 @@
       "import": "./dist/index.js",
       "require": "./dist/cjs/index.js"
     },
+    "./http-exception": {
+      "types": "./dist/types/http-exception.d.ts",
+      "import": "./dist/http-exception.js",
+      "require": "./dist/cjs/http-exception.js"
+    },
     "./basic-auth": {
       "types": "./dist/types/middleware/basic-auth/index.d.ts",
       "import": "./dist/middleware/basic-auth/index.js",
@@ -161,6 +166,9 @@
   },
   "typesVersions": {
     "*": {
+      "http-exception": [
+        "./dist/types/http-exception"
+      ],
       "basic-auth": [
         "./dist/types/middleware/basic-auth"
       ],
@@ -202,15 +210,6 @@
       ],
       "pretty-json": [
         "./dist/types/middleware/pretty-json"
-      ],
-      "serve-static": [
-        "./dist/types/middleware/serve-static/index.d.ts"
-      ],
-      "serve-static.bun": [
-        "./dist/types/middleware/serve-static/bun.d.ts"
-      ],
-      "serve-static.module": [
-        "./dist/types/middleware/serve-static/module.d.ts"
       ],
       "validator": [
         "./dist/types/validator/index.d.ts"
