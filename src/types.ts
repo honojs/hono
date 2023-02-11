@@ -193,6 +193,13 @@ export interface OnHandlerInterface<E extends Env = Env, S = {}> {
     path: P,
     ...handlers: H<E, P, I, O>[]
   ): Hono<E, S & Schema<M, P, I, O>>
+
+  // app.on(method[], path, ...handler)
+  <P extends string, O extends {} = {}, I = {}>(
+    methods: string[],
+    path: P,
+    ...handlers: H<E, P, I, O>[]
+  ): Hono<E, S & Schema<string, P, I, O>>
 }
 
 type ExtractKey<S> = S extends Record<infer Key, unknown>
