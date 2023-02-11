@@ -1126,6 +1126,48 @@ describe('Using other methods with `app.on`', () => {
   })
 })
 
+describe('Multiple methods with `app.on`', () => {
+  const app = new Hono()
+  app.on(['PUT', 'DELETE'], '/posts/:id', (c) => {
+    return c.json({
+      postId: c.req.param('id'),
+      method: c.req.method,
+    })
+  })
+
+  it('Should return 200 with PUT', async () => {
+    const req = new Request('http://localhost/posts/123', {
+      method: 'PUT',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      postId: '123',
+      method: 'PUT',
+    })
+  })
+
+  it('Should return 200 with DELETE', async () => {
+    const req = new Request('http://localhost/posts/123', {
+      method: 'DELETE',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      postId: '123',
+      method: 'DELETE',
+    })
+  })
+
+  it('Should return 404 with POST', async () => {
+    const req = new Request('http://localhost/posts/123', {
+      method: 'POST',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(404)
+  })
+})
+
 describe('Multiple handler', () => {
   describe('handler + handler', () => {
     const app = new Hono()

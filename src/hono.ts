@@ -86,12 +86,21 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
     })
 
     // Implementation of app.on(method, path, ...handlers[])
-    this.on = (method: string, path: string, ...handlers: H[]) => {
+    this.on = (method: string | string[], path: string, ...handlers: H[]) => {
       if (!method) return this
+      let methods: string[] = []
+      if (Array.isArray(method)) {
+        methods = method
+      } else {
+        methods = [method]
+      }
       this.path = path
-      handlers.map((handler) => {
-        this.addRoute(method.toUpperCase(), this.path, handler)
-      })
+
+      for (const m of methods) {
+        handlers.map((handler) => {
+          this.addRoute(m.toUpperCase(), this.path, handler)
+        })
+      }
       return this
     }
 
