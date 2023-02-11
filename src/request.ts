@@ -36,7 +36,7 @@ declare global {
     }
     headerData?: Record<string, string>
     header: {
-      (name: string): string
+      (name: string): string | undefined
       (): Record<string, string>
     }
     cookie: {
