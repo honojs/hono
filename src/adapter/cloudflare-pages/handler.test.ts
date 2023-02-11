@@ -31,7 +31,7 @@ describe('Adapter for Cloudflare Pages', () => {
     app.get('/foo', (c) => {
       return c.text('/api/foo')
     })
-    const handler = handle('/api', app)
+    const handler = handle(app, '/api')
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const res = await handler({ request })

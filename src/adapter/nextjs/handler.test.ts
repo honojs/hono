@@ -19,7 +19,7 @@ describe('Adapter for Next.js', () => {
     app.get('/foo', (c) => {
       return c.text('/api/foo')
     })
-    const handler = handle('/api', app)
+    const handler = handle(app, '/api')
     const req = new Request('http://localhost/api/foo')
     const res = await handler(req)
     expect(res.status).toBe(200)
