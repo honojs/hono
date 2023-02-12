@@ -1,6 +1,6 @@
 # Contribution Guide
 
-Contributions Welcome! We will be grad for your help.
+Contributions Welcome! We will be glad for your help.
 You can contribute in the following ways.
 
 - Create an Issue - Propose a new feature. Report a bug.
@@ -17,6 +17,10 @@ So, if you propose great ideas, but I do not appropriate them, the idea may not 
 
 Although, don't worry!
 Hono is tested well, polished by the contributors, and used by many developers. And I'll try my best to make Hono cool, beautiful, and ultrafast.
+
+## PRs
+
+Please ensure your PR passes tests with `yarn test:all`. Also please ensure the Deno code is generated with `yarn denoify`.
 
 ## Third-party middleware
 
