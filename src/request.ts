@@ -68,18 +68,17 @@ export class HonoRequest<P extends string = '/', I extends Input = {}> {
     return getQueryParams(queryString, key)
   }
 
-  header(name: string): string
+  header(name: string): string | undefined
   header(): Record<string, string>
   header(name?: string) {
     const headerData: Record<string, string> = {}
     this.raw.headers.forEach((value, key) => {
       headerData[key] = value
     })
-    if (name) {
-      return headerData[name.toLowerCase()]
-    } else {
+    if (!name) {
       return headerData
     }
+    return headerData[name.toLowerCase()] || undefined
   }
 
   cookie(key: string): string | undefined
