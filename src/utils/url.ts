@@ -68,20 +68,21 @@ export const getPattern = (label: string): Pattern | null => {
   return null
 }
 
-export const getPathFromURL = (url: string, strict: boolean = true): [string, number] => {
+export const getPathFromURL = (url: string, strict: boolean = true): string => {
   const queryIndex = url.indexOf('?', 8)
   const result = url.substring(url.indexOf('/', 8), queryIndex === -1 ? url.length : queryIndex)
 
   // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
   // default is true
   if (strict === false && result.endsWith('/')) {
-    return [result.slice(0, -1), queryIndex]
+    return result.slice(0, -1)
   }
 
-  return [result, queryIndex]
+  return result
 }
 
-export const getQueryStringFromURL = (url: string, queryIndex: number): string => {
+export const getQueryStringFromURL = (url: string): string => {
+  const queryIndex = url.indexOf('?', 8)
   const result = queryIndex !== -1 ? url.slice(queryIndex + 1) : ''
   return result
 }

@@ -17,7 +17,7 @@ export const replaceUrlParam = (urlString: string, params: Record<string, string
 
 export const removeIndexString = (urlSting: string) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [path, _] = getPathFromURL(urlSting)
+  const path = getPathFromURL(urlSting)
   if (path === '/index') {
     return urlSting.replace(/index$/, '')
   }
