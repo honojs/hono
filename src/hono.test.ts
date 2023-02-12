@@ -9,6 +9,11 @@ import { TrieRouter } from './router/trie-router'
 import type { Handler, Next } from './types'
 import type { Expect, Equal } from './utils/types'
 
+// https://stackoverflow.com/a/65666402
+function throwExpression(errorMessage: string): never {
+  throw new Error(errorMessage)
+}
+
 describe('GET Request', () => {
   const app = new Hono()
 
@@ -512,7 +517,7 @@ describe('Middleware', () => {
       })
       .use(async (c, next) => {
         await next()
-        c.header('x-after', c.req.header('x-before'))
+        c.header('x-after', c.req.header('x-before') ?? throwExpression('missing `x-before` header'))
       })
       .get('/chained/abc', (c) => {
         return c.text('GET chained')
@@ -536,7 +541,7 @@ describe('Middleware', () => {
         },
         async (c, next) => {
           await next()
-          c.header('x-after', c.req.header('x-before'))
+          c.header('x-after', c.req.header('x-before') ?? throwExpression('missing `x-before` header'))
         }
       )
       .get('/multiple/abc', (c) => {
@@ -775,7 +780,7 @@ describe('Request methods with custom middleware', () => {
     await next()
     c.header('X-Query-2', query)
     c.header('X-Param-2', param)
-    c.header('X-Header-2', header)
+    c.header('X-Header-2', header ?? throwExpression('missing `X-Header-2` header'))
   })
 
   app.get('/:foo', (c) => {
@@ -784,7 +789,7 @@ describe('Request methods with custom middleware', () => {
     const header = c.req.header('User-Agent')
     c.header('X-Query', query)
     c.header('X-Param', param)
-    c.header('X-Header', header)
+    c.header('X-Header', header ?? throwExpression('missing `X-Header` header'))
     return c.body('Hono')
   })
 
