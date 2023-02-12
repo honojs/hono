@@ -254,7 +254,7 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
     return this.dispatch(event.request, event)
   }
 
-  fetch = (request: Request, Env?: E['Bindings'], executionCtx?: ExecutionContext) => {
+  fetch = (request: Request, Env?: E['Bindings'] | {}, executionCtx?: ExecutionContext) => {
     return this.dispatch(request, executionCtx, Env)
   }
 
