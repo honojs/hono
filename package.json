@@ -153,6 +153,11 @@
       "import": "./dist/adapter/cloudflare-pages/index.js",
       "require": "./dist/cjs/adapter/cloudflare-pages/index.js"
     },
+    "./deno": {
+      "types": "./dist/types/adapter/deno/index.d.ts",
+      "import": "./dist/adapter/deno/index.js",
+      "require": "./dist/cjs/adapter/deno/index.js"
+    },
     "./bun": {
       "types": "./dist/types/adapter/bun/index.d.ts",
       "import": "./dist/adapter/bun/index.js",
@@ -237,6 +242,9 @@
       ],
       "cloudflare-pages": [
         "./dist/types/adapter/cloudflare-pages"
+      ],
+      "deno": [
+        "./dist/types/adapter/deno"
       ],
       "bun": [
         "./dist/types/adapter/bun"
