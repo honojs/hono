@@ -17,7 +17,7 @@ import type {
   Next,
   NotFoundHandler,
   OnHandlerInterface,
-  TypeResponse,
+  TypedResponse,
 } from './types.ts'
 import { getPathFromURL, mergePath } from './utils/url.ts'
 
@@ -214,7 +214,7 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
       if (res instanceof Response) return res
 
       return (async () => {
-        let awaited: Response | TypeResponse | void
+        let awaited: Response | TypedResponse | void
         try {
           awaited = await res
           if (awaited !== undefined && 'response' in awaited) {

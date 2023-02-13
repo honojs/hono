@@ -37,7 +37,7 @@ export type Handler<
 > = (
   c: Context<E, P, I>,
   next: Next
-) => Response | Promise<Response | TypeResponse<O>> | TypeResponse<O>
+) => Response | Promise<Response | TypedResponse<O>> | TypedResponse<O>
 
 export type MiddlewareHandler<E extends Env = any, P extends string = any, I extends Input = {}> = (
   c: Context<E, P, I>,
@@ -230,11 +230,11 @@ export type AddDollar<T> = T extends Record<infer K, infer R>
 
 ////////////////////////////////////////
 //////                            //////
-//////        TypeResponse        //////
+//////        TypedResponse       //////
 //////                            //////
 ////////////////////////////////////////
 
-export type TypeResponse<T = unknown> = {
+export type TypedResponse<T = unknown> = {
   response: Response | Promise<Response>
   data: T
   format: 'json' // Currently, support only `json` with `c.jsonT()`
