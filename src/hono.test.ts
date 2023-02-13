@@ -302,8 +302,8 @@ describe('param and query', () => {
     })
 
     app.get('/multiple-values', (c) => {
-      const queries = c.req.queries('q')
-      const limit = c.req.queries('limit')
+      const queries = c.req.queries('q') ?? throwExpression('missing query values')
+      const limit = c.req.queries('limit') ?? throwExpression('missing query values')
       return c.text(`q is ${queries[0]} and ${queries[1]}, limit is ${limit[0]}`)
     })
 
@@ -517,7 +517,10 @@ describe('Middleware', () => {
       })
       .use(async (c, next) => {
         await next()
-        c.header('x-after', c.req.header('x-before') ?? throwExpression('missing `x-before` header'))
+        c.header(
+          'x-after',
+          c.req.header('x-before') ?? throwExpression('missing `x-before` header')
+        )
       })
       .get('/chained/abc', (c) => {
         return c.text('GET chained')
@@ -541,7 +544,10 @@ describe('Middleware', () => {
         },
         async (c, next) => {
           await next()
-          c.header('x-after', c.req.header('x-before') ?? throwExpression('missing `x-before` header'))
+          c.header(
+            'x-after',
+            c.req.header('x-before') ?? throwExpression('missing `x-before` header')
+          )
         }
       )
       .get('/multiple/abc', (c) => {
@@ -814,7 +820,7 @@ describe('Request methods with custom middleware', () => {
     const param = c.req.param('foo') // This will cause a type error.
     const header = c.req.header('User-Agent')
     await next()
-    c.header('X-Query-2', query)
+    c.header('X-Query-2', query ?? throwExpression('missing `X-Query-2` header'))
     c.header('X-Param-2', param)
     c.header('X-Header-2', header ?? throwExpression('missing `X-Header-2` header'))
   })
@@ -823,7 +829,7 @@ describe('Request methods with custom middleware', () => {
     const query = c.req.query('foo')
     const param = c.req.param('foo')
     const header = c.req.header('User-Agent')
-    c.header('X-Query', query)
+    c.header('X-Query', query ?? throwExpression('missing `X-Query` header'))
     c.header('X-Param', param)
     c.header('X-Header', header ?? throwExpression('missing `X-Header` header'))
     return c.body('Hono')

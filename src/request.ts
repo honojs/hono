@@ -19,16 +19,10 @@ export class HonoRequest<P extends string = '/', I extends Input = {}> {
 
   private paramData: Record<string, string> | undefined
   private validatedData: { [K in keyof ValidationTypes]?: {} }
-  private queryIndex: number
 
-  constructor(
-    request: Request,
-    paramData?: Record<string, string> | undefined,
-    queryIndex: number = -1
-  ) {
+  constructor(request: Request, paramData?: Record<string, string> | undefined) {
     this.raw = request
     this.paramData = paramData
-    this.queryIndex = queryIndex
     this.validatedData = {}
   }
 
@@ -54,18 +48,22 @@ export class HonoRequest<P extends string = '/', I extends Input = {}> {
     return null
   }
 
-  query(key: string): string
+  query(key: string): string | undefined
   query(): Record<string, string>
   query(key?: string) {
-    const queryString = getQueryStringFromURL(this.url, this.queryIndex)
-    return getQueryParam(queryString, key)
+    const queryString = getQueryStringFromURL(this.url)
+    const result = getQueryParam(queryString, key)
+    if (result === null) return undefined
+    return result
   }
 
-  queries(key: string): string[]
+  queries(key: string): string[] | undefined
   queries(): Record<string, string[]>
   queries(key?: string) {
-    const queryString = getQueryStringFromURL(this.url, this.queryIndex)
-    return getQueryParams(queryString, key)
+    const queryString = getQueryStringFromURL(this.url)
+    const result = getQueryParams(queryString, key)
+    if (result === null) return undefined
+    return result
   }
 
   header(name: string): string | undefined
