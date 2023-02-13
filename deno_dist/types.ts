@@ -241,12 +241,12 @@ export type TypedResponse<T = unknown> = {
 }
 
 ////////////////////////////////////////
-//////                            //////
-//////      ValidationTypes       //////
-//////                            //////
+//////                             /////
+//////      ValidationTargets      /////
+//////                             /////
 ////////////////////////////////////////
 
-export type ValidationTypes = {
+export type ValidationTargets = {
   json: any
   form: Record<string, string | File>
   query: Record<string, string>
@@ -282,8 +282,11 @@ export type ParamKeyToRecord<T extends string> = T extends `${infer R}?`
 //////                            //////
 ////////////////////////////////////////
 
-export type InputToDataByType<T extends Input, Type extends keyof ValidationTypes> = T extends {
-  [K in Type]: infer R
+export type InputToDataByTarget<
+  T extends Input,
+  Target extends keyof ValidationTargets
+> = T extends {
+  [K in Target]: infer R
 }
   ? R
   : never
