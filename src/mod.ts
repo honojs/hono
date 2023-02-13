@@ -27,7 +27,7 @@ export type {
   MiddlewareHandler,
   Next,
   NotFoundHandler,
-  ValidationTypes,
+  ValidationTargets,
 } from './types'
 export type { Context, ContextVariableMap } from './context'
 export { Hono }

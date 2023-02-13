@@ -1,27 +1,27 @@
 import type { Context } from '../context.ts'
-import type { Env, ValidationTypes, MiddlewareHandler } from '../types.ts'
+import type { Env, ValidationTargets, MiddlewareHandler } from '../types.ts'
 
-type ValidationTypeKeysWithBody = 'form' | 'json'
-type ValidationTypeByMethod<M> = M extends 'get' | 'head' // GET and HEAD request must not have a body content.
-  ? Exclude<keyof ValidationTypes, ValidationTypeKeysWithBody>
-  : keyof ValidationTypes
+type ValidationTargetKeysWithBody = 'form' | 'json'
+type ValidationTargetByMethod<M> = M extends 'get' | 'head' // GET and HEAD request must not have a body content.
+  ? Exclude<keyof ValidationTargets, ValidationTargetKeysWithBody>
+  : keyof ValidationTargets
 
 export const validator = <
   T,
   P extends string,
   M extends string,
-  U extends ValidationTypeByMethod<M>,
+  U extends ValidationTargetByMethod<M>,
   V extends { [K in U]: T },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any
 >(
-  type: U,
-  validationFunc: (value: ValidationTypes[U], c: Context<E>) => T | Response | Promise<Response>
+  target: U,
+  validationFunc: (value: ValidationTargets[U], c: Context<E>) => T | Response | Promise<Response>
 ): MiddlewareHandler<E, P, V> => {
   return async (c, next) => {
     let value = {}
 
-    switch (type) {
+    switch (target) {
       case 'json':
         try {
           value = await c.req.json()
@@ -53,7 +53,7 @@ export const validator = <
       return res
     }
 
-    c.req.addValidatedData(type, res as never)
+    c.req.addValidatedData(target, res as never)
 
     await next()
   }

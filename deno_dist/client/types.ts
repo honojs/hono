@@ -1,12 +1,12 @@
 import type { Hono } from '../hono.ts'
-import type { ValidationTypes, Env } from '../types.ts'
+import type { ValidationTargets, Env } from '../types.ts'
 
 type MethodName = `$${string}`
 
 type Endpoint = Record<MethodName, Data>
 
 type Data = {
-  input: Partial<ValidationTypes> & {
+  input: Partial<ValidationTargets> & {
     param?: Record<string, string>
   }
   output: {}
