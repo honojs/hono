@@ -26,7 +26,6 @@ type ContextOptions<E extends Env> = {
   executionCtx?: FetchEvent | ExecutionContext | undefined
   notFoundHandler?: NotFoundHandler<E>
   paramData?: Record<string, string>
-  queryIndex?: number
 }
 
 export class Context<
@@ -51,7 +50,6 @@ export class Context<
   private _preparedHeaders: Record<string, string> | undefined = undefined
   private _res: Response | undefined
   private _paramData?: Record<string, string> | null
-  private _queryIndex: number | undefined
   private rawRequest?: Request | null
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
@@ -64,7 +62,6 @@ export class Context<
       if (options.notFoundHandler) {
         this.notFoundHandler = options.notFoundHandler
       }
-      this._queryIndex = options.queryIndex
     }
   }
 
@@ -73,7 +70,7 @@ export class Context<
       return this._req
     } else {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this._req = new HonoRequest(this.rawRequest!, this._paramData!, this._queryIndex)
+      this._req = new HonoRequest(this.rawRequest!, this._paramData!)
       this.rawRequest = undefined
       this._paramData = undefined
       return this._req

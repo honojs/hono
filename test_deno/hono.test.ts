@@ -9,7 +9,7 @@ Deno.test('Hello World', async () => {
   const app = new Hono()
   app.get('/:foo', (c) => {
     c.header('x-param', c.req.param('foo'))
-    c.header('x-query', c.req.query('q'))
+    c.header('x-query', c.req.query('q') || '')
     return c.text('Hello Deno!')
   })
   const res = await app.request('http://localhost/foo?q=bar')
