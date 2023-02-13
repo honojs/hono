@@ -1,11 +1,11 @@
 import type {
   Input,
-  InputToDataByType,
+  InputToDataByTarget,
   ParamKeys,
   ParamKeyToRecord,
   RemoveQuestion,
   UndefinedIfHavingQuestion,
-  ValidationTypes,
+  ValidationTargets,
 } from './types'
 import { parseBody } from './utils/body'
 import type { BodyData } from './utils/body'
@@ -18,7 +18,7 @@ export class HonoRequest<P extends string = '/', I extends Input = {}> {
   raw: Request
 
   private paramData: Record<string, string> | undefined
-  private validatedData: { [K in keyof ValidationTypes]?: {} }
+  private validatedData: { [K in keyof ValidationTargets]?: {} }
 
   constructor(request: Request, paramData?: Record<string, string> | undefined) {
     this.raw = request
@@ -118,21 +118,21 @@ export class HonoRequest<P extends string = '/', I extends Input = {}> {
     return this.raw.formData()
   }
 
-  addValidatedData(type: keyof ValidationTypes, data: {}) {
-    this.validatedData[type] = data
+  addValidatedData(target: keyof ValidationTargets, data: {}) {
+    this.validatedData[target] = data
   }
 
   valid<
-    T extends keyof ValidationTypes = I extends Record<infer R, unknown>
-      ? R extends keyof ValidationTypes
+    T extends keyof ValidationTargets = I extends Record<infer R, unknown>
+      ? R extends keyof ValidationTargets
         ? R
         : never
       : never
-  >(type: T): InputToDataByType<I, T>
+  >(target: T): InputToDataByTarget<I, T>
   valid(): never
-  valid(type?: keyof ValidationTypes) {
-    if (type) {
-      return this.validatedData[type] as unknown
+  valid(target?: keyof ValidationTargets) {
+    if (target) {
+      return this.validatedData[target] as unknown
     }
   }
 
