@@ -7,7 +7,7 @@ import type {
   Env,
   ExtractSchema,
   Handler,
-  InputToDataByType,
+  InputToDataByTarget,
   MiddlewareHandler,
   ParamKeys,
   ParamKeyToRecord,
@@ -306,7 +306,7 @@ describe('For HonoRequest', () => {
   }
 
   test('InputToDataByType with value', () => {
-    type Actual = InputToDataByType<Input, 'json'>
+    type Actual = InputToDataByTarget<Input, 'json'>
     type Expected = {
       id: number
       title: string
@@ -315,7 +315,7 @@ describe('For HonoRequest', () => {
   })
 
   test('InputToDataByType without value', () => {
-    type Actual = InputToDataByType<Input, 'form'>
+    type Actual = InputToDataByTarget<Input, 'form'>
     type verify = Expect<Equal<never, Actual>>
   })
 

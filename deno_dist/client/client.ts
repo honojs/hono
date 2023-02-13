@@ -1,5 +1,5 @@
 import type { Hono } from '../hono.ts'
-import type { ValidationTypes } from '../types.ts'
+import type { ValidationTargets } from '../types.ts'
 import type { UnionToIntersection } from '../utils/types.ts'
 import type { Callback, Client, RequestOption } from './types.ts'
 import { replaceUrlParam, mergePath, removeIndexString } from './utils.ts'
@@ -33,7 +33,7 @@ class ClientRequestImpl {
     this.method = method
   }
   fetch = (
-    args?: ValidationTypes & {
+    args?: ValidationTargets & {
       param?: Record<string, string>
     },
     opt?: RequestOption
