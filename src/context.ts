@@ -1,5 +1,5 @@
 import { HonoRequest } from './request'
-import type { TypeResponse } from './types'
+import type { TypedResponse } from './types'
 import type { Env, NotFoundHandler, Input } from './types'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
@@ -241,7 +241,7 @@ export class Context<
     object: T,
     status: StatusCode = this._status,
     headers?: HeaderRecord
-  ): TypeResponse<T> => {
+  ): TypedResponse<T> => {
     return {
       response: this.json(object, status, headers),
       data: object,
