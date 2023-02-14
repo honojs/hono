@@ -238,8 +238,9 @@ describe('Infer the request type', () => {
 
   it('Should infer the type correctly', () => {
     const client = hc<AppType>('/')
+    const req = client.index.$get
 
-    type Actual = InferResponseType<typeof client.index>
+    type Actual = InferResponseType<typeof req>
     type Expected = {
       id: number
       title: string
