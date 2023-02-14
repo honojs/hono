@@ -1,2 +1,2 @@
 export { hc } from './client'
-export type { InferResponseType } from './types'
+export type { InferResponseType, InferRequestType } from './types'
