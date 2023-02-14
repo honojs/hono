@@ -26,11 +26,7 @@ export interface ClientResponse<T> extends Response {
   json(): Promise<T>
 }
 
-export type InferResponseType<T> = T extends Record<MethodName, infer R>
-  ? R extends () => Promise<ClientResponse<infer O>>
-    ? O
-    : never
-  : never
+export type InferResponseType<T> = T extends () => Promise<ClientResponse<infer O>> ? O : never
 
 type PathToChain<
   Path extends string,
