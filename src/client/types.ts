@@ -27,6 +27,9 @@ export interface ClientResponse<T> extends Response {
 }
 
 export type InferResponseType<T> = T extends () => Promise<ClientResponse<infer O>> ? O : never
+export type InferRequestType<T> = T extends (args: infer R) => Promise<ClientResponse<unknown>>
+  ? NonNullable<R>
+  : never
 
 type PathToChain<
   Path extends string,
