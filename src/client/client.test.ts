@@ -8,7 +8,7 @@ import { Hono } from '../hono'
 import type { Equal, Expect } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
-import type { InferResponseType } from './types'
+import type { InferRequestType, InferResponseType } from './types'
 
 // @ts-ignore
 global.fetch = _fetch
@@ -227,16 +227,24 @@ describe('Basic - query, queries, form, and path params', () => {
 
 describe('Infer the request type', () => {
   const app = new Hono()
-  const route = app.get('/', (c) =>
-    c.jsonT({
-      id: 123,
-      title: 'Morning!',
-    })
+  const route = app.get(
+    '/',
+    validator('query', () => {
+      return {
+        name: 'dummy',
+        age: 'dummy',
+      }
+    }),
+    (c) =>
+      c.jsonT({
+        id: 123,
+        title: 'Morning!',
+      })
   )
 
   type AppType = typeof route
 
-  it('Should infer the type correctly', () => {
+  it('Should infer response type the type correctly', () => {
     const client = hc<AppType>('/')
     const req = client.index.$get
 
@@ -246,5 +254,17 @@ describe('Infer the request type', () => {
       title: string
     }
     type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer request type the type correctly', () => {
+    const client = hc<AppType>('/')
+    const req = client.index.$get
+
+    type Actual = InferRequestType<typeof req>
+    type Expected = {
+      age: string
+      name: string
+    }
+    type verify = Expect<Equal<Expected, Actual['query']>>
   })
 })

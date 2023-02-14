@@ -1,2 +1,2 @@
 export { hc } from './client.ts'
-export type { InferResponseType } from './types.ts'
+export type { InferResponseType, InferRequestType } from './types.ts'
