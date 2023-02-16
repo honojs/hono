@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://honojs.dev">
+  <a href="https://hono.dev">
     <img src="https://raw.githubusercontent.com/honojs/hono/main/docs/images/hono-title.png" width="500" height="auto" alt="Hono"/>
   </a>
 </div>
@@ -7,7 +7,7 @@
 <hr />
 
 <p align="center">
-<a href="https://honojs.dev"><b>Documentation :point_right: honojs.dev</b></a><br />
+<a href="https://hono.dev"><b>Documentation :point_right: hono.dev</b></a><br />
 <i>v2.x has been released!</i> <a href="docs/MIGRATION.md">Migration guide</b>
 </p>
 
@@ -59,7 +59,7 @@ Fastest is Hono
 
 ## Documentation
 
-The documentation is available on [honojs.dev](https://honojs.dev).
+The documentation is available on [hono.dev](https://hono.dev).
 
 ## Migration
 
