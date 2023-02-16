@@ -263,7 +263,7 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
   },
-  "homepage": "https://honojs.dev",
+  "homepage": "https://hono.dev",
   "keywords": [
     "hono",
     "web",
