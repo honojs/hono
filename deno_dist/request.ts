@@ -98,23 +98,23 @@ export class HonoRequest<P extends string = '/', I extends Input = {}> {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async json<T = any>(): Promise<T> {
-    return this.raw.json() as T
+  json<T = any>(): Promise<T> {
+    return this.raw.json()
   }
 
-  async text() {
+  text() {
     return this.raw.text()
   }
 
-  async arrayBuffer() {
+  arrayBuffer() {
     return this.raw.arrayBuffer()
   }
 
-  async blob() {
+  blob() {
     return this.raw.blob()
   }
 
-  async formData() {
+  formData() {
     return this.raw.formData()
   }
 
