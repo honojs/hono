@@ -8,7 +8,7 @@
 
 <p align="center">
 <a href="https://hono.dev"><b>Documentation :point_right: hono.dev</b></a><br />
-<i>v2.x has been released!</i> <a href="docs/MIGRATION.md">Migration guide</b>
+<i>v3 has been released!</i> <a href="docs/MIGRATION.md">Migration guide</b>
 </p>
 
 <hr />
@@ -25,30 +25,32 @@
 [![Deno badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fdeno-visualizer.danopia.net%2Fshields%2Flatest-version%2Fx%2Fhono%2Fmod.ts)](https://doc.deno.land/https/deno.land/x/hono/mod.ts)
 [![Discord badge](https://img.shields.io/discord/1011308539819597844?label=Discord&logo=Discord)](https://discord.gg/KMh2eNSdxV)
 
-Hono - _**[炎] means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework for Cloudflare Workers, Deno, Bun, and others.
+Hono - _**\[炎\] means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework for the Edge.
+It works on Cloudflare Workers, Fastly Compute@Edge, Deno, Bun, Vercel, Lagon, Node.js, and others.
+Fast, but not only fast.
 
 ```ts
 import { Hono } from 'hono'
 const app = new Hono()
 
-app.get('/', (c) => c.text('Hono!!'))
+app.get('/', (c) => c.text('Hono!'))
 
 export default app
 ```
 
 ## Features
 
-- **Ultrafast** - The routers are really smart. Not using linear loops. The fastest one will be selected from three routers.
-- **Zero-dependencies** - Using only Web Standard API. Does not depend on other npm or Deno libraries.
-- **Middleware** - Hono has built-in middleware, custom middleware, and third-party middleware. Batteries included.
-- **TypeScript** - First-class TypeScript support. Now, we've got "Types".
-- **Multi-runtime** - Works on Cloudflare Workers, Fastly Compute@Edge, Deno, Bun, or Node.js. The same code runs on all platforms.
+- **Ultrafast** - The routers are really fast and smart. Not using linear loops. Fast.
+- **Multi-runtime** - Works on Cloudflare Workers, Fastly Compute@Edge, Deno, Bun, Lagon, or Node.js. The same code runs on all platforms.
+- **Batteries Included** - Hono has built-in middleware, custom middleware, and third-party middleware. Batteries included.
+- **Fine DX** - First-class TypeScript support. Now, we've got "Types".
+- **Small** - About 20kB. Zero-dependencies. Using only Web Standard API.
 
 ## Benchmarks
 
-**Hono is **the **fastest**, compared to other routers for Cloudflare Workers.
+**Hono is the fastest**, compared to other routers for Cloudflare Workers.
 
-```txt
+```
 Hono x 385,807 ops/sec ±5.02% (76 runs sampled)
 itty-router x 205,318 ops/sec ±3.63% (84 runs sampled)
 sunder x 287,198 ops/sec ±4.90% (74 runs sampled)
@@ -63,7 +65,7 @@ The documentation is available on [hono.dev](https://hono.dev).
 
 ## Migration
 
-Migration guide is available on [docs/MIGRATION.md](docs/MIGRATION.md).
+The migration guide is available on [docs/MIGRATION.md](docs/MIGRATION.md).
 
 ## Communication
 
