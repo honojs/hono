@@ -46,12 +46,25 @@ import { serveStatic } from 'hono/cloudflare-workers'
 app.get('/static/*', serveStatic({ root: './' }))
 ```
 
-## `serveStatic` for Cloudflare Workers "Service Worker mode" is obsolete
+### `serveStatic` for Cloudflare Workers "Service Worker mode" is obsolete
 
 For Cloudflare Workers, the `serveStatic` is obsolete in Service Worker mode.
 
 Note: Service Worker mode is that using `app.fire()`.
 We recommend use "Module Worker" mode with `export default app`.
+
+### Use `type` to define the Generics for `new Hono`
+
+You must use `type` to define the Generics for `new Hono`. Do not use `interface`.
+
+```ts
+// Should use `type`
+type Bindings = {
+  TOKEN: string
+}
+
+const app = new Hono<{ Bindings: Bindings }>()
+```
 
 ## v2.7.1 - v2.x.x
 
