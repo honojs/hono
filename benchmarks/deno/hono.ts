@@ -1,6 +1,6 @@
-import { Hono } from '../../deno_dist/mod.ts'
+import { Hono, RegExpRouter } from '../../deno_dist/mod.ts'
 
-const app = new Hono()
+const app = new Hono({ router: new RegExpRouter() })
 
 app.get('/user', (c) => c.text('User'))
 app.get('/user/comments', (c) => c.text('User Comments'))

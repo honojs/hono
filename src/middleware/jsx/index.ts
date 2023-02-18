@@ -2,13 +2,14 @@ import { escapeToBuffer } from '../../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Props = Record<string, any>;
+type Props = Record<string, any>
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace jsx.JSX {
+  namespace JSX {
+    type Element = HtmlEscapedString
     interface IntrinsicElements {
-      [tagName: string]: Props,
+      [tagName: string]: Props
     }
   }
 }
@@ -67,7 +68,10 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
       continue
     } else if (child instanceof JSXNode) {
       child.toStringToBuffer(buffer)
-    } else if (typeof child === 'number' || (child as unknown as { isEscaped: boolean }).isEscaped) {
+    } else if (
+      typeof child === 'number' ||
+      (child as unknown as { isEscaped: boolean }).isEscaped
+    ) {
       buffer[0] += child
     } else {
       // `child` type is `Child[]`, so stringify recursively

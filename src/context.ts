@@ -1,47 +1,80 @@
-import type { ExecutionContext } from './types'
-import type { Environment, NotFoundHandler, ContextVariableMap } from './types'
+import { HonoRequest } from './request'
+import type { TypedResponse } from './types'
+import type { Env, NotFoundHandler, Input } from './types'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'
-import type { Schema, SchemaToProp } from './validator/schema'
 
-type HeaderField = [string, string]
-type Headers = Record<string, string | string[]>
-type Runtime = 'node' | 'deno' | 'bun' | 'cloudflare' | 'fastly' | 'vercel' | 'lagon' | 'other'
-export type Data = string | ArrayBuffer | ReadableStream
+type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'lagon' | 'other'
+type HeaderRecord = Record<string, string | string[]>
+type Data = string | ArrayBuffer | ReadableStream
+
+export interface ExecutionContext {
+  waitUntil(promise: Promise<void>): void
+  passThroughOnException(): void
+}
+export interface ContextVariableMap {}
+
+type GetVariable<K, E extends Env> = K extends keyof E['Variables']
+  ? E['Variables'][K]
+  : K extends keyof ContextVariableMap
+  ? ContextVariableMap[K]
+  : unknown
+
+type ContextOptions<E extends Env> = {
+  env: E['Bindings']
+  executionCtx?: FetchEvent | ExecutionContext | undefined
+  notFoundHandler?: NotFoundHandler<E>
+  paramData?: Record<string, string>
+}
 
 export class Context<
-  P extends string = string,
-  E extends Partial<Environment> = Environment,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  S = any
+  E extends Env = any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  P extends string = any,
+  I extends Input = {}
 > {
-  req: Request<unknown, P, S extends Schema ? SchemaToProp<S> : S>
-  env: E['Bindings']
-  finalized: boolean
+  env: E['Bindings'] = {}
+  finalized: boolean = false
   error: Error | undefined = undefined
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _req?: HonoRequest<any, any>
   private _status: StatusCode = 200
   private _executionCtx: FetchEvent | ExecutionContext | undefined
   private _pretty: boolean = false
   private _prettySpace: number = 2
   private _map: Record<string, unknown> | undefined
-  private _headers: Record<string, string[]> | undefined
+  private _headers: Headers | undefined = undefined
+  private _preparedHeaders: Record<string, string> | undefined = undefined
   private _res: Response | undefined
-  private notFoundHandler: NotFoundHandler<E>
+  private _paramData?: Record<string, string> | null
+  private rawRequest?: Request | null
+  private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
-  constructor(
-    req: Request<unknown, P>,
-    env: E['Bindings'] = {},
-    executionCtx: FetchEvent | ExecutionContext | undefined = undefined,
-    notFoundHandler: NotFoundHandler<E> = () => new Response()
-  ) {
-    this._executionCtx = executionCtx
-    this.req = req as Request<unknown, P>
-    this.env = env
+  constructor(req: Request, options?: ContextOptions<E>) {
+    this.rawRequest = req
+    if (options) {
+      this._executionCtx = options.executionCtx
+      this._paramData = options.paramData
+      this.env = options.env
+      if (options.notFoundHandler) {
+        this.notFoundHandler = options.notFoundHandler
+      }
+    }
+  }
 
-    this.notFoundHandler = notFoundHandler
-    this.finalized = false
+  get req(): HonoRequest<P, I> {
+    if (this._req) {
+      return this._req
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this._req = new HonoRequest(this.rawRequest!, this._paramData!)
+      this.rawRequest = undefined
+      this._paramData = undefined
+      return this._req
+    }
   }
 
   get event(): FetchEvent {
@@ -76,25 +109,22 @@ export class Context<
   }
 
   header = (name: string, value: string, options?: { append?: boolean }): void => {
-    this._headers ||= {}
-    const key = name.toLowerCase()
-
-    let shouldAppend = false
-    if (options && options.append) {
-      const vAlreadySet = this._headers[key]
-      if (vAlreadySet && vAlreadySet.length) {
-        shouldAppend = true
+    if (options?.append) {
+      if (!this._headers) {
+        this._headers = new Headers(this._preparedHeaders)
+      }
+      this._headers.append(name, value)
+    } else {
+      if (this._headers) {
+        this._headers.set(name, value)
+      } else {
+        this._preparedHeaders ??= {}
+        this._preparedHeaders[name.toLowerCase()] = value
       }
     }
 
-    if (shouldAppend) {
-      this._headers[key].push(value)
-    } else {
-      this._headers[key] = [value]
-    }
-
     if (this.finalized) {
-      if (shouldAppend) {
+      if (options?.append) {
         this.res.headers.append(name, value)
       } else {
         this.res.headers.set(name, value)
@@ -106,22 +136,18 @@ export class Context<
     this._status = status
   }
 
-  set<Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
-  set<Key extends keyof E['Variables']>(key: Key, value: E['Variables'][Key]): void
-  set(key: string, value: unknown): void
-  set(key: string, value: unknown): void {
+  set = <Key extends keyof E['Variables'] | keyof ContextVariableMap>(
+    key: Key,
+    value: GetVariable<Key, E>
+  ): void => {
     this._map ||= {}
-    this._map[key] = value
+    this._map[key as string] = value
   }
 
-  get<Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
-  get<Key extends keyof E['Variables']>(key: Key): E['Variables'][Key]
-  get<T>(key: string): T
-  get(key: string) {
-    if (!this._map) {
-      return undefined
-    }
-    return this._map[key]
+  get = <Key extends keyof E['Variables'] | keyof ContextVariableMap>(
+    key: Key
+  ): GetVariable<Key, E> => {
+    return this._map?.[key as string] as GetVariable<Key, E>
   }
 
   pretty = (prettyJSON: boolean, space: number = 2): void => {
@@ -129,79 +155,110 @@ export class Context<
     this._prettySpace = space
   }
 
-  newResponse = (data: Data | null, status: StatusCode, headers: Headers = {}): Response => {
-    return new Response(data, {
-      status,
-      headers: this._finalizeHeaders(headers),
-    })
-  }
-
-  private _finalizeHeaders(incomingHeaders: Headers): HeaderField[] {
-    const finalizedHeaders: HeaderField[] = []
-    const headersKv = this._headers || {}
-    // If Response is already set
-    if (this._res) {
-      this._res.headers.forEach((v, k) => {
-        headersKv[k] = [v]
+  newResponse = (data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response => {
+    // Optimized
+    if (!headers && !this._headers && !this._res && !status) {
+      return new Response(data, {
+        headers: this._preparedHeaders,
       })
     }
-    for (const key of Object.keys(incomingHeaders)) {
-      const value = incomingHeaders[key]
-      if (typeof value === 'string') {
-        finalizedHeaders.push([key, value])
+
+    this._preparedHeaders ??= {}
+
+    if (!this._headers) {
+      this._headers = new Headers()
+      for (const [k, v] of Object.entries(this._preparedHeaders)) {
+        this._headers.set(k, v)
+      }
+    }
+
+    if (this._res) {
+      this._res.headers.forEach((v, k) => {
+        this._headers?.set(k, v)
+      })
+      for (const [k, v] of Object.entries(this._preparedHeaders)) {
+        this._headers.set(k, v)
+      }
+    }
+
+    headers ??= {}
+    for (const [k, v] of Object.entries(headers)) {
+      if (typeof v === 'string') {
+        this._headers.set(k, v)
       } else {
-        for (const v of value) {
-          finalizedHeaders.push([key, v])
+        this._headers.delete(k)
+        for (const v2 of v) {
+          this._headers.append(k, v2)
         }
       }
-      delete headersKv[key]
     }
-    for (const key of Object.keys(headersKv)) {
-      for (const value of headersKv[key]) {
-        const kv: HeaderField = [key, value]
-        finalizedHeaders.push(kv)
-      }
-    }
-    return finalizedHeaders
+
+    return new Response(data, {
+      status,
+      headers: this._headers,
+    })
   }
 
   body = (
     data: Data | null,
     status: StatusCode = this._status,
-    headers: Headers = {}
+    headers?: HeaderRecord
   ): Response => {
     return this.newResponse(data, status, headers)
   }
 
-  text = (text: string, status?: StatusCode, headers?: Headers): Response => {
+  text = (text: string, status?: StatusCode, headers?: HeaderRecord): Response => {
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
-    if (!headers && !status && !this._res && !this._headers) {
-      return new Response(text)
+    if (!this._preparedHeaders) {
+      if (!headers && !this._res && !this._headers && !status) {
+        return new Response(text)
+      }
+      this._preparedHeaders = {}
     }
-    status ||= this._status
-    headers ||= {}
-    headers['content-type'] = 'text/plain; charset=UTF-8'
+    // If Content-Type is not set, we don't have to set `text/plain`.
+    // Fewer the header values, it will be faster.
+    if (this._preparedHeaders['content-type']) {
+      this._preparedHeaders['content-type'] = 'text/plain; charset=UTF8'
+    }
     return this.newResponse(text, status, headers)
   }
 
-  json = <T>(object: T, status: StatusCode = this._status, headers: Headers = {}): Response => {
+  json = <T = object>(
+    object: T,
+    status: StatusCode = this._status,
+    headers?: HeaderRecord
+  ): Response => {
     const body = this._pretty
       ? JSON.stringify(object, null, this._prettySpace)
       : JSON.stringify(object)
-    headers['content-type'] = 'application/json; charset=UTF-8'
+    this._preparedHeaders ??= {}
+    this._preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
     return this.newResponse(body, status, headers)
   }
 
-  html = (html: string, status: StatusCode = this._status, headers: Headers = {}): Response => {
-    headers['content-type'] = 'text/html; charset=UTF-8'
+  jsonT = <T = object>(
+    object: T,
+    status: StatusCode = this._status,
+    headers?: HeaderRecord
+  ): TypedResponse<T> => {
+    return {
+      response: this.json(object, status, headers),
+      data: object,
+      format: 'json',
+    }
+  }
+
+  html = (html: string, status: StatusCode = this._status, headers?: HeaderRecord): Response => {
+    this._preparedHeaders ??= {}
+    this._preparedHeaders['content-type'] = 'text/html; charset=UTF-8'
     return this.newResponse(html, status, headers)
   }
 
   redirect = (location: string, status: StatusCode = 302): Response => {
-    return this.newResponse(null, status, {
-      Location: location,
-    })
+    this._headers ??= new Headers()
+    this._headers.set('Location', location)
+    return this.newResponse(null, status)
   }
 
   cookie = (name: string, value: string, opt?: CookieOptions): void => {
@@ -210,7 +267,9 @@ export class Context<
   }
 
   notFound = (): Response | Promise<Response> => {
-    return this.notFoundHandler(this as unknown as Context<string, E>)
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return this.notFoundHandler(this)
   }
 
   get runtime(): Runtime {
@@ -226,23 +285,30 @@ export class Context<
     }
 
     if (typeof global?.WebSocketPair === 'function') {
-      return 'cloudflare'
-    }
-
-    if (global?.fastly !== undefined) {
-      return 'fastly'
+      return 'workerd'
     }
 
     if (typeof global?.EdgeRuntime === 'string') {
-      return 'vercel'
+      return 'edge-light'
     }
 
-    if (global?.process?.release?.name === 'node') {
-      return 'node'
+    let onFastly = false
+    try {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const { env } = require('fastly:env')
+      if (env instanceof Function) onFastly = true
+    } catch {}
+    if (onFastly) {
+      return 'fastly'
     }
 
     if (global?.__lagon__ !== undefined) {
       return 'lagon'
+    }
+
+    if (global?.process?.release?.name === 'node') {
+      return 'node'
     }
 
     return 'other'

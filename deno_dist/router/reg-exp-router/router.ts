@@ -8,12 +8,13 @@ import { Trie } from './trie.ts'
 
 const methodNames = [METHOD_NAME_ALL, ...METHODS].map((method) => method.toUpperCase())
 
-type HandlerData<T> = [T[], ParamMap | null]
-type Matcher<T> = [RegExp, HandlerData<T>[]]
+type HandlerData<T> = [T[], ParamMap] | [Result<T>, null]
+type StaticMap<T> = Record<string, Result<T>>
+type Matcher<T> = [RegExp, HandlerData<T>[], StaticMap<T>]
 
 const emptyParam = {}
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const nullMatcher: Matcher<any> = [/^$/, []]
+const nullMatcher: Matcher<any> = [/^$/, [], {}]
 
 let wildcardRegExpCache: Record<string, RegExp> = {}
 function buildWildcardRegExp(path: string): RegExp {
@@ -35,15 +36,32 @@ function buildMatcherFromPreprocessedRoutes<T>(routes: [string, T[]][]): Matcher
 
   routes = routes.sort(([a], [b]) => a.length - b.length)
 
-  for (let i = 0, len = routes.length; i < len; i++) {
-    let paramMap
-    try {
-      paramMap = trie.insert(routes[i][0], i)
-    } catch (e) {
-      throw e === PATH_ERROR ? new UnsupportedPathError(routes[i][0]) : e
+  const staticMap: StaticMap<T> = {}
+  for (let i = 0, j = -1, len = routes.length; i < len; i++) {
+    const path = routes[i][0]
+    let pathErrorCheckOnly = false
+    if (!/\*|\/:/.test(path)) {
+      pathErrorCheckOnly = true
+      staticMap[routes[i][0]] = { handlers: routes[i][1], params: emptyParam }
+    } else {
+      j++
     }
 
-    handlers[i] = [routes[i][1], paramMap.length !== 0 ? paramMap : null]
+    let paramMap
+    try {
+      paramMap = trie.insert(path, j, pathErrorCheckOnly)
+    } catch (e) {
+      throw e === PATH_ERROR ? new UnsupportedPathError(path) : e
+    }
+
+    if (pathErrorCheckOnly) {
+      continue
+    }
+
+    handlers[j] =
+      paramMap.length === 0
+        ? [{ handlers: routes[i][1], params: emptyParam }, null]
+        : [routes[i][1], paramMap]
   }
 
   const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp()
@@ -62,7 +80,7 @@ function buildMatcherFromPreprocessedRoutes<T>(routes: [string, T[]][]): Matcher
     handlerMap[i] = handlers[indexReplacementMap[i]]
   }
 
-  return [regexp, handlerMap] as Matcher<T>
+  return [regexp, handlerMap, staticMap] as Matcher<T>
 }
 
 function findMiddleware<T>(
@@ -168,6 +186,12 @@ export class RegExpRouter<T> implements Router<T> {
 
     this.match = (method, path) => {
       const matcher = matchers[method]
+
+      const staticMatch = matcher[2][path]
+      if (staticMatch) {
+        return staticMatch
+      }
+
       const match = path.match(matcher[0])
       if (!match) {
         return null
@@ -176,7 +200,7 @@ export class RegExpRouter<T> implements Router<T> {
       const index = match.indexOf('', 1)
       const [handlers, paramMap] = matcher[1][index]
       if (!paramMap) {
-        return { handlers, params: emptyParam }
+        return handlers
       }
 
       const params: Record<string, string> = {}

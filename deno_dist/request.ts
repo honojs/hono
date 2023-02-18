@@ -1,78 +1,44 @@
+import type {
+  Input,
+  InputToDataByTarget,
+  ParamKeys,
+  ParamKeyToRecord,
+  RemoveQuestion,
+  UndefinedIfHavingQuestion,
+  ValidationTargets,
+} from './types.ts'
 import { parseBody } from './utils/body.ts'
 import type { BodyData } from './utils/body.ts'
 import type { Cookie } from './utils/cookie.ts'
 import { parse } from './utils/cookie.ts'
 import type { UnionToIntersection } from './utils/types.ts'
-import { getQueryStringFromURL } from './utils/url.ts'
+import { getQueryStringFromURL, getQueryParam, getQueryParams } from './utils/url.ts'
 
-type RemoveQuestion<T> = T extends `${infer R}?` ? R : T
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | undefined : string
-type ParamKeyToRecord<T extends string> = T extends `${infer R}?`
-  ? Record<R, string | undefined>
-  : Record<T, string>
+export class HonoRequest<P extends string = '/', I extends Input = {}> {
+  raw: Request
 
-declare global {
-  interface Request<
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    CfHostMetadata = unknown,
-    ParamKey extends string = string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Data = any
-  > {
-    paramData?: Record<ParamKey, string>
-    param: {
-      (key: RemoveQuestion<ParamKey>): UndefinedIfHavingQuestion<ParamKey>
-      (): UnionToIntersection<ParamKeyToRecord<ParamKey>>
-    }
-    queryData?: Record<string, string>
-    query: {
-      (key: string): string
-      (): Record<string, string>
-    }
-    queries: {
-      (key: string): string[]
-      (): Record<string, string[]>
-    }
-    headerData?: Record<string, string>
-    header: {
-      (name: string): string | undefined
-      (): Record<string, string>
-    }
-    cookie: {
-      (name: string): string | undefined
-      (): Cookie
-    }
-    bodyData?: BodyData
-    parseBody<BodyType extends BodyData>(): Promise<BodyType>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    jsonData?: any
-    json<T>(): Promise<T>
-    data: Data
-    valid: {
-      (data: Data): Data
-      (): Data
-    }
-  }
-}
+  private paramData: Record<string, string> | undefined
+  private validatedData: { [K in keyof ValidationTargets]?: {} }
 
-export function extendRequestPrototype() {
-  if (!!Request.prototype.param as boolean) {
-    // already extended
-    return
+  constructor(request: Request, paramData?: Record<string, string> | undefined) {
+    this.raw = request
+    this.paramData = paramData
+    this.validatedData = {}
   }
 
-  Request.prototype.param = function (this: Request, key?: string) {
+  param(key: RemoveQuestion<ParamKeys<P>>): UndefinedIfHavingQuestion<ParamKeys<P>>
+  param(): UnionToIntersection<ParamKeyToRecord<ParamKeys<P>>>
+  param(key?: string): unknown {
     if (this.paramData) {
       if (key) {
         const param = this.paramData[key]
-        return param ? decodeURIComponent(param) : undefined
+        return param ? (/\%/.test(param) ? decodeURIComponent(param) : param) : undefined
       } else {
         const decoded: Record<string, string> = {}
 
         for (const [key, value] of Object.entries(this.paramData)) {
-          if (value) {
-            decoded[key] = decodeURIComponent(value)
+          if (value && typeof value === 'string') {
+            decoded[key] = /\%/.test(value) ? decodeURIComponent(value) : value
           }
         }
 
@@ -80,55 +46,44 @@ export function extendRequestPrototype() {
       }
     }
     return null
-  } as InstanceType<typeof Request>['param']
+  }
 
-  Request.prototype.header = function (this: Request, name?: string) {
-    if (!this.headerData) {
-      this.headerData = {}
-      this.headers.forEach((value, key) => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.headerData![key] = value
-      })
-    }
-    if (name) {
-      return this.headerData[name.toLowerCase()]
-    } else {
-      return this.headerData
-    }
-  } as InstanceType<typeof Request>['header']
-
-  Request.prototype.query = function (this: Request, key?: string) {
+  query(key: string): string | undefined
+  query(): Record<string, string>
+  query(key?: string) {
     const queryString = getQueryStringFromURL(this.url)
-    const searchParams = new URLSearchParams(queryString)
-    if (!this.queryData) {
-      this.queryData = {}
-      for (const key of searchParams.keys()) {
-        this.queryData[key] = searchParams.get(key) || ''
-      }
-    }
-    if (key) {
-      return this.queryData[key]
-    } else {
-      return this.queryData
-    }
-  } as InstanceType<typeof Request>['query']
+    const result = getQueryParam(queryString, key)
+    if (result === null) return undefined
+    return result
+  }
 
-  Request.prototype.queries = function (this: Request, key?: string) {
+  queries(key: string): string[] | undefined
+  queries(): Record<string, string[]>
+  queries(key?: string) {
     const queryString = getQueryStringFromURL(this.url)
-    const searchParams = new URLSearchParams(queryString)
-    if (key) {
-      return searchParams.getAll(key)
-    } else {
-      const result: Record<string, string[]> = {}
-      for (const key of searchParams.keys()) {
-        result[key] = searchParams.getAll(key)
-      }
-      return result
-    }
-  } as InstanceType<typeof Request>['queries']
+    const result = getQueryParams(queryString, key)
+    if (result === null) return undefined
+    return result
+  }
 
-  Request.prototype.cookie = function (this: Request, key?: string) {
-    const cookie = this.headers.get('Cookie') || ''
+  header(name: string): string | undefined
+  header(): Record<string, string>
+  header(name?: string) {
+    const headerData: Record<string, string> = {}
+    this.raw.headers.forEach((value, key) => {
+      headerData[key] = value
+    })
+    if (!name) {
+      return headerData
+    }
+    return headerData[name.toLowerCase()] || undefined
+  }
+
+  cookie(key: string): string | undefined
+  cookie(): Cookie
+  cookie(key?: string) {
+    const cookie = this.raw.headers.get('Cookie')
+    if (!cookie) return
     const obj = parse(cookie)
     if (key) {
       const value = obj[key]
@@ -136,41 +91,91 @@ export function extendRequestPrototype() {
     } else {
       return obj
     }
-  } as InstanceType<typeof Request>['cookie']
+  }
 
-  Request.prototype.parseBody = async function <BodyType extends BodyData>(
-    this: Request
-  ): Promise<BodyType> {
-    // Cache the parsed body
-    let body: BodyType
-    if (!this.bodyData) {
-      body = await parseBody<BodyType>(this)
-      this.bodyData = body
-    } else {
-      body = this.bodyData as BodyType
-    }
-    return body
-  } as InstanceType<typeof Request>['parseBody']
+  async parseBody(): Promise<BodyData> {
+    return await parseBody(this.raw)
+  }
 
-  Request.prototype.json = async function <JSONData = unknown>(this: Request) {
-    // Cache the JSON body
-    let jsonData: Partial<JSONData>
-    if (!this.jsonData) {
-      jsonData = JSON.parse(await this.text())
-      this.jsonData = jsonData
-    } else {
-      jsonData = this.jsonData
-    }
-    return jsonData
-  } as InstanceType<typeof Request>['jsonData']
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  json<T = any>(): Promise<T> {
+    return this.raw.json()
+  }
 
-  Request.prototype.valid = function (this: Request, data?: unknown) {
-    if (!this.data) {
-      this.data = {}
+  text() {
+    return this.raw.text()
+  }
+
+  arrayBuffer() {
+    return this.raw.arrayBuffer()
+  }
+
+  blob() {
+    return this.raw.blob()
+  }
+
+  formData() {
+    return this.raw.formData()
+  }
+
+  addValidatedData(target: keyof ValidationTargets, data: {}) {
+    this.validatedData[target] = data
+  }
+
+  valid<
+    T extends keyof ValidationTargets = I extends Record<infer R, unknown>
+      ? R extends keyof ValidationTargets
+        ? R
+        : never
+      : never
+  >(target: T): InputToDataByTarget<I, T>
+  valid(): never
+  valid(target?: keyof ValidationTargets) {
+    if (target) {
+      return this.validatedData[target] as unknown
     }
-    if (data) {
-      this.data = data
-    }
-    return this.data
-  } as InstanceType<typeof Request>['valid']
+  }
+
+  get url() {
+    return this.raw.url
+  }
+  get method() {
+    return this.raw.method
+  }
+  get headers() {
+    return this.raw.headers
+  }
+  get redirect() {
+    return this.raw.redirect
+  }
+  get body() {
+    return this.raw.body
+  }
+  get bodyUsed() {
+    return this.raw.bodyUsed
+  }
+  get cache() {
+    return this.raw.cache
+  }
+  get credentials() {
+    return this.raw.credentials
+  }
+  get integrity() {
+    return this.raw.integrity
+  }
+  get keepalive() {
+    return this.raw.keepalive
+  }
+  get mode() {
+    return this.raw.mode
+  }
+  get referrer() {
+    return this.raw.referrer
+  }
+  get refererPolicy() {
+    return this.raw.referrerPolicy
+  }
+  get signal() {
+    return this.raw.signal
+  }
 }

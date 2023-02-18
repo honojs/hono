@@ -182,7 +182,7 @@ describe('UnsupportedPathError', () => {
     router.add('GET', '/entry/:name', 'get entry')
     router.add('POST', '/entry', 'create entry')
 
-    it('GET /entry/entry', async () => {
+    it('GET /entry/entries', async () => {
       expect(() => {
         router.match('GET', '/entry/entries')
       }).toThrowError(UnsupportedPathError)
@@ -216,6 +216,26 @@ describe('UnsupportedPathError', () => {
     const router = new RegExpRouter<string>()
     router.add('GET', '/posts/:id', 'foo')
     router.add('GET', '/:id/:action', 'bar')
+
+    expect(() => {
+      router.match('GET', '/')
+    }).toThrowError(UnsupportedPathError)
+  })
+
+  it('static and dynamic', () => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', '/reg-exp/router', 'foo')
+    router.add('GET', '/reg-exp/:id', 'bar')
+
+    expect(() => {
+      router.match('GET', '/')
+    }).toThrowError(UnsupportedPathError)
+  })
+
+  it('dynamic and static', () => {
+    const router = new RegExpRouter<string>()
+    router.add('GET', '/reg-exp/:id', 'bar')
+    router.add('GET', '/reg-exp/router', 'foo')
 
     expect(() => {
       router.match('GET', '/')
@@ -328,6 +348,54 @@ describe('long prefix, then star', () => {
     it('get /long/prefix/test', () => {
       const res = router.match('GET', '/long/prefix/test')
       expect(res?.handlers).toEqual(['long-prefix', 'long', 'star1', 'star2'])
+    })
+  })
+
+  describe('Including slashes', () => {
+    const router = new RegExpRouter<string>()
+
+    router.add('GET', '/js/:filename{[a-z0-9/]+.js}', 'any file')
+
+    // XXX This route can not be added with `:label` to RegExpRouter. This is ambiguous.
+    // router.add('GET', '/js/main.js', 'main.js')
+    // it('get /js/main.js', () => {
+    //   const res = router.match('GET', '/js/main.js')
+    //   expect(res).not.toBeNull()
+    //   expect(res?.handlers).toEqual(['any file', 'main.js'])
+    //   expect(res?.params).toEqual({ filename: 'main.js' })
+    // })
+
+    it('get /js/chunk/123.js', () => {
+      const res = router.match('GET', '/js/chunk/123.js')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['any file'])
+      expect(res?.params).toEqual({ filename: 'chunk/123.js' })
+    })
+
+    it('get /js/chunk/nest/123.js', () => {
+      const res = router.match('GET', '/js/chunk/nest/123.js')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['any file'])
+      expect(res?.params).toEqual({ filename: 'chunk/nest/123.js' })
+    })
+  })
+
+  describe('REST API', () => {
+    const router = new RegExpRouter<string>()
+
+    router.add('GET', '/users/:username{[a-z]+}', 'profile')
+    router.add('GET', '/users/:username{[a-z]+}/posts', 'posts')
+
+    it('get /users/hono', () => {
+      const res = router.match('GET', '/users/hono')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['profile'])
+    })
+
+    it('get /users/hono/posts', () => {
+      const res = router.match('GET', '/users/hono/posts')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['posts'])
     })
   })
 })
