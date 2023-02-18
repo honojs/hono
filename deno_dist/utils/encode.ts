@@ -12,7 +12,7 @@ export const encodeBase64 = (str: string): string => {
   try {
     return Buffer.from(str).toString('base64')
   } catch (e) {
-    console.error('If you want to do "encodeBase64", polyfill "buffer" module.')
+    console.error('Error: If you want to do "encodeBase64", polyfill "buffer" module.')
     throw e
   }
 }
@@ -31,7 +31,7 @@ export const decodeBase64 = (str: string): string => {
   try {
     return Buffer.from(str, 'base64').toString()
   } catch (e) {
-    console.error('If you want to do "decodeBase64", polyfill "buffer" module.')
+    console.error('Error: If you want to do "decodeBase64", polyfill "buffer" module.')
     throw e
   }
 }

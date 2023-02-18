@@ -87,5 +87,5 @@ const mimes: Record<string, string> = {
   '3g2': 'video/3gpp2',
   '7z': 'application/x-7z-compressed',
   gltf: 'model/gltf+json',
-  glb: 'model/gltf-binary'
+  glb: 'model/gltf-binary',
 }

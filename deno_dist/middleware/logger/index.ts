@@ -56,6 +56,7 @@ function log(
 export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
   return async (c, next) => {
     const { method } = c.req
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const path = getPathFromURL(c.req.url)
 
     log(fn, LogPrefix.Incoming, method, path)

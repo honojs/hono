@@ -1,51 +1,60 @@
 name: ci
 on:
   push:
-    branches: [main]
+    branches: [main, next]
   pull_request:
     branches: ['*']
 
 jobs:
   ci:
+    name: 'Cloudflare Workers (main)'
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [16.x, 18.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+      - uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 18.x
       - run: yarn install --frozen-lockfile
       - run: npm run lint
       - run: npm run build
       - run: npm test
 
   deno:
+    name: 'Deno'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
-      - run: deno test --allow-read deno_test
+      - run: deno test --allow-read test_deno
 
   bun:
+    name: 'Bun'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: 16.x
+          node-version: 18.x
       - run: curl -fsSL https://bun.sh/install | bash
       - run: echo "${HOME}/.bun/bin" >> $GITHUB_PATH
       - run: npm run test:bun
 
+  fastly:
+    name: 'Fastly Compute@Edge'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 18.x
+      - run: yarn install --frozen-lockfile
+      - run: npm run build
+      - run: npm run test:fastly
+
   lagon:
+    name: 'Lagon'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -56,3 +65,15 @@ jobs:
       - run: npm run build
       - run: npm i -g @lagon/cli@latest esbuild@latest
       - run: npm run test:lagon
+
+  node:
+    name: 'Node.js'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 18.x
+      - run: yarn install --frozen-lockfile
+      - run: npm run build
+      - run: npm run test:node

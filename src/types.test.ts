@@ -1,92 +1,208 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import type { Context } from './context'
 import { Hono } from './hono'
-import { validator } from './middleware/validator'
-import type { CustomHandler as Handler, MiddlewareHandler } from './types'
-import type { Expect, Equal, NotEqual } from './utils/types'
-import type { Validator } from './validator/validator'
+import { poweredBy } from './middleware/powered-by'
+import type {
+  Env,
+  ExtractSchema,
+  Handler,
+  InputToDataByTarget,
+  MiddlewareHandler,
+  ParamKeys,
+  ParamKeyToRecord,
+  RemoveQuestion,
+  Schema,
+  UndefinedIfHavingQuestion,
+} from './types'
+import type { Expect, Equal } from './utils/types'
 
-describe('Test types of CustomHandler', () => {
-  type Env = {
+describe('Env', () => {
+  test('Env', () => {
+    type E = {
+      Variables: {
+        foo: string
+      }
+      Bindings: {
+        FLAG: boolean
+      }
+    }
+    const app = new Hono<E>()
+    app.use('*', poweredBy())
+    app.get('/', (c) => {
+      const foo = c.get('foo')
+      type verify = Expect<Equal<string, typeof foo>>
+      const FLAG = c.env.FLAG
+      type verify2 = Expect<Equal<boolean, typeof FLAG>>
+      return c.text('foo')
+    })
+  })
+})
+
+describe('HandlerInterface', () => {
+  type Env = {}
+
+  describe('no path pattern', () => {
+    const app = new Hono<Env>()
+    const middleware: MiddlewareHandler<
+      Env,
+      never,
+      { json: { foo: string; bar: boolean } }
+    > = async (_c, next) => {
+      await next()
+    }
+    test('Context', () => {
+      const route = app.get(middleware, (c) => {
+        type Expected = Context<Env, never, { json: { foo: string; bar: boolean } }>
+        type verify = Expect<Equal<Expected, typeof c>>
+        return c.jsonT({
+          message: 'Hello!',
+        })
+      })
+      app.get(middleware, (c) => {
+        const data = c.req.valid('json')
+        type verify = Expect<Equal<{ foo: string; bar: boolean }, typeof data>>
+        return c.jsonT({
+          message: 'Hello!',
+        })
+      })
+    })
+  })
+
+  describe('path pattern', () => {
+    const app = new Hono<Env>()
+    const middleware: MiddlewareHandler<
+      Env,
+      '/foo',
+      { json: { foo: string; bar: boolean } }
+    > = async (_c, next) => {
+      await next()
+    }
+    test('Context and AppType', () => {
+      const route = app.get('/foo', middleware, (c) => {
+        type Expected = Context<Env, '/foo', { json: { foo: string; bar: boolean } }>
+        type verify = Expect<Equal<Expected, typeof c>>
+        return c.jsonT({
+          message: 'Hello!',
+        })
+      })
+      type Actual = ExtractSchema<typeof route>
+      type Expected = {
+        '/foo': {
+          $get: {
+            input: {
+              json: {
+                foo: string
+                bar: boolean
+              }
+            }
+            output: {
+              message: string
+            }
+          }
+        }
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+  })
+})
+
+describe('OnHandlerInterface', () => {
+  const app = new Hono()
+  test('Context', () => {
+    const middleware: MiddlewareHandler<Env, '/purge', { form: { id: number } }> = async (
+      _c,
+      next
+    ) => {
+      await next()
+    }
+    const route = app.on('PURGE', '/purge', middleware, (c) => {
+      const data = c.req.valid('form')
+      type verify = Expect<Equal<{ id: number }, typeof data>>
+      return c.jsonT({
+        success: true,
+      })
+    })
+    type Actual = ExtractSchema<typeof route>
+    type Expected = {
+      '/purge': {
+        $purge: {
+          input: {
+            form: {
+              id: number
+            }
+          }
+          output: {
+            success: boolean
+          }
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+describe('Schema', () => {
+  test('Schema', () => {
+    type AppType = Hono<
+      Env,
+      Schema<
+        'post',
+        '/api/posts/:id',
+        {
+          json: {
+            id: number
+            title: string
+          }
+        },
+        {
+          message: string
+          success: boolean
+        }
+      >
+    >
+
+    type Actual = ExtractSchema<AppType>
+    type Expected = {
+      '/api/posts/:id': {
+        $post: {
+          input: {
+            json: {
+              id: number
+              title: string
+            }
+          } & {
+            param: {
+              id: string
+            }
+          }
+          output: {
+            message: string
+            success: boolean
+          }
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+describe('Test types of Handler', () => {
+  type E = {
     Variables: {
-      foo: string
+      foo: number
     }
   }
 
-  let app: Hono
-
-  beforeEach(() => {
-    app = new Hono()
-  })
-
-  const schema = (v: Validator) => ({
-    query: v.query('q').isRequired(),
-  })
-  type Schema = ReturnType<typeof schema>
   const url = 'http://localhost/'
 
-  test('No arguments', async () => {
-    const handler: Handler = (c) => {
-      const data = c.req.valid()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      type verifySchema = Expect<Equal<typeof data['foo'], any>>
-      return c.text('Hi')
-    }
-    app.get('/', handler)
-    const res = await app.request(url)
-    expect(res.status).toBe(200)
-  })
-
-  test('Path', async () => {
-    const handler: Handler<'id'> = (c) => {
-      const id = c.req.param('id')
-      type verifyPath = Expect<Equal<typeof id, string>>
-      const data = c.req.valid()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      type verifySchema = Expect<Equal<typeof data['foo'], any>>
-      return c.text('Hi')
-    }
-    app.get('/', handler)
-    const res = await app.request(url)
-    expect(res.status).toBe(200)
-  })
-
-  test('Path, Env', async () => {
-    const handler: Handler<'id', Env> = (c) => {
-      const id = c.req.param('id')
-      type verifyPath = Expect<Equal<typeof id, string>>
-      const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<typeof foo, string>>
-      const data = c.req.valid()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      type verifySchema = Expect<Equal<typeof data['foo'], any>>
-      return c.text('Hi')
-    }
-    app.get('/', handler)
-    const res = await app.request(url)
-    expect(res.status).toBe(200)
-  })
-
-  test('Path, Env, Schema', async () => {
-    const handler: Handler<'id', Env, Schema> = (c) => {
-      const id = c.req.param('id')
-      type verifyPath = Expect<Equal<typeof id, string>>
-      const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<typeof foo, string>>
-      const { query } = c.req.valid()
-      type verifySchema = Expect<Equal<typeof query, string>>
-      return c.text('Hi')
-    }
-    app.get('/', handler)
-    const res = await app.request(url)
-    expect(res.status).toBe(200)
-  })
-
   test('Env', async () => {
-    const handler: Handler<Env> = (c) => {
+    const app = new Hono<E>()
+    const handler: Handler<E> = (c) => {
       const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<typeof foo, string>>
-      const { query } = c.req.valid()
-      type verifySchema = Expect<NotEqual<typeof query, string>>
+      type verifyEnv = Expect<Equal<number, typeof foo>>
+      const id = c.req.param('id')
+      type verifyPath = Expect<Equal<string, typeof id>>
       return c.text('Hi')
     }
     app.get('/', handler)
@@ -94,95 +210,128 @@ describe('Test types of CustomHandler', () => {
     expect(res.status).toBe(200)
   })
 
-  test('Env, Schema', async () => {
-    const handler: Handler<Env, Schema> = (c) => {
+  test('Env, Path', async () => {
+    const app = new Hono<E>()
+    const handler: Handler<E, '/'> = (c) => {
       const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<typeof foo, string>>
-      const { query } = c.req.valid()
-      type verifySchema = Expect<Equal<typeof query, string>>
+      type verifyEnv = Expect<Equal<number, typeof foo>>
       return c.text('Hi')
     }
     app.get('/', handler)
+
     const res = await app.request(url)
     expect(res.status).toBe(200)
   })
 
-  test('Schema', async () => {
-    const handler: Handler<Schema> = (c) => {
-      const { query } = c.req.valid()
-      type verifySchema = Expect<Equal<typeof query, string>>
-      return c.text('Hi')
-    }
-    app.get('/', handler)
-    const res = await app.request(url)
-    expect(res.status).toBe(200)
-  })
+  type User = {
+    name: string
+    age: number
+  }
 
-  test('Complex', async () => {
-    const app = new Hono<Env>()
-    const handler: Handler<Env> = (c) => {
+  test('Env, Path, Type', async () => {
+    const app = new Hono<E>()
+    const handler: Handler<E, '/', { json: User }> = (c) => {
       const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<typeof foo, string>>
-      const data = c.req.valid()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      type verifySchema = Expect<Equal<typeof data['foo'], any>>
-      return c.text(foo)
-    }
-    app.get(
-      '/',
-      async (c, next) => {
-        c.set('foo', 'bar')
-        await next()
-      },
-      handler
-    )
-    app.get('/v', validator(schema), (c) => {
-      const { query } = c.req.valid()
-      type verify = Expect<Equal<typeof query, string>>
-      return c.text(query)
-    })
-    let res = await app.request(url)
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('bar')
-
-    res = await app.request('http://localhost/?q=bar')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('bar')
-  })
-
-  test('Normal types', () => {
-    type User = {
-      name: string
-      age: number
-    }
-
-    const handler: Handler<User> = (c) => {
-      const user = c.req.valid()
-      type verifySchema = Expect<Equal<typeof user, User>>
+      type verifyEnv = Expect<Equal<number, typeof foo>>
+      const { name } = c.req.valid('json')
+      type verifySchema = Expect<Equal<string, typeof name>>
       return c.text('Hi')
     }
   })
 })
 
-describe('CustomHandler as middleware', () => {
-  const app = new Hono()
-  const mid1 = (): MiddlewareHandler => {
-    return async (_c, next) => {
-      await next()
-    }
-  }
+describe('`jsonT()`', () => {
+  const app = new Hono<{ Variables: { foo: string } }>()
 
-  const mid2 = (): Handler<{ Foo: string }> => {
-    return async (_c, next) => {
-      await next()
-    }
-  }
+  app.get('/post/:id', (c) => {
+    c.req.param('id')
+    const id = c.req.param('id')
+    return c.text('foo')
+  })
 
-  it('Should not throw Type error', async () => {
-    app.get('*', mid1(), mid2(), (c) => {
-      return c.text('foo')
+  const route = app.get('/hello', (c) => {
+    return c.jsonT({
+      message: 'Hello!',
     })
-    const res = await app.request('http://localhost/')
-    expect(res.status).toBe(200)
+  })
+
+  test('jsonT', () => {
+    type Actual = ExtractSchema<typeof route>
+
+    type Expected = {
+      '/hello': {
+        $get: {
+          input: {}
+          output: {
+            message: string
+          }
+        }
+      }
+    }
+
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+describe('Path parameters', () => {
+  test('ParamKeys', () => {
+    type Actual = ParamKeys<'/posts/:postId/comment/:commentId'>
+    type Expected = 'postId' | 'commentId'
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  describe('ParamKeyToRecord', () => {
+    test('With ?', () => {
+      type Actual = ParamKeyToRecord<'/animal/type?'>
+      type Expected = { [K in '/animal/type']: string | undefined }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+    test('Without ?', () => {
+      type Actual = ParamKeyToRecord<'/animal/type'>
+      type Expected = { [K in '/animal/type']: string }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+  })
+})
+
+describe('For HonoRequest', () => {
+  type Input = {
+    json: {
+      id: number
+      title: string
+    }
+    query: {
+      page: string
+    }
+  }
+
+  test('InputToDataByType with value', () => {
+    type Actual = InputToDataByTarget<Input, 'json'>
+    type Expected = {
+      id: number
+      title: string
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('InputToDataByType without value', () => {
+    type Actual = InputToDataByTarget<Input, 'form'>
+    type verify = Expect<Equal<never, Actual>>
+  })
+
+  test('RemoveQuestion', () => {
+    type Actual = RemoveQuestion<'/animal/type?'>
+    type verify = Expect<Equal<'/animal/type', Actual>>
+  })
+
+  describe('UndefinedIfHavingQuestion', () => {
+    test('With ?', () => {
+      type Actual = UndefinedIfHavingQuestion<'/animal/type?'>
+      type verify = Expect<Equal<string | undefined, Actual>>
+    })
+    test('Without ?', () => {
+      type Actual = UndefinedIfHavingQuestion<'/animal/type'>
+      type verify = Expect<Equal<string, Actual>>
+    })
   })
 })

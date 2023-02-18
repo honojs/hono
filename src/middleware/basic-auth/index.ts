@@ -1,3 +1,5 @@
+import { HTTPException } from '../../http-exception'
+import type { HonoRequest } from '../../request'
 import type { MiddlewareHandler } from '../../types'
 import { timingSafeEqual } from '../../utils/buffer'
 import { decodeBase64 } from '../../utils/encode'
@@ -5,7 +7,7 @@ import { decodeBase64 } from '../../utils/encode'
 const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/
 
-const auth = (req: Request) => {
+const auth = (req: HonoRequest) => {
   const match = CREDENTIALS_REGEXP.exec(req.headers.get('Authorization') || '')
   if (!match) {
     return undefined
@@ -53,11 +55,12 @@ export const basicAuth = (
         }
       }
     }
-    return new Response('Unauthorized', {
+    const res = new Response('Unauthorized', {
       status: 401,
       headers: {
         'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"',
       },
     })
+    throw new HTTPException(401, { res })
   }
 }

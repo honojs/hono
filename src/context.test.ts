@@ -150,7 +150,9 @@ describe('Context', () => {
     const req = new Request('http://localhost/')
     const key = 'a-secret-key'
     const ctx = new Context(req, {
-      API_KEY: key,
+      env: {
+        API_KEY: key,
+      },
     })
     expect(ctx.env.API_KEY).toBe(key)
   })
@@ -173,9 +175,9 @@ describe('Context', () => {
     expect(res.headers.get('foo')).toBe('bar')
   })
 
-  it('returns current runtime (cloudflare)', async () => {
+  it('returns current runtime (workerd)', async () => {
     c = new Context(req)
-    expect(c.runtime).toBe('cloudflare')
+    expect(c.runtime).toBe('workerd')
   })
 })
 

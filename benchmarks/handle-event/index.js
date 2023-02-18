@@ -1,11 +1,11 @@
 import Benchmark from 'benchmark'
 import { makeEdgeEnv } from 'edge-mock'
-import itty from 'itty-router'
-const { Router: IttyRouter } = itty
+import { Router as IttyRouter } from 'itty-router'
 import { Request, Response } from 'node-fetch'
 import { Router as SunderRouter, Sunder } from 'sunder'
 import { Router as WorktopRouter } from 'worktop'
-import { Hono } from '../../dist/cjs/hono'
+import { Hono } from '../../dist/hono'
+import { RegExpRouter } from '../../dist/router/reg-exp-router'
 
 globalThis.Request = Request
 globalThis.Response = Response
@@ -26,7 +26,7 @@ const initHono = (hono) => {
   return hono
 }
 
-const hono = initHono(new Hono())
+const hono = initHono(new Hono({ router: new RegExpRouter() }))
 
 // itty-router
 const ittyRouter = IttyRouter()
