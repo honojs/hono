@@ -1,5 +1,58 @@
 # Migration Guide
 
+## v2.7.8 to v3.0.0
+
+There are some breaking changes.
+In addition to the following, type mismatches may occur.
+
+### `c.req` is now `HonoRequest`
+
+`c.req` becomes `HonoRequest`, not `Request`.
+Although APIs are almost same, but if you want to access `Request`, use `c.req.raw`.
+
+```ts
+app.post('/', async (c) => {
+  const metadata = c.req.raw.cf?.hostMetadata?
+  ...
+})
+```
+
+### StaticRouter is obsolete
+
+You can't use `StaticRouter`.
+
+### Validator is changed
+
+Previous Validator Middleware is obsolete.
+You can still use `hono/validator`, but the API has been changed.
+See [the document](https://hono.dev).
+
+### `serveStatic` is provided from Adapter
+
+Serve Static Middleware is obsolete. Use Adapters instead.
+
+```ts
+// For Cloudflare Workers
+import { serveStatic } from 'hono/cloudflare-workers'
+
+// For Bun
+// import { serveStatic } from 'hono/bun'
+
+// For Deno
+// import { serveStatic } from 'npm:hono/deno'
+
+// ...
+
+app.get('/static/*', serveStatic({ root: './' }))
+```
+
+## `serveStatic` for Cloudflare Workers "Service Worker mode" is obsolete
+
+For Cloudflare Workers, the `serveStatic` is obsolete in Service Worker mode.
+
+Note: Service Worker mode is that using `app.fire()`.
+We recommend use "Module Worker" mode with `export default app`.
+
 ## v2.7.1 - v2.x.x
 
 ### Current Validator Middleware is deprecated
