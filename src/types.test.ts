@@ -8,6 +8,8 @@ import type {
   ExtractSchema,
   Handler,
   InputToDataByTarget,
+  MergePath,
+  MergeSchemaPath,
   MiddlewareHandler,
   ParamKeys,
   ParamKeyToRecord,
@@ -333,5 +335,67 @@ describe('For HonoRequest', () => {
       type Actual = UndefinedIfHavingQuestion<'/animal/type'>
       type verify = Expect<Equal<string, Actual>>
     })
+  })
+})
+
+describe('merge path', () => {
+  test('MergePath', () => {
+    type path1 = MergePath<'/api', '/book'>
+    type verify1 = Expect<Equal<'/api/book', path1>>
+    type path2 = MergePath<'/api/', '/book'>
+    type verify2 = Expect<Equal<'/api/book', path2>>
+    type path3 = MergePath<'/api/', '/'>
+    type verify3 = Expect<Equal<'/api/', path3>>
+  })
+
+  test('MergeSchemaPath', () => {
+    type Sub = Schema<
+      'post',
+      '/posts',
+      {
+        json: {
+          id: number
+          title: string
+        }
+      },
+      {
+        message: string
+      }
+    > &
+      Schema<
+        'get',
+        '/posts',
+        {},
+        {
+          ok: boolean
+        }
+      >
+
+    type Actual = MergeSchemaPath<Sub, '/api'>
+
+    type Expected = {
+      '/api/posts': {
+        $post: {
+          input: {
+            json: {
+              id: number
+              title: string
+            }
+          }
+          output: {
+            message: string
+          }
+        }
+      } & {
+        $get: {
+          input: {}
+          output: {
+            ok: boolean
+          }
+        }
+      }
+    }
+
+    type verify = Expect<Equal<Expected, Actual>>
   })
 })

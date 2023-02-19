@@ -228,6 +228,16 @@ export type AddDollar<T> = T extends Record<infer K, infer R>
     : never
   : never
 
+export type MergeSchemaPath<S, P extends string> = S extends Record<infer Key, infer T>
+  ? Key extends string
+    ? Record<MergePath<P, Key>, T>
+    : never
+  : never
+
+export type MergePath<A extends string, B extends string> = A extends `${infer P}/`
+  ? `${P}${B}`
+  : `${A}${B}`
+
 ////////////////////////////////////////
 //////                            //////
 //////        TypedResponse       //////
@@ -302,3 +312,9 @@ export type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | un
 ////////////////////////////////////////
 
 export type ExtractSchema<T> = T extends Hono<infer _, infer S> ? S : never
+
+export type RemoveBlankRecord<T> = T extends Record<infer K, unknown>
+  ? K extends string
+    ? T
+    : never
+  : never

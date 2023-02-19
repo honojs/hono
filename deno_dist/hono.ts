@@ -18,6 +18,8 @@ import type {
   NotFoundHandler,
   OnHandlerInterface,
   TypedResponse,
+  MergeSchemaPath,
+  RemoveBlankRecord,
 } from './types.ts'
 import { getPathFromURL, mergePath } from './utils/url.ts'
 
@@ -116,8 +118,10 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
   private notFoundHandler: NotFoundHandler = notFoundHandler
   private errorHandler: ErrorHandler = errorHandler
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  route(path: string, app?: Hono<any, any>) {
+  route<SubPath extends string, SubSchema>(
+    path: SubPath,
+    app?: Hono<E, SubSchema>
+  ): Hono<E, RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>> {
     this._tempPath = path
     if (app) {
       app.routes.map((r) => {
@@ -130,7 +134,8 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
       })
       this._tempPath = ''
     }
-    return this
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return this as any
   }
 
   onError(handler: ErrorHandler<E>) {
