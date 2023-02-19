@@ -2,7 +2,7 @@ import type { Hono } from '../hono'
 import type { ValidationTargets } from '../types'
 import type { UnionToIntersection } from '../utils/types'
 import type { Callback, Client, RequestOption } from './types'
-import { replaceUrlParam, mergePath, removeIndexString } from './utils'
+import { replaceUrlParam, mergePath, removeIndexString, deepMerge } from './utils'
 
 const createProxy = (callback: Callback, path: string[]) => {
   const proxy: unknown = new Proxy(() => {}, {
@@ -100,7 +100,7 @@ class ClientRequestImpl {
   }
 }
 
-export const hc = <T extends Hono>(baseUrl: string, headers?: RequestOption['headers']) =>
+export const hc = <T extends Hono>(baseUrl: string, options?: RequestOption) =>
   createProxy(async (opts) => {
     const parts = [...opts.path]
 
@@ -115,10 +115,9 @@ export const hc = <T extends Hono>(baseUrl: string, headers?: RequestOption['hea
     const path = parts.join('/')
     const url = mergePath(baseUrl, path)
     const req = new ClientRequestImpl(url, method)
-    console.log(method)
     if (method) {
-      headers ??= {}
-      const args = {...opts.args[1], headers: opts.args[1]?.headers ? {...headers, ...opts.args[1].headers }: headers}
+      options ??= {}
+      const args = deepMerge<RequestOption>(options, { ...(opts.args[1] ?? {}) })
       return req.fetch(opts.args[0], args)
     }
     return req

@@ -65,3 +65,7 @@ interface CallbackOptions {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   args: any[]
 }
+
+export type ObjectType<T = unknown> = {
+  [key: string]: T
+}

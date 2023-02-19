@@ -77,7 +77,7 @@ describe('Basic - JSON', () => {
     title: 'Hello! Hono!',
   }
 
-  const client = hc<AppType>('http://localhost', { 'x-hono': 'hono' })
+  const client = hc<AppType>('http://localhost', { headers: { 'x-hono': 'hono' } })
 
   it('Should get 200 response', async () => {
     const res = await client.posts.$post(
