@@ -100,7 +100,7 @@ class ClientRequestImpl {
   }
 }
 
-export const hc = <T extends Hono>(baseUrl: string) =>
+export const hc = <T extends Hono>(baseUrl: string, headers?: RequestOption['headers']) =>
   createProxy(async (opts) => {
     const parts = [...opts.path]
 
@@ -115,8 +115,11 @@ export const hc = <T extends Hono>(baseUrl: string) =>
     const path = parts.join('/')
     const url = mergePath(baseUrl, path)
     const req = new ClientRequestImpl(url, method)
+    console.log(method)
     if (method) {
-      return req.fetch(opts.args[0], opts.args[1])
+      headers ??= {}
+      const args = {...opts.args[1], headers: opts.args[1]?.headers ? {...headers, ...opts.args[1].headers }: headers}
+      return req.fetch(opts.args[0], args)
     }
     return req
   }, []) as UnionToIntersection<Client<T>>

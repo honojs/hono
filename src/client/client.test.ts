@@ -34,6 +34,7 @@ describe('Basic - JSON', () => {
           success: true,
           message: 'dummy',
           requestContentType: 'dummy',
+          requestHono: 'dummy',
           requestMessage: 'dummy',
           requestBody: {
             id: 123,
@@ -49,12 +50,14 @@ describe('Basic - JSON', () => {
   const server = setupServer(
     rest.post('http://localhost/posts', async (req, res, ctx) => {
       const requestContentType = req.headers.get('content-type')
+      const requestHono = req.headers.get('x-hono')
       const requestMessage = req.headers.get('x-message')
       const requestBody = await req.json()
       const payload = {
         message: 'Hello!',
         success: true,
         requestContentType,
+        requestHono,
         requestMessage,
         requestBody,
       }
@@ -74,7 +77,7 @@ describe('Basic - JSON', () => {
     title: 'Hello! Hono!',
   }
 
-  const client = hc<AppType>('http://localhost')
+  const client = hc<AppType>('http://localhost', { 'x-hono': 'hono' })
 
   it('Should get 200 response', async () => {
     const res = await client.posts.$post(
@@ -93,6 +96,7 @@ describe('Basic - JSON', () => {
     expect(data.success).toBe(true)
     expect(data.message).toBe('Hello!')
     expect(data.requestContentType).toBe('application/json')
+    expect(data.requestHono).toBe('hono')
     expect(data.requestMessage).toBe('foobar')
     expect(data.requestBody).toEqual(payload)
   })
