@@ -1,4 +1,4 @@
-import { mergePath, removeIndexString, replaceUrlParam } from './utils'
+import { deepMerge, mergePath, removeIndexString, replaceUrlParam } from './utils'
 
 describe('mergePath', () => {
   it('Should merge paths correctly', () => {
@@ -31,5 +31,27 @@ describe('removeIndexString', () => {
     url = '/index'
     newUrl = removeIndexString(url)
     expect(newUrl).toBe('/')
+  })
+})
+
+describe('deepMerge', () => {
+  it('should return the source object if the target object is not an object', () => {
+    const target = null
+    const source = { a: 1 }
+    const result = deepMerge(target, source)
+    expect(result).toEqual(source)
+  })
+
+  it('should merge two objects with object properties', () => {
+    expect(
+      deepMerge(
+        { headers: { hono: '1' }, timeout: 2, params: {} },
+        { headers: { hono: '2', demo: 2 }, params: undefined }
+      )
+    ).toStrictEqual({
+      params: undefined,
+      headers: { hono: '2', demo: 2 },
+      timeout: 2,
+    })
   })
 })
