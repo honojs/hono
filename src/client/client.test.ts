@@ -272,3 +272,37 @@ describe('Infer the request type', () => {
     type verify = Expect<Equal<Expected, Actual['query']>>
   })
 })
+
+describe('Merge path with `app.route()`', () => {
+  const server = setupServer(
+    rest.get('http://localhost/api/search', async (req, res, ctx) => {
+      return res(
+        ctx.status(200),
+        ctx.json({
+          ok: true,
+        })
+      )
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  type Env = {
+    Bindings: {
+      TOKEN: string
+    }
+  }
+
+  it('Should have correct types', async () => {
+    const api = new Hono<Env>().get('/search', (c) => c.jsonT({ ok: true }))
+    const app = new Hono<Env>().route('/api', api)
+    type AppType = typeof app
+    const client = hc<AppType>('http://localhost')
+    const res = await client.api.search.$get()
+    const data = await res.json()
+    type verify = Expect<Equal<boolean, typeof data.ok>>
+    expect(data.ok).toBe(true)
+  })
+})

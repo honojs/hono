@@ -9,4 +9,4 @@ interface HandleInterface {
 export const handle: HandleInterface =
   <E extends Env>(subApp: Hono<E>, path: string = '/') =>
   async (req) =>
-    new Hono().route(path, subApp).fetch(req)
+    new Hono<E>().route(path, subApp).fetch(req)

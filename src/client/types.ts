@@ -1,5 +1,5 @@
 import type { Hono } from '../hono'
-import type { ValidationTargets, Env } from '../types'
+import type { ValidationTargets } from '../types'
 
 type MethodName = `$${string}`
 
@@ -50,7 +50,8 @@ type PathToChain<
       >
     }
 
-export type Client<T> = T extends Hono<Env, infer S>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Client<T> = T extends Hono<any, infer S>
   ? S extends Record<infer K, Endpoint>
     ? K extends string
       ? PathToChain<K, S>
