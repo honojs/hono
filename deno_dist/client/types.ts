@@ -12,13 +12,13 @@ type Data = {
   output: {}
 }
 
-export type RequestOption = {
+export type RequestOptions = {
   headers?: Record<string, string>
 }
 
 type ClientRequest<S extends Data> = {
   [M in keyof S]: S[M] extends { input: infer R; output: infer O }
-    ? (args?: R, options?: RequestOption) => Promise<ClientResponse<O>>
+    ? (args?: R, options?: RequestOptions) => Promise<ClientResponse<O>>
     : never
 }
 
@@ -28,7 +28,7 @@ export interface ClientResponse<T> extends Response {
 
 export type Fetch<T> = (
   args?: InferRequestType<T>,
-  opt?: RequestOption
+  opt?: RequestOptions
 ) => Promise<ClientResponse<InferResponseType<T>>>
 
 export type InferResponseType<T> = T extends () => Promise<ClientResponse<infer O>> ? O : never
@@ -64,4 +64,8 @@ interface CallbackOptions {
   path: string[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   args: any[]
+}
+
+export type ObjectType<T = unknown> = {
+  [key: string]: T
 }
