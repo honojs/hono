@@ -13,7 +13,6 @@ export type {
 export type { Context, ContextVariableMap } from './context'
 export type { HonoRequest } from './request'
 
-
 declare module './hono' {
   interface Hono {
     fire(): void
