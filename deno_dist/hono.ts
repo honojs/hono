@@ -83,7 +83,8 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
             this.addRoute(method, this.path, handler)
           }
         })
-        return this
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return this as any
       }
     })
 
@@ -96,7 +97,8 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
           this.addRoute(m.toUpperCase(), this.path, handler)
         })
       }
-      return this
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return this as any
     }
 
     // Implementation of app.use(...handlers[]) or app.get(path, ...handlers[])
