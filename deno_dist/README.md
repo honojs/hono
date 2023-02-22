@@ -38,6 +38,12 @@ app.get('/', (c) => c.text('Hono!'))
 export default app
 ```
 
+## Quick Start
+
+```
+npm create hono@latest my-app
+```
+
 ## Features
 
 - **Ultrafast** - The routers are really fast and smart. Not using linear loops. Fast.
