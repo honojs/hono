@@ -156,21 +156,21 @@ export interface OnHandlerInterface<E extends Env = Env, S = {}> {
     method: M,
     path: P,
     ...handlers: [H<E, P, I, O>, H<E, P, I, O>]
-  ): Hono<E, S & Schema<M, P, I, O>>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I, O>>>
 
   // app.get(method, path, handler x3)
   <M extends string, P extends string, O = {}, I = {}, I2 = I, I3 = I & I2>(
     method: M,
     path: P,
     ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>]
-  ): Hono<E, S & Schema<M, P, I3, O>>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I3, O>>>
 
   // app.get(method, path, handler x4)
   <M extends string, P extends string, O = {}, I = {}, I2 = I, I3 = I & I2, I4 = I2 & I3>(
     method: M,
     path: P,
     ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>]
-  ): Hono<E, S & Schema<M, P, I4, O>>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I4, O>>>
 
   // app.get(method, path, handler x5)
   <
@@ -186,20 +186,20 @@ export interface OnHandlerInterface<E extends Env = Env, S = {}> {
     method: M,
     path: P,
     ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>, H<E, P, I5, O>]
-  ): Hono<E, S & Schema<M, P, I5, O>>
+  ): Hono<E, S | Schema<M, P, I5, O>>
 
   <M extends string, P extends string, O extends {} = {}, I = {}>(
     method: M,
     path: P,
     ...handlers: H<E, P, I, O>[]
-  ): Hono<E, S & Schema<M, P, I, O>>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I, O>>>
 
   // app.on(method[], path, ...handler)
   <P extends string, O extends {} = {}, I = {}>(
     methods: string[],
     path: P,
     ...handlers: H<E, P, I, O>[]
-  ): Hono<E, S & Schema<string, P, I, O>>
+  ): Hono<E, RemoveBlankRecord<S | Schema<string, P, I, O>>>
 }
 
 type ExtractKey<S> = S extends Record<infer Key, unknown>
