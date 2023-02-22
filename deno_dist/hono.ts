@@ -120,9 +120,9 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
   private notFoundHandler: NotFoundHandler = notFoundHandler
   private errorHandler: ErrorHandler = errorHandler
 
-  route<SubPath extends string, SubSchema>(
+  route<SubPath extends string, SubEnv extends Env, SubSchema>(
     path: SubPath,
-    app?: Hono<E, SubSchema>
+    app?: Hono<SubEnv, SubSchema>
   ): Hono<E, RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>> {
     this._tempPath = path
     if (app) {
