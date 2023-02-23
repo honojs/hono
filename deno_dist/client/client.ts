@@ -92,7 +92,7 @@ class ClientRequestImpl {
     setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
 
     // Pass URL string to 1st arg for testing with MSW and node-fetch
-    return fetch(url, {
+    return (opt?.fetch || fetch)(url, {
       body: setBody ? this.rBody : undefined,
       method: methodUpperCase,
       headers: headers,

@@ -306,3 +306,30 @@ describe('Merge path with `app.route()`', () => {
     expect(data.ok).toBe(true)
   })
 })
+
+describe('Use custom fetch method', () => {
+  it('Should call the custom fetch method when provided', async () => {
+    const fetchMock = jest.fn()
+
+    const api = new Hono().get('/search', (c) => c.jsonT({ ok: true }))
+    const app = new Hono().route('/api', api)
+    type AppType = typeof app
+    const client = hc<AppType>('http://localhost', { fetch: fetchMock })
+    await client.api.search.$get()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('Should return Response from custom fetch method', async () => {
+    const fetchMock = jest.fn()
+    const returnValue = new Response(null, { status: 200 })
+    fetchMock.mockReturnValueOnce(returnValue)
+
+    const api = new Hono().get('/search', (c) => c.jsonT({ ok: true }))
+    const app = new Hono().route('/api', api)
+    type AppType = typeof app
+    const client = hc<AppType>('http://localhost', { fetch: fetchMock })
+    const res = await client.api.search.$get()
+    expect(res.ok).toBe(true)
+    expect(res).toEqual(returnValue)
+  })
+})

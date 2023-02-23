@@ -14,6 +14,7 @@ type Data = {
 
 export type RequestOptions = {
   headers?: Record<string, string>
+  fetch?: typeof fetch
 }
 
 type ClientRequest<S extends Data> = {
