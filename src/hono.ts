@@ -263,7 +263,10 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
   }
 
   request = async (input: Request | string, requestInit?: RequestInit) => {
-    const req = input instanceof Request ? input : new Request(input, requestInit)
+    if (input instanceof Request) {
+      return await this.fetch(input)
+    }
+    const req = new Request(/^http/.test(input) ? input : `http://localhost${input}`, requestInit)
     return await this.fetch(req)
   }
 }
