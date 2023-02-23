@@ -38,8 +38,21 @@ describe('GET Request', () => {
     expect(await res.text()).toBe('hello')
   })
 
+  it('GET httphello is ng', async () => {
+    const res = await app.request('httphello')
+    expect(res.status).toBe(404)
+  })
+
   it('GET /hello is ok', async () => {
     const res = await app.request('/hello')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.statusText).toBe('Hono is OK')
+    expect(await res.text()).toBe('hello')
+  })
+
+  it('GET hello is ok', async () => {
+    const res = await app.request('hello')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.statusText).toBe('Hono is OK')

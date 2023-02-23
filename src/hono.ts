@@ -266,7 +266,8 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
     if (input instanceof Request) {
       return await this.fetch(input)
     }
-    const req = new Request(/^http/.test(input) ? input : `http://localhost${input}`, requestInit)
+    const path = /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`
+    const req = new Request(path, requestInit)
     return await this.fetch(req)
   }
 }
