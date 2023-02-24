@@ -478,3 +478,59 @@ describe('`app.on`', () => {
   type Actual = ExtractSchema<typeof route>
   //type verify = Expect<Equal<Expected, Actual>>
 })
+
+describe('Clone Request object', () => {
+  describe('json', () => {
+    const app = new Hono()
+    app.post(
+      '/',
+      validator('json', () => {
+        return {
+          foo: 'bar',
+        }
+      }),
+      async (c) => {
+        // `c.req.json` should not throw the error
+        await c.req.json()
+        return c.text('foo')
+      }
+    )
+
+    it('Should not throw the error with c.req.json()', async () => {
+      const req = new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify({ foo: 'bar' }),
+      })
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+    })
+  })
+
+  describe('form', () => {
+    const app = new Hono()
+    app.post(
+      '/',
+      validator('form', () => {
+        return {
+          foo: 'bar',
+        }
+      }),
+      async (c) => {
+        // `c.req.json` should not throw the error
+        await c.req.parseBody()
+        return c.text('foo')
+      }
+    )
+
+    it('Should not throw the error with c.req.parseBody()', async () => {
+      const body = new FormData()
+      body.append('foo', 'bar')
+      const req = new Request('http://localhost', {
+        method: 'POST',
+        body: body,
+      })
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+    })
+  })
+})
