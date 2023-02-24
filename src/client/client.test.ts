@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import FormData from 'form-data'
@@ -5,7 +6,8 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import _fetch, { Request as NodeFetchRequest } from 'node-fetch'
 import { Hono } from '../hono'
-import type { Equal, Expect } from '../utils/types'
+import type { Expect } from '../utils/types'
+import type { Equal, NotEqual } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
 import type { InferRequestType, InferResponseType } from './types'
@@ -277,7 +279,20 @@ describe('Merge path with `app.route()`', () => {
   const server = setupServer(
     rest.get('http://localhost/api/search', async (req, res, ctx) => {
       return res(
-        ctx.status(200),
+        ctx.json({
+          ok: true,
+        })
+      )
+    }),
+    rest.get('http://localhost/api/foo', async (req, res, ctx) => {
+      return res(
+        ctx.json({
+          ok: true,
+        })
+      )
+    }),
+    rest.post('http://localhost/api/bar', async (req, res, ctx) => {
+      return res(
         ctx.json({
           ok: true,
         })
@@ -304,6 +319,27 @@ describe('Merge path with `app.route()`', () => {
     const data = await res.json()
     type verify = Expect<Equal<boolean, typeof data.ok>>
     expect(data.ok).toBe(true)
+  })
+
+  describe('Multiple endpoints', () => {
+    const api = new Hono()
+      .get('/foo', (c) => c.jsonT({ foo: '' }))
+      .post('/bar', (c) => c.jsonT({ bar: 0 }))
+    const app = new Hono().route('/api', api)
+    type AppType = typeof app
+    const client = hc<typeof app>('http://localhost')
+
+    it('Should return correct types - GET /api/foo', async () => {
+      const res = await client.api.foo.$get()
+      const data = await res.json()
+      type verify = Expect<Equal<string, typeof data.foo>>
+    })
+
+    it('Should return correct types - POST /api/bar', async () => {
+      const res = await client.api.bar.$post()
+      const data = await res.json()
+      type verify = Expect<Equal<number, typeof data.bar>>
+    })
   })
 })
 

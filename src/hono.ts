@@ -83,7 +83,8 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
             this.addRoute(method, this.path, handler)
           }
         })
-        return this
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return this as any
       }
     })
 
@@ -96,7 +97,8 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
           this.addRoute(m.toUpperCase(), this.path, handler)
         })
       }
-      return this
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return this as any
     }
 
     // Implementation of app.use(...handlers[]) or app.get(path, ...handlers[])
@@ -118,9 +120,9 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
   private notFoundHandler: NotFoundHandler = notFoundHandler
   private errorHandler: ErrorHandler = errorHandler
 
-  route<SubPath extends string, SubSchema>(
+  route<SubPath extends string, SubEnv extends Env, SubSchema>(
     path: SubPath,
-    app?: Hono<E, SubSchema>
+    app?: Hono<SubEnv, SubSchema>
   ): Hono<E, RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>> {
     this._tempPath = path
     if (app) {
