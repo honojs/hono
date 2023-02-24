@@ -330,17 +330,15 @@ describe('Merge path with `app.route()`', () => {
     const client = hc<typeof app>('http://localhost')
 
     it('Should return correct types - GET /api/foo', async () => {
-      type verify1 = Expect<NotEqual<typeof client.api.foo.$get, any>>
       const res = await client.api.foo.$get()
       const data = await res.json()
-      type verify2 = Expect<Equal<string, typeof data.foo>>
+      type verify = Expect<Equal<string, typeof data.foo>>
     })
 
     it('Should return correct types - POST /api/bar', async () => {
-      type verify1 = Expect<NotEqual<typeof client.api.bar.$post, any>>
       const res = await client.api.bar.$post()
       const data = await res.json()
-      type verify2 = Expect<Equal<number, typeof data.bar>>
+      type verify = Expect<Equal<number, typeof data.bar>>
     })
   })
 })
