@@ -30,6 +30,7 @@ export type {
   ValidationTargets,
 } from './types.ts'
 export type { Context, ContextVariableMap } from './context.ts'
+export type { HonoRequest } from './request.ts'
 export { Hono }
 
 // Router
