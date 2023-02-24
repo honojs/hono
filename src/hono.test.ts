@@ -176,6 +176,11 @@ describe('Routing', () => {
     user.get('/login', (c) => c.text('get /user/login'))
     user.post('/register', (c) => c.text('post /user/register'))
 
+    const appForEachUser = user.route(':id')
+    appForEachUser.get('/profile', (c) => c.text('get /user/' + c.req.param('id') + '/profile'))
+
+    app.get('/add-path-after-route-call', (c) => c.text('get /add-path-after-route-call'))
+
     let res = await app.request('http://localhost/book', { method: 'GET' })
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('get /book')
@@ -198,6 +203,14 @@ describe('Routing', () => {
     res = await app.request('http://localhost/user/register', { method: 'POST' })
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('post /user/register')
+
+    res = await app.request('http://localhost/user/123/profile', { method: 'GET' })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /user/123/profile')
+
+    res = await app.request('http://localhost/add-path-after-route-call', { method: 'GET' })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /add-path-after-route-call')
   })
 
   describe('Nested route with middleware', () => {

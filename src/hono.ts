@@ -61,7 +61,7 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
     routers: [new RegExpRouter(), new TrieRouter()],
   })
   readonly strict: boolean = true // strict routing - default is true
-  private _tempPath: string = ''
+  private basePath: string = ''
   private path: string = '*'
 
   routes: RouterRoute[] = []
@@ -117,14 +117,25 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
     Object.assign(this, init)
   }
 
+  private clone(): Hono<E, S> {
+    const clone = new Hono<E, S>({
+      router: this.router,
+      strict: this.strict,
+    })
+    clone.routes = this.routes
+    return clone
+  }
+
   private notFoundHandler: NotFoundHandler = notFoundHandler
   private errorHandler: ErrorHandler = errorHandler
 
   route<SubPath extends string, SubEnv extends Env, SubSchema>(
-    path: SubPath,
+    path: SubPath = '' as SubPath,
     app?: Hono<SubEnv, SubSchema>
   ): Hono<E, RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>> {
-    this._tempPath = path
+    const subApp = this.clone()
+    subApp.basePath = mergePath(this.basePath, path)
+
     if (app) {
       app.routes.map((r) => {
         const handler =
@@ -132,12 +143,12 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
             ? r.handler
             : async (c: Context, next: Next) =>
                 (await compose<Context>([r.handler], app.errorHandler)(c, next)).res
-        this.addRoute(r.method, r.path, handler)
+        subApp.addRoute(r.method, r.path, handler)
       })
-      this._tempPath = ''
     }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this as any
+    return subApp as any
   }
 
   onError(handler: ErrorHandler<E>) {
@@ -161,8 +172,8 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
 
   private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
-    if (this._tempPath) {
-      path = mergePath(this._tempPath, path)
+    if (this.basePath) {
+      path = mergePath(this.basePath, path)
     }
     this.router.add(method, path, handler)
     const r: RouterRoute = { path: path, method: method, handler: handler }
