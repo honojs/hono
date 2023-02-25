@@ -100,11 +100,7 @@ class ClientRequestImpl {
 
     if (opt?.after) {
       const hookedResponse = await opt.after(await res)
-      if (hookedResponse) {
-        return hookedResponse
-      } else {
-        return res
-      }
+      return hookedResponse ?? res
     }
     return res
   }
