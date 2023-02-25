@@ -12,12 +12,12 @@ type Data = {
   output: {}
 }
 
-type AfterHook = (res: Response) => Promise<Response | void> | Response | void
+type AfterResponseHook = (res: Response) => Promise<Response | void> | Response | void
 
 export type RequestOptions = {
   headers?: Record<string, string>
   fetch?: typeof fetch
-  after?: AfterHook
+  after?: AfterResponseHook
 }
 
 type ClientRequest<S extends Data> = {
