@@ -32,7 +32,7 @@ class ClientRequestImpl {
     this.url = url
     this.method = method
   }
-  fetch = (
+  fetch = async (
     args?: ValidationTargets & {
       param?: Record<string, string>
     },
@@ -92,11 +92,21 @@ class ClientRequestImpl {
     setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
 
     // Pass URL string to 1st arg for testing with MSW and node-fetch
-    return (opt?.fetch || fetch)(url, {
+    const res = (opt?.fetch || fetch)(url, {
       body: setBody ? this.rBody : undefined,
       method: methodUpperCase,
       headers: headers,
     })
+
+    if (opt?.after) {
+      const hookedResponse = await opt.after(await res)
+      if (hookedResponse) {
+        return hookedResponse
+      } else {
+        return res
+      }
+    }
+    return res
   }
 }
 

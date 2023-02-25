@@ -369,3 +369,30 @@ describe('Use custom fetch method', () => {
     expect(res).toEqual(returnValue)
   })
 })
+
+describe('After Hook', () => {
+  const server = setupServer(
+    rest.get('http://localhost/hello', (_, res, ctx) => {
+      return res(ctx.text('OK'))
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  const app = new Hono().get('/hello', (c) => c.text('OK'))
+  type AppType = typeof app
+  const client = hc<AppType>('http://localhost', {
+    after: (res) => {
+      res.headers.append('X-Custom', 'Hono!')
+    },
+  })
+
+  it('Should return Response with the X-Custom header', async () => {
+    const res = await client.hello.$get()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Custom')).toBe('Hono!')
+    expect(await res.text()).toBe('OK')
+  })
+})
