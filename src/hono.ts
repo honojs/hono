@@ -135,7 +135,7 @@ export class Hono<
   private errorHandler: ErrorHandler = errorHandler
 
   route<SubPath extends string, SubEnv extends Env, SubSchema>(
-    path: SubPath = '' as SubPath,
+    path: SubPath,
     app?: Hono<SubEnv, SubSchema>
   ): Hono<
     E,
