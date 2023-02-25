@@ -101,7 +101,7 @@ class ClientRequestImpl {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const hc = <T extends Hono<any>>(baseUrl: string, options?: RequestOptions) =>
+export const hc = <T extends Hono<any, any, any>>(baseUrl: string, options?: RequestOptions) =>
   createProxy(async (opts) => {
     const parts = [...opts.path]
 
