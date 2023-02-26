@@ -264,10 +264,14 @@ export class Hono<E extends Env = Env, S = {}> extends defineDynamicClass()<E, S
     return this.dispatch(request, executionCtx, Env)
   }
 
-  request = async (input: Request | string, requestInit?: RequestInit) => {
+  request = async (input: Request | string | URL, requestInit?: RequestInit) => {
     if (input instanceof Request) {
+      if (requestInit !== undefined) {
+        input = new Request(input, requestInit)
+      }
       return await this.fetch(input)
     }
+    input = input.toString()
     const path = /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`
     const req = new Request(path, requestInit)
     return await this.fetch(req)
