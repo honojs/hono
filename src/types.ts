@@ -119,7 +119,7 @@ export interface HandlerInterface<
       H<E, MergePath<BasePath, P>, I2, O>,
       H<E, MergePath<BasePath, P>, I3, O>
     ]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I3, O>>>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I3, O>>>
 
   // app.get(path, handler x4)
   <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2, I4 = I2 & I3>(
@@ -130,7 +130,7 @@ export interface HandlerInterface<
       H<E, MergePath<BasePath, P>, I3, O>,
       H<E, MergePath<BasePath, P>, I4, O>
     ]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I4, O>>>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I4, O>>>
 
   // app.get(path, handler x5)
   <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2, I4 = I2 & I3, I5 = I3 & I4>(
@@ -142,7 +142,7 @@ export interface HandlerInterface<
       H<E, MergePath<BasePath, P>, I4, O>,
       H<E, MergePath<BasePath, P>, I5, O>
     ]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I5, O>>>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I5, O>>>
 
   // app.get(path, ...handlers[])
   <P extends string, I = {}, O = {}>(
