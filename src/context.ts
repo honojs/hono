@@ -4,6 +4,7 @@ import type { Env, NotFoundHandler, Input } from './types'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'
+import type { PrettyJSON, JSONObject } from './utils/types'
 
 type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'lagon' | 'other'
 type HeaderRecord = Record<string, string | string[]>
@@ -237,14 +238,17 @@ export class Context<
     return this.newResponse(body, status, headers)
   }
 
-  jsonT = <T = object>(
-    object: T,
+  jsonT = <T>(
+    object: T extends JSONObject ? T : JSONObject,
     status: StatusCode = this._status,
     headers?: HeaderRecord
-  ): TypedResponse<T> => {
+  ): TypedResponse<
+    T extends JSONObject ? (JSONObject extends T ? never : PrettyJSON<T>) : never
+  > => {
     return {
       response: this.json(object, status, headers),
-      data: object,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data: object as any,
       format: 'json',
     }
   }
