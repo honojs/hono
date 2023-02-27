@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Context } from './context.ts'
 import type { Hono } from './hono.ts'
-import type { UnionToIntersection } from './utils/types.ts'
+import type { UnionToIntersection, RemoveBlankRecord } from './utils/types.ts'
 
 ////////////////////////////////////////
 //////                            //////
@@ -361,9 +361,3 @@ export type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | un
 ////////////////////////////////////////
 
 export type ExtractSchema<T> = T extends Hono<infer _, infer S> ? S : never
-
-export type RemoveBlankRecord<T> = T extends Record<infer K, unknown>
-  ? K extends string
-    ? T
-    : never
-  : never
