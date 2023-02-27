@@ -231,7 +231,7 @@ describe('Basic - query, queries, form, and path params', () => {
   })
 })
 
-describe('Infer the request type', () => {
+describe('Infer the response/request type', () => {
   const app = new Hono()
   const route = app.get(
     '/',
@@ -272,6 +272,29 @@ describe('Infer the request type', () => {
       name: string
     }
     type verify = Expect<Equal<Expected, Actual['query']>>
+  })
+
+  describe('Without input', () => {
+    const route = app.get('/', (c) => c.jsonT({ ok: true }))
+    type AppType = typeof route
+
+    it('Should infer response type the type correctly', () => {
+      const client = hc<AppType>('/')
+      const req = client.index.$get
+
+      type Actual = InferResponseType<typeof req>
+      type Expected = { ok: boolean }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+
+    it('Should infer request type the type correctly', () => {
+      const client = hc<AppType>('/')
+      const req = client.index.$get
+
+      type Actual = InferRequestType<typeof req>
+      type Expected = {}
+      type verify = Expect<Equal<Expected, Actual>>
+    })
   })
 })
 

@@ -10,3 +10,9 @@ export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) ex
 ) => void
   ? I
   : never
+
+export type RemoveBlankRecord<T> = T extends Record<infer K, unknown>
+  ? K extends string
+    ? T
+    : never
+  : never
