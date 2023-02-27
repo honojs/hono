@@ -10,3 +10,18 @@ export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) ex
 ) => void
   ? I
   : never
+
+export type JSONPrimitive = string | boolean | number | null | undefined
+export type JSONArray = (JSONPrimitive | JSONObject | JSONArray)[]
+export type JSONObject = { [key: string]: JSONPrimitive | JSONArray | JSONObject }
+export type PrettyJSON<T> = T extends true
+  ? boolean
+  : T extends false
+  ? boolean
+  : T extends JSONPrimitive
+  ? T
+  : T extends JSONArray
+  ? PrettyJSON<T[number]>
+  : T extends JSONObject
+  ? { [K in keyof T]: PrettyJSON<T[K]> }
+  : never
