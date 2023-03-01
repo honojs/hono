@@ -33,7 +33,7 @@ interface RouterRoute {
 }
 
 function defineDynamicClass(): {
-  new <E extends Env = Env, S = {}, BasePath extends string = ''>(): {
+  new <E extends Env = Env, S = {}, BasePath extends string = '/'>(): {
     [M in Methods]: HandlerInterface<E, M, S, BasePath>
   } & {
     on: OnHandlerInterface<E, S, BasePath>
@@ -60,19 +60,23 @@ const errorHandler = (err: Error, c: Context) => {
 export class Hono<
   E extends Env = Env,
   S = {},
-  BasePath extends string = ''
+  BasePath extends string = '/'
 > extends defineDynamicClass()<E, S, BasePath> {
   readonly router: Router<H> = new SmartRouter({
     routers: [new RegExpRouter(), new TrieRouter()],
   })
   readonly strict: boolean = true // strict routing - default is true
-  private basePath: string = ''
+  basePath: BasePath
   private path: string = '*'
 
   routes: RouterRoute[] = []
 
-  constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
+  constructor(
+    init: Partial<Pick<Hono, 'router' | 'strict'>> & Partial<{ basePath: BasePath }> = {}
+  ) {
     super()
+
+    this.basePath = (init.basePath || '/') as BasePath
 
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
@@ -126,6 +130,7 @@ export class Hono<
     const clone = new Hono<E, S, BasePath>({
       router: this.router,
       strict: this.strict,
+      basePath: this.basePath,
     })
     clone.routes = this.routes
     return clone
@@ -134,16 +139,16 @@ export class Hono<
   private notFoundHandler: NotFoundHandler = notFoundHandler
   private errorHandler: ErrorHandler = errorHandler
 
-  route<SubPath extends string, SubEnv extends Env, SubSchema>(
+  route<SubPath extends string, SubEnv extends Env, SubSchema, SubBasePath extends string>(
     path: SubPath,
-    app?: Hono<SubEnv, SubSchema>
+    app?: Hono<SubEnv, SubSchema, SubBasePath>
   ): Hono<
     E,
     RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>,
     MergePath<BasePath, SubPath>
   > {
     const subApp = this.clone()
-    subApp.basePath = mergePath(this.basePath, path)
+    subApp.basePath = mergePath(this.basePath, path) as BasePath
 
     if (app) {
       app.routes.map((r) => {
