@@ -25,7 +25,7 @@ export const validator = <
     switch (target) {
       case 'json':
         try {
-          value = await c.req.raw.clone().json()
+          value = await c.req.json()
         } catch {
           console.error('Error: Malformed JSON in request body')
           return c.json(
