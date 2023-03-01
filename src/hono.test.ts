@@ -128,6 +128,32 @@ describe('strict parameter', () => {
   })
 })
 
+describe('Specify basePath in the constructor', () => {
+  describe('basic', () => {
+    const app = new Hono({ basePath: '/api' })
+    app.get('/hello', (c) => c.text('/api/hello'))
+
+    it('Should return 200 response - GET /api/hello', async () => {
+      const res = await app.request('/api/hello')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/api/hello')
+    })
+  })
+
+  describe('with app.route()', () => {
+    const app = new Hono({ basePath: '/api' })
+    app.get('/hello', (c) => c.text('/v1/api/hello'))
+    const v1 = new Hono()
+    v1.route('/v1', app)
+
+    it('Should return 200 response - GET /v1/api/hello', async () => {
+      const res = await v1.request('/v1/api/hello')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/v1/api/hello')
+    })
+  })
+})
+
 describe('Destruct functions in context', () => {
   it('Should return 200 response - text', async () => {
     const app = new Hono()

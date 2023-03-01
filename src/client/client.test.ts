@@ -275,6 +275,33 @@ describe('Infer the request type', () => {
   })
 })
 
+describe('With `basePath` option', () => {
+  const server = setupServer(
+    rest.get('http://localhost/api/hello', async (req, res, ctx) => {
+      return res(
+        ctx.json({
+          ok: true,
+        })
+      )
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  it('Should have correct types', async () => {
+    const app = new Hono({ basePath: '/api' })
+    const route = app.get('/hello', (c) => c.jsonT({ ok: true }))
+    type AppType = typeof route
+    const client = hc<AppType>('http://localhost')
+    const res = await client.api.hello.$get()
+    const data = await res.json()
+    type verify = Expect<Equal<boolean, typeof data.ok>>
+    expect(data.ok).toBe(true)
+  })
+})
+
 describe('Merge path with `app.route()`', () => {
   const server = setupServer(
     rest.get('http://localhost/api/search', async (req, res, ctx) => {
