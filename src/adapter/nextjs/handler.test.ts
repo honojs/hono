@@ -25,4 +25,19 @@ describe('Adapter for Next.js', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('/api/foo')
   })
+
+  it('Should not use `route()` if path argument is not passed', async () => {
+    const app = new Hono().route('/api')
+
+    app.onError((e) => {
+      throw e
+    })
+    app.get('/error', () => {
+      throw new Error('Custom Error')
+    })
+
+    const handler = handle(app)
+    const req = new Request('http://localhost/api/error')
+    expect(() => handler(req)).toThrowError('Custom Error')
+  })
 })

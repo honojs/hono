@@ -15,8 +15,8 @@ interface HandleInterface {
 }
 
 export const handle: HandleInterface =
-  <E extends Env>(subApp: Hono<E>, path: string = '/') =>
-  ({ request, env, waitUntil }) =>
-    new Hono<E>()
-      .route(path, subApp)
-      .fetch(request, env, { waitUntil, passThroughOnException: () => {} })
+  <E extends Env>(subApp: Hono<E>, path?: string) =>
+  ({ request, env, waitUntil }) => {
+    const app = path ? new Hono<E>().route(path, subApp) : subApp
+    return app.fetch(request, env, { waitUntil, passThroughOnException: () => {} })
+  }
