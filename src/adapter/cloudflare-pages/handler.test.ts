@@ -38,4 +38,22 @@ describe('Adapter for Cloudflare Pages', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('/api/foo')
   })
+
+  it('Should not use `route()` if path argument is not passed', async () => {
+    const request = new Request('http://localhost/api/error')
+    const app = new Hono().route('/api')
+
+    app.onError((e) => {
+      throw e
+    })
+    app.get('/error', () => {
+      throw new Error('Custom Error')
+    })
+
+    const handler = handle(app)
+    // It does throw the error if app is NOT "subApp"
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    expect(() => handler({ request })).toThrowError('Custom Error')
+  })
 })
