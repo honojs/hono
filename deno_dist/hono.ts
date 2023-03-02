@@ -20,8 +20,8 @@ import type {
   TypedResponse,
   MergePath,
   MergeSchemaPath,
-  RemoveBlankRecord,
 } from './types.ts'
+import type { RemoveBlankRecord } from './utils/types.ts'
 import { getPathFromURL, mergePath } from './utils/url.ts'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
