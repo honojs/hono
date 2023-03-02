@@ -11,6 +11,12 @@ export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) ex
   ? I
   : never
 
+export type RemoveBlankRecord<T> = T extends Record<infer K, unknown>
+  ? K extends string
+    ? T
+    : never
+  : never
+
 export type JSONPrimitive = string | boolean | number | null | undefined
 export type JSONArray = (JSONPrimitive | JSONObject | JSONArray)[]
 export type JSONObject = { [key: string]: JSONPrimitive | JSONArray | JSONObject }

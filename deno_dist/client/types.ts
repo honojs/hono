@@ -1,5 +1,6 @@
 import type { Hono } from '../hono.ts'
 import type { ValidationTargets } from '../types.ts'
+import type { RemoveBlankRecord } from '../utils/types.ts'
 
 type MethodName = `$${string}`
 
@@ -19,7 +20,9 @@ export type RequestOptions = {
 
 type ClientRequest<S extends Data> = {
   [M in keyof S]: S[M] extends { input: infer R; output: infer O }
-    ? (args?: R, options?: RequestOptions) => Promise<ClientResponse<O>>
+    ? RemoveBlankRecord<R> extends never
+      ? (args?: {}, options?: RequestOptions) => Promise<ClientResponse<O>>
+      : (args: R, options?: RequestOptions) => Promise<ClientResponse<O>>
     : never
 }
 
@@ -32,7 +35,12 @@ export type Fetch<T> = (
   opt?: RequestOptions
 ) => Promise<ClientResponse<InferResponseType<T>>>
 
-export type InferResponseType<T> = T extends () => Promise<ClientResponse<infer O>> ? O : never
+export type InferResponseType<T> = T extends (
+  args: any | undefined
+) => Promise<ClientResponse<infer O>>
+  ? O
+  : never
+
 export type InferRequestType<T> = T extends (args: infer R) => Promise<ClientResponse<unknown>>
   ? NonNullable<R>
   : never
