@@ -355,6 +355,17 @@ describe('Merge path with `app.route()`', () => {
     expect(data.ok).toBe(true)
   })
 
+  it('Should not allow the incorrect JSON type', async () => {
+    const app = new Hono()
+    // @ts-ignore
+    const route = app.get('/api/foo', (c) => c.jsonT({ datetime: new Date() }))
+    type AppType = typeof route
+    const client = hc<AppType>('http://localhost')
+    const res = await client.api.foo.$get()
+    const data = await res.json()
+    type verify = Expect<Equal<never, typeof data>>
+  })
+
   describe('Multiple endpoints', () => {
     const api = new Hono()
       .get('/foo', (c) => c.jsonT({ foo: '' }))
