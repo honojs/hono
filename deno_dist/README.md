@@ -49,7 +49,7 @@ npm create hono@latest my-app
 - **Ultrafast** - The routers are really fast and smart. Not using linear loops. Fast.
 - **Multi-runtime** - Works on Cloudflare Workers, Fastly Compute@Edge, Deno, Bun, Lagon, or Node.js. The same code runs on all platforms.
 - **Batteries Included** - Hono has built-in middleware, custom middleware, and third-party middleware. Batteries included.
-- **Fine DX** - First-class TypeScript support. Now, we've got "Types".
+- **Delightful DX** - First-class TypeScript support. Now, we've got "Types".
 - **Small** - About 20kB. Zero-dependencies. Using only Web Standard API.
 
 ## Benchmarks
