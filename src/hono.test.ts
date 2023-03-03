@@ -213,6 +213,26 @@ describe('Routing', () => {
     expect(await res.text()).toBe('get /add-path-after-route-call')
   })
 
+  it('Multiple route', async () => {
+    const app = new Hono()
+
+    const book = new Hono()
+    book.get('/hello', (c) => c.text('get /book/hello'))
+
+    const user = new Hono()
+    user.get('/hello', (c) => c.text('get /user/hello'))
+
+    app.route('/book', book).route('/user', user)
+
+    let res = await app.request('http://localhost/book/hello', { method: 'GET' })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /book/hello')
+
+    res = await app.request('http://localhost/user/hello', { method: 'GET' })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /user/hello')
+  })
+
   describe('Nested route with middleware', () => {
     const api = new Hono()
     const api2 = api.use('*', async (_c, next) => await next())

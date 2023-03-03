@@ -134,13 +134,25 @@ export class Hono<
   private notFoundHandler: NotFoundHandler = notFoundHandler
   private errorHandler: ErrorHandler = errorHandler
 
+  route<SubPath extends string, SubSchema>(
+    path: SubPath
+  ): Hono<
+    E,
+    RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>,
+    MergePath<BasePath, SubPath>
+  >
+  route<SubPath extends string, SubEnv extends Env, SubSchema>(
+    path: SubPath,
+    app: Hono<SubEnv, SubSchema>
+  ): Hono<E, RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>, BasePath>
   route<SubPath extends string, SubEnv extends Env, SubSchema>(
     path: SubPath,
     app?: Hono<SubEnv, SubSchema>
   ): Hono<
     E,
     RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>,
-    MergePath<BasePath, SubPath>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any
   > {
     const subApp = this.clone()
     subApp.basePath = mergePath(this.basePath, path)
@@ -154,6 +166,8 @@ export class Hono<
                 (await compose<Context>([r.handler], app.errorHandler)(c, next)).res
         subApp.addRoute(r.method, r.path, handler)
       })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return this as any
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
