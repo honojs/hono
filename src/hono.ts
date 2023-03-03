@@ -66,7 +66,7 @@ export class Hono<
     routers: [new RegExpRouter(), new TrieRouter()],
   })
   readonly strict: boolean = true // strict routing - default is true
-  private basePath: string = ''
+  #basePath: string = ''
   private path: string = '*'
 
   routes: RouterRoute[] = []
@@ -136,26 +136,25 @@ export class Hono<
 
   route<SubPath extends string, SubEnv extends Env, SubSchema>(
     path: SubPath,
-    app?: Hono<SubEnv, SubSchema>
-  ): Hono<
-    E,
-    RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>,
-    MergePath<BasePath, SubPath>
-  > {
+    app: Hono<SubEnv, SubSchema>
+  ): Hono<E, RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>, BasePath> {
+    const subApp = this.basePath(path)
+
+    app.routes.map((r) => {
+      const handler =
+        app.errorHandler === errorHandler
+          ? r.handler
+          : async (c: Context, next: Next) =>
+              (await compose<Context>([r.handler], app.errorHandler)(c, next)).res
+      subApp.addRoute(r.method, r.path, handler)
+    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return this as any
+  }
+
+  basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
     const subApp = this.clone()
-    subApp.basePath = mergePath(this.basePath, path)
-
-    if (app) {
-      app.routes.map((r) => {
-        const handler =
-          app.errorHandler === errorHandler
-            ? r.handler
-            : async (c: Context, next: Next) =>
-                (await compose<Context>([r.handler], app.errorHandler)(c, next)).res
-        subApp.addRoute(r.method, r.path, handler)
-      })
-    }
-
+    subApp.#basePath = mergePath(this.#basePath, path)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return subApp as any
   }
@@ -181,8 +180,8 @@ export class Hono<
 
   private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
-    if (this.basePath) {
-      path = mergePath(this.basePath, path)
+    if (this.#basePath) {
+      path = mergePath(this.#basePath, path)
     }
     this.router.add(method, path, handler)
     const r: RouterRoute = { path: path, method: method, handler: handler }

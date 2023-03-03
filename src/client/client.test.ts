@@ -344,8 +344,8 @@ describe('Merge path with `app.route()`', () => {
     expect(data.ok).toBe(true)
   })
 
-  it('Should have correct types - route() then get()', async () => {
-    const base = new Hono<Env>().route('/api')
+  it('Should have correct types - basePath() then get()', async () => {
+    const base = new Hono<Env>().basePath('/api')
     const app = base.get('/search', (c) => c.jsonT({ ok: true }))
     type AppType = typeof app
     const client = hc<AppType>('http://localhost')
