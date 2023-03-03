@@ -1,4 +1,5 @@
 import { Hono } from '../src'
+import { env } from '../src/adapter'
 import { HTTPException } from '../src/http-exception'
 import { basicAuth } from '../src/middleware/basic-auth'
 import { bearerAuth } from '../src/middleware/bearer-auth'
@@ -25,6 +26,11 @@ app.use(
   })
 )
 app.use('/etag/*', etag())
+
+app.get('/env', (c) => {
+  const { NAME } = env<{ NAME: string }>(c)
+  return c.text(NAME)
+})
 
 // Custom Middleware
 // Add Custom Header

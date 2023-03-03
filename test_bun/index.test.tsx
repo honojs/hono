@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test'
+import { env } from '../src/adapter'
 import { serveStatic } from '../src/adapter/bun'
 import { Context } from '../src/context'
 import { Hono } from '../src/index'
@@ -13,14 +14,14 @@ describe('Basic', () => {
   app.get('/a/:foo', (c) => {
     c.header('x-param', c.req.param('foo'))
     c.header('x-query', c.req.query('q'))
-    return c.text('Hello Deno!')
+    return c.text('Hello Bun!')
   })
 
   it('Should return 200 Response', async () => {
     const req = new Request('http://localhost/a/foo?q=bar')
     const res = await app.request(req)
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('Hello Deno!')
+    expect(await res.text()).toBe('Hello Bun!')
     expect(res.headers.get('x-param')).toBe('foo')
     expect(res.headers.get('x-query')).toBe('bar')
   })
@@ -28,6 +29,14 @@ describe('Basic', () => {
   it('returns current runtime (bun)', async () => {
     const c = new Context(new Request('http://localhost/'))
     expect(c.runtime).toBe('bun')
+  })
+})
+
+describe('Environment Variables', () => {
+  it('Should return the environment variable', async () => {
+    const c = new Context(new Request('http://localhost/'))
+    const { NAME } = env<{ NAME: string }>(c)
+    expect(NAME).toBe('Bun')
   })
 })
 
