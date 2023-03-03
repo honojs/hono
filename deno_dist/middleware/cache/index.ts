@@ -14,7 +14,7 @@ export const cache = (options: {
   }
 
   return async (c, next) => {
-    const key = c.req.raw
+    const key = c.req.url
     const cache = await caches.open(options.cacheName)
     const response = await cache.match(key)
     if (!response) {
