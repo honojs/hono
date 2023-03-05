@@ -11,7 +11,7 @@ type HeaderRecord = Record<string, string | string[]>
 type Data = string | ArrayBuffer | ReadableStream
 
 export interface ExecutionContext {
-  waitUntil(promise: Promise<void>): void
+  waitUntil(promise: Promise<unknown>): void
   passThroughOnException(): void
 }
 export interface ContextVariableMap {}
