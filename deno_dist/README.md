@@ -97,6 +97,8 @@ Thanks to [all contributors](https://github.com/honojs/hono/graphs/contributors)
 
 Yusuke Wada <https://github.com/yusukebe>
 
+"RegExpRouter" and "SmartRouter" are created by Taku Amano <https://github.com/usualoma>
+
 ## License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
