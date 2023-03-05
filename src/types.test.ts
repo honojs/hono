@@ -135,7 +135,7 @@ describe('OnHandlerInterface', () => {
             }
           }
           output: {
-            success: boolean
+            success: true
           }
         }
       }

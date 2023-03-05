@@ -426,7 +426,7 @@ describe('`on`', () => {
           }
         }
         output: {
-          success: boolean
+          success: true
         }
       }
     }
