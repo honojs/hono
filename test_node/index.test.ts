@@ -1,6 +1,8 @@
 import { createAdaptorServer } from '@hono/node-server'
 import request from 'supertest'
 import { Hono } from '../src'
+import { env } from '../src/adapter'
+import { Context } from '../src/context'
 import { basicAuth } from '../src/middleware/basic-auth'
 import { jwt } from '../src/middleware/jwt'
 
@@ -29,6 +31,14 @@ describe('Basic', () => {
     const res = await request(server).get('/runtime-name')
     expect(res.status).toBe(200)
     expect(res.text).toBe('node')
+  })
+})
+
+describe('Environment Variables', () => {
+  it('Should return the environment variable', async () => {
+    const c = new Context(new Request('http://localhost/'))
+    const { NAME } = env<{ NAME: string }>(c)
+    expect(NAME).toBe('Node')
   })
 })
 
