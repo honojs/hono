@@ -137,8 +137,22 @@ export class Hono<
   route<SubPath extends string, SubEnv extends Env, SubSchema>(
     path: SubPath,
     app: Hono<SubEnv, SubSchema>
+  ): Hono<E, RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>, BasePath>
+  /** @deprecated
+   * Use `basePath` instead of `route` with one argument.
+   * The `route` with one argument has been removed in v4.
+   */
+  route<SubPath extends string>(path: SubPath): Hono<E, RemoveBlankRecord<S>, BasePath>
+  route<SubPath extends string, SubEnv extends Env, SubSchema>(
+    path: SubPath,
+    app?: Hono<SubEnv, SubSchema>
   ): Hono<E, RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>, BasePath> {
     const subApp = this.basePath(path)
+
+    if (!app) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return subApp as any
+    }
 
     app.routes.map((r) => {
       const handler =
