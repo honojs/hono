@@ -66,7 +66,7 @@ export class Hono<
     routers: [new RegExpRouter(), new TrieRouter()],
   })
   readonly strict: boolean = true // strict routing - default is true
-  #basePath: string = ''
+  private _basePath: string = ''
   private path: string = '*'
 
   routes: RouterRoute[] = []
@@ -154,7 +154,7 @@ export class Hono<
 
   basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
     const subApp = this.clone()
-    subApp.#basePath = mergePath(this.#basePath, path)
+    subApp._basePath = mergePath(this._basePath, path)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return subApp as any
   }
@@ -180,8 +180,8 @@ export class Hono<
 
   private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
-    if (this.#basePath) {
-      path = mergePath(this.#basePath, path)
+    if (this._basePath) {
+      path = mergePath(this._basePath, path)
     }
     this.router.add(method, path, handler)
     const r: RouterRoute = { path: path, method: method, handler: handler }
