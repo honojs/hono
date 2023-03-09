@@ -9,14 +9,18 @@ type EventContext = {
 }
 
 interface HandleInterface {
-  <E extends Env>(app: Hono<E>, path?: string): (
-    eventContext: EventContext
-  ) => Response | Promise<Response>
+  <E extends Env, S extends {}, BasePath extends string>(
+    app: Hono<E, S, BasePath>,
+    path?: string
+  ): (eventContext: EventContext) => Response | Promise<Response>
 }
 
 export const handle: HandleInterface =
-  <E extends Env>(subApp: Hono<E>, path?: string) =>
+  <E extends Env, S extends {}, BasePath extends string>(
+    subApp: Hono<E, S, BasePath>,
+    path?: string
+  ) =>
   ({ request, env, waitUntil }) => {
-    const app = path ? new Hono<E>().route(path, subApp) : subApp
+    const app = path ? new Hono<E, S, BasePath>().route(path, subApp as any) : subApp
     return app.fetch(request, env, { waitUntil, passThroughOnException: () => {} })
   }

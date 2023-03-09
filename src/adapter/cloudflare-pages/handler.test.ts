@@ -39,9 +39,9 @@ describe('Adapter for Cloudflare Pages', () => {
     expect(await res.text()).toBe('/api/foo')
   })
 
-  it('Should not use `route()` if path argument is not passed', async () => {
+  it('Should not use `basePath()` if path argument is not passed', async () => {
     const request = new Request('http://localhost/api/error')
-    const app = new Hono().route('/api')
+    const app = new Hono().basePath('/api')
 
     app.onError((e) => {
       throw e
