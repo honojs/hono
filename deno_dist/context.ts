@@ -16,6 +16,39 @@ export interface ExecutionContext {
 }
 export interface ContextVariableMap {}
 
+interface NewResponse {
+  (data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response
+  (data: Data | null, init?: ResponseInit): Response
+}
+
+interface BodyRespond extends NewResponse {}
+
+interface TextRespond {
+  (text: string, status?: StatusCode, headers?: HeaderRecord): Response
+  (text: string, init?: ResponseInit): Response
+}
+
+interface JSONRespond {
+  <T = JSONValue>(object: T, status?: StatusCode, headers?: HeaderRecord): Response
+  <T = JSONValue>(object: T, init?: ResponseInit): Response
+}
+
+interface JSONTRespond {
+  <T>(
+    object: T extends JSONValue ? T : JSONValue,
+    status?: StatusCode,
+    headers?: HeaderRecord
+  ): TypedResponse<T extends JSONValue ? (JSONValue extends T ? never : T) : never>
+  <T>(object: T extends JSONValue ? T : JSONValue, init?: ResponseInit): TypedResponse<
+    T extends JSONValue ? (JSONValue extends T ? never : T) : never
+  >
+}
+
+interface HTMLRespond {
+  (html: string, status?: StatusCode, headers?: HeaderRecord): Response
+  (html: string, init?: ResponseInit): Response
+}
+
 type GetVariable<K, E extends Env> = K extends keyof E['Variables']
   ? E['Variables'][K]
   : K extends keyof ContextVariableMap
@@ -156,14 +189,29 @@ export class Context<
     this._prettySpace = space
   }
 
-  newResponse = (data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response => {
+  newResponse: NewResponse = (
+    data: Data | null,
+    arg?: StatusCode | ResponseInit,
+    headers?: HeaderRecord
+  ): Response => {
     // Optimized
-    if (!headers && !this._headers && !this._res && !status) {
+    if (!headers && !this._headers && !this._res && !arg && this._status === 200) {
       return new Response(data, {
         headers: this._preparedHeaders,
       })
     }
 
+    // Return Response immediately if arg is RequestInit.
+    if (arg && typeof arg !== 'number') {
+      const res = new Response(data, arg)
+      const contentType = this._preparedHeaders?.['content-type']
+      if (contentType) {
+        res.headers.set('content-type', contentType)
+      }
+      return res
+    }
+
+    const status = arg ?? this._status
     this._preparedHeaders ??= {}
 
     if (!this._headers) {
@@ -200,19 +248,25 @@ export class Context<
     })
   }
 
-  body = (
+  body: BodyRespond = (
     data: Data | null,
-    status: StatusCode = this._status,
+    arg?: StatusCode | RequestInit,
     headers?: HeaderRecord
   ): Response => {
-    return this.newResponse(data, status, headers)
+    return typeof arg === 'number'
+      ? this.newResponse(data, arg, headers)
+      : this.newResponse(data, arg)
   }
 
-  text = (text: string, status?: StatusCode, headers?: HeaderRecord): Response => {
+  text: TextRespond = (
+    text: string,
+    arg?: StatusCode | RequestInit,
+    headers?: HeaderRecord
+  ): Response => {
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
     if (!this._preparedHeaders) {
-      if (!headers && !this._res && !this._headers && !status) {
+      if (!headers && !this._res && !this._headers && !arg) {
         return new Response(text)
       }
       this._preparedHeaders = {}
@@ -222,39 +276,49 @@ export class Context<
     if (this._preparedHeaders['content-type']) {
       this._preparedHeaders['content-type'] = 'text/plain; charset=UTF8'
     }
-    return this.newResponse(text, status, headers)
+    return typeof arg === 'number'
+      ? this.newResponse(text, arg, headers)
+      : this.newResponse(text, arg)
   }
 
-  json = <T = object>(
+  json: JSONRespond = <T = {}>(
     object: T,
-    status: StatusCode = this._status,
+    arg?: StatusCode | RequestInit,
     headers?: HeaderRecord
-  ): Response => {
+  ) => {
     const body = this._pretty
       ? JSON.stringify(object, null, this._prettySpace)
       : JSON.stringify(object)
     this._preparedHeaders ??= {}
     this._preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
-    return this.newResponse(body, status, headers)
+    return typeof arg === 'number'
+      ? this.newResponse(body, arg, headers)
+      : this.newResponse(body, arg)
   }
 
-  jsonT = <T>(
+  jsonT: JSONTRespond = <T>(
     object: T extends JSONValue ? T : JSONValue,
-    status: StatusCode = this._status,
+    arg?: StatusCode | RequestInit,
     headers?: HeaderRecord
   ): TypedResponse<T extends JSONValue ? (JSONValue extends T ? never : T) : never> => {
     return {
-      response: this.json(object, status, headers),
+      response: typeof arg === 'number' ? this.json(object, arg, headers) : this.json(object, arg),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: object as any,
       format: 'json',
     }
   }
 
-  html = (html: string, status: StatusCode = this._status, headers?: HeaderRecord): Response => {
+  html: HTMLRespond = (
+    html: string,
+    arg?: StatusCode | RequestInit,
+    headers?: HeaderRecord
+  ): Response => {
     this._preparedHeaders ??= {}
     this._preparedHeaders['content-type'] = 'text/html; charset=UTF-8'
-    return this.newResponse(html, status, headers)
+    return typeof arg === 'number'
+      ? this.newResponse(html, arg, headers)
+      : this.newResponse(html, arg)
   }
 
   redirect = (location: string, status: StatusCode = 302): Response => {
