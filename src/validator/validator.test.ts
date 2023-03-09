@@ -1,22 +1,33 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { ZodSchema } from 'zod'
 import { z } from 'zod'
-import type { Context } from '../context'
 import { Hono } from '../hono'
-import type { ExtractSchema } from '../types'
+import type { ExtractSchema, MiddlewareHandler, ValidationTargets } from '../types'
 import type { Equal, Expect } from '../utils/types'
 import { validator } from './validator'
 
-const validatorFunc =
-  <T extends ZodSchema>(schema: T) =>
-  (value: unknown, c: Context) => {
-    const parsed = schema.safeParse(value)
-    if (!parsed.success) {
+// Reference implementation for only testing
+const zodValidator = <
+  T extends ZodSchema,
+  E extends {},
+  P extends string,
+  Target extends keyof ValidationTargets
+>(
+  target: Target,
+  schema: T
+): MiddlewareHandler<
+  E,
+  P,
+  { input: { [K in Target]: z.input<T> }; output: { [K in Target]: z.output<T> } }
+> =>
+  validator(target, (value, c) => {
+    const result = schema.safeParse(value)
+    if (!result.success) {
       return c.text('Invalid!', 400)
     }
-    const data = parsed.data as z.infer<T>
+    const data = result.data as z.output<T>
     return data
-  }
+  })
 
 describe('Validator middleware', () => {
   const app = new Hono()
@@ -89,7 +100,7 @@ describe('Validator middleware with Zod validates JSON', () => {
     title: z.string(),
   })
 
-  const route = app.post('/post', validator('json', validatorFunc(schema)), (c) => {
+  const route = app.post('/post', zodValidator('json', schema), (c) => {
     const post = c.req.valid('json')
     type Expected = {
       id: number
@@ -161,7 +172,7 @@ describe('Validator middleware with Zod validates Form data', () => {
     id: z.string(),
     title: z.string(),
   })
-  app.post('/post', validator('form', validatorFunc(schema)), (c) => {
+  app.post('/post', zodValidator('form', schema), (c) => {
     const post = c.req.valid('form')
     return c.jsonT({
       post: post,
@@ -208,7 +219,7 @@ describe('Validator middleware with Zod validates query params', () => {
       }),
   })
 
-  app.get('/search', validator('query', validatorFunc(schema)), (c) => {
+  app.get('/search', zodValidator('query', schema), (c) => {
     const res = c.req.valid('query')
     return c.jsonT({
       page: res.page,
@@ -237,7 +248,7 @@ describe('Validator middleware with Zod validates queries params', () => {
     tags: z.array(z.string()),
   })
 
-  app.get('/posts', validator('queries', validatorFunc(schema)), (c) => {
+  app.get('/posts', zodValidator('queries', schema), (c) => {
     const res = c.req.valid('queries')
     return c.jsonT({
       tags: res.tags,
@@ -263,10 +274,9 @@ describe('Validator middleware with Zod multiple validators', () => {
   const app = new Hono<{ Variables: { id: number } }>()
   const route = app.post(
     '/posts',
-    validator('query', (value, c) => {
-      const id = c.get('id')
-      type verify = Expect<Equal<number, typeof id>>
-      const schema = z.object({
+    zodValidator(
+      'query',
+      z.object({
         page: z
           .string()
           .refine((v) => {
@@ -276,26 +286,13 @@ describe('Validator middleware with Zod multiple validators', () => {
             return Number(v)
           }),
       })
-      const parsed = schema.safeParse(value)
-      if (!parsed.success) {
-        return c.text('Invalid!', 400)
-      }
-      const data = parsed.data as z.infer<typeof schema>
-      return data
-    }),
-    validator('form', (value, c) => {
-      const id = c.get('id')
-      type verify = Expect<Equal<number, typeof id>>
-      const schema = z.object({
+    ),
+    zodValidator(
+      'form',
+      z.object({
         title: z.string(),
       })
-      const parsed = schema.safeParse(value)
-      if (!parsed.success) {
-        return c.text('Invalid!', 400)
-      }
-      const data = parsed.data as z.infer<typeof schema>
-      return data
-    }),
+    ),
     (c) => {
       const id = c.get('id')
       type verify = Expect<Equal<number, typeof id>>
@@ -314,7 +311,7 @@ describe('Validator middleware with Zod multiple validators', () => {
       $post: {
         input: {
           query: {
-            page: number
+            page: string
           }
         } & {
           form: {

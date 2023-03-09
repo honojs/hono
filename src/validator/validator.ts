@@ -12,7 +12,7 @@ export const validator = <
   P extends string,
   M extends string,
   U extends ValidationTargetByMethod<M>,
-  V extends { [K in U]: T },
+  V extends { input: { [K in U]: T }; output: { [K in U]: T } },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any
 >(
