@@ -5,6 +5,7 @@ import { Hono } from '../hono'
 import type { ExtractSchema, MiddlewareHandler, ValidationTargets } from '../types'
 import type { Equal, Expect } from '../utils/types'
 import { validator } from './validator'
+import type { ValidationFunction } from './validator'
 
 // Reference implementation for only testing
 const zodValidator = <
@@ -89,6 +90,62 @@ describe('Malformed JSON', () => {
       method: 'POST',
     })
     expect(res.status).toBe(400)
+  })
+})
+
+describe('Validator middleware with a custom validation function', () => {
+  const app = new Hono()
+
+  const validationFunction: ValidationFunction<{ id: string }, { id: number }> = (v) => {
+    return {
+      id: Number(v.id),
+    }
+  }
+
+  const route = app.post('/post', validator('json', validationFunction), (c) => {
+    const post = c.req.valid('json')
+    type Expected = {
+      id: number
+    }
+    type verify = Expect<Equal<Expected, typeof post>>
+    return c.jsonT({
+      post,
+    })
+  })
+
+  type Expected = {
+    '/post': {
+      $post: {
+        input: {
+          json: {
+            id: string
+          }
+        }
+        output: {
+          post: {
+            id: number
+          }
+        }
+      }
+    }
+  }
+
+  type Actual = ExtractSchema<typeof route>
+  type verify2 = Expect<Equal<Expected, Actual>>
+
+  it('Should validate JSON with transformation and return 200 response', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      body: JSON.stringify({
+        id: '123',
+      }),
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      post: {
+        id: 123,
+      },
+    })
   })
 })
 
