@@ -7,17 +7,29 @@ type ValidationTargetByMethod<M> = M extends 'get' | 'head' // GET and HEAD requ
   ? Exclude<keyof ValidationTargets, ValidationTargetKeysWithBody>
   : keyof ValidationTargets
 
+export type ValidationFunction<InputType, OutputType, E extends Env = {}> = (
+  value: InputType,
+  c: Context<E>
+) => OutputType | Response | Promise<Response>
+
 export const validator = <
-  T,
+  InputType,
   P extends string,
   M extends string,
   U extends ValidationTargetByMethod<M>,
-  V extends { [K in U]: T },
+  OutputType = ValidationTargets[U],
+  V extends {
+    in: { [K in U]: unknown extends InputType ? OutputType : InputType }
+    out: { [K in U]: OutputType }
+  } = {
+    in: { [K in U]: unknown extends InputType ? OutputType : InputType }
+    out: { [K in U]: OutputType }
+  },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any
 >(
   target: U,
-  validationFunc: (value: ValidationTargets[U], c: Context<E>) => T | Response | Promise<Response>
+  validationFunc: ValidationFunction<InputType, OutputType, E>
 ): MiddlewareHandler<E, P, V> => {
   return async (c, next) => {
     let value = {}
@@ -48,7 +60,7 @@ export const validator = <
         break
     }
 
-    const res = validationFunc(value, c)
+    const res = validationFunc(value as InputType, c)
 
     if (res instanceof Response || res instanceof Promise) {
       return res

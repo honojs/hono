@@ -44,18 +44,30 @@ describe('Env', () => {
 describe('HandlerInterface', () => {
   type Env = {}
 
+  type Payload = { foo: string; bar: boolean }
+
   describe('no path pattern', () => {
     const app = new Hono<Env>()
     const middleware: MiddlewareHandler<
       Env,
       never,
-      { json: { foo: string; bar: boolean } }
+      {
+        in: { json: Payload }
+        out: { json: Payload }
+      }
     > = async (_c, next) => {
       await next()
     }
     test('Context', () => {
       const route = app.get(middleware, (c) => {
-        type Expected = Context<Env, never, { json: { foo: string; bar: boolean } }>
+        type Expected = Context<
+          Env,
+          never,
+          {
+            in: { json: Payload }
+            out: { json: Payload }
+          }
+        >
         type verify = Expect<Equal<Expected, typeof c>>
         return c.jsonT({
           message: 'Hello!',
@@ -63,7 +75,7 @@ describe('HandlerInterface', () => {
       })
       app.get(middleware, (c) => {
         const data = c.req.valid('json')
-        type verify = Expect<Equal<{ foo: string; bar: boolean }, typeof data>>
+        type verify = Expect<Equal<Payload, typeof data>>
         return c.jsonT({
           message: 'Hello!',
         })
@@ -76,13 +88,13 @@ describe('HandlerInterface', () => {
     const middleware: MiddlewareHandler<
       Env,
       '/foo',
-      { json: { foo: string; bar: boolean } }
+      { in: { json: Payload }; out: { json: Payload } }
     > = async (_c, next) => {
       await next()
     }
     test('Context and AppType', () => {
       const route = app.get('/foo', middleware, (c) => {
-        type Expected = Context<Env, '/foo', { json: { foo: string; bar: boolean } }>
+        type Expected = Context<Env, '/foo', { in: { json: Payload }; out: { json: Payload } }>
         type verify = Expect<Equal<Expected, typeof c>>
         return c.jsonT({
           message: 'Hello!',
@@ -112,10 +124,11 @@ describe('HandlerInterface', () => {
 describe('OnHandlerInterface', () => {
   const app = new Hono()
   test('Context', () => {
-    const middleware: MiddlewareHandler<Env, '/purge', { form: { id: number } }> = async (
-      _c,
-      next
-    ) => {
+    const middleware: MiddlewareHandler<
+      Env,
+      '/purge',
+      { in: { form: { id: string } }; out: { form: { id: number } } }
+    > = async (_c, next) => {
       await next()
     }
     const route = app.on('PURGE', '/purge', middleware, (c) => {
@@ -131,7 +144,7 @@ describe('OnHandlerInterface', () => {
         $purge: {
           input: {
             form: {
-              id: number
+              id: string
             }
           }
           output: {
@@ -232,7 +245,7 @@ describe('Test types of Handler', () => {
 
   test('Env, Path, Type', async () => {
     const app = new Hono<E>()
-    const handler: Handler<E, '/', { json: User }> = (c) => {
+    const handler: Handler<E, '/', { in: { json: User }; out: { json: User } }> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<number, typeof foo>>
       const { name } = c.req.valid('json')
