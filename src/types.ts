@@ -331,6 +331,8 @@ export type MergeSchemaPath<S, P extends string> = S extends Record<infer Key, i
     : never
   : never
 
+type path4 = MergePath<'/api', '/'>
+
 export type MergePath<A extends string, B extends string> = A extends ''
   ? B
   : A extends `${infer P}/`
@@ -338,7 +340,9 @@ export type MergePath<A extends string, B extends string> = A extends ''
     ? `${P}/${Q}`
     : `${P}/${B}`
   : B extends `/${infer Q}`
-  ? `${A}/${Q}`
+  ? Q extends ''
+    ? A
+    : `${A}/${Q}`
   : `${A}/${B}`
 
 ////////////////////////////////////////

@@ -46,6 +46,20 @@ export type InferRequestType<T> = T extends (args: infer R) => Promise<ClientRes
   ? NonNullable<R>
   : never
 
+type Foo<Path extends string> = Path extends `${infer P}/` ? P : Path
+type v = Foo<'/foo/bar'>
+type v2 = PathToChain<
+  '/foo/bar',
+  {
+    $get: {
+      input: {}
+      output: {
+        name: string
+      }[]
+    }
+  }
+>
+
 type PathToChain<
   Path extends string,
   E extends Endpoint,
