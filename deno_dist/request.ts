@@ -14,7 +14,7 @@ import { parse } from './utils/cookie.ts'
 import type { UnionToIntersection } from './utils/types.ts'
 import { getQueryStringFromURL, getQueryParam, getQueryParams } from './utils/url.ts'
 
-export class HonoRequest<P extends string = '/', I extends Input['output'] = {}> {
+export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   raw: Request
 
   private paramData: Record<string, string> | undefined
