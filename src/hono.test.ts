@@ -615,6 +615,36 @@ describe('Middleware', () => {
       expect(res.headers.get('x-after')).toBe('abc')
     })
   })
+
+  describe('Overwrite the response from middleware after next()', () => {
+    const app = new Hono()
+
+    app.use('/normal', async (c, next) => {
+      await next()
+      c.res = new Response('Middleware')
+    })
+
+    app.use('/overwrite', async (c, next) => {
+      await next()
+      c.res = undefined
+      c.res = new Response('Middleware')
+    })
+
+    app.get('*', (c) => {
+      c.header('x-custom', 'foo')
+      return c.text('Handler')
+    })
+
+    it('Should have the custom header', async () => {
+      const res = await app.request('/normal')
+      expect(res.headers.get('x-custom')).toBe('foo')
+    })
+
+    it('Should not have the custom header', async () => {
+      const res = await app.request('/overwrite')
+      expect(res.headers.get('x-custom')).toBe(null)
+    })
+  })
 })
 
 describe('Builtin Middleware', () => {
