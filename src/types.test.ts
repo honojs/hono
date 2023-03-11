@@ -52,8 +52,8 @@ describe('HandlerInterface', () => {
       Env,
       never,
       {
-        input: { json: Payload }
-        output: { json: Payload }
+        in: { json: Payload }
+        out: { json: Payload }
       }
     > = async (_c, next) => {
       await next()
@@ -64,8 +64,8 @@ describe('HandlerInterface', () => {
           Env,
           never,
           {
-            input: { json: Payload }
-            output: { json: Payload }
+            in: { json: Payload }
+            out: { json: Payload }
           }
         >
         type verify = Expect<Equal<Expected, typeof c>>
@@ -88,17 +88,13 @@ describe('HandlerInterface', () => {
     const middleware: MiddlewareHandler<
       Env,
       '/foo',
-      { input: { json: Payload }; output: { json: Payload } }
+      { in: { json: Payload }; out: { json: Payload } }
     > = async (_c, next) => {
       await next()
     }
     test('Context and AppType', () => {
       const route = app.get('/foo', middleware, (c) => {
-        type Expected = Context<
-          Env,
-          '/foo',
-          { input: { json: Payload }; output: { json: Payload } }
-        >
+        type Expected = Context<Env, '/foo', { in: { json: Payload }; out: { json: Payload } }>
         type verify = Expect<Equal<Expected, typeof c>>
         return c.jsonT({
           message: 'Hello!',
@@ -131,7 +127,7 @@ describe('OnHandlerInterface', () => {
     const middleware: MiddlewareHandler<
       Env,
       '/purge',
-      { input: { form: { id: string } }; output: { form: { id: number } } }
+      { in: { form: { id: string } }; out: { form: { id: number } } }
     > = async (_c, next) => {
       await next()
     }
@@ -249,7 +245,7 @@ describe('Test types of Handler', () => {
 
   test('Env, Path, Type', async () => {
     const app = new Hono<E>()
-    const handler: Handler<E, '/', { input: { json: User }; output: { json: User } }> = (c) => {
+    const handler: Handler<E, '/', { in: { json: User }; out: { json: User } }> = (c) => {
       const foo = c.get('foo')
       type verifyEnv = Expect<Equal<number, typeof foo>>
       const { name } = c.req.valid('json')

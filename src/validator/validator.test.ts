@@ -19,7 +19,7 @@ const zodValidator = <
 ): MiddlewareHandler<
   E,
   P,
-  { input: { [K in Target]: z.input<T> }; output: { [K in Target]: z.output<T> } }
+  { in: { [K in Target]: z.input<T> }; out: { [K in Target]: z.output<T> } }
 > =>
   validator(target, (value, c) => {
     const result = schema.safeParse(value)

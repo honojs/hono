@@ -99,7 +99,7 @@ export class Context<
     }
   }
 
-  get req(): HonoRequest<P, I['output']> {
+  get req(): HonoRequest<P, I['out']> {
     if (this._req) {
       return this._req
     } else {

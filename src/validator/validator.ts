@@ -19,11 +19,11 @@ export const validator = <
   U extends ValidationTargetByMethod<M>,
   OutputType = ValidationTargets[U],
   V extends {
-    input: { [K in U]: unknown extends InputType ? OutputType : InputType }
-    output: { [K in U]: OutputType }
+    in: { [K in U]: unknown extends InputType ? OutputType : InputType }
+    out: { [K in U]: OutputType }
   } = {
-    input: { [K in U]: unknown extends InputType ? OutputType : InputType }
-    output: { [K in U]: OutputType }
+    in: { [K in U]: unknown extends InputType ? OutputType : InputType }
+    out: { [K in U]: OutputType }
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any
