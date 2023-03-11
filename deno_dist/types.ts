@@ -21,7 +21,10 @@ export type Env = {
 
 export type Next = () => Promise<void>
 
-export type Input = unknown
+export type Input = {
+  in?: Partial<ValidationTargets>
+  out?: Partial<{ [K in keyof ValidationTargets]: unknown }>
+}
 
 ////////////////////////////////////////
 //////                            //////
@@ -66,29 +69,42 @@ export interface HandlerInterface<
   //// app.get(...handlers[])
 
   // app.get(handler, handler)
-  <I = {}, O = {}>(...handlers: [H<E, ExtractKey<S>, I, O>, H<E, ExtractKey<S>, I, O>]): Hono<
-    E,
-    RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I, O>>,
-    BasePath
-  >
+  <I extends Input = {}, O = {}>(
+    ...handlers: [H<E, ExtractKey<S>, I, O>, H<E, ExtractKey<S>, I, O>]
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I['in'], O>>, BasePath>
 
   // app.get(handler x 3)
-  <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2>(
+  <P extends string, O = {}, I extends Input = {}, I2 extends Input = I, I3 extends Input = I & I2>(
     ...handlers: [H<E, ExtractKey<S>, I, O>, H<E, ExtractKey<S>, I2, O>, H<E, ExtractKey<S>, I3, O>]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I3, O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I3['in'], O>>, BasePath>
 
   // app.get(handler x 4)
-  <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2, I4 = I2 & I3>(
+  <
+    P extends string,
+    O = {},
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I2 & I3
+  >(
     ...handlers: [
       H<E, ExtractKey<S>, I, O>,
       H<E, ExtractKey<S>, I2, O>,
       H<E, ExtractKey<S>, I3, O>,
       H<E, ExtractKey<S>, I4, O>
     ]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I4, O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I4['in'], O>>, BasePath>
 
   // app.get(handler x 5)
-  <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2, I4 = I2 & I3, I5 = I3 & I4>(
+  <
+    P extends string,
+    O = {},
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I2 & I3,
+    I5 extends Input = I3 & I4
+  >(
     ...handlers: [
       H<E, ExtractKey<S>, I, O>,
       H<E, ExtractKey<S>, I2, O>,
@@ -96,36 +112,43 @@ export interface HandlerInterface<
       H<E, ExtractKey<S>, I4, O>,
       H<E, ExtractKey<S>, I5, O>
     ]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I5, O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I5['in'], O>>, BasePath>
 
   // app.get(...handlers[])
-  <I = {}, O = {}>(...handlers: Handler<E, ExtractKey<S>, I, O>[]): Hono<
+  <I extends Input = {}, O = {}>(...handlers: Handler<E, ExtractKey<S>, I, O>[]): Hono<
     E,
-    RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I, O>>,
+    RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I['in'], O>>,
     BasePath
   >
 
   ////  app.get(path, ...handlers[])
 
   // app.get(path, handler, handler)
-  <P extends string, O = {}, I = {}>(path: P, ...handlers: [H<E, P, I, O>, H<E, P, I, O>]): Hono<
-    E,
-    RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I, O>>,
-    BasePath
-  >
+
+  <P extends string, O = {}, I extends Input = {}>(
+    path: P,
+    ...handlers: [H<E, P, I, O>, H<E, P, I, O>]
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I['in'], O>>, BasePath>
 
   // app.get(path, handler x3)
-  <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2>(
+  <P extends string, O = {}, I extends Input = {}, I2 extends Input = I, I3 extends Input = I & I2>(
     path: P,
     ...handlers: [
       H<E, MergePath<BasePath, P>, I, O>,
       H<E, MergePath<BasePath, P>, I2, O>,
       H<E, MergePath<BasePath, P>, I3, O>
     ]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I3, O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I3['in'], O>>, BasePath>
 
   // app.get(path, handler x4)
-  <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2, I4 = I2 & I3>(
+  <
+    P extends string,
+    O = {},
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I2 & I3
+  >(
     path: P,
     ...handlers: [
       H<E, MergePath<BasePath, P>, I, O>,
@@ -133,10 +156,18 @@ export interface HandlerInterface<
       H<E, MergePath<BasePath, P>, I3, O>,
       H<E, MergePath<BasePath, P>, I4, O>
     ]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I4, O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I4['in'], O>>, BasePath>
 
   // app.get(path, handler x5)
-  <P extends string, O = {}, I = {}, I2 = I, I3 = I & I2, I4 = I2 & I3, I5 = I3 & I4>(
+  <
+    P extends string,
+    O = {},
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I2 & I3,
+    I5 extends Input = I3 & I4
+  >(
     path: P,
     ...handlers: [
       H<E, MergePath<BasePath, P>, I, O>,
@@ -145,13 +176,13 @@ export interface HandlerInterface<
       H<E, MergePath<BasePath, P>, I4, O>,
       H<E, MergePath<BasePath, P>, I5, O>
     ]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I5, O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I5['in'], O>>, BasePath>
 
   // app.get(path, ...handlers[])
-  <P extends string, I = {}, O = {}>(
+  <P extends string, I extends Input = {}, O = {}>(
     path: P,
     ...handlers: H<E, MergePath<BasePath, P>, I, O>[]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I, O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I['in'], O>>, BasePath>
 }
 
 ////////////////////////////////////////
@@ -183,14 +214,21 @@ export interface MiddlewareHandlerInterface<
 
 export interface OnHandlerInterface<E extends Env = Env, S = {}, BasePath extends string = ''> {
   // app.on(method, path, handler, handler)
-  <M extends string, P extends string, O = {}, I = {}>(
+  <M extends string, P extends string, O = {}, I extends Input = {}>(
     method: M,
     path: P,
     ...handlers: [H<E, MergePath<BasePath, P>, I, O>, H<E, MergePath<BasePath, P>, I, O>]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I, O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I['in'], O>>, BasePath>
 
   // app.get(method, path, handler x3)
-  <M extends string, P extends string, O = {}, I = {}, I2 = I, I3 = I & I2>(
+  <
+    M extends string,
+    P extends string,
+    O = {},
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2
+  >(
     method: M,
     path: P,
     ...handlers: [
@@ -198,10 +236,18 @@ export interface OnHandlerInterface<E extends Env = Env, S = {}, BasePath extend
       H<E, MergePath<BasePath, P>, I2, O>,
       H<E, MergePath<BasePath, P>, I3, O>
     ]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I3, O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I3['in'], O>>, BasePath>
 
   // app.get(method, path, handler x4)
-  <M extends string, P extends string, O = {}, I = {}, I2 = I, I3 = I & I2, I4 = I2 & I3>(
+  <
+    M extends string,
+    P extends string,
+    O = {},
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I2 & I3
+  >(
     method: M,
     path: P,
     ...handlers: [
@@ -210,18 +256,18 @@ export interface OnHandlerInterface<E extends Env = Env, S = {}, BasePath extend
       H<E, MergePath<BasePath, P>, I3, O>,
       H<E, MergePath<BasePath, P>, I4, O>
     ]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I4, O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I4['in'], O>>, BasePath>
 
   // app.get(method, path, handler x5)
   <
     M extends string,
     P extends string,
     O = {},
-    I = {},
-    I2 = I,
-    I3 = I & I2,
-    I4 = I2 & I3,
-    I5 = I3 & I4
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I2 & I3,
+    I5 extends Input = I3 & I4
   >(
     method: M,
     path: P,
@@ -232,20 +278,20 @@ export interface OnHandlerInterface<E extends Env = Env, S = {}, BasePath extend
       H<E, MergePath<BasePath, P>, I4, O>,
       H<E, MergePath<BasePath, P>, I5, O>
     ]
-  ): Hono<E, S | Schema<M, MergePath<BasePath, P>, I5, O>, BasePath>
+  ): Hono<E, S | Schema<M, MergePath<BasePath, P>, I5['in'], O>, BasePath>
 
-  <M extends string, P extends string, O extends {} = {}, I = {}>(
+  <M extends string, P extends string, O extends {} = {}, I extends Input = {}>(
     method: M,
     path: P,
     ...handlers: H<E, MergePath<BasePath, P>, I, O>[]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I, O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I['in'], O>>, BasePath>
 
   // app.on(method[], path, ...handler)
-  <P extends string, O extends {} = {}, I = {}>(
+  <P extends string, O extends {} = {}, I extends Input = {}>(
     methods: string[],
     path: P,
     ...handlers: H<E, MergePath<BasePath, P>, I, O>[]
-  ): Hono<E, RemoveBlankRecord<S | Schema<string, MergePath<BasePath, P>, I, O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<string, MergePath<BasePath, P>, I['in'], O>>, BasePath>
 }
 
 type ExtractKey<S> = S extends Record<infer Key, unknown>
@@ -260,8 +306,13 @@ type ExtractKey<S> = S extends Record<infer Key, unknown>
 //////                            //////
 ////////////////////////////////////////
 
-export type Schema<M extends string, P extends string, I extends Input, O> = {
-  [K in P]: AddDollar<{ [K2 in M]: { input: AddParam<I, P>; output: O } }>
+export type Schema<M extends string, P extends string, I extends Input['in'], O> = {
+  [K in P]: AddDollar<{
+    [K2 in M]: {
+      input: unknown extends I ? {} : AddParam<I, P>
+      output: unknown extends O ? {} : O
+    }
+  }>
 }
 
 export type AddParam<I, P extends string> = ParamKeys<P> extends never
@@ -345,7 +396,7 @@ export type ParamKeyToRecord<T extends string> = T extends `${infer R}?`
 ////////////////////////////////////////
 
 export type InputToDataByTarget<
-  T extends Input,
+  T extends Input['out'],
   Target extends keyof ValidationTargets
 > = T extends {
   [K in Target]: infer R
