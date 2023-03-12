@@ -86,6 +86,7 @@ describe('Etag Middleware', () => {
     })
     res = await app.request(req)
     expect(res.status).toBe(304)
+    expect(res.headers.get('Etag')).toBe(etag)
     expect(await res.text()).toBe('')
   })
 })

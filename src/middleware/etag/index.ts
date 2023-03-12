@@ -22,6 +22,9 @@ export const etag = (options: ETagOptions = { weak: false }): MiddlewareHandler 
       c.res = new Response(null, {
         status: 304,
         statusText: 'Not Modified',
+        headers: {
+          Etag: etag,
+        },
       })
       c.res.headers.delete('Content-Length')
     } else {
