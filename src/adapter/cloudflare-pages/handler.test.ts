@@ -1,13 +1,15 @@
 import { Hono } from '../../hono'
 import { handle } from './handler'
+import type { EventContext } from './handler'
 
 type Env = {
   Bindings: {
     TOKEN: string
+    eventContext: EventContext
   }
 }
 
-describe('Adapter for Cloudflare Pages', () => {
+describe.only('Adapter for Cloudflare Pages', () => {
   it('Should return 200 response', async () => {
     const request = new Request('http://localhost/api/foo')
     const env = {
@@ -15,14 +17,18 @@ describe('Adapter for Cloudflare Pages', () => {
     }
     const app = new Hono<Env>()
     app.get('/api/foo', (c) => {
-      return c.text(c.env.TOKEN)
+      const reqInEventContext = c.env.eventContext.request
+      return c.json({ TOKEN: c.env.TOKEN, requestURL: reqInEventContext.url })
     })
     const handler = handle(app)
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const res = await handler({ request, env })
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('HONOISCOOL')
+    expect(await res.json()).toEqual({
+      TOKEN: 'HONOISCOOL',
+      requestURL: 'http://localhost/api/foo',
+    })
   })
 
   it('Should return 200 response with path', async () => {
