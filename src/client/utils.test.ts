@@ -31,6 +31,14 @@ describe('removeIndexString', () => {
     url = '/index'
     newUrl = removeIndexString(url)
     expect(newUrl).toBe('/')
+
+    url = '/sub/index'
+    newUrl = removeIndexString(url)
+    expect(newUrl).toBe('/sub/')
+
+    url = '/subindex'
+    newUrl = removeIndexString(url)
+    expect(newUrl).toBe('/subindex')
   })
 })
 
