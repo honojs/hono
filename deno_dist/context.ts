@@ -131,8 +131,8 @@ export class Context<
     return (this._res ||= new Response('404 Not Found', { status: 404 }))
   }
 
-  set res(_res: Response) {
-    if (this._res) {
+  set res(_res: Response | undefined) {
+    if (this._res && _res) {
       this._res.headers.delete('content-type')
       this._res.headers.forEach((v, k) => {
         _res.headers.set(k, v)
