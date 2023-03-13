@@ -125,12 +125,12 @@ export const checkOptionalParameter = (path: string): string[] | null => {
    [`/api/animals`, `/api/animals/:type`]
    in other cases it will return null
    */
-  const match = path.match(/(^.+)(\/\:[^\/]+)\?$/)
+  const match = path.match(/^(.+|)(\/\:[^\/]+)\?$/)
   if (!match) return null
 
   const base = match[1]
   const optional = base + match[2]
-  return [base, optional]
+  return [base === '' ? '/' : base.replace(/\/$/, ''), optional]
 }
 
 const removeFragment = (queryString: string): string => {
