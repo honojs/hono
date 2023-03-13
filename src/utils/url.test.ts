@@ -148,6 +148,7 @@ describe('url', () => {
       expect(checkOptionalParameter('/api/animals')).toBeNull()
       expect(checkOptionalParameter('/api/:animals?/type')).toBeNull()
       expect(checkOptionalParameter('/api/animals/:type?/')).toBeNull()
+      expect(checkOptionalParameter('/:optional?')).toEqual(['/', '/:optional'])
     })
   })
 
