@@ -359,6 +359,8 @@ describe('merge path', () => {
     type verify2 = Expect<Equal<'/api/book', path2>>
     type path3 = MergePath<'/api/', '/'>
     type verify3 = Expect<Equal<'/api/', path3>>
+    type path4 = MergePath<'/api', '/'>
+    type verify4 = Expect<Equal<'/api', path4>>
   })
 
   test('MergeSchemaPath', () => {

@@ -338,7 +338,9 @@ export type MergePath<A extends string, B extends string> = A extends ''
     ? `${P}/${Q}`
     : `${P}/${B}`
   : B extends `/${infer Q}`
-  ? `${A}/${Q}`
+  ? Q extends ''
+    ? A
+    : `${A}/${Q}`
   : `${A}/${B}`
 
 ////////////////////////////////////////
