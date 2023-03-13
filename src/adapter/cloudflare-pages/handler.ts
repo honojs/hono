@@ -20,10 +20,16 @@ export type EventContext<Env = {}, P extends string = any, Data = {}> = {
 }
 
 interface HandleInterface {
-  <E extends Env, S extends {}, BasePath extends string>(
-    app: Hono<E, S, BasePath>,
-    path?: string
-  ): (eventContext: EventContext) => Response | Promise<Response>
+  <E extends Env, S extends {}, BasePath extends string>(app: Hono<E, S, BasePath>): (
+    eventContext: EventContext
+  ) => Response | Promise<Response>
+  /** @deprecated
+   * Use `app.basePath()` to set a sub path instead of passing the second argument.
+   * The `handle` will have only one argument in v4.
+   */
+  <E extends Env, S extends {}, BasePath extends string>(app: Hono<E, S, BasePath>, path: string): (
+    eventContext: EventContext
+  ) => Response | Promise<Response>
 }
 
 export const handle: HandleInterface =
