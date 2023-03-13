@@ -21,6 +21,6 @@ export const handle: HandleInterface =
     path?: string
   ) =>
   ({ request, env, waitUntil }) => {
-    const app = path ? new Hono<E, S, BasePath>().route(path, subApp as any) : subApp
+    const app = path ? new Hono<E, S, BasePath>().route(path, subApp as never) : subApp
     return app.fetch(request, env, { waitUntil, passThroughOnException: () => {} })
   }
