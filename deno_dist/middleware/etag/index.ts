@@ -23,7 +23,7 @@ export const etag = (options: ETagOptions = { weak: false }): MiddlewareHandler 
         status: 304,
         statusText: 'Not Modified',
         headers: {
-          Etag: etag,
+          ETag: etag,
         },
       })
       c.res.headers.delete('Content-Length')
