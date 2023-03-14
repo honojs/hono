@@ -57,7 +57,11 @@ export const validator = <
         value = await parseBody(c.req.raw.clone())
         break
       case 'query':
-        value = c.req.query()
+        value = Object.fromEntries(
+          Object.entries(c.req.queries()).map(([k, v]) => {
+            return v.length === 1 ? [k, v[0]] : [k, v]
+          })
+        )
         break
       case 'queries':
         value = c.req.queries()
