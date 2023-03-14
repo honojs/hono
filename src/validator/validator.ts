@@ -58,6 +58,9 @@ export const validator = <
       case 'queries':
         value = c.req.queries()
         break
+      case 'param':
+        value = c.req.param() as Record<string, string>
+        break
     }
 
     const res = validationFunc(value as InputType, c)

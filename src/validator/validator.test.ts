@@ -327,6 +327,43 @@ describe('Validator middleware with Zod validates queries params', () => {
   })
 })
 
+describe('Validator middleware with Zod validates param', () => {
+  const app = new Hono()
+
+  const schema = z.object({
+    id: z
+      .string()
+      .regex(/^[0-9]+$/)
+      .transform((v) => {
+        return Number(v)
+      }),
+    title: z.string(),
+  })
+  app.get('/users/:id/books/:title', zodValidator('param', schema), (c) => {
+    const param = c.req.valid('param')
+    return c.jsonT({
+      param: param,
+    })
+  })
+
+  it('Should validate Form data and return 200 response', async () => {
+    const res = await app.request('http://localhost/users/123/books/Hello')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      param: {
+        id: 123,
+        title: 'Hello',
+      },
+    })
+  })
+
+  it('Should validate Form data and return 400 response', async () => {
+    const res = await app.request('http://localhost/users/0.123/books/Hello')
+    expect(res.status).toBe(400)
+    expect(await res.text()).toBe('Invalid!')
+  })
+})
+
 describe('Validator middleware with Zod multiple validators', () => {
   const app = new Hono<{ Variables: { id: number } }>()
   const route = app.post(

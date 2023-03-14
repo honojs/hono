@@ -366,6 +366,7 @@ export type ValidationTargets = {
   form: Record<string, string | File>
   query: Record<string, string>
   queries: Record<string, string[]>
+  param: Record<string, string>
 }
 
 ////////////////////////////////////////
