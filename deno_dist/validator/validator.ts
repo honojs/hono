@@ -29,7 +29,11 @@ export const validator = <
   E extends Env = any
 >(
   target: U,
-  validationFunc: ValidationFunction<InputType, OutputType, E>
+  validationFunc: ValidationFunction<
+    unknown extends InputType ? ValidationTargets[U] : InputType,
+    OutputType,
+    E
+  >
 ): MiddlewareHandler<E, P, V> => {
   return async (c, next) => {
     let value = {}
@@ -60,7 +64,7 @@ export const validator = <
         break
     }
 
-    const res = validationFunc(value as InputType, c)
+    const res = validationFunc(value as never, c)
 
     if (res instanceof Response || res instanceof Promise) {
       return res
