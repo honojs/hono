@@ -119,6 +119,32 @@ describe('HandlerInterface', () => {
       type verify = Expect<Equal<Expected, Actual>>
     })
   })
+
+  describe('With path parameters', () => {
+    const app = new Hono<Env>()
+    const middleware: MiddlewareHandler<Env, '/post/:id'> = async (_c, next) => {
+      await next()
+    }
+    it('Should have the `param` type', () => {
+      const route = app.get('/post/:id', middleware, (c) => {
+        return c.text('foo')
+      })
+      type Actual = ExtractSchema<typeof route>
+      type Expected = {
+        '/post/:id': {
+          $get: {
+            input: {
+              param: {
+                id: string
+              }
+            }
+            output: {}
+          }
+        }
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+  })
 })
 
 describe('OnHandlerInterface', () => {

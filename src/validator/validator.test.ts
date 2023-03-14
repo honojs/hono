@@ -39,6 +39,7 @@ describe('Validator middleware', () => {
       await next()
     },
     validator('query', (value, c) => {
+      type verify = Expect<Equal<Record<string, string>, typeof value>>
       if (!value) {
         return c.text('Invalid!', 400)
       }
