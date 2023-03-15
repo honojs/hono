@@ -7,10 +7,12 @@ type ValidationTargetByMethod<M> = M extends 'get' | 'head' // GET and HEAD requ
   ? Exclude<keyof ValidationTargets, ValidationTargetKeysWithBody>
   : keyof ValidationTargets
 
-export type ValidationFunction<InputType, OutputType, E extends Env = {}> = (
-  value: InputType,
-  c: Context<E>
-) => OutputType | Response | Promise<Response>
+export type ValidationFunction<
+  InputType,
+  OutputType,
+  E extends Env = {},
+  P extends string = string
+> = (value: InputType, c: Context<E, P>) => OutputType | Response | Promise<Response>
 
 export const validator = <
   InputType,
@@ -18,6 +20,7 @@ export const validator = <
   M extends string,
   U extends ValidationTargetByMethod<M>,
   OutputType = ValidationTargets[U],
+  P2 extends string = P,
   V extends {
     in: { [K in U]: unknown extends InputType ? OutputType : InputType }
     out: { [K in U]: OutputType }
@@ -32,7 +35,8 @@ export const validator = <
   validationFunc: ValidationFunction<
     unknown extends InputType ? ValidationTargets[U] : InputType,
     OutputType,
-    E
+    E,
+    P2
   >
 ): MiddlewareHandler<E, P, V> => {
   return async (c, next) => {
@@ -67,7 +71,7 @@ export const validator = <
         break
     }
 
-    const res = validationFunc(value as never, c)
+    const res = validationFunc(value as never, c as never)
 
     if (res instanceof Response || res instanceof Promise) {
       return res
