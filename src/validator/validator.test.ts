@@ -39,7 +39,7 @@ describe('Validator middleware', () => {
       await next()
     },
     validator('query', (value, c) => {
-      type verify = Expect<Equal<Record<string, string>, typeof value>>
+      type verify = Expect<Equal<Record<string, string | string[]>, typeof value>>
       if (!value) {
         return c.text('Invalid!', 400)
       }
@@ -275,20 +275,23 @@ describe('Validator middleware with Zod validates query params', () => {
       .transform((v) => {
         return Number(v)
       }),
+    tag: z.array(z.string()),
   })
 
   app.get('/search', zodValidator('query', schema), (c) => {
     const res = c.req.valid('query')
     return c.jsonT({
       page: res.page,
+      tags: res.tag,
     })
   })
 
   it('Should validate query params and return 200 response', async () => {
-    const res = await app.request('http://localhost/search?page=123')
+    const res = await app.request('http://localhost/search?page=123&tag=a&tag=b')
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       page: 123,
+      tags: ['a', 'b'],
     })
   })
 
