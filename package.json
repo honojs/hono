@@ -174,6 +174,11 @@
       "types": "./dist/types/adapter/nextjs/index.d.ts",
       "import": "./dist/adapter/nextjs/index.js",
       "require": "./dist/cjs/adapter/nextjs/index.js"
+    },
+    "./aws-lambda": {
+      "types": "./dist/types/adapter/aws-lambda/index.d.ts",
+      "import": "./dist/adapter/aws-lambda/index.js",
+      "require": "./dist/cjs/adapter/aws-lambda/index.js"
     }
   },
   "typesVersions": {
@@ -261,6 +266,9 @@
       ],
       "nextjs": [
         "./dist/types/adapter/nextjs"
+      ],
+      "aws-lambda": [
+        "./dist/types/adapter/aws-lambda"
       ]
     }
   },
