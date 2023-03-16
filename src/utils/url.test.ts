@@ -89,6 +89,13 @@ describe('url', () => {
       path = getPathFromURL('https://example.com/hello/hey/', false)
       expect(path).toBe('/hello/hey')
     })
+
+    it('getPathFromURL - with fragments', () => {
+      let path = getPathFromURL('https://example.com/hello#fragment')
+      expect(path).toBe('/hello')
+      path = getPathFromURL('https://example.com/hello?name=foo#frament')
+      expect(path).toBe('/hello')
+    })
   })
 
   describe('getQueryStringFromURL', () => {
@@ -178,7 +185,6 @@ describe('url', () => {
   describe('getQueryParams', () => {
     it('Parse URL query strings', () => {
       expect(getQueryParams('name=hey', 'name')).toEqual(['hey'])
-      expect(getQueryParams('name=hey#fragment', 'name')).toEqual(['hey'])
       expect(getQueryParams('name=hey&name=foo', 'name')).toEqual(['hey', 'foo'])
       expect(getQueryParams('name=hey&age=20&tall=170', 'age')).toEqual(['20'])
       expect(getQueryParams('name=hey&age=20&tall=170&name=foo&age=30', 'age')).toEqual([

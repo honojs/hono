@@ -465,6 +465,30 @@ describe('param and query', () => {
   })
 })
 
+describe('c.req.path', () => {
+  const app = new Hono()
+  app.get('/', (c) => c.text(c.req.path))
+  app.get('/search', (c) => c.text(c.req.path))
+
+  it('Should get the path `/` correctly', async () => {
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('/')
+  })
+
+  it('Should get the path `/search` correctly with a query', async () => {
+    const res = await app.request('/search?query=hono')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('/search')
+  })
+
+  it('Should get the path `/search` correctly with a fragment', async () => {
+    const res = await app.request('/search#head1')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('/search')
+  })
+})
+
 describe('Middleware', () => {
   describe('Basic', () => {
     const app = new Hono()

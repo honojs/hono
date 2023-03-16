@@ -70,7 +70,8 @@ export const getPattern = (label: string): Pattern | null => {
 
 export const getPathFromURL = (url: string, strict: boolean = true): string => {
   const queryIndex = url.indexOf('?', 8)
-  const result = url.substring(url.indexOf('/', 8), queryIndex === -1 ? url.length : queryIndex)
+  let result = url.substring(url.indexOf('/', 8), queryIndex === -1 ? url.length : queryIndex)
+  result = removeFragment(result)
 
   // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
   // default is true
@@ -146,8 +147,6 @@ export const getQueryParam = (
   queryString: string,
   key?: string
 ): string | null | Record<string, string> => {
-  queryString = removeFragment(queryString)
-
   const results: Record<string, string> = {}
 
   // eslint-disable-next-line no-constant-condition
@@ -185,7 +184,6 @@ export const getQueryParams = (
   queryString: string,
   key?: string
 ): string[] | null | Record<string, string[]> => {
-  queryString = removeFragment(queryString)
   const results: Record<string, string[]> = {}
 
   for (const strings of queryString.split('&')) {
