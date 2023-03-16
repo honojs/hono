@@ -116,7 +116,7 @@ describe('Basic - query, queries, form, and path params', () => {
     .get(
       '/search',
       validator('query', () => {
-        return {} as { q: string }
+        return {} as { q: string; tag: string[] }
       }),
       (c) => {
         return c.jsonT({
@@ -157,10 +157,12 @@ describe('Basic - query, queries, form, and path params', () => {
     rest.get('http://localhost/api/search', (req, res, ctx) => {
       const url = new URL(req.url)
       const query = url.searchParams.get('q')
+      const tag = url.searchParams.getAll('tag')
       return res(
         ctx.status(200),
         ctx.json({
           q: query,
+          tag: tag,
         })
       )
     }),
@@ -194,12 +196,14 @@ describe('Basic - query, queries, form, and path params', () => {
     const res = await client.search.$get({
       query: {
         q: 'foobar',
+        tag: ['a', 'b'],
       },
     })
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       q: 'foobar',
+      tag: ['a', 'b'],
     })
   })
 
