@@ -19,9 +19,15 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   private paramData: Record<string, string> | undefined
   private validatedData: { [K in keyof ValidationTargets]?: {} }
+  path: string
 
-  constructor(request: Request, paramData?: Record<string, string> | undefined) {
+  constructor(
+    request: Request,
+    path: string = '/',
+    paramData?: Record<string, string> | undefined
+  ) {
     this.raw = request
+    this.path = path
     this.paramData = paramData
     this.validatedData = {}
   }

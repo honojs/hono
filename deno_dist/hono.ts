@@ -228,6 +228,7 @@ export class Hono<
       env,
       executionCtx: eventOrExecutionCtx,
       notFoundHandler: this.notFoundHandler,
+      path,
       paramData,
     })
 
