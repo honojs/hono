@@ -133,21 +133,11 @@ export const checkOptionalParameter = (path: string): string[] | null => {
   return [base === '' ? '/' : base.replace(/\/$/, ''), optional]
 }
 
-const removeFragment = (queryString: string): string => {
-  const fragIndex = queryString.indexOf('#')
-  if (fragIndex !== -1) {
-    queryString = queryString.slice(0, fragIndex)
-  }
-  return queryString
-}
-
 // Optimized
 export const getQueryParam = (
   queryString: string,
   key?: string
 ): string | null | Record<string, string> => {
-  queryString = removeFragment(queryString)
-
   const results: Record<string, string> = {}
 
   // eslint-disable-next-line no-constant-condition
@@ -185,7 +175,6 @@ export const getQueryParams = (
   queryString: string,
   key?: string
 ): string[] | null | Record<string, string[]> => {
-  queryString = removeFragment(queryString)
   const results: Record<string, string[]> = {}
 
   for (const strings of queryString.split('&')) {
