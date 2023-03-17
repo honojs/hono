@@ -16,8 +16,9 @@
     "test:fastly": "jest --config ./jest.fastly.config.js",
     "test:lagon": "start-server-and-test \"lagon dev test_lagon/index.ts\" http://127.0.0.1:1234 \"yarn jest test_lagon/index.test.ts --testMatch '**/*.test.ts'\"",
     "test:node": "env NAME=Node jest --config ./jest.node.config.js",
-    "test:wrangler": "jest --config ./jest.wrangler.config.js",
-    "test:all": "yarn test && yarn test:deno && yarn test:bun && yarn test:fastly && yarn test:lagon && yarn test:node && yarn test:wrangler",
+    "test:wrangler": "jest --config ./jest.lambda.config.js",
+    "test:lambda": "env NAME=Node jest --config ./jest.node.config.js",
+    "test:all": "yarn test && yarn test:deno && yarn test:bun && yarn test:fastly && yarn test:lagon && yarn test:node && yarn test:wrangler && yarn test:lambda",
     "lint": "eslint --ext js,ts src .eslintrc.cjs",
     "lint:fix": "eslint --ext js,ts src .eslintrc.cjs --fix",
     "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.ts'",
@@ -173,6 +174,11 @@
       "types": "./dist/types/adapter/nextjs/index.d.ts",
       "import": "./dist/adapter/nextjs/index.js",
       "require": "./dist/cjs/adapter/nextjs/index.js"
+    },
+    "./aws-lambda": {
+      "types": "./dist/types/adapter/aws-lambda/index.d.ts",
+      "import": "./dist/adapter/aws-lambda/index.js",
+      "require": "./dist/cjs/adapter/aws-lambda/index.js"
     }
   },
   "typesVersions": {
@@ -260,6 +266,9 @@
       ],
       "nextjs": [
         "./dist/types/adapter/nextjs"
+      ],
+      "aws-lambda": [
+        "./dist/types/adapter/aws-lambda"
       ]
     }
   },
