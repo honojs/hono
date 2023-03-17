@@ -70,8 +70,7 @@ export const getPattern = (label: string): Pattern | null => {
 
 export const getPathFromURL = (url: string, strict: boolean = true): string => {
   const queryIndex = url.indexOf('?', 8)
-  let result = url.substring(url.indexOf('/', 8), queryIndex === -1 ? url.length : queryIndex)
-  result = removeFragment(result)
+  const result = url.substring(url.indexOf('/', 8), queryIndex === -1 ? url.length : queryIndex)
 
   // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
   // default is true
@@ -132,14 +131,6 @@ export const checkOptionalParameter = (path: string): string[] | null => {
   const base = match[1]
   const optional = base + match[2]
   return [base === '' ? '/' : base.replace(/\/$/, ''), optional]
-}
-
-const removeFragment = (queryString: string): string => {
-  const fragIndex = queryString.indexOf('#')
-  if (fragIndex !== -1) {
-    queryString = queryString.slice(0, fragIndex)
-  }
-  return queryString
 }
 
 // Optimized

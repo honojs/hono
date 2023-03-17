@@ -481,12 +481,6 @@ describe('c.req.path', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('/search')
   })
-
-  it('Should get the path `/search` correctly with a fragment', async () => {
-    const res = await app.request('/search#head1')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('/search')
-  })
 })
 
 describe('Middleware', () => {
