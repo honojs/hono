@@ -36,6 +36,7 @@ export type Fetch<T> = (
 ) => Promise<ClientResponse<InferResponseType<T>>>
 
 export type InferResponseType<T> = T extends (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   args: any | undefined
 ) => Promise<ClientResponse<infer O>>
   ? O

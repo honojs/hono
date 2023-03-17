@@ -42,7 +42,13 @@ class ClientRequestImpl {
       if (args.query) {
         for (const [k, v] of Object.entries(args.query)) {
           this.queryParams ||= new URLSearchParams()
-          this.queryParams.set(k, v)
+          if (Array.isArray(v)) {
+            for (const v2 of v) {
+              this.queryParams.append(k, v2)
+            }
+          } else {
+            this.queryParams.set(k, v)
+          }
         }
       }
 

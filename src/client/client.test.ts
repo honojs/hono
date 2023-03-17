@@ -7,7 +7,7 @@ import { setupServer } from 'msw/node'
 import _fetch, { Request as NodeFetchRequest } from 'node-fetch'
 import { Hono } from '../hono'
 import type { Expect } from '../utils/types'
-import type { Equal, NotEqual } from '../utils/types'
+import type { Equal } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
 import type { InferRequestType, InferResponseType } from './types'
@@ -116,7 +116,7 @@ describe('Basic - query, queries, form, and path params', () => {
     .get(
       '/search',
       validator('query', () => {
-        return {} as { q: string }
+        return {} as { q: string; tag: string[] }
       }),
       (c) => {
         return c.jsonT({
@@ -157,10 +157,12 @@ describe('Basic - query, queries, form, and path params', () => {
     rest.get('http://localhost/api/search', (req, res, ctx) => {
       const url = new URL(req.url)
       const query = url.searchParams.get('q')
+      const tag = url.searchParams.getAll('tag')
       return res(
         ctx.status(200),
         ctx.json({
           q: query,
+          tag: tag,
         })
       )
     }),
@@ -194,12 +196,14 @@ describe('Basic - query, queries, form, and path params', () => {
     const res = await client.search.$get({
       query: {
         q: 'foobar',
+        tag: ['a', 'b'],
       },
     })
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       q: 'foobar',
+      tag: ['a', 'b'],
     })
   })
 
@@ -283,7 +287,7 @@ describe('Infer the response/request type', () => {
       const req = client.index.$get
 
       type Actual = InferResponseType<typeof req>
-      type Expected = { ok: boolean }
+      type Expected = { ok: true }
       type verify = Expect<Equal<Expected, Actual>>
     })
 
@@ -340,18 +344,18 @@ describe('Merge path with `app.route()`', () => {
     const client = hc<AppType>('http://localhost')
     const res = await client.api.search.$get()
     const data = await res.json()
-    type verify = Expect<Equal<boolean, typeof data.ok>>
+    type verify = Expect<Equal<true, typeof data.ok>>
     expect(data.ok).toBe(true)
   })
 
-  it('Should have correct types - route() then get()', async () => {
-    const base = new Hono<Env>().route('/api')
+  it('Should have correct types - basePath() then get()', async () => {
+    const base = new Hono<Env>().basePath('/api')
     const app = base.get('/search', (c) => c.jsonT({ ok: true }))
     type AppType = typeof app
     const client = hc<AppType>('http://localhost')
     const res = await client.api.search.$get()
     const data = await res.json()
-    type verify = Expect<Equal<boolean, typeof data.ok>>
+    type verify = Expect<Equal<true, typeof data.ok>>
     expect(data.ok).toBe(true)
   })
 
