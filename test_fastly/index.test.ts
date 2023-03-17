@@ -1,4 +1,5 @@
 import { SHA256 } from 'crypto-js'
+import { env } from '../src/adapter'
 import { Hono } from '../src/index'
 import { basicAuth } from '../src/middleware/basic-auth'
 import { jwt } from '../src/middleware/jwt'

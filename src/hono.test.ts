@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { env } from './adapter'
 import type { Context } from './context'
 import { Hono } from './hono'
 import { HTTPException } from './http-exception'
@@ -165,18 +166,18 @@ describe('Routing', () => {
   it('Nested route', async () => {
     const app = new Hono()
 
-    const book = app.route('/book')
+    const book = app.basePath('/book')
     book.get('/', (c) => c.text('get /book'))
     book.get('/:id', (c) => {
       return c.text('get /book/' + c.req.param('id'))
     })
     book.post('/', (c) => c.text('post /book'))
 
-    const user = app.route('/user')
+    const user = app.basePath('/user')
     user.get('/login', (c) => c.text('get /user/login'))
     user.post('/register', (c) => c.text('post /user/register'))
 
-    const appForEachUser = user.route(':id')
+    const appForEachUser = user.basePath(':id')
     appForEachUser.get('/profile', (c) => c.text('get /user/' + c.req.param('id') + '/profile'))
 
     app.get('/add-path-after-route-call', (c) => c.text('get /add-path-after-route-call'))
@@ -211,6 +212,26 @@ describe('Routing', () => {
     res = await app.request('http://localhost/add-path-after-route-call', { method: 'GET' })
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('get /add-path-after-route-call')
+  })
+
+  it('Multiple route', async () => {
+    const app = new Hono()
+
+    const book = new Hono()
+    book.get('/hello', (c) => c.text('get /book/hello'))
+
+    const user = new Hono()
+    user.get('/hello', (c) => c.text('get /user/hello'))
+
+    app.route('/book', book).route('/user', user)
+
+    let res = await app.request('http://localhost/book/hello', { method: 'GET' })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /book/hello')
+
+    res = await app.request('http://localhost/user/hello', { method: 'GET' })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /user/hello')
   })
 
   describe('Nested route with middleware', () => {
@@ -444,6 +465,24 @@ describe('param and query', () => {
   })
 })
 
+describe('c.req.path', () => {
+  const app = new Hono()
+  app.get('/', (c) => c.text(c.req.path))
+  app.get('/search', (c) => c.text(c.req.path))
+
+  it('Should get the path `/` correctly', async () => {
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('/')
+  })
+
+  it('Should get the path `/search` correctly with a query', async () => {
+    const res = await app.request('/search?query=hono')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('/search')
+  })
+})
+
 describe('Middleware', () => {
   describe('Basic', () => {
     const app = new Hono()
@@ -592,6 +631,36 @@ describe('Middleware', () => {
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('GET multiple')
       expect(res.headers.get('x-after')).toBe('abc')
+    })
+  })
+
+  describe('Overwrite the response from middleware after next()', () => {
+    const app = new Hono()
+
+    app.use('/normal', async (c, next) => {
+      await next()
+      c.res = new Response('Middleware')
+    })
+
+    app.use('/overwrite', async (c, next) => {
+      await next()
+      c.res = undefined
+      c.res = new Response('Middleware')
+    })
+
+    app.get('*', (c) => {
+      c.header('x-custom', 'foo')
+      return c.text('Handler')
+    })
+
+    it('Should have the custom header', async () => {
+      const res = await app.request('/normal')
+      expect(res.headers.get('x-custom')).toBe('foo')
+    })
+
+    it('Should not have the custom header', async () => {
+      const res = await app.request('/overwrite')
+      expect(res.headers.get('x-custom')).toBe(null)
     })
   })
 })

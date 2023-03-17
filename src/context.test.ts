@@ -1,4 +1,3 @@
-//import type { Context } from './context'
 import { Context } from './context'
 
 describe('Context', () => {
@@ -196,5 +195,68 @@ describe('Context header', () => {
     c.res = c.html('foo')
     const res = c.text('foo')
     expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
+  })
+})
+
+describe('Pass a ResponseInit to respond methods', () => {
+  const req = new Request('http://localhost/')
+  let c: Context
+  beforeEach(() => {
+    c = new Context(req)
+  })
+
+  it('c.json()', async () => {
+    const originalResponse = new Response('Unauthorized', {
+      headers: {
+        'content-type': 'text/plain',
+        'x-custom': 'custom message',
+      },
+      status: 401,
+    })
+    const res = c.json(
+      {
+        message: 'Unauthorized',
+      },
+      originalResponse
+    )
+    expect(res.status).toBe(401)
+    expect(res.headers.get('content-type')).toMatch(/^application\/json/)
+    expect(res.headers.get('x-custom')).toBe('custom message')
+    expect(await res.json()).toEqual({
+      message: 'Unauthorized',
+    })
+  })
+
+  it('c.body()', async () => {
+    const originalResponse = new Response('<h1>Hello</h1>', {
+      headers: {
+        'content-type': 'text/html',
+      },
+    })
+    const res = c.body('<h2>Hello</h2>', originalResponse)
+    expect(res.headers.get('content-type')).toMatch(/^text\/html/)
+    expect(await res.text()).toBe('<h2>Hello</h2>')
+  })
+
+  it('c.text()', async () => {
+    const originalResponse = new Response(JSON.stringify({ foo: 'bar' }))
+    const res = c.text('foo', originalResponse)
+    expect(res.headers.get('content-type')).toMatch(/^text\/plain/)
+    expect(await res.text()).toBe('foo')
+  })
+
+  it('c.jsonT()', async () => {
+    const originalResponse = new Response('foo')
+    const tRes = c.jsonT({ foo: 'bar' }, originalResponse)
+    const res = tRes['response'] as Response
+    expect(res.headers.get('content-type')).toMatch(/^application\/json/)
+    expect(await res.json()).toEqual({ foo: 'bar' })
+  })
+
+  it('c.html()', async () => {
+    const originalResponse = new Response('foo')
+    const res = c.html('<h1>foo</h1>', originalResponse)
+    expect(res.headers.get('content-type')).toMatch(/^text\/html/)
+    expect(await res.text()).toBe('<h1>foo</h1>')
   })
 })

@@ -27,7 +27,7 @@ describe('Adapter for Next.js', () => {
   })
 
   it('Should not use `route()` if path argument is not passed', async () => {
-    const app = new Hono().route('/api')
+    const app = new Hono().basePath('/api')
 
     app.onError((e) => {
       throw e
