@@ -149,6 +149,7 @@ export class Context<
     if (options?.append) {
       if (!this._headers) {
         this._headers = new Headers(this._preparedHeaders)
+        this._preparedHeaders = {}
       }
       this._headers.append(name, value)
     } else {
@@ -217,11 +218,9 @@ export class Context<
     const status = arg ?? this._status
     this._preparedHeaders ??= {}
 
-    if (!this._headers) {
-      this._headers = new Headers()
-      for (const [k, v] of Object.entries(this._preparedHeaders)) {
-        this._headers.set(k, v)
-      }
+    this._headers ??= new Headers()
+    for (const [k, v] of Object.entries(this._preparedHeaders)) {
+      this._headers.set(k, v)
     }
 
     if (this._res) {
