@@ -134,18 +134,18 @@ export class Hono<
   private notFoundHandler: NotFoundHandler = notFoundHandler
   private errorHandler: ErrorHandler = errorHandler
 
-  route<SubPath extends string, SubEnv extends Env, SubSchema>(
+  route<SubPath extends string, SubEnv extends Env, SubSchema, SubBasePath extends string>(
     path: SubPath,
-    app: Hono<SubEnv, SubSchema>
+    app: Hono<SubEnv, SubSchema, SubBasePath>
   ): Hono<E, RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>, BasePath>
   /** @deprecated
    * Use `basePath` instead of `route` with one argument.
    * The `route` with one argument has been removed in v4.
    */
   route<SubPath extends string>(path: SubPath): Hono<E, RemoveBlankRecord<S>, BasePath>
-  route<SubPath extends string, SubEnv extends Env, SubSchema>(
+  route<SubPath extends string, SubEnv extends Env, SubSchema, SubBasePath extends string>(
     path: SubPath,
-    app?: Hono<SubEnv, SubSchema>
+    app?: Hono<SubEnv, SubSchema, SubBasePath>
   ): Hono<E, RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>, BasePath> {
     const subApp = this.basePath(path)
 
