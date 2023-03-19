@@ -19,6 +19,10 @@ describe('base64', () => {
     [utf8Encoder.encode('Hello, 世界'), 'SGVsbG8sIOS4lueVjA=='],
     [utf8Encoder.encode('炎'), '54KO'],
     [utf8Encoder.encode('🔥'), '8J+UpQ=='],
+    [
+      utf8Encoder.encode('http://github.com/honojs/hono'),
+      'aHR0cDovL2dpdGh1Yi5jb20vaG9ub2pzL2hvbm8=',
+    ],
 
     // RFC 3548 examples
     [str2UInt8Array('\x14\xfb\x9c\x03\xd9\x7e'), 'FPucA9l+'],
