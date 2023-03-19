@@ -13,11 +13,12 @@ const str2UInt8Array = (s: string): Uint8Array => {
 }
 
 describe('base64', () => {
+  const utf8Encoder = new TextEncoder()
   describe.each([
     // basic
-    [new TextEncoder().encode('Hello, 世界'), 'SGVsbG8sIOS4lueVjA=='],
-    [new TextEncoder().encode('炎'), '54KO'],
-    [new TextEncoder().encode('🔥'), '8J+UpQ=='],
+    [utf8Encoder.encode('Hello, 世界'), 'SGVsbG8sIOS4lueVjA=='],
+    [utf8Encoder.encode('炎'), '54KO'],
+    [utf8Encoder.encode('🔥'), '8J+UpQ=='],
 
     // RFC 3548 examples
     [str2UInt8Array('\x14\xfb\x9c\x03\xd9\x7e'), 'FPucA9l+'],

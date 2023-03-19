@@ -39,6 +39,8 @@ const utf8Decoder = new TextDecoder()
 
 const encodeJwtPart = (part: unknown): string =>
   encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
+const encodeSignaturePart = (buf: ArrayBufferLike): string => encodeBase64Url(buf).replace(/=/g, '')
+
 const decodeJwtPart = (part: string): unknown =>
   JSON.parse(utf8Decoder.decode(decodeBase64Url(part)))
 
@@ -100,7 +102,8 @@ export const sign = async (
 
   const partialToken = `${encodedHeader}.${encodedPayload}`
 
-  const signature = encodeBase64Url(await signing(partialToken, secret, alg)).replace(/=/g, '')
+  const signaturePart = await signing(partialToken, secret, alg)
+  const signature = encodeSignaturePart(signaturePart)
 
   return `${partialToken}.${signature}`
 }
@@ -123,10 +126,10 @@ export const verify = async (
     throw new JwtTokenExpired(token)
   }
 
-  const signature = encodeBase64Url(
-    await signing(tokenParts.slice(0, 2).join('.'), secret, alg)
-  ).replace(/=/g, '')
-  if (signature !== tokenParts[2]) {
+  const signaturePart = tokenParts.slice(0, 2).join('.')
+  const signature = await signing(signaturePart, secret, alg)
+  const encodedSignature = encodeSignaturePart(signature)
+  if (encodedSignature !== tokenParts[2]) {
     throw new JwtTokenSignatureMismatched(token)
   }
 
