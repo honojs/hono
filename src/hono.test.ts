@@ -214,6 +214,17 @@ describe('Routing', () => {
     expect(await res.text()).toBe('get /add-path-after-route-call')
   })
 
+  it('Nested route - subApp with basePath', async () => {
+    const app = new Hono()
+    const book = new Hono().basePath('/book')
+    book.get('/', (c) => c.text('get /book'))
+    app.route('/api', book)
+
+    const res = await app.request('http://localhost/api/book', { method: 'GET' })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /book')
+  })
+
   it('Multiple route', async () => {
     const app = new Hono()
 
