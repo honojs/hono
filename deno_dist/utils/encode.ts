@@ -1,50 +1,25 @@
-export const encodeBase64 = (str: string): string => {
-  if (str === null) {
-    throw new TypeError('1st argument of "encodeBase64" should not be null.')
+export const decodeBase64Url = (str: string): Uint8Array => {
+  return decodeBase64(str.replace(/_|-/g, (m) => ({ _: '/', '-': '+' }[m] ?? m)))
+}
+
+export const encodeBase64Url = (buf: ArrayBufferLike): string =>
+  encodeBase64(buf).replace(/\/|\+/g, (m) => ({ '/': '_', '+': '-' }[m] ?? m))
+
+// This approach is written in MDN.
+// btoa does not support utf-8 characters. So we need a little bit hack.
+export const encodeBase64 = (buf: ArrayBufferLike): string => {
+  const binary = String.fromCharCode(...new Uint8Array(buf))
+  return btoa(binary)
+}
+
+// atob does not support utf-8 characters. So we need a little bit hack.
+export const decodeBase64 = (str: string): Uint8Array => {
+  const binary = atob(str)
+  const bytes = new Uint8Array(new ArrayBuffer(binary.length))
+  const half = binary.length / 2
+  for (let i = 0, j = binary.length - 1; i <= half; i++, j--) {
+    bytes[i] = binary.charCodeAt(i)
+    bytes[j] = binary.charCodeAt(j)
   }
-  const encoder = new TextEncoder()
-  const bytes = encoder.encode(str)
-  return btoa(String.fromCharCode(...bytes))
-}
-
-export const decodeBase64 = (str: string): string => {
-  if (str === null) {
-    throw new TypeError('1st argument of "decodeBase64" should not be null.')
-  }
-  const text = atob(str)
-  const bytes = new Uint8Array(text.split('').map((c) => c.charCodeAt(0)))
-  const decoder = new TextDecoder()
-  return decoder.decode(bytes)
-}
-
-export const encodeBase64URL = (str: string): string => {
-  return encodeBase64(str).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
-}
-
-export const decodeBase64URL = (str: string): string => {
-  const pad = (s: string) => {
-    const diff = s.length % 4
-    if (diff === 2) {
-      return `${s}==`
-    }
-    if (diff === 3) {
-      return `${s}=`
-    }
-    return s
-  }
-
-  return decodeBase64(pad(str).replace(/-/g, '+').replace('_', '/'))
-}
-
-export const utf8ToUint8Array = (str: string): Uint8Array => {
-  const encoder = new TextEncoder()
-  return encoder.encode(str)
-}
-
-export const arrayBufferToBase64 = async (buf: ArrayBuffer): Promise<string> => {
-  return btoa(String.fromCharCode(...new Uint8Array(buf)))
-}
-
-export const arrayBufferToBase64URL = async (buf: ArrayBuffer) => {
-  return (await arrayBufferToBase64(buf)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+  return bytes
 }
