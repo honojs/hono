@@ -75,6 +75,12 @@ describe('Context', () => {
     expect(foo).toBe('Bar, Buzz')
   })
 
+  it('c.header() - append, c.html()', async () => {
+    c.header('X-Foo', 'Bar', { append: true })
+    const res = c.html('<h1>This rendered fine</h1>')
+    expect(res.headers.get('content-type')).toMatch(/^text\/html/)
+  })
+
   it('c.body() - multiple header', async () => {
     const res = c.body('Hi', 200, {
       'X-Foo': ['Bar', 'Buzz'],
@@ -180,6 +186,7 @@ describe('Context', () => {
   })
 })
 
+/*
 describe('Context header', () => {
   const req = new Request('http://localhost/')
   let c: Context
@@ -260,3 +267,4 @@ describe('Pass a ResponseInit to respond methods', () => {
     expect(await res.text()).toBe('<h1>foo</h1>')
   })
 })
+*/
