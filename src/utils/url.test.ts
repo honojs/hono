@@ -89,6 +89,11 @@ describe('url', () => {
       path = getPathFromURL('https://example.com/hello/hey/', false)
       expect(path).toBe('/hello/hey')
     })
+
+    it('getPathFromURL - return `/` whether strict is false', () => {
+      const path = getPathFromURL('https://example.com/', false)
+      expect(path).toBe('/')
+    })
   })
 
   describe('getQueryStringFromURL', () => {
