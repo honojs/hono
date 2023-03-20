@@ -8,7 +8,7 @@ export class JwtAlgorithmNotImplemented extends Error {
 /**
  * Export for backward compatibility
  * @deprecated Use JwtAlgorithmNotImplemented instead
-**/
+ **/
 export const JwtAlorithmNotImplemented = JwtAlgorithmNotImplemented
 
 export class JwtTokenInvalid extends Error {
@@ -32,6 +32,13 @@ export class JwtTokenExpired extends Error {
   }
 }
 
+export class JwtTokenIssuedAt extends Error {
+  constructor(currentTimestamp: number, iat: number) {
+    super(`Incorrect "iat" claim must be a older than "${currentTimestamp}" (iat: "${iat}")`)
+    this.name = 'JwtTokenIssuedAt'
+  }
+}
+
 export class JwtTokenSignatureMismatched extends Error {
   constructor(token: string) {
     super(`token(${token}) signature mismatched`)
@@ -44,4 +51,3 @@ export enum AlgorithmTypes {
   HS384 = 'HS384',
   HS512 = 'HS512',
 }
-
