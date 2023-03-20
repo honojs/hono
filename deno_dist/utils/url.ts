@@ -74,7 +74,7 @@ export const getPathFromURL = (url: string, strict: boolean = true): string => {
 
   // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
   // default is true
-  if (strict === false && result.endsWith('/')) {
+  if (strict === false && /.+\/$/.test(result)) {
     return result.slice(0, -1)
   }
 
