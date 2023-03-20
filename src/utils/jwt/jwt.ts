@@ -1,5 +1,5 @@
 import { encodeBase64Url, decodeBase64Url } from '../../utils/encode'
-import { AlgorithmTypes } from './types'
+import { AlgorithmTypes, JwtTokenIssuedAt } from './types'
 import {
   JwtTokenInvalid,
   JwtTokenNotBefore,
@@ -119,11 +119,15 @@ export const verify = async (
   }
 
   const { payload } = decode(token)
-  if (payload.nbf && payload.nbf > Math.floor(Date.now() / 1000)) {
+  const now = Math.floor(Date.now() / 1000)
+  if (payload.nbf && payload.nbf > now) {
     throw new JwtTokenNotBefore(token)
   }
-  if (payload.exp && payload.exp <= Math.floor(Date.now() / 1000)) {
+  if (payload.exp && payload.exp <= now) {
     throw new JwtTokenExpired(token)
+  }
+  if (payload.iat && now < payload.iat) {
+    throw new JwtTokenIssuedAt(now, payload.iat)
   }
 
   const signaturePart = tokenParts.slice(0, 2).join('.')

@@ -7,6 +7,7 @@ import {
   JwtTokenInvalid,
   JwtTokenNotBefore,
   JwtTokenExpired,
+  JwtTokenIssuedAt,
 } from './types'
 
 describe('JWT', () => {
@@ -69,6 +70,26 @@ describe('JWT', () => {
       err = e
     }
     expect(err).toEqual(new JwtTokenExpired(tok))
+    expect(authorized).toBe(false)
+  })
+
+  it('JwtTokenIssuedAt', async () => {
+    const now = 1633046400
+    jest.useFakeTimers().setSystemTime(new Date().setTime(now * 1000))
+
+    const iat = now + 1000 // after 1s
+    const payload = { role: 'api_role', iat }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+
+    let err
+    let authorized = false
+    try {
+      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenIssuedAt(now, iat))
     expect(authorized).toBe(false)
   })
 
