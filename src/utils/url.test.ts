@@ -90,7 +90,7 @@ describe('url', () => {
       expect(path).toBe('/hello/hey')
     })
 
-    it('getPathFromURL - return `/` whether strict is false', () => {
+    it('getPathFromURL - return `/` even if strict is false', () => {
       const path = getPathFromURL('https://example.com/', false)
       expect(path).toBe('/')
     })
