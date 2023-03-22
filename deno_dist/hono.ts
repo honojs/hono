@@ -239,36 +239,33 @@ export class Hono<
 
       try {
         res = handler(c, async () => {})
+
         if (!res) {
           return this.notFoundHandler(c)
         }
+
+        if (res instanceof Response) return res
+
+        if ('response' in res) {
+          res = res.response
+        }
+
+        if (res instanceof Response) return res
+
+        return res.then((resolvedRes) => {
+          if (resolvedRes !== undefined && 'response' in resolvedRes) {
+            resolvedRes = resolvedRes['response'] as Response
+          }
+          if (!resolvedRes) {
+            return this.notFoundHandler(c)
+          }
+          return resolvedRes
+        }).catch((err) => {
+          return this.handleError(err, c)
+        })
       } catch (err) {
         return this.handleError(err, c)
       }
-
-      if (res instanceof Response) return res
-
-      if ('response' in res) {
-        res = res.response
-      }
-
-      if (res instanceof Response) return res
-
-      return (async () => {
-        let awaited: Response | TypedResponse | void
-        try {
-          awaited = await res
-          if (awaited !== undefined && 'response' in awaited) {
-            awaited = awaited['response'] as Response
-          }
-          if (!awaited) {
-            return this.notFoundHandler(c)
-          }
-        } catch (err) {
-          return this.handleError(err, c)
-        }
-        return awaited
-      })()
     }
 
     const handlers = result ? result.handlers : [this.notFoundHandler]
