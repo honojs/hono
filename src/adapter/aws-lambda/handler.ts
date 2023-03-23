@@ -46,7 +46,6 @@ export const handle = (app: Hono) => {
   return async (
     event: APIGatewayProxyEvent | APIGatewayProxyEventV2
   ): Promise<APIGatewayProxyResult> => {
-    console.log(event)
     const req = createRequest(event)
     const res = await app.fetch(req)
 
