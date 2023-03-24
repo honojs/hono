@@ -1,6 +1,7 @@
 // @denoify-ignore
 import crypto from 'crypto'
 import type { Hono } from '../../hono'
+import { bufferToString } from '../../utils/buffer'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -26,7 +27,7 @@ interface APIGatewayProxyEvent {
   path: string
   body: string | null
   isBase64Encoded: boolean
-  queryStringParameters: Record<string, string | undefined>
+  queryStringParameters?: Record<string, string | undefined>
   requestContext: {
     domainName: string
   }
@@ -53,7 +54,7 @@ export const handle = (app: Hono) => {
   }
 }
 
-async function createResult(res: Response): Promise<APIGatewayProxyResult> {
+const createResult = async (res: Response): Promise<APIGatewayProxyResult> => {
   const isBase64Encoded = res.body instanceof ReadableStream
   const body = isBase64Encoded ? await fromReadableToString(res) : await fromBufferTostring(res)
 
@@ -71,7 +72,7 @@ async function createResult(res: Response): Promise<APIGatewayProxyResult> {
   return result
 }
 
-function createRequest(event: APIGatewayProxyEvent | APIGatewayProxyEventV2) {
+const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
   const queryString = extractQueryString(event)
   const urlPath = isProxyEventV2(event)
     ? `https://${event.requestContext.domainName}${event.rawPath}`
@@ -90,18 +91,18 @@ function createRequest(event: APIGatewayProxyEvent | APIGatewayProxyEventV2) {
   }
 
   if (event.body) {
-    requestInit.body = event.isBase64Encoded ? Buffer.from(event.body, 'base64') : event.body
+    requestInit.body = event.isBase64Encoded ? atob(event.body) : event.body
   }
 
   return new Request(url, requestInit)
 }
 
-function extractQueryString(event: APIGatewayProxyEvent | APIGatewayProxyEventV2) {
+const extractQueryString = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
   if (isProxyEventV2(event)) {
     return event.rawQueryString
   }
 
-  return Object.entries(event.queryStringParameters)
+  return Object.entries(event.queryStringParameters || {})
     .filter(([, value]) => value)
     .map(([key, value]) => `${key}=${value}`)
     .join('&')
@@ -113,12 +114,12 @@ function isProxyEventV2(
   return Object.prototype.hasOwnProperty.call(event, 'rawPath')
 }
 
-async function fromBufferTostring(res: Response) {
+const fromBufferTostring = async (res: Response) => {
   const arrayBuffer = await res.arrayBuffer()
-  return String.fromCharCode(...new Uint8Array(arrayBuffer))
+  return bufferToString(arrayBuffer)
 }
 
-async function fromReadableToString(res: Response) {
+const fromReadableToString = async (res: Response) => {
   const chunks = []
   const stream = res.body || new ReadableStream()
 
