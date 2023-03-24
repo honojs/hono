@@ -108,9 +108,9 @@ const extractQueryString = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2
     .join('&')
 }
 
-function isProxyEventV2(
+const isProxyEventV2 = (
   event: APIGatewayProxyEvent | APIGatewayProxyEventV2
-): event is APIGatewayProxyEventV2 {
+): event is APIGatewayProxyEventV2 => {
   return Object.prototype.hasOwnProperty.call(event, 'rawPath')
 }
 
