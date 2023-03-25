@@ -1,10 +1,10 @@
 import { HonoRequest } from './request'
 
 describe('Query', () => {
-  const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
-  const req = new HonoRequest(rawRequest)
-
   test('req.query() and req.queries()', () => {
+    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
+    const req = new HonoRequest(rawRequest)
+
     const page = req.query('page')
     expect(page).not.toBeUndefined()
     expect(page).toBe('2')
@@ -18,6 +18,17 @@ describe('Query', () => {
 
     const q2 = req.queries('q2')
     expect(q2).toBeUndefined()
+  })
+
+  test('decode special chars', () => {
+    const rawRequest = new Request('http://localhost?mail=framework%40hono.dev&tag=%401&tag=%402')
+    const req = new HonoRequest(rawRequest)
+
+    const mail = req.query('mail')
+    expect(mail).toBe('framework@hono.dev')
+
+    const tags = req.queries('tag')
+    expect(tags).toEqual(['@1', '@2'])
   })
 })
 
