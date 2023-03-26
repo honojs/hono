@@ -20,15 +20,18 @@ describe('JWT', () => {
 
     app.get('/auth/*', (c) => {
       handlerExecuted = true
-      return c.text('auth')
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
     })
     app.get('/auth-unicode/*', (c) => {
       handlerExecuted = true
-      return c.text('auth')
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
     })
     app.get('/nested/*', (c) => {
       handlerExecuted = true
-      return c.text('auth')
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
     })
 
     it('Should not authorize', async () => {
@@ -48,7 +51,7 @@ describe('JWT', () => {
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
-      expect(await res.text()).toBe('auth')
+      expect(await res.json()).toEqual({ message: 'hello world' })
       expect(handlerExecuted).toBeTruthy()
     })
 
@@ -61,7 +64,7 @@ describe('JWT', () => {
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
-      expect(await res.text()).toBe('auth')
+      expect(await res.json()).toEqual({ message: 'hello world' })
       expect(handlerExecuted).toBeTruthy()
     })
 
@@ -112,7 +115,7 @@ describe('JWT', () => {
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
-      expect(await res.text()).toBe('auth')
+      expect(await res.json()).toEqual({ message: 'hello world' })
       expect(handlerExecuted).toBeTruthy()
     })
   })
@@ -131,11 +134,13 @@ describe('JWT', () => {
 
     app.get('/auth/*', (c) => {
       handlerExecuted = true
-      return c.text('auth')
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
     })
     app.get('/auth-unicode/*', (c) => {
       handlerExecuted = true
-      return c.text('auth')
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
     })
 
     it('Should not authorize', async () => {
@@ -158,7 +163,7 @@ describe('JWT', () => {
       })
       const res = await app.request(req)
       expect(res).not.toBeNull()
-      expect(await res.text()).toBe('auth')
+      expect(await res.json()).toEqual({ message: 'hello world' })
       expect(res.status).toBe(200)
       expect(handlerExecuted).toBeTruthy()
     })
@@ -175,7 +180,7 @@ describe('JWT', () => {
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
-      expect(await res.text()).toBe('auth')
+      expect(await res.json()).toEqual({ message: 'hello world' })
       expect(handlerExecuted).toBeTruthy()
     })
 
