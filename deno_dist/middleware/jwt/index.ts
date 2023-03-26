@@ -2,6 +2,7 @@ import { HTTPException } from '../../http-exception.ts'
 import type { MiddlewareHandler } from '../../types.ts'
 import { Jwt } from '../../utils/jwt/index.ts'
 import type { AlgorithmTypes } from '../../utils/jwt/types.ts'
+import '../../context.ts'
 
 declare module '../../context.ts' {
   interface ContextVariableMap {
