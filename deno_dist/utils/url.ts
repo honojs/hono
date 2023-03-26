@@ -155,7 +155,7 @@ export const getQueryParam = (
       const v = strings.substring(eqIndex + 1)
       const k = strings.substring(0, eqIndex)
       if (key === k) {
-        return /\%/.test(v) ? decodeURI(v) : v
+        return /\%/.test(v) ? decodeURIComponent(v) : v
       } else {
         results[k] ||= v
       }
@@ -181,7 +181,7 @@ export const getQueryParams = (
     let [k, v] = strings.split('=')
     if (v === undefined) v = ''
     results[k] ||= []
-    results[k].push(v.indexOf('%') !== -1 ? decodeURI(v) : v)
+    results[k].push(v.indexOf('%') !== -1 ? decodeURIComponent(v) : v)
   }
 
   if (key) return results[key] ? results[key] : null
