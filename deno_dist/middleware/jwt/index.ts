@@ -3,6 +3,13 @@ import type { MiddlewareHandler } from '../../types.ts'
 import { Jwt } from '../../utils/jwt/index.ts'
 import type { AlgorithmTypes } from '../../utils/jwt/types.ts'
 
+declare module '../../context.ts' {
+  interface ContextVariableMap {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    jwtPayload: any
+  }
+}
+
 export const jwt = (options: {
   secret: string
   cookie?: string
@@ -46,14 +53,14 @@ export const jwt = (options: {
       throw new HTTPException(401, { res })
     }
 
-    let authorized = false
+    let payload
     let msg = ''
     try {
-      authorized = await Jwt.verify(token, options.secret, options.alg as AlgorithmTypes)
+      payload = await Jwt.verify(token, options.secret, options.alg as AlgorithmTypes)
     } catch (e) {
       msg = `${e}`
     }
-    if (!authorized) {
+    if (!payload) {
       const res = new Response('Unauthorized', {
         status: 401,
         statusText: msg,
@@ -63,6 +70,8 @@ export const jwt = (options: {
       })
       throw new HTTPException(401, { res })
     }
+
+    ctx.set('jwtPayload', payload)
 
     await next()
   }
