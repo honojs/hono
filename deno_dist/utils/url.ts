@@ -133,6 +133,10 @@ export const checkOptionalParameter = (path: string): string[] | null => {
   return [base === '' ? '/' : base.replace(/\/$/, ''), optional]
 }
 
+const _decodeURI = (value: string): string => {
+  return /[%+]/.test(value) ? decodeURIComponent(value.replace(/\+/g, ' ')) : value
+}
+
 // Optimized
 export const getQueryParam = (
   queryString: string,
@@ -155,7 +159,7 @@ export const getQueryParam = (
       const v = strings.substring(eqIndex + 1)
       const k = strings.substring(0, eqIndex)
       if (key === k) {
-        return /\%/.test(v) ? decodeURIComponent(v) : v
+        return _decodeURI(v)
       } else {
         results[k] ||= v
       }
@@ -181,7 +185,7 @@ export const getQueryParams = (
     let [k, v] = strings.split('=')
     if (v === undefined) v = ''
     results[k] ||= []
-    results[k].push(v.indexOf('%') !== -1 ? decodeURIComponent(v) : v)
+    results[k].push(_decodeURI(v))
   }
 
   if (key) return results[key] ? results[key] : null
