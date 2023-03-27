@@ -144,9 +144,21 @@ describe('url', () => {
       expect(getQueryParam('http://example.com/?name=hey', 'name')).toBe('hey')
       expect(getQueryParam('http://example.com/?name=hey#fragment', 'name')).toBe('hey#fragment')
       expect(getQueryParam('http://example.com/?name=hey&age=20&tall=170', 'age')).toBe('20')
+      expect(getQueryParam('http://example.com/?Hono+is=a+web+framework', 'Hono is')).toBe(
+        'a web framework'
+      )
       let searchParams = new URLSearchParams({ name: '炎' })
       expect(getQueryParam(`http://example.com/?${searchParams.toString()}`, 'name')).toBe('炎')
-      expect(getQueryParam('http://example.com/?name=hey&age=20&tall=170', 'weight')).toBe(undefined)
+      searchParams = new URLSearchParams({ '炎 is': 'a web framework' })
+      expect(
+        getQueryParam(
+          `http://example.com/?${searchParams.toString()}`,
+          searchParams.keys().next().value
+        )
+      ).toBe('a web framework')
+      expect(getQueryParam('http://example.com/?name=hey&age=20&tall=170', 'weight')).toBe(
+        undefined
+      )
       expect(getQueryParam('http://example.com/?name=hey&age=20&tall=170')).toEqual({
         name: 'hey',
         age: '20',
@@ -166,19 +178,42 @@ describe('url', () => {
   describe('getQueryParams', () => {
     it('Parse URL query strings', () => {
       expect(getQueryParams('http://example.com/?name=hey', 'name')).toEqual(['hey'])
-      expect(getQueryParams('http://example.com/?name=hey#fragment', 'name')).toEqual(['hey#fragment'])
-      expect(getQueryParams('http://example.com/?name=hey&name=foo', 'name')).toEqual(['hey', 'foo'])
-      expect(getQueryParams('http://example.com/?name=hey&age=20&tall=170', 'age')).toEqual(['20'])
-      expect(getQueryParams('http://example.com/?name=hey&age=20&tall=170&name=foo&age=30', 'age')).toEqual([
-        '20',
-        '30',
+      expect(getQueryParams('http://example.com/?name=hey#fragment', 'name')).toEqual([
+        'hey#fragment',
       ])
-      const searchParams = new URLSearchParams()
+      expect(getQueryParams('http://example.com/?name=hey&name=foo', 'name')).toEqual([
+        'hey',
+        'foo',
+      ])
+      expect(getQueryParams('http://example.com/?name=hey&age=20&tall=170', 'age')).toEqual(['20'])
+      expect(
+        getQueryParams('http://example.com/?name=hey&age=20&tall=170&name=foo&age=30', 'age')
+      ).toEqual(['20', '30'])
+      expect(getQueryParams('http://example.com/?Hono+is=a+web+framework', 'Hono is')).toEqual([
+        'a web framework',
+      ])
+      let searchParams = new URLSearchParams()
       searchParams.append('tag', '炎')
       searchParams.append('tag', 'ほのお')
-      expect(getQueryParams(`http://example.com/?${searchParams.toString()}`, 'tag')).toEqual(['炎', 'ほのお'])
-      expect(getQueryParams('http://example.com/?name=hey&age=20&tall=170', 'weight')).toEqual(undefined)
-      expect(getQueryParams('http://example.com/?name=hey&age=20&tall=170&name=foo&age=30&tall=180')).toEqual({
+      expect(getQueryParams(`http://example.com/?${searchParams.toString()}`, 'tag')).toEqual([
+        '炎',
+        'ほのお',
+      ])
+      searchParams = new URLSearchParams()
+      searchParams.append('炎 works on', 'Cloudflare Workers')
+      searchParams.append('炎 works on', 'Fastly Compute@Edge')
+      expect(
+        getQueryParams(
+          `http://example.com/?${searchParams.toString()}`,
+          searchParams.keys().next().value
+        )
+      ).toEqual(['Cloudflare Workers', 'Fastly Compute@Edge'])
+      expect(getQueryParams('http://example.com/?name=hey&age=20&tall=170', 'weight')).toEqual(
+        undefined
+      )
+      expect(
+        getQueryParams('http://example.com/?name=hey&age=20&tall=170&name=foo&age=30&tall=180')
+      ).toEqual({
         name: ['hey', 'foo'],
         age: ['20', '30'],
         tall: ['170', '180'],
