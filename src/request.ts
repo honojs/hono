@@ -12,7 +12,7 @@ import type { BodyData } from './utils/body'
 import type { Cookie } from './utils/cookie'
 import { parse } from './utils/cookie'
 import type { UnionToIntersection } from './utils/types'
-import { getQueryStringFromURL, getQueryParam, getQueryParams } from './utils/url'
+import { getQueryParam, getQueryParams } from './utils/url'
 
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   raw: Request
@@ -57,19 +57,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   query(key: string): string | undefined
   query(): Record<string, string>
   query(key?: string) {
-    const queryString = getQueryStringFromURL(this.url)
-    const result = getQueryParam(queryString, key)
-    if (result === null) return undefined
-    return result
+    return getQueryParam(this.url, key)
   }
 
   queries(key: string): string[] | undefined
   queries(): Record<string, string[]>
   queries(key?: string) {
-    const queryString = getQueryStringFromURL(this.url)
-    const result = getQueryParams(queryString, key)
-    if (result === null) return undefined
-    return result
+    return getQueryParams(this.url, key)
   }
 
   header(name: string): string | undefined

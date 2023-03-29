@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "bench:node": "tsx ./src/bench.mts",
+    "bench:bun": "bun run ./src/bench.mts"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "tsx": "^3.12.2"
+  },
+  "dependencies": {
+    "fast-querystring": "^1.1.1",
+    "mitata": "^0.1.6"
+  }
+}
