@@ -9,6 +9,7 @@ export type {
   Next,
   NotFoundHandler,
   ValidationTargets,
+  Input,
 } from './types'
 export type { Context, ContextVariableMap } from './context'
 export type { HonoRequest } from './request'
