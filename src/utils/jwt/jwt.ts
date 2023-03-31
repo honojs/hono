@@ -112,7 +112,8 @@ export const verify = async (
   token: string,
   secret: string,
   alg: AlgorithmTypes = AlgorithmTypes.HS256
-): Promise<boolean> => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any> => {
   const tokenParts = token.split('.')
   if (tokenParts.length !== 3) {
     throw new JwtTokenInvalid(token)
@@ -137,7 +138,7 @@ export const verify = async (
     throw new JwtTokenSignatureMismatched(token)
   }
 
-  return true
+  return payload
 }
 
 // eslint-disable-next-line
