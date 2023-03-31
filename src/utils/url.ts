@@ -157,8 +157,7 @@ const _getQueryParam = (
       if (trailingKeyCode === 61) {
         const valueIndex = keyIndex + key.length + 2
         const endIndex = url.indexOf('&', valueIndex)
-        const value = url.slice(valueIndex, endIndex === -1 ? undefined : endIndex)
-        return _decodeURI(value)
+        return _decodeURI(url.slice(valueIndex, endIndex === -1 ? undefined : endIndex))
       } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
         return ''
       }
