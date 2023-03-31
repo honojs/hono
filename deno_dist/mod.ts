@@ -28,6 +28,7 @@ export type {
   Next,
   NotFoundHandler,
   ValidationTargets,
+  Input,
 } from './types.ts'
 export type { Context, ContextVariableMap } from './context.ts'
 export type { HonoRequest } from './request.ts'
