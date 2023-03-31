@@ -164,6 +164,10 @@ describe('url', () => {
         age: '20',
         tall: '170',
       })
+      expect(getQueryParam('http://example.com/?pretty&&&&q=1%2b1=2')).toEqual({
+        pretty: '',
+        q: '1+1=2',
+      })
       expect(getQueryParam('http://example.com/?pretty', 'pretty')).toBe('')
       expect(getQueryParam('http://example.com/?pretty', 'prtt')).toBe(undefined)
       expect(getQueryParam('http://example.com/?name=sam&name=tom', 'name')).toBe('sam')
@@ -217,6 +221,10 @@ describe('url', () => {
         name: ['hey', 'foo'],
         age: ['20', '30'],
         tall: ['170', '180'],
+      })
+      expect(getQueryParams('http://example.com/?pretty&&&&q=1%2b1=2&q=2%2b2=4')).toEqual({
+        pretty: [''],
+        q: ['1+1=2', '2+2=4'],
       })
       expect(getQueryParams('http://example.com/?pretty', 'pretty')).toEqual([''])
       expect(getQueryParams('http://example.com/?pretty', 'prtt')).toBe(undefined)
