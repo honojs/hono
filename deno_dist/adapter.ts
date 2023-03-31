@@ -1,6 +1,8 @@
 import type { Context } from './context.ts'
 
-export const env = <T = Record<string, string>>(c: Context): T => {
+export const env = <T extends Record<string, string>, C extends Context = Context<{}>>(
+  c: C
+): T & C['env'] => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const global = globalThis as any
 
