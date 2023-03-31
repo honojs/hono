@@ -176,19 +176,30 @@ const _getQueryParam = (
 
   let keyIndex = url.indexOf('?', 8)
   while (keyIndex !== -1) {
-    const valueIndex = url.indexOf('=', keyIndex)
-    let name = url.slice(keyIndex + 1, valueIndex === -1 ? undefined : valueIndex)
+    const nextKeyIndex = url.indexOf('&', keyIndex + 1)
+    let valueIndex = url.indexOf('=', keyIndex)
+    if (valueIndex > nextKeyIndex && nextKeyIndex !== -1) {
+      valueIndex = -1
+    }
+    let name = url.slice(
+      keyIndex + 1,
+      valueIndex === -1 ? (nextKeyIndex === -1 ? undefined : nextKeyIndex) : valueIndex
+    )
     if (encoded) {
       name = _decodeURI(name)
     }
 
+    keyIndex = nextKeyIndex
+
+    if (name === '') {
+      continue
+    }
+
     let value
     if (valueIndex === -1) {
-      keyIndex = -1
       value = ''
     } else {
-      keyIndex = url.indexOf('&', valueIndex)
-      value = url.slice(valueIndex + 1, keyIndex === -1 ? undefined : keyIndex)
+      value = url.slice(valueIndex + 1, nextKeyIndex === -1 ? undefined : nextKeyIndex)
       if (encoded) {
         value = _decodeURI(value)
       }
