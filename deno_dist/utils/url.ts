@@ -81,12 +81,6 @@ export const getPathFromURL = (url: string, strict: boolean = true): string => {
   return result
 }
 
-export const getQueryStringFromURL = (url: string): string => {
-  const queryIndex = url.indexOf('?', 8)
-  const result = queryIndex !== -1 ? url.slice(queryIndex + 1) : ''
-  return result
-}
-
 export const mergePath = (...paths: string[]): string => {
   let p: string = ''
   let endsWithSlash = false
@@ -134,57 +128,104 @@ export const checkOptionalParameter = (path: string): string[] | null => {
 }
 
 // Optimized
-export const getQueryParam = (
-  queryString: string,
-  key?: string
-): string | null | Record<string, string> => {
-  const results: Record<string, string> = {}
-
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const andIndex = queryString.indexOf('&')
-    let strings = ''
-    if (andIndex === -1) {
-      strings = queryString
-    } else {
-      strings = queryString.substring(0, andIndex)
-    }
-
-    const eqIndex = strings.indexOf('=')
-    if (eqIndex !== -1) {
-      const v = strings.substring(eqIndex + 1)
-      const k = strings.substring(0, eqIndex)
-      if (key === k) {
-        return /\%/.test(v) ? decodeURI(v) : v
-      } else {
-        results[k] ||= v
-      }
-    } else if (strings === key) {
-      return ''
-    }
-
-    if (andIndex === -1) break
-    queryString = queryString.substring(andIndex + 1, queryString.length)
+const _decodeURI = (value: string) => {
+  if (!/[%+]/.test(value)) {
+    return value
   }
-
-  if (key) return null
-  return results
+  if (value.includes('+')) {
+    value = value.replace(/\+/g, ' ')
+  }
+  return value.includes('%') ? decodeURIComponent(value) : value
 }
 
-export const getQueryParams = (
-  queryString: string,
-  key?: string
-): string[] | null | Record<string, string[]> => {
-  const results: Record<string, string[]> = {}
+const _getQueryParam = (
+  url: string,
+  key?: string,
+  multiple?: boolean
+): string | undefined | Record<string, string> | string[] | Record<string, string[]> => {
+  let encoded
 
-  for (const strings of queryString.split('&')) {
-    let [k, v] = strings.split('=')
-    if (v === undefined) v = ''
-    results[k] ||= []
-    results[k].push(v.indexOf('%') !== -1 ? decodeURI(v) : v)
+  if (!multiple && key && !/[%+]/.test(key)) {
+    // optimized for unencoded key
+
+    let keyIndex = url.indexOf(`?${key}`, 8)
+    if (keyIndex === -1) {
+      keyIndex = url.indexOf(`&${key}`, 8)
+    }
+    while (keyIndex !== -1) {
+      const trailingKeyCode = url.charCodeAt(keyIndex + key.length + 1)
+      if (trailingKeyCode === 61) {
+        const valueIndex = keyIndex + key.length + 2
+        const endIndex = url.indexOf('&', valueIndex)
+        return _decodeURI(url.slice(valueIndex, endIndex === -1 ? undefined : endIndex))
+      } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
+        return ''
+      }
+      keyIndex = url.indexOf(`&${key}`, keyIndex)
+    }
+
+    encoded = /[%+]/.test(url)
+    if (!encoded) {
+      return undefined
+    }
+    // fallback to default routine
   }
 
-  if (key) return results[key] ? results[key] : null
+  const results: Record<string, string> | Record<string, string[]> = {}
+  encoded ??= /[%+]/.test(url)
 
-  return results
+  let keyIndex = url.indexOf('?', 8)
+  while (keyIndex !== -1) {
+    const nextKeyIndex = url.indexOf('&', keyIndex + 1)
+    let valueIndex = url.indexOf('=', keyIndex)
+    if (valueIndex > nextKeyIndex && nextKeyIndex !== -1) {
+      valueIndex = -1
+    }
+    let name = url.slice(
+      keyIndex + 1,
+      valueIndex === -1 ? (nextKeyIndex === -1 ? undefined : nextKeyIndex) : valueIndex
+    )
+    if (encoded) {
+      name = _decodeURI(name)
+    }
+
+    keyIndex = nextKeyIndex
+
+    if (name === '') {
+      continue
+    }
+
+    let value
+    if (valueIndex === -1) {
+      value = ''
+    } else {
+      value = url.slice(valueIndex + 1, nextKeyIndex === -1 ? undefined : nextKeyIndex)
+      if (encoded) {
+        value = _decodeURI(value)
+      }
+    }
+
+    if (multiple) {
+      ;((results[name] ??= []) as string[]).push(value)
+    } else {
+      results[name] ??= value
+    }
+  }
+
+  return key ? results[key] : results
+}
+
+export const getQueryParam: (
+  url: string,
+  key?: string
+) => string | undefined | Record<string, string> = _getQueryParam as (
+  url: string,
+  key?: string
+) => string | undefined | Record<string, string>
+
+export const getQueryParams = (
+  url: string,
+  key?: string
+): string[] | undefined | Record<string, string[]> => {
+  return _getQueryParam(url, key, true) as string[] | undefined | Record<string, string[]>
 }

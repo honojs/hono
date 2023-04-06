@@ -13,7 +13,7 @@ export type EventContext<Env = {}, P extends string = any, Data = {}> = {
   functionPath: string
   waitUntil: (promise: Promise<unknown>) => void
   passThroughOnException: () => void
-  next: (input?: Request | string, init?: RequestInit) => Response
+  next: (input?: Request | string, init?: RequestInit) => Promise<Response>
   env: Env & { ASSETS: { fetch: typeof fetch } }
   params: Params<P>
   data: Data
