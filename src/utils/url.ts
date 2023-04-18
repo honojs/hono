@@ -68,17 +68,17 @@ export const getPattern = (label: string): Pattern | null => {
   return null
 }
 
-export const getPathFromURL = (url: string, strict: boolean = true): string => {
+export const getPath = (request: Request): string => {
+  const url = request.url
   const queryIndex = url.indexOf('?', 8)
-  const result = url.substring(url.indexOf('/', 8), queryIndex === -1 ? url.length : queryIndex)
+  return url.slice(url.indexOf('/', 8), queryIndex === -1 ? undefined : queryIndex)
+}
+
+export const getPathNoStrict = (request: Request): string => {
+  const result = getPath(request)
 
   // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
-  // default is true
-  if (strict === false && /.+\/$/.test(result)) {
-    return result.slice(0, -1)
-  }
-
-  return result
+  return result.length > 1 && result[result.length - 1] === '/' ? result.slice(0, -1) : result
 }
 
 export const mergePath = (...paths: string[]): string => {

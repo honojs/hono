@@ -22,7 +22,7 @@ import type {
   MergeSchemaPath,
 } from './types'
 import type { RemoveBlankRecord } from './utils/types'
-import { getPathFromURL, mergePath } from './utils/url'
+import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
@@ -65,13 +65,13 @@ export class Hono<
   readonly router: Router<H> = new SmartRouter({
     routers: [new RegExpRouter(), new TrieRouter()],
   })
-  readonly strict: boolean = true // strict routing - default is true
   private _basePath: string = ''
   private path: string = '*'
+  readonly getPath: (request: Request) => string
 
   routes: RouterRoute[] = []
 
-  constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
+  constructor(init: Partial<Pick<Hono, 'router' | 'getPath'> & { strict: boolean }> = {}) {
     super()
 
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
@@ -119,13 +119,16 @@ export class Hono<
       return this
     }
 
+    const strict = init.strict ?? true
+    delete init.strict
     Object.assign(this, init)
+    this.getPath ||= strict ? getPath : getPathNoStrict
   }
 
   private clone(): Hono<E, S, BasePath> {
     const clone = new Hono<E, S, BasePath>({
       router: this.router,
-      strict: this.strict,
+      getPath: this.getPath,
     })
     clone.routes = this.routes
     return clone
@@ -218,7 +221,7 @@ export class Hono<
     eventOrExecutionCtx?: ExecutionContext | FetchEvent,
     env?: E['Bindings']
   ): Response | Promise<Response> {
-    const path = getPathFromURL(request.url, this.strict)
+    const path = this.getPath(request)
     const method = request.method
 
     const result = this.matchRoute(method, path)
