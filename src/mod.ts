@@ -38,6 +38,7 @@ export { Hono }
 export { RegExpRouter } from './router/reg-exp-router'
 export { TrieRouter } from './router/trie-router'
 export { SmartRouter } from './router/smart-router'
+export { URLPatternRouter } from './router/url-pattern-router'
 
 // Validator
 export { validator } from './validator'
