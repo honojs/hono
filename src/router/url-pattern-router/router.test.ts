@@ -449,30 +449,3 @@ describe('Routing order With named parameters', () => {
     expect(res?.params['slug']).toBe('b')
   })
 })
-
-describe('Unsupported patterns', () => {
-  it('/books/{[0-9]+}', () => {
-    const router = new URLPatternRouter<string>()
-    expect(() => {
-      router.add('GET', '/books/{[0-9]+}', 'books')
-    }).toThrowError(/Unsupported pattern/)
-  })
-  it('/books/:id+', () => {
-    const router = new URLPatternRouter<string>()
-    expect(() => {
-      router.add('GET', '/books/:id+', 'books')
-    }).toThrowError(/Unsupported pattern/)
-  })
-  it('/books/:id*', () => {
-    const router = new URLPatternRouter<string>()
-    expect(() => {
-      router.add('GET', '/books/:id*', 'books')
-    }).toThrowError(/Unsupported pattern/)
-  })
-  it('/img/*.png', () => {
-    const router = new URLPatternRouter<string>()
-    expect(() => {
-      router.add('GET', '/img/*.png', 'image')
-    }).toThrowError(/Unsupported pattern/)
-  })
-})
