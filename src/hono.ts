@@ -4,6 +4,7 @@ import type { ExecutionContext } from './context'
 import { HTTPException } from './http-exception'
 import type { Router } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router'
+import { LinearRouter } from './router/linear-router'
 import { RegExpRouter } from './router/reg-exp-router'
 import { SmartRouter } from './router/smart-router'
 import { TrieRouter } from './router/trie-router'
@@ -63,6 +64,7 @@ export class Hono<
   BasePath extends string = ''
 > extends defineDynamicClass()<E, S, BasePath> {
   readonly router: Router<H> = new SmartRouter({
+    firstRequestRouter: new LinearRouter(),
     routers: [new RegExpRouter(), new TrieRouter()],
   })
   readonly strict: boolean = true // strict routing - default is true

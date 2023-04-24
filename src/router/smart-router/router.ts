@@ -3,10 +3,11 @@ import type { Router, Result } from '../../router'
 import { UnsupportedPathError } from '../../router'
 
 export class SmartRouter<T> implements Router<T> {
+  firstRequestRouter: Router<T> | undefined
   routers: Router<T>[] = []
   routes?: [string, string, T][] = []
 
-  constructor(init: Pick<SmartRouter<T>, 'routers'>) {
+  constructor(init: Pick<SmartRouter<T>, 'firstRequestRouter' | 'routers'>) {
     Object.assign(this, init)
   }
 
@@ -24,6 +25,20 @@ export class SmartRouter<T> implements Router<T> {
     }
 
     const { routers, routes } = this
+
+    if (this.firstRequestRouter) {
+      const router = this.firstRequestRouter
+      this.firstRequestRouter = undefined
+      try {
+        routes.forEach((args) => {
+          router.add(...args)
+        })
+        return router.match(method, path)
+      } catch (e) {
+        // ignore
+      }
+    }
+
     const len = routers.length
     let i = 0
     let res
