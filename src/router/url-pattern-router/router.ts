@@ -12,44 +12,38 @@ export class URLPatternRouter<T> implements Router<T> {
   private duplicatedNames: Record<string, number> = {}
 
   add(method: string, path: string, handler: T) {
-    let endWithWildcard = false
-    if (path.charCodeAt(path.length - 1) === 42) {
-      endWithWildcard = true
+    const endsWithWildcard = path.endsWith('*')
+    if (endsWithWildcard) {
       path = path.slice(0, -2)
     }
 
     const parts = path.match(/\/(:\w+(?:{[^}]+})?)|\/[^\/\?]+|(\?)/g) || []
     if (parts[parts.length - 1] === '?') {
-      // end with '?'
       this.add(method, parts.slice(0, parts.length - 2).join(''), handler)
       parts.pop()
     }
 
     for (let i = 0, len = parts.length; i < len; i++) {
-      let part = parts[i]
-
-      if (part === '/*') {
-        part = parts[i] = '/[^/]+'
-      }
-
       // Check duplicated names
-      const match = part.match(/^\/:([^{]+)(?:{(.*)})?/)
+      const match = parts[i].match(/^\/:([^{]+)(?:{(.*)})?/)
       if (match) {
-        const n = match[1]
-        const p = this.duplicatedNames[n]
-        if (typeof p === 'number' && p !== i) {
+        const label = match[1]
+        const pos = this.duplicatedNames[label]
+        if (typeof pos === 'number' && pos !== i) {
           throw new Error(
-            `Duplicate param name, use another name instead of '${n}' - ${method} ${path} <--- '${n}'`
+            `Duplicate param name, use another name instead of '${label}' - ${method} ${path} <--- '${label}'`
           )
         }
-        this.duplicatedNames[n] = i
+        this.duplicatedNames[label] = i
 
-        parts[i] = `/(?<${n}>${match[2] || '[^/]+'})`
+        parts[i] = `/(?<${label}>${match[2] || '[^/]+'})`
+      } else if (parts[i] === '/*') {
+        parts[i] = '/[^/]+'
       }
     }
 
     this.routes.push({
-      pattern: new RegExp(`^${parts.join('')}${endWithWildcard ? '' : '/?$'}`),
+      pattern: new RegExp(`^${parts.join('')}${endsWithWildcard ? '' : '/?$'}`),
       method,
       handler,
     })
