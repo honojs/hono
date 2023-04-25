@@ -2,8 +2,6 @@
 import type { Router, Result } from '../../router'
 import { METHOD_NAME_ALL, UnsupportedPathError } from '../../router'
 
-const hasStarRe = /\*/
-const hasLabelRe = /:/
 const splitPathRe = /\/(:\w+(?:{[^}]+})?)|\/[^\/\?]+|(\?)/g
 const splitByStarRe = /\*/
 export class LinearRouter<T> implements Router<T> {
@@ -31,8 +29,8 @@ export class LinearRouter<T> implements Router<T> {
         continue
       }
 
-      const hasStar = hasStarRe.test(routePath)
-      const hasLabel = hasLabelRe.test(routePath)
+      const hasStar = routePath.indexOf('*') !== -1
+      const hasLabel = routePath.indexOf(':') !== -1
       if (!hasStar && !hasLabel) {
         if (routePath === path) {
           handlers.push(handler)
