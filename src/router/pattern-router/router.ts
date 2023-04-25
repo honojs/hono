@@ -3,7 +3,7 @@ import { METHOD_NAME_ALL } from '../../router'
 
 type Route<T> = [RegExp, string, T] // [pattern, method, handler]
 
-export class URLPatternRouter<T> implements Router<T> {
+export class PatternRouter<T> implements Router<T> {
   private routes: Route<T>[] = []
   private duplicatedNames: Record<string, number> = {}
 

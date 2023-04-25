@@ -1,5 +1,5 @@
 import { HonoBase } from './hono-base'
-import { URLPatternRouter } from './router/url-pattern-router'
+import { PatternRouter } from './router/pattern-router'
 import type { Env } from './types'
 
 export class Hono<E extends Env = Env, S = {}, BasePath extends string = ''> extends HonoBase<
@@ -9,6 +9,6 @@ export class Hono<E extends Env = Env, S = {}, BasePath extends string = ''> ext
 > {
   constructor() {
     super()
-    this.router = new URLPatternRouter()
+    this.router = new PatternRouter()
   }
 }
