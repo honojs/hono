@@ -826,7 +826,9 @@ describe('Error handle', () => {
     const app = new Hono()
 
     app.get('/exception', () => {
-      throw new HTTPException(401)
+      throw new HTTPException(401, {
+        message: 'Unauthorized',
+      })
     })
 
     it('Should return 401 response', async () => {
