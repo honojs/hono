@@ -20,9 +20,8 @@ export type EventContext<Env = {}, P extends string = any, Data = {}> = {
 }
 
 interface HandleInterface {
-  <E extends Env, S extends {}, BasePath extends string>(app: Hono<E, S, BasePath>): (
-    eventContext: EventContext
-  ) => Response | Promise<Response>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (app: Hono<any, any, any>): (eventContext: EventContext) => Response | Promise<Response>
   /** @deprecated
    * Use `app.basePath()` to set a sub path instead of passing the second argument.
    * The `handle` will have only one argument in v4.
@@ -33,12 +32,8 @@ interface HandleInterface {
 }
 
 export const handle: HandleInterface =
-  <E extends Env, S extends {}, BasePath extends string>(
-    subApp: Hono<E, S, BasePath>,
-    path?: string
-  ) =>
-  (eventContext) => {
-    const app = path ? new Hono<E, S, BasePath>().route(path, subApp as never) : subApp
+  (subApp: Hono, path?: string) => (eventContext: EventContext) => {
+    const app = path ? new Hono().route(path, subApp as never) : subApp
     return app.fetch(
       eventContext.request,
       { ...eventContext.env, eventContext },
