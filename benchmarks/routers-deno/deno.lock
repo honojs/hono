@@ -1,0 +1,227 @@
+{
+  "version": "2",
+  "remote": {},
+  "npm": {
+    "specifiers": {
+      "@medley/router": "@medley/router@0.2.1",
+      "find-my-way": "find-my-way@7.6.0",
+      "koa-router": "koa-router@12.0.0",
+      "koa-tree-router": "koa-tree-router@0.12.1",
+      "mitata": "mitata@0.1.6",
+      "trek-router": "trek-router@1.2.0"
+    },
+    "packages": {
+      "@medley/router@0.2.1": {
+        "integrity": "sha512-mdvS1spIxmZoUbTdYmWknHtwm72WwrGNoQCDd4RTvcXJ9G6XThxeC3g+cpOf6Fw6vIERHt50pYiJpsk5XTJQ5w==",
+        "dependencies": {
+          "object-treeify": "object-treeify@1.1.33"
+        }
+      },
+      "@types/accepts@1.3.5": {
+        "integrity": "sha512-jOdnI/3qTpHABjM5cx1Hc0sKsPoYCp+DP/GJRGtDlPd7fiV9oXGGIcjW/ZOxLIvjGz8MA+uMZI9metHlgqbgwQ==",
+        "dependencies": {
+          "@types/node": "@types/node@18.16.0"
+        }
+      },
+      "@types/body-parser@1.19.2": {
+        "integrity": "sha512-ALYone6pm6QmwZoAgeyNksccT9Q4AWZQ6PvfwR37GT6r6FWUPguq6sUmNGSMV2Wr761oQoBxwGGa6DR5o1DC9g==",
+        "dependencies": {
+          "@types/connect": "@types/connect@3.4.35",
+          "@types/node": "@types/node@18.16.0"
+        }
+      },
+      "@types/connect@3.4.35": {
+        "integrity": "sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==",
+        "dependencies": {
+          "@types/node": "@types/node@18.16.0"
+        }
+      },
+      "@types/content-disposition@0.5.5": {
+        "integrity": "sha512-v6LCdKfK6BwcqMo+wYW05rLS12S0ZO0Fl4w1h4aaZMD7bqT3gVUns6FvLJKGZHQmYn3SX55JWGpziwJRwVgutA==",
+        "dependencies": {}
+      },
+      "@types/cookies@0.7.7": {
+        "integrity": "sha512-h7BcvPUogWbKCzBR2lY4oqaZbO3jXZksexYJVFvkrFeLgbZjQkU4x8pRq6eg2MHXQhY0McQdqmmsxRWlVAHooA==",
+        "dependencies": {
+          "@types/connect": "@types/connect@3.4.35",
+          "@types/express": "@types/express@4.17.17",
+          "@types/keygrip": "@types/keygrip@1.0.2",
+          "@types/node": "@types/node@18.16.0"
+        }
+      },
+      "@types/express-serve-static-core@4.17.33": {
+        "integrity": "sha512-TPBqmR/HRYI3eC2E5hmiivIzv+bidAfXofM+sbonAGvyDhySGw9/PQZFt2BLOrjUUR++4eJVpx6KnLQK1Fk9tA==",
+        "dependencies": {
+          "@types/node": "@types/node@18.16.0",
+          "@types/qs": "@types/qs@6.9.7",
+          "@types/range-parser": "@types/range-parser@1.2.4"
+        }
+      },
+      "@types/express@4.17.17": {
+        "integrity": "sha512-Q4FmmuLGBG58btUnfS1c1r/NQdlp3DMfGDGig8WhfpA2YRUtEkxAjkZb0yvplJGYdF1fsQ81iMDcH24sSCNC/Q==",
+        "dependencies": {
+          "@types/body-parser": "@types/body-parser@1.19.2",
+          "@types/express-serve-static-core": "@types/express-serve-static-core@4.17.33",
+          "@types/qs": "@types/qs@6.9.7",
+          "@types/serve-static": "@types/serve-static@1.15.1"
+        }
+      },
+      "@types/http-assert@1.5.3": {
+        "integrity": "sha512-FyAOrDuQmBi8/or3ns4rwPno7/9tJTijVW6aQQjK02+kOQ8zmoNg2XJtAuQhvQcy1ASJq38wirX5//9J1EqoUA==",
+        "dependencies": {}
+      },
+      "@types/http-errors@2.0.1": {
+        "integrity": "sha512-/K3ds8TRAfBvi5vfjuz8y6+GiAYBZ0x4tXv1Av6CWBWn0IlADc+ZX9pMq7oU0fNQPnBwIZl3rmeLp6SBApbxSQ==",
+        "dependencies": {}
+      },
+      "@types/keygrip@1.0.2": {
+        "integrity": "sha512-GJhpTepz2udxGexqos8wgaBx4I/zWIDPh/KOGEwAqtuGDkOUJu5eFvwmdBX4AmB8Odsr+9pHCQqiAqDL/yKMKw==",
+        "dependencies": {}
+      },
+      "@types/koa-compose@3.2.5": {
+        "integrity": "sha512-B8nG/OoE1ORZqCkBVsup/AKcvjdgoHnfi4pZMn5UwAPCbhk/96xyv284eBYW8JlQbQ7zDmnpFr68I/40mFoIBQ==",
+        "dependencies": {
+          "@types/koa": "@types/koa@2.13.6"
+        }
+      },
+      "@types/koa@2.13.6": {
+        "integrity": "sha512-diYUfp/GqfWBAiwxHtYJ/FQYIXhlEhlyaU7lB/bWQrx4Il9lCET5UwpFy3StOAohfsxxvEQ11qIJgT1j2tfBvw==",
+        "dependencies": {
+          "@types/accepts": "@types/accepts@1.3.5",
+          "@types/content-disposition": "@types/content-disposition@0.5.5",
+          "@types/cookies": "@types/cookies@0.7.7",
+          "@types/http-assert": "@types/http-assert@1.5.3",
+          "@types/http-errors": "@types/http-errors@2.0.1",
+          "@types/keygrip": "@types/keygrip@1.0.2",
+          "@types/koa-compose": "@types/koa-compose@3.2.5",
+          "@types/node": "@types/node@18.16.0"
+        }
+      },
+      "@types/mime@3.0.1": {
+        "integrity": "sha512-Y4XFY5VJAuw0FgAqPNd6NNoV44jbq9Bz2L7Rh/J6jLTiHBSBJa9fxqQIvkIld4GsoDOcCbvzOUAbLPsSKKg+uA==",
+        "dependencies": {}
+      },
+      "@types/node@18.16.0": {
+        "integrity": "sha512-BsAaKhB+7X+H4GnSjGhJG9Qi8Tw+inU9nJDwmD5CgOmBLEI6ArdhikpLX7DjbjDRDTbqZzU2LSQNZg8WGPiSZQ==",
+        "dependencies": {}
+      },
+      "@types/qs@6.9.7": {
+        "integrity": "sha512-FGa1F62FT09qcrueBA6qYTrJPVDzah9a+493+o2PCXsesWHIn27G98TsSMs3WPNbZIEj4+VJf6saSFpvD+3Zsw==",
+        "dependencies": {}
+      },
+      "@types/range-parser@1.2.4": {
+        "integrity": "sha512-EEhsLsD6UsDM1yFhAvy0Cjr6VwmpMWqFBCb9w07wVugF7w9nfajxLuVmngTIpgS6svCnm6Vaw+MZhoDCKnOfsw==",
+        "dependencies": {}
+      },
+      "@types/serve-static@1.15.1": {
+        "integrity": "sha512-NUo5XNiAdULrJENtJXZZ3fHtfMolzZwczzBbnAeBbqBwG+LaG6YaJtuwzwGSQZ2wsCrxjEhNNjAkKigy3n8teQ==",
+        "dependencies": {
+          "@types/mime": "@types/mime@3.0.1",
+          "@types/node": "@types/node@18.16.0"
+        }
+      },
+      "depd@2.0.0": {
+        "integrity": "sha512-g7nH6P6dyDioJogAAGprGpCtVImJhpPk/roCzdb3fIh61/s/nPsfR6onyMwkCAR/OlC3yBC0lESvUoQEAssIrw==",
+        "dependencies": {}
+      },
+      "fast-decode-uri-component@1.0.1": {
+        "integrity": "sha512-WKgKWg5eUxvRZGwW8FvfbaH7AXSh2cL+3j5fMGzUMCxWBJ3dV3a7Wz8y2f/uQ0e3B6WmodD3oS54jTQ9HVTIIg==",
+        "dependencies": {}
+      },
+      "fast-deep-equal@3.1.3": {
+        "integrity": "sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==",
+        "dependencies": {}
+      },
+      "fast-querystring@1.1.1": {
+        "integrity": "sha512-qR2r+e3HvhEFmpdHMv//U8FnFlnYjaC6QKDuaXALDkw2kvHO8WDjxH+f/rHGR4Me4pnk8p9JAkRNTjYHAKRn2Q==",
+        "dependencies": {
+          "fast-decode-uri-component": "fast-decode-uri-component@1.0.1"
+        }
+      },
+      "find-my-way@7.6.0": {
+        "integrity": "sha512-H7berWdHJ+5CNVr4ilLWPai4ml7Y2qAsxjw3pfeBxPigZmaDTzF0wjJLj90xRCmGcWYcyt050yN+34OZDJm1eQ==",
+        "dependencies": {
+          "fast-deep-equal": "fast-deep-equal@3.1.3",
+          "fast-querystring": "fast-querystring@1.1.1",
+          "safe-regex2": "safe-regex2@2.0.0"
+        }
+      },
+      "http-errors@2.0.0": {
+        "integrity": "sha512-FtwrG/euBzaEjYeRqOgly7G0qviiXoJWnvEH2Z1plBdXgbyjv34pHTSb9zoeHMyDy33+DWy5Wt9Wo+TURtOYSQ==",
+        "dependencies": {
+          "depd": "depd@2.0.0",
+          "inherits": "inherits@2.0.4",
+          "setprototypeof": "setprototypeof@1.2.0",
+          "statuses": "statuses@2.0.1",
+          "toidentifier": "toidentifier@1.0.1"
+        }
+      },
+      "inherits@2.0.4": {
+        "integrity": "sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==",
+        "dependencies": {}
+      },
+      "koa-compose@4.2.0": {
+        "integrity": "sha512-/Io2dpt3uU/wWkn2pkRBj3vudzsi6hMssGkREZCxLIczAIvLWy5Jw9PW7ctTxvcfXKCisbgsMLsgE1BvSZB6Kw==",
+        "dependencies": {}
+      },
+      "koa-router@12.0.0": {
+        "integrity": "sha512-zGrdiXygGYW8WvrzeGsHZvKnHs4DzyGoqJ9a8iHlRkiwuEAOAPyI27//OlhoWdgFAEIM3qbUgr0KCuRaP/TCag==",
+        "dependencies": {
+          "http-errors": "http-errors@2.0.0",
+          "koa-compose": "koa-compose@4.2.0",
+          "methods": "methods@1.1.2",
+          "path-to-regexp": "path-to-regexp@6.2.1"
+        }
+      },
+      "koa-tree-router@0.12.1": {
+        "integrity": "sha512-U/jJoV+rDFYtbaU/X6r2hcNKT7+DZs8HeXONWA7/OSIMk6/cYhoW5P9MPrjg7vHWRrmZOAiFkPoW7vtxvwLWpw==",
+        "dependencies": {
+          "@types/koa": "@types/koa@2.13.6",
+          "koa-compose": "koa-compose@4.2.0"
+        }
+      },
+      "methods@1.1.2": {
+        "integrity": "sha512-iclAHeNqNm68zFtnZ0e+1L2yUIdvzNoauKU4WBA3VvH/vPFieF7qfRlwUZU+DA9P9bPXIS90ulxoUoCH23sV2w==",
+        "dependencies": {}
+      },
+      "mitata@0.1.6": {
+        "integrity": "sha512-VKQ0r3jriTOU9E2Z+mwbZrUmbg4Li4QyFfi7kfHKl6reZhGzL0AYlu3wE0VPXzIwA5xnFzmEQoBwCcNT8stUkA==",
+        "dependencies": {}
+      },
+      "object-treeify@1.1.33": {
+        "integrity": "sha512-EFVjAYfzWqWsBMRHPMAXLCDIJnpMhdWAqR7xG6M6a2cs6PMFpl/+Z20w9zDW4vkxOFfddegBKq9Rehd0bxWE7A==",
+        "dependencies": {}
+      },
+      "path-to-regexp@6.2.1": {
+        "integrity": "sha512-JLyh7xT1kizaEvcaXOQwOc2/Yhw6KZOvPf1S8401UyLk86CU79LN3vl7ztXGm/pZ+YjoyAJ4rxmHwbkBXJX+yw==",
+        "dependencies": {}
+      },
+      "ret@0.2.2": {
+        "integrity": "sha512-M0b3YWQs7R3Z917WRQy1HHA7Ba7D8hvZg6UE5mLykJxQVE2ju0IXbGlaHPPlkY+WN7wFP+wUMXmBFA0aV6vYGQ==",
+        "dependencies": {}
+      },
+      "safe-regex2@2.0.0": {
+        "integrity": "sha512-PaUSFsUaNNuKwkBijoAPHAK6/eM6VirvyPWlZ7BAQy4D+hCvh4B6lIG+nPdhbFfIbP+gTGBcrdsOaUs0F+ZBOQ==",
+        "dependencies": {
+          "ret": "ret@0.2.2"
+        }
+      },
+      "setprototypeof@1.2.0": {
+        "integrity": "sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==",
+        "dependencies": {}
+      },
+      "statuses@2.0.1": {
+        "integrity": "sha512-RwNA9Z/7PrK06rYLIzFMlaF+l73iwpzsqRIFgbMLbTcLD6cOao82TaWefPXQvB2fOC4AjuYSEndS7N/mTCbkdQ==",
+        "dependencies": {}
+      },
+      "toidentifier@1.0.1": {
+        "integrity": "sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==",
+        "dependencies": {}
+      },
+      "trek-router@1.2.0": {
+        "integrity": "sha512-43A1krE0myUO2DV+RQBUYLwK3Q5osszQ65jFe/TFGWMnhdZx0nvq2GQXecXwIPU0weSFo1pYmHfhHHaUPPIRNg==",
+        "dependencies": {}
+      }
+    }
+  }
+}
