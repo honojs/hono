@@ -35,6 +35,11 @@
       "import": "./dist/index.js",
       "require": "./dist/cjs/index.js"
     },
+    "./tiny": {
+      "types": "./dist/types/tiny.d.ts",
+      "import": "./dist/tiny.js",
+      "require": "./dist/cjs/tiny.js"
+    },
     "./http-exception": {
       "types": "./dist/types/http-exception.d.ts",
       "import": "./dist/http-exception.js",
@@ -183,6 +188,9 @@
   },
   "typesVersions": {
     "*": {
+      "tiny": [
+        "./dist/types/tiny"
+      ],
       "http-exception": [
         "./dist/types/http-exception"
       ],
