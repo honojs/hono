@@ -1,7 +1,7 @@
 import type { Router } from '../../../deno_dist/router.ts'
 import { RegExpRouter } from '../../../deno_dist/router/reg-exp-router/index.ts'
 import { TrieRouter } from '../../../deno_dist/router/trie-router/index.ts'
-import { URLPatternRouter } from '../../../deno_dist/router/url-pattern-router/index.ts'
+import { PatternRouter } from '../../../deno_dist/router/pattern-router/index.ts'
 import type { RouterInterface } from './tool.mts'
 import { routes, handler } from './tool.mts'
 
@@ -19,4 +19,4 @@ const createHonoRouter = (name: string, router: Router<unknown>): RouterInterfac
 
 export const regExpRouter = createHonoRouter('RegExpRouter', new RegExpRouter())
 export const trieRouter = createHonoRouter('TrieRouter', new TrieRouter())
-export const urlPatternRouter = createHonoRouter('URLPatternRouter', new URLPatternRouter())
+export const patternRouter = createHonoRouter('PatternRouter', new PatternRouter())

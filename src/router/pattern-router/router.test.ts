@@ -1,7 +1,7 @@
-import { URLPatternRouter } from './router'
+import { PatternRouter } from './router'
 
 describe('Basic', () => {
-  const router = new URLPatternRouter<string>()
+  const router = new PatternRouter<string>()
   router.add('GET', '/hello', 'get hello')
   router.add('POST', '/hello', 'post hello')
   router.add('PURGE', '/hello', 'purge hello')
@@ -28,7 +28,7 @@ describe('Basic', () => {
 })
 
 describe('Complex', () => {
-  const router = new URLPatternRouter<string>()
+  const router = new PatternRouter<string>()
 
   it('Named Param', async () => {
     router.add('GET', '/entry/:id', 'get entry')
@@ -71,7 +71,7 @@ describe('Complex', () => {
 })
 
 describe('Multi match', () => {
-  const router = new URLPatternRouter<string>()
+  const router = new PatternRouter<string>()
 
   describe('Blog', () => {
     router.add('ALL', '*', 'middleware a')
@@ -113,7 +113,7 @@ describe('Multi match', () => {
 })
 
 describe('Fallback', () => {
-  const router = new URLPatternRouter<string>()
+  const router = new PatternRouter<string>()
   router.add('POST', '/entry', 'post entry')
   router.add('POST', '/entry/*', 'fallback')
   router.add('GET', '/entry/:id', 'get entry')
@@ -125,7 +125,7 @@ describe('Fallback', () => {
 })
 
 describe('page', () => {
-  const router = new URLPatternRouter<string>()
+  const router = new PatternRouter<string>()
   router.add('GET', '/page', 'page')
   router.add('ALL', '*', 'fallback') // or '*'
   it('GET /page', async () => {
@@ -135,7 +135,7 @@ describe('page', () => {
 })
 
 describe('Optional route', () => {
-  const router = new URLPatternRouter<string>()
+  const router = new PatternRouter<string>()
   router.add('GET', '/api/animals/:type?', 'animals')
   it('GET /api/animals/dog', async () => {
     const res = router.match('GET', '/api/animals/dog')
@@ -150,7 +150,7 @@ describe('Optional route', () => {
 })
 
 describe('routing order with named parameters', () => {
-  const router = new URLPatternRouter<string>()
+  const router = new PatternRouter<string>()
   router.add('GET', '/book/a', 'no-slug')
   router.add('GET', '/book/:slug', 'slug')
   router.add('GET', '/book/b', 'no-slug-b')
@@ -172,7 +172,7 @@ describe('routing order with named parameters', () => {
 })
 
 describe('Trailing slash', () => {
-  const router = new URLPatternRouter<string>()
+  const router = new PatternRouter<string>()
   router.add('GET', '/book', 'GET /book')
   router.add('GET', '/book/:id', 'GET /book/:id')
   it('GET /book', () => {
@@ -186,7 +186,7 @@ describe('Trailing slash', () => {
 })
 
 describe('Same path', () => {
-  const router = new URLPatternRouter<string>()
+  const router = new PatternRouter<string>()
   router.add('GET', '/hey', 'Middleware A')
   router.add('GET', '/hey', 'Middleware B')
   it('GET /hey', () => {
@@ -196,7 +196,7 @@ describe('Same path', () => {
 })
 
 describe('Including slashes', () => {
-  const router = new URLPatternRouter<string>()
+  const router = new PatternRouter<string>()
   router.add('GET', '/js/:filename{[a-z0-9/]+.js}', 'any file')
   router.add('GET', '/js/main.js', 'main.js')
 
@@ -220,7 +220,7 @@ describe('Including slashes', () => {
 })
 
 describe('REST API', () => {
-  const router = new URLPatternRouter<string>()
+  const router = new PatternRouter<string>()
   router.add('GET', '/users/:username{[a-z]+}', 'profile')
   router.add('GET', '/users/:username{[a-z]+}/posts', 'posts')
 
@@ -239,14 +239,14 @@ describe('REST API', () => {
 
 describe('Duplicate param name', () => {
   it('self', () => {
-    const router = new URLPatternRouter<string>()
+    const router = new PatternRouter<string>()
     expect(() => {
       router.add('GET', '/:id/:id', 'foo')
     }).toThrowError(/Duplicate param name/)
   })
 
   it('parent', () => {
-    const router = new URLPatternRouter<string>()
+    const router = new PatternRouter<string>()
     router.add('get', '/:id/:action', 'foo')
     expect(() => {
       router.add('get', '/posts/:id', 'bar')
@@ -254,7 +254,7 @@ describe('Duplicate param name', () => {
   })
 
   it('child', () => {
-    const router = new URLPatternRouter<string>()
+    const router = new PatternRouter<string>()
     router.add('get', '/posts/:id', 'foo')
     expect(() => {
       router.add('get', '/:id/:action', 'bar')
@@ -262,7 +262,7 @@ describe('Duplicate param name', () => {
   })
 
   it('hierarchy', () => {
-    const router = new URLPatternRouter<string>()
+    const router = new PatternRouter<string>()
     router.add('get', '/posts/:id/comments/:comment_id', 'foo')
     expect(() => {
       router.add('get', '/posts/:id', 'bar')
@@ -270,7 +270,7 @@ describe('Duplicate param name', () => {
   })
 
   it('regular expression', () => {
-    const router = new URLPatternRouter<string>()
+    const router = new PatternRouter<string>()
     router.add('get', '/:id/:action{create|update}', 'foo')
     expect(() => {
       router.add('get', '/:id/:action{delete}', 'bar')
@@ -280,7 +280,7 @@ describe('Duplicate param name', () => {
 
 describe('Sort Order', () => {
   describe('Basic', () => {
-    const router = new URLPatternRouter<string>()
+    const router = new PatternRouter<string>()
     router.add('get', '*', 'a')
     router.add('get', '/page', '/page')
     router.add('get', '/:slug', '/:slug')
@@ -292,7 +292,7 @@ describe('Sort Order', () => {
   })
 
   describe('With Named path', () => {
-    const router = new URLPatternRouter<string>()
+    const router = new PatternRouter<string>()
     router.add('get', '*', 'a')
     router.add('get', '/posts/:id', '/posts/:id')
     router.add('get', '/:type/:id', '/:type/:id')
@@ -305,7 +305,7 @@ describe('Sort Order', () => {
   })
 
   describe('With Wildcards', () => {
-    const router = new URLPatternRouter<string>()
+    const router = new PatternRouter<string>()
     router.add('get', '/api/*', '1st')
     router.add('get', '/api/*', '2nd')
     router.add('get', '/api/posts/:id', '3rd')
@@ -319,7 +319,7 @@ describe('Sort Order', () => {
   })
 
   describe('With special Wildcard', () => {
-    const router = new URLPatternRouter<string>()
+    const router = new PatternRouter<string>()
     router.add('get', '/posts', '/posts') // 1.1
     router.add('get', '/posts/*', '/posts/*') // 1.2
     router.add('get', '/posts/:id', '/posts/:id') // 2.3
@@ -333,7 +333,7 @@ describe('Sort Order', () => {
   })
 
   describe('Complex', () => {
-    const router = new URLPatternRouter<string>()
+    const router = new PatternRouter<string>()
     router.add('get', '/api', 'a') // not match
     router.add('get', '/api/*', 'b') // match
     router.add('get', '/api/:type', 'c') // not match
@@ -352,7 +352,7 @@ describe('Sort Order', () => {
   })
 
   describe('Multi match', () => {
-    const router = new URLPatternRouter<string>()
+    const router = new PatternRouter<string>()
     router.add('get', '*', 'GET *') // 0.1
     router.add('get', '/abc/*', 'GET /abc/*') // 1.2
     router.add('get', '/abc/edf', 'GET /abc/edf') // 2.3
@@ -365,7 +365,7 @@ describe('Sort Order', () => {
   })
 
   describe('Multi match', () => {
-    const router = new URLPatternRouter<string>()
+    const router = new PatternRouter<string>()
 
     router.add('get', '/api/*', 'a') // 2.1 for /api/entry
     router.add('get', '/api/entry', 'entry') // 2.2
@@ -380,7 +380,7 @@ describe('Sort Order', () => {
 
   describe('fallback', () => {
     describe('Blog - failed', () => {
-      const router = new URLPatternRouter<string>()
+      const router = new PatternRouter<string>()
       router.add('post', '/entry', 'post entry') // 1.1
       router.add('post', '/entry/*', 'fallback') // 1.2
       router.add('get', '/entry/:id', 'get entry') // 2.3
@@ -392,7 +392,7 @@ describe('Sort Order', () => {
     })
   })
   describe('page', () => {
-    const router = new URLPatternRouter<string>()
+    const router = new PatternRouter<string>()
     router.add('get', '/page', 'page') // 1.1
     router.add('ALL', '/*', 'fallback') // 1.2
     it('get /page', async () => {
@@ -404,7 +404,7 @@ describe('Sort Order', () => {
 })
 
 describe('star', () => {
-  const router = new URLPatternRouter<string>()
+  const router = new PatternRouter<string>()
   router.add('get', '/', '/')
   router.add('get', '/*', '/*')
   router.add('get', '*', '*')
@@ -426,7 +426,7 @@ describe('star', () => {
 })
 
 describe('Routing order With named parameters', () => {
-  const router = new URLPatternRouter<string>()
+  const router = new PatternRouter<string>()
   router.add('get', '/book/a', 'no-slug')
   router.add('get', '/book/:slug', 'slug')
   router.add('get', '/book/b', 'no-slug-b')
@@ -447,32 +447,5 @@ describe('Routing order With named parameters', () => {
     expect(res).not.toBeNull()
     expect(res?.handlers).toEqual(['slug', 'no-slug-b'])
     expect(res?.params['slug']).toBe('b')
-  })
-})
-
-describe('Unsupported patterns', () => {
-  it('/books/{[0-9]+}', () => {
-    const router = new URLPatternRouter<string>()
-    expect(() => {
-      router.add('GET', '/books/{[0-9]+}', 'books')
-    }).toThrowError(/Unsupported pattern/)
-  })
-  it('/books/:id+', () => {
-    const router = new URLPatternRouter<string>()
-    expect(() => {
-      router.add('GET', '/books/:id+', 'books')
-    }).toThrowError(/Unsupported pattern/)
-  })
-  it('/books/:id*', () => {
-    const router = new URLPatternRouter<string>()
-    expect(() => {
-      router.add('GET', '/books/:id*', 'books')
-    }).toThrowError(/Unsupported pattern/)
-  })
-  it('/img/*.png', () => {
-    const router = new URLPatternRouter<string>()
-    expect(() => {
-      router.add('GET', '/img/*.png', 'image')
-    }).toThrowError(/Unsupported pattern/)
   })
 })
