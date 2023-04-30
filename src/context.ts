@@ -77,24 +77,24 @@ export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _req?: HonoRequest<any, any>
   private _status: StatusCode = 200
-  private _executionCtx: FetchEvent | ExecutionContext | undefined
-  private _pretty: boolean = false
-  private _prettySpace: number = 2
+  private _exCtx: FetchEvent | ExecutionContext | undefined // _executionCtx
+  private _pre: boolean = false // _pretty
+  private _preS: number = 2 // _prettySpace
   private _map: Record<string, unknown> | undefined
-  private _h: Headers | undefined = undefined // Short name of _headers
-  private _pHeaders: Record<string, string> | undefined = undefined // Short name of _preparedHeaders
+  private _h: Headers | undefined = undefined //  _headers
+  private _pH: Record<string, string> | undefined = undefined // _preparedHeaders
   private _res: Response | undefined
   private _path: string = '/'
-  private _paramData?: Record<string, string> | null
+  private _pData?: Record<string, string> | null // __paramData
   private rawRequest?: Request | null
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
   constructor(req: Request, options?: ContextOptions<E>) {
     this.rawRequest = req
     if (options) {
-      this._executionCtx = options.executionCtx
+      this._exCtx = options.executionCtx
       this._path = options.path ?? '/'
-      this._paramData = options.paramData
+      this._pData = options.paramData
       this.env = options.env
       if (options.notFoundHandler) {
         this.notFoundHandler = options.notFoundHandler
@@ -107,24 +107,24 @@ export class Context<
       return this._req
     } else {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this._req = new HonoRequest(this.rawRequest!, this._path, this._paramData!)
+      this._req = new HonoRequest(this.rawRequest!, this._path, this._pData!)
       this.rawRequest = undefined
-      this._paramData = undefined
+      this._pData = undefined
       return this._req
     }
   }
 
   get event(): FetchEvent {
-    if (this._executionCtx instanceof FetchEvent) {
-      return this._executionCtx
+    if (this._exCtx instanceof FetchEvent) {
+      return this._exCtx
     } else {
       throw Error('This context has no FetchEvent')
     }
   }
 
   get executionCtx(): ExecutionContext {
-    if (this._executionCtx) {
-      return this._executionCtx as ExecutionContext
+    if (this._exCtx) {
+      return this._exCtx as ExecutionContext
     } else {
       throw Error('This context has no ExecutionContext')
     }
@@ -148,16 +148,16 @@ export class Context<
   header = (name: string, value: string, options?: { append?: boolean }): void => {
     if (options?.append) {
       if (!this._h) {
-        this._h = new Headers(this._pHeaders)
-        this._pHeaders = {}
+        this._h = new Headers(this._pH)
+        this._pH = {}
       }
       this._h.append(name, value)
     } else {
       if (this._h) {
         this._h.set(name, value)
       } else {
-        this._pHeaders ??= {}
-        this._pHeaders[name.toLowerCase()] = value
+        this._pH ??= {}
+        this._pH[name.toLowerCase()] = value
       }
     }
 
@@ -189,8 +189,8 @@ export class Context<
   }
 
   pretty = (prettyJSON: boolean, space: number = 2): void => {
-    this._pretty = prettyJSON
-    this._prettySpace = space
+    this._pre = prettyJSON
+    this._preS = space
   }
 
   newResponse: NewResponse = (
@@ -201,14 +201,14 @@ export class Context<
     // Optimized
     if (!headers && !this._h && !this._res && !arg && this._status === 200) {
       return new Response(data, {
-        headers: this._pHeaders,
+        headers: this._pH,
       })
     }
 
     // Return Response immediately if arg is RequestInit.
     if (arg && typeof arg !== 'number') {
       const res = new Response(data, arg)
-      const contentType = this._pHeaders?.['content-type']
+      const contentType = this._pH?.['content-type']
       if (contentType) {
         res.headers.set('content-type', contentType)
       }
@@ -216,10 +216,10 @@ export class Context<
     }
 
     const status = arg ?? this._status
-    this._pHeaders ??= {}
+    this._pH ??= {}
 
     this._h ??= new Headers()
-    for (const [k, v] of Object.entries(this._pHeaders)) {
+    for (const [k, v] of Object.entries(this._pH)) {
       this._h.set(k, v)
     }
 
@@ -227,7 +227,7 @@ export class Context<
       this._res.headers.forEach((v, k) => {
         this._h?.set(k, v)
       })
-      for (const [k, v] of Object.entries(this._pHeaders)) {
+      for (const [k, v] of Object.entries(this._pH)) {
         this._h.set(k, v)
       }
     }
@@ -267,16 +267,16 @@ export class Context<
   ): Response => {
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
-    if (!this._pHeaders) {
+    if (!this._pH) {
       if (!headers && !this._res && !this._h && !arg) {
         return new Response(text)
       }
-      this._pHeaders = {}
+      this._pH = {}
     }
     // If Content-Type is not set, we don't have to set `text/plain`.
     // Fewer the header values, it will be faster.
-    if (this._pHeaders['content-type']) {
-      this._pHeaders['content-type'] = 'text/plain; charset=UTF8'
+    if (this._pH['content-type']) {
+      this._pH['content-type'] = 'text/plain; charset=UTF8'
     }
     return typeof arg === 'number'
       ? this.newResponse(text, arg, headers)
@@ -288,11 +288,9 @@ export class Context<
     arg?: StatusCode | RequestInit,
     headers?: HeaderRecord
   ) => {
-    const body = this._pretty
-      ? JSON.stringify(object, null, this._prettySpace)
-      : JSON.stringify(object)
-    this._pHeaders ??= {}
-    this._pHeaders['content-type'] = 'application/json; charset=UTF-8'
+    const body = this._pre ? JSON.stringify(object, null, this._preS) : JSON.stringify(object)
+    this._pH ??= {}
+    this._pH['content-type'] = 'application/json; charset=UTF-8'
     return typeof arg === 'number'
       ? this.newResponse(body, arg, headers)
       : this.newResponse(body, arg)
@@ -316,8 +314,8 @@ export class Context<
     arg?: StatusCode | RequestInit,
     headers?: HeaderRecord
   ): Response => {
-    this._pHeaders ??= {}
-    this._pHeaders['content-type'] = 'text/html; charset=UTF-8'
+    this._pH ??= {}
+    this._pH['content-type'] = 'text/html; charset=UTF-8'
     return typeof arg === 'number'
       ? this.newResponse(html, arg, headers)
       : this.newResponse(html, arg)
