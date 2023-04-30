@@ -87,13 +87,13 @@ export const mergePath = (...paths: string[]): string => {
 
   for (let path of paths) {
     /* ['/hey/','/say'] => ['/hey', '/say'] */
-    if (p.endsWith('/')) {
+    if (p[p.length - 1] === '/') {
       p = p.slice(0, -1)
       endsWithSlash = true
     }
 
     /* ['/hey','say'] => ['/hey', '/say'] */
-    if (!path.startsWith('/')) {
+    if (path[0] !== '/') {
       path = `/${path}`
     }
 
@@ -135,7 +135,7 @@ const _decodeURI = (value: string) => {
   if (value.includes('+')) {
     value = value.replace(/\+/g, ' ')
   }
-  return value.includes('%') ? decodeURIComponent(value) : value
+  return value.includes('%') ? decodeURIComponent_(value) : value
 }
 
 const _getQueryParam = (
@@ -229,3 +229,7 @@ export const getQueryParams = (
 ): string[] | undefined | Record<string, string[]> => {
   return _getQueryParam(url, key, true) as string[] | undefined | Record<string, string[]>
 }
+
+// `decodeURIComponent` is a long name.
+// By making it a function, we can use it commonly when minified, reducing the amount of code.
+export const decodeURIComponent_ = decodeURIComponent

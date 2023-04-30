@@ -5,10 +5,10 @@ type Route<T> = [RegExp, string, T] // [pattern, method, handler]
 
 export class PatternRouter<T> implements Router<T> {
   private routes: Route<T>[] = []
-  private duplicatedNames: Record<string, number> = {}
+  private dNames: Record<string, number> = {} // Short name of duplicatedNames
 
   add(method: string, path: string, handler: T) {
-    const endsWithWildcard = path.endsWith('*')
+    const endsWithWildcard = path[path.length - 1] === '*'
     if (endsWithWildcard) {
       path = path.slice(0, -2)
     }
@@ -24,13 +24,13 @@ export class PatternRouter<T> implements Router<T> {
       const match = parts[i].match(/^\/:([^{]+)(?:{(.*)})?/)
       if (match) {
         const label = match[1]
-        const pos = this.duplicatedNames[label]
+        const pos = this.dNames[label]
         if (typeof pos === 'number' && pos !== i) {
           throw new Error(
             `Duplicate param name, use another name instead of '${label}' - ${method} ${path} <--- '${label}'`
           )
         }
-        this.duplicatedNames[label] = i
+        this.dNames[label] = i
 
         parts[i] = `/(?<${label}>${match[2] || '[^/]+'})`
       } else if (parts[i] === '/*') {
