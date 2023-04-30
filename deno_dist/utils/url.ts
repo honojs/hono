@@ -87,13 +87,13 @@ export const mergePath = (...paths: string[]): string => {
 
   for (let path of paths) {
     /* ['/hey/','/say'] => ['/hey', '/say'] */
-    if (p.endsWith('/')) {
+    if (p[p.length - 1] === '/') {
       p = p.slice(0, -1)
       endsWithSlash = true
     }
 
     /* ['/hey','say'] => ['/hey', '/say'] */
-    if (!path.startsWith('/')) {
+    if (path[0] !== '/') {
       path = `/${path}`
     }
 
