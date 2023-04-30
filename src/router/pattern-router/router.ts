@@ -8,7 +8,7 @@ export class PatternRouter<T> implements Router<T> {
   private dNames: Record<string, number> = {} // Short name of duplicatedNames
 
   add(method: string, path: string, handler: T) {
-    const endsWithWildcard = path.endsWith('*')
+    const endsWithWildcard = path[path.length - 1] === '*'
     if (endsWithWildcard) {
       path = path.slice(0, -2)
     }
