@@ -19,18 +19,12 @@ export const env = <T extends Record<string, string>, C extends Context = Contex
     // @ts-ignore
     return Deno.env.toObject()
   }
-  if (c.runtime === 'fastly') {
-    let env = {}
-    try {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const data = require('fastly:env')
-      env = data.env
-    } catch {}
-    return env as T
-  }
   if (c.runtime === 'workerd') {
     return c.env
+  }
+  if (c.runtime === 'fastly') {
+    // On Fastly Compute@Edge, you can use the ConfigStore to manage user-defined data.
+    return {} as T
   }
   return {} as T
 }
