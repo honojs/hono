@@ -1,11 +1,11 @@
-import { Hono } from '../src'
-import { env } from '../src/adapter'
-import { HTTPException } from '../src/http-exception'
-import { basicAuth } from '../src/middleware/basic-auth'
-import { bearerAuth } from '../src/middleware/bearer-auth'
-import { etag } from '../src/middleware/etag'
-import { poweredBy } from '../src/middleware/powered-by'
-import { prettyJSON } from '../src/middleware/pretty-json'
+import { Hono } from '../../src'
+import { env } from '../../src/adapter'
+import { HTTPException } from '../../src/http-exception'
+import { basicAuth } from '../../src/middleware/basic-auth'
+import { bearerAuth } from '../../src/middleware/bearer-auth'
+import { etag } from '../../src/middleware/etag'
+import { poweredBy } from '../../src/middleware/powered-by'
+import { prettyJSON } from '../../src/middleware/pretty-json'
 
 const app = new Hono()
 

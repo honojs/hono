@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test'
-import { env } from '../src/adapter'
-import { serveStatic } from '../src/adapter/bun'
-import { Context } from '../src/context'
-import { Hono } from '../src/index'
-import { basicAuth } from '../src/middleware/basic-auth'
-import { jwt } from '../src/middleware/jwt'
+import { env } from '../../src/adapter'
+import { serveStatic } from '../../src/adapter/bun'
+import { Context } from '../../src/context'
+import { Hono } from '../../src/index'
+import { basicAuth } from '../../src/middleware/basic-auth'
+import { jwt } from '../../src/middleware/jwt'
 
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.
@@ -74,7 +74,7 @@ describe('Basic Auth Middleware', () => {
 
 describe('Serve Static Middleware', () => {
   const app = new Hono()
-  app.all('/favicon.ico', serveStatic({ path: './test_bun/favicon.ico' }))
+  app.all('/favicon.ico', serveStatic({ path: './runtime_tests/bun/favicon.ico' }))
   app.all('/favicon-notfound.ico', serveStatic({ path: './test_bun/favicon-notfound.ico' }))
   app.use('/favicon-notfound.ico', async (c, next) => {
     await next()

@@ -1,10 +1,10 @@
 import { createAdaptorServer } from '@hono/node-server'
 import request from 'supertest'
-import { Hono } from '../src'
-import { env } from '../src/adapter'
-import { Context } from '../src/context'
-import { basicAuth } from '../src/middleware/basic-auth'
-import { jwt } from '../src/middleware/jwt'
+import { Hono } from '../../src'
+import { env } from '../../src/adapter'
+import { Context } from '../../src/context'
+import { basicAuth } from '../../src/middleware/basic-auth'
+import { jwt } from '../../src/middleware/jwt'
 
 // Test only minimal patterns.
 // See <https://github.com/honojs/node-server> for more tests and information.
