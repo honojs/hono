@@ -5,7 +5,7 @@ describe('Wrangler', () => {
   let worker: UnstableDevWorker
 
   beforeAll(async () => {
-    worker = await unstable_dev('./test_wrangler/index.ts', {
+    worker = await unstable_dev('./runtime_tests/wrangler/index.ts', {
       vars: {
         NAME: 'Cloudflare',
       },

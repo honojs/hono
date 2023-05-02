@@ -1,7 +1,7 @@
 import { SHA256 } from 'crypto-js'
-import { Hono } from '../src/index'
-import { basicAuth } from '../src/middleware/basic-auth'
-import { jwt } from '../src/middleware/jwt'
+import { Hono } from '../../src/index'
+import { basicAuth } from '../../src/middleware/basic-auth'
+import { jwt } from '../../src/middleware/jwt'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
