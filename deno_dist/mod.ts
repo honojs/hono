@@ -33,6 +33,7 @@ export type {
 export type { Context, ContextVariableMap } from './context.ts'
 export type { HonoRequest } from './request.ts'
 export { Hono }
+export { HTTPException } from './http-exception.ts'
 
 // Router
 export { RegExpRouter } from './router/reg-exp-router/index.ts'
