@@ -1,7 +1,7 @@
 /** @jsx jsx */
 /** @jsxFrag Fragment */
-import { basicAuth, jsx, Fragment, serveStatic, jwt } from '../deno_dist/middleware.ts'
-import { Hono } from '../deno_dist/mod.ts'
+import { basicAuth, jsx, Fragment, serveStatic, jwt } from '../../deno_dist/middleware.ts'
+import { Hono } from '../../deno_dist/mod.ts'
 import { assertEquals, assertMatch } from './deps.ts'
 
 // Test just only minimal patterns.
@@ -58,8 +58,11 @@ Deno.test('JSX middleware', async () => {
 
 Deno.test('Serve Static middleware', async () => {
   const app = new Hono()
-  app.all('/favicon.ico', serveStatic({ path: './test_deno/favicon.ico' }))
-  app.all('/favicon-notfound.ico', serveStatic({ path: './test_deno/favicon-notfound.ico' }))
+  app.all('/favicon.ico', serveStatic({ path: './runtime_tests/deno/favicon.ico' }))
+  app.all(
+    '/favicon-notfound.ico',
+    serveStatic({ path: './runtime_tests/deno/favicon-notfound.ico' })
+  )
   app.use('/favicon-notfound.ico', async (c, next) => {
     await next()
     c.header('X-Custom', 'Deno')
