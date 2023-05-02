@@ -33,6 +33,7 @@ export type {
 export type { Context, ContextVariableMap } from './context'
 export type { HonoRequest } from './request'
 export { Hono }
+export { HTTPException } from './http-exception'
 
 // Router
 export { RegExpRouter } from './router/reg-exp-router'
