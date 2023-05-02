@@ -358,14 +358,7 @@ export class Context<
       return 'edge-light'
     }
 
-    let onFastly = false
-    try {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const { env } = require('fastly:env')
-      if (env instanceof Function) onFastly = true
-    } catch {}
-    if (onFastly) {
+    if (global?.fastly !== undefined) {
       return 'fastly'
     }
 

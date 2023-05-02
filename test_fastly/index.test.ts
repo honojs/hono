@@ -1,8 +1,11 @@
 import { SHA256 } from 'crypto-js'
-import { env } from '../src/adapter'
 import { Hono } from '../src/index'
 import { basicAuth } from '../src/middleware/basic-auth'
 import { jwt } from '../src/middleware/jwt'
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+globalThis.fastly = true
 
 const app = new Hono()
 
