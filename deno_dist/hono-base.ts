@@ -19,7 +19,7 @@ import type {
   MergeSchemaPath,
 } from './types.ts'
 import type { RemoveBlankRecord } from './utils/types.ts'
-import { getPathFromURL, mergePath } from './utils/url.ts'
+import { getPath, getPathNoStrict, mergePath } from './utils/url.ts'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
@@ -64,13 +64,13 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = ''> extends de
     To use it, inherit the class and implement router in the constructor.
   */
   router!: Router<H>
-  readonly strict: boolean = true // strict routing - default is true
+  readonly getPath: (request: Request) => string
   private _basePath: string = ''
   private path: string = '*'
 
   routes: RouterRoute[] = []
 
-  constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
+  constructor(init: Partial<Pick<Hono, 'router' | 'getPath'> & { strict: boolean }> = {}) {
     super()
 
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
@@ -118,13 +118,16 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = ''> extends de
       return this
     }
 
+    const strict = init.strict ?? true
+    delete init.strict
     Object.assign(this, init)
+    this.getPath ||= strict ? getPath : getPathNoStrict
   }
 
   private clone(): Hono<E, S, BasePath> {
     const clone = new Hono<E, S, BasePath>({
       router: this.router,
-      strict: this.strict,
+      getPath: this.getPath,
     })
     clone.routes = this.routes
     return clone
@@ -217,7 +220,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = ''> extends de
     eventOrExecutionCtx?: ExecutionContext | FetchEvent,
     env?: E['Bindings']
   ): Response | Promise<Response> {
-    const path = getPathFromURL(request.url, this.strict)
+    const path = this.getPath(request)
     const method = request.method
 
     const result = this.matchRoute(method, path)
