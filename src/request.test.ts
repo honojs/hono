@@ -68,3 +68,11 @@ describe('req.addValidatedData() and req.data()', () => {
     })
   })
 })
+
+describe('headers', () => {
+  test('empty string is a valid header value', () => {
+    const req = new HonoRequest(new Request('http://localhost', { headers: { foo: '' } }))
+    const foo = req.header('foo')
+    expect(foo).toEqual('')
+  })
+})
