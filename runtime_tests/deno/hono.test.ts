@@ -1,6 +1,6 @@
-import { env } from '../deno_dist/adapter.ts'
-import { Context } from '../deno_dist/context.ts'
-import { Hono } from '../deno_dist/mod.ts'
+import { env } from '../../deno_dist/adapter.ts'
+import { Context } from '../../deno_dist/context.ts'
+import { Hono } from '../../deno_dist/mod.ts'
 import { assertEquals } from './deps.ts'
 
 // Test just only minimal patterns.
