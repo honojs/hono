@@ -67,13 +67,38 @@ Deno.test('Serve Static middleware', async () => {
     await next()
     c.header('X-Custom', 'Deno')
   })
+
+  app.get(
+    '/static/*',
+    serveStatic({
+      root: './runtime_tests/deno',
+    })
+  )
+
+  app.get(
+    '/dot-static/*',
+    serveStatic({
+      root: './runtime_tests/deno',
+      rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
+    })
+  )
+
   let res = await app.request('http://localhost/favicon.ico')
   assertEquals(res.status, 200)
   assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
+
   res = await app.request('http://localhost/favicon-notfound.ico')
   assertEquals(res.status, 404)
   assertMatch(res.headers.get('Content-Type') || '', /^text\/plain/)
   assertEquals(res.headers.get('X-Custom'), 'Deno')
+
+  res = await app.request('http://localhost/static/plain.txt')
+  assertEquals(res.status, 200)
+  assertEquals(await res.text(), 'Deno!')
+
+  res = await app.request('http://localhost/dot-static/plain.txt')
+  assertEquals(res.status, 200)
+  assertEquals(await res.text(), 'Deno!!')
 })
 
 Deno.test('JWT Authentication middleware', async () => {
