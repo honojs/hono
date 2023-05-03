@@ -329,6 +329,18 @@ export class Context<
     return this.newResponse(null, status)
   }
 
+  /** @deprecated
+   * Use Cookie Middleware instead of `c.cookie()`. The `c.cookie()` will be removed in v4.
+   *
+   * @example
+   *
+   * import { setCookie } from 'hono/cookie'
+   * // ...
+   * app.get('/', (c) => {
+   *   setCookie(c, 'key', 'value')
+   *   //...
+   * })
+   */
   cookie = (name: string, value: string, opt?: CookieOptions): void => {
     const cookie = serialize(name, value, opt)
     this.header('set-cookie', cookie, { append: true })
