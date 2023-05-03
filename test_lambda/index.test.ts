@@ -35,9 +35,9 @@ describe('AWS Lambda Adapter for Hono', () => {
 
     const response = await handler(event)
     expect(response.statusCode).toBe(200)
-    expect(response.body).toBe('Hello Lambda!')
+    expect(response.body).toBe('SGVsbG8gTGFtYmRhIQ==')
     expect(response.headers['content-type']).toMatch(/^text\/plain/)
-    expect(response.isBase64Encoded).toBe(false)
+    expect(response.isBase64Encoded).toBe(true)
   })
 
   it('Should handle a GET request and return a 404 response', async () => {
@@ -74,7 +74,7 @@ describe('AWS Lambda Adapter for Hono', () => {
 
     const response = await handler(event)
     expect(response.statusCode).toBe(200)
-    expect(response.body).toBe('Good Morning Lambda!')
+    expect(response.body).toBe('R29vZCBNb3JuaW5nIExhbWJkYSE=')
   })
 
   it('Should handle a request and return a 401 response with Basic auth', async () => {
@@ -113,6 +113,6 @@ describe('AWS Lambda Adapter for Hono', () => {
 
     const response = await handler(event)
     expect(response.statusCode).toBe(200)
-    expect(response.body).toBe('Good Night Lambda!')
+    expect(response.body).toBe('R29vZCBOaWdodCBMYW1iZGEh')
   })
 })

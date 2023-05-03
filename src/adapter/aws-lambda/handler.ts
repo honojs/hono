@@ -1,11 +1,10 @@
 // @denoify-ignore
-import crypto from 'crypto'
+//import crypto from 'crypto'
 import type { Hono } from '../../hono'
-import { bufferToString } from '../../utils/buffer'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-globalThis.crypto = crypto
+//globalThis.crypto = crypto
 
 // When calling Lambda directly through function urls
 interface APIGatewayProxyEventV2 {
@@ -55,14 +54,11 @@ export const handle = (app: Hono) => {
 }
 
 const createResult = async (res: Response): Promise<APIGatewayProxyResult> => {
-  const isBase64Encoded = res.body instanceof ReadableStream
-  const body = isBase64Encoded ? await fromReadableToString(res) : await fromBufferTostring(res)
-
   const result: APIGatewayProxyResult = {
-    body,
+    body: await fromReadableToString(res),
     headers: {},
     statusCode: res.status,
-    isBase64Encoded,
+    isBase64Encoded: true,
   }
 
   res.headers.forEach((value, key) => {
@@ -114,20 +110,16 @@ const isProxyEventV2 = (
   return Object.prototype.hasOwnProperty.call(event, 'rawPath')
 }
 
-const fromBufferTostring = async (res: Response) => {
-  const arrayBuffer = await res.arrayBuffer()
-  return bufferToString(arrayBuffer)
-}
-
 const fromReadableToString = async (res: Response) => {
-  const chunks = []
   const stream = res.body || new ReadableStream()
+  const decoder = new TextDecoder()
+  let string = ''
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore: asking for asyncIterator
   for await (const chunk of stream) {
-    chunks.push(chunk)
+    string += decoder.decode(chunk)
   }
 
-  return Buffer.concat(chunks).toString('base64')
+  return btoa(string)
 }
