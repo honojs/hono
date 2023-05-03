@@ -9,7 +9,7 @@ export class Hono<E extends Env = Env, S = {}, BasePath extends string = ''> ext
   S,
   BasePath
 > {
-  constructor(init: Partial<Pick<Hono, 'router' | 'strict'>> = {}) {
+  constructor(init: Partial<Pick<Hono, 'router' | 'getPath'> & { strict: boolean }> = {}) {
     super(init)
     this.router = new SmartRouter({
       routers: [new RegExpRouter(), new TrieRouter()],
