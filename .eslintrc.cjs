@@ -58,4 +58,5 @@ module.exports = defineConfig({
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
   },
+  ignorePatterns: ['dist'],
 })

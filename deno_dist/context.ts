@@ -276,7 +276,7 @@ export class Context<
     // If Content-Type is not set, we don't have to set `text/plain`.
     // Fewer the header values, it will be faster.
     if (this._preparedHeaders['content-type']) {
-      this._preparedHeaders['content-type'] = 'text/plain; charset=UTF8'
+      this._preparedHeaders['content-type'] = 'text/plain; charset=UTF-8'
     }
     return typeof arg === 'number'
       ? this.newResponse(text, arg, headers)
@@ -360,14 +360,7 @@ export class Context<
       return 'edge-light'
     }
 
-    let onFastly = false
-    try {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const { env } = require('fastly:env')
-      if (env instanceof Function) onFastly = true
-    } catch {}
-    if (onFastly) {
+    if (global?.fastly !== undefined) {
       return 'fastly'
     }
 

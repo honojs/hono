@@ -1,6 +1,6 @@
-import { handle } from '../src/adapter/aws-lambda/handler'
-import { Hono } from '../src/hono'
-import { basicAuth } from '../src/middleware/basic-auth'
+import { handle } from '../../src/adapter/aws-lambda/handler'
+import { Hono } from '../../src/hono'
+import { basicAuth } from '../../src/middleware/basic-auth'
 
 describe('AWS Lambda Adapter for Hono', () => {
   const app = new Hono()

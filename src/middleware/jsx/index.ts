@@ -85,7 +85,7 @@ export class JSXNode implements HtmlEscaped {
   tag: string | Function
   props: Props
   children: Child[]
-  isEscaped: true = true
+  isEscaped: true = true as const
   constructor(tag: string | Function, props: Props, children: Child[]) {
     this.tag = tag
     this.props = props
