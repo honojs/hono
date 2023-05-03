@@ -75,11 +75,27 @@ describe('Basic Auth Middleware', () => {
 describe('Serve Static Middleware', () => {
   const app = new Hono()
   app.all('/favicon.ico', serveStatic({ path: './runtime_tests/bun/favicon.ico' }))
-  app.all('/favicon-notfound.ico', serveStatic({ path: './test_bun/favicon-notfound.ico' }))
+  app.all(
+    '/favicon-notfound.ico',
+    serveStatic({ path: './runtime_tests/bun/favicon-notfound.ico' })
+  )
   app.use('/favicon-notfound.ico', async (c, next) => {
     await next()
     c.header('X-Custom', 'Bun')
   })
+  app.get(
+    '/static/*',
+    serveStatic({
+      root: './runtime_tests/bun/',
+    })
+  )
+  app.get(
+    '/dot-static/*',
+    serveStatic({
+      root: './runtime_tests/bun/',
+      rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
+    })
+  )
 
   it('Should return static file correctly', async () => {
     const res = await app.request(new Request('http://localhost/favicon.ico'))
@@ -92,6 +108,18 @@ describe('Serve Static Middleware', () => {
     const res = await app.request(new Request('http://localhost/favicon-notfound.ico'))
     expect(res.status).toBe(404)
     expect(res.headers.get('X-Custom')).toBe('Bun')
+  })
+
+  it('Should return 200 response - /static/plain.txt', async () => {
+    const res = await app.request(new Request('http://localhost/static/plain.txt'))
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Bun!')
+  })
+
+  it('Should return 200 response - /dot-static/plain.txt', async () => {
+    const res = await app.request(new Request('http://localhost/dot-static/plain.txt'))
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Bun!!')
   })
 })
 
