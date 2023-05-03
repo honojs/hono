@@ -318,6 +318,48 @@ describe('Routing', () => {
     })
   })
 
+  it('routing with hostname', async () => {
+    const app = new Hono({
+      getPath: (req) => req.url.replace(/^https?:\/\//, ''),
+    })
+
+    app.get('www1.example.com/hello', () => new Response('hello www1'))
+    app.get('www2.example.com/hello', () => new Response('hello www2'))
+
+    let res = await app.request('http://www1.example.com/hello')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www1')
+
+    res = await app.request('http://www2.example.com/hello')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www2')
+  })
+
+  it('routing with request header', async () => {
+    const app = new Hono({
+      getPath: (req) => req.headers.get('host') + req.url.replace(/^https?:\/\/[^\/]+/, ''),
+    })
+
+    app.get('www1.example.com/hello', () => new Response('hello www1'))
+    app.get('www2.example.com/hello', () => new Response('hello www2'))
+
+    let res = await app.request('http://www1.example.com/hello', {
+      headers: { host: 'www1.example.com' },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www1')
+
+    res = await app.request('http://www2.example.com/hello', {
+      headers: { host: 'www2.example.com' },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www2')
+  })
+
   describe('Chained route', () => {
     const app = new Hono()
 

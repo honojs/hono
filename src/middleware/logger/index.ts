@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from '../../types'
-import { getPathFromURL } from '../../utils/url'
+import { getPath } from '../../utils/url'
 
 enum LogPrefix {
   Outgoing = '-->',
@@ -57,7 +57,7 @@ export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
   return async (c, next) => {
     const { method } = c.req
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const path = getPathFromURL(c.req.url)
+    const path = getPath(c.req.raw)
 
     log(fn, LogPrefix.Incoming, method, path)
 

@@ -2,7 +2,8 @@ import {
   splitPath,
   splitRoutingPath,
   getPattern,
-  getPathFromURL,
+  getPath,
+  getPathNoStrict,
   mergePath,
   checkOptionalParameter,
   getQueryParam,
@@ -61,36 +62,38 @@ describe('url', () => {
     expect(res).toBe('*')
   })
 
-  describe('getPathFromURL', () => {
-    it('getPathFromURL - no trailing slash', () => {
-      let path = getPathFromURL('https://example.com/')
+  describe('getPath', () => {
+    it('getPath - no trailing slash', () => {
+      let path = getPath(new Request('https://example.com/'))
       expect(path).toBe('/')
-      path = getPathFromURL('https://example.com/hello')
+      path = getPath(new Request('https://example.com/hello'))
       expect(path).toBe('/hello')
-      path = getPathFromURL('https://example.com/hello/hey')
+      path = getPath(new Request('https://example.com/hello/hey'))
       expect(path).toBe('/hello/hey')
-      path = getPathFromURL('https://example.com/hello?name=foo')
+      path = getPath(new Request('https://example.com/hello?name=foo'))
       expect(path).toBe('/hello')
-      path = getPathFromURL('https://example.com/hello/hey?name=foo&name=bar')
+      path = getPath(new Request('https://example.com/hello/hey?name=foo&name=bar'))
       expect(path).toBe('/hello/hey')
     })
 
-    it('getPathFromURL - with trailing slash', () => {
-      let path = getPathFromURL('https://example.com/hello/')
+    it('getPath - with trailing slash', () => {
+      let path = getPath(new Request('https://example.com/hello/'))
       expect(path).toBe('/hello/')
-      path = getPathFromURL('https://example.com/hello/hey/')
+      path = getPath(new Request('https://example.com/hello/hey/'))
       expect(path).toBe('/hello/hey/')
     })
+  })
 
-    it('getPathFromURL - no strict is false', () => {
-      let path = getPathFromURL('https://example.com/hello/', false)
+  describe('getPathNoStrict', () => {
+    it('getPathNoStrict - no strict is false', () => {
+      let path = getPathNoStrict(new Request('https://example.com/hello/'))
       expect(path).toBe('/hello')
-      path = getPathFromURL('https://example.com/hello/hey/', false)
+      path = getPathNoStrict(new Request('https://example.com/hello/hey/'))
       expect(path).toBe('/hello/hey')
     })
 
-    it('getPathFromURL - return `/` even if strict is false', () => {
-      const path = getPathFromURL('https://example.com/', false)
+    it('getPathNoStrict - return `/` even if strict is false', () => {
+      const path = getPathNoStrict(new Request('https://example.com/'))
       expect(path).toBe('/')
     })
   })
