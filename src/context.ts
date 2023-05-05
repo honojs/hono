@@ -145,7 +145,20 @@ export class Context<
     this.finalized = true
   }
 
-  header = (name: string, value: string, options?: { append?: boolean }): void => {
+  header = (name: string, value: string | undefined, options?: { append?: boolean }): void => {
+    // Clear the header
+    if (value === undefined) {
+      if (this._headers) {
+        this._headers.delete(name)
+      } else if (this._preparedHeaders) {
+        delete this._preparedHeaders[name.toLocaleLowerCase()]
+      }
+      if (this.finalized) {
+        this.res.headers.delete(name)
+      }
+      return
+    }
+
     if (options?.append) {
       if (!this._headers) {
         this._headers = new Headers(this._preparedHeaders)
