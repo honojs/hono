@@ -81,6 +81,17 @@ describe('Context', () => {
     expect(res.headers.get('content-type')).toMatch(/^text\/html/)
   })
 
+  it('c.header() - clear the header', async () => {
+    c.header('X-Foo', 'Bar')
+    c.header('X-Foo', undefined)
+    c.header('X-Foo2', 'Bar')
+    let res = c.body('Hi')
+    expect(res.headers.get('X-Foo')).toBe(null)
+    c.header('X-Foo2', undefined)
+    res = c.res
+    expect(res.headers.get('X-Foo2')).toBe(null)
+  })
+
   it('c.body() - multiple header', async () => {
     const res = c.body('Hi', 200, {
       'X-Foo': ['Bar', 'Buzz'],
