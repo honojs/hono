@@ -12,6 +12,7 @@ const { file } = Bun
 export type ServeStaticOptions = {
   root?: string
   path?: string
+  rewriteRequestPath?: (path: string) => string
 }
 
 const DEFAULT_DOCUMENT = 'index.html'
@@ -25,8 +26,9 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
     }
     const url = new URL(c.req.url)
 
+    const filename = options.path ?? decodeURI(url.pathname)
     let path = getFilePath({
-      filename: options.path ?? decodeURI(url.pathname),
+      filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
       root: options.root,
       defaultDocument: DEFAULT_DOCUMENT,
     })

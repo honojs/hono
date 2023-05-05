@@ -60,6 +60,11 @@
       "import": "./dist/middleware/cache/index.js",
       "require": "./dist/cjs/middleware/cache/index.js"
     },
+    "./cookie": {
+      "types": "./dist/types/middleware/cookie/index.d.ts",
+      "import": "./dist/middleware/cookie/index.js",
+      "require": "./dist/cjs/middleware/cookie/index.js"
+    },
     "./compress": {
       "types": "./dist/types/middleware/compress/index.d.ts",
       "import": "./dist/middleware/compress/index.js",
@@ -202,6 +207,9 @@
       ],
       "cache": [
         "./dist/types/middleware/cache"
+      ],
+      "cookie": [
+        "./dist/types/middleware/cookie"
       ],
       "compress": [
         "./dist/types/middleware/compress"
