@@ -10,6 +10,7 @@ export type ServeStaticOptions = {
   path?: string
   manifest?: object | string
   namespace?: KVNamespace
+  rewriteRequestPath?: (path: string) => string
 }
 
 const DEFAULT_DOCUMENT = 'index.html'
@@ -24,9 +25,9 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Middlew
     }
 
     const url = new URL(c.req.url)
-
+    const filename = options.path ?? decodeURI(url.pathname)
     const path = getFilePath({
-      filename: options.path ?? decodeURI(url.pathname),
+      filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
       root: options.root,
       defaultDocument: DEFAULT_DOCUMENT,
     })

@@ -79,8 +79,28 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return headerData[name.toLowerCase()]
   }
 
+  /** @deprecated
+   * Use Cookie Middleware instead of `c.req.cookie()`. The `c.req.cookie()` will be removed in v4.
+   *
+   * @example
+   *
+   * import { getCookie } from 'hono/cookie'
+   * // ...
+   * app.get('/', (c) => c.text(getCookie(c, 'cookie-name')))
+   */
   cookie(key: string): string | undefined
+
+  /** @deprecated
+   * Use Cookie Middleware instead of `c.req.cookie()`. The `c.req.cookie()` will be removed in v4.
+   *
+   * @example
+   *
+   * import { getCookie } from 'hono/cookie'
+   * // ...
+   * app.get('/', (c) => c.json(getCookie(c)))
+   */
   cookie(): Cookie
+
   cookie(key?: string) {
     const cookie = this.raw.headers.get('Cookie')
     if (!cookie) return

@@ -145,7 +145,20 @@ export class Context<
     this.finalized = true
   }
 
-  header = (name: string, value: string, options?: { append?: boolean }): void => {
+  header = (name: string, value: string | undefined, options?: { append?: boolean }): void => {
+    // Clear the header
+    if (value === undefined) {
+      if (this._h) {
+        this._h.delete(name)
+      } else if (this._pH) {
+        delete this._pH[name.toLocaleLowerCase()]
+      }
+      if (this.finalized) {
+        this.res.headers.delete(name)
+      }
+      return
+    }
+
     if (options?.append) {
       if (!this._h) {
         this._h = new Headers(this._pH)
@@ -327,6 +340,18 @@ export class Context<
     return this.newResponse(null, status)
   }
 
+  /** @deprecated
+   * Use Cookie Middleware instead of `c.cookie()`. The `c.cookie()` will be removed in v4.
+   *
+   * @example
+   *
+   * import { setCookie } from 'hono/cookie'
+   * // ...
+   * app.get('/', (c) => {
+   *   setCookie(c, 'key', 'value')
+   *   //...
+   * })
+   */
   cookie = (name: string, value: string, opt?: CookieOptions): void => {
     const cookie = serialize(name, value, opt)
     this.header('set-cookie', cookie, { append: true })
