@@ -302,6 +302,107 @@ type ExtractKey<S> = S extends Record<infer Key, unknown>
 
 ////////////////////////////////////////
 //////                            //////
+//////      Bundle Handlers       //////
+//////                            //////
+////////////////////////////////////////
+
+export interface BundleHandlersInterface<E extends Env, BasePath extends string> {
+  // app.bundleHandlers(path, handler)
+  /**
+   * @experimental
+   */
+  <P extends string = string, O = {}, I extends Input = {}>(
+    path: P,
+    ...handlers: [H<E, P, I, O>]
+  ): [P, H<E, MergePath<BasePath, P>, I, O>]
+
+  // app.bundleHandlers(path, handler, handler)
+  /**
+   * @experimental
+   */
+  <P extends string = string, O = {}, I extends Input = {}>(
+    path: P,
+    ...handlers: [H<E, P, I, O>, H<E, P, I, O>]
+  ): [P, H<E, MergePath<BasePath, P>, I, O>, H<E, MergePath<BasePath, P>, I, O>]
+
+  // app.bundleHandlers(path, handler x 3)
+  /**
+   * @experimental
+   */
+  <
+    P extends string = string,
+    O = {},
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2
+  >(
+    path: P,
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>]
+  ): [
+    P,
+    H<E, MergePath<BasePath, P>, I, O>,
+    H<E, MergePath<BasePath, P>, I2, O>,
+    H<E, MergePath<BasePath, P>, I3, O>
+  ]
+
+  // app.bundleHandlers(path, handler x 4)
+  /**
+   * @experimental
+   */
+  <
+    M extends string,
+    P extends string,
+    O = {},
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I2 & I3
+  >(
+    path: P,
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>]
+  ): [
+    H<E, MergePath<BasePath, P>, I, O>,
+    H<E, MergePath<BasePath, P>, I2, O>,
+    H<E, MergePath<BasePath, P>, I3, O>,
+    H<E, MergePath<BasePath, P>, I4, O>
+  ]
+
+  // app.bundleHandlers(path, handler x 5)
+  /**
+   * @experimental
+   */
+  <
+    M extends string,
+    P extends string,
+    O = {},
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I2 & I3,
+    I5 extends Input = I3 & I4
+  >(
+    path: P,
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>, H<E, P, I5, O>]
+  ): [
+    H<E, MergePath<BasePath, P>, I, O>,
+    H<E, MergePath<BasePath, P>, I2, O>,
+    H<E, MergePath<BasePath, P>, I3, O>,
+    H<E, MergePath<BasePath, P>, I4, O>,
+    H<E, MergePath<BasePath, P>, I5, O>
+  ]
+
+  // app.bundleHandlers(path, handler[])
+  /**
+   * @experimental
+   */
+  <P extends string = string, O = {}, I extends Input = {}>(
+    path: P,
+    ...handlers: H<E, P, I, O>[]
+  ): [P, ...H<E, MergePath<BasePath, P>, I, O>[]]
+}
+
+////////////////////////////////////////
+//////                            //////
 //////           Schema           //////
 //////                            //////
 ////////////////////////////////////////
@@ -336,6 +437,8 @@ export type MergePath<A extends string, B extends string> = A extends ''
   : A extends `${infer P}/`
   ? B extends `/${infer Q}`
     ? `${P}/${Q}`
+    : string extends B
+    ? string
     : `${P}/${B}`
   : B extends `/${infer Q}`
   ? Q extends ''

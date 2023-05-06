@@ -17,6 +17,7 @@ import type {
   TypedResponse,
   MergePath,
   MergeSchemaPath,
+  BundleHandlersInterface,
 } from './types.ts'
 import type { RemoveBlankRecord } from './utils/types.ts'
 import { getPath, getPathNoStrict, mergePath } from './utils/url.ts'
@@ -36,6 +37,8 @@ function defineDynamicClass(): {
     on: OnHandlerInterface<E, S, BasePath>
   } & {
     use: MiddlewareHandlerInterface<E, S, BasePath>
+  } & {
+    bundleHandlers: BundleHandlersInterface<E, BasePath>
   }
 } {
   return class {} as never
@@ -116,6 +119,12 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = ''> extends de
         this.addRoute(METHOD_NAME_ALL, this.path, handler)
       })
       return this
+    }
+
+    // Implementation of app.bundleHandlers(path, ...handler[])
+    this.bundleHandlers = (path: string, ...handlers: H[]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return [path, ...handlers] as any
     }
 
     const strict = init.strict ?? true
