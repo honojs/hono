@@ -7,8 +7,9 @@ import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
 import { RegExpRouter } from './router/reg-exp-router'
 import { TrieRouter } from './router/trie-router'
-import type { Handler, Next } from './types'
+import type { ExtractSchema, Handler, Next, Schema } from './types'
 import type { Expect, Equal } from './utils/types'
+import { validator } from './validator'
 
 // https://stackoverflow.com/a/65666402
 function throwExpression(errorMessage: string): never {
@@ -1856,6 +1857,72 @@ describe('Optional parameters', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       type: undefined,
+    })
+  })
+})
+
+describe('Bundle Handlers', () => {
+  describe('Basic', () => {
+    const app = new Hono()
+    const listHandler = app.bundleHandlers('/list', (c) => c.text('list'))
+    const postHandler = app.bundleHandlers('/post', (c) => c.text('post'))
+
+    it('Should return 200 response', async () => {
+      app.get(...listHandler).post(...postHandler)
+      let res = await app.request('/list')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toEqual('list')
+      res = await app.request('/post', { method: 'POST' })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toEqual('post')
+    })
+  })
+
+  describe('With validators', () => {
+    const defaultPage = '1'
+    const defaultTitle = 'Hono is great!'
+
+    const app = new Hono()
+    const listHandler = app.bundleHandlers(
+      '/list',
+      validator('query', () => {
+        return {
+          page: defaultPage,
+        }
+      }),
+      (c) => {
+        const { page } = c.req.valid('query')
+        return c.jsonT({
+          ok: true,
+          page,
+        })
+      }
+    )
+
+    it('Should return 200 response and correct types', async () => {
+      const routes = app.get(...listHandler)
+      const res = await app.request(`/list?page=${defaultPage}`)
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        ok: true,
+        page: '1',
+      })
+      type Expected = {
+        '/list': {
+          $get: {
+            input: {
+              query: {
+                page: string
+              }
+            }
+            output: {
+              ok: true
+              page: string
+            }
+          }
+        }
+      }
+      type verify = Expect<Equal<ExtractSchema<typeof routes>, Expected>>
     })
   })
 })
