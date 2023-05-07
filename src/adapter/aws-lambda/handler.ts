@@ -32,6 +32,21 @@ interface APIGatewayProxyEvent {
   }
 }
 
+interface LambdaFunctionUrlEvent {
+  // httpMethod: string
+  headers: Record<string, string | undefined>
+  rawPath: string
+  rawQueryString: string
+  body: string | null
+  isBase64Encoded: boolean
+  requestContext: {
+    domainName: string,
+    http: {
+      method: string,
+    }
+  }
+}
+
 interface APIGatewayProxyResult {
   statusCode: number
   body: string
@@ -44,7 +59,7 @@ interface APIGatewayProxyResult {
  */
 export const handle = (app: Hono) => {
   return async (
-    event: APIGatewayProxyEvent | APIGatewayProxyEventV2
+    event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
   ): Promise<APIGatewayProxyResult> => {
     const req = createRequest(event)
     const res = await app.fetch(req)
@@ -68,7 +83,7 @@ const createResult = async (res: Response): Promise<APIGatewayProxyResult> => {
   return result
 }
 
-const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
+const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent) => {
   const queryString = extractQueryString(event)
   const urlPath = isProxyEventV2(event)
     ? `https://${event.requestContext.domainName}${event.rawPath}`
@@ -83,7 +98,7 @@ const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => 
 
   const requestInit: RequestInit = {
     headers,
-    method: event.httpMethod,
+    method: event.httpMethod ?? event.requestContext.http?.httpMethod,
   }
 
   if (event.body) {
