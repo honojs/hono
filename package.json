@@ -36,9 +36,14 @@
       "require": "./dist/cjs/index.js"
     },
     "./tiny": {
-      "types": "./dist/types/tiny.d.ts",
-      "import": "./dist/tiny.js",
-      "require": "./dist/cjs/tiny.js"
+      "types": "./dist/types/preset/tiny.d.ts",
+      "import": "./dist/preset/tiny.js",
+      "require": "./dist/cjs/preset/tiny.js"
+    },
+    "./quick": {
+      "types": "./dist/types/preset/quick.d.ts",
+      "import": "./dist/preset/quick.js",
+      "require": "./dist/cjs/preset/quick.js"
     },
     "./http-exception": {
       "types": "./dist/types/http-exception.d.ts",
@@ -194,7 +199,10 @@
   "typesVersions": {
     "*": {
       "tiny": [
-        "./dist/types/tiny"
+        "./dist/types/preset/tiny"
+      ],
+      "quick": [
+        "./dist/types/preset/quick"
       ],
       "http-exception": [
         "./dist/types/http-exception"
