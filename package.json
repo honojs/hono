@@ -189,6 +189,11 @@
       "types": "./dist/types/adapter/aws-lambda/index.d.ts",
       "import": "./dist/adapter/aws-lambda/index.js",
       "require": "./dist/cjs/adapter/aws-lambda/index.js"
+    },
+    "./vercel": {
+      "types": "./dist/types/adapter/vercel/index.d.ts",
+      "import": "./dist/adapter/vercel/index.js",
+      "require": "./dist/cjs/adapter/vercel/index.js"
     }
   },
   "typesVersions": {
@@ -285,6 +290,9 @@
       ],
       "aws-lambda": [
         "./dist/types/adapter/aws-lambda"
+      ],
+      "vercel": [
+        "./dist/types/adapter/vercel"
       ]
     }
   },
