@@ -54,7 +54,7 @@ const errorHandler = (err: Error, c: Context) => {
   return c.text(message, 500)
 }
 
-class Hono<E extends Env = Env, S = {}, BasePath extends string = ''> extends defineDynamicClass()<
+class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends defineDynamicClass()<
   E,
   S,
   BasePath

@@ -4,7 +4,7 @@ import { SmartRouter } from './router/smart-router'
 import { TrieRouter } from './router/trie-router'
 import type { Env } from './types'
 
-export class Hono<E extends Env = Env, S = {}, BasePath extends string = ''> extends HonoBase<
+export class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends HonoBase<
   E,
   S,
   BasePath
