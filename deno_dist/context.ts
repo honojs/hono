@@ -16,6 +16,16 @@ export interface ExecutionContext {
 }
 export interface ContextVariableMap {}
 
+interface Get<E extends Env> {
+  <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
+  <Key extends keyof E['Variables']>(key: Key): E['Variables'][Key]
+}
+
+interface Set<E extends Env> {
+  <Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
+  <Key extends keyof E['Variables']>(key: Key, value: E['Variables'][Key]): void
+}
+
 interface NewResponse {
   (data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response
   (data: Data | null, init?: ResponseInit): Response
@@ -48,12 +58,6 @@ interface HTMLRespond {
   (html: string, status?: StatusCode, headers?: HeaderRecord): Response
   (html: string, init?: ResponseInit): Response
 }
-
-type GetVariable<K, E extends Env> = K extends keyof E['Variables']
-  ? E['Variables'][K]
-  : K extends keyof ContextVariableMap
-  ? ContextVariableMap[K]
-  : unknown
 
 type ContextOptions<E extends Env> = {
   env: E['Bindings']
@@ -187,18 +191,13 @@ export class Context<
     this._status = status
   }
 
-  set = <Key extends keyof E['Variables'] | keyof ContextVariableMap>(
-    key: Key,
-    value: GetVariable<Key, E>
-  ): void => {
+  set: Set<E> = (key: string, value: unknown) => {
     this._map ||= {}
     this._map[key as string] = value
   }
 
-  get = <Key extends keyof E['Variables'] | keyof ContextVariableMap>(
-    key: Key
-  ): GetVariable<Key, E> => {
-    return this._map?.[key as string] as GetVariable<Key, E>
+  get: Get<E> = (key: string) => {
+    return this._map ? this._map[key] : undefined
   }
 
   pretty = (prettyJSON: boolean, space: number = 2): void => {
