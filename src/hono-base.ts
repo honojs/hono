@@ -30,7 +30,7 @@ interface RouterRoute {
 }
 
 function defineDynamicClass(): {
-  new <E extends Env = Env, S = {}, BasePath extends string = ''>(): {
+  new <E extends Env = Env, S = {}, BasePath extends string = '/'>(): {
     [M in Methods]: HandlerInterface<E, M, S, BasePath>
   } & {
     on: OnHandlerInterface<E, S, BasePath>
