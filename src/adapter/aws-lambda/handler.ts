@@ -32,8 +32,8 @@ interface APIGatewayProxyEvent {
   }
 }
 
+// When calling Lambda through an Lambda Function URLs
 interface LambdaFunctionUrlEvent {
-  // httpMethod: string
   headers: Record<string, string | undefined>
   rawPath: string
   rawQueryString: string
