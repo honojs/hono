@@ -5,6 +5,7 @@ import { Hono } from './hono'
 import { HTTPException } from './http-exception'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
+import { SmartRouter } from './mod'
 import { RegExpRouter } from './router/reg-exp-router'
 import { TrieRouter } from './router/trie-router'
 import type { Handler, Next } from './types'
@@ -73,6 +74,19 @@ describe('GET Request', () => {
     const res = await app.request('http://localhost/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
+  })
+})
+
+describe('router option', () => {
+  it('Should be SmartRouter', () => {
+    const app = new Hono()
+    expect(app.router instanceof SmartRouter).toBe(true)
+  })
+  it('Should be RegExpRouter', () => {
+    const app = new Hono({
+      router: new RegExpRouter(),
+    })
+    expect(app.router instanceof RegExpRouter).toBe(true)
   })
 })
 
