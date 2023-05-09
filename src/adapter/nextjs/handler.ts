@@ -3,6 +3,10 @@ import { Hono } from '../../hono'
 import type { Env } from '../../types'
 
 interface HandleInterface {
+  /** @deprecated
+   * `hono/nextjs` will become obsolete in v4.
+   * Use `hono/vercel` instead.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (subApp: Hono<any, any, any>): (req: Request) => Response | Promise<Response>
   /** @deprecated
