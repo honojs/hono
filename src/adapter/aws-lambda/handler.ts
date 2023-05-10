@@ -85,8 +85,8 @@ const createResult = async (res: Response): Promise<APIGatewayProxyResult> => {
 
 const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent) => {
   const queryString = extractQueryString(event)
-  const urlPath = `https://${event.requestContext.domainName}${isProxyEvent(event) ? event.path : event.rawPath}`;
-  const url = queryString ? `${urlPath}?${queryString}` : urlPath;
+  const urlPath = `https://${event.requestContext.domainName}${isProxyEvent(event) ? event.path : event.rawPath}`
+  const url = queryString ? `${urlPath}?${queryString}` : urlPath
 
   const headers = new Headers()
   for (const [k, v] of Object.entries(event.headers)) {
@@ -111,16 +111,16 @@ const extractQueryString = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2
     return Object.entries(event.queryStringParameters || {})
       .filter(([, value]) => value)
       .map(([key, value]) => `${key}=${value}`)
-      .join('&');
+      .join('&')
   }
 
-  return isProxyEventV2(event) ? event.rawQueryString : event.rawQueryString;
+  return isProxyEventV2(event) ? event.rawQueryString : event.rawQueryString
 }
 
 const isProxyEvent = (
   event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
 ): event is APIGatewayProxyEvent => {
-  return Object.prototype.hasOwnProperty.call(event, 'path');
+  return Object.prototype.hasOwnProperty.call(event, 'path')
 }
 
 const isProxyEventV2 = (
