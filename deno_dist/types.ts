@@ -52,7 +52,7 @@ export type H<E extends Env = any, P extends string = any, I extends Input = {},
   | MiddlewareHandler<E, P, I>
 
 export type NotFoundHandler<E extends Env = any> = (c: Context<E>) => Response | Promise<Response>
-export type ErrorHandler<E extends Env = any> = (err: Error, c: Context<E>) => Response
+export type ErrorHandler<E extends Env = any> = (err: Error, c: Context<E>) => Response | Promise<Response>
 
 ////////////////////////////////////////
 //////                            //////
