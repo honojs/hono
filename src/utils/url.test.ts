@@ -147,6 +147,11 @@ describe('url', () => {
       expect(getQueryParam('http://example.com/?Hono+is=a+web+framework', 'Hono is')).toBe(
         'a web framework'
       )
+
+      expect(getQueryParam('http://example.com/?name0=sam&name1=tom', 'name0')).toBe('sam')
+      expect(getQueryParam('http://example.com/?name0=sam&name1=tom', 'name1')).toBe('tom')
+      expect(getQueryParam('http://example.com/?name0=sam&name1=tom', 'name')).toBe(undefined)
+
       let searchParams = new URLSearchParams({ name: '炎' })
       expect(getQueryParam(`http://example.com/?${searchParams.toString()}`, 'name')).toBe('炎')
       searchParams = new URLSearchParams({ '炎 is': 'a web framework' })
