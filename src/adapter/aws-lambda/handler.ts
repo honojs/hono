@@ -32,6 +32,21 @@ interface APIGatewayProxyEvent {
   }
 }
 
+// When calling Lambda through an Lambda Function URLs
+interface LambdaFunctionUrlEvent {
+  headers: Record<string, string | undefined>
+  rawPath: string
+  rawQueryString: string
+  body: string | null
+  isBase64Encoded: boolean
+  requestContext: {
+    domainName: string,
+    http: {
+      method: string,
+    }
+  }
+}
+
 interface APIGatewayProxyResult {
   statusCode: number
   body: string
@@ -44,7 +59,7 @@ interface APIGatewayProxyResult {
  */
 export const handle = (app: Hono) => {
   return async (
-    event: APIGatewayProxyEvent | APIGatewayProxyEventV2
+    event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
   ): Promise<APIGatewayProxyResult> => {
     const req = createRequest(event)
     const res = await app.fetch(req)
@@ -68,12 +83,9 @@ const createResult = async (res: Response): Promise<APIGatewayProxyResult> => {
   return result
 }
 
-const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
+const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent) => {
   const queryString = extractQueryString(event)
-  const urlPath = isProxyEventV2(event)
-    ? `https://${event.requestContext.domainName}${event.rawPath}`
-    : `https://${event.requestContext.domainName}${event.path}`
-
+  const urlPath = `https://${event.requestContext.domainName}${isProxyEvent(event) ? event.path : event.rawPath}`
   const url = queryString ? `${urlPath}?${queryString}` : urlPath
 
   const headers = new Headers()
@@ -81,9 +93,10 @@ const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => 
     if (v) headers.set(k, v)
   }
 
+  const method = 'httpMethod' in event ? event.httpMethod : event.requestContext.http.method
   const requestInit: RequestInit = {
     headers,
-    method: event.httpMethod,
+    method
   }
 
   if (event.body) {
@@ -93,19 +106,25 @@ const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => 
   return new Request(url, requestInit)
 }
 
-const extractQueryString = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
-  if (isProxyEventV2(event)) {
-    return event.rawQueryString
+const extractQueryString = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent) => {
+  if (isProxyEvent(event)) {
+    return Object.entries(event.queryStringParameters || {})
+      .filter(([, value]) => value)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('&')
   }
 
-  return Object.entries(event.queryStringParameters || {})
-    .filter(([, value]) => value)
-    .map(([key, value]) => `${key}=${value}`)
-    .join('&')
+  return isProxyEventV2(event) ? event.rawQueryString : event.rawQueryString
+}
+
+const isProxyEvent = (
+  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
+): event is APIGatewayProxyEvent => {
+  return Object.prototype.hasOwnProperty.call(event, 'path')
 }
 
 const isProxyEventV2 = (
-  event: APIGatewayProxyEvent | APIGatewayProxyEventV2
+  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
 ): event is APIGatewayProxyEventV2 => {
   return Object.prototype.hasOwnProperty.call(event, 'rawPath')
 }
