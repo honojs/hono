@@ -161,7 +161,7 @@ const _getQueryParam = (
       } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
         return ''
       }
-      keyIndex = url.indexOf(`&${key}`, keyIndex)
+      keyIndex = url.indexOf(`&${key}`, keyIndex + 1)
     }
 
     encoded = /[%+]/.test(url)
