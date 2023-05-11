@@ -40,6 +40,28 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.isBase64Encoded).toBe(true)
   })
 
+  it('Should handle a GET request and return a 200 response (LambdaFunctionUrlEvent)', async () => {
+    const event = {
+      headers: { 'content-type': 'text/plain' },
+      rawPath: '/',
+      rawQueryString: '',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: {
+        domainName: 'example.com',
+        http: {
+          method: 'GET',
+        },
+      },
+    };
+  
+    const response = await handler(event);
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBe('SGVsbG8gTGFtYmRhIQ==');
+    expect(response.headers['content-type']).toMatch(/^text\/plain/);
+    expect(response.isBase64Encoded).toBe(true);
+  });
+
   it('Should handle a GET request and return a 404 response', async () => {
     const event = {
       httpMethod: 'GET',
@@ -77,6 +99,30 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.body).toBe('R29vZCBNb3JuaW5nIExhbWJkYSE=')
   })
 
+  it('Should handle a POST request and return a 200 response (LambdaFunctionUrlEvent)', async () => {
+    const searchParam = new URLSearchParams();
+    searchParam.append('message', 'Good Morning Lambda!');
+    const event = {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      rawPath: '/post',
+      rawQueryString: '',
+      body: btoa(searchParam.toString()),
+      isBase64Encoded: true,
+      requestContext: {
+        domainName: 'example.com',
+        http: {
+          method: 'POST',
+        },
+      },
+    };
+  
+    const response = await handler(event);
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBe('R29vZCBNb3JuaW5nIExhbWJkYSE=');
+  });
+  
   it('Should handle a request and return a 401 response with Basic auth', async () => {
     const event = {
       httpMethod: 'GET',
