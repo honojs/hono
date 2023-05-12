@@ -40,9 +40,9 @@ interface LambdaFunctionUrlEvent {
   body: string | null
   isBase64Encoded: boolean
   requestContext: {
-    domainName: string,
+    domainName: string
     http: {
-      method: string,
+      method: string
     }
   }
 }
@@ -69,11 +69,16 @@ export const handle = (app: Hono) => {
 }
 
 const createResult = async (res: Response): Promise<APIGatewayProxyResult> => {
+  const contentType = res.headers.get('content-type')
+  const isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
+
+  const body = isBase64Encoded ? await fromReadableToString(res) : await res.text()
+
   const result: APIGatewayProxyResult = {
-    body: await fromReadableToString(res),
+    body: body,
     headers: {},
     statusCode: res.status,
-    isBase64Encoded: true,
+    isBase64Encoded,
   }
 
   res.headers.forEach((value, key) => {
@@ -83,9 +88,13 @@ const createResult = async (res: Response): Promise<APIGatewayProxyResult> => {
   return result
 }
 
-const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent) => {
+const createRequest = (
+  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
+) => {
   const queryString = extractQueryString(event)
-  const urlPath = `https://${event.requestContext.domainName}${isProxyEvent(event) ? event.path : event.rawPath}`
+  const urlPath = `https://${event.requestContext.domainName}${
+    isProxyEvent(event) ? event.path : event.rawPath
+  }`
   const url = queryString ? `${urlPath}?${queryString}` : urlPath
 
   const headers = new Headers()
@@ -96,7 +105,7 @@ const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | La
   const method = 'httpMethod' in event ? event.httpMethod : event.requestContext.http.method
   const requestInit: RequestInit = {
     headers,
-    method
+    method,
   }
 
   if (event.body) {
@@ -106,7 +115,9 @@ const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | La
   return new Request(url, requestInit)
 }
 
-const extractQueryString = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent) => {
+const extractQueryString = (
+  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
+) => {
   if (isProxyEvent(event)) {
     return Object.entries(event.queryStringParameters || {})
       .filter(([, value]) => value)
@@ -141,4 +152,10 @@ const fromReadableToString = async (res: Response) => {
   }
 
   return btoa(string)
+}
+
+export const isContentTypeBinary = (contentType: string) => {
+  return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml)$/.test(
+    contentType
+  )
 }
