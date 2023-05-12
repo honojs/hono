@@ -9,6 +9,12 @@ describe('AWS Lambda Adapter for Hono', () => {
     return c.text('Hello Lambda!')
   })
 
+  app.get('/binary', (c) => {
+    return c.body('Fake Image', 200, {
+      'Content-Type': 'image/png',
+    })
+  })
+
   app.post('/post', async (c) => {
     const body = (await c.req.parseBody()) as { message: string }
     return c.text(body.message)
@@ -35,8 +41,27 @@ describe('AWS Lambda Adapter for Hono', () => {
 
     const response = await handler(event)
     expect(response.statusCode).toBe(200)
-    expect(response.body).toBe('SGVsbG8gTGFtYmRhIQ==')
+    expect(response.body).toBe('Hello Lambda!')
     expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.isBase64Encoded).toBe(false)
+  })
+
+  it('Should handle a GET request and return a 200 response with binary', async () => {
+    const event = {
+      httpMethod: 'GET',
+      headers: {},
+      path: '/binary',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: {
+        domainName: 'example.com',
+      },
+    }
+
+    const response = await handler(event)
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toBe('RmFrZSBJbWFnZQ==')
+    expect(response.headers['content-type']).toMatch(/^image\/png/)
     expect(response.isBase64Encoded).toBe(true)
   })
 
@@ -53,14 +78,14 @@ describe('AWS Lambda Adapter for Hono', () => {
           method: 'GET',
         },
       },
-    };
-  
-    const response = await handler(event);
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toBe('SGVsbG8gTGFtYmRhIQ==');
-    expect(response.headers['content-type']).toMatch(/^text\/plain/);
-    expect(response.isBase64Encoded).toBe(true);
-  });
+    }
+
+    const response = await handler(event)
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toBe('Hello Lambda!')
+    expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.isBase64Encoded).toBe(false)
+  })
 
   it('Should handle a GET request and return a 404 response', async () => {
     const event = {
@@ -96,12 +121,12 @@ describe('AWS Lambda Adapter for Hono', () => {
 
     const response = await handler(event)
     expect(response.statusCode).toBe(200)
-    expect(response.body).toBe('R29vZCBNb3JuaW5nIExhbWJkYSE=')
+    expect(response.body).toBe('Good Morning Lambda!')
   })
 
   it('Should handle a POST request and return a 200 response (LambdaFunctionUrlEvent)', async () => {
-    const searchParam = new URLSearchParams();
-    searchParam.append('message', 'Good Morning Lambda!');
+    const searchParam = new URLSearchParams()
+    searchParam.append('message', 'Good Morning Lambda!')
     const event = {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -116,13 +141,13 @@ describe('AWS Lambda Adapter for Hono', () => {
           method: 'POST',
         },
       },
-    };
-  
-    const response = await handler(event);
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toBe('R29vZCBNb3JuaW5nIExhbWJkYSE=');
-  });
-  
+    }
+
+    const response = await handler(event)
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toBe('Good Morning Lambda!')
+  })
+
   it('Should handle a request and return a 401 response with Basic auth', async () => {
     const event = {
       httpMethod: 'GET',
@@ -159,6 +184,6 @@ describe('AWS Lambda Adapter for Hono', () => {
 
     const response = await handler(event)
     expect(response.statusCode).toBe(200)
-    expect(response.body).toBe('R29vZCBOaWdodCBMYW1iZGEh')
+    expect(response.body).toBe('Good Night Lambda!')
   })
 })
