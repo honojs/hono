@@ -851,31 +851,68 @@ describe('Redirect', () => {
 })
 
 describe('Error handle', () => {
-  const app = new Hono()
+  describe('Basic', () => {
+    const app = new Hono()
 
-  app.get('/error', () => {
-    throw new Error('This is Error')
+    app.get('/error', () => {
+      throw new Error('This is Error')
+    })
+
+    app.use('/error-middleware', async () => {
+      throw new Error('This is Middleware Error')
+    })
+
+    app.onError((err, c) => {
+      c.header('x-debug', err.message)
+      return c.text('Custom Error Message', 500)
+    })
+
+    it('Custom Error Message', async () => {
+      let res = await app.request('https://example.com/error')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message')
+      expect(res.headers.get('x-debug')).toBe('This is Error')
+
+      res = await app.request('https://example.com/error-middleware')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message')
+      expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
+    })
   })
 
-  app.use('/error-middleware', async () => {
-    throw new Error('This is Middleware Error')
-  })
+  describe('Async custom handler', () => {
+    const app = new Hono()
 
-  app.onError((err, c) => {
-    c.header('x-debug', err.message)
-    return c.text('Custom Error Message', 500)
-  })
+    app.get('/error', () => {
+      throw new Error('This is Error')
+    })
 
-  it('Custom Error Message', async () => {
-    let res = await app.request('https://example.com/error')
-    expect(res.status).toBe(500)
-    expect(await res.text()).toBe('Custom Error Message')
-    expect(res.headers.get('x-debug')).toBe('This is Error')
+    app.use('/error-middleware', async () => {
+      throw new Error('This is Middleware Error')
+    })
 
-    res = await app.request('https://example.com/error-middleware')
-    expect(res.status).toBe(500)
-    expect(await res.text()).toBe('Custom Error Message')
-    expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
+    app.onError(async (err, c) => {
+      const promise = new Promise((resolve) =>
+        setTimeout(() => {
+          resolve('Promised')
+        }, 1)
+      )
+      const message = (await promise) as string
+      c.header('x-debug', err.message)
+      return c.text(`Custom Error Message with ${message}`, 500)
+    })
+
+    it('Custom Error Message', async () => {
+      let res = await app.request('https://example.com/error')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message with Promised')
+      expect(res.headers.get('x-debug')).toBe('This is Error')
+
+      res = await app.request('https://example.com/error-middleware')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message with Promised')
+      expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
+    })
   })
 
   describe('Handle HTTPException', () => {
