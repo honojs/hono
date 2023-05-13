@@ -197,7 +197,7 @@ export interface HandlerInterface<
 export interface MiddlewareHandlerInterface<
   E extends Env = Env,
   S = {},
-  BasePath extends string = ''
+  BasePath extends string = '/'
 > {
   //// app.get(...handlers[])
   (...handlers: MiddlewareHandler<E, MergePath<BasePath, ExtractKey<S>>>[]): Hono<E, S, BasePath>
@@ -215,7 +215,7 @@ export interface MiddlewareHandlerInterface<
 //////                            //////
 ////////////////////////////////////////
 
-export interface OnHandlerInterface<E extends Env = Env, S = {}, BasePath extends string = ''> {
+export interface OnHandlerInterface<E extends Env = Env, S = {}, BasePath extends string = '/'> {
   // app.on(method, path, handler, handler)
   <M extends string, P extends string, O = {}, I extends Input = {}>(
     method: M,
@@ -335,6 +335,8 @@ export type MergeSchemaPath<S, P extends string> = S extends Record<infer Key, i
   : never
 
 export type MergePath<A extends string, B extends string> = A extends ''
+  ? B
+  : A extends '/'
   ? B
   : A extends `${infer P}/`
   ? B extends `/${infer Q}`
