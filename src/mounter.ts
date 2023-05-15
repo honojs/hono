@@ -2,8 +2,10 @@ import type { Context } from './context'
 import type { MiddlewareHandler } from './types'
 import { mergePath } from './utils/url'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ApplicationHandler = (request: Request, args?: any) => Response | Promise<Response>
+interface ApplicationHandler {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (request: Request, ...args: any): Response | Promise<Response>
+}
 type OptionHandler = (c: Context) => unknown
 
 /**
