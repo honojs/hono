@@ -50,6 +50,10 @@ describe('mount', () => {
       if (path === '/hello') {
         return new Response('Hello from AnotherApp')
       }
+      if (path === '/header') {
+        const message = req.headers.get('x-message')
+        return new Response(message)
+      }
       if (path == '/with-params') {
         return new Response(
           JSON.stringify({
@@ -97,6 +101,16 @@ describe('mount', () => {
       expect(res.headers.get('x-message')).toBe('Foo')
       expect(await res.text()).toBe('Hello from AnotherApp')
 
+      const req = new Request('http://localhost/another-app/header', {
+        headers: {
+          'x-message': 'Message Foo!',
+        },
+      })
+      res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(res.headers.get('x-message')).toBe('Foo')
+      expect(await res.text()).toBe('Message Foo!')
+
       res = await app.request('/another-app/not-found')
       expect(res.status).toBe(404)
       expect(res.headers.get('x-message')).toBe('Foo')
@@ -110,7 +124,7 @@ describe('mount', () => {
     })
   })
 
-  describe.only('With fetch', () => {
+  describe('With fetch', () => {
     const anotherApp = async (req: Request, env: {}, executionContext: ExecutionContext) => {
       const path = getPath(req)
       if (path === '/') {
