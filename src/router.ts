@@ -3,6 +3,7 @@ export const METHOD_NAME_ALL_LOWERCASE = 'all' as const
 export const METHODS = ['get', 'post', 'put', 'delete', 'head', 'options', 'patch'] as const
 
 export interface Router<T> {
+  name: string
   add(method: string, path: string, handler: T): void
   match(method: string, path: string): Result<T> | null
 }

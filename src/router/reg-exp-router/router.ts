@@ -101,6 +101,7 @@ function findMiddleware<T>(
 }
 
 export class RegExpRouter<T> implements Router<T> {
+  name: string = 'RegExpRouter'
   middleware?: Record<string, Record<string, T[]>>
   routes?: Record<string, Record<string, T[]>>
 

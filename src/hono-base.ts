@@ -232,6 +232,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
       notFoundHandler: this.notFoundHandler,
       path,
       paramData,
+      routerName: this.router.name,
     })
 
     // Do not `compose` if it has only one handler
