@@ -312,6 +312,14 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     const req = new Request(path, requestInit)
     return await this.fetch(req)
   }
+
+  fire = () => {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    addEventListener('fetch', (event: FetchEvent): void => {
+      void event.respondWith(this.handleEvent(event))
+    })
+  }
 }
 
 export { Hono as HonoBase }
