@@ -3,6 +3,7 @@ import { checkOptionalParameter } from '../../utils/url.ts'
 import { Node } from './node.ts'
 
 export class TrieRouter<T> implements Router<T> {
+  name: string = 'TrieRouter'
   node: Node<T>
 
   constructor() {
