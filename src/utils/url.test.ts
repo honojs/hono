@@ -8,7 +8,6 @@ import {
   checkOptionalParameter,
   getQueryParam,
   getQueryParams,
-  getBaseURLAndPath,
 } from './url'
 
 describe('url', () => {
@@ -237,18 +236,6 @@ describe('url', () => {
       })
       expect(getQueryParams('http://example.com/?pretty', 'pretty')).toEqual([''])
       expect(getQueryParams('http://example.com/?pretty', 'prtt')).toBe(undefined)
-    })
-  })
-
-  describe('getBaseURLAndPath', () => {
-    const baseURL = 'http://localhost'
-    it('Should return the base URL and the path', () => {
-      expect(getBaseURLAndPath('http://localhost/abc')).toEqual([baseURL, '/abc'])
-      expect(getBaseURLAndPath('http://localhost/abc/def')).toEqual([baseURL, '/abc/def'])
-      expect(getBaseURLAndPath('http://localhost/')).toEqual([baseURL, '/'])
-      expect(getBaseURLAndPath('http://localhost')).toEqual([baseURL, '/'])
-      expect(getBaseURLAndPath('https://localhost/abc')).toEqual(['https://localhost', '/abc'])
-      expect(getBaseURLAndPath('hhttp')).toEqual(['hhttp', '/'])
     })
   })
 })

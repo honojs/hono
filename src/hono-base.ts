@@ -19,7 +19,7 @@ import type {
   MergeSchemaPath,
 } from './types'
 import type { RemoveBlankRecord } from './utils/types'
-import { getPath, getPathNoStrict, mergePath, getBaseURLAndPath } from './utils/url'
+import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
@@ -53,6 +53,8 @@ const errorHandler = (err: Error, c: Context) => {
   const message = 'Internal Server Error'
   return c.text(message, 500)
 }
+
+let mountCount = 0
 
 class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends defineDynamicClass()<
   E,
@@ -205,6 +207,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     optionHandler?: (c: Context) => unknown
   ): Hono<E, S, BasePath> {
+    const paramName = `_mount_${mountCount++}`
     const handler: MiddlewareHandler = async (c, next) => {
       let executionContext: ExecutionContext | undefined = undefined
       try {
@@ -212,13 +215,8 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
       } catch {} // Do nothing
       const options = optionHandler ? optionHandler(c) : [c.env, executionContext]
       const optionsArray = Array.isArray(options) ? options : [options]
-
-      const [baseURL, oldPath] = getBaseURLAndPath(c.req.url)
-      const regexp = new RegExp(`^${mergePath(this._basePath, path).replace(/\/$/, '')}`)
-      const newPath = oldPath.replace(regexp, '')
-
       const res = await applicationHandler(
-        new Request(baseURL + newPath, c.req.raw),
+        new Request(new URL('/' + (c.req.param(paramName) || ''), c.req.url), c.req.raw),
         ...optionsArray
       )
 
@@ -226,7 +224,10 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
 
       await next()
     }
-    this.addRoute(METHOD_NAME_ALL, mergePath(path, '*'), handler)
+    if (path[path.length - 1] === '/') {
+      path = path.slice(0, -1)
+    }
+    ;[path, `${path}/:${paramName}{.*}`].map((p) => this.all(p, handler))
     return this
   }
 
