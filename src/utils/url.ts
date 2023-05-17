@@ -127,13 +127,6 @@ export const checkOptionalParameter = (path: string): string[] | null => {
   return [base === '' ? '/' : base.replace(/\/$/, ''), optional]
 }
 
-export const getBaseURLAndPath = (url: string) => {
-  const match = url.match(/(^https?:\/\/[^\/]+)\/(.+)?/)
-  const baseURL = match ? match[1] : url
-  const path = match && match[2] ? `/${match[2]}` : '/'
-  return [baseURL, path]
-}
-
 // Optimized
 const _decodeURI = (value: string) => {
   if (!/[%+]/.test(value)) {
