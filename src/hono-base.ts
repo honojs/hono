@@ -194,6 +194,11 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     })
   }
 
+  get routerName() {
+    this.matchRoute('GET', '/')
+    return this.router.name
+  }
+
   private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
     if (this._basePath) {
@@ -232,7 +237,6 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
       notFoundHandler: this.notFoundHandler,
       path,
       paramData,
-      routerName: this.router.name,
     })
 
     // Do not `compose` if it has only one handler

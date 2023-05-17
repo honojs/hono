@@ -1917,7 +1917,7 @@ describe('Router Name', () => {
       router: new RegExpRouter(),
     })
     app.get('/router-name', (c) => {
-      return c.text(c.routerName ?? 'N/A')
+      return c.text(app.routerName ?? 'N/A')
     })
     const res = await app.request('/router-name')
     expect(await res.text()).toBe('RegExpRouter')
