@@ -34,12 +34,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: oven-sh/setup-bun@v1
         with:
-          node-version: 18.x
-      - run: curl -fsSL https://bun.sh/install | bash
-      - run: echo "${HOME}/.bun/bin" >> $GITHUB_PATH
-      - run: npm run test:bun
+          bun-version: '0.5.9'
+      - run: bun run test:bun
 
   fastly:
     name: 'Fastly Compute@Edge'
