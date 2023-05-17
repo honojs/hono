@@ -19,7 +19,7 @@ import type {
   MergeSchemaPath,
 } from './types'
 import type { RemoveBlankRecord } from './utils/types'
-import { getPath, getPathNoStrict, mergePath } from './utils/url'
+import { getPath, getPathNoStrict, mergePath, getBaseURLAndPath } from './utils/url'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
@@ -192,6 +192,42 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
         `\x1b[32m${route.method}\x1b[0m ${' '.repeat(length - route.method.length)} ${route.path}`
       )
     })
+  }
+
+  /**
+   * @experimental
+   * `app.mount()` is an experimental feature.
+   * The API might be changed.
+   */
+  mount(
+    path: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
+    optionHandler?: (c: Context) => unknown
+  ): Hono<E, S, BasePath> {
+    const handler: MiddlewareHandler = async (c, next) => {
+      let executionContext: ExecutionContext | undefined = undefined
+      try {
+        executionContext = c.executionCtx
+      } catch {} // Do nothing
+      const options = optionHandler ? optionHandler(c) : [c.env, executionContext]
+      const optionsArray = Array.isArray(options) ? options : [options]
+
+      const [baseURL, oldPath] = getBaseURLAndPath(c.req.url)
+      const regexp = new RegExp(`^${mergePath(this._basePath, path).replace(/\/$/, '')}`)
+      const newPath = oldPath.replace(regexp, '')
+
+      const res = await applicationHandler(
+        new Request(baseURL + newPath, c.req.raw),
+        ...optionsArray
+      )
+
+      if (res) return res
+
+      await next()
+    }
+    this.addRoute(METHOD_NAME_ALL, mergePath(path, '*'), handler)
+    return this
   }
 
   private addRoute(method: string, path: string, handler: H) {
