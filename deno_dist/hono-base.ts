@@ -19,7 +19,7 @@ import type {
   MergeSchemaPath,
 } from './types.ts'
 import type { RemoveBlankRecord } from './utils/types.ts'
-import { getPath, getPathNoStrict, mergePath, getBaseURLAndPath } from './utils/url.ts'
+import { getPath, getPathNoStrict, mergePath } from './utils/url.ts'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
@@ -205,6 +205,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     optionHandler?: (c: Context) => unknown
   ): Hono<E, S, BasePath> {
+    const pathPrefixLength = mergePath(this._basePath, path).length
     const handler: MiddlewareHandler = async (c, next) => {
       let executionContext: ExecutionContext | undefined = undefined
       try {
@@ -212,13 +213,8 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
       } catch {} // Do nothing
       const options = optionHandler ? optionHandler(c) : [c.env, executionContext]
       const optionsArray = Array.isArray(options) ? options : [options]
-
-      const [baseURL, oldPath] = getBaseURLAndPath(c.req.url)
-      const regexp = new RegExp(`^${mergePath(this._basePath, path).replace(/\/$/, '')}`)
-      const newPath = oldPath.replace(regexp, '')
-
       const res = await applicationHandler(
-        new Request(baseURL + newPath, c.req.raw),
+        new Request(new URL(c.req.path.slice(pathPrefixLength) || '/', c.req.url), c.req.raw),
         ...optionsArray
       )
 
