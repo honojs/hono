@@ -1,11 +1,12 @@
 import type { Router, Result } from '../../router.ts'
 import { METHOD_NAME_ALL, UnsupportedPathError } from '../../router.ts'
 
-type RegExpMatchArrayWithIndices = RegExpMatchArray & { indices: [number, number][] };
+type RegExpMatchArrayWithIndices = RegExpMatchArray & { indices: [number, number][] }
 
 const splitPathRe = /\/(:\w+(?:{[^}]+})?)|\/[^\/\?]+|(\?)/g
 const splitByStarRe = /\*/
 export class LinearRouter<T> implements Router<T> {
+  name: string = 'LinearRouter'
   routes: [string, string, T][] = []
 
   add(method: string, path: string, handler: T) {
