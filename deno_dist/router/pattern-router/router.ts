@@ -4,6 +4,7 @@ import { METHOD_NAME_ALL } from '../../router.ts'
 type Route<T> = [RegExp, string, T] // [pattern, method, handler]
 
 export class PatternRouter<T> implements Router<T> {
+  name: string = 'PatternRouter'
   private routes: Route<T>[] = []
   private dNames: Record<string, number> = {} // Short name of duplicatedNames
 

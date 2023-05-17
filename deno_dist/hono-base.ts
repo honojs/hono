@@ -230,6 +230,11 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     return this
   }
 
+  get routerName() {
+    this.matchRoute('GET', '/')
+    return this.router.name
+  }
+
   private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
     if (this._basePath) {

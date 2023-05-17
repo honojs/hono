@@ -18,6 +18,7 @@ describe('RegExpRouter', () => {
       expect(res?.handlers).toEqual(['get entry'])
       expect(res?.params['id']).toBe('123')
       expect(router.activeRouter).toBeInstanceOf(RegExpRouter)
+      expect(router.name).toBe('SmartRouter + RegExpRouter')
     })
 
     it('Wildcard', async () => {
@@ -82,5 +83,6 @@ describe('TrieRouter', () => {
     expect(res?.params['user']).toBe('entry')
     expect(res?.params['name']).toBe('entries')
     expect(router.activeRouter).toBeInstanceOf(TrieRouter)
+    expect(router.name).toBe('SmartRouter + TrieRouter')
   })
 })

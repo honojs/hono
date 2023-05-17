@@ -2066,3 +2066,16 @@ describe('app.mount()', () => {
     })
   })
 })
+
+describe('Router Name', () => {
+  it('Should return the correct router name', async () => {
+    const app = new Hono({
+      router: new RegExpRouter(),
+    })
+    app.get('/router-name', (c) => {
+      return c.text(app.routerName ?? 'N/A')
+    })
+    const res = await app.request('/router-name')
+    expect(await res.text()).toBe('RegExpRouter')
+  })
+})

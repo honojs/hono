@@ -3,6 +3,7 @@ import type { Router, Result } from '../../router.ts'
 import { UnsupportedPathError } from '../../router.ts'
 
 export class SmartRouter<T> implements Router<T> {
+  name: string = 'SmartRouter'
   routers: Router<T>[] = []
   routes?: [string, string, T][] = []
 
@@ -51,6 +52,9 @@ export class SmartRouter<T> implements Router<T> {
       // not found
       throw new Error('Fatal error')
     }
+
+    // e.g. "SmartRouter + RegExpRouter"
+    this.name = `SmartRouter + ${this.activeRouter.name}`
 
     return res || null
   }
