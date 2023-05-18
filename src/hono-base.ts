@@ -194,6 +194,38 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     })
   }
 
+  /**
+   * @experimental
+   * `app.mount()` is an experimental feature.
+   * The API might be changed.
+   */
+  mount(
+    path: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
+    optionHandler?: (c: Context) => unknown
+  ): Hono<E, S, BasePath> {
+    const pathPrefixLength = mergePath(this._basePath, path).length
+    const handler: MiddlewareHandler = async (c, next) => {
+      let executionContext: ExecutionContext | undefined = undefined
+      try {
+        executionContext = c.executionCtx
+      } catch {} // Do nothing
+      const options = optionHandler ? optionHandler(c) : [c.env, executionContext]
+      const optionsArray = Array.isArray(options) ? options : [options]
+      const res = await applicationHandler(
+        new Request(new URL(c.req.path.slice(pathPrefixLength) || '/', c.req.url), c.req.raw),
+        ...optionsArray
+      )
+
+      if (res) return res
+
+      await next()
+    }
+    this.addRoute(METHOD_NAME_ALL, mergePath(path, '*'), handler)
+    return this
+  }
+
   get routerName() {
     this.matchRoute('GET', '/')
     return this.router.name
