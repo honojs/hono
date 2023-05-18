@@ -449,3 +449,23 @@ describe('Routing order With named parameters', () => {
     expect(res?.params['slug']).toBe('b')
   })
 })
+
+describe('Routing with a hostname', () => {
+  const router = new PatternRouter<string>()
+  router.add('get', 'www1.example.com/hello', 'www1')
+  router.add('get', 'www2.example.com/hello', 'www2')
+  it('GET www1.example.com/hello', () => {
+    const res = router.match('get', 'www1.example.com/hello')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['www1'])
+  })
+  it('GET www2.example.com/hello', () => {
+    const res = router.match('get', 'www2.example.com/hello')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['www2'])
+  })
+  it('GET /hello', () => {
+    const res = router.match('get', '/hello')
+    expect(res).toBeNull()
+  })
+})
