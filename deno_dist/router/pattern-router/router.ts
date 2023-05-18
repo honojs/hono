@@ -14,7 +14,7 @@ export class PatternRouter<T> implements Router<T> {
       path = path.slice(0, -2)
     }
 
-    const parts = path.match(/\/(:\w+(?:{[^}]+})?)|\/[^\/\?]+|(\?)/g) || []
+    const parts = path.match(/\/?(:\w+(?:{[^}]+})?)|\/?[^\/\?]+|(\?)/g) || []
     if (parts[parts.length - 1] === '?') {
       this.add(method, parts.slice(0, parts.length - 2).join(''), handler)
       parts.pop()
