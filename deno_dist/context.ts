@@ -65,7 +65,6 @@ type ContextOptions<E extends Env> = {
   notFoundHandler?: NotFoundHandler<E>
   path?: string
   paramData?: Record<string, string>
-  routerName?: string
 }
 
 export class Context<
@@ -78,7 +77,6 @@ export class Context<
   env: E['Bindings'] = {}
   finalized: boolean = false
   error: Error | undefined = undefined
-  routerName?: string | undefined
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _req?: HonoRequest<any, any>
@@ -101,7 +99,6 @@ export class Context<
       this._exCtx = options.executionCtx
       this._path = options.path ?? '/'
       this._pData = options.paramData
-      this.routerName = options.routerName
       this.env = options.env
       if (options.notFoundHandler) {
         this.notFoundHandler = options.notFoundHandler
