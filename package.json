@@ -1,7 +1,7 @@
 {
   "name": "hono",
-  "version": "3.1.8",
-  "description": "Ultrafast web framework for the Edge",
+  "version": "3.2.0-rc.4",
+  "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
   "module": "dist/index.js",
@@ -34,6 +34,16 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/cjs/index.js"
+    },
+    "./tiny": {
+      "types": "./dist/types/preset/tiny.d.ts",
+      "import": "./dist/preset/tiny.js",
+      "require": "./dist/cjs/preset/tiny.js"
+    },
+    "./quick": {
+      "types": "./dist/types/preset/quick.d.ts",
+      "import": "./dist/preset/quick.js",
+      "require": "./dist/cjs/preset/quick.js"
     },
     "./http-exception": {
       "types": "./dist/types/http-exception.d.ts",
@@ -184,10 +194,21 @@
       "types": "./dist/types/adapter/aws-lambda/index.d.ts",
       "import": "./dist/adapter/aws-lambda/index.js",
       "require": "./dist/cjs/adapter/aws-lambda/index.js"
+    },
+    "./vercel": {
+      "types": "./dist/types/adapter/vercel/index.d.ts",
+      "import": "./dist/adapter/vercel/index.js",
+      "require": "./dist/cjs/adapter/vercel/index.js"
     }
   },
   "typesVersions": {
     "*": {
+      "tiny": [
+        "./dist/types/preset/tiny"
+      ],
+      "quick": [
+        "./dist/types/preset/quick"
+      ],
       "http-exception": [
         "./dist/types/http-exception"
       ],
@@ -277,6 +298,9 @@
       ],
       "aws-lambda": [
         "./dist/types/adapter/aws-lambda"
+      ],
+      "vercel": [
+        "./dist/types/adapter/vercel"
       ]
     }
   },
@@ -303,7 +327,10 @@
     "fastly",
     "compute@edge",
     "deno",
-    "bun"
+    "bun",
+    "lagon",
+    "lambda",
+    "nodejs"
   ],
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20221111.1",
@@ -334,7 +361,7 @@
     "jest-preset-fastly-js-compute": "^0.6.1",
     "msw": "^1.0.0",
     "node-fetch": "2",
-    "np": "^7.6.2",
+    "np": "^7.7.0",
     "prettier": "^2.6.2",
     "publint": "^0.1.8",
     "rimraf": "^3.0.2",

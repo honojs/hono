@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "npm/": "https://unpkg.com/"
+  }
+}

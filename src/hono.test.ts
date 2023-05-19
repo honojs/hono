@@ -5,10 +5,12 @@ import { Hono } from './hono'
 import { HTTPException } from './http-exception'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
+import { SmartRouter } from './mod'
 import { RegExpRouter } from './router/reg-exp-router'
 import { TrieRouter } from './router/trie-router'
 import type { Handler, Next } from './types'
 import type { Expect, Equal } from './utils/types'
+import { getPath } from './utils/url'
 
 // https://stackoverflow.com/a/65666402
 function throwExpression(errorMessage: string): never {
@@ -73,6 +75,19 @@ describe('GET Request', () => {
     const res = await app.request('http://localhost/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
+  })
+})
+
+describe('router option', () => {
+  it('Should be SmartRouter', () => {
+    const app = new Hono()
+    expect(app.router instanceof SmartRouter).toBe(true)
+  })
+  it('Should be RegExpRouter', () => {
+    const app = new Hono({
+      router: new RegExpRouter(),
+    })
+    expect(app.router instanceof RegExpRouter).toBe(true)
   })
 })
 
@@ -316,6 +331,48 @@ describe('Routing', () => {
       const { status } = await one.request('http://localhost/two/three/hi', { method: 'GET' })
       expect(status).toBe(404)
     })
+  })
+
+  it('routing with hostname', async () => {
+    const app = new Hono({
+      getPath: (req) => req.url.replace(/^https?:\/\//, ''),
+    })
+
+    app.get('www1.example.com/hello', () => new Response('hello www1'))
+    app.get('www2.example.com/hello', () => new Response('hello www2'))
+
+    let res = await app.request('http://www1.example.com/hello')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www1')
+
+    res = await app.request('http://www2.example.com/hello')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www2')
+  })
+
+  it('routing with request header', async () => {
+    const app = new Hono({
+      getPath: (req) => req.headers.get('host') + req.url.replace(/^https?:\/\/[^\/]+/, ''),
+    })
+
+    app.get('www1.example.com/hello', () => new Response('hello www1'))
+    app.get('www2.example.com/hello', () => new Response('hello www2'))
+
+    let res = await app.request('http://www1.example.com/hello', {
+      headers: { host: 'www1.example.com' },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www1')
+
+    res = await app.request('http://www2.example.com/hello', {
+      headers: { host: 'www2.example.com' },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www2')
   })
 
   describe('Chained route', () => {
@@ -795,38 +852,77 @@ describe('Redirect', () => {
 })
 
 describe('Error handle', () => {
-  const app = new Hono()
+  describe('Basic', () => {
+    const app = new Hono()
 
-  app.get('/error', () => {
-    throw new Error('This is Error')
+    app.get('/error', () => {
+      throw new Error('This is Error')
+    })
+
+    app.use('/error-middleware', async () => {
+      throw new Error('This is Middleware Error')
+    })
+
+    app.onError((err, c) => {
+      c.header('x-debug', err.message)
+      return c.text('Custom Error Message', 500)
+    })
+
+    it('Custom Error Message', async () => {
+      let res = await app.request('https://example.com/error')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message')
+      expect(res.headers.get('x-debug')).toBe('This is Error')
+
+      res = await app.request('https://example.com/error-middleware')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message')
+      expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
+    })
   })
 
-  app.use('/error-middleware', async () => {
-    throw new Error('This is Middleware Error')
-  })
+  describe('Async custom handler', () => {
+    const app = new Hono()
 
-  app.onError((err, c) => {
-    c.header('x-debug', err.message)
-    return c.text('Custom Error Message', 500)
-  })
+    app.get('/error', () => {
+      throw new Error('This is Error')
+    })
 
-  it('Custom Error Message', async () => {
-    let res = await app.request('https://example.com/error')
-    expect(res.status).toBe(500)
-    expect(await res.text()).toBe('Custom Error Message')
-    expect(res.headers.get('x-debug')).toBe('This is Error')
+    app.use('/error-middleware', async () => {
+      throw new Error('This is Middleware Error')
+    })
 
-    res = await app.request('https://example.com/error-middleware')
-    expect(res.status).toBe(500)
-    expect(await res.text()).toBe('Custom Error Message')
-    expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
+    app.onError(async (err, c) => {
+      const promise = new Promise((resolve) =>
+        setTimeout(() => {
+          resolve('Promised')
+        }, 1)
+      )
+      const message = (await promise) as string
+      c.header('x-debug', err.message)
+      return c.text(`Custom Error Message with ${message}`, 500)
+    })
+
+    it('Custom Error Message', async () => {
+      let res = await app.request('https://example.com/error')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message with Promised')
+      expect(res.headers.get('x-debug')).toBe('This is Error')
+
+      res = await app.request('https://example.com/error-middleware')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message with Promised')
+      expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
+    })
   })
 
   describe('Handle HTTPException', () => {
     const app = new Hono()
 
     app.get('/exception', () => {
-      throw new HTTPException(401)
+      throw new HTTPException(401, {
+        message: 'Unauthorized',
+      })
     })
 
     it('Should return 401 response', async () => {
@@ -1813,5 +1909,173 @@ describe('Optional parameters', () => {
     expect(await res.json()).toEqual({
       type: undefined,
     })
+  })
+})
+
+describe('app.mount()', () => {
+  describe('Basic', () => {
+    const anotherApp = (req: Request, params: unknown) => {
+      const path = getPath(req)
+      console.log(`path in anotherApp: ${path}`)
+      if (path === '/') {
+        return new Response('AnotherApp')
+      }
+      if (path === '/hello') {
+        return new Response('Hello from AnotherApp')
+      }
+      if (path === '/header') {
+        const message = req.headers.get('x-message')
+        return new Response(message)
+      }
+      if (path == '/with-params') {
+        return new Response(
+          JSON.stringify({
+            params,
+          }),
+          {
+            headers: {
+              'Content-Type': 'application.json',
+            },
+          }
+        )
+      }
+      console.log(`before 404 ${req.url}`)
+      return new Response('Not Found from AnotherApp', {
+        status: 404,
+      })
+    }
+
+    const app = new Hono()
+    app.use('*', async (c, next) => {
+      await next()
+      c.header('x-message', 'Foo')
+    })
+    app.get('/', (c) => c.text('Hono'))
+    app.mount('/another-app', anotherApp, () => {
+      return 'params'
+    })
+    app.mount('/another-app2/sub-slash/', anotherApp)
+
+    const api = new Hono().basePath('/api')
+    api.mount('/another-app', anotherApp)
+
+    it('Should return responses from Hono app', async () => {
+      const res = await app.request('/')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('x-message')).toBe('Foo')
+      expect(await res.text()).toBe('Hono')
+    })
+
+    it('Should return responses from AnotherApp', async () => {
+      let res = await app.request('/another-app')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('x-message')).toBe('Foo')
+      expect(await res.text()).toBe('AnotherApp')
+
+      res = await app.request('/another-app/hello')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('x-message')).toBe('Foo')
+      expect(await res.text()).toBe('Hello from AnotherApp')
+
+      const req = new Request('http://localhost/another-app/header', {
+        headers: {
+          'x-message': 'Message Foo!',
+        },
+      })
+      res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(res.headers.get('x-message')).toBe('Foo')
+      expect(await res.text()).toBe('Message Foo!')
+
+      res = await app.request('/another-app/not-found')
+      expect(res.status).toBe(404)
+      expect(res.headers.get('x-message')).toBe('Foo')
+      expect(await res.text()).toBe('Not Found from AnotherApp')
+
+      res = await app.request('/another-app/with-params')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        params: 'params',
+      })
+    })
+
+    it('Should return responses from AnotherApp - sub + slash', async () => {
+      const res = await app.request('/another-app2/sub-slash')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('AnotherApp')
+    })
+
+    it('Should return responses from AnotherApp - with `basePath()`', async () => {
+      const res = await api.request('/api/another-app')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('AnotherApp')
+    })
+  })
+
+  describe('With fetch', () => {
+    const anotherApp = async (req: Request, env: {}, executionContext: ExecutionContext) => {
+      const path = getPath(req)
+      if (path === '/') {
+        return new Response(
+          JSON.stringify({
+            env,
+            executionContext,
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        )
+      }
+      return new Response('Not Found from AnotherApp', {
+        status: 404,
+      })
+    }
+
+    const app = new Hono()
+    app.mount('/another-app', anotherApp)
+
+    it('Should handle Env and ExecuteContext', async () => {
+      const request = new Request('http://localhost/another-app')
+      const res = await app.fetch(
+        request,
+        {
+          TOKEN: 'foo',
+        },
+        {
+          // Force mocking!
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          waitUntil: 'waitUntil',
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          passThroughOnException: 'passThroughOnException',
+        }
+      )
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        env: {
+          TOKEN: 'foo',
+        },
+        executionContext: {
+          waitUntil: 'waitUntil',
+          passThroughOnException: 'passThroughOnException',
+        },
+      })
+    })
+  })
+})
+
+describe('Router Name', () => {
+  it('Should return the correct router name', async () => {
+    const app = new Hono({
+      router: new RegExpRouter(),
+    })
+    app.get('/router-name', (c) => {
+      return c.text(app.routerName ?? 'N/A')
+    })
+    const res = await app.request('/router-name')
+    expect(await res.text()).toBe('RegExpRouter')
   })
 })

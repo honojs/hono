@@ -107,7 +107,8 @@ export class Node<T> {
     return curNode
   }
 
-  private getHandlerSets(node: Node<T>, method: string, wildcard?: boolean): HandlerSet<T>[] {
+  // getHandlerSets
+  private gHSets(node: Node<T>, method: string, wildcard?: boolean): HandlerSet<T>[] {
     return (node.handlerSetCache[`${method}:${wildcard ? '1' : '0'}`] ||= (() => {
       const handlerSets: HandlerSet<T>[] = []
       for (let i = 0, len = node.methods.length; i < len; i++) {
@@ -144,9 +145,9 @@ export class Node<T> {
           if (isLast === true) {
             // '/hello/*' => match '/hello'
             if (nextNode.children['*']) {
-              handlerSets.push(...this.getHandlerSets(nextNode.children['*'], method, true))
+              handlerSets.push(...this.gHSets(nextNode.children['*'], method, true))
             }
-            handlerSets.push(...this.getHandlerSets(nextNode, method))
+            handlerSets.push(...this.gHSets(nextNode, method))
             matched = true
           } else {
             tempNodes.push(nextNode)
@@ -161,7 +162,7 @@ export class Node<T> {
           if (pattern === '*') {
             const astNode = node.children['*']
             if (astNode) {
-              handlerSets.push(...this.getHandlerSets(astNode, method))
+              handlerSets.push(...this.gHSets(astNode, method))
               tempNodes.push(astNode)
             }
             continue
@@ -176,7 +177,7 @@ export class Node<T> {
           // `/js/:filename{[a-z]+.js}` => match /js/chunk/123.js
           const restPathString = parts.slice(i).join('/')
           if (matcher instanceof RegExp && matcher.test(restPathString)) {
-            handlerSets.push(...this.getHandlerSets(node.children[key], method))
+            handlerSets.push(...this.gHSets(node.children[key], method))
             params[name] = restPathString
             continue
           }
@@ -184,7 +185,7 @@ export class Node<T> {
           if (matcher === true || (matcher instanceof RegExp && matcher.test(part))) {
             if (typeof key === 'string') {
               if (isLast === true) {
-                handlerSets.push(...this.getHandlerSets(node.children[key], method))
+                handlerSets.push(...this.gHSets(node.children[key], method))
               } else {
                 tempNodes.push(node.children[key])
               }

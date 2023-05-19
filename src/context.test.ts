@@ -197,7 +197,6 @@ describe('Context', () => {
   })
 })
 
-/*
 describe('Context header', () => {
   const req = new Request('http://localhost/')
   let c: Context
@@ -278,4 +277,3 @@ describe('Pass a ResponseInit to respond methods', () => {
     expect(await res.text()).toBe('<h1>foo</h1>')
   })
 })
-*/

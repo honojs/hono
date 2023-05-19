@@ -12,13 +12,13 @@ import type { BodyData } from './utils/body.ts'
 import type { Cookie } from './utils/cookie.ts'
 import { parse } from './utils/cookie.ts'
 import type { UnionToIntersection } from './utils/types.ts'
-import { getQueryParam, getQueryParams } from './utils/url.ts'
+import { getQueryParam, getQueryParams, decodeURIComponent_ } from './utils/url.ts'
 
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   raw: Request
 
   private paramData: Record<string, string> | undefined
-  private validatedData: { [K in keyof ValidationTargets]?: {} }
+  private vData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
   path: string
 
   constructor(
@@ -29,7 +29,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     this.raw = request
     this.path = path
     this.paramData = paramData
-    this.validatedData = {}
+    this.vData = {}
   }
 
   param(key: RemoveQuestion<ParamKeys<P>>): UndefinedIfHavingQuestion<ParamKeys<P>>
@@ -38,13 +38,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     if (this.paramData) {
       if (key) {
         const param = this.paramData[key]
-        return param ? (/\%/.test(param) ? decodeURIComponent(param) : param) : undefined
+        return param ? (/\%/.test(param) ? decodeURIComponent_(param) : param) : undefined
       } else {
         const decoded: Record<string, string> = {}
 
         for (const [key, value] of Object.entries(this.paramData)) {
           if (value && typeof value === 'string') {
-            decoded[key] = /\%/.test(value) ? decodeURIComponent(value) : value
+            decoded[key] = /\%/.test(value) ? decodeURIComponent_(value) : value
           }
         }
 
@@ -139,7 +139,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   addValidatedData(target: keyof ValidationTargets, data: {}) {
-    this.validatedData[target] = data
+    this.vData[target] = data
   }
 
   valid<
@@ -152,7 +152,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   valid(): never
   valid(target?: keyof ValidationTargets) {
     if (target) {
-      return this.validatedData[target] as unknown
+      return this.vData[target] as unknown
     }
   }
 

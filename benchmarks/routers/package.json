@@ -1,7 +1,9 @@
 {
   "scripts": {
     "bench:node": "tsx ./src/bench.mts",
-    "bench:bun": "bun run ./src/bench.mts"
+    "bench:bun": "bun run ./src/bench.mts",
+    "bench-includes-init:node": "tsx ./src/bench-includes-init.mts",
+    "bench-includes-init:bun": "bun run ./src/bench-includes-init.mts"
   },
   "license": "MIT",
   "devDependencies": {
