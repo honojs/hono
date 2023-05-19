@@ -1,3 +1,5 @@
+import { decodeURIComponent_ } from './url'
+
 export type Cookie = Record<string, string>
 export type CookieOptions = {
   domain?: string
@@ -15,7 +17,7 @@ export const parse = (cookie: string): Cookie => {
   const parsedCookie: Cookie = {}
   for (let i = 0, len = pairs.length; i < len; i++) {
     const pair = pairs[i].split(/\s*=\s*([^\s]+)/)
-    parsedCookie[pair[0]] = decodeURIComponent(pair[1])
+    parsedCookie[pair[0]] = decodeURIComponent_(pair[1])
   }
   return parsedCookie
 }

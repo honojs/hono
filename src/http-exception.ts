@@ -1,5 +1,4 @@
 import type { StatusCode } from './utils/http-status'
-import { getStatusText } from './utils/http-status'
 
 type HTTPExceptionOptions = {
   res?: Response
@@ -10,7 +9,7 @@ export class HTTPException extends Error {
   readonly res?: Response
   readonly status: StatusCode
   constructor(status: StatusCode = 500, options?: HTTPExceptionOptions) {
-    super(options?.message || getStatusText(status))
+    super(options?.message)
     this.res = options?.res
     this.status = status
   }
@@ -20,7 +19,7 @@ export class HTTPException extends Error {
     }
     return new Response(this.message, {
       status: this.status,
-      statusText: getStatusText(this.status),
+      statusText: this.message,
     })
   }
 }

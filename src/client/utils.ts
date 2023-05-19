@@ -1,4 +1,3 @@
-import { getPathFromURL } from '../utils/url'
 import type { ObjectType } from './types'
 
 export const mergePath = (base: string, path: string) => {
@@ -17,8 +16,6 @@ export const replaceUrlParam = (urlString: string, params: Record<string, string
 }
 
 export const removeIndexString = (urlSting: string) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const path = getPathFromURL(urlSting)
   return urlSting.replace(/\/index$/, '/')
 }
 
