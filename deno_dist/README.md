@@ -47,11 +47,11 @@ npm create hono@latest my-app
 
 ## Features
 
-- **Ultrafast** - The router _RegExpRouter_ is really fast. Not using linear loops. Fast.
-- **Multi-runtime** - Works on Cloudflare Workers, Fastly Compute@Edge, Deno, Bun, Lagon, AWS Lambda or Node.js. The same code runs on all platforms.
-- **Batteries Included** - Hono has built-in middleware, custom middleware, and third-party middleware. Batteries included.
-- **Delightful DX** - First-class TypeScript support. Now, we've got "Types".
-- **Small** - The `hono/tiny` preset is under 12kB. Hono has zero dependencies and uses only the Web Standard API.
+- **Ultrafast** 🚀 - The router `RegExpRouter` is really fast. Not using linear loops. Fast.
+- **Lightweight** 🪶 - The `hono/tiny` preset is under 12kB. Hono has zero dependencies and uses only the Web Standard API.
+- **Multi-runtime** 🌍 - Works on Cloudflare Workers, Fastly Compute@Edge, Deno, Bun, Lagon, AWS Lambda, or Node.js. The same code runs on all platforms.
+- **Batteries Included** 🔋 - Hono has built-in middleware, custom middleware, and third-party middleware. Batteries included.
+- **Delightful DX** 🛠️ - Super clean APIs. First-class TypeScript support. Now, we've got "Types".
 
 ## Benchmarks
 
