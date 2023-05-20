@@ -205,7 +205,9 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     optionHandler?: (c: Context) => unknown
   ): Hono<E, S, BasePath> {
-    const pathPrefixLength = mergePath(this._basePath, path).length
+    const mergedPath = mergePath(this._basePath, path)
+    const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
+
     const handler: MiddlewareHandler = async (c, next) => {
       let executionContext: ExecutionContext | undefined = undefined
       try {

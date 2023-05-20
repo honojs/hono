@@ -1916,7 +1916,6 @@ describe('app.mount()', () => {
   describe('Basic', () => {
     const anotherApp = (req: Request, params: unknown) => {
       const path = getPath(req)
-      console.log(`path in anotherApp: ${path}`)
       if (path === '/') {
         return new Response('AnotherApp')
       }
@@ -1939,7 +1938,6 @@ describe('app.mount()', () => {
           }
         )
       }
-      console.log(`before 404 ${req.url}`)
       return new Response('Not Found from AnotherApp', {
         status: 404,
       })
@@ -2063,6 +2061,42 @@ describe('app.mount()', () => {
           passThroughOnException: 'passThroughOnException',
         },
       })
+    })
+  })
+
+  describe('Mount on `/`', () => {
+    const anotherApp = (req: Request, params: unknown) => {
+      const path = getPath(req)
+      if (path === '/') {
+        return new Response('AnotherApp')
+      }
+      if (path === '/hello') {
+        return new Response('Hello from AnotherApp')
+      }
+      if (path === '/good/night') {
+        return new Response('Good Night from AnotherApp')
+      }
+      return new Response('Not Found from AnotherApp', {
+        status: 404,
+      })
+    }
+
+    const app = new Hono()
+    app.mount('/', anotherApp)
+
+    it('Should return responses from AnotherApp - mount on `/`', async () => {
+      let res = await app.request('/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('AnotherApp')
+      res = await app.request('/hello')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('Hello from AnotherApp')
+      res = await app.request('/good/night')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('Good Night from AnotherApp')
+      res = await app.request('/not-found')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Not Found from AnotherApp')
     })
   })
 })
