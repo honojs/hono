@@ -13,7 +13,11 @@ const auth = (req: HonoRequest) => {
     return undefined
   }
 
-  const userPass = USER_PASS_REGEXP.exec(utf8Decoder.decode(decodeBase64(match[1])))
+  let userPass = undefined
+  // If an invalid string is passed to atob(), it throws a `DOMException`.
+  try {
+    userPass = USER_PASS_REGEXP.exec(utf8Decoder.decode(decodeBase64(match[1])))
+  } catch {} // Do nothing
 
   if (!userPass) {
     return undefined

@@ -10,8 +10,8 @@ import { assertEquals, assertMatch } from './deps.ts'
 Deno.test('Basic Auth Middleware', async () => {
   const app = new Hono()
 
-  const username = 'hono-user-a'
-  const password = 'hono-password-a'
+  const username = 'hono'
+  const password = 'acoolproject'
 
   app.use(
     '/auth/*',
@@ -27,13 +27,21 @@ Deno.test('Basic Auth Middleware', async () => {
   assertEquals(res.status, 401)
   assertEquals(await res.text(), 'Unauthorized')
 
-  const credential = 'aG9uby11c2VyLWE6aG9uby1wYXNzd29yZC1h'
+  const credential = 'aG9ubzphY29vbHByb2plY3Q='
 
   const req = new Request('http://localhost/auth/a')
   req.headers.set('Authorization', `Basic ${credential}`)
   const resOK = await app.request(req)
   assertEquals(resOK.status, 200)
   assertEquals(await resOK.text(), 'auth')
+
+  const invalidCredential = 'G9ubzphY29vbHByb2plY3Q='
+
+  const req2 = new Request('http://localhost/auth/a')
+  req2.headers.set('Authorization', `Basic ${invalidCredential}`)
+  const resNG = await app.request(req2)
+  assertEquals(resNG.status, 401)
+  assertEquals(await resNG.text(), 'Unauthorized')
 })
 
 Deno.test('JSX middleware', async () => {
