@@ -58,7 +58,7 @@ describe('compose', () => {
   })
 })
 
-describe('compose with returning a promise, non-async funciton', () => {
+describe('compose with returning a promise, non-async function', () => {
   const handlers: Function[] = [
     () => {
       return new Promise((resolve) =>
