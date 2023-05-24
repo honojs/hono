@@ -33,6 +33,19 @@ describe('CORS by Middleware', () => {
 
   app.use('/api5/*', cors())
 
+  app.use(
+    '/api6/*',
+    cors({
+      origin: 'http://example.com',
+    })
+  )
+  app.use(
+    '/api6/*',
+    cors({
+      origin: 'http://example.com',
+    })
+  )
+
   app.get('/api/abc', (c) => {
     return c.json({ success: true })
   })
@@ -141,5 +154,11 @@ describe('CORS by Middleware', () => {
 
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res.headers.get('Vary')).toBeNull()
+  })
+
+  it('Should not return duplicate header values', async () => {
+    const res = await app.request('http://localhost/api6/abc')
+
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
   })
 })

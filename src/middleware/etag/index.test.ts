@@ -36,6 +36,10 @@ describe('Etag Middleware', () => {
     return c.body(new Uint8Array([1, 2, 3, 4]))
   })
 
+  app.use('/etag2/*', etag())
+  app.use('/etag2/*', etag())
+  app.get('/etag2/abc', (c) => c.text('Hono is cool'))
+
   it('Should return etag header', async () => {
     let res = await app.request('http://localhost/etag/abc')
     expect(res.headers.get('ETag')).not.toBeFalsy()
@@ -88,5 +92,11 @@ describe('Etag Middleware', () => {
     expect(res.status).toBe(304)
     expect(res.headers.get('Etag')).toBe(etag)
     expect(await res.text()).toBe('')
+  })
+
+  it('Should not return duplicate etag header values', async () => {
+    const res = await app.request('http://localhost/etag2/abc')
+    expect(res.headers.get('ETag')).not.toBeFalsy()
+    expect(res.headers.get('ETag')).toBe('"4e32298b1cb4edc595237405e5b696e105c2399a"')
   })
 })

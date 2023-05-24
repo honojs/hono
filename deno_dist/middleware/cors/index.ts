@@ -33,7 +33,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
 
   return async (c, next) => {
     function set(key: string, value: string) {
-      c.res.headers.append(key, value)
+      c.res.headers.set(key, value)
     }
 
     const allowOrigin = findAllowOrigin(c.req.headers.get('origin') || '')
@@ -77,7 +77,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       }
       if (headers?.length) {
         set('Access-Control-Allow-Headers', headers.join(','))
-        set('Vary', 'Access-Control-Request-Headers')
+        c.res.headers.append('Vary', 'Access-Control-Request-Headers')
       }
 
       c.res.headers.delete('Content-Length')
