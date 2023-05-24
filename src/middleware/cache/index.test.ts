@@ -30,6 +30,12 @@ describe('Cache Middleware', () => {
     return c.text('not cached')
   })
 
+  app.use('/wait2/*', cache({ cacheName: 'my-app-v1', wait: true, cacheControl: 'max-age=10' }))
+  app.use('/wait2/*', cache({ cacheName: 'my-app-v1', wait: true, cacheControl: 'max-age=10' }))
+  app.get('/wait2/', (c) => {
+    return c.text('cached')
+  })
+
   const ctx = new Context()
 
   it('Should return cached response', async () => {
@@ -49,5 +55,12 @@ describe('Cache Middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('cache-control')).toBe('max-age=10')
     expect(res.headers.get('cf-cache-status')).toBeNull()
+  })
+
+  it('Should not return duplicate header values', async () => {
+    const res = await app.request('/wait2/')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('cache-control')).toBe('max-age=10')
   })
 })
