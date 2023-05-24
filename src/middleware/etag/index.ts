@@ -29,7 +29,7 @@ export const etag = (options: ETagOptions = { weak: false }): MiddlewareHandler 
       c.res.headers.delete('Content-Length')
     } else {
       c.res = new Response(clone.body, clone)
-      c.res.headers.append('ETag', etag)
+      c.res.headers.set('ETag', etag)
     }
   }
 }
