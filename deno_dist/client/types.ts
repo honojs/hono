@@ -13,7 +13,7 @@ type Data = {
   output: {}
 }
 
-export type RequestOptions = {
+export type ClientRequestOptions = {
   headers?: Record<string, string>
   fetch?: typeof fetch
 }
@@ -21,8 +21,8 @@ export type RequestOptions = {
 type ClientRequest<S extends Data> = {
   [M in keyof S]: S[M] extends { input: infer R; output: infer O }
     ? RemoveBlankRecord<R> extends never
-      ? (args?: {}, options?: RequestOptions) => Promise<ClientResponse<O>>
-      : (args: R, options?: RequestOptions) => Promise<ClientResponse<O>>
+      ? (args?: {}, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
+      : (args: R, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
     : never
 }
 
@@ -32,7 +32,7 @@ export interface ClientResponse<T> extends Response {
 
 export type Fetch<T> = (
   args?: InferRequestType<T>,
-  opt?: RequestOptions
+  opt?: ClientRequestOptions
 ) => Promise<ClientResponse<InferResponseType<T>>>
 
 export type InferResponseType<T> = T extends (

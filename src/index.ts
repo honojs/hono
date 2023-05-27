@@ -10,8 +10,10 @@ export type {
   NotFoundHandler,
   ValidationTargets,
   Input,
+  TypedResponse,
 } from './types'
 export type { Context, ContextVariableMap } from './context'
 export type { HonoRequest } from './request'
+export type { InferRequestType, InferResponseType, ClientRequestOptions } from './client'
 
 export { Hono }
