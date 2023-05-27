@@ -29,6 +29,7 @@ export type {
   NotFoundHandler,
   ValidationTargets,
   Input,
+  TypedResponse,
 } from './types'
 export type { Context, ContextVariableMap } from './context'
 export type { HonoRequest } from './request'
@@ -47,4 +48,4 @@ export { validator } from './validator'
 
 // Client
 export { hc } from './client'
-export type { InferResponseType } from './client'
+export type { InferRequestType, InferResponseType, ClientRequestOptions } from './client'
