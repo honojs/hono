@@ -1,7 +1,7 @@
 import type { Hono } from '../hono.ts'
 import type { ValidationTargets } from '../types.ts'
 import type { UnionToIntersection } from '../utils/types.ts'
-import type { Callback, Client, RequestOptions } from './types.ts'
+import type { Callback, Client, ClientRequestOptions } from './types.ts'
 import { replaceUrlParam, mergePath, removeIndexString, deepMerge } from './utils.ts'
 
 const createProxy = (callback: Callback, path: string[]) => {
@@ -36,7 +36,7 @@ class ClientRequestImpl {
     args?: ValidationTargets & {
       param?: Record<string, string>
     },
-    opt?: RequestOptions
+    opt?: ClientRequestOptions
   ) => {
     if (args) {
       if (args.query) {
@@ -107,7 +107,7 @@ class ClientRequestImpl {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const hc = <T extends Hono<any, any, any>>(baseUrl: string, options?: RequestOptions) =>
+export const hc = <T extends Hono<any, any, any>>(baseUrl: string, options?: ClientRequestOptions) =>
   createProxy(async (opts) => {
     const parts = [...opts.path]
 
@@ -124,7 +124,7 @@ export const hc = <T extends Hono<any, any, any>>(baseUrl: string, options?: Req
     const req = new ClientRequestImpl(url, method)
     if (method) {
       options ??= {}
-      const args = deepMerge<RequestOptions>(options, { ...(opts.args[1] ?? {}) })
+      const args = deepMerge<ClientRequestOptions>(options, { ...(opts.args[1] ?? {}) })
       return req.fetch(opts.args[0], args)
     }
     return req
