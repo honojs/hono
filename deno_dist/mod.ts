@@ -29,6 +29,7 @@ export type {
   NotFoundHandler,
   ValidationTargets,
   Input,
+  TypedResponse,
 } from './types.ts'
 export type { Context, ContextVariableMap } from './context.ts'
 export type { HonoRequest } from './request.ts'
@@ -47,4 +48,4 @@ export { validator } from './validator/index.ts'
 
 // Client
 export { hc } from './client/index.ts'
-export type { InferResponseType } from './client/index.ts'
+export type { InferRequestType, InferResponseType, ClientRequestOptions } from './client/index.ts'
