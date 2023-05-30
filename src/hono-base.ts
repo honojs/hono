@@ -233,6 +233,16 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     return this.router.name
   }
 
+  /**
+   * @deprecate
+   * `app.head()` is no longer used.
+   * `app.get()` implicitly handles the HEAD method.
+   */
+  head = () => {
+    console.warn('`app.head()` is no longer used. `app.get()` implicitly handles the HEAD method.')
+    return this
+  }
+
   private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
     if (this._basePath) {
