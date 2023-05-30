@@ -233,6 +233,16 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     return this.router.name
   }
 
+  /**
+   * @deprecate
+   * `app.head()` is no longer used.
+   * `app.get()` implicitly handles the HEAD method.
+   */
+  head = () => {
+    console.warn('`app.head()` is no longer used. `app.get()` implicitly handles the HEAD method.')
+    return this
+  }
+
   private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
     if (this._basePath) {
@@ -261,6 +271,18 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
   ): Response | Promise<Response> {
     const path = this.getPath(request)
     const method = request.method
+
+    // Handle HEAD method
+    if (method === 'HEAD') {
+      request = new Request(request, {
+        ...request,
+        method: 'GET',
+      })
+      return (async () => {
+        const response = await this.dispatch(request, eventOrExecutionCtx, env)
+        return new Response(null, response)
+      })()
+    }
 
     const result = this.matchRoute(method, path)
     const paramData = result?.params
