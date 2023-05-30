@@ -2113,3 +2113,29 @@ describe('Router Name', () => {
     expect(await res.text()).toBe('RegExpRouter')
   })
 })
+
+describe('HEAD method', () => {
+  const app = new Hono()
+
+  app.get('/page', (c) => {
+    c.header('X-Message', 'Foo')
+    return c.text('/page')
+  })
+
+  it('Should return 200 response with body - GET /page', async () => {
+    const res = await app.request('/page')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Message')).toBe('Foo')
+    expect(await res.text()).toBe('/page')
+  })
+
+  it('Should return 200 response without body - HEAD /page', async () => {
+    const req = new Request('http://localhost/page', {
+      method: 'HEAD',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Message')).toBe('Foo')
+    expect(res.body).toBe(null)
+  })
+})
