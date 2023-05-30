@@ -274,7 +274,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
 
     // Handle HEAD method
     if (method === 'HEAD') {
-      request = new Request(request, {
+      request = new Request(request.url, {
         ...request,
         method: 'GET',
       })
