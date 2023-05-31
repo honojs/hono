@@ -604,7 +604,7 @@ describe('Routing order With named parameters', () => {
     const res = node.search('get', '/book/a')
     expect(res).not.toBeNull()
     expect(res?.handlers).toEqual(['no-slug', 'slug'])
-    expect(res?.params['slug']).toBeUndefined()
+    expect(res?.params['slug']).toBe('a')
   })
   it('/book/foo', () => {
     const res = node.search('get', '/book/foo')
