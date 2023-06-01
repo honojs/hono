@@ -1,7 +1,7 @@
 import type { Result, Router } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 
-type Route<T> = [RegExp, string, T] // [pattern, method, handler]
+type Route<T> = [RegExp, string, T, string] // [pattern, method, handler, path]
 
 export class PatternRouter<T> implements Router<T> {
   name: string = 'PatternRouter'
@@ -43,23 +43,36 @@ export class PatternRouter<T> implements Router<T> {
       new RegExp(`^${parts.join('')}${endsWithWildcard ? '' : '/?$'}`),
       method,
       handler,
+      path,
     ])
   }
 
   match(method: string, path: string): Result<T> | null {
     const handlers: T[] = []
     let params: Record<string, string> | undefined = undefined
-    for (const [pattern, routeMethod, handler] of this.routes) {
+    const matchedRoutes: Route<T>[] = []
+
+    for (const route of this.routes) {
+      const [pattern, routeMethod, handler] = route
+      const isRegExp = pattern.source.charCodeAt(pattern.source.length - 1) === 36
       if (routeMethod === METHOD_NAME_ALL || routeMethod === method) {
         const match = pattern.exec(path)
         if (match) {
           handlers.push(handler)
-          if (pattern.source.charCodeAt(pattern.source.length - 1) === 36) {
+          for (const r of matchedRoutes) {
+            const m = pattern.exec(r[3])
+            if (m && isRegExp) {
+              params = Object.assign({}, m.groups)
+            }
+          }
+          if (isRegExp) {
             params ??= match.groups || {}
           }
+          matchedRoutes.push(route)
         }
       }
     }
+
     return handlers.length
       ? {
           handlers,

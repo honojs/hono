@@ -29,20 +29,22 @@ function clearWildcardRegExpCache() {
 
 function buildMatcherFromPreprocessedRoutes<T>(routes: [string, T[]][]): Matcher<T> {
   const trie = new Trie()
-  const handlers: HandlerData<T>[] = []
+  const handlerData: HandlerData<T>[] = []
   if (routes.length === 0) {
     return nullMatcher
   }
 
-  routes = routes.sort(([a], [b]) => a.length - b.length)
+  const routesWithStaticPathFlag = routes
+    .map((route) => [!/\*|\/:/.test(route[0]), ...route] as [boolean, string, T[]])
+    .sort(([isStaticA, pathA], [isStaticB, pathB]) =>
+      isStaticA ? 1 : isStaticB ? -1 : pathA.length - pathB.length
+    )
 
   const staticMap: StaticMap<T> = {}
-  for (let i = 0, j = -1, len = routes.length; i < len; i++) {
-    const path = routes[i][0]
-    let pathErrorCheckOnly = false
-    if (!/\*|\/:/.test(path)) {
-      pathErrorCheckOnly = true
-      staticMap[routes[i][0]] = { handlers: routes[i][1], params: emptyParam }
+  for (let i = 0, j = -1, len = routesWithStaticPathFlag.length; i < len; i++) {
+    const [pathErrorCheckOnly, path, handlers] = routesWithStaticPathFlag[i]
+    if (pathErrorCheckOnly) {
+      staticMap[path] = { handlers, params: emptyParam }
     } else {
       j++
     }
@@ -58,15 +60,13 @@ function buildMatcherFromPreprocessedRoutes<T>(routes: [string, T[]][]): Matcher
       continue
     }
 
-    handlers[j] =
-      paramMap.length === 0
-        ? [{ handlers: routes[i][1], params: emptyParam }, null]
-        : [routes[i][1], paramMap]
+    handlerData[j] =
+      paramMap.length === 0 ? [{ handlers, params: emptyParam }, null] : [handlers, paramMap]
   }
 
   const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp()
-  for (let i = 0, len = handlers.length; i < len; i++) {
-    const paramMap = handlers[i][1]
+  for (let i = 0, len = handlerData.length; i < len; i++) {
+    const paramMap = handlerData[i][1]
     if (paramMap) {
       for (let j = 0, len = paramMap.length; j < len; j++) {
         paramMap[j][1] = paramReplacementMap[paramMap[j][1]]
@@ -77,7 +77,7 @@ function buildMatcherFromPreprocessedRoutes<T>(routes: [string, T[]][]): Matcher
   const handlerMap: HandlerData<T>[] = []
   // using `in` because indexReplacementMap is a sparse array
   for (const i in indexReplacementMap) {
-    handlerMap[i] = handlers[indexReplacementMap[i]]
+    handlerMap[i] = handlerData[indexReplacementMap[i]]
   }
 
   return [regexp, handlerMap, staticMap] as Matcher<T>
