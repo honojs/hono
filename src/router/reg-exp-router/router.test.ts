@@ -222,24 +222,36 @@ describe('UnsupportedPathError', () => {
     }).toThrowError(UnsupportedPathError)
   })
 
-  it('static and dynamic', () => {
-    const router = new RegExpRouter<string>()
-    router.add('GET', '/reg-exp/router', 'foo')
-    router.add('GET', '/reg-exp/:id', 'bar')
+  describe('static and dynamic', () => {
+    it('static first', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/reg-exp/router', 'foo')
+      router.add('GET', '/reg-exp/:id', 'bar')
 
-    expect(() => {
-      router.match('GET', '/')
-    }).toThrowError(UnsupportedPathError)
-  })
+      expect(() => {
+        router.match('GET', '/')
+      }).toThrowError(UnsupportedPathError)
+    })
 
-  it('dynamic and static', () => {
-    const router = new RegExpRouter<string>()
-    router.add('GET', '/reg-exp/:id', 'bar')
-    router.add('GET', '/reg-exp/router', 'foo')
+    it('long label', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/reg-exp/router', 'foo')
+      router.add('GET', '/reg-exp/:service', 'bar')
 
-    expect(() => {
-      router.match('GET', '/')
-    }).toThrowError(UnsupportedPathError)
+      expect(() => {
+        router.match('GET', '/')
+      }).toThrowError(UnsupportedPathError)
+    })
+
+    it('dynamic first', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/reg-exp/:id', 'bar')
+      router.add('GET', '/reg-exp/router', 'foo')
+
+      expect(() => {
+        router.match('GET', '/')
+      }).toThrowError(UnsupportedPathError)
+    })
   })
 
   it('different regular expression', () => {
