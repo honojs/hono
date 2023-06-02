@@ -29,6 +29,12 @@ interface RouterRoute {
   handler: H
 }
 
+interface DispatchOptions<Env> {
+  eventOrExecutionCtx?: ExecutionContext | FetchEvent
+  env?: Env
+  method?: string
+}
+
 function defineDynamicClass(): {
   new <E extends Env = Env, S = {}, BasePath extends string = '/'>(): {
     [M in Methods]: HandlerInterface<E, M, S, BasePath>
@@ -266,17 +272,18 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
 
   private dispatch(
     request: Request,
-    eventOrExecutionCtx?: ExecutionContext | FetchEvent,
-    env?: E['Bindings'],
-    method?: string,
+    options?: DispatchOptions<E['Bindings']>
   ): Response | Promise<Response> {
     const path = this.getPath(request)
-    method ||= request.method
+    const method = options?.method ?? request.method
 
     // Handle HEAD method
     if (method === 'HEAD') {
       return (async () => {
-        const response = await this.dispatch(request, eventOrExecutionCtx, env, 'GET')
+        const response = await this.dispatch(request, {
+          ...options,
+          method: 'GET',
+        })
         return new Response(null, response)
       })()
     }
@@ -285,8 +292,8 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     const paramData = result?.params
 
     const c = new Context(request, {
-      env,
-      executionCtx: eventOrExecutionCtx,
+      env: options?.env,
+      executionCtx: options?.eventOrExecutionCtx,
       notFoundHandler: this.notFoundHandler,
       path,
       paramData,
@@ -351,11 +358,16 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
   }
 
   handleEvent = (event: FetchEvent) => {
-    return this.dispatch(event.request, event)
+    return this.dispatch(event.request, {
+      eventOrExecutionCtx: event,
+    })
   }
 
   fetch = (request: Request, Env?: E['Bindings'] | {}, executionCtx?: ExecutionContext) => {
-    return this.dispatch(request, executionCtx, Env)
+    return this.dispatch(request, {
+      eventOrExecutionCtx: executionCtx,
+      env: Env,
+    })
   }
 
   request = async (input: Request | string | URL, requestInit?: RequestInit) => {
