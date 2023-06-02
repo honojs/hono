@@ -267,19 +267,16 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
   private dispatch(
     request: Request,
     eventOrExecutionCtx?: ExecutionContext | FetchEvent,
-    env?: E['Bindings']
+    env?: E['Bindings'],
+    method?: string,
   ): Response | Promise<Response> {
     const path = this.getPath(request)
-    const method = request.method
+    method ||= request.method
 
     // Handle HEAD method
     if (method === 'HEAD') {
-      request = new Request(request.url, {
-        ...request,
-        method: 'GET',
-      })
       return (async () => {
-        const response = await this.dispatch(request, eventOrExecutionCtx, env)
+        const response = await this.dispatch(request, eventOrExecutionCtx, env, 'GET')
         return new Response(null, response)
       })()
     }
