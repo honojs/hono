@@ -2119,6 +2119,7 @@ describe('HEAD method', () => {
 
   app.get('/page', (c) => {
     c.header('X-Message', 'Foo')
+    c.header('X-Method', c.req.method)
     return c.text('/page')
   })
 
@@ -2126,6 +2127,7 @@ describe('HEAD method', () => {
     const res = await app.request('/page')
     expect(res.status).toBe(200)
     expect(res.headers.get('X-Message')).toBe('Foo')
+    expect(res.headers.get('X-Method')).toBe('GET')
     expect(await res.text()).toBe('/page')
   })
 
@@ -2136,6 +2138,7 @@ describe('HEAD method', () => {
     const res = await app.request(req)
     expect(res.status).toBe(200)
     expect(res.headers.get('X-Message')).toBe('Foo')
+    expect(res.headers.get('X-Method')).toBe('HEAD')
     expect(res.body).toBe(null)
   })
 })
