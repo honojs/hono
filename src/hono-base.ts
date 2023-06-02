@@ -244,7 +244,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
   }
 
   private matchRoute(method: string, path: string) {
-    return this.router.match(method, path)
+    return this.router.match(method, path) || { handlers: [], params: {} }
   }
 
   private handleError(err: unknown, c: Context<E>) {
@@ -256,30 +256,28 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
 
   private dispatch(
     request: Request,
-    eventOrExecutionCtx?: ExecutionContext | FetchEvent,
+    executionCtx?: ExecutionContext | FetchEvent,
     env?: E['Bindings']
   ): Response | Promise<Response> {
     const path = this.getPath(request)
     const method = request.method
 
-    const result = this.matchRoute(method, path)
-    const paramData = result?.params
+    const { handlers, params } = this.matchRoute(method, path)
 
     const c = new Context(request, {
       env,
-      executionCtx: eventOrExecutionCtx,
+      executionCtx,
       notFoundHandler: this.notFoundHandler,
       path,
-      paramData,
+      params,
     })
 
     // Do not `compose` if it has only one handler
-    if (result?.handlers.length === 1) {
-      const handler = result.handlers[0]
+    if (handlers.length === 1) {
       let res: ReturnType<H>
 
       try {
-        res = handler(c, async () => {})
+        res = handlers[0](c, async () => {})
         if (!res) {
           return this.notFoundHandler(c)
         }
@@ -312,7 +310,6 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
       })()
     }
 
-    const handlers = result ? result.handlers : [this.notFoundHandler]
     const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)
 
     return (async () => {
