@@ -29,12 +29,6 @@ interface RouterRoute {
   handler: H
 }
 
-interface DispatchOptions<Env> {
-  eventOrExecutionCtx?: ExecutionContext | FetchEvent
-  env?: Env
-  method?: string
-}
-
 function defineDynamicClass(): {
   new <E extends Env = Env, S = {}, BasePath extends string = '/'>(): {
     [M in Methods]: HandlerInterface<E, M, S, BasePath>
@@ -272,18 +266,17 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
 
   private dispatch(
     request: Request,
-    options?: DispatchOptions<E['Bindings']>
+    eventOrExecutionCtx?: ExecutionContext | FetchEvent,
+    env?: E['Bindings'],
+    method?: string,
   ): Response | Promise<Response> {
     const path = this.getPath(request)
-    const method = options?.method ?? request.method
+    method ||= request.method
 
     // Handle HEAD method
     if (method === 'HEAD') {
       return (async () => {
-        const response = await this.dispatch(request, {
-          ...options,
-          method: 'GET',
-        })
+        const response = await this.dispatch(request, eventOrExecutionCtx, env, 'GET')
         return new Response(null, response)
       })()
     }
@@ -292,8 +285,8 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     const paramData = result?.params
 
     const c = new Context(request, {
-      env: options?.env,
-      executionCtx: options?.eventOrExecutionCtx,
+      env,
+      executionCtx: eventOrExecutionCtx,
       notFoundHandler: this.notFoundHandler,
       path,
       paramData,
@@ -358,16 +351,11 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
   }
 
   handleEvent = (event: FetchEvent) => {
-    return this.dispatch(event.request, {
-      eventOrExecutionCtx: event,
-    })
+    return this.dispatch(event.request, event)
   }
 
   fetch = (request: Request, Env?: E['Bindings'] | {}, executionCtx?: ExecutionContext) => {
-    return this.dispatch(request, {
-      eventOrExecutionCtx: executionCtx,
-      env: Env,
-    })
+    return this.dispatch(request, executionCtx, Env)
   }
 
   request = async (input: Request | string | URL, requestInit?: RequestInit) => {
