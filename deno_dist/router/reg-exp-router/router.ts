@@ -117,7 +117,7 @@ export class RegExpRouter<T> implements Router<T> {
       throw new Error('Can not add a route since the matcher is already built.')
     }
 
-    if (!methodNames.includes(method)) methodNames.push(method)
+    if (methodNames.indexOf(method) === -1) methodNames.push(method)
     if (!middleware[method]) {
       ;[middleware, routes].forEach((handlerMap) => {
         handlerMap[method] = {}
