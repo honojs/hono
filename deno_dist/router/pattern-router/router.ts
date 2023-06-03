@@ -1,7 +1,7 @@
 import type { Result, Router } from '../../router.ts'
 import { METHOD_NAME_ALL } from '../../router.ts'
 
-type Route<T> = [RegExp, string, T] // [pattern, method, handler]
+type Route<T> = [RegExp, string, T] // [pattern, method, handler, path]
 
 export class PatternRouter<T> implements Router<T> {
   name: string = 'PatternRouter'
@@ -48,22 +48,25 @@ export class PatternRouter<T> implements Router<T> {
 
   match(method: string, path: string): Result<T> | null {
     const handlers: T[] = []
-    let params: Record<string, string> | undefined = undefined
+    const params: Record<string, string> = {}
+
     for (const [pattern, routeMethod, handler] of this.routes) {
+      const isRegExp = pattern.source.charCodeAt(pattern.source.length - 1) === 36
       if (routeMethod === METHOD_NAME_ALL || routeMethod === method) {
         const match = pattern.exec(path)
         if (match) {
           handlers.push(handler)
-          if (pattern.source.charCodeAt(pattern.source.length - 1) === 36) {
-            params ??= match.groups || {}
+          if (isRegExp) {
+            Object.assign(params, match.groups)
           }
         }
       }
     }
+
     return handlers.length
       ? {
           handlers,
-          params: params || {},
+          params,
         }
       : null
   }

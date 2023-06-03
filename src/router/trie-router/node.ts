@@ -33,7 +33,6 @@ export class Node<T> {
   order: number = 0
   name: string
   handlerSetCache: Record<string, HandlerSet<T>[]>
-  shouldCapture: boolean = false
 
   constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
     this.children = children || {}
@@ -75,7 +74,6 @@ export class Node<T> {
       const pattern = getPattern(p)
       if (pattern) {
         if (typeof pattern === 'object') {
-          this.shouldCapture = true
           for (let j = 0, len = parentPatterns.length; j < len; j++) {
             if (typeof parentPatterns[j] === 'object' && parentPatterns[j][1] === pattern[1]) {
               throw new Error(errorMessage(pattern[1]))
@@ -90,7 +88,6 @@ export class Node<T> {
       }
       parentPatterns.push(...curNode.patterns)
       curNode = curNode.children[p]
-      curNode.shouldCapture = this.shouldCapture
     }
 
     if (!curNode.methods.length) {
@@ -200,7 +197,7 @@ export class Node<T> {
             if (typeof name === 'string' && !matched) {
               params[name] = part
             } else {
-              if (node.children[part] && node.children[part].shouldCapture) {
+              if (node.children[part]) {
                 params[name] = part
               }
             }

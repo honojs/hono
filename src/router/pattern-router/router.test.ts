@@ -157,7 +157,7 @@ describe('routing order with named parameters', () => {
   it('GET /book/a', async () => {
     const res = router.match('GET', '/book/a')
     expect(res?.handlers).toEqual(['no-slug', 'slug'])
-    expect(res?.params['slug']).toBeUndefined()
+    expect(res?.params['slug']).toBe('a')
   })
   it('GET /book/foo', async () => {
     const res = router.match('GET', '/book/foo')
@@ -434,8 +434,9 @@ describe('Routing order With named parameters', () => {
     const res = router.match('get', '/book/a')
     expect(res).not.toBeNull()
     expect(res?.handlers).toEqual(['no-slug', 'slug'])
-    expect(res?.params['slug']).toBeUndefined()
+    expect(res?.params['slug']).toBe('a')
   })
+
   it('/book/foo', () => {
     const res = router.match('get', '/book/foo')
     expect(res).not.toBeNull()
