@@ -89,7 +89,7 @@ export class Context<
   private _pH: Record<string, string> | undefined = undefined // _preparedHeaders
   private _res: Response | undefined
   private _path: string = '/'
-  private _params?: Record<string, string> | null // __params
+  private _params?: Record<string, string> | null
   private rawRequest?: Request | null
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
