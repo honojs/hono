@@ -61,8 +61,6 @@ app.onError((err, c) => {
   return c.text('Custom Error Message', 500)
 })
 
-app.head('/', (c) => c.text('OK'))
-
 // Routing
 app.get('/', (c) => c.text('Hono!!'))
 // Use Response object directly
