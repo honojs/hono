@@ -64,7 +64,7 @@ type ContextOptions<E extends Env> = {
   executionCtx?: FetchEvent | ExecutionContext | undefined
   notFoundHandler?: NotFoundHandler<E>
   path?: string
-  paramData?: Record<string, string>
+  params?: Record<string, string>
 }
 
 export class Context<
@@ -89,7 +89,7 @@ export class Context<
   private _pH: Record<string, string> | undefined = undefined // _preparedHeaders
   private _res: Response | undefined
   private _path: string = '/'
-  private _pData?: Record<string, string> | null // __paramData
+  private _params?: Record<string, string> | null
   private rawRequest?: Request | null
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
@@ -98,7 +98,7 @@ export class Context<
     if (options) {
       this._exCtx = options.executionCtx
       this._path = options.path ?? '/'
-      this._pData = options.paramData
+      this._params = options.params
       this.env = options.env
       if (options.notFoundHandler) {
         this.notFoundHandler = options.notFoundHandler
@@ -111,9 +111,9 @@ export class Context<
       return this._req
     } else {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this._req = new HonoRequest(this.rawRequest!, this._path, this._pData!)
+      this._req = new HonoRequest(this.rawRequest!, this._path, this._params!)
       this.rawRequest = undefined
-      this._pData = undefined
+      this._params = undefined
       return this._req
     }
   }
