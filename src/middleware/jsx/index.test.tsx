@@ -268,6 +268,26 @@ describe('render to string', () => {
       )
     })
   })
+
+  describe('style attribute', () => {
+    it('should convert the object to strings', () => {
+      const template = (
+        <h1
+          style={{
+            color: 'red',
+            fontSize: 'small',
+          }}
+        >
+          Hello
+        </h1>
+      )
+      expect(template.toString()).toBe('<h1 style="color:red;font-size:small">Hello</h1>')
+    })
+    it('should not convert the strings', () => {
+      const template = <h1 style='color:red;font-size:small'>Hello</h1>
+      expect(template.toString()).toBe('<h1 style="color:red;font-size:small">Hello</h1>')
+    })
+  })
 })
 
 describe('memo', () => {
