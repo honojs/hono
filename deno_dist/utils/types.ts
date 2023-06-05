@@ -21,3 +21,5 @@ export type JSONPrimitive = string | boolean | number | null | undefined
 export type JSONArray = (JSONPrimitive | JSONObject | JSONArray)[]
 export type JSONObject = { [key: string]: JSONPrimitive | JSONArray | JSONObject }
 export type JSONValue = JSONObject | JSONArray | JSONPrimitive
+
+export type InterfaceToType<T> = T extends Function ? T : { [K in keyof T]: InterfaceToType<T[K]> }

@@ -4,7 +4,7 @@ import type { Env, NotFoundHandler, Input } from './types'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'
-import type { JSONValue } from './utils/types'
+import type { JSONValue, InterfaceToType } from './utils/types'
 
 type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'lagon' | 'other'
 type HeaderRecord = Record<string, string | string[]>
@@ -48,9 +48,40 @@ interface JSONTRespond {
     object: T extends JSONValue ? T : JSONValue,
     status?: StatusCode,
     headers?: HeaderRecord
-  ): TypedResponse<T extends JSONValue ? (JSONValue extends T ? never : T) : never>
+  ): TypedResponse<
+    InterfaceToType<T> extends JSONValue
+      ? JSONValue extends InterfaceToType<T>
+        ? never
+        : T
+      : never
+  >
+  <T>(
+    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
+    status?: StatusCode,
+    headers?: HeaderRecord
+  ): TypedResponse<
+    InterfaceToType<T> extends JSONValue
+      ? JSONValue extends InterfaceToType<T>
+        ? never
+        : T
+      : never
+  >
   <T>(object: T extends JSONValue ? T : JSONValue, init?: ResponseInit): TypedResponse<
-    T extends JSONValue ? (JSONValue extends T ? never : T) : never
+    InterfaceToType<T> extends JSONValue
+      ? JSONValue extends InterfaceToType<T>
+        ? never
+        : T
+      : never
+  >
+  <T>(
+    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
+    init?: ResponseInit
+  ): TypedResponse<
+    InterfaceToType<T> extends JSONValue
+      ? JSONValue extends InterfaceToType<T>
+        ? never
+        : T
+      : never
   >
 }
 
@@ -309,10 +340,16 @@ export class Context<
   }
 
   jsonT: JSONTRespond = <T>(
-    object: T extends JSONValue ? T : JSONValue,
+    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
     arg?: StatusCode | RequestInit,
     headers?: HeaderRecord
-  ): TypedResponse<T extends JSONValue ? (JSONValue extends T ? never : T) : never> => {
+  ): TypedResponse<
+    InterfaceToType<T> extends JSONValue
+      ? JSONValue extends InterfaceToType<T>
+        ? never
+        : T
+      : never
+  > => {
     return {
       response: typeof arg === 'number' ? this.json(object, arg, headers) : this.json(object, arg),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
