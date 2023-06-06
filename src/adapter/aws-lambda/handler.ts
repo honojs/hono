@@ -2,6 +2,8 @@
 import crypto from 'crypto'
 import type { Hono } from '../../hono'
 
+import { encodeBase64 } from '../../utils/encode'
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 globalThis.crypto = crypto
@@ -72,8 +74,13 @@ const createResult = async (res: Response): Promise<APIGatewayProxyResult> => {
   const contentType = res.headers.get('content-type')
   const isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
 
-  const body = isBase64Encoded ? await fromReadableToString(res) : await res.text()
-
+  let body: string
+  if (isBase64Encoded) {
+    const buffer = await res.arrayBuffer()
+    body = encodeBase64(buffer)
+  } else {
+    body = await res.text()
+  }
   const result: APIGatewayProxyResult = {
     body: body,
     headers: {},
@@ -138,20 +145,6 @@ const isProxyEventV2 = (
   event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
 ): event is APIGatewayProxyEventV2 => {
   return Object.prototype.hasOwnProperty.call(event, 'rawPath')
-}
-
-const fromReadableToString = async (res: Response) => {
-  const stream = res.body || new ReadableStream()
-  const decoder = new TextDecoder()
-  let string = ''
-
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore: asking for asyncIterator
-  for await (const chunk of stream) {
-    string += decoder.decode(chunk)
-  }
-
-  return btoa(string)
 }
 
 export const isContentTypeBinary = (contentType: string) => {
