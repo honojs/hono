@@ -359,6 +359,21 @@ describe('Merge path with `app.route()`', () => {
     expect(data.ok).toBe(true)
   })
 
+  it('Should have correct types - with interface', async () => {
+    interface Result {
+      ok: boolean
+    }
+    const result: Result = { ok: true }
+    const base = new Hono<Env>().basePath('/api')
+    const app = base.get('/search', (c) => c.jsonT(result))
+    type AppType = typeof app
+    const client = hc<AppType>('http://localhost')
+    const res = await client.api.search.$get()
+    const data = await res.json()
+    type verify = Expect<Equal<Result, typeof data>>
+    expect(data.ok).toBe(true)
+  })
+
   it('Should not allow the incorrect JSON type', async () => {
     const app = new Hono()
     // @ts-ignore
