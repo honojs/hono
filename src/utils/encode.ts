@@ -8,7 +8,11 @@ export const encodeBase64Url = (buf: ArrayBufferLike): string =>
 // This approach is written in MDN.
 // btoa does not support utf-8 characters. So we need a little bit hack.
 export const encodeBase64 = (buf: ArrayBufferLike): string => {
-  const binary = String.fromCharCode(...new Uint8Array(buf))
+  let binary = ''
+  const bytes = new Uint8Array(buf)
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
   return btoa(binary)
 }
 
