@@ -19,7 +19,6 @@ export class HTTPException extends Error {
     }
     return new Response(this.message, {
       status: this.status,
-      statusText: this.message,
     })
   }
 }
