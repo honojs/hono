@@ -111,20 +111,28 @@ export class JSXNode implements HtmlEscaped {
     const propsKeys = Object.keys(props || {})
 
     for (let i = 0, len = propsKeys.length; i < len; i++) {
-      const v = props[propsKeys[i]]
-      if (typeof v === 'string') {
-        buffer[0] += ` ${propsKeys[i]}="`
+      const key = propsKeys[i]
+      const v = props[key]
+      // object to style strings
+      if (key === 'style' && typeof v === 'object') {
+        const styles = Object.keys(v)
+          .map((k) => `${k}:${v[k]}`)
+          .join(';')
+          .replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)
+        buffer[0] += ` style="${styles}"`
+      } else if (typeof v === 'string') {
+        buffer[0] += ` ${key}="`
         escapeToBuffer(v, buffer)
         buffer[0] += '"'
       } else if (typeof v === 'number') {
-        buffer[0] += ` ${propsKeys[i]}="${v}"`
+        buffer[0] += ` ${key}="${v}"`
       } else if (v === null || v === undefined) {
         // Do nothing
-      } else if (typeof v === 'boolean' && booleanAttributes.includes(propsKeys[i])) {
+      } else if (typeof v === 'boolean' && booleanAttributes.includes(key)) {
         if (v) {
-          buffer[0] += ` ${propsKeys[i]}=""`
+          buffer[0] += ` ${key}=""`
         }
-      } else if (propsKeys[i] === 'dangerouslySetInnerHTML') {
+      } else if (key === 'dangerouslySetInnerHTML') {
         if (children.length > 0) {
           throw 'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
         }
@@ -133,7 +141,7 @@ export class JSXNode implements HtmlEscaped {
         escapedString.isEscaped = true
         children = [escapedString]
       } else {
-        buffer[0] += ` ${propsKeys[i]}="`
+        buffer[0] += ` ${key}="`
         escapeToBuffer(v.toString(), buffer)
         buffer[0] += '"'
       }
