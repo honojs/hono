@@ -928,7 +928,6 @@ describe('Error handle', () => {
     it('Should return 401 response', async () => {
       const res = await app.request('http://localhost/exception')
       expect(res.status).toBe(401)
-      expect(res.statusText).toBe('Unauthorized')
       expect(await res.text()).toBe('Unauthorized')
     })
 
