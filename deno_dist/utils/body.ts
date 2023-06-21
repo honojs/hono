@@ -6,7 +6,7 @@ export async function parseBody(r: Request | Response) {
   if (
     contentType &&
     (contentType.startsWith('multipart/form-data') ||
-      contentType === 'application/x-www-form-urlencoded')
+      contentType.startsWith('application/x-www-form-urlencoded'))
   ) {
     const form: BodyData = {}
     ;(await r.formData()).forEach((value, key) => {
