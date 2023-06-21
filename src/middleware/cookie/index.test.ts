@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { getCookie, setCookie } from '.'
+import { getCookie, setCookie, deleteCookie } from '.'
 
 describe('Cookie Middleware', () => {
   describe('Parse cookie', () => {
@@ -97,6 +97,55 @@ describe('Cookie Middleware', () => {
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
       expect(header).toBe('delicious_cookie=macha, delicious_cookie=choco')
+    })
+  })
+
+  describe('Delete cookie', () => {
+    const app = new Hono()
+
+    app.get('/set-cookie', (c) => {
+      setCookie(c, 'delicious_cookie', 'macha')
+      return c.text('Give cookie')
+    })
+
+    app.get('/delete-cookie', (c) => {
+      deleteCookie(c, 'delicious_cookie')
+      return c.text('Give cookie')
+    })
+
+    it('Delete cookie with setCookie()', async () => {
+      const res = await app.request('http://localhost/delete-cookie')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe('delicious_cookie=macha')
+
+      const res2 = await app.request('http://localhost/delete-cookie')
+      expect(res2.status).toBe(200)
+      const header2 = res2.headers.get('Set-Cookie')
+      expect(header2).toBe(null)
+    })
+
+    app.get('/set-cookie-multiple', (c) => {
+      setCookie(c, 'delicious_cookie', 'macha')
+      setCookie(c, 'delicious_cookie', 'choco')
+      return c.text('Give cookie')
+    })
+
+    app.get('/delete-cookie-multiple', (c) => {
+      deleteCookie(c, 'delicious_cookie')
+      return c.text('Give cookie')
+    })
+
+    it('Delete cookie with setCookie()', async () => {
+      const res = await app.request('http://localhost/delete-cookie-multiple')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe('delicious_cookie=macha, delicious_cookie=choco')
+
+      const res2 = await app.request('http://localhost/delete-cookie-multiple')
+      expect(res2.status).toBe(200)
+      const header2 = res2.headers.get('Set-Cookie')
+      expect(header2).toBe(null)
     })
   })
 })
