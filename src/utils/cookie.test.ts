@@ -27,4 +27,12 @@ describe('Set cookie', () => {
       'great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
     )
   })
+
+  it('Should serialize cookie', () => {
+    expect(
+      serialize('great_cookie', 'banana', {
+        maxAge: -1,
+      })
+    ).toBe('great_cookie=banana')
+  })
 })

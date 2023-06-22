@@ -26,7 +26,7 @@ export const serialize = (name: string, value: string, opt: CookieOptions = {}):
   value = encodeURIComponent(value)
   let cookie = `${name}=${value}`
 
-  if (opt.maxAge >= 0) {
+  if (opt.maxAge && opt.maxAge >= 0) {
     cookie += `; Max-Age=${Math.floor(opt.maxAge)}`
   }
 
