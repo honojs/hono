@@ -7,14 +7,14 @@ import { decodeBase64 } from '../../utils/encode'
 const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/
 
-interface AuthOptions {
+interface BasicAuthOptions {
   username: string
   password: string
   realm?: string
   hashFunction?: Function
 }
 
-type ShortAuthOptions = Omit<AuthOptions, 'realm' | 'hashFunction'>
+type ShortBasicAuthOptions = Omit<BasicAuthOptions, 'realm' | 'hashFunction'>
 
 const auth = (req: HonoRequest) => {
   const match = CREDENTIALS_REGEXP.exec(req.headers.get('Authorization') || '')
@@ -32,8 +32,8 @@ const auth = (req: HonoRequest) => {
 }
 
 export const basicAuth = (
-  options: AuthOptions,
-  ...users: ShortAuthOptions[]
+  options: BasicAuthOptions,
+  ...users: ShortBasicAuthOptions[]
 ): MiddlewareHandler => {
   const { username, password } = options
   const realm = options?.realm || 'Secure Area'
