@@ -114,7 +114,7 @@ describe('Cookie Middleware', () => {
     })
 
     it('Delete cookie with setCookie()', async () => {
-      const res = await app.request('http://localhost/delete-cookie')
+      const res = await app.request('http://localhost/set-cookie')
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
       expect(header).toBe('delicious_cookie=macha')
@@ -137,7 +137,7 @@ describe('Cookie Middleware', () => {
     })
 
     it('Delete cookie with setCookie()', async () => {
-      const res = await app.request('http://localhost/delete-cookie-multiple')
+      const res = await app.request('http://localhost/set-cookie-multiple')
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
       expect(header).toBe('delicious_cookie=macha, delicious_cookie=choco')
