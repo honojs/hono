@@ -2,43 +2,18 @@ import { Hono } from '../../hono'
 import { etag } from '.'
 
 describe('Etag Middleware', () => {
-  const app = new Hono()
+  let app: Hono
 
-  app.use('/etag/*', etag())
-  app.get('/etag/abc', (c) => {
-    return c.text('Hono is cool')
+  beforeEach(() => {
+    app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/abc', (c) => {
+      return c.text('Hono is cool')
+    })
+    app.get('/etag/def', (c) => {
+      return c.json({ message: 'Hono is cool' })
+    })
   })
-  app.get('/etag/def', (c) => {
-    return c.json({ message: 'Hono is cool' })
-  })
-
-  app.use('/etag-weak/*', etag({ weak: true }))
-  app.get('/etag-weak/abc', (c) => {
-    return c.text('Hono is cool')
-  })
-
-  app.use('/etag-binary/*', etag())
-  app.get('/etag-binary', async (c) => {
-    return c.body(new Uint8Array(1))
-  })
-
-  app.get('/etag/ab1', (c) => {
-    return c.body(new ArrayBuffer(1))
-  })
-  app.get('/etag/ab2', (c) => {
-    return c.body(new ArrayBuffer(2))
-  })
-
-  app.get('/etag/ui1', (c) => {
-    return c.body(new Uint8Array([1, 2, 3]))
-  })
-  app.get('/etag/ui2', (c) => {
-    return c.body(new Uint8Array([1, 2, 3, 4]))
-  })
-
-  app.use('/etag2/*', etag())
-  app.use('/etag2/*', etag())
-  app.get('/etag2/abc', (c) => c.text('Hono is cool'))
 
   it('Should return etag header', async () => {
     let res = await app.request('http://localhost/etag/abc')
@@ -51,13 +26,25 @@ describe('Etag Middleware', () => {
   })
 
   it('Should return etag header - binary', async () => {
+    app.use('/etag-binary/*', etag())
+    app.get('/etag-binary', async (c) => {
+      return c.body(new Uint8Array(1))
+    })
+
     const res = await app.request('http://localhost/etag-binary')
     expect(res.headers.get('ETag')).not.toBeFalsy()
-    const etag = res.headers.get('ETag')
-    expect(etag).toBe('"5ba93c9db0cff93f52b521d7420e43f6eda2784f"')
+    const etagHeader = res.headers.get('ETag')
+    expect(etagHeader).toBe('"5ba93c9db0cff93f52b521d7420e43f6eda2784f"')
   })
 
   it('Should not be the same etag - arrayBuffer', async () => {
+    app.get('/etag/ab1', (c) => {
+      return c.body(new ArrayBuffer(1))
+    })
+    app.get('/etag/ab2', (c) => {
+      return c.body(new ArrayBuffer(2))
+    })
+
     let res = await app.request('http://localhost/etag/ab1')
     const hash = res.headers.get('Etag')
     res = await app.request('http://localhost/etag/ab2')
@@ -65,6 +52,13 @@ describe('Etag Middleware', () => {
   })
 
   it('Should not be the same etag - Uint8Array', async () => {
+    app.get('/etag/ui1', (c) => {
+      return c.body(new Uint8Array([1, 2, 3]))
+    })
+    app.get('/etag/ui2', (c) => {
+      return c.body(new Uint8Array([1, 2, 3, 4]))
+    })
+
     let res = await app.request('http://localhost/etag/ui1')
     const hash = res.headers.get('Etag')
     res = await app.request('http://localhost/etag/ui2')
@@ -72,6 +66,11 @@ describe('Etag Middleware', () => {
   })
 
   it('Should return etag header - weak', async () => {
+    app.use('/etag-weak/*', etag({ weak: true }))
+    app.get('/etag-weak/abc', (c) => {
+      return c.text('Hono is cool')
+    })
+
     const res = await app.request('http://localhost/etag-weak/abc')
     expect(res.headers.get('ETag')).not.toBeFalsy()
     expect(res.headers.get('ETag')).toBe('W/"4e32298b1cb4edc595237405e5b696e105c2399a"')
@@ -95,6 +94,10 @@ describe('Etag Middleware', () => {
   })
 
   it('Should not return duplicate etag header values', async () => {
+    app.use('/etag2/*', etag())
+    app.use('/etag2/*', etag())
+    app.get('/etag2/abc', (c) => c.text('Hono is cool'))
+
     const res = await app.request('http://localhost/etag2/abc')
     expect(res.headers.get('ETag')).not.toBeFalsy()
     expect(res.headers.get('ETag')).toBe('"4e32298b1cb4edc595237405e5b696e105c2399a"')
