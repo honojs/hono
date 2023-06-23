@@ -115,6 +115,14 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('expires')).toBe('Mon, Feb 27 2023 12:10:36 GMT')
     expect(res.headers.get('server')).toBeFalsy()
     expect(res.headers.get('vary')).toBe('Accept-Language')
+
+    // conditional GET with matching ETag among list:
+    res = await app.request('http://localhost/etag/ghi', {
+      headers: {
+        'If-None-Match': `"mismatch 1", ${etag}, "mismatch 2"`,
+      },
+    })
+    expect(res.status).toBe(304)
   })
 
   it('Should not return duplicate etag header values', async () => {

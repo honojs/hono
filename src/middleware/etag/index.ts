@@ -16,6 +16,10 @@ const RETAINED_304_HEADERS = [
   'cache-control', 'content-location', 'date', 'etag', 'expires', 'vary'
 ]
 
+function etagMatches(etag: string, ifNoneMatch: string | undefined) {
+  return ifNoneMatch != null && ifNoneMatch.split(/,\s*/).indexOf(etag) > -1
+}
+
 export const etag = (options?: ETagOptions): MiddlewareHandler => {
   const retainedHeaders = options?.retainedHeaders ?? RETAINED_304_HEADERS
   const weak = options?.weak ?? false
@@ -35,7 +39,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
       etag = weak ? `W/"${hash}"` : `"${hash}"`
     }
 
-    if (ifNoneMatch && ifNoneMatch === etag) {
+    if (etagMatches(etag, ifNoneMatch)) {
       await undisturbedRes.blob() // Force using body
       c.res = new Response(null, {
         status: 304,
