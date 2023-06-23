@@ -28,7 +28,15 @@ describe('Set cookie', () => {
     )
   })
 
-  it('Should serialize cookie', () => {
+  it('Should serialize cookie with maxAge is 0', () => {
+    expect(
+      serialize('great_cookie', 'banana', {
+        maxAge: 0,
+      })
+    ).toBe('great_cookie=banana; Max-Age=0')
+  })
+
+  it('Should serialize cookie with maxAge is -1', () => {
     expect(
       serialize('great_cookie', 'banana', {
         maxAge: -1,
