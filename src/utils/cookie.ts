@@ -10,6 +10,7 @@ export type CookieOptions = {
   secure?: boolean
   signed?: boolean
   sameSite?: 'Strict' | 'Lax' | 'None'
+  partitioned?: boolean
 }
 
 export const parse = (cookie: string): Cookie => {
@@ -52,6 +53,10 @@ export const serialize = (name: string, value: string, opt: CookieOptions = {}):
 
   if (opt.sameSite) {
     cookie += `; SameSite=${opt.sameSite}`
+  }
+
+  if (opt.partitioned) {
+    cookie += '; Partitioned'
   }
 
   return cookie
