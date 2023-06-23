@@ -16,7 +16,7 @@ const RETAINED_304_HEADERS = [
   'cache-control', 'content-location', 'date', 'etag', 'expires', 'vary'
 ]
 
-function etagMatches(etag: string, ifNoneMatch: string | undefined) {
+function etagMatches(etag: string, ifNoneMatch: string | null) {
   return ifNoneMatch != null && ifNoneMatch.split(/,\s*/).indexOf(etag) > -1
 }
 
@@ -25,7 +25,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
   const weak = options?.weak ?? false
 
   return async (c, next) => {
-    const ifNoneMatch = c.req.header('If-None-Match') || c.req.header('if-none-match')
+    const ifNoneMatch = c.req.headers.get('If-None-Match')
 
     await next()
 
