@@ -2,10 +2,24 @@ import type { MiddlewareHandler } from '../../types.ts'
 import { sha1 } from '../../utils/crypto.ts'
 
 type ETagOptions = {
-  weak: boolean
+  retainedHeaders?: string[],
+  weak?: boolean
 }
 
-export const etag = (options: ETagOptions = { weak: false }): MiddlewareHandler => {
+/**
+ * Default headers to pass through on 304 responses. From the spec:
+ * > The response must not contain a body and must include the headers that
+ * > would have been sent in an equivalent 200 OK response: Cache-Control,
+ * > Content-Location, Date, ETag, Expires, and Vary.
+ */
+const RETAINED_304_HEADERS = [
+  'cache-control', 'content-location', 'date', 'etag', 'expires', 'vary'
+]
+
+export const etag = (options?: ETagOptions): MiddlewareHandler => {
+  const retainedHeaders = options?.retainedHeaders ?? RETAINED_304_HEADERS
+  const weak = options?.weak ?? false
+
   return async (c, next) => {
     const ifNoneMatch = c.req.header('If-None-Match') || c.req.header('if-none-match')
 
@@ -18,7 +32,7 @@ export const etag = (options: ETagOptions = { weak: false }): MiddlewareHandler 
     if (!etag) {
       undisturbedRes = res.clone()
       const hash = await sha1(res.body || '')
-      etag = options.weak ? `W/"${hash}"` : `"${hash}"`
+      etag = weak ? `W/"${hash}"` : `"${hash}"`
     }
 
     if (ifNoneMatch && ifNoneMatch === etag) {
@@ -30,7 +44,11 @@ export const etag = (options: ETagOptions = { weak: false }): MiddlewareHandler 
           ETag: etag,
         },
       })
-      c.res.headers.delete('Content-Length')
+      c.res.headers.forEach((_, key) => {
+        if (retainedHeaders.indexOf(key.toLowerCase()) === -1) {
+          c.res.headers.delete(key)
+        }
+      })
     } else {
       c.res = new Response(undisturbedRes.body, undisturbedRes)
       c.res.headers.set('ETag', etag)

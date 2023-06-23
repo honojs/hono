@@ -76,21 +76,45 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).toBe('W/"4e32298b1cb4edc595237405e5b696e105c2399a"')
   })
 
-  it('Should return 304 response', async () => {
-    let res = await app.request('http://localhost/etag/abc')
+  it('Should handle conditional GETs', async () => {
+    app.get('/etag/ghi', (c) =>
+      c.text('Hono is great', 200, {
+        'cache-control': 'public, max-age=120',
+        date: 'Mon, Feb 27 2023 12:08:36 GMT',
+        expires: 'Mon, Feb 27 2023 12:10:36 GMT',
+        server: 'Upstream 1.2',
+        vary: 'Accept-Language',
+      })
+    )
+
+    // unconditional GET
+    let res = await app.request('http://localhost/etag/ghi')
     expect(res.status).toBe(200)
     expect(res.headers.get('ETag')).not.toBeFalsy()
     const etag = res.headers.get('ETag') || ''
 
-    const req = new Request('http://localhost/etag/abc', {
+    // conditional GET with the wrong ETag:
+    res = await app.request('http://localhost/etag/ghi', {
+      headers: {
+        'If-None-Match': '"not the right etag"',
+      },
+    })
+    expect(res.status).toBe(200)
+
+    // conditional GET with matching ETag:
+    res = await app.request('http://localhost/etag/ghi', {
       headers: {
         'If-None-Match': etag,
       },
     })
-    res = await app.request(req)
     expect(res.status).toBe(304)
     expect(res.headers.get('Etag')).toBe(etag)
     expect(await res.text()).toBe('')
+    expect(res.headers.get('cache-control')).toBe('public, max-age=120')
+    expect(res.headers.get('date')).toBe('Mon, Feb 27 2023 12:08:36 GMT')
+    expect(res.headers.get('expires')).toBe('Mon, Feb 27 2023 12:10:36 GMT')
+    expect(res.headers.get('server')).toBeFalsy()
+    expect(res.headers.get('vary')).toBe('Accept-Language')
   })
 
   it('Should not return duplicate etag header values', async () => {
