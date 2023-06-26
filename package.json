@@ -350,7 +350,7 @@
   ],
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20221111.1",
-    "@hono/node-server": "^0.2.3",
+    "@hono/node-server": "^1.0.2",
     "@types/crypto-js": "^4.1.1",
     "@types/glob": "^8.0.0",
     "@types/jest": "^29.4.0",

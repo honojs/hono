@@ -3,6 +3,10 @@ import type { Next } from '../../types'
 import { getFilePath } from '../../utils/filepath'
 import { getMimeType } from '../../utils/mime'
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+const { readFile } = Deno
+
 export type ServeStaticOptions = {
   root?: string
   path?: string
@@ -32,7 +36,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
     let content
 
     try {
-      content = await Deno.readFile(path)
+      content = await readFile(path)
     } catch (e) {
       console.warn(`${e}`)
     }

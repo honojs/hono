@@ -7,12 +7,9 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "lib": [
-      "WebWorker"
-    ],
     "types": [
       "jest",
       "node"
