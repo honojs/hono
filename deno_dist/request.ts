@@ -69,14 +69,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   header(name: string): string | undefined
   header(): Record<string, string>
   header(name?: string) {
+    if (name) return this.raw.headers.get(name.toLowerCase()) ?? undefined
+
     const headerData: Record<string, string | undefined> = {}
     this.raw.headers.forEach((value, key) => {
       headerData[key] = value
     })
-    if (!name) {
-      return headerData
-    }
-    return headerData[name.toLowerCase()]
+    return headerData
   }
 
   /** @deprecated
