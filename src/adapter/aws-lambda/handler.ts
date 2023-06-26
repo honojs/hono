@@ -6,7 +6,7 @@ import { encodeBase64 } from '../../utils/encode'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-globalThis.crypto = crypto
+globalThis.crypto ??= crypto
 
 // When calling Lambda directly through function urls
 interface APIGatewayProxyEventV2 {
