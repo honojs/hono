@@ -17,6 +17,7 @@ import type {
   TypedResponse,
   MergePath,
   MergeSchemaPath,
+  FetchEventLike,
 } from './types.ts'
 import type { RemoveBlankRecord } from './utils/types.ts'
 import { getPath, getPathNoStrict, mergePath } from './utils/url.ts'
@@ -266,7 +267,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
 
   private dispatch(
     request: Request,
-    executionCtx: ExecutionContext | FetchEvent | undefined,
+    executionCtx: ExecutionContext | FetchEventLike | undefined,
     env: E['Bindings'],
     method: string
   ): Response | Promise<Response> {
@@ -344,7 +345,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     })()
   }
 
-  handleEvent = (event: FetchEvent) => {
+  handleEvent = (event: FetchEventLike) => {
     return this.dispatch(event.request, event, undefined, event.request.method)
   }
 

@@ -1,19 +1,6 @@
 import { Hono } from './hono.ts'
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  class ExtendableEvent extends Event {
-    constructor(type: string, init?: EventInit)
-    waitUntil(promise: Promise<void>): void
-  }
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  abstract class FetchEvent extends ExtendableEvent {
-    readonly request: Request
-    respondWith(promise: Response | Promise<Response>): void
-    passThroughOnException(): void
-  }
   interface ExecutionContext {
     waitUntil(promise: Promise<void>): void
     passThroughOnException(): void

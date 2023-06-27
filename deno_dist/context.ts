@@ -1,6 +1,6 @@
 import { HonoRequest } from './request.ts'
-import type { TypedResponse } from './types.ts'
-import type { Env, NotFoundHandler, Input } from './types.ts'
+import { FetchEventLike } from './types.ts'
+import type { Env, NotFoundHandler, Input, TypedResponse } from './types.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
 import type { StatusCode } from './utils/http-status.ts'
@@ -92,7 +92,7 @@ interface HTMLRespond {
 
 type ContextOptions<E extends Env> = {
   env: E['Bindings']
-  executionCtx?: FetchEvent | ExecutionContext | undefined
+  executionCtx?: FetchEventLike | ExecutionContext | undefined
   notFoundHandler?: NotFoundHandler<E>
   path?: string
   params?: Record<string, string>
@@ -112,7 +112,7 @@ export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _req?: HonoRequest<any, any>
   private _status: StatusCode = 200
-  private _exCtx: FetchEvent | ExecutionContext | undefined // _executionCtx
+  private _exCtx: FetchEventLike | ExecutionContext | undefined // _executionCtx
   private _pre: boolean = false // _pretty
   private _preS: number = 2 // _prettySpace
   private _map: Record<string, unknown> | undefined
@@ -149,8 +149,8 @@ export class Context<
     }
   }
 
-  get event(): FetchEvent {
-    if (this._exCtx instanceof FetchEvent) {
+  get event(): FetchEventLike {
+    if (this._exCtx instanceof FetchEventLike) {
       return this._exCtx
     } else {
       throw Error('This context has no FetchEvent')
