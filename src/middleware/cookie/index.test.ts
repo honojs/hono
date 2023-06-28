@@ -103,49 +103,29 @@ describe('Cookie Middleware', () => {
   describe('Delete cookie', () => {
     const app = new Hono()
 
-    app.get('/set-cookie', (c) => {
-      setCookie(c, 'delicious_cookie', 'macha')
-      return c.text('Give cookie')
-    })
-
     app.get('/delete-cookie', (c) => {
       deleteCookie(c, 'delicious_cookie')
       return c.text('Give cookie')
     })
 
-    it('Delete cookie with setCookie()', async () => {
-      const res = await app.request('http://localhost/set-cookie')
-      expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('delicious_cookie=macha')
-
+    it('Delete cookie', async () => {
       const res2 = await app.request('http://localhost/delete-cookie')
       expect(res2.status).toBe(200)
       const header2 = res2.headers.get('Set-Cookie')
-      expect(header2).toBe(null)
-    })
-
-    app.get('/set-cookie-multiple', (c) => {
-      setCookie(c, 'delicious_cookie', 'macha')
-      setCookie(c, 'delicious_cookie', 'choco')
-      return c.text('Give cookie')
+      expect(header2).toBe('delicious_cookie=; Max-Age=0')
     })
 
     app.get('/delete-cookie-multiple', (c) => {
       deleteCookie(c, 'delicious_cookie')
+      deleteCookie(c, 'delicious_cookie2')
       return c.text('Give cookie')
     })
 
-    it('Delete cookie with setCookie()', async () => {
-      const res = await app.request('http://localhost/set-cookie-multiple')
-      expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('delicious_cookie=macha, delicious_cookie=choco')
-
+    it('Delete multile cookies', async () => {
       const res2 = await app.request('http://localhost/delete-cookie-multiple')
       expect(res2.status).toBe(200)
       const header2 = res2.headers.get('Set-Cookie')
-      expect(header2).toBe(null)
+      expect(header2).toBe('delicious_cookie=; Max-Age=0, delicious_cookie2=; Max-Age=0')
     })
   })
 })
