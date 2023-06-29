@@ -45,28 +45,10 @@ interface JSONRespond {
 
 interface JSONTRespond {
   <T>(
-    object: T extends JSONValue ? T : JSONValue,
-    status?: StatusCode,
-    headers?: HeaderRecord
-  ): TypedResponse<
-    InterfaceToType<T> extends JSONValue
-      ? JSONValue extends InterfaceToType<T>
-        ? never
-        : T
-      : never
-  >
-  <T>(
     object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
     status?: StatusCode,
     headers?: HeaderRecord
   ): TypedResponse<
-    InterfaceToType<T> extends JSONValue
-      ? JSONValue extends InterfaceToType<T>
-        ? never
-        : T
-      : never
-  >
-  <T>(object: T extends JSONValue ? T : JSONValue, init?: ResponseInit): TypedResponse<
     InterfaceToType<T> extends JSONValue
       ? JSONValue extends InterfaceToType<T>
         ? never
