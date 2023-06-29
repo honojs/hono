@@ -127,5 +127,21 @@ describe('Cookie Middleware', () => {
       const header2 = res2.headers.get('Set-Cookie')
       expect(header2).toBe('delicious_cookie=; Max-Age=0, delicious_cookie2=; Max-Age=0')
     })
+
+    app.get('/delete-cookie-with-options', (c) => {
+      deleteCookie(c, 'delicious_cookie', {
+        path: '/',
+        secure: true,
+        domain: 'example.com',
+      })
+      return c.text('Give cookie')
+    })
+
+    it('Delete cookie with options', async () => {
+      const res2 = await app.request('http://localhost/delete-cookie-with-options')
+      expect(res2.status).toBe(200)
+      const header2 = res2.headers.get('Set-Cookie')
+      expect(header2).toBe('delicious_cookie=; Max-Age=0; Domain=example.com; Path=/; Secure')
+    })
   })
 })
