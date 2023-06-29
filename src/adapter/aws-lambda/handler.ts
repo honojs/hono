@@ -49,6 +49,61 @@ interface LambdaFunctionUrlEvent {
   }
 }
 
+interface CloudFrontHeader {
+  key: string;
+  value: string;
+}
+
+interface CloudFrontHeaders {
+  [name: string]: CloudFrontHeader[];
+}
+
+interface CloudFrontCustomOrigin {
+  customHeaders: CloudFrontHeaders;
+  domainName: string;
+  keepaliveTimeout: number;
+  path: string;
+  port: number;
+  protocol: string;
+  readTimeout: number;
+  sslProtocols: string[];
+}
+
+interface CloudFrontRequest {
+  clientIp: string;
+  headers: CloudFrontHeaders;
+  method: string;
+  querystring: string;
+  uri: string;
+  body?: {
+    inputTruncated: boolean;
+    action: string;
+    encoding: string;
+    data: string;
+  };
+  origin?: {
+    custom: CloudFrontCustomOrigin;
+  };
+}
+
+interface CloudFrontConfig {
+  distributionDomainName: string;
+  distributionId: string;
+  eventType: string;
+  requestId: string;
+}
+
+interface CloudFrontEvent {
+  cf: {
+    config: CloudFrontConfig;
+    request: CloudFrontRequest;
+  };
+}
+
+interface CloudFrontEdgeEvent {
+  Records: CloudFrontEvent[];
+}
+
 interface APIGatewayProxyResult {
   statusCode: number
   body: string
@@ -61,7 +116,7 @@ interface APIGatewayProxyResult {
  */
 export const handle = (app: Hono) => {
   return async (
-    event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
+    event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent | CloudFrontEdgeEvent
   ): Promise<APIGatewayProxyResult> => {
     const req = createRequest(event)
     const res = await app.fetch(req)
@@ -96,55 +151,88 @@ const createResult = async (res: Response): Promise<APIGatewayProxyResult> => {
 }
 
 const createRequest = (
-  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
+  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent | CloudFrontEdgeEvent
 ) => {
   const queryString = extractQueryString(event)
-  const urlPath = `https://${event.requestContext.domainName}${
-    isProxyEvent(event) ? event.path : event.rawPath
+  const urlPath = `https://${
+    isCloudFrontEvent(event)
+    ? event.Records[0].cf.config.distributionDomainName
+    : event.requestContext.domainName
+  }${
+    isProxyEvent(event) 
+    ? event.path 
+    : isCloudFrontEvent(event) 
+    ? event.Records[0].cf.request.uri 
+    : event.rawPath
   }`
+
   const url = queryString ? `${urlPath}?${queryString}` : urlPath
 
   const headers = new Headers()
-  for (const [k, v] of Object.entries(event.headers)) {
-    if (v) headers.set(k, v)
+  if (isCloudFrontEvent(event)) {
+    for (const [k, v] of Object.entries(event.Records[0].cf.request.headers)) {
+      if (Array.isArray(v)) {
+        v.forEach(header => headers.set(k, header.value))
+      }
+    }
+  } else {
+    for (const [k, v] of Object.entries(event.headers)) {
+      if (v) headers.set(k, v)
+    }
   }
-
-  const method = 'httpMethod' in event ? event.httpMethod : event.requestContext.http.method
+  const method = isCloudFrontEvent(event) 
+  ? event.Records[0].cf.request.method 
+  : 'httpMethod' in event 
+    ? event.httpMethod 
+    : event.requestContext.http.method
   const requestInit: RequestInit = {
     headers,
     method,
   }
 
-  if (event.body) {
+  if (isCloudFrontEvent(event)) {
+    const requestBody = event.Records[0].cf.request.body
+    requestInit.body = requestBody?.encoding === 'base64' && requestBody?.data
+      ? atob(requestBody.data)
+      : requestBody?.data
+  } else if (event.body) {
     requestInit.body = event.isBase64Encoded ? atob(event.body) : event.body
   }
-
+  
   return new Request(url, requestInit)
 }
 
 const extractQueryString = (
-  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
+  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent | CloudFrontEdgeEvent
 ) => {
   if (isProxyEvent(event)) {
     return Object.entries(event.queryStringParameters || {})
-      .filter(([, value]) => value)
-      .map(([key, value]) => `${key}=${value}`)
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v || '')}`)
       .join('&')
+  } else if (isProxyEventV2(event)) {
+    return event.rawQueryString
+  } else if (isCloudFrontEvent(event)) {
+    return event.Records[0].cf.request.querystring
   }
-
-  return isProxyEventV2(event) ? event.rawQueryString : event.rawQueryString
+  throw new Error('Unsupported event type')
 }
 
 const isProxyEvent = (
-  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
+  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent | CloudFrontEdgeEvent
 ): event is APIGatewayProxyEvent => {
   return Object.prototype.hasOwnProperty.call(event, 'path')
 }
 
 const isProxyEventV2 = (
-  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
+  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent | CloudFrontEdgeEvent
 ): event is APIGatewayProxyEventV2 => {
   return Object.prototype.hasOwnProperty.call(event, 'rawPath')
+}
+
+const isCloudFrontEvent = (
+  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent | CloudFrontEdgeEvent
+): event is CloudFrontEdgeEvent => {
+  return Object.prototype.hasOwnProperty.call(event, 'Records')
 }
 
 export const isContentTypeBinary = (contentType: string) => {
