@@ -24,3 +24,7 @@ export const setCookie = (c: Context, name: string, value: string, opt?: CookieO
   const cookie = serialize(name, value, opt)
   c.header('set-cookie', cookie, { append: true })
 }
+
+export const deleteCookie = (c: Context, name: string, opt?: CookieOptions): void => {
+  setCookie(c, name, '', { ...opt, maxAge: 0 })
+}
