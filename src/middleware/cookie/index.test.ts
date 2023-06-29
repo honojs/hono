@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { getCookie, setCookie } from '.'
+import { getCookie, setCookie, deleteCookie } from '.'
 
 describe('Cookie Middleware', () => {
   describe('Parse cookie', () => {
@@ -97,6 +97,51 @@ describe('Cookie Middleware', () => {
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
       expect(header).toBe('delicious_cookie=macha, delicious_cookie=choco')
+    })
+  })
+
+  describe('Delete cookie', () => {
+    const app = new Hono()
+
+    app.get('/delete-cookie', (c) => {
+      deleteCookie(c, 'delicious_cookie')
+      return c.text('Give cookie')
+    })
+
+    it('Delete cookie', async () => {
+      const res2 = await app.request('http://localhost/delete-cookie')
+      expect(res2.status).toBe(200)
+      const header2 = res2.headers.get('Set-Cookie')
+      expect(header2).toBe('delicious_cookie=; Max-Age=0')
+    })
+
+    app.get('/delete-cookie-multiple', (c) => {
+      deleteCookie(c, 'delicious_cookie')
+      deleteCookie(c, 'delicious_cookie2')
+      return c.text('Give cookie')
+    })
+
+    it('Delete multile cookies', async () => {
+      const res2 = await app.request('http://localhost/delete-cookie-multiple')
+      expect(res2.status).toBe(200)
+      const header2 = res2.headers.get('Set-Cookie')
+      expect(header2).toBe('delicious_cookie=; Max-Age=0, delicious_cookie2=; Max-Age=0')
+    })
+
+    app.get('/delete-cookie-with-options', (c) => {
+      deleteCookie(c, 'delicious_cookie', {
+        path: '/',
+        secure: true,
+        domain: 'example.com',
+      })
+      return c.text('Give cookie')
+    })
+
+    it('Delete cookie with options', async () => {
+      const res2 = await app.request('http://localhost/delete-cookie-with-options')
+      expect(res2.status).toBe(200)
+      const header2 = res2.headers.get('Set-Cookie')
+      expect(header2).toBe('delicious_cookie=; Max-Age=0; Domain=example.com; Path=/; Secure')
     })
   })
 })
