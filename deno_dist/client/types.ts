@@ -26,9 +26,22 @@ type ClientRequest<S extends Data> = {
     : never
 }
 
-export interface ClientResponse<T> extends Response {
+export interface ClientResponse<T> {
+  ok: boolean
+  status: number
+  statusText: string
+  headers: Headers
+  url: string
+  redirect(url: string, status: number): Response
+  clone(): Response
   json(): Promise<T>
+  text(): Promise<string>
+  blob(): Promise<Blob>
+  formData(): Promise<FormData>
+  arrayBuffer(): Promise<ArrayBuffer>
 }
+
+export interface Response extends ClientResponse<unknown> {}
 
 export type Fetch<T> = (
   args?: InferRequestType<T>,

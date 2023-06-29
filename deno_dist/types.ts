@@ -423,3 +423,16 @@ export type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | un
 ////////////////////////////////////////
 
 export type ExtractSchema<T> = T extends Hono<infer _, infer S> ? S : never
+
+////////////////////////////////////////
+//////                            //////
+//////         FetchEvent         //////
+//////                            //////
+////////////////////////////////////////
+
+export abstract class FetchEventLike {
+  abstract readonly request: Request
+  abstract respondWith(promise: Response | Promise<Response>): void
+  abstract passThroughOnException(): void
+  abstract waitUntil(promise: Promise<void>): void
+}

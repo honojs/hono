@@ -164,20 +164,11 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   get headers() {
     return this.raw.headers
   }
-  get redirect() {
-    return this.raw.redirect
-  }
   get body() {
     return this.raw.body
   }
   get bodyUsed() {
     return this.raw.bodyUsed
-  }
-  get cache() {
-    return this.raw.cache
-  }
-  get credentials() {
-    return this.raw.credentials
   }
   get integrity() {
     return this.raw.integrity
@@ -185,14 +176,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   get keepalive() {
     return this.raw.keepalive
   }
-  get mode() {
-    return this.raw.mode
-  }
   get referrer() {
     return this.raw.referrer
-  }
-  get refererPolicy() {
-    return this.raw.referrerPolicy
   }
   get signal() {
     return this.raw.signal
