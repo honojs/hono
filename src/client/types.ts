@@ -41,8 +41,7 @@ export interface ClientResponse<T> {
   arrayBuffer(): Promise<ArrayBuffer>
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface Response extends ClientResponse<any> {}
+export interface Response extends ClientResponse<unknown> {}
 
 export type Fetch<T> = (
   args?: InferRequestType<T>,
