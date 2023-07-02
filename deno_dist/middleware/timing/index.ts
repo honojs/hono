@@ -16,7 +16,7 @@ interface Timer {
   start: number
 }
 
-interface Config {
+interface TimingOptions {
   total: boolean
   enabled: boolean | ((c: Context) => boolean)
   totalDescription: string
@@ -31,8 +31,8 @@ const getTime = () => {
   return Date.now()
 }
 
-export const timing = (config?: Partial<Config>): MiddlewareHandler => {
-  const options: Config = {
+export const timing = (config?: Partial<TimingOptions>): MiddlewareHandler => {
+  const options: TimingOptions = {
     ...{
       total: true,
       enabled: true,
