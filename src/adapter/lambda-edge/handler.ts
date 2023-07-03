@@ -90,28 +90,28 @@ export const handle = (app: Hono) => {
 }
 
 const createResult = async (res: Response): Promise<CloudFrontResult> => {
-    const isBase64Encoded = isContentTypeBinary(res.headers.get('content-type') || '');
+    const isBase64Encoded = isContentTypeBinary(res.headers.get('content-type') || '')
 
-    const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text();
+    const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
 
-    const headers: { [header: string]: { key: string; value: string }[] } = {};
+    const headers: { [header: string]: { key: string; value: string }[] } = {}
 
     res.headers.forEach((value, key) => {
-        headers[key.toLowerCase()] = [{ key: key.toLowerCase(), value }];
-    });
+        headers[key.toLowerCase()] = [{ key: key.toLowerCase(), value }]
+    })
 
     return {
         status: res.status.toString(),
         headers,
         body,
-    };
-};
+    }
+}
 
 const createRequest = (
   event: CloudFrontEdgeEvent
 ) => {
   const queryString = extractQueryString(event)
-  const urlPath = `https://${event.Records[0].cf.config.distributionDomainName}${event.Records[0].cf.request.uri}`;
+  const urlPath = `https://${event.Records[0].cf.config.distributionDomainName}${event.Records[0].cf.request.uri}`
   const url = queryString ? `${urlPath}?${queryString}` : urlPath
 
   const headers = new Headers()
