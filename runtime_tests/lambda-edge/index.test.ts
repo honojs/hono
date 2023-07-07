@@ -408,98 +408,208 @@ describe('Lambda@Edge Adapter for Hono', () => {
     expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/);
   })
 
-  // it('Should handle a GET request and return a 200 response with binary', async () => {
-  //   const event = {
-  //     httpMethod: 'GET',
-  //     headers: {},
-  //     path: '/binary',
-  //     body: null,
-  //     isBase64Encoded: false,
-  //     requestContext: {
-  //       domainName: 'example.com',
-  //     },
-  //   }
+  it('Should handle a GET request and return a 200 response with binary', async () => {
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'example.com',
+              distributionId: 'EXAMPLE123',
+              eventType: 'viewer-request',
+              requestId: 'exampleRequestId',
+            },
+            request: {
+              clientIp: '123.123.123.123',
+              headers: {
+                'host': [
+                  {
+                    key: 'Host',
+                    value: 'example.com',
+                  },
+                ],
+              },
+              method: 'GET',
+              querystring: '',
+              uri: '/binary',
+            },
+          },
+        },
+      ],
+    };
+    
+    const response = await handler(event);
+  
+    expect(response.status).toBe('200');
+    expect(response.body).toBe('RmFrZSBJbWFnZQ=='); // base64 encoded fake image
+    expect(response.headers['content-type'][0].value).toMatch(/^image\/png/);
+  });
+  
+  it('Should handle a GET request and return a 404 response', async () => {
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'example.com',
+              distributionId: 'EXAMPLE123',
+              eventType: 'viewer-request',
+              requestId: 'exampleRequestId',
+            },
+            request: {
+              clientIp: '123.123.123.123',
+              headers: {
+                'host': [
+                  {
+                    key: 'Host',
+                    value: 'example.com',
+                  },
+                ],
+              },
+              method: 'GET',
+              querystring: '',
+              uri: '/nothing',
+            },
+          },
+        },
+      ],
+    };
+  
+    const response = await handler(event);
+  
+    expect(response.status).toBe('404');
+  });
 
-  //   const response = await handler(event)
-  //   expect(response.statusCode).toBe(200)
-  //   expect(response.body).toBe('RmFrZSBJbWFnZQ==')
-  //   expect(response.headers['content-type']).toMatch(/^image\/png/)
-  //   expect(response.isBase64Encoded).toBe(true)
-  // })
+  it('Should handle a POST request and return a 200 response', async () => {
+    const searchParam = new URLSearchParams();
+    searchParam.append('message', 'Good Morning Lambda!');
+  
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'example.com',
+              distributionId: 'EXAMPLE123',
+              eventType: 'viewer-request',
+              requestId: 'exampleRequestId',
+            },
+            request: {
+              clientIp: '123.123.123.123',
+              headers: {
+                'host': [
+                  {
+                    key: 'Host',
+                    value: 'example.com',
+                  },
+                ],
+                'content-type': [
+                  {
+                    key: 'Content-Type',
+                    value: 'application/x-www-form-urlencoded',
+                  },
+                ],
+              },
+              method: 'POST',
+              querystring: '',
+              uri: '/post',
+              body: {
+                inputTruncated: false,
+                action: 'read-only',
+                encoding: 'base64',
+                data: btoa(searchParam.toString()),
+              },
+            },
+          },
+        },
+      ],
+    };
 
-  // it('Should handle a GET request and return a 404 response', async () => {
-  //   const event = {
-  //     httpMethod: 'GET',
-  //     headers: { 'content-type': 'text/plain' },
-  //     path: '/nothing',
-  //     body: null,
-  //     isBase64Encoded: false,
-  //     requestContext: {
-  //       domainName: 'example.com',
-  //     },
-  //   }
+    const response = await handler(event);
+  
+    expect(response.status).toBe('200');
+    expect(response.body).toBe('Good Morning Lambda!');
+  });
 
-  //   const response = await handler(event)
-  //   expect(response.statusCode).toBe(404)
-  // })
-
-  // it('Should handle a POST request and return a 200 response', async () => {
-  //   const searchParam = new URLSearchParams()
-  //   searchParam.append('message', 'Good Morning Lambda!')
-  //   const event = {
-  //     httpMethod: 'POST',
-  //     headers: {
-  //       'Content-Type': 'application/x-www-form-urlencoded',
-  //     },
-  //     path: '/post',
-  //     body: btoa(searchParam.toString()),
-  //     isBase64Encoded: true,
-  //     requestContext: {
-  //       domainName: 'example.com',
-  //     },
-  //   }
-
-  //   const response = await handler(event)
-  //   expect(response.statusCode).toBe(200)
-  //   expect(response.body).toBe('Good Morning Lambda!')
-  // })
-
-  // it('Should handle a request and return a 401 response with Basic auth', async () => {
-  //   const event = {
-  //     httpMethod: 'GET',
-  //     headers: {
-  //       'Content-Type': 'plain/text',
-  //     },
-  //     path: '/auth/abc',
-  //     body: null,
-  //     isBase64Encoded: true,
-  //     requestContext: {
-  //       domainName: 'example.com',
-  //     },
-  //   }
-
-  //   const response = await handler(event)
-  //   expect(response.statusCode).toBe(401)
-  // })
-
-  // it('Should handle a request and return a 200 response with Basic auth', async () => {
-  //   const credential = 'aG9uby11c2VyLWE6aG9uby1wYXNzd29yZC1h'
-  //   const event = {
-  //     httpMethod: 'GET',
-  //     headers: {
-  //       'Content-Type': 'plain/text',
-  //       Authorization: `Basic ${credential}`,
-  //     },
-  //     path: '/auth/abc',
-  //     body: null,
-  //     isBase64Encoded: true,
-  //     requestContext: {
-  //       domainName: 'example.com',
-  //     },
-  //   }
-
-  //   const response = await handler(event)
-  //   expect(response.statusCode).toBe(200)
-  //   expect(response.body).toBe('Good Night Lambda!')
-  // })
-})
+  it('Should handle a request and return a 401 response with Basic auth', async () => {
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'example.com',
+              distributionId: 'EXAMPLE123',
+              eventType: 'viewer-request',
+              requestId: 'exampleRequestId',
+            },
+            request: {
+              clientIp: '123.123.123.123',
+              headers: {
+                'host': [
+                  {
+                    key: 'Host',
+                    value: 'example.com',
+                  },
+                ],
+                'content-type': [
+                  {
+                    key: 'Content-Type',
+                    value: 'plain/text',
+                  },
+                ],
+              },
+              method: 'GET',
+              querystring: '',
+              uri: '/auth/abc',
+            },
+          },
+        },
+      ],
+    };
+  
+    const response = await handler(event);
+  
+    expect(response.status).toBe('401');
+  });
+  
+  it('Should handle a request and return a 401 response with Basic auth', async () => {
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'example.com',
+              distributionId: 'EXAMPLE123',
+              eventType: 'viewer-request',
+              requestId: 'exampleRequestId',
+            },
+            request: {
+              clientIp: '123.123.123.123',
+              headers: {
+                'host': [
+                  {
+                    key: 'Host',
+                    value: 'example.com',
+                  },
+                ],
+                'content-type': [
+                  {
+                    key: 'Content-Type',
+                    value: 'plain/text',
+                  },
+                ],
+              },
+              method: 'GET',
+              querystring: '',
+              uri: '/auth/abc',
+            },
+          },
+        },
+      ],
+    };
+    
+    const response = await handler(event);
+  
+    expect(response.status).toBe('401');
+  });
+});
