@@ -76,7 +76,8 @@ interface CloudFrontResult {
 }
 
 /**
- * Accepts events from API Gateway/ELB(`APIGatewayProxyEvent`) and directly through Function Url(`APIGatewayProxyEventV2`)
+ * Accepts events from 'Lambda@Edge' event
+ * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
  */
 export const handle = (app: Hono) => {
   return async (

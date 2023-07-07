@@ -101,7 +101,7 @@ jobs:
       - run: npm run test:lambda
 
   lambda-edge:
-    name: 'AWS Lambda'
+    name: 'Lambda@Edge'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
