@@ -111,6 +111,11 @@
       "import": "./dist/middleware/jwt/index.js",
       "require": "./dist/cjs/middleware/jwt/index.js"
     },
+    "./timing": {
+      "types": "./dist/types/middleware/timing/index.d.ts",
+      "import": "./dist/middleware/timing/index.js",
+      "require": "./dist/cjs/middleware/timing/index.js"
+    },
     "./logger": {
       "types": "./dist/types/middleware/logger/index.d.ts",
       "import": "./dist/middleware/logger/index.js",
@@ -263,6 +268,9 @@
       ],
       "jwt": [
         "./dist/types/middleware/jwt"
+      ],
+      "timing": [
+        "./dist/types/middleware/timing"
       ],
       "logger": [
         "./dist/types/middleware/logger"
