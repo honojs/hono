@@ -29,383 +29,376 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
   it('Should handle a GET request and return a 200 response (Lambda@Edge viewer request)', async () => {
     const event = {
-      "Records": [
+      Records: [
         {
-          "cf": {
-            "config": {
-              "distributionDomainName": "d111111abcdef8.cloudfront.net",
-              "distributionId": "EDFDVBD6EXAMPLE",
-              "eventType": "viewer-request",
-              "requestId": "4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ=="
+          cf: {
+            config: {
+              distributionDomainName: 'd111111abcdef8.cloudfront.net',
+              distributionId: 'EDFDVBD6EXAMPLE',
+              eventType: 'viewer-request',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
             },
-            "request": {
-              "clientIp": "203.0.113.178",
-              "headers": {
-                "host": [
+            request: {
+              clientIp: '203.0.113.178',
+              headers: {
+                host: [
                   {
-                    "key": "Host",
-                    "value": "d111111abcdef8.cloudfront.net"
-                  }
+                    key: 'Host',
+                    value: 'd111111abcdef8.cloudfront.net',
+                  },
                 ],
-                "user-agent": [
+                'user-agent': [
                   {
-                    "key": "User-Agent",
-                    "value": "curl/7.66.0"
-                  }
+                    key: 'User-Agent',
+                    value: 'curl/7.66.0',
+                  },
                 ],
-                "accept": [
+                accept: [
                   {
-                    "key": "accept",
-                    "value": "*/*"
-                  }
-                ]
+                    key: 'accept',
+                    value: '*/*',
+                  },
+                ],
               },
-              "method": "GET",
-              "querystring": "",
-              "uri": "/"
-            }
-          }
-        }
-      ]
+              method: 'GET',
+              querystring: '',
+              uri: '/',
+            },
+          },
+        },
+      ],
     }
     const response = await handler(event)
-    expect(response.status).toBe('200');
-    expect(response.body).toBe('Hello Lambda!');
-    expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/);
+    expect(response.status).toBe('200')
+    expect(response.body).toBe('Hello Lambda!')
+    expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
   })
 
   it('Should handle a GET request and return a 200 response (Lambda@Edge origin request)', async () => {
     const event = {
-      "Records": [
+      Records: [
         {
-          "cf": {
-            "config": {
-              "distributionDomainName": "d111111abcdef8.cloudfront.net",
-              "distributionId": "EDFDVBD6EXAMPLE",
-              "eventType": "origin-request",
-              "requestId": "4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ=="
+          cf: {
+            config: {
+              distributionDomainName: 'd111111abcdef8.cloudfront.net',
+              distributionId: 'EDFDVBD6EXAMPLE',
+              eventType: 'origin-request',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
             },
-            "request": {
-              "clientIp": "203.0.113.178",
-              "headers": {
-                "x-forwarded-for": [
+            request: {
+              clientIp: '203.0.113.178',
+              headers: {
+                'x-forwarded-for': [
                   {
-                    "key": "X-Forwarded-For",
-                    "value": "203.0.113.178"
-                  }
+                    key: 'X-Forwarded-For',
+                    value: '203.0.113.178',
+                  },
                 ],
-                "user-agent": [
+                'user-agent': [
                   {
-                    "key": "User-Agent",
-                    "value": "Amazon CloudFront"
-                  }
+                    key: 'User-Agent',
+                    value: 'Amazon CloudFront',
+                  },
                 ],
-                "via": [
+                via: [
                   {
-                    "key": "Via",
-                    "value": "2.0 2afae0d44e2540f472c0635ab62c232b.cloudfront.net (CloudFront)"
-                  }
+                    key: 'Via',
+                    value: '2.0 2afae0d44e2540f472c0635ab62c232b.cloudfront.net (CloudFront)',
+                  },
                 ],
-                "host": [
+                host: [
                   {
-                    "key": "Host",
-                    "value": "example.org"
-                  }
+                    key: 'Host',
+                    value: 'example.org',
+                  },
                 ],
-                "cache-control": [
+                'cache-control': [
                   {
-                    "key": "Cache-Control",
-                    "value": "no-cache"
-                  }
-                ]
+                    key: 'Cache-Control',
+                    value: 'no-cache',
+                  },
+                ],
               },
-              "method": "GET",
-              "origin": {
-                "custom": {
-                  "customHeaders": {},
-                  "domainName": "example.org",
-                  "keepaliveTimeout": 5,
-                  "path": "",
-                  "port": 443,
-                  "protocol": "https",
-                  "readTimeout": 30,
-                  "sslProtocols": [
-                    "TLSv1",
-                    "TLSv1.1",
-                    "TLSv1.2"
-                  ]
-                }
+              method: 'GET',
+              origin: {
+                custom: {
+                  customHeaders: {},
+                  domainName: 'example.org',
+                  keepaliveTimeout: 5,
+                  path: '',
+                  port: 443,
+                  protocol: 'https',
+                  readTimeout: 30,
+                  sslProtocols: ['TLSv1', 'TLSv1.1', 'TLSv1.2'],
+                },
               },
-              "querystring": "",
-              "uri": "/"
-            }
-          }
-        }
-      ]
+              querystring: '',
+              uri: '/',
+            },
+          },
+        },
+      ],
     }
     const response = await handler(event)
-    expect(response.status).toBe('200');
-    expect(response.body).toBe('Hello Lambda!');
-    expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/);
+    expect(response.status).toBe('200')
+    expect(response.body).toBe('Hello Lambda!')
+    expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
   })
 
   it('Should handle a GET request and return a 200 response (Lambda@Edge viewer response)', async () => {
     const event = {
-      "Records": [
+      Records: [
         {
-          "cf": {
-            "config": {
-              "distributionDomainName": "d111111abcdef8.cloudfront.net",
-              "distributionId": "EDFDVBD6EXAMPLE",
-              "eventType": "viewer-response",
-              "requestId": "4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ=="
+          cf: {
+            config: {
+              distributionDomainName: 'd111111abcdef8.cloudfront.net',
+              distributionId: 'EDFDVBD6EXAMPLE',
+              eventType: 'viewer-response',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
             },
-            "request": {
-              "clientIp": "203.0.113.178",
-              "headers": {
-                "host": [
+            request: {
+              clientIp: '203.0.113.178',
+              headers: {
+                host: [
                   {
-                    "key": "Host",
-                    "value": "d111111abcdef8.cloudfront.net"
-                  }
+                    key: 'Host',
+                    value: 'd111111abcdef8.cloudfront.net',
+                  },
                 ],
-                "user-agent": [
+                'user-agent': [
                   {
-                    "key": "User-Agent",
-                    "value": "curl/7.66.0"
-                  }
+                    key: 'User-Agent',
+                    value: 'curl/7.66.0',
+                  },
                 ],
-                "accept": [
+                accept: [
                   {
-                    "key": "accept",
-                    "value": "*/*"
-                  }
-                ]
+                    key: 'accept',
+                    value: '*/*',
+                  },
+                ],
               },
-              "method": "GET",
-              "querystring": "",
-              "uri": "/"
+              method: 'GET',
+              querystring: '',
+              uri: '/',
             },
-            "response": {
-              "headers": {
-                "access-control-allow-credentials": [
+            response: {
+              headers: {
+                'access-control-allow-credentials': [
                   {
-                    "key": "Access-Control-Allow-Credentials",
-                    "value": "true"
-                  }
+                    key: 'Access-Control-Allow-Credentials',
+                    value: 'true',
+                  },
                 ],
-                "access-control-allow-origin": [
+                'access-control-allow-origin': [
                   {
-                    "key": "Access-Control-Allow-Origin",
-                    "value": "*"
-                  }
+                    key: 'Access-Control-Allow-Origin',
+                    value: '*',
+                  },
                 ],
-                "date": [
+                date: [
                   {
-                    "key": "Date",
-                    "value": "Mon, 13 Jan 2020 20:14:56 GMT"
-                  }
+                    key: 'Date',
+                    value: 'Mon, 13 Jan 2020 20:14:56 GMT',
+                  },
                 ],
-                "referrer-policy": [
+                'referrer-policy': [
                   {
-                    "key": "Referrer-Policy",
-                    "value": "no-referrer-when-downgrade"
-                  }
+                    key: 'Referrer-Policy',
+                    value: 'no-referrer-when-downgrade',
+                  },
                 ],
-                "server": [
+                server: [
                   {
-                    "key": "Server",
-                    "value": "ExampleCustomOriginServer"
-                  }
+                    key: 'Server',
+                    value: 'ExampleCustomOriginServer',
+                  },
                 ],
-                "x-content-type-options": [
+                'x-content-type-options': [
                   {
-                    "key": "X-Content-Type-Options",
-                    "value": "nosniff"
-                  }
+                    key: 'X-Content-Type-Options',
+                    value: 'nosniff',
+                  },
                 ],
-                "x-frame-options": [
+                'x-frame-options': [
                   {
-                    "key": "X-Frame-Options",
-                    "value": "DENY"
-                  }
+                    key: 'X-Frame-Options',
+                    value: 'DENY',
+                  },
                 ],
-                "x-xss-protection": [
+                'x-xss-protection': [
                   {
-                    "key": "X-XSS-Protection",
-                    "value": "1; mode=block"
-                  }
+                    key: 'X-XSS-Protection',
+                    value: '1; mode=block',
+                  },
                 ],
-                "age": [
+                age: [
                   {
-                    "key": "Age",
-                    "value": "2402"
-                  }
+                    key: 'Age',
+                    value: '2402',
+                  },
                 ],
-                "content-type": [
+                'content-type': [
                   {
-                    "key": "Content-Type",
-                    "value": "text/html; charset=utf-8"
-                  }
+                    key: 'Content-Type',
+                    value: 'text/html; charset=utf-8',
+                  },
                 ],
-                "content-length": [
+                'content-length': [
                   {
-                    "key": "Content-Length",
-                    "value": "9593"
-                  }
-                ]
+                    key: 'Content-Length',
+                    value: '9593',
+                  },
+                ],
               },
-              "status": "200",              "statusDescription": "OK"
-            }
-          }
-        }
-      ]
+              status: '200',
+              statusDescription: 'OK',
+            },
+          },
+        },
+      ],
     }
     const response = await handler(event)
-    expect(response.status).toBe('200');
-    expect(response.body).toBe('Hello Lambda!');
-    expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/);
+    expect(response.status).toBe('200')
+    expect(response.body).toBe('Hello Lambda!')
+    expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
   })
 
   it('Should handle a GET request and return a 200 response (Lambda@Edge origin response)', async () => {
     const event = {
-      "Records": [
+      Records: [
         {
-          "cf": {
-            "config": {
-              "distributionDomainName": "d111111abcdef8.cloudfront.net",
-              "distributionId": "EDFDVBD6EXAMPLE",
-              "eventType": "origin-response",
-              "requestId": "4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ=="
+          cf: {
+            config: {
+              distributionDomainName: 'd111111abcdef8.cloudfront.net',
+              distributionId: 'EDFDVBD6EXAMPLE',
+              eventType: 'origin-response',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
             },
-            "request": {
-              "clientIp": "203.0.113.178",
-              "headers": {
-                "x-forwarded-for": [
+            request: {
+              clientIp: '203.0.113.178',
+              headers: {
+                'x-forwarded-for': [
                   {
-                    "key": "X-Forwarded-For",
-                    "value": "203.0.113.178"
-                  }
+                    key: 'X-Forwarded-For',
+                    value: '203.0.113.178',
+                  },
                 ],
-                "user-agent": [
+                'user-agent': [
                   {
-                    "key": "User-Agent",
-                    "value": "Amazon CloudFront"
-                  }
+                    key: 'User-Agent',
+                    value: 'Amazon CloudFront',
+                  },
                 ],
-                "via": [
+                via: [
                   {
-                    "key": "Via",
-                    "value": "2.0 8f22423015641505b8c857a37450d6c0.cloudfront.net (CloudFront)"
-                  }
+                    key: 'Via',
+                    value: '2.0 8f22423015641505b8c857a37450d6c0.cloudfront.net (CloudFront)',
+                  },
                 ],
-                "host": [
+                host: [
                   {
-                    "key": "Host",
-                    "value": "example.org"
-                  }
+                    key: 'Host',
+                    value: 'example.org',
+                  },
                 ],
-                "cache-control": [
+                'cache-control': [
                   {
-                    "key": "Cache-Control",
-                    "value": "no-cache"
-                  }
-                ]
+                    key: 'Cache-Control',
+                    value: 'no-cache',
+                  },
+                ],
               },
-              "method": "GET",
-              "origin": {
-                "custom": {
-                  "customHeaders": {},
-                  "domainName": "example.org",
-                  "keepaliveTimeout": 5,
-                  "path": "",
-                  "port": 443,
-                  "protocol": "https",
-                  "readTimeout": 30,
-                  "sslProtocols": [
-                    "TLSv1",
-                    "TLSv1.1",
-                    "TLSv1.2"
-                  ]
-                }
+              method: 'GET',
+              origin: {
+                custom: {
+                  customHeaders: {},
+                  domainName: 'example.org',
+                  keepaliveTimeout: 5,
+                  path: '',
+                  port: 443,
+                  protocol: 'https',
+                  readTimeout: 30,
+                  sslProtocols: ['TLSv1', 'TLSv1.1', 'TLSv1.2'],
+                },
               },
-              "querystring": "",
-              "uri": "/"
+              querystring: '',
+              uri: '/',
             },
-            "response": {
-              "headers": {
-                "access-control-allow-credentials": [
+            response: {
+              headers: {
+                'access-control-allow-credentials': [
                   {
-                    "key": "Access-Control-Allow-Credentials",
-                    "value": "true"
-                  }
+                    key: 'Access-Control-Allow-Credentials',
+                    value: 'true',
+                  },
                 ],
-                "access-control-allow-origin": [
+                'access-control-allow-origin': [
                   {
-                    "key": "Access-Control-Allow-Origin",
-                    "value": "*"
-                  }
+                    key: 'Access-Control-Allow-Origin',
+                    value: '*',
+                  },
                 ],
-                "date": [
+                date: [
                   {
-                    "key": "Date",
-                    "value": "Mon, 13 Jan 2020 20:12:38 GMT"
-                  }
+                    key: 'Date',
+                    value: 'Mon, 13 Jan 2020 20:12:38 GMT',
+                  },
                 ],
-                "referrer-policy": [
+                'referrer-policy': [
                   {
-                    "key": "Referrer-Policy",
-                    "value": "no-referrer-when-downgrade"
-                  }
+                    key: 'Referrer-Policy',
+                    value: 'no-referrer-when-downgrade',
+                  },
                 ],
-                "server": [
+                server: [
                   {
-                    "key": "Server",
-                    "value": "ExampleCustomOriginServer"
-                  }
+                    key: 'Server',
+                    value: 'ExampleCustomOriginServer',
+                  },
                 ],
-                "x-content-type-options": [
+                'x-content-type-options': [
                   {
-                    "key": "X-Content-Type-Options",
-                    "value": "nosniff"
-                  }
+                    key: 'X-Content-Type-Options',
+                    value: 'nosniff',
+                  },
                 ],
-                "x-frame-options": [
+                'x-frame-options': [
                   {
-                    "key": "X-Frame-Options",
-                    "value": "DENY"
-                  }
+                    key: 'X-Frame-Options',
+                    value: 'DENY',
+                  },
                 ],
-                "x-xss-protection": [
+                'x-xss-protection': [
                   {
-                    "key": "X-XSS-Protection",
-                    "value": "1; mode=block"
-                  }
+                    key: 'X-XSS-Protection',
+                    value: '1; mode=block',
+                  },
                 ],
-                "content-type": [
+                'content-type': [
                   {
-                    "key": "Content-Type",
-                    "value": "text/html; charset=utf-8"
-                  }
+                    key: 'Content-Type',
+                    value: 'text/html; charset=utf-8',
+                  },
                 ],
-                "content-length": [
+                'content-length': [
                   {
-                    "key": "Content-Length",
-                    "value": "9593"
-                  }
-                ]
+                    key: 'Content-Length',
+                    value: '9593',
+                  },
+                ],
               },
-              "status": "200",
-              "statusDescription": "OK"
-            }
-          }
-        }
-      ]
+              status: '200',
+              statusDescription: 'OK',
+            },
+          },
+        },
+      ],
     }
     const response = await handler(event)
-    expect(response.status).toBe('200');
-    expect(response.body).toBe('Hello Lambda!');
-    expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/);
+    expect(response.status).toBe('200')
+    expect(response.body).toBe('Hello Lambda!')
+    expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
   })
 
   it('Should handle a GET request and return a 200 response with binary', async () => {
@@ -422,7 +415,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
             request: {
               clientIp: '123.123.123.123',
               headers: {
-                'host': [
+                host: [
                   {
                     key: 'Host',
                     value: 'example.com',
@@ -436,15 +429,15 @@ describe('Lambda@Edge Adapter for Hono', () => {
           },
         },
       ],
-    };
-    
-    const response = await handler(event);
-  
-    expect(response.status).toBe('200');
-    expect(response.body).toBe('RmFrZSBJbWFnZQ=='); // base64 encoded fake image
-    expect(response.headers['content-type'][0].value).toMatch(/^image\/png/);
-  });
-  
+    }
+
+    const response = await handler(event)
+
+    expect(response.status).toBe('200')
+    expect(response.body).toBe('RmFrZSBJbWFnZQ==') // base64 encoded fake image
+    expect(response.headers['content-type'][0].value).toMatch(/^image\/png/)
+  })
+
   it('Should handle a GET request and return a 404 response', async () => {
     const event = {
       Records: [
@@ -459,7 +452,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
             request: {
               clientIp: '123.123.123.123',
               headers: {
-                'host': [
+                host: [
                   {
                     key: 'Host',
                     value: 'example.com',
@@ -473,17 +466,17 @@ describe('Lambda@Edge Adapter for Hono', () => {
           },
         },
       ],
-    };
-  
-    const response = await handler(event);
-  
-    expect(response.status).toBe('404');
-  });
+    }
+
+    const response = await handler(event)
+
+    expect(response.status).toBe('404')
+  })
 
   it('Should handle a POST request and return a 200 response', async () => {
-    const searchParam = new URLSearchParams();
-    searchParam.append('message', 'Good Morning Lambda!');
-  
+    const searchParam = new URLSearchParams()
+    searchParam.append('message', 'Good Morning Lambda!')
+
     const event = {
       Records: [
         {
@@ -497,7 +490,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
             request: {
               clientIp: '123.123.123.123',
               headers: {
-                'host': [
+                host: [
                   {
                     key: 'Host',
                     value: 'example.com',
@@ -523,13 +516,13 @@ describe('Lambda@Edge Adapter for Hono', () => {
           },
         },
       ],
-    };
+    }
 
-    const response = await handler(event);
-  
-    expect(response.status).toBe('200');
-    expect(response.body).toBe('Good Morning Lambda!');
-  });
+    const response = await handler(event)
+
+    expect(response.status).toBe('200')
+    expect(response.body).toBe('Good Morning Lambda!')
+  })
 
   it('Should handle a request and return a 401 response with Basic auth', async () => {
     const event = {
@@ -545,7 +538,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
             request: {
               clientIp: '123.123.123.123',
               headers: {
-                'host': [
+                host: [
                   {
                     key: 'Host',
                     value: 'example.com',
@@ -565,13 +558,13 @@ describe('Lambda@Edge Adapter for Hono', () => {
           },
         },
       ],
-    };
-  
-    const response = await handler(event);
-  
-    expect(response.status).toBe('401');
-  });
-  
+    }
+
+    const response = await handler(event)
+
+    expect(response.status).toBe('401')
+  })
+
   it('Should handle a request and return a 401 response with Basic auth', async () => {
     const event = {
       Records: [
@@ -586,7 +579,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
             request: {
               clientIp: '123.123.123.123',
               headers: {
-                'host': [
+                host: [
                   {
                     key: 'Host',
                     value: 'example.com',
@@ -606,10 +599,10 @@ describe('Lambda@Edge Adapter for Hono', () => {
           },
         },
       ],
-    };
-    
-    const response = await handler(event);
-  
-    expect(response.status).toBe('401');
-  });
-});
+    }
+
+    const response = await handler(event)
+
+    expect(response.status).toBe('401')
+  })
+})
