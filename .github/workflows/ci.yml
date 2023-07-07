@@ -10,8 +10,8 @@ jobs:
     name: 'Main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 18.x
       - run: yarn install --frozen-lockfile
@@ -23,7 +23,7 @@ jobs:
     name: 'Deno'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
@@ -33,7 +33,7 @@ jobs:
     name: 'Bun'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: oven-sh/setup-bun@v1
         with:
           bun-version: '0.6.9'
@@ -43,8 +43,8 @@ jobs:
     name: 'Fastly Compute@Edge'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 18.x
       - run: yarn install --frozen-lockfile
@@ -55,8 +55,8 @@ jobs:
     name: 'Lagon'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 18.x
       - run: yarn install --frozen-lockfile
@@ -68,8 +68,8 @@ jobs:
     name: 'Node.js'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 18.x
       - run: yarn install --frozen-lockfile
@@ -80,8 +80,8 @@ jobs:
     name: 'Cloudflare Workers'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 18.x
       - run: yarn install --frozen-lockfile
@@ -92,8 +92,8 @@ jobs:
     name: 'AWS Lambda'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 18.x
       - run: yarn install --frozen-lockfile
