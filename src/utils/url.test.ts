@@ -8,6 +8,7 @@ import {
   checkOptionalParameter,
   getQueryParam,
   getQueryParams,
+  getQueryStrings,
 } from './url'
 
 describe('url', () => {
@@ -81,6 +82,20 @@ describe('url', () => {
       expect(path).toBe('/hello/')
       path = getPath(new Request('https://example.com/hello/hey/'))
       expect(path).toBe('/hello/hey/')
+    })
+  })
+
+  describe('getQueryStrings', () => {
+    it('getQueryStrings', () => {
+      let qs = getQueryStrings('https://example.com/hello?name=foo&name=bar&age=20')
+      expect(qs).toBe('?name=foo&name=bar&age=20')
+      qs = getQueryStrings('https://example.com/hello?')
+      expect(qs).toBe('?')
+      qs = getQueryStrings('https://example.com/hello')
+      expect(qs).toBe('')
+      // Allows to contain hash
+      qs = getQueryStrings('https://example.com/hello?name=foo&name=bar&age=20#hash')
+      expect(qs).toBe('?name=foo&name=bar&age=20#hash')
     })
   })
 
