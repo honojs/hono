@@ -20,7 +20,7 @@ import type {
   FetchEventLike,
 } from './types.ts'
 import type { RemoveBlankRecord } from './utils/types.ts'
-import { getPath, getPathNoStrict, mergePath } from './utils/url.ts'
+import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url.ts'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
@@ -216,8 +216,13 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
       } catch {} // Do nothing
       const options = optionHandler ? optionHandler(c) : [c.env, executionContext]
       const optionsArray = Array.isArray(options) ? options : [options]
+
+      const queryStrings = getQueryStrings(c.req.url)
       const res = await applicationHandler(
-        new Request(new URL(c.req.path.slice(pathPrefixLength) || '/', c.req.url), c.req.raw),
+        new Request(
+          new URL((c.req.path.slice(pathPrefixLength) || '/') + queryStrings, c.req.url),
+          c.req.raw
+        ),
         ...optionsArray
       )
 
