@@ -1925,6 +1925,10 @@ describe('app.mount()', () => {
         const message = req.headers.get('x-message')
         return new Response(message)
       }
+      if (path === '/with-query') {
+        const queryStrings = new URL(req.url).searchParams.toString()
+        return new Response(queryStrings)
+      }
       if (path == '/with-params') {
         return new Response(
           JSON.stringify({
@@ -1988,6 +1992,10 @@ describe('app.mount()', () => {
       expect(res.status).toBe(404)
       expect(res.headers.get('x-message')).toBe('Foo')
       expect(await res.text()).toBe('Not Found from AnotherApp')
+
+      res = await app.request('/another-app/with-query?foo=bar&baz=qux')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('foo=bar&baz=qux')
 
       res = await app.request('/another-app/with-params')
       expect(res.status).toBe(200)
