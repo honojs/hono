@@ -1,9 +1,19 @@
+import type {
+  Callback,
+  CloudFrontEdgeEvent,
+  CloudFrontRequest,
+} from '../../src/adapter/lambda-edge/handler'
 import { handle } from '../../src/adapter/lambda-edge/handler'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
 
+type Bindings = {
+  callback: Callback
+  request: CloudFrontRequest
+}
+
 describe('Lambda@Edge Adapter for Hono', () => {
-  const app = new Hono()
+  const app = new Hono<{ Bindings: Bindings }>()
 
   app.get('/', (c) => {
     return c.text('Hello Lambda!')
@@ -18,6 +28,11 @@ describe('Lambda@Edge Adapter for Hono', () => {
   app.post('/post', async (c) => {
     const body = (await c.req.parseBody()) as { message: string }
     return c.text(body.message)
+  })
+
+  app.get('/callback', async (c, next) => {
+    await next()
+    c.env.callback(null, c.env.request)
   })
 
   const username = 'hono-user-a'
@@ -604,5 +619,42 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
 
     expect(response.status).toBe('401')
+  })
+
+  it('Should call a callback to continue processing the request', async () => {
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'example.com',
+              distributionId: 'EXAMPLE123',
+              eventType: 'viewer-request',
+              requestId: 'exampleRequestId',
+            },
+            request: {
+              clientIp: '123.123.123.123',
+              headers: {},
+              method: 'GET',
+              querystring: '',
+              uri: '/callback',
+            },
+          },
+        },
+      ],
+    }
+
+    let called = false
+    let requestClientIp = ''
+
+    await handler(event, {}, (_err, result) => {
+      if (result && 'clientIp' in result) {
+        requestClientIp = result.clientIp
+      }
+      called = true
+    })
+
+    expect(called).toBe(true)
+    expect(requestClientIp).toBe('123.123.123.123')
   })
 })
