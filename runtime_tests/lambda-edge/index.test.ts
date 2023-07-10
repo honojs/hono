@@ -1,9 +1,16 @@
+/* eslint-disable quotes */
+import type { Callback, CloudFrontRequest } from '../../src/adapter/lambda-edge/handler'
 import { handle } from '../../src/adapter/lambda-edge/handler'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
 
+type Bindings = {
+  callback: Callback
+  request: CloudFrontRequest
+}
+
 describe('Lambda@Edge Adapter for Hono', () => {
-  const app = new Hono()
+  const app = new Hono<{ Bindings: Bindings }>()
 
   app.get('/', (c) => {
     return c.text('Hello Lambda!')
@@ -18,6 +25,11 @@ describe('Lambda@Edge Adapter for Hono', () => {
   app.post('/post', async (c) => {
     const body = (await c.req.parseBody()) as { message: string }
     return c.text(body.message)
+  })
+
+  app.get('/callback', async (c, next) => {
+    await next()
+    c.env.callback(null, c.env.request)
   })
 
   const username = 'hono-user-a'
@@ -71,10 +83,10 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.status).toBe('200')
     expect(response.body).toBe('Hello Lambda!')
-    if(response.headers && response.headers['content-type']){
+    if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
     } else {
-        throw new Error("'content-type' header is missing in the response");
+      throw new Error("'content-type' header is missing in the response")
     }
   })
 
@@ -146,10 +158,10 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.status).toBe('200')
     expect(response.body).toBe('Hello Lambda!')
-    if(response.headers && response.headers['content-type']){
+    if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
     } else {
-        throw new Error("'content-type' header is missing in the response");
+      throw new Error("'content-type' header is missing in the response")
     }
   })
 
@@ -269,10 +281,10 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.status).toBe('200')
     expect(response.body).toBe('Hello Lambda!')
-    if(response.headers && response.headers['content-type']){
+    if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
     } else {
-        throw new Error("'content-type' header is missing in the response");
+      throw new Error("'content-type' header is missing in the response")
     }
   })
 
@@ -410,10 +422,10 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.status).toBe('200')
     expect(response.body).toBe('Hello Lambda!')
-    if(response.headers && response.headers['content-type']){
+    if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
     } else {
-        throw new Error("'content-type' header is missing in the response");
+      throw new Error("'content-type' header is missing in the response")
     }
   })
 
@@ -451,10 +463,10 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
     expect(response.status).toBe('200')
     expect(response.body).toBe('RmFrZSBJbWFnZQ==') // base64 encoded fake image
-    if(response.headers && response.headers['content-type']){
+    if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^image\/png/)
     } else {
-        throw new Error("'content-type' header is missing in the response");
+      throw new Error("'content-type' header is missing in the response")
     }
   })
 
@@ -624,5 +636,42 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
 
     expect(response.status).toBe('401')
+  })
+
+  it('Should call a callback to continue processing the request', async () => {
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'example.com',
+              distributionId: 'EXAMPLE123',
+              eventType: 'viewer-request',
+              requestId: 'exampleRequestId',
+            },
+            request: {
+              clientIp: '123.123.123.123',
+              headers: {},
+              method: 'GET',
+              querystring: '',
+              uri: '/callback',
+            },
+          },
+        },
+      ],
+    }
+
+    let called = false
+    let requestClientIp = ''
+
+    await handler(event, {}, (_err, result) => {
+      if (result && 'clientIp' in result) {
+        requestClientIp = result.clientIp
+      }
+      called = true
+    })
+
+    expect(called).toBe(true)
+    expect(requestClientIp).toBe('123.123.123.123')
   })
 })
