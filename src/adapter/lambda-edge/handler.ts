@@ -63,16 +63,18 @@ interface CloudFrontEdgeEvent {
   Records: CloudFrontEvent[];
 }
 
+// https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/lambda-generating-http-responses-in-requests.html#lambda-generating-http-responses-programming-model
 interface CloudFrontResult {
   status: string;
   statusDescription?: string;
-  headers: {
+  headers?: {
       [header: string]: {
-          key?: string;
+          key: string;
           value: string;
       }[];
   };
   body?: string;
+  bodyEncoding?: 'text' | 'base64';
 }
 
 /**
