@@ -69,16 +69,18 @@ export interface Callback {
   (err: Error | null, result?: CloudFrontRequest | CloudFrontResult): void
 }
 
+// https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-generating-http-responses-in-requests.html#lambda-generating-http-responses-programming-model
 interface CloudFrontResult {
   status: string
   statusDescription?: string
-  headers: {
+  headers?: {
     [header: string]: {
-      key?: string
+      key: string
       value: string
     }[]
   }
   body?: string
+  bodyEncoding?: 'text' | 'base64'
 }
 
 /**
@@ -129,9 +131,7 @@ const createRequest = (event: CloudFrontEdgeEvent) => {
 
   const headers = new Headers()
   for (const [k, v] of Object.entries(event.Records[0].cf.request.headers)) {
-    if (Array.isArray(v)) {
-      v.forEach((header) => headers.set(k, header.value))
-    }
+    v.forEach((header) => headers.set(k, header.value))
   }
   const method = event.Records[0].cf.request.method
   const requestInit: RequestInit = {

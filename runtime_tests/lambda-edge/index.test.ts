@@ -1,8 +1,5 @@
-import type {
-  Callback,
-  CloudFrontEdgeEvent,
-  CloudFrontRequest,
-} from '../../src/adapter/lambda-edge/handler'
+/* eslint-disable quotes */
+import type { Callback, CloudFrontRequest } from '../../src/adapter/lambda-edge/handler'
 import { handle } from '../../src/adapter/lambda-edge/handler'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
@@ -86,7 +83,11 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.status).toBe('200')
     expect(response.body).toBe('Hello Lambda!')
-    expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
+    if (response.headers && response.headers['content-type']) {
+      expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
+    } else {
+      throw new Error("'content-type' header is missing in the response")
+    }
   })
 
   it('Should handle a GET request and return a 200 response (Lambda@Edge origin request)', async () => {
@@ -157,7 +158,11 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.status).toBe('200')
     expect(response.body).toBe('Hello Lambda!')
-    expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
+    if (response.headers && response.headers['content-type']) {
+      expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
+    } else {
+      throw new Error("'content-type' header is missing in the response")
+    }
   })
 
   it('Should handle a GET request and return a 200 response (Lambda@Edge viewer response)', async () => {
@@ -276,7 +281,11 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.status).toBe('200')
     expect(response.body).toBe('Hello Lambda!')
-    expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
+    if (response.headers && response.headers['content-type']) {
+      expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
+    } else {
+      throw new Error("'content-type' header is missing in the response")
+    }
   })
 
   it('Should handle a GET request and return a 200 response (Lambda@Edge origin response)', async () => {
@@ -413,7 +422,11 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.status).toBe('200')
     expect(response.body).toBe('Hello Lambda!')
-    expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
+    if (response.headers && response.headers['content-type']) {
+      expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
+    } else {
+      throw new Error("'content-type' header is missing in the response")
+    }
   })
 
   it('Should handle a GET request and return a 200 response with binary', async () => {
@@ -450,7 +463,11 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
     expect(response.status).toBe('200')
     expect(response.body).toBe('RmFrZSBJbWFnZQ==') // base64 encoded fake image
-    expect(response.headers['content-type'][0].value).toMatch(/^image\/png/)
+    if (response.headers && response.headers['content-type']) {
+      expect(response.headers['content-type'][0].value).toMatch(/^image\/png/)
+    } else {
+      throw new Error("'content-type' header is missing in the response")
+    }
   })
 
   it('Should handle a GET request and return a 404 response', async () => {
