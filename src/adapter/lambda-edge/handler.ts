@@ -117,9 +117,7 @@ const createRequest = (
 
   const headers = new Headers()
   for (const [k, v] of Object.entries(event.Records[0].cf.request.headers)) {
-    if (Array.isArray(v)) {
-      v.forEach(header => headers.set(k, header.value))
-    }
+    v.forEach(header => headers.set(k, header.value))
   }
   const method = event.Records[0].cf.request.method 
   const requestInit: RequestInit = {
