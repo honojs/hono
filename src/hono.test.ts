@@ -1,13 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { env } from './adapter'
 import type { Context } from './context'
 import { Hono } from './hono'
+import { HTTPException } from './http-exception'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
+import { SmartRouter } from './mod'
 import { RegExpRouter } from './router/reg-exp-router'
-import { StaticRouter } from './router/static-router'
 import { TrieRouter } from './router/trie-router'
 import type { Handler, Next } from './types'
 import type { Expect, Equal } from './utils/types'
+import { getPath } from './utils/url'
+
+// https://stackoverflow.com/a/65666402
+function throwExpression(errorMessage: string): never {
+  throw new Error(errorMessage)
+}
 
 describe('GET Request', () => {
   const app = new Hono()
@@ -25,8 +33,29 @@ describe('GET Request', () => {
     return c.html('<h1>Hono!!!</h1>')
   })
 
-  it('GET /hello is ok', async () => {
+  it('GET http://localhost/hello is ok', async () => {
     const res = await app.request('http://localhost/hello')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.statusText).toBe('Hono is OK')
+    expect(await res.text()).toBe('hello')
+  })
+
+  it('GET httphello is ng', async () => {
+    const res = await app.request('httphello')
+    expect(res.status).toBe(404)
+  })
+
+  it('GET /hello is ok', async () => {
+    const res = await app.request('/hello')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.statusText).toBe('Hono is OK')
+    expect(await res.text()).toBe('hello')
+  })
+
+  it('GET hello is ok', async () => {
+    const res = await app.request('hello')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.statusText).toBe('Hono is OK')
@@ -46,6 +75,19 @@ describe('GET Request', () => {
     const res = await app.request('http://localhost/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
+  })
+})
+
+describe('router option', () => {
+  it('Should be SmartRouter', () => {
+    const app = new Hono()
+    expect(app.router instanceof SmartRouter).toBe(true)
+  })
+  it('Should be RegExpRouter', () => {
+    const app = new Hono({
+      router: new RegExpRouter(),
+    })
+    expect(app.router instanceof RegExpRouter).toBe(true)
   })
 })
 
@@ -102,6 +144,21 @@ describe('strict parameter', () => {
   })
 })
 
+describe('Destruct functions in context', () => {
+  it('Should return 200 response - text', async () => {
+    const app = new Hono()
+    app.get('/text', ({ text }) => text('foo'))
+    const res = await app.request('http://localhost/text')
+    expect(res.status).toBe(200)
+  })
+  it('Should return 200 response - json', async () => {
+    const app = new Hono()
+    app.get('/json', ({ json }) => json({ foo: 'bar' }))
+    const res = await app.request('http://localhost/json')
+    expect(res.status).toBe(200)
+  })
+})
+
 describe('Routing', () => {
   it('Return it self', async () => {
     const app = new Hono()
@@ -124,16 +181,21 @@ describe('Routing', () => {
   it('Nested route', async () => {
     const app = new Hono()
 
-    const book = app.route('/book')
+    const book = app.basePath('/book')
     book.get('/', (c) => c.text('get /book'))
     book.get('/:id', (c) => {
       return c.text('get /book/' + c.req.param('id'))
     })
     book.post('/', (c) => c.text('post /book'))
 
-    const user = app.route('/user')
+    const user = app.basePath('/user')
     user.get('/login', (c) => c.text('get /user/login'))
     user.post('/register', (c) => c.text('post /user/register'))
+
+    const appForEachUser = user.basePath(':id')
+    appForEachUser.get('/profile', (c) => c.text('get /user/' + c.req.param('id') + '/profile'))
+
+    app.get('/add-path-after-route-call', (c) => c.text('get /add-path-after-route-call'))
 
     let res = await app.request('http://localhost/book', { method: 'GET' })
     expect(res.status).toBe(200)
@@ -157,6 +219,45 @@ describe('Routing', () => {
     res = await app.request('http://localhost/user/register', { method: 'POST' })
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('post /user/register')
+
+    res = await app.request('http://localhost/user/123/profile', { method: 'GET' })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /user/123/profile')
+
+    res = await app.request('http://localhost/add-path-after-route-call', { method: 'GET' })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /add-path-after-route-call')
+  })
+
+  it('Nested route - subApp with basePath', async () => {
+    const app = new Hono()
+    const book = new Hono().basePath('/book')
+    book.get('/', (c) => c.text('get /book'))
+    app.route('/api', book)
+
+    const res = await app.request('http://localhost/api/book', { method: 'GET' })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /book')
+  })
+
+  it('Multiple route', async () => {
+    const app = new Hono()
+
+    const book = new Hono()
+    book.get('/hello', (c) => c.text('get /book/hello'))
+
+    const user = new Hono()
+    user.get('/hello', (c) => c.text('get /user/hello'))
+
+    app.route('/book', book).route('/user', user)
+
+    let res = await app.request('http://localhost/book/hello', { method: 'GET' })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /book/hello')
+
+    res = await app.request('http://localhost/user/hello', { method: 'GET' })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /user/hello')
   })
 
   describe('Nested route with middleware', () => {
@@ -232,6 +333,48 @@ describe('Routing', () => {
     })
   })
 
+  it('routing with hostname', async () => {
+    const app = new Hono({
+      getPath: (req) => req.url.replace(/^https?:\/\//, ''),
+    })
+
+    app.get('www1.example.com/hello', () => new Response('hello www1'))
+    app.get('www2.example.com/hello', () => new Response('hello www2'))
+
+    let res = await app.request('http://www1.example.com/hello')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www1')
+
+    res = await app.request('http://www2.example.com/hello')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www2')
+  })
+
+  it('routing with request header', async () => {
+    const app = new Hono({
+      getPath: (req) => req.headers.get('host') + req.url.replace(/^https?:\/\/[^\/]+/, ''),
+    })
+
+    app.get('www1.example.com/hello', () => new Response('hello www1'))
+    app.get('www2.example.com/hello', () => new Response('hello www2'))
+
+    let res = await app.request('http://www1.example.com/hello', {
+      headers: { host: 'www1.example.com' },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www1')
+
+    res = await app.request('http://www2.example.com/hello', {
+      headers: { host: 'www2.example.com' },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www2')
+  })
+
   describe('Chained route', () => {
     const app = new Hono()
 
@@ -282,8 +425,8 @@ describe('param and query', () => {
     })
 
     app.get('/multiple-values', (c) => {
-      const queries = c.req.queries('q')
-      const limit = c.req.queries('limit')
+      const queries = c.req.queries('q') ?? throwExpression('missing query values')
+      const limit = c.req.queries('limit') ?? throwExpression('missing query values')
       return c.text(`q is ${queries[0]} and ${queries[1]}, limit is ${limit[0]}`)
     })
 
@@ -373,6 +516,39 @@ describe('param and query', () => {
       expect(await res.text()).toBe('foo is Bar')
     })
   })
+
+  describe('param with undefined', () => {
+    const app = new Hono()
+    app.get('/foo/:foo', (c) => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      /* @ts-ignore */
+      const bar = c.req.param('bar')
+      return c.json({ foo: bar })
+    })
+    it('param of /foo/foo should return undefined not "undefined"', async () => {
+      const res = await app.request('http://localhost/foo/foo')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ foo: undefined })
+    })
+  })
+})
+
+describe('c.req.path', () => {
+  const app = new Hono()
+  app.get('/', (c) => c.text(c.req.path))
+  app.get('/search', (c) => c.text(c.req.path))
+
+  it('Should get the path `/` correctly', async () => {
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('/')
+  })
+
+  it('Should get the path `/search` correctly with a query', async () => {
+    const res = await app.request('/search?query=hono')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('/search')
+  })
 })
 
 describe('Middleware', () => {
@@ -405,6 +581,25 @@ describe('Middleware', () => {
       return c.text('hello')
     })
 
+    app.use('/json/*', async (c, next) => {
+      c.res.headers.append('foo', 'bar')
+      await next()
+    })
+
+    app.get('/json', (c) => {
+      // With a raw response
+      return new Response(
+        JSON.stringify({
+          message: 'hello',
+        }),
+        {
+          headers: {
+            'content-type': 'application/json',
+          },
+        }
+      )
+    })
+
     app.get('/hello/:message', (c) => {
       const message = c.req.param('message')
       return c.text(`${message}`)
@@ -435,6 +630,12 @@ describe('Middleware', () => {
       expect(res.headers.get('x-message-2')).toBe('custom-header-2')
     })
 
+    it('should return correct the content-type header', async () => {
+      const res = await app.request('http://localhost/json')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('content-type')).toMatch(/^application\/json/)
+    })
+
     it('not found', async () => {
       const res = await app.request('http://localhost/foo')
       expect(res.status).toBe(404)
@@ -457,7 +658,10 @@ describe('Middleware', () => {
       })
       .use(async (c, next) => {
         await next()
-        c.header('x-after', c.req.header('x-before'))
+        c.header(
+          'x-after',
+          c.req.header('x-before') ?? throwExpression('missing `x-before` header')
+        )
       })
       .get('/chained/abc', (c) => {
         return c.text('GET chained')
@@ -481,7 +685,10 @@ describe('Middleware', () => {
         },
         async (c, next) => {
           await next()
-          c.header('x-after', c.req.header('x-before'))
+          c.header(
+            'x-after',
+            c.req.header('x-before') ?? throwExpression('missing `x-before` header')
+          )
         }
       )
       .get('/multiple/abc', (c) => {
@@ -492,6 +699,36 @@ describe('Middleware', () => {
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('GET multiple')
       expect(res.headers.get('x-after')).toBe('abc')
+    })
+  })
+
+  describe('Overwrite the response from middleware after next()', () => {
+    const app = new Hono()
+
+    app.use('/normal', async (c, next) => {
+      await next()
+      c.res = new Response('Middleware')
+    })
+
+    app.use('/overwrite', async (c, next) => {
+      await next()
+      c.res = undefined
+      c.res = new Response('Middleware')
+    })
+
+    app.get('*', (c) => {
+      c.header('x-custom', 'foo')
+      return c.text('Handler')
+    })
+
+    it('Should have the custom header', async () => {
+      const res = await app.request('/normal')
+      expect(res.headers.get('x-custom')).toBe('foo')
+    })
+
+    it('Should not have the custom header', async () => {
+      const res = await app.request('/overwrite')
+      expect(res.headers.get('x-custom')).toBe(null)
     })
   })
 })
@@ -615,31 +852,103 @@ describe('Redirect', () => {
 })
 
 describe('Error handle', () => {
-  const app = new Hono()
+  describe('Basic', () => {
+    const app = new Hono()
 
-  app.get('/error', () => {
-    throw new Error('This is Error')
+    app.get('/error', () => {
+      throw new Error('This is Error')
+    })
+
+    app.use('/error-middleware', async () => {
+      throw new Error('This is Middleware Error')
+    })
+
+    app.onError((err, c) => {
+      c.header('x-debug', err.message)
+      return c.text('Custom Error Message', 500)
+    })
+
+    it('Custom Error Message', async () => {
+      let res = await app.request('https://example.com/error')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message')
+      expect(res.headers.get('x-debug')).toBe('This is Error')
+
+      res = await app.request('https://example.com/error-middleware')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message')
+      expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
+    })
   })
 
-  app.use('/error-middleware', async () => {
-    throw new Error('This is Middleware Error')
+  describe('Async custom handler', () => {
+    const app = new Hono()
+
+    app.get('/error', () => {
+      throw new Error('This is Error')
+    })
+
+    app.use('/error-middleware', async () => {
+      throw new Error('This is Middleware Error')
+    })
+
+    app.onError(async (err, c) => {
+      const promise = new Promise((resolve) =>
+        setTimeout(() => {
+          resolve('Promised')
+        }, 1)
+      )
+      const message = (await promise) as string
+      c.header('x-debug', err.message)
+      return c.text(`Custom Error Message with ${message}`, 500)
+    })
+
+    it('Custom Error Message', async () => {
+      let res = await app.request('https://example.com/error')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message with Promised')
+      expect(res.headers.get('x-debug')).toBe('This is Error')
+
+      res = await app.request('https://example.com/error-middleware')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('Custom Error Message with Promised')
+      expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
+    })
   })
 
-  app.onError((err, c) => {
-    c.header('x-debug', err.message)
-    return c.text('Custom Error Message', 500)
-  })
+  describe('Handle HTTPException', () => {
+    const app = new Hono()
 
-  it('Custom Error Message', async () => {
-    let res = await app.request('https://example.com/error')
-    expect(res.status).toBe(500)
-    expect(await res.text()).toBe('Custom Error Message')
-    expect(res.headers.get('x-debug')).toBe('This is Error')
+    app.get('/exception', () => {
+      throw new HTTPException(401, {
+        message: 'Unauthorized',
+      })
+    })
 
-    res = await app.request('https://example.com/error-middleware')
-    expect(res.status).toBe(500)
-    expect(await res.text()).toBe('Custom Error Message')
-    expect(res.headers.get('x-debug')).toBe('This is Middleware Error')
+    it('Should return 401 response', async () => {
+      const res = await app.request('http://localhost/exception')
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+    })
+
+    const app2 = new Hono()
+
+    app2.get('/exception', () => {
+      throw new HTTPException(401)
+    })
+
+    app2.onError((err, c) => {
+      if (err instanceof HTTPException && err.status === 401) {
+        return c.text('Custom Error Message', 401)
+      }
+      return c.text('Internal Server Error', 500)
+    })
+
+    it('Should return 401 response with a custom message', async () => {
+      const res = await app2.request('http://localhost/exception')
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Custom Error Message')
+    })
   })
 })
 
@@ -715,21 +1024,23 @@ describe('Request methods with custom middleware', () => {
 
   app.use('*', async (c, next) => {
     const query = c.req.query('foo')
-    const param = c.req.param('foo')
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const param = c.req.param('foo') // This will cause a type error.
     const header = c.req.header('User-Agent')
     await next()
-    c.header('X-Query-2', query)
+    c.header('X-Query-2', query ?? throwExpression('missing `X-Query-2` header'))
     c.header('X-Param-2', param)
-    c.header('X-Header-2', header)
+    c.header('X-Header-2', header ?? throwExpression('missing `X-Header-2` header'))
   })
 
   app.get('/:foo', (c) => {
     const query = c.req.query('foo')
     const param = c.req.param('foo')
     const header = c.req.header('User-Agent')
-    c.header('X-Query', query)
+    c.header('X-Query', query ?? throwExpression('missing `X-Query` header'))
     c.header('X-Param', param)
-    c.header('X-Header', header)
+    c.header('X-Header', header ?? throwExpression('missing `X-Header` header'))
     return c.body('Hono')
   })
 
@@ -880,22 +1191,134 @@ describe('Hono with `app.route`', () => {
       expect(await res.text()).toBe('book 123')
     })
   })
+
+  describe('onError', () => {
+    const app = new Hono()
+    const sub = new Hono()
+
+    app.use('*', async (c, next) => {
+      await next()
+      if (c.req.query('app-error')) {
+        throw new Error('This is Error')
+      }
+    })
+
+    app.onError((err, c) => {
+      return c.text('onError by app', 500)
+    })
+
+    sub.get('/ok', (c) => {
+      return c.text('ok')
+    })
+
+    sub.get('/error', () => {
+      throw new Error('This is Error')
+    })
+
+    sub.onError((err, c) => {
+      return c.text('onError by sub', 500)
+    })
+
+    app.route('/sub', sub)
+
+    it('should be handled by app', async () => {
+      const res = await app.request('https://example.com/sub/ok?app-error=1')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('onError by app')
+    })
+
+    it('should be handled by sub', async () => {
+      const res = await app.request('https://example.com/sub/error')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('onError by sub')
+    })
+  })
+
+  describe('onError for a single handler', () => {
+    const app = new Hono()
+    const sub = new Hono()
+
+    sub.get('/ok', (c) => c.text('OK'))
+
+    sub.get('/error', () => {
+      throw new Error('This is Error')
+    })
+
+    sub.onError((err, c) => {
+      return c.text('onError by sub', 500)
+    })
+
+    app.route('/sub', sub)
+
+    it('ok', async () => {
+      const res = await app.request('https://example.com/sub/ok')
+      expect(res.status).toBe(200)
+    })
+
+    it('error', async () => {
+      const res = await app.request('https://example.com/sub/error')
+      expect(res.status).toBe(500)
+      expect(await res.text()).toBe('onError by sub')
+    })
+  })
+
+  describe('notFound', () => {
+    const app = new Hono()
+    const sub = new Hono()
+
+    app.get('/explicit-404', async (c) => {
+      c.header('explicit', '1')
+    })
+
+    app.notFound((c) => {
+      return c.text('404 Not Found by app', 404)
+    })
+
+    sub.get('/ok', (c) => {
+      return c.text('ok')
+    })
+
+    sub.get('/explicit-404', async (c) => {
+      c.header('explicit', '1')
+    })
+
+    sub.notFound((c) => {
+      return c.text('404 Not Found by sub', 404)
+    })
+
+    app.route('/sub', sub)
+
+    it('/explicit-404 should be handled on app', async () => {
+      const res = await app.request('https://example.com/explicit-404')
+      expect(res.status).toBe(404)
+      expect(res.headers.get('explicit')).toBe('1')
+      expect(await res.text()).toBe('404 Not Found by app')
+    })
+
+    it('/sub/explicit-404 should be handled on app', async () => {
+      const res = await app.request('https://example.com/sub/explicit-404')
+      expect(res.status).toBe(404)
+      expect(res.headers.get('explicit')).toBe('1')
+      expect(await res.text()).toBe('404 Not Found by app')
+    })
+
+    it('/implicit-404 should be handled by app', async () => {
+      const res = await app.request('https://example.com/implicit-404')
+      expect(res.status).toBe(404)
+      expect(res.headers.get('explicit')).toBe(null)
+      expect(await res.text()).toBe('404 Not Found by app')
+    })
+
+    it('/sub/implicit-404 should be handled by sub', async () => {
+      const res = await app.request('https://example.com/sub/implicit-404')
+      expect(res.status).toBe(404)
+      expect(res.headers.get('explicit')).toBe(null)
+      expect(await res.text()).toBe('404 Not Found by app')
+    })
+  })
 })
 
 describe('Using other methods with `app.on`', () => {
-  it('Should handle PURGE method with StaticRouter', async () => {
-    const app = new Hono({ router: new StaticRouter() })
-
-    app.on('PURGE', '/purge', (c) => c.text('Accepted', 202))
-
-    const req = new Request('http://localhost/purge', {
-      method: 'PURGE',
-    })
-    const res = await app.request(req)
-    expect(res.status).toBe(202)
-    expect(await res.text()).toBe('Accepted')
-  })
-
   it('Should handle PURGE method with RegExpRouter', async () => {
     const app = new Hono({ router: new RegExpRouter() })
 
@@ -920,6 +1343,48 @@ describe('Using other methods with `app.on`', () => {
     const res = await app.request(req)
     expect(res.status).toBe(202)
     expect(await res.text()).toBe('Accepted')
+  })
+})
+
+describe('Multiple methods with `app.on`', () => {
+  const app = new Hono()
+  app.on(['PUT', 'DELETE'], '/posts/:id', (c) => {
+    return c.json({
+      postId: c.req.param('id'),
+      method: c.req.method,
+    })
+  })
+
+  it('Should return 200 with PUT', async () => {
+    const req = new Request('http://localhost/posts/123', {
+      method: 'PUT',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      postId: '123',
+      method: 'PUT',
+    })
+  })
+
+  it('Should return 200 with DELETE', async () => {
+    const req = new Request('http://localhost/posts/123', {
+      method: 'DELETE',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      postId: '123',
+      method: 'DELETE',
+    })
+  })
+
+  it('Should return 404 with POST', async () => {
+    const req = new Request('http://localhost/posts/123', {
+      method: 'POST',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(404)
   })
 })
 
@@ -1085,8 +1550,10 @@ describe('Cookie', () => {
         const yummyCookie = c.req.cookie('yummy_cookie')
         const tastyCookie = c.req.cookie('tasty_cookie')
         const res = new Response('Good cookie')
-        res.headers.set('Yummy-Cookie', yummyCookie)
-        res.headers.set('Tasty-Cookie', tastyCookie)
+        if (yummyCookie && tastyCookie) {
+          res.headers.set('Yummy-Cookie', yummyCookie)
+          res.headers.set('Tasty-Cookie', tastyCookie)
+        }
         return res
       })
 
@@ -1192,8 +1659,6 @@ describe('Parse Body', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    const body = await req.parseBody()
-    expect(body).toEqual({})
   })
 
   it('POST with `multipart/form-data`', async () => {
@@ -1207,7 +1672,6 @@ describe('Parse Body', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await req.parseBody()).toEqual({ message: 'hello' })
     expect(await res.json()).toEqual({ message: 'hello' })
   })
 
@@ -1225,7 +1689,6 @@ describe('Parse Body', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await req.parseBody()).toEqual({ message: 'hello' })
     expect(await res.json()).toEqual({ message: 'hello' })
   })
 })
@@ -1244,7 +1707,7 @@ describe('Both two middleware returning response', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Bar')
-    expect(res.headers.get('content-type')).toBe('text/plain; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
   })
 })
 
@@ -1300,8 +1763,8 @@ describe('Context set/get variables', () => {
     app.get('/', (c) => {
       const id = c.get('id')
       const title = c.get('title')
-      type verifyID = Expect<Equal<typeof id, number>>
-      type verifyTitle = Expect<Equal<typeof title, string>>
+      type verifyID = Expect<Equal<number, typeof id>>
+      type verifyTitle = Expect<Equal<string, typeof title>>
       return c.text(`${id} is ${title}`)
     })
     const res = await app.request('http://localhost/')
@@ -1320,8 +1783,8 @@ describe('Context binding variables', () => {
 
   it('Should get binding variables with correct types', async () => {
     app.get('/', (c) => {
-      type verifyID = Expect<Equal<typeof c.env.USER_ID, number>>
-      type verifyName = Expect<Equal<typeof c.env.USER_NAME, string>>
+      type verifyID = Expect<Equal<number, typeof c.env.USER_ID>>
+      type verifyName = Expect<Equal<string, typeof c.env.USER_NAME>>
       return c.text('These are verified')
     })
     const res = await app.request('http://localhost/')
@@ -1353,5 +1816,336 @@ describe('Show routes', () => {
     app.get('/foo', (c) => c.text('/'))
     app.showRoutes()
     expect(console.log).toBeCalled()
+  })
+})
+
+describe('jsonT', () => {
+  const api = new Hono()
+
+  api.get('/message', (c) => {
+    return c.jsonT({
+      message: 'Hello',
+    })
+  })
+
+  api.get('/message-async', async (c) => {
+    return c.jsonT({
+      message: 'Hello',
+    })
+  })
+
+  describe('Single handler', () => {
+    const app = new Hono()
+    app.route('/api', api)
+
+    it('Should return 200 response', async () => {
+      const res = await app.request('http://localhost/api/message')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        message: 'Hello',
+      })
+    })
+
+    it('Should return 200 response - with async', async () => {
+      const res = await app.request('http://localhost/api/message-async')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        message: 'Hello',
+      })
+    })
+  })
+
+  describe('With middleware', () => {
+    const app = new Hono()
+    app.use('*', async (_c, next) => {
+      await next()
+    })
+    app.route('/api', api)
+
+    it('Should return 200 response', async () => {
+      const res = await app.request('http://localhost/api/message')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        message: 'Hello',
+      })
+    })
+
+    it('Should return 200 response - with async', async () => {
+      const res = await app.request('http://localhost/api/message-async')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        message: 'Hello',
+      })
+    })
+  })
+})
+
+describe('Optional parameters', () => {
+  const app = new Hono()
+  app.get('/api/:version/animal/:type?', (c) => {
+    const type1 = c.req.param('type')
+    type verify = Expect<Equal<typeof type1, string | undefined>>
+    const { type, version } = c.req.param()
+    type verify2 = Expect<Equal<typeof version, string>>
+    type verify3 = Expect<Equal<typeof type, string | undefined>>
+
+    return c.json({
+      type: type,
+    })
+  })
+
+  it('Should match with an optional parameter', async () => {
+    const res = await app.request('http://localhost/api/v1/animal/bird')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      type: 'bird',
+    })
+  })
+
+  it('Should match without an optional parameter', async () => {
+    const res = await app.request('http://localhost/api/v1/animal')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      type: undefined,
+    })
+  })
+})
+
+describe('app.mount()', () => {
+  describe('Basic', () => {
+    const anotherApp = (req: Request, params: unknown) => {
+      const path = getPath(req)
+      if (path === '/') {
+        return new Response('AnotherApp')
+      }
+      if (path === '/hello') {
+        return new Response('Hello from AnotherApp')
+      }
+      if (path === '/header') {
+        const message = req.headers.get('x-message')
+        return new Response(message)
+      }
+      if (path === '/with-query') {
+        const queryStrings = new URL(req.url).searchParams.toString()
+        return new Response(queryStrings)
+      }
+      if (path == '/with-params') {
+        return new Response(
+          JSON.stringify({
+            params,
+          }),
+          {
+            headers: {
+              'Content-Type': 'application.json',
+            },
+          }
+        )
+      }
+      return new Response('Not Found from AnotherApp', {
+        status: 404,
+      })
+    }
+
+    const app = new Hono()
+    app.use('*', async (c, next) => {
+      await next()
+      c.header('x-message', 'Foo')
+    })
+    app.get('/', (c) => c.text('Hono'))
+    app.mount('/another-app', anotherApp, () => {
+      return 'params'
+    })
+    app.mount('/another-app2/sub-slash/', anotherApp)
+
+    const api = new Hono().basePath('/api')
+    api.mount('/another-app', anotherApp)
+
+    it('Should return responses from Hono app', async () => {
+      const res = await app.request('/')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('x-message')).toBe('Foo')
+      expect(await res.text()).toBe('Hono')
+    })
+
+    it('Should return responses from AnotherApp', async () => {
+      let res = await app.request('/another-app')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('x-message')).toBe('Foo')
+      expect(await res.text()).toBe('AnotherApp')
+
+      res = await app.request('/another-app/hello')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('x-message')).toBe('Foo')
+      expect(await res.text()).toBe('Hello from AnotherApp')
+
+      const req = new Request('http://localhost/another-app/header', {
+        headers: {
+          'x-message': 'Message Foo!',
+        },
+      })
+      res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(res.headers.get('x-message')).toBe('Foo')
+      expect(await res.text()).toBe('Message Foo!')
+
+      res = await app.request('/another-app/not-found')
+      expect(res.status).toBe(404)
+      expect(res.headers.get('x-message')).toBe('Foo')
+      expect(await res.text()).toBe('Not Found from AnotherApp')
+
+      res = await app.request('/another-app/with-query?foo=bar&baz=qux')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('foo=bar&baz=qux')
+
+      res = await app.request('/another-app/with-params')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        params: 'params',
+      })
+    })
+
+    it('Should return responses from AnotherApp - sub + slash', async () => {
+      const res = await app.request('/another-app2/sub-slash')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('AnotherApp')
+    })
+
+    it('Should return responses from AnotherApp - with `basePath()`', async () => {
+      const res = await api.request('/api/another-app')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('AnotherApp')
+    })
+  })
+
+  describe('With fetch', () => {
+    const anotherApp = async (req: Request, env: {}, executionContext: ExecutionContext) => {
+      const path = getPath(req)
+      if (path === '/') {
+        return new Response(
+          JSON.stringify({
+            env,
+            executionContext,
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        )
+      }
+      return new Response('Not Found from AnotherApp', {
+        status: 404,
+      })
+    }
+
+    const app = new Hono()
+    app.mount('/another-app', anotherApp)
+
+    it('Should handle Env and ExecuteContext', async () => {
+      const request = new Request('http://localhost/another-app')
+      const res = await app.fetch(
+        request,
+        {
+          TOKEN: 'foo',
+        },
+        {
+          // Force mocking!
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          waitUntil: 'waitUntil',
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          passThroughOnException: 'passThroughOnException',
+        }
+      )
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        env: {
+          TOKEN: 'foo',
+        },
+        executionContext: {
+          waitUntil: 'waitUntil',
+          passThroughOnException: 'passThroughOnException',
+        },
+      })
+    })
+  })
+
+  describe('Mount on `/`', () => {
+    const anotherApp = (req: Request, params: unknown) => {
+      const path = getPath(req)
+      if (path === '/') {
+        return new Response('AnotherApp')
+      }
+      if (path === '/hello') {
+        return new Response('Hello from AnotherApp')
+      }
+      if (path === '/good/night') {
+        return new Response('Good Night from AnotherApp')
+      }
+      return new Response('Not Found from AnotherApp', {
+        status: 404,
+      })
+    }
+
+    const app = new Hono()
+    app.mount('/', anotherApp)
+
+    it('Should return responses from AnotherApp - mount on `/`', async () => {
+      let res = await app.request('/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('AnotherApp')
+      res = await app.request('/hello')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('Hello from AnotherApp')
+      res = await app.request('/good/night')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('Good Night from AnotherApp')
+      res = await app.request('/not-found')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Not Found from AnotherApp')
+    })
+  })
+})
+
+describe('Router Name', () => {
+  it('Should return the correct router name', async () => {
+    const app = new Hono({
+      router: new RegExpRouter(),
+    })
+    app.get('/router-name', (c) => {
+      return c.text(app.routerName ?? 'N/A')
+    })
+    const res = await app.request('/router-name')
+    expect(await res.text()).toBe('RegExpRouter')
+  })
+})
+
+describe('HEAD method', () => {
+  const app = new Hono()
+
+  app.get('/page', (c) => {
+    c.header('X-Message', 'Foo')
+    c.header('X-Method', c.req.method)
+    return c.text('/page')
+  })
+
+  it('Should return 200 response with body - GET /page', async () => {
+    const res = await app.request('/page')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Message')).toBe('Foo')
+    expect(res.headers.get('X-Method')).toBe('GET')
+    expect(await res.text()).toBe('/page')
+  })
+
+  it('Should return 200 response without body - HEAD /page', async () => {
+    const req = new Request('http://localhost/page', {
+      method: 'HEAD',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Message')).toBe('Foo')
+    expect(res.headers.get('X-Method')).toBe('HEAD')
+    expect(res.body).toBe(null)
   })
 })

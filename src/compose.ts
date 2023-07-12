@@ -1,5 +1,5 @@
 import { Context } from './context'
-import type { Environment, NotFoundHandler, ErrorHandler } from './types'
+import type { Env, NotFoundHandler, ErrorHandler } from './types'
 
 interface ComposeContext {
   finalized: boolean
@@ -7,10 +7,10 @@ interface ComposeContext {
 }
 
 // Based on the code in the MIT licensed `koa-compose` package.
-export const compose = <C extends ComposeContext, E extends Partial<Environment> = Environment>(
+export const compose = <C extends ComposeContext, E extends Env = Env>(
   middleware: Function[],
-  onNotFound?: NotFoundHandler<E>,
-  onError?: ErrorHandler<E>
+  onError?: ErrorHandler<E>,
+  onNotFound?: NotFoundHandler<E>
 ) => {
   const middlewareLength = middleware.length
   return (context: C, next?: Function) => {
@@ -50,6 +50,9 @@ export const compose = <C extends ComposeContext, E extends Partial<Environment>
       }
 
       if (!(res instanceof Promise)) {
+        if (res !== undefined && 'response' in res) {
+          res = res['response']
+        }
         if (res && (context.finalized === false || isError)) {
           context.res = res
         }
@@ -57,15 +60,18 @@ export const compose = <C extends ComposeContext, E extends Partial<Environment>
       } else {
         return res
           .then((res) => {
+            if (res !== undefined && 'response' in res) {
+              res = res['response']
+            }
             if (res && context.finalized === false) {
               context.res = res
             }
             return context
           })
-          .catch((err) => {
+          .catch(async (err) => {
             if (err instanceof Error && context instanceof Context && onError) {
               context.error = err
-              context.res = onError(err, context)
+              context.res = await onError(err, context)
               return context
             }
             throw err

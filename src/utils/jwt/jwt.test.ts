@@ -7,6 +7,7 @@ import {
   JwtTokenInvalid,
   JwtTokenNotBefore,
   JwtTokenExpired,
+  JwtTokenIssuedAt,
 } from './types'
 
 describe('JWT', () => {
@@ -30,7 +31,7 @@ describe('JWT', () => {
     const tok = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ'
     const secret = 'a-secret'
     let err: JwtTokenInvalid
-    let authorized = false
+    let authorized
     try {
       authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
     } catch (e) {
@@ -38,7 +39,7 @@ describe('JWT', () => {
     }
     // @ts-ignore
     expect(err).toEqual(new JwtTokenInvalid(tok))
-    expect(authorized).toBe(false)
+    expect(authorized).toBeUndefined()
   })
 
   it('JwtTokenNotBefore', async () => {
@@ -46,7 +47,7 @@ describe('JWT', () => {
       'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NjQ2MDYzMzQsImV4cCI6MTY2NDYwOTkzNCwibmJmIjoiMzEwNDYwNjI2NCJ9.hpSDT_cfkxeiLWEpWVT8TDxFP3dFi27q1K7CcMcLXHc'
     const secret = 'a-secret'
     let err: JwtTokenNotBefore
-    let authorized = false
+    let authorized
     try {
       authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
     } catch (e) {
@@ -54,7 +55,7 @@ describe('JWT', () => {
     }
     // @ts-ignore
     expect(err).toEqual(new JwtTokenNotBefore(tok))
-    expect(authorized).toBe(false)
+    expect(authorized).toBeUndefined()
   })
 
   it('JwtTokenExpired', async () => {
@@ -62,14 +63,34 @@ describe('JWT', () => {
       'eyJraWQiOiJFemF6bVZWbnd0TUpUNEFveFVtT0dILWJ0Y2VUVFM3djBYcEJuMm5ZZ2VjIiwiYWxnIjoiSFMyNTYifQ.eyJyb2xlIjoiYXBpX3JvbGUiLCJleHAiOjE2MzMwNDY0MDB9.Gmq_dozOnwzqkMUMEm7uny7cMZuF1d0QkCnmRXAbTEk'
     const secret = 'a-secret'
     let err
-    let authorized = false
+    let authorized
     try {
       authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
     } catch (e) {
       err = e
     }
     expect(err).toEqual(new JwtTokenExpired(tok))
-    expect(authorized).toBe(false)
+    expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenIssuedAt', async () => {
+    const now = 1633046400
+    jest.useFakeTimers().setSystemTime(new Date().setTime(now * 1000))
+
+    const iat = now + 1000 // after 1s
+    const payload = { role: 'api_role', iat }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenIssuedAt(now, iat))
+    expect(authorized).toBeUndefined()
   })
 
   it('HS256 sign & verify & decode', async () => {
@@ -80,7 +101,9 @@ describe('JWT', () => {
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
     expect(tok).toEqual(expected)
 
-    expect(await JWT.verify(tok, secret, AlgorithmTypes.HS256)).toBe(true)
+    const verifiedPayload = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    expect(verifiedPayload).not.toBeUndefined()
+    expect(verifiedPayload).toEqual(payload)
 
     expect(JWT.decode(tok)).toEqual({
       header: {
@@ -102,13 +125,13 @@ describe('JWT', () => {
     expect(tok).toEqual(expected)
 
     let err = null
-    let authorized = false
+    let authorized
     try {
       authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS256)
     } catch (e) {
       err = e
     }
-    expect(authorized).toBe(false)
+    expect(authorized).toBeUndefined()
     expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
   })
 
@@ -120,7 +143,9 @@ describe('JWT', () => {
       'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.RqVLgExB_GXF1-9T-k4V4HjFmiuQKTEjVSiZd-YL0WERIlywZ7PfzAuTZSJU4gg8cscGamQa030cieEWrYcywg'
     expect(tok).toEqual(expected)
 
-    expect(await JWT.verify(tok, secret, AlgorithmTypes.HS512)).toBe(true)
+    const verifiedPayload = await JWT.verify(tok, secret, AlgorithmTypes.HS512)
+    expect(verifiedPayload).not.toBeUndefined()
+    expect(verifiedPayload).toEqual(payload)
 
     expect(JWT.decode(tok)).toEqual({
       header: {
@@ -142,13 +167,13 @@ describe('JWT', () => {
     expect(tok).toEqual(expected)
 
     let err = null
-    let authorized = false
+    let authorized
     try {
       authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS256)
     } catch (e) {
       err = e
     }
-    expect(authorized).toBe(false)
+    expect(authorized).toBeUndefined()
     expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
   })
 
@@ -161,13 +186,13 @@ describe('JWT', () => {
     expect(tok).toEqual(expected)
 
     let err = null
-    let authorized = false
+    let authorized
     try {
       authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS256)
     } catch (e) {
       err = e
     }
-    expect(authorized).toBe(false)
+    expect(authorized).toBeUndefined()
     expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
   })
 })

@@ -1,8 +1,5 @@
 import { compose } from './compose'
 import { Context } from './context'
-import { extendRequestPrototype } from './request'
-
-extendRequestPrototype()
 
 type C = {
   req: Record<string, string>
@@ -61,7 +58,7 @@ describe('compose', () => {
   })
 })
 
-describe('compose with returning a promise, non-async funciton', () => {
+describe('compose with returning a promise, non-async function', () => {
   const handlers: Function[] = [
     () => {
       return new Promise((resolve) =>
@@ -136,7 +133,7 @@ describe('compose with Context - 200 success', () => {
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(200)
-    expect(await context.res!.text()).toBe('Hello')
+    expect(await context.res.text()).toBe('Hello')
   })
 })
 
@@ -155,7 +152,7 @@ describe('compose with Context - 404 not found', () => {
   middleware.push(mHandler)
 
   it('Should return 404 Response', async () => {
-    const composed = compose<Context>(middleware, onNotFound)
+    const composed = compose<Context>(middleware, undefined, onNotFound)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(404)
@@ -169,7 +166,7 @@ describe('compose with Context - 401 not authorized', () => {
 
   const req = new Request('http://localhost/')
   const c: Context = new Context(req)
-  const handler = (c: Context, _next: Function) => {
+  const handler = (c: Context) => {
     return c.text('Hello')
   }
   const mHandler = async (c: Context, next: Function) => {
@@ -238,7 +235,7 @@ describe('compose with Context - 500 error', () => {
     const onNotFound = (c: Context) => c.text('NotFound', 404)
     const onError = (_error: Error, c: Context) => c.text('onError', 500)
 
-    const composed = compose<Context>(middleware, onNotFound, onError)
+    const composed = compose<Context>(middleware, onError, onNotFound)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(500)
@@ -284,7 +281,7 @@ describe('compose with Context - not finalized', () => {
 
     middleware.push(mHandler)
     middleware.push(mHandler2)
-    const composed = compose<Context>(middleware, onNotFound)
+    const composed = compose<Context>(middleware, undefined, onNotFound)
     const context = await composed(c)
     expect(context.finalized).toBe(false)
   })
@@ -298,17 +295,13 @@ describe('compose with Context - not finalized', () => {
     middleware2.push(mHandler3)
     middleware2.push(handler)
 
-    const composed = compose<Context>(middleware2, onNotFound)
+    const composed = compose<Context>(middleware2, undefined, onNotFound)
     const context = await composed(c)
     expect(context.finalized).toBe(false)
   })
 })
 
 describe('Compose', function () {
-  function isPromise(x: any) {
-    return x && typeof x.then === 'function'
-  }
-
   it('should get executed order one by one', async () => {
     const arr: number[] = []
     const stack = []
@@ -412,8 +405,8 @@ describe('Compose', function () {
   })
 
   it('should create next functions that return a Promise', async () => {
-    const stack: any[] = []
-    const arr: any[] = []
+    const stack: Function[] = []
+    const arr: unknown[] = []
     for (let i = 0; i < 5; i++) {
       stack.push((_context: C, next: Function) => {
         arr.push(next())
@@ -423,7 +416,8 @@ describe('Compose', function () {
     await compose(stack)({ res: null, finalized: false })
 
     for (const next of arr) {
-      expect(isPromise(next)).toBe(true)
+      const isPromise = !!(next as { then?: Function })?.then
+      expect(isPromise).toBe(true)
     }
   })
 
@@ -483,7 +477,7 @@ describe('Compose', function () {
   })
 
   it('should catch downstream errors', async () => {
-    const arr: any[] = []
+    const arr: number[] = []
     const stack = []
 
     stack.push(async (_ctx: C, next: Function) => {
@@ -595,7 +589,7 @@ describe('Compose', function () {
     type C = {
       val: number
       finalized: boolean
-      res: any
+      res: unknown
     }
     const stack = []
 
@@ -638,7 +632,7 @@ describe('Compose', function () {
       middleware: number
       next: number
       finalized: boolean
-      res: any
+      res: unknown
     }
 
     const middleware = [

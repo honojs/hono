@@ -1,32 +1,19 @@
 // @denoify-ignore
-// eslint-disable-next-line @typescript-eslint/triple-slash-reference
-/// <reference path="./request.ts" /> Import "declare global" for the Request interface.
 
 import { Hono } from './hono'
 export type {
-  Next,
-  ContextVariableMap,
-  MiddlewareHandler,
+  Env,
   ErrorHandler,
+  Handler,
+  MiddlewareHandler,
+  Next,
   NotFoundHandler,
+  ValidationTargets,
+  Input,
+  TypedResponse,
 } from './types'
-export type { Context } from './context'
-export type { Validator } from './validator/validator'
-import type { CustomHandler } from './types'
-export type { CustomHandler as Handler }
-
-declare module './hono' {
-  interface Hono {
-    fire(): void
-  }
-}
-
-Hono.prototype.fire = function () {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  addEventListener('fetch', (event: FetchEvent): void => {
-    void event.respondWith(this.handleEvent(event))
-  })
-}
+export type { Context, ContextVariableMap } from './context'
+export type { HonoRequest } from './request'
+export type { InferRequestType, InferResponseType, ClientRequestOptions } from './client'
 
 export { Hono }

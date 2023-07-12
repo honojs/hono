@@ -1,7 +1,7 @@
 import type { Result } from '../../router.ts'
 import { METHOD_NAME_ALL } from '../../router.ts'
 import type { Pattern } from '../../utils/url.ts'
-import { splitPath, getPattern } from '../../utils/url.ts'
+import { splitPath, splitRoutingPath, getPattern } from '../../utils/url.ts'
 
 type HandlerSet<T> = {
   handler: T
@@ -53,10 +53,9 @@ export class Node<T> {
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let curNode: Node<T> = this
-    const parts = splitPath(path)
+    const parts = splitRoutingPath(path)
 
     const parentPatterns: Pattern[] = []
-
     const errorMessage = (name: string): string => {
       return `Duplicate param name, use another name instead of '${name}' - ${method} ${path} <--- '${name}'`
     }
@@ -87,7 +86,6 @@ export class Node<T> {
         curNode.patterns.push(pattern)
         parentPatterns.push(...curNode.patterns)
       }
-
       parentPatterns.push(...curNode.patterns)
       curNode = curNode.children[p]
     }
@@ -106,7 +104,8 @@ export class Node<T> {
     return curNode
   }
 
-  private getHandlerSets(node: Node<T>, method: string, wildcard?: boolean): HandlerSet<T>[] {
+  // getHandlerSets
+  private gHSets(node: Node<T>, method: string, wildcard?: boolean): HandlerSet<T>[] {
     return (node.handlerSetCache[`${method}:${wildcard ? '1' : '0'}`] ||= (() => {
       const handlerSets: HandlerSet<T>[] = []
       for (let i = 0, len = node.methods.length; i < len; i++) {
@@ -143,9 +142,9 @@ export class Node<T> {
           if (isLast === true) {
             // '/hello/*' => match '/hello'
             if (nextNode.children['*']) {
-              handlerSets.push(...this.getHandlerSets(nextNode.children['*'], method, true))
+              handlerSets.push(...this.gHSets(nextNode.children['*'], method, true))
             }
-            handlerSets.push(...this.getHandlerSets(nextNode, method))
+            handlerSets.push(...this.gHSets(nextNode, method))
             matched = true
           } else {
             tempNodes.push(nextNode)
@@ -160,7 +159,7 @@ export class Node<T> {
           if (pattern === '*') {
             const astNode = node.children['*']
             if (astNode) {
-              handlerSets.push(...this.getHandlerSets(astNode, method))
+              handlerSets.push(...this.gHSets(astNode, method))
               tempNodes.push(astNode)
             }
             continue
@@ -171,21 +170,36 @@ export class Node<T> {
           // Named match
           // `/posts/:id` => match /posts/123
           const [key, name, matcher] = pattern
+
+          // `/js/:filename{[a-z]+.js}` => match /js/chunk/123.js
+          const restPathString = parts.slice(i).join('/')
+          if (matcher instanceof RegExp && matcher.test(restPathString)) {
+            handlerSets.push(...this.gHSets(node.children[key], method))
+            params[name] = restPathString
+            continue
+          }
+
           if (matcher === true || (matcher instanceof RegExp && matcher.test(part))) {
             if (typeof key === 'string') {
               if (isLast === true) {
-                handlerSets.push(...this.getHandlerSets(node.children[key], method))
+                handlerSets.push(...this.gHSets(node.children[key], method))
               } else {
                 tempNodes.push(node.children[key])
               }
             }
 
-            // '/book/a'     => not-slug
-            // '/book/:slug' => slug
+            // `/book/a`     => no-slug
+            // `/book/:slug` => slug
+            // `/book/b`     => no-slug-b
             // GET /book/a   ~> no-slug, param['slug'] => undefined
             // GET /book/foo ~> slug, param['slug'] => foo
+            // GET /book/b   ~> no-slug-b, param['slug'] => b
             if (typeof name === 'string' && !matched) {
               params[name] = part
+            } else {
+              if (node.children[part]) {
+                params[name] = part
+              }
             }
           }
         }

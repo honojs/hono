@@ -31,17 +31,35 @@ describe('CORS by Middleware', () => {
     })
   )
 
-  app.all('/api/abc', (c) => {
+  app.use('/api5/*', cors())
+
+  app.use(
+    '/api6/*',
+    cors({
+      origin: 'http://example.com',
+    })
+  )
+  app.use(
+    '/api6/*',
+    cors({
+      origin: 'http://example.com',
+    })
+  )
+
+  app.get('/api/abc', (c) => {
     return c.json({ success: true })
   })
-  app.all('/api2/abc', (c) => {
+  app.get('/api2/abc', (c) => {
     return c.json({ success: true })
   })
-  app.all('/api3/abc', (c) => {
+  app.get('/api3/abc', (c) => {
     return c.json({ success: true })
   })
-  app.all('/api4/abc', (c) => {
+  app.get('/api4/abc', (c) => {
     return c.json({ success: true })
+  })
+  app.get('/api5/abc', () => {
+    return new Response(JSON.stringify({ success: true }))
   })
 
   it('GET default', async () => {
@@ -128,6 +146,19 @@ describe('CORS by Middleware', () => {
       },
     })
     res = await app.request(req)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+  })
+
+  it('With raw Response object', async () => {
+    const res = await app.request('http://localhost/api5/abc')
+
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    expect(res.headers.get('Vary')).toBeNull()
+  })
+
+  it('Should not return duplicate header values', async () => {
+    const res = await app.request('http://localhost/api6/abc')
+
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
   })
 })

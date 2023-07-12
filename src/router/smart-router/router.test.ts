@@ -1,76 +1,13 @@
 import { RegExpRouter } from '../reg-exp-router'
-import { StaticRouter } from '../static-router'
 import { TrieRouter } from '../trie-router'
 import { SmartRouter } from './router'
-
-describe('StaticRouter', () => {
-  describe('Basic Usage', () => {
-    const router = new SmartRouter<string>({
-      routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
-    })
-
-    router.add('GET', '/hello', 'get hello')
-    router.add('POST', '/hello', 'post hello')
-    router.add('PURGE', '/hello', 'purge hello')
-
-    it('get, post hello', async () => {
-      let res = router.match('GET', '/hello')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['get hello'])
-
-      res = router.match('POST', '/hello')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['post hello'])
-
-      res = router.match('PURGE', '/hello')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['purge hello'])
-
-      res = router.match('PUT', '/hello')
-      expect(res).toBeNull()
-
-      res = router.match('GET', '/')
-      expect(res).toBeNull()
-
-      expect(router.activeRouter).toBeInstanceOf(StaticRouter)
-    })
-  })
-
-  describe('Multi match', () => {
-    describe('Blog', () => {
-      const router = new SmartRouter<string>({
-        routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
-      })
-
-      router.add('ALL', '*', 'middleware a')
-      router.add('GET', '*', 'middleware b')
-      router.add('GET', '/entry', 'get entries')
-      it('GET /', async () => {
-        const res = router.match('GET', '/')
-        expect(res).not.toBeNull()
-        expect(res?.handlers).toEqual(['middleware a', 'middleware b'])
-        expect(router.activeRouter).toBeInstanceOf(StaticRouter)
-      })
-      it('GET /entry', async () => {
-        const res = router.match('GET', '/entry')
-        expect(res).not.toBeNull()
-        expect(res?.handlers).toEqual(['middleware a', 'middleware b', 'get entries'])
-      })
-      it('DELETE /entry', async () => {
-        const res = router.match('DELETE', '/entry')
-        expect(res).not.toBeNull()
-        expect(res?.handlers).toEqual(['middleware a'])
-      })
-    })
-  })
-})
 
 describe('RegExpRouter', () => {
   describe('Complex', () => {
     let router: SmartRouter<string>
     beforeEach(() => {
       router = new SmartRouter<string>({
-        routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
+        routers: [new RegExpRouter(), new TrieRouter()],
       })
     })
 
@@ -81,6 +18,7 @@ describe('RegExpRouter', () => {
       expect(res?.handlers).toEqual(['get entry'])
       expect(res?.params['id']).toBe('123')
       expect(router.activeRouter).toBeInstanceOf(RegExpRouter)
+      expect(router.name).toBe('SmartRouter + RegExpRouter')
     })
 
     it('Wildcard', async () => {
@@ -133,7 +71,7 @@ describe('RegExpRouter', () => {
 
 describe('TrieRouter', () => {
   const router = new SmartRouter<string>({
-    routers: [new StaticRouter(), new RegExpRouter(), new TrieRouter()],
+    routers: [new RegExpRouter(), new TrieRouter()],
   })
 
   router.add('GET', '/:user/entries', 'get user entries')
@@ -145,5 +83,6 @@ describe('TrieRouter', () => {
     expect(res?.params['user']).toBe('entry')
     expect(res?.params['name']).toBe('entries')
     expect(router.activeRouter).toBeInstanceOf(TrieRouter)
+    expect(router.name).toBe('SmartRouter + TrieRouter')
   })
 })

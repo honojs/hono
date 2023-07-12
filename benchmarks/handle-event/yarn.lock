@@ -345,10 +345,10 @@ is-number@^7.0.0:
   resolved "https://registry.yarnpkg.com/is-number/-/is-number-7.0.0.tgz#7535345b896734d5f80c4d06c50955527a14f12b"
   integrity sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==
 
-itty-router@^2.6.3:
-  version "2.6.3"
-  resolved "https://registry.yarnpkg.com/itty-router/-/itty-router-2.6.3.tgz#d95a8b6873da0cdcc7e4955e2dbbac2982aba27e"
-  integrity sha512-w9aELaE7U/vH5ykJ2wacgNe0hOa1z4XdiSgYgAuEg1eZ+G8wZvURWIa3Vib2UhrFY2r+hZgVIjP1mFO+Vkhk5Q==
+itty-router@^3.0.11:
+  version "3.0.11"
+  resolved "https://registry.yarnpkg.com/itty-router/-/itty-router-3.0.11.tgz#256c2ef0a12721a839656f49db640d40ed2fb308"
+  integrity sha512-vWsoHBi2CmU15YzyUeHjRfjdySL2jqZQKA9jP1LXkBcLJAo0KQNVlQMvhtzG0mzABhVYifeBF97UkrrpuTCWYQ==
 
 livereload-js@^3.3.1:
   version "3.4.0"

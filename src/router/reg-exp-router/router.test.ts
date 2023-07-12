@@ -182,7 +182,7 @@ describe('UnsupportedPathError', () => {
     router.add('GET', '/entry/:name', 'get entry')
     router.add('POST', '/entry', 'create entry')
 
-    it('GET /entry/entry', async () => {
+    it('GET /entry/entries', async () => {
       expect(() => {
         router.match('GET', '/entry/entries')
       }).toThrowError(UnsupportedPathError)
@@ -220,6 +220,38 @@ describe('UnsupportedPathError', () => {
     expect(() => {
       router.match('GET', '/')
     }).toThrowError(UnsupportedPathError)
+  })
+
+  describe('static and dynamic', () => {
+    it('static first', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/reg-exp/router', 'foo')
+      router.add('GET', '/reg-exp/:id', 'bar')
+
+      expect(() => {
+        router.match('GET', '/')
+      }).toThrowError(UnsupportedPathError)
+    })
+
+    it('long label', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/reg-exp/router', 'foo')
+      router.add('GET', '/reg-exp/:service', 'bar')
+
+      expect(() => {
+        router.match('GET', '/')
+      }).toThrowError(UnsupportedPathError)
+    })
+
+    it('dynamic first', () => {
+      const router = new RegExpRouter<string>()
+      router.add('GET', '/reg-exp/:id', 'bar')
+      router.add('GET', '/reg-exp/router', 'foo')
+
+      expect(() => {
+        router.match('GET', '/')
+      }).toThrowError(UnsupportedPathError)
+    })
   })
 
   it('different regular expression', () => {
@@ -329,5 +361,145 @@ describe('long prefix, then star', () => {
       const res = router.match('GET', '/long/prefix/test')
       expect(res?.handlers).toEqual(['long-prefix', 'long', 'star1', 'star2'])
     })
+  })
+
+  describe('Including slashes', () => {
+    const router = new RegExpRouter<string>()
+
+    router.add('GET', '/js/:filename{[a-z0-9/]+.js}', 'any file')
+
+    // XXX This route can not be added with `:label` to RegExpRouter. This is ambiguous.
+    // router.add('GET', '/js/main.js', 'main.js')
+    // it('get /js/main.js', () => {
+    //   const res = router.match('GET', '/js/main.js')
+    //   expect(res).not.toBeNull()
+    //   expect(res?.handlers).toEqual(['any file', 'main.js'])
+    //   expect(res?.params).toEqual({ filename: 'main.js' })
+    // })
+
+    it('get /js/chunk/123.js', () => {
+      const res = router.match('GET', '/js/chunk/123.js')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['any file'])
+      expect(res?.params).toEqual({ filename: 'chunk/123.js' })
+    })
+
+    it('get /js/chunk/nest/123.js', () => {
+      const res = router.match('GET', '/js/chunk/nest/123.js')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['any file'])
+      expect(res?.params).toEqual({ filename: 'chunk/nest/123.js' })
+    })
+  })
+
+  describe('REST API', () => {
+    const router = new RegExpRouter<string>()
+
+    router.add('GET', '/users/:username{[a-z]+}', 'profile')
+    router.add('GET', '/users/:username{[a-z]+}/posts', 'posts')
+
+    it('get /users/hono', () => {
+      const res = router.match('GET', '/users/hono')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['profile'])
+    })
+
+    it('get /users/hono/posts', () => {
+      const res = router.match('GET', '/users/hono/posts')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['posts'])
+    })
+  })
+})
+
+describe('static routes of ALL and GET', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('ALL', '/foo', 'foo')
+  router.add('GET', '/bar', 'bar')
+
+  it('get /foo', () => {
+    const res = router.match('GET', '/foo')
+    expect(res?.handlers).toEqual(['foo'])
+  })
+})
+
+describe('ALL and Star', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('ALL', '/x', '/x')
+  router.add('GET', '*', 'star')
+
+  it('Should return /x and star', async () => {
+    const res = router.match('GET', '/x')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['/x', 'star'])
+  })
+})
+
+describe('GET star, ALL static, GET star...', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('GET', '*', 'star1')
+  router.add('ALL', '/x', '/x')
+  router.add('GET', '*', 'star2')
+  router.add('GET', '*', 'star3')
+
+  it('Should return /x and star', async () => {
+    const res = router.match('GET', '/x')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['star1', '/x', 'star2', 'star3'])
+  })
+})
+
+// https://github.com/honojs/hono/issues/699
+describe('GET star, GET static, ALL star...', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('GET', '/y/*', 'star1')
+  router.add('GET', '/y/a', 'a')
+  router.add('ALL', '/y/b/*', 'star2')
+  router.add('GET', '/y/b/bar', 'bar')
+
+  it('Should return star1, star2, and bar', async () => {
+    const res = router.match('GET', '/y/b/bar')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['star1', 'star2', 'bar'])
+  })
+})
+
+describe('ALL star, ALL star, GET static, ALL star...', () => {
+  const router = new RegExpRouter<string>()
+
+  router.add('ALL', '*', 'wildcard')
+  router.add('ALL', '/a/*', 'star1')
+  router.add('GET', '/a/foo', 'foo')
+  router.add('ALL', '/b/*', 'star2')
+  router.add('GET', '/b/bar', 'bar')
+
+  it('Should return wildcard, star2 and bar', async () => {
+    const res = router.match('GET', '/b/bar')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['wildcard', 'star2', 'bar'])
+  })
+})
+
+describe('Routing with a hostname', () => {
+  const router = new RegExpRouter<string>()
+  router.add('get', 'www1.example.com/hello', 'www1')
+  router.add('get', 'www2.example.com/hello', 'www2')
+  it('GET www1.example.com/hello', () => {
+    const res = router.match('get', 'www1.example.com/hello')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['www1'])
+  })
+  it('GET www2.example.com/hello', () => {
+    const res = router.match('get', 'www2.example.com/hello')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['www2'])
+  })
+  it('GET /hello', () => {
+    const res = router.match('get', '/hello')
+    expect(res).toBeNull()
   })
 })

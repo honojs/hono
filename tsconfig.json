@@ -7,14 +7,9 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": true,
-    "strictPropertyInitialization": true,
-    "strictNullChecks": true,
+    "skipLibCheck": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "lib": [
-      "WebWorker"
-    ],
     "types": [
       "jest",
       "node"
@@ -26,6 +21,7 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.mts",
-    "src/**/*.test.ts"
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
   ],
 }

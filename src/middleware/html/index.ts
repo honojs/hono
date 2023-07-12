@@ -1,22 +1,24 @@
 import { escapeToBuffer } from '../../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html'
 
-export const raw = (value: any): HtmlEscapedString => {
+export const raw = (value: unknown): HtmlEscapedString => {
   const escapedString = new String(value) as HtmlEscapedString
   escapedString.isEscaped = true
 
   return escapedString
 }
 
-export const html = (strings: TemplateStringsArray, ...values: any[]): HtmlEscapedString => {
+export const html = (strings: TemplateStringsArray, ...values: unknown[]): HtmlEscapedString => {
   const buffer: StringBuffer = ['']
 
   for (let i = 0, len = strings.length - 1; i < len; i++) {
     buffer[0] += strings[i]
 
-    const children = values[i] instanceof Array ? values[i].flat(Infinity) : [values[i]]
+    const children =
+      values[i] instanceof Array ? (values[i] as Array<unknown>).flat(Infinity) : [values[i]]
     for (let i = 0, len = children.length; i < len; i++) {
-      const child = children[i]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const child = children[i] as any
       if (typeof child === 'string') {
         escapeToBuffer(child, buffer)
       } else if (typeof child === 'boolean' || child === null || child === undefined) {

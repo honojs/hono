@@ -1,38 +1,38 @@
 import { Hono } from './hono'
 
 declare global {
-  class ExtendableEvent extends Event {
-    constructor(type: string, init?: EventInit)
-    waitUntil(promise: Promise<any>): void
-  }
-  abstract class FetchEvent extends ExtendableEvent {
-    readonly request: Request
-    respondWith(promise: Response | Promise<Response>): void
-    passThroughOnException(): void
-  }
   interface ExecutionContext {
-    waitUntil(promise: Promise<any>): void
+    waitUntil(promise: Promise<void>): void
     passThroughOnException(): void
   }
 }
 
 export type {
-  Next,
-  ContextVariableMap,
-  MiddlewareHandler,
+  Env,
   ErrorHandler,
+  Handler,
+  MiddlewareHandler,
+  Next,
   NotFoundHandler,
+  ValidationTargets,
+  Input,
+  TypedResponse,
 } from './types'
-import type { CustomHandler } from './types'
-export type { CustomHandler as Handler }
-export type { Context } from './context'
+export type { Context, ContextVariableMap } from './context'
+export type { HonoRequest } from './request'
 export { Hono }
+export { HTTPException } from './http-exception'
 
 // Router
 export { RegExpRouter } from './router/reg-exp-router'
 export { TrieRouter } from './router/trie-router'
-export { StaticRouter } from './router/static-router'
 export { SmartRouter } from './router/smart-router'
+export { PatternRouter } from './router/pattern-router'
+export { LinearRouter } from './router/linear-router'
 
 // Validator
-export type { Validator } from './validator/validator'
+export { validator } from './validator'
+
+// Client
+export { hc } from './client'
+export type { InferRequestType, InferResponseType, ClientRequestOptions } from './client'

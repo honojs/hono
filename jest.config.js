@@ -3,7 +3,6 @@ export default {
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
-  testPathIgnorePatterns: ['./examples'],
   testEnvironment: 'miniflare',
   testEnvironmentOptions: {
     /*

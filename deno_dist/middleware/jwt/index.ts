@@ -1,6 +1,15 @@
+import { HTTPException } from '../../http-exception.ts'
 import type { MiddlewareHandler } from '../../types.ts'
 import { Jwt } from '../../utils/jwt/index.ts'
 import type { AlgorithmTypes } from '../../utils/jwt/types.ts'
+import '../../context.ts'
+
+declare module '../../context.ts' {
+  interface ContextVariableMap {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    jwtPayload: any
+  }
+}
 
 export const jwt = (options: {
   secret: string
@@ -21,12 +30,13 @@ export const jwt = (options: {
     if (credentials) {
       const parts = credentials.split(/\s+/)
       if (parts.length !== 2) {
-        return new Response('Unauthorized', {
+        const res = new Response('Unauthorized', {
           status: 401,
           headers: {
             'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="invalid credentials structure"`,
           },
         })
+        throw new HTTPException(401, { res })
       } else {
         token = parts[1]
       }
@@ -35,30 +45,34 @@ export const jwt = (options: {
     }
 
     if (!token) {
-      return new Response('Unauthorized', {
+      const res = new Response('Unauthorized', {
         status: 401,
         headers: {
           'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="no authorization included in request"`,
         },
       })
+      throw new HTTPException(401, { res })
     }
 
-    let authorized = false
+    let payload
     let msg = ''
     try {
-      authorized = await Jwt.verify(token, options.secret, options.alg as AlgorithmTypes)
+      payload = await Jwt.verify(token, options.secret, options.alg as AlgorithmTypes)
     } catch (e) {
       msg = `${e}`
     }
-    if (!authorized) {
-      return new Response('Unauthorized', {
+    if (!payload) {
+      const res = new Response('Unauthorized', {
         status: 401,
         statusText: msg,
         headers: {
           'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_token",error_description="token verification failure"`,
         },
       })
+      throw new HTTPException(401, { res })
     }
+
+    ctx.set('jwtPayload', payload)
 
     await next()
   }

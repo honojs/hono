@@ -1,4 +1,3 @@
-//import type { Context } from './context'
 import { Context } from './context'
 
 describe('Context', () => {
@@ -12,7 +11,7 @@ describe('Context', () => {
   it('c.text()', async () => {
     const res = c.text('text in c', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
-    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
     expect(await res.text()).toBe('text in c')
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
@@ -76,6 +75,23 @@ describe('Context', () => {
     expect(foo).toBe('Bar, Buzz')
   })
 
+  it('c.header() - append, c.html()', async () => {
+    c.header('X-Foo', 'Bar', { append: true })
+    const res = c.html('<h1>This rendered fine</h1>')
+    expect(res.headers.get('content-type')).toMatch(/^text\/html/)
+  })
+
+  it('c.header() - clear the header', async () => {
+    c.header('X-Foo', 'Bar')
+    c.header('X-Foo', undefined)
+    c.header('X-Foo2', 'Bar')
+    let res = c.body('Hi')
+    expect(res.headers.get('X-Foo')).toBe(null)
+    c.header('X-Foo2', undefined)
+    res = c.res
+    expect(res.headers.get('X-Foo2')).toBe(null)
+  })
+
   it('c.body() - multiple header', async () => {
     const res = c.body('Hi', 200, {
       'X-Foo': ['Bar', 'Buzz'],
@@ -121,6 +137,19 @@ describe('Context', () => {
     expect(c.res.status).toBe(201)
   })
 
+  it('Should append the previous headers to new Response', () => {
+    c.res.headers.set('x-Custom1', 'Message1')
+    const res2 = new Response('foo2', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    res2.headers.set('x-Custom2', 'Message2')
+    c.res = res2
+    expect(c.res.headers.get('x-Custom1')).toBe('Message1')
+    expect(c.res.headers.get('Content-Type')).toBe('application/json')
+  })
+
   it('Should return 200 response', async () => {
     const res = c.text('Text')
     expect(res.status).toBe(200)
@@ -137,7 +166,9 @@ describe('Context', () => {
     const req = new Request('http://localhost/')
     const key = 'a-secret-key'
     const ctx = new Context(req, {
-      API_KEY: key,
+      env: {
+        API_KEY: key,
+      },
     })
     expect(ctx.env.API_KEY).toBe(key)
   })
@@ -160,9 +191,9 @@ describe('Context', () => {
     expect(res.headers.get('foo')).toBe('bar')
   })
 
-  it('returns current runtime (cloudflare)', async () => {
+  it('returns current runtime (workerd)', async () => {
     c = new Context(req)
-    expect(c.runtime).toBe('cloudflare')
+    expect(c.runtime).toBe('workerd')
   })
 })
 
@@ -174,14 +205,75 @@ describe('Context header', () => {
   })
   it('Should return only one content-type value', async () => {
     c.header('Content-Type', 'foo')
-    c.header('content-type', 'foo')
     const res = c.html('foo')
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
-    expect(res.headers.get('content-type')).toBe('text/html; charset=UTF-8')
   })
   it('Should rewrite header values correctly', async () => {
     c.res = c.html('foo')
     const res = c.text('foo')
-    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
+  })
+})
+
+describe('Pass a ResponseInit to respond methods', () => {
+  const req = new Request('http://localhost/')
+  let c: Context
+  beforeEach(() => {
+    c = new Context(req)
+  })
+
+  it('c.json()', async () => {
+    const originalResponse = new Response('Unauthorized', {
+      headers: {
+        'content-type': 'text/plain',
+        'x-custom': 'custom message',
+      },
+      status: 401,
+    })
+    const res = c.json(
+      {
+        message: 'Unauthorized',
+      },
+      originalResponse
+    )
+    expect(res.status).toBe(401)
+    expect(res.headers.get('content-type')).toMatch(/^application\/json/)
+    expect(res.headers.get('x-custom')).toBe('custom message')
+    expect(await res.json()).toEqual({
+      message: 'Unauthorized',
+    })
+  })
+
+  it('c.body()', async () => {
+    const originalResponse = new Response('<h1>Hello</h1>', {
+      headers: {
+        'content-type': 'text/html',
+      },
+    })
+    const res = c.body('<h2>Hello</h2>', originalResponse)
+    expect(res.headers.get('content-type')).toMatch(/^text\/html/)
+    expect(await res.text()).toBe('<h2>Hello</h2>')
+  })
+
+  it('c.text()', async () => {
+    const originalResponse = new Response(JSON.stringify({ foo: 'bar' }))
+    const res = c.text('foo', originalResponse)
+    expect(res.headers.get('content-type')).toMatch(/^text\/plain/)
+    expect(await res.text()).toBe('foo')
+  })
+
+  it('c.jsonT()', async () => {
+    const originalResponse = new Response('foo')
+    const tRes = c.jsonT({ foo: 'bar' }, originalResponse)
+    const res = tRes['response'] as Response
+    expect(res.headers.get('content-type')).toMatch(/^application\/json/)
+    expect(await res.json()).toEqual({ foo: 'bar' })
+  })
+
+  it('c.html()', async () => {
+    const originalResponse = new Response('foo')
+    const res = c.html('<h1>foo</h1>', originalResponse)
+    expect(res.headers.get('content-type')).toMatch(/^text\/html/)
+    expect(await res.text()).toBe('<h1>foo</h1>')
   })
 })

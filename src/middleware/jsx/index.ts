@@ -1,11 +1,18 @@
 import { escapeToBuffer } from '../../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Props = Record<string, any>
+
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace jsx.JSX {
+  namespace JSX {
+    type Element = HtmlEscapedString
+    interface ElementChildrenAttribute {
+      children: Child
+    }
     interface IntrinsicElements {
-      [tagName: string]: Record<string, any>
+      [tagName: string]: Props
     }
   }
 }
@@ -64,7 +71,10 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
       continue
     } else if (child instanceof JSXNode) {
       child.toStringToBuffer(buffer)
-    } else if (typeof child === 'number' || (child as any).isEscaped) {
+    } else if (
+      typeof child === 'number' ||
+      (child as unknown as { isEscaped: boolean }).isEscaped
+    ) {
       buffer[0] += child
     } else {
       // `child` type is `Child[]`, so stringify recursively
@@ -76,10 +86,10 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
 type Child = string | number | JSXNode | Child[]
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
-  props: Record<string, any>
+  props: Props
   children: Child[]
-  isEscaped: true = true
-  constructor(tag: string | Function, props: Record<string, any>, children: Child[]) {
+  isEscaped: true = true as const
+  constructor(tag: string | Function, props: Props, children: Child[]) {
     this.tag = tag
     this.props = props
     this.children = children
@@ -101,20 +111,28 @@ export class JSXNode implements HtmlEscaped {
     const propsKeys = Object.keys(props || {})
 
     for (let i = 0, len = propsKeys.length; i < len; i++) {
-      const v = props[propsKeys[i]]
-      if (typeof v === 'string') {
-        buffer[0] += ` ${propsKeys[i]}="`
+      const key = propsKeys[i]
+      const v = props[key]
+      // object to style strings
+      if (key === 'style' && typeof v === 'object') {
+        const styles = Object.keys(v)
+          .map((k) => `${k}:${v[k]}`)
+          .join(';')
+          .replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)
+        buffer[0] += ` style="${styles}"`
+      } else if (typeof v === 'string') {
+        buffer[0] += ` ${key}="`
         escapeToBuffer(v, buffer)
         buffer[0] += '"'
       } else if (typeof v === 'number') {
-        buffer[0] += ` ${propsKeys[i]}="${v}"`
+        buffer[0] += ` ${key}="${v}"`
       } else if (v === null || v === undefined) {
         // Do nothing
-      } else if (typeof v === 'boolean' && booleanAttributes.includes(propsKeys[i])) {
+      } else if (typeof v === 'boolean' && booleanAttributes.includes(key)) {
         if (v) {
-          buffer[0] += ` ${propsKeys[i]}=""`
+          buffer[0] += ` ${key}=""`
         }
-      } else if (propsKeys[i] === 'dangerouslySetInnerHTML') {
+      } else if (key === 'dangerouslySetInnerHTML') {
         if (children.length > 0) {
           throw 'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
         }
@@ -123,7 +141,7 @@ export class JSXNode implements HtmlEscaped {
         escapedString.isEscaped = true
         children = [escapedString]
       } else {
-        buffer[0] += ` ${propsKeys[i]}="`
+        buffer[0] += ` ${key}="`
         escapeToBuffer(v.toString(), buffer)
         buffer[0] += '"'
       }
@@ -170,7 +188,7 @@ class JSXFragmentNode extends JSXNode {
 export { jsxFn as jsx }
 const jsxFn = (
   tag: string | Function,
-  props: Record<string, any>,
+  props: Props,
   ...children: (string | HtmlEscapedString)[]
 ): JSXNode => {
   if (typeof tag === 'function') {
@@ -180,9 +198,9 @@ const jsxFn = (
   }
 }
 
-type FC<T = Record<string, any>> = (props: T) => HtmlEscapedString
+type FC<T = Props> = (props: T) => HtmlEscapedString
 
-const shallowEqual = (a: Record<string, any>, b: Record<string, any>): boolean => {
+const shallowEqual = (a: Props, b: Props): boolean => {
   if (a === b) {
     return true
   }
@@ -217,6 +235,6 @@ export const memo = <T>(
   }) as FC<T>
 }
 
-export const Fragment = (props: { key?: string; children?: any }): JSXNode => {
+export const Fragment = (props: { key?: string; children?: Child[] }): JSXNode => {
   return new JSXFragmentNode('', {}, props.children || [])
 }

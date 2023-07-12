@@ -10,11 +10,11 @@ export const cache = (options: {
   }
 
   const addHeader = (response: Response) => {
-    if (options.cacheControl) response.headers.append('Cache-Control', options.cacheControl)
+    if (options.cacheControl) response.headers.set('Cache-Control', options.cacheControl)
   }
 
   return async (c, next) => {
-    const key = c.req
+    const key = c.req.url
     const cache = await caches.open(options.cacheName)
     const response = await cache.match(key)
     if (!response) {

@@ -359,6 +359,51 @@ describe('Multi match', () => {
       expect(res?.handlers).toEqual(['Middleware A', 'Middleware B'])
     })
   })
+
+  describe('Including slashes', () => {
+    const node = new Node()
+    node.insert('get', '/js/:filename{[a-z0-9/]+.js}', 'any file')
+    node.insert('get', '/js/main.js', 'main.js')
+
+    it('get /js/main.js', () => {
+      const res = node.search('get', '/js/main.js')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['any file', 'main.js'])
+      expect(res?.params).toEqual({ filename: 'main.js' })
+    })
+
+    it('get /js/chunk/123.js', () => {
+      const res = node.search('get', '/js/chunk/123.js')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['any file'])
+      expect(res?.params).toEqual({ filename: 'chunk/123.js' })
+    })
+
+    it('get /js/chunk/nest/123.js', () => {
+      const res = node.search('get', '/js/chunk/nest/123.js')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['any file'])
+      expect(res?.params).toEqual({ filename: 'chunk/nest/123.js' })
+    })
+  })
+
+  describe('REST API', () => {
+    const node = new Node()
+    node.insert('get', '/users/:username{[a-z]+}', 'profile')
+    node.insert('get', '/users/:username{[a-z]+}/posts', 'posts')
+
+    it('get /users/hono', () => {
+      const res = node.search('get', '/users/hono')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['profile'])
+    })
+
+    it('get /users/hono/posts', () => {
+      const res = node.search('get', '/users/hono/posts')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['posts'])
+    })
+  })
 })
 
 describe('Duplicate param name', () => {
@@ -554,16 +599,23 @@ describe('Routing order With named parameters', () => {
   const node = new Node()
   node.insert('get', '/book/a', 'no-slug')
   node.insert('get', '/book/:slug', 'slug')
+  node.insert('get', '/book/b', 'no-slug-b')
   it('/book/a', () => {
     const res = node.search('get', '/book/a')
     expect(res).not.toBeNull()
     expect(res?.handlers).toEqual(['no-slug', 'slug'])
-    expect(res?.params['slug']).toBeUndefined()
+    expect(res?.params['slug']).toBe('a')
   })
   it('/book/foo', () => {
     const res = node.search('get', '/book/foo')
     expect(res).not.toBeNull()
     expect(res?.handlers).toEqual(['slug'])
     expect(res?.params['slug']).toBe('foo')
+  })
+  it('/book/b', () => {
+    const res = node.search('get', '/book/b')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['slug', 'no-slug-b'])
+    expect(res?.params['slug']).toBe('b')
   })
 })

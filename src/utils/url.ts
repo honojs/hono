@@ -1,10 +1,43 @@
 export type Pattern = readonly [string, string, RegExp | true] | '*'
 
 export const splitPath = (path: string): string[] => {
-  const paths = path.split(/\//) // faster than path.split('/')
+  const paths = path.split('/')
   if (paths[0] === '') {
     paths.shift()
   }
+  return paths
+}
+
+export const splitRoutingPath = (path: string): string[] => {
+  const groups: [string, string][] = [] // [mark, original string]
+  for (let i = 0; ; ) {
+    let replaced = false
+    path = path.replace(/\{[^}]+\}/g, (m) => {
+      const mark = `@\\${i}`
+      groups[i] = [mark, m]
+      i++
+      replaced = true
+      return mark
+    })
+    if (!replaced) {
+      break
+    }
+  }
+
+  const paths = path.split('/')
+  if (paths[0] === '') {
+    paths.shift()
+  }
+  for (let i = groups.length - 1; i >= 0; i--) {
+    const [mark] = groups[i]
+    for (let j = paths.length - 1; j >= 0; j--) {
+      if (paths[j].indexOf(mark) !== -1) {
+        paths[j] = paths[j].replace(mark, groups[i][1])
+        break
+      }
+    }
+  }
+
   return paths
 }
 
@@ -35,23 +68,22 @@ export const getPattern = (label: string): Pattern | null => {
   return null
 }
 
-export const getPathFromURL = (url: string, strict: boolean = true): string => {
-  const queryIndex = url.indexOf('?')
-  const result = url.substring(url.indexOf('/', 8), queryIndex === -1 ? url.length : queryIndex)
-
-  // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
-  // default is true
-  if (strict === false && result.endsWith('/')) {
-    return result.slice(0, -1)
-  }
-
-  return result
+export const getPath = (request: Request): string => {
+  const url = request.url
+  const queryIndex = url.indexOf('?', 8)
+  return url.slice(url.indexOf('/', 8), queryIndex === -1 ? undefined : queryIndex)
 }
 
-export const getQueryStringFromURL = (url: string): string => {
-  const queryIndex = url.indexOf('?')
-  const result = queryIndex !== -1 ? url.substring(queryIndex) : ''
-  return result
+export const getQueryStrings = (url: string): string => {
+  const queryIndex = url.indexOf('?', 8)
+  return queryIndex === -1 ? '' : '?' + url.slice(queryIndex + 1)
+}
+
+export const getPathNoStrict = (request: Request): string => {
+  const result = getPath(request)
+
+  // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
+  return result.length > 1 && result[result.length - 1] === '/' ? result.slice(0, -1) : result
 }
 
 export const mergePath = (...paths: string[]): string => {
@@ -60,13 +92,13 @@ export const mergePath = (...paths: string[]): string => {
 
   for (let path of paths) {
     /* ['/hey/','/say'] => ['/hey', '/say'] */
-    if (p.endsWith('/')) {
+    if (p[p.length - 1] === '/') {
       p = p.slice(0, -1)
       endsWithSlash = true
     }
 
     /* ['/hey','say'] => ['/hey', '/say'] */
-    if (!path.startsWith('/')) {
+    if (path[0] !== '/') {
       path = `/${path}`
     }
 
@@ -92,10 +124,117 @@ export const checkOptionalParameter = (path: string): string[] | null => {
    [`/api/animals`, `/api/animals/:type`]
    in other cases it will return null
    */
-  const match = path.match(/(^.+)(\/\:[^\/]+)\?$/)
+  const match = path.match(/^(.+|)(\/\:[^\/]+)\?$/)
   if (!match) return null
 
   const base = match[1]
   const optional = base + match[2]
-  return [base, optional]
+  return [base === '' ? '/' : base.replace(/\/$/, ''), optional]
 }
+
+// Optimized
+const _decodeURI = (value: string) => {
+  if (!/[%+]/.test(value)) {
+    return value
+  }
+  if (value.indexOf('+') !== -1) {
+    value = value.replace(/\+/g, ' ')
+  }
+  return value.indexOf('%') === -1 ? value : decodeURIComponent_(value)
+}
+
+const _getQueryParam = (
+  url: string,
+  key?: string,
+  multiple?: boolean
+): string | undefined | Record<string, string> | string[] | Record<string, string[]> => {
+  let encoded
+
+  if (!multiple && key && !/[%+]/.test(key)) {
+    // optimized for unencoded key
+
+    let keyIndex = url.indexOf(`?${key}`, 8)
+    if (keyIndex === -1) {
+      keyIndex = url.indexOf(`&${key}`, 8)
+    }
+    while (keyIndex !== -1) {
+      const trailingKeyCode = url.charCodeAt(keyIndex + key.length + 1)
+      if (trailingKeyCode === 61) {
+        const valueIndex = keyIndex + key.length + 2
+        const endIndex = url.indexOf('&', valueIndex)
+        return _decodeURI(url.slice(valueIndex, endIndex === -1 ? undefined : endIndex))
+      } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
+        return ''
+      }
+      keyIndex = url.indexOf(`&${key}`, keyIndex + 1)
+    }
+
+    encoded = /[%+]/.test(url)
+    if (!encoded) {
+      return undefined
+    }
+    // fallback to default routine
+  }
+
+  const results: Record<string, string> | Record<string, string[]> = {}
+  encoded ??= /[%+]/.test(url)
+
+  let keyIndex = url.indexOf('?', 8)
+  while (keyIndex !== -1) {
+    const nextKeyIndex = url.indexOf('&', keyIndex + 1)
+    let valueIndex = url.indexOf('=', keyIndex)
+    if (valueIndex > nextKeyIndex && nextKeyIndex !== -1) {
+      valueIndex = -1
+    }
+    let name = url.slice(
+      keyIndex + 1,
+      valueIndex === -1 ? (nextKeyIndex === -1 ? undefined : nextKeyIndex) : valueIndex
+    )
+    if (encoded) {
+      name = _decodeURI(name)
+    }
+
+    keyIndex = nextKeyIndex
+
+    if (name === '') {
+      continue
+    }
+
+    let value
+    if (valueIndex === -1) {
+      value = ''
+    } else {
+      value = url.slice(valueIndex + 1, nextKeyIndex === -1 ? undefined : nextKeyIndex)
+      if (encoded) {
+        value = _decodeURI(value)
+      }
+    }
+
+    if (multiple) {
+      ;((results[name] ??= []) as string[]).push(value)
+    } else {
+      results[name] ??= value
+    }
+  }
+
+  return key ? results[key] : results
+}
+
+export const getQueryParam: (
+  url: string,
+  key?: string
+) => string | undefined | Record<string, string> = _getQueryParam as (
+  url: string,
+  key?: string
+) => string | undefined | Record<string, string>
+
+export const getQueryParams = (
+  url: string,
+  key?: string
+): string[] | undefined | Record<string, string[]> => {
+  return _getQueryParam(url, key, true) as string[] | undefined | Record<string, string[]>
+}
+
+// `decodeURIComponent` is a long name.
+// By making it a function, we can use it commonly when minified, reducing the amount of code.
+export const decodeURIComponent_ = decodeURIComponent

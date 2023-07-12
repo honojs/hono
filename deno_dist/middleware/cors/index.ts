@@ -32,10 +32,8 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
   })(opts.origin)
 
   return async (c, next) => {
-    await next()
-
     function set(key: string, value: string) {
-      c.res.headers.append(key, value)
+      c.res.headers.set(key, value)
     }
 
     const allowOrigin = findAllowOrigin(c.req.headers.get('origin') || '')
@@ -57,7 +55,9 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       set('Access-Control-Expose-Headers', opts.exposeHeaders.join(','))
     }
 
-    if (c.req.method === 'OPTIONS') {
+    if (c.req.method !== 'OPTIONS') {
+      await next()
+    } else {
       // Preflight
 
       if (opts.maxAge != null) {
@@ -77,13 +77,13 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       }
       if (headers?.length) {
         set('Access-Control-Allow-Headers', headers.join(','))
-        set('Vary', 'Access-Control-Request-Headers')
+        c.res.headers.append('Vary', 'Access-Control-Request-Headers')
       }
 
       c.res.headers.delete('Content-Length')
       c.res.headers.delete('Content-Type')
 
-      c.res = new Response(null, {
+      return new Response(null, {
         headers: c.res.headers,
         status: 204,
         statusText: c.res.statusText,
