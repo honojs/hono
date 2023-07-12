@@ -30,7 +30,7 @@ export const cache = (options: {
         c.executionCtx.waitUntil(cache.put(key, response))
       }
     } else {
-      return new Response(await response.blob(), { headers: response.headers })
+      return new Response(response.body, response)
     }
   }
 }
