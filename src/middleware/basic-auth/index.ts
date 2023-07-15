@@ -14,7 +14,7 @@ const auth = (req: HonoRequest) => {
   }
 
   let userPass = undefined
-  // If an invalid string is passed to atob(), it throws a `DOMException`.
+  // Buffer.from() with 'base64' will return a zero-filled buffer on failure
   try {
     userPass = USER_PASS_REGEXP.exec(utf8Decoder.decode(decodeBase64(match[1])))
   } catch {} // Do nothing
