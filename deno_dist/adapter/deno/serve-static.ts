@@ -3,9 +3,9 @@ import type { Next } from '../../types.ts'
 import { getFilePath } from '../../utils/filepath.ts'
 import { getMimeType } from '../../utils/mime.ts'
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-const { open } = Deno 
+const { readFile } = Deno
 
 export type ServeStaticOptions = {
   root?: string
@@ -16,38 +16,38 @@ export type ServeStaticOptions = {
 const DEFAULT_DOCUMENT = 'index.html'
 
 export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
-  return async (c: Context, next: Next) => { 
+  return async (c: Context, next: Next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
       await next()
       return
     }
 
-    const url = new URL(c.req.url) 
+    const url = new URL(c.req.url)
     const filename = options.path ?? decodeURI(url.pathname)
     let path = getFilePath({
-      filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename, 
+      filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
       root: options.root,
       defaultDocument: DEFAULT_DOCUMENT,
     })
 
     path = `./${path}`
 
-    let file 
+    let content
 
     try {
-      file = await open(path)
+      content = await readFile(path)
     } catch (e) {
       console.warn(`${e}`)
     }
 
-    if (file) { 
-      const mimeType = getMimeType(path) 
+    if (content) {
+      const mimeType = getMimeType(path)
       if (mimeType) {
-        c.header('Content-Type', mimeType) 
+        c.header('Content-Type', mimeType)
       }
-      // Return Response object with stream
-      return c.body(file.readable) 
+      // Return Response object
+      return c.body(content)
     } else {
       console.warn(`Static file: ${path} is not found`)
       await next()
