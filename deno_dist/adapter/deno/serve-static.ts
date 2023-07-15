@@ -5,7 +5,7 @@ import { getMimeType } from '../../utils/mime.ts'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-const { readFile } = Deno
+const { open } = Deno
 
 export type ServeStaticOptions = {
   root?: string
@@ -33,21 +33,21 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
 
     path = `./${path}`
 
-    let content
+    let file
 
     try {
-      content = await readFile(path)
+      file = await open(path)
     } catch (e) {
       console.warn(`${e}`)
     }
 
-    if (content) {
+    if (file) {
       const mimeType = getMimeType(path)
       if (mimeType) {
         c.header('Content-Type', mimeType)
       }
-      // Return Response object
-      return c.body(content)
+      // Return Response object with stream
+      return c.body(file.readable)
     } else {
       console.warn(`Static file: ${path} is not found`)
       await next()
