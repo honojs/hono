@@ -18,12 +18,12 @@ export const encodeBase64 = (buf: ArrayBufferLike): string => {
 
 // atob does not support utf-8 characters. So we need a little bit hack.
 export const decodeBase64 = (str: string): Uint8Array => {
-  const binary = atob(str)
+  const binary = Buffer.from(str, 'base64')
   const bytes = new Uint8Array(new ArrayBuffer(binary.length))
   const half = binary.length / 2
-  for (let i = 0, j = binary.length - 1; i <= half; i++, j--) {
-    bytes[i] = binary.charCodeAt(i)
-    bytes[j] = binary.charCodeAt(j)
+  for (let i = 0; i < half; i++) {
+    bytes[i] = binary.readUInt8(i)
+    bytes[binary.length - i - 1] = binary.readUInt8(binary.length - i - 1)
   }
   return bytes
 }
