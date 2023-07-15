@@ -46,7 +46,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
       if (mimeType) {
         c.header('Content-Type', mimeType)
       }
-      // Return Response object
+      // Return Response object with stream
       return c.body(file.readable)
     } else {
       console.warn(`Static file: ${path} is not found`)
