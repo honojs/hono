@@ -142,7 +142,7 @@ const createRequest = (event: CloudFrontEdgeEvent) => {
   const requestBody = event.Records[0].cf.request.body
   requestInit.body =
     requestBody?.encoding === 'base64' && requestBody?.data
-      ? atob(requestBody.data)
+      ? Buffer.from(requestBody.data, 'base64')
       : requestBody?.data
   return new Request(url, requestInit)
 }
