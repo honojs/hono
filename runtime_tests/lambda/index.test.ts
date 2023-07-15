@@ -117,7 +117,7 @@ describe('AWS Lambda Adapter for Hono', () => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       path: '/post',
-      body: btoa(searchParam.toString()),
+      body: Buffer.from(searchParam.toString()).toString('base64'),
       isBase64Encoded: true,
       requestContext: {
         domainName: 'example.com',
@@ -138,7 +138,7 @@ describe('AWS Lambda Adapter for Hono', () => {
       },
       rawPath: '/post',
       rawQueryString: '',
-      body: btoa(searchParam.toString()),
+      body: Buffer.from(searchParam.toString()).toString('base64'),
       isBase64Encoded: true,
       requestContext: {
         domainName: 'example.com',
