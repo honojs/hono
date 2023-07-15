@@ -547,7 +547,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 inputTruncated: false,
                 action: 'read-only',
                 encoding: 'base64',
-                data: btoa(searchParam.toString()),
+                data: Buffer.from(searchParam.toString()).toString('base64'),
               },
             },
           },

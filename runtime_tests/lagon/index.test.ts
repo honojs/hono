@@ -77,7 +77,7 @@ describe('Example', () => {
     test('GET /basic-auth/anyroute', async () => {
       const res = await fetch('http://127.0.0.1:1234/basic-auth/anyroute', {
         headers: {
-          authorization: `Basic ${btoa('hono:acoolproject')}`,
+          authorization: `Basic ${Buffer.from('hono:acoolproject').toString('base64')}`,
         },
       })
       expect(res.status).toBe(200)
