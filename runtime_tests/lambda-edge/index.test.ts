@@ -32,6 +32,11 @@ describe('Lambda@Edge Adapter for Hono', () => {
     c.env.callback(null, c.env.request)
   })
 
+  app.post('/post/binary', async (c) => {
+    const body = await c.req.blob()
+    return c.text(`${body.size} bytes`)
+  })
+
   const username = 'hono-user-a'
   const password = 'hono-password-a'
   app.use('/auth/*', basicAuth({ username, password }))
@@ -554,6 +559,55 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
     expect(response.status).toBe('200')
     expect(response.body).toBe('Good Morning Lambda!')
+  })
+
+  it('Should handle a POST request with binary and return a 200 response', async () => {
+    const array = new Uint8Array([0xc0, 0xff, 0xee])
+    const buffer = Buffer.from(array)
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'example.com',
+              distributionId: 'EXAMPLE123',
+              eventType: 'viewer-request',
+              requestId: 'exampleRequestId',
+            },
+            request: {
+              clientIp: '123.123.123.123',
+              headers: {
+                host: [
+                  {
+                    key: 'Host',
+                    value: 'example.com',
+                  },
+                ],
+                'content-type': [
+                  {
+                    key: 'Content-Type',
+                    value: 'application/x-www-form-urlencoded',
+                  },
+                ],
+              },
+              method: 'POST',
+              querystring: '',
+              uri: '/post/binary',
+              body: {
+                inputTruncated: false,
+                action: 'read-only',
+                encoding: 'base64',
+                data: buffer.toString('base64'),
+              },
+            },
+          },
+        },
+      ],
+    }
+  
+    const response = await handler(event)
+    expect(response.status).toBe('200')
+    expect(response.body).toBe('3 bytes')
   })
 
   it('Should handle a request and return a 401 response with Basic auth', async () => {
