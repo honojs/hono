@@ -20,6 +20,11 @@ describe('AWS Lambda Adapter for Hono', () => {
     return c.text(body.message)
   })
 
+  app.post('/post/binary', async (c) => {
+    const body = await c.req.blob()
+    return c.text(`${body.size} bytes`)
+  })
+
   const username = 'hono-user-a'
   const password = 'hono-password-a'
   app.use('/auth/*', basicAuth({ username, password }))
@@ -146,6 +151,27 @@ describe('AWS Lambda Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('Good Morning Lambda!')
+  })
+
+  it('Should handle a POST request with binary and return a 200 response', async () => {
+    const array = new Uint8Array([0xc0, 0xff, 0xee])
+    const buffer = Buffer.from(array)
+    const event = {
+      httpMethod: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      path: '/post/binary',
+      body: buffer.toString('base64'),
+      isBase64Encoded: true,
+      requestContext: {
+        domainName: 'example.com',
+      },
+    }
+
+    const response = await handler(event)
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toBe('3 bytes')
   })
 
   it('Should handle a request and return a 401 response with Basic auth', async () => {
