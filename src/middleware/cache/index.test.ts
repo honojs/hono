@@ -36,6 +36,8 @@ describe('Cache Middleware', () => {
     return c.text('cached')
   })
 
+  app.use('/not-found/*', cache({ cacheName: 'my-app-v1', wait: true, cacheControl: 'max-age=10' }))
+
   const ctx = new Context()
 
   it('Should return cached response', async () => {
@@ -62,5 +64,12 @@ describe('Cache Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('cache-control')).toBe('max-age=10')
+  })
+
+  it('Should not cache if it is not found', async () => {
+    const res = await app.request('/not-found/')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(404)
+    expect(res.headers.get('cache-control')).toBeFalsy()
   })
 })
