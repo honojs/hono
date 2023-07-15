@@ -94,6 +94,7 @@ Deno.test('Serve Static middleware', async () => {
   let res = await app.request('http://localhost/favicon.ico')
   assertEquals(res.status, 200)
   assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
+  await res.body?.cancel()
 
   res = await app.request('http://localhost/favicon-notfound.ico')
   assertEquals(res.status, 404)
