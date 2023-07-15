@@ -1,5 +1,6 @@
 // @denoify-ignore
 import crypto from 'crypto'
+import { Buffer } from 'node:buffer'
 import type { Hono } from '../../hono'
 
 import { encodeBase64 } from '../../utils/encode'
@@ -116,7 +117,7 @@ const createRequest = (
   }
 
   if (event.body) {
-    requestInit.body = event.isBase64Encoded ? atob(event.body) : event.body
+    requestInit.body = event.isBase64Encoded ? new Buffer(event.body, 'base64') : event.body
   }
 
   return new Request(url, requestInit)
