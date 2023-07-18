@@ -30,17 +30,15 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     await next()
 
     const res = c.res as Response
-    let undisturbedRes = res
     let etag = res.headers.get('ETag')
 
     if (!etag) {
-      undisturbedRes = res.clone()
-      const hash = await sha1(res.body || '')
+      const hash = await sha1(res.clone().body || '')
       etag = weak ? `W/"${hash}"` : `"${hash}"`
     }
 
     if (etagMatches(etag, ifNoneMatch)) {
-      await undisturbedRes.blob() // Force using body
+      await c.res.blob() // Force using body
       c.res = new Response(null, {
         status: 304,
         statusText: 'Not Modified',
@@ -54,7 +52,6 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
         }
       })
     } else {
-      c.res = new Response(undisturbedRes.body, undisturbedRes)
       c.res.headers.set('ETag', etag)
     }
   }
