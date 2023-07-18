@@ -51,14 +51,11 @@ export class PatternRouter<T> implements Router<T> {
     const params: Record<string, string> = {}
 
     for (const [pattern, routeMethod, handler] of this.routes) {
-      const isRegExp = pattern.source.charCodeAt(pattern.source.length - 1) === 36
       if (routeMethod === METHOD_NAME_ALL || routeMethod === method) {
         const match = pattern.exec(path)
         if (match) {
           handlers.push(handler)
-          if (isRegExp) {
-            Object.assign(params, match.groups)
-          }
+          Object.assign(params, match.groups)
         }
       }
     }
