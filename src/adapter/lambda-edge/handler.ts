@@ -66,7 +66,7 @@ export interface CloudFrontEdgeEvent {
 type CloudFrontContext = {}
 
 export interface Callback {
-  (err: Error | null, result?: CloudFrontRequest | CloudFrontResult): void
+  (err: Error | null, result?: CloudFrontRequest | CloudFrontResult | Response): void
 }
 
 // https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-generating-http-responses-in-requests.html#lambda-generating-http-responses-programming-model
@@ -88,6 +88,21 @@ interface CloudFrontResult {
  * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
  */
 
+function convertToLambdaEdgeResponse(response: Response): CloudFrontResult {
+  const headers: CloudFrontHeaders = {}
+
+  response.headers.forEach((value, key) => {
+    headers[key] = [{ key, value }]
+  })
+
+  return {
+    status: response.status.toString(),
+    headers,
+    body: response.body ? response.body.toString() : undefined,
+    // 必要に応じて他のプロパティも追加
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const handle = (app: Hono<any>) => {
   return async (
@@ -99,7 +114,14 @@ export const handle = (app: Hono<any>) => {
     const res = await app.fetch(req, {
       event,
       context,
-      callback,
+      callback: (err: Error | null, result: Response | CloudFrontResult | CloudFrontRequest | undefined) => {
+        if (result instanceof Response) {
+          const lambdaEdgeResponse = convertToLambdaEdgeResponse(result)
+          callback && callback(err, lambdaEdgeResponse)
+        } else {
+          callback && callback(err, result)
+        }
+      },
       request: event.Records[0].cf.request,
     })
     return createResult(res)
