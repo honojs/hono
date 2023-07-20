@@ -33,6 +33,11 @@ describe('Lambda@Edge Adapter for Hono', () => {
     c.env.callback(null, c.env.request)
   })
 
+  app.get('/callback/response', async (c, next) => {
+    await next()
+    c.env.callback(null, c.env.response)
+  })
+
   app.post('/post/binary', async (c) => {
     const body = await c.req.blob()
     return c.text(`${body.size} bytes`)
@@ -43,12 +48,6 @@ describe('Lambda@Edge Adapter for Hono', () => {
   app.use('/auth/*', basicAuth({ username, password }))
   app.get('/auth/abc', (c) => c.text('Good Night Lambda!'))
 
-
-  app.get('/callback/response', async (c, next) => {
-    await next()
-    c.env.callback(null, c.env.response)
-  })
-
   app.get('/header/add', async (c, next) => {
     c.env.response.headers['Strict-Transport-Security'.toLowerCase()] = [{
       key: 'Strict-Transport-Security'.toLocaleLowerCase(),
@@ -58,7 +57,6 @@ describe('Lambda@Edge Adapter for Hono', () => {
       key: 'X-Custom'.toLocaleLowerCase(),
       value: 'Foo'
     }];
-    c.env.response
     await next()
     c.env.callback(null, c.env.response)
   })
@@ -750,7 +748,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     expect(requestClientIp).toBe('123.123.123.123')
   })
 
-  it('Should handle a GET request and add header (Lambda@Edge viewer response)', async () => {
+  it('Should call a callback to continue processing the response', async () => {
     const event = {
       Records: [
         {
@@ -785,7 +783,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               },
               method: 'GET',
               querystring: '',
-              uri: '/callback/request',
+              uri: '/callback/response',
             },
             response: {
               headers: {
@@ -863,7 +861,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
         },
       ],
     }
-    
+
     interface CloudFrontHeaders {
       [name: string]: [{
         key: string
@@ -882,13 +880,13 @@ describe('Lambda@Edge Adapter for Hono', () => {
     expect(called).toBe(true)
     expect(headers["access-control-allow-credentials"]).toEqual([
       {
-        key: "access-control-allow-credentials",
+        key: "Access-Control-Allow-Credentials",
         value: "true"
       }
     ]);
     expect(headers["access-control-allow-origin"]).toEqual([
       {
-        key: "access-control-allow-origin",
+        key: "Access-Control-Allow-Origin",
         value: "*"
       }
     ]);
