@@ -171,10 +171,12 @@ export class Node<T> {
           // `/posts/:id` => match /posts/123
           const [key, name, matcher] = pattern
 
+          const child = node.children[key]
+
           // `/js/:filename{[a-z]+.js}` => match /js/chunk/123.js
           const restPathString = parts.slice(i).join('/')
           if (matcher instanceof RegExp && matcher.test(restPathString)) {
-            handlerSets.push(...this.gHSets(node.children[key], method))
+            handlerSets.push(...this.gHSets(child, method))
             params[name] = restPathString
             continue
           }
@@ -182,9 +184,13 @@ export class Node<T> {
           if (matcher === true || (matcher instanceof RegExp && matcher.test(part))) {
             if (typeof key === 'string') {
               if (isLast === true) {
-                handlerSets.push(...this.gHSets(node.children[key], method))
+                handlerSets.push(...this.gHSets(child, method))
+                // `/:id/*` => match `/foo`
+                if (child.children['*']) {
+                  handlerSets.push(...this.gHSets(child.children['*'], method))
+                }
               } else {
-                tempNodes.push(node.children[key])
+                tempNodes.push(child)
               }
             }
 
