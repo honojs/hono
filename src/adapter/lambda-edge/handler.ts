@@ -83,21 +83,23 @@ interface CloudFrontResult {
   bodyEncoding?: 'text' | 'base64'
 }
 
+
+const convertHeaders = (headers: Headers): CloudFrontHeaders => {
+  const cfHeaders: CloudFrontHeaders = {}
+  headers.forEach((value, key) => {
+    cfHeaders[key.toLowerCase()] = [{ key: key.toLowerCase(), value }]
+  })
+  return cfHeaders
+}
+
 /**
  * Accepts events from 'Lambda@Edge' event
  * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
  */
-
 function convertToLambdaEdgeResponse(response: Response): CloudFrontResult {
-  const headers: CloudFrontHeaders = {}
-
-  response.headers.forEach((value, key) => {
-    headers[key] = [{ key, value }]
-  })
-
   return {
     status: response.status.toString(),
-    headers,
+    headers: convertHeaders(response.headers),
     body: response.body?.toString(),
   }
 }
@@ -128,43 +130,35 @@ export const handle = (app: Hono<any>) => {
 
 const createResult = async (res: Response): Promise<CloudFrontResult> => {
   const isBase64Encoded = isContentTypeBinary(res.headers.get('content-type') || '')
-
   const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
-
-  const headers: { [header: string]: { key: string; value: string }[] } = {}
-
-  res.headers.forEach((value, key) => {
-    headers[key.toLowerCase()] = [{ key: key.toLowerCase(), value }]
-  })
 
   return {
     status: res.status.toString(),
-    headers,
+    headers: convertHeaders(res.headers),
     body,
   }
 }
 
 const createRequest = (event: CloudFrontEdgeEvent) => {
-  const queryString = extractQueryString(event)
+  const queryString = event.Records[0].cf.request.querystring
   const urlPath = `https://${event.Records[0].cf.config.distributionDomainName}${event.Records[0].cf.request.uri}`
   const url = queryString ? `${urlPath}?${queryString}` : urlPath
 
   const headers = new Headers()
-  for (const [k, v] of Object.entries(event.Records[0].cf.request.headers)) {
+  Object.entries(event.Records[0].cf.request.headers).forEach(([k, v]) => {
     v.forEach((header) => headers.set(k, header.value))
-  }
-  const method = event.Records[0].cf.request.method
-  const requestInit: RequestInit = {
-    headers,
-    method,
-  }
+  })
 
   const requestBody = event.Records[0].cf.request.body
-  requestInit.body =
-    requestBody?.encoding === 'base64' && requestBody?.data
+  const body = requestBody?.encoding === 'base64' && requestBody?.data
       ? Buffer.from(requestBody.data, 'base64')
       : requestBody?.data
-  return new Request(url, requestInit)
+
+  return new Request(url, {
+    headers,
+    method: event.Records[0].cf.request.method,
+    body,
+  })
 }
 
 const extractQueryString = (event: CloudFrontEdgeEvent) => {
