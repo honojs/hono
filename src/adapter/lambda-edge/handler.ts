@@ -45,6 +45,12 @@ export interface CloudFrontRequest {
   }
 }
 
+export interface CloudFrontResponse {
+  headers: CloudFrontHeaders
+  status: string
+  statusDescription?: string
+}
+
 interface CloudFrontConfig {
   distributionDomainName: string
   distributionId: string
@@ -56,6 +62,7 @@ interface CloudFrontEvent {
   cf: {
     config: CloudFrontConfig
     request: CloudFrontRequest
+    response?: CloudFrontResponse
   }
 }
 
@@ -110,10 +117,12 @@ export const handle = (app: Hono<any>) => {
     context?: CloudFrontContext,
     callback?: Callback
   ): Promise<CloudFrontResult> => {
+
     const res = await app.fetch(createRequest(event), {
       event,
       context,
       request: event.Records[0].cf.request,
+      response: event.Records[0].cf.response,
       callback: (err: Error | null, result?: Response | CloudFrontResult | CloudFrontRequest) => {
         if (result instanceof Response) {
           callback?.(err, convertToLambdaEdgeResponse(result))
@@ -122,7 +131,6 @@ export const handle = (app: Hono<any>) => {
         }
       }
     })
-
     return createResult(res)
   }
 }
