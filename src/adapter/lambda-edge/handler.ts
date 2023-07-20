@@ -83,7 +83,6 @@ interface CloudFrontResult {
   bodyEncoding?: 'text' | 'base64'
 }
 
-
 const convertHeaders = (headers: Headers): CloudFrontHeaders => {
   const cfHeaders: CloudFrontHeaders = {}
   headers.forEach((value, key) => {
@@ -159,10 +158,6 @@ const createRequest = (event: CloudFrontEdgeEvent) => {
     method: event.Records[0].cf.request.method,
     body,
   })
-}
-
-const extractQueryString = (event: CloudFrontEdgeEvent) => {
-  return event.Records[0].cf.request.querystring
 }
 
 export const isContentTypeBinary = (contentType: string) => {
