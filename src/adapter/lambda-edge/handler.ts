@@ -99,7 +99,6 @@ function convertToLambdaEdgeResponse(response: Response): CloudFrontResult {
     status: response.status.toString(),
     headers,
     body: response.body ? response.body.toString() : undefined,
-    // 必要に応じて他のプロパティも追加
   }
 }
 

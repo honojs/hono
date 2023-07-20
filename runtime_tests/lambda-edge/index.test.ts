@@ -43,21 +43,13 @@ describe('Lambda@Edge Adapter for Hono', () => {
   app.get('/auth/abc', (c) => c.text('Good Night Lambda!'))
 
   app.get('/header/add', async (c, next) => {
-    c.header("Strict-Transport-Security", "max-age=63072000; includeSubdomains; preload")
-    c.header("Content-Security-Policy", "default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'")
-    await next()
-    c.env.callback(null, c.env.request)
-  })
-
-  app.get('/header/add2', async (c, next) => {
-    let res, newResponse
     try {
       const res = await fetch(c.req.raw);
       const newResponse = new Response(res.body, res);
       newResponse.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubdomains; preload")
+      newResponse.headers.set('X-Custom', 'Foo')
       await next()
       c.env.callback(null, newResponse)
-      // その他のコード
     } catch (error) {
       if (error instanceof Error) {
         console.error("Fetch error:", error.message);
@@ -66,11 +58,6 @@ describe('Lambda@Edge Adapter for Hono', () => {
         console.error("Unknown error:", error);
       }
     }
-    // const res = await fetch(c.req.raw.url)
-    // const newResponse = new Response(res.body, res)
-    // newResponse.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubdomains; preload")
-    // await next()
-    // c.env.callback(null, newResponse)
   })
 
   const handler = handle(app)
@@ -795,7 +782,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               },
               method: 'GET',
               querystring: '',
-              uri: '/header/add2',
+              uri: '/header/add',
             },
             response: {
               headers: {
@@ -894,6 +881,12 @@ describe('Lambda@Edge Adapter for Hono', () => {
       {
         key: "strict-transport-security",
         value: "max-age=63072000; includeSubdomains; preload"
+      }
+    ]);
+    expect(headers["x-custom"]).toEqual([
+      {
+        key: "x-custom",
+        value: "Foo"
       }
     ]);
   })
