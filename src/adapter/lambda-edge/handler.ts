@@ -73,7 +73,7 @@ export interface CloudFrontEdgeEvent {
 type CloudFrontContext = {}
 
 export interface Callback {
-  (err: Error | null, result?: CloudFrontRequest | CloudFrontResult | Response): void
+  (err: Error | null, result?: CloudFrontRequest | CloudFrontResult ): void
 }
 
 // https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-generating-http-responses-in-requests.html#lambda-generating-http-responses-programming-model
@@ -98,18 +98,6 @@ const convertHeaders = (headers: Headers): CloudFrontHeaders => {
   return cfHeaders
 }
 
-/**
- * Accepts events from 'Lambda@Edge' event
- * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
- */
-function convertToLambdaEdgeResponse(response: Response): CloudFrontResult {
-  return {
-    status: response.status.toString(),
-    headers: convertHeaders(response.headers),
-    body: response.body?.toString(),
-  }
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const handle = (app: Hono<any>) => {
   return async (
@@ -123,12 +111,8 @@ export const handle = (app: Hono<any>) => {
       context,
       request: event.Records[0].cf.request,
       response: event.Records[0].cf.response,
-      callback: (err: Error | null, result?: Response | CloudFrontResult | CloudFrontRequest) => {
-        if (result instanceof Response) {
-          callback?.(err, convertToLambdaEdgeResponse(result))
-        } else {
-          callback?.(err, result)
-        }
+      callback: (err: Error | null, result?: CloudFrontResult | CloudFrontRequest) => {
+        callback?.(err, result)
       }
     })
     return createResult(res)
