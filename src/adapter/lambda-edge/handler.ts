@@ -98,7 +98,7 @@ function convertToLambdaEdgeResponse(response: Response): CloudFrontResult {
   return {
     status: response.status.toString(),
     headers,
-    body: response.body ? response.body.toString() : undefined,
+    body: response.body?.toString(),
   }
 }
 
@@ -109,20 +109,19 @@ export const handle = (app: Hono<any>) => {
     context?: CloudFrontContext,
     callback?: Callback
   ): Promise<CloudFrontResult> => {
-    const req = createRequest(event)
-    const res = await app.fetch(req, {
+    const res = await app.fetch(createRequest(event), {
       event,
       context,
-      callback: (err: Error | null, result: Response | CloudFrontResult | CloudFrontRequest | undefined) => {
-        if (result instanceof Response) {
-          const lambdaEdgeResponse = convertToLambdaEdgeResponse(result)
-          callback && callback(err, lambdaEdgeResponse)
-        } else {
-          callback && callback(err, result)
-        }
-      },
       request: event.Records[0].cf.request,
+      callback: (err: Error | null, result?: Response | CloudFrontResult | CloudFrontRequest) => {
+        if (result instanceof Response) {
+          callback?.(err, convertToLambdaEdgeResponse(result))
+        } else {
+          callback?.(err, result)
+        }
+      }
     })
+
     return createResult(res)
   }
 }
