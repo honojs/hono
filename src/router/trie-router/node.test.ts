@@ -127,6 +127,31 @@ describe('Param prefix', () => {
   })
 })
 
+describe('Named params and a wildcard', () => {
+  const node = new Node()
+
+  node.insert('get', '/:id/*', 'onepart')
+
+  it('get /', () => {
+    const res = node.search('get', '/')
+    expect(res).toBeNull()
+  })
+
+  it('get /foo', () => {
+    const res = node.search('get', '/foo')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['onepart'])
+    expect(res?.params['id']).toEqual('foo')
+  })
+
+  it('get /foo/bar', () => {
+    const res = node.search('get', '/foo/bar')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['onepart'])
+    expect(res?.params['id']).toEqual('foo')
+  })
+})
+
 describe('Wildcard', () => {
   const node = new Node()
   node.insert('get', '/wildcard-abc/*/wildcard-efg', 'wildcard')
