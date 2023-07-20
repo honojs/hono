@@ -43,21 +43,12 @@ describe('Lambda@Edge Adapter for Hono', () => {
   app.get('/auth/abc', (c) => c.text('Good Night Lambda!'))
 
   app.get('/header/add', async (c, next) => {
-    try {
-      const res = await fetch(c.req.raw);
-      const newResponse = new Response(res.body, res);
-      newResponse.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubdomains; preload")
-      newResponse.headers.set('X-Custom', 'Foo')
-      await next()
-      c.env.callback(null, newResponse)
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error("Fetch error:", error.message);
-        console.error("Error stack:", error.stack);
-      } else {
-        console.error("Unknown error:", error);
-      }
-    }
+    const res = await fetch(c.req.raw);
+    const newResponse = new Response(res.body, res);
+    newResponse.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubdomains; preload")
+    newResponse.headers.set('X-Custom', 'Foo')
+    await next()
+    c.env.callback(null, newResponse)
   })
 
   const handler = handle(app)
