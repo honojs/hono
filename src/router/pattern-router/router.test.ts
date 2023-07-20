@@ -38,6 +38,19 @@ describe('Complex', () => {
     expect(res?.params['id']).toBe('123')
   })
 
+  it('Named param with trailing wildcard', async () => {
+    router.add('GET', '/article/:id/*', 'get article with wildcard')
+    let res = router.match('GET', '/article/123')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['get article with wildcard'])
+    expect(res?.params['id']).toBe('123')
+
+    res = router.match('GET', '/article/123/action')
+    expect(res).not.toBeNull()
+    expect(res?.handlers).toEqual(['get article with wildcard'])
+    expect(res?.params['id']).toBe('123')
+  })
+
   it('Wildcard', async () => {
     router.add('GET', '/wild/*/card', 'get wildcard')
     const res = router.match('GET', '/wild/xxx/card')
