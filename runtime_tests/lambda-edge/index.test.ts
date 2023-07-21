@@ -50,11 +50,11 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
   app.get('/header/add', async (c, next) => {
     c.env.response.headers['Strict-Transport-Security'.toLowerCase()] = [{
-      key: 'Strict-Transport-Security'.toLocaleLowerCase(),
+      key: 'Strict-Transport-Security',
       value: 'max-age=63072000; includeSubdomains; preload'
     }];
     c.env.response.headers['X-Custom'.toLowerCase()] = [{
-      key: 'X-Custom'.toLocaleLowerCase(),
+      key: 'X-Custom',
       value: 'Foo'
     }];
     await next()
@@ -1024,13 +1024,13 @@ describe('Lambda@Edge Adapter for Hono', () => {
     expect(called).toBe(true)
     expect(headers["strict-transport-security"]).toEqual([
       {
-        key: "strict-transport-security",
+        key: "Strict-Transport-Security",
         value: "max-age=63072000; includeSubdomains; preload"
       }
     ]);
     expect(headers["x-custom"]).toEqual([
       {
-        key: "x-custom",
+        key: "X-Custom",
         value: "Foo"
       }
     ]);
