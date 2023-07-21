@@ -1,5 +1,5 @@
 /* eslint-disable quotes */
-import type { Callback, CloudFrontRequest } from '../../src/adapter/lambda-edge/handler'
+import type { Callback, CloudFrontRequest, CloudFrontResponse } from '../../src/adapter/lambda-edge/handler'
 import { handle } from '../../src/adapter/lambda-edge/handler'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
@@ -7,6 +7,7 @@ import { basicAuth } from '../../src/middleware/basic-auth'
 type Bindings = {
   callback: Callback
   request: CloudFrontRequest
+  response: CloudFrontResponse
 }
 
 describe('Lambda@Edge Adapter for Hono', () => {
@@ -27,9 +28,14 @@ describe('Lambda@Edge Adapter for Hono', () => {
     return c.text(body.message)
   })
 
-  app.get('/callback', async (c, next) => {
+  app.get('/callback/request', async (c, next) => {
     await next()
     c.env.callback(null, c.env.request)
+  })
+
+  app.get('/callback/response', async (c, next) => {
+    await next()
+    c.env.callback(null, c.env.response)
   })
 
   app.post('/post/binary', async (c) => {
@@ -41,6 +47,19 @@ describe('Lambda@Edge Adapter for Hono', () => {
   const password = 'hono-password-a'
   app.use('/auth/*', basicAuth({ username, password }))
   app.get('/auth/abc', (c) => c.text('Good Night Lambda!'))
+
+  app.get('/header/add', async (c, next) => {
+    c.env.response.headers['Strict-Transport-Security'.toLowerCase()] = [{
+      key: 'Strict-Transport-Security',
+      value: 'max-age=63072000; includeSubdomains; preload'
+    }];
+    c.env.response.headers['X-Custom'.toLowerCase()] = [{
+      key: 'X-Custom',
+      value: 'Foo'
+    }];
+    await next()
+    c.env.callback(null, c.env.response)
+  })
 
   const handler = handle(app)
 
@@ -708,7 +727,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               headers: {},
               method: 'GET',
               querystring: '',
-              uri: '/callback',
+              uri: '/callback/request',
             },
           },
         },
@@ -727,5 +746,293 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
     expect(called).toBe(true)
     expect(requestClientIp).toBe('123.123.123.123')
+  })
+
+  it('Should call a callback to continue processing the response', async () => {
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'example.com',
+              distributionId: 'EDFDVBD6EXAMPLE',
+              eventType: 'viewer-response',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+            },
+            request: {
+              clientIp: '203.0.113.178',
+              headers: {
+                host: [
+                  {
+                    key: 'Host',
+                    value: 'example.com',
+                  },
+                ],
+                'user-agent': [
+                  {
+                    key: 'User-Agent',
+                    value: 'curl/7.66.0',
+                  },
+                ],
+                accept: [
+                  {
+                    key: 'accept',
+                    value: '*/*',
+                  },
+                ],
+              },
+              method: 'GET',
+              querystring: '',
+              uri: '/callback/response',
+            },
+            response: {
+              headers: {
+                'access-control-allow-credentials': [
+                  {
+                    key: 'Access-Control-Allow-Credentials',
+                    value: 'true',
+                  },
+                ],
+                'access-control-allow-origin': [
+                  {
+                    key: 'Access-Control-Allow-Origin',
+                    value: '*',
+                  },
+                ],
+                date: [
+                  {
+                    key: 'Date',
+                    value: 'Mon, 13 Jan 2020 20:14:56 GMT',
+                  },
+                ],
+                'referrer-policy': [
+                  {
+                    key: 'Referrer-Policy',
+                    value: 'no-referrer-when-downgrade',
+                  },
+                ],
+                server: [
+                  {
+                    key: 'Server',
+                    value: 'ExampleCustomOriginServer',
+                  },
+                ],
+                'x-content-type-options': [
+                  {
+                    key: 'X-Content-Type-Options',
+                    value: 'nosniff',
+                  },
+                ],
+                'x-frame-options': [
+                  {
+                    key: 'X-Frame-Options',
+                    value: 'DENY',
+                  },
+                ],
+                'x-xss-protection': [
+                  {
+                    key: 'X-XSS-Protection',
+                    value: '1; mode=block',
+                  },
+                ],
+                age: [
+                  {
+                    key: 'Age',
+                    value: '2402',
+                  },
+                ],
+                'content-type': [
+                  {
+                    key: 'Content-Type',
+                    value: 'text/html; charset=utf-8',
+                  },
+                ],
+                'content-length': [
+                  {
+                    key: 'Content-Length',
+                    value: '9593',
+                  },
+                ],
+              },
+              status: '200',
+              statusDescription: 'OK',
+            },
+          },
+        },
+      ],
+    }
+
+    interface CloudFrontHeaders {
+      [name: string]: [{
+        key: string
+        value: string
+      }]
+    }
+    let called = false
+    let headers: CloudFrontHeaders = {};
+    await handler(event, {}, (_err, result) => {
+      if (result && result.headers) {
+        headers = result.headers as CloudFrontHeaders;
+      }
+      called = true
+    })
+
+    expect(called).toBe(true)
+    expect(headers["access-control-allow-credentials"]).toEqual([
+      {
+        key: "Access-Control-Allow-Credentials",
+        value: "true"
+      }
+    ]);
+    expect(headers["access-control-allow-origin"]).toEqual([
+      {
+        key: "Access-Control-Allow-Origin",
+        value: "*"
+      }
+    ]);
+  })
+
+  it('Should handle a GET request and add header (Lambda@Edge viewer response)', async () => {
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'example.com',
+              distributionId: 'EDFDVBD6EXAMPLE',
+              eventType: 'viewer-response',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+            },
+            request: {
+              clientIp: '203.0.113.178',
+              headers: {
+                host: [
+                  {
+                    key: 'Host',
+                    value: 'example.com',
+                  },
+                ],
+                'user-agent': [
+                  {
+                    key: 'User-Agent',
+                    value: 'curl/7.66.0',
+                  },
+                ],
+                accept: [
+                  {
+                    key: 'accept',
+                    value: '*/*',
+                  },
+                ],
+              },
+              method: 'GET',
+              querystring: '',
+              uri: '/header/add',
+            },
+            response: {
+              headers: {
+                'access-control-allow-credentials': [
+                  {
+                    key: 'Access-Control-Allow-Credentials',
+                    value: 'true',
+                  },
+                ],
+                'access-control-allow-origin': [
+                  {
+                    key: 'Access-Control-Allow-Origin',
+                    value: '*',
+                  },
+                ],
+                date: [
+                  {
+                    key: 'Date',
+                    value: 'Mon, 13 Jan 2020 20:14:56 GMT',
+                  },
+                ],
+                'referrer-policy': [
+                  {
+                    key: 'Referrer-Policy',
+                    value: 'no-referrer-when-downgrade',
+                  },
+                ],
+                server: [
+                  {
+                    key: 'Server',
+                    value: 'ExampleCustomOriginServer',
+                  },
+                ],
+                'x-content-type-options': [
+                  {
+                    key: 'X-Content-Type-Options',
+                    value: 'nosniff',
+                  },
+                ],
+                'x-frame-options': [
+                  {
+                    key: 'X-Frame-Options',
+                    value: 'DENY',
+                  },
+                ],
+                'x-xss-protection': [
+                  {
+                    key: 'X-XSS-Protection',
+                    value: '1; mode=block',
+                  },
+                ],
+                age: [
+                  {
+                    key: 'Age',
+                    value: '2402',
+                  },
+                ],
+                'content-type': [
+                  {
+                    key: 'Content-Type',
+                    value: 'text/html; charset=utf-8',
+                  },
+                ],
+                'content-length': [
+                  {
+                    key: 'Content-Length',
+                    value: '9593',
+                  },
+                ],
+              },
+              status: '200',
+              statusDescription: 'OK',
+            },
+          },
+        },
+      ],
+    }
+    
+    interface CloudFrontHeaders {
+      [name: string]: [{
+        key: string
+        value: string
+      }]
+    }
+    let called = false
+    let headers: CloudFrontHeaders = {};
+    await handler(event, {}, (_err, result) => {
+      if (result && result.headers) {
+        headers = result.headers as CloudFrontHeaders;
+      }
+      called = true
+    })
+
+    expect(called).toBe(true)
+    expect(headers["strict-transport-security"]).toEqual([
+      {
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubdomains; preload"
+      }
+    ]);
+    expect(headers["x-custom"]).toEqual([
+      {
+        key: "X-Custom",
+        value: "Foo"
+      }
+    ]);
   })
 })
