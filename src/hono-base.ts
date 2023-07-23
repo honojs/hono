@@ -122,7 +122,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     const strict = init.strict ?? true
     delete init.strict
     Object.assign(this, init)
-    this.getPath ||= strict ? getPath : getPathNoStrict
+    this.getPath = strict ? init.getPath ?? getPath : getPathNoStrict
   }
 
   private clone(): Hono<E, S, BasePath> {
