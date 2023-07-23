@@ -142,6 +142,26 @@ describe('strict parameter', () => {
       expect(res.status).toBe(200)
     })
   })
+
+  describe('strict is false with `getPath` option', () => {
+    const app = new Hono({
+      strict: false,
+      getPath: getPath,
+    })
+
+    app.get('/hello', (c) => {
+      return c.text('/hello')
+    })
+
+    it('/hello and /hello/ are treated as the same', async () => {
+      let res = await app.request('http://localhost/hello')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      res = await app.request('http://localhost/hello/')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+    })
+  })
 })
 
 describe('Destruct functions in context', () => {
