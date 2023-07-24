@@ -51,7 +51,7 @@ export interface CloudFrontResponse {
   statusDescription?: string
 }
 
-interface CloudFrontConfig {
+export interface CloudFrontConfig {
   distributionDomainName: string
   distributionId: string
   eventType: string
@@ -115,6 +115,7 @@ export const handle = (app: Hono<any>) => {
       callback: (err: Error | null, result?: CloudFrontResult | CloudFrontRequest) => {
         callback?.(err, result)
       },
+      config: event.Records[0].cf.config,
       request: event.Records[0].cf.request,
       response: event.Records[0].cf.response,
     })
