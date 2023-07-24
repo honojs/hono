@@ -1,11 +1,12 @@
 /* eslint-disable quotes */
-import type { Callback, CloudFrontRequest, CloudFrontResponse } from '../../src/adapter/lambda-edge/handler'
+import type { Callback, CloudFrontConfig, CloudFrontRequest, CloudFrontResponse } from '../../src/adapter/lambda-edge/handler'
 import { handle } from '../../src/adapter/lambda-edge/handler'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
 
 type Bindings = {
   callback: Callback
+  config: CloudFrontConfig
   request: CloudFrontRequest
   response: CloudFrontResponse
 }
@@ -31,6 +32,15 @@ describe('Lambda@Edge Adapter for Hono', () => {
   app.get('/callback/request', async (c, next) => {
     await next()
     c.env.callback(null, c.env.request)
+  })
+
+  app.get('/config/eventCheck', async (c, next) => {
+    await next()
+    if(c.env.config.eventType in ['viewer-request', 'origin-request']) {
+      c.env.callback(null, c.env.request)
+    } else {
+      c.env.callback(null, c.env.response)
+    }
   })
 
   app.get('/callback/response', async (c, next) => {
@@ -1035,4 +1045,44 @@ describe('Lambda@Edge Adapter for Hono', () => {
       }
     ]);
   })
+
+  it('Callback Event (Lambda@Edge response)', async () => {
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'example.com',
+              distributionId: 'EDFDVBD6EXAMPLE',
+              eventType: 'viewer-response',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+            },
+            request: {
+              clientIp: '203.0.113.178',
+              headers: {
+                host: [
+                  {
+                    key: 'Host',
+                    value: 'example.com',
+                  },
+                ],
+              },
+              method: 'GET',
+              querystring: '',
+              uri: '/config/eventCheck',
+            },
+          }
+        },
+      ],
+    }
+    
+    let called = false
+    await handler(event, {}, (_err, result) => {
+      called = true
+    })
+
+    expect(called).toBe(true)
+  })
+
+
 })
