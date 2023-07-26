@@ -31,6 +31,8 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
       defaultDocument: DEFAULT_DOCUMENT,
     })
 
+    if (!path) return await next()
+
     path = `./${path}`
 
     let file
