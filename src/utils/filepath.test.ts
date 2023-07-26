@@ -15,5 +15,8 @@ describe('getFilePath', () => {
 
     expect(getFilePath({ filename: './foo' })).toBe('foo/index.html')
     expect(getFilePath({ filename: 'foo', root: './bar' })).toBe('bar/foo/index.html')
+
+    expect(getFilePath({ filename: '../foo' })).toBeUndefined()
+    expect(getFilePath({ filename: '../foo', root: './bar' })).toBeUndefined()
   })
 })

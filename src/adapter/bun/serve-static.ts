@@ -32,6 +32,9 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
       root: options.root,
       defaultDocument: DEFAULT_DOCUMENT,
     })
+
+    if (!path) return await next()
+
     path = `./${path}`
 
     if (existsSync(path)) {
