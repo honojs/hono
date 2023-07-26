@@ -32,6 +32,8 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Middlew
       defaultDocument: DEFAULT_DOCUMENT,
     })
 
+    if (!path) return await next()
+
     const content = await getContentFromKVAsset(path, {
       manifest: options.manifest,
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
