@@ -130,6 +130,10 @@ export class Node<T> {
 
     for (let i = 0, len = parts.length; i < len; i++) {
       const part: string = parts[i]
+
+      // Should not match when GET `/static/../foo.txt`
+      if (/\.\./.test(part)) return null
+
       const isLast = i === len - 1
       const tempNodes: Node<T>[] = []
       let matched = false

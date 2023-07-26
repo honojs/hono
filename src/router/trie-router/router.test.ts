@@ -204,3 +204,23 @@ describe('Routing with a hostname', () => {
     expect(res).toBeNull()
   })
 })
+
+describe('Path includes `..`', () => {
+  const router = new TrieRouter<string>()
+  router.add('get', '/../hello', '/../hello')
+  router.add('get', '/hello/..', '/hello/..')
+  router.add('get', '/hello/../hello', '/hello/../hello')
+
+  it('Should not match with GET /../hello', () => {
+    const res = router.match('get', '/../hello')
+    expect(res).toBeNull()
+  })
+  it('Should not match with GET /hello/..', () => {
+    const res = router.match('get', '/hello/..')
+    expect(res).toBeNull()
+  })
+  it('Should not match with GET /hello/../hello', () => {
+    const res = router.match('get', '/hello/../hello')
+    expect(res).toBeNull()
+  })
+})
