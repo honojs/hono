@@ -1,3 +1,3 @@
 // @denoify-ignore
-export { handle } from './handler'
+export { handle, serveStatic } from './handler'
 export type { EventContext } from './handler'

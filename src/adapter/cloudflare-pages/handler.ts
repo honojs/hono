@@ -1,6 +1,6 @@
 // @denoify-ignore
 import { Hono } from '../../hono'
-import type { Env } from '../../types'
+import type { Env, MiddlewareHandler } from '../../types'
 
 // Ref: https://github.com/cloudflare/workerd/blob/main/types/defines/pages.d.ts
 
@@ -43,3 +43,24 @@ export const handle: HandleInterface =
       }
     )
   }
+
+declare abstract class FetcherLike {
+  fetch(input: RequestInfo, init?: RequestInit): Promise<Response>
+}
+
+/**
+ *
+ * @description `serveStatic()` is for advanced mode:
+ * https://developers.cloudflare.com/pages/platform/functions/advanced-mode/#set-up-a-function
+ *
+ */
+export const serveStatic = (): MiddlewareHandler => {
+  return async (c) => {
+    const env = c.env as { ASSETS: FetcherLike }
+    const res = await env.ASSETS.fetch(c.req.raw)
+    if (res.status === 404) {
+      return c.notFound()
+    }
+    return res
+  }
+}
