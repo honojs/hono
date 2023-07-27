@@ -22,5 +22,6 @@ describe('getFilePath', () => {
     expect(getFilePath({ filename: 'foo..bar.txt' })).toBe('foo..bar.txt')
     expect(getFilePath({ filename: '/foo..bar.txt' })).toBe('foo..bar.txt')
     expect(getFilePath({ filename: './foo..bar.txt' })).toBe('foo..bar.txt')
+    expect(getFilePath({ filename: './foo../bar.txt' })).toBe('foo../bar.txt')
   })
 })
