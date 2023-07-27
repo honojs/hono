@@ -6,7 +6,7 @@ type FilePathOptions = {
 
 export const getFilePath = (options: FilePathOptions): string | undefined => {
   let filename = options.filename
-  if (/\.\./.test(filename)) return
+  if (/\.\.\//.test(filename)) return
 
   let root = options.root || ''
   const defaultDocument = options.defaultDocument || 'index.html'
