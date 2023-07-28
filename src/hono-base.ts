@@ -358,17 +358,17 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     return this.dispatch(request, executionCtx, Env, request.method)
   }
 
-  request = async (input: Request | string | URL, requestInit?: RequestInit) => {
+  request = (input: Request | string | URL, requestInit?: RequestInit) => {
     if (input instanceof Request) {
       if (requestInit !== undefined) {
         input = new Request(input, requestInit)
       }
-      return await this.fetch(input)
+      return this.fetch(input)
     }
     input = input.toString()
     const path = /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`
     const req = new Request(path, requestInit)
-    return await this.fetch(req)
+    return this.fetch(req)
   }
 
   fire = () => {
