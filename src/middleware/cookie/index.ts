@@ -1,10 +1,15 @@
 import type { Context } from '../../context'
-import { parse, serialize } from '../../utils/cookie'
-import type { CookieOptions, Cookie } from '../../utils/cookie'
+import { parse, parseSigned, serialize, serializeSigned } from '../../utils/cookie'
+import type { CookieOptions, Cookie, SignedCookie } from '../../utils/cookie'
 
 interface GetCookie {
   (c: Context, key: string): string | undefined
   (c: Context): Cookie
+}
+
+interface GetSignedCookie {
+  (c: Context, sercet: string, key: string): Promise<string | undefined | false>
+  (c: Context, secret: string): Promise<SignedCookie>
 }
 
 export const getCookie: GetCookie = (c, key?) => {
@@ -20,8 +25,32 @@ export const getCookie: GetCookie = (c, key?) => {
   return obj as any
 }
 
+export const getSignedCookie: GetSignedCookie = async (c, secret, key?) => {
+  const cookie = c.req.raw.headers.get('Cookie')
+  if (typeof key === 'string') {
+    if (!cookie) return undefined
+    const obj = await parseSigned(cookie, secret, key)
+    return obj[key]
+  }
+  if (!cookie) return {}
+  const obj = await parseSigned(cookie, secret)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return obj as any
+}
+
 export const setCookie = (c: Context, name: string, value: string, opt?: CookieOptions): void => {
   const cookie = serialize(name, value, opt)
+  c.header('set-cookie', cookie, { append: true })
+}
+
+export const setSignedCookie = async (
+  c: Context,
+  name: string,
+  value: string,
+  secret: string,
+  opt?: CookieOptions
+): Promise<void> => {
+  const cookie = await serializeSigned(name, value, secret, opt)
   c.header('set-cookie', cookie, { append: true })
 }
 
