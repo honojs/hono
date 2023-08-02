@@ -10,7 +10,7 @@ import { RegExpRouter } from './router/reg-exp-router'
 import { TrieRouter } from './router/trie-router'
 import type { Handler, Next } from './types'
 import type { Expect, Equal } from './utils/types'
-import { getPath } from './utils/url'
+import { getPath, getPathNoStrict } from './utils/url'
 
 // https://stackoverflow.com/a/65666402
 function throwExpression(errorMessage: string): never {
@@ -355,11 +355,18 @@ describe('Routing', () => {
 
   it('routing with hostname', async () => {
     const app = new Hono({
-      getPath: (req) => req.url.replace(/^https?:\/\//, ''),
+      getPath: (req) => req.url.replace(/^https?:\/(.+?)$/, '$1'),
     })
 
-    app.get('www1.example.com/hello', () => new Response('hello www1'))
-    app.get('www2.example.com/hello', () => new Response('hello www2'))
+    const sub = new Hono()
+    sub.get('/', (c) => c.text('hello sub'))
+    sub.get('/foo', (c) => c.text('hello sub foo'))
+
+    app.get('/www1.example.com/hello', () => new Response('hello www1'))
+    app.get('/www2.example.com/hello', () => new Response('hello www2'))
+
+    app.get('/www1.example.com/', (c) => c.text('hello www1 root'))
+    app.route('/www1.example.com/sub', sub)
 
     let res = await app.request('http://www1.example.com/hello')
     expect(res).not.toBeNull()
@@ -370,29 +377,84 @@ describe('Routing', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello www2')
+
+    res = await app.request('http://www1.example.com/')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www1 root')
+
+    res = await app.request('http://www1.example.com/sub')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello sub')
+
+    res = await app.request('http://www1.example.com/sub/foo')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello sub foo')
   })
 
   it('routing with request header', async () => {
     const app = new Hono({
-      getPath: (req) => req.headers.get('host') + req.url.replace(/^https?:\/\/[^\/]+/, ''),
+      getPath: (req) =>
+        '/' + req.headers.get('host') + req.url.replace(/^https?:\/\/[^/]+(\/[^?]*)/, '$1'),
     })
 
-    app.get('www1.example.com/hello', () => new Response('hello www1'))
-    app.get('www2.example.com/hello', () => new Response('hello www2'))
+    const sub = new Hono()
+    sub.get('/', (c) => c.text('hello sub'))
+    sub.get('/foo', (c) => c.text('hello sub foo'))
+
+    app.get('/www1.example.com/hello', () => new Response('hello www1'))
+    app.get('/www2.example.com/hello', () => new Response('hello www2'))
+
+    app.get('/www1.example.com/', (c) => c.text('hello www1 root'))
+    app.route('/www1.example.com/sub', sub)
 
     let res = await app.request('http://www1.example.com/hello', {
-      headers: { host: 'www1.example.com' },
+      headers: {
+        host: 'www1.example.com',
+      },
     })
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello www1')
 
     res = await app.request('http://www2.example.com/hello', {
-      headers: { host: 'www2.example.com' },
+      headers: {
+        host: 'www2.example.com',
+      },
     })
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello www2')
+
+    res = await app.request('http://www1.example.com/', {
+      headers: {
+        host: 'www1.example.com',
+      },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello www1 root')
+
+    res = await app.request('http://www1.example.com/sub', {
+      headers: {
+        host: 'www1.example.com',
+      },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello sub')
+
+    res = await app.request('http://www1.example.com/sub/foo', {
+      headers: {
+        host: 'www1.example.com',
+      },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello sub foo')
+    expect(res.status).toBe(200)
   })
 
   describe('Chained route', () => {
