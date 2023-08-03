@@ -277,3 +277,25 @@ describe('Pass a ResponseInit to respond methods', () => {
     expect(await res.text()).toBe('<h1>foo</h1>')
   })
 })
+
+describe('Hooks', () => {
+  const req = new Request('http://localhost/')
+  let c: Context
+  beforeEach(() => {
+    c = new Context(req)
+  })
+  it('Should handle `hookBeforeRespond`', async () => {
+    c.hookBeforeRespond((r) => {
+      r.headers.set('message', 'hook!')
+      if (typeof r.body === 'string') {
+        r.body = r.body + 'bar'
+        console.log(r.body)
+      }
+      r.status = 201
+    })
+    const res = c.text('foo')
+    expect(res.headers.get('message')).toBe('hook!')
+    expect(res.status).toBe(201)
+    expect(await res.text()).toBe('foobar')
+  })
+})
