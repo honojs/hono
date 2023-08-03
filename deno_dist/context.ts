@@ -103,6 +103,7 @@ export class Context<
   private _res: Response | undefined
   private _path: string = '/'
   private _params?: Record<string, string> | null
+  private _init = true
   private rawRequest?: Request | null
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
@@ -148,10 +149,12 @@ export class Context<
   }
 
   get res(): Response {
+    this._init = false
     return (this._res ||= new Response('404 Not Found', { status: 404 }))
   }
 
   set res(_res: Response | undefined) {
+    this._init = false
     if (this._res && _res) {
       this._res.headers.delete('content-type')
       this._res.headers.forEach((v, k) => {
@@ -178,6 +181,7 @@ export class Context<
 
     if (options?.append) {
       if (!this._h) {
+        this._init = false
         this._h = new Headers(this._pH)
         this._pH = {}
       }
@@ -224,7 +228,7 @@ export class Context<
     headers?: HeaderRecord
   ): Response => {
     // Optimized
-    if (!headers && !this._h && !this._res && !arg && this._status === 200) {
+    if (this._init && !headers && !arg && this._status === 200) {
       return new Response(data, {
         headers: this._pH,
       })
@@ -293,7 +297,7 @@ export class Context<
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
     if (!this._pH) {
-      if (!headers && !this._res && !this._h && !arg) {
+      if (this._init && !headers && !arg) {
         return new Response(text)
       }
       this._pH = {}
