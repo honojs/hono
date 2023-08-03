@@ -126,11 +126,16 @@ export interface HandlerInterface<
 
   ////  app.get(path, ...handlers[])
 
-  // app.get(path, handler, handler)
-
+  // app.get(path, handler)
   <P extends string, O = {}, I extends Input = {}>(
     path: P,
-    ...handlers: [H<E, P, I, O>, H<E, P, I, O>]
+    handler: H<E, MergePath<BasePath, P>, I, O>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I['in'], O>>, BasePath>
+
+  // app.get(path, handler, handler)
+  <P extends string, O = {}, I extends Input = {}>(
+    path: P,
+    ...handlers: [H<E, MergePath<BasePath, P>, I, O>, H<E, MergePath<BasePath, P>, I, O>]
   ): Hono<E, RemoveBlankRecord<S | Schema<M, MergePath<BasePath, P>, I['in'], O>>, BasePath>
 
   // app.get(path, handler x3)
