@@ -105,8 +105,6 @@ export class Context<
   private _req?: HonoRequest<any, any>
   private _status: StatusCode = 200
   private _exCtx: FetchEventLike | ExecutionContext | undefined // _executionCtx
-  private _pre: boolean = false // _pretty
-  private _preS: number = 2 // _prettySpace
   private _map: Record<string, unknown> | undefined
   private _h: Headers | undefined = undefined //  _headers
   private _pH: Record<string, string> | undefined = undefined // _preparedHeaders
@@ -233,11 +231,6 @@ export class Context<
     return this._map ? this._map[key] : undefined
   }
 
-  pretty = (prettyJSON: boolean, space: number = 2): void => {
-    this._pre = prettyJSON
-    this._preS = space
-  }
-
   newResponse: NewResponse = (
     data: Data | null,
     arg?: StatusCode | ResponseInit,
@@ -343,7 +336,7 @@ export class Context<
     arg?: StatusCode | RequestInit,
     headers?: HeaderRecord
   ) => {
-    const body = this._pre ? JSON.stringify(object, null, this._preS) : JSON.stringify(object)
+    const body = JSON.stringify(object)
     this._pH ??= {}
     this._pH['content-type'] = 'application/json; charset=UTF-8'
     return typeof arg === 'number'
