@@ -72,16 +72,6 @@ interface HTMLRespond {
   (html: string, init?: ResponseInit): Response
 }
 
-type RespondContent = {
-  body: Data | null
-  status: StatusCode
-  headers: Headers
-}
-
-interface BeforeRespondHook {
-  (respondContent: RespondContent): void
-}
-
 type ContextOptions<E extends Env> = {
   env: E['Bindings']
   executionCtx?: FetchEventLike | ExecutionContext | undefined
@@ -112,7 +102,6 @@ export class Context<
   private _path: string = '/'
   private _params?: Record<string, string> | null
   private _init = true
-  private _beforeRespondHooks: BeforeRespondHook[] = []
   private rawRequest?: Request | null
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
@@ -172,11 +161,6 @@ export class Context<
     }
     this._res = _res
     this.finalized = true
-  }
-
-  hookBeforeRespond = (respondHook: BeforeRespondHook) => {
-    this._init = false
-    this._beforeRespondHooks.push(respondHook)
   }
 
   header = (name: string, value: string | undefined, options?: { append?: boolean }): void => {
@@ -282,19 +266,9 @@ export class Context<
       }
     }
 
-    const r = {
-      body: data,
+    return new Response(data, {
       status,
-      headers: this._h ?? new Headers(),
-    }
-
-    this._beforeRespondHooks.map((hook) => {
-      hook(r)
-    })
-
-    return new Response(r['body'], {
-      status: r['status'],
-      headers: r['headers'],
+      headers: this._h,
     })
   }
 
