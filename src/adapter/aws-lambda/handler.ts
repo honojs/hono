@@ -73,12 +73,12 @@ export const handle = <E extends Env = Env, S = {}, BasePath extends string = '/
 
 const createResult = async (res: Response): Promise<APIGatewayProxyResult> => {
   const contentType = res.headers.get('content-type')
-  const isBase64Encoded_contentType = contentType && isContentTypeBinary(contentType) ? true : false
+  let isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
 
-  const contentEncoding = res.headers.get('content-encoding')
-  const isBase64Encoded_contentEncoding = isContentEncodingBinary(contentEncoding)
-
-  const isBase64Encoded = isBase64Encoded_contentType || isBase64Encoded_contentEncoding
+  if (!isBase64Encoded) {
+    const contentEncoding = res.headers.get('content-encoding')
+    isBase64Encoded = isContentEncodingBinary(contentEncoding)
+  }
 
   let body: string
   if (isBase64Encoded) {
