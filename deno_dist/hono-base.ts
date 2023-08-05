@@ -141,9 +141,10 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     path: SubPath,
     app: Hono<SubEnv, SubSchema, SubBasePath>
   ): Hono<E, RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>, BasePath>
-  /** @deprecated
-   * Use `basePath` instead of `route` with one argument.
-   * The `route` with one argument has been removed in v4.
+  /** @description
+   * Use `basePath` instead of `route` when passing **one** argument, such as `app.route('/api')`.
+   * The use of `route` with **one** argument has been removed in v4.
+   * However, you can still use `route` with **two** arguments, like `app.route('/api', subApp)`."
    */
   route<SubPath extends string>(path: SubPath): Hono<E, RemoveBlankRecord<S>, BasePath>
   route<SubPath extends string, SubEnv extends Env, SubSchema, SubBasePath extends string>(
