@@ -58,12 +58,12 @@ npm create hono@latest my-app
 **Hono is the fastest**, compared to other routers for Cloudflare Workers.
 
 ```
-Hono x 402,820 ops/sec ±4.78% (80 runs sampled)
-itty-router x 212,598 ops/sec ±3.11% (87 runs sampled)
-sunder x 297,036 ops/sec ±4.76% (77 runs sampled)
-worktop x 197,345 ops/sec ±2.40% (88 runs sampled)
+Hono x 510,171 ops/sec ±4.61% (82 runs sampled)
+itty-router x 285,810 ops/sec ±4.13% (85 runs sampled)
+sunder x 345,272 ops/sec ±4.46% (87 runs sampled)
+worktop x 203,468 ops/sec ±3.03% (91 runs sampled)
 Fastest is Hono
-✨  Done in 28.06s.
+✨  Done in 28.68s.
 ```
 
 ## Documentation
