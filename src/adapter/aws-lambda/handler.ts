@@ -60,7 +60,9 @@ interface APIGatewayProxyResult {
 /**
  * Accepts events from API Gateway/ELB(`APIGatewayProxyEvent`) and directly through Function Url(`APIGatewayProxyEventV2`)
  */
-export const handle = <E extends Env = Env, S = {}, BasePath extends string = '/'>(app: Hono<E, S, BasePath>) => {
+export const handle = <E extends Env = Env, S = {}, BasePath extends string = '/'>(
+  app: Hono<E, S, BasePath>
+) => {
   return async (
     event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
   ): Promise<APIGatewayProxyResult> => {
@@ -73,7 +75,12 @@ export const handle = <E extends Env = Env, S = {}, BasePath extends string = '/
 
 const createResult = async (res: Response): Promise<APIGatewayProxyResult> => {
   const contentType = res.headers.get('content-type')
-  const isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
+  let isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
+
+  if (!isBase64Encoded) {
+    const contentEncoding = res.headers.get('content-encoding')
+    isBase64Encoded = isContentEncodingBinary(contentEncoding)
+  }
 
   let body: string
   if (isBase64Encoded) {
@@ -152,4 +159,11 @@ export const isContentTypeBinary = (contentType: string) => {
   return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml)$/.test(
     contentType
   )
+}
+
+export const isContentEncodingBinary = (contentEncoding: string | null) => {
+  if (contentEncoding === null) {
+    return false
+  }
+  return /^(gzip|deflate|compress|br)/.test(contentEncoding)
 }
