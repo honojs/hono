@@ -351,6 +351,11 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     })()
   }
 
+  /**
+   * @deprecate
+   * `app.handleEvent()` will be removed in v4.
+   * Use `app.fetch()` instead of `app.handleEvent()`.
+   */
   handleEvent = (event: FetchEventLike) => {
     return this.dispatch(event.request, event, undefined, event.request.method)
   }
@@ -375,8 +380,8 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
   fire = () => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    addEventListener('fetch', (event: FetchEvent): void => {
-      void event.respondWith(this.handleEvent(event))
+    addEventListener('fetch', (event: FetchEventLike): void => {
+      event.respondWith(this.dispatch(event.request, event, undefined, event.request.method))
     })
   }
 }
