@@ -114,7 +114,7 @@ makeEdgeEnv()
 const event = new FetchEvent('fetch', { request })
 
 const fn = async () => {
-  let res = await hono.handleEvent(event)
+  let res = await hono.fetch(event.request)
   console.log(await res.text())
   res = await ittyRouter.handle(event.request)
   console.log(await res.text())
@@ -129,7 +129,7 @@ const suite = new Benchmark.Suite()
 
 suite
   .add('Hono', async () => {
-    await hono.handleEvent(event)
+    await hono.fetch(event.request)
   })
   .add('itty-router', async () => {
     await ittyRouter.handle(event.request)
