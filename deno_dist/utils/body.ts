@@ -1,6 +1,8 @@
 export type BodyData = Record<string, string | File>
 
-export async function parseBody(r: Request | Response) {
+export const parseBody = async <T extends BodyData = BodyData>(
+  r: Request | Response
+): Promise<T> => {
   let body: BodyData = {}
   const contentType = r.headers.get('Content-Type')
   if (
@@ -14,5 +16,5 @@ export async function parseBody(r: Request | Response) {
     })
     body = form
   }
-  return body
+  return body as T
 }
