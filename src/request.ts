@@ -112,7 +112,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     }
   }
 
-  async parseBody(): Promise<BodyData> {
+  async parseBody<T extends BodyData = BodyData>(): Promise<T> {
     return await parseBody(this.raw)
   }
 
