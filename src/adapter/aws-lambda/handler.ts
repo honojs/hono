@@ -60,7 +60,9 @@ interface APIGatewayProxyResult {
 /**
  * Accepts events from API Gateway/ELB(`APIGatewayProxyEvent`) and directly through Function Url(`APIGatewayProxyEventV2`)
  */
-export const handle = <E extends Env = Env, S = {}, BasePath extends string = '/'>(app: Hono<E, S, BasePath>) => {
+export const handle = <E extends Env = Env, S = {}, BasePath extends string = '/'>(
+  app: Hono<E, S, BasePath>
+) => {
   return async (
     event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
   ): Promise<APIGatewayProxyResult> => {
@@ -160,6 +162,8 @@ export const isContentTypeBinary = (contentType: string) => {
 }
 
 export const isContentEncodingBinary = (contentEncoding: string | null) => {
-  if (contentEncoding === null) { return false }
+  if (contentEncoding === null) {
+    return false
+  }
   return /^(gzip|deflate|compress|br)/.test(contentEncoding)
 }
