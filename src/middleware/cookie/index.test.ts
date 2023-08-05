@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { getCookie, setCookie, deleteCookie } from '.'
+import { getCookie, getSignedCookie, setCookie, setSignedCookie, deleteCookie } from '.'
 
 describe('Cookie Middleware', () => {
   describe('Parse cookie', () => {
@@ -47,6 +47,72 @@ describe('Cookie Middleware', () => {
         expect(res.headers.get('Tasty-Cookie')).toBe('strawberry')
       })
     })
+
+    const app = new Hono()
+
+    app.get('/cookie-signed-get-all', async (c) => {
+      const secret = 'secret lucky charm'
+      const { fortune_cookie: fortuneCookie, fruit_cookie: fruitCookie } = await getSignedCookie(
+        c,
+        secret
+      )
+      const res = new Response('Signed fortune cookie')
+      if (typeof fortuneCookie !== 'undefined' && typeof fruitCookie !== 'undefined') {
+        // just examples for tests sake
+        res.headers.set('Fortune-Cookie', fortuneCookie || 'INVALID')
+        res.headers.set('Fruit-Cookie', fruitCookie || 'INVALID')
+      }
+      return res
+    })
+
+    app.get('/cookie-signed-get-one', async (c) => {
+      const secret = 'secret lucky charm'
+      const fortuneCookie = await getSignedCookie(c, secret, 'fortune_cookie')
+      const res = new Response('Signed fortune cookie')
+      if (typeof fortuneCookie !== 'undefined') {
+        // just an example for tests sake
+        res.headers.set('Fortune-Cookie', fortuneCookie || 'INVALID')
+      }
+      return res
+    })
+
+    it('Get signed cookies', async () => {
+      const req = new Request('http://localhost/cookie-signed-get-all')
+      const cookieString =
+        'fortune_cookie=lots-of-money.UO6vMygDM6NCDU4LdvBnzdVb2Xcdj+h+ZTnmS8X7iH8%3D; fruit_cookie=mango.lRwgtW9ooM9%2Fd9ZZA%2FInNRG64CbQsfWGXQyFLPM9520%3D'
+      req.headers.set('Cookie', cookieString)
+      const res = await app.request(req)
+      expect(res.headers.get('Fortune-Cookie')).toBe('lots-of-money')
+      expect(res.headers.get('Fruit-Cookie')).toBe('mango')
+    })
+
+    it('Get signed cookies invalid signature', async () => {
+      const req = new Request('http://localhost/cookie-signed-get-all')
+      const cookieString =
+        'fortune_cookie=lots-of-money.UO6vMygDM6NCDU4LdvBnzdVb2Xcdj+h+ZTnmS8X7iH8%3D; fruit_cookie=mango.verytasty%3D'
+      req.headers.set('Cookie', cookieString)
+      const res = await app.request(req)
+      expect(res.headers.get('Fortune-Cookie')).toBe('lots-of-money')
+      expect(res.headers.get('Fruit-Cookie')).toBe('INVALID')
+    })
+
+    it('Get signed cookie', async () => {
+      const req = new Request('http://localhost/cookie-signed-get-one')
+      const cookieString =
+        'fortune_cookie=lots-of-money.UO6vMygDM6NCDU4LdvBnzdVb2Xcdj+h+ZTnmS8X7iH8%3D; fruit_cookie=mango.lRwgtW9ooM9%2Fd9ZZA%2FInNRG64CbQsfWGXQyFLPM9520%3D'
+      req.headers.set('Cookie', cookieString)
+      const res = await app.request(req)
+      expect(res.headers.get('Fortune-Cookie')).toBe('lots-of-money')
+    })
+
+    it('Get signed cookie witn invalid signature', async () => {
+      const req = new Request('http://localhost/cookie-signed-get-one')
+      const cookieString =
+        'fortune_cookie=lots-of-money.nolucktoday%3D; fruit_cookie=mango.lRwgtW9ooM9%2Fd9ZZA%2FInNRG64CbQsfWGXQyFLPM9520%3D'
+      req.headers.set('Cookie', cookieString)
+      const res = await app.request(req)
+      expect(res.headers.get('Fortune-Cookie')).toBe('INVALID')
+    })
   })
 
   describe('Set cookie', () => {
@@ -62,6 +128,19 @@ describe('Cookie Middleware', () => {
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
       expect(header).toBe('delicious_cookie=macha')
+    })
+
+    app.get('/set-signed-cookie', async (c) => {
+      const secret = 'secret chocolate chips'
+      await setSignedCookie(c, 'delicious_cookie', 'macha', secret)
+      return c.text('Give signed cookie')
+    })
+
+    it('Set signed cookie with setSignedCookie()', async () => {
+      const res = await app.request('http://localhost/set-signed-cookie')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe('delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D')
     })
 
     app.get('/set-cookie-complex', (c) => {
@@ -83,6 +162,29 @@ describe('Cookie Middleware', () => {
       const header = res.headers.get('Set-Cookie')
       expect(header).toBe(
         'great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
+      )
+    })
+
+    app.get('/set-signed-cookie-complex', async (c) => {
+      const secret = 'secret chocolate chips'
+      await setSignedCookie(c, 'great_cookie', 'banana', secret, {
+        path: '/',
+        secure: true,
+        domain: 'example.com',
+        httpOnly: true,
+        maxAge: 1000,
+        expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
+        sameSite: 'Strict',
+      })
+      return c.text('Give signed cookie')
+    })
+
+    it('Complex pattern (signed)', async () => {
+      const res = await app.request('http://localhost/set-signed-cookie-complex')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe(
+        'great_cookie=banana.hSo6gB7YT2db0WBiEAakEmh7dtwEL0DSp76G23WvHuQ%3D; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
       )
     })
 
