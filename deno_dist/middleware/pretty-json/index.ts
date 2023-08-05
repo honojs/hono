@@ -7,7 +7,10 @@ type prettyOptions = {
 export const prettyJSON = (options: prettyOptions = { space: 2 }): MiddlewareHandler => {
   return async (c, next) => {
     const pretty = c.req.query('pretty') || c.req.query('pretty') === '' ? true : false
-    c.pretty(pretty, options.space)
     await next()
+    if (pretty && c.res.headers.get('Content-Type')?.startsWith('application/json')) {
+      const obj = await c.res.json()
+      c.res = new Response(JSON.stringify(obj, null, options.space), c.res)
+    }
   }
 }
