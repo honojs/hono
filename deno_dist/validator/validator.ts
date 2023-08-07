@@ -12,7 +12,10 @@ export type ValidationFunction<
   OutputType,
   E extends Env = {},
   P extends string = string
-> = (value: InputType, c: Context<E, P>) => OutputType | Response | Promise<Response>
+> = (
+  value: InputType,
+  c: Context<E, P>
+) => OutputType | Response | Promise<OutputType> | Promise<Response>
 
 export const validator = <
   InputType,
@@ -75,9 +78,9 @@ export const validator = <
         break
     }
 
-    const res = validationFunc(value as never, c as never)
+    const res = await validationFunc(value as never, c as never)
 
-    if (res instanceof Response || res instanceof Promise) {
+    if (res instanceof Response) {
       return res
     }
 
