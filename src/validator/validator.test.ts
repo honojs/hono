@@ -629,3 +629,28 @@ describe('Clone Request object', () => {
     })
   })
 })
+
+describe('Async validator function', () => {
+  const app = new Hono()
+
+  app.get(
+    '/posts',
+    validator('query', async () => {
+      return {
+        page: '1',
+      }
+    }),
+    (c) => {
+      const { page } = c.req.valid('query')
+      return c.json({ page })
+    }
+  )
+
+  it('Should get the values from the async function', async () => {
+    const res = await app.request('/posts')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      page: '1',
+    })
+  })
+})
