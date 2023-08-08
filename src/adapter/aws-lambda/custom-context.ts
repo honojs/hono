@@ -31,8 +31,8 @@ export interface ApiGatewayRequestContext {
   accountId: string;
   apiId: string;
   authorizer: {
-    claims?: any;
-    scopes?: any;
+    claims?: unknown;
+    scopes?: unknown;
   };
   domainName: string;
   domainPrefix: string;
