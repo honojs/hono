@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import type { Context } from 'https://edge.netlify.com/'
-import type { Hono } from '../../index.ts'
+import type { Hono } from '../../'
 
 export type Env = {
   Bindings: {
