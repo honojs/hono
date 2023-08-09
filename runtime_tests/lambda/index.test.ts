@@ -1,5 +1,5 @@
-import { handle } from '../../src/adapter/aws-lambda/handler'
 import type { ApiGatewayRequestContext, LambdaFunctionUrlRequestContext } from '../../src/adapter/aws-lambda/custom-context'
+import { handle } from '../../src/adapter/aws-lambda/handler'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
 
@@ -48,61 +48,61 @@ describe('AWS Lambda Adapter for Hono', () => {
   const handler = handle(app)
 
 const testApiGatewayRequestContext = {
-  accountId: "123456789012",
-  apiId: "id",
+  accountId: '123456789012',
+  apiId: 'id',
   authorizer: {
     claims: null,
     scopes: null
   },
   domainName: 'example.com',
-  domainPrefix: "id",
-  extendedRequestId: "request-id",
-  httpMethod: "GET",
+  domainPrefix: 'id',
+  extendedRequestId: 'request-id',
+  httpMethod: 'GET',
   identity: {
-    "sourceIp": "IP",
-    "userAgent": "user-agent",
+    'sourceIp': 'IP',
+    'userAgent': 'user-agent',
   },
-  path: "/my/path",
-  protocol: "HTTP/1.1",
-  requestId: "id=",
-  requestTime: "04/Mar/2020:19:15:17 +0000",
+  path: '/my/path',
+  protocol: 'HTTP/1.1',
+  requestId: 'id=',
+  requestTime: '04/Mar/2020:19:15:17 +0000',
   requestTimeEpoch: 1583349317135,
-  resourcePath: "/",
-  stage: "$default",
+  resourcePath: '/',
+  stage: '$default',
   customProperty: 'customValue'
 }
 
 const testLambdaFunctionUrlRequestContext = {
-  accountId: "123456789012",
-  apiId: "urlid",
+  accountId: '123456789012',
+  apiId: 'urlid',
   authentication: null,
   authorizer: {
     iam: {
-      accessKey: "AKIA...",
-      accountId: "111122223333",
-      callerId: "AIDA...",
+      accessKey: 'AKIA...',
+      accountId: '111122223333',
+      callerId: 'AIDA...',
       cognitoIdentity: null,
       principalOrgId: null,
-      userArn: "arn:aws:iam::111122223333:user/example-user",
-      userId: "AIDA..."
+      userArn: 'arn:aws:iam::111122223333:user/example-user',
+      userId: 'AIDA...'
     }
   },
-  domainName: "example.com",
-  domainPrefix: "<url-id>",
+  domainName: 'example.com',
+  domainPrefix: '<url-id>',
   http: {
-    method: "POST",
-    path: "/my/path",
-    protocol: "HTTP/1.1",
-    sourceIp: "123.123.123.123",
-    userAgent: "agent"
+    method: 'POST',
+    path: '/my/path',
+    protocol: 'HTTP/1.1',
+    sourceIp: '123.123.123.123',
+    userAgent: 'agent'
   },
-  requestId: "id",
-  routeKey: "$default",
-  stage: "$default",
-  time: "12/Mar/2020:19:03:58 +0000",
+  requestId: 'id',
+  routeKey: '$default',
+  stage: '$default',
+  time: '12/Mar/2020:19:03:58 +0000',
   timeEpoch: 1583348638390,
   customProperty: 'customValue'
-};
+}
 
   it('Should handle a GET request and return a 200 response', async () => {
     const event = {
@@ -148,7 +148,7 @@ const testLambdaFunctionUrlRequestContext = {
       requestContext: testLambdaFunctionUrlRequestContext,
     }
 
-    testLambdaFunctionUrlRequestContext.http.method = "GET";
+    testLambdaFunctionUrlRequestContext.http.method = 'GET'
 
     const response = await handler(event)
     expect(response.statusCode).toBe(200)
@@ -204,7 +204,7 @@ const testLambdaFunctionUrlRequestContext = {
       requestContext: testLambdaFunctionUrlRequestContext,
     }
 
-    testLambdaFunctionUrlRequestContext.http.method = "POST";
+    testLambdaFunctionUrlRequestContext.http.method = 'POST'
 
     const response = await handler(event)
     expect(response.statusCode).toBe(200)
@@ -266,9 +266,7 @@ const testLambdaFunctionUrlRequestContext = {
   })
 
   it('Should handle a GET request and return custom context', async () => {
-    const customContext = {
-      customProperty: 'customValue',
-    };
+
   
     const event = {
       httpMethod: 'GET',
@@ -279,9 +277,9 @@ const testLambdaFunctionUrlRequestContext = {
       requestContext: testApiGatewayRequestContext,
     }
   
-    const response = await handler(event);
-    expect(response.statusCode).toBe(200);
-    expect(JSON.parse(response.body).customProperty).toEqual('customValue');
-  });
+    const response = await handler(event)
+    expect(response.statusCode).toBe(200)
+    expect(JSON.parse(response.body).customProperty).toEqual('customValue')
+  })
   
 })

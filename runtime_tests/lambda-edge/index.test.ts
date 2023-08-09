@@ -62,11 +62,11 @@ describe('Lambda@Edge Adapter for Hono', () => {
     c.env.response.headers['Strict-Transport-Security'.toLowerCase()] = [{
       key: 'Strict-Transport-Security',
       value: 'max-age=63072000; includeSubdomains; preload'
-    }];
+    }]
     c.env.response.headers['X-Custom'.toLowerCase()] = [{
       key: 'X-Custom',
       value: 'Foo'
-    }];
+    }]
     await next()
     c.env.callback(null, c.env.response)
   })
@@ -879,10 +879,10 @@ describe('Lambda@Edge Adapter for Hono', () => {
       }]
     }
     let called = false
-    let headers: CloudFrontHeaders = {};
+    let headers: CloudFrontHeaders = {}
     await handler(event, {}, (_err, result) => {
       if (result && result.headers) {
-        headers = result.headers as CloudFrontHeaders;
+        headers = result.headers as CloudFrontHeaders
       }
       called = true
     })
@@ -893,13 +893,13 @@ describe('Lambda@Edge Adapter for Hono', () => {
         key: "Access-Control-Allow-Credentials",
         value: "true"
       }
-    ]);
+    ])
     expect(headers["access-control-allow-origin"]).toEqual([
       {
         key: "Access-Control-Allow-Origin",
         value: "*"
       }
-    ]);
+    ])
   })
 
   it('Should handle a GET request and add header (Lambda@Edge viewer response)', async () => {
@@ -1023,10 +1023,10 @@ describe('Lambda@Edge Adapter for Hono', () => {
       }]
     }
     let called = false
-    let headers: CloudFrontHeaders = {};
+    let headers: CloudFrontHeaders = {}
     await handler(event, {}, (_err, result) => {
       if (result && result.headers) {
-        headers = result.headers as CloudFrontHeaders;
+        headers = result.headers as CloudFrontHeaders
       }
       called = true
     })
@@ -1037,13 +1037,13 @@ describe('Lambda@Edge Adapter for Hono', () => {
         key: "Strict-Transport-Security",
         value: "max-age=63072000; includeSubdomains; preload"
       }
-    ]);
+    ])
     expect(headers["x-custom"]).toEqual([
       {
         key: "X-Custom",
         value: "Foo"
       }
-    ]);
+    ])
   })
 
   it('Callback Event (Lambda@Edge response)', async () => {
