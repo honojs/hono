@@ -5,6 +5,7 @@ import { env } from '../../src/adapter'
 import { Context } from '../../src/context'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
+import { HonoRequest } from '../../src/request'
 
 // Test only minimal patterns.
 // See <https://github.com/honojs/node-server> for more tests and information.
@@ -36,7 +37,7 @@ describe('Basic', () => {
 
 describe('Environment Variables', () => {
   it('Should return the environment variable', async () => {
-    const c = new Context(new Request('http://localhost/'))
+    const c = new Context(new HonoRequest(new Request('http://localhost/')))
     const { NAME } = env<{ NAME: string }>(c)
     expect(NAME).toBe('Node')
   })
