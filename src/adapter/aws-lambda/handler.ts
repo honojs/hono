@@ -4,6 +4,7 @@ import type { Hono } from '../../hono'
 import type { Env } from '../../types'
 
 import { encodeBase64 } from '../../utils/encode'
+import type { ApiGatewayRequestContext, LambdaFunctionUrlRequestContext } from './custom-context'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -17,9 +18,7 @@ interface APIGatewayProxyEventV2 {
   rawQueryString: string
   body: string | null
   isBase64Encoded: boolean
-  requestContext: {
-    domainName: string
-  }
+  requestContext: ApiGatewayRequestContext
 }
 
 // When calling Lambda through an API Gateway or an ELB
@@ -30,9 +29,7 @@ interface APIGatewayProxyEvent {
   body: string | null
   isBase64Encoded: boolean
   queryStringParameters?: Record<string, string | undefined>
-  requestContext: {
-    domainName: string
-  }
+  requestContext: ApiGatewayRequestContext
 }
 
 // When calling Lambda through an Lambda Function URLs
@@ -42,12 +39,7 @@ interface LambdaFunctionUrlEvent {
   rawQueryString: string
   body: string | null
   isBase64Encoded: boolean
-  requestContext: {
-    domainName: string
-    http: {
-      method: string
-    }
-  }
+  requestContext: LambdaFunctionUrlRequestContext
 }
 
 interface APIGatewayProxyResult {
@@ -55,6 +47,12 @@ interface APIGatewayProxyResult {
   body: string
   headers: Record<string, string>
   isBase64Encoded: boolean
+}
+
+const getRequestContext = (
+  event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
+): ApiGatewayRequestContext | LambdaFunctionUrlRequestContext => {
+  return event.requestContext
 }
 
 /**
@@ -67,7 +65,9 @@ export const handle = <E extends Env = Env, S = {}, BasePath extends string = '/
     event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
   ): Promise<APIGatewayProxyResult> => {
     const req = createRequest(event)
-    const res = await app.fetch(req)
+    const requestContext = getRequestContext(event)
+
+    const res = await app.fetch(req, { requestContext })
 
     return createResult(res)
   }
