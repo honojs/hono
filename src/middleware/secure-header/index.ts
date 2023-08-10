@@ -1,6 +1,14 @@
 import type { MiddlewareHandler } from '../../types'
 
+interface ContentSecurityPolicy {
+  directives: {
+    [key: string]: string[]
+  }
+}
+
 interface SecureHeaderOptions {
+  xContentTypeOptions?: boolean
+  xDnsPrefetchControl?: boolean
   xFrameOptions?: boolean
   strictTransportSecurity?: boolean
   xDownloadOptions?: boolean
@@ -9,6 +17,14 @@ interface SecureHeaderOptions {
 
 export const secureHeader = (options?: SecureHeaderOptions): MiddlewareHandler => {
   return async (ctx, next) => {
+    if (options?.xContentTypeOptions !== false) {
+      ctx.res.headers.set('X-Content-Type-Options', 'nosniff')
+    }
+
+    if (options?.xDnsPrefetchControl !== false) {
+      ctx.res.headers.set('X-DNS-Prefetch-Control', 'off')
+    }
+    
     if (options?.xFrameOptions !== false) {
       ctx.res.headers.set('X-Frame-Options', 'DENY')
     }
