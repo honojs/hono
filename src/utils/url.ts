@@ -150,7 +150,7 @@ const _getQueryParam = (
 ): string | undefined | Record<string, string> | string[] | Record<string, string[]> => {
   let encoded
 
-  if (key && !multiple) {
+  if (!multiple && key && !/[%+]/.test(key)) {
     // optimized for unencoded key
 
     let keyIndex = url.indexOf(`?${key}`, 8)
