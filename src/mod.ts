@@ -16,6 +16,7 @@ export type {
   NotFoundHandler,
   ValidationTargets,
   Input,
+  Schema,
   TypedResponse,
 } from './types'
 export type { Context, ContextVariableMap } from './context'
