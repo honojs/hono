@@ -74,6 +74,22 @@ export const getPath = (request: Request): string => {
   return match ? match[1] : ''
 }
 
+export const getPathWithFirstQuery = (
+  request: Request
+): [string, Record<string, string> | undefined] => {
+  const url = request.url
+  if (!/\?/.test(url)) {
+    return [getPath(request), undefined]
+  }
+  const match = url.match(/^https?:\/\/[^/]+(\/[^?]+)\?([^=]+)=([^&%]+)$/)
+  if (match) {
+    const firstQuery = {} as Record<string, string>
+    firstQuery[match[2]] = match[3]
+    return [match[1], firstQuery]
+  }
+  return [getPath(request), undefined]
+}
+
 export const getQueryStrings = (url: string): string => {
   const queryIndex = url.indexOf('?', 8)
   return queryIndex === -1 ? '' : '?' + url.slice(queryIndex + 1)

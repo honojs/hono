@@ -1,4 +1,4 @@
-import { HonoRequest } from './request'
+import type { HonoRequest } from './request'
 import { FetchEventLike } from './types'
 import type { Env, NotFoundHandler, Input, TypedResponse } from './types'
 import type { CookieOptions } from './utils/cookie'
@@ -76,8 +76,6 @@ type ContextOptions<E extends Env> = {
   env: E['Bindings']
   executionCtx?: FetchEventLike | ExecutionContext | undefined
   notFoundHandler?: NotFoundHandler<E>
-  path?: string
-  params?: Record<string, string>
 }
 
 export class Context<
@@ -90,43 +88,25 @@ export class Context<
   env: E['Bindings'] = {}
   finalized: boolean = false
   error: Error | undefined = undefined
+  req: HonoRequest<P, I['out']>
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private _req?: HonoRequest<any, any>
   private _status: StatusCode = 200
   private _exCtx: FetchEventLike | ExecutionContext | undefined // _executionCtx
   private _map: Record<string, unknown> | undefined
   private _h: Headers | undefined = undefined //  _headers
   private _pH: Record<string, string> | undefined = undefined // _preparedHeaders
   private _res: Response | undefined
-  private _path: string = '/'
-  private _params?: Record<string, string> | null
   private _init = true
-  private rawRequest?: Request | null
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
-  constructor(req: Request, options?: ContextOptions<E>) {
-    this.rawRequest = req
+  constructor(req: HonoRequest<P, I['out']>, options?: ContextOptions<E>) {
+    this.req = req
     if (options) {
       this._exCtx = options.executionCtx
-      this._path = options.path ?? '/'
-      this._params = options.params
       this.env = options.env
       if (options.notFoundHandler) {
         this.notFoundHandler = options.notFoundHandler
       }
-    }
-  }
-
-  get req(): HonoRequest<P, I['out']> {
-    if (this._req) {
-      return this._req
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this._req = new HonoRequest(this.rawRequest!, this._path, this._params!)
-      this.rawRequest = undefined
-      this._params = undefined
-      return this._req
     }
   }
 
@@ -203,6 +183,7 @@ export class Context<
   }
 
   status = (status: StatusCode): void => {
+    this._init = false
     this._status = status
   }
 
@@ -220,13 +201,6 @@ export class Context<
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
   ): Response => {
-    // Optimized
-    if (this._init && !headers && !arg && this._status === 200) {
-      return new Response(data, {
-        headers: this._pH,
-      })
-    }
-
     // Return Response immediately if arg is RequestInit.
     if (arg && typeof arg !== 'number') {
       const res = new Response(data, arg)
@@ -282,6 +256,22 @@ export class Context<
       : this.newResponse(data, arg)
   }
 
+  /**
+   * If you want to return a response fast, use the following code:
+   *
+   * ```
+   * // A text only
+   * return c.text('foo')
+   * ```
+   *
+   * ```
+   * // With headers
+   * c.text('foo', {
+   *  headers: {
+   *    message: 'bar'
+   *  }
+   * })
+   */
   text: TextRespond = (
     text: string,
     arg?: StatusCode | RequestInit,
@@ -289,17 +279,16 @@ export class Context<
   ): Response => {
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
-    if (!this._pH) {
-      if (this._init && !headers && !arg) {
+    if (!this._pH && this._init && !headers) {
+      if (!arg) {
         return new Response(text)
+      } else if (!(typeof arg === 'number')) {
+        // `arg` is RequestInit
+        return new Response(text, arg)
       }
-      this._pH = {}
     }
-    // If Content-Type is not set, we don't have to set `text/plain`.
-    // Fewer the header values, it will be faster.
-    if (this._pH['content-type']) {
-      this._pH['content-type'] = 'text/plain; charset=UTF-8'
-    }
+    this._pH ??= {}
+    this._pH['content-type'] = 'text/plain; charset=UTF-8'
     return typeof arg === 'number'
       ? this.newResponse(text, arg, headers)
       : this.newResponse(text, arg)
@@ -311,6 +300,13 @@ export class Context<
     headers?: HeaderRecord
   ) => {
     const body = JSON.stringify(object)
+    if (!this._pH && this._init && !arg) {
+      return new Response(body, {
+        headers: {
+          'content-type': 'application/json; charset=UTF-8',
+        },
+      })
+    }
     this._pH ??= {}
     this._pH['content-type'] = 'application/json; charset=UTF-8'
     return typeof arg === 'number'

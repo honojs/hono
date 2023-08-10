@@ -21,14 +21,20 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   private vData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
   path: string
 
+  private firstQuery: Record<string, string> | undefined
+
   constructor(
     request: Request,
-    path: string = '/',
-    paramData?: Record<string, string> | undefined
+    options: {
+      path: string
+      paramData: Record<string, string> | undefined
+      firstQuery: Record<string, string> | undefined
+    }
   ) {
     this.raw = request
-    this.path = path
-    this.paramData = paramData
+    this.path = options.path
+    this.paramData = options.paramData
+    this.firstQuery = options.firstQuery
     this.vData = {}
   }
 
@@ -57,6 +63,9 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   query(key: string): string | undefined
   query(): Record<string, string>
   query(key?: string) {
+    if (key && this.firstQuery) {
+      return this.firstQuery[key]
+    }
     return getQueryParam(this.url, key)
   }
 

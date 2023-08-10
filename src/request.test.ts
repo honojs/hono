@@ -1,9 +1,15 @@
 import { HonoRequest } from './request'
 
+const defaultOption = {
+  path: '/',
+  paramData: {},
+  firstQuery: undefined,
+}
+
 describe('Query', () => {
   test('req.query() and req.queries()', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
-    const req = new HonoRequest(rawRequest)
+    const req = new HonoRequest(rawRequest, defaultOption)
 
     const page = req.query('page')
     expect(page).not.toBeUndefined()
@@ -22,7 +28,7 @@ describe('Query', () => {
 
   test('decode special chars', () => {
     const rawRequest = new Request('http://localhost?mail=framework%40hono.dev&tag=%401&tag=%402')
-    const req = new HonoRequest(rawRequest)
+    const req = new HonoRequest(rawRequest, defaultOption)
 
     const mail = req.query('mail')
     expect(mail).toBe('framework@hono.dev')
@@ -44,14 +50,14 @@ describe('req.addValidatedData() and req.data()', () => {
   }
 
   test('add data - json', () => {
-    const req = new HonoRequest(rawRequest)
+    const req = new HonoRequest(rawRequest, defaultOption)
     req.addValidatedData('json', payload)
     const data = req.valid('json')
     expect(data).toEqual(payload)
   })
 
   test('replace data - json', () => {
-    const req = new HonoRequest(rawRequest)
+    const req = new HonoRequest(rawRequest, defaultOption)
     req.addValidatedData('json', payload)
     req.addValidatedData('json', {
       tag: ['sport', 'music'],
@@ -71,7 +77,10 @@ describe('req.addValidatedData() and req.data()', () => {
 
 describe('headers', () => {
   test('empty string is a valid header value', () => {
-    const req = new HonoRequest(new Request('http://localhost', { headers: { foo: '' } }))
+    const req = new HonoRequest(
+      new Request('http://localhost', { headers: { foo: '' } }),
+      defaultOption
+    )
     const foo = req.header('foo')
     expect(foo).toEqual('')
   })

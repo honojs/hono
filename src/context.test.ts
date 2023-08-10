@@ -1,8 +1,13 @@
 import { Context } from './context'
+import { HonoRequest } from './request'
+
+const req = new HonoRequest(new Request('http://localhost/'), {
+  path: '/',
+  paramData: {},
+  firstQuery: undefined,
+})
 
 describe('Context', () => {
-  const req = new Request('http://localhost/')
-
   let c: Context
   beforeEach(() => {
     c = new Context(req)
@@ -145,7 +150,6 @@ describe('Context', () => {
   })
 
   it('Should be able read env', async () => {
-    const req = new Request('http://localhost/')
     const key = 'a-secret-key'
     const ctx = new Context(req, {
       env: {
@@ -180,7 +184,6 @@ describe('Context', () => {
 })
 
 describe('Context header', () => {
-  const req = new Request('http://localhost/')
   let c: Context
   beforeEach(() => {
     c = new Context(req)
@@ -198,7 +201,6 @@ describe('Context header', () => {
 })
 
 describe('Pass a ResponseInit to respond methods', () => {
-  const req = new Request('http://localhost/')
   let c: Context
   beforeEach(() => {
     c = new Context(req)

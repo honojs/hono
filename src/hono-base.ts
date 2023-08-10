@@ -2,6 +2,7 @@ import { compose } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
 import { HTTPException } from './http-exception'
+import { HonoRequest } from './request'
 import type { Router } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router'
 import type {
@@ -20,7 +21,7 @@ import type {
   FetchEventLike,
 } from './types'
 import type { RemoveBlankRecord } from './utils/types'
-import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
+import { getPathNoStrict, getQueryStrings, mergePath, getPathWithFirstQuery } from './utils/url'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
@@ -65,7 +66,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     To use it, inherit the class and implement router in the constructor.
   */
   router!: Router<H>
-  readonly getPath: (request: Request) => string
+  readonly getPath: ((request: Request) => string) | undefined
   private _basePath: string = ''
   private path: string = '*'
 
@@ -122,7 +123,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     const strict = init.strict ?? true
     delete init.strict
     Object.assign(this, init)
-    this.getPath = strict ? init.getPath ?? getPath : getPathNoStrict
+    this.getPath = strict ? init.getPath ?? undefined : getPathNoStrict
   }
 
   private clone(): Hono<E, S, BasePath> {
@@ -277,22 +278,28 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     env: E['Bindings'],
     method: string
   ): Response | Promise<Response> {
-    const path = this.getPath(request)
-
     // Handle HEAD method
     if (method === 'HEAD') {
       return (async () =>
         new Response(null, await this.dispatch(request, executionCtx, env, 'GET')))()
     }
 
+    let path: string
+    let firstQuery: Record<string, string> | undefined = undefined
+
+    if (this.getPath) {
+      path = this.getPath(request)
+    } else {
+      ;[path, firstQuery] = getPathWithFirstQuery(request)
+    }
+
     const { handlers, params } = this.matchRoute(method, path)
 
-    const c = new Context(request, {
+    const honoRequest = new HonoRequest(request, { path, paramData: params, firstQuery })
+    const c = new Context(honoRequest, {
       env,
       executionCtx,
       notFoundHandler: this.notFoundHandler,
-      path,
-      params,
     })
 
     // Do not `compose` if it has only one handler
