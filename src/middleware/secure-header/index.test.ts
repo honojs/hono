@@ -14,7 +14,7 @@ describe('Secure Header Middleware', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(res.headers.get('X-Frame-Options')).toEqual('DENY')
+    expect(res.headers.get('X-Frame-Options')).toEqual('SAMEORIGIN')
     expect(res.headers.get('Strict-Transport-Security')).toEqual('max-age=15552000; includeSubDomains')
     expect(res.headers.get('X-Download-Options')).toEqual('noopen')
     expect(res.headers.get('X-XSS-Protection')).toEqual('0')
