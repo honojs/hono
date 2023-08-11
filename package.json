@@ -131,6 +131,11 @@
       "import": "./dist/middleware/pretty-json/index.js",
       "require": "./dist/cjs/middleware/pretty-json/index.js"
     },
+    "./secure-header": {
+      "types": "./dist/types/middleware/secure-header/index.d.ts",
+      "import": "./dist/middleware/secure-header/index.js",
+      "require": "./dist/cjs/middleware/secure-header/index.js"
+    },
     "./validator": {
       "types": "./dist/types/validator/index.d.ts",
       "import": "./dist/validator/index.js",
@@ -280,6 +285,9 @@
       ],
       "pretty-json": [
         "./dist/types/middleware/pretty-json"
+      ],
+      "secure-header": [
+        "./dist/types/middleware/secure-header"
       ],
       "validator": [
         "./dist/types/validator/index.d.ts"
