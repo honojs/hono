@@ -22,6 +22,10 @@ describe('Secure Header Middleware', () => {
     expect(res.headers.get('X-Powered-By')).toBeNull()
     expect(res.headers.get('X-DNS-Prefetch-Control')).toEqual('off')
     expect(res.headers.get('X-Content-Type-Options')).toEqual('nosniff')
+    expect(res.headers.get('Referrer-Policy')).toEqual('no-referrer')
+    expect(res.headers.get('X-Permitted-Cross-Domain-Policies')).toEqual('none')
+    expect(res.headers.get('Cross-Origin-Resource-Policy')).toEqual('same-origin')
+    expect(res.headers.get('Cross-Origin-Opener-Policy')).toEqual('same-origin')
   })
 
   it('specific headers disabled', async () => {
@@ -42,5 +46,11 @@ describe('Secure Header Middleware', () => {
     expect(res.headers.get('X-Download-Options')).toEqual('noopen')
     expect(res.headers.get('X-XSS-Protection')).toBeNull()
     expect(res.headers.get('X-Powered-By')).toBeNull()
+    expect(res.headers.get('X-DNS-Prefetch-Control')).toEqual('off')
+    expect(res.headers.get('X-Content-Type-Options')).toEqual('nosniff')
+    expect(res.headers.get('Referrer-Policy')).toEqual('no-referrer')
+    expect(res.headers.get('X-Permitted-Cross-Domain-Policies')).toEqual('none')
+    expect(res.headers.get('Cross-Origin-Resource-Policy')).toEqual('same-origin')
+    expect(res.headers.get('Cross-Origin-Opener-Policy')).toEqual('same-origin')
   })
 })

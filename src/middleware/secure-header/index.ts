@@ -13,11 +13,15 @@ interface SecureHeaderOptions {
   xXssProtection?: boolean
 }
 
-const HEADER_MAP = {
+type HeaderMap = {
+  [key in keyof SecureHeaderOptions]: [string, string]
+}
+
+const HEADER_MAP: HeaderMap = {
   crossOriginResourcePolicy: ['Cross-Origin-Resource-Policy', 'same-origin'],
   crossOriginOpenerPolicy: ['Cross-Origin-Opener-Policy', 'same-origin'],
   referrerPolicy: ['Referrer-Policy', 'no-referrer'],
-  strictTransportSecurity: ['Strict-Transport-Security', 'max-age=31536000; includeSubDomains'],
+  strictTransportSecurity: ['Strict-Transport-Security', 'max-age=15552000; includeSubDomains'],
   xContentTypeOptions: ['X-Content-Type-Options', 'nosniff'],
   xDnsPrefetchControl: ['X-DNS-Prefetch-Control', 'off'],
   xDownloadOptions: ['X-Download-Options', 'noopen'],
@@ -43,7 +47,7 @@ export const secureHeader = (customOptions?: Partial<SecureHeaderOptions>): Midd
   const options = { ...DEFAULT_OPTIONS, ...customOptions }
   const headersToSet = Object.entries(HEADER_MAP)
     .filter(([key]) => options[key as keyof SecureHeaderOptions])
-    .map(([key, value]) => value)
+    .map(([, value]) => value)
 
   return async (ctx, next) => {
     headersToSet.forEach(([header, value]) => {
