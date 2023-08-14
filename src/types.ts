@@ -89,7 +89,7 @@ export interface HandlerInterface<
     I3 extends Input = I & I2
   >(
     ...handlers: [
-      Handler<E, P, I, O>, Handler<E, P, I2, O>, Handler<E, P, I3, O>]
+      H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>]
   ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I3['in'], O>>, BasePath>
 
   // app.get(handler x 4)
@@ -102,10 +102,10 @@ export interface HandlerInterface<
     I4 extends Input = I2 & I3
   >(
     ...handlers: [
-      Handler<E, P, I, O>,
-      Handler<E, P, I2, O>,
-      Handler<E, P, I3, O>,
-      Handler<E, P, I4, O>
+      H<E, P, I, O>,
+      H<E, P, I2, O>,
+      H<E, P, I3, O>,
+      H<E, P, I4, O>
     ]
   ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I4['in'], O>>, BasePath>
 
