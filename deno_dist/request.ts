@@ -32,8 +32,10 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     this.vData = {}
   }
 
-  param(key: RemoveQuestion<ParamKeys<P>>): UndefinedIfHavingQuestion<ParamKeys<P>>
-  param(): UnionToIntersection<ParamKeyToRecord<ParamKeys<P>>>
+  param<P2 extends string = P>(
+    key: RemoveQuestion<ParamKeys<P2>>
+  ): UndefinedIfHavingQuestion<ParamKeys<P2>>
+  param<P2 extends string = P>(): UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>
   param(key?: string): unknown {
     if (this.paramData) {
       if (key) {
