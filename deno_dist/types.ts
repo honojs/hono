@@ -67,7 +67,7 @@ export interface HandlerInterface<
   E extends Env = Env,
   M extends string = any,
   S = {},
-  BasePath extends string = ''
+  BasePath extends string = '/'
 > {
   //// app.get(...handlers[])
 
