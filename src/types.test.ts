@@ -161,6 +161,16 @@ describe('HandlerInterface', () => {
       type Expected = Hono<Env, Schema<'get', '/foo/:foo', {}, {}>, '/foo/:foo'>
       type verify = Expect<Equal<Expected, Actual>>
     })
+
+    it('Chained', () => {
+      const route = app.post('/books/:id').get((c) => {
+        const id = c.req.param('id')
+        return c.text(id)
+      })
+      type Actual = typeof route
+      type Expected = Hono<Env, Schema<'get', '/foo/:foo/books/:id', {}, {}> | Schema<'post', '/foo/:foo/books/:id', {}, {}>, '/foo/:foo'>
+      type verify = Expect<Equal<Expected, Actual>>
+    })
   })
 })
 
