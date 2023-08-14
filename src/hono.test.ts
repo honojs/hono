@@ -78,6 +78,66 @@ describe('GET Request', () => {
   })
 })
 
+describe('Register handlers without a path', () => {
+  describe('No basePath', () => {
+    const app = new Hono()
+
+    app.get((c) => {
+      return c.text('Hello')
+    })
+
+    it('GET http://localhost/ is ok', async () => {
+      const res = await app.request('/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('Hello')
+    })
+
+    it('GET http://localhost/anything is ok', async () => {
+      const res = await app.request('/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('Hello')
+    })
+  })
+
+  describe('With specifying basePath', () => {
+    const app = new Hono().basePath('/about')
+
+    app.get((c) => {
+      return c.text('About')
+    })
+
+    it('GET http://localhost/about is ok', async () => {
+      const res = await app.request('/about')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('About')
+    })
+
+    it('GET http://localhost/ is not found', async () => {
+      const res = await app.request('/')
+      expect(res.status).toBe(404)
+    })
+  })
+
+  describe('With chaining', () => {
+    const app = new Hono()
+
+    app.post('/books').get((c) => {
+      return c.text('Books')
+    })
+
+    it('GET http://localhost/books is ok', async () => {
+      const res = await app.request('/books')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('Books')
+    })
+
+    it('GET http://localhost/ is not found', async () => {
+      const res = await app.request('/')
+      expect(res.status).toBe(404)
+    })
+  })
+})
+
 describe('router option', () => {
   it('Should be SmartRouter', () => {
     const app = new Hono()
