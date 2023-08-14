@@ -78,7 +78,7 @@ export interface HandlerInterface<
     O = {}
   >(
     ...handlers: [H<E, P, I, O>, H<E, P, I, O>]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I['in'], O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I['in'], O>>, BasePath>
 
   // app.get(handler x 3)
   <
@@ -88,8 +88,7 @@ export interface HandlerInterface<
     I2 extends Input = I,
     I3 extends Input = I & I2
   >(
-    ...handlers: [
-      H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>]
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>]
   ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I3['in'], O>>, BasePath>
 
   // app.get(handler x 4)
@@ -101,12 +100,7 @@ export interface HandlerInterface<
     I3 extends Input = I & I2,
     I4 extends Input = I2 & I3
   >(
-    ...handlers: [
-      H<E, P, I, O>,
-      H<E, P, I2, O>,
-      H<E, P, I3, O>,
-      H<E, P, I4, O>
-    ]
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>]
   ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I4['in'], O>>, BasePath>
 
   // app.get(handler x 5)
@@ -119,13 +113,7 @@ export interface HandlerInterface<
     I4 extends Input = I2 & I3,
     I5 extends Input = I3 & I4
   >(
-    ...handlers: [
-      H<E, P, I, O>,
-      H<E, P, I2, O>,
-      H<E, P, I3, O>,
-      H<E, P, I4, O>,
-      H<E, P, I5, O>
-    ]
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>, H<E, P, I5, O>]
   ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I5['in'], O>>, BasePath>
 
   // app.get(...handlers[])
@@ -133,11 +121,9 @@ export interface HandlerInterface<
     P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
     I extends Input = {},
     O = {}
-  >(...handlers: Handler<E, P, I, O>[]): Hono<
-    E,
-    RemoveBlankRecord<S | Schema<M, P, I['in'], O>>,
-    BasePath
-  >
+  >(
+    ...handlers: Handler<E, P, I, O>[]
+  ): Hono<E, RemoveBlankRecord<Schema<M, P, I['in'], O>>, BasePath>
 
   ////  app.get(path, ...handlers[])
 
@@ -442,7 +428,7 @@ export type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | un
 //////                            //////
 ////////////////////////////////////////
 
-export type ExtractSchema<T> = T extends Hono<infer _, infer S> ? S : never
+export type ExtractSchema<T> = T extends Hono<infer _, infer S, any> ? S : never
 
 ////////////////////////////////////////
 //////                            //////
