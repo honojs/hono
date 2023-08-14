@@ -145,6 +145,25 @@ describe('HandlerInterface', () => {
       type verify = Expect<Equal<Expected, Actual>>
     })
   })
+
+  describe('Without path', () => {
+    const app = new Hono<Env>().basePath('/foo/:foo')
+
+    test('With basePath', () => {
+      it('With path params', () => {
+        const route = app.get(
+          async (c) => {
+            const foo = c.req.param('foo')
+            expect(typeof foo).toBe('string')
+            return c.text(foo)
+          }
+        )
+        type Actual = typeof route
+        type Expected = Hono<Env, Schema<'get', '/foo/:foo', {}, {}>, '/foo/:foo'>
+        type verify = Expect<Equal<Expected, Actual>>
+      })
+    })
+  })
 })
 
 describe('OnHandlerInterface', () => {
