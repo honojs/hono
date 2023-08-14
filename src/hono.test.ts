@@ -1269,6 +1269,44 @@ describe('Hono with `app.route`', () => {
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('bar')
     })
+
+    describe('With app.get(...handler)', () => {
+      const app = new Hono()
+      const about = new Hono()
+      about.get((c) => c.text('me'))
+      const subApp = new Hono()
+      subApp.route('/about', about)
+      app.route('/', subApp)
+
+      it('Should return 200 response - /about', async () => {
+        const res = await app.request('/about')
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('me')
+      })
+
+      test('Should return 404 response /about/foo', async () => {
+        const res = await app.request('/about/foo')
+        expect(res.status).toBe(404)
+      })
+    })
+
+    describe('With app.get(...handler) and app.basePath()', () => {
+      const app = new Hono()
+      const about = new Hono().basePath('/about')
+      about.get((c) => c.text('me'))
+      app.route('/', about)
+
+      it('Should return 200 response - /about', async () => {
+        const res = await app.request('/about')
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('me')
+      })
+
+      test('Should return 404 response /about/foo', async () => {
+        const res = await app.request('/about/foo')
+        expect(res.status).toBe(404)
+      })
+    })
   })
 
   describe('Chaining', () => {

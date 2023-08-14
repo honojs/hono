@@ -66,8 +66,8 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
   */
   router!: Router<H>
   readonly getPath: (request: Request) => string
-  private _basePath: string = ''
-  private path: string = '*'
+  private _basePath: string = '/'
+  private path: string = '/'
 
   routes: RouterRoute[] = []
 
