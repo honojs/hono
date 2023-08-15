@@ -145,7 +145,8 @@ const createRequest = (event: CloudFrontEdgeEvent) => {
   })
 
   const requestBody = event.Records[0].cf.request.body
-  const body = requestBody?.encoding === 'base64' && requestBody?.data
+  const body =
+    requestBody?.encoding === 'base64' && requestBody?.data
       ? Buffer.from(requestBody.data, 'base64')
       : requestBody?.data
 
