@@ -15,6 +15,7 @@ jobs:
         with:
           node-version: 18.x
       - run: yarn install --frozen-lockfile
+      - run: npm run format
       - run: npm run lint
       - run: npm run build
       - run: npm test
