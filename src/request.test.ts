@@ -76,3 +76,66 @@ describe('headers', () => {
     expect(foo).toEqual('')
   })
 })
+
+describe('Body methods', () => {
+  test('req.text()', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: 'foo',
+      })
+    )
+    expect(await req.text()).toBe('foo')
+    expect(await req.text()).toBe('foo') // Should be cached
+  })
+
+  test('req.json()', async () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: '{"foo":"bar"}',
+      })
+    )
+    expect(await req.json()).toEqual({ foo: 'bar' })
+    expect(await req.json()).toEqual({ foo: 'bar' }) // Should be cached
+  })
+
+  test('req.arrayBuffer()', async () => {
+    const buffer = new ArrayBuffer(8)
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: buffer,
+      })
+    )
+    expect(await req.arrayBuffer()).toEqual(buffer)
+    expect(await req.arrayBuffer()).toEqual(buffer) // Should be cached
+  })
+
+  test('req.blob()', async () => {
+    const blob = new Blob(['foo'], {
+      type: 'text/plain',
+    })
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: blob,
+      })
+    )
+    expect(await req.blob()).toEqual(blob)
+    expect(await req.blob()).toEqual(blob) // Should be cached
+  })
+
+  test('req.formData()', async () => {
+    const data = new FormData()
+    data.append('foo', 'bar')
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: data,
+      })
+    )
+    expect((await req.formData()).get('foo')).toBe('bar')
+    expect((await req.formData()).get('foo')).toBe('bar') // Should be cached
+  })
+})
