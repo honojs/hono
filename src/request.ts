@@ -125,10 +125,10 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   private cachedBody = (key: keyof BodyCache) => {
-    const cachedBody = this.bodyCache[key]
+    const { bodyCache, raw } = this
+    const cachedBody = bodyCache[key]
     if (cachedBody) return cachedBody
-    this.bodyCache[key] = this.raw[key]()
-    return this.bodyCache[key]
+    return (bodyCache[key] = raw[key]())
   }
 
   json<T = any>(): Promise<T> {
