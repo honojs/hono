@@ -88,8 +88,9 @@ describe('Cookie Middleware', () => {
 
     it('Get signed cookies invalid signature', async () => {
       const req = new Request('http://localhost/cookie-signed-get-all')
+      // fruit_cookie has invalid signature
       const cookieString =
-        'fortune_cookie=lots-of-money.UO6vMygDM6NCDU4LdvBnzdVb2Xcdj+h+ZTnmS8X7iH8%3D; fruit_cookie=mango.verytasty%3D'
+        'fortune_cookie=lots-of-money.UO6vMygDM6NCDU4LdvBnzdVb2Xcdj+h+ZTnmS8X7iH8%3D; fruit_cookie=mango.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg%3D'
       req.headers.set('Cookie', cookieString)
       const res = await app.request(req)
       expect(res.headers.get('Fortune-Cookie')).toBe('lots-of-money')
@@ -107,8 +108,9 @@ describe('Cookie Middleware', () => {
 
     it('Get signed cookie witn invalid signature', async () => {
       const req = new Request('http://localhost/cookie-signed-get-one')
+      // fortune_cookie has invalid signature
       const cookieString =
-        'fortune_cookie=lots-of-money.nolucktoday%3D; fruit_cookie=mango.lRwgtW9ooM9%2Fd9ZZA%2FInNRG64CbQsfWGXQyFLPM9520%3D'
+        'fortune_cookie=lots-of-money.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg=; fruit_cookie=mango.lRwgtW9ooM9%2Fd9ZZA%2FInNRG64CbQsfWGXQyFLPM9520%3D'
       req.headers.set('Cookie', cookieString)
       const res = await app.request(req)
       expect(res.headers.get('Fortune-Cookie')).toBe('INVALID')
