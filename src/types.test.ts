@@ -50,7 +50,7 @@ describe('HandlerInterface', () => {
     const app = new Hono<Env>()
     const middleware: MiddlewareHandler<
       Env,
-      never,
+      '/',
       {
         in: { json: Payload }
         out: { json: Payload }
@@ -62,7 +62,7 @@ describe('HandlerInterface', () => {
       const route = app.get(middleware, (c) => {
         type Expected = Context<
           Env,
-          never,
+          '/',
           {
             in: { json: Payload }
             out: { json: Payload }
@@ -80,6 +80,20 @@ describe('HandlerInterface', () => {
           message: 'Hello!',
         })
       })
+      type Actual = ExtractSchema<typeof route>
+      type Expected = {
+        '/': {
+          $get: {
+            input: {
+              json: Payload
+            }
+            output: {
+              message: string
+            }
+          }
+        }
+      }
+      type verify = Expect<Equal<Expected, Actual>>
     })
   })
 
@@ -136,6 +150,56 @@ describe('HandlerInterface', () => {
             input: {
               param: {
                 id: string
+              }
+            }
+            output: {}
+          }
+        }
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+  })
+
+  describe('Without path', () => {
+    const app = new Hono<Env>().basePath('/foo/:foo')
+
+    it('With basePath and path params', () => {
+      const route = app.get(async (c) => {
+        const foo = c.req.param('foo')
+        expect(typeof foo).toBe('string')
+        return c.text(foo)
+      })
+      type Actual = ExtractSchema<typeof route>
+
+      type Expected = {
+        '/foo/:foo': {
+          $get: {
+            input: {
+              param: {
+                foo: string
+              }
+            }
+            output: {}
+          }
+        }
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+
+    it('Chained', () => {
+      const route = app.post('/books/:id').get((c) => {
+        const id = c.req.param('id')
+        return c.text(id)
+      })
+      type Actual = ExtractSchema<typeof route>
+      type Expected = {
+        '/foo/:foo/books/:id': {
+          $get: {
+            input: {
+              param: {
+                id: string
+              } & {
+                foo: string
               }
             }
             output: {}

@@ -136,7 +136,9 @@ describe('Etag Middleware', () => {
   })
 
   it('Should not override ETag headers from upstream', async () => {
-    app.get('/etag/predefined', (c) => c.text('This response has an ETag', 200, { ETag: '"f-0194-d"'}))
+    app.get('/etag/predefined', (c) =>
+      c.text('This response has an ETag', 200, { ETag: '"f-0194-d"' })
+    )
 
     const res = await app.request('http://localhost/etag/predefined')
     expect(res.headers.get('ETag')).toBe('"f-0194-d"')

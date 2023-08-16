@@ -1090,7 +1090,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     }
 
     let called = false
-    await handler(event, {}, (_err, result) => {
+    await handler(event, {}, () => {
       called = true
     })
 

@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from '../../types'
 import { sha1 } from '../../utils/crypto'
 
 type ETagOptions = {
-  retainedHeaders?: string[],
+  retainedHeaders?: string[]
   weak?: boolean
 }
 
@@ -13,7 +13,12 @@ type ETagOptions = {
  * > Content-Location, Date, ETag, Expires, and Vary.
  */
 const RETAINED_304_HEADERS = [
-  'cache-control', 'content-location', 'date', 'etag', 'expires', 'vary'
+  'cache-control',
+  'content-location',
+  'date',
+  'etag',
+  'expires',
+  'vary',
 ]
 
 function etagMatches(etag: string, ifNoneMatch: string | null) {
