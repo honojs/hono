@@ -309,11 +309,15 @@ export class Context<
         : T
       : never
   > => {
+    const response =
+      typeof arg === 'number' ? this.json(object, arg, headers) : this.json(object, arg)
+
     return {
-      response: typeof arg === 'number' ? this.json(object, arg, headers) : this.json(object, arg),
+      response,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: object as any,
       format: 'json',
+      status: response.status,
     }
   }
 

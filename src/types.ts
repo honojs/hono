@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Context } from './context'
 import type { Hono } from './hono'
+import type { StatusCode } from './utils/http-status'
 import type { UnionToIntersection } from './utils/types'
 
 ////////////////////////////////////////
@@ -385,6 +386,7 @@ export type TypedResponse<T = unknown> = {
   response: Response | Promise<Response>
   data: T
   format: 'json' // Currently, support only `json` with `c.jsonT()`
+  status: StatusCode
 }
 
 type ExtractResponseData<T> = T extends Promise<infer T2>
