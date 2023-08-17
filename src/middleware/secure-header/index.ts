@@ -3,7 +3,7 @@ import type { MiddlewareHandler } from '../../types'
 interface SecureHeaderOptions {
   crossOriginResourcePolicy?: boolean
   crossOriginOpenerPolicy?: boolean
-  requireCorp: boolean
+  originAgentCluster: boolean
   referrerPolicy?: boolean
   strictTransportSecurity?: boolean
   xContentTypeOptions?: boolean
@@ -21,7 +21,7 @@ type HeaderMap = {
 const HEADER_MAP: HeaderMap = {
   crossOriginResourcePolicy: ['Cross-Origin-Resource-Policy', 'same-origin'],
   crossOriginOpenerPolicy: ['Cross-Origin-Opener-Policy', 'same-origin'],
-  requireCorp: ['require-corp', '?1'],
+  originAgentCluster: ['Origin-Agent-Cluster', '?1'],
   referrerPolicy: ['Referrer-Policy', 'no-referrer'],
   strictTransportSecurity: ['Strict-Transport-Security', 'max-age=15552000; includeSubDomains'],
   xContentTypeOptions: ['X-Content-Type-Options', 'nosniff'],
@@ -35,7 +35,7 @@ const HEADER_MAP: HeaderMap = {
 const DEFAULT_OPTIONS = {
   crossOriginResourcePolicy: true,
   crossOriginOpenerPolicy: true,
-  requireCorp: true,
+  originAgentCluster: true,
   referrerPolicy: true,
   strictTransportSecurity: true,
   xContentTypeOptions: true,

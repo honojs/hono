@@ -26,7 +26,7 @@ describe('Secure Header Middleware', () => {
     expect(res.headers.get('X-Permitted-Cross-Domain-Policies')).toEqual('none')
     expect(res.headers.get('Cross-Origin-Resource-Policy')).toEqual('same-origin')
     expect(res.headers.get('Cross-Origin-Opener-Policy')).toEqual('same-origin')
-    expect(res.headers.get('require-corp')).toEqual('?1')
+    expect(res.headers.get('Origin-Agent-Cluster')).toEqual('?1')
   })
 
   it('specific headers disabled', async () => {
@@ -53,6 +53,6 @@ describe('Secure Header Middleware', () => {
     expect(res.headers.get('X-Permitted-Cross-Domain-Policies')).toEqual('none')
     expect(res.headers.get('Cross-Origin-Resource-Policy')).toEqual('same-origin')
     expect(res.headers.get('Cross-Origin-Opener-Policy')).toEqual('same-origin')
-    expect(res.headers.get('require-corp')).toEqual('?1')
+    expect(res.headers.get('Origin-Agent-Cluster')).toEqual('?1')
   })
 })
