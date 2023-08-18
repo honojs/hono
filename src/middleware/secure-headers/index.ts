@@ -53,11 +53,11 @@ export const secureHeaders = (customOptions?: Partial<SecureHeadersOptions>): Mi
     .map(([, value]) => value)
 
   return async (ctx, next) => {
+    await next()
     headersToSet.forEach(([header, value]) => {
       ctx.res.headers.set(header, value)
     })
 
     ctx.res.headers.delete('X-Powered-By')
-    await next()
   }
 }
