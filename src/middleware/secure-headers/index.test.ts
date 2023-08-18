@@ -10,8 +10,7 @@ describe('Secure Headers Middleware', () => {
       return ctx.text('test')
     })
 
-    const req = new Request('http://localhost/test', { method: 'GET' })
-    const res = await app.request(req)
+    const res = await app.request('/test')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('X-Frame-Options')).toEqual('SAMEORIGIN')
@@ -37,8 +36,7 @@ describe('Secure Headers Middleware', () => {
       return ctx.text('test')
     })
 
-    const req = new Request('http://localhost/test', { method: 'GET' })
-    const res = await app.request(req)
+    const res = await app.request('/test')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('X-Frame-Options')).toBeNull()
