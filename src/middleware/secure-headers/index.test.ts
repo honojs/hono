@@ -70,4 +70,22 @@ describe('Secure Headers Middleware', () => {
     const resAfter = await appAfter.request('/')
     expect(resAfter.headers.get('x-powered-by')).toBe('Hono')
   })
+
+  it('should override Strict-Transport-Security header after middleware', async () => {
+    const app = new Hono()
+    app.use('/test1', secureHeaders())
+
+    app.all('*', async (c) => {
+      c.res.headers.set('Strict-Transport-Security', 'Hono')
+      return c.text('header updated')
+    })
+
+    const res1 = await app.request('/test1')
+    expect(res1.headers.get('Strict-Transport-Security')).toEqual(
+      'max-age=15552000; includeSubDomains'
+    )
+
+    const res2 = await app.request('/test2')
+    expect(res2.headers.get('Strict-Transport-Security')).toEqual('Hono')
+  })
 })
