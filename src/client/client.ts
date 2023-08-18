@@ -2,7 +2,7 @@ import type { Hono } from '../hono'
 import type { ValidationTargets } from '../types'
 import type { UnionToIntersection } from '../utils/types'
 import type { Callback, Client, ClientRequestOptions } from './types'
-import { replaceUrlParam, mergePath, removeIndexString, deepMerge } from './utils'
+import { deepMerge, mergePath, removeIndexString, replaceUrlParam } from './utils'
 
 const createProxy = (callback: Callback, path: string[]) => {
   const proxy: unknown = new Proxy(() => {}, {
@@ -41,6 +41,10 @@ class ClientRequestImpl {
     if (args) {
       if (args.query) {
         for (const [k, v] of Object.entries(args.query)) {
+          if (v === undefined) {
+            return
+          }
+
           this.queryParams ||= new URLSearchParams()
           if (Array.isArray(v)) {
             for (const v2 of v) {
