@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type {
   Input,
   InputToDataByTarget,
@@ -14,12 +16,16 @@ import { parse } from './utils/cookie.ts'
 import type { UnionToIntersection } from './utils/types.ts'
 import { getQueryParam, getQueryParams, decodeURIComponent_ } from './utils/url.ts'
 
+type BodyType = 'json' | 'text' | 'arrayBuffer' | 'blob' | 'formData'
+type BodyCache = Partial<Record<BodyType, any>>
+
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   raw: Request
 
   private paramData: Record<string, string> | undefined
   private vData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
   path: string
+  private bodyCache: BodyCache = {}
 
   constructor(
     request: Request,
@@ -115,28 +121,34 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   async parseBody<T extends BodyData = BodyData>(): Promise<T> {
-    return await parseBody(this.raw)
+    return await parseBody(this)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private cachedBody = (key: keyof BodyCache) => {
+    const { bodyCache, raw } = this
+    const cachedBody = bodyCache[key]
+    if (cachedBody) return cachedBody
+    return (bodyCache[key] = raw[key]())
+  }
+
   json<T = any>(): Promise<T> {
-    return this.raw.json()
+    return this.cachedBody('json')
   }
 
-  text() {
-    return this.raw.text()
+  text(): Promise<string> {
+    return this.cachedBody('text')
   }
 
-  arrayBuffer() {
-    return this.raw.arrayBuffer()
+  arrayBuffer(): Promise<ArrayBuffer> {
+    return this.cachedBody('arrayBuffer')
   }
 
-  blob() {
-    return this.raw.blob()
+  blob(): Promise<Blob> {
+    return this.cachedBody('blob')
   }
 
-  formData() {
-    return this.raw.formData()
+  formData(): Promise<FormData> {
+    return this.cachedBody('formData')
   }
 
   addValidatedData(target: keyof ValidationTargets, data: {}) {

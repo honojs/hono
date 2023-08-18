@@ -1,6 +1,5 @@
 import type { Context } from '../context'
 import type { Env, ValidationTargets, MiddlewareHandler } from '../types'
-import { parseBody } from '../utils/body'
 
 type ValidationTargetKeysWithBody = 'form' | 'json'
 type ValidationTargetByMethod<M> = M extends 'get' | 'head' // GET and HEAD request must not have a body content.
@@ -48,7 +47,7 @@ export const validator = <
     switch (target) {
       case 'json':
         try {
-          value = await c.req.raw.clone().json()
+          value = await c.req.json()
         } catch {
           console.error('Error: Malformed JSON in request body')
           return c.json(
@@ -61,7 +60,7 @@ export const validator = <
         }
         break
       case 'form':
-        value = await parseBody(c.req.raw.clone())
+        value = await c.req.parseBody()
         break
       case 'query':
         value = Object.fromEntries(
