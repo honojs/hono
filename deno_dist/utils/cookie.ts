@@ -21,6 +21,7 @@ const makeSignature = async (value: string, secret: string): Promise<string> => 
     'verify',
   ])
   const signature = await crypto.subtle.sign(algorithm.name, key, encoder.encode(value))
+  // the returned base64 encoded signature will always be 44 characters long and end with one or two equal signs
   return btoa(String.fromCharCode(...new Uint8Array(signature)))
 }
 
@@ -33,12 +34,21 @@ const _parseCookiePairs = (cookie: string, name?: string): string[][] => {
 
 export const parse = (cookie: string, name?: string): Cookie => {
   const parsedCookie: Cookie = {}
-  const unsingedCookies = _parseCookiePairs(cookie, name).filter((pair) => {
+  const unsignedCookies = _parseCookiePairs(cookie, name).filter((pair) => {
     // ignore signed cookies, assuming they always have that commonly accepted format
-    if (pair[1].split('.').length === 2) return false
+    const valueSplit = pair[1].split('.')
+    const signature = valueSplit[1] ? decodeURIComponent_(valueSplit[1]) : undefined
+    if (
+      valueSplit.length === 2 &&
+      signature &&
+      signature.length === 44 &&
+      signature.endsWith('=')
+    ) {
+      return false
+    }
     return true
   })
-  for (let [key, value] of unsingedCookies) {
+  for (let [key, value] of unsignedCookies) {
     value = decodeURIComponent_(value)
     parsedCookie[key] = value
   }
@@ -53,7 +63,17 @@ export const parseSigned = async (
   const parsedCookie: SignedCookie = {}
   const signedCookies = _parseCookiePairs(cookie, name).filter((pair) => {
     // ignore signed cookies, assuming they always have that commonly accepted format
-    if (pair[1].split('.').length !== 2) return false
+    const valueSplit = pair[1].split('.')
+    const signature = valueSplit[1] ? decodeURIComponent_(valueSplit[1]) : undefined
+    if (
+      valueSplit.length !== 2 ||
+      !signature ||
+      signature.length !== 44 ||
+      !signature.endsWith('=')
+    ) {
+      console.log('VALUE SPLIT', valueSplit)
+      return false
+    }
     return true
   })
   for (let [key, value] of signedCookies) {

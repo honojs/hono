@@ -38,6 +38,11 @@
       "import": "./dist/index.js",
       "require": "./dist/cjs/index.js"
     },
+    "./context": {
+      "types": "./dist/types/context.d.ts",
+      "import": "./dist/context.js",
+      "require": "./dist/cjs/context.js"
+    },
     "./tiny": {
       "types": "./dist/types/preset/tiny.d.ts",
       "import": "./dist/preset/tiny.js",
@@ -231,6 +236,9 @@
   },
   "typesVersions": {
     "*": {
+      "context": [
+        "./dist/types/context"
+      ],
       "tiny": [
         "./dist/types/preset/tiny"
       ],
