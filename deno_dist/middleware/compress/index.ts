@@ -1,24 +1,23 @@
 import type { MiddlewareHandler } from '../../types.ts'
 
-type EncodingType = 'gzip' | 'deflate'
+const ENCODING_TYPES = ['gzip', 'deflate'] as const
 
 interface CompressionOptions {
-  encoding?: EncodingType
+  encoding?: typeof ENCODING_TYPES[number]
 }
 
 export const compress = (options?: CompressionOptions): MiddlewareHandler => {
   return async (ctx, next) => {
     await next()
     const accepted = ctx.req.headers.get('Accept-Encoding')
-    const pattern = options?.encoding ?? /gzip|deflate/
-    const match = accepted?.match(pattern)
-    if (!accepted || !match || !ctx.res.body) {
+    const encoding =
+      options?.encoding ?? ENCODING_TYPES.find((encoding) => accepted?.includes(encoding))
+    if (!encoding || !ctx.res.body) {
       return
     }
-    const encoding = match[0]
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const stream = new CompressionStream(encoding as EncodingType)
+    const stream = new CompressionStream(encoding)
     ctx.res = new Response(ctx.res.body.pipeThrough(stream), ctx.res)
     ctx.res.headers.set('Content-Encoding', encoding)
   }
