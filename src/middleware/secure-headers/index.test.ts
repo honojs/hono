@@ -1,10 +1,10 @@
 import { Hono } from '../../hono'
-import { secureHeader } from '.'
+import { secureHeaders } from '.'
 
-describe('Secure Header Middleware', () => {
+describe('Secure Headers Middleware', () => {
   it('all headers enabled', async () => {
     const app = new Hono()
-    app.use('*', secureHeader())
+    app.use('*', secureHeaders())
     app.get('/test', async (ctx) => {
       return ctx.text('test')
     })
@@ -31,7 +31,7 @@ describe('Secure Header Middleware', () => {
 
   it('specific headers disabled', async () => {
     const app = new Hono()
-    app.use('*', secureHeader({ xFrameOptions: false, xXssProtection: false }))
+    app.use('*', secureHeaders({ xFrameOptions: false, xXssProtection: false }))
     app.get('/test', async (ctx) => {
       return ctx.text('test')
     })
