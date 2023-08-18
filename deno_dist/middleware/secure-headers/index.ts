@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from '../../types.ts'
 
-interface SecureHeaderOptions {
+interface SecureHeadersOptions {
   crossOriginResourcePolicy?: boolean
   crossOriginOpenerPolicy?: boolean
   originAgentCluster: boolean
@@ -14,11 +14,11 @@ interface SecureHeaderOptions {
   xXssProtection?: boolean
 }
 
-type HeaderMap = {
-  [key in keyof SecureHeaderOptions]: [string, string]
+type HeadersMap = {
+  [key in keyof SecureHeadersOptions]: [string, string]
 }
 
-const HEADER_MAP: HeaderMap = {
+const HEADERS_MAP: HeadersMap = {
   crossOriginResourcePolicy: ['Cross-Origin-Resource-Policy', 'same-origin'],
   crossOriginOpenerPolicy: ['Cross-Origin-Opener-Policy', 'same-origin'],
   originAgentCluster: ['Origin-Agent-Cluster', '?1'],
@@ -46,18 +46,18 @@ const DEFAULT_OPTIONS = {
   xXssProtection: true,
 }
 
-export const secureHeader = (customOptions?: Partial<SecureHeaderOptions>): MiddlewareHandler => {
+export const secureHeaders = (customOptions?: Partial<SecureHeadersOptions>): MiddlewareHandler => {
   const options = { ...DEFAULT_OPTIONS, ...customOptions }
-  const headersToSet = Object.entries(HEADER_MAP)
-    .filter(([key]) => options[key as keyof SecureHeaderOptions])
+  const headersToSet = Object.entries(HEADERS_MAP)
+    .filter(([key]) => options[key as keyof SecureHeadersOptions])
     .map(([, value]) => value)
 
   return async (ctx, next) => {
+    await next()
     headersToSet.forEach(([header, value]) => {
       ctx.res.headers.set(header, value)
     })
 
     ctx.res.headers.delete('X-Powered-By')
-    await next()
   }
 }
