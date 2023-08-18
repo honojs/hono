@@ -1,6 +1,6 @@
 import { Hono } from '../../hono'
-import { secureHeaders } from '.'
 import { poweredBy } from '../powered-by'
+import { secureHeaders } from '.'
 
 describe('Secure Headers Middleware', () => {
   it('all headers enabled', async () => {
@@ -59,17 +59,15 @@ describe('Secure Headers Middleware', () => {
     const appBefore = new Hono()
     appBefore.use('*', secureHeaders())
     appBefore.use('*', poweredBy())
-  
+
     const resBefore = await appBefore.request('/')
     expect(resBefore.headers.get('x-powered-by')).toBeFalsy()
 
     const appAfter = new Hono()
     appAfter.use('*', poweredBy())
     appAfter.use('*', secureHeaders())
-    
+
     const resAfter = await appAfter.request('/')
     expect(resAfter.headers.get('x-powered-by')).toBe('Hono')
-
   })
-
 })
