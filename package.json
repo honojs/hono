@@ -12,7 +12,7 @@
   "scripts": {
     "test": "jest",
     "test:deno": "env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno",
-    "test:bun": "env NAME=Bun bun test --jsx-import-source ../../src/middleware/jsx runtime_tests/bun/index.test.tsx",
+    "test:bun": "env NAME=Bun bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
     "test:fastly": "jest --config ./runtime_tests/fastly/jest.config.js",
     "test:lagon": "start-server-and-test \"lagon dev runtime_tests/lagon/index.ts -e runtime_tests/lagon/.env.lagon\" http://127.0.0.1:1234 \"yarn jest runtime_tests/lagon/index.test.ts --roots runtime_tests/lagon --testMatch '**/*.test.ts'\"",
     "test:node": "env NAME=Node jest --config ./runtime_tests/node/jest.config.js",
@@ -99,19 +99,19 @@
       "require": "./dist/cjs/middleware/html/index.js"
     },
     "./jsx": {
-      "types": "./dist/types/middleware/jsx/index.d.ts",
-      "import": "./dist/middleware/jsx/index.js",
-      "require": "./dist/cjs/middleware/jsx/index.js"
+      "types": "./dist/types/jsx/index.d.ts",
+      "import": "./dist/jsx/index.js",
+      "require": "./dist/cjs/jsx/index.js"
     },
     "./jsx/jsx-dev-runtime": {
-      "types": "./dist/types/middleware/jsx/jsx-dev-runtime.d.ts",
-      "import": "./dist/middleware/jsx/jsx-dev-runtime.js",
-      "require": "./dist/cjs/middleware/jsx/jsx-dev-runtime.js"
+      "types": "./dist/types/jsx/jsx-dev-runtime.d.ts",
+      "import": "./dist/jsx/jsx-dev-runtime.js",
+      "require": "./dist/cjs/jsx/jsx-dev-runtime.js"
     },
     "./jsx/jsx-runtime": {
-      "types": "./dist/types/middleware/jsx/jsx-runtime.d.ts",
-      "import": "./dist/middleware/jsx/jsx-runtime.js",
-      "require": "./dist/cjs/middleware/jsx/jsx-runtime.js"
+      "types": "./dist/types/jsx/jsx-runtime.d.ts",
+      "import": "./dist/jsx/jsx-runtime.js",
+      "require": "./dist/cjs/jsx/jsx-runtime.js"
     },
     "./jwt": {
       "types": "./dist/types/middleware/jwt/index.d.ts",
@@ -268,13 +268,13 @@
         "./dist/types/middleware/html"
       ],
       "jsx": [
-        "./dist/types/middleware/jsx"
+        "./dist/types/jsx"
       ],
       "jsx/jsx-runtime": [
-        "./dist/types/middleware/jsx/jsx-runtime.d.ts"
+        "./dist/types/jsx/jsx-runtime.d.ts"
       ],
       "jsx/jsx-dev-runtime": [
-        "./dist/types/middleware/jsx/jsx-dev-runtime.d.ts"
+        "./dist/types/jsx/jsx-dev-runtime.d.ts"
       ],
       "jwt": [
         "./dist/types/middleware/jwt"
