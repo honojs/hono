@@ -1,5 +1,5 @@
+import { html } from '../helper/html'
 import { Hono } from '../hono'
-import { html } from '../middleware/html'
 import { jsx, memo, Fragment } from './index'
 
 interface SiteData {

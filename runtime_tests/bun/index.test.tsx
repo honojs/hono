@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'bun:test'
-import { env } from '../../src/adapter'
 import { serveStatic } from '../../src/adapter/bun'
 import { Context } from '../../src/context'
+import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { Hono } from '../../src/index'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
+import { HonoRequest } from '../../src/request'
 
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.
@@ -27,14 +28,13 @@ describe('Basic', () => {
   })
 
   it('returns current runtime (bun)', async () => {
-    const c = new Context(new Request('http://localhost/'))
-    expect(c.runtime).toBe('bun')
+    expect(getRuntimeKey()).toBe('bun')
   })
 })
 
 describe('Environment Variables', () => {
   it('Should return the environment variable', async () => {
-    const c = new Context(new Request('http://localhost/'))
+    const c = new Context(new HonoRequest(new Request('http://localhost/')))
     const { NAME } = env<{ NAME: string }>(c)
     expect(NAME).toBe('Bun')
   })

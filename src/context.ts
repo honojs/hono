@@ -358,6 +358,18 @@ export class Context<
     return this.notFoundHandler(this)
   }
 
+  /** @deprecated
+   * Use `getRuntimeKey()` exported from `hono/adapter` instead of `c.runtime()`. The `c.runtime()` will be removed in v4.
+   *
+   * @example
+   *
+   * import { getRuntimeKey } from 'hono/adapter'
+   * // ...
+   * app.get('/', (c) => {
+   *   const key = getRuntimeKey()
+   *   //...
+   * })
+   */
   get runtime(): Runtime {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const global = globalThis as any

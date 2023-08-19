@@ -74,9 +74,9 @@
       "require": "./dist/cjs/middleware/cache/index.js"
     },
     "./cookie": {
-      "types": "./dist/types/middleware/cookie/index.d.ts",
-      "import": "./dist/middleware/cookie/index.js",
-      "require": "./dist/cjs/middleware/cookie/index.js"
+      "types": "./dist/types/helper/cookie/index.d.ts",
+      "import": "./dist/helper/cookie/index.js",
+      "require": "./dist/cjs/helper/cookie/index.js"
     },
     "./compress": {
       "types": "./dist/types/middleware/compress/index.d.ts",
@@ -94,9 +94,9 @@
       "require": "./dist/cjs/middleware/etag/index.js"
     },
     "./html": {
-      "types": "./dist/types/middleware/html/index.d.ts",
-      "import": "./dist/middleware/html/index.js",
-      "require": "./dist/cjs/middleware/html/index.js"
+      "types": "./dist/types/helper/html/index.d.ts",
+      "import": "./dist/helper/html/index.js",
+      "require": "./dist/cjs/helper/html/index.js"
     },
     "./jsx": {
       "types": "./dist/types/jsx/index.d.ts",
@@ -184,9 +184,9 @@
       "require": "./dist/cjs/client/index.js"
     },
     "./adapter": {
-      "types": "./dist/types/adapter.d.ts",
-      "import": "./dist/adapter.js",
-      "require": "./dist/cjs/adapter.js"
+      "types": "./dist/types/helper/adapter/index.d.ts",
+      "import": "./dist/helper/adapter/index.js",
+      "require": "./dist/cjs/helper/adapter/index.js"
     },
     "./cloudflare-workers": {
       "types": "./dist/types/adapter/cloudflare-workers/index.d.ts",
@@ -253,7 +253,7 @@
         "./dist/types/middleware/cache"
       ],
       "cookie": [
-        "./dist/types/middleware/cookie"
+        "./dist/types/helper/cookie"
       ],
       "compress": [
         "./dist/types/middleware/compress"
@@ -265,7 +265,7 @@
         "./dist/types/middleware/etag"
       ],
       "html": [
-        "./dist/types/middleware/html"
+        "./dist/types/helper/html"
       ],
       "jsx": [
         "./dist/types/jsx"
@@ -319,7 +319,7 @@
         "./dist/types/client/index.d.ts"
       ],
       "adapter": [
-        "./dist/types/adapter.d.ts"
+        "./dist/types/helper/adapter/index.d.ts"
       ],
       "cloudflare-workers": [
         "./dist/types/adapter/cloudflare-workers"
