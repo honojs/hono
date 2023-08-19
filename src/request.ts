@@ -155,18 +155,9 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     this.vData[target] = data
   }
 
-  valid<
-    T extends keyof ValidationTargets = I extends Record<infer R, unknown>
-      ? R extends keyof ValidationTargets
-        ? R
-        : never
-      : never
-  >(target: T): InputToDataByTarget<I, T>
-  valid(): never
-  valid(target?: keyof ValidationTargets) {
-    if (target) {
-      return this.vData[target] as unknown
-    }
+  valid<T extends keyof I & keyof ValidationTargets>(target: T): InputToDataByTarget<I, T>
+  valid(target: keyof ValidationTargets) {
+    return this.vData[target] as unknown
   }
 
   get url() {
