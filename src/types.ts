@@ -123,7 +123,7 @@ export interface HandlerInterface<
     O = {}
   >(
     ...handlers: Handler<E, P, I, O>[]
-  ): Hono<E, RemoveBlankRecord<Schema<M, P, I['in'], O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I['in'], O>>, BasePath>
 
   ////  app.get(path, ...handlers[])
 
