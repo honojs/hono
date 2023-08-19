@@ -97,15 +97,15 @@ describe('Secure Headers Middleware', () => {
       '/test',
       secureHeaders({
         contentSecurityPolicy: {
-          defaultSrc: ["'self'"],
-          baseUri: ["'self'"],
-          fontSrc: ["'self'", 'https:', 'data:'],
-          frameAncestors: ["'self'"],
-          imgSrc: ["'self'", 'data:'],
-          objectSrc: ["'none'"],
-          scriptSrc: ["'self'"],
-          scriptSrcAttr: ["'none'"],
-          styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+          defaultSrc: ['\'self\''],
+          baseUri: ['\'self\''],
+          fontSrc: ['\'self\'', 'https:', 'data:'],
+          frameAncestors: ['\'self\''],
+          imgSrc: ['\'self\'', 'data:'],
+          objectSrc: ['\'none\''],
+          scriptSrc: ['\'self\''],
+          scriptSrcAttr: ['\'none\''],
+          styleSrc: ['\'self\'', 'https:', '\'unsafe-inline\''],
         },
       })
     )
@@ -117,7 +117,7 @@ describe('Secure Headers Middleware', () => {
 
     const res = await app.request('/test')
     expect(res.headers.get('Content-Security-Policy')).toEqual(
-      "defaultSrc 'self'; baseUri 'self'; fontSrc 'self' https: data:; frameAncestors 'self'; imgSrc 'self' data:; objectSrc 'none'; scriptSrc 'self'; scriptSrcAttr 'none'; styleSrc 'self' https: 'unsafe-inline'"
+      'defaultSrc \'self\'; baseUri \'self\'; fontSrc \'self\' https: data:; frameAncestors \'self\'; imgSrc \'self\' data:; objectSrc \'none\'; scriptSrc \'self\'; scriptSrcAttr \'none\'; styleSrc \'self\' https: \'unsafe-inline\''
     )
   })
 
@@ -127,7 +127,7 @@ describe('Secure Headers Middleware', () => {
       '/test',
       secureHeaders({
         contentSecurityPolicy: {
-          defaultSrc: ["'self'"],
+          defaultSrc: ['\'self\''],
         },
       })
     )
@@ -137,7 +137,7 @@ describe('Secure Headers Middleware', () => {
     })
 
     const res = await app.request('/test')
-    expect(res.headers.get('Content-Security-Policy')).toEqual("defaultSrc 'self'")
+    expect(res.headers.get('Content-Security-Policy')).toEqual('defaultSrc \'self\'')
   })
 
   it('No CSP Setting', async () => {
