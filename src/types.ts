@@ -378,6 +378,8 @@ export type ValidationTargets = {
   query: Record<string, string | string[]>
   queries: Record<string, string[]> // Deprecated. Will be obsolete in v4.
   param: Record<string, string>
+  header: Record<string, string>
+  cookie: Record<string, string>
 }
 
 ////////////////////////////////////////
