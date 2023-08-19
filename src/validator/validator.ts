@@ -71,6 +71,7 @@ export const validator = <
         break
       case 'queries':
         value = c.req.queries()
+        console.log('Warnings: Validate type `queries` is deprecated. Use `query` instead.')
         break
       case 'param':
         value = c.req.param() as Record<string, string>
