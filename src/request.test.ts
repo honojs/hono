@@ -44,14 +44,14 @@ describe('req.addValidatedData() and req.data()', () => {
   }
 
   test('add data - json', () => {
-    const req = new HonoRequest(rawRequest)
+    const req = new HonoRequest<'/', { json: typeof payload }>(rawRequest)
     req.addValidatedData('json', payload)
     const data = req.valid('json')
     expect(data).toEqual(payload)
   })
 
   test('replace data - json', () => {
-    const req = new HonoRequest(rawRequest)
+    const req = new HonoRequest<'/', { json: typeof payload }>(rawRequest)
     req.addValidatedData('json', payload)
     req.addValidatedData('json', {
       tag: ['sport', 'music'],
