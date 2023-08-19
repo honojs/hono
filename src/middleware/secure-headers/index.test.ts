@@ -28,6 +28,7 @@ describe('Secure Headers Middleware', () => {
     expect(res.headers.get('Cross-Origin-Opener-Policy')).toEqual('same-origin')
     expect(res.headers.get('Origin-Agent-Cluster')).toEqual('?1')
     expect(res.headers.get('Cross-Origin-Embedder-Policy')).toEqual('require-corp')
+    expect(res.headers.get('Content-Security-Policy')).toBeFalsy
   })
 
   it('specific headers disabled', async () => {
@@ -88,5 +89,66 @@ describe('Secure Headers Middleware', () => {
 
     const res2 = await app.request('/test2')
     expect(res2.headers.get('Strict-Transport-Security')).toEqual('Hono')
+  })
+
+  it('CSP Setting', async () => {
+    const app = new Hono()
+    app.use(
+      '/test',
+      secureHeaders({
+        contentSecurityPolicy: {
+          defaultSrc: ["'self'"],
+          baseUri: ["'self'"],
+          fontSrc: ["'self'", 'https:', 'data:'],
+          frameAncestors: ["'self'"],
+          imgSrc: ["'self'", 'data:'],
+          objectSrc: ["'none'"],
+          scriptSrc: ["'self'"],
+          scriptSrcAttr: ["'none'"],
+          styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+        },
+      })
+    )
+
+    app.all('*', async (c) => {
+      c.res.headers.set('Strict-Transport-Security', 'Hono')
+      return c.text('header updated')
+    })
+
+    const res = await app.request('/test')
+    expect(res.headers.get('Content-Security-Policy')).toEqual(
+      "defaultSrc 'self'; baseUri 'self'; fontSrc 'self' https: data:; frameAncestors 'self'; imgSrc 'self' data:; objectSrc 'none'; scriptSrc 'self'; scriptSrcAttr 'none'; styleSrc 'self' https: 'unsafe-inline'"
+    )
+  })
+
+  it('CSP Setting one only', async () => {
+    const app = new Hono()
+    app.use(
+      '/test',
+      secureHeaders({
+        contentSecurityPolicy: {
+          defaultSrc: ["'self'"],
+        },
+      })
+    )
+
+    app.all('*', async (c) => {
+      return c.text('header updated')
+    })
+
+    const res = await app.request('/test')
+    expect(res.headers.get('Content-Security-Policy')).toEqual("defaultSrc 'self'")
+  })
+
+  it('No CSP Setting', async () => {
+    const app = new Hono()
+    app.use('/test', secureHeaders({ contentSecurityPolicy: {} }))
+
+    app.all('*', async (c) => {
+      return c.text('header updated')
+    })
+
+    const res = await app.request('/test')
+    expect(res.headers.get('Content-Security-Policy')).toEqual('')
   })
 })

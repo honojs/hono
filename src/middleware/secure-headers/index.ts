@@ -1,6 +1,20 @@
 import type { MiddlewareHandler } from '../../types'
 
+interface ContentSecurityPolicyOptions {
+  defaultSrc?: string[]
+  baseUri?: string[]
+  fontSrc?: string[]
+  frameAncestors?: string[]
+  imgSrc?: string[]
+  objectSrc?: string[]
+  scriptSrc?: string[]
+  scriptSrcAttr?: string[]
+  styleSrc?: string[]
+  upgradeInsecureRequests?: string[]
+}
+
 interface SecureHeadersOptions {
+  contentSecurityPolicy?: ContentSecurityPolicyOptions
   crossOriginEmbedderPolicy?: boolean
   crossOriginResourcePolicy?: boolean
   crossOriginOpenerPolicy?: boolean
@@ -60,6 +74,15 @@ export const secureHeaders = (customOptions?: Partial<SecureHeadersOptions>): Mi
     headersToSet.forEach(([header, value]) => {
       ctx.res.headers.set(header, value)
     })
+
+    if (options.contentSecurityPolicy) {
+      const cspDirectives = Object.entries(options.contentSecurityPolicy)
+        .map(([directive, sources]) => {
+          return `${directive} ${sources.join(' ')}`
+        })
+        .join('; ')
+      ctx.res.headers.set('Content-Security-Policy', cspDirectives)
+    }
 
     ctx.res.headers.delete('X-Powered-By')
   }
