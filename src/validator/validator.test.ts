@@ -302,7 +302,7 @@ describe('Validator middleware with Zod validates query params', () => {
   })
 })
 
-describe('Validator middleware with Zod validates queries params', () => {
+describe('Validator middleware with Zod validates queries params - with `queries` will be obsolete in v4', () => {
   const app = new Hono()
 
   const schema = z.object({
