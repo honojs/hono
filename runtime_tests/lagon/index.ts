@@ -66,7 +66,7 @@ app.get('/', (c) => c.text('Hono!!'))
 // Use Response object directly
 app.get('/hello', () => new Response('This is /hello'))
 
-app.get('/runtime', (c) => new Response(getRuntimeKey()))
+app.get('/runtime', () => new Response(getRuntimeKey()))
 
 // Named parameter
 app.get('/entry/:id', (c) => {
