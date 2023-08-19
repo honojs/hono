@@ -17,7 +17,7 @@ import type {
   Schema,
   UndefinedIfHavingQuestion,
 } from './types'
-import type { Expect, Equal } from './utils/types'
+import type { Expect, Equal, UnionToIntersection } from './utils/types'
 
 describe('Env', () => {
   test('Env', () => {
@@ -191,10 +191,23 @@ describe('HandlerInterface', () => {
         const id = c.req.param('id')
         return c.text(id)
       })
-      type Actual = ExtractSchema<typeof route>
+      type Actual = UnionToIntersection<ExtractSchema<typeof route>>
       type Expected = {
         '/foo/:foo/books/:id': {
           $get: {
+            input: {
+              param: {
+                id: string
+              } & {
+                foo: string
+              }
+            }
+            output: {}
+          }
+        }
+      } & {
+        '/foo/:foo/books/:id': {
+          $post: {
             input: {
               param: {
                 id: string
