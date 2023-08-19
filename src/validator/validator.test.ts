@@ -368,6 +368,81 @@ describe('Validator middleware with Zod validates param', () => {
   })
 })
 
+describe('Validator middleware with Zod validates header values', () => {
+  const app = new Hono()
+
+  const schema = z.object({
+    'x-request-id': z.string().uuid(),
+  })
+
+  app.get('/ping', zodValidator('header', schema), (c) => {
+    const data = c.req.valid('header')
+    const xRequestId = data['x-request-id']
+    return c.jsonT({
+      xRequestId,
+    })
+  })
+
+  it('Should validate header values and return 200 response', async () => {
+    const res = await app.request('/ping', {
+      headers: {
+        'x-request-id': '6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b',
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      xRequestId: '6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b',
+    })
+  })
+
+  it('Should validate header values and return 400 response', async () => {
+    const res = await app.request('http://localhost/ping', {
+      headers: {
+        'x-request-id': 'invalid-key',
+      },
+    })
+    expect(res.status).toBe(400)
+    expect(await res.text()).toBe('Invalid!')
+  })
+})
+
+describe('Validator middleware with Zod validates cookies', () => {
+  const app = new Hono()
+
+  const schema = z.object({
+    debug: z.enum(['0', '1']),
+  })
+
+  app.get('/api/user', zodValidator('cookie', schema), (c) => {
+    const { debug } = c.req.valid('cookie')
+    return c.jsonT({
+      debug,
+    })
+  })
+
+  it('Should validate cookies and return 200 response', async () => {
+    const res = await app.request('/api/user', {
+      headers: {
+        Cookie: 'debug=0',
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      debug: '0',
+    })
+  })
+
+  it('Should validate cookies and return 400 response', async () => {
+    const res = await app.request('/api/user', {
+      headers: {
+        Cookie: 'debug=true',
+      },
+    })
+    expect(res.status).toBe(400)
+    expect(await res.text()).toBe('Invalid!')
+  })
+})
+
 describe('Validator middleware with Zod multiple validators', () => {
   const app = new Hono<{ Variables: { id: number } }>()
   const route = app.post(

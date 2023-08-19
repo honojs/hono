@@ -1,4 +1,5 @@
 import type { Context } from '../context.ts'
+import { getCookie } from '../middleware/cookie/index.ts'
 import type { Env, ValidationTargets, MiddlewareHandler } from '../types.ts'
 
 type ValidationTargetKeysWithBody = 'form' | 'json'
@@ -75,6 +76,12 @@ export const validator = <
         break
       case 'param':
         value = c.req.param() as Record<string, string>
+        break
+      case 'header':
+        value = c.req.header()
+        break
+      case 'cookie':
+        value = getCookie(c)
         break
     }
 
