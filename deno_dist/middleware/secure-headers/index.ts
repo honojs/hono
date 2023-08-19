@@ -1,6 +1,21 @@
 import type { MiddlewareHandler } from '../../types.ts'
 
+interface ContentSecurityPolicyOptions {
+  defaultSrc?: string[]
+  baseUri?: string[]
+  fontSrc?: string[]
+  frameAncestors?: string[]
+  imgSrc?: string[]
+  objectSrc?: string[]
+  scriptSrc?: string[]
+  scriptSrcAttr?: string[]
+  styleSrc?: string[]
+  upgradeInsecureRequests?: string[]
+}
+
 interface SecureHeadersOptions {
+  contentSecurityPolicy?: ContentSecurityPolicyOptions
+  crossOriginEmbedderPolicy?: boolean
   crossOriginResourcePolicy?: boolean
   crossOriginOpenerPolicy?: boolean
   originAgentCluster: boolean
@@ -19,6 +34,7 @@ type HeadersMap = {
 }
 
 const HEADERS_MAP: HeadersMap = {
+  crossOriginEmbedderPolicy: ['Cross-Origin-Embedder-Policy', 'require-corp'],
   crossOriginResourcePolicy: ['Cross-Origin-Resource-Policy', 'same-origin'],
   crossOriginOpenerPolicy: ['Cross-Origin-Opener-Policy', 'same-origin'],
   originAgentCluster: ['Origin-Agent-Cluster', '?1'],
@@ -33,6 +49,7 @@ const HEADERS_MAP: HeadersMap = {
 }
 
 const DEFAULT_OPTIONS = {
+  crossOriginEmbedderPolicy: true,
   crossOriginResourcePolicy: true,
   crossOriginOpenerPolicy: true,
   originAgentCluster: true,
@@ -57,6 +74,15 @@ export const secureHeaders = (customOptions?: Partial<SecureHeadersOptions>): Mi
     headersToSet.forEach(([header, value]) => {
       ctx.res.headers.set(header, value)
     })
+
+    if (options.contentSecurityPolicy) {
+      const cspDirectives = Object.entries(options.contentSecurityPolicy)
+        .map(([directive, sources]) => {
+          return `${directive} ${sources.join(' ')}`
+        })
+        .join('; ')
+      ctx.res.headers.set('Content-Security-Policy', cspDirectives)
+    }
 
     ctx.res.headers.delete('X-Powered-By')
   }
