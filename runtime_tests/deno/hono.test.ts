@@ -23,7 +23,6 @@ Deno.test('Hello World', async () => {
 })
 
 Deno.test('runtime', () => {
-  const c = new Context(new HonoRequest(new Request('http://localhost/')))
   assertEquals(getRuntimeKey(), 'deno')
 })
 
