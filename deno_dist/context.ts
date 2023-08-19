@@ -1,4 +1,4 @@
-import { HonoRequest } from './request.ts'
+import type { HonoRequest } from './request.ts'
 import { FetchEventLike } from './types.ts'
 import type { Env, NotFoundHandler, Input, TypedResponse } from './types.ts'
 import type { CookieOptions } from './utils/cookie.ts'
@@ -76,8 +76,6 @@ type ContextOptions<E extends Env> = {
   env: E['Bindings']
   executionCtx?: FetchEventLike | ExecutionContext | undefined
   notFoundHandler?: NotFoundHandler<E>
-  path?: string
-  params?: Record<string, string>
 }
 
 export class Context<
@@ -87,46 +85,28 @@ export class Context<
   P extends string = any,
   I extends Input = {}
 > {
+  req: HonoRequest<P, I['out']>
   env: E['Bindings'] = {}
   finalized: boolean = false
   error: Error | undefined = undefined
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private _req?: HonoRequest<any, any>
   private _status: StatusCode = 200
   private _exCtx: FetchEventLike | ExecutionContext | undefined // _executionCtx
   private _map: Record<string, unknown> | undefined
   private _h: Headers | undefined = undefined //  _headers
   private _pH: Record<string, string> | undefined = undefined // _preparedHeaders
   private _res: Response | undefined
-  private _path: string = '/'
-  private _params?: Record<string, string> | null
   private _init = true
-  private rawRequest?: Request | null
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
-  constructor(req: Request, options?: ContextOptions<E>) {
-    this.rawRequest = req
+  constructor(req: HonoRequest<P, I['out']>, options?: ContextOptions<E>) {
+    this.req = req
     if (options) {
       this._exCtx = options.executionCtx
-      this._path = options.path ?? '/'
-      this._params = options.params
       this.env = options.env
       if (options.notFoundHandler) {
         this.notFoundHandler = options.notFoundHandler
       }
-    }
-  }
-
-  get req(): HonoRequest<P, I['out']> {
-    if (this._req) {
-      return this._req
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this._req = new HonoRequest(this.rawRequest!, this._path, this._params!)
-      this.rawRequest = undefined
-      this._params = undefined
-      return this._req
     }
   }
 

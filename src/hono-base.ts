@@ -2,6 +2,7 @@ import { compose } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
 import { HTTPException } from './http-exception'
+import { HonoRequest } from './request'
 import type { Router } from './router'
 import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router'
 import type {
@@ -287,12 +288,10 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
 
     const { handlers, params } = this.matchRoute(method, path)
 
-    const c = new Context(request, {
+    const c = new Context(new HonoRequest(request, path, params), {
       env,
       executionCtx,
       notFoundHandler: this.notFoundHandler,
-      path,
-      params,
     })
 
     // Do not `compose` if it has only one handler
