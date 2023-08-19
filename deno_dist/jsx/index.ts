@@ -1,5 +1,5 @@
-import { escapeToBuffer } from '../../utils/html.ts'
-import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html.ts'
+import { escapeToBuffer } from '../utils/html.ts'
+import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Props = Record<string, any>

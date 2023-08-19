@@ -1,5 +1,5 @@
 import type { Context } from '../context.ts'
-import { getCookie } from '../middleware/cookie/index.ts'
+import { getCookie } from '../helper/cookie/index.ts'
 import type { Env, ValidationTargets, MiddlewareHandler } from '../types.ts'
 
 type ValidationTargetKeysWithBody = 'form' | 'json'

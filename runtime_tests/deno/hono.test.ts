@@ -1,5 +1,5 @@
 import { Context } from '../../deno_dist/context.ts'
-import { env, getRuntimeKey } from '../../deno_dist/helper/adapter.ts'
+import { env, getRuntimeKey } from '../../deno_dist/helper.ts'
 import { Hono } from '../../deno_dist/mod.ts'
 import { HonoRequest } from '../../deno_dist/request.ts'
 import { assertEquals } from './deps.ts'

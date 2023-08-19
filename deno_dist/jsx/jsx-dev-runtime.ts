@@ -1,4 +1,4 @@
-import type { HtmlEscapedString } from '../../utils/html.ts'
+import type { HtmlEscapedString } from '../utils/html.ts'
 import { jsx } from './index.ts'
 import type { JSXNode } from './index.ts'
 export { Fragment } from './index.ts'
