@@ -428,7 +428,9 @@ export type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | un
 //////                            //////
 ////////////////////////////////////////
 
-export type ExtractSchema<T> = UnionToIntersection<T extends Hono<infer _, infer S, any> ? S : never>
+export type ExtractSchema<T> = UnionToIntersection<
+  T extends Hono<infer _, infer S, any> ? S : never
+>
 
 ////////////////////////////////////////
 //////                            //////
