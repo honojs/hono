@@ -67,40 +67,45 @@ export interface HandlerInterface<
   E extends Env = Env,
   M extends string = any,
   S = {},
-  BasePath extends string = ''
+  BasePath extends string = '/'
 > {
   //// app.get(...handlers[])
 
   // app.get(handler, handler)
-  <I extends Input = {}, O = {}>(
-    ...handlers: [H<E, ExtractKey<S>, I, O>, H<E, ExtractKey<S>, I, O>]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I['in'], O>>, BasePath>
+  <
+    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    I extends Input = {},
+    O = {}
+  >(
+    ...handlers: [H<E, P, I, O>, H<E, P, I, O>]
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I['in'], O>>, BasePath>
 
   // app.get(handler x 3)
-  <P extends string, O = {}, I extends Input = {}, I2 extends Input = I, I3 extends Input = I & I2>(
-    ...handlers: [H<E, ExtractKey<S>, I, O>, H<E, ExtractKey<S>, I2, O>, H<E, ExtractKey<S>, I3, O>]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I3['in'], O>>, BasePath>
+  <
+    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    O = {},
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2
+  >(
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>]
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I3['in'], O>>, BasePath>
 
   // app.get(handler x 4)
   <
-    P extends string,
+    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
     O = {},
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
     I4 extends Input = I2 & I3
   >(
-    ...handlers: [
-      H<E, ExtractKey<S>, I, O>,
-      H<E, ExtractKey<S>, I2, O>,
-      H<E, ExtractKey<S>, I3, O>,
-      H<E, ExtractKey<S>, I4, O>
-    ]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I4['in'], O>>, BasePath>
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>]
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I4['in'], O>>, BasePath>
 
   // app.get(handler x 5)
   <
-    P extends string,
+    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
     O = {},
     I extends Input = {},
     I2 extends Input = I,
@@ -108,21 +113,17 @@ export interface HandlerInterface<
     I4 extends Input = I2 & I3,
     I5 extends Input = I3 & I4
   >(
-    ...handlers: [
-      H<E, ExtractKey<S>, I, O>,
-      H<E, ExtractKey<S>, I2, O>,
-      H<E, ExtractKey<S>, I3, O>,
-      H<E, ExtractKey<S>, I4, O>,
-      H<E, ExtractKey<S>, I5, O>
-    ]
-  ): Hono<E, RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I5['in'], O>>, BasePath>
+    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>, H<E, P, I5, O>]
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I5['in'], O>>, BasePath>
 
   // app.get(...handlers[])
-  <I extends Input = {}, O = {}>(...handlers: Handler<E, ExtractKey<S>, I, O>[]): Hono<
-    E,
-    RemoveBlankRecord<S | Schema<M, ExtractKey<S>, I['in'], O>>,
-    BasePath
-  >
+  <
+    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    I extends Input = {},
+    O = {}
+  >(
+    ...handlers: Handler<E, P, I, O>[]
+  ): Hono<E, RemoveBlankRecord<Schema<M, P, I['in'], O>>, BasePath>
 
   ////  app.get(path, ...handlers[])
 
@@ -427,7 +428,7 @@ export type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | un
 //////                            //////
 ////////////////////////////////////////
 
-export type ExtractSchema<T> = T extends Hono<infer _, infer S> ? S : never
+export type ExtractSchema<T> = T extends Hono<infer _, infer S, any> ? S : never
 
 ////////////////////////////////////////
 //////                            //////

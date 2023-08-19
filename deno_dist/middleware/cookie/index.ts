@@ -8,7 +8,7 @@ interface GetCookie {
 }
 
 interface GetSignedCookie {
-  (c: Context, sercet: string, key: string): Promise<string | undefined | false>
+  (c: Context, secret: string, key: string): Promise<string | undefined | false>
   (c: Context, secret: string): Promise<SignedCookie>
 }
 

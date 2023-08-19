@@ -67,8 +67,8 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
   */
   router!: Router<H>
   readonly getPath: (request: Request) => string
-  private _basePath: string = ''
-  private path: string = '*'
+  private _basePath: string = '/'
+  private path: string = '/'
 
   routes: RouterRoute[] = []
 
@@ -307,13 +307,13 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
         return this.handleError(err, c)
       }
 
-      if (res instanceof Response) return res
+      if (res.constructor.name === 'Response') return res as Response
 
       if ('response' in res) {
         res = res.response
       }
 
-      if (res instanceof Response) return res
+      if (res.constructor.name === 'Response') return res as Response
 
       return (async () => {
         let awaited: Response | TypedResponse | void
@@ -337,7 +337,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     return (async () => {
       try {
         const tmp = composed(c)
-        const context = tmp instanceof Promise ? await tmp : tmp
+        const context = tmp.constructor.name === 'Promise' ? await tmp : (tmp as Context)
         if (!context.finalized) {
           throw new Error(
             'Context is not finalized. You may forget returning Response object or `await next()`'

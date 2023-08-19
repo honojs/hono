@@ -17,11 +17,13 @@ describe('Parse cookie', () => {
   })
 
   it('Should parse cookies but ignore signed cookies', () => {
+    // also contains another cookie with a '.' in its value to test it is not misinterpreted as signed cookie
     const cookieString =
-      'yummy_cookie=choco; tasty_cookie = strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D'
+      'yummy_cookie=choco; tasty_cookie = strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D; great_cookie=rating3.5'
     const cookie: Cookie = parse(cookieString)
     expect(cookie['yummy_cookie']).toBe('choco')
     expect(cookie['tasty_cookie']).toBeUndefined()
+    expect(cookie['great_cookie']).toBe('rating3.5')
   })
 
   it('Should parse signed cookies', async () => {
@@ -35,8 +37,9 @@ describe('Parse cookie', () => {
 
   it('Should parse signed cookies and return "false" for wrong signature', async () => {
     const secret = 'secret ingredient'
+    // tasty_cookie has invalid signature
     const cookieString =
-      'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.invalidsignatur%3D'
+      'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg%3D'
     const cookie: SignedCookie = await parseSigned(cookieString, secret)
     expect(cookie['yummy_cookie']).toBe('choco')
     expect(cookie['tasty_cookie']).toBe(false)
@@ -53,8 +56,9 @@ describe('Parse cookie', () => {
 
   it('Should parse one signed cookie specified by name and return "false" for wrong signature', async () => {
     const secret = 'secret ingredient'
+    // tasty_cookie has invalid signature
     const cookieString =
-      'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.invalidsignatur%3D'
+      'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg%3D'
     const cookie: SignedCookie = await parseSigned(cookieString, secret, 'tasty_cookie')
     expect(cookie['yummy_cookie']).toBeUndefined()
     expect(cookie['tasty_cookie']).toBe(false)
@@ -62,11 +66,13 @@ describe('Parse cookie', () => {
 
   it('Should parse signed cookies and ignore regular cookies', async () => {
     const secret = 'secret ingredient'
+    // also contains another cookie with a '.' in its value to test it is not misinterpreted as signed cookie
     const cookieString =
-      'yummy_cookie=choco; tasty_cookie = strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D'
+      'yummy_cookie=choco; tasty_cookie = strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D; great_cookie=rating3.5'
     const cookie: SignedCookie = await parseSigned(cookieString, secret)
     expect(cookie['yummy_cookie']).toBeUndefined()
     expect(cookie['tasty_cookie']).toBe('strawberry')
+    expect(cookie['great_cookie']).toBeUndefined()
   })
 })
 

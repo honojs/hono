@@ -2,7 +2,7 @@ import type { Hono } from '../hono.ts'
 import type { ValidationTargets } from '../types.ts'
 import type { UnionToIntersection } from '../utils/types.ts'
 import type { Callback, Client, ClientRequestOptions } from './types.ts'
-import { replaceUrlParam, mergePath, removeIndexString, deepMerge } from './utils.ts'
+import { deepMerge, mergePath, removeIndexString, replaceUrlParam } from './utils.ts'
 
 const createProxy = (callback: Callback, path: string[]) => {
   const proxy: unknown = new Proxy(() => {}, {
@@ -41,6 +41,10 @@ class ClientRequestImpl {
     if (args) {
       if (args.query) {
         for (const [k, v] of Object.entries(args.query)) {
+          if (v === undefined) {
+            return
+          }
+
           this.queryParams ||= new URLSearchParams()
           if (Array.isArray(v)) {
             for (const v2 of v) {
@@ -107,7 +111,10 @@ class ClientRequestImpl {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const hc = <T extends Hono<any, any, any>>(baseUrl: string, options?: ClientRequestOptions) =>
+export const hc = <T extends Hono<any, any, any>>(
+  baseUrl: string,
+  options?: ClientRequestOptions
+) =>
   createProxy(async (opts) => {
     const parts = [...opts.path]
 

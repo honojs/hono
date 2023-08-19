@@ -72,6 +72,7 @@ const mimes: Record<string, string> = {
   ttf: 'font/ttf',
   txt: 'text/plain',
   vsd: 'application/vnd.visio',
+  wasm: 'application/wasm',
   webm: 'video/webm',
   weba: 'audio/webm',
   webp: 'image/webp',

@@ -1,5 +1,10 @@
 /* eslint-disable quotes */
-import type { Callback, CloudFrontConfig, CloudFrontRequest, CloudFrontResponse } from '../../src/adapter/lambda-edge/handler'
+import type {
+  Callback,
+  CloudFrontConfig,
+  CloudFrontRequest,
+  CloudFrontResponse,
+} from '../../src/adapter/lambda-edge/handler'
 import { handle } from '../../src/adapter/lambda-edge/handler'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
@@ -36,7 +41,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
   app.get('/config/eventCheck', async (c, next) => {
     await next()
-    if(c.env.config.eventType in ['viewer-request', 'origin-request']) {
+    if (c.env.config.eventType in ['viewer-request', 'origin-request']) {
       c.env.callback(null, c.env.request)
     } else {
       c.env.callback(null, c.env.response)
@@ -59,14 +64,18 @@ describe('Lambda@Edge Adapter for Hono', () => {
   app.get('/auth/abc', (c) => c.text('Good Night Lambda!'))
 
   app.get('/header/add', async (c, next) => {
-    c.env.response.headers['Strict-Transport-Security'.toLowerCase()] = [{
-      key: 'Strict-Transport-Security',
-      value: 'max-age=63072000; includeSubdomains; preload'
-    }];
-    c.env.response.headers['X-Custom'.toLowerCase()] = [{
-      key: 'X-Custom',
-      value: 'Foo'
-    }];
+    c.env.response.headers['Strict-Transport-Security'.toLowerCase()] = [
+      {
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubdomains; preload',
+      },
+    ]
+    c.env.response.headers['X-Custom'.toLowerCase()] = [
+      {
+        key: 'X-Custom',
+        value: 'Foo',
+      },
+    ]
     await next()
     c.env.callback(null, c.env.response)
   })
@@ -873,33 +882,35 @@ describe('Lambda@Edge Adapter for Hono', () => {
     }
 
     interface CloudFrontHeaders {
-      [name: string]: [{
-        key: string
-        value: string
-      }]
+      [name: string]: [
+        {
+          key: string
+          value: string
+        }
+      ]
     }
     let called = false
-    let headers: CloudFrontHeaders = {};
+    let headers: CloudFrontHeaders = {}
     await handler(event, {}, (_err, result) => {
       if (result && result.headers) {
-        headers = result.headers as CloudFrontHeaders;
+        headers = result.headers as CloudFrontHeaders
       }
       called = true
     })
 
     expect(called).toBe(true)
-    expect(headers["access-control-allow-credentials"]).toEqual([
+    expect(headers['access-control-allow-credentials']).toEqual([
       {
-        key: "Access-Control-Allow-Credentials",
-        value: "true"
-      }
-    ]);
-    expect(headers["access-control-allow-origin"]).toEqual([
+        key: 'Access-Control-Allow-Credentials',
+        value: 'true',
+      },
+    ])
+    expect(headers['access-control-allow-origin']).toEqual([
       {
-        key: "Access-Control-Allow-Origin",
-        value: "*"
-      }
-    ]);
+        key: 'Access-Control-Allow-Origin',
+        value: '*',
+      },
+    ])
   })
 
   it('Should handle a GET request and add header (Lambda@Edge viewer response)', async () => {
@@ -1015,35 +1026,37 @@ describe('Lambda@Edge Adapter for Hono', () => {
         },
       ],
     }
-    
+
     interface CloudFrontHeaders {
-      [name: string]: [{
-        key: string
-        value: string
-      }]
+      [name: string]: [
+        {
+          key: string
+          value: string
+        }
+      ]
     }
     let called = false
-    let headers: CloudFrontHeaders = {};
+    let headers: CloudFrontHeaders = {}
     await handler(event, {}, (_err, result) => {
       if (result && result.headers) {
-        headers = result.headers as CloudFrontHeaders;
+        headers = result.headers as CloudFrontHeaders
       }
       called = true
     })
 
     expect(called).toBe(true)
-    expect(headers["strict-transport-security"]).toEqual([
+    expect(headers['strict-transport-security']).toEqual([
       {
-        key: "Strict-Transport-Security",
-        value: "max-age=63072000; includeSubdomains; preload"
-      }
-    ]);
-    expect(headers["x-custom"]).toEqual([
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubdomains; preload',
+      },
+    ])
+    expect(headers['x-custom']).toEqual([
       {
-        key: "X-Custom",
-        value: "Foo"
-      }
-    ]);
+        key: 'X-Custom',
+        value: 'Foo',
+      },
+    ])
   })
 
   it('Callback Event (Lambda@Edge response)', async () => {
@@ -1071,18 +1084,16 @@ describe('Lambda@Edge Adapter for Hono', () => {
               querystring: '',
               uri: '/config/eventCheck',
             },
-          }
+          },
         },
       ],
     }
-    
+
     let called = false
-    await handler(event, {}, (_err, result) => {
+    await handler(event, {}, () => {
       called = true
     })
 
     expect(called).toBe(true)
   })
-
-
 })

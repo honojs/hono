@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "3.4.1",
+  "version": "3.4.3",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -20,8 +20,10 @@
     "test:lambda": "env NAME=Node jest --config ./runtime_tests/lambda/jest.config.js",
     "test:lambda-edge": "env NAME=Node jest --config ./runtime_tests/lambda-edge/jest.config.js",
     "test:all": "yarn test && yarn test:deno && yarn test:bun && yarn test:fastly && yarn test:lagon && yarn test:node && yarn test:wrangler && yarn test:lambda && yarn test:lambda-edge",
-    "lint": "eslint --ext js,ts src .eslintrc.cjs",
-    "lint:fix": "eslint --ext js,ts src .eslintrc.cjs --fix",
+    "lint": "eslint --ext js,ts src runtime_tests .eslintrc.cjs",
+    "lint:fix": "eslint --ext js,ts src runtime_tests .eslintrc.cjs --fix",
+    "format": "prettier --check 'src/**/*.{js,ts}' 'runtime_tests/**/*.{js,ts}'",
+    "format:fix": "prettier --write 'src/**/*.{js,ts}' 'runtime_tests/**/*.{js,ts}'",
     "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.ts'",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
     "build": "rimraf dist && tsx ./build.ts && yarn copy:package.cjs.json",
@@ -35,6 +37,11 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/cjs/index.js"
+    },
+    "./context": {
+      "types": "./dist/types/context.d.ts",
+      "import": "./dist/context.js",
+      "require": "./dist/cjs/context.js"
     },
     "./tiny": {
       "types": "./dist/types/preset/tiny.d.ts",
@@ -224,6 +231,9 @@
   },
   "typesVersions": {
     "*": {
+      "context": [
+        "./dist/types/context"
+      ],
       "tiny": [
         "./dist/types/preset/tiny"
       ],

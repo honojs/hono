@@ -78,6 +78,66 @@ describe('GET Request', () => {
   })
 })
 
+describe('Register handlers without a path', () => {
+  describe('No basePath', () => {
+    const app = new Hono()
+
+    app.get((c) => {
+      return c.text('Hello')
+    })
+
+    it('GET http://localhost/ is ok', async () => {
+      const res = await app.request('/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('Hello')
+    })
+
+    it('GET http://localhost/anything is ok', async () => {
+      const res = await app.request('/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('Hello')
+    })
+  })
+
+  describe('With specifying basePath', () => {
+    const app = new Hono().basePath('/about')
+
+    app.get((c) => {
+      return c.text('About')
+    })
+
+    it('GET http://localhost/about is ok', async () => {
+      const res = await app.request('/about')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('About')
+    })
+
+    it('GET http://localhost/ is not found', async () => {
+      const res = await app.request('/')
+      expect(res.status).toBe(404)
+    })
+  })
+
+  describe('With chaining', () => {
+    const app = new Hono()
+
+    app.post('/books').get((c) => {
+      return c.text('Books')
+    })
+
+    it('GET http://localhost/books is ok', async () => {
+      const res = await app.request('/books')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('Books')
+    })
+
+    it('GET http://localhost/ is not found', async () => {
+      const res = await app.request('/')
+      expect(res.status).toBe(404)
+    })
+  })
+})
+
 describe('router option', () => {
   it('Should be SmartRouter', () => {
     const app = new Hono()
@@ -1208,6 +1268,44 @@ describe('Hono with `app.route`', () => {
       const res = await app.request('http://localhost/foo')
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('bar')
+    })
+
+    describe('With app.get(...handler)', () => {
+      const app = new Hono()
+      const about = new Hono()
+      about.get((c) => c.text('me'))
+      const subApp = new Hono()
+      subApp.route('/about', about)
+      app.route('/', subApp)
+
+      it('Should return 200 response - /about', async () => {
+        const res = await app.request('/about')
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('me')
+      })
+
+      test('Should return 404 response /about/foo', async () => {
+        const res = await app.request('/about/foo')
+        expect(res.status).toBe(404)
+      })
+    })
+
+    describe('With app.get(...handler) and app.basePath()', () => {
+      const app = new Hono()
+      const about = new Hono().basePath('/about')
+      about.get((c) => c.text('me'))
+      app.route('/', about)
+
+      it('Should return 200 response - /about', async () => {
+        const res = await app.request('/about')
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('me')
+      })
+
+      test('Should return 404 response /about/foo', async () => {
+        const res = await app.request('/about/foo')
+        expect(res.status).toBe(404)
+      })
     })
   })
 
