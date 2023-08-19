@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from '../../types'
 
 interface SecureHeadersOptions {
+  crossOriginEmbedderPolicy?: boolean
   crossOriginResourcePolicy?: boolean
   crossOriginOpenerPolicy?: boolean
   originAgentCluster: boolean
@@ -19,6 +20,7 @@ type HeadersMap = {
 }
 
 const HEADERS_MAP: HeadersMap = {
+  crossOriginEmbedderPolicy: ['Cross-Origin-Embedder-Policy', 'require-corp'],
   crossOriginResourcePolicy: ['Cross-Origin-Resource-Policy', 'same-origin'],
   crossOriginOpenerPolicy: ['Cross-Origin-Opener-Policy', 'same-origin'],
   originAgentCluster: ['Origin-Agent-Cluster', '?1'],
@@ -33,6 +35,7 @@ const HEADERS_MAP: HeadersMap = {
 }
 
 const DEFAULT_OPTIONS = {
+  crossOriginEmbedderPolicy: true,
   crossOriginResourcePolicy: true,
   crossOriginOpenerPolicy: true,
   originAgentCluster: true,

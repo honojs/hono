@@ -27,6 +27,7 @@ describe('Secure Headers Middleware', () => {
     expect(res.headers.get('Cross-Origin-Resource-Policy')).toEqual('same-origin')
     expect(res.headers.get('Cross-Origin-Opener-Policy')).toEqual('same-origin')
     expect(res.headers.get('Origin-Agent-Cluster')).toEqual('?1')
+    expect(res.headers.get('Cross-Origin-Embedder-Policy')).toEqual('require-corp')
   })
 
   it('specific headers disabled', async () => {
