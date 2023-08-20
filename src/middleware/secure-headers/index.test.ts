@@ -4,7 +4,7 @@ import { poweredBy } from '../powered-by'
 import { secureHeaders } from '.'
 
 describe('Secure Headers Middleware', () => {
-  it('all headers enabled', async () => {
+  it('default middleware', async () => {
     const app = new Hono()
     app.use('*', secureHeaders())
     app.get('/test', async (ctx) => {
@@ -28,8 +28,43 @@ describe('Secure Headers Middleware', () => {
     expect(res.headers.get('Cross-Origin-Resource-Policy')).toEqual('same-origin')
     expect(res.headers.get('Cross-Origin-Opener-Policy')).toEqual('same-origin')
     expect(res.headers.get('Origin-Agent-Cluster')).toEqual('?1')
-    expect(res.headers.get('Cross-Origin-Embedder-Policy')).toEqual('require-corp')
     expect(res.headers.get('Content-Security-Policy')).toBeFalsy
+  })
+
+  it('all headers enabled', async () => {
+    const app = new Hono()
+    app.use(
+      '*',
+      secureHeaders({
+        contentSecurityPolicy: {
+          defaultSrc: ["'self'"],
+        },
+        crossOriginEmbedderPolicy: true,
+      })
+    )
+    app.get('/test', async (ctx) => {
+      return ctx.text('test')
+    })
+
+    const res = await app.request('/test')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Frame-Options')).toEqual('SAMEORIGIN')
+    expect(res.headers.get('Strict-Transport-Security')).toEqual(
+      'max-age=15552000; includeSubDomains'
+    )
+    expect(res.headers.get('X-Download-Options')).toEqual('noopen')
+    expect(res.headers.get('X-XSS-Protection')).toEqual('0')
+    expect(res.headers.get('X-Powered-By')).toBeNull()
+    expect(res.headers.get('X-DNS-Prefetch-Control')).toEqual('off')
+    expect(res.headers.get('X-Content-Type-Options')).toEqual('nosniff')
+    expect(res.headers.get('Referrer-Policy')).toEqual('no-referrer')
+    expect(res.headers.get('X-Permitted-Cross-Domain-Policies')).toEqual('none')
+    expect(res.headers.get('Cross-Origin-Resource-Policy')).toEqual('same-origin')
+    expect(res.headers.get('Cross-Origin-Opener-Policy')).toEqual('same-origin')
+    expect(res.headers.get('Origin-Agent-Cluster')).toEqual('?1')
+    expect(res.headers.get('Cross-Origin-Embedder-Policy')).toEqual('require-corp')
+    expect(res.headers.get('Content-Security-Policy')).toEqual("defaultSrc 'self'")
   })
 
   it('specific headers disabled', async () => {
