@@ -25,6 +25,18 @@ describe('Basic - JSON', () => {
   const route = app
     .post(
       '/posts',
+      // Client does not support `cookie`
+      validator('cookie', () => {
+        return {} as {
+          debug: string
+        }
+      }),
+      // Client does not support `header`
+      validator('header', () => {
+        return {} as {
+          'x-request-id': string
+        }
+      }),
       validator('json', () => {
         return {} as {
           id: number

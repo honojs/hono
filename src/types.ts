@@ -98,7 +98,7 @@ export interface HandlerInterface<
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
-    I4 extends Input = I2 & I3
+    I4 extends Input = I & I2 & I3
   >(
     ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>]
   ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I4['in'], O>>, BasePath>
@@ -111,7 +111,7 @@ export interface HandlerInterface<
     I2 extends Input = I,
     I3 extends Input = I & I2,
     I4 extends Input = I2 & I3,
-    I5 extends Input = I3 & I4
+    I5 extends Input = I & I2 & I3 & I4
   >(
     ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>, H<E, P, I5, O>]
   ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I5['in'], O>>, BasePath>
@@ -156,7 +156,7 @@ export interface HandlerInterface<
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
-    I4 extends Input = I2 & I3
+    I4 extends Input = I & I2 & I3
   >(
     path: P,
     ...handlers: [
@@ -175,7 +175,7 @@ export interface HandlerInterface<
     I2 extends Input = I,
     I3 extends Input = I & I2,
     I4 extends Input = I2 & I3,
-    I5 extends Input = I3 & I4
+    I5 extends Input = I & I2 & I3 & I4
   >(
     path: P,
     ...handlers: [

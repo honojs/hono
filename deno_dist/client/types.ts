@@ -22,7 +22,11 @@ type ClientRequest<S extends Data> = {
   [M in keyof S]: S[M] extends { input: infer R; output: infer O }
     ? RemoveBlankRecord<R> extends never
       ? (args?: {}, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
-      : (args: R, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
+      : (
+          // Client does not support `header` and `cookie`
+          args: Omit<R, 'header' | 'cookie'>,
+          options?: ClientRequestOptions
+        ) => Promise<ClientResponse<O>>
     : never
 }
 
