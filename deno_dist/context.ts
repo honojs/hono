@@ -207,7 +207,7 @@ export class Context<
       })
     }
 
-    // Return Response immediately if arg is RequestInit.
+    // Return Response immediately if arg is ResponseInit.
     if (arg && typeof arg !== 'number') {
       const res = new Response(data, arg)
       const contentType = this._pH?.['content-type']
@@ -254,7 +254,7 @@ export class Context<
 
   body: BodyRespond = (
     data: Data | null,
-    arg?: StatusCode | RequestInit,
+    arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
   ): Response => {
     return typeof arg === 'number'
@@ -264,7 +264,7 @@ export class Context<
 
   text: TextRespond = (
     text: string,
-    arg?: StatusCode | RequestInit,
+    arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
   ): Response => {
     // If the header is empty, return Response immediately.
@@ -287,7 +287,7 @@ export class Context<
 
   json: JSONRespond = <T = {}>(
     object: T,
-    arg?: StatusCode | RequestInit,
+    arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
   ) => {
     const body = JSON.stringify(object)
@@ -300,7 +300,7 @@ export class Context<
 
   jsonT: JSONTRespond = <T>(
     object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
-    arg?: StatusCode | RequestInit,
+    arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
   ): TypedResponse<
     InterfaceToType<T> extends JSONValue
@@ -319,7 +319,7 @@ export class Context<
 
   html: HTMLRespond = (
     html: string,
-    arg?: StatusCode | RequestInit,
+    arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
   ): Response => {
     this._pH ??= {}
