@@ -123,7 +123,7 @@ export interface HandlerInterface<
     O = {}
   >(
     ...handlers: Handler<E, P, I, O>[]
-  ): Hono<E, RemoveBlankRecord<Schema<M, P, I['in'], O>>, BasePath>
+  ): Hono<E, RemoveBlankRecord<S | Schema<M, P, I['in'], O>>, BasePath>
 
   ////  app.get(path, ...handlers[])
 
@@ -430,7 +430,7 @@ export type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | un
 //////                            //////
 ////////////////////////////////////////
 
-export type ExtractSchema<T> = T extends Hono<infer _, infer S, any> ? S : never
+export type ExtractSchema<T> = UnionToIntersection<T extends Hono<infer _, infer S, any> ? S : never>
 
 ////////////////////////////////////////
 //////                            //////

@@ -205,6 +205,19 @@ describe('HandlerInterface', () => {
             output: {}
           }
         }
+      } & {
+        '/foo/:foo/books/:id': {
+          $post: {
+            input: {
+              param: {
+                id: string
+              } & {
+                foo: string
+              }
+            }
+            output: {}
+          }
+        }
       }
       type verify = Expect<Equal<Expected, Actual>>
     })

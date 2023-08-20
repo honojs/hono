@@ -9,7 +9,7 @@ import { RegExpRouter } from './router/reg-exp-router'
 import { TrieRouter } from './router/trie-router'
 import type { Handler, Next } from './types'
 import type { Expect, Equal } from './utils/types'
-import { getPath, getPathNoStrict } from './utils/url'
+import { getPath } from './utils/url'
 
 // https://stackoverflow.com/a/65666402
 function throwExpression(errorMessage: string): never {
@@ -514,6 +514,33 @@ describe('Routing', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello sub foo')
     expect(res.status).toBe(200)
+  })
+
+  describe('routing with the bindings value', () => {
+    const app = new Hono<{ Bindings: { host: string } }>({
+      getPath: (req, options) => {
+        const url = new URL(req.url)
+        const host = options?.env?.host
+        const prefix = url.host === host ? '/FOO' : ''
+        return url.pathname === '/' ? prefix : `${prefix}${url.pathname}`
+      },
+    })
+
+    app.get('/about', (c) => c.text('About root'))
+    app.get('/FOO/about', (c) => c.text('About FOO'))
+
+    it('Should return 200 without specifying a hostname', async () => {
+      const res = await app.request('/about')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('About root')
+    })
+
+    it('Should return 200 with specifying the hostname in env', async () => {
+      const req = new Request('http://foo.localhost/about')
+      const res = await app.fetch(req, { host: 'foo.localhost' })
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('About FOO')
+    })
   })
 
   describe('Chained route', () => {

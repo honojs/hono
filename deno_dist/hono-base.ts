@@ -66,7 +66,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     To use it, inherit the class and implement router in the constructor.
   */
   router!: Router<H>
-  readonly getPath: (request: Request) => string
+  readonly getPath: (request: Request, options?: { env?: E['Bindings'] }) => string
   private _basePath: string = '/'
   private path: string = '/'
 
@@ -278,7 +278,7 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
     env: E['Bindings'],
     method: string
   ): Response | Promise<Response> {
-    const path = this.getPath(request)
+    const path = this.getPath(request, { env })
 
     // Handle HEAD method
     if (method === 'HEAD') {
