@@ -12,7 +12,7 @@
   "scripts": {
     "test": "jest",
     "test:deno": "env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno",
-    "test:bun": "env NAME=Bun bun test --jsx-import-source ../../src/middleware/jsx runtime_tests/bun/index.test.tsx",
+    "test:bun": "env NAME=Bun bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
     "test:fastly": "jest --config ./runtime_tests/fastly/jest.config.js",
     "test:lagon": "start-server-and-test \"lagon dev runtime_tests/lagon/index.ts -e runtime_tests/lagon/.env.lagon\" http://127.0.0.1:1234 \"yarn jest runtime_tests/lagon/index.test.ts --roots runtime_tests/lagon --testMatch '**/*.test.ts'\"",
     "test:node": "env NAME=Node jest --config ./runtime_tests/node/jest.config.js",
@@ -74,9 +74,9 @@
       "require": "./dist/cjs/middleware/cache/index.js"
     },
     "./cookie": {
-      "types": "./dist/types/middleware/cookie/index.d.ts",
-      "import": "./dist/middleware/cookie/index.js",
-      "require": "./dist/cjs/middleware/cookie/index.js"
+      "types": "./dist/types/helper/cookie/index.d.ts",
+      "import": "./dist/helper/cookie/index.js",
+      "require": "./dist/cjs/helper/cookie/index.js"
     },
     "./compress": {
       "types": "./dist/types/middleware/compress/index.d.ts",
@@ -94,24 +94,24 @@
       "require": "./dist/cjs/middleware/etag/index.js"
     },
     "./html": {
-      "types": "./dist/types/middleware/html/index.d.ts",
-      "import": "./dist/middleware/html/index.js",
-      "require": "./dist/cjs/middleware/html/index.js"
+      "types": "./dist/types/helper/html/index.d.ts",
+      "import": "./dist/helper/html/index.js",
+      "require": "./dist/cjs/helper/html/index.js"
     },
     "./jsx": {
-      "types": "./dist/types/middleware/jsx/index.d.ts",
-      "import": "./dist/middleware/jsx/index.js",
-      "require": "./dist/cjs/middleware/jsx/index.js"
+      "types": "./dist/types/jsx/index.d.ts",
+      "import": "./dist/jsx/index.js",
+      "require": "./dist/cjs/jsx/index.js"
     },
     "./jsx/jsx-dev-runtime": {
-      "types": "./dist/types/middleware/jsx/jsx-dev-runtime.d.ts",
-      "import": "./dist/middleware/jsx/jsx-dev-runtime.js",
-      "require": "./dist/cjs/middleware/jsx/jsx-dev-runtime.js"
+      "types": "./dist/types/jsx/jsx-dev-runtime.d.ts",
+      "import": "./dist/jsx/jsx-dev-runtime.js",
+      "require": "./dist/cjs/jsx/jsx-dev-runtime.js"
     },
     "./jsx/jsx-runtime": {
-      "types": "./dist/types/middleware/jsx/jsx-runtime.d.ts",
-      "import": "./dist/middleware/jsx/jsx-runtime.js",
-      "require": "./dist/cjs/middleware/jsx/jsx-runtime.js"
+      "types": "./dist/types/jsx/jsx-runtime.d.ts",
+      "import": "./dist/jsx/jsx-runtime.js",
+      "require": "./dist/cjs/jsx/jsx-runtime.js"
     },
     "./jwt": {
       "types": "./dist/types/middleware/jwt/index.d.ts",
@@ -189,9 +189,9 @@
       "require": "./dist/cjs/client/index.js"
     },
     "./adapter": {
-      "types": "./dist/types/adapter.d.ts",
-      "import": "./dist/adapter.js",
-      "require": "./dist/cjs/adapter.js"
+      "types": "./dist/types/helper/adapter/index.d.ts",
+      "import": "./dist/helper/adapter/index.js",
+      "require": "./dist/cjs/helper/adapter/index.js"
     },
     "./cloudflare-workers": {
       "types": "./dist/types/adapter/cloudflare-workers/index.d.ts",
@@ -258,7 +258,7 @@
         "./dist/types/middleware/cache"
       ],
       "cookie": [
-        "./dist/types/middleware/cookie"
+        "./dist/types/helper/cookie"
       ],
       "compress": [
         "./dist/types/middleware/compress"
@@ -270,16 +270,16 @@
         "./dist/types/middleware/etag"
       ],
       "html": [
-        "./dist/types/middleware/html"
+        "./dist/types/helper/html"
       ],
       "jsx": [
-        "./dist/types/middleware/jsx"
+        "./dist/types/jsx"
       ],
       "jsx/jsx-runtime": [
-        "./dist/types/middleware/jsx/jsx-runtime.d.ts"
+        "./dist/types/jsx/jsx-runtime.d.ts"
       ],
       "jsx/jsx-dev-runtime": [
-        "./dist/types/middleware/jsx/jsx-dev-runtime.d.ts"
+        "./dist/types/jsx/jsx-dev-runtime.d.ts"
       ],
       "jwt": [
         "./dist/types/middleware/jwt"
@@ -327,7 +327,7 @@
         "./dist/types/client/index.d.ts"
       ],
       "adapter": [
-        "./dist/types/adapter.d.ts"
+        "./dist/types/helper/adapter/index.d.ts"
       ],
       "cloudflare-workers": [
         "./dist/types/adapter/cloudflare-workers"

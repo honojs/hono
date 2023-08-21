@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { env } from './adapter'
 import type { Context } from './context'
 import { Hono } from './hono'
 import { HTTPException } from './http-exception'

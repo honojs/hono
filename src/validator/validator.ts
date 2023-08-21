@@ -1,5 +1,5 @@
 import type { Context } from '../context'
-import { getCookie } from '../middleware/cookie'
+import { getCookie } from '../helper/cookie'
 import type { Env, ValidationTargets, MiddlewareHandler } from '../types'
 
 type ValidationTargetKeysWithBody = 'form' | 'json'

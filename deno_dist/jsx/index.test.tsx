@@ -1,5 +1,5 @@
-import { Hono } from '../../hono.ts'
-import { html } from '../html/index.ts'
+import { html } from '../helper/html/index.ts'
+import { Hono } from '../hono.ts'
 import { jsx, memo, Fragment } from './index.ts'
 
 interface SiteData {

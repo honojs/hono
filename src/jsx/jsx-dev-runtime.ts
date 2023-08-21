@@ -1,4 +1,4 @@
-import type { HtmlEscapedString } from '../../utils/html'
+import type { HtmlEscapedString } from '../utils/html'
 import { jsx } from '.'
 import type { JSXNode } from '.'
 export { Fragment } from '.'
