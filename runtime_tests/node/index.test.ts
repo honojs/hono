@@ -1,8 +1,8 @@
 import { createAdaptorServer } from '@hono/node-server'
 import request from 'supertest'
 import { Hono } from '../../src'
-import { env } from '../../src/adapter'
 import { Context } from '../../src/context'
+import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 import { HonoRequest } from '../../src/request'
@@ -17,7 +17,7 @@ describe('Basic', () => {
     return c.text('Hello! Node.js!')
   })
   app.get('/runtime-name', (c) => {
-    return c.text(c.runtime)
+    return c.text(getRuntimeKey())
   })
 
   const server = createAdaptorServer(app)

@@ -1,4 +1,5 @@
 import { SHA256 } from 'crypto-js'
+import { getRuntimeKey } from '../../src/helper/adapter'
 import { Hono } from '../../src/index'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
@@ -12,7 +13,7 @@ const app = new Hono()
 describe('Hello World', () => {
   app.get('/', (c) => c.text('Hello! Compute!'))
   app.get('/runtime-name', (c) => {
-    return c.text(c.runtime)
+    return c.text(getRuntimeKey())
   })
 
   it('Should return 200', async () => {

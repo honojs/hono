@@ -1,4 +1,4 @@
-import { env } from '../../src/adapter'
+import { env } from '../../src/helper/adapter'
 import { Hono } from '../../src/hono'
 
 const app = new Hono()

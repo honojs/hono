@@ -1,5 +1,5 @@
 import { Hono } from '../../src'
-import { env } from '../../src/adapter'
+import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { HTTPException } from '../../src/http-exception'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { bearerAuth } from '../../src/middleware/bearer-auth'
@@ -66,7 +66,7 @@ app.get('/', (c) => c.text('Hono!!'))
 // Use Response object directly
 app.get('/hello', () => new Response('This is /hello'))
 
-app.get('/runtime', (c) => new Response(c.runtime))
+app.get('/runtime', () => new Response(getRuntimeKey()))
 
 // Named parameter
 app.get('/entry/:id', (c) => {

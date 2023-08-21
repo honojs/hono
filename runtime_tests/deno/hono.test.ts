@@ -1,5 +1,5 @@
-import { env } from '../../deno_dist/adapter.ts'
 import { Context } from '../../deno_dist/context.ts'
+import { env, getRuntimeKey } from '../../deno_dist/helper.ts'
 import { Hono } from '../../deno_dist/mod.ts'
 import { HonoRequest } from '../../deno_dist/request.ts'
 import { assertEquals } from './deps.ts'
@@ -23,8 +23,7 @@ Deno.test('Hello World', async () => {
 })
 
 Deno.test('runtime', () => {
-  const c = new Context(new HonoRequest(new Request('http://localhost/')))
-  assertEquals(c.runtime, 'deno')
+  assertEquals(getRuntimeKey(), 'deno')
 })
 
 Deno.test('environment variables', () => {
