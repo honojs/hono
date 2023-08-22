@@ -19,6 +19,7 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
     // @ts-ignore
     const stream = new CompressionStream(encoding)
     ctx.res = new Response(ctx.res.body.pipeThrough(stream), ctx.res)
+    ctx.res.headers.delete('Content-Length')
     ctx.res.headers.set('Content-Encoding', encoding)
   }
 }
