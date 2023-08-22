@@ -19,6 +19,11 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm test
+      - run: npm run denoify
+        if [[ `git status --porcelain` ]]; then
+          echo "Changes were detected after running denoify. Ensure you commit the build results."
+          exit 1
+        fi
 
   deno:
     name: 'Deno'
