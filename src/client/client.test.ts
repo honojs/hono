@@ -128,15 +128,13 @@ describe('Basic - query, queries, form, and path params', () => {
     .get(
       '/search',
       validator('query', () => {
-        return {} as { q: string; tag: string[] }
+        return {} as { q: string; tag: string[]; filter: string }
       }),
       (c) => {
         return c.jsonT({
-          entries: [
-            {
-              title: 'Foo',
-            },
-          ],
+          q: 'fake',
+          tag: ['fake'],
+          filter: 'fake',
         })
       }
     )
@@ -170,11 +168,13 @@ describe('Basic - query, queries, form, and path params', () => {
       const url = new URL(req.url)
       const query = url.searchParams.get('q')
       const tag = url.searchParams.getAll('tag')
+      const filter = url.searchParams.get('filter')
       return res(
         ctx.status(200),
         ctx.json({
           q: query,
-          tag: tag,
+          tag,
+          filter,
         })
       )
     }),
@@ -209,6 +209,8 @@ describe('Basic - query, queries, form, and path params', () => {
       query: {
         q: 'foobar',
         tag: ['a', 'b'],
+        // @ts-expect-error
+        filter: undefined,
       },
     })
 
@@ -216,6 +218,7 @@ describe('Basic - query, queries, form, and path params', () => {
     expect(await res.json()).toEqual({
       q: 'foobar',
       tag: ['a', 'b'],
+      filter: null,
     })
   })
 
