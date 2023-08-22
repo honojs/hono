@@ -49,8 +49,8 @@ const HEADERS_MAP: HeadersMap = {
 }
 
 const DEFAULT_OPTIONS = {
-  crossOriginEmbedderPolicy: true,
-  crossOriginResourcePolicy: true,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false,
   crossOriginOpenerPolicy: true,
   originAgentCluster: true,
   referrerPolicy: true,
