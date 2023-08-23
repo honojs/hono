@@ -42,7 +42,7 @@ class ClientRequestImpl {
       if (args.query) {
         for (const [k, v] of Object.entries(args.query)) {
           if (v === undefined) {
-            return
+            continue
           }
 
           this.queryParams ||= new URLSearchParams()
