@@ -331,8 +331,10 @@ export type ToSchema<M extends string, P extends string, I extends Input['in'], 
 export type Schema = {
   [Path: string]: {
     [Method: `$${Lowercase<string>}`]: {
-      input: any
-      output: any
+      input: Partial<ValidationTargets> & {
+        param?: Record<string, string>
+      }
+      output: {}
     }
   }
 }

@@ -1,24 +1,13 @@
 import type { Hono } from '../hono'
-import type { ValidationTargets } from '../types'
+import type { Schema } from '../types'
 import type { RemoveBlankRecord } from '../utils/types'
-
-type MethodName = `$${string}`
-
-type Endpoint = Record<MethodName, Data>
-
-type Data = {
-  input: Partial<ValidationTargets> & {
-    param?: Record<string, string>
-  }
-  output: {}
-}
 
 export type ClientRequestOptions = {
   headers?: Record<string, string>
   fetch?: typeof fetch
 }
 
-type ClientRequest<S extends Data> = {
+type ClientRequest<S extends Schema> = {
   [M in keyof S]: S[M] extends { input: infer R; output: infer O }
     ? RemoveBlankRecord<R> extends never
       ? (args?: {}, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
@@ -65,7 +54,7 @@ export type InferRequestType<T> = T extends (args: infer R) => Promise<ClientRes
 
 type PathToChain<
   Path extends string,
-  E extends Endpoint,
+  E extends Schema,
   Original extends string = ''
 > = Path extends `/${infer P}`
   ? PathToChain<P, E, Path>
@@ -79,7 +68,7 @@ type PathToChain<
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Client<T> = T extends Hono<any, infer S, any>
-  ? S extends Record<infer K, Endpoint>
+  ? S extends Record<infer K, Schema>
     ? K extends string
       ? PathToChain<K, S>
       : never
