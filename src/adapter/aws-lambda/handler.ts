@@ -1,7 +1,7 @@
 // @denoify-ignore
 import crypto from 'crypto'
 import type { Hono } from '../../hono'
-import type { Env } from '../../types'
+import type { Env, Schema } from '../../types'
 
 import { encodeBase64 } from '../../utils/encode'
 import type { ApiGatewayRequestContext, LambdaFunctionUrlRequestContext } from './custom-context'
@@ -58,7 +58,7 @@ const getRequestContext = (
 /**
  * Accepts events from API Gateway/ELB(`APIGatewayProxyEvent`) and directly through Function Url(`APIGatewayProxyEventV2`)
  */
-export const handle = <E extends Env = Env, S = {}, BasePath extends string = '/'>(
+export const handle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
   app: Hono<E, S, BasePath>
 ) => {
   return async (
