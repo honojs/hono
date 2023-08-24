@@ -19,6 +19,7 @@ import type {
   MergePath,
   MergeSchemaPath,
   FetchEventLike,
+  Schema,
 } from './types'
 import type { RemoveBlankRecord } from './utils/types'
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
@@ -32,7 +33,7 @@ interface RouterRoute {
 }
 
 function defineDynamicClass(): {
-  new <E extends Env = Env, S = {}, BasePath extends string = '/'>(): {
+  new <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(): {
     [M in Methods]: HandlerInterface<E, M, S, BasePath>
   } & {
     on: OnHandlerInterface<E, S, BasePath>
@@ -56,11 +57,11 @@ const errorHandler = (err: Error, c: Context) => {
   return c.text(message, 500)
 }
 
-class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends defineDynamicClass()<
-  E,
-  S,
-  BasePath
-> {
+class Hono<
+  E extends Env = Env,
+  S extends Schema = {},
+  BasePath extends string = '/'
+> extends defineDynamicClass()<E, S, BasePath> {
   /*
     This class is like an abstract class and does not have a router.
     To use it, inherit the class and implement router in the constructor.
@@ -138,20 +139,30 @@ class Hono<E extends Env = Env, S = {}, BasePath extends string = '/'> extends d
   private notFoundHandler: NotFoundHandler = notFoundHandler
   private errorHandler: ErrorHandler = errorHandler
 
-  route<SubPath extends string, SubEnv extends Env, SubSchema, SubBasePath extends string>(
+  route<
+    SubPath extends string,
+    SubEnv extends Env,
+    SubSchema extends Schema,
+    SubBasePath extends string
+  >(
     path: SubPath,
     app: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<E, RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>, BasePath>
+  ): Hono<E, MergeSchemaPath<SubSchema, SubPath> & S, BasePath>
   /** @description
    * Use `basePath` instead of `route` when passing **one** argument, such as `app.route('/api')`.
    * The use of `route` with **one** argument has been removed in v4.
    * However, you can still use `route` with **two** arguments, like `app.route('/api', subApp)`."
    */
   route<SubPath extends string>(path: SubPath): Hono<E, RemoveBlankRecord<S>, BasePath>
-  route<SubPath extends string, SubEnv extends Env, SubSchema, SubBasePath extends string>(
+  route<
+    SubPath extends string,
+    SubEnv extends Env,
+    SubSchema extends Schema,
+    SubBasePath extends string
+  >(
     path: SubPath,
     app?: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<E, RemoveBlankRecord<MergeSchemaPath<SubSchema, SubPath> | S>, BasePath> {
+  ): Hono<E, MergeSchemaPath<SubSchema, SubPath> & S, BasePath> {
     const subApp = this.basePath(path)
 
     if (!app) {
