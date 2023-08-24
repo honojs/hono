@@ -17,6 +17,7 @@ export type {
   ValidationTargets,
   Input,
   Schema,
+  ToSchema,
   TypedResponse,
 } from './types'
 export type { Context, ContextVariableMap } from './context'
