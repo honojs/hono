@@ -321,7 +321,7 @@ type ExtractKey<S> = S extends Record<infer Key, unknown>
 
 export type ToSchema<M extends string, P extends string, I extends Input['in'], O> = {
   [K in P]: {
-    [K2 in M as PrefixWithDollar<string & K2>]: {
+    [K2 in M as AddDollar<string & K2>]: {
       input: unknown extends I ? AddParam<{}, P> : AddParam<I, P>
       output: unknown extends O ? {} : O
     }
@@ -347,7 +347,7 @@ export type AddParam<I, P extends string> = ParamKeys<P> extends never
   ? I
   : I & { param: UnionToIntersection<ParamKeyToRecord<ParamKeys<P>>> }
 
-export type PrefixWithDollar<T extends string> = `$${Lowercase<T>}`
+type AddDollar<T extends string> = `$${Lowercase<T>}`
 
 export type MergePath<A extends string, B extends string> = A extends ''
   ? B
