@@ -321,7 +321,7 @@ type ExtractKey<S> = S extends Record<infer Key, unknown>
 
 export type ToSchema<M extends string, P extends string, I extends Input['in'], O> = {
   [K in P]: {
-    [K2 in M as AddDollar<string & K2>]: {
+    [K2 in M as AddDollar<K2>]: {
       input: unknown extends I ? AddParam<{}, P> : AddParam<I, P>
       output: unknown extends O ? {} : O
     }
