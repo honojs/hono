@@ -18,12 +18,12 @@ jobs:
       - run: npm run format
       - run: npm run lint
       - run: npm run build
-      - run: npm test
       - run: |
           npm run denoify
           if [[ `git status --porcelain` ]]; then
             exit 1
           fi
+      - run: npm test
 
   deno:
     name: 'Deno'
