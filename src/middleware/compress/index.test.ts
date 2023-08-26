@@ -6,6 +6,7 @@ describe('Parse Compress Middleware', () => {
 
   app.use('*', compress())
   app.get('/hello', async (ctx) => {
+    ctx.header('Content-Length', '5')
     return ctx.text('hello')
   })
 
@@ -18,6 +19,7 @@ describe('Parse Compress Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Encoding')).toEqual('gzip')
+    expect(res.headers.get('Content-Length')).toBeNull()
   })
 
   it('deflate', async () => {
@@ -29,6 +31,7 @@ describe('Parse Compress Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Encoding')).toEqual('deflate')
+    expect(res.headers.get('Content-Length')).toBeNull()
   })
 
   it('gzip or deflate', async () => {
@@ -40,6 +43,7 @@ describe('Parse Compress Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Encoding')).toEqual('gzip')
+    expect(res.headers.get('Content-Length')).toBeNull()
   })
 
   it('raw', async () => {
@@ -50,5 +54,6 @@ describe('Parse Compress Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Encoding')).toBeNull()
+    expect(res.headers.get('Content-Length')).toBe('5')
   })
 })

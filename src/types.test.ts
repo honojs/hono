@@ -14,7 +14,7 @@ import type {
   ParamKeys,
   ParamKeyToRecord,
   RemoveQuestion,
-  Schema,
+  ToSchema,
   UndefinedIfHavingQuestion,
 } from './types'
 import type { Expect, Equal } from './utils/types'
@@ -264,7 +264,7 @@ describe('Schema', () => {
   test('Schema', () => {
     type AppType = Hono<
       Env,
-      Schema<
+      ToSchema<
         'post',
         '/api/posts/:id',
         {
@@ -467,7 +467,7 @@ describe('merge path', () => {
   })
 
   test('MergeSchemaPath', () => {
-    type Sub = Schema<
+    type Sub = ToSchema<
       'post',
       '/posts',
       {
@@ -480,7 +480,7 @@ describe('merge path', () => {
         message: string
       }
     > &
-      Schema<
+      ToSchema<
         'get',
         '/posts',
         {},
