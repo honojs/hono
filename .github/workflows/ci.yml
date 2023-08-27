@@ -21,7 +21,7 @@ jobs:
       - run: npm test
 
   denoify:
-    name: "Check if you've done denoify"
+    name: "Checking if you've done denoify"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
