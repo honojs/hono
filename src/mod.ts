@@ -22,7 +22,7 @@ export type {
 } from './types'
 export type { Context, ContextVariableMap } from './context'
 export type { HonoRequest } from './request'
-export { Hono }
+// export { Hono }
 export { HTTPException } from './http-exception'
 
 // Router
