@@ -6,7 +6,7 @@ on:
     branches: ['*']
 
 jobs:
-  ci:
+  main:
     name: 'Main'
     runs-on: ubuntu-latest
     steps:
@@ -19,6 +19,22 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm test
+
+  denoify:
+    name: "Checking if you've done denoify"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - run: yarn install --frozen-lockfile
+      - run: npm run build
+      - run: |
+          npm run denoify
+          if [[ `git status --porcelain` ]]; then
+            exit 1
+          fi
 
   deno:
     name: 'Deno'
