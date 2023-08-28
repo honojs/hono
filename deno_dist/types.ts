@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Context } from './context.ts'
 import type { Hono } from './hono.ts'
-import type { UnionToIntersection, RemoveBlankRecord } from './utils/types.ts'
+import type { UnionToIntersection } from './utils/types.ts'
 
 ////////////////////////////////////////
 //////                            //////
@@ -32,24 +32,26 @@ export type Input = {
 //////                            //////
 ////////////////////////////////////////
 
+type HandlerResponse<O> = Response | TypedResponse<O> | Promise<Response | TypedResponse<O>>
+
 export type Handler<
   E extends Env = any,
   P extends string = any,
   I extends Input = Input,
-  O = {}
-> = (
-  c: Context<E, P, I>,
-  next: Next
-) => Response | Promise<Response | TypedResponse<O>> | TypedResponse<O>
+  R extends HandlerResponse<any> = any
+> = (c: Context<E, P, I>, next: Next) => R
 
 export type MiddlewareHandler<E extends Env = any, P extends string = any, I extends Input = {}> = (
   c: Context<E, P, I>,
   next: Next
 ) => Promise<Response | void>
 
-export type H<E extends Env = any, P extends string = any, I extends Input = {}, O = {}> =
-  | Handler<E, P, I, O>
-  | MiddlewareHandler<E, P, I>
+export type H<
+  E extends Env = any,
+  P extends string = any,
+  I extends Input = {},
+  R extends HandlerResponse<any> = any
+> = Handler<E, P, I, R> | MiddlewareHandler<E, P, I>
 
 export type NotFoundHandler<E extends Env = any> = (c: Context<E>) => Response | Promise<Response>
 export type ErrorHandler<E extends Env = any> = (
@@ -75,84 +77,90 @@ export interface HandlerInterface<
   <
     P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
     I extends Input = {},
-    O = {}
+    R extends HandlerResponse<any> = any
   >(
-    ...handlers: [H<E, P, I, O>, H<E, P, I, O>]
-  ): Hono<E, S & ToSchema<M, P, I['in'], O>, BasePath>
+    ...handlers: [H<E, P, I, R>, H<E, P, I, R>]
+  ): Hono<E, S & ToSchema<M, P, I['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(handler x 3)
   <
     P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
-    O = {},
+    R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2
   >(
-    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>]
-  ): Hono<E, S & ToSchema<M, P, I3['in'], O>, BasePath>
+    ...handlers: [H<E, P, I, R>, H<E, P, I2, R>, H<E, P, I3, R>]
+  ): Hono<E, S & ToSchema<M, P, I3['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(handler x 4)
   <
     P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
-    O = {},
+    R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
     I4 extends Input = I & I2 & I3
   >(
-    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>]
-  ): Hono<E, S & ToSchema<M, P, I4['in'], O>, BasePath>
+    ...handlers: [H<E, P, I, R>, H<E, P, I2, R>, H<E, P, I3, R>, H<E, P, I4, R>]
+  ): Hono<E, S & ToSchema<M, P, I4['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(handler x 5)
   <
     P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
-    O = {},
+    R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
     I4 extends Input = I2 & I3,
     I5 extends Input = I & I2 & I3 & I4
   >(
-    ...handlers: [H<E, P, I, O>, H<E, P, I2, O>, H<E, P, I3, O>, H<E, P, I4, O>, H<E, P, I5, O>]
-  ): Hono<E, S & ToSchema<M, P, I5['in'], O>, BasePath>
+    ...handlers: [H<E, P, I, R>, H<E, P, I2, R>, H<E, P, I3, R>, H<E, P, I4, R>, H<E, P, I5, R>]
+  ): Hono<E, S & ToSchema<M, P, I5['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(...handlers[])
   <
     P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
     I extends Input = {},
-    O = {}
+    R extends HandlerResponse<any> = any
   >(
-    ...handlers: Handler<E, P, I, O>[]
-  ): Hono<E, S & ToSchema<M, P, I['in'], O>, BasePath>
+    ...handlers: Handler<E, P, I, R>[]
+  ): Hono<E, S & ToSchema<M, P, I['in'], MergeTypedResponseData<R>>, BasePath>
 
   ////  app.get(path, ...handlers[])
 
   // app.get(path, handler)
-  <P extends string, O = {}, I extends Input = {}>(
+  <P extends string, R extends HandlerResponse<any> = any, I extends Input = {}>(
     path: P,
-    handler: H<E, MergePath<BasePath, P>, I, O>
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I['in'], O>, BasePath>
+    handler: H<E, MergePath<BasePath, P>, I, R>
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(path, handler, handler)
-  <P extends string, O = {}, I extends Input = {}>(
+  <P extends string, R extends HandlerResponse<any> = any, I extends Input = {}>(
     path: P,
-    ...handlers: [H<E, MergePath<BasePath, P>, I, O>, H<E, MergePath<BasePath, P>, I, O>]
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I['in'], O>, BasePath>
+    ...handlers: [H<E, MergePath<BasePath, P>, I, R>, H<E, MergePath<BasePath, P>, I, R>]
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(path, handler x3)
-  <P extends string, O = {}, I extends Input = {}, I2 extends Input = I, I3 extends Input = I & I2>(
+  <
+    P extends string,
+    R extends HandlerResponse<any> = any,
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2
+  >(
     path: P,
     ...handlers: [
-      H<E, MergePath<BasePath, P>, I, O>,
-      H<E, MergePath<BasePath, P>, I2, O>,
-      H<E, MergePath<BasePath, P>, I3, O>
+      H<E, MergePath<BasePath, P>, I, R>,
+      H<E, MergePath<BasePath, P>, I2, R>,
+      H<E, MergePath<BasePath, P>, I3, R>
     ]
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I3['in'], O>, BasePath>
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I3['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(path, handler x4)
   <
     P extends string,
-    O = {},
+    R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -160,17 +168,17 @@ export interface HandlerInterface<
   >(
     path: P,
     ...handlers: [
-      H<E, MergePath<BasePath, P>, I, O>,
-      H<E, MergePath<BasePath, P>, I2, O>,
-      H<E, MergePath<BasePath, P>, I3, O>,
-      H<E, MergePath<BasePath, P>, I4, O>
+      H<E, MergePath<BasePath, P>, I, R>,
+      H<E, MergePath<BasePath, P>, I2, R>,
+      H<E, MergePath<BasePath, P>, I3, R>,
+      H<E, MergePath<BasePath, P>, I4, R>
     ]
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I4['in'], O>, BasePath>
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I4['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(path, handler x5)
   <
     P extends string,
-    O = {},
+    R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -179,19 +187,19 @@ export interface HandlerInterface<
   >(
     path: P,
     ...handlers: [
-      H<E, MergePath<BasePath, P>, I, O>,
-      H<E, MergePath<BasePath, P>, I2, O>,
-      H<E, MergePath<BasePath, P>, I3, O>,
-      H<E, MergePath<BasePath, P>, I4, O>,
-      H<E, MergePath<BasePath, P>, I5, O>
+      H<E, MergePath<BasePath, P>, I, R>,
+      H<E, MergePath<BasePath, P>, I2, R>,
+      H<E, MergePath<BasePath, P>, I3, R>,
+      H<E, MergePath<BasePath, P>, I4, R>,
+      H<E, MergePath<BasePath, P>, I5, R>
     ]
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I5['in'], O>, BasePath>
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I5['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(path, ...handlers[])
-  <P extends string, I extends Input = {}, O = {}>(
+  <P extends string, I extends Input = {}, R extends HandlerResponse<any> = any>(
     path: P,
-    ...handlers: H<E, MergePath<BasePath, P>, I, O>[]
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I['in'], O>, BasePath>
+    ...handlers: H<E, MergePath<BasePath, P>, I, R>[]
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>, BasePath>
 }
 
 ////////////////////////////////////////
@@ -227,17 +235,17 @@ export interface OnHandlerInterface<
   BasePath extends string = '/'
 > {
   // app.on(method, path, handler, handler)
-  <M extends string, P extends string, O = {}, I extends Input = {}>(
+  <M extends string, P extends string, R extends HandlerResponse<any> = any, I extends Input = {}>(
     method: M,
     path: P,
-    ...handlers: [H<E, MergePath<BasePath, P>, I, O>, H<E, MergePath<BasePath, P>, I, O>]
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I['in'], O>, BasePath>
+    ...handlers: [H<E, MergePath<BasePath, P>, I, R>, H<E, MergePath<BasePath, P>, I, R>]
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(method, path, handler x3)
   <
     M extends string,
     P extends string,
-    O = {},
+    R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2
@@ -245,17 +253,17 @@ export interface OnHandlerInterface<
     method: M,
     path: P,
     ...handlers: [
-      H<E, MergePath<BasePath, P>, I, O>,
-      H<E, MergePath<BasePath, P>, I2, O>,
-      H<E, MergePath<BasePath, P>, I3, O>
+      H<E, MergePath<BasePath, P>, I, R>,
+      H<E, MergePath<BasePath, P>, I2, R>,
+      H<E, MergePath<BasePath, P>, I3, R>
     ]
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I3['in'], O>, BasePath>
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I3['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(method, path, handler x4)
   <
     M extends string,
     P extends string,
-    O = {},
+    R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -264,18 +272,18 @@ export interface OnHandlerInterface<
     method: M,
     path: P,
     ...handlers: [
-      H<E, MergePath<BasePath, P>, I, O>,
-      H<E, MergePath<BasePath, P>, I2, O>,
-      H<E, MergePath<BasePath, P>, I3, O>,
-      H<E, MergePath<BasePath, P>, I4, O>
+      H<E, MergePath<BasePath, P>, I, R>,
+      H<E, MergePath<BasePath, P>, I2, R>,
+      H<E, MergePath<BasePath, P>, I3, R>,
+      H<E, MergePath<BasePath, P>, I4, R>
     ]
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I4['in'], O>, BasePath>
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I4['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(method, path, handler x5)
   <
     M extends string,
     P extends string,
-    O = {},
+    R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -285,26 +293,30 @@ export interface OnHandlerInterface<
     method: M,
     path: P,
     ...handlers: [
-      H<E, MergePath<BasePath, P>, I, O>,
-      H<E, MergePath<BasePath, P>, I2, O>,
-      H<E, MergePath<BasePath, P>, I3, O>,
-      H<E, MergePath<BasePath, P>, I4, O>,
-      H<E, MergePath<BasePath, P>, I5, O>
+      H<E, MergePath<BasePath, P>, I, R>,
+      H<E, MergePath<BasePath, P>, I2, R>,
+      H<E, MergePath<BasePath, P>, I3, R>,
+      H<E, MergePath<BasePath, P>, I4, R>,
+      H<E, MergePath<BasePath, P>, I5, R>
     ]
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I5['in'], O>, BasePath>
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I5['in'], MergeTypedResponseData<R>>, BasePath>
 
-  <M extends string, P extends string, O extends {} = {}, I extends Input = {}>(
+  <M extends string, P extends string, R extends HandlerResponse<any> = any, I extends Input = {}>(
     method: M,
     path: P,
-    ...handlers: H<E, MergePath<BasePath, P>, I, O>[]
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I['in'], O>, BasePath>
+    ...handlers: H<E, MergePath<BasePath, P>, I, R>[]
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.on(method[], path, ...handler)
-  <P extends string, O extends {} = {}, I extends Input = {}>(
+  <P extends string, R extends HandlerResponse<any> = any, I extends Input = {}>(
     methods: string[],
     path: P,
-    ...handlers: H<E, MergePath<BasePath, P>, I, O>[]
-  ): Hono<E, S & ToSchema<string, MergePath<BasePath, P>, I['in'], O>, BasePath>
+    ...handlers: H<E, MergePath<BasePath, P>, I, R>[]
+  ): Hono<
+    E,
+    S & ToSchema<string, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>,
+    BasePath
+  >
 }
 
 type ExtractKey<S> = S extends Record<infer Key, unknown>
@@ -374,6 +386,10 @@ export type TypedResponse<T = unknown> = {
   data: T
   format: 'json' // Currently, support only `json` with `c.jsonT()`
 }
+
+type ExtractResponseData<T> = T extends TypedResponse<infer U> ? U : never
+
+type MergeTypedResponseData<T> = UnionToIntersection<ExtractResponseData<T>>
 
 ////////////////////////////////////////
 //////                             /////

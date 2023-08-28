@@ -517,3 +517,81 @@ describe('merge path', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 })
+
+describe('Different types using jsonT()', () => {
+  describe('no path pattern', () => {
+    const app = new Hono()
+    test('Three different types', () => {
+      const route = app.get((c) => {
+        const flag = false
+        if (flag) {
+          return c.jsonT({
+            ng: true,
+          })
+        }
+        if (!flag) {
+          return c.jsonT({
+            ok: true,
+          })
+        }
+        return c.jsonT({
+          default: true,
+        })
+      })
+      type Actual = ExtractSchema<typeof route>
+      type Expected = {
+        '/': {
+          $get: {
+            input: {}
+            output: {
+              ng: boolean
+            } & {
+              ok: boolean
+            } & {
+              default: boolean
+            }
+          }
+        }
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+  })
+
+  describe('path pattern', () => {
+    const app = new Hono()
+    test('Three different types', () => {
+      const route = app.get('/foo', (c) => {
+        const flag = false
+        if (flag) {
+          return c.jsonT({
+            ng: true,
+          })
+        }
+        if (!flag) {
+          return c.jsonT({
+            ok: true,
+          })
+        }
+        return c.jsonT({
+          default: true,
+        })
+      })
+      type Actual = ExtractSchema<typeof route>
+      type Expected = {
+        '/foo': {
+          $get: {
+            input: {}
+            output: {
+              ng: boolean
+            } & {
+              ok: boolean
+            } & {
+              default: boolean
+            }
+          }
+        }
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+  })
+})

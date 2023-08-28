@@ -19,6 +19,12 @@ type ClientRequest<S extends Schema> = {
     : never
 }
 
+type BlankRecordToNever<T> = T extends Record<infer R, unknown>
+  ? R extends never
+    ? never
+    : T
+  : never
+
 export interface ClientResponse<T> {
   ok: boolean
   status: number
@@ -27,7 +33,7 @@ export interface ClientResponse<T> {
   url: string
   redirect(url: string, status: number): Response
   clone(): Response
-  json(): Promise<T>
+  json(): Promise<BlankRecordToNever<T>>
   text(): Promise<string>
   blob(): Promise<Blob>
   formData(): Promise<FormData>
