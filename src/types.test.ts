@@ -595,3 +595,26 @@ describe('Different types using jsonT()', () => {
     })
   })
 })
+
+describe('jsonT() in an async handler', () => {
+  const app = new Hono()
+  test('Three different types', () => {
+    const route = app.get(async (c) => {
+      return c.jsonT({
+        ok: true,
+      })
+    })
+    type Actual = ExtractSchema<typeof route>
+    type Expected = {
+      '/': {
+        $get: {
+          input: {}
+          output: {
+            ok: boolean
+          }
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})

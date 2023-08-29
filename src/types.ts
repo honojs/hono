@@ -387,7 +387,13 @@ export type TypedResponse<T = unknown> = {
   format: 'json' // Currently, support only `json` with `c.jsonT()`
 }
 
-type ExtractResponseData<T> = T extends TypedResponse<infer U> ? U : never
+type ExtractResponseData<T> = T extends Promise<infer T2>
+  ? T2 extends TypedResponse<infer U>
+    ? U
+    : never
+  : T extends TypedResponse<infer U>
+  ? U
+  : never
 
 type MergeTypedResponseData<T> = UnionToIntersection<ExtractResponseData<T>>
 
