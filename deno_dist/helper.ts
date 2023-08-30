@@ -2,3 +2,4 @@
 export * from './helper/cookie/index.ts'
 export * from './helper/html/index.ts'
 export * from './helper/adapter/index.ts'
+export * from './helper/body-parser/index.ts'
