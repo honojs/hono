@@ -128,12 +128,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   async parseBody<T extends BodyData = BodyData>(): Promise<T> {
     if (this.bodyCache.parsedBody) return this.bodyCache.parsedBody as T
-    let arrayBuffer = this.bodyCache.arrayBuffer
-    if (!arrayBuffer) {
-      arrayBuffer = await this.raw.arrayBuffer()
-      this.bodyCache.arrayBuffer = arrayBuffer
-    }
-    const parsedBody = await parseBody<T>(this, arrayBuffer)
+    const parsedBody = await parseBody<T>(this)
     this.bodyCache.parsedBody = parsedBody
     return parsedBody
   }

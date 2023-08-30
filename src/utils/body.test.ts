@@ -34,37 +34,4 @@ describe('Parse Body Util', () => {
     })
     expect(await parseBody(req)).toEqual({})
   })
-
-  it('should correctly parse multipart/form-data from ArrayBuffer', async () => {
-    const dummyRequest = new Request('http://localhost', {
-      method: 'POST',
-      headers: [['Content-Type', 'multipart/form-data; boundary=sampleboundary']],
-      body: new FormData(),
-    })
-
-    const encoder = new TextEncoder()
-    const testData =
-      '--sampleboundary\r\nContent-Disposition: form-data; name="test"\r\n\r\nHello\r\n--sampleboundary--'
-    const arrayBuffer = encoder.encode(testData).buffer
-
-    const result = await parseBody(dummyRequest, arrayBuffer)
-
-    expect(result).toEqual({ test: 'Hello' })
-  })
-
-  it('should correctly parse application/x-www-form-urlencoded from ArrayBuffer', async () => {
-    const dummyRequest = new Request('http://localhost', {
-      method: 'POST',
-      headers: [['Content-Type', 'application/x-www-form-urlencoded']],
-      body: new FormData(),
-    })
-
-    const encoder = new TextEncoder()
-    const testData = 'key1=value1&key2=value2'
-    const arrayBuffer = encoder.encode(testData).buffer
-
-    const result = await parseBody(dummyRequest, arrayBuffer)
-
-    expect(result).toEqual({ key1: 'value1', key2: 'value2' })
-  })
 })
