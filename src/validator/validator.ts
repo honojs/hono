@@ -48,7 +48,13 @@ export const validator = <
     switch (target) {
       case 'json':
         try {
-          value = await c.req.json()
+          /**
+           * Get the arrayBuffer first, create JSON object via Response,
+           * and cache the arrayBuffer in the c.req.bodyCache.
+           */
+          const arrayBuffer = c.req.bodyCache.arrayBuffer ?? (await c.req.raw.arrayBuffer())
+          value = await new Response(arrayBuffer).json()
+          c.req.bodyCache.arrayBuffer = arrayBuffer
         } catch {
           console.error('Error: Malformed JSON in request body')
           return c.json(
