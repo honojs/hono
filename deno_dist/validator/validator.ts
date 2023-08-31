@@ -68,22 +68,21 @@ export const validator = <
           )
         }
         break
-      case 'form':
-        await (async () => {
-          const contentType = c.req.header('Content-Type')
-          if (contentType) {
-            const arrayBuffer = c.req.bodyCache.arrayBuffer ?? (await c.req.raw.arrayBuffer())
-            const formData = arrayBufferToFormData(arrayBuffer, contentType)
-            const form: BodyData = {}
-            formData.forEach((value, key) => {
-              form[key] = value
-            })
-            value = form
-            c.req.bodyCache.formData = formData
-            c.req.bodyCache.arrayBuffer = arrayBuffer
-          }
-        })()
+      case 'form': {
+        const contentType = c.req.header('Content-Type')
+        if (contentType) {
+          const arrayBuffer = c.req.bodyCache.arrayBuffer ?? (await c.req.raw.arrayBuffer())
+          const formData = arrayBufferToFormData(arrayBuffer, contentType)
+          const form: BodyData = {}
+          formData.forEach((value, key) => {
+            form[key] = value
+          })
+          value = form
+          c.req.bodyCache.formData = formData
+          c.req.bodyCache.arrayBuffer = arrayBuffer
+        }
         break
+      }
       case 'query':
         value = Object.fromEntries(
           Object.entries(c.req.queries()).map(([k, v]) => {
