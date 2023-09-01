@@ -2,6 +2,7 @@ import type { Context } from '../context.ts'
 import { getCookie } from '../helper/cookie/index.ts'
 import type { Env, ValidationTargets, MiddlewareHandler } from '../types.ts'
 import type { BodyData } from '../utils/body.ts'
+import { bufferToFormData } from '../utils/buffer.ts'
 
 type ValidationTargetKeysWithBody = 'form' | 'json'
 type ValidationTargetByMethod<M> = M extends 'get' | 'head' // GET and HEAD request must not have a body content.
@@ -72,7 +73,7 @@ export const validator = <
         const contentType = c.req.header('Content-Type')
         if (contentType) {
           const arrayBuffer = c.req.bodyCache.arrayBuffer ?? (await c.req.raw.arrayBuffer())
-          const formData = arrayBufferToFormData(arrayBuffer, contentType)
+          const formData = bufferToFormData(arrayBuffer, contentType)
           const form: BodyData = {}
           formData.forEach((value, key) => {
             form[key] = value
@@ -115,35 +116,4 @@ export const validator = <
 
     await next()
   }
-}
-
-const _decodeURIComponent = decodeURIComponent
-
-const arrayBufferToFormData = (arrayBuffer: ArrayBuffer, contentType: string) => {
-  const decoder = new TextDecoder('utf-8')
-  const content = decoder.decode(arrayBuffer)
-  const formData = new FormData()
-
-  const boundaryMatch = contentType.match(/boundary=(.+)/)
-  const boundary = boundaryMatch ? boundaryMatch[1] : ''
-
-  if (contentType.startsWith('multipart/form-data') && boundary) {
-    const parts = content.split('--' + boundary).slice(1, -1)
-    for (const part of parts) {
-      const [header, body] = part.split('\r\n\r\n')
-      const nameMatch = header.match(/name="([^"]+)"/)
-      if (nameMatch) {
-        const name = nameMatch[1]
-        formData.append(name, body.trim())
-      }
-    }
-  } else if (contentType.startsWith('application/x-www-form-urlencoded')) {
-    const pairs = content.split('&')
-    for (const pair of pairs) {
-      const [key, value] = pair.split('=')
-      formData.append(_decodeURIComponent(key), _decodeURIComponent(value))
-    }
-  }
-
-  return formData
 }
