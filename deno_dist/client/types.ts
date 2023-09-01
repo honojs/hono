@@ -17,6 +17,8 @@ type ClientRequest<S extends Schema> = {
           options?: ClientRequestOptions
         ) => Promise<ClientResponse<O>>
     : never
+} & {
+  $url: () => Promise<URL>
 }
 
 type BlankRecordToNever<T> = T extends Record<infer R, unknown>
