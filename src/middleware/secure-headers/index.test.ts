@@ -28,7 +28,7 @@ describe('Secure Headers Middleware', () => {
     expect(res.headers.get('Cross-Origin-Resource-Policy')).toEqual('same-origin')
     expect(res.headers.get('Cross-Origin-Opener-Policy')).toEqual('same-origin')
     expect(res.headers.get('Origin-Agent-Cluster')).toEqual('?1')
-    expect(res.headers.get('Content-Security-Policy')).toBeFalsy
+    expect(res.headers.get('Content-Security-Policy')).toBeFalsy()
   })
 
   it('all headers enabled', async () => {
@@ -64,7 +64,7 @@ describe('Secure Headers Middleware', () => {
     expect(res.headers.get('Cross-Origin-Opener-Policy')).toEqual('same-origin')
     expect(res.headers.get('Origin-Agent-Cluster')).toEqual('?1')
     expect(res.headers.get('Cross-Origin-Embedder-Policy')).toEqual('require-corp')
-    expect(res.headers.get('Content-Security-Policy')).toEqual("defaultSrc 'self'")
+    expect(res.headers.get('Content-Security-Policy')).toEqual("default-src 'self'")
   })
 
   it('specific headers disabled', async () => {
@@ -127,6 +127,25 @@ describe('Secure Headers Middleware', () => {
     expect(res2.headers.get('Strict-Transport-Security')).toEqual('Hono')
   })
 
+  it('should use custom value when overridden', async () => {
+    const app = new Hono()
+    app.use(
+      '/test',
+      secureHeaders({
+        strictTransportSecurity: 'max-age=31536000; includeSubDomains; preload;',
+        xFrameOptions: 'DENY',
+        xXssProtection: '1',
+      })
+    )
+
+    const res = await app.request('/test')
+    expect(res.headers.get('Strict-Transport-Security')).toEqual(
+      'max-age=31536000; includeSubDomains; preload;'
+    )
+    expect(res.headers.get('X-FRAME-OPTIONS')).toEqual('DENY')
+    expect(res.headers.get('X-XSS-Protection')).toEqual('1')
+  })
+
   it('CSP Setting', async () => {
     const app = new Hono()
     app.use(
@@ -153,7 +172,7 @@ describe('Secure Headers Middleware', () => {
 
     const res = await app.request('/test')
     expect(res.headers.get('Content-Security-Policy')).toEqual(
-      "defaultSrc 'self'; baseUri 'self'; fontSrc 'self' https: data:; frameAncestors 'self'; imgSrc 'self' data:; objectSrc 'none'; scriptSrc 'self'; scriptSrcAttr 'none'; styleSrc 'self' https: 'unsafe-inline'"
+      "default-src 'self'; base-uri 'self'; font-src 'self' https: data:; frame-ancestors 'self'; img-src 'self' data:; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self' https: 'unsafe-inline'"
     )
   })
 
@@ -173,7 +192,7 @@ describe('Secure Headers Middleware', () => {
     })
 
     const res = await app.request('/test')
-    expect(res.headers.get('Content-Security-Policy')).toEqual("defaultSrc 'self'")
+    expect(res.headers.get('Content-Security-Policy')).toEqual("default-src 'self'")
   })
 
   it('No CSP Setting', async () => {
@@ -186,5 +205,121 @@ describe('Secure Headers Middleware', () => {
 
     const res = await app.request('/test')
     expect(res.headers.get('Content-Security-Policy')).toEqual('')
+  })
+
+  it('CSP with reportTo', async () => {
+    const app = new Hono()
+    app.use(
+      '/test1',
+      secureHeaders({
+        reportingEndpoints: [
+          {
+            name: 'endpoint-1',
+            url: 'https://example.com/reports',
+          },
+        ],
+        contentSecurityPolicy: {
+          defaultSrc: ["'self'"],
+          reportTo: 'endpoint-1',
+        },
+      })
+    )
+
+    app.use(
+      '/test2',
+      secureHeaders({
+        reportTo: [
+          {
+            group: 'endpoint-1',
+            max_age: 10886400,
+            endpoints: [{ url: 'https://example.com/reports' }],
+          },
+        ],
+        contentSecurityPolicy: {
+          defaultSrc: ["'self'"],
+          reportTo: 'endpoint-1',
+        },
+      })
+    )
+
+    app.use(
+      '/test3',
+      secureHeaders({
+        reportTo: [
+          {
+            group: 'g1',
+            max_age: 10886400,
+            endpoints: [
+              { url: 'https://a.example.com/reports' },
+              { url: 'https://b.example.com/reports' },
+            ],
+          },
+          {
+            group: 'g2',
+            max_age: 10886400,
+            endpoints: [
+              { url: 'https://c.example.com/reports' },
+              { url: 'https://d.example.com/reports' },
+            ],
+          },
+        ],
+        contentSecurityPolicy: {
+          defaultSrc: ["'self'"],
+          reportTo: 'g2',
+        },
+      })
+    )
+
+    app.use(
+      '/test4',
+      secureHeaders({
+        reportingEndpoints: [
+          {
+            name: 'e1',
+            url: 'https://a.example.com/reports',
+          },
+          {
+            name: 'e2',
+            url: 'https://b.example.com/reports',
+          },
+        ],
+        contentSecurityPolicy: {
+          defaultSrc: ["'self'"],
+          reportTo: 'e1',
+        },
+      })
+    )
+
+    app.all('*', async (c) => {
+      return c.text('header updated')
+    })
+
+    const res1 = await app.request('/test1')
+    expect(res1.headers.get('Reporting-Endpoints')).toEqual(
+      'endpoint-1="https://example.com/reports"'
+    )
+    expect(res1.headers.get('Content-Security-Policy')).toEqual(
+      "default-src 'self'; report-to endpoint-1"
+    )
+
+    const res2 = await app.request('/test2')
+    expect(res2.headers.get('Report-To')).toEqual(
+      '{"group":"endpoint-1","max_age":10886400,"endpoints":[{"url":"https://example.com/reports"}]}'
+    )
+    expect(res2.headers.get('Content-Security-Policy')).toEqual(
+      "default-src 'self'; report-to endpoint-1"
+    )
+
+    const res3 = await app.request('/test3')
+    expect(res3.headers.get('Report-To')).toEqual(
+      '{"group":"g1","max_age":10886400,"endpoints":[{"url":"https://a.example.com/reports"},{"url":"https://b.example.com/reports"}]}, {"group":"g2","max_age":10886400,"endpoints":[{"url":"https://c.example.com/reports"},{"url":"https://d.example.com/reports"}]}'
+    )
+    expect(res3.headers.get('Content-Security-Policy')).toEqual("default-src 'self'; report-to g2")
+
+    const res4 = await app.request('/test4')
+    expect(res4.headers.get('Reporting-Endpoints')).toEqual(
+      'e1="https://a.example.com/reports", e2="https://b.example.com/reports"'
+    )
+    expect(res4.headers.get('Content-Security-Policy')).toEqual("default-src 'self'; report-to e1")
   })
 })
