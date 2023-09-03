@@ -3,20 +3,24 @@ import type { HonoRequest } from '../request'
 export type BodyData = Record<string, string | File>
 
 export const parseBody = async <T extends BodyData = BodyData>(
-  r: HonoRequest | Request
+  request: HonoRequest | Request
 ): Promise<T> => {
   let body: BodyData = {}
-  const contentType = r.headers.get('Content-Type')
+  const contentType = request.headers.get('Content-Type')
+
   if (
     contentType &&
     (contentType.startsWith('multipart/form-data') ||
       contentType.startsWith('application/x-www-form-urlencoded'))
   ) {
-    const form: BodyData = {}
-    ;(await r.formData()).forEach((value, key) => {
-      form[key] = value
-    })
-    body = form
+    const formData = await request.formData()
+    if (formData) {
+      const form: BodyData = {}
+      formData.forEach((value, key) => {
+        form[key] = value
+      })
+      body = form
+    }
   }
   return body as T
 }

@@ -1,6 +1,8 @@
 import type { Context } from '../context.ts'
 import { getCookie } from '../helper/cookie/index.ts'
 import type { Env, ValidationTargets, MiddlewareHandler } from '../types.ts'
+import type { BodyData } from '../utils/body.ts'
+import { bufferToFormData } from '../utils/buffer.ts'
 
 type ValidationTargetKeysWithBody = 'form' | 'json'
 type ValidationTargetByMethod<M> = M extends 'get' | 'head' // GET and HEAD request must not have a body content.
@@ -48,7 +50,14 @@ export const validator = <
     switch (target) {
       case 'json':
         try {
-          value = await c.req.json()
+          /**
+           * Get the arrayBuffer first, create JSON object via Response,
+           * and cache the arrayBuffer in the c.req.bodyCache.
+           */
+          const arrayBuffer = c.req.bodyCache.arrayBuffer ?? (await c.req.raw.arrayBuffer())
+          value = await new Response(arrayBuffer).json()
+          c.req.bodyCache.json = value
+          c.req.bodyCache.arrayBuffer = arrayBuffer
         } catch {
           console.error('Error: Malformed JSON in request body')
           return c.json(
@@ -60,9 +69,21 @@ export const validator = <
           )
         }
         break
-      case 'form':
-        value = await c.req.parseBody()
+      case 'form': {
+        const contentType = c.req.header('Content-Type')
+        if (contentType) {
+          const arrayBuffer = c.req.bodyCache.arrayBuffer ?? (await c.req.raw.arrayBuffer())
+          const formData = bufferToFormData(arrayBuffer, contentType)
+          const form: BodyData = {}
+          formData.forEach((value, key) => {
+            form[key] = value
+          })
+          value = form
+          c.req.bodyCache.formData = formData
+          c.req.bodyCache.arrayBuffer = arrayBuffer
+        }
         break
+      }
       case 'query':
         value = Object.fromEntries(
           Object.entries(c.req.queries()).map(([k, v]) => {
