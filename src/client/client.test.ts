@@ -339,6 +339,13 @@ describe('Merge path with `app.route()`', () => {
           ok: true,
         })
       )
+    }),
+    rest.get('http://localhost/v1/book', async (req, res, ctx) => {
+      return res(
+        ctx.json({
+          ok: true,
+        })
+      )
     })
   )
 
@@ -369,6 +376,17 @@ describe('Merge path with `app.route()`', () => {
     type AppType = typeof app
     const client = hc<AppType>('http://localhost')
     const res = await client.api.search.$get()
+    const data = await res.json()
+    type verify = Expect<Equal<boolean, typeof data.ok>>
+    expect(data.ok).toBe(true)
+  })
+
+  it('Should have correct types - basePath(), route(), get()', async () => {
+    const book = new Hono().get('/', (c) => c.jsonT({ ok: true }))
+    const app = new Hono().basePath('/v1').route('/book', book)
+    type AppType = typeof app
+    const client = hc<AppType>('http://localhost')
+    const res = await client.v1.book.index.$get()
     const data = await res.json()
     type verify = Expect<Equal<boolean, typeof data.ok>>
     expect(data.ok).toBe(true)
