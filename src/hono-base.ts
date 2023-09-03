@@ -147,7 +147,7 @@ class Hono<
   >(
     path: SubPath,
     app: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<E, MergeSchemaPath<SubSchema, SubPath> & S, BasePath>
+  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath>
   /** @description
    * Use `basePath` instead of `route` when passing **one** argument, such as `app.route('/api')`.
    * The use of `route` with **one** argument has been removed in v4.
@@ -162,7 +162,7 @@ class Hono<
   >(
     path: SubPath,
     app?: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<E, MergeSchemaPath<SubSchema, SubPath> & S, BasePath> {
+  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
     const subApp = this.basePath(path)
 
     if (!app) {
