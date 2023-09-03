@@ -16,8 +16,14 @@ import { parse } from './utils/cookie.ts'
 import type { UnionToIntersection } from './utils/types.ts'
 import { getQueryParam, getQueryParams, decodeURIComponent_ } from './utils/url.ts'
 
-type BodyType = 'json' | 'text' | 'arrayBuffer' | 'blob' | 'formData'
-type BodyCache = Partial<Record<BodyType, any>>
+type Body = {
+  json: any
+  text: string
+  arrayBuffer: ArrayBuffer
+  blob: Blob
+  formData: FormData
+}
+type BodyCache = Partial<Body & { parsedBody: BodyData }>
 
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   raw: Request
@@ -25,7 +31,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   private paramData: Record<string, string> | undefined
   private vData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
   path: string
-  private bodyCache: BodyCache = {}
+  bodyCache: BodyCache = {}
 
   constructor(
     request: Request,
@@ -121,13 +127,25 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   async parseBody<T extends BodyData = BodyData>(): Promise<T> {
-    return await parseBody(this)
+    if (this.bodyCache.parsedBody) return this.bodyCache.parsedBody as T
+    const parsedBody = await parseBody<T>(this)
+    this.bodyCache.parsedBody = parsedBody
+    return parsedBody
   }
 
-  private cachedBody = (key: keyof BodyCache) => {
+  private cachedBody = (key: keyof Body) => {
     const { bodyCache, raw } = this
     const cachedBody = bodyCache[key]
     if (cachedBody) return cachedBody
+    /**
+     * If an arrayBuffer cache is exist,
+     * use it for creating a text, json, and others.
+     */
+    if (bodyCache.arrayBuffer) {
+      return (async () => {
+        return await new Response(bodyCache.arrayBuffer)[key]()
+      })()
+    }
     return (bodyCache[key] = raw[key]())
   }
 
