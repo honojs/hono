@@ -14,7 +14,14 @@ export interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void
   passThroughOnException(): void
 }
+
 export interface ContextVariableMap {}
+
+export interface ContextRenderer {}
+interface DefaultRenderer {
+  (content: string): Response | Promise<Response>
+}
+type Renderer = ContextRenderer extends Function ? ContextRenderer : DefaultRenderer
 
 interface Get<E extends Env> {
   <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
@@ -97,6 +104,7 @@ export class Context<
   private _pH: Record<string, string> | undefined = undefined // _preparedHeaders
   private _res: Response | undefined
   private _init = true
+  private _renderer: Renderer = (content: string) => this.html(content)
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
   constructor(req: HonoRequest<P, I['out']>, options?: ContextOptions<E>) {
@@ -141,6 +149,25 @@ export class Context<
     }
     this._res = _res
     this.finalized = true
+  }
+
+  /**
+   * @experimental
+   * `c.render()` is an experimental feature.
+   * The API might be changed.
+   */
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  render: Renderer = (...args: any[]) => this._renderer(...args)
+
+  /**
+   * @experimental
+   * `c.setRenderer()` is an experimental feature.
+   * The API might be changed.
+   */
+  setRenderer = (renderer: Renderer) => {
+    this._renderer = renderer
   }
 
   header = (name: string, value: string | undefined, options?: { append?: boolean }): void => {
