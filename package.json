@@ -401,7 +401,6 @@
     "eslint-plugin-node": "^11.1.0",
     "form-data": "^4.0.0",
     "jest": "^29.4.3",
-    "jest-environment-miniflare": "2.7.1",
     "msw": "^1.0.0",
     "node-fetch": "2",
     "np": "^7.7.0",
