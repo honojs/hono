@@ -11,27 +11,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: yarn install --frozen-lockfile
-      - run: npm run format
-      - run: npm run lint
-      - run: npm run build
-      - run: npm test
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm format
+      - run: pnpm lint
+      - run: pnpm build
+      - run: pnpm test
 
   denoify:
     name: "Checking if you've done denoify"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: yarn install --frozen-lockfile
-      - run: npm run build
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm build
       - run: |
-          npm run denoify
+          pnpm denoify
           if [[ `git status --porcelain` ]]; then
             exit 1
           fi
@@ -59,72 +67,99 @@ jobs:
   fastly:
     name: 'Fastly Compute@Edge'
     runs-on: ubuntu-latest
-    steps:
+    steps:  
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: yarn install --frozen-lockfile
-      - run: npm run build
-      - run: npm run test:fastly
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm test:fastly
 
   lagon:
     name: 'Lagon'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: yarn install --frozen-lockfile
-      - run: npm run build
-      - run: npm i -g @lagon/cli@latest esbuild@latest
-      - run: npm run test:lagon
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm add -g @lagon/cli@latest esbuild@latest
+      - run: pnpm test:lagon
 
   node:
     name: 'Node.js'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: yarn install --frozen-lockfile
-      - run: npm run build
-      - run: npm run test:node
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm test:node
 
   wrangler:
     name: 'Cloudflare Workers'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: yarn install --frozen-lockfile
-      - run: npm run build
-      - run: npm run test:wrangler
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm test:wrangler
 
   lambda:
     name: 'AWS Lambda'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: yarn install --frozen-lockfile
-      - run: npm run build
-      - run: npm run test:lambda
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm test:lambda
 
   lambda-edge:
     name: 'Lambda@Edge'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: yarn install --frozen-lockfile
-      - run: npm run build
-      - run: npm run test:lambda-edge
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm test:lambda-edge
