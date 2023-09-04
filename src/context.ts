@@ -87,12 +87,12 @@ export class Context<
 > {
   req: HonoRequest<P, I['out']>
   env: E['Bindings'] = {}
+  var: E['Variables'] = {}
   finalized: boolean = false
   error: Error | undefined = undefined
 
   private _status: StatusCode = 200
   private _exCtx: FetchEventLike | ExecutionContext | undefined // _executionCtx
-  private _map: Record<string, unknown> | undefined
   private _h: Headers | undefined = undefined //  _headers
   private _pH: Record<string, string> | undefined = undefined // _preparedHeaders
   private _res: Response | undefined
@@ -187,16 +187,12 @@ export class Context<
   }
 
   set: Set<E> = (key: string, value: unknown) => {
-    this._map ||= {}
-    this._map[key as string] = value
+    this.var ??= {}
+    this.var[key as string] = value
   }
 
   get: Get<E> = (key: string) => {
-    return this._map ? this._map[key] : undefined
-  }
-
-  get var(): E['Variables'] {
-    return this._map
+    return this.var ? this.var[key] : undefined
   }
 
   newResponse: NewResponse = (
