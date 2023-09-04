@@ -16,7 +16,7 @@
     "test:fastly": "vitest --run --config ./runtime_tests/fastly/vitest.config.ts",
     "test:lagon": "start-server-and-test \"lagon dev runtime_tests/lagon/index.ts -e .env.lagon\" http://127.0.0.1:1234 \"yarn vitest --run runtime_tests/lagon/index.test.ts --config runtime_tests/lagon/vitest.config.ts\"",
     "test:node": "env NAME=Node vitest --run --config ./runtime_tests/node/vitest.config.ts",
-    "test:wrangler": "jest --config ./runtime_tests/wrangler/jest.config.js",
+    "test:wrangler": "vitest --run --config ./runtime_tests/wrangler/vitest.config.ts",
     "test:lambda": "env NAME=Node vitest --run --config ./runtime_tests/lambda/vitest.config.ts",
     "test:lambda-edge": "env NAME=Node vitest --run --config ./runtime_tests/lambda-edge/vitest.config.ts",
     "test:all": "yarn test && yarn test:deno && yarn test:bun && yarn test:fastly && yarn test:lagon && yarn test:node && yarn test:wrangler && yarn test:lambda && yarn test:lambda-edge",
