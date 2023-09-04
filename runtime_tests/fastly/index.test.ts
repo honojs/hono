@@ -7,11 +7,14 @@ import { jwt } from '../../src/middleware/jwt'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 globalThis.fastly = true
-Object.defineProperty(globalThis.crypto, 'subtle', {
-  get() {
-    return undefined
-  },
-})
+
+if (typeof globalThis.crypto !== 'undefined' && typeof globalThis.crypto.subtle !== 'undefined') {
+  Object.defineProperty(globalThis.crypto, 'subtle', {
+    get() {
+      return undefined
+    },
+  })
+}
 
 const app = new Hono()
 
