@@ -7,6 +7,11 @@ import { jwt } from '../../src/middleware/jwt'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 globalThis.fastly = true
+Object.defineProperty(globalThis.crypto, 'subtle', {
+  get() {
+    return undefined
+  },
+})
 
 const app = new Hono()
 
@@ -44,12 +49,11 @@ describe('Basic Auth Middleware without `hashFunction`', () => {
 
   app.get('/auth/*', () => new Response('auth'))
 
-  it('Should authorize, return 401 Response', async () => {
-    const credential = 'aG9uby11c2VyLWE6aG9uby1wYXNzd29yZC1h'
+  it('Should not authorize, return 401 Response', async () => {
     const req = new Request('http://localhost/auth/a')
-    req.headers.set('Authorization', `Basic ${credential}`)
     const res = await app.request(req)
     expect(res.status).toBe(401)
+    expect(await res.text()).toBe('Unauthorized')
   })
 })
 

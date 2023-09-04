@@ -10,10 +10,10 @@
     "dist"
   ],
   "scripts": {
-    "test": "vitest",
+    "test": "vitest --run",
     "test:deno": "env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno",
     "test:bun": "env NAME=Bun bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
-    "test:fastly": "jest --config ./runtime_tests/fastly/jest.config.js",
+    "test:fastly": "vitest --run --config ./runtime_tests/fastly/vitest.config.ts",
     "test:lagon": "start-server-and-test \"lagon dev runtime_tests/lagon/index.ts -e runtime_tests/lagon/.env.lagon\" http://127.0.0.1:1234 \"yarn jest runtime_tests/lagon/index.test.ts --roots runtime_tests/lagon --testMatch '**/*.test.ts'\"",
     "test:node": "env NAME=Node jest --config ./runtime_tests/node/jest.config.js",
     "test:wrangler": "jest --config ./runtime_tests/wrangler/jest.config.js",
@@ -402,7 +402,6 @@
     "form-data": "^4.0.0",
     "jest": "^29.4.3",
     "jest-environment-miniflare": "2.7.1",
-    "jest-preset-fastly-js-compute": "^0.6.1",
     "msw": "^1.0.0",
     "node-fetch": "2",
     "np": "^7.7.0",

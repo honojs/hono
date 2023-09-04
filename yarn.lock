@@ -5535,14 +5535,6 @@ jest-pnp-resolver@^1.2.2:
   resolved "https://registry.yarnpkg.com/jest-pnp-resolver/-/jest-pnp-resolver-1.2.2.tgz#b704ac0ae028a89108a4d040b3f919dfddc8e33c"
   integrity sha512-olV41bKSMm8BdnuMsewT4jqlZ8+3TCARAXjZGT9jcoSnrfUnRCqnMoF9XEeoWjbzObpqF9dRhHQj0Xb9QdF6/w==
 
-jest-preset-fastly-js-compute@^0.6.1:
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/jest-preset-fastly-js-compute/-/jest-preset-fastly-js-compute-0.6.1.tgz#91562b7d532da42a5a1ec70aefe1d8f26da5e1de"
-  integrity sha512-iYew/0jzKkuX8Ob7L2WqpMkqXv8KML183jYQWDVwthEi36fI6c3fAJpNNDsgfrq168KcBXgjszPgI31L4RmLTQ==
-  dependencies:
-    node-fetch "^2.6.7"
-    ts-jest "^29.0.3"
-
 jest-regex-util@^29.4.3:
   version "29.4.3"
   resolved "https://registry.yarnpkg.com/jest-regex-util/-/jest-regex-util-29.4.3.tgz#a42616141e0cae052cfa32c169945d00c0aa0bb8"
@@ -7994,20 +7986,6 @@ ts-jest@^29.0.1:
   version "29.0.1"
   resolved "https://registry.yarnpkg.com/ts-jest/-/ts-jest-29.0.1.tgz#3296b39d069dc55825ce1d059a9510b33c718b86"
   integrity sha512-htQOHshgvhn93QLxrmxpiQPk69+M1g7govO1g6kf6GsjCv4uvRV0znVmDrrvjUrVCnTYeY4FBxTYYYD4airyJA==
-  dependencies:
-    bs-logger "0.x"
-    fast-json-stable-stringify "2.x"
-    jest-util "^29.0.0"
-    json5 "^2.2.1"
-    lodash.memoize "4.x"
-    make-error "1.x"
-    semver "7.x"
-    yargs-parser "^21.0.1"
-
-ts-jest@^29.0.3:
-  version "29.0.3"
-  resolved "https://registry.yarnpkg.com/ts-jest/-/ts-jest-29.0.3.tgz#63ea93c5401ab73595440733cefdba31fcf9cb77"
-  integrity sha512-Ibygvmuyq1qp/z3yTh9QTwVVAbFdDy/+4BtIQR2sp6baF2SJU/8CKK/hhnGIDY2L90Az2jIqTwZPnN2p+BweiQ==
   dependencies:
     bs-logger "0.x"
     fast-json-stable-stringify "2.x"
