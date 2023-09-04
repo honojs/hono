@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "test": "jest",
+    "test": "vitest",
     "test:deno": "env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno",
     "test:bun": "env NAME=Bun bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
     "test:fastly": "jest --config ./runtime_tests/fastly/jest.config.js",
@@ -386,6 +386,7 @@
     "@types/supertest": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^5.59.2",
     "@typescript-eslint/parser": "^5.59.2",
+    "@vitest/coverage-v8": "^0.34.3",
     "arg": "^5.0.2",
     "crypto-js": "^4.1.1",
     "denoify": "^1.1.1",
@@ -413,10 +414,13 @@
     "ts-jest": "^29.0.1",
     "tsx": "^3.11.0",
     "typescript": "^4.8.3",
+    "vitest": "^0.34.3",
+    "vitest-environment-miniflare": "^2.14.1",
     "wrangler": "^2.12.0",
     "zod": "^3.20.2"
   },
   "engines": {
     "node": ">=16.0.0"
-  }
+  },
+  "dependencies": {}
 }
