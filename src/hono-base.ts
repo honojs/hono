@@ -24,7 +24,7 @@ import type {
 import type { RemoveBlankRecord } from './utils/types'
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
 
-type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
+type Methods = (typeof METHODS)[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
 interface RouterRoute {
   path: string
