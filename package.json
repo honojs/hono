@@ -29,6 +29,7 @@
     "build": "rimraf dist && tsx ./build.ts && yarn copy:package.cjs.json",
     "postbuild": "publint",
     "watch": "rimraf dist && tsx ./build.ts --watch && yarn copy:package.cjs.json",
+    "coverage": "vitest --run --coverage",
     "prerelease": "yarn denoify && yarn test:deno && yarn build",
     "release": "np"
   },

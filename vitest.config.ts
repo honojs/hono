@@ -6,5 +6,9 @@ export default defineConfig({
     globals: true,
     include: ['**/src/**/(*.)+(spec|test).+(ts|tsx|js)'],
     environment: 'miniflare',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text'],
+    },
   },
 })
