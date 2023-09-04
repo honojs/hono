@@ -18,7 +18,7 @@
     "test:node": "env NAME=Node jest --config ./runtime_tests/node/jest.config.js",
     "test:wrangler": "jest --config ./runtime_tests/wrangler/jest.config.js",
     "test:lambda": "env NAME=Node vitest --run --config ./runtime_tests/lambda/vitest.config.ts",
-    "test:lambda-edge": "env NAME=Node jest --config ./runtime_tests/lambda-edge/jest.config.js",
+    "test:lambda-edge": "env NAME=Node vitest --run --config ./runtime_tests/lambda-edge/vitest.config.ts",
     "test:all": "yarn test && yarn test:deno && yarn test:bun && yarn test:fastly && yarn test:lagon && yarn test:node && yarn test:wrangler && yarn test:lambda && yarn test:lambda-edge",
     "lint": "eslint --ext js,ts src runtime_tests .eslintrc.cjs",
     "lint:fix": "eslint --ext js,ts src runtime_tests .eslintrc.cjs --fix",
