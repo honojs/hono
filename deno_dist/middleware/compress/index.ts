@@ -3,7 +3,7 @@ import type { MiddlewareHandler } from '../../types.ts'
 const ENCODING_TYPES = ['gzip', 'deflate'] as const
 
 interface CompressionOptions {
-  encoding?: typeof ENCODING_TYPES[number]
+  encoding?: (typeof ENCODING_TYPES)[number]
 }
 
 export const compress = (options?: CompressionOptions): MiddlewareHandler => {
