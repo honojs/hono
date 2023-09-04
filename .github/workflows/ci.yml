@@ -23,6 +23,8 @@ jobs:
   denoify:
     name: "Checking if you've done denoify"
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
