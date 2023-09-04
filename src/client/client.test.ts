@@ -5,9 +5,9 @@ import FormData from 'form-data'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import _fetch, { Request as NodeFetchRequest } from 'node-fetch'
+import { vi } from 'vitest'
 import { Hono } from '../hono'
-import type { Expect } from '../utils/types'
-import type { Equal } from '../utils/types'
+import type { Equal, Expect } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
 import type { InferRequestType, InferResponseType } from './types'
@@ -442,7 +442,7 @@ describe('Merge path with `app.route()`', () => {
 
 describe('Use custom fetch method', () => {
   it('Should call the custom fetch method when provided', async () => {
-    const fetchMock = jest.fn()
+    const fetchMock = vi.fn()
 
     const api = new Hono().get('/search', (c) => c.jsonT({ ok: true }))
     const app = new Hono().route('/api', api)
@@ -453,7 +453,7 @@ describe('Use custom fetch method', () => {
   })
 
   it('Should return Response from custom fetch method', async () => {
-    const fetchMock = jest.fn()
+    const fetchMock = vi.fn()
     const returnValue = new Response(null, { status: 200 })
     fetchMock.mockReturnValueOnce(returnValue)
 
