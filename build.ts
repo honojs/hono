@@ -9,9 +9,9 @@ import { exec } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import arg from 'arg'
+import type { BuildOptions, Plugin, PluginBuild } from 'esbuild'
 import { build } from 'esbuild'
-import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
-import glob from 'glob'
+import * as glob from 'glob'
 
 const args = arg({
   '--watch': Boolean,
