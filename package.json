@@ -400,6 +400,7 @@
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-node": "^11.1.0",
     "form-data": "^4.0.0",
+    "glob": "^10.3.4",
     "jest": "^29.4.3",
     "jest-environment-miniflare": "2.7.1",
     "jest-preset-fastly-js-compute": "^0.6.1",
@@ -421,6 +422,5 @@
   },
   "engines": {
     "node": ">=16.0.0"
-  },
-  "dependencies": {}
+  }
 }
