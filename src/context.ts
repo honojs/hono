@@ -195,6 +195,10 @@ export class Context<
     return this._map ? this._map[key] : undefined
   }
 
+  get var(): E['Variables'] {
+    return this._map
+  }
+
   newResponse: NewResponse = (
     data: Data | null,
     arg?: StatusCode | ResponseInit,
