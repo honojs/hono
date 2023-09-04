@@ -14,7 +14,7 @@
     "test:deno": "env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno",
     "test:bun": "env NAME=Bun bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
     "test:fastly": "vitest --run --config ./runtime_tests/fastly/vitest.config.ts",
-    "test:lagon": "start-server-and-test \"lagon dev runtime_tests/lagon/index.ts -e .env.lagon\" http://127.0.0.1:1234 \"yarn vitest --run runtime_tests/lagon/index.test.ts --config runtime_tests/lagon/vitest.config.ts\"",
+    "test:lagon": "start-server-and-test \"lagon dev runtime_tests/lagon/index.ts -e runtime_tests/lagon/.env.lagon\" http://127.0.0.1:1234 \"yarn vitest --run runtime_tests/lagon/index.test.ts --config runtime_tests/lagon/vitest.config.ts\"",
     "test:node": "env NAME=Node vitest --run --config ./runtime_tests/node/vitest.config.ts",
     "test:wrangler": "vitest --run --config ./runtime_tests/wrangler/vitest.config.ts",
     "test:lambda": "env NAME=Node vitest --run --config ./runtime_tests/lambda/vitest.config.ts",
