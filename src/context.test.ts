@@ -251,6 +251,7 @@ describe('Pass a ResponseInit to respond methods', () => {
     const res = tRes['response'] as Response
     expect(res.headers.get('content-type')).toMatch(/^application\/json/)
     expect(await res.json()).toEqual({ foo: 'bar' })
+    expect(tRes.status).toEqual(200)
   })
 
   it('c.html()', async () => {
