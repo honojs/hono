@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from '../helper/html'
 import { Hono } from '../hono'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, memo, Fragment } from './index'
 
 interface SiteData {
@@ -360,6 +362,16 @@ describe('Fragment', () => {
         <p>1</p>
         <p>2</p>
       </>
+    )
+    expect(template.toString()).toBe('<p>1</p><p>2</p>')
+  })
+
+  it('Should render children - with `Fragment`', () => {
+    const template = (
+      <Fragment>
+        <p>1</p>
+        <p>2</p>
+      </Fragment>
     )
     expect(template.toString()).toBe('<p>1</p><p>2</p>')
   })

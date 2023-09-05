@@ -235,6 +235,6 @@ export const memo = <T>(
   }) as FC<T>
 }
 
-export const Fragment = (props: { key?: string; children?: Child[] }): JSXNode => {
-  return new JSXFragmentNode('', {}, props.children || [])
+export const Fragment = (props: { key?: string; children?: Child[] }): HtmlEscapedString => {
+  return new JSXFragmentNode('', {}, props.children || []) as never
 }
