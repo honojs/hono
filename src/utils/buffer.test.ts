@@ -68,12 +68,15 @@ describe('bufferToFormData', () => {
 
   it('Should parse application/x-www-form-urlencoded from ArrayBuffer', () => {
     const encoder = new TextEncoder()
-    const testData = 'key1=value1&key2=value2'
+    const searchParams = new URLSearchParams()
+    searchParams.append('id', '123')
+    searchParams.append('title', 'Good title')
+    const testData = searchParams.toString()
     const arrayBuffer = encoder.encode(testData).buffer
 
     const result = bufferToFormData(arrayBuffer, 'application/x-www-form-urlencoded')
 
-    expect(result.get('key1')).toBe('value1')
-    expect(result.get('key2')).toBe('value2')
+    expect(result.get('id')).toBe('123')
+    expect(result.get('title')).toBe('Good title')
   })
 })
