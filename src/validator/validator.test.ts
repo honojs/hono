@@ -660,8 +660,14 @@ describe('Clone Request object', () => {
         }
       }),
       async (c) => {
-        // `c.req.json` should not throw the error
+        // `c.req.json()` should not throw the error
         await c.req.json()
+        // `c.req.text()` should not throw the error
+        await c.req.text()
+        // `c.req.arrayBuffer()` should not throw the error
+        await c.req.arrayBuffer()
+        // `c.req.blob()` should not throw the error
+        await c.req.blob()
         return c.text('foo')
       }
     )
@@ -686,8 +692,14 @@ describe('Clone Request object', () => {
         }
       }),
       async (c) => {
-        // `c.req.json` should not throw the error
+        // `c.req.parseBody()` should not throw the error
         await c.req.parseBody()
+        // `c.req.text()` should not throw the error
+        await c.req.text()
+        // `c.req.arrayBuffer()` should not throw the error
+        await c.req.arrayBuffer()
+        // `c.req.blob()` should not throw the error
+        await c.req.blob()
         return c.text('foo')
       }
     )

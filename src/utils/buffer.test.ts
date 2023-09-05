@@ -1,5 +1,5 @@
 import { SHA256 as sha256CryptoJS } from 'crypto-js'
-import { timingSafeEqual, bufferToString } from './buffer'
+import { timingSafeEqual, bufferToString, bufferToFormData } from './buffer'
 
 describe('buffer', () => {
   it('positive', async () => {
@@ -51,5 +51,29 @@ describe('bufferToString', () => {
     const bytes = [227, 129, 130, 227, 129, 132, 227, 129, 134, 227, 129, 136, 227, 129, 138]
     const buffer = Uint8Array.from(bytes).buffer
     expect(bufferToString(buffer)).toBe('あいうえお')
+  })
+})
+
+describe('bufferToFormData', () => {
+  it('Should parse multipart/form-data from ArrayBuffer', () => {
+    const encoder = new TextEncoder()
+    const testData =
+      '--sampleboundary\r\nContent-Disposition: form-data; name="test"\r\n\r\nHello\r\n--sampleboundary--'
+    const arrayBuffer = encoder.encode(testData).buffer
+
+    const result = bufferToFormData(arrayBuffer, 'multipart/form-data; boundary=sampleboundary')
+
+    expect(result.get('test')).toBe('Hello')
+  })
+
+  it('Should parse application/x-www-form-urlencoded from ArrayBuffer', () => {
+    const encoder = new TextEncoder()
+    const testData = 'key1=value1&key2=value2'
+    const arrayBuffer = encoder.encode(testData).buffer
+
+    const result = bufferToFormData(arrayBuffer, 'application/x-www-form-urlencoded')
+
+    expect(result.get('key1')).toBe('value1')
+    expect(result.get('key2')).toBe('value2')
   })
 })
