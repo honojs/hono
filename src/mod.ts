@@ -20,7 +20,7 @@ export type {
   ToSchema,
   TypedResponse,
 } from './types'
-export type { Context, ContextVariableMap } from './context'
+export type { Context, ContextVariableMap, ContextRenderer } from './context'
 export type { HonoRequest } from './request'
 export { Hono }
 export { HTTPException } from './http-exception'
