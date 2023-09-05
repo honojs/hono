@@ -6,8 +6,7 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import _fetch, { Request as NodeFetchRequest } from 'node-fetch'
 import { Hono } from '../hono'
-import type { Expect } from '../utils/types'
-import type { Equal } from '../utils/types'
+import type { Equal, Expect } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
 import type { InferRequestType, InferResponseType } from './types'
@@ -436,6 +435,10 @@ describe('Merge path with `app.route()`', () => {
       const res = await client.api.bar.$post()
       const data = await res.json()
       type verify = Expect<Equal<number, typeof data.bar>>
+    })
+    it('Should work with $url', async () => {
+      const url = await client.api.bar.$url()
+      expect(url.href).toBe('http://localhost/api/bar')
     })
   })
 })

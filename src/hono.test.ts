@@ -2357,6 +2357,44 @@ describe('HEAD method', () => {
   })
 })
 
+declare module './context' {
+  interface ContextRenderer {
+    (content: string, head: { title: string }): Response
+  }
+}
+
+describe('Context render and setRenderer', () => {
+  const app = new Hono()
+  app.get('/default', (c) => {
+    return c.render('<h1>content</h1>', { title: 'dummy ' })
+  })
+  app.use('/page', async (c, next) => {
+    c.setRenderer((content, head) => {
+      return new Response(
+        `<html><head><title>${head.title}</title></head><body><h1>${content}</h1></body></html>`
+      )
+    })
+    await next()
+  })
+  app.get('/page', (c) => {
+    return c.render('page content', {
+      title: 'page title',
+    })
+  })
+
+  it('Should return a Response from the default renderer', async () => {
+    const res = await app.request('/default')
+    expect(await res.text()).toBe('<h1>content</h1>')
+  })
+
+  it('Should return a Response from the custom renderer', async () => {
+    const res = await app.request('/page')
+    expect(await res.text()).toBe(
+      '<html><head><title>page title</title></head><body><h1>page content</h1></body></html>'
+    )
+  })
+})
+
 describe('c.var - with testing types', () => {
   const app = new Hono<{
     Bindings: {
