@@ -821,7 +821,7 @@ describe('Middleware', () => {
     const app = new Hono()
     app
       .use('/chained/*', async (c, next) => {
-        c.req.headers.append('x-before', 'abc')
+        c.req.raw.headers.append('x-before', 'abc')
         await next()
       })
       .use(async (c, next) => {
@@ -848,7 +848,7 @@ describe('Middleware', () => {
       .use(
         '/multiple/*',
         async (c, next) => {
-          c.req.headers.append('x-before', 'abc')
+          c.req.raw.headers.append('x-before', 'abc')
           await next()
         },
         async (c, next) => {
@@ -933,7 +933,7 @@ describe('Middleware with app.HTTP_METHOD', () => {
     })
 
     const customHeader = async (c: Context, next: Next) => {
-      c.req.headers.append('x-custom-foo', 'bar')
+      c.req.raw.headers.append('x-custom-foo', 'bar')
       await next()
     }
 
