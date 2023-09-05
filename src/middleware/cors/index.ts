@@ -36,7 +36,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       c.res.headers.set(key, value)
     }
 
-    const allowOrigin = findAllowOrigin(c.req.headers.get('origin') || '')
+    const allowOrigin = findAllowOrigin(c.req.header('origin') || '')
     if (allowOrigin) {
       set('Access-Control-Allow-Origin', allowOrigin)
     }
@@ -70,7 +70,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
 
       let headers = opts.allowHeaders
       if (!headers?.length) {
-        const requestHeaders = c.req.headers.get('Access-Control-Request-Headers')
+        const requestHeaders = c.req.header('Access-Control-Request-Headers')
         if (requestHeaders) {
           headers = requestHeaders.split(/\s*,\s*/)
         }

@@ -181,27 +181,63 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   get url() {
     return this.raw.url
   }
+
   get method() {
     return this.raw.method
   }
+
+  /** @deprecated
+   * Use `c.req.raw.headers` instead of `c.req.headers`. The `c.req.headers` will be removed in v4.
+   * Or you can get the header values with using `c.req.header`.
+   * @example
+   *
+   * app.get('/', (c) => {
+   *   const userAgent = c.req.header('User-Agent')
+   *   //...
+   * })
+   */
   get headers() {
     return this.raw.headers
   }
+
+  /** @deprecated
+   * Use `c.req.raw.body` instead of `c.req.body`. The `c.req.body` will be removed in v4.
+   */
   get body() {
     return this.raw.body
   }
+
+  /** @deprecated
+   * Use `c.req.raw.bodyUsed` instead of `c.req.bodyUsed`. The `c.req.bodyUsed` will be removed in v4.
+   */
   get bodyUsed() {
     return this.raw.bodyUsed
   }
+
+  /** @deprecated
+   * Use `c.req.raw.integrity` instead of `c.req.integrity`. The `c.req.integrity` will be removed in v4.
+   */
   get integrity() {
     return this.raw.integrity
   }
+
+  /** @deprecated
+   * Use `c.req.raw.keepalive` instead of `c.req.keepalive`. The `c.req.keepalive` will be removed in v4.
+   */
   get keepalive() {
     return this.raw.keepalive
   }
+
+  /** @deprecated
+   * Use `c.req.raw.referrer` instead of `c.req.referrer`. The `c.req.referrer` will be removed in v4.
+   */
   get referrer() {
     return this.raw.referrer
   }
+
+  /** @deprecated
+   * Use `c.req.raw.signal` instead of `c.req.signal`. The `c.req.signal` will be removed in v4.
+   */
   get signal() {
     return this.raw.signal
   }
