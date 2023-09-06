@@ -94,7 +94,7 @@ export class Context<
 > {
   req: HonoRequest<P, I['out']>
   env: E['Bindings'] = {}
-  var: E['Variables'] = {}
+  private _var: E['Variables'] = {}
   finalized: boolean = false
   error: Error | undefined = undefined
 
@@ -214,12 +214,17 @@ export class Context<
   }
 
   set: Set<E> = (key: string, value: unknown) => {
-    this.var ??= {}
-    this.var[key as string] = value
+    this._var ??= {}
+    this._var[key as string] = value
   }
 
   get: Get<E> = (key: string) => {
-    return this.var ? this.var[key] : undefined
+    return this._var ? this._var[key] : undefined
+  }
+
+  // c.var.propName is a read-only
+  get var(): Readonly<E['Variables']> {
+    return { ...this._var }
   }
 
   newResponse: NewResponse = (

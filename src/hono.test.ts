@@ -2619,4 +2619,14 @@ describe('c.var - with testing types', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hellohello2hello3hello4hello5')
   })
+
+  it('Should be a read-only', () => {
+    expect(() => {
+      app.get('/path/1', mw(), (c) => {
+        // @ts-expect-error
+        c.var.echo = 'hello'
+        return c.text(c.var.echo('hello'))
+      })
+    }).toThrow()
+  })
 })
