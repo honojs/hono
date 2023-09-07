@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // @denoify-ignore
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Hono } from '../../hono'
 
 export const handle =
