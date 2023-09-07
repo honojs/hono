@@ -8,14 +8,6 @@ import { jwt } from '../../src/middleware/jwt'
 // @ts-ignore
 globalThis.fastly = true
 
-if (typeof globalThis.crypto !== 'undefined' && typeof globalThis.crypto.subtle !== 'undefined') {
-  Object.defineProperty(globalThis.crypto, 'subtle', {
-    get() {
-      return undefined
-    },
-  })
-}
-
 const app = new Hono()
 
 describe('Hello World', () => {
