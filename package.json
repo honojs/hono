@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "test": "vitest --run",
+    "test": "tsc --noEmit && vitest --run",
     "test:deno": "env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno",
     "test:bun": "env NAME=Bun bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
     "test:fastly": "jest --config ./runtime_tests/fastly/jest.config.js",
