@@ -386,7 +386,7 @@ describe('Merge path with `app.route()`', () => {
     const app = new Hono().basePath('/v1').route('/book', book)
     type AppType = typeof app
     const client = hc<AppType>('http://localhost')
-    const res = await client.v1.book.index.$get()
+    const res = await client.v1.book.$get()
     const data = await res.json()
     type verify = Expect<Equal<boolean, typeof data.ok>>
     expect(data.ok).toBe(true)
