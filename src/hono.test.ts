@@ -2620,6 +2620,26 @@ describe('c.var - with testing types', () => {
     expect(await res.text()).toBe('hellohello2hello3hello4hello5')
   })
 
+  it('Should not throw type errors', () => {
+    const app = new Hono<{
+      Variables: {
+        hello: () => string
+      }
+    }>()
+
+    app.get(mw())
+    app.get(mw(), mw2())
+    app.get(mw(), mw2(), mw3())
+    app.get(mw(), mw2(), mw3(), mw4())
+    app.get(mw(), mw2(), mw3(), mw4(), mw5())
+
+    app.get('/', mw())
+    app.get('/', mw(), mw2())
+    app.get('/', mw(), mw2(), mw3())
+    app.get('/', mw(), mw2(), mw3(), mw4())
+    app.get('/', mw(), mw2(), mw3(), mw4(), mw5())
+  })
+
   it('Should be a read-only', () => {
     expect(() => {
       app.get('/path/1', mw(), (c) => {
