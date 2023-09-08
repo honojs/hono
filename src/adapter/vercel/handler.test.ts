@@ -2,16 +2,27 @@ import { Hono } from '../../hono'
 import { handle } from './handler'
 
 describe('Adapter for Next.js', () => {
-  it('Should return 200 response', async () => {
+  it('Should return 200 response with a `waitUntil` value', async () => {
     const app = new Hono()
-    app.get('/api/foo', (c) => {
-      return c.text('/api/foo')
+    app.get('/api/foo', async (c) => {
+      return c.json({
+        path: '/api/foo',
+        /**
+         * Checking if the `waitUntil` value is passed.
+         */
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        waitUntil: c.executionCtx.waitUntil(),
+      })
     })
     const handler = handle(app)
     const req = new Request('http://localhost/api/foo')
-    const res = await handler(req)
+    const res = await handler(req, { waitUntil: () => 'waitUntil' })
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('/api/foo')
+    expect(await res.json()).toEqual({
+      path: '/api/foo',
+      waitUntil: 'waitUntil',
+    })
   })
 
   it('Should not use `route()` if path argument is not passed', async () => {
@@ -26,6 +37,10 @@ describe('Adapter for Next.js', () => {
 
     const handler = handle(app)
     const req = new Request('http://localhost/api/error')
-    expect(() => handler(req)).toThrowError('Custom Error')
+    expect(() =>
+      handler(req, {
+        waitUntil: () => {},
+      })
+    ).toThrowError('Custom Error')
   })
 })
