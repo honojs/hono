@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+import { vi } from 'vitest'
 import * as JWT from './jwt'
 import {
   AlgorithmTypes,
-  JwtTokenSignatureMismatched,
   JwtAlgorithmNotImplemented,
-  JwtTokenInvalid,
-  JwtTokenNotBefore,
   JwtTokenExpired,
+  JwtTokenInvalid,
   JwtTokenIssuedAt,
+  JwtTokenNotBefore,
+  JwtTokenSignatureMismatched,
 } from './types'
 
 describe('JWT', () => {
@@ -75,7 +76,7 @@ describe('JWT', () => {
 
   it('JwtTokenIssuedAt', async () => {
     const now = 1633046400
-    jest.useFakeTimers().setSystemTime(new Date().setTime(now * 1000))
+    vi.useFakeTimers().setSystemTime(new Date().setTime(now * 1000))
 
     const iat = now + 1000 // after 1s
     const payload = { role: 'api_role', iat }

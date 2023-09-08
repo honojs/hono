@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { vi } from 'vitest'
 import type { Context } from './context'
 import { Hono } from './hono'
 import { HTTPException } from './http-exception'
@@ -8,7 +9,7 @@ import { SmartRouter } from './mod'
 import { RegExpRouter } from './router/reg-exp-router'
 import { TrieRouter } from './router/trie-router'
 import type { Handler, Next } from './types'
-import type { Expect, Equal } from './utils/types'
+import type { Equal, Expect } from './utils/types'
 import { getPath } from './utils/url'
 
 // https://stackoverflow.com/a/65666402
@@ -2016,7 +2017,7 @@ describe('Handler as variables', () => {
 
 describe('Show routes', () => {
   const app = new Hono()
-  jest.spyOn(console, 'log')
+  vi.spyOn(console, 'log')
   it('Should call `console.log()` with `app.showRoutes()`', async () => {
     app.get('/', (c) => c.text('/'))
     app.get('/foo', (c) => c.text('/'))

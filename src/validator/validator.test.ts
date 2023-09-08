@@ -4,8 +4,8 @@ import { z } from 'zod'
 import { Hono } from '../hono'
 import type { ExtractSchema, MiddlewareHandler, ValidationTargets } from '../types'
 import type { Equal, Expect } from '../utils/types'
-import { validator } from './validator'
 import type { ValidationFunction } from './validator'
+import { validator } from './validator'
 
 // Reference implementation for only testing
 const zodValidator = <
@@ -524,7 +524,7 @@ describe('Validator middleware with Zod multiple validators', () => {
   })
 })
 
-describe('With path parameters', () => {
+it('With path parameters', () => {
   const app = new Hono()
 
   const route = app.put(
@@ -560,7 +560,7 @@ describe('With path parameters', () => {
   type verify = Expect<Equal<Expected, Actual>>
 })
 
-describe('`on`', () => {
+it('`on`', () => {
   const app = new Hono()
 
   const route = app.on(
@@ -606,7 +606,7 @@ describe('`on`', () => {
   type verify = Expect<Equal<Expected, Actual>>
 })
 
-describe('`app.on`', () => {
+it('`app.on`', () => {
   const app = new Hono()
 
   const route = app
