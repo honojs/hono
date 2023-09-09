@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { vi } from 'vitest'
 import type { Context } from './context'
 import { Hono } from './hono'
@@ -8,8 +9,8 @@ import { poweredBy } from './middleware/powered-by'
 import { SmartRouter } from './mod'
 import { RegExpRouter } from './router/reg-exp-router'
 import { TrieRouter } from './router/trie-router'
-import type { Handler, Next } from './types'
-import type { Equal, Expect } from './utils/types'
+import type { Handler, MiddlewareHandler, Next } from './types'
+import type { Expect, Equal } from './utils/types'
 import { getPath } from './utils/url'
 
 // https://stackoverflow.com/a/65666402
@@ -2392,5 +2393,261 @@ describe('Context render and setRenderer', () => {
     expect(await res.text()).toBe(
       '<html><head><title>page title</title></head><body><h1>page content</h1></body></html>'
     )
+  })
+})
+
+describe('c.var - with testing types', () => {
+  const app = new Hono<{
+    Bindings: {
+      Token: string
+    }
+  }>()
+
+  const mw =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo', (str) => str)
+      await next()
+    }
+
+  const mw2 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo2: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo2', (str) => str)
+      await next()
+    }
+
+  const mw3 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo3: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo3', (str) => str)
+      await next()
+    }
+
+  const mw4 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo4: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo4', (str) => str)
+      await next()
+    }
+
+  const mw5 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo5: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo5', (str) => str)
+      await next()
+    }
+
+  app.use('/no-path/1').get(mw(), (c) => {
+    return c.text(c.var.echo('hello'))
+  })
+
+  app.use('/no-path/2').get(mw(), mw2(), (c) => {
+    return c.text(c.var.echo('hello') + c.var.echo2('hello2'))
+  })
+
+  app.use('/no-path/3').get(mw(), mw2(), mw3(), (c) => {
+    return c.text(c.var.echo('hello') + c.var.echo2('hello2') + c.var.echo3('hello3'))
+  })
+
+  app.use('/no-path/4').get(mw(), mw2(), mw3(), mw4(), (c) => {
+    return c.text(
+      c.var.echo('hello') + c.var.echo2('hello2') + c.var.echo3('hello3') + c.var.echo4('hello4')
+    )
+  })
+
+  app.use('/no-path/5').get(mw(), mw2(), mw3(), mw4(), mw5(), (c) => {
+    return c.text(
+      // @ts-ignore
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5')
+    )
+  })
+
+  app.get('/path/1', mw(), (c) => {
+    return c.text(c.var.echo('hello'))
+  })
+
+  app.get('/path/2', mw(), mw2(), (c) => {
+    return c.text(c.var.echo('hello') + c.var.echo2('hello2'))
+  })
+
+  app.get('/path/3', mw(), mw2(), mw3(), (c) => {
+    return c.text(c.var.echo('hello') + c.var.echo2('hello2') + c.var.echo3('hello3'))
+  })
+
+  app.get('/path/4', mw(), mw2(), mw3(), mw4(), (c) => {
+    return c.text(
+      c.var.echo('hello') + c.var.echo2('hello2') + c.var.echo3('hello3') + c.var.echo4('hello4')
+    )
+  })
+
+  // @ts-expect-error
+  app.get('/path/5', mw(), mw2(), mw3(), mw4(), mw5(), (c) => {
+    return c.text(
+      // @ts-expect-error
+      c.var.echo('hello') +
+        // @ts-expect-error
+        c.var.echo2('hello2') +
+        // @ts-expect-error
+        c.var.echo3('hello3') +
+        // @ts-expect-error
+        c.var.echo4('hello4') +
+        // @ts-expect-error
+        c.var.echo5('hello5')
+    )
+  })
+
+  app.on('GET', '/on/1', mw(), (c) => {
+    return c.text(c.var.echo('hello'))
+  })
+
+  app.on('GET', '/on/2', mw(), mw2(), (c) => {
+    return c.text(c.var.echo('hello') + c.var.echo2('hello2'))
+  })
+
+  app.on('GET', '/on/3', mw(), mw2(), mw3(), (c) => {
+    return c.text(c.var.echo('hello') + c.var.echo2('hello2') + c.var.echo3('hello3'))
+  })
+
+  app.on('GET', '/on/4', mw(), mw2(), mw3(), mw4(), (c) => {
+    return c.text(
+      c.var.echo('hello') + c.var.echo2('hello2') + c.var.echo3('hello3') + c.var.echo4('hello4')
+    )
+  })
+
+  // @ts-expect-error
+  app.on('GET', '/on/5', mw(), mw2(), mw3(), mw4(), mw5(), (c) => {
+    return c.text(
+      // @ts-expect-error
+      c.var.echo('hello') +
+        // @ts-expect-error
+        c.var.echo2('hello2') +
+        // @ts-expect-error
+        c.var.echo3('hello3') +
+        // @ts-expect-error
+        c.var.echo4('hello4') +
+        // @ts-expect-error
+        c.var.echo5('hello5')
+    )
+  })
+
+  it('Should return the correct response - no-path', async () => {
+    let res = await app.request('/no-path/1')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello')
+
+    res = await app.request('/no-path/2')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hellohello2')
+
+    res = await app.request('/no-path/3')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hellohello2hello3')
+
+    res = await app.request('/no-path/4')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hellohello2hello3hello4')
+
+    res = await app.request('/no-path/5')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hellohello2hello3hello4hello5')
+  })
+
+  it('Should return the correct response - path', async () => {
+    let res = await app.request('/path/1')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello')
+
+    res = await app.request('/path/2')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hellohello2')
+
+    res = await app.request('/path/3')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hellohello2hello3')
+
+    res = await app.request('/path/4')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hellohello2hello3hello4')
+
+    res = await app.request('/path/5')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hellohello2hello3hello4hello5')
+  })
+
+  it('Should return the correct response - on', async () => {
+    let res = await app.request('/on/1')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello')
+
+    res = await app.request('/on/2')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hellohello2')
+
+    res = await app.request('/on/3')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hellohello2hello3')
+
+    res = await app.request('/on/4')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hellohello2hello3hello4')
+
+    res = await app.request('/on/5')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hellohello2hello3hello4hello5')
+  })
+
+  it('Should not throw type errors', () => {
+    const app = new Hono<{
+      Variables: {
+        hello: () => string
+      }
+    }>()
+
+    app.get(mw())
+    app.get(mw(), mw2())
+    app.get(mw(), mw2(), mw3())
+    app.get(mw(), mw2(), mw3(), mw4())
+    app.get(mw(), mw2(), mw3(), mw4(), mw5())
+
+    app.get('/', mw())
+    app.get('/', mw(), mw2())
+    app.get('/', mw(), mw2(), mw3())
+    app.get('/', mw(), mw2(), mw3(), mw4())
+    app.get('/', mw(), mw2(), mw3(), mw4(), mw5())
+  })
+
+  it('Should be a read-only', () => {
+    expect(() => {
+      app.get('/path/1', mw(), (c) => {
+        // @ts-expect-error
+        c.var.echo = 'hello'
+        return c.text(c.var.echo('hello'))
+      })
+    }).toThrow()
   })
 })
