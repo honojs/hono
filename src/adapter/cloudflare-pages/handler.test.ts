@@ -1,6 +1,6 @@
 import { Hono } from '../../hono'
-import { handle } from './handler'
 import type { EventContext } from './handler'
+import { handle } from './handler'
 
 type Env = {
   Bindings: {
@@ -9,7 +9,7 @@ type Env = {
   }
 }
 
-describe.only('Adapter for Cloudflare Pages', () => {
+describe('Adapter for Cloudflare Pages', () => {
   it('Should return 200 response', async () => {
     const request = new Request('http://localhost/api/foo')
     const env = {

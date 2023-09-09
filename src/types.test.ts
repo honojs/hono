@@ -516,6 +516,26 @@ describe('merge path', () => {
 
     type verify = Expect<Equal<Expected, Actual>>
   })
+
+  type GetKey<T> = T extends Record<infer K, unknown> ? K : never
+
+  it('Should remove a slash - `/` + `/`', () => {
+    type Sub = ToSchema<'get', '/', {}, {}>
+    type Actual = MergeSchemaPath<Sub, '/'>
+    type verify = Expect<Equal<'/', GetKey<Actual>>>
+  })
+
+  it('Should remove a slash - `/tags` + `/`', () => {
+    type Sub = ToSchema<'get', '/tags', {}, {}>
+    type Actual = MergeSchemaPath<Sub, '/'>
+    type verify = Expect<Equal<'/tags', GetKey<Actual>>>
+  })
+
+  it('Should remove a slash - `/` + `/tags`', () => {
+    type Sub = ToSchema<'get', '/', {}, {}>
+    type Actual = MergeSchemaPath<Sub, '/tags'>
+    type verify = Expect<Equal<'/tags', GetKey<Actual>>>
+  })
 })
 
 describe('Different types using jsonT()', () => {
