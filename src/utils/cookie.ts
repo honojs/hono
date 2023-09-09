@@ -13,80 +13,86 @@ export type CookieOptions = {
   sameSite?: 'Strict' | 'Lax' | 'None'
 }
 
-const makeSignature = async (value: string, secret: string): Promise<string> => {
-  const algorithm = { name: 'HMAC', hash: 'SHA-256' }
-  const encoder = new TextEncoder()
-  const key = await crypto.subtle.importKey('raw', encoder.encode(secret), algorithm, false, [
-    'sign',
-    'verify',
-  ])
-  const signature = await crypto.subtle.sign(algorithm.name, key, encoder.encode(value))
+const algorithm = { name: 'HMAC', hash: 'SHA-256' }
+
+const getCryptoKey = async (secret: string | BufferSource): Promise<CryptoKey> => {
+  const secretBuf = typeof secret === 'string' ? new TextEncoder().encode(secret) : secret
+  return await crypto.subtle.importKey('raw', secretBuf, algorithm, false, ['sign', 'verify'])
+}
+
+const makeSignature = async (value: string, secret: string | BufferSource): Promise<string> => {
+  const key = await getCryptoKey(secret)
+  const signature = await crypto.subtle.sign(algorithm.name, key, new TextEncoder().encode(value))
   // the returned base64 encoded signature will always be 44 characters long and end with one or two equal signs
   return btoa(String.fromCharCode(...new Uint8Array(signature)))
 }
 
-const _parseCookiePairs = (cookie: string, name?: string): string[][] => {
-  const pairs = cookie.split(/;\s*/g)
-  const cookiePairs = pairs.map((pairStr: string) => pairStr.split(/\s*=\s*([^\s]+)/))
-  if (!name) return cookiePairs
-  return cookiePairs.filter((pair) => pair[0] === name)
+const verifySignature = async (
+  base64Signature: string,
+  value: string,
+  secret: CryptoKey
+): Promise<boolean> => {
+  try {
+    const signatureBinStr = atob(base64Signature)
+    const signature = new Uint8Array(signatureBinStr.length)
+    for (let i = 0; i < signatureBinStr.length; i++) signature[i] = signatureBinStr.charCodeAt(i)
+    return await crypto.subtle.verify(algorithm, secret, signature, new TextEncoder().encode(value))
+  } catch (e) {
+    return false
+  }
 }
 
+// all alphanumeric chars and all of _!#$%&'*.^`|~+-
+// (see: https://datatracker.ietf.org/doc/html/rfc6265#section-4.1.1)
+const validCookieNameRegEx = /^[\w!#$%&'*.^`|~+-]+$/
+
+// all ASCII chars 32-126 except 34, 59, and 92 (i.e. space to tilde but not double quote, semicolon, or backslash)
+// (see: https://datatracker.ietf.org/doc/html/rfc6265#section-4.1.1)
+//
+// note: the spec also prohibits comma and space, but we allow both since they are very common in the real world
+// (see: https://github.com/golang/go/issues/7243)
+const validCookieValueRegEx = /^[ !#-:<-[\]-~]*$/
+
 export const parse = (cookie: string, name?: string): Cookie => {
-  const parsedCookie: Cookie = {}
-  const unsignedCookies = _parseCookiePairs(cookie, name).filter((pair) => {
-    // ignore signed cookies, assuming they always have that commonly accepted format
-    const valueSplit = pair[1].split('.')
-    const signature = valueSplit[1] ? decodeURIComponent_(valueSplit[1]) : undefined
-    if (
-      valueSplit.length === 2 &&
-      signature &&
-      signature.length === 44 &&
-      signature.endsWith('=')
-    ) {
-      return false
-    }
-    return true
-  })
-  for (let [key, value] of unsignedCookies) {
-    value = decodeURIComponent_(value)
-    parsedCookie[key] = value
-  }
-  return parsedCookie
+  const pairs = cookie.trim().split(';')
+  return pairs.reduce((parsedCookie, pairStr) => {
+    pairStr = pairStr.trim()
+    const valueStartPos = pairStr.indexOf('=')
+    if (valueStartPos === -1) return parsedCookie
+
+    const cookieName = pairStr.substring(0, valueStartPos).trim()
+    if ((name && name !== cookieName) || !validCookieNameRegEx.test(cookieName)) return parsedCookie
+
+    let cookieValue = pairStr.substring(valueStartPos + 1).trim()
+    if (cookieValue.startsWith('"') && cookieValue.endsWith('"'))
+      cookieValue = cookieValue.slice(1, -1)
+    if (validCookieValueRegEx.test(cookieValue))
+      parsedCookie[cookieName] = decodeURIComponent_(cookieValue)
+
+    return parsedCookie
+  }, {} as Cookie)
 }
 
 export const parseSigned = async (
   cookie: string,
-  secret: string,
+  secret: string | BufferSource,
   name?: string
 ): Promise<SignedCookie> => {
   const parsedCookie: SignedCookie = {}
-  const signedCookies = _parseCookiePairs(cookie, name).filter((pair) => {
-    // ignore signed cookies, assuming they always have that commonly accepted format
-    const valueSplit = pair[1].split('.')
-    const signature = valueSplit[1] ? decodeURIComponent_(valueSplit[1]) : undefined
-    if (
-      valueSplit.length !== 2 ||
-      !signature ||
-      signature.length !== 44 ||
-      !signature.endsWith('=')
-    ) {
-      console.log('VALUE SPLIT', valueSplit)
-      return false
-    }
-    return true
-  })
-  for (let [key, value] of signedCookies) {
-    value = decodeURIComponent_(value)
-    const signedPair = value.split('.')
-    const signatureToCompare = await makeSignature(signedPair[0], secret)
-    if (signedPair[1] !== signatureToCompare) {
-      // cookie will be undefined when using getCookie
-      parsedCookie[key] = false
-      continue
-    }
-    parsedCookie[key] = signedPair[0]
+  const secretKey = await getCryptoKey(secret)
+
+  for (const [key, value] of Object.entries(parse(cookie, name))) {
+    const signatureStartPos = value.lastIndexOf('.')
+    if (signatureStartPos < 1) continue
+
+    const signedValue = value.substring(0, signatureStartPos)
+    const signature = value.substring(signatureStartPos + 1)
+    if (signature.length !== 44 || !signature.endsWith('=')) continue
+
+    const isVerified = await verifySignature(signature, signedValue, secretKey)
+    parsedCookie[key] = isVerified ? signedValue : false
   }
+
   return parsedCookie
 }
 
@@ -132,7 +138,7 @@ export const serialize = (name: string, value: string, opt: CookieOptions = {}):
 export const serializeSigned = async (
   name: string,
   value: string,
-  secret: string,
+  secret: string | BufferSource,
   opt: CookieOptions = {}
 ): Promise<string> => {
   const signature = await makeSignature(value, secret)
