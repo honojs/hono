@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+import { vi } from 'vitest'
 import type { Context } from './context'
 import { Hono } from './hono'
 import { HTTPException } from './http-exception'
@@ -822,7 +823,7 @@ describe('Middleware', () => {
     const app = new Hono()
     app
       .use('/chained/*', async (c, next) => {
-        c.req.headers.append('x-before', 'abc')
+        c.req.raw.headers.append('x-before', 'abc')
         await next()
       })
       .use(async (c, next) => {
@@ -849,7 +850,7 @@ describe('Middleware', () => {
       .use(
         '/multiple/*',
         async (c, next) => {
-          c.req.headers.append('x-before', 'abc')
+          c.req.raw.headers.append('x-before', 'abc')
           await next()
         },
         async (c, next) => {
@@ -934,7 +935,7 @@ describe('Middleware with app.HTTP_METHOD', () => {
     })
 
     const customHeader = async (c: Context, next: Next) => {
-      c.req.headers.append('x-custom-foo', 'bar')
+      c.req.raw.headers.append('x-custom-foo', 'bar')
       await next()
     }
 
@@ -2017,7 +2018,7 @@ describe('Handler as variables', () => {
 
 describe('Show routes', () => {
   const app = new Hono()
-  jest.spyOn(console, 'log')
+  vi.spyOn(console, 'log')
   it('Should call `console.log()` with `app.showRoutes()`', async () => {
     app.get('/', (c) => c.text('/'))
     app.get('/foo', (c) => c.text('/'))

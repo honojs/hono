@@ -8,7 +8,7 @@ interface GetCookie {
 }
 
 interface GetSignedCookie {
-  (c: Context, secret: string, key: string): Promise<string | undefined | false>
+  (c: Context, secret: string | BufferSource, key: string): Promise<string | undefined | false>
   (c: Context, secret: string): Promise<SignedCookie>
 }
 
@@ -47,7 +47,7 @@ export const setSignedCookie = async (
   c: Context,
   name: string,
   value: string,
-  secret: string,
+  secret: string | BufferSource,
   opt?: CookieOptions
 ): Promise<void> => {
   const cookie = await serializeSigned(name, value, secret, opt)

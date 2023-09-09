@@ -85,7 +85,7 @@ describe('Handler and middlewares', () => {
   const c: Context = new Context(req)
 
   const mHandlerFoo = async (c: Context, next: Function) => {
-    c.req.headers.append('x-header-foo', 'foo')
+    c.req.raw.headers.append('x-header-foo', 'foo')
     await next()
   }
 
@@ -198,7 +198,7 @@ describe('compose with Context - next() below', () => {
     return c.text(message)
   }
   const mHandler = async (c: Context, next: Function) => {
-    c.req.headers.append('x-custom', 'foo')
+    c.req.raw.headers.append('x-custom', 'foo')
     await next()
   }
 

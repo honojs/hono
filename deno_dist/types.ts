@@ -453,7 +453,7 @@ export type Schema = {
 }
 
 export type MergeSchemaPath<OrigSchema, SubPath extends string> = {
-  [K in keyof OrigSchema as `${SubPath}${K & string}`]: OrigSchema[K]
+  [K in keyof OrigSchema as `${MergePath<SubPath, K & string>}`]: OrigSchema[K]
 }
 
 export type AddParam<I, P extends string> = ParamKeys<P> extends never

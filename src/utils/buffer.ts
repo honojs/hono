@@ -48,7 +48,7 @@ export const bufferToString = (buffer: ArrayBuffer): string => {
   return buffer
 }
 
-const _decodeURIComponent = decodeURIComponent
+const _decodeURIComponent = (str: string) => decodeURIComponent(str.replace(/\+/g, ' '))
 
 export const bufferToFormData = (arrayBuffer: ArrayBuffer, contentType: string) => {
   const decoder = new TextDecoder('utf-8')
