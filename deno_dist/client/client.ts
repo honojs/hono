@@ -115,7 +115,7 @@ export const hc = <T extends Hono<any, any, any>>(
   baseUrl: string,
   options?: ClientRequestOptions
 ) =>
-  createProxy(async (opts) => {
+  createProxy((opts) => {
     const parts = [...opts.path]
 
     let method = ''
