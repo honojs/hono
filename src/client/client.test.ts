@@ -437,6 +437,10 @@ describe('Merge path with `app.route()`', () => {
       const data = await res.json()
       type verify = Expect<Equal<number, typeof data.bar>>
     })
+    it('Should work with $url', async () => {
+      const url = client.api.bar.$url()
+      expect(url.href).toBe('http://localhost/api/bar')
+    })
   })
 })
 

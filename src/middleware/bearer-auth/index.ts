@@ -24,7 +24,7 @@ export const bearerAuth = (options: {
   const realm = options.realm?.replace(/"/g, '\\"')
 
   return async (c, next) => {
-    const headerToken = c.req.headers.get('Authorization')
+    const headerToken = c.req.header('Authorization')
 
     if (!headerToken) {
       // No Authorization header
