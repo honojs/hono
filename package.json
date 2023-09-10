@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "3.5.8",
+  "version": "3.6.0-rc.2",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -189,6 +189,11 @@
       "import": "./dist/helper/adapter/index.js",
       "require": "./dist/cjs/helper/adapter/index.js"
     },
+    "./factory": {
+      "types": "./dist/types/helper/factory/index.d.ts",
+      "import": "./dist/helper/factory/index.js",
+      "require": "./dist/cjs/helper/factory/index.js"
+    },
     "./cloudflare-workers": {
       "types": "./dist/types/adapter/cloudflare-workers/index.d.ts",
       "import": "./dist/adapter/cloudflare-workers/index.js",
@@ -321,6 +326,9 @@
       ],
       "adapter": [
         "./dist/types/helper/adapter/index.d.ts"
+      ],
+      "factory": [
+        "./dist/types/helper/factory/index.d.ts"
       ],
       "cloudflare-workers": [
         "./dist/types/adapter/cloudflare-workers"
