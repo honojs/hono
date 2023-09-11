@@ -374,17 +374,22 @@ class Hono<
     return this.dispatch(request, executionCtx, Env, request.method)
   }
 
-  request = (input: Request | string | URL, requestInit?: RequestInit) => {
+  request = (
+    input: Request | string | URL,
+    requestInit?: RequestInit,
+    Env?: E['Bindings'] | {},
+    executionCtx?: ExecutionContext
+  ) => {
     if (input instanceof Request) {
       if (requestInit !== undefined) {
         input = new Request(input, requestInit)
       }
-      return this.fetch(input)
+      return this.fetch(input, Env, executionCtx)
     }
     input = input.toString()
     const path = /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`
     const req = new Request(path, requestInit)
-    return this.fetch(req)
+    return this.fetch(req, Env, executionCtx)
   }
 
   fire = () => {
