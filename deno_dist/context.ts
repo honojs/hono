@@ -4,6 +4,7 @@ import type { Env, NotFoundHandler, Input, TypedResponse } from './types.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
 import type { StatusCode } from './utils/http-status.ts'
+import { StreamingApi } from './utils/stream.ts'
 import type { JSONValue, InterfaceToType } from './utils/types.ts'
 
 type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'lagon' | 'other'
@@ -333,6 +334,24 @@ export class Context<
     this._h ??= new Headers()
     this._h.set('Location', location)
     return this.newResponse(null, status)
+  }
+
+  stream = (
+    cb: (stream: StreamingApi) => Promise<void>,
+    arg?: StatusCode | ResponseInit,
+    headers?: HeaderRecord
+  ): Response => {
+    const { readable, writable } = new TransformStream()
+    const stream = new StreamingApi(writable)
+    cb(stream).finally(() => stream.close())
+
+    this._pH ??= {}
+    this._pH['content-type'] = 'text/plain; charset=UTF-8'
+    this._pH['transfer-encoding'] = 'chunked'
+
+    return typeof arg === 'number'
+      ? this.newResponse(readable, arg, headers)
+      : this.newResponse(readable, arg)
   }
 
   /** @deprecated
