@@ -34,6 +34,10 @@ describe('GET Request', () => {
     return c.html('<h1>Hono!!!</h1>')
   })
 
+  app.get('/hello-env', (c) => {
+    return c.json(c.env)
+  })
+
   it('GET http://localhost/hello is ok', async () => {
     const res = await app.request('http://localhost/hello')
     expect(res).not.toBeNull()
@@ -76,6 +80,12 @@ describe('GET Request', () => {
     const res = await app.request('http://localhost/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
+  })
+
+  it('GET /hello-env is ok', async () => {
+    const res = await app.request('/hello-env', undefined, { HELLO: 'world' })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ HELLO: 'world' })
   })
 })
 
