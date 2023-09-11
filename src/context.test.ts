@@ -259,4 +259,24 @@ describe('Pass a ResponseInit to respond methods', () => {
     expect(res.headers.get('content-type')).toMatch(/^text\/html/)
     expect(await res.text()).toBe('<h1>foo</h1>')
   })
+
+  it('c.stream()', async () => {
+    const res = c.stream(async (stream) => {
+      for (let i = 0; i < 3; i++) {
+        await stream.writeln(`${i}`).flush()
+        await new Promise((res) => setTimeout(res, 1000))
+      }
+    })
+    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=UTF-8')
+    expect(res.headers.get('Transfer-Encoding')).toBe('chunked')
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const encoder = new TextEncoder()
+    for (let i = 0; i < 3; i++) {
+      const { value } = await reader.read()
+      expect(value).toEqual(encoder.encode(`${i}\n`))
+    }
+  })
 })
