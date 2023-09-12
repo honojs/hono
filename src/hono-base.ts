@@ -362,7 +362,7 @@ class Hono<
   }
 
   /**
-   * @deprecate
+   * @deprecated
    * `app.handleEvent()` will be removed in v4.
    * Use `app.fetch()` instead of `app.handleEvent()`.
    */
