@@ -2660,4 +2660,15 @@ describe('c.var - with testing types', () => {
       })
     }).toThrow()
   })
+
+  it('Should not throw a type error', (c) => {
+    const app = new Hono<{
+      Bindings: {
+        TOKEN: string
+      }
+    }>()
+    app.get('/', poweredBy(), async (c) => {
+      type verify = Expect<Equal<string, typeof c.env.TOKEN>>
+    })
+  })
 })
