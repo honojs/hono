@@ -470,3 +470,13 @@ describe('Use custom fetch method', () => {
     expect(res).toEqual(returnValue)
   })
 })
+
+describe('Use custom fetch (app.request) method', () => {
+  it('Should return Response from qpp request method', async () => {
+    const app = new Hono().get('/search', (c) => c.jsonT({ ok: true }))
+    type AppType = typeof app
+    const client = hc<AppType>('', { fetch: app.request })
+    const res = await client.search.$get()
+    expect(res.ok).toBe(true)
+  })
+})
