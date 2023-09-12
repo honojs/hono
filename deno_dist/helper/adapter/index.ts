@@ -1,6 +1,7 @@
 import type { Context } from '../../context.ts'
+import type { Env } from '../../types.ts'
 
-export const env = <T extends Record<string, string>, C extends Context = Context<{}>>(
+export const env = <T extends Env, C extends Context = Context<{}>>(
   c: C
 ): T & C['env'] => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
