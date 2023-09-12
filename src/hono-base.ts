@@ -375,7 +375,7 @@ class Hono<
   }
 
   request = (
-    input: Request | string | URL,
+    input: RequestInfo | URL,
     requestInit?: RequestInit,
     Env?: E['Bindings'] | {},
     executionCtx?: ExecutionContext
