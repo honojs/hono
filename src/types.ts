@@ -42,7 +42,7 @@ export type Handler<
   R extends HandlerResponse<any> = any
 > = (c: Context<E, P, I>, next: Next) => R
 
-export type MiddlewareHandler<E extends Env = any, P extends string = any, I extends Input = {}> = (
+export type MiddlewareHandler<E extends Env = {}, P extends string = any, I extends Input = {}> = (
   c: Context<E, P, I>,
   next: Next
 ) => Promise<Response | void>
@@ -296,11 +296,10 @@ export interface MiddlewareHandlerInterface<
   //// app.get(...handlers[])
   (...handlers: MiddlewareHandler<E, MergePath<BasePath, ExtractKey<S>>>[]): Hono<E, S, BasePath>
   //// app.get(path, ...handlers[])
-  <P extends string>(path: P, ...handlers: MiddlewareHandler<E, MergePath<BasePath, P>>[]): Hono<
-    E,
-    S,
-    BasePath
-  >
+  <P extends string, E2 extends Env = E>(
+    path: P,
+    ...handlers: MiddlewareHandler<E2, MergePath<BasePath, P>>[]
+  ): Hono<E, S, BasePath>
 }
 
 ////////////////////////////////////////
