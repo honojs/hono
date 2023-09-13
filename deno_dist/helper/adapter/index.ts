@@ -17,7 +17,7 @@ export const env = <T extends Record<string, string>, C extends Context = Contex
     deno: () => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      return Deno.env.toObject()
+      return Deno.env.toObject() as T
     },
     workerd: () => c.env,
     fastly: () => ({} as T),
