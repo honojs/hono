@@ -1,35 +1,39 @@
 export class StreamingApi {
   private writer: WritableStreamDefaultWriter<Uint8Array>
   private encoder: TextEncoder
-  buffer: string[] = []
+  private writable: WritableStream
 
-  constructor(writable: WritableStream<Uint8Array>) {
+  constructor(writable: WritableStream) {
+    this.writable = writable
     this.writer = writable.getWriter()
     this.encoder = new TextEncoder()
   }
 
-  write(str: string): StreamingApi {
-    this.buffer.push(str)
+  async write(bytes?: Uint8Array | string) {
+    if (typeof bytes === 'string') {
+      bytes = this.encoder.encode(bytes)
+    }
+    await this.writer.write(bytes)
     return this
   }
 
-  writeln(str: string): StreamingApi {
-    return this.write(str + '\n')
+  async writeln(bytes?: string) {
+    await this.write((bytes || '') + '\n')
+    return this
   }
 
-  clear(): void {
-    this.buffer = []
+  async log(arg: any) {
+    await this.writeln(JSON.stringify(arg))
+    return this
   }
 
-  async flush(): Promise<void> {
-    const text = this.buffer.join('')
-    const encoded = this.encoder.encode(text)
-    await this.writer.write(encoded)
-    this.clear()
-  }
-
-  async close(): Promise<void> {
+  async close() {
     await this.writer.close()
-    this.clear()
+  }
+
+  async pipe(body: ReadableStream) {
+    this.writer.releaseLock()
+    await body.pipeTo(this.writable, { preventClose: true })
+    this.writer = this.writable.getWriter()
   }
 }
