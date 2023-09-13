@@ -162,6 +162,7 @@ describe('Set cookie', () => {
       maxAge: 1000,
       expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
       sameSite: 'Strict',
+      partitioned: true,
     })
     expect(serialized).toBe(
       'great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
@@ -186,6 +187,7 @@ describe('Set cookie', () => {
       maxAge: 1000,
       expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
       sameSite: 'Strict',
+      partitioned: true,
     })
     expect(serialized).toBe(
       'great_cookie=banana.hSo6gB7YT2db0WBiEAakEmh7dtwEL0DSp76G23WvHuQ%3D; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
