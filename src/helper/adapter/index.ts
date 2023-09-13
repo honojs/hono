@@ -5,23 +5,23 @@ export const env = <T extends Record<string, string>, C extends Context = Contex
 ): T & C['env'] => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const global = globalThis as any
-  const globalEnv = global?.process?.env as T;
+  const globalEnv = global?.process?.env as T
 
   const runtime = getRuntimeKey()
 
   const runtimeEnvHandlers: Record<string, () => T> = {
-    'bun': () => globalEnv,
-    'node': () => globalEnv,
+    bun: () => globalEnv,
+    node: () => globalEnv,
     'edge-light': () => globalEnv,
-    'lagon': () => globalEnv,
-    'deno': () => {
+    lagon: () => globalEnv,
+    deno: () => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return Deno.env.toObject()
     },
-    'workerd': () => c.env,
-    'fastly': () => ({} as T),
-    'other': () => ({} as T),
+    workerd: () => c.env,
+    fastly: () => ({} as T),
+    other: () => ({} as T),
   }
 
   return runtimeEnvHandlers[runtime]()
@@ -38,6 +38,6 @@ export const getRuntimeKey = () => {
   if (global?.fastly !== undefined) return 'fastly'
   if (global?.__lagon__ !== undefined) return 'lagon'
   if (global?.process?.release?.name === 'node') return 'node'
-  
+
   return 'other'
 }
