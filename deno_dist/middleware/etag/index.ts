@@ -30,7 +30,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
   const weak = options?.weak ?? false
 
   return async (c, next) => {
-    const ifNoneMatch = c.req.headers.get('If-None-Match')
+    const ifNoneMatch = c.req.header('If-None-Match') ?? null
 
     await next()
 

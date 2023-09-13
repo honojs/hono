@@ -198,7 +198,7 @@ const jsxFn = (
   }
 }
 
-type FC<T = Props> = (props: T) => HtmlEscapedString
+export type FC<T = Props> = (props: T & { children?: Child }) => HtmlEscapedString
 
 const shallowEqual = (a: Props, b: Props): boolean => {
   if (a === b) {
@@ -226,7 +226,7 @@ export const memo = <T>(
 ): FC<T> => {
   let computed = undefined
   let prevProps: T | undefined = undefined
-  return ((props: T): HtmlEscapedString => {
+  return ((props: T & { children?: Child }): HtmlEscapedString => {
     if (prevProps && !propsAreEqual(prevProps, props)) {
       computed = undefined
     }
