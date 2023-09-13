@@ -11,6 +11,7 @@ export type CookieOptions = {
   secure?: boolean
   signingSecret?: string
   sameSite?: 'Strict' | 'Lax' | 'None'
+  partitioned?: boolean
 }
 
 const algorithm = { name: 'HMAC', hash: 'SHA-256' }
@@ -125,6 +126,10 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
 
   if (opt.sameSite) {
     cookie += `; SameSite=${opt.sameSite}`
+  }
+
+  if (opt.partitioned) {
+    cookie += '; Partitioned'
   }
 
   return cookie
