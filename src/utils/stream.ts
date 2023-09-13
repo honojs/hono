@@ -9,16 +9,16 @@ export class StreamingApi {
     this.encoder = new TextEncoder()
   }
 
-  async write(bytes?: Uint8Array | string) {
-    if (typeof bytes === 'string') {
-      bytes = this.encoder.encode(bytes)
+  async write(input?: Uint8Array | string) {
+    if (typeof input === 'string') {
+      input = this.encoder.encode(input)
     }
-    await this.writer.write(bytes)
+    await this.writer.write(input)
     return this
   }
 
-  async writeln(bytes?: string) {
-    await this.write((bytes || '') + '\n')
+  async writeln(input?: string) {
+    await this.write((input || '') + '\n')
     return this
   }
 
