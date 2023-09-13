@@ -105,15 +105,15 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   }
 
   if (opt.domain) {
-    cookie += '; Domain=' + opt.domain
+    cookie += `; Domain=${opt.domain}`
   }
 
   if (opt.path) {
-    cookie += '; Path=' + opt.path
+    cookie += `; Path=${opt.path}`
   }
 
   if (opt.expires) {
-    cookie += '; Expires=' + opt.expires.toUTCString()
+    cookie += `; Expires=${opt.expires.toUTCString()}`
   }
 
   if (opt.httpOnly) {
