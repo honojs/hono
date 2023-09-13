@@ -260,23 +260,38 @@ describe('Pass a ResponseInit to respond methods', () => {
     expect(await res.text()).toBe('<h1>foo</h1>')
   })
 
-  it('c.stream()', async () => {
-    const res = c.stream(async (stream) => {
+  it('c.textStream()', async () => {
+    const res = c.textStream(async (stream) => {
       for (let i = 0; i < 3; i++) {
-        await stream.writeln(`${i}`).flush()
+        await stream.write(`${i}`)
         await new Promise((res) => setTimeout(res, 1000))
       }
     })
-    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=UTF-8')
-    expect(res.headers.get('Transfer-Encoding')).toBe('chunked')
     if (!res.body) {
       throw new Error('Body is null')
     }
     const reader = res.body.getReader()
-    const encoder = new TextEncoder()
+    const decoder = new TextDecoder()
     for (let i = 0; i < 3; i++) {
       const { value } = await reader.read()
-      expect(value).toEqual(encoder.encode(`${i}\n`))
+      expect(decoder.decode(value)).toEqual(`${i}`)
+    }
+  })
+
+  it('c.stream()', async () => {
+    const res = c.stream(async (stream) => {
+      for (let i = 0; i < 3; i++) {
+        await stream.write(new Uint8Array([i]))
+        await new Promise((res) => setTimeout(res, 1000))
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    for (let i = 0; i < 3; i++) {
+      const { value } = await reader.read()
+      expect(value).toEqual(new Uint8Array([i]))
     }
   })
 })
