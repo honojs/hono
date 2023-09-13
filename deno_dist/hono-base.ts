@@ -109,7 +109,8 @@ class Hono<
     }
 
     // Implementation of app.use(...handlers[]) or app.get(path, ...handlers[])
-    this.use = (arg1: string | MiddlewareHandler, ...handlers: MiddlewareHandler[]) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.use = (arg1: string | MiddlewareHandler<any>, ...handlers: MiddlewareHandler<any>[]) => {
       if (typeof arg1 === 'string') {
         this.path = arg1
       } else {
@@ -362,7 +363,7 @@ class Hono<
   }
 
   /**
-   * @deprecate
+   * @deprecated
    * `app.handleEvent()` will be removed in v4.
    * Use `app.fetch()` instead of `app.handleEvent()`.
    */
@@ -374,17 +375,22 @@ class Hono<
     return this.dispatch(request, executionCtx, Env, request.method)
   }
 
-  request = (input: Request | string | URL, requestInit?: RequestInit) => {
+  request = (
+    input: RequestInfo | URL,
+    requestInit?: RequestInit,
+    Env?: E['Bindings'] | {},
+    executionCtx?: ExecutionContext
+  ) => {
     if (input instanceof Request) {
       if (requestInit !== undefined) {
         input = new Request(input, requestInit)
       }
-      return this.fetch(input)
+      return this.fetch(input, Env, executionCtx)
     }
     input = input.toString()
     const path = /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`
     const req = new Request(path, requestInit)
-    return this.fetch(req)
+    return this.fetch(req, Env, executionCtx)
   }
 
   fire = () => {

@@ -2,9 +2,11 @@ import type { Hono } from '../hono'
 import type { Schema } from '../types'
 import type { RemoveBlankRecord } from '../utils/types'
 
+type HonoRequest = typeof Hono.prototype['request']
+
 export type ClientRequestOptions = {
   headers?: Record<string, string>
-  fetch?: typeof fetch
+  fetch?: typeof fetch | HonoRequest
 }
 
 type ClientRequest<S extends Schema> = {
@@ -17,6 +19,8 @@ type ClientRequest<S extends Schema> = {
           options?: ClientRequestOptions
         ) => Promise<ClientResponse<O>>
     : never
+} & {
+  $url: () => URL
 }
 
 type BlankRecordToNever<T> = T extends Record<infer R, unknown>

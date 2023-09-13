@@ -251,6 +251,7 @@ describe('Pass a ResponseInit to respond methods', () => {
     const res = tRes['response'] as Response
     expect(res.headers.get('content-type')).toMatch(/^application\/json/)
     expect(await res.json()).toEqual({ foo: 'bar' })
+    expect(tRes.status).toEqual(200)
   })
 
   it('c.html()', async () => {
@@ -258,5 +259,36 @@ describe('Pass a ResponseInit to respond methods', () => {
     const res = c.html('<h1>foo</h1>', originalResponse)
     expect(res.headers.get('content-type')).toMatch(/^text\/html/)
     expect(await res.text()).toBe('<h1>foo</h1>')
+  })
+})
+
+declare module './context' {
+  interface ContextRenderer {
+    (content: string, head: { title: string }): Response
+  }
+}
+
+describe('c.render', () => {
+  const req = new HonoRequest(new Request('http://localhost/'))
+  let c: Context
+  beforeEach(() => {
+    c = new Context(req)
+  })
+
+  it('Should return a Response from the default renderer', async () => {
+    c.header('foo', 'bar')
+    const res = c.render('<h1>content</h1>', { title: 'dummy ' })
+    expect(res.headers.get('foo')).toBe('bar')
+    expect(await res.text()).toBe('<h1>content</h1>')
+  })
+
+  it('Should return a Response from the custom renderer', async () => {
+    c.setRenderer((content, head) => {
+      return c.html(`<html><head>${head.title}</head><body>${content}</body></html>`)
+    })
+    c.header('foo', 'bar')
+    const res = c.render('<h1>content</h1>', { title: 'title' })
+    expect(res.headers.get('foo')).toBe('bar')
+    expect(await res.text()).toBe('<html><head>title</head><body><h1>content</h1></body></html>')
   })
 })

@@ -115,7 +115,7 @@ export const hc = <T extends Hono<any, any, any>>(
   baseUrl: string,
   options?: ClientRequestOptions
 ) =>
-  createProxy(async (opts) => {
+  createProxy((opts) => {
     const parts = [...opts.path]
 
     let method = ''
@@ -128,6 +128,10 @@ export const hc = <T extends Hono<any, any, any>>(
 
     const path = parts.join('/')
     const url = mergePath(baseUrl, path)
+    if (method === 'url') {
+      return new URL(url)
+    }
+
     const req = new ClientRequestImpl(url, method)
     if (method) {
       options ??= {}
