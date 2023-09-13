@@ -9,7 +9,7 @@ export class StreamingApi {
     this.encoder = new TextEncoder()
   }
 
-  async write(input?: Uint8Array | string) {
+  async write(input: Uint8Array | string) {
     if (typeof input === 'string') {
       input = this.encoder.encode(input)
     }
@@ -17,8 +17,8 @@ export class StreamingApi {
     return this
   }
 
-  async writeln(input?: string) {
-    await this.write((input || '') + '\n')
+  async writeln(input: string) {
+    await this.write(input + '\n')
     return this
   }
 
