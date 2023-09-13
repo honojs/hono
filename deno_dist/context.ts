@@ -336,6 +336,24 @@ export class Context<
     return this.newResponse(null, status)
   }
 
+  textStream = (
+    cb: (stream: StreamingApi) => Promise<void>,
+    arg?: StatusCode | ResponseInit,
+    headers?: HeaderRecord
+  ): Response => {
+    const { readable, writable } = new TransformStream()
+    const stream = new StreamingApi(writable)
+    cb(stream).finally(() => stream.close())
+
+    this._pH ??= {}
+    this._pH['content-type'] = 'text/plain'
+    this._pH['transfer-encoding'] = 'chunked'
+
+    return typeof arg === 'number'
+      ? this.newResponse(readable, arg, headers)
+      : this.newResponse(readable, arg)
+  }
+
   stream = (
     cb: (stream: StreamingApi) => Promise<void>,
     arg?: StatusCode | ResponseInit,
@@ -346,7 +364,6 @@ export class Context<
     cb(stream).finally(() => stream.close())
 
     this._pH ??= {}
-    this._pH['content-type'] = 'text/plain; charset=UTF-8'
     this._pH['transfer-encoding'] = 'chunked'
 
     return typeof arg === 'number'
