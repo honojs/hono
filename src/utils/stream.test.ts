@@ -1,56 +1,94 @@
 import { StreamingApi } from './stream'
 
 describe('StreamingApi', () => {
-  it('write()', async () => {
-    const writable = new WritableStream()
-    const api = new StreamingApi(writable)
-    api.write('foo')
-    expect(api.buffer).toEqual(['foo'])
-    api.write('bar')
-    expect(api.buffer).toEqual(['foo', 'bar'])
-  })
-
-  it('writeln()', async () => {
-    const writable = new WritableStream()
-    const api = new StreamingApi(writable)
-    api.writeln('foo')
-    expect(api.buffer).toEqual(['foo\n'])
-    api.writeln('bar')
-    expect(api.buffer).toEqual(['foo\n', 'bar\n'])
-  })
-
-  it('clear()', async () => {
-    const writable = new WritableStream()
-    const api = new StreamingApi(writable)
-    api.write('foo')
-    api.clear()
-    expect(api.buffer).toEqual([])
-  })
-
-  it('flush()', async () => {
+  it('write(string)', async () => {
     const { readable, writable } = new TransformStream()
     const api = new StreamingApi(writable)
-    const encoder = new TextEncoder()
     const reader = readable.getReader()
+    api.write('foo')
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('foo'))
+    api.write('bar')
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('bar'))
+  })
+
+  it('write(Uint8Array)', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable)
+    const reader = readable.getReader()
+    api.write(new Uint8Array([1, 2, 3]))
+    expect((await reader.read()).value).toEqual(new Uint8Array([1, 2, 3]))
+    api.write(new Uint8Array([4, 5, 6]))
+    expect((await reader.read()).value).toEqual(new Uint8Array([4, 5, 6]))
+  })
+
+  it('writeln(string)', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable)
+    const reader = readable.getReader()
+    api.writeln('foo')
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('foo\n'))
+    api.writeln('bar')
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('bar\n'))
+  })
+
+  it('log(string)', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable)
+    const reader = readable.getReader()
+    api.log('foo')
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('"foo"\n'))
+  })
+
+  it('log(object)', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable)
+    const reader = readable.getReader()
+    api.log({ foo: 'bar' })
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('{"foo":"bar"}\n'))
+  })
+
+  it('log(arg)', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable)
+    const reader = readable.getReader()
+    api.log('foo')
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('"foo"\n'))
+    api.log({ foo: 'bar' })
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('{"foo":"bar"}\n'))
+  })
+
+  it('pipe()', async () => {
+    const { readable: senderReadable, writable: senderWritable } = new TransformStream()
+
+    // send data to readable in other scope
     ;(async () => {
-      await api.write('foo').flush()
-      await api.writeln('bar').flush()
+      const writer = senderWritable.getWriter()
+      await writer.write(new TextEncoder().encode('foo'))
+      await writer.write(new TextEncoder().encode('bar'))
+      // await writer.close()
     })()
-    const { value } = await reader.read()
-    expect(value).toEqual(encoder.encode('foo'))
-    const { value: value2 } = await reader.read()
-    expect(value2).toEqual(encoder.encode('bar\n'))
+
+    const { readable: receiverReadable, writable: receiverWritable } = new TransformStream()
+
+    const api = new StreamingApi(receiverWritable)
+
+    // pipe readable to api in other scope
+    ;(async () => {
+      await api.pipe(senderReadable)
+    })()
+
+    // read data from api
+    const reader = receiverReadable.getReader()
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('foo'))
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('bar'))
   })
 
   it('close()', async () => {
     const { readable, writable } = new TransformStream()
     const api = new StreamingApi(writable)
     const reader = readable.getReader()
-    api.write('foo')
-    api.close()
-    await expect(api.flush()).rejects.toThrow()
-    await expect(api.close()).rejects.toThrow()
-    const { value } = await reader.read()
-    expect(value).toEqual(undefined)
+    await api.close()
+    expect((await reader.read()).done).toBe(true)
+    await expect(api.write('foo')).rejects.toThrow()
   })
 })
