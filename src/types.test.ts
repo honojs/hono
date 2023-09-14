@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { expectTypeOf } from 'vitest'
 import type { Context } from './context'
 import { Hono } from './hono'
 import { poweredBy } from './middleware/powered-by'
@@ -18,7 +19,6 @@ import type {
   UndefinedIfHavingQuestion,
 } from './types'
 import type { Expect, Equal } from './utils/types'
-
 describe('Env', () => {
   test('Env', () => {
     type E = {
@@ -33,9 +33,9 @@ describe('Env', () => {
     app.use('*', poweredBy())
     app.get('/', (c) => {
       const foo = c.get('foo')
-      type verify = Expect<Equal<string, typeof foo>>
+      expectTypeOf(foo).toEqualTypeOf<string>()
       const FLAG = c.env.FLAG
-      type verify2 = Expect<Equal<boolean, typeof FLAG>>
+      expectTypeOf(FLAG).toEqualTypeOf<boolean>()
       return c.text('foo')
     })
   })
@@ -68,14 +68,14 @@ describe('HandlerInterface', () => {
             out: { json: Payload }
           }
         >
-        type verify = Expect<Equal<Expected, typeof c>>
+        expectTypeOf(c).toEqualTypeOf<Expected>()
         return c.jsonT({
           message: 'Hello!',
         })
       })
       app.get(middleware, (c) => {
         const data = c.req.valid('json')
-        type verify = Expect<Equal<Payload, typeof data>>
+        expectTypeOf(data).toEqualTypeOf<Payload>()
         return c.jsonT({
           message: 'Hello!',
         })
@@ -109,7 +109,7 @@ describe('HandlerInterface', () => {
     test('Context and AppType', () => {
       const route = app.get('/foo', middleware, (c) => {
         type Expected = Context<Env, '/foo', { in: { json: Payload }; out: { json: Payload } }>
-        type verify = Expect<Equal<Expected, typeof c>>
+        expectTypeOf(c).toEqualTypeOf<Expected>()
         return c.jsonT({
           message: 'Hello!',
         })
@@ -236,7 +236,7 @@ describe('OnHandlerInterface', () => {
     }
     const route = app.on('PURGE', '/purge', middleware, (c) => {
       const data = c.req.valid('form')
-      type verify = Expect<Equal<{ id: number }, typeof data>>
+      expectTypeOf(data).toEqualTypeOf<{ id: number }>()
       return c.jsonT({
         success: true,
       })
@@ -318,9 +318,9 @@ describe('Test types of Handler', () => {
     const app = new Hono<E>()
     const handler: Handler<E> = (c) => {
       const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<number, typeof foo>>
+      expectTypeOf(foo).toEqualTypeOf<number>()
       const id = c.req.param('id')
-      type verifyPath = Expect<Equal<string, typeof id>>
+      expectTypeOf(id).toEqualTypeOf<string>()
       return c.text('Hi')
     }
     app.get('/', handler)
@@ -332,7 +332,7 @@ describe('Test types of Handler', () => {
     const app = new Hono<E>()
     const handler: Handler<E, '/'> = (c) => {
       const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<number, typeof foo>>
+      expectTypeOf(foo).toEqualTypeOf<number>()
       return c.text('Hi')
     }
     app.get('/', handler)
@@ -350,9 +350,9 @@ describe('Test types of Handler', () => {
     const app = new Hono<E>()
     const handler: Handler<E, '/', { in: { json: User }; out: { json: User } }> = (c) => {
       const foo = c.get('foo')
-      type verifyEnv = Expect<Equal<number, typeof foo>>
+      expectTypeOf(foo).toEqualTypeOf<number>()
       const { name } = c.req.valid('json')
-      type verifySchema = Expect<Equal<string, typeof name>>
+      expectTypeOf(name).toEqualTypeOf<string>()
       return c.text('Hi')
     }
   })
