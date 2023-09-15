@@ -22,6 +22,7 @@ type ClientRequest<S extends Schema> = {
       ? (args?: {}, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
       : HasHeaderOption<R> extends never
       ? (
+          // Client does not support `cookie`
           args?: Omit<R, 'header' | 'cookie'>,
           options?: ClientRequestOptions
         ) => Promise<ClientResponse<O>>
