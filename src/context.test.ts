@@ -260,8 +260,8 @@ describe('Pass a ResponseInit to respond methods', () => {
     expect(await res.text()).toBe('<h1>foo</h1>')
   })
 
-  it('c.textStream()', async () => {
-    const res = c.textStream(async (stream) => {
+  it('c.streamText()', async () => {
+    const res = c.streamText(async (stream) => {
       for (let i = 0; i < 3; i++) {
         await stream.write(`${i}`)
         await new Promise((res) => setTimeout(res, 1000))

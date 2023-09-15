@@ -336,7 +336,7 @@ export class Context<
     return this.newResponse(null, status)
   }
 
-  textStream = (
+  streamText = (
     cb: (stream: StreamingApi) => Promise<void>,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
