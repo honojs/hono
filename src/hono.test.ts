@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { vi } from 'vitest'
+import { expectTypeOf } from 'vitest'
 import type { Context } from './context'
 import { Hono } from './hono'
 import { HTTPException } from './http-exception'
@@ -1981,8 +1982,10 @@ describe('Context set/get variables', () => {
     app.get('/', (c) => {
       const id = c.get('id')
       const title = c.get('title')
-      type verifyID = Expect<Equal<number, typeof id>>
-      type verifyTitle = Expect<Equal<string, typeof title>>
+      // type verifyID = Expect<Equal<number, typeof id>>
+      expectTypeOf(id).toEqualTypeOf<number>()
+      // type verifyTitle = Expect<Equal<string, typeof title>>
+      expectTypeOf(title).toEqualTypeOf<string>()
       return c.text(`${id} is ${title}`)
     })
     const res = await app.request('http://localhost/')
@@ -2001,8 +2004,7 @@ describe('Context binding variables', () => {
 
   it('Should get binding variables with correct types', async () => {
     app.get('/', (c) => {
-      type verifyID = Expect<Equal<number, typeof c.env.USER_ID>>
-      type verifyName = Expect<Equal<string, typeof c.env.USER_NAME>>
+      expectTypeOf(c.env).toEqualTypeOf<Bindings>()
       return c.text('These are verified')
     })
     const res = await app.request('http://localhost/')
@@ -2102,10 +2104,10 @@ describe('Optional parameters', () => {
   const app = new Hono()
   app.get('/api/:version/animal/:type?', (c) => {
     const type1 = c.req.param('type')
-    type verify = Expect<Equal<typeof type1, string | undefined>>
+    expectTypeOf(type1).toEqualTypeOf<string | undefined>()
     const { type, version } = c.req.param()
-    type verify2 = Expect<Equal<typeof version, string>>
-    type verify3 = Expect<Equal<typeof type, string | undefined>>
+    expectTypeOf(version).toEqualTypeOf<string>()
+    expectTypeOf(type).toEqualTypeOf<string | undefined>()
 
     return c.json({
       type: type,
@@ -2668,7 +2670,7 @@ describe('c.var - with testing types', () => {
       }
     }>()
     app.get('/', poweredBy(), async (c) => {
-      type verify = Expect<Equal<string, typeof c.env.TOKEN>>
+      expectTypeOf(c.env.TOKEN).toEqualTypeOf<string>()
     })
   })
 })
