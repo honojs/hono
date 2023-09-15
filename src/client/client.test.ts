@@ -10,7 +10,7 @@ import { Hono } from '../hono'
 import type { Equal, Expect } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
-import type { InferRequestType, InferResponseType } from './types'
+import type { InferRequestOptionsType, InferRequestType, InferResponseType } from './types'
 
 // @ts-ignore
 global.fetch = _fetch
@@ -31,10 +31,9 @@ describe('Basic - JSON', () => {
           debug: string
         }
       }),
-      // Client does not support `header`
       validator('header', () => {
         return {} as {
-          'x-request-id': string
+          'x-message': string
         }
       }),
       validator('json', () => {
@@ -260,6 +259,11 @@ describe('Infer the response/request type', () => {
         age: 'dummy',
       }
     }),
+    validator('header', () => {
+      return {
+        'x-request-id': 'dummy',
+      }
+    }),
     (c) =>
       c.jsonT({
         id: 123,
@@ -291,6 +295,18 @@ describe('Infer the response/request type', () => {
       name: string
     }
     type verify = Expect<Equal<Expected, Actual['query']>>
+  })
+
+  it('Should infer request header type the type correctly', () => {
+    const client = hc<AppType>('/')
+    const req = client.index.$get
+    type c = typeof req
+
+    type Actual = InferRequestOptionsType<c>
+    type Expected = {
+      'x-request-id': string
+    }
+    type verify = Expect<Equal<Expected, Actual['headers']>>
   })
 
   describe('Without input', () => {
