@@ -27,6 +27,10 @@ export class StreamingApi {
     return this
   }
 
+  wait(ms: number) {
+    return new Promise((res) => setTimeout(res, ms))
+  }
+
   async close() {
     await this.writer.close()
   }
