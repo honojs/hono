@@ -346,7 +346,7 @@ export class Context<
     cb(stream).finally(() => stream.close())
 
     this._pH ??= {}
-    this._pH['content-type'] = 'text/plain'
+    this._pH['content-type'] = 'text/plain; charset=UTF-8'
     this._pH['transfer-encoding'] = 'chunked'
 
     return typeof arg === 'number'
