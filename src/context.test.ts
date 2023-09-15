@@ -174,6 +174,7 @@ describe('Context', () => {
     expect(res.headers.get('foo')).toBe('bar')
   })
 
+  // The `c.runtime()` will be removed in v4.
   it('returns current runtime (workerd)', async () => {
     c = new Context(req)
     expect(c.runtime).toBe('workerd')
