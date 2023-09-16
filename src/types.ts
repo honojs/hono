@@ -42,10 +42,11 @@ export type Handler<
   R extends HandlerResponse<any> = any
 > = (c: Context<E, P, I>, next: Next) => R
 
-export type MiddlewareHandler<E extends Env = any, P extends string = any, I extends Input = {}> = (
-  c: Context<E, P, I>,
-  next: Next
-) => Promise<Response | void>
+export type MiddlewareHandler<
+  E extends Env = any,
+  P extends string = string,
+  I extends Input = {}
+> = (c: Context<E, P, I>, next: Next) => Promise<Response | void>
 
 export type H<
   E extends Env = any,
@@ -68,7 +69,7 @@ export type ErrorHandler<E extends Env = any> = (
 
 export interface HandlerInterface<
   E extends Env = Env,
-  M extends string = any,
+  M extends string = string,
   S extends Schema = {},
   BasePath extends string = '/'
 > {
