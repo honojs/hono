@@ -2488,13 +2488,18 @@ describe('c.var - with testing types', () => {
     )
   })
 
+  // @ts-expect-error
   app.use('/no-path/5').get(mw(), mw2(), mw3(), mw4(), mw5(), (c) => {
     return c.text(
-      // @ts-ignore
+      // @ts-expect-error
       c.var.echo('hello') +
+        // @ts-expect-error
         c.var.echo2('hello2') +
+        // @ts-expect-error
         c.var.echo3('hello3') +
+        // @ts-expect-error
         c.var.echo4('hello4') +
+        // @ts-expect-error
         c.var.echo5('hello5')
     )
   })
@@ -2684,5 +2689,14 @@ describe('c.var - with testing types', () => {
 
     app.use(mw())
     app.use('*', mw())
+  })
+
+  it('Should throw type errors', (c) => {
+    try {
+      // @ts-expect-error
+      app.get(['foo', 'bar'], poweredBy())
+      // @ts-expect-error
+      app.use(['foo', 'bar'], poweredBy())
+    } catch {}
   })
 })
