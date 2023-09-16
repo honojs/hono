@@ -77,3 +77,7 @@ export const jwt = (options: {
     await next()
   }
 }
+
+export const verify = Jwt.verify
+export const decode = Jwt.decode
+export const sign = Jwt.sign
