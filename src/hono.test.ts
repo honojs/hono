@@ -2499,6 +2499,8 @@ describe('c.var - with testing types', () => {
     )
   })
 
+  app.get('*', mw())
+
   app.get('/path/1', mw(), (c) => {
     return c.text(c.var.echo('hello'))
   })
@@ -2669,8 +2671,18 @@ describe('c.var - with testing types', () => {
         TOKEN: string
       }
     }>()
+
     app.get('/', poweredBy(), async (c) => {
       expectTypeOf(c.env.TOKEN).toEqualTypeOf<string>()
     })
+
+    app.get('/', async (c, next) => {
+      expectTypeOf(c.env.TOKEN).toEqualTypeOf<string>()
+      const mw = poweredBy()
+      await mw(c, next)
+    })
+
+    app.use(mw())
+    app.use('*', mw())
   })
 })
