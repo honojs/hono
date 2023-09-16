@@ -260,6 +260,41 @@ describe('Pass a ResponseInit to respond methods', () => {
     expect(res.headers.get('content-type')).toMatch(/^text\/html/)
     expect(await res.text()).toBe('<h1>foo</h1>')
   })
+
+  it('c.streamText()', async () => {
+    const res = c.streamText(async (stream) => {
+      for (let i = 0; i < 3; i++) {
+        await stream.write(`${i}`)
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    for (let i = 0; i < 3; i++) {
+      const { value } = await reader.read()
+      expect(decoder.decode(value)).toEqual(`${i}`)
+    }
+  })
+
+  it('c.stream()', async () => {
+    const res = c.stream(async (stream) => {
+      for (let i = 0; i < 3; i++) {
+        await stream.write(new Uint8Array([i]))
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    for (let i = 0; i < 3; i++) {
+      const { value } = await reader.read()
+      expect(value).toEqual(new Uint8Array([i]))
+    }
+  })
 })
 
 declare module './context' {
