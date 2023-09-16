@@ -563,13 +563,16 @@ describe('Different types using jsonT()', () => {
         '/': {
           $get: {
             input: {}
-            output: {
-              ng: boolean
-            } & {
-              ok: boolean
-            } & {
-              default: boolean
-            }
+            output:
+              | {
+                  ng: boolean
+                }
+              | {
+                  ok: boolean
+                }
+              | {
+                  default: boolean
+                }
           }
         }
       }
@@ -601,13 +604,16 @@ describe('Different types using jsonT()', () => {
         '/foo': {
           $get: {
             input: {}
-            output: {
-              ng: boolean
-            } & {
-              ok: boolean
-            } & {
-              default: boolean
-            }
+            output:
+              | {
+                  ng: boolean
+                }
+              | {
+                  ok: boolean
+                }
+              | {
+                  default: boolean
+                }
           }
         }
       }
