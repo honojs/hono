@@ -475,12 +475,12 @@ export type TypedResponse<T = unknown> = {
 type ExtractResponseData<T> = T extends Promise<infer T2>
   ? T2 extends TypedResponse<infer U>
     ? U
-    : never
+    : {}
   : T extends TypedResponse<infer U>
   ? U
-  : never
+  : {}
 
-type MergeTypedResponseData<T> = UnionToIntersection<ExtractResponseData<T>>
+type MergeTypedResponseData<T> = ExtractResponseData<T>
 
 ////////////////////////////////////////
 //////                             /////
