@@ -264,7 +264,7 @@ describe('Pass a ResponseInit to respond methods', () => {
     const res = c.streamText(async (stream) => {
       for (let i = 0; i < 3; i++) {
         await stream.write(`${i}`)
-        await stream.sleep(1000)
+        await stream.sleep(1)
       }
     })
     if (!res.body) {
@@ -282,7 +282,7 @@ describe('Pass a ResponseInit to respond methods', () => {
     const res = c.stream(async (stream) => {
       for (let i = 0; i < 3; i++) {
         await stream.write(new Uint8Array([i]))
-        await stream.sleep(1000)
+        await stream.sleep(1)
       }
     })
     if (!res.body) {
