@@ -358,8 +358,6 @@ export class Context<
     const stream = new StreamingApi(writable)
     cb(stream).finally(() => stream.close())
 
-    this._pH ??= {}
-
     return typeof arg === 'number'
       ? this.newResponse(readable, arg, headers)
       : this.newResponse(readable, arg)
