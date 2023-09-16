@@ -344,6 +344,7 @@ export class Context<
     headers ??= {}
     headers['content-type'] = 'text/plain; charset=UTF-8'
     headers['x-content-type-options'] = 'nosniff'
+    headers['transfer-encoding'] = 'chunked'
 
     return this.stream(cb, arg, headers)
   }
@@ -358,7 +359,6 @@ export class Context<
     cb(stream).finally(() => stream.close())
 
     this._pH ??= {}
-    this._pH['transfer-encoding'] = 'chunked'
 
     return typeof arg === 'number'
       ? this.newResponse(readable, arg, headers)
