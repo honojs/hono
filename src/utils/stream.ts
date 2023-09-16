@@ -27,7 +27,7 @@ export class StreamingApi {
     return this
   }
 
-  wait(ms: number) {
+  sleep(ms: number) {
     return new Promise((res) => setTimeout(res, ms))
   }
 
