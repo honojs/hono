@@ -31,32 +31,6 @@ describe('StreamingApi', () => {
     expect((await reader.read()).value).toEqual(new TextEncoder().encode('bar\n'))
   })
 
-  it('log(string)', async () => {
-    const { readable, writable } = new TransformStream()
-    const api = new StreamingApi(writable)
-    const reader = readable.getReader()
-    api.log('foo')
-    expect((await reader.read()).value).toEqual(new TextEncoder().encode('"foo"\n'))
-  })
-
-  it('log(object)', async () => {
-    const { readable, writable } = new TransformStream()
-    const api = new StreamingApi(writable)
-    const reader = readable.getReader()
-    api.log({ foo: 'bar' })
-    expect((await reader.read()).value).toEqual(new TextEncoder().encode('{"foo":"bar"}\n'))
-  })
-
-  it('log(arg)', async () => {
-    const { readable, writable } = new TransformStream()
-    const api = new StreamingApi(writable)
-    const reader = readable.getReader()
-    api.log('foo')
-    expect((await reader.read()).value).toEqual(new TextEncoder().encode('"foo"\n'))
-    api.log({ foo: 'bar' })
-    expect((await reader.read()).value).toEqual(new TextEncoder().encode('{"foo":"bar"}\n'))
-  })
-
   it('pipe()', async () => {
     const { readable: senderReadable, writable: senderWritable } = new TransformStream()
 

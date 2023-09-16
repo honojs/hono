@@ -22,11 +22,6 @@ export class StreamingApi {
     return this
   }
 
-  async log(arg: any) {
-    await this.writeln(JSON.stringify(arg))
-    return this
-  }
-
   sleep(ms: number) {
     return new Promise((res) => setTimeout(res, ms))
   }
