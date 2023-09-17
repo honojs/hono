@@ -1,5 +1,13 @@
 import { Hono } from '../../hono'
-import { getCookie, getSignedCookie, setCookie, setSignedCookie, deleteCookie } from '.'
+import { serialize, serializeSigned } from '../../utils/cookie'
+import {
+  getCookie,
+  getSignedCookie,
+  setCookie,
+  setSignedCookie,
+  deleteCookie,
+  getCookieValue,
+} from '.'
 
 describe('Cookie Middleware', () => {
   describe('Parse cookie', () => {
@@ -246,6 +254,23 @@ describe('Cookie Middleware', () => {
       expect(res2.status).toBe(200)
       const header2 = res2.headers.get('Set-Cookie')
       expect(header2).toBe('delicious_cookie=; Max-Age=0; Domain=example.com; Path=/; Secure')
+    })
+  })
+
+  describe('get cookie value', () => {
+    it('Should have correct plain cookie value', async () => {
+      const cookie = serialize('debug', 'world=')
+      const value = getCookieValue(cookie, 'debug')
+      const decodeCookie = decodeURIComponent(cookie.replace('debug=', ''))
+
+      expect(value).toBe(decodeCookie)
+    })
+    it('Should have correct signed cookie value', async () => {
+      const cookie = await serializeSigned('debug', 'world', 'secret')
+      const value = getCookieValue(cookie, 'debug')
+      const decodeCookie = decodeURIComponent(cookie.replace('debug=', ''))
+
+      expect(value).toBe(decodeCookie)
     })
   })
 })

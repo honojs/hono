@@ -1,5 +1,6 @@
 import type { Hono } from '../hono'
 import type { ValidationTargets } from '../types'
+import { serialize } from '../utils/cookie'
 import type { UnionToIntersection } from '../utils/types'
 import type { Callback, Client, ClientRequestOptions } from './types'
 import { deepMerge, mergePath, removeIndexString, replaceUrlParam } from './utils'
@@ -86,7 +87,19 @@ class ClientRequestImpl {
     let methodUpperCase = this.method.toUpperCase()
     let setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
 
-    const headerValues: Record<string, string> = opt?.headers ? opt.headers : {}
+    const headerValues: Record<string, string> = {
+      ...(args?.header ?? {}),
+      ...(opt?.headers ? opt.headers : {}),
+    }
+
+    if (args?.cookie) {
+      const cookies: string[] = []
+      for (const [key, value] of Object.entries(args.cookie)) {
+        cookies.push(serialize(key, value, { path: '/' }))
+      }
+      headerValues['Cookie'] = cookies.join(',')
+    }
+
     if (this.cType) headerValues['Content-Type'] = this.cType
 
     const headers = new Headers(headerValues ?? undefined)
