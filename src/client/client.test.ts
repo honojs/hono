@@ -6,8 +6,8 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import _fetch, { Request as NodeFetchRequest } from 'node-fetch'
 import { vi } from 'vitest'
-import { getCookieValue } from '../helper'
 import { Hono } from '../hono'
+import { parse, serialize } from '../utils/cookie'
 import type { Equal, Expect } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
@@ -223,8 +223,10 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
       const message = await req.headers.get('x-message-id')
       return res(ctx.status(200), ctx.json({ 'x-message-id': message }))
     }),
+
     rest.get('http://localhost/api/cookie', async (req, res, ctx) => {
-      const value = getCookieValue(req.headers.get('cookie') || '', 'hello')
+      const obj = parse(req.headers.get('cookie') || '')
+      const value = obj['hello']
       return res(ctx.status(200), ctx.json({ hello: value }))
     })
   )

@@ -57,8 +57,3 @@ export const setSignedCookie = async (
 export const deleteCookie = (c: Context, name: string, opt?: CookieOptions): void => {
   setCookie(c, name, '', { ...opt, maxAge: 0 })
 }
-
-export const getCookieValue = (cookie: string, key: string): string => {
-  const obj = parse(cookie)
-  return obj[key] || ''
-}
