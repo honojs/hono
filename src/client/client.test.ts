@@ -7,6 +7,7 @@ import { setupServer } from 'msw/node'
 import _fetch, { Request as NodeFetchRequest } from 'node-fetch'
 import { vi } from 'vitest'
 import { Hono } from '../hono'
+import { parse, serialize } from '../utils/cookie'
 import type { Equal, Expect } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
@@ -25,7 +26,6 @@ describe('Basic - JSON', () => {
   const route = app
     .post(
       '/posts',
-      // Client does not support `cookie`
       validator('cookie', () => {
         return {} as {
           debug: string
@@ -96,12 +96,14 @@ describe('Basic - JSON', () => {
     const res = await client.posts.$post(
       {
         json: payload,
-      },
-      {
-        headers: {
+        header: {
           'x-message': 'foobar',
         },
-      }
+        cookie: {
+          debug: 'true',
+        },
+      },
+      {}
     )
 
     expect(res.ok).toBe(true)
@@ -120,7 +122,7 @@ describe('Basic - JSON', () => {
   })
 })
 
-describe('Basic - query, queries, form, and path params', () => {
+describe('Basic - query, queries, form, path params, header and cookie', () => {
   const app = new Hono()
 
   const route = app
@@ -161,6 +163,30 @@ describe('Basic - query, queries, form, and path params', () => {
         return c.jsonT(data)
       }
     )
+    .get(
+      '/header',
+      validator('header', () => {
+        return {
+          'x-message-id': 'Hello',
+        }
+      }),
+      (c) => {
+        const data = c.req.valid('header')
+        return c.jsonT(data)
+      }
+    )
+    .get(
+      '/cookie',
+      validator('cookie', () => {
+        return {
+          hello: 'world',
+        }
+      }),
+      (c) => {
+        const data = c.req.valid('cookie')
+        return c.jsonT(data)
+      }
+    )
 
   const server = setupServer(
     rest.get('http://localhost/api/search', (req, res, ctx) => {
@@ -192,6 +218,16 @@ describe('Basic - query, queries, form, and path params', () => {
       // @ts-ignore
       const string = String.fromCharCode.apply('', new Uint8Array(buffer))
       return res(ctx.status(200), ctx.text(string))
+    }),
+    rest.get('http://localhost/api/header', async (req, res, ctx) => {
+      const message = await req.headers.get('x-message-id')
+      return res(ctx.status(200), ctx.json({ 'x-message-id': message }))
+    }),
+
+    rest.get('http://localhost/api/cookie', async (req, res, ctx) => {
+      const obj = parse(req.headers.get('cookie') || '')
+      const value = obj['hello']
+      return res(ctx.status(200), ctx.json({ hello: value }))
     })
   )
 
@@ -247,6 +283,30 @@ describe('Basic - query, queries, form, and path params', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toMatch('Good Night')
   })
+
+  it('Should get 200 response - header', async () => {
+    const header = {
+      'x-message-id': 'Hello',
+    }
+    const res = await client.header.$get({
+      header,
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual(header)
+  })
+
+  it('Should get 200 response - cookie', async () => {
+    const cookie = {
+      hello: 'world',
+    }
+    const res = await client.cookie.$get({
+      cookie,
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual(cookie)
+  })
 })
 
 describe('Infer the response/request type', () => {
@@ -262,6 +322,11 @@ describe('Infer the response/request type', () => {
     validator('header', () => {
       return {
         'x-request-id': 'dummy',
+      }
+    }),
+    validator('cookie', () => {
+      return {
+        name: 'dummy',
       }
     }),
     (c) =>
@@ -302,11 +367,23 @@ describe('Infer the response/request type', () => {
     const req = client.index.$get
     type c = typeof req
 
-    type Actual = InferRequestOptionsType<c>
+    type Actual = InferRequestType<c>
     type Expected = {
       'x-request-id': string
     }
-    type verify = Expect<Equal<Expected, Actual['headers']>>
+    type verify = Expect<Equal<Expected, Actual['header']>>
+  })
+
+  it('Should infer request cookie type the type correctly', () => {
+    const client = hc<AppType>('/')
+    const req = client.index.$get
+    type c = typeof req
+
+    type Actual = InferRequestType<c>
+    type Expected = {
+      name: string
+    }
+    type verify = Expect<Equal<Expected, Actual['cookie']>>
   })
 
   describe('Without input', () => {

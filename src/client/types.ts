@@ -4,8 +4,6 @@ import type { RemoveBlankRecord } from '../utils/types'
 
 type HonoRequest = typeof Hono.prototype['request']
 
-type HasHeaderOption<T> = T extends { header: unknown } ? T['header'] : never
-
 export type ClientRequestOptions<T = unknown> = keyof T extends never
   ? {
       headers?: Record<string, string>
@@ -20,16 +18,7 @@ type ClientRequest<S extends Schema> = {
   [M in keyof S]: S[M] extends { input: infer R; output: infer O }
     ? RemoveBlankRecord<R> extends never
       ? (args?: {}, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
-      : HasHeaderOption<R> extends never
-      ? (
-          // Client does not support `cookie`
-          args?: Omit<R, 'header' | 'cookie'>,
-          options?: ClientRequestOptions
-        ) => Promise<ClientResponse<O>>
-      : (
-          args: Omit<R, 'header' | 'cookie'> | undefined,
-          options: ClientRequestOptions<HasHeaderOption<R>>
-        ) => Promise<ClientResponse<O>>
+      : (args: R, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
     : never
 } & {
   $url: () => URL
