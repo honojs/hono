@@ -115,6 +115,25 @@ describe('Cookie Middleware', () => {
       const res = await app.request(req)
       expect(res.headers.get('Fortune-Cookie')).toBe('INVALID')
     })
+
+    describe('get null if the value is undefined', () => {
+      const app = new Hono()
+
+      app.get('/cookie', (c) => {
+        const yummyCookie = getCookie(c, 'yummy_cookie')
+        const res = new Response('Good cookie')
+        if (yummyCookie) res.headers.set('Yummy-Cookie', yummyCookie)
+        return res
+      })
+
+      it('Should be null', async () => {
+        const req = new Request('http://localhost/cookie')
+        const cookieString = 'yummy_cookie='
+        req.headers.set('Cookie', cookieString)
+        const res = await app.request(req)
+        expect(res.headers.get('Yummy-Cookie')).toBe(null)
+      })
+    })
   })
 
   describe('Set cookie', () => {

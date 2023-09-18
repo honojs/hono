@@ -20,7 +20,7 @@ export const getCookie: GetCookie = (c, key?) => {
     return obj[key]
   }
   if (!cookie) return {}
-  const obj = parse(cookie, key)
+  const obj = parse(cookie)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return obj as any
 }
