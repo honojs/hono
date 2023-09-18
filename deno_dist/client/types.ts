@@ -13,7 +13,7 @@ type ClientRequest<S extends Schema> = {
   [M in keyof S]: S[M] extends { input: infer R; output: infer O }
     ? RemoveBlankRecord<R> extends never
       ? (args?: {}, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
-      : (args: R | undefined, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
+      : (args: R, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
     : never
 } & {
   $url: () => URL
@@ -49,18 +49,12 @@ export type Fetch<T> = (
 
 export type InferResponseType<T> = T extends (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  args: any | undefined,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  options: any | undefined
+  args: any | undefined
 ) => Promise<ClientResponse<infer O>>
   ? O
   : never
 
-export type InferRequestType<T> = T extends (
-  args: infer R,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  options: any | undefined
-) => Promise<ClientResponse<unknown>>
+export type InferRequestType<T> = T extends (args: infer R) => Promise<ClientResponse<unknown>>
   ? NonNullable<R>
   : never
 
