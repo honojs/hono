@@ -11,7 +11,7 @@ import { parse, serialize } from '../utils/cookie'
 import type { Equal, Expect } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
-import type { InferRequestType, InferResponseType } from './types'
+import type { InferRequestOptionsType, InferRequestType, InferResponseType } from './types'
 
 // @ts-ignore
 global.fetch = _fetch
