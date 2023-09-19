@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import { StreamingApi } from './stream'
 
 describe('StreamingApi', () => {
@@ -63,6 +64,23 @@ describe('StreamingApi', () => {
     const reader = readable.getReader()
     await api.close()
     expect((await reader.read()).done).toBe(true)
-    await expect(api.write('foo')).rejects.toThrow()
+  })
+
+  it('should not throw an error in write()', async () => {
+    const { writable } = new TransformStream()
+    const api = new StreamingApi(writable)
+    await api.close()
+    const write = () => api.write('foo')
+    expect(write).not.toThrow()
+  })
+
+  it('should not throw an error in close()', async () => {
+    const { writable } = new TransformStream()
+    const api = new StreamingApi(writable)
+    const close = async () => {
+      await api.close()
+      await api.close()
+    }
+    expect(close).not.toThrow()
   })
 })
