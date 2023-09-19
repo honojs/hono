@@ -10,10 +10,14 @@ export class StreamingApi {
   }
 
   async write(input: Uint8Array | string) {
-    if (typeof input === 'string') {
-      input = this.encoder.encode(input)
+    try {
+      if (typeof input === 'string') {
+        input = this.encoder.encode(input)
+      }
+      await this.writer.write(input)
+    } catch (e) {
+      // Do nothing. If you want to handle errors, create a stream by yourself.
     }
-    await this.writer.write(input)
     return this
   }
 
@@ -27,7 +31,11 @@ export class StreamingApi {
   }
 
   async close() {
-    await this.writer.close()
+    try {
+      await this.writer.close()
+    } catch (e) {
+      // Do nothing. If you want to handle errors, create a stream by yourself.
+    }
   }
 
   async pipe(body: ReadableStream) {
