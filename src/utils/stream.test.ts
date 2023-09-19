@@ -1,4 +1,3 @@
-import { vi } from 'vitest'
 import { StreamingApi } from './stream'
 
 describe('StreamingApi', () => {
