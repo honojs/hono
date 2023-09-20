@@ -1,5 +1,6 @@
 import { encodeBase64Url, decodeBase64Url } from '../../utils/encode.ts'
-import { AlgorithmTypes, JwtTokenIssuedAt } from './types.ts'
+import type { AlgorithmTypes } from './types.ts'
+import { JwtTokenIssuedAt } from './types.ts'
 import {
   JwtTokenInvalid,
   JwtTokenNotBefore,
@@ -34,6 +35,8 @@ enum CryptoKeyUsage {
   UnwrapKey = 'unwrapKey',
 }
 
+type AlgorithmTypeName = keyof typeof AlgorithmTypes
+
 const utf8Encoder = new TextEncoder()
 const utf8Decoder = new TextDecoder()
 
@@ -44,7 +47,7 @@ const encodeSignaturePart = (buf: ArrayBufferLike): string => encodeBase64Url(bu
 const decodeJwtPart = (part: string): unknown =>
   JSON.parse(utf8Decoder.decode(decodeBase64Url(part)))
 
-const param = (name: AlgorithmTypes): AlgorithmParams => {
+const param = (name: AlgorithmTypeName): AlgorithmParams => {
   switch (name.toUpperCase()) {
     case 'HS256':
       return {
@@ -75,7 +78,7 @@ const param = (name: AlgorithmTypes): AlgorithmParams => {
 const signing = async (
   data: string,
   secret: string,
-  alg: AlgorithmTypes = AlgorithmTypes.HS256
+  alg: AlgorithmTypeName = 'HS256'
 ): Promise<ArrayBuffer> => {
   if (!crypto.subtle || !crypto.subtle.importKey) {
     throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
@@ -95,7 +98,7 @@ const signing = async (
 export const sign = async (
   payload: unknown,
   secret: string,
-  alg: AlgorithmTypes = AlgorithmTypes.HS256
+  alg: AlgorithmTypeName = 'HS256'
 ): Promise<string> => {
   const encodedPayload = encodeJwtPart(payload)
   const encodedHeader = encodeJwtPart({ alg, typ: 'JWT' })
@@ -111,7 +114,7 @@ export const sign = async (
 export const verify = async (
   token: string,
   secret: string,
-  alg: AlgorithmTypes = AlgorithmTypes.HS256
+  alg: AlgorithmTypeName = 'HS256'
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> => {
   const tokenParts = token.split('.')
