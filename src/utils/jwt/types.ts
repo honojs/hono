@@ -1,6 +1,6 @@
 export class JwtAlgorithmNotImplemented extends Error {
-  constructor(token: string) {
-    super(`invalid JWT token: ${token}`)
+  constructor(alg: string) {
+    super(`${alg} is not an implemented algorithm`)
     this.name = 'JwtAlgorithmNotImplemented'
   }
 }
