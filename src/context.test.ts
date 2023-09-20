@@ -269,6 +269,12 @@ describe('Pass a ResponseInit to respond methods', () => {
         await stream.sleep(1)
       }
     })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toMatch(/^text\/plain/)
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(res.headers.get('transfer-encoding')).toBe('chunked')
+
     if (!res.body) {
       throw new Error('Body is null')
     }

@@ -86,6 +86,8 @@ type ContextOptions<E extends Env> = {
   notFoundHandler?: NotFoundHandler<E>
 }
 
+const TEXT_PLAIN = 'text/plain; charset=UTF-8'
+
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any,
@@ -311,7 +313,7 @@ export class Context<
     // If Content-Type is not set, we don't have to set `text/plain`.
     // Fewer the header values, it will be faster.
     if (this._pH['content-type']) {
-      this._pH['content-type'] = 'text/plain; charset=UTF-8'
+      this._pH['content-type'] = TEXT_PLAIN
     }
     return typeof arg === 'number'
       ? this.newResponse(text, arg, headers)
@@ -378,10 +380,9 @@ export class Context<
     headers?: HeaderRecord
   ): Response => {
     headers ??= {}
-    headers['content-type'] = 'text/plain; charset=UTF-8'
-    headers['x-content-type-options'] = 'nosniff'
-    headers['transfer-encoding'] = 'chunked'
-
+    this.header('content-type', TEXT_PLAIN)
+    this.header('x-content-type-options', 'nosniff')
+    this.header('transfer-encoding', 'chunked')
     return this.stream(cb, arg, headers)
   }
 
