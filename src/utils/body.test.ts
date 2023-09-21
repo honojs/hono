@@ -39,18 +39,20 @@ describe('Parse Body Util', () => {
     const data = new FormData()
     data.append('foo', 'value1')
     data.append('foo', 'value2')
+    data.append('bar', 'value3')
     const req = new Request('https://localhost/form', {
       method: 'POST',
       body: data,
       // `Content-Type` header must not be set.
     })
-    expect(await parseBody(req)).toEqual({ foo: ['value1', 'value2'] })
+    expect(await parseBody(req)).toEqual({ foo: ['value1', 'value2'], bar: 'value3' })
   })
 
   it('should parse `x-www-form-urlencoded` and return an array for key with multiple values', async () => {
     const searchParams = new URLSearchParams()
     searchParams.append('foo', 'value1')
     searchParams.append('foo', 'value2')
+    searchParams.append('bar', 'value3')
     const req = new Request('https://localhost/search', {
       method: 'POST',
       body: searchParams,
@@ -58,6 +60,6 @@ describe('Parse Body Util', () => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     })
-    expect(await parseBody(req)).toEqual({ foo: ['value1', 'value2'] })
+    expect(await parseBody(req)).toEqual({ foo: ['value1', 'value2'], bar: 'value3' })
   })
 })
