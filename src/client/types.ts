@@ -4,20 +4,21 @@ import type { RemoveBlankRecord } from '../utils/types'
 
 type HonoRequest = typeof Hono.prototype['request']
 
-export type ClientRequestOptions = {
-  headers?: Record<string, string>
-  fetch?: typeof fetch | HonoRequest
-}
+export type ClientRequestOptions<T = unknown> = keyof T extends never
+  ? {
+      headers?: Record<string, string>
+      fetch?: typeof fetch | HonoRequest
+    }
+  : {
+      headers: T
+      fetch?: typeof fetch | HonoRequest
+    }
 
 type ClientRequest<S extends Schema> = {
   [M in keyof S]: S[M] extends { input: infer R; output: infer O }
     ? RemoveBlankRecord<R> extends never
       ? (args?: {}, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
-      : (
-          // Client does not support `header` and `cookie`
-          args: Omit<R, 'header' | 'cookie'>,
-          options?: ClientRequestOptions
-        ) => Promise<ClientResponse<O>>
+      : (args: R, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
     : never
 } & {
   $url: () => URL
@@ -53,12 +54,26 @@ export type Fetch<T> = (
 
 export type InferResponseType<T> = T extends (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  args: any | undefined
+  args: any | undefined,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options: any | undefined
 ) => Promise<ClientResponse<infer O>>
   ? O
   : never
 
-export type InferRequestType<T> = T extends (args: infer R) => Promise<ClientResponse<unknown>>
+export type InferRequestType<T> = T extends (
+  args: infer R,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options: any | undefined
+) => Promise<ClientResponse<unknown>>
+  ? NonNullable<R>
+  : never
+
+export type InferRequestOptionsType<T> = T extends (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  args: any,
+  options: infer R
+) => Promise<ClientResponse<unknown>>
   ? NonNullable<R>
   : never
 
