@@ -17,7 +17,7 @@ export const parseBody = async <T extends BodyData = BodyData>(
     if (formData) {
       const form: BodyData = {}
       for (const key of formData.keys()) {
-        const values = formData.getAll(key);
+        const values = formData.getAll(key)
         form[key] = values.length === 1 ? values[0] : values
       }
       body = form
