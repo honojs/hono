@@ -1,6 +1,6 @@
 import type { HonoRequest } from '../request'
 
-export type BodyData = Record<string, string | File>
+export type BodyData = Record<string, string | File | (string | File)[]>
 
 export const parseBody = async <T extends BodyData = BodyData>(
   request: HonoRequest | Request
@@ -16,9 +16,10 @@ export const parseBody = async <T extends BodyData = BodyData>(
     const formData = await request.formData()
     if (formData) {
       const form: BodyData = {}
-      formData.forEach((value, key) => {
-        form[key] = value
-      })
+      for (const key of formData.keys()) {
+        const values = formData.getAll(key);
+        form[key] = values.length === 1 ? values[0] : values
+      }
       body = form
     }
   }
