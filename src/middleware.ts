@@ -8,7 +8,7 @@ export * from './middleware/cors'
 export * from './middleware/etag'
 export * from './helper/html' // will be moved to helper.ts in v4
 export * from './jsx'
-export * from './middleware/jwt'
+export { jwt } from './middleware/jwt'
 export * from './middleware/logger'
 export * from './middleware/powered-by'
 export * from './middleware/timing'
