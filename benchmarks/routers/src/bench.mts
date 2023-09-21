@@ -5,6 +5,7 @@ import { regExpRouter, trieRouter } from './hono.mts'
 import { koaRouter } from './koa-router.mts'
 import { koaTreeRouter } from './koa-tree-router.mts'
 import { medleyRouter } from './medley-router.mts'
+import { memoiristRouter } from './memoirist.mts'
 import { radix3Router } from './radix3.mts'
 import type { Route, RouterInterface } from './tool.mts'
 import { trekRouter } from './trek-router.mts'
@@ -19,6 +20,7 @@ const routers: RouterInterface[] = [
   expressRouter,
   koaRouter,
   radix3Router,
+  memoiristRouter,
 ]
 
 medleyRouter.match({ method: 'GET', path: '/user' })

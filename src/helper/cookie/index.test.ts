@@ -244,7 +244,7 @@ describe('Cookie Middleware', () => {
       return c.text('Give cookie')
     })
 
-    it('Delete multile cookies', async () => {
+    it('Delete multiple cookies', async () => {
       const res2 = await app.request('http://localhost/delete-cookie-multiple')
       expect(res2.status).toBe(200)
       const header2 = res2.headers.get('Set-Cookie')

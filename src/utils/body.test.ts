@@ -4,12 +4,14 @@ describe('Parse Body Util', () => {
   it('should parse `multipart/form-data`', async () => {
     const data = new FormData()
     data.append('message', 'hello')
+    data.append('multi[]', 'foo')
+    data.append('multi[]', 'bar')
     const req = new Request('https://localhost/form', {
       method: 'POST',
       body: data,
       // `Content-Type` header must not be set.
     })
-    expect(await parseBody(req)).toEqual({ message: 'hello' })
+    expect(await parseBody(req)).toEqual({ message: 'hello', 'multi[]': ['foo', 'bar'] })
   })
 
   it('should parse `x-www-form-urlencoded`', async () => {
