@@ -241,3 +241,36 @@ export const Fragment = (props: {
 }): HtmlEscapedString => {
   return new JSXFragmentNode('', {}, props.children ? [props.children] : []) as never
 }
+
+export interface Context<T> {
+  values: T[]
+  Provider: FC<{ value: T }>
+}
+
+export const createContext = <T>(defaultValue: T): Context<T> => {
+  const values = [defaultValue]
+  return {
+    values,
+    Provider(props): HtmlEscapedString {
+      values.push(props.value)
+
+      const res = new String(
+        props.children
+          ? (Array.isArray(props.children)
+              ? new JSXFragmentNode('', {}, props.children)
+              : props.children
+            ).toString()
+          : ''
+      ) as HtmlEscapedString
+      res.isEscaped = true
+
+      values.pop()
+
+      return res
+    },
+  }
+}
+
+export const useContext = <T>(context: Context<T>): T => {
+  return context.values[context.values.length - 1]
+}
