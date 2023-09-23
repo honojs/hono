@@ -55,18 +55,21 @@ describe('bufferToString', () => {
 })
 
 describe('bufferToFormData', () => {
-  it('Should parse multipart/form-data from ArrayBuffer', () => {
+  it('Should parse multipart/form-data from ArrayBuffer', async () => {
     const encoder = new TextEncoder()
     const testData =
       '--sampleboundary\r\nContent-Disposition: form-data; name="test"\r\n\r\nHello\r\n--sampleboundary--'
     const arrayBuffer = encoder.encode(testData).buffer
 
-    const result = bufferToFormData(arrayBuffer, 'multipart/form-data; boundary=sampleboundary')
+    const result = await bufferToFormData(
+      arrayBuffer,
+      'multipart/form-data; boundary=sampleboundary'
+    )
 
     expect(result.get('test')).toBe('Hello')
   })
 
-  it('Should parse application/x-www-form-urlencoded from ArrayBuffer', () => {
+  it('Should parse application/x-www-form-urlencoded from ArrayBuffer', async () => {
     const encoder = new TextEncoder()
     const searchParams = new URLSearchParams()
     searchParams.append('id', '123')
@@ -74,7 +77,7 @@ describe('bufferToFormData', () => {
     const testData = searchParams.toString()
     const arrayBuffer = encoder.encode(testData).buffer
 
-    const result = bufferToFormData(arrayBuffer, 'application/x-www-form-urlencoded')
+    const result = await bufferToFormData(arrayBuffer, 'application/x-www-form-urlencoded')
 
     expect(result.get('id')).toBe('123')
     expect(result.get('title')).toBe('Good title')
