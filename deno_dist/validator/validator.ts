@@ -73,7 +73,7 @@ export const validator = <
         const contentType = c.req.header('Content-Type')
         if (contentType) {
           const arrayBuffer = c.req.bodyCache.arrayBuffer ?? (await c.req.raw.arrayBuffer())
-          const formData = bufferToFormData(arrayBuffer, contentType)
+          const formData = await bufferToFormData(arrayBuffer, contentType)
           const form: BodyData = {}
           formData.forEach((value, key) => {
             form[key] = value
