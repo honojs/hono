@@ -1,4 +1,5 @@
-import { encodeBase64Url, decodeBase64Url } from '../../utils/encode'
+import { encodeBase64Url, decodeBase64Url } from '../encode'
+import handlePayloadConversion from './dateFormatter'
 import type { AlgorithmTypes } from './types'
 import { JwtTokenIssuedAt } from './types'
 import {
@@ -100,6 +101,7 @@ export const sign = async (
   secret: string,
   alg: AlgorithmTypeName = 'HS256'
 ): Promise<string> => {
+  payload = handlePayloadConversion(payload)
   const encodedPayload = encodeJwtPart(payload)
   const encodedHeader = encodeJwtPart({ alg, typ: 'JWT' })
 
