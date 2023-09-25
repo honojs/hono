@@ -1,5 +1,5 @@
-import type { Context } from '../../context'
-import { StreamingApi } from '../../utils/stream'
+import type { Context } from '../../context.ts'
+import { StreamingApi } from '../../utils/stream.ts'
 
 interface SSEMessage {
   data: string
