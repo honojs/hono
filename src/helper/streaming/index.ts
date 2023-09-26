@@ -8,8 +8,8 @@ interface SSEMessage {
 }
 
 class SSEStreamingApi extends StreamingApi {
-  constructor(originalStream: StreamingApi) {
-    super(originalStream['writable']) // Accessing the private writable property - normally not recommended but works for this specific solution.
+  constructor(writable: WritableStream) {
+    super(writable)
   }
 
   async writeSse(message: SSEMessage) {
@@ -26,16 +26,18 @@ class SSEStreamingApi extends StreamingApi {
   }
 }
 
-function setSSEHeaders(context: Context) {
-  context.set('Transfer-Encoding', 'chunked')
-  context.set('Content-Type', 'text/event-stream')
-  context.set('Cache-Control', 'no-cache')
-  context.set('Connection', 'keep-alive')
+const setSSEHeaders = (context: Context) => {
+  context.header('Transfer-Encoding', 'chunked')
+  context.header('Content-Type', 'text/event-stream')
+  context.header('Cache-Control', 'no-cache')
+  context.header('Connection', 'keep-alive')
 }
 
-export const streamAsSSE = (c: Context, cb: (stream: SSEStreamingApi) => Promise<void>) => {
+export const streamSSE = (c: Context, cb: (stream: SSEStreamingApi) => Promise<void>) => {
   return c.stream(async (originalStream: StreamingApi) => {
-    const stream = new SSEStreamingApi(originalStream)
+    const { readable, writable } = new TransformStream()
+    const stream = new SSEStreamingApi(writable)
+    originalStream.pipe(readable)
     setSSEHeaders(c)
 
     try {

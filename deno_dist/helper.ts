@@ -2,5 +2,5 @@
 export * from './helper/adapter/index.ts'
 export * from './helper/cookie/index.ts'
 export * from './helper/html/index.ts'
-export * from './helper/stream/index.ts'
+export * from './helper/streaming/index.ts'
 export * from './helper/testing/index.ts'

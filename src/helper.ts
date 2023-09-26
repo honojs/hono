@@ -2,5 +2,5 @@
 export * from './helper/adapter'
 export * from './helper/cookie'
 export * from './helper/html'
-export * from './helper/stream'
+export * from './helper/streaming'
 export * from './helper/testing'
