@@ -12,7 +12,7 @@ class SSEStreamingApi extends StreamingApi {
     super(writable)
   }
 
-  async writeSse(message: SSEMessage) {
+  async writeSSE(message: SSEMessage) {
     const sseData =
       [
         message.event && `event: ${message.event}`,
