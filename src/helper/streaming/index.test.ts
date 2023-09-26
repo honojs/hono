@@ -11,7 +11,7 @@ describe('SSE Streaming headers', () => {
 
         while (id < maxIterations) {
           const message = `It is ${id}`
-          await stream.writeSse({ data: message, event: 'time-update', id: String(id++) })
+          await stream.writeSSE({ data: message, event: 'time-update', id: String(id++) })
           await stream.sleep(1000)
         }
       })
@@ -33,7 +33,6 @@ describe('SSE Streaming headers', () => {
     for (let i = 0; i < 5; i++) {
       const { value } = await reader.read()
       const decodedValue = decoder.decode(value)
-      console.log(decodedValue)
 
       // Check the structure and content of the SSE message
       expect(decodedValue).toContain(`id: ${i}`)
