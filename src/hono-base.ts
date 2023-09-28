@@ -306,6 +306,15 @@ class Hono<
       notFoundHandler: this.notFoundHandler,
     })
 
+    if (this.stopped) {
+      return new Response(
+        null,
+        {
+          status: 503,
+        }
+      )
+    }
+
     // Do not `compose` if it has only one handler
     if (handlers.length === 1) {
       let res: ReturnType<H>
@@ -399,6 +408,45 @@ class Hono<
     addEventListener('fetch', (event: FetchEventLike): void => {
       event.respondWith(this.dispatch(event.request, event, undefined, event.request.method))
     })
+  }
+
+  // Server Stop Method
+
+  stopped: boolean = false
+
+  stop = (period?: number): boolean => {
+    if (this.stopped) {
+      console.error('Already stopped')
+      return false
+    }
+
+    // Stop
+
+    this.stopped = true
+
+    if (typeof period === 'number') {
+      setTimeout(() => {
+        this.resume(0)
+      }, period)
+    }
+
+    return true
+  }
+
+  resume = (delay: number = 0): boolean => {
+    if (!this.stopped) {
+      console.error('Server is up and running')
+
+      return false
+    }
+
+    setTimeout(() => {
+      // Resume
+
+      this.stopped = false
+    }, delay)
+
+    return true
   }
 }
 

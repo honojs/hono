@@ -422,7 +422,7 @@
     "msw": "^1.0.0",
     "node-fetch": "2",
     "np": "^7.7.0",
-    "prettier": "^2.6.2",
+    "prettier": "^3.0.3",
     "publint": "^0.1.8",
     "rimraf": "^3.0.2",
     "start-server-and-test": "^1.15.2",

@@ -2705,3 +2705,32 @@ describe('c.var - with testing types', () => {
     } catch {}
   })
 })
+
+describe('Server Stop Method', () => {
+  const app = new Hono()
+
+  app.get('/', async () => {
+
+    app.stop(5000) // stop in 5s
+
+    return new Response('Hello world!', {
+      status: 200,
+      statusText: 'ok',
+    })
+  })
+
+  it('Is the server down as expected', async () => {
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(res.statusText).toBe('ok')
+    expect(await res.text()).toBe('Hello world!')
+
+    const res2 = await app.request('/')
+    expect(res2.status).toBe(503) // stopped
+
+    setTimeout(async () => {
+      const res3 = await app.request('/')
+      expect(res3.status).toBe(200)
+    }, 5000)
+  })
+})
