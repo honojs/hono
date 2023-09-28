@@ -2129,6 +2129,14 @@ describe('Optional parameters', () => {
       type: undefined,
     })
   })
+
+  it('Should have a correct type with an optional parameter in a regexp path', async () => {
+    app.get('/url/:url{.*}?', (c) => {
+      const url = c.req.param('url')
+      expectTypeOf(url).toEqualTypeOf<string | undefined>()
+      return c.json(0)
+    })
+  })
 })
 
 describe('app.mount()', () => {
