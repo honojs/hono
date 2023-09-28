@@ -1,0 +1,19 @@
+import { Hono } from '../../hono.ts'
+import { testClient } from './index.ts'
+
+describe('hono testClinet', () => {
+  it('should return the correct search result', async () => {
+    const app = new Hono().get('/search', (c) => c.jsonT({ hello: 'world' }))
+    const res = await testClient(app).search.$get()
+    expect(await res.json()).toEqual({ hello: 'world' })
+  })
+
+  it('should return the correct environment variables value', async () => {
+    type Bindings = { hello: string }
+    const app = new Hono<{ Bindings: Bindings }>().get('/search', (c) => {
+      return c.jsonT({ hello: c.env.hello })
+    })
+    const res = await testClient(app, { hello: 'world' }).search.$get()
+    expect(await res.json()).toEqual({ hello: 'world' })
+  })
+})
