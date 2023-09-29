@@ -14,7 +14,8 @@ declare module '../../context' {
 export const jwt = (options: {
   secret: string
   cookie?: string
-  alg?: string
+  alg?: string,
+  optional?: boolean
 }): MiddlewareHandler => {
   if (!options) {
     throw new Error('JWT auth middleware requires options for "secret')
@@ -45,6 +46,11 @@ export const jwt = (options: {
     }
 
     if (!token) {
+      if (options.optional) {
+        await next()
+        return
+      }
+
       const res = new Response('Unauthorized', {
         status: 401,
         headers: {
@@ -62,6 +68,11 @@ export const jwt = (options: {
       msg = `${e}`
     }
     if (!payload) {
+      if (options.optional) {
+        await next()
+        return
+      }
+      
       const res = new Response('Unauthorized', {
         status: 401,
         statusText: msg,
