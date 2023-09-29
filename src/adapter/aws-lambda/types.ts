@@ -1,3 +1,4 @@
+// @denoify-ignore
 export interface CognitoIdentity {
   cognitoIdentityId: string
   cognitoIdentityPoolId: string
