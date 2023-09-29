@@ -24,6 +24,8 @@ export class SmartRouter<T> implements Router<T> {
       throw new Error('Fatal error')
     }
 
+    const pathType: ('RegExpRouter' | 'PatternRouter' | 'LinearRouter')[] = []
+
     const { routers, routes } = this
     const len = routers.length
     let i = 0
@@ -34,6 +36,22 @@ export class SmartRouter<T> implements Router<T> {
         routes.forEach((args) => {
           router.add(...args)
         })
+
+        if (!path.includes('/:') && !path.includes('{') && !path.includes('}')) {
+          pathType.push('LinearRouter')
+        } // LinearRouter?
+
+        if (!pathType.includes('LinearRouter') && path.indexOf('/:') !== -1) {
+          pathType.push('PatternRouter')
+        } // PatternRouter?
+
+        if (
+          (pathType.includes('PatternRouter') && router.name === 'RegExpRouter') ||
+          (pathType.includes('LinearRouter') && router.name === 'PatternRouter')
+        ) {
+          continue
+        }
+
         res = router.match(method, path)
       } catch (e) {
         if (e instanceof UnsupportedPathError) {
@@ -58,7 +76,6 @@ export class SmartRouter<T> implements Router<T> {
 
     return res || null
   }
-
   get activeRouter() {
     if (this.routes || this.routers.length !== 1) {
       throw new Error('No active router has been determined yet.')
