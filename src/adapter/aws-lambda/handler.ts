@@ -2,10 +2,10 @@
 import crypto from 'crypto'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
-import type { LambdaContext } from './types'
 
 import { encodeBase64 } from '../../utils/encode'
 import type { ApiGatewayRequestContext, LambdaFunctionUrlRequestContext } from './custom-context'
+import type { LambdaContext } from './types'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -69,10 +69,10 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
     const req = createRequest(event)
     const requestContext = getRequestContext(event)
 
-    const res = await app.fetch(req, { 
+    const res = await app.fetch(req, {
       requestContext,
-      lambdaContext
-     })
+      lambdaContext,
+    })
 
     return createResult(res)
   }

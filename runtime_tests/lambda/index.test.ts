@@ -2,8 +2,8 @@ import type {
   ApiGatewayRequestContext,
   LambdaFunctionUrlRequestContext,
 } from '../../src/adapter/aws-lambda/custom-context'
-import { LambdaContext } from '../../src/adapter/aws-lambda/types'
 import { handle } from '../../src/adapter/aws-lambda/handler'
+import type { LambdaContext } from '../../src/adapter/aws-lambda/types'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
 
@@ -299,19 +299,19 @@ describe('AWS Lambda Adapter for Hono', () => {
       isBase64Encoded: false,
       requestContext: testApiGatewayRequestContext,
     }
-    const context: LambdaContext =  {
+    const context: LambdaContext = {
       callbackWaitsForEmptyEventLoop: false,
-      functionName: "myLambdaFunction",
-      functionVersion: "1.0.0",
-      invokedFunctionArn: "arn:aws:lambda:us-west-2:123456789012:function:myLambdaFunction",
-      memoryLimitInMB: "128",
-      awsRequestId: "c6af9ac6-a7b0-11e6-80f5-76304dec7eb7",
-      logGroupName: "/aws/lambda/myLambdaFunction",
-      logStreamName: "2016/11/14/[$LATEST]f2d4b21cfb33490da2e8f8ef79a483s4",
+      functionName: 'myLambdaFunction',
+      functionVersion: '1.0.0',
+      invokedFunctionArn: 'arn:aws:lambda:us-west-2:123456789012:function:myLambdaFunction',
+      memoryLimitInMB: '128',
+      awsRequestId: 'c6af9ac6-a7b0-11e6-80f5-76304dec7eb7',
+      logGroupName: '/aws/lambda/myLambdaFunction',
+      logStreamName: '2016/11/14/[$LATEST]f2d4b21cfb33490da2e8f8ef79a483s4',
       getRemainingTimeInMillis: () => {
-          return 60000 // 60 seconds
-        }
-      }
+        return 60000 // 60 seconds
+      },
+    }
     const response = await handler(event, context)
     expect(response.statusCode).toBe(200)
     expect(JSON.parse(response.body).callbackWaitsForEmptyEventLoop).toEqual(false)

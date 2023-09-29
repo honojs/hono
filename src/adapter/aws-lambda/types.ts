@@ -1,28 +1,28 @@
 export interface CognitoIdentity {
-    cognitoIdentityId: string;
-    cognitoIdentityPoolId: string;
+  cognitoIdentityId: string
+  cognitoIdentityPoolId: string
 }
 
 export interface ClientContext {
-    client: ClientContextClient;
-    Custom?: any;
-    env: ClientContextEnv;
+  client: ClientContextClient
+  Custom?: any
+  env: ClientContextEnv
 }
 
 export interface ClientContextClient {
-    installationId: string;
-    appTitle: string;
-    appVersionName: string;
-    appVersionCode: string;
-    appPackageName: string;
+  installationId: string
+  appTitle: string
+  appVersionName: string
+  appVersionCode: string
+  appPackageName: string
 }
 
 export interface ClientContextEnv {
-    platformVersion: string;
-    platform: string;
-    make: string;
-    model: string;
-    locale: string;
+  platformVersion: string
+  platform: string
+  make: string
+  model: string
+  locale: string
 }
 
 /**
@@ -30,17 +30,16 @@ export interface ClientContextEnv {
  * See {@link https://docs.aws.amazon.com/lambda/latest/dg/nodejs-prog-model-context.html AWS documentation}.
  */
 export interface LambdaContext {
-    callbackWaitsForEmptyEventLoop: boolean;
-    functionName: string;
-    functionVersion: string;
-    invokedFunctionArn: string;
-    memoryLimitInMB: string;
-    awsRequestId: string;
-    logGroupName: string;
-    logStreamName: string;
-    identity?: CognitoIdentity | undefined;
-    clientContext?: ClientContext | undefined;
+  callbackWaitsForEmptyEventLoop: boolean
+  functionName: string
+  functionVersion: string
+  invokedFunctionArn: string
+  memoryLimitInMB: string
+  awsRequestId: string
+  logGroupName: string
+  logStreamName: string
+  identity?: CognitoIdentity | undefined
+  clientContext?: ClientContext | undefined
 
-    getRemainingTimeInMillis(): number;
-
+  getRemainingTimeInMillis(): number
 }
