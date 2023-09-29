@@ -2,11 +2,13 @@ import type {
   ApiGatewayRequestContext,
   LambdaFunctionUrlRequestContext,
 } from '../../src/adapter/aws-lambda/custom-context'
+import { LambdaContext } from '../../src/adapter/aws-lambda/types'
 import { handle } from '../../src/adapter/aws-lambda/handler'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
 
 type Bindings = {
+  lambdaContext: LambdaContext
   requestContext: ApiGatewayRequestContext | LambdaFunctionUrlRequestContext
 }
 
@@ -37,6 +39,11 @@ describe('AWS Lambda Adapter for Hono', () => {
   const password = 'hono-password-a'
   app.use('/auth/*', basicAuth({ username, password }))
   app.get('/auth/abc', (c) => c.text('Good Night Lambda!'))
+
+  app.get('/lambda-context', (c) => {
+    const fnctx = c.env.lambdaContext
+    return c.json(fnctx)
+  })
 
   app.get('/custom-context/apigw', (c) => {
     const lambdaContext = c.env.requestContext
@@ -281,5 +288,32 @@ describe('AWS Lambda Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.statusCode).toBe(200)
     expect(JSON.parse(response.body).customProperty).toEqual('customValue')
+  })
+
+  it('Should handle a GET request and context', async () => {
+    const event = {
+      httpMethod: 'GET',
+      headers: { 'content-type': 'application/json' },
+      path: '/lambda-context',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testApiGatewayRequestContext,
+    }
+    const context: LambdaContext =  {
+      callbackWaitsForEmptyEventLoop: false,
+      functionName: "myLambdaFunction",
+      functionVersion: "1.0.0",
+      invokedFunctionArn: "arn:aws:lambda:us-west-2:123456789012:function:myLambdaFunction",
+      memoryLimitInMB: "128",
+      awsRequestId: "c6af9ac6-a7b0-11e6-80f5-76304dec7eb7",
+      logGroupName: "/aws/lambda/myLambdaFunction",
+      logStreamName: "2016/11/14/[$LATEST]f2d4b21cfb33490da2e8f8ef79a483s4",
+      getRemainingTimeInMillis: () => {
+          return 60000 // 60 seconds
+        }
+      }
+    const response = await handler(event, context)
+    expect(response.statusCode).toBe(200)
+    expect(JSON.parse(response.body).callbackWaitsForEmptyEventLoop).toEqual(false)
   })
 })
