@@ -411,43 +411,7 @@ class Hono<
   }
 
   // Server Stop Method
-
   stopped: boolean = false
-
-  stop = (period?: number): boolean => {
-    if (this.stopped) {
-      console.error('Already stopped')
-      return false
-    }
-
-    // Stop
-
-    this.stopped = true
-
-    if (typeof period === 'number') {
-      setTimeout(() => {
-        this.resume(0)
-      }, period)
-    }
-
-    return true
-  }
-
-  resume = (delay: number = 0): boolean => {
-    if (!this.stopped) {
-      console.error('Server is up and running')
-
-      return false
-    }
-
-    setTimeout(() => {
-      // Resume
-
-      this.stopped = false
-    }, delay)
-
-    return true
-  }
 }
 
 export { Hono as HonoBase }
