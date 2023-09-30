@@ -5,6 +5,7 @@ import type { Env, Schema } from '../../types'
 
 import { encodeBase64 } from '../../utils/encode'
 import type { ApiGatewayRequestContext, LambdaFunctionUrlRequestContext } from './custom-context'
+import type { LambdaContext } from './types'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -62,12 +63,16 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
   app: Hono<E, S, BasePath>
 ) => {
   return async (
-    event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
+    event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent,
+    lambdaContext?: LambdaContext
   ): Promise<APIGatewayProxyResult> => {
     const req = createRequest(event)
     const requestContext = getRequestContext(event)
 
-    const res = await app.fetch(req, { requestContext })
+    const res = await app.fetch(req, {
+      requestContext,
+      lambdaContext,
+    })
 
     return createResult(res)
   }
