@@ -39,16 +39,16 @@ export const parseBody = async <T extends BodyData = BodyData>(
     if (formData) {
       const form: BodyData = {}
       formData.forEach((value, key) => {
-        const isParseAll = options.all || key.slice(-2) === '[]'
+        const shouldParseAllValues = options.all || key.slice(-2) === '[]'
 
-        if (!isParseAll) {
-          form[key] = value
+        if (!shouldParseAllValues) {
+          form[key] = value // override if same key
           return
         }
 
         form[key] ??= []
         if (Array.isArray(form[key])) {
-          ;(form[key] as (string | File)[]).push(value)
+          ;(form[key] as (string | File)[]).push(value) // append if same key
           return
         }
       })
