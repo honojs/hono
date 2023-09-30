@@ -14,6 +14,34 @@ describe('Parse Body Util', () => {
     expect(await parseBody(req)).toEqual({ message: 'hello', 'multi[]': ['foo', 'bar'] })
   })
 
+  it('should not parse multiple values in default', async () => {
+    const data = new FormData()
+    data.append('file', 'aaa')
+    data.append('file', 'bbb')
+    const req = new Request('https://localhost/form', {
+      method: 'POST',
+      body: data,
+      // `Content-Type` header must not be set.
+    })
+    expect(await parseBody(req)).toEqual({
+      file: 'bbb',
+    })
+  })
+
+  it('should parse multiple values if `all` option is true', async () => {
+    const data = new FormData()
+    data.append('file', 'aaa')
+    data.append('file', 'bbb')
+    const req = new Request('https://localhost/form', {
+      method: 'POST',
+      body: data,
+      // `Content-Type` header must not be set.
+    })
+    expect(await parseBody(req, { all: true })).toEqual({
+      file: ['aaa', 'bbb'],
+    })
+  })
+
   it('should parse `x-www-form-urlencoded`', async () => {
     const searchParams = new URLSearchParams()
     searchParams.append('message', 'hello')
