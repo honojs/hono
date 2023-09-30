@@ -17,6 +17,7 @@ describe('JWT', () => {
       const auth = jwt({ secret: 'a-secret' })
       return auth(c, next)
     })
+    app.use('/optional/*', jwt({ secret: 'a-secret', optional: true }))
 
     app.get('/auth/*', (c) => {
       handlerExecuted = true
@@ -32,6 +33,11 @@ describe('JWT', () => {
       handlerExecuted = true
       const payload = c.get('jwtPayload')
       return c.json(payload)
+    })
+    app.get('/optional/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload ?? { message: 'fallback payload' })
     })
 
     it('Should not authorize', async () => {
@@ -111,6 +117,27 @@ describe('JWT', () => {
       const credential =
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
       const req = new Request('http://localhost/nested/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not provide payload', async () => {
+      const req = new Request('http://localhost/optional/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'fallback payload' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should provide payload', async () => {
+      const credential =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+      const req = new Request('http://localhost/optional/a')
       req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
