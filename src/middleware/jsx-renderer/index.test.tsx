@@ -1,7 +1,8 @@
+import { expectTypeOf } from 'vitest'
 import { html } from '../../helper/html'
 import { Hono } from '../../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, type FC } from '../../jsx'
+import { jsx, Fragment, type FC } from '../../jsx'
 import { jsxRenderer, useRequestContext } from '.'
 
 const RequestUrl: FC = () => {
@@ -10,10 +11,8 @@ const RequestUrl: FC = () => {
 }
 
 describe('JSX renderer', () => {
-  let app: Hono
-
   it('with layout', async () => {
-    app = new Hono()
+    const app = new Hono()
     app.use(
       '*',
       jsxRenderer(({ children, title }) => (
@@ -40,7 +39,7 @@ describe('JSX renderer', () => {
   })
 
   it('without layout', async () => {
-    app = new Hono()
+    const app = new Hono()
     app.use('*', jsxRenderer())
     app.get('/', (c) =>
       c.render(
@@ -54,5 +53,49 @@ describe('JSX renderer', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<h1>http://localhost/</h1>')
+  })
+
+  it('Env', async () => {
+    type JSXRendererEnv = {
+      Variables: {
+        foo: string
+      }
+      Bindings: {
+        bar: string
+      }
+    }
+
+    const VariableFoo: FC = () => {
+      const c = useRequestContext<JSXRendererEnv>()
+      expectTypeOf(c.get('foo')).toEqualTypeOf<string>()
+      return html`${c.get('foo')}`
+    }
+
+    const BindingsBar: FC = () => {
+      const c = useRequestContext<JSXRendererEnv>()
+      expectTypeOf(c.env.bar).toEqualTypeOf<string>()
+      return html`${c.env.bar}`
+    }
+
+    const app = new Hono<JSXRendererEnv>()
+    app.use('*', jsxRenderer())
+    app.get('/', (c) => {
+      c.set('foo', 'fooValue')
+      return c.render(
+        <>
+          <h1>
+            <VariableFoo />
+          </h1>
+          <p>
+            <BindingsBar />
+          </p>
+        </>,
+        { title: 'Title' }
+      )
+    })
+    const res = await app.request('http://localhost/', undefined, { bar: 'barValue' })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('<h1>fooValue</h1><p>barValue</p>')
   })
 })

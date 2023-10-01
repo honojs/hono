@@ -1,6 +1,7 @@
 import { type Context, type Renderer } from '../../context'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, createContext, useContext, type JSXNode, type FC } from '../../jsx'
+import type { Env, Input } from '../../types'
 import type { MiddlewareHandler } from '../../types'
 
 export const RequestContext = createContext<Context | null>(null)
@@ -24,7 +25,11 @@ export const jsxRenderer =
     return next()
   }
 
-export const useRequestContext = (): Context => {
+export const useRequestContext = <
+  E extends Env = any,
+  P extends string = any,
+  I extends Input = {}
+>(): Context<E, P, I> => {
   const c = useContext(RequestContext)
   if (!c) {
     throw new Error('RequestContext is not provided.')
