@@ -533,9 +533,10 @@ export type ValidationTargets = {
 //////                            //////
 ////////////////////////////////////////
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer _Pattern}`
-  ? Name
+type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer Rest}`
+  ? Rest extends `${infer _Pattern}?`
+    ? `${Name}?`
+    : Name
   : NameWithPattern
 
 type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
