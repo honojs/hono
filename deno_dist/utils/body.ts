@@ -10,15 +10,20 @@ export type ParseBodyOptions = {
    * const data = new FormData()
    * data.append('file', 'aaa')
    * data.append('file', 'bbb')
+   * data.append('message', 'hello')
    * ```
    *
    * If `all` is `false`:
-   * parseBody should return `{ file: 'bbb' }`
+   * parseBody should return `{ file: 'bbb', message: 'hello' }`
    *
    * If `all` is `true`:
-   * parseBody should return `{ file: ['aaa', 'bbb'] }`
+   * parseBody should return `{ file: ['aaa', 'bbb'], message: 'hello' }`
    */
   all?: boolean
+}
+
+const isArrayField = (value: unknown): value is (string | File)[] => {
+  return Array.isArray(value)
 }
 
 export const parseBody = async <T extends BodyData = BodyData>(
@@ -46,11 +51,17 @@ export const parseBody = async <T extends BodyData = BodyData>(
           return
         }
 
-        form[key] ??= []
-        if (Array.isArray(form[key])) {
+        if (form[key] && isArrayField(form[key])) {
           ;(form[key] as (string | File)[]).push(value) // append if same key
           return
         }
+
+        if (form[key]) {
+          form[key] = [form[key] as string | File, value] // convert to array if multiple values
+          return
+        }
+
+        form[key] = value
       })
       body = form
     }
