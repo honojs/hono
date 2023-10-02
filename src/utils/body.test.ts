@@ -29,12 +29,14 @@ describe('Parse Body Util', () => {
     const data = new FormData()
     data.append('file', 'aaa')
     data.append('file', 'bbb')
+    data.append('message', 'hello')
     const req = new Request('https://localhost/form', {
       method: 'POST',
       body: data,
     })
     expect(await parseBody(req)).toEqual({
       file: 'bbb',
+      message: 'hello',
     })
   })
 
@@ -42,12 +44,14 @@ describe('Parse Body Util', () => {
     const data = new FormData()
     data.append('file', 'aaa')
     data.append('file', 'bbb')
+    data.append('message', 'hello')
     const req = new Request('https://localhost/form', {
       method: 'POST',
       body: data,
     })
     expect(await parseBody(req, { all: true })).toEqual({
       file: ['aaa', 'bbb'],
+      message: 'hello',
     })
   })
 
@@ -55,12 +59,14 @@ describe('Parse Body Util', () => {
     const data = new FormData()
     data.append('file[]', 'aaa')
     data.append('file[]', 'bbb')
+    data.append('message', 'hello')
     const req = new Request('https://localhost/form', {
       method: 'POST',
       body: data,
     })
     expect(await parseBody(req, { all: true })).toEqual({
       'file[]': ['aaa', 'bbb'],
+      message: 'hello',
     })
   })
 
