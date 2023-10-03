@@ -398,7 +398,7 @@
     "@types/crypto-js": "^4.1.1",
     "@types/glob": "^8.0.0",
     "@types/jest": "^29.4.0",
-    "@types/node": "^17.0.29",
+    "@types/node": "^20.8.2",
     "@types/node-fetch": "^2.6.2",
     "@types/supertest": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^5.59.2",
