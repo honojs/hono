@@ -1,5 +1,8 @@
+/// <reference lib="es2022" />
+/// <reference lib="webworker" />
+// We need these triple slashes to correctly refer to `FetchEvent` in Deno.
+
 import type { HonoRequest } from './request'
-import { FetchEventLike } from './types'
 import type { Env, NotFoundHandler, Input, TypedResponse } from './types'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
@@ -82,7 +85,7 @@ interface HTMLRespond {
 
 type ContextOptions<E extends Env> = {
   env: E['Bindings']
-  executionCtx?: FetchEventLike | ExecutionContext | undefined
+  executionCtx?: FetchEvent | ExecutionContext | undefined
   notFoundHandler?: NotFoundHandler<E>
 }
 
@@ -102,7 +105,7 @@ export class Context<
   error: Error | undefined = undefined
 
   private _status: StatusCode = 200
-  private _exCtx: FetchEventLike | ExecutionContext | undefined // _executionCtx
+  private _exCtx: FetchEvent | ExecutionContext | undefined // _executionCtx
   private _h: Headers | undefined = undefined //  _headers
   private _pH: Record<string, string> | undefined = undefined // _preparedHeaders
   private _res: Response | undefined
@@ -121,8 +124,8 @@ export class Context<
     }
   }
 
-  get event(): FetchEventLike {
-    if (this._exCtx instanceof FetchEventLike) {
+  get event(): FetchEvent {
+    if (this._exCtx instanceof FetchEvent) {
       return this._exCtx
     } else {
       throw Error('This context has no FetchEvent')
