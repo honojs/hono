@@ -12,9 +12,11 @@ const createRenderer =
   (c: Context, component?: FC<PropsForRenderer>) => (children: JSXNode, props: PropsForRenderer) =>
     /* eslint-disable @typescript-eslint/no-explicit-any */
     c.html(
-      <RequestContext.Provider value={c}>
-        {component ? component({ children, ...(props || {}) } as any) : children}
-      </RequestContext.Provider>
+      jsx(
+        RequestContext.Provider,
+        { value: c },
+        (component ? component({ children, ...(props || {}) }) : children) as any
+      ) as any
     )
 
 export const jsxRenderer =
