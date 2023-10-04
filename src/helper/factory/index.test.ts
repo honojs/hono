@@ -7,7 +7,7 @@ describe('createMiddleware', () => {
   const app = new Hono<Env>()
 
   const mw = (message: string) =>
-  createMiddleware<Env>(async (c, next) => {
+    createMiddleware<Env>(async (c, next) => {
       c.set('foo', 'bar')
       await next()
       c.header('X-Message', message)
