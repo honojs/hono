@@ -29,4 +29,7 @@
     "src/**/*.test.ts",
     "src/**/*.test.tsx"
   ],
+  "exclude": [
+    "src/middleware.deno.ts"
+  ],
 }
