@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from '../../hono'
 import { handle } from './handler'
 
@@ -17,7 +18,7 @@ describe('Adapter for Next.js', () => {
     })
     const handler = handle(app)
     const req = new Request('http://localhost/api/foo')
-    const res = await handler(req, { waitUntil: () => 'waitUntil' })
+    const res = await handler(req, { waitUntil: () => 'waitUntil' } as any)
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       path: '/api/foo',
@@ -40,7 +41,7 @@ describe('Adapter for Next.js', () => {
     expect(() =>
       handler(req, {
         waitUntil: () => {},
-      })
+      } as any)
     ).toThrowError('Custom Error')
   })
 })
