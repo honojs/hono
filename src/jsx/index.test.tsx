@@ -403,6 +403,24 @@ describe('Fragment', () => {
     expect(template.toString()).toBe('<p>1</p><p>2</p>')
   })
 
+  it('Should render a child', () => {
+    const template = (
+      <>
+        <p>1</p>
+      </>
+    )
+    expect(template.toString()).toBe('<p>1</p>')
+  })
+
+  it('Should render a child - with `Fragment`', () => {
+    const template = (
+      <Fragment>
+        <p>1</p>
+      </Fragment>
+    )
+    expect(template.toString()).toBe('<p>1</p>')
+  })
+
   it('Should render nothing for empty Fragment', () => {
     const template = <></>
     expect(template.toString()).toBe('')
