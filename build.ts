@@ -19,8 +19,8 @@ const args = arg({
 
 const isWatch = args['--watch'] || false
 
-const entryPoints = glob.sync('./src/**/*.ts', {
-  ignore: ['./src/**/*.test.ts', './src/mod.ts', './src/middleware.ts', './src/deno/**/*.ts'],
+const entryPoints = glob.sync('./src/**/*.{ts,tsx}', {
+  ignore: ['./src/**/*.test.{ts,tsx}', './src/mod.ts', './src/middleware.deno.ts', './src/deno/**/*.ts'],
 })
 
 /*
