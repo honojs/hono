@@ -1,13 +1,13 @@
 import { hc } from '../../client'
 import { Hono } from '../../index'
-import { middleware } from './index'
+import { createMiddleware } from './index'
 
-describe('middleware', () => {
+describe('createMiddleware', () => {
   type Env = { Variables: { foo: string } }
   const app = new Hono<Env>()
 
   const mw = (message: string) =>
-    middleware<Env>(async (c, next) => {
+  createMiddleware<Env>(async (c, next) => {
       c.set('foo', 'bar')
       await next()
       c.header('X-Message', message)
