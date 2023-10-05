@@ -25,7 +25,7 @@ export interface ContextRenderer {}
 interface DefaultRenderer {
   (content: string): Response | Promise<Response>
 }
-type Renderer = ContextRenderer extends Function ? ContextRenderer : DefaultRenderer
+export type Renderer = ContextRenderer extends Function ? ContextRenderer : DefaultRenderer
 
 interface Get<E extends Env> {
   <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
