@@ -10,10 +10,6 @@
     "skipLibCheck": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "lib": [
-      "ES2022",
-      "WebWorker"
-    ],
     "types": [
       "jest",
       "node"

@@ -1,9 +1,6 @@
-/// <reference lib="es2022" />
-/// <reference lib="webworker" />
-// We need these triple slashes to correctly refer to `FetchEvent` in Deno.
-
 import type { HonoRequest } from './request.ts'
 import type { Env, NotFoundHandler, Input, TypedResponse } from './types.ts'
+import { FetchEvent } from './types.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
 import type { StatusCode } from './utils/http-status.ts'
