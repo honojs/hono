@@ -10,7 +10,7 @@ import type {
   ValidationTargets,
 } from './types'
 import { parseBody } from './utils/body'
-import type { BodyData } from './utils/body'
+import type { BodyData, ParseBodyOptions } from './utils/body'
 import type { Cookie } from './utils/cookie'
 import { parse } from './utils/cookie'
 import type { UnionToIntersection } from './utils/types'
@@ -126,9 +126,9 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     }
   }
 
-  async parseBody<T extends BodyData = BodyData>(): Promise<T> {
+  async parseBody<T extends BodyData = BodyData>(options?: ParseBodyOptions): Promise<T> {
     if (this.bodyCache.parsedBody) return this.bodyCache.parsedBody as T
-    const parsedBody = await parseBody<T>(this)
+    const parsedBody = await parseBody<T>(this, options)
     this.bodyCache.parsedBody = parsedBody
     return parsedBody
   }

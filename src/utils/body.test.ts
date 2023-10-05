@@ -4,14 +4,12 @@ describe('Parse Body Util', () => {
   it('should parse `multipart/form-data`', async () => {
     const data = new FormData()
     data.append('message', 'hello')
-    data.append('multi[]', 'foo')
-    data.append('multi[]', 'bar')
     const req = new Request('https://localhost/form', {
       method: 'POST',
       body: data,
       // `Content-Type` header must not be set.
     })
-    expect(await parseBody(req)).toEqual({ message: 'hello', 'multi[]': ['foo', 'bar'] })
+    expect(await parseBody(req)).toEqual({ message: 'hello' })
   })
 
   it('should parse `x-www-form-urlencoded`', async () => {
@@ -25,6 +23,51 @@ describe('Parse Body Util', () => {
       },
     })
     expect(await parseBody(req)).toEqual({ message: 'hello' })
+  })
+
+  it('should not parse multiple values in default', async () => {
+    const data = new FormData()
+    data.append('file', 'aaa')
+    data.append('file', 'bbb')
+    data.append('message', 'hello')
+    const req = new Request('https://localhost/form', {
+      method: 'POST',
+      body: data,
+    })
+    expect(await parseBody(req)).toEqual({
+      file: 'bbb',
+      message: 'hello',
+    })
+  })
+
+  it('should parse multiple values if `all` option is true', async () => {
+    const data = new FormData()
+    data.append('file', 'aaa')
+    data.append('file', 'bbb')
+    data.append('message', 'hello')
+    const req = new Request('https://localhost/form', {
+      method: 'POST',
+      body: data,
+    })
+    expect(await parseBody(req, { all: true })).toEqual({
+      file: ['aaa', 'bbb'],
+      message: 'hello',
+    })
+  })
+
+  it('should parse multiple values if key ends with `[]`', async () => {
+    const data = new FormData()
+    data.append('file[]', 'aaa')
+    data.append('file[]', 'bbb')
+    data.append('message', 'hello')
+    const req = new Request('https://localhost/form', {
+      method: 'POST',
+      body: data,
+    })
+    expect(await parseBody(req, { all: true })).toEqual({
+      'file[]': ['aaa', 'bbb'],
+      message: 'hello',
+    })
   })
 
   it('should return blank object if body is JSON', async () => {
