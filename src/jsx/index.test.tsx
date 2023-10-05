@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from '../helper/html'
 import { Hono } from '../hono'
-import type { FC } from './index'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, memo, Fragment } from './index'
+import { jsx, memo, Fragment, createContext, useContext } from './index'
+import type { Context, FC } from './index'
 
 interface SiteData {
   title: string
@@ -429,5 +429,60 @@ describe('Fragment', () => {
   it('Should render nothing for undefined', () => {
     const template = <>{undefined}</>
     expect(template.toString()).toBe('')
+  })
+})
+
+describe('Context', () => {
+  let ThemeContext: Context<string>
+  let Consumer: FC
+  beforeAll(() => {
+    ThemeContext = createContext('light')
+    Consumer = () => {
+      const theme = useContext(ThemeContext)
+      return <span>{theme}</span>
+    }
+  })
+
+  describe('with .Provider', () => {
+    it('has a child', () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <Consumer />
+        </ThemeContext.Provider>
+      )
+      expect(template.toString()).toBe('<span>dark</span>')
+    })
+
+    it('has children', () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <div>
+            <Consumer />!
+          </div>
+          <div>
+            <Consumer />!
+          </div>
+        </ThemeContext.Provider>
+      )
+      expect(template.toString()).toBe('<div><span>dark</span>!</div><div><span>dark</span>!</div>')
+    })
+
+    it('nested', () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <Consumer />
+          <ThemeContext.Provider value='black'>
+            <Consumer />
+          </ThemeContext.Provider>
+          <Consumer />
+        </ThemeContext.Provider>
+      )
+      expect(template.toString()).toBe('<span>dark</span><span>black</span><span>dark</span>')
+    })
+  })
+
+  it('default value', () => {
+    const template = <Consumer />
+    expect(template.toString()).toBe('<span>light</span>')
   })
 })
