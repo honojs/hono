@@ -2,7 +2,8 @@ import { expectTypeOf } from 'vitest'
 import { html } from '../../helper/html'
 import { Hono } from '../../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, Fragment, type FC } from '../../jsx'
+import { jsx, Fragment } from '../../jsx'
+import type { FC } from '../../jsx'
 import { jsxRenderer, useRequestContext } from '.'
 
 const RequestUrl: FC = () => {

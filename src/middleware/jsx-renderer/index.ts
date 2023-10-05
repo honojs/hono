@@ -1,8 +1,8 @@
-import { type Context, type Renderer } from '../../context'
+import type { Context, Renderer } from '../../context'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, createContext, useContext, type JSXNode, type FC } from '../../jsx'
-import type { Env, Input } from '../../types'
-import type { MiddlewareHandler } from '../../types'
+import { jsx, createContext, useContext } from '../../jsx'
+import type { FC, JSXNode } from '../../jsx'
+import type { Env, Input, MiddlewareHandler } from '../../types'
 
 export const RequestContext = createContext<Context | null>(null)
 

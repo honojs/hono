@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from '../helper/html'
 import { Hono } from '../hono'
-import type { FC } from './index'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, memo, Fragment, type Context, createContext, useContext } from './index'
+import { jsx, memo, Fragment, createContext, useContext } from './index'
+import type { Context, FC } from './index'
 
 interface SiteData {
   title: string
