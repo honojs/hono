@@ -9,15 +9,12 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx",
     "src/**/*.mts"
   ],
   "exclude": [
     "src/mod.ts",
+    "src/middleware.ts",
     "src/deno/**/*.ts",
-    "src/**/*.test.ts",
-    "src/**/*.test.tsx",
-    "src/**/*.deno.ts",
-    "src/**/*.deno.tsx"
+    "src/**/*.test.ts"
   ]
 }

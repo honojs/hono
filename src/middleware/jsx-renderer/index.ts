@@ -1,8 +1,8 @@
-import { type Context, type Renderer } from '../../context.ts'
+import { type Context, type Renderer } from '../../context'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, createContext, useContext, type JSXNode, type FC } from '../../jsx/index.ts'
-import type { Env, Input } from '../../types.ts'
-import type { MiddlewareHandler } from '../../types.ts'
+import { jsx, createContext, useContext, type JSXNode, type FC } from '../../jsx'
+import type { Env, Input } from '../../types'
+import type { MiddlewareHandler } from '../../types'
 
 export const RequestContext = createContext<Context | null>(null)
 
@@ -12,9 +12,11 @@ const createRenderer =
   (c: Context, component?: FC<PropsForRenderer>) => (children: JSXNode, props: PropsForRenderer) =>
     /* eslint-disable @typescript-eslint/no-explicit-any */
     c.html(
-      <RequestContext.Provider value={c}>
-        {component ? component({ children, ...(props || {}) } as any) : children}
-      </RequestContext.Provider>
+      jsx(
+        RequestContext.Provider,
+        { value: c },
+        (component ? component({ children, ...(props || {}) }) : children) as any
+      ) as any
     )
 
 export const jsxRenderer =

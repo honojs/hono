@@ -24,12 +24,8 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx",
     "src/**/*.mts",
     "src/**/*.test.ts",
     "src/**/*.test.tsx"
-  ],
-  "exclude": [
-    "src/middleware.deno.ts"
   ],
 }
