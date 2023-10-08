@@ -94,6 +94,45 @@ describe('Malformed JSON', () => {
   })
 })
 
+describe('Malformed FormData request', () => {
+  const app = new Hono()
+  app.post(
+    '/post',
+    validator('form', (value, c) => ({})),
+    (c) => {
+      return c.text('Valid!')
+    }
+  )
+
+  it('Should return 400 response, for unsupported content type header', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      body: 'hi',
+    })
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({
+      success: false,
+      message:
+        'Malformed FormData request. Response.formData: Could not parse content as FormData.',
+    })
+  })
+
+  it('Should return 400 response, for malformed content type header', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      body: 'hi',
+      headers: {
+        'content-type': 'multipart/form-data',
+      },
+    })
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({
+      success: false,
+      message: 'Malformed FormData request. Error: Multipart: Boundary not found',
+    })
+  })
+})
+
 describe('Validator middleware with a custom validation function', () => {
   const app = new Hono()
 

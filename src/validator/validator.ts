@@ -70,17 +70,29 @@ export const validator = <
         }
         break
       case 'form': {
-        const contentType = c.req.header('Content-Type')
-        if (contentType) {
-          const arrayBuffer = c.req.bodyCache.arrayBuffer ?? (await c.req.raw.arrayBuffer())
-          const formData = await bufferToFormData(arrayBuffer, contentType)
-          const form: BodyData = {}
-          formData.forEach((value, key) => {
-            form[key] = value
-          })
-          value = form
-          c.req.bodyCache.formData = formData
-          c.req.bodyCache.arrayBuffer = arrayBuffer
+        try {
+          const contentType = c.req.header('Content-Type')
+          if (contentType) {
+            const arrayBuffer = c.req.bodyCache.arrayBuffer ?? (await c.req.raw.arrayBuffer())
+            const formData = await bufferToFormData(arrayBuffer, contentType)
+            const form: BodyData = {}
+            formData.forEach((value, key) => {
+              form[key] = value
+            })
+            value = form
+            c.req.bodyCache.formData = formData
+            c.req.bodyCache.arrayBuffer = arrayBuffer
+          }
+        } catch (e) {
+          let message = 'Malformed FormData request.'
+          message += e instanceof Error ? ` ${e.message}` : ` ${String(e)}`
+          return c.json(
+            {
+              success: false,
+              message,
+            },
+            400
+          )
         }
         break
       }
