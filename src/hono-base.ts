@@ -173,7 +173,12 @@ class Hono<
         app.errorHandler === errorHandler
           ? r.handler
           : async (c: Context, next: Next) =>
-              (await compose<Context>([r.handler], app.errorHandler)(c, next)).res
+              (
+                await compose<Context>([{ handler: r.handler, params: {} }], app.errorHandler)(
+                  c,
+                  next
+                )
+              ).res
       subApp.addRoute(r.method, r.path, handler)
     })
     return this
@@ -269,7 +274,7 @@ class Hono<
   }
 
   private matchRoute(method: string, path: string) {
-    return this.router.match(method, path) || { handlers: [], params: {} }
+    return this.router.match(method, path) || []
   }
 
   private handleError(err: unknown, c: Context<E>) {
@@ -292,20 +297,20 @@ class Hono<
     }
 
     const path = this.getPath(request, { env })
-    const { handlers, params } = this.matchRoute(method, path)
-
-    const c = new Context(new HonoRequest(request, path, params), {
-      env,
-      executionCtx,
-      notFoundHandler: this.notFoundHandler,
-    })
+    const results = this.matchRoute(method, path)
 
     // Do not `compose` if it has only one handler
-    if (handlers.length === 1) {
+    if (results.length === 1) {
       let res: ReturnType<H>
 
+      const c = new Context(new HonoRequest(request, path, results[0].params), {
+        env,
+        executionCtx,
+        notFoundHandler: this.notFoundHandler,
+      })
+
       try {
-        res = handlers[0](c, async () => {})
+        res = results[0].handler(c, async () => {})
         if (!res) {
           return this.notFoundHandler(c)
         }
@@ -338,7 +343,13 @@ class Hono<
       })()
     }
 
-    const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)
+    const c = new Context(new HonoRequest(request, path, {}), {
+      env,
+      executionCtx,
+      notFoundHandler: this.notFoundHandler,
+    })
+
+    const composed = compose<Context>(results, this.errorHandler, this.notFoundHandler)
 
     return (async () => {
       try {

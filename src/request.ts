@@ -44,6 +44,10 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     this.vData = {}
   }
 
+  setParams(params: Record<string, string>) {
+    this.paramData = params
+  }
+
   param<P2 extends string = P>(
     key: RemoveQuestion<ParamKeys<P2>>
   ): UndefinedIfHavingQuestion<ParamKeys<P2>>

@@ -4,15 +4,21 @@ import type { Env, NotFoundHandler, ErrorHandler } from './types'
 interface ComposeContext {
   finalized: boolean
   res: unknown
+  setRequestParams: Function
+}
+
+interface Result {
+  handler: Function
+  params: Record<string, string>
 }
 
 // Based on the code in the MIT licensed `koa-compose` package.
 export const compose = <C extends ComposeContext, E extends Env = Env>(
-  middleware: Function[],
+  results: Result[],
   onError?: ErrorHandler<E>,
   onNotFound?: NotFoundHandler<E>
 ) => {
-  const middlewareLength = middleware.length
+  const resultsLength = results.length
   return (context: C, next?: Function) => {
     let index = -1
     return dispatch(0)
@@ -21,19 +27,20 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
       if (i <= index) {
         throw new Error('next() called multiple times')
       }
-      let handler = middleware[i]
-      index = i
-      if (i === middlewareLength && next) handler = next
 
       let res
       let isError = false
 
-      if (!handler) {
+      if (!results[i]) {
         if (context instanceof Context && context.finalized === false && onNotFound) {
           res = onNotFound(context)
         }
       } else {
+        let handler = results[i].handler
+        index = i
+        if (i === resultsLength && next) handler = next
         try {
+          context.setRequestParams(results[i].params)
           res = handler(context, () => {
             const dispatchRes = dispatch(i + 1)
             return dispatchRes instanceof Promise ? dispatchRes : Promise.resolve(dispatchRes)

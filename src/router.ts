@@ -5,11 +5,11 @@ export const METHODS = ['get', 'post', 'put', 'delete', 'options', 'patch'] as c
 export interface Router<T> {
   name: string
   add(method: string, path: string, handler: T): void
-  match(method: string, path: string): Result<T> | null
+  match(method: string, path: string): Result<T>[] | null
 }
 
 export interface Result<T> {
-  handlers: T[]
+  handler: T
   params: Record<string, string>
 }
 

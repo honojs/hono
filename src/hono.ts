@@ -11,10 +11,6 @@ export class Hono<
 > extends HonoBase<E, S, BasePath> {
   constructor(init: Partial<Pick<Hono, 'router' | 'getPath'> & { strict: boolean }> = {}) {
     super(init)
-    this.router =
-      init.router ??
-      new SmartRouter({
-        routers: [new RegExpRouter(), new TrieRouter()],
-      })
+    this.router = new TrieRouter()
   }
 }
