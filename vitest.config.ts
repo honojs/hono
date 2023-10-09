@@ -6,7 +6,7 @@ export default defineConfig({
     globals: true,
     include: ['**/src/**/(*.)+(spec|test).+(ts|tsx|js)'],
     exclude: [...configDefaults.exclude, '**/sandbox/**'],
-    environment: 'miniflare',
+    setupFiles: ['./src/test-utils/setup-vitest.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text'],
