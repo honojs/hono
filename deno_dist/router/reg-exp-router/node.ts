@@ -77,7 +77,14 @@ export class Node {
     let node
     if (pattern) {
       const name = pattern[1]
-      const regexpStr = pattern[2] || LABEL_REG_EXP_STR
+      let regexpStr = pattern[2] || LABEL_REG_EXP_STR
+      if (name && pattern[2]) {
+        regexpStr = regexpStr.replace(/^\((?!\?:)(?=[^)]+\)$)/, '(?:') // (a|b) => (?:a|b)
+        if (/\((?!\?:)/.test(regexpStr)) {
+          // prefix(?:a|b) is allowed, but prefix(a|b) is not
+          throw PATH_ERROR
+        }
+      }
 
       node = this.children[regexpStr]
       if (!node) {
