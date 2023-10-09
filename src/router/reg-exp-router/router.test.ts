@@ -503,3 +503,84 @@ describe('Routing with a hostname', () => {
     expect(res).toBeNull()
   })
 })
+
+describe('Capture Group', () => {
+  describe('Simple capturing group', () => {
+    const router = new RegExpRouter<string>()
+    router.add('get', '/foo/:capture{(bar|baz)}', 'ok')
+    it('GET /foo/bar', () => {
+      const res = router.match('get', '/foo/bar')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['ok'])
+      expect(res?.params).toEqual({ capture: 'bar' })
+    })
+
+    it('GET /foo/baz', () => {
+      const res = router.match('get', '/foo/baz')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['ok'])
+      expect(res?.params).toEqual({ capture: 'baz' })
+    })
+
+    it('GET /foo/qux', () => {
+      const res = router.match('get', '/foo/qux')
+      expect(res).toBeNull()
+    })
+  })
+
+  describe('Non-capturing group', () => {
+    const router = new RegExpRouter<string>()
+    router.add('get', '/foo/:capture{(?:bar|baz)}', 'ok')
+    it('GET /foo/bar', () => {
+      const res = router.match('get', '/foo/bar')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['ok'])
+      expect(res?.params).toEqual({ capture: 'bar' })
+    })
+
+    it('GET /foo/baz', () => {
+      const res = router.match('get', '/foo/baz')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['ok'])
+      expect(res?.params).toEqual({ capture: 'baz' })
+    })
+
+    it('GET /foo/qux', () => {
+      const res = router.match('get', '/foo/qux')
+      expect(res).toBeNull()
+    })
+  })
+
+  describe('Non-capturing group with prefix', () => {
+    const router = new RegExpRouter<string>()
+    router.add('get', '/foo/:capture{ba(?:r|z)}', 'ok')
+    it('GET /foo/bar', () => {
+      const res = router.match('get', '/foo/bar')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['ok'])
+      expect(res?.params).toEqual({ capture: 'bar' })
+    })
+
+    it('GET /foo/baz', () => {
+      const res = router.match('get', '/foo/baz')
+      expect(res).not.toBeNull()
+      expect(res?.handlers).toEqual(['ok'])
+      expect(res?.params).toEqual({ capture: 'baz' })
+    })
+
+    it('GET /foo/qux', () => {
+      const res = router.match('get', '/foo/qux')
+      expect(res).toBeNull()
+    })
+  })
+
+  describe('Complex capturing group', () => {
+    const router = new RegExpRouter<string>()
+    router.add('get', '/foo/:capture{ba(r|z)}', 'ok')
+    it('GET request', () => {
+      expect(() => {
+        router.match('GET', '/foo/bar')
+      }).toThrowError(UnsupportedPathError)
+    })
+  })
+})
