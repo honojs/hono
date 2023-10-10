@@ -50,6 +50,10 @@ export const validator = <
     switch (target) {
       case 'json':
         try {
+          const contentType = c.req.header('Content-Type')
+          if (!contentType || !/application\/json/.test(contentType)) {
+            throw new Error(`Invalid HTTP header: Content-Type=${contentType}`)
+          }
           /**
            * Get the arrayBuffer first, create JSON object via Response,
            * and cache the arrayBuffer in the c.req.bodyCache.
