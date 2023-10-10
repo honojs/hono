@@ -9,7 +9,11 @@ export class Hono<
   S extends Schema = {},
   BasePath extends string = '/'
 > extends HonoBase<E, S, BasePath> {
-  constructor(init: Partial<Pick<Hono, 'getPath'> & { strict: boolean }> = {}) {
+  constructor(
+    init: Exclude<ConstructorParameters<typeof HonoBase>[0], 'basePath'> & {
+      basePath?: BasePath
+    } = {}
+  ) {
     super(init)
     this.router = new SmartRouter({
       routers: [new LinearRouter(), new TrieRouter()],

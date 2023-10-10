@@ -21,7 +21,6 @@ import type {
   FetchEventLike,
   Schema,
 } from './types'
-import type { RemoveBlankRecord } from './utils/types'
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
@@ -68,12 +67,14 @@ class Hono<
   */
   router!: Router<H>
   readonly getPath: (request: Request, options?: { env?: E['Bindings'] }) => string
-  private _basePath: string = '/'
+  #basePath: string
   private path: string = '/'
 
   routes: RouterRoute[] = []
 
-  constructor(init: Partial<Pick<Hono, 'router' | 'getPath'> & { strict: boolean }> = {}) {
+  constructor(
+    init: Partial<Pick<Hono, 'router' | 'getPath'> & { strict: boolean; basePath: BasePath }> = {}
+  ) {
     super()
 
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
@@ -123,6 +124,7 @@ class Hono<
     const strict = init.strict ?? true
     delete init.strict
     Object.assign(this, init)
+    this.#basePath = init.basePath ?? '/'
     this.getPath = strict ? init.getPath ?? getPath : getPathNoStrict
   }
 
@@ -145,24 +147,10 @@ class Hono<
     SubBasePath extends string
   >(
     path: SubPath,
-    app: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath>
-  /** @description
-   * Use `basePath` instead of `route` when passing **one** argument, such as `app.route('/api')`.
-   * The use of `route` with **one** argument has been removed in v4.
-   * However, you can still use `route` with **two** arguments, like `app.route('/api', subApp)`."
-   */
-  route<SubPath extends string>(path: SubPath): Hono<E, RemoveBlankRecord<S>, BasePath>
-  route<
-    SubPath extends string,
-    SubEnv extends Env,
-    SubSchema extends Schema,
-    SubBasePath extends string
-  >(
-    path: SubPath,
     app?: Hono<SubEnv, SubSchema, SubBasePath>
   ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
-    const subApp = this.basePath(path)
+    const subApp = this.clone()
+    subApp.#basePath = mergePath(this.#basePath, path)
 
     if (!app) {
       return subApp
@@ -179,9 +167,14 @@ class Hono<
     return this
   }
 
+  /**
+   * @deprecated
+   * `app.basePath()` will be removed in the v4.
+   * Use `new Hono({ basePath: '/api' })` instead of `new Hono().basePath('/api')`.
+   */
   basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
     const subApp = this.clone()
-    subApp._basePath = mergePath(this._basePath, path)
+    subApp.#basePath = mergePath(this.#basePath, path)
     return subApp
   }
 
@@ -215,7 +208,7 @@ class Hono<
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     optionHandler?: (c: Context) => unknown
   ): Hono<E, S, BasePath> {
-    const mergedPath = mergePath(this._basePath, path)
+    const mergedPath = mergePath(this.#basePath, path)
     const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
 
     const handler: MiddlewareHandler = async (c, next) => {
@@ -249,7 +242,7 @@ class Hono<
   }
 
   /**
-   * @deprecate
+   * @deprecated
    * `app.head()` is no longer used.
    * `app.get()` implicitly handles the HEAD method.
    */
@@ -260,9 +253,7 @@ class Hono<
 
   private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
-    if (this._basePath) {
-      path = mergePath(this._basePath, path)
-    }
+    path = mergePath(this.#basePath, path)
     this.router.add(method, path, handler)
     const r: RouterRoute = { path: path, method: method, handler: handler }
     this.routes.push(r)
@@ -358,7 +349,7 @@ class Hono<
 
   /**
    * @deprecated
-   * `app.handleEvent()` will be removed in v4.
+   * `app.handleEvent()` will be removed in the v4.
    * Use `app.fetch()` instead of `app.handleEvent()`.
    */
   handleEvent = (event: FetchEventLike) => {
