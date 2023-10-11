@@ -10,22 +10,22 @@ describe('Basic Usage', () => {
 
   it('get, post hello', async () => {
     let res = router.match('GET', '/hello')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['get hello'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('get hello')
 
     res = router.match('POST', '/hello')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['post hello'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('post hello')
 
     res = router.match('PURGE', '/hello')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['purge hello'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('purge hello')
 
     res = router.match('PUT', '/hello')
-    expect(res).toBeNull()
+    expect(res.length).toBe(0)
 
     res = router.match('GET', '/')
-    expect(res).toBeNull()
+    expect(res.length).toBe(0)
   })
 })
 
@@ -38,40 +38,41 @@ describe('Complex', () => {
   it('Named Param', async () => {
     router.add('GET', '/entry/:id', 'get entry')
     const res = router.match('GET', '/entry/123')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['get entry'])
-    expect(res?.params['id']).toBe('123')
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('get entry')
+    expect(res[0].params['id']).toBe('123')
   })
 
   it('Wildcard', async () => {
     router.add('GET', '/wild/*/card', 'get wildcard')
     const res = router.match('GET', '/wild/xxx/card')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['get wildcard'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('get wildcard')
   })
 
   it('Default', async () => {
     router.add('GET', '/api/abc', 'get api')
     router.add('GET', '/api/*', 'fallback')
     let res = router.match('GET', '/api/abc')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['get api', 'fallback'])
+    expect(res.length).toBe(2)
+    expect(res[0].handler).toEqual('get api')
+    expect(res[1].handler).toEqual('fallback')
     res = router.match('GET', '/api/def')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['fallback'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('fallback')
   })
 
   it('Regexp', async () => {
     router.add('GET', '/post/:date{[0-9]+}/:title{[a-z]+}', 'get post')
     let res = router.match('GET', '/post/20210101/hello')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['get post'])
-    expect(res?.params['date']).toBe('20210101')
-    expect(res?.params['title']).toBe('hello')
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('get post')
+    expect(res[0].params['date']).toBe('20210101')
+    expect(res[0].params['title']).toBe('hello')
     res = router.match('GET', '/post/onetwothree')
-    expect(res).toBeNull()
+    expect(res.length).toBe(0)
     res = router.match('GET', '/post/123/123')
-    expect(res).toBeNull()
+    expect(res.length).toBe(0)
   })
 
   it('/*', async () => {
@@ -81,12 +82,16 @@ describe('Complex', () => {
     router.add('GET', '/api/*', 'fallback')
 
     let res = router.match('GET', '/api')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['auth middleware', 'top', 'fallback'])
+    expect(res.length).toBe(3)
+    expect(res[0].handler).toEqual('auth middleware')
+    expect(res[1].handler).toEqual('top')
+    expect(res[2].handler).toEqual('fallback')
 
     res = router.match('GET', '/api/posts')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['auth middleware', 'posts', 'fallback'])
+    expect(res.length).toBe(3)
+    expect(res[0].handler).toEqual('auth middleware')
+    expect(res[1].handler).toEqual('posts')
+    expect(res[2].handler).toEqual('fallback')
   })
 })
 
@@ -100,16 +105,18 @@ describe('Registration order', () => {
     router.add('GET', '*', 'bar')
     router.add('GET', '/:type/:action', 'foo')
     const res = router.match('GET', '/posts/123')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['bar', 'foo'])
+    expect(res.length).toBe(2)
+    expect(res[0].handler).toEqual('bar')
+    expect(res[1].handler).toEqual('foo')
   })
 
   it('handler -> fallback', async () => {
     router.add('GET', '/:type/:action', 'foo')
     router.add('GET', '*', 'fallback')
     const res = router.match('GET', '/posts/123')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['foo', 'fallback'])
+    expect(res.length).toBe(2)
+    expect(res[0].handler).toEqual('foo')
+    expect(res[1].handler).toEqual('fallback')
   })
 })
 
@@ -126,31 +133,44 @@ describe('Multi match', () => {
     router.add('GET', '/entry/:id/comment/:comment_id', 'get comment')
     it('GET /', async () => {
       const res = router.match('GET', '/')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['middleware a', 'middleware b'])
+      expect(res.length).toBe(2)
+      expect(res[0].handler).toEqual('middleware a')
+      expect(res[1].handler).toEqual('middleware b')
     })
     it('GET /entry/123', async () => {
       const res = router.match('GET', '/entry/123')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['middleware a', 'middleware b', 'get entry'])
-      expect(res?.params['id']).toBe('123')
+      expect(res.length).toBe(3)
+      expect(res[0].handler).toEqual('middleware a')
+      expect(res[0].params['id']).toBe(undefined)
+      expect(res[1].handler).toEqual('middleware b')
+      expect(res[1].params['id']).toBe(undefined)
+      expect(res[2].handler).toEqual('get entry')
+      expect(res[2].params['id']).toBe('123')
     })
     it('GET /entry/123/comment/456', async () => {
       const res = router.match('GET', '/entry/123/comment/456')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['middleware a', 'middleware b', 'get comment'])
-      expect(res?.params['id']).toBe('123')
-      expect(res?.params['comment_id']).toBe('456')
+      expect(res.length).toBe(3)
+      expect(res[0].handler).toEqual('middleware a')
+      expect(res[0].params['id']).toBe(undefined)
+      expect(res[0].params['comment_id']).toBe(undefined)
+      expect(res[1].handler).toEqual('middleware b')
+      expect(res[1].params['id']).toBe(undefined)
+      expect(res[1].params['comment_id']).toBe(undefined)
+      expect(res[2].handler).toEqual('get comment')
+      expect(res[2].params['id']).toBe('123')
+      expect(res[2].params['comment_id']).toBe('456')
     })
     it('POST /entry', async () => {
       const res = router.match('POST', '/entry')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['middleware a', 'middleware c', 'post entry'])
+      expect(res.length).toBe(3)
+      expect(res[0].handler).toEqual('middleware a')
+      expect(res[1].handler).toEqual('middleware c')
+      expect(res[2].handler).toEqual('post entry')
     })
     it('DELETE /entry', async () => {
       const res = router.match('DELETE', '/entry')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['middleware a'])
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toEqual('middleware a')
     })
   })
 
@@ -276,14 +296,19 @@ describe('star', () => {
 
   it('top', async () => {
     const res = router.match('GET', '/')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['/', '/*', '*'])
+    expect(res.length).toBe(3)
+    expect(res[0].handler).toEqual('/')
+    expect(res[1].handler).toEqual('/*')
+    expect(res[2].handler).toEqual('*')
   })
 
   it('Under a certain path', async () => {
     const res = router.match('GET', '/x')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['/*', '*', '/x', '/x/*'])
+    expect(res.length).toBe(4)
+    expect(res[0].handler).toEqual('/*')
+    expect(res[1].handler).toEqual('*')
+    expect(res[2].handler).toEqual('/x')
+    expect(res[3].handler).toEqual('/x/*')
   })
 })
 
@@ -292,13 +317,15 @@ describe('Optional route', () => {
   router.add('GET', '/api/animals/:type?', 'animals')
   it('GET /api/animals/dog', async () => {
     const res = router.match('GET', '/api/animals/dog')
-    expect(res?.handlers).toEqual(['animals'])
-    expect(res?.params['type']).toBe('dog')
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('animals')
+    expect(res[0].params['type']).toBe('dog')
   })
   it('GET /api/animals', async () => {
     const res = router.match('GET', '/api/animals')
-    expect(res?.handlers).toEqual(['animals'])
-    expect(res?.params['type']).toBeUndefined()
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('animals')
+    expect(res[0].params['type']).toBeUndefined()
   })
 })
 
@@ -310,7 +337,7 @@ describe('All', () => {
 
   it('get, all hello', async () => {
     const res = router.match('GET', '/all')
-    expect(res).not.toBeNull()
+    expect(res.length).toBe(1)
   })
 })
 
@@ -325,17 +352,27 @@ describe('long prefix, then star', () => {
 
     it('get /', () => {
       const res = router.match('GET', '/')
-      expect(res?.handlers).toEqual(['star1', 'star2'])
+      expect(res.length).toBe(2)
+      expect(res[0].handler).toEqual('star1')
+      expect(res[1].handler).toEqual('star2')
     })
 
     it('get /long/prefix', () => {
       const res = router.match('GET', '/long/prefix')
-      expect(res?.handlers).toEqual(['long-prefix', 'long', 'star1', 'star2'])
+      expect(res.length).toBe(4)
+      expect(res[0].handler).toEqual('long-prefix')
+      expect(res[1].handler).toEqual('long')
+      expect(res[2].handler).toEqual('star1')
+      expect(res[3].handler).toEqual('star2')
     })
 
     it('get /long/prefix/test', () => {
       const res = router.match('GET', '/long/prefix/test')
-      expect(res?.handlers).toEqual(['long-prefix', 'long', 'star1', 'star2'])
+      expect(res.length).toBe(4)
+      expect(res[0].handler).toEqual('long-prefix')
+      expect(res[1].handler).toEqual('long')
+      expect(res[2].handler).toEqual('star1')
+      expect(res[3].handler).toEqual('star2')
     })
   })
 
@@ -349,17 +386,27 @@ describe('long prefix, then star', () => {
 
     it('get /', () => {
       const res = router.match('GET', '/')
-      expect(res?.handlers).toEqual(['star1', 'star2'])
+      expect(res.length).toBe(2)
+      expect(res[0].handler).toEqual('star1')
+      expect(res[1].handler).toEqual('star2')
     })
 
     it('get /long/prefix', () => {
       const res = router.match('GET', '/long/prefix')
-      expect(res?.handlers).toEqual(['long-prefix', 'long', 'star1', 'star2'])
+      expect(res.length).toBe(4)
+      expect(res[0].handler).toEqual('long-prefix')
+      expect(res[1].handler).toEqual('long')
+      expect(res[2].handler).toEqual('star1')
+      expect(res[3].handler).toEqual('star2')
     })
 
     it('get /long/prefix/test', () => {
       const res = router.match('GET', '/long/prefix/test')
-      expect(res?.handlers).toEqual(['long-prefix', 'long', 'star1', 'star2'])
+      expect(res.length).toBe(4)
+      expect(res[0].handler).toEqual('long-prefix')
+      expect(res[1].handler).toEqual('long')
+      expect(res[2].handler).toEqual('star1')
+      expect(res[3].handler).toEqual('star2')
     })
   })
 
@@ -372,23 +419,23 @@ describe('long prefix, then star', () => {
     // router.add('GET', '/js/main.js', 'main.js')
     // it('get /js/main.js', () => {
     //   const res = router.match('GET', '/js/main.js')
-    //   expect(res).not.toBeNull()
-    //   expect(res?.handlers).toEqual(['any file', 'main.js'])
-    //   expect(res?.params).toEqual({ filename: 'main.js' })
+    //   expect(res.length).toBe(1)
+    //   expect(res[0].handler).toEqual('any file', 'main.js')
+    //   expect(res[0].params).toEqual({ filename: 'main.js' })
     // })
 
     it('get /js/chunk/123.js', () => {
       const res = router.match('GET', '/js/chunk/123.js')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['any file'])
-      expect(res?.params).toEqual({ filename: 'chunk/123.js' })
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toEqual('any file')
+      expect(res[0].params).toEqual({ filename: 'chunk/123.js' })
     })
 
     it('get /js/chunk/nest/123.js', () => {
       const res = router.match('GET', '/js/chunk/nest/123.js')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['any file'])
-      expect(res?.params).toEqual({ filename: 'chunk/nest/123.js' })
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toEqual('any file')
+      expect(res[0].params).toEqual({ filename: 'chunk/nest/123.js' })
     })
   })
 
@@ -400,14 +447,14 @@ describe('long prefix, then star', () => {
 
     it('get /users/hono', () => {
       const res = router.match('GET', '/users/hono')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['profile'])
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toEqual('profile')
     })
 
     it('get /users/hono/posts', () => {
       const res = router.match('GET', '/users/hono/posts')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['posts'])
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toEqual('posts')
     })
   })
 })
@@ -420,7 +467,7 @@ describe('static routes of ALL and GET', () => {
 
   it('get /foo', () => {
     const res = router.match('GET', '/foo')
-    expect(res?.handlers).toEqual(['foo'])
+    expect(res[0].handler).toEqual('foo')
   })
 })
 
@@ -432,8 +479,9 @@ describe('ALL and Star', () => {
 
   it('Should return /x and star', async () => {
     const res = router.match('GET', '/x')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['/x', 'star'])
+    expect(res.length).toBe(2)
+    expect(res[0].handler).toEqual('/x')
+    expect(res[1].handler).toEqual('star')
   })
 })
 
@@ -447,8 +495,11 @@ describe('GET star, ALL static, GET star...', () => {
 
   it('Should return /x and star', async () => {
     const res = router.match('GET', '/x')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['star1', '/x', 'star2', 'star3'])
+    expect(res.length).toBe(4)
+    expect(res[0].handler).toEqual('star1')
+    expect(res[1].handler).toEqual('/x')
+    expect(res[2].handler).toEqual('star2')
+    expect(res[3].handler).toEqual('star3')
   })
 })
 
@@ -463,8 +514,10 @@ describe('GET star, GET static, ALL star...', () => {
 
   it('Should return star1, star2, and bar', async () => {
     const res = router.match('GET', '/y/b/bar')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['star1', 'star2', 'bar'])
+    expect(res.length).toBe(3)
+    expect(res[0].handler).toEqual('star1')
+    expect(res[1].handler).toEqual('star2')
+    expect(res[2].handler).toEqual('bar')
   })
 })
 
@@ -479,8 +532,10 @@ describe('ALL star, ALL star, GET static, ALL star...', () => {
 
   it('Should return wildcard, star2 and bar', async () => {
     const res = router.match('GET', '/b/bar')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['wildcard', 'star2', 'bar'])
+    expect(res.length).toBe(3)
+    expect(res[0].handler).toEqual('wildcard')
+    expect(res[1].handler).toEqual('star2')
+    expect(res[2].handler).toEqual('bar')
   })
 })
 
@@ -490,16 +545,16 @@ describe('Routing with a hostname', () => {
   router.add('get', 'www2.example.com/hello', 'www2')
   it('GET www1.example.com/hello', () => {
     const res = router.match('get', 'www1.example.com/hello')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['www1'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('www1')
   })
   it('GET www2.example.com/hello', () => {
     const res = router.match('get', 'www2.example.com/hello')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['www2'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('www2')
   })
   it('GET /hello', () => {
     const res = router.match('get', '/hello')
-    expect(res).toBeNull()
+    expect(res.length).toBe(0)
   })
 })
