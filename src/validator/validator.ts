@@ -51,7 +51,7 @@ export const validator = <
       case 'json':
         try {
           const contentType = c.req.header('Content-Type')
-          if (!contentType || !/application\/json/.test(contentType)) {
+          if (!contentType || !contentType.startsWith('application/json')) {
             throw new Error(`Invalid HTTP header: Content-Type=${contentType}`)
           }
           /**
