@@ -4,6 +4,7 @@ import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 
 import { encodeBase64 } from '../../utils/encode'
+import { StreamingApi } from '../../utils/stream'
 import type { ApiGatewayRequestContext, LambdaFunctionUrlRequestContext } from './custom-context'
 import type { LambdaContext } from './types'
 
@@ -106,6 +107,54 @@ const createResult = async (res: Response): Promise<APIGatewayProxyResult> => {
   })
 
   return result
+}
+
+export const streamHandle = <
+  E extends Env = Env,
+  S extends Schema = {},
+  BasePath extends string = '/'
+>(
+  app: Hono<E, S, BasePath>
+) => {
+  return awslambda.streamifyResponse(
+    async (
+      event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent,
+      responseStream: NodeJS.WritableStream,
+      lambdaContext?: LambdaContext
+    ) => {
+      const stream = new StreamingApi(responseStream as any)  // キャストが必要かもしれません
+      const req = createRequest(event)
+      const requestContext = getRequestContext(event)
+
+      const res = await app.fetch(req, {
+        requestContext,
+        lambdaContext,
+      })
+
+      // ストリーミングAPIを使用してres.bodyをresponseStreamにパイプする
+      if (res.body instanceof ReadableStream) {
+        await stream.pipe(res.body)
+        return
+      }
+
+      // それ以外の場合、通常の方法でボディを書き込む
+      const contentType = res.headers.get('content-type')
+      let isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
+      if (!isBase64Encoded) {
+        const contentEncoding = res.headers.get('content-encoding')
+        isBase64Encoded = isContentEncodingBinary(contentEncoding)
+      }
+
+      if (isBase64Encoded) {
+        const buffer = await res.arrayBuffer()
+        await stream.write(encodeBase64(buffer))
+      } else {
+        await stream.write(await res.text())
+      }
+
+      await stream.close()
+    }
+  )
 }
 
 const createRequest = (

@@ -1,3 +1,5 @@
+import { Handler } from 'aws-lambda';
+
 // @denoify-ignore
 export interface CognitoIdentity {
   cognitoIdentityId: string

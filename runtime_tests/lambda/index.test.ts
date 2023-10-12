@@ -1,8 +1,10 @@
+/// <reference path="../../src/adapter/aws-lambda/awslambda.d.ts" />
+
 import type {
   ApiGatewayRequestContext,
   LambdaFunctionUrlRequestContext,
 } from '../../src/adapter/aws-lambda/custom-context'
-import { handle } from '../../src/adapter/aws-lambda/handler'
+import { handle, streamHandle } from '../../src/adapter/aws-lambda/handler'
 import type { LambdaContext } from '../../src/adapter/aws-lambda/types'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
@@ -317,3 +319,93 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(JSON.parse(response.body).callbackWaitsForEmptyEventLoop).toEqual(false)
   })
 })
+
+describe('AWS Lambda Streaming Adapter for Hono', () => {
+  const app = new Hono<{ Bindings: Bindings }>()
+
+  app.get('/streamText', (c) => {
+    return c.streamText(async (stream) => {
+      // return streamSSE(c, async (stream) => {
+        let id = 0
+        const maxIterations = 5
+    
+        while (id < maxIterations) {
+          console.log(id)
+          // const message = `It is ${id}`
+          await stream.write(String(id++))
+          // await stream.writeSSE({ data: message, event: 'time-update', id: String(id++) })
+          await stream.sleep(1000)
+        }
+      })
+    })
+  
+  const handler = streamHandle(app)
+
+  const testLambdaFunctionUrlRequestContext = {
+    accountId: '123456789012',
+    apiId: 'urlid',
+    authentication: null,
+    authorizer: {
+      iam: {
+        accessKey: 'AKIA...',
+        accountId: '111122223333',
+        callerId: 'AIDA...',
+        cognitoIdentity: null,
+        principalOrgId: null,
+        userArn: 'arn:aws:iam::111122223333:user/example-user',
+        userId: 'AIDA...',
+      },
+    },
+    domainName: 'example.com',
+    domainPrefix: '<url-id>',
+    http: {
+      method: 'POST',
+      path: '/my/path',
+      protocol: 'HTTP/1.1',
+      sourceIp: '123.123.123.123',
+      userAgent: 'agent',
+    },
+    requestId: 'id',
+    routeKey: '$default',
+    stage: '$default',
+    time: '12/Mar/2020:19:03:58 +0000',
+    timeEpoch: 1583348638390,
+    customProperty: 'customValue',
+  }
+
+  it('Should handle a GET request and return a 200 response', async () => {
+    const event = {
+      headers: { 'content-type': 'text/plain' },
+      rawPath: '/',
+      rawQueryString: '',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testLambdaFunctionUrlRequestContext,
+    }
+    const context: LambdaContext = {
+      callbackWaitsForEmptyEventLoop: false,
+      functionName: 'myLambdaFunction',
+      functionVersion: '1.0.0',
+      invokedFunctionArn: 'arn:aws:lambda:us-west-2:123456789012:function:myLambdaFunction',
+      memoryLimitInMB: '128',
+      awsRequestId: 'c6af9ac6-a7b0-11e6-80f5-76304dec7eb7',
+      logGroupName: '/aws/lambda/myLambdaFunction',
+      logStreamName: '2016/11/14/[$LATEST]f2d4b21cfb33490da2e8f8ef79a483s4',
+      getRemainingTimeInMillis: () => {
+        return 60000 // 60 seconds
+      },
+    }
+
+    testLambdaFunctionUrlRequestContext.http.method = 'GET'
+
+    const response = await handler(event, context, callback(null, 'Success!'))
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toBe('Hello Lambda!')
+    expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.isBase64Encoded).toBe(false)
+  })
+})
+
+function callback(arg0: null, arg1: string): import("aws-lambda").Callback<any> {
+  throw new Error('Function not implemented.')
+}
