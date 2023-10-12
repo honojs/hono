@@ -1,15 +1,14 @@
-import type { ParamMap, Context } from './node'
+import type { ParamAssocArray, Context } from './node'
 import { Node } from './node'
 
-export type { ParamMap } from './node'
 export type ReplacementMap = number[]
 
 export class Trie {
   context: Context = { varIndex: 0 }
   root: Node = new Node()
 
-  insert(path: string, index: number, pathErrorCheckOnly: boolean): ParamMap {
-    const paramMap: ParamMap = []
+  insert(path: string, index: number, pathErrorCheckOnly: boolean): ParamAssocArray {
+    const paramAssoc: ParamAssocArray = []
 
     const groups: [string, string][] = [] // [mark, original string]
     for (let i = 0; ; ) {
@@ -42,9 +41,9 @@ export class Trie {
       }
     }
 
-    this.root.insert(tokens, index, paramMap, this.context, pathErrorCheckOnly)
+    this.root.insert(tokens, index, paramAssoc, this.context, pathErrorCheckOnly)
 
-    return paramMap
+    return paramAssoc
   }
 
   buildRegExp(): [RegExp, ReplacementMap, ReplacementMap] {

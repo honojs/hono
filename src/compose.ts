@@ -1,4 +1,5 @@
 import { Context } from './context'
+import type { ParamIndexMap, Params } from './router'
 import type { Env, NotFoundHandler, ErrorHandler } from './types'
 
 interface ComposeContext {
@@ -8,7 +9,7 @@ interface ComposeContext {
 
 // Based on the code in the MIT licensed `koa-compose` package.
 export const compose = <C extends ComposeContext, E extends Env = Env>(
-  middleware: Function[],
+  middleware: [Function, ParamIndexMap | Params][],
   onError?: ErrorHandler<E>,
   onNotFound?: NotFoundHandler<E>
 ) => {
@@ -21,18 +22,23 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
       if (i <= index) {
         throw new Error('next() called multiple times')
       }
-      let handler = middleware[i]
-      index = i
-      if (i === middlewareLength && next) handler = next
 
       let res
       let isError = false
 
-      if (!handler) {
+      if (!middleware[i]) {
         if (context instanceof Context && context.finalized === false && onNotFound) {
           res = onNotFound(context)
         }
       } else {
+        let handler = middleware[i][0]
+        index = i
+        if (i === middlewareLength && next) handler = next
+
+        if (context instanceof Context) {
+          context.req.setParams(middleware[i][1])
+        }
+
         try {
           res = handler(context, () => {
             const dispatchRes = dispatch(i + 1)

@@ -173,7 +173,7 @@ class Hono<
         app.errorHandler === errorHandler
           ? r.handler
           : async (c: Context, next: Next) =>
-              (await compose<Context>([r.handler], app.errorHandler)(c, next)).res
+              (await compose<Context>([[r.handler, {}]], app.errorHandler)(c, next)).res
       subApp.addRoute(r.method, r.path, handler)
     })
     return this
@@ -269,7 +269,7 @@ class Hono<
   }
 
   private matchRoute(method: string, path: string) {
-    return this.router.match(method, path) || { handlers: [], params: {} }
+    return this.router.match(method, path)
   }
 
   private handleError(err: unknown, c: Context<E>) {
@@ -292,9 +292,9 @@ class Hono<
     }
 
     const path = this.getPath(request, { env })
-    const { handlers, params } = this.matchRoute(method, path)
+    const [handlers, params] = this.matchRoute(method, path)
 
-    const c = new Context(new HonoRequest(request, path, params), {
+    const c = new Context(new HonoRequest(request, path, params || []), {
       env,
       executionCtx,
       notFoundHandler: this.notFoundHandler,
@@ -304,8 +304,9 @@ class Hono<
     if (handlers.length === 1) {
       let res: ReturnType<H>
 
+      c.req.setParams(handlers[0][1])
       try {
-        res = handlers[0](c, async () => {})
+        res = handlers[0][0](c, async () => {})
         if (!res) {
           return this.notFoundHandler(c)
         }
