@@ -64,18 +64,15 @@ function buildMatcherFromPreprocessedRoutes<T>(
       continue
     }
 
-    handlerData[j] = handlers.map(([h, paramCount]) => [
-      h,
-      paramCount === 0
-        ? {}
-        : (paramAssoc.length === paramCount ? paramAssoc : paramAssoc.slice(0, paramCount)).reduce(
-            (acc, [k, v]) => {
-              acc[k] = v
-              return acc
-            },
-            {} as ParamIndexMap
-          ),
-    ])
+    handlerData[j] = handlers.map(([h, paramCount]) => {
+      const paramIndexMap: ParamIndexMap = {}
+      paramCount -= 1
+      for (; paramCount >= 0; paramCount--) {
+        const [key, value] = paramAssoc[paramCount]
+        paramIndexMap[key] = value
+      }
+      return [h, paramIndexMap]
+    })
   }
 
   const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp()
