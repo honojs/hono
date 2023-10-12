@@ -6,7 +6,6 @@ type C = {
   req: Record<string, string>
   res: Record<string, string>
   finalized: boolean
-  setRequestParams: Function
 }
 
 class ExpectedError extends Error {}
@@ -42,7 +41,7 @@ describe('compose', () => {
   middleware.push(handler)
 
   it('Request', async () => {
-    const c: C = { req: {}, res: {}, finalized: false, setRequestParams: () => {} }
+    const c: C = { req: {}, res: {}, finalized: false }
     const composed = compose<C>(middleware)
     const context = await composed(c)
     expect(context.req['log']).not.toBeNull()

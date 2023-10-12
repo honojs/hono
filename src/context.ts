@@ -154,10 +154,6 @@ export class Context<
     this.finalized = true
   }
 
-  setRequestParams = (params: Record<string, string>) => {
-    this.req.setParams(params)
-  }
-
   /**
    * @experimental
    * `c.render()` is an experimental feature.
