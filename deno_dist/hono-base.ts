@@ -313,13 +313,13 @@ class Hono<
         return this.handleError(err, c)
       }
 
-      if (res.constructor.name === 'Response') return res as Response
+      if (res instanceof Response) return res
 
       if ('response' in res) {
         res = res.response
       }
 
-      if (res.constructor.name === 'Response') return res as Response
+      if (res instanceof Response) return res
 
       return (async () => {
         let awaited: Response | TypedResponse | void
