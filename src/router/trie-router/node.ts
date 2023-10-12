@@ -1,4 +1,4 @@
-import type { Result } from '../../router'
+import type { Result, Params } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 import type { Pattern } from '../../utils/url'
 import { splitPath, splitRoutingPath, getPattern } from '../../utils/url'
@@ -102,7 +102,7 @@ export class Node<T> {
     return handlerSets
   }
 
-  search(method: string, path: string): Result<T>[] {
+  search(method: string, path: string): [[T, Params][]] {
     const handlerSets: HandlerSet<T>[] = []
 
     const params: Record<string, string> = {}
@@ -189,6 +189,6 @@ export class Node<T> {
       return a.score - b.score
     })
 
-    return results
+    return [results.map(({ handler, params }) => [handler, params] as [T, Params])]
   }
 }

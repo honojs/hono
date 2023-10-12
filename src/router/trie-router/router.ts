@@ -22,7 +22,7 @@ export class TrieRouter<T> implements Router<T> {
     this.node.insert(method, path, handler)
   }
 
-  match(method: string, path: string): Result<T>[] {
+  match(method: string, path: string): Result<T> {
     return this.node.search(method, path)
   }
 }
