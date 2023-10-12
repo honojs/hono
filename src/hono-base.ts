@@ -292,9 +292,9 @@ class Hono<
     }
 
     const path = this.getPath(request, { env })
-    const [handlers, params] = this.matchRoute(method, path)
+    const [handlers, paramStash] = this.matchRoute(method, path)
 
-    const c = new Context(new HonoRequest(request, path, params || []), {
+    const c = new Context(new HonoRequest(request, path, paramStash || []), {
       env,
       executionCtx,
       notFoundHandler: this.notFoundHandler,
