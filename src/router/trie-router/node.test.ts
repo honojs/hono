@@ -6,8 +6,8 @@ describe('Root Node', () => {
   it('get /', () => {
     const res = node.search('get', '/')
     expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['get root'])
-    expect(node.search('get', '/hello')).toBeNull()
+    expect(res[0].handler).toEqual('get root')
+    expect(node.search('get', '/hello').length).toBe(0)
   })
 })
 
@@ -15,7 +15,7 @@ describe('Root Node is not defined', () => {
   const node = new Node()
   node.insert('get', '/hello', 'get hello')
   it('get /', () => {
-    expect(node.search('get', '/')).toBeNull()
+    expect(node.search('get', '/')).toEqual([])
   })
 })
 
@@ -23,8 +23,8 @@ describe('Get with *', () => {
   const node = new Node()
   node.insert('get', '*', 'get all')
   it('get /', () => {
-    expect(node.search('get', '/')).not.toBeNull()
-    expect(node.search('get', '/hello')).not.toBeNull()
+    expect(node.search('get', '/').length).toBe(1)
+    expect(node.search('get', '/hello').length).toBe(1)
   })
 })
 
@@ -35,23 +35,23 @@ describe('Basic Usage', () => {
   node.insert('get', '/hello/foo', 'get hello foo')
 
   it('get, post /hello', () => {
-    expect(node.search('get', '/')).toBeNull()
-    expect(node.search('post', '/')).toBeNull()
+    expect(node.search('get', '/').length).toBe(0)
+    expect(node.search('post', '/').length).toBe(0)
 
-    expect(node.search('get', '/hello')?.handlers).toEqual(['get hello'])
-    expect(node.search('post', '/hello')?.handlers).toEqual(['post hello'])
-    expect(node.search('put', '/hello')).toBeNull()
+    expect(node.search('get', '/hello')[0].handler).toEqual('get hello')
+    expect(node.search('post', '/hello')[0].handler).toEqual('post hello')
+    expect(node.search('put', '/hello').length).toBe(0)
   })
   it('get /nothing', () => {
-    expect(node.search('get', '/nothing')).toBeNull()
+    expect(node.search('get', '/nothing').length).toBe(0)
   })
   it('/hello/foo, /hello/bar', () => {
-    expect(node.search('get', '/hello/foo')?.handlers).toEqual(['get hello foo'])
-    expect(node.search('post', '/hello/foo')).toBeNull()
-    expect(node.search('get', '/hello/bar')).toBeNull()
+    expect(node.search('get', '/hello/foo')[0].handler).toEqual('get hello foo')
+    expect(node.search('post', '/hello/foo').length).toBe(0)
+    expect(node.search('get', '/hello/bar').length).toBe(0)
   })
   it('/hello/foo/bar', () => {
-    expect(node.search('get', '/hello/foo/bar')).toBeNull()
+    expect(node.search('get', '/hello/foo/bar').length).toBe(0)
   })
 })
 
@@ -63,31 +63,31 @@ describe('Name path', () => {
 
   it('get /entry/123', () => {
     const res = node.search('get', '/entry/123')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['get entry'])
-    expect(res?.params).not.toBeNull()
-    expect(res?.params['id']).toBe('123')
-    expect(res?.params['id']).not.toBe('1234')
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('get entry')
+    expect(res[0].params).not.toBeNull()
+    expect(res[0].params['id']).toBe('123')
+    expect(res[0].params['id']).not.toBe('1234')
   })
 
   it('get /entry/456/comment', () => {
     const res = node.search('get', '/entry/456/comment')
-    expect(res).toBeNull()
+    expect(res.length).toBe(0)
   })
 
   it('get /entry/789/comment/123', () => {
     const res = node.search('get', '/entry/789/comment/123')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['get comment'])
-    expect(res?.params['id']).toBe('789')
-    expect(res?.params['comment_id']).toBe('123')
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('get comment')
+    expect(res[0].params['id']).toBe('789')
+    expect(res[0].params['comment_id']).toBe('123')
   })
 
   it('get /map/:location/events', () => {
     const res = node.search('get', '/map/yokohama/events')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['get events'])
-    expect(res?.params['location']).toBe('yokohama')
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('get events')
+    expect(res[0].params['location']).toBe('yokohama')
   })
 })
 
@@ -99,9 +99,11 @@ describe('Name path - Multiple route', () => {
 
   it('get /posts/123', () => {
     const res = node.search('get', '/posts/123')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['common', 'specialized'])
-    expect(res?.params['id']).toBe('123')
+    expect(res.length).toBe(2)
+    expect(res[0].handler).toEqual('common')
+    expect(res[0].params['id']).toBe('123')
+    expect(res[1].handler).toEqual('specialized')
+    expect(res[1].params['id']).toBe('123')
   })
 })
 
@@ -113,17 +115,17 @@ describe('Param prefix', () => {
 
   it('get /hello', () => {
     const res = node.search('get', '/hello')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['onepart'])
-    expect(res?.params['foo']).toBe('hello')
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('onepart')
+    expect(res[0].params['foo']).toBe('hello')
   })
 
   it('get /hello/world', () => {
     const res = node.search('get', '/hello/world')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['twopart'])
-    expect(res?.params['bar']).toBe('hello')
-    expect(res?.params['baz']).toBe('world')
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('twopart')
+    expect(res[0].params['bar']).toBe('hello')
+    expect(res[0].params['baz']).toBe('world')
   })
 })
 
@@ -134,21 +136,21 @@ describe('Named params and a wildcard', () => {
 
   it('get /', () => {
     const res = node.search('get', '/')
-    expect(res).toBeNull()
+    expect(res.length).toBe(0)
   })
 
   it('get /foo', () => {
     const res = node.search('get', '/foo')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['onepart'])
-    expect(res?.params['id']).toEqual('foo')
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('onepart')
+    expect(res[0].params['id']).toEqual('foo')
   })
 
   it('get /foo/bar', () => {
     const res = node.search('get', '/foo/bar')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['onepart'])
-    expect(res?.params['id']).toEqual('foo')
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('onepart')
+    expect(res[0].params['id']).toEqual('foo')
   })
 })
 
@@ -157,14 +159,14 @@ describe('Wildcard', () => {
   node.insert('get', '/wildcard-abc/*/wildcard-efg', 'wildcard')
   it('/wildcard-abc/xxxxxx/wildcard-efg', () => {
     const res = node.search('get', '/wildcard-abc/xxxxxx/wildcard-efg')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['wildcard'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('wildcard')
   })
   node.insert('get', '/wildcard-abc/*/wildcard-efg/hijk', 'wildcard')
   it('/wildcard-abc/xxxxxx/wildcard-efg/hijk', () => {
     const res = node.search('get', '/wildcard-abc/xxxxxx/wildcard-efg/hijk')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['wildcard'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('wildcard')
   })
 })
 
@@ -173,18 +175,18 @@ describe('Regexp', () => {
   node.insert('get', '/regex-abc/:id{[0-9]+}/comment/:comment_id{[a-z]+}', 'regexp')
   it('/regexp-abc/123/comment/abc', () => {
     const res = node.search('get', '/regex-abc/123/comment/abc')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['regexp'])
-    expect(res?.params['id']).toBe('123')
-    expect(res?.params['comment_id']).toBe('abc')
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('regexp')
+    expect(res[0].params['id']).toBe('123')
+    expect(res[0].params['comment_id']).toBe('abc')
   })
   it('/regexp-abc/abc', () => {
     const res = node.search('get', '/regex-abc/abc')
-    expect(res).toBeNull()
+    expect(res.length).toBe(0)
   })
   it('/regexp-abc/123/comment/123', () => {
     const res = node.search('get', '/regex-abc/123/comment/123')
-    expect(res).toBeNull()
+    expect(res.length).toBe(0)
   })
 })
 
@@ -193,11 +195,11 @@ describe('All', () => {
   node.insert('ALL', '/all-methods', 'all methods') // ALL
   it('/all-methods', () => {
     let res = node.search('get', '/all-methods')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['all methods'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('all methods')
     res = node.search('put', '/all-methods')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['all methods'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('all methods')
   })
 })
 
@@ -207,18 +209,18 @@ describe('Special Wildcard', () => {
 
   it('/foo', () => {
     const res = node.search('get', '/foo')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['match all'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('match all')
   })
   it('/hello', () => {
     const res = node.search('get', '/hello')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['match all'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('match all')
   })
   it('/hello/foo', () => {
     const res = node.search('get', '/hello/foo')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['match all'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('match all')
   })
 })
 
@@ -227,13 +229,13 @@ describe('Special Wildcard deeply', () => {
   node.insert('ALL', '/hello/*', 'match hello')
   it('/hello', () => {
     const res = node.search('get', '/hello')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['match hello'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('match hello')
   })
   it('/hello/foo', () => {
     const res = node.search('get', '/hello/foo')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['match hello'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('match hello')
   })
 })
 
@@ -243,13 +245,14 @@ describe('Default with wildcard', () => {
   node.insert('ALL', '/api/abc', 'match api')
   it('/api/abc', () => {
     const res = node.search('get', '/api/abc')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['fallback', 'match api'])
+    expect(res.length).toBe(2)
+    expect(res[0].handler).toEqual('fallback')
+    expect(res[1].handler).toEqual('match api')
   })
   it('/api/def', () => {
     const res = node.search('get', '/api/def')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['fallback'])
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('fallback')
   })
 })
 
@@ -263,30 +266,34 @@ describe('Multi match', () => {
     node.insert('get', '/abc/*/ghi/jkl', 'GET /abc/*/ghi/jkl')
     it('get /abc/edf', () => {
       const res = node.search('get', '/abc/edf')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['GET *', 'GET /abc/*', 'GET /abc/edf'])
+      expect(res.length).toBe(3)
+      expect(res[0].handler).toEqual('GET *')
+      expect(res[1].handler).toEqual('GET /abc/*')
+      expect(res[2].handler).toEqual('GET /abc/edf')
     })
     it('get /abc/xxx/edf', () => {
       const res = node.search('get', '/abc/xxx/edf')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['GET *', 'GET /abc/*', 'GET /abc/*/edf'])
+      expect(res.length).toBe(3)
+      expect(res[0].handler).toEqual('GET *')
+      expect(res[1].handler).toEqual('GET /abc/*')
+      expect(res[2].handler).toEqual('GET /abc/*/edf')
     })
     it('get /', () => {
       const res = node.search('get', '/')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['GET *'])
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toEqual('GET *')
     })
     it('post /', () => {
       const res = node.search('post', '/')
-      expect(res).toBeNull()
+      expect(res.length).toBe(0)
     })
     it('get /abc/edf/ghi', () => {
       const res = node.search('get', '/abc/edf/ghi')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['GET *', 'GET /abc/*'])
+      expect(res.length).toBe(2)
+      expect(res[0].handler).toEqual('GET *')
+      expect(res[1].handler).toEqual('GET /abc/*')
     })
   })
-
   describe('Blog', () => {
     const node = new Node()
     node.insert('get', '*', 'middleware a') // 0.1
@@ -298,29 +305,40 @@ describe('Multi match', () => {
     node.insert('get', '/entry/:id/comment/:comment_id', 'get comment') // 4.7
     it('get /entry/123', async () => {
       const res = node.search('get', '/entry/123')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['middleware a', 'middleware b', 'get entry'])
-      expect(res?.params['id']).toBe('123')
+      expect(res.length).toBe(3)
+      expect(res[0].handler).toEqual('middleware a')
+      expect(res[0].params['id']).toBe(undefined)
+      expect(res[1].handler).toEqual('middleware b')
+      expect(res[1].params['id']).toBe(undefined)
+      expect(res[2].handler).toEqual('get entry')
+      expect(res[2].params['id']).toBe('123')
     })
     it('get /entry/123/comment/456', async () => {
       const res = node.search('get', '/entry/123/comment/456')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['middleware a', 'middleware b', 'get comment'])
-      expect(res?.params['id']).toBe('123')
-      expect(res?.params['comment_id']).toBe('456')
+      expect(res.length).toBe(3)
+      expect(res[0].handler).toEqual('middleware a')
+      expect(res[0].params['id']).toBe(undefined)
+      expect(res[0].params['comment_id']).toBe(undefined)
+      expect(res[1].handler).toEqual('middleware b')
+      expect(res[1].params['id']).toBe(undefined)
+      expect(res[1].params['comment_id']).toBe(undefined)
+      expect(res[2].handler).toEqual('get comment')
+      expect(res[2].params['id']).toBe('123')
+      expect(res[2].params['comment_id']).toBe('456')
     })
     it('post /entry', async () => {
       const res = node.search('post', '/entry')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['middleware b', 'middleware c', 'post entry'])
+      expect(res.length).toBe(3)
+      expect(res[0].handler).toEqual('middleware b')
+      expect(res[1].handler).toEqual('middleware c')
+      expect(res[2].handler).toEqual('post entry')
     })
     it('delete /entry', async () => {
       const res = node.search('delete', '/entry')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['middleware b'])
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toEqual('middleware b')
     })
   })
-
   describe('ALL', () => {
     const node = new Node()
     node.insert('ALL', '*', 'ALL *')
@@ -328,105 +346,103 @@ describe('Multi match', () => {
     node.insert('ALL', '/abc/*/def', 'ALL /abc/*/def')
     it('get /', () => {
       const res = node.search('get', '/')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['ALL *'])
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toEqual('ALL *')
     })
     it('post /abc', () => {
       const res = node.search('post', '/abc')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['ALL *', 'ALL /abc/*'])
+      expect(res.length).toBe(2)
+      expect(res[0].handler).toEqual('ALL *')
+      expect(res[1].handler).toEqual('ALL /abc/*')
     })
     it('delete /abc/xxx/def', () => {
       const res = node.search('post', '/abc/xxx/def')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['ALL *', 'ALL /abc/*', 'ALL /abc/*/def'])
+      expect(res.length).toBe(3)
+      expect(res[0].handler).toEqual('ALL *')
+      expect(res[1].handler).toEqual('ALL /abc/*')
+      expect(res[2].handler).toEqual('ALL /abc/*/def')
     })
   })
-
   describe('Regexp', () => {
     const node = new Node()
     node.insert('get', '/regex-abc/:id{[0-9]+}/*', 'middleware a')
     node.insert('get', '/regex-abc/:id{[0-9]+}/def', 'regexp')
     it('/regexp-abc/123/def', () => {
       const res = node.search('get', '/regex-abc/123/def')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['middleware a', 'regexp'])
-      expect(res?.params['id']).toBe('123')
+      expect(res.length).toBe(2)
+      expect(res[0].handler).toEqual('middleware a')
+      expect(res[0].params['id']).toBe('123')
+      expect(res[1].handler).toEqual('regexp')
+      expect(res[1].params['id']).toBe('123')
     })
     it('/regexp-abc/123', () => {
       const res = node.search('get', '/regex-abc/123/ghi')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['middleware a'])
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toEqual('middleware a')
     })
   })
-
   describe('Trailing slash', () => {
     const node = new Node()
     node.insert('get', '/book', 'GET /book')
     node.insert('get', '/book/:id', 'GET /book/:id')
     it('get /book', () => {
       const res = node.search('get', '/book')
-      expect(res).not.toBeNull()
+      expect(res.length).toBe(1)
     })
     it('get /book/', () => {
       const res = node.search('get', '/book/')
-      expect(res).toBeNull()
+      expect(res.length).toBe(0)
     })
   })
-
   describe('Same path', () => {
     const node = new Node()
     node.insert('get', '/hey', 'Middleware A')
     node.insert('get', '/hey', 'Middleware B')
     it('get /hey', () => {
       const res = node.search('get', '/hey')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['Middleware A', 'Middleware B'])
+      expect(res.length).toBe(2)
+      expect(res[0].handler).toEqual('Middleware A')
+      expect(res[1].handler).toEqual('Middleware B')
     })
   })
-
   describe('Including slashes', () => {
     const node = new Node()
     node.insert('get', '/js/:filename{[a-z0-9/]+.js}', 'any file')
     node.insert('get', '/js/main.js', 'main.js')
-
     it('get /js/main.js', () => {
       const res = node.search('get', '/js/main.js')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['any file', 'main.js'])
-      expect(res?.params).toEqual({ filename: 'main.js' })
+      expect(res.length).toBe(2)
+      expect(res[0].handler).toEqual('any file')
+      expect(res[0].params).toEqual({ filename: 'main.js' })
+      expect(res[1].handler).toEqual('main.js')
+      expect(res[1].params).toEqual({})
     })
-
     it('get /js/chunk/123.js', () => {
       const res = node.search('get', '/js/chunk/123.js')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['any file'])
-      expect(res?.params).toEqual({ filename: 'chunk/123.js' })
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toEqual('any file')
+      expect(res[0].params).toEqual({ filename: 'chunk/123.js' })
     })
-
     it('get /js/chunk/nest/123.js', () => {
       const res = node.search('get', '/js/chunk/nest/123.js')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['any file'])
-      expect(res?.params).toEqual({ filename: 'chunk/nest/123.js' })
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toEqual('any file')
+      expect(res[0].params).toEqual({ filename: 'chunk/nest/123.js' })
     })
   })
-
   describe('REST API', () => {
     const node = new Node()
     node.insert('get', '/users/:username{[a-z]+}', 'profile')
     node.insert('get', '/users/:username{[a-z]+}/posts', 'posts')
-
     it('get /users/hono', () => {
       const res = node.search('get', '/users/hono')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['profile'])
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toEqual('profile')
     })
-
     it('get /users/hono/posts', () => {
       const res = node.search('get', '/users/hono/posts')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['posts'])
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toEqual('posts')
     })
   })
 })
@@ -434,41 +450,73 @@ describe('Multi match', () => {
 describe('Duplicate param name', () => {
   it('self', () => {
     const node = new Node()
-    expect(() => {
-      node.insert('get', '/:id/:id', 'foo')
-    }).toThrowError(/Duplicate param name/)
+    node.insert('get', '/:id/:id', 'foo')
+    const res = node.search('get', '/123/456')
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toBe('foo')
+    expect(res[0].params['id']).toBe('123')
   })
 
-  it('parent', () => {
+  describe('parent', () => {
     const node = new Node()
     node.insert('get', '/:id/:action', 'foo')
-    expect(() => {
-      node.insert('get', '/posts/:id', 'bar')
-    }).toThrowError(/Duplicate param name/)
+    node.insert('get', '/posts/:id', 'bar')
+    node.insert('get', '/posts/:id/comments/:comment_id', 'comment')
+
+    it('get /123/action', () => {
+      const res = node.search('get', '/123/action')
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toBe('foo')
+      expect(res[0].params).toEqual({ id: '123', action: 'action' })
+    })
+
+    it('get /posts/456', () => {
+      const res = node.search('get', '/posts/456')
+      expect(res.length).toBe(2)
+      expect(res[0].handler).toBe('foo')
+      expect(res[0].params).toEqual({ id: 'posts', action: '456' })
+      expect(res[1].handler).toBe('bar')
+      expect(res[1].params).toEqual({ id: '456' })
+
+      it('get /posts/456', () => {
+        const res = node.search('get', '/posts/abc/comments/edf')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toBe('comment')
+        expect(res[0].params).toEqual({ id: 'abc', comment_id: 'edf' })
+      })
+    })
   })
 
-  it('child', () => {
+  describe('child', () => {
     const node = new Node()
     node.insert('get', '/posts/:id', 'foo')
-    expect(() => {
-      node.insert('get', '/:id/:action', 'bar')
-    }).toThrowError(/Duplicate param name/)
+    node.insert('get', '/:id/:action', 'bar')
+    it('get /posts/action', () => {
+      const res = node.search('get', '/posts/action')
+      expect(res.length).toBe(2)
+      expect(res[0].handler).toBe('foo')
+      expect(res[0].params).toEqual({ id: 'action' })
+      expect(res[1].handler).toBe('bar')
+      expect(res[1].params).toEqual({ id: 'posts', action: 'action' })
+    })
   })
 
-  it('hierarchy', () => {
-    const node = new Node()
-    node.insert('get', '/posts/:id/comments/:comment_id', 'foo')
-    expect(() => {
-      node.insert('get', '/posts/:id', 'bar')
-    }).not.toThrowError()
-  })
-
-  it('regular expression', () => {
+  describe('regular expression', () => {
     const node = new Node()
     node.insert('get', '/:id/:action{create|update}', 'foo')
-    expect(() => {
-      node.insert('get', '/:id/:action{delete}', 'bar')
-    }).not.toThrowError()
+    node.insert('get', '/:id/:action{delete}', 'bar')
+    it('get /123/create', () => {
+      const res = node.search('get', '/123/create')
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toBe('foo')
+      expect(res[0].params).toEqual({ id: '123', action: 'create' })
+    })
+    it('get /123/delete', () => {
+      const res = node.search('get', '/123/delete')
+      expect(res.length).toBe(1)
+      expect(res[0].handler).toBe('bar')
+      expect(res[0].params).toEqual({ id: '123', action: 'delete' })
+    })
   })
 })
 
@@ -481,8 +529,10 @@ describe('Sort Order', () => {
 
     it('get /page', () => {
       const res = node.search('get', '/page')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['a', '/page', '/:slug'])
+      expect(res.length).toBe(3)
+      expect(res[0].handler).toEqual('a')
+      expect(res[1].handler).toEqual('/page')
+      expect(res[2].handler).toEqual('/:slug')
     })
   })
 
@@ -494,8 +544,10 @@ describe('Sort Order', () => {
 
     it('get /posts/123', () => {
       const res = node.search('get', '/posts/123')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['a', '/posts/:id', '/:type/:id'])
+      expect(res.length).toBe(3)
+      expect(res[0].handler).toEqual('a')
+      expect(res[1].handler).toEqual('/posts/:id')
+      expect(res[2].handler).toEqual('/:type/:id')
     })
   })
 
@@ -508,8 +560,11 @@ describe('Sort Order', () => {
 
     it('get /api/posts/123', () => {
       const res = node.search('get', '/api/posts/123')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['1st', '2nd', '3rd', '4th'])
+      expect(res.length).toBe(4)
+      expect(res[0].handler).toEqual('1st')
+      expect(res[1].handler).toEqual('2nd')
+      expect(res[2].handler).toEqual('3rd')
+      expect(res[3].handler).toEqual('4th')
     })
   })
 
@@ -521,9 +576,9 @@ describe('Sort Order', () => {
 
     it('get /posts', () => {
       const res = node.search('get', '/posts')
-
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['/posts', '/posts/*'])
+      expect(res.length).toBe(2)
+      expect(res[0].handler).toEqual('/posts')
+      expect(res[1].handler).toEqual('/posts/*')
     })
   })
 
@@ -542,7 +597,14 @@ describe('Sort Order', () => {
 
     it('get /api/posts/123', () => {
       const res = node.search('get', '/api/posts/123')
-      expect(res?.handlers).toEqual(['b', 'd', 'e', 'f', 'g', 'i', 'j'])
+      expect(res.length).toBe(7)
+      expect(res[0].handler).toEqual('b')
+      expect(res[1].handler).toEqual('d')
+      expect(res[2].handler).toEqual('e')
+      expect(res[3].handler).toEqual('f')
+      expect(res[4].handler).toEqual('g')
+      expect(res[5].handler).toEqual('i')
+      expect(res[6].handler).toEqual('j')
     })
   })
 
@@ -554,8 +616,10 @@ describe('Sort Order', () => {
     node.insert('get', '/abc/*/ghi/jkl', 'GET /abc/*/ghi/jkl') // 4.4
     it('get /abc/edf', () => {
       const res = node.search('get', '/abc/edf')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['GET *', 'GET /abc/*', 'GET /abc/edf'])
+      expect(res.length).toBe(3)
+      expect(res[0].handler).toEqual('GET *')
+      expect(res[1].handler).toEqual('GET /abc/*')
+      expect(res[2].handler).toEqual('GET /abc/edf')
     })
   })
 
@@ -568,8 +632,10 @@ describe('Sort Order', () => {
 
     it('get /api/entry', async () => {
       const res = node.search('get', '/api/entry')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['a', 'entry', 'b'])
+      expect(res.length).toBe(3)
+      expect(res[0].handler).toEqual('a')
+      expect(res[1].handler).toEqual('entry')
+      expect(res[2].handler).toEqual('b')
     })
   })
 
@@ -581,8 +647,9 @@ describe('Sort Order', () => {
       node.insert('get', '/entry/:id', 'get entry') // 2.3
       it('post /entry', async () => {
         const res = node.search('post', '/entry')
-        expect(res).not.toBeNull()
-        expect(res?.handlers).toEqual(['post entry', 'fallback'])
+        expect(res.length).toBe(2)
+        expect(res[0].handler).toEqual('post entry')
+        expect(res[1].handler).toEqual('fallback')
       })
     })
   })
@@ -592,8 +659,9 @@ describe('Sort Order', () => {
     node.insert('ALL', '/*', 'fallback') // 1.2
     it('get /page', async () => {
       const res = node.search('get', '/page')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['page', 'fallback'])
+      expect(res.length).toBe(2)
+      expect(res[0].handler).toEqual('page')
+      expect(res[1].handler).toEqual('fallback')
     })
   })
 })
@@ -609,14 +677,19 @@ describe('star', () => {
 
   it('top', async () => {
     const res = node.search('get', '/')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['/', '/*', '*']) // =>  failed ['*', '/*', '/']
+    expect(res.length).toBe(3)
+    expect(res[0].handler).toEqual('/')
+    expect(res[1].handler).toEqual('/*')
+    expect(res[2].handler).toEqual('*')
   })
 
   it('Under a certain path', async () => {
     const res = node.search('get', '/x')
-    expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['/*', '*', '/x', '/x/*'])
+    expect(res.length).toBe(4)
+    expect(res[0].handler).toEqual('/*')
+    expect(res[1].handler).toEqual('*')
+    expect(res[2].handler).toEqual('/x')
+    expect(res[3].handler).toEqual('/x/*')
   })
 })
 
@@ -628,19 +701,27 @@ describe('Routing order With named parameters', () => {
   it('/book/a', () => {
     const res = node.search('get', '/book/a')
     expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['no-slug', 'slug'])
-    expect(res?.params['slug']).toBe('a')
+    expect(res.length).toBe(2)
+    expect(res[0].handler).toEqual('no-slug')
+    expect(res[0].params).toEqual({})
+    expect(res[1].handler).toEqual('slug')
+    expect(res[1].params).toEqual({ slug: 'a' })
   })
   it('/book/foo', () => {
     const res = node.search('get', '/book/foo')
     expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['slug'])
-    expect(res?.params['slug']).toBe('foo')
+    expect(res.length).toBe(1)
+    expect(res[0].handler).toEqual('slug')
+    expect(res[0].params).toEqual({ slug: 'foo' })
+    expect(res[0].params['slug']).toBe('foo')
   })
   it('/book/b', () => {
     const res = node.search('get', '/book/b')
     expect(res).not.toBeNull()
-    expect(res?.handlers).toEqual(['slug', 'no-slug-b'])
-    expect(res?.params['slug']).toBe('b')
+    expect(res.length).toBe(2)
+    expect(res[0].handler).toEqual('slug')
+    expect(res[0].params).toEqual({ slug: 'b' })
+    expect(res[1].handler).toEqual('no-slug-b')
+    expect(res[1].params).toEqual({})
   })
 })
