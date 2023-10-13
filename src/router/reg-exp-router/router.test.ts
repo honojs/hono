@@ -210,9 +210,9 @@ describe('Check for duplicate parameter names', () => {
   it('self', () => {
     const router = new RegExpRouter<string>()
     router.add('GET', '/:id/:id', 'get')
-    expect(() => {
-      router.match('GET', '/') // check parameter names on the first `match` call
-    }).toThrowError(/Duplicate param name/)
+    const [res, stash] = router.match('GET', '/123/456')
+    expect(res.length).toBe(1)
+    expect(stash?.[res[0][1]['id'] as number]).toBe('123')
   })
 })
 

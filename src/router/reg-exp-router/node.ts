@@ -97,9 +97,6 @@ export class Node {
         }
       }
       if (!pathErrorCheckOnly && name !== '') {
-        if (paramMap.some((p) => p[0] === name)) {
-          throw new Error('Duplicate param name')
-        }
         paramMap.push([name, node.varIndex as number])
       }
     } else {
