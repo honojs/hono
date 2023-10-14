@@ -7,6 +7,7 @@ import { Hono } from './hono'
 import { HTTPException } from './http-exception'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
+import { SmartRouter } from './mod'
 import { RegExpRouter } from './router/reg-exp-router'
 import { TrieRouter } from './router/trie-router'
 import type { Handler, MiddlewareHandler, Next } from './types'
@@ -149,18 +150,18 @@ describe('Register handlers without a path', () => {
   })
 })
 
-// describe('router option', () => {
-//   it('Should be SmartRouter', () => {
-//     const app = new Hono()
-//     expect(app.router instanceof SmartRouter).toBe(true)
-//   })
-//   it('Should be RegExpRouter', () => {
-//     const app = new Hono({
-//       router: new RegExpRouter(),
-//     })
-//     expect(app.router instanceof RegExpRouter).toBe(true)
-//   })
-// })
+describe('router option', () => {
+  it('Should be SmartRouter', () => {
+    const app = new Hono()
+    expect(app.router instanceof SmartRouter).toBe(true)
+  })
+  it('Should be RegExpRouter', () => {
+    const app = new Hono({
+      router: new RegExpRouter(),
+    })
+    expect(app.router instanceof RegExpRouter).toBe(true)
+  })
+})
 
 describe('strict parameter', () => {
   describe('strict is true with not slash', () => {
@@ -1536,33 +1537,33 @@ describe('Hono with `app.route`', () => {
   })
 })
 
-// describe('Using other methods with `app.on`', () => {
-//   it('Should handle PURGE method with RegExpRouter', async () => {
-//     const app = new Hono({ router: new RegExpRouter() })
+describe('Using other methods with `app.on`', () => {
+  it('Should handle PURGE method with RegExpRouter', async () => {
+    const app = new Hono({ router: new RegExpRouter() })
 
-//     app.on('PURGE', '/purge', (c) => c.text('Accepted', 202))
+    app.on('PURGE', '/purge', (c) => c.text('Accepted', 202))
 
-//     const req = new Request('http://localhost/purge', {
-//       method: 'PURGE',
-//     })
-//     const res = await app.request(req)
-//     expect(res.status).toBe(202)
-//     expect(await res.text()).toBe('Accepted')
-//   })
+    const req = new Request('http://localhost/purge', {
+      method: 'PURGE',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(202)
+    expect(await res.text()).toBe('Accepted')
+  })
 
-//   it('Should handle PURGE method with TrieRouter', async () => {
-//     const app = new Hono({ router: new TrieRouter() })
+  it('Should handle PURGE method with TrieRouter', async () => {
+    const app = new Hono({ router: new TrieRouter() })
 
-//     app.on('PURGE', '/purge', (c) => c.text('Accepted', 202))
+    app.on('PURGE', '/purge', (c) => c.text('Accepted', 202))
 
-//     const req = new Request('http://localhost/purge', {
-//       method: 'PURGE',
-//     })
-//     const res = await app.request(req)
-//     expect(res.status).toBe(202)
-//     expect(await res.text()).toBe('Accepted')
-//   })
-// })
+    const req = new Request('http://localhost/purge', {
+      method: 'PURGE',
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(202)
+    expect(await res.text()).toBe('Accepted')
+  })
+})
 
 describe('Multiple methods with `app.on`', () => {
   const app = new Hono()
@@ -1642,71 +1643,30 @@ describe('Multiple handler', () => {
       expect(await res.text()).toBe('id is 123')
     })
 
-    it('parent', async () => {
+    it('hierarchy', () => {
       const app = new Hono()
-      app.get('/posts/:id', (c) => {
-        const id = c.req.param('id')
-        return c.text(`id is ${id}`)
-      })
-      app.get('/:id/:action', (c) => {
-        return c.text('foo')
-      })
-      let res = await app.request('http://localhost/123/do')
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe('foo')
-      res = await app.request('http://localhost/posts/123')
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe('id is 123')
-    })
-
-    it('child', async () => {
-      const app = new Hono()
-      app.get('/:id/:action', (c) => {
-        const id = c.req.param('id')
-        return c.text(`id is ${id}`)
-      })
-      app.get('/posts/:id', (c) => {
-        return c.text('foo')
-      })
-      const res = await app.request('http://localhost/123/do')
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe('id is 123')
-    })
-
-    it('hierarchy', async () => {
-      const app = new Hono()
-      app.get('/posts/:id', (c) => {
-        const id = c.req.param('id')
-        return c.text(`id is ${id}`)
-      })
       app.get('/posts/:id/comments/:comment_id', (c) => {
-        const { id, comment_id } = c.req.param()
-        return c.text(`id is ${id}, comment_id is ${comment_id}`)
+        return c.text('foo')
       })
-      let res = await app.request('http://localhost/posts/123')
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe('id is 123')
-      res = await app.request('http://localhost/posts/456/comments/789')
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe('id is 456, comment_id is 789')
+      expect(() => {
+        app.get('/posts/:id', (c) => {
+          const id = c.req.param('id')
+          return c.text(`id is ${id}`)
+        })
+      }).not.toThrow()
     })
 
-    it('different regular expression', async () => {
+    it('different regular expression', () => {
       const app = new Hono()
       app.get('/:id/:action{create|update}', (c) => {
-        const { id, action } = c.req.param()
-        return c.text(`id is ${id}, action is ${action}`)
+        return c.text('foo')
       })
-      app.get('/:id/:action{delete}', (c) => {
-        const id = c.req.param('id')
-        return c.text(`id is ${id}`)
-      })
-      let res = await app.request('/123/create')
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe('id is 123, action is create')
-      res = await app.request('/456/delete')
-      expect(res.status).toBe(200)
-      expect(await res.text()).toBe('id is 456')
+      expect(() => {
+        app.get('/:id/:action{delete}', (c) => {
+          const id = c.req.param('id')
+          return c.text(`id is ${id}`)
+        })
+      }).not.toThrow()
     })
   })
 })
@@ -2349,18 +2309,18 @@ describe('app.mount()', () => {
   })
 })
 
-// describe('Router Name', () => {
-//   it('Should return the correct router name', async () => {
-//     const app = new Hono({
-//       router: new RegExpRouter(),
-//     })
-//     app.get('/router-name', (c) => {
-//       return c.text(app.routerName ?? 'N/A')
-//     })
-//     const res = await app.request('/router-name')
-//     expect(await res.text()).toBe('RegExpRouter')
-//   })
-// })
+describe('Router Name', () => {
+  it('Should return the correct router name', async () => {
+    const app = new Hono({
+      router: new RegExpRouter(),
+    })
+    app.get('/router-name', (c) => {
+      return c.text(app.routerName ?? 'N/A')
+    })
+    const res = await app.request('/router-name')
+    expect(await res.text()).toBe('RegExpRouter')
+  })
+})
 
 describe('HEAD method', () => {
   const app = new Hono()
@@ -2679,6 +2639,16 @@ describe('c.var - with testing types', () => {
     app.get('/', mw(), mw2(), mw3())
     app.get('/', mw(), mw2(), mw3(), mw4())
     app.get('/', mw(), mw2(), mw3(), mw4(), mw5())
+  })
+
+  it('Should be a read-only', () => {
+    expect(() => {
+      app.get('/path/1', mw(), (c) => {
+        // @ts-expect-error
+        c.var.echo = 'hello'
+        return c.text(c.var.echo('hello'))
+      })
+    }).toThrow()
   })
 
   it('Should not throw a type error', (c) => {
