@@ -13,7 +13,6 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
   onError?: ErrorHandler<E>,
   onNotFound?: NotFoundHandler<E>
 ) => {
-  const middlewareLength = middleware.length
   return (context: C, next?: Function) => {
     let index = -1
     return dispatch(0)
@@ -22,23 +21,26 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
       if (i <= index) {
         throw new Error('next() called multiple times')
       }
+      index = i
 
       let res
       let isError = false
+      let handler
 
-      if (!middleware[i]) {
+      if (middleware[i]) {
+        handler = middleware[i][0]
+        if (context instanceof Context) {
+          context.req.setParams(middleware[i][1])
+        }
+      } else {
+        handler = (i === middleware.length && next) || undefined
+      }
+
+      if (!handler) {
         if (context instanceof Context && context.finalized === false && onNotFound) {
           res = onNotFound(context)
         }
       } else {
-        let handler = middleware[i][0]
-        index = i
-        if (i === middlewareLength && next) handler = next
-
-        if (context instanceof Context) {
-          context.req.setParams(middleware[i][1])
-        }
-
         try {
           res = handler(context, () => {
             const dispatchRes = dispatch(i + 1)
