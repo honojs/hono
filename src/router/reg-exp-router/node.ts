@@ -3,7 +3,7 @@ const ONLY_WILDCARD_REG_EXP_STR = '.*'
 const TAIL_WILDCARD_REG_EXP_STR = '(?:|/.*)'
 export const PATH_ERROR = Symbol()
 
-export type ParamMap = Array<[string, number]>
+export type ParamAssocArray = [string, number][]
 export interface Context {
   varIndex: number
 }
@@ -48,7 +48,7 @@ export class Node {
   insert(
     tokens: readonly string[],
     index: number,
-    paramMap: ParamMap,
+    paramMap: ParamAssocArray,
     context: Context,
     pathErrorCheckOnly: boolean
   ): void {
@@ -104,9 +104,6 @@ export class Node {
         }
       }
       if (!pathErrorCheckOnly && name !== '') {
-        if (paramMap.some((p) => p[0] === name)) {
-          throw new Error('Duplicate param name')
-        }
         paramMap.push([name, node.varIndex as number])
       }
     } else {

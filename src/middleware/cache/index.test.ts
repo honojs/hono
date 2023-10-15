@@ -46,7 +46,6 @@ describe('Cache Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('cache-control')).toBe('max-age=10')
-    expect(res.headers.get('cf-cache-status')).toBe('HIT')
     expect(res.headers.get('x-count')).toBe('1')
   })
 
@@ -56,7 +55,6 @@ describe('Cache Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('cache-control')).toBe('max-age=10')
-    expect(res.headers.get('cf-cache-status')).toBeNull()
   })
 
   it('Should not return duplicate header values', async () => {

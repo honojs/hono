@@ -5,12 +5,36 @@ export const METHODS = ['get', 'post', 'put', 'delete', 'options', 'patch'] as c
 export interface Router<T> {
   name: string
   add(method: string, path: string, handler: T): void
-  match(method: string, path: string): Result<T> | null
+  match(method: string, path: string): Result<T>
 }
 
-export interface Result<T> {
-  handlers: T[]
-  params: Record<string, string>
-}
+export type ParamIndexMap = Record<string, number>
+export type ParamStash = string[]
+export type Params = Record<string, string>
+export type Result<T> = [[T, ParamIndexMap][], ParamStash] | [[T, Params][]]
+/*
+The router returns the result of `match` in either format.
+
+[[handler, paramIndexMap][], paramArray]
+e.g.
+[
+  [
+    [middlewareA, {}],                     // '*'
+    [funcA,       {'id': 0}],              // '/user/:id/*'
+    [funcB,       {'id': 0, 'action': 1}], // '/user/:id/:action'
+  ],
+  ['123', 'abc']
+]
+
+[[handler, params][]]
+e.g.
+[
+  [
+    [middlewareA, {}],                             // '*'
+    [funcA,       {'id': '123'}],                  // '/user/:id/*'
+    [funcB,       {'id': '123', 'action': 'abc'}], // '/user/:id/:action'
+  ]
+]
+*/
 
 export class UnsupportedPathError extends Error {}
