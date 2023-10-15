@@ -1,4 +1,4 @@
-import type { Result, Params } from '../../router'
+import type { Params } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 import type { Pattern } from '../../utils/url'
 import { splitPath, splitRoutingPath, getPattern } from '../../utils/url'
