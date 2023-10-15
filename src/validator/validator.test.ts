@@ -92,6 +92,71 @@ describe('Malformed JSON', () => {
     })
     expect(res.status).toBe(400)
   })
+
+  it('Should return 400 response, for request with wrong Content-Type header', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: JSON.stringify({
+        any: 'thing',
+      }),
+    })
+    expect(res.status).toBe(400)
+  })
+
+  it('Should return 400 response, if Content-Type header does not start with application/json', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'Xapplication/json',
+      },
+      body: JSON.stringify({
+        any: 'thing',
+      }),
+    })
+    expect(res.status).toBe(400)
+  })
+})
+
+describe('Malformed FormData request', () => {
+  const app = new Hono()
+  app.post(
+    '/post',
+    validator('form', (value, c) => ({})),
+    (c) => {
+      return c.text('Valid!')
+    }
+  )
+
+  it('Should return 400 response, for unsupported content type header', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      body: 'hi',
+    })
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({
+      success: false,
+      message:
+        'Malformed FormData request. Response.formData: Could not parse content as FormData.',
+    })
+  })
+
+  it('Should return 400 response, for malformed content type header', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      body: 'hi',
+      headers: {
+        'content-type': 'multipart/form-data',
+      },
+    })
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({
+      success: false,
+      message: 'Malformed FormData request. Error: Multipart: Boundary not found',
+    })
+  })
 })
 
 describe('Validator middleware with a custom validation function', () => {
@@ -137,6 +202,9 @@ describe('Validator middleware with a custom validation function', () => {
   it('Should validate JSON with transformation and return 200 response', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         id: '123',
       }),
@@ -196,6 +264,9 @@ describe('Validator middleware with Zod validates JSON', () => {
   it('Should validate JSON and return 200 response', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         id: 123,
         title: 'Hello',
@@ -213,6 +284,9 @@ describe('Validator middleware with Zod validates JSON', () => {
   it('Should validate JSON and return 400 response', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         id: '123',
         title: 'Hello',
@@ -675,6 +749,9 @@ describe('Clone Request object', () => {
     it('Should not throw the error with c.req.json()', async () => {
       const req = new Request('http://localhost', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ foo: 'bar' }),
       })
       const res = await app.request(req)
