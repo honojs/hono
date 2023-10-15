@@ -12,18 +12,14 @@ describe('Basic Usage', () => {
     let [res] = router.match('GET', '/hello')
     expect(res.length).toBe(1)
     expect(res[0][0]).toEqual('get hello')
-
     ;[res] = router.match('POST', '/hello')
     expect(res.length).toBe(1)
     expect(res[0][0]).toEqual('post hello')
-
     ;[res] = router.match('PURGE', '/hello')
     expect(res.length).toBe(1)
     expect(res[0][0]).toEqual('purge hello')
-
     ;[res] = router.match('PUT', '/hello')
     expect(res.length).toBe(0)
-
     ;[res] = router.match('GET', '/')
     expect(res.length).toBe(0)
   })
@@ -86,7 +82,6 @@ describe('Complex', () => {
     expect(res[0][0]).toEqual('auth middleware')
     expect(res[1][0]).toEqual('top')
     expect(res[2][0]).toEqual('fallback')
-
     ;[res] = router.match('GET', '/api/posts')
     expect(res.length).toBe(3)
     expect(res[0][0]).toEqual('auth middleware')

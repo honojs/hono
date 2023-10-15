@@ -11,18 +11,14 @@ describe('Basic Usage', () => {
     let [res] = router.match('GET', '/hello')
     expect(res.length).toBe(1)
     expect(res[0][0]).toEqual('get hello')
-
     ;[res] = router.match('POST', '/hello')
     expect(res.length).toBe(1)
     expect(res[0][0]).toEqual('post hello')
-
     ;[res] = router.match('PURGE', '/hello')
     expect(res.length).toBe(1)
     expect(res[0][0]).toEqual('purge hello')
-
     ;[res] = router.match('PUT', '/hello')
     expect(res.length).toBe(0)
-
     ;[res] = router.match('GET', '/')
     expect(res.length).toBe(0)
   })
@@ -45,7 +41,6 @@ describe('Complex', () => {
     expect(res.length).toBe(1)
     expect(res[0][0]).toEqual('get article with wildcard')
     expect(res[0][1]['id']).toBe('123')
-
     ;[res] = router.match('GET', '/article/123/action')
     expect(res.length).toBe(1)
     expect(res[0][0]).toEqual('get article with wildcard')

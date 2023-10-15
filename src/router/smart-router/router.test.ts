@@ -64,7 +64,6 @@ describe('RegExpRouter', () => {
       expect(res[0][0]).toEqual('auth middleware')
       expect(res[1][0]).toEqual('top')
       expect(res[2][0]).toEqual('fallback')
-
       ;[res] = router.match('GET', '/api/posts')
       expect(res.length).toBe(3)
       expect(res[0][0]).toEqual('auth middleware')
