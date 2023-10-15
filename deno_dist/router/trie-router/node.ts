@@ -1,4 +1,4 @@
-import type { Result, Params } from '../../router.ts'
+import type { Params } from '../../router.ts'
 import { METHOD_NAME_ALL } from '../../router.ts'
 import type { Pattern } from '../../utils/url.ts'
 import { splitPath, splitRoutingPath, getPattern } from '../../utils/url.ts'
