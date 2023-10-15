@@ -12,7 +12,7 @@ describe('SSE Streaming headers', () => {
         while (id < maxIterations) {
           const message = `It is ${id}`
           await stream.writeSSE({ data: message, event: 'time-update', id: String(id++) })
-          await stream.sleep(1000)
+          await stream.sleep(100)
         }
       })
     })
