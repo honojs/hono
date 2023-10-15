@@ -579,24 +579,24 @@ describe('Routing with a hostname', () => {
 describe('Capture Group', () => {
   describe('Simple capturing group', () => {
     const router = new RegExpRouter<string>()
-    router.add('get', '/foo/:capture{(bar|baz)}', 'ok')
+    router.add('get', '/foo/:capture{(?:bar|baz)}', 'ok')
     it('GET /foo/bar', () => {
-      const res = router.match('get', '/foo/bar')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['ok'])
-      expect(res?.params).toEqual({ capture: 'bar' })
+      const [res, stash] = router.match('get', '/foo/bar')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('ok')
+      expect(stash?.[res[0][1]['capture'] as number]).toBe('bar')
     })
 
     it('GET /foo/baz', () => {
-      const res = router.match('get', '/foo/baz')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['ok'])
-      expect(res?.params).toEqual({ capture: 'baz' })
+      const [res, stash] = router.match('get', '/foo/baz')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('ok')
+      expect(stash?.[res[0][1]['capture'] as number]).toBe('baz')
     })
 
     it('GET /foo/qux', () => {
-      const res = router.match('get', '/foo/qux')
-      expect(res).toBeNull()
+      const [res] = router.match('get', '/foo/qux')
+      expect(res.length).toBe(0)
     })
   })
 
@@ -604,22 +604,22 @@ describe('Capture Group', () => {
     const router = new RegExpRouter<string>()
     router.add('get', '/foo/:capture{(?:bar|baz)}', 'ok')
     it('GET /foo/bar', () => {
-      const res = router.match('get', '/foo/bar')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['ok'])
-      expect(res?.params).toEqual({ capture: 'bar' })
+      const [res, stash] = router.match('get', '/foo/bar')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('ok')
+      expect(stash?.[res[0][1]['capture'] as number]).toBe('bar')
     })
 
     it('GET /foo/baz', () => {
-      const res = router.match('get', '/foo/baz')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['ok'])
-      expect(res?.params).toEqual({ capture: 'baz' })
+      const [res, stash] = router.match('get', '/foo/baz')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('ok')
+      expect(stash?.[res[0][1]['capture'] as number]).toBe('baz')
     })
 
     it('GET /foo/qux', () => {
-      const res = router.match('get', '/foo/qux')
-      expect(res).toBeNull()
+      const [res] = router.match('get', '/foo/qux')
+      expect(res.length).toBe(0)
     })
   })
 
@@ -627,22 +627,22 @@ describe('Capture Group', () => {
     const router = new RegExpRouter<string>()
     router.add('get', '/foo/:capture{ba(?:r|z)}', 'ok')
     it('GET /foo/bar', () => {
-      const res = router.match('get', '/foo/bar')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['ok'])
-      expect(res?.params).toEqual({ capture: 'bar' })
+      const [res, stash] = router.match('get', '/foo/bar')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('ok')
+      expect(stash?.[res[0][1]['capture'] as number]).toBe('bar')
     })
 
     it('GET /foo/baz', () => {
-      const res = router.match('get', '/foo/baz')
-      expect(res).not.toBeNull()
-      expect(res?.handlers).toEqual(['ok'])
-      expect(res?.params).toEqual({ capture: 'baz' })
+      const [res, stash] = router.match('get', '/foo/baz')
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toBe('ok')
+      expect(stash?.[res[0][1]['capture'] as number]).toBe('baz')
     })
 
     it('GET /foo/qux', () => {
-      const res = router.match('get', '/foo/qux')
-      expect(res).toBeNull()
+      const [res] = router.match('get', '/foo/qux')
+      expect(res.length).toBe(0)
     })
   })
 
