@@ -1,5 +1,4 @@
 import { HonoBase } from '../hono-base.ts'
-import type { HonoOptions } from '../hono-base.ts'
 import { PatternRouter } from '../router/pattern-router/index.ts'
 import type { Env, Schema } from '../types.ts'
 
@@ -8,8 +7,8 @@ export class Hono<
   S extends Schema = {},
   BasePath extends string = '/'
 > extends HonoBase<E, S, BasePath> {
-  constructor(options: HonoOptions<E, BasePath> = {}) {
-    super(options)
+  constructor(init: Partial<Pick<Hono, 'getPath'> & { strict: boolean }> = {}) {
+    super(init)
     this.router = new PatternRouter()
   }
 }
