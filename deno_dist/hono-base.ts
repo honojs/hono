@@ -21,6 +21,7 @@ import type {
   FetchEventLike,
   Schema,
 } from './types.ts'
+import type { RemoveBlankRecord } from './utils/types.ts'
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url.ts'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
@@ -56,15 +57,6 @@ const errorHandler = (err: Error, c: Context) => {
   return c.text(message, 500)
 }
 
-type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings'] }) => string
-
-export type HonoOptions<E extends Env, BasePath extends string> = {
-  strict?: boolean
-  basePath?: BasePath
-  router?: Router<H>
-  getPath?: GetPath<E>
-}
-
 class Hono<
   E extends Env = Env,
   S extends Schema = {},
@@ -75,13 +67,13 @@ class Hono<
     To use it, inherit the class and implement router in the constructor.
   */
   router!: Router<H>
-  readonly getPath: GetPath<E>
-  #basePath: string
+  readonly getPath: (request: Request, options?: { env?: E['Bindings'] }) => string
+  private _basePath: string = '/'
   private path: string = '/'
 
   routes: RouterRoute[] = []
 
-  constructor(options: HonoOptions<E, BasePath> = {}) {
+  constructor(init: Partial<Pick<Hono, 'router' | 'getPath'> & { strict: boolean }> = {}) {
     super()
 
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
@@ -128,11 +120,10 @@ class Hono<
       return this
     }
 
-    const strict = options.strict ?? true
-    delete options.strict
-    Object.assign(this, options)
-    this.#basePath = options.basePath ?? '/'
-    this.getPath = strict ? options.getPath ?? getPath : getPathNoStrict
+    const strict = init.strict ?? true
+    delete init.strict
+    Object.assign(this, init)
+    this.getPath = strict ? init.getPath ?? getPath : getPathNoStrict
   }
 
   private clone(): Hono<E, S, BasePath> {
@@ -154,10 +145,24 @@ class Hono<
     SubBasePath extends string
   >(
     path: SubPath,
+    app: Hono<SubEnv, SubSchema, SubBasePath>
+  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath>
+  /** @description
+   * Use `basePath` instead of `route` when passing **one** argument, such as `app.route('/api')`.
+   * The use of `route` with **one** argument has been removed in v4.
+   * However, you can still use `route` with **two** arguments, like `app.route('/api', subApp)`."
+   */
+  route<SubPath extends string>(path: SubPath): Hono<E, RemoveBlankRecord<S>, BasePath>
+  route<
+    SubPath extends string,
+    SubEnv extends Env,
+    SubSchema extends Schema,
+    SubBasePath extends string
+  >(
+    path: SubPath,
     app?: Hono<SubEnv, SubSchema, SubBasePath>
   ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
-    const subApp = this.clone()
-    subApp.#basePath = mergePath(this.#basePath, path)
+    const subApp = this.basePath(path)
 
     if (!app) {
       return subApp
@@ -174,14 +179,9 @@ class Hono<
     return this
   }
 
-  /**
-   * @deprecated
-   * `app.basePath()` will be removed in the v4.
-   * Use `new Hono({ basePath: '/api' })` instead of `new Hono().basePath('/api')`.
-   */
   basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
     const subApp = this.clone()
-    subApp.#basePath = mergePath(this.#basePath, path)
+    subApp._basePath = mergePath(this._basePath, path)
     return subApp
   }
 
@@ -215,7 +215,7 @@ class Hono<
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     optionHandler?: (c: Context) => unknown
   ): Hono<E, S, BasePath> {
-    const mergedPath = mergePath(this.#basePath, path)
+    const mergedPath = mergePath(this._basePath, path)
     const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
 
     const handler: MiddlewareHandler = async (c, next) => {
@@ -249,7 +249,7 @@ class Hono<
   }
 
   /**
-   * @deprecated
+   * @deprecate
    * `app.head()` is no longer used.
    * `app.get()` implicitly handles the HEAD method.
    */
@@ -260,7 +260,9 @@ class Hono<
 
   private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
-    path = mergePath(this.#basePath, path)
+    if (this._basePath) {
+      path = mergePath(this._basePath, path)
+    }
     this.router.add(method, path, handler)
     const r: RouterRoute = { path: path, method: method, handler: handler }
     this.routes.push(r)
@@ -357,7 +359,7 @@ class Hono<
 
   /**
    * @deprecated
-   * `app.handleEvent()` will be removed in the v4.
+   * `app.handleEvent()` will be removed in v4.
    * Use `app.fetch()` instead of `app.handleEvent()`.
    */
   handleEvent = (event: FetchEventLike) => {
