@@ -56,6 +56,15 @@ const errorHandler = (err: Error, c: Context) => {
   return c.text(message, 500)
 }
 
+type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings'] }) => string
+
+export type HonoOptions<E extends Env, BasePath extends string> = {
+  strict?: boolean
+  basePath?: BasePath
+  router?: Router<H>
+  getPath?: GetPath<E>
+}
+
 class Hono<
   E extends Env = Env,
   S extends Schema = {},
@@ -66,15 +75,13 @@ class Hono<
     To use it, inherit the class and implement router in the constructor.
   */
   router!: Router<H>
-  readonly getPath: (request: Request, options?: { env?: E['Bindings'] }) => string
+  readonly getPath: GetPath<E>
   #basePath: string
   private path: string = '/'
 
   routes: RouterRoute[] = []
 
-  constructor(
-    init: Partial<Pick<Hono, 'router' | 'getPath'> & { strict: boolean; basePath: BasePath }> = {}
-  ) {
+  constructor(options: HonoOptions<E, BasePath> = {}) {
     super()
 
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
@@ -121,11 +128,11 @@ class Hono<
       return this
     }
 
-    const strict = init.strict ?? true
-    delete init.strict
-    Object.assign(this, init)
-    this.#basePath = init.basePath ?? '/'
-    this.getPath = strict ? init.getPath ?? getPath : getPathNoStrict
+    const strict = options.strict ?? true
+    delete options.strict
+    Object.assign(this, options)
+    this.#basePath = options.basePath ?? '/'
+    this.getPath = strict ? options.getPath ?? getPath : getPathNoStrict
   }
 
   private clone(): Hono<E, S, BasePath> {
