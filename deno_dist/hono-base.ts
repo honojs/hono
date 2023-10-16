@@ -90,8 +90,7 @@ class Hono<
             this.addRoute(method, this.path, handler)
           }
         })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return this as any
+        return this
       }
     })
 
@@ -104,8 +103,7 @@ class Hono<
           this.addRoute(m.toUpperCase(), this.path, handler)
         })
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return this as any
+      return this
     }
 
     // Implementation of app.use(...handlers[]) or app.get(path, ...handlers[])
@@ -167,8 +165,7 @@ class Hono<
     const subApp = this.basePath(path)
 
     if (!app) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return subApp as any
+      return subApp
     }
 
     app.routes.map((r) => {
@@ -179,15 +176,13 @@ class Hono<
               (await compose<Context>([r.handler], app.errorHandler)(c, next)).res
       subApp.addRoute(r.method, r.path, handler)
     })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this as any
+    return this
   }
 
   basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
     const subApp = this.clone()
     subApp._basePath = mergePath(this._basePath, path)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return subApp as any
+    return subApp
   }
 
   onError(handler: ErrorHandler<E>) {
@@ -290,14 +285,13 @@ class Hono<
     env: E['Bindings'],
     method: string
   ): Response | Promise<Response> {
-    const path = this.getPath(request, { env })
-
     // Handle HEAD method
     if (method === 'HEAD') {
       return (async () =>
         new Response(null, await this.dispatch(request, executionCtx, env, 'GET')))()
     }
 
+    const path = this.getPath(request, { env })
     const { handlers, params } = this.matchRoute(method, path)
 
     const c = new Context(new HonoRequest(request, path, params), {
@@ -319,13 +313,13 @@ class Hono<
         return this.handleError(err, c)
       }
 
-      if (res.constructor.name === 'Response') return res as Response
+      if (res instanceof Response) return res
 
       if ('response' in res) {
         res = res.response
       }
 
-      if (res.constructor.name === 'Response') return res as Response
+      if (res instanceof Response) return res
 
       return (async () => {
         let awaited: Response | TypedResponse | void

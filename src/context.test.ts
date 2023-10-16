@@ -175,9 +175,9 @@ describe('Context', () => {
   })
 
   // The `c.runtime()` will be removed in v4.
-  it('returns current runtime (workerd)', async () => {
+  it('returns current runtime (node)', async () => {
     c = new Context(req)
-    expect(c.runtime).toBe('workerd')
+    expect(c.runtime).toBe('node')
   })
 })
 

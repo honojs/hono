@@ -1,18 +1,8 @@
 // @denoify-ignore
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Hono } from '../../hono'
+import type { FetchEvent } from '../../types'
 
-export const handle =
-  (app: Hono<any, any, any>) =>
-  (req: Request, requestContext: Omit<ExecutionContext, 'passThroughOnException'>) => {
-    return app.fetch(
-      req,
-      {},
-      {
-        waitUntil: requestContext?.waitUntil,
-        passThroughOnException: () => {
-          throw new Error('`passThroughOnException` is not implemented in the Vercel')
-        },
-      }
-    )
-  }
+export const handle = (app: Hono<any, any, any>) => (req: Request, requestContext: FetchEvent) => {
+  return app.fetch(req, {}, requestContext as any)
+}

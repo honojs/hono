@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "3.7.3",
+  "version": "3.7.6",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -407,7 +407,7 @@
     "@types/crypto-js": "^4.1.1",
     "@types/glob": "^8.0.0",
     "@types/jest": "^29.4.0",
-    "@types/node": "^17.0.29",
+    "@types/node": "^20.8.2",
     "@types/node-fetch": "^2.6.2",
     "@types/supertest": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^5.59.2",
@@ -416,7 +416,7 @@
     "arg": "^5.0.2",
     "aws-lambda-ric": "^3.0.0",
     "crypto-js": "^4.1.1",
-    "denoify": "^1.1.1",
+    "denoify": "^1.6.6",
     "esbuild": "^0.15.12",
     "eslint": "^8.39.0",
     "eslint-config-prettier": "^8.8.0",
@@ -441,7 +441,6 @@
     "tsx": "^3.11.0",
     "typescript": "^4.8.3",
     "vitest": "^0.34.3",
-    "vitest-environment-miniflare": "^2.14.1",
     "wrangler": "^2.12.0",
     "zod": "^3.20.2"
   },
