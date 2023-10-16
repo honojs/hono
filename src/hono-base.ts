@@ -21,7 +21,6 @@ import type {
   FetchEventLike,
   Schema,
 } from './types'
-import type { RemoveBlankRecord } from './utils/types'
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
@@ -57,6 +56,14 @@ const errorHandler = (err: Error, c: Context) => {
   return c.text(message, 500)
 }
 
+type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings'] }) => string
+
+export type HonoOptions<E extends Env> = {
+  strict?: boolean
+  router?: Router<H>
+  getPath?: GetPath<E>
+}
+
 class Hono<
   E extends Env = Env,
   S extends Schema = {},
@@ -67,13 +74,13 @@ class Hono<
     To use it, inherit the class and implement router in the constructor.
   */
   router!: Router<H>
-  readonly getPath: (request: Request, options?: { env?: E['Bindings'] }) => string
+  readonly getPath: GetPath<E>
   private _basePath: string = '/'
   private path: string = '/'
 
   routes: RouterRoute[] = []
 
-  constructor(init: Partial<Pick<Hono, 'router' | 'getPath'> & { strict: boolean }> = {}) {
+  constructor(options: HonoOptions<E> = {}) {
     super()
 
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
@@ -120,10 +127,10 @@ class Hono<
       return this
     }
 
-    const strict = init.strict ?? true
-    delete init.strict
-    Object.assign(this, init)
-    this.getPath = strict ? init.getPath ?? getPath : getPathNoStrict
+    const strict = options.strict ?? true
+    delete options.strict
+    Object.assign(this, options)
+    this.getPath = strict ? options.getPath ?? getPath : getPathNoStrict
   }
 
   private clone(): Hono<E, S, BasePath> {
@@ -138,21 +145,6 @@ class Hono<
   private notFoundHandler: NotFoundHandler = notFoundHandler
   private errorHandler: ErrorHandler = errorHandler
 
-  route<
-    SubPath extends string,
-    SubEnv extends Env,
-    SubSchema extends Schema,
-    SubBasePath extends string
-  >(
-    path: SubPath,
-    app: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath>
-  /** @description
-   * Use `basePath` instead of `route` when passing **one** argument, such as `app.route('/api')`.
-   * The use of `route` with **one** argument has been removed in v4.
-   * However, you can still use `route` with **two** arguments, like `app.route('/api', subApp)`."
-   */
-  route<SubPath extends string>(path: SubPath): Hono<E, RemoveBlankRecord<S>, BasePath>
   route<
     SubPath extends string,
     SubEnv extends Env,
@@ -249,7 +241,7 @@ class Hono<
   }
 
   /**
-   * @deprecate
+   * @deprecated
    * `app.head()` is no longer used.
    * `app.get()` implicitly handles the HEAD method.
    */
@@ -260,9 +252,7 @@ class Hono<
 
   private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
-    if (this._basePath) {
-      path = mergePath(this._basePath, path)
-    }
+    path = mergePath(this._basePath, path)
     this.router.add(method, path, handler)
     const r: RouterRoute = { path: path, method: method, handler: handler }
     this.routes.push(r)
