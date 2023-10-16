@@ -10,7 +10,7 @@ describe('SSE Streaming headers', () => {
         const maxIterations = 5
 
         while (id < maxIterations) {
-          const message = `It is ${id}`
+          const message = `Message\nIt is ${id}`
           await stream.writeSSE({ data: message, event: 'time-update', id: String(id++) })
           await stream.sleep(100)
         }
@@ -35,9 +35,11 @@ describe('SSE Streaming headers', () => {
       const decodedValue = decoder.decode(value)
 
       // Check the structure and content of the SSE message
-      expect(decodedValue).toContain(`id: ${i}`)
-      expect(decodedValue).toContain('event: time-update')
-      expect(decodedValue).toContain(`data: It is ${i}`)
+      let expectedValue = 'event: time-update\n'
+      expectedValue += 'data: Message\n'
+      expectedValue += `data: It is ${i}\n`
+      expectedValue += `id: ${i}\n\n`
+      expect(decodedValue).toBe(expectedValue)
     }
   })
 })
