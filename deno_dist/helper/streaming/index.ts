@@ -13,14 +13,17 @@ class SSEStreamingApi extends StreamingApi {
   }
 
   async writeSSE(message: SSEMessage) {
+    const data = message.data
+      .split('\n')
+      .map((line) => {
+        return `data: ${line}`
+      })
+      .join('\n')
+
     const sseData =
-      [
-        message.event && `event: ${message.event}`,
-        message.id && `id: ${message.id}`,
-        `data: ${message.data}`,
-      ]
+      [message.event && `event: ${message.event}`, data, message.id && `id: ${message.id}`]
         .filter(Boolean)
-        .join('\n') + '\n'
+        .join('\n') + '\n\n'
 
     await this.write(sseData)
   }
