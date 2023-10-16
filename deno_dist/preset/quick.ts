@@ -1,4 +1,5 @@
 import { HonoBase } from '../hono-base.ts'
+import type { HonoOptions } from '../hono-base.ts'
 import { LinearRouter } from '../router/linear-router/index.ts'
 import { SmartRouter } from '../router/smart-router/index.ts'
 import { TrieRouter } from '../router/trie-router/index.ts'
@@ -9,8 +10,8 @@ export class Hono<
   S extends Schema = {},
   BasePath extends string = '/'
 > extends HonoBase<E, S, BasePath> {
-  constructor(init: Partial<Pick<Hono, 'getPath'> & { strict: boolean }> = {}) {
-    super(init)
+  constructor(options: HonoOptions<E, BasePath> = {}) {
+    super(options)
     this.router = new SmartRouter({
       routers: [new LinearRouter(), new TrieRouter()],
     })

@@ -111,7 +111,26 @@ describe('Register handlers without a path', () => {
     })
   })
 
-  describe('With specifying basePath', () => {
+  describe('With specifying a basePath option', () => {
+    const app = new Hono({ basePath: '/about' })
+
+    app.get((c) => {
+      return c.text('About')
+    })
+
+    it('GET http://localhost/about is ok', async () => {
+      const res = await app.request('/about')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('About')
+    })
+
+    it('GET http://localhost/ is not found', async () => {
+      const res = await app.request('/')
+      expect(res.status).toBe(404)
+    })
+  })
+
+  describe('With specifying app.basePath() - deprecated', () => {
     const app = new Hono().basePath('/about')
 
     app.get((c) => {
@@ -271,21 +290,24 @@ describe('Routing', () => {
   })
 
   it('Nested route', async () => {
-    const app = new Hono()
-
-    const book = app.basePath('/book')
+    const book = new Hono({ basePath: '/book' })
     book.get('/', (c) => c.text('get /book'))
     book.get('/:id', (c) => {
       return c.text('get /book/' + c.req.param('id'))
     })
     book.post('/', (c) => c.text('post /book'))
 
-    const user = app.basePath('/user')
+    const user = new Hono({ basePath: '/user' })
     user.get('/login', (c) => c.text('get /user/login'))
     user.post('/register', (c) => c.text('post /user/register'))
 
-    const appForEachUser = user.basePath(':id')
+    const appForEachUser = new Hono({ basePath: ':id' })
     appForEachUser.get('/profile', (c) => c.text('get /user/' + c.req.param('id') + '/profile'))
+    user.route('/', appForEachUser)
+
+    const app = new Hono()
+    app.route('/', book)
+    app.route('/', user)
 
     app.get('/add-path-after-route-call', (c) => c.text('get /add-path-after-route-call'))
 
@@ -1329,7 +1351,24 @@ describe('Hono with `app.route`', () => {
       })
     })
 
-    describe('With app.get(...handler) and app.basePath()', () => {
+    describe('With app.get(...handler) and a basePath option', () => {
+      const about = new Hono({ basePath: '/about' })
+      about.get((c) => c.text('me'))
+      app.route('/', about)
+
+      it('Should return 200 response - /about', async () => {
+        const res = await app.request('/about')
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('me')
+      })
+
+      test('Should return 404 response /about/foo', async () => {
+        const res = await app.request('/about/foo')
+        expect(res.status).toBe(404)
+      })
+    })
+
+    describe('With app.get(...handler) and app.basePath() - deprecated', () => {
       const app = new Hono()
       const about = new Hono().basePath('/about')
       about.get((c) => c.text('me'))
@@ -2202,7 +2241,7 @@ describe('app.mount()', () => {
     })
     app.mount('/another-app2/sub-slash/', anotherApp)
 
-    const api = new Hono().basePath('/api')
+    const api = new Hono({ basePath: '/api' })
     api.mount('/another-app', anotherApp)
 
     it('Should return responses from Hono app', async () => {
@@ -2255,7 +2294,7 @@ describe('app.mount()', () => {
       expect(await res.text()).toBe('AnotherApp')
     })
 
-    it('Should return responses from AnotherApp - with `basePath()`', async () => {
+    it('Should return responses from AnotherApp - with a `basePath` option', async () => {
       const res = await api.request('/api/another-app')
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('AnotherApp')
