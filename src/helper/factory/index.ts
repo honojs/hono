@@ -2,7 +2,7 @@ import type { Env, Input, MiddlewareHandler } from '../../types'
 
 /**
  * @experimental
- * `middleware()` is an experimental feature.
+ * `createMiddleware()` is an experimental feature.
  * The API might be changed.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
