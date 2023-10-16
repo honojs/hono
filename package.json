@@ -144,6 +144,11 @@
       "import": "./dist/middleware/secure-headers/index.js",
       "require": "./dist/cjs/middleware/secure-headers/index.js"
     },
+    "./streaming": {
+      "types": "./dist/types/helper/streaming/index.d.ts",
+      "import": "./dist/helper/streaming/index.js",
+      "require": "./dist/cjs/helper/streaming/index.js"
+    },
     "./validator": {
       "types": "./dist/types/validator/index.d.ts",
       "import": "./dist/validator/index.js",
@@ -306,6 +311,9 @@
       ],
       "pretty-json": [
         "./dist/types/middleware/pretty-json"
+      ],
+      "streaming": [
+        "./dist/types/helper/streaming"
       ],
       "secure-headers": [
         "./dist/types/middleware/secure-headers"
