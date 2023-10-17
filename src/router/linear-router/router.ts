@@ -1,7 +1,9 @@
-import type { Router, Result } from '../../router'
+import type { Router, Result, Params } from '../../router'
 import { METHOD_NAME_ALL, UnsupportedPathError } from '../../router'
 
 type RegExpMatchArrayWithIndices = RegExpMatchArray & { indices: [number, number][] }
+
+const emptyParams = {}
 
 const splitPathRe = /\/(:\w+(?:{[^}]+})?)|\/[^\/\?]+|(\?)/g
 const splitByStarRe = /\*/
@@ -19,16 +21,15 @@ export class LinearRouter<T> implements Router<T> {
     }
   }
 
-  match(method: string, path: string): Result<T> | null {
-    const handlers: T[] = []
-    const params: Record<string, string> = {}
+  match(method: string, path: string): Result<T> {
+    const handlers: [T, Params][] = []
     ROUTES_LOOP: for (let i = 0; i < this.routes.length; i++) {
       const [routeMethod, routePath, handler] = this.routes[i]
       if (routeMethod !== method && routeMethod !== METHOD_NAME_ALL) {
         continue
       }
       if (routePath === '*' || routePath === '/*') {
-        handlers.push(handler)
+        handlers.push([handler, emptyParams])
         continue
       }
 
@@ -36,7 +37,7 @@ export class LinearRouter<T> implements Router<T> {
       const hasLabel = routePath.indexOf(':') !== -1
       if (!hasStar && !hasLabel) {
         if (routePath === path || routePath + '/' === path) {
-          handlers.push(handler)
+          handlers.push([handler, emptyParams])
         }
       } else if (hasStar && !hasLabel) {
         const endsWithStar = routePath.charCodeAt(routePath.length - 1) === 42
@@ -66,9 +67,9 @@ export class LinearRouter<T> implements Router<T> {
             pos = index
           }
         }
-        handlers.push(handler)
+        handlers.push([handler, emptyParams])
       } else if (hasLabel && !hasStar) {
-        const localParams: Record<string, string> = {}
+        const params: Record<string, string> = {}
         const parts = routePath.match(splitPathRe) as string[]
 
         const lastIndex = parts.length - 1
@@ -107,13 +108,7 @@ export class LinearRouter<T> implements Router<T> {
               pos = endValuePos
             }
 
-            if (
-              (params[name] && params[name] !== value) ||
-              (localParams[name] && localParams[name] !== value)
-            ) {
-              throw new Error('Duplicate param name')
-            }
-            localParams[name] = value as string
+            params[name] ||= value as string
           } else {
             const index = path.indexOf(part, pos)
             if (index !== pos) {
@@ -128,17 +123,13 @@ export class LinearRouter<T> implements Router<T> {
             }
           }
         }
-        Object.assign(params, localParams)
-        handlers.push(handler)
+
+        handlers.push([handler, params])
       } else if (hasLabel && hasStar) {
         throw new UnsupportedPathError()
       }
     }
-    return handlers.length
-      ? {
-          handlers,
-          params,
-        }
-      : null
+
+    return [handlers]
   }
 }

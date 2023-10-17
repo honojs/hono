@@ -1238,7 +1238,7 @@ describe('Request methods with custom middleware', () => {
     expect(res.headers.get('X-Header')).toBe('bar')
 
     expect(res.headers.get('X-Query-2')).toBe('bar')
-    expect(res.headers.get('X-Param-2')).toBe('bar')
+    expect(res.headers.get('X-Param-2')).toBe(null)
     expect(res.headers.get('X-Header-2')).toBe('bar')
   })
 })
@@ -1632,69 +1632,85 @@ describe('Multiple handler', () => {
   })
 
   describe('Duplicate param name', () => {
-    it('self', async () => {
+    describe('basic', () => {
+      const app = new Hono()
+      app.get('/:type/:url', (c) => {
+        return c.text(`type: ${c.req.param('type')}, url: ${c.req.param('url')}`)
+      })
+      app.get('/foo/:type/:url', (c) => {
+        return c.text(`foo type: ${c.req.param('type')}, url: ${c.req.param('url')}`)
+      })
+
+      it('Should return a correct param - GET /car/good-car', async () => {
+        const res = await app.request('/car/good-car')
+        expect(res.ok).toBe(true)
+        expect(await res.text()).toBe('type: car, url: good-car')
+      })
+
+      it('Should return a correct param - GET /foo/food/good-food', async () => {
+        const res = await app.request('/foo/food/good-food')
+        expect(res.ok).toBe(true)
+        expect(await res.text()).toBe('foo type: food, url: good-food')
+      })
+    })
+
+    describe('self', () => {
       const app = new Hono()
       app.get('/:id/:id', (c) => {
         const id = c.req.param('id')
         return c.text(`id is ${id}`)
       })
-      await expect(async () => {
-        await app.request('http://localhost/')
-      }).rejects.toThrowError(/Duplicate param name/)
+      it('Should return 123 - GET /123/456', async () => {
+        const res = await app.request('/123/456')
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('id is 123')
+      })
     })
 
-    it('parent', async () => {
-      const app = new Hono()
-      app.get('/:id/:action', (c) => {
-        return c.text('foo')
-      })
-      app.get('/posts/:id', (c) => {
-        const id = c.req.param('id')
-        return c.text(`id is ${id}`)
-      })
-      await expect(async () => {
-        await app.request('http://localhost/')
-      }).rejects.toThrowError(/Duplicate param name/)
-    })
-
-    it('child', async () => {
-      const app = new Hono()
-      app.get('/posts/:id', (c) => {
-        return c.text('foo')
-      })
-      app.get('/:id/:action', (c) => {
-        const id = c.req.param('id')
-        return c.text(`id is ${id}`)
-      })
-      await expect(async () => {
-        await app.request('http://localhost/')
-      }).rejects.toThrowError(/Duplicate param name/)
-    })
-
-    it('hierarchy', () => {
+    describe('hierarchy', () => {
       const app = new Hono()
       app.get('/posts/:id/comments/:comment_id', (c) => {
-        return c.text('foo')
+        return c.text(`post: ${c.req.param('id')}, comment: ${c.req.param('comment_id')}`)
       })
-      expect(() => {
-        app.get('/posts/:id', (c) => {
-          const id = c.req.param('id')
-          return c.text(`id is ${id}`)
-        })
-      }).not.toThrow()
+      app.get('/posts/:id', (c) => {
+        return c.text(`post: ${c.req.param('id')}`)
+      })
+      it('Should return a correct param - GET /posts/123/comments/456', async () => {
+        const res = await app.request('/posts/123/comments/456')
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('post: 123, comment: 456')
+      })
+      it('Should return a correct param - GET /posts/789', async () => {
+        const res = await app.request('/posts/789')
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('post: 789')
+      })
     })
 
-    it('different regular expression', () => {
+    describe('different regular expression', () => {
       const app = new Hono()
       app.get('/:id/:action{create|update}', (c) => {
-        return c.text('foo')
+        return c.text(`id: ${c.req.param('id')}, action: ${c.req.param('action')}`)
       })
-      expect(() => {
-        app.get('/:id/:action{delete}', (c) => {
-          const id = c.req.param('id')
-          return c.text(`id is ${id}`)
-        })
-      }).not.toThrow()
+      app.get('/:id/:action{delete}', (c) => {
+        return c.text(`id: ${c.req.param('id')}, action: ${c.req.param('action')}`)
+      })
+
+      it('Should return a correct param - GET /123/create', async () => {
+        const res = await app.request('/123/create')
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('id: 123, action: create')
+      })
+      it('Should return a correct param - GET /456/update', async () => {
+        const res = await app.request('/467/update')
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('id: 467, action: update')
+      })
+      it('Should return a correct param - GET /789/delete', async () => {
+        const res = await app.request('/789/delete')
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('id: 789, action: delete')
+      })
     })
   })
 })
