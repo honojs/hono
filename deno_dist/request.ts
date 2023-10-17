@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import type { ParamIndexMap, ParamStash, Params } from './router.ts'
 import type {
   Input,
   InputToDataByTarget,
@@ -10,7 +11,7 @@ import type {
   ValidationTargets,
 } from './types.ts'
 import { parseBody } from './utils/body.ts'
-import type { BodyData } from './utils/body.ts'
+import type { BodyData, ParseBodyOptions } from './utils/body.ts'
 import type { Cookie } from './utils/cookie.ts'
 import { parse } from './utils/cookie.ts'
 import type { UnionToIntersection } from './utils/types.ts'
@@ -28,20 +29,21 @@ type BodyCache = Partial<Body & { parsedBody: BodyData }>
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   raw: Request
 
-  private paramData: Record<string, string> | undefined
+  private _s: ParamStash
   private vData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
+  private _p: ParamIndexMap | Params = {}
   path: string
   bodyCache: BodyCache = {}
 
-  constructor(
-    request: Request,
-    path: string = '/',
-    paramData?: Record<string, string> | undefined
-  ) {
+  constructor(request: Request, path: string = '/', paramStash: ParamStash = []) {
     this.raw = request
     this.path = path
-    this.paramData = paramData
+    this._s = paramStash
     this.vData = {}
+  }
+
+  setParams(params: ParamIndexMap | Params) {
+    this._p = params
   }
 
   param<P2 extends string = P>(
@@ -49,14 +51,17 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   ): UndefinedIfHavingQuestion<ParamKeys<P2>>
   param<P2 extends string = P>(): UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>
   param(key?: string): unknown {
-    if (this.paramData) {
+    if (this._s) {
       if (key) {
-        const param = this.paramData[key]
+        const param = this._s[this._p[key] as any] ?? this._p[key]
         return param ? (/\%/.test(param) ? decodeURIComponent_(param) : param) : undefined
       } else {
         const decoded: Record<string, string> = {}
 
-        for (const [key, value] of Object.entries(this.paramData)) {
+        const keys = Object.keys(this._p)
+        for (let i = 0, len = keys.length; i < len; i++) {
+          const key = keys[i]
+          const value = this._s[this._p[key] as any] ?? this._p[key]
           if (value && typeof value === 'string') {
             decoded[key] = /\%/.test(value) ? decodeURIComponent_(value) : value
           }
@@ -126,9 +131,9 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     }
   }
 
-  async parseBody<T extends BodyData = BodyData>(): Promise<T> {
+  async parseBody<T extends BodyData = BodyData>(options?: ParseBodyOptions): Promise<T> {
     if (this.bodyCache.parsedBody) return this.bodyCache.parsedBody as T
-    const parsedBody = await parseBody<T>(this)
+    const parsedBody = await parseBody<T>(this, options)
     this.bodyCache.parsedBody = parsedBody
     return parsedBody
   }

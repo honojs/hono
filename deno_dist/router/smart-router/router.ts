@@ -19,7 +19,7 @@ export class SmartRouter<T> implements Router<T> {
     this.routes.push([method, path, handler])
   }
 
-  match(method: string, path: string): Result<T> | null {
+  match(method: string, path: string): Result<T> {
     if (!this.routes) {
       throw new Error('Fatal error')
     }
@@ -56,7 +56,7 @@ export class SmartRouter<T> implements Router<T> {
     // e.g. "SmartRouter + RegExpRouter"
     this.name = `SmartRouter + ${this.activeRouter.name}`
 
-    return res || null
+    return res as Result<T>
   }
 
   get activeRouter() {

@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "3.7.6",
+  "version": "3.8.0-rc.3",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -24,7 +24,7 @@
     "lint:fix": "eslint --ext js,ts src runtime_tests .eslintrc.cjs --fix",
     "format": "prettier --check 'src/**/*.{js,ts}' 'runtime_tests/**/*.{js,ts}'",
     "format:fix": "prettier --write 'src/**/*.{js,ts}' 'runtime_tests/**/*.{js,ts}'",
-    "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.ts'",
+    "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.{ts,tsx}'",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
     "build": "rimraf dist && tsx ./build.ts && yarn copy:package.cjs.json",
     "postbuild": "publint",
@@ -109,6 +109,11 @@
       "import": "./dist/jsx/jsx-runtime.js",
       "require": "./dist/cjs/jsx/jsx-runtime.js"
     },
+    "./jsx-renderer": {
+      "types": "./dist/types/middleware/jsx-renderer/index.d.ts",
+      "import": "./dist/middleware/jsx-renderer/index.js",
+      "require": "./dist/cjs/middleware/jsx-renderer/index.js"
+    },
     "./jwt": {
       "types": "./dist/types/middleware/jwt/index.d.ts",
       "import": "./dist/middleware/jwt/index.js",
@@ -138,6 +143,11 @@
       "types": "./dist/types/middleware/secure-headers/index.d.ts",
       "import": "./dist/middleware/secure-headers/index.js",
       "require": "./dist/cjs/middleware/secure-headers/index.js"
+    },
+    "./streaming": {
+      "types": "./dist/types/helper/streaming/index.d.ts",
+      "import": "./dist/helper/streaming/index.js",
+      "require": "./dist/cjs/helper/streaming/index.js"
     },
     "./validator": {
       "types": "./dist/types/validator/index.d.ts",
@@ -284,6 +294,9 @@
       "jsx/jsx-dev-runtime": [
         "./dist/types/jsx/jsx-dev-runtime.d.ts"
       ],
+      "jsx-renderer": [
+        "./dist/types/middleware/jsx-renderer"
+      ],
       "jwt": [
         "./dist/types/middleware/jwt"
       ],
@@ -298,6 +311,9 @@
       ],
       "pretty-json": [
         "./dist/types/middleware/pretty-json"
+      ],
+      "streaming": [
+        "./dist/types/helper/streaming"
       ],
       "secure-headers": [
         "./dist/types/middleware/secure-headers"
