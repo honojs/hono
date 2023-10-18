@@ -592,5 +592,3 @@ export abstract class FetchEventLike {
   abstract passThroughOnException(): void
   abstract waitUntil(promise: Promise<void>): void
 }
-
-export abstract class FetchEvent extends FetchEventLike {}
