@@ -1,6 +1,5 @@
 import type { HonoRequest } from './request'
-import type { Env, NotFoundHandler, Input, TypedResponse } from './types'
-import { FetchEvent } from './types'
+import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import type { StatusCode } from './utils/http-status'
@@ -82,7 +81,7 @@ interface HTMLRespond {
 
 type ContextOptions<E extends Env> = {
   env: E['Bindings']
-  executionCtx?: FetchEvent | ExecutionContext | undefined
+  executionCtx?: FetchEventLike | ExecutionContext | undefined
   notFoundHandler?: NotFoundHandler<E>
 }
 
@@ -102,7 +101,7 @@ export class Context<
   error: Error | undefined = undefined
 
   private _status: StatusCode = 200
-  private _exCtx: FetchEvent | ExecutionContext | undefined // _executionCtx
+  private _exCtx: FetchEventLike | ExecutionContext | undefined // _executionCtx
   private _h: Headers | undefined = undefined //  _headers
   private _pH: Record<string, string> | undefined = undefined // _preparedHeaders
   private _res: Response | undefined
@@ -121,8 +120,8 @@ export class Context<
     }
   }
 
-  get event(): FetchEvent {
-    if (this._exCtx instanceof FetchEvent) {
+  get event(): FetchEventLike {
+    if (this._exCtx && 'respondWith' in this._exCtx) {
       return this._exCtx
     } else {
       throw Error('This context has no FetchEvent')
