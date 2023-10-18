@@ -139,7 +139,7 @@ describe('Malformed FormData request', () => {
     expect(await res.json()).toEqual({
       success: false,
       message:
-        'Malformed FormData request. Response.formData: Could not parse content as FormData.',
+        'Malformed FormData request. _Response.formData: Could not parse content as FormData.',
     })
   })
 
