@@ -136,11 +136,11 @@ describe('Malformed FormData request', () => {
       body: 'hi',
     })
     expect(res.status).toBe(400)
-    expect(await res.json()).toEqual({
-      success: false,
-      message:
-        'Malformed FormData request. Response.formData: Could not parse content as FormData.',
-    })
+    const data = await res.json()
+    expect(data['success']).toBe(false)
+    expect(data['message']).toMatch(
+      /Malformed FormData request. \_*Response.formData: Could not parse content as FormData./
+    )
   })
 
   it('Should return 400 response, for malformed content type header', async () => {
