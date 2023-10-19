@@ -55,7 +55,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1
         with:
-          bun-version: '0.6.9'
+          bun-version: '1.x.x'
       - run: bun run test:bun
 
   fastly:
