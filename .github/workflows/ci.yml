@@ -7,13 +7,16 @@ on:
 
 jobs:
   main:
-    name: 'Main'
+    name: 'Main with Node.js v${{ matrix.node }}'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['18.18.2', '20.x']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
-          node-version: 18.18.2
+          node-version: ${{ matrix.node }}
       - run: yarn install --frozen-lockfile
       - run: npm run format
       - run: npm run lint
