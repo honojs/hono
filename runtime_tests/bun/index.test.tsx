@@ -3,6 +3,8 @@ import { serveStatic } from '../../src/adapter/bun'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { Hono } from '../../src/index'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { jsx } from '../../src/jsx'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 import { HonoRequest } from '../../src/request'
