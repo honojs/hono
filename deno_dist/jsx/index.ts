@@ -117,8 +117,8 @@ export class JSXNode implements HtmlEscaped {
       if (key === 'style' && typeof v === 'object') {
         const styles = Object.keys(v)
           .map((k) => {
-              const property = k.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
-              return `${property}:${v[k]}`
+            const property = k.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)
+            return `${property}:${v[k]}`
           })
           .join(';')
         buffer[0] += ` style="${styles}"`

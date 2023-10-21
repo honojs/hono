@@ -1,3 +1,4 @@
+// @denoify-ignore
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from '../helper/html'
 import { Hono } from '../hono'
