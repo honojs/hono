@@ -1,3 +1,4 @@
+// @denoify-ignore
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from '../helper/html'
 import { Hono } from '../hono'
@@ -305,12 +306,15 @@ describe('render to string', () => {
           style={{
             color: 'red',
             fontSize: 'small',
+            fontFamily: 'Menlo, Consolas, DejaVu Sans Mono, monospace',
           }}
         >
           Hello
         </h1>
       )
-      expect(template.toString()).toBe('<h1 style="color:red;font-size:small">Hello</h1>')
+      expect(template.toString()).toBe(
+        '<h1 style="color:red;font-size:small;font-family:Menlo, Consolas, DejaVu Sans Mono, monospace">Hello</h1>'
+      )
     })
     it('should not convert the strings', () => {
       const template = <h1 style='color:red;font-size:small'>Hello</h1>
