@@ -7,11 +7,11 @@ import { setupServer } from 'msw/node'
 import _fetch, { Request as NodeFetchRequest } from 'node-fetch'
 import { vi } from 'vitest'
 import { Hono } from '../hono'
-import { parse, serialize } from '../utils/cookie'
+import { parse } from '../utils/cookie'
 import type { Equal, Expect } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
-import type { InferRequestOptionsType, InferRequestType, InferResponseType } from './types'
+import type { InferRequestType, InferResponseType } from './types'
 
 // @ts-ignore
 global.fetch = _fetch
