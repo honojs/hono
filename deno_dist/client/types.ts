@@ -16,7 +16,7 @@ export type ClientRequestOptions<T = unknown> = keyof T extends never
 
 type ClientRequest<S extends Schema> = {
   [M in keyof S]: S[M] extends { input: infer R; output: infer O }
-    ? RemoveBlankRecord<R> extends never
+    ? RemoveBlankRecord<Required<R>> extends never
       ? (args?: {}, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
       : (args: R, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
     : never
