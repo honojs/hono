@@ -39,6 +39,11 @@
       "import": "./dist/index.js",
       "require": "./dist/cjs/index.js"
     },
+    "./types": {
+      "types": "./dist/types/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/cjs/types.js"
+    },
     "./hono-base": {
       "types": "./dist/types/hono-base.d.ts",
       "import": "./dist/hono-base.js",
