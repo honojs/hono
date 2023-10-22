@@ -6,7 +6,9 @@ import type { Env, Input, MiddlewareHandler } from '../../types.ts'
 
 export const RequestContext = createContext<Context | null>(null)
 
-type PropsForRenderer = [...Parameters<Renderer>] extends [unknown, infer Props] ? Props : unknown
+type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unknown, infer Props]
+  ? Props
+  : unknown
 
 const createRenderer =
   (c: Context, component?: FC<PropsForRenderer>) => (children: JSXNode, props: PropsForRenderer) =>
