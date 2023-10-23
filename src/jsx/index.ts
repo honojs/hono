@@ -1,5 +1,6 @@
 import { escapeToBuffer } from '../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html'
+import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Props = Record<string, any>
@@ -8,12 +9,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     type Element = HtmlEscapedString
-    interface ElementChildrenAttribute {
-      children: Child
-    }
-    interface IntrinsicElements {
-      [tagName: string]: Props
-    }
+    type IntrinsicElements = IntrinsicElementsDefined
   }
 }
 
