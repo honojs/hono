@@ -9,178 +9,20 @@
 
 type CrossOrigin = 'anonymous' | 'use-credentials' | '' | undefined
 type CSSProperties = {}
+type AnyAttributes = { [attributeName: string]: any }
 
-interface DOMAttributes {
+interface JSXAttributes {
   dangerouslySetInnerHTML?: {
     __html: string
   }
-  key?: string // For compatibility
 }
 
-interface AriaAttributes {
-  'aria-activedescendant'?: string | undefined
-  'aria-atomic'?: boolean | undefined
-  'aria-autocomplete'?: 'none' | 'inline' | 'list' | 'both' | undefined
-  'aria-braillelabel'?: string | undefined
-  'aria-brailleroledescription'?: string | undefined
-  'aria-busy'?: boolean | undefined
-  'aria-checked'?: boolean | 'false' | 'mixed' | 'true' | undefined
-  'aria-colcount'?: number | undefined
-  'aria-colindex'?: number | undefined
-  'aria-colindextext'?: string | undefined
-  'aria-colspan'?: number | undefined
-  'aria-controls'?: string | undefined
-  'aria-current'?:
-    | boolean
-    | 'false'
-    | 'true'
-    | 'page'
-    | 'step'
-    | 'location'
-    | 'date'
-    | 'time'
-    | undefined
-  'aria-describedby'?: string | undefined
-  'aria-description'?: string | undefined
-  'aria-details'?: string | undefined
-  'aria-disabled'?: boolean | undefined
-  'aria-dropeffect'?: 'none' | 'copy' | 'execute' | 'link' | 'move' | 'popup' | undefined
-  'aria-errormessage'?: string | undefined
-  'aria-expanded'?: boolean | undefined
-  'aria-flowto'?: string | undefined
-  'aria-grabbed'?: boolean | undefined
-  'aria-haspopup'?:
-    | boolean
-    | 'false'
-    | 'true'
-    | 'menu'
-    | 'listbox'
-    | 'tree'
-    | 'grid'
-    | 'dialog'
-    | undefined
-  'aria-hidden'?: boolean | undefined
-  'aria-invalid'?: boolean | 'false' | 'true' | 'grammar' | 'spelling' | undefined
-  'aria-keyshortcuts'?: string | undefined
-  'aria-label'?: string | undefined
-  'aria-labelledby'?: string | undefined
-  'aria-level'?: number | undefined
-  'aria-live'?: 'off' | 'assertive' | 'polite' | undefined
-  'aria-modal'?: boolean | undefined
-  'aria-multiline'?: boolean | undefined
-  'aria-multiselectable'?: boolean | undefined
-  'aria-orientation'?: 'horizontal' | 'vertical' | undefined
-  'aria-owns'?: string | undefined
-  'aria-placeholder'?: string | undefined
-  'aria-posinset'?: number | undefined
-  'aria-pressed'?: boolean | 'false' | 'mixed' | 'true' | undefined
-  'aria-readonly'?: boolean | undefined
-  'aria-relevant'?:
-    | 'additions'
-    | 'additions removals'
-    | 'additions text'
-    | 'all'
-    | 'removals'
-    | 'removals additions'
-    | 'removals text'
-    | 'text'
-    | 'text additions'
-    | 'text removals'
-    | undefined
-  'aria-required'?: boolean | undefined
-  'aria-roledescription'?: string | undefined
-  'aria-rowcount'?: number | undefined
-  'aria-rowindex'?: number | undefined
-  'aria-rowindextext'?: string | undefined
-  'aria-rowspan'?: number | undefined
-  'aria-selected'?: boolean | undefined
-  'aria-setsize'?: number | undefined
-  'aria-sort'?: 'none' | 'ascending' | 'descending' | 'other' | undefined
-  'aria-valuemax'?: number | undefined
-  'aria-valuemin'?: number | undefined
-  'aria-valuenow'?: number | undefined
-  'aria-valuetext'?: string | undefined
-}
-
-type AriaRole =
-  | 'alert'
-  | 'alertdialog'
-  | 'application'
-  | 'article'
-  | 'banner'
-  | 'button'
-  | 'cell'
-  | 'checkbox'
-  | 'columnheader'
-  | 'combobox'
-  | 'complementary'
-  | 'contentinfo'
-  | 'definition'
-  | 'dialog'
-  | 'directory'
-  | 'document'
-  | 'feed'
-  | 'figure'
-  | 'form'
-  | 'grid'
-  | 'gridcell'
-  | 'group'
-  | 'heading'
-  | 'img'
-  | 'link'
-  | 'list'
-  | 'listbox'
-  | 'listitem'
-  | 'log'
-  | 'main'
-  | 'marquee'
-  | 'math'
-  | 'menu'
-  | 'menubar'
-  | 'menuitem'
-  | 'menuitemcheckbox'
-  | 'menuitemradio'
-  | 'navigation'
-  | 'none'
-  | 'note'
-  | 'option'
-  | 'presentation'
-  | 'progressbar'
-  | 'radio'
-  | 'radiogroup'
-  | 'region'
-  | 'row'
-  | 'rowgroup'
-  | 'rowheader'
-  | 'scrollbar'
-  | 'search'
-  | 'searchbox'
-  | 'separator'
-  | 'slider'
-  | 'spinbutton'
-  | 'status'
-  | 'switch'
-  | 'tab'
-  | 'table'
-  | 'tablist'
-  | 'tabpanel'
-  | 'term'
-  | 'textbox'
-  | 'timer'
-  | 'toolbar'
-  | 'tooltip'
-  | 'tree'
-  | 'treegrid'
-  | 'treeitem'
-  | (string & {})
-
-interface HTMLAttributes extends AriaAttributes, DOMAttributes {
-  // Standard HTML Attributes
+interface HTMLAttributes extends JSXAttributes, AnyAttributes {
   accessKey?: string | undefined
-  autoFocus?: boolean | undefined
-  className?: string | undefined
-  contentEditable?: boolean | 'inherit' | undefined
-  contextMenu?: string | undefined
+  autofocus?: boolean | undefined
+  class?: string | undefined
+  contenteditable?: boolean | 'inherit' | undefined
+  contextmenu?: string | undefined
   dir?: string | undefined
   draggable?: boolean | undefined
   hidden?: boolean | undefined
@@ -189,64 +31,11 @@ interface HTMLAttributes extends AriaAttributes, DOMAttributes {
   nonce?: string | undefined
   placeholder?: string | undefined
   slot?: string | undefined
-  spellCheck?: boolean | undefined
+  spellcheck?: boolean | undefined
   style?: CSSProperties | undefined
-  tabIndex?: number | undefined
+  tabindex?: number | undefined
   title?: string | undefined
   translate?: 'yes' | 'no' | undefined
-
-  // Unknown
-  radioGroup?: string | undefined // <command>, <menuitem
-  // WAI-ARIA
-  role?: AriaRole | undefined
-
-  // RDFa Attributes
-  about?: string | undefined
-  content?: string | undefined
-  datatype?: string | undefined
-  inlist?: any
-  prefix?: string | undefined
-  property?: string | undefined
-  rel?: string | undefined
-  resource?: string | undefined
-  rev?: string | undefined
-  typeof?: string | undefined
-  vocab?: string | undefined
-
-  // Non-standard Attributes
-  autoCapitalize?: string | undefined
-  autoCorrect?: string | undefined
-  autoSave?: string | undefined
-  color?: string | undefined
-  itemProp?: string | undefined
-  itemScope?: boolean | undefined
-  itemType?: string | undefined
-  itemID?: string | undefined
-  itemRef?: string | undefined
-  results?: number | undefined
-  security?: string | undefined
-  unselectable?: 'on' | 'off' | undefined
-
-  // Living Standard
-  /**
-   * Hints at the type of data that might be entered by the user while editing the element or its contents
-   * @see https://html.spec.whatwg.org/multipage/interaction.html#input-modalities:-the-inputmode-attribute
-   */
-  inputMode?:
-    | 'none'
-    | 'text'
-    | 'tel'
-    | 'url'
-    | 'email'
-    | 'numeric'
-    | 'decimal'
-    | 'search'
-    | undefined
-  /**
-   * Specify that a standard HTML element should behave like a defined custom built-in element
-   * @see https://html.spec.whatwg.org/multipage/custom-elements.html#attr-is
-   */
-  is?: string | undefined
 }
 
 type HTMLAttributeReferrerPolicy =
@@ -260,17 +49,17 @@ type HTMLAttributeReferrerPolicy =
   | 'strict-origin-when-cross-origin'
   | 'unsafe-url'
 
-type HTMLAttributeAnchorTarget = '_self' | '_blank' | '_parent' | '_top' | (string & {})
+type HTMLAttributeAnchorTarget = '_self' | '_blank' | '_parent' | '_top' | string
 
 interface AnchorHTMLAttributes extends HTMLAttributes {
   download?: any
   href?: string | undefined
-  hrefLang?: string | undefined
+  hreflang?: string | undefined
   media?: string | undefined
   ping?: string | undefined
   target?: HTMLAttributeAnchorTarget | undefined
   type?: string | undefined
-  referrerPolicy?: HTMLAttributeReferrerPolicy | undefined
+  referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
 }
 
 interface AudioHTMLAttributes extends MediaHTMLAttributes {}
@@ -280,9 +69,9 @@ interface AreaHTMLAttributes extends HTMLAttributes {
   coords?: string | undefined
   download?: any
   href?: string | undefined
-  hrefLang?: string | undefined
+  hreflang?: string | undefined
   media?: string | undefined
-  referrerPolicy?: HTMLAttributeReferrerPolicy | undefined
+  referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
   shape?: string | undefined
   target?: string | undefined
 }
@@ -299,10 +88,10 @@ interface BlockquoteHTMLAttributes extends HTMLAttributes {
 interface ButtonHTMLAttributes extends HTMLAttributes {
   disabled?: boolean | undefined
   form?: string | undefined
-  formEncType?: string | undefined
-  formMethod?: string | undefined
-  formNoValidate?: boolean | undefined
-  formTarget?: string | undefined
+  formenctype?: string | undefined
+  formmethod?: string | undefined
+  formnovalidate?: boolean | undefined
+  formtarget?: string | undefined
   name?: string | undefined
   type?: 'submit' | 'reset' | 'button' | undefined
   value?: string | ReadonlyArray<string> | number | undefined
@@ -328,7 +117,7 @@ interface DataHTMLAttributes extends HTMLAttributes {
 
 interface DetailsHTMLAttributes extends HTMLAttributes {
   open?: boolean | undefined
-  onToggle?: string | undefined
+  ontoggle?: string | undefined
 }
 
 interface DelHTMLAttributes extends HTMLAttributes {
@@ -337,8 +126,8 @@ interface DelHTMLAttributes extends HTMLAttributes {
 }
 
 interface DialogHTMLAttributes extends HTMLAttributes {
-  onCancel?: string | undefined
-  onClose?: string | undefined
+  oncancel?: string | undefined
+  onclose?: string | undefined
   open?: boolean | undefined
 }
 
@@ -356,12 +145,12 @@ interface FieldsetHTMLAttributes extends HTMLAttributes {
 }
 
 interface FormHTMLAttributes extends HTMLAttributes {
-  acceptCharset?: string | undefined
-  autoComplete?: string | undefined
-  encType?: string | undefined
+  'accept-charset'?: string | undefined
+  autocomplete?: string | undefined
+  enctype?: string | undefined
   method?: string | undefined
   name?: string | undefined
-  noValidate?: boolean | undefined
+  novalidate?: boolean | undefined
   target?: string | undefined
 }
 
@@ -371,21 +160,12 @@ interface HtmlHTMLAttributes extends HTMLAttributes {
 
 interface IframeHTMLAttributes extends HTMLAttributes {
   allow?: string | undefined
-  allowFullScreen?: boolean | undefined
-  allowTransparency?: boolean | undefined
-  /** @deprecated */
-  frameBorder?: number | string | undefined
+  allowfullScreen?: boolean | undefined
   height?: number | string | undefined
   loading?: 'eager' | 'lazy' | undefined
-  /** @deprecated */
-  marginHeight?: number | undefined
-  /** @deprecated */
-  marginWidth?: number | undefined
   name?: string | undefined
-  referrerPolicy?: HTMLAttributeReferrerPolicy | undefined
+  referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
   sandbox?: string | undefined
-  /** @deprecated */
-  scrolling?: string | undefined
   seamless?: boolean | undefined
   src?: string | undefined
   srcDoc?: string | undefined
@@ -394,21 +174,21 @@ interface IframeHTMLAttributes extends HTMLAttributes {
 
 interface ImgHTMLAttributes extends HTMLAttributes {
   alt?: string | undefined
-  crossOrigin?: CrossOrigin
+  crossorigin?: CrossOrigin
   decoding?: 'async' | 'auto' | 'sync' | undefined
   height?: number | string | undefined
   loading?: 'eager' | 'lazy' | undefined
-  referrerPolicy?: HTMLAttributeReferrerPolicy | undefined
+  referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
   sizes?: string | undefined
   src?: string | undefined
-  srcSet?: string | undefined
-  useMap?: string | undefined
+  srcset?: string | undefined
+  usemap?: string | undefined
   width?: number | string | undefined
 }
 
 interface InsHTMLAttributes extends HTMLAttributes {
   cite?: string | undefined
-  dateTime?: string | undefined
+  datetime?: string | undefined
 }
 
 type HTMLInputTypeAttribute =
@@ -434,32 +214,32 @@ type HTMLInputTypeAttribute =
   | 'time'
   | 'url'
   | 'week'
-  | (string & {})
+  | string
 
 interface InputHTMLAttributes extends HTMLAttributes {
   accept?: string | undefined
   alt?: string | undefined
-  autoComplete?: string | undefined
+  autocomplete?: string | undefined
   capture?: boolean | 'user' | 'environment' | undefined // https://www.w3.org/TR/html-media-capture/#the-capture-attribute
   checked?: boolean | undefined
   disabled?: boolean | undefined
-  enterKeyHint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send' | undefined
+  enterkeyhint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send' | undefined
   form?: string | undefined
-  formEncType?: string | undefined
-  formMethod?: string | undefined
-  formNoValidate?: boolean | undefined
-  formTarget?: string | undefined
+  formenctype?: string | undefined
+  formmethod?: string | undefined
+  formnovalidate?: boolean | undefined
+  formtarget?: string | undefined
   height?: number | string | undefined
   list?: string | undefined
   max?: number | string | undefined
-  maxLength?: number | undefined
+  maxlength?: number | undefined
   min?: number | string | undefined
-  minLength?: number | undefined
+  minlength?: number | undefined
   multiple?: boolean | undefined
   name?: string | undefined
   pattern?: string | undefined
   placeholder?: string | undefined
-  readOnly?: boolean | undefined
+  readonly?: boolean | undefined
   required?: boolean | undefined
   size?: number | undefined
   src?: string | undefined
@@ -467,22 +247,20 @@ interface InputHTMLAttributes extends HTMLAttributes {
   type?: HTMLInputTypeAttribute | undefined
   value?: string | ReadonlyArray<string> | number | undefined
   width?: number | string | undefined
-
-  onChange?: string | undefined
+  onchange?: string | undefined
 }
 
 interface KeygenHTMLAttributes extends HTMLAttributes {
   challenge?: string | undefined
   disabled?: boolean | undefined
   form?: string | undefined
-  keyType?: string | undefined
-  keyParams?: string | undefined
+  keytype?: string | undefined
   name?: string | undefined
 }
 
 interface LabelHTMLAttributes extends HTMLAttributes {
   form?: string | undefined
-  htmlFor?: string | undefined
+  for?: string | undefined
 }
 
 interface LiHTMLAttributes extends HTMLAttributes {
@@ -491,15 +269,14 @@ interface LiHTMLAttributes extends HTMLAttributes {
 
 interface LinkHTMLAttributes extends HTMLAttributes {
   as?: string | undefined
-  crossOrigin?: CrossOrigin
-  fetchPriority?: 'high' | 'low' | 'auto'
+  crossorigin?: CrossOrigin
   href?: string | undefined
-  hrefLang?: string | undefined
+  hreflang?: string | undefined
   integrity?: string | undefined
   media?: string | undefined
-  imageSrcSet?: string | undefined
-  imageSizes?: string | undefined
-  referrerPolicy?: HTMLAttributeReferrerPolicy | undefined
+  imagesrcset?: string | undefined
+  imagesizes?: string | undefined
+  referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
   sizes?: string | undefined
   type?: string | undefined
   charSet?: string | undefined
@@ -514,21 +291,21 @@ interface MenuHTMLAttributes extends HTMLAttributes {
 }
 
 interface MediaHTMLAttributes extends HTMLAttributes {
-  autoPlay?: boolean | undefined
+  autoplay?: boolean | undefined
   controls?: boolean | undefined
-  controlsList?: string | undefined
-  crossOrigin?: CrossOrigin
+  controlslist?: string | undefined
+  crossorigin?: CrossOrigin
   loop?: boolean | undefined
-  mediaGroup?: string | undefined
+  mediagroup?: string | undefined
   muted?: boolean | undefined
-  playsInline?: boolean | undefined
+  playsinline?: boolean | undefined
   preload?: string | undefined
   src?: string | undefined
 }
 
 interface MetaHTMLAttributes extends HTMLAttributes {
-  charSet?: string | undefined
-  httpEquiv?: string | undefined
+  charset?: string | undefined
+  'http-equiv'?: string | undefined
   name?: string | undefined
   media?: string | undefined
   content?: string | undefined
@@ -549,15 +326,13 @@ interface QuoteHTMLAttributes extends HTMLAttributes {
 }
 
 interface ObjectHTMLAttributes extends HTMLAttributes {
-  classID?: string | undefined
   data?: string | undefined
   form?: string | undefined
   height?: number | string | undefined
   name?: string | undefined
   type?: string | undefined
-  useMap?: string | undefined
+  usemap?: string | undefined
   width?: number | string | undefined
-  wmode?: string | undefined
 }
 
 interface OlHTMLAttributes extends HTMLAttributes {
@@ -580,7 +355,7 @@ interface OptionHTMLAttributes extends HTMLAttributes {
 
 interface OutputHTMLAttributes extends HTMLAttributes {
   form?: string | undefined
-  htmlFor?: string | undefined
+  for?: string | undefined
   name?: string | undefined
 }
 
@@ -600,19 +375,17 @@ interface SlotHTMLAttributes extends HTMLAttributes {
 
 interface ScriptHTMLAttributes extends HTMLAttributes {
   async?: boolean | undefined
-  /** @deprecated */
-  charSet?: string | undefined
-  crossOrigin?: CrossOrigin
+  crossorigin?: CrossOrigin
   defer?: boolean | undefined
   integrity?: string | undefined
-  noModule?: boolean | undefined
-  referrerPolicy?: HTMLAttributeReferrerPolicy | undefined
+  nomodule?: boolean | undefined
+  referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
   src?: string | undefined
   type?: string | undefined
 }
 
 interface SelectHTMLAttributes extends HTMLAttributes {
-  autoComplete?: string | undefined
+  autocomplete?: string | undefined
   disabled?: boolean | undefined
   form?: string | undefined
   multiple?: boolean | undefined
@@ -620,7 +393,7 @@ interface SelectHTMLAttributes extends HTMLAttributes {
   required?: boolean | undefined
   size?: number | undefined
   value?: string | ReadonlyArray<string> | number | undefined
-  onChange?: string | undefined
+  onchange?: string | undefined
 }
 
 interface SourceHTMLAttributes extends HTMLAttributes {
@@ -628,7 +401,7 @@ interface SourceHTMLAttributes extends HTMLAttributes {
   media?: string | undefined
   sizes?: string | undefined
   src?: string | undefined
-  srcSet?: string | undefined
+  srcset?: string | undefined
   type?: string | undefined
   width?: number | string | undefined
 }
@@ -643,8 +416,8 @@ interface TableHTMLAttributes extends HTMLAttributes {
   align?: 'left' | 'center' | 'right' | undefined
   bgcolor?: string | undefined
   border?: number | undefined
-  cellPadding?: number | string | undefined
-  cellSpacing?: number | string | undefined
+  cellpadding?: number | string | undefined
+  cellspacing?: number | string | undefined
   frame?: boolean | undefined
   rules?: 'none' | 'groups' | 'rows' | 'columns' | 'all' | undefined
   summary?: string | undefined
@@ -652,28 +425,28 @@ interface TableHTMLAttributes extends HTMLAttributes {
 }
 
 interface TextareaHTMLAttributes extends HTMLAttributes {
-  autoComplete?: string | undefined
+  autocomplete?: string | undefined
   cols?: number | undefined
-  dirName?: string | undefined
+  dirname?: string | undefined
   disabled?: boolean | undefined
   form?: string | undefined
-  maxLength?: number | undefined
-  minLength?: number | undefined
+  maxlength?: number | undefined
+  minlength?: number | undefined
   name?: string | undefined
   placeholder?: string | undefined
-  readOnly?: boolean | undefined
+  readonly?: boolean | undefined
   required?: boolean | undefined
   rows?: number | undefined
   value?: string | ReadonlyArray<string> | number | undefined
   wrap?: string | undefined
-  onChange?: string | undefined
+  onchange?: string | undefined
 }
 
 interface TdHTMLAttributes extends HTMLAttributes {
   align?: 'left' | 'center' | 'right' | 'justify' | 'char' | undefined
-  colSpan?: number | undefined
+  colspan?: number | undefined
   headers?: string | undefined
-  rowSpan?: number | undefined
+  rowspan?: number | undefined
   scope?: string | undefined
   abbr?: string | undefined
   height?: number | string | undefined
@@ -683,15 +456,15 @@ interface TdHTMLAttributes extends HTMLAttributes {
 
 interface ThHTMLAttributes extends HTMLAttributes {
   align?: 'left' | 'center' | 'right' | 'justify' | 'char' | undefined
-  colSpan?: number | undefined
+  colspan?: number | undefined
   headers?: string | undefined
-  rowSpan?: number | undefined
+  rowspan?: number | undefined
   scope?: string | undefined
   abbr?: string | undefined
 }
 
 interface TimeHTMLAttributes extends HTMLAttributes {
-  dateTime?: string | undefined
+  datetime?: string | undefined
 }
 
 interface TrackHTMLAttributes extends HTMLAttributes {
@@ -699,16 +472,16 @@ interface TrackHTMLAttributes extends HTMLAttributes {
   kind?: string | undefined
   label?: string | undefined
   src?: string | undefined
-  srcLang?: string | undefined
+  srclang?: string | undefined
 }
 
 interface VideoHTMLAttributes extends MediaHTMLAttributes {
   height?: number | string | undefined
-  playsInline?: boolean | undefined
+  playsinline?: boolean | undefined
   poster?: string | undefined
   width?: number | string | undefined
-  disablePictureInPicture?: boolean | undefined
-  disableRemotePlayback?: boolean | undefined
+  disablepictureInpicture?: boolean | undefined
+  disableremoteplayback?: boolean | undefined
 }
 
 export interface IntrinsicElements {
