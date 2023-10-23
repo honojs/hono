@@ -18,7 +18,7 @@ interface JSXAttributes {
 }
 
 interface HTMLAttributes extends JSXAttributes, AnyAttributes {
-  accessKey?: string | undefined
+  accesskey?: string | undefined
   autofocus?: boolean | undefined
   class?: string | undefined
   contenteditable?: boolean | 'inherit' | undefined
@@ -160,7 +160,7 @@ interface HtmlHTMLAttributes extends HTMLAttributes {
 
 interface IframeHTMLAttributes extends HTMLAttributes {
   allow?: string | undefined
-  allowfullScreen?: boolean | undefined
+  allowfullscreen?: boolean | undefined
   height?: number | string | undefined
   loading?: 'eager' | 'lazy' | undefined
   name?: string | undefined
@@ -168,7 +168,7 @@ interface IframeHTMLAttributes extends HTMLAttributes {
   sandbox?: string | undefined
   seamless?: boolean | undefined
   src?: string | undefined
-  srcDoc?: string | undefined
+  srcdoc?: string | undefined
   width?: number | string | undefined
 }
 
@@ -480,8 +480,8 @@ interface VideoHTMLAttributes extends MediaHTMLAttributes {
   playsinline?: boolean | undefined
   poster?: string | undefined
   width?: number | string | undefined
-  disablepictureInpicture?: boolean | undefined
-  disableremoteplayback?: boolean | undefined
+  disablePictureInPicture?: boolean | undefined
+  disableRemotePlayback?: boolean | undefined
 }
 
 export interface IntrinsicElements {
