@@ -56,6 +56,38 @@ const getRequestContext = (
   return event.requestContext
 }
 
+export const streamHandle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
+  app: Hono<E, S, BasePath>
+) => {
+  return awslambda.streamifyResponse(
+    async (event: APIGatewayProxyEvent, responseStream, context: Context) => {
+      const req = createRequest(event);  // Honoフレームワーク用のリクエストを作成
+      const res = await app.fetch(req);  // Honoフレームワークでリクエストを処理
+
+      // ContentTypeを設定
+      responseStream.setContentType(res.headers.get('content-type') || 'text/plain');
+
+      if (res.body) {
+        const reader = res.body.getReader();
+
+        // レスポンスボディをストリームとして書き込む
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            break;
+          }
+
+          // レスポンスストリームにデータを書き込む
+          responseStream.write(value);
+        }
+      }
+
+      // ストリームを閉じる
+      responseStream.end();
+    }
+  );
+};
+
 /**
  * Accepts events from API Gateway/ELB(`APIGatewayProxyEvent`) and directly through Function Url(`APIGatewayProxyEventV2`)
  */
