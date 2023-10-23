@@ -9,6 +9,9 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     type Element = HtmlEscapedString
+    interface ElementChildrenAttribute {
+      children: Child
+    }
     type IntrinsicElements = IntrinsicElementsDefined & { [tagName: string]: Props }
   }
 }
