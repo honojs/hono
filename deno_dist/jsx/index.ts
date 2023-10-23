@@ -1,5 +1,6 @@
 import { escapeToBuffer } from '../utils/html.ts'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html.ts'
+import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Props = Record<string, any>
@@ -11,9 +12,7 @@ declare global {
     interface ElementChildrenAttribute {
       children: Child
     }
-    interface IntrinsicElements {
-      [tagName: string]: Props
-    }
+    type IntrinsicElements = IntrinsicElementsDefined & { [tagName: string]: Props }
   }
 }
 
