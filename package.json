@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "3.8.2",
+  "version": "3.8.3",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -38,6 +38,11 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/cjs/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/cjs/types.js"
     },
     "./hono-base": {
       "types": "./dist/types/hono-base.d.ts",
