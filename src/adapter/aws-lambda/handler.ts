@@ -56,37 +56,53 @@ const getRequestContext = (
   return event.requestContext
 }
 
-export const streamHandle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
+export const streamHandle = <
+  E extends Env = Env,
+  S extends Schema = {},
+  BasePath extends string = '/'
+>(
   app: Hono<E, S, BasePath>
 ) => {
   return awslambda.streamifyResponse(
     async (event: APIGatewayProxyEvent, responseStream, context: Context) => {
-      const req = createRequest(event);  // Honoフレームワーク用のリクエストを作成
-      const res = await app.fetch(req);  // Honoフレームワークでリクエストを処理
+      try {
+        const req = createRequest(event)
+        const requestContext = getRequestContext(event)
 
-      // ContentTypeを設定
-      responseStream.setContentType(res.headers.get('content-type') || 'text/plain');
+        const res = await app.fetch(req, {
+          requestContext,
+          context,
+        })
 
-      if (res.body) {
-        const reader = res.body.getReader();
-
-        // レスポンスボディをストリームとして書き込む
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            break;
-          }
-
-          // レスポンスストリームにデータを書き込む
-          responseStream.write(value);
+        // Improved content type handling
+        const contentType = res.headers.get('content-type')
+        if (contentType) {
+          responseStream.setContentType(contentType)
+        } else {
+          console.warn('Content Type is not set in the response.')
+          responseStream.setContentType('application/octet-stream')
         }
-      }
 
-      // ストリームを閉じる
-      responseStream.end();
+        // Improved headers handling
+        res.headers.forEach((value, name) => {
+          responseStream.setHeader(name, value)
+        })
+
+        // Use async iterators for more concise code
+        if (res.body) {
+          for await (const chunk of res.body) {
+            responseStream.write(chunk)
+          }
+        }
+      } catch (error) {
+        console.error('Error processing request:', error)
+        responseStream.write('Internal Server Error')
+      } finally {
+        responseStream.end()
+      }
     }
-  );
-};
+  )
+}
 
 /**
  * Accepts events from API Gateway/ELB(`APIGatewayProxyEvent`) and directly through Function Url(`APIGatewayProxyEventV2`)
