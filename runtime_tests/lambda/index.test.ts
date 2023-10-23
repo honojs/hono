@@ -56,18 +56,32 @@ describe('AWS Lambda Adapter for Hono', () => {
     return c.json(lambdaContext)
   })
 
-  const testCookieKey = 'id'
-  const testCookieValue = crypto.randomUUID()
-  const testCookie = `${testCookieKey}=${testCookieValue}`
+  const testCookie1 = {
+    key: 'id',
+    value: crypto.randomUUID(),
+    get serialized() {
+      return `${this.key}=${this.value}`
+    },
+  }
+  const testCookie2 = {
+    key: 'secret',
+    value: crypto.randomUUID(),
+    get serialized() {
+      return `${this.key}=${this.value}`
+    },
+  }
 
   app.post('/cookie', (c) => {
-    setCookie(c, testCookieKey, testCookieValue)
+    setCookie(c, testCookie1.key, testCookie1.value)
+    setCookie(c, testCookie2.key, testCookie2.value)
     return c.text('Cookies Set')
   })
 
   app.get('/cookie', (c) => {
-    const validCookie = getCookie(c, testCookieKey) === testCookieValue
-    if (!validCookie) return c.text('Invalid Cookies')
+    const validCookies =
+      getCookie(c, testCookie1.key) === testCookie1.value &&
+      getCookie(c, testCookie2.key) === testCookie2.value
+    if (!validCookies) return c.text('Invalid Cookies')
     return c.text('Valid Cookies')
   })
 
@@ -346,7 +360,10 @@ describe('AWS Lambda Adapter for Hono', () => {
     const apiGatewayResponse = await handler(apiGatewayEvent)
 
     expect(apiGatewayResponse.statusCode).toBe(200)
-    expect(apiGatewayResponse.multiValueHeaders).toHaveProperty('set-cookie', [testCookie])
+    expect(apiGatewayResponse.multiValueHeaders).toHaveProperty('set-cookie', [
+      testCookie1.serialized,
+      testCookie2.serialized,
+    ])
 
     const apiGatewayEventV2 = {
       httpMethod: 'POST',
@@ -361,13 +378,19 @@ describe('AWS Lambda Adapter for Hono', () => {
     const apiGatewayResponseV2 = await handler(apiGatewayEventV2)
 
     expect(apiGatewayResponseV2.statusCode).toBe(200)
-    expect(apiGatewayResponseV2).toHaveProperty('cookies', [testCookie])
+    expect(apiGatewayResponseV2).toHaveProperty('cookies', [
+      testCookie1.serialized,
+      testCookie2.serialized,
+    ])
   })
 
   it('Shoul handle a POST request and return a 200 response if cookies match (APIGatewayProxyEvent V1 and V2)', async () => {
     const apiGatewayEvent = {
       httpMethod: 'GET',
-      headers: { 'content-type': 'text/plain', cookie: testCookie },
+      headers: {
+        'content-type': 'text/plain',
+        cookie: [testCookie1.serialized, testCookie2.serialized].join('; '),
+      },
       path: '/cookie',
       body: null,
       isBase64Encoded: false,
@@ -385,7 +408,7 @@ describe('AWS Lambda Adapter for Hono', () => {
       httpMethod: 'GET',
       headers: { 'content-type': 'text/plain' },
       rawPath: '/cookie',
-      cookies: [testCookie],
+      cookies: [testCookie1.serialized, testCookie2.serialized],
       rawQueryString: '',
       body: null,
       isBase64Encoded: false,
