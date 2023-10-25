@@ -1,6 +1,6 @@
 import type { Hono } from '../hono.ts'
-import type { Schema, HasRequiredKeys } from '../types.ts'
-import type { RemoveBlankRecord } from '../utils/types.ts'
+import type { Schema } from '../types.ts'
+import type { HasRequiredKeys } from '../utils/types.ts'
 
 type HonoRequest = typeof Hono.prototype['request']
 
@@ -17,9 +17,7 @@ export type ClientRequestOptions<T = unknown> = keyof T extends never
 type ClientRequest<S extends Schema> = {
   [M in keyof S]: S[M] extends { input: infer R; output: infer O }
     ? R extends object
-      ? RemoveBlankRecord<Required<R>> extends never
-        ? (args?: {}, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
-        : HasRequiredKeys<R> extends true
+      ? HasRequiredKeys<R> extends true
         ? (args: R, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
         : (args?: R, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
       : never
