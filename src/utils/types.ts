@@ -29,3 +29,14 @@ export type JSONObject = { [key: string]: JSONPrimitive | JSONArray | JSONObject
 export type JSONValue = JSONObject | JSONArray | JSONPrimitive
 
 export type InterfaceToType<T> = T extends Function ? T : { [K in keyof T]: InterfaceToType<T[K]> }
+
+export type RequiredKeysOf<BaseType extends object> = Exclude<
+  {
+    [Key in keyof BaseType]: BaseType extends Record<Key, BaseType[Key]> ? Key : never
+  }[keyof BaseType],
+  undefined
+>
+
+export type HasRequiredKeys<BaseType extends object> = RequiredKeysOf<BaseType> extends never
+  ? false
+  : true
