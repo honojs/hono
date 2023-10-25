@@ -122,7 +122,7 @@ interface DetailsHTMLAttributes extends HTMLAttributes {
 
 interface DelHTMLAttributes extends HTMLAttributes {
   cite?: string | undefined
-  dateTime?: string | undefined
+  datetime?: string | undefined
 }
 
 interface DialogHTMLAttributes extends HTMLAttributes {
