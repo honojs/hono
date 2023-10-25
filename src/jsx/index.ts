@@ -12,7 +12,9 @@ declare global {
     interface ElementChildrenAttribute {
       children: Child
     }
-    type IntrinsicElements = IntrinsicElementsDefined & { [tagName: string]: Props }
+    interface IntrinsicElements extends IntrinsicElementsDefined {
+      [tagName: string]: Props
+    }
   }
 }
 
