@@ -117,7 +117,6 @@ interface DataHTMLAttributes extends HTMLAttributes {
 
 interface DetailsHTMLAttributes extends HTMLAttributes {
   open?: boolean | undefined
-  ontoggle?: string | undefined
 }
 
 interface DelHTMLAttributes extends HTMLAttributes {
@@ -126,8 +125,6 @@ interface DelHTMLAttributes extends HTMLAttributes {
 }
 
 interface DialogHTMLAttributes extends HTMLAttributes {
-  oncancel?: string | undefined
-  onclose?: string | undefined
   open?: boolean | undefined
 }
 
@@ -247,7 +244,6 @@ interface InputHTMLAttributes extends HTMLAttributes {
   type?: HTMLInputTypeAttribute | undefined
   value?: string | ReadonlyArray<string> | number | undefined
   width?: number | string | undefined
-  onchange?: string | undefined
 }
 
 interface KeygenHTMLAttributes extends HTMLAttributes {
@@ -393,7 +389,6 @@ interface SelectHTMLAttributes extends HTMLAttributes {
   required?: boolean | undefined
   size?: number | undefined
   value?: string | ReadonlyArray<string> | number | undefined
-  onchange?: string | undefined
 }
 
 interface SourceHTMLAttributes extends HTMLAttributes {
@@ -439,7 +434,6 @@ interface TextareaHTMLAttributes extends HTMLAttributes {
   rows?: number | undefined
   value?: string | ReadonlyArray<string> | number | undefined
   wrap?: string | undefined
-  onchange?: string | undefined
 }
 
 interface TdHTMLAttributes extends HTMLAttributes {
