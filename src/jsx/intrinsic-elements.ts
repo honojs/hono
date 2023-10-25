@@ -120,7 +120,6 @@ declare global {
 
     interface DetailsHTMLAttributes extends HTMLAttributes {
       open?: boolean | undefined
-      ontoggle?: string | undefined
     }
 
     interface DelHTMLAttributes extends HTMLAttributes {
@@ -129,8 +128,6 @@ declare global {
     }
 
     interface DialogHTMLAttributes extends HTMLAttributes {
-      oncancel?: string | undefined
-      onclose?: string | undefined
       open?: boolean | undefined
     }
 
@@ -250,7 +247,6 @@ declare global {
       type?: HTMLInputTypeAttribute | undefined
       value?: string | ReadonlyArray<string> | number | undefined
       width?: number | string | undefined
-      onchange?: string | undefined
     }
 
     interface KeygenHTMLAttributes extends HTMLAttributes {
@@ -396,7 +392,6 @@ declare global {
       required?: boolean | undefined
       size?: number | undefined
       value?: string | ReadonlyArray<string> | number | undefined
-      onchange?: string | undefined
     }
 
     interface SourceHTMLAttributes extends HTMLAttributes {
@@ -442,7 +437,6 @@ declare global {
       rows?: number | undefined
       value?: string | ReadonlyArray<string> | number | undefined
       wrap?: string | undefined
-      onchange?: string | undefined
     }
 
     interface TdHTMLAttributes extends HTMLAttributes {
