@@ -4,6 +4,7 @@ import type {
 } from '../../src/adapter/aws-lambda/custom-context'
 import { handle } from '../../src/adapter/aws-lambda/handler'
 import type { LambdaContext } from '../../src/adapter/aws-lambda/types'
+import { getCookie, setCookie } from '../../src/helper/cookie'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
 
@@ -53,6 +54,35 @@ describe('AWS Lambda Adapter for Hono', () => {
   app.get('/custom-context/lambda', (c) => {
     const lambdaContext = c.env.requestContext
     return c.json(lambdaContext)
+  })
+
+  const testCookie1 = {
+    key: 'id',
+    value: crypto.randomUUID(),
+    get serialized() {
+      return `${this.key}=${this.value}`
+    },
+  }
+  const testCookie2 = {
+    key: 'secret',
+    value: crypto.randomUUID(),
+    get serialized() {
+      return `${this.key}=${this.value}`
+    },
+  }
+
+  app.post('/cookie', (c) => {
+    setCookie(c, testCookie1.key, testCookie1.value)
+    setCookie(c, testCookie2.key, testCookie2.value)
+    return c.text('Cookies Set')
+  })
+
+  app.get('/cookie', (c) => {
+    const validCookies =
+      getCookie(c, testCookie1.key) === testCookie1.value &&
+      getCookie(c, testCookie2.key) === testCookie2.value
+    if (!validCookies) return c.text('Invalid Cookies')
+    return c.text('Valid Cookies')
   })
 
   const handler = handle(app)
@@ -315,5 +345,81 @@ describe('AWS Lambda Adapter for Hono', () => {
     const response = await handler(event, context)
     expect(response.statusCode).toBe(200)
     expect(JSON.parse(response.body).callbackWaitsForEmptyEventLoop).toEqual(false)
+  })
+
+  it('Shoul handle a POST request and return a 200 response with cookies set (APIGatewayProxyEvent V1 and V2)', async () => {
+    const apiGatewayEvent = {
+      httpMethod: 'POST',
+      headers: { 'content-type': 'text/plain' },
+      path: '/cookie',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testApiGatewayRequestContext,
+    }
+
+    const apiGatewayResponse = await handler(apiGatewayEvent)
+
+    expect(apiGatewayResponse.statusCode).toBe(200)
+    expect(apiGatewayResponse.multiValueHeaders).toHaveProperty('set-cookie', [
+      testCookie1.serialized,
+      testCookie2.serialized,
+    ])
+
+    const apiGatewayEventV2 = {
+      httpMethod: 'POST',
+      headers: { 'content-type': 'text/plain' },
+      rawPath: '/cookie',
+      rawQueryString: '',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testApiGatewayRequestContext,
+    }
+
+    const apiGatewayResponseV2 = await handler(apiGatewayEventV2)
+
+    expect(apiGatewayResponseV2.statusCode).toBe(200)
+    expect(apiGatewayResponseV2).toHaveProperty('cookies', [
+      testCookie1.serialized,
+      testCookie2.serialized,
+    ])
+  })
+
+  it('Shoul handle a POST request and return a 200 response if cookies match (APIGatewayProxyEvent V1 and V2)', async () => {
+    const apiGatewayEvent = {
+      httpMethod: 'GET',
+      headers: {
+        'content-type': 'text/plain',
+        cookie: [testCookie1.serialized, testCookie2.serialized].join('; '),
+      },
+      path: '/cookie',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testApiGatewayRequestContext,
+    }
+
+    const apiGatewayResponse = await handler(apiGatewayEvent)
+
+    expect(apiGatewayResponse.statusCode).toBe(200)
+    expect(apiGatewayResponse.body).toBe('Valid Cookies')
+    expect(apiGatewayResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(apiGatewayResponse.isBase64Encoded).toBe(false)
+
+    const apiGatewayEventV2 = {
+      httpMethod: 'GET',
+      headers: { 'content-type': 'text/plain' },
+      rawPath: '/cookie',
+      cookies: [testCookie1.serialized, testCookie2.serialized],
+      rawQueryString: '',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testApiGatewayRequestContext,
+    }
+
+    const apiGatewayResponseV2 = await handler(apiGatewayEventV2)
+
+    expect(apiGatewayResponseV2.statusCode).toBe(200)
+    expect(apiGatewayResponseV2.body).toBe('Valid Cookies')
+    expect(apiGatewayResponseV2.headers['content-type']).toMatch(/^text\/plain/)
+    expect(apiGatewayResponseV2.isBase64Encoded).toBe(false)
   })
 })
