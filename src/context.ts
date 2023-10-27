@@ -1,3 +1,4 @@
+import type { Runtime } from './helper/adapter'
 import type { HonoRequest } from './request'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types'
 import type { CookieOptions } from './utils/cookie'
@@ -6,7 +7,6 @@ import type { StatusCode } from './utils/http-status'
 import { StreamingApi } from './utils/stream'
 import type { JSONValue, InterfaceToType } from './utils/types'
 
-type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'lagon' | 'other'
 type HeaderRecord = Record<string, string | string[]>
 type Data = string | ArrayBuffer | ReadableStream
 
