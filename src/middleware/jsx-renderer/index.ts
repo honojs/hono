@@ -10,22 +10,36 @@ type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unknown, in
   ? Props
   : unknown
 
+type RendererOptions = {
+  docType?: boolean | string
+}
+
 const createRenderer =
-  (c: Context, component?: FC<PropsForRenderer>) => (children: JSXNode, props: PropsForRenderer) =>
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    c.html(
-      jsx(
-        RequestContext.Provider,
-        { value: c },
-        (component ? component({ children, ...(props || {}) }) : children) as any
-      ) as any
+  (c: Context, component?: FC<PropsForRenderer>, options?: RendererOptions) =>
+  (children: JSXNode, props: PropsForRenderer) => {
+    const docType =
+      typeof options?.docType === 'string'
+        ? options.docType
+        : options?.docType === true
+        ? '<!DOCTYPE html>'
+        : ''
+
+    return c.html(
+      (docType +
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        jsx(
+          RequestContext.Provider,
+          { value: c },
+          (component ? component({ children, ...(props || {}) }) : children) as any
+        )) as any
     )
+  }
 
 export const jsxRenderer =
-  (component?: FC<PropsForRenderer>): MiddlewareHandler =>
+  (component?: FC<PropsForRenderer>, options?: RendererOptions): MiddlewareHandler =>
   (c, next) => {
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    c.setRenderer(createRenderer(c, component) as any)
+    c.setRenderer(createRenderer(c, component, options) as any)
     return next()
   }
 

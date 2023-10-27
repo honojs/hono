@@ -1,13 +1,24 @@
 import type { Context } from '../../context'
 
+export type Runtime =
+  | 'node'
+  | 'deno'
+  | 'bun'
+  | 'workerd'
+  | 'fastly'
+  | 'edge-light'
+  | 'lagon'
+  | 'other'
+
 export const env = <T extends Record<string, string>, C extends Context = Context<{}>>(
-  c: C
+  c: C,
+  runtime?: Runtime
 ): T & C['env'] => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const global = globalThis as any
   const globalEnv = global?.process?.env as T
 
-  const runtime = getRuntimeKey()
+  runtime ??= getRuntimeKey()
 
   const runtimeEnvHandlers: Record<string, () => T> = {
     bun: () => globalEnv,
