@@ -1,11 +1,16 @@
 // @denoify-ignore
 import crypto from 'crypto'
+import { pipeline } from 'stream'
+import { promisify } from 'util'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 
 import { encodeBase64 } from '../../utils/encode'
 import type { ApiGatewayRequestContext, LambdaFunctionUrlRequestContext } from './custom-context'
 import type { LambdaContext } from './types'
+
+
+const pipelineAsync = promisify(pipeline)
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -72,7 +77,11 @@ export const streamHandle = <
   app: Hono<E, S, BasePath>
 ) => {
   return awslambda.streamifyResponse(
-    async (event: APIGatewayProxyEvent, responseStream, context: Context) => {
+    async (
+      event: APIGatewayProxyEvent,
+      responseStream: NodeJS.WritableStream,
+      context: LambdaContext
+    ) => {
       try {
         const req = createRequest(event)
         const requestContext = getRequestContext(event)
@@ -82,25 +91,15 @@ export const streamHandle = <
           context,
         })
 
-        // Improved content type handling
+        // Check content type
         const contentType = res.headers.get('content-type')
-        if (contentType) {
-          responseStream.setContentType(contentType)
-        } else {
+        if (!contentType) {
           console.warn('Content Type is not set in the response.')
-          responseStream.setContentType('application/octet-stream')
         }
 
-        // Improved headers handling
-        res.headers.forEach((value, name) => {
-          responseStream.setHeader(name, value)
-        })
-
-        // Use async iterators for more concise code
+        // Stream the response body if present
         if (res.body) {
-          for await (const chunk of res.body) {
-            responseStream.write(chunk)
-          }
+          await pipelineAsync(res.body, responseStream)
         }
       } catch (error) {
         console.error('Error processing request:', error)
