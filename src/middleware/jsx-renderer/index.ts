@@ -17,14 +17,13 @@ type RendererOptions = {
 const createRenderer =
   (c: Context, component?: FC<PropsForRenderer>, options?: RendererOptions) =>
   (children: JSXNode, props: PropsForRenderer) => {
-    let docType = ''
-    if (options?.docType) {
-      if (typeof options.docType === 'string') {
-        docType = options.docType
-      } else if (typeof options.docType === 'boolean' && options.docType === true) {
-        docType = '<!DOCTYPE html>'
-      }
-    }
+    const docType =
+      typeof options?.docType === 'string'
+        ? options.docType
+        : options?.docType === true
+        ? '<!DOCTYPE html>'
+        : ''
+
     return c.html(
       (docType +
         /* eslint-disable @typescript-eslint/no-explicit-any */
