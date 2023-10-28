@@ -1,4 +1,6 @@
 // @denoify-ignore
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export interface CognitoIdentity {
   cognitoIdentityId: string
   cognitoIdentityPoolId: string
@@ -46,10 +48,10 @@ export interface LambdaContext {
   getRemainingTimeInMillis(): number
 }
 
-type Callback<TResult = any> = (error?: Error | string | null, result?: TResult) => void;
+type Callback<TResult = any> = (error?: Error | string | null, result?: TResult) => void
 
 export type Handler<TEvent = any, TResult = any> = (
   event: TEvent,
   context: LambdaContext,
-  callback: Callback<TResult>,
-) => void | Promise<TResult>;
+  callback: Callback<TResult>
+) => void | Promise<TResult>

@@ -9,7 +9,6 @@ import { encodeBase64 } from '../../utils/encode'
 import type { ApiGatewayRequestContext, LambdaFunctionUrlRequestContext } from './custom-context'
 import type { LambdaContext } from './types'
 
-
 const pipelineAsync = promisify(pipeline)
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -78,7 +77,7 @@ export const streamHandle = <
 ) => {
   return awslambda.streamifyResponse(
     async (
-      event: APIGatewayProxyEvent,
+      event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent,
       responseStream: NodeJS.WritableStream,
       context: LambdaContext
     ) => {
