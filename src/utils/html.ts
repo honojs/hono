@@ -1,6 +1,6 @@
 export type HtmlEscaped = { isEscaped: true }
 export type HtmlEscapedString = string & HtmlEscaped
-export type StringBuffer = [string]
+export type StringBuffer = (string | Promise<string>)[]
 
 // The `escapeToBuffer` implementation is based on code from the MIT licensed `react-dom` package.
 // https://github.com/facebook/react/blob/main/packages/react-dom-bindings/src/server/escapeTextForBrowser.js

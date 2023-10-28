@@ -67,6 +67,21 @@ describe('JSX middleware', () => {
         </body>
       </html>`)
   })
+
+  it('Should render async component', async () => {
+    const AsyncComponent = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      return <h1>Hello from async component</h1>
+    }
+
+    app.get('/', (c) => {
+      return c.html(<AsyncComponent />)
+    })
+    const res = await app.request('http://localhost/')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(await res.text()).toBe('<h1>Hello from async component</h1>')
+  })
 })
 
 describe('render to string', () => {
