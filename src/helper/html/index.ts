@@ -1,4 +1,4 @@
-import { escapeToBuffer } from '../../utils/html'
+import { escapeToBuffer, stringBufferToString } from '../../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html'
 
 export const raw = (value: unknown): HtmlEscapedString => {
@@ -43,11 +43,5 @@ export const html = (
   }
   buffer[0] += strings[strings.length - 1]
 
-  return buffer.length === 1
-    ? raw(buffer[0])
-    : Promise.all(buffer.reverse()).then((res) =>
-        raw(
-          res.map((r) => (typeof r === 'object' ? (r as HtmlEscapedString).toString() : r)).join('')
-        )
-      )
+  return buffer.length === 1 ? raw(buffer[0]) : stringBufferToString(buffer).then((str) => raw(str))
 }

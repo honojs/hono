@@ -7,6 +7,15 @@ export type StringBuffer = (string | Promise<string>)[]
 
 const escapeRe = /[&<>'"]/
 
+export const stringBufferToString = async (buffer: StringBuffer): Promise<string> => {
+  let str = ''
+  for (let i = buffer.length - 1; i >= 0; i--) {
+    const r = await buffer[i]
+    str += await (typeof r === 'object' ? (r as HtmlEscapedString).toString() : r)
+  }
+  return str
+}
+
 export const escapeToBuffer = (str: string, buffer: StringBuffer): void => {
   const match = str.search(escapeRe)
   if (match === -1) {

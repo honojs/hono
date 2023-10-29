@@ -69,9 +69,19 @@ describe('JSX middleware', () => {
   })
 
   it('Should render async component', async () => {
+    const ChildAsyncComponent = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      return <span>child async component</span>
+    }
+
     const AsyncComponent = async () => {
       await new Promise((resolve) => setTimeout(resolve, 10))
-      return <h1>Hello from async component</h1>
+      return (
+        <h1>
+          Hello from async component
+          <ChildAsyncComponent />
+        </h1>
+      )
     }
 
     app.get('/', (c) => {
@@ -80,7 +90,7 @@ describe('JSX middleware', () => {
     const res = await app.request('http://localhost/')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
-    expect(await res.text()).toBe('<h1>Hello from async component</h1>')
+    expect(await res.text()).toBe('<h1>Hello from async component<span>child async component</span></h1>')
   })
 })
 
