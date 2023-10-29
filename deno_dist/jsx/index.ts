@@ -1,4 +1,4 @@
-import { escapeToBuffer } from '../utils/html.ts'
+import { escapeToBuffer, stringBufferToString } from '../utils/html.ts'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html.ts'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements.ts'
 
@@ -101,11 +101,7 @@ export class JSXNode implements HtmlEscaped {
   toString(): string | Promise<string> {
     const buffer: StringBuffer = ['']
     this.toStringToBuffer(buffer)
-    return buffer.length === 1
-      ? buffer[0]
-      : Promise.all(buffer.reverse()).then((res) =>
-          res.map((r) => (typeof r === 'object' ? (r as HtmlEscapedString).toString() : r)).join('')
-        )
+    return buffer.length === 1 ? buffer[0] : stringBufferToString(buffer)
   }
 
   toStringToBuffer(buffer: StringBuffer): void {
