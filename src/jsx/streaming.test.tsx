@@ -11,6 +11,11 @@ function replacementResult(html: string) {
 }
 
 describe('Streaming', () => {
+  let suspenseCounter = 0
+  afterEach(() => {
+    suspenseCounter++
+  })
+
   it('Suspense / use / renderToReadableStream', async () => {
     const delayedContent = new Promise<HtmlEscapedString>((resolve) =>
       setTimeout(() => resolve(<h1>Hello</h1>), 10)
@@ -33,11 +38,11 @@ describe('Streaming', () => {
     }
 
     expect(chunks).toEqual([
-      '<template id="H:0"></template><p>Loading...</p><!--/$-->',
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
       `<template><h1>Hello</h1></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
-d=d.getElementById('H:0')
+d=d.getElementById('H:${suspenseCounter}')
 while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
 d.replaceWith(c.content)
 })(document)
@@ -80,11 +85,11 @@ d.replaceWith(c.content)
     }
 
     expect(chunks).toEqual([
-      '<template id="H:1"></template><p>Loading...</p><!--/$-->',
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
       `<template><h1>Hello</h1><h2>World</h2></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
-d=d.getElementById('H:1')
+d=d.getElementById('H:${suspenseCounter}')
 while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
 d.replaceWith(c.content)
 })(document)
@@ -131,11 +136,11 @@ d.replaceWith(c.content)
     }
 
     expect(chunks).toEqual([
-      '<template id="H:2"></template><p>Loading...</p><!--/$-->',
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
       `<template><h1>Hello</h1><p>paragraph</p></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
-d=d.getElementById('H:2')
+d=d.getElementById('H:${suspenseCounter}')
 while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
 d.replaceWith(c.content)
 })(document)
@@ -176,11 +181,11 @@ d.replaceWith(c.content)
     }
 
     expect(chunks).toEqual([
-      '<template id="H:3"></template>Loading<span>...</span><!--/$-->',
+      `<template id="H:${suspenseCounter}"></template>Loading<span>...</span><!--/$-->`,
       `<template><h1>Hello</h1></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
-d=d.getElementById('H:3')
+d=d.getElementById('H:${suspenseCounter}')
 while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
 d.replaceWith(c.content)
 })(document)
