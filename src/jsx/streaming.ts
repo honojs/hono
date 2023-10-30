@@ -1,6 +1,7 @@
 import type { HtmlEscapedString } from '../utils/html'
 import type { FC, Child } from './index'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const useContexts: any[][] = []
 
 let suspenseCounter = 0
@@ -22,6 +23,7 @@ async function childrenToString(useContext: number, children: Child): Promise<st
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) => {
   if (!children) {
     return fallback.toString()
