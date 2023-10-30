@@ -59,13 +59,13 @@ d.replaceWith(c.content)
   return res as HtmlEscapedString
 }
 
-export const createUseContext = (): number => {
+const createUseContext = (): number => {
   const newUseContext = useCounter++
   setUseContext(newUseContext)
   return newUseContext
 }
 
-export const setUseContext = (index: number): void => {
+const setUseContext = (index: number): void => {
   useIndex = -1
   currentUseContext = index
 }
