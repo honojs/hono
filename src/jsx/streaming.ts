@@ -51,16 +51,13 @@ export const setUseContext = (index: number): void => {
   currentUseContext = index
 }
 
-export const use = <T>(promise: Promise<T> | (() => Promise<T>)): T => {
+export const use = <T>(promise: Promise<T>): T => {
   useIndex++
 
   if (useContexts[currentUseContext]) {
     return useContexts[currentUseContext][useIndex - 1]
   }
 
-  if (typeof promise === 'function') {
-    promise = promise()
-  }
   promise.then((res) => ((useContexts[currentUseContext] ||= [])[useIndex - 1] = res))
 
   throw promise
