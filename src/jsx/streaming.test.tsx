@@ -26,12 +26,12 @@ describe('Streaming', () => {
     }
 
     expect(chunks).toEqual([
-      '<template id="H:0"></template><p>Loading...</p>',
+      '<template id="H:0"></template><p>Loading...</p><!--/$-->',
       `<template><h1>Hello</h1></template><script>
-((d, c) => {
+((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:0')
-d.nextElementSibling.remove()
+while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
 d.replaceWith(c.content)
 })(document)
 </script>`,
@@ -64,12 +64,12 @@ d.replaceWith(c.content)
     }
 
     expect(chunks).toEqual([
-      '<template id="H:1"></template><p>Loading...</p>',
+      '<template id="H:1"></template><p>Loading...</p><!--/$-->',
       `<template><h1>Hello</h1><h2>World</h2></template><script>
-((d, c) => {
+((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:1')
-d.nextElementSibling.remove()
+while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
 d.replaceWith(c.content)
 })(document)
 </script>`,
@@ -106,12 +106,12 @@ d.replaceWith(c.content)
     }
 
     expect(chunks).toEqual([
-      '<template id="H:2"></template><p>Loading...</p>',
+      '<template id="H:2"></template><p>Loading...</p><!--/$-->',
       `<template><h1>Hello</h1><p>paragraph</p></template><script>
-((d, c) => {
+((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:2')
-d.nextElementSibling.remove()
+while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
 d.replaceWith(c.content)
 })(document)
 </script>`,

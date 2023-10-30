@@ -35,16 +35,16 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
     const index = suspenseCounter++
     if (e instanceof Promise) {
       res = new String(
-        `<template id="H:${index}"></template>${fallback.toString()}`
+        `<template id="H:${index}"></template>${fallback.toString()}<!--/$-->`
       ) as HtmlEscapedString
       res.isEscaped = true
       res.promises = [
         e.then(async () => {
           return `<template>${await childrenToString(useContext, children)}</template><script>
-((d, c) => {
+((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${index}')
-d.nextElementSibling.remove()
+while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
 d.replaceWith(c.content)
 })(document)
 </script>`
