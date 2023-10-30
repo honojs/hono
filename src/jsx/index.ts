@@ -86,7 +86,7 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
   }
 }
 
-type Child = string | Promise<string> | number | JSXNode | Child[]
+export type Child = string | Promise<string> | number | JSXNode | Child[]
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
   props: Props
