@@ -142,4 +142,41 @@ d.replaceWith(c.content)
 
     expect(replacementResult(chunks.join(''))).toEqual('<h1>Hello</h1><p>paragraph</p>')
   })
+
+  it('Complex fallback content', async () => {
+    const delayedContent = new Promise<HtmlEscapedString>((resolve) =>
+      setTimeout(() => resolve(<h1>Hello</h1>), 10)
+    )
+
+    const Content = () => {
+      const content = use(delayedContent)
+      return content
+    }
+
+    const stream = renderToReadableStream(
+      <Suspense fallback={<>Loading<span>...</span></>}>
+        <Content />
+      </Suspense>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual([
+      '<template id="H:3"></template>Loading<span>...</span><!--/$-->',
+      `<template><h1>Hello</h1></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:3')
+while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
+d.replaceWith(c.content)
+})(document)
+</script>`,
+    ])
+
+    expect(replacementResult(chunks.join(''))).toEqual('<h1>Hello</h1>')
+  })
 })
