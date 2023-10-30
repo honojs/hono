@@ -1,14 +1,12 @@
-import { Window } from 'happy-dom'
+import { JSDOM } from 'jsdom'
 import type { HtmlEscapedString } from '../utils/html'
 import { Suspense, use, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, Fragment } from './index'
 
 function replacementResult(html: string) {
-  const window = new Window()
-  const document = window.document
-  document.write(html)
-  document.querySelectorAll('template, script').forEach((s) => s.remove())
+  const document = new JSDOM(html, { runScripts: 'dangerously' }).window.document
+  document.querySelectorAll('template, script').forEach((e) => e.remove())
   return document.body.innerHTML
 }
 
@@ -46,7 +44,9 @@ d.replaceWith(c.content)
 </script>`,
     ])
 
-    expect(replacementResult(chunks.join(''))).toEqual('<h1>Hello</h1>')
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<h1>Hello</h1>'
+    )
   })
 
   it('Multiple calls to "use"', async () => {
@@ -91,7 +91,9 @@ d.replaceWith(c.content)
 </script>`,
     ])
 
-    expect(replacementResult(chunks.join(''))).toEqual('<h1>Hello</h1><h2>World</h2>')
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<h1>Hello</h1><h2>World</h2>'
+    )
   })
 
   it('Nested calls to "use"', async () => {
@@ -140,7 +142,9 @@ d.replaceWith(c.content)
 </script>`,
     ])
 
-    expect(replacementResult(chunks.join(''))).toEqual('<h1>Hello</h1><p>paragraph</p>')
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<h1>Hello</h1><p>paragraph</p>'
+    )
   })
 
   it('Complex fallback content', async () => {
@@ -154,7 +158,13 @@ d.replaceWith(c.content)
     }
 
     const stream = renderToReadableStream(
-      <Suspense fallback={<>Loading<span>...</span></>}>
+      <Suspense
+        fallback={
+          <>
+            Loading<span>...</span>
+          </>
+        }
+      >
         <Content />
       </Suspense>
     )
@@ -177,6 +187,8 @@ d.replaceWith(c.content)
 </script>`,
     ])
 
-    expect(replacementResult(chunks.join(''))).toEqual('<h1>Hello</h1>')
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<h1>Hello</h1>'
+    )
   })
 })
