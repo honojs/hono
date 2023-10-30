@@ -1,7 +1,16 @@
+import { Window } from 'happy-dom'
 import type { HtmlEscapedString } from '../utils/html'
 import { Suspense, use, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, Fragment } from './index'
+
+function replacementResult(html: string) {
+  const window = new Window()
+  const document = window.document
+  document.write(html)
+  document.querySelectorAll('template, script').forEach((s) => s.remove())
+  return document.body.innerHTML
+}
 
 describe('Streaming', () => {
   it('Suspense / use / renderToReadableStream', async () => {
@@ -20,7 +29,7 @@ describe('Streaming', () => {
     )
 
     const chunks = []
-    const textDecoder = new TextDecoder
+    const textDecoder = new TextDecoder()
     for await (const chunk of stream as any) {
       chunks.push(textDecoder.decode(chunk))
     }
@@ -36,6 +45,8 @@ d.replaceWith(c.content)
 })(document)
 </script>`,
     ])
+
+    expect(replacementResult(chunks.join(''))).toEqual('<h1>Hello</h1>')
   })
 
   it('Multiple calls to "use"', async () => {
@@ -48,7 +59,12 @@ d.replaceWith(c.content)
     const Content = () => {
       const content = use(delayedContent)
       const content2 = use(delayedContent2)
-      return <>{content}{content2}</>
+      return (
+        <>
+          {content}
+          {content2}
+        </>
+      )
     }
 
     const stream = renderToReadableStream(
@@ -58,7 +74,7 @@ d.replaceWith(c.content)
     )
 
     const chunks = []
-    const textDecoder = new TextDecoder
+    const textDecoder = new TextDecoder()
     for await (const chunk of stream as any) {
       chunks.push(textDecoder.decode(chunk))
     }
@@ -74,6 +90,8 @@ d.replaceWith(c.content)
 })(document)
 </script>`,
     ])
+
+    expect(replacementResult(chunks.join(''))).toEqual('<h1>Hello</h1><h2>World</h2>')
   })
 
   it('Nested calls to "use"', async () => {
@@ -90,7 +108,12 @@ d.replaceWith(c.content)
     }
     const Content = () => {
       const content = use(delayedContent)
-      return <>{content}<SubContent /></>
+      return (
+        <>
+          {content}
+          <SubContent />
+        </>
+      )
     }
 
     const stream = renderToReadableStream(
@@ -100,7 +123,7 @@ d.replaceWith(c.content)
     )
 
     const chunks = []
-    const textDecoder = new TextDecoder
+    const textDecoder = new TextDecoder()
     for await (const chunk of stream as any) {
       chunks.push(textDecoder.decode(chunk))
     }
@@ -116,5 +139,7 @@ d.replaceWith(c.content)
 })(document)
 </script>`,
     ])
+
+    expect(replacementResult(chunks.join(''))).toEqual('<h1>Hello</h1><p>paragraph</p>')
   })
 })
