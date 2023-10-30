@@ -1,4 +1,4 @@
-export type HtmlEscaped = { isEscaped: true }
+export type HtmlEscaped = { isEscaped: true; promises?: Promise<string>[] }
 export type HtmlEscapedString = string & HtmlEscaped
 export type StringBuffer = (string | Promise<string>)[]
 
@@ -7,13 +7,25 @@ export type StringBuffer = (string | Promise<string>)[]
 
 const escapeRe = /[&<>'"]/
 
-export const stringBufferToString = async (buffer: StringBuffer): Promise<string> => {
+export const stringBufferToString = async (buffer: StringBuffer): Promise<HtmlEscapedString> => {
   let str = ''
+  const promises: Promise<string>[] = []
   for (let i = buffer.length - 1; i >= 0; i--) {
-    const r = await buffer[i]
-    str += await (typeof r === 'object' ? (r as HtmlEscapedString).toString() : r)
+    let r = await buffer[i]
+    if (typeof r === 'object') {
+      promises.push(...((r as HtmlEscapedString).promises || []))
+    }
+    r = await (typeof r === 'object' ? (r as HtmlEscapedString).toString() : r)
+    if (typeof r === 'object') {
+      promises.push(...((r as HtmlEscapedString).promises || []))
+    }
+    str += r
   }
-  return str
+
+  const res = new String(str) as HtmlEscapedString
+  res.isEscaped = true
+  res.promises = promises
+  return res
 }
 
 export const escapeToBuffer = (str: string, buffer: StringBuffer): void => {
