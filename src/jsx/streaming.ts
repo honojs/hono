@@ -61,6 +61,7 @@ d.replaceWith(c.content)
 
 const createUseContext = (): number => {
   const newUseContext = useCounter++
+  useContexts[newUseContext] = []
   setUseContext(newUseContext)
   return newUseContext
 }
@@ -73,11 +74,11 @@ const setUseContext = (index: number): void => {
 export const use = <T>(promise: Promise<T>): T => {
   useIndex++
 
-  if (useContexts[currentUseContext]?.[useIndex]) {
+  if (useContexts[currentUseContext][useIndex]) {
     return useContexts[currentUseContext][useIndex]
   }
 
-  promise.then((res) => ((useContexts[currentUseContext] ||= [])[useIndex] = res))
+  promise.then((res) => (useContexts[currentUseContext][useIndex] = res))
 
   throw promise
 }
