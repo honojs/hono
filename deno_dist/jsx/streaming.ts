@@ -59,13 +59,14 @@ d.replaceWith(c.content)
   return res as HtmlEscapedString
 }
 
-export const createUseContext = (): number => {
+const createUseContext = (): number => {
   const newUseContext = useCounter++
+  useContexts[newUseContext] = []
   setUseContext(newUseContext)
   return newUseContext
 }
 
-export const setUseContext = (index: number): void => {
+const setUseContext = (index: number): void => {
   useIndex = -1
   currentUseContext = index
 }
@@ -73,11 +74,11 @@ export const setUseContext = (index: number): void => {
 export const use = <T>(promise: Promise<T>): T => {
   useIndex++
 
-  if (useContexts[currentUseContext]?.[useIndex]) {
+  if (useContexts[currentUseContext][useIndex]) {
     return useContexts[currentUseContext][useIndex]
   }
 
-  promise.then((res) => ((useContexts[currentUseContext] ||= [])[useIndex] = res))
+  promise.then((res) => (useContexts[currentUseContext][useIndex] = res))
 
   throw promise
 }
@@ -90,18 +91,17 @@ export const renderToReadableStream = (
     async start(controller) {
       const resolved = await str.toString()
       controller.enqueue(textEncoder.encode(resolved))
-      if (typeof resolved !== 'object' || !(resolved as HtmlEscapedString).promises?.length) {
+
+      let unresolvedCount = (resolved as HtmlEscapedString).promises?.length || 0
+      if (typeof resolved !== 'object' || !unresolvedCount) {
         controller.close()
         return
       }
 
-      const len = (resolved as HtmlEscapedString).promises?.length
-      let resolvedCount = 0
-      for (const p of (resolved as HtmlEscapedString).promises || []) {
-        p.then((res) => {
-          resolvedCount++
+      for (let i = 0; i < unresolvedCount; i++) {
+        ;((resolved as HtmlEscapedString).promises as Promise<string>[])[i].then((res) => {
           controller.enqueue(textEncoder.encode(res))
-          if (resolvedCount === len) {
+          if (!--unresolvedCount) {
             controller.close()
           }
         })
