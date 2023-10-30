@@ -1,38 +1,55 @@
 import type { HtmlEscapedString } from '../utils/html.ts'
-import type { FC } from './index.ts'
+import type { FC, Child } from './index.ts'
 
 const useContexts: any[][] = []
 
 let suspenseCounter = 0
 let useCounter = 0
 let currentUseContext: number = 0
-let useIndex: number = 0
+let useIndex: number = -1
+
+async function childrenToString(useContext: number, children: Child): Promise<string> {
+  setUseContext(useContext)
+  try {
+    return children.toString()
+  } catch (e) {
+    if (e instanceof Promise) {
+      await e
+      return childrenToString(useContext, children)
+    } else {
+      throw e
+    }
+  }
+}
 
 export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) => {
+  if (!children) {
+    return fallback.toString()
+  }
+
   let res
   const useContext = createUseContext()
   try {
-    res = children?.toString() || ''
+    res = children.toString()
   } catch (e) {
     const index = suspenseCounter++
     if (e instanceof Promise) {
       res = new String(
-        `<template id="H:${index}"></template>${fallback.toString()}`
+        `<template id="H:${index}"></template>${fallback.toString()}<!--/$-->`
       ) as HtmlEscapedString
       res.isEscaped = true
-      ;(res.promises ||= []).push(
-        e.then(() => {
-          setUseContext(useContext)
-          return `<template>${children?.toString() || ''}</template><script>
-((d, c) => {
+      res.promises = [
+        e.then(async () => {
+          return `<template>${await childrenToString(useContext, children)}</template><script>
+((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${index}')
-d.nextElementSibling.remove()
+while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
 d.replaceWith(c.content)
 })(document)
 </script>`
-        })
-      )
+        }),
+      ]
     } else {
       throw e
     }
@@ -47,21 +64,18 @@ export const createUseContext = (): number => {
 }
 
 export const setUseContext = (index: number): void => {
-  useIndex = 0
+  useIndex = -1
   currentUseContext = index
 }
 
-export const use = <T>(promise: Promise<T> | (() => Promise<T>)): T => {
+export const use = <T>(promise: Promise<T>): T => {
   useIndex++
 
-  if (useContexts[currentUseContext]) {
-    return useContexts[currentUseContext][useIndex - 1]
+  if (useContexts[currentUseContext]?.[useIndex]) {
+    return useContexts[currentUseContext][useIndex]
   }
 
-  if (typeof promise === 'function') {
-    promise = promise()
-  }
-  promise.then((res) => ((useContexts[currentUseContext] ||= [])[useIndex - 1] = res))
+  promise.then((res) => ((useContexts[currentUseContext] ||= [])[useIndex] = res))
 
   throw promise
 }
