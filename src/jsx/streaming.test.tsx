@@ -196,4 +196,17 @@ d.replaceWith(c.content)
       '<h1>Hello</h1>'
     )
   })
+
+  it('renderToReadableStream(str: string)', async () => {
+    const str = '<h1>Hello</h1>'
+    const stream = renderToReadableStream(str as HtmlEscapedString)
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual([str])
+  })
 })

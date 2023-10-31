@@ -93,7 +93,7 @@ export const renderToReadableStream = (
       controller.enqueue(textEncoder.encode(resolved))
 
       let unresolvedCount = (resolved as HtmlEscapedString).promises?.length || 0
-      if (typeof resolved !== 'object' || !unresolvedCount) {
+      if (!unresolvedCount) {
         controller.close()
         return
       }
