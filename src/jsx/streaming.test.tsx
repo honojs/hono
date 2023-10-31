@@ -43,7 +43,7 @@ describe('Streaming', () => {
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
-while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
 </script>`,
@@ -90,7 +90,7 @@ d.replaceWith(c.content)
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
-while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
 </script>`,
@@ -141,7 +141,7 @@ d.replaceWith(c.content)
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
-while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
 </script>`,
@@ -186,7 +186,7 @@ d.replaceWith(c.content)
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
-while(n=d.nextSibling){n.remove();if(n.nodeType===8&&n.nodeValue==='/$')break}
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
 </script>`,
