@@ -73,22 +73,24 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return null
   }
 
-  query(key: string): string | undefined
-  query(): Record<string, string>
-  query(key?: string) {
-    return getQueryParam(this.url, key)
+  query<T extends Record<string, string | undefined>>(): T
+  query<T extends Record<string, string | undefined>, K = keyof T>(
+    key: K
+  ): K extends string ? T[K] : undefined
+  query<T extends Record<string, string | undefined>>(key?: keyof T) {
+    return getQueryParam(this.url, key as string)
   }
 
-  queries(key: string): string[] | undefined
-  queries(): Record<string, string[]>
-  queries(key?: string) {
-    return getQueryParams(this.url, key)
+  queries<T extends Record<string, string[]>>(): T
+  queries<T extends Record<string, string[]>>(key: keyof T): string[]
+  queries<T extends Record<string, string[]>>(key?: keyof T) {
+    return getQueryParams(this.url, key as string)
   }
 
-  header(name: string): string | undefined
-  header(): Record<string, string>
-  header(name?: string) {
-    if (name) return this.raw.headers.get(name.toLowerCase()) ?? undefined
+  header<T extends Record<string, string>>(): T
+  header<T extends Record<string, string>>(name: keyof T): string
+  header<T extends Record<string, string>>(name?: keyof T) {
+    if (name) return this.raw.headers.get((name as string).toLowerCase()) ?? undefined
 
     const headerData: Record<string, string | undefined> = {}
     this.raw.headers.forEach((value, key) => {
