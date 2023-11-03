@@ -6,7 +6,7 @@ type FilePathOptions = {
 
 export const getFilePath = (options: FilePathOptions): string | undefined => {
   let filename = options.filename
-  if (/(?:^|\/)\.\.(?:$|\/)/.test(filename)) return
+  if (/(?:^|[\/\\])\.\.(?:$|[\/\\])/.test(filename)) return
 
   let root = options.root || ''
   const defaultDocument = options.defaultDocument || 'index.html'
@@ -20,7 +20,10 @@ export const getFilePath = (options: FilePathOptions): string | undefined => {
   }
 
   // /foo.html => foo.html
-  filename = filename.replace(/^\.?\//, '')
+  filename = filename.replace(/^\.?[\/\\]/, '')
+
+  // foo\bar.txt => foo/bar.txt
+  filename = filename.replace(/\\/, '/')
 
   // assets/ => assets
   root = root.replace(/\/$/, '')

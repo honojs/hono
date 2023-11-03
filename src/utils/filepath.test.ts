@@ -25,5 +25,18 @@ describe('getFilePath', () => {
     expect(getFilePath({ filename: './..foo/bar.txt' })).toBe('..foo/bar.txt')
     expect(getFilePath({ filename: './foo../bar.txt' })).toBe('foo../bar.txt')
     expect(getFilePath({ filename: './..foo../bar.txt' })).toBe('..foo../bar.txt')
+
+    expect(getFilePath({ filename: slashToBackslash('/../foo') })).toBeUndefined()
+    expect(getFilePath({ filename: slashToBackslash('./../foo') })).toBeUndefined()
+    expect(getFilePath({ filename: slashToBackslash('foo..bar.txt') })).toBe('foo..bar.txt')
+    expect(getFilePath({ filename: slashToBackslash('/foo..bar.txt') })).toBe('foo..bar.txt')
+    expect(getFilePath({ filename: slashToBackslash('./foo..bar.txt') })).toBe('foo..bar.txt')
+    expect(getFilePath({ filename: slashToBackslash('./..foo/bar.txt') })).toBe('..foo/bar.txt')
+    expect(getFilePath({ filename: slashToBackslash('./foo../bar.txt') })).toBe('foo../bar.txt')
+    expect(getFilePath({ filename: slashToBackslash('./..foo../bar.txt') })).toBe('..foo../bar.txt')
   })
 })
+
+function slashToBackslash(filename: string) {
+  return filename.split('/').join('\\')
+}
