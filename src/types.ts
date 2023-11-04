@@ -27,6 +27,8 @@ export type Input = {
   out?: Partial<{ [K in keyof ValidationTargets]: unknown }>
 }
 
+export type RoutePath = string | string[]
+
 ////////////////////////////////////////
 //////                            //////
 //////          Handlers          //////
@@ -162,7 +164,7 @@ export interface HandlerInterface<
   ////  app.get(path)
 
   // app.get(path)
-  <P extends string, R extends HandlerResponse<any> = any, I extends Input = {}>(path: P): Hono<
+  <P = RoutePath, R extends HandlerResponse<any> = any, I extends Input = {}>(path: P): Hono<
     E,
     S & ToSchema<M, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>,
     BasePath
@@ -172,8 +174,8 @@ export interface HandlerInterface<
 
   // app.get(path, handler)
   <
-    P extends string,
-    P2 extends string = P,
+    P = RoutePath,
+    P2 = P,
     R extends HandlerResponse<any> = any,
     I extends Input = {},
     E2 extends Env = E
@@ -184,9 +186,9 @@ export interface HandlerInterface<
 
   // app.get(path, handler, handler)
   <
-    P extends string,
-    P2 extends string = P,
-    P3 extends string = P,
+    P = RoutePath,
+    P2 = P,
+    P3 = P,
     R extends HandlerResponse<any> = any,
     I extends Input = {},
     E2 extends Env = E,
@@ -198,10 +200,10 @@ export interface HandlerInterface<
 
   // app.get(path, handler x3)
   <
-    P extends string,
-    P2 extends string = P,
-    P3 extends string = P,
-    P4 extends string = P,
+    P = RoutePath,
+    P2 = P,
+    P3 = P,
+    P4 = P,
     R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
@@ -220,11 +222,11 @@ export interface HandlerInterface<
 
   // app.get(path, handler x4)
   <
-    P extends string,
-    P2 extends string = P,
-    P3 extends string = P,
-    P4 extends string = P,
-    P5 extends string = P,
+    P = RoutePath,
+    P2 = P,
+    P3 = P,
+    P4 = P,
+    P5 = P,
     R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
@@ -246,12 +248,12 @@ export interface HandlerInterface<
 
   // app.get(path, handler x5)
   <
-    P extends string,
-    P2 extends string = P,
-    P3 extends string = P,
-    P4 extends string = P,
-    P5 extends string = P,
-    P6 extends string = P,
+    P = RoutePath,
+    P2 = P,
+    P3 = P,
+    P4 = P,
+    P5 = P,
+    P6 = P,
     R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
@@ -275,7 +277,7 @@ export interface HandlerInterface<
   ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I5['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(path, ...handlers[])
-  <P extends string, I extends Input = {}, R extends HandlerResponse<any> = any>(
+  <P = RoutePath, I extends Input = {}, R extends HandlerResponse<any> = any>(
     path: P,
     ...handlers: H<E, MergePath<BasePath, P>, I, R>[]
   ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>, BasePath>
@@ -298,7 +300,7 @@ export interface MiddlewareHandlerInterface<
   ): Hono<E, S, BasePath>
 
   //// app.get(path, ...handlers[])
-  <P extends string, E2 extends Env = E>(
+  <P = RoutePath, E2 extends Env = E>(
     path: P,
     ...handlers: MiddlewareHandler<E2, MergePath<BasePath, P>>[]
   ): Hono<E, S, BasePath>
@@ -319,8 +321,8 @@ export interface OnHandlerInterface<
   <
     M extends string,
     P extends string,
-    P2 extends string = P,
-    P3 extends string = P,
+    P2 = P,
+    P3 = P,
     R extends HandlerResponse<any> = any,
     I extends Input = {},
     E2 extends Env = E,
@@ -335,9 +337,9 @@ export interface OnHandlerInterface<
   <
     M extends string,
     P extends string,
-    P2 extends string = P,
-    P3 extends string = P,
-    P4 extends string = P,
+    P2 = P,
+    P3 = P,
+    P4 = P,
     R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
@@ -358,10 +360,10 @@ export interface OnHandlerInterface<
   <
     M extends string,
     P extends string,
-    P2 extends string = P,
-    P3 extends string = P,
-    P4 extends string = P,
-    P5 extends string = P,
+    P2 = P,
+    P3 = P,
+    P4 = P,
+    P5 = P,
     R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
@@ -386,11 +388,11 @@ export interface OnHandlerInterface<
   <
     M extends string,
     P extends string,
-    P2 extends string = P,
-    P3 extends string = P,
-    P4 extends string = P,
-    P5 extends string = P,
-    P6 extends string = P,
+    P2 = P,
+    P3 = P,
+    P4 = P,
+    P5 = P,
+    P6 = P,
     R extends HandlerResponse<any> = any,
     I extends Input = {},
     I2 extends Input = I,
@@ -474,18 +476,22 @@ export type AddParam<I, P extends string> = ParamKeys<P> extends never
 
 type AddDollar<T extends string> = `$${Lowercase<T>}`
 
-export type MergePath<A extends string, B extends string> = A extends ''
+export type MergePath<A extends string, B = RoutePath> = A extends ''
   ? B
   : A extends '/'
   ? B
   : A extends `${infer P}/`
   ? B extends `/${infer Q}`
     ? `${P}/${Q}`
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     : `${P}/${B}`
   : B extends `/${infer Q}`
   ? Q extends ''
     ? A
     : `${A}/${Q}`
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
   : `${A}/${B}`
 
 ////////////////////////////////////////

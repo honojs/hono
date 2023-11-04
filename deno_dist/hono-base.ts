@@ -20,6 +20,7 @@ import type {
   MergeSchemaPath,
   FetchEventLike,
   Schema,
+  RoutePath
 } from './types.ts'
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url.ts'
 
@@ -86,11 +87,15 @@ class Hono<
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.map((method) => {
-      this[method] = (args1: string | H, ...args: H[]) => {
+      this[method] = (args1: RoutePath | H, ...args: H[]) => {
         if (typeof args1 === 'string') {
-          this.path = args1
+          this.path = args1 as string
+        } else if (typeof args1 === 'object' && args1.every((path) => typeof path === 'string')) {
+          for (const path of args1) {
+            this[method](path, ...args)
+          }
         } else {
-          this.addRoute(method, this.path, args1)
+          this.addRoute(method, this.path, args1 as H)
         }
         args.map((handler) => {
           if (typeof handler !== 'string') {
@@ -102,7 +107,9 @@ class Hono<
     })
 
     // Implementation of app.on(method, path, ...handlers[])
-    this.on = (method: string | string[], path: string, ...handlers: H[]) => {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore NOTE: add on
+    this.on = (method: string, path: string, ...handlers: H[]) => {
       if (!method) return this
       this.path = path
       for (const m of [method].flat()) {
@@ -115,11 +122,15 @@ class Hono<
 
     // Implementation of app.use(...handlers[]) or app.get(path, ...handlers[])
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.use = (arg1: string | MiddlewareHandler<any>, ...handlers: MiddlewareHandler<any>[]) => {
+    this.use = (arg1: RoutePath | MiddlewareHandler<any>, ...handlers: MiddlewareHandler<any>[]) => {
       if (typeof arg1 === 'string') {
         this.path = arg1
+      } else if (typeof arg1 === 'object' && arg1.every((path) => typeof path === 'string')) {
+        for (const path of arg1) {
+          this.use(path, ...handlers)
+        }
       } else {
-        handlers.unshift(arg1)
+        handlers.unshift(arg1 as MiddlewareHandler<any>)
       }
       handlers.map((handler) => {
         this.addRoute(METHOD_NAME_ALL, this.path, handler)

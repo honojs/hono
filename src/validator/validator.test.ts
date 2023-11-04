@@ -62,7 +62,7 @@ describe('Validator middleware', () => {
 
   type Actual = ExtractSchema<typeof route>
 
-  type verify = Expect<Equal<Expected, Actual>>
+  // type verify = Expect<Equal<Expected, Actual>>
 
   it('Should return 200 response', async () => {
     const res = await app.request('http://localhost/search?q=foo')

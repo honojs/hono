@@ -2742,3 +2742,30 @@ describe('c.var - with testing types', () => {
     } catch {}
   })
 })
+
+describe('Multiple path configuration for routing', () => {
+  const app = new Hono()
+
+  app.get(['/hi', '/hey'], (c) => c.text('hello'))
+  app.post(['/foo', '/bar'], (c) => c.text('baz'))
+  app.use(['/middleware/*'], poweredBy())
+
+  // @ts-ignore
+  it('Should be returned the same result', async (c) => {
+    const hi = await app.request('/hi')
+    const hey = await app.request('/hey')
+
+    expect(await hi.text()).toBe('hello')
+    expect(await hey.text()).toBe('hello')
+    
+    const foo = await app.request('/foo')
+    const bar = await app.request('/bar')
+
+    expect(await foo.text()).toBe('baz')
+    expect(await bar.text()).toBe('baz')
+
+    const middleware = await app.request('/middleware/' + Date.now())
+
+    expect(middleware.status).toBe(200)
+  })
+})
