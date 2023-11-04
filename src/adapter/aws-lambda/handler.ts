@@ -1,15 +1,11 @@
 // @denoify-ignore
 import crypto from 'crypto'
-import { pipeline } from 'stream'
-import { promisify } from 'util'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 
 import { encodeBase64 } from '../../utils/encode'
 import type { ApiGatewayRequestContext, LambdaFunctionUrlRequestContext } from './custom-context'
 import type { LambdaContext } from './types'
-
-const pipelineAsync = promisify(pipeline)
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -68,6 +64,18 @@ const getRequestContext = (
   return event.requestContext
 }
 
+const streamToNodeStream = async (
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  writer: NodeJS.WritableStream
+) => {
+  let readResult = await reader.read()
+  while (!readResult.done) {
+    writer.write(readResult.value)
+    readResult = await reader.read()
+  }
+  writer.end()
+}
+
 export const streamHandle = <
   E extends Env = Env,
   S extends Schema = {},
@@ -96,9 +104,8 @@ export const streamHandle = <
           console.warn('Content Type is not set in the response.')
         }
 
-        // Stream the response body if present
         if (res.body) {
-          await pipelineAsync(res.body, responseStream)
+          await streamToNodeStream(res.body.getReader(), responseStream)
         }
       } catch (error) {
         console.error('Error processing request:', error)
