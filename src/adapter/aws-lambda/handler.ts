@@ -9,14 +9,14 @@ import { encodeBase64 } from '../../utils/encode'
 import type { ApiGatewayRequestContext, LambdaFunctionUrlRequestContext } from './custom-context'
 import type { LambdaContext } from './types'
 
-const pipelineAsync = promisify(pipeline)
+const pipelineAsync = promisify(pipeline);
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 globalThis.crypto ??= crypto
 
 // When calling Lambda directly through function urls
-interface APIGatewayProxyEventV2 {
+export interface APIGatewayProxyEventV2 {
   httpMethod: string
   headers: Record<string, string | undefined>
   cookies?: string[]
@@ -28,7 +28,7 @@ interface APIGatewayProxyEventV2 {
 }
 
 // When calling Lambda through an API Gateway or an ELB
-interface APIGatewayProxyEvent {
+export interface APIGatewayProxyEvent {
   httpMethod: string
   headers: Record<string, string | undefined>
   multiValueHeaders?: {
@@ -42,7 +42,7 @@ interface APIGatewayProxyEvent {
 }
 
 // When calling Lambda through an Lambda Function URLs
-interface LambdaFunctionUrlEvent {
+export interface LambdaFunctionUrlEvent {
   headers: Record<string, string | undefined>
   rawPath: string
   rawQueryString: string
