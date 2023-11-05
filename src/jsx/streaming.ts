@@ -84,7 +84,7 @@ const setUseContext = (index: number): void => {
 export const use = <T>(promise: Promise<T>): T => {
   useIndex++
 
-  if (useContexts[currentUseContext][useIndex]) {
+  if (useIndex in useContexts[currentUseContext]) {
     return useContexts[currentUseContext][useIndex]
   }
 
