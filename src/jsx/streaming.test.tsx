@@ -1,6 +1,6 @@
 import { JSDOM } from 'jsdom'
 import type { HtmlEscapedString } from '../utils/html'
-import { Suspense, use, renderToReadableStream } from './streaming'
+import { Suspense, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, Fragment } from './index'
 
@@ -73,47 +73,9 @@ d.replaceWith(c.content)
     expect(chunks).toEqual(['<h1>Hello</h1>'])
   })
 
-  it('use()', async () => {
-    const delayedContent = new Promise<HtmlEscapedString>((resolve) =>
-      setTimeout(() => resolve(<h1>Hello</h1>), 10)
-    )
-    const Content = () => {
-      const content = use(delayedContent)
-      return content
-    }
-
-    const stream = renderToReadableStream(
-      <Suspense fallback={<p>Loading...</p>}>
-        <Content />
-      </Suspense>
-    )
-
-    const chunks = []
-    const textDecoder = new TextDecoder()
-    for await (const chunk of stream as any) {
-      chunks.push(textDecoder.decode(chunk))
-    }
-
-    expect(chunks).toEqual([
-      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><h1>Hello</h1></template><script>
-((d,c,n) => {
-c=d.currentScript.previousSibling
-d=d.getElementById('H:${suspenseCounter}')
-do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
-d.replaceWith(c.content)
-})(document)
-</script>`,
-    ])
-
-    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
-      '<h1>Hello</h1>'
-    )
-  })
-
   it('resolve(undefined)', async () => {
-    const Content = () => {
-      const content = use(Promise.resolve(undefined))
+    const Content = async () => {
+      const content = await Promise.resolve(undefined)
       return <p>{content}</p>
     }
 
@@ -145,8 +107,8 @@ d.replaceWith(c.content)
   })
 
   it('resolve(null)', async () => {
-    const Content = () => {
-      const content = use(Promise.resolve(null))
+    const Content = async () => {
+      const content = await Promise.resolve(null)
       return <p>{content}</p>
     }
 
@@ -179,8 +141,8 @@ d.replaceWith(c.content)
 
   // This test should end successfully , but vitest catches the global unhandledRejection and makes an error, so it temporarily skips
   it.skip('reject()', async () => {
-    const Content = () => {
-      const content = use(Promise.reject())
+    const Content = async () => {
+      const content = await Promise.reject()
       return <p>{content}</p>
     }
 
@@ -213,9 +175,9 @@ d.replaceWith(c.content)
     const delayedContent2 = new Promise<HtmlEscapedString>((resolve) =>
       setTimeout(() => resolve(<h2>World</h2>), 10)
     )
-    const Content = () => {
-      const content = use(delayedContent)
-      const content2 = use(delayedContent2)
+    const Content = async () => {
+      const content = await delayedContent
+      const content2 = await delayedContent2
       return (
         <>
           {content}
@@ -253,64 +215,13 @@ d.replaceWith(c.content)
     )
   })
 
-  it('Nested calls to "use"', async () => {
-    const delayedContent = new Promise<HtmlEscapedString>((resolve) =>
-      setTimeout(() => resolve(<h1>Hello</h1>), 10)
-    )
-    const delayedContent2 = new Promise<HtmlEscapedString>((resolve) =>
-      setTimeout(() => resolve(<p>paragraph</p>), 10)
-    )
-
-    const SubContent = () => {
-      const content = use(delayedContent2)
-      return <>{content}</>
-    }
-    const Content = () => {
-      const content = use(delayedContent)
-      return (
-        <>
-          {content}
-          <SubContent />
-        </>
-      )
-    }
-
-    const stream = renderToReadableStream(
-      <Suspense fallback={<p>Loading...</p>}>
-        <Content />
-      </Suspense>
-    )
-
-    const chunks = []
-    const textDecoder = new TextDecoder()
-    for await (const chunk of stream as any) {
-      chunks.push(textDecoder.decode(chunk))
-    }
-
-    expect(chunks).toEqual([
-      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><h1>Hello</h1><p>paragraph</p></template><script>
-((d,c,n) => {
-c=d.currentScript.previousSibling
-d=d.getElementById('H:${suspenseCounter}')
-do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
-d.replaceWith(c.content)
-})(document)
-</script>`,
-    ])
-
-    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
-      '<h1>Hello</h1><p>paragraph</p>'
-    )
-  })
-
   it('Complex fallback content', async () => {
     const delayedContent = new Promise<HtmlEscapedString>((resolve) =>
       setTimeout(() => resolve(<h1>Hello</h1>), 10)
     )
 
-    const Content = () => {
-      const content = use(delayedContent)
+    const Content = async () => {
+      const content = await delayedContent
       return content
     }
 

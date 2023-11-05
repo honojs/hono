@@ -1,22 +1,15 @@
 import type { HtmlEscapedString } from '../utils/html.ts'
 import type { FC, Child } from './index.ts'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const useContexts: any[][] = []
-
 let suspenseCounter = 0
-let useCounter = 0
-let currentUseContext: number = 0
-let useIndex: number = -1
 
-async function childrenToString(useContext: number, children: Child): Promise<string> {
-  setUseContext(useContext)
+async function childrenToString(children: Child): Promise<string> {
   try {
     return children.toString()
   } catch (e) {
     if (e instanceof Promise) {
       await e
-      return childrenToString(useContext, children)
+      return childrenToString(children)
     } else {
       throw e
     }
@@ -35,7 +28,6 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
   }
 
   let res
-  const useContext = createUseContext()
   try {
     res = children.toString()
   } catch (e) {
@@ -54,7 +46,7 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
       res.isEscaped = true
       res.promises = [
         promise.then(async () => {
-          return `<template>${await childrenToString(useContext, children)}</template><script>
+          return `<template>${await childrenToString(children)}</template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${index}')
@@ -67,35 +59,6 @@ d.replaceWith(c.content)
     }
   }
   return res as HtmlEscapedString
-}
-
-const createUseContext = (): number => {
-  const newUseContext = useCounter++
-  useContexts[newUseContext] = []
-  setUseContext(newUseContext)
-  return newUseContext
-}
-
-const setUseContext = (index: number): void => {
-  useIndex = -1
-  currentUseContext = index
-}
-
-/**
- * @experimental
- * `use()` is an experimental feature.
- * The API might be changed.
- */
-export const use = <T>(promise: Promise<T>): T => {
-  useIndex++
-
-  if (useIndex in useContexts[currentUseContext]) {
-    return useContexts[currentUseContext][useIndex]
-  }
-
-  promise.then((res) => (useContexts[currentUseContext][useIndex] = res))
-
-  throw promise
 }
 
 const textEncoder = new TextEncoder()
