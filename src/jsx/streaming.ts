@@ -114,12 +114,17 @@ export const renderToReadableStream = (
       }
 
       for (let i = 0; i < unresolvedCount; i++) {
-        ;((resolved as HtmlEscapedString).promises as Promise<string>[])[i].then((res) => {
-          controller.enqueue(textEncoder.encode(res))
-          if (!--unresolvedCount) {
-            controller.close()
-          }
-        })
+        ;((resolved as HtmlEscapedString).promises as Promise<string>[])[i]
+          .catch((err) => {
+            console.trace(err)
+            return ''
+          })
+          .then((res) => {
+            controller.enqueue(textEncoder.encode(res))
+            if (!--unresolvedCount) {
+              controller.close()
+            }
+          })
       }
     },
   })

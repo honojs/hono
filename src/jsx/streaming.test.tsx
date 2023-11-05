@@ -120,6 +120,35 @@ d.replaceWith(c.content)
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual('<p></p>')
   })
 
+  // This test should end successfully , but vitest catches the global unhandledRejection and makes an error, so it temporarily skips
+  it.skip('reject()', async () => {
+    const Content = () => {
+      const content = use(Promise.reject())
+      return <p>{content}</p>
+    }
+
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Content />
+      </Suspense>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual([
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
+      '',
+    ])
+
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<p>Loading...</p><!--/$-->'
+    )
+  })
+
   it('Multiple calls to "use"', async () => {
     const delayedContent = new Promise<HtmlEscapedString>((resolve) =>
       setTimeout(() => resolve(<h1>Hello</h1>), 10)
