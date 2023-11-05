@@ -119,6 +119,11 @@
       "import": "./dist/jsx/jsx-runtime.js",
       "require": "./dist/cjs/jsx/jsx-runtime.js"
     },
+    "./jsx/streaming": {
+      "types": "./dist/types/jsx/streaming.d.ts",
+      "import": "./dist/jsx/streaming.js",
+      "require": "./dist/cjs/jsx/streaming.js"
+    },
     "./jsx-renderer": {
       "types": "./dist/types/middleware/jsx-renderer/index.d.ts",
       "import": "./dist/middleware/jsx-renderer/index.js",
@@ -303,6 +308,9 @@
       ],
       "jsx/jsx-dev-runtime": [
         "./dist/types/jsx/jsx-dev-runtime.d.ts"
+      ],
+      "jsx/streaming": [
+        "./dist/types/jsx/streaming.d.ts"
       ],
       "jsx-renderer": [
         "./dist/types/middleware/jsx-renderer"
