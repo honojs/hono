@@ -23,6 +23,11 @@ async function childrenToString(useContext: number, children: Child): Promise<st
   }
 }
 
+/**
+ * @experimental
+ * `Suspense` is an experimental feature.
+ * The API might be changed.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) => {
   if (!children) {
@@ -71,10 +76,15 @@ const setUseContext = (index: number): void => {
   currentUseContext = index
 }
 
+/**
+ * @experimental
+ * `use()` is an experimental feature.
+ * The API might be changed.
+ */
 export const use = <T>(promise: Promise<T>): T => {
   useIndex++
 
-  if (useContexts[currentUseContext][useIndex]) {
+  if (useIndex in useContexts[currentUseContext]) {
     return useContexts[currentUseContext][useIndex]
   }
 
@@ -84,6 +94,11 @@ export const use = <T>(promise: Promise<T>): T => {
 }
 
 const textEncoder = new TextEncoder()
+/**
+ * @experimental
+ * `renderToReadableStream()` is an experimental feature.
+ * The API might be changed.
+ */
 export const renderToReadableStream = (
   str: HtmlEscapedString | Promise<HtmlEscapedString>
 ): ReadableStream<Uint8Array> => {
@@ -99,12 +114,17 @@ export const renderToReadableStream = (
       }
 
       for (let i = 0; i < unresolvedCount; i++) {
-        ;((resolved as HtmlEscapedString).promises as Promise<string>[])[i].then((res) => {
-          controller.enqueue(textEncoder.encode(res))
-          if (!--unresolvedCount) {
-            controller.close()
-          }
-        })
+        ;((resolved as HtmlEscapedString).promises as Promise<string>[])[i]
+          .catch((err) => {
+            console.trace(err)
+            return ''
+          })
+          .then((res) => {
+            controller.enqueue(textEncoder.encode(res))
+            if (!--unresolvedCount) {
+              controller.close()
+            }
+          })
       }
     },
   })
