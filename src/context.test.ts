@@ -27,7 +27,7 @@ describe('Context', () => {
   })
 
   it('c.html()', async () => {
-    const res = c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
+    const res = await c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
     expect(res.headers.get('Content-Type')).toMatch('text/html')
     expect(await res.text()).toBe('<h1>Hello! Hono!</h1>')
@@ -60,7 +60,7 @@ describe('Context', () => {
 
   it('c.header() - append, c.html()', async () => {
     c.header('X-Foo', 'Bar', { append: true })
-    const res = c.html('<h1>This rendered fine</h1>')
+    const res = await c.html('<h1>This rendered fine</h1>')
     expect(res.headers.get('content-type')).toMatch(/^text\/html/)
   })
 
@@ -189,11 +189,11 @@ describe('Context header', () => {
   })
   it('Should return only one content-type value', async () => {
     c.header('Content-Type', 'foo')
-    const res = c.html('foo')
+    const res = await c.html('foo')
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
   })
   it('Should rewrite header values correctly', async () => {
-    c.res = c.html('foo')
+    c.res = await c.html('foo')
     const res = c.text('foo')
     expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
   })
@@ -257,7 +257,7 @@ describe('Pass a ResponseInit to respond methods', () => {
 
   it('c.html()', async () => {
     const originalResponse = new Response('foo')
-    const res = c.html('<h1>foo</h1>', originalResponse)
+    const res = await c.html('<h1>foo</h1>', originalResponse)
     expect(res.headers.get('content-type')).toMatch(/^text\/html/)
     expect(await res.text()).toBe('<h1>foo</h1>')
   })
@@ -306,7 +306,7 @@ describe('Pass a ResponseInit to respond methods', () => {
 
 declare module './context' {
   interface ContextRenderer {
-    (content: string, head: { title: string }): Response
+    (content: string | Promise<string>, head: { title: string }): Response | Promise<Response>
   }
 }
 
@@ -319,7 +319,7 @@ describe('c.render', () => {
 
   it('Should return a Response from the default renderer', async () => {
     c.header('foo', 'bar')
-    const res = c.render('<h1>content</h1>', { title: 'dummy ' })
+    const res = await c.render('<h1>content</h1>', { title: 'dummy ' })
     expect(res.headers.get('foo')).toBe('bar')
     expect(await res.text()).toBe('<h1>content</h1>')
   })
@@ -329,7 +329,7 @@ describe('c.render', () => {
       return c.html(`<html><head>${head.title}</head><body>${content}</body></html>`)
     })
     c.header('foo', 'bar')
-    const res = c.render('<h1>content</h1>', { title: 'title' })
+    const res = await c.render('<h1>content</h1>', { title: 'title' })
     expect(res.headers.get('foo')).toBe('bar')
     expect(await res.text()).toBe('<html><head>title</head><body><h1>content</h1></body></html>')
   })
