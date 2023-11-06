@@ -67,6 +67,50 @@ describe('JSX middleware', () => {
         </body>
       </html>`)
   })
+
+  it('Should render async component', async () => {
+    const ChildAsyncComponent = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      return <span>child async component</span>
+    }
+
+    const AsyncComponent = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      return (
+        <h1>
+          Hello from async component
+          <ChildAsyncComponent />
+        </h1>
+      )
+    }
+
+    app.get('/', (c) => {
+      return c.html(<AsyncComponent />)
+    })
+    const res = await app.request('http://localhost/')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(await res.text()).toBe(
+      '<h1>Hello from async component<span>child async component</span></h1>'
+    )
+  })
+
+  it('Should render async component with "html" tagged template strings', async () => {
+    const AsyncComponent = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      return <h1>Hello from async component</h1>
+    }
+
+    app.get('/', (c) => {
+      return c.html(
+        html`<html><body>${(<AsyncComponent />)}</body></html>`
+      )
+    })
+    const res = await app.request('http://localhost/')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(await res.text()).toBe('<html><body><h1>Hello from async component</h1></body></html>')
+  })
 })
 
 describe('render to string', () => {

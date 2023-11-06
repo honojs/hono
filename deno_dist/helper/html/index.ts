@@ -1,4 +1,4 @@
-import { escapeToBuffer } from '../../utils/html.ts'
+import { escapeToBuffer, stringBufferToString } from '../../utils/html.ts'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html.ts'
 
 export const raw = (value: unknown): HtmlEscapedString => {
@@ -8,7 +8,10 @@ export const raw = (value: unknown): HtmlEscapedString => {
   return escapedString
 }
 
-export const html = (strings: TemplateStringsArray, ...values: unknown[]): HtmlEscapedString => {
+export const html = (
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+): HtmlEscapedString | Promise<HtmlEscapedString> => {
   const buffer: StringBuffer = ['']
 
   for (let i = 0, len = strings.length - 1; i < len; i++) {
@@ -27,7 +30,12 @@ export const html = (strings: TemplateStringsArray, ...values: unknown[]): HtmlE
         (typeof child === 'object' && (child as HtmlEscaped).isEscaped) ||
         typeof child === 'number'
       ) {
-        buffer[0] += child
+        const tmp = child.toString()
+        if (tmp instanceof Promise) {
+          buffer.unshift('', tmp)
+        } else {
+          buffer[0] += tmp
+        }
       } else {
         escapeToBuffer(child.toString(), buffer)
       }
@@ -35,5 +43,5 @@ export const html = (strings: TemplateStringsArray, ...values: unknown[]): HtmlE
   }
   buffer[0] += strings[strings.length - 1]
 
-  return raw(buffer[0])
+  return buffer.length === 1 ? raw(buffer[0]) : stringBufferToString(buffer).then((str) => raw(str))
 }
