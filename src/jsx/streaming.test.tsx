@@ -1,4 +1,5 @@
 import { JSDOM } from 'jsdom'
+import { raw } from '../helper/html'
 import type { HtmlEscapedString } from '../utils/html'
 import { Suspense, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -262,7 +263,7 @@ d.replaceWith(c.content)
 
   it('renderToReadableStream(str: string)', async () => {
     const str = '<h1>Hello</h1>'
-    const stream = renderToReadableStream(str as HtmlEscapedString)
+    const stream = renderToReadableStream(raw(str))
 
     const chunks = []
     const textDecoder = new TextDecoder()
@@ -271,5 +272,17 @@ d.replaceWith(c.content)
     }
 
     expect(chunks).toEqual([str])
+  })
+
+  it('renderToReadableStream(promise: Promise<HtmlEscapedString>)', async () => {
+    const stream = renderToReadableStream(Promise.resolve(raw('<h1>Hello</h1>')))
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual(['<h1>Hello</h1>'])
   })
 })
