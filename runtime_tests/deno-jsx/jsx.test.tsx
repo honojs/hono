@@ -1,3 +1,4 @@
+/** @jsxImportSource ../../deno_dist/jsx */
 import { Suspense, renderToReadableStream } from '../../deno_dist/jsx/streaming.ts'
 import type { HtmlEscapedString } from '../../deno_dist/utils/html.ts'
 import { assertEquals } from '../deno/deps.ts'
@@ -34,7 +35,7 @@ Deno.test('JSX: Async Component', async () => {
     </div>
   )
 
-  const chunks = []
+  const chunks: string[] = []
   const textDecoder = new TextDecoder()
   for await (const chunk of stream as any) {
     chunks.push(textDecoder.decode(chunk))
@@ -57,7 +58,7 @@ Deno.test('JSX: Suspense', async () => {
     </Suspense>
   )
 
-  const chunks = []
+  const chunks: string[] = []
   const textDecoder = new TextDecoder()
   for await (const chunk of stream as any) {
     chunks.push(textDecoder.decode(chunk))
