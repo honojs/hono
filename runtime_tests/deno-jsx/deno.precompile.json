@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxImportSource": "hono/jsx"
+  },
+  "imports": {
+    "hono": "./../deno_dist/hono.ts",
+    "hono/jsx/jsx-runtime": "../../deno_dist/jsx/jsx-runtime.ts",
+    "hono/jsx/streaming": "../../deno_dist/jsx/streaming.ts"
+  }
+}
