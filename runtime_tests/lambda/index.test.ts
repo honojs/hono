@@ -490,4 +490,39 @@ describe('streamHandle function', () => {
     console.log(res)
     expect(chunks.join('')).toContain('0\n1\n2\n3\n')
   })
+
+  it('Should handle a GET request for an SSE stream and return the correct chunks', async () => {
+    const event = {
+      headers: { 'content-type': 'text/event-stream' },
+      rawPath: '/sse',
+      rawQueryString: '',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testLambdaFunctionUrlRequestContext,
+    }
+
+    testLambdaFunctionUrlRequestContext.http.method = 'GET'
+
+    const mockReadableStream = new Readable({
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      read() {},
+    })
+
+    mockReadableStream.push('data: Message\ndata: It is 0\n\n')
+    mockReadableStream.push('data: Message\ndata: It is 1\n\n')
+    mockReadableStream.push('event: close\ndata: Stream closed\n\n')
+    mockReadableStream.push(null) // EOF
+
+    const res = await handler(event, mockReadableStream)
+
+    const chunks = []
+    for await (const chunk of mockReadableStream) {
+      chunks.push(chunk)
+    }
+
+    // If you have chunks, you might want to convert them to strings before checking
+    const output = Buffer.concat(chunks).toString()
+    expect(output).toContain('data: Message\ndata: It is 0\n\n')
+    expect(output).toContain('data: Message\ndata: It is 1\n\n')
+  })
 })
