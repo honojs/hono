@@ -510,10 +510,9 @@ describe('streamHandle function', () => {
 
     mockReadableStream.push('data: Message\ndata: It is 0\n\n')
     mockReadableStream.push('data: Message\ndata: It is 1\n\n')
-    mockReadableStream.push('event: close\ndata: Stream closed\n\n')
     mockReadableStream.push(null) // EOF
 
-    const res = await handler(event, mockReadableStream)
+    await handler(event, mockReadableStream)
 
     const chunks = []
     for await (const chunk of mockReadableStream) {
