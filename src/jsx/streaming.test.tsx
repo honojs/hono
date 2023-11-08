@@ -66,7 +66,7 @@ d.replaceWith(c.content)
       if (!resolvedContent) {
         throw new Promise<void>((resolve) =>
           setTimeout(() => {
-            resolvedContent = <p>thrown a promise then resolved</p> as HtmlEscapedString
+            resolvedContent = (<p>thrown a promise then resolved</p>) as HtmlEscapedString
             resolve()
           }, 10)
         )
@@ -219,7 +219,7 @@ d.replaceWith(c.content)
     )
   })
 
-  it('Multiple calls to "use"', async () => {
+  it('Multiple "await" call', async () => {
     const delayedContent = new Promise<HtmlEscapedString>((resolve) =>
       setTimeout(() => resolve(<h1>Hello</h1>), 10)
     )
@@ -308,6 +308,71 @@ d.replaceWith(c.content)
 
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
       '<h1>Hello</h1>'
+    )
+  })
+
+  it('nested Suspense', async () => {
+    const SubContent = () => {
+      const content = new Promise<HtmlEscapedString>((resolve) =>
+        setTimeout(() => resolve(<h2>World</h2>), 10)
+      )
+      return content
+    }
+
+    const Content = () => {
+      const content = new Promise<HtmlEscapedString>((resolve) =>
+        setTimeout(
+          () =>
+            resolve(
+              <>
+                <h1>Hello</h1>
+                <Suspense fallback={<p>Loading sub content...</p>}>
+                  <SubContent />
+                </Suspense>
+              </>
+            ),
+          10
+        )
+      )
+      return content
+    }
+
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Content />
+      </Suspense>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual([
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
+      `<template><h1>Hello</h1><template id=\"H:${
+        suspenseCounter + 1
+      }\"></template><p>Loading sub content...</p><!--/$--></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:${suspenseCounter}')
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+      `<template><h2>World</h2></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:${suspenseCounter + 1}')
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+    ])
+
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<h1>Hello</h1><h2>World</h2>'
     )
   })
 

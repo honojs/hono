@@ -45,8 +45,8 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
       ) as HtmlEscapedString
       res.isEscaped = true
       res.promises = [
-        promise.then((html) => {
-          return `<template>${html}</template><script>
+        promise.then((_html) => {
+          const html = `<template>${_html}</template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${index}')
@@ -54,6 +54,14 @@ do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
 </script>`
+          if (!(_html as HtmlEscapedString).promises?.length) {
+            return html
+          }
+
+          const promiseRes = new String(html) as HtmlEscapedString
+          promiseRes.isEscaped = true
+          promiseRes.promises = (_html as HtmlEscapedString).promises
+          return promiseRes
         }),
       ]
     }
@@ -75,25 +83,26 @@ export const renderToReadableStream = (
       const resolved = await (str instanceof Promise ? await str : str).toString()
       controller.enqueue(textEncoder.encode(resolved))
 
-      let unresolvedCount = (resolved as HtmlEscapedString).promises?.length || 0
-      if (!unresolvedCount) {
-        controller.close()
-        return
+      let unresolvedPromises = (resolved as HtmlEscapedString).promises || []
+      while (unresolvedPromises.length) {
+        const promises = unresolvedPromises.map((promise) =>
+          promise
+            .catch((err) => {
+              console.trace(err)
+              return ''
+            })
+            .then((res) => {
+              if ((res as HtmlEscapedString).promises) {
+                unresolvedPromises.push(...((res as HtmlEscapedString).promises || []))
+              }
+              controller.enqueue(textEncoder.encode(res))
+            })
+        )
+        unresolvedPromises = []
+        await Promise.all(promises)
       }
 
-      for (let i = 0; i < unresolvedCount; i++) {
-        ;((resolved as HtmlEscapedString).promises as Promise<string>[])[i]
-          .catch((err) => {
-            console.trace(err)
-            return ''
-          })
-          .then((res) => {
-            controller.enqueue(textEncoder.encode(res))
-            if (!--unresolvedCount) {
-              controller.close()
-            }
-          })
-      }
+      controller.close()
     },
   })
   return reader
