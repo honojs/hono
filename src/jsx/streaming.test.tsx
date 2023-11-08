@@ -190,8 +190,7 @@ d.replaceWith(c.content)
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual('<p></p>')
   })
 
-  // This test should end successfully , but vitest catches the global unhandledRejection and makes an error, so it temporarily skips
-  it.skip('reject()', async () => {
+  it('reject()', async () => {
     const Content = async () => {
       const content = await Promise.reject()
       return <p>{content}</p>
