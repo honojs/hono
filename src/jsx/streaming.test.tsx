@@ -17,7 +17,9 @@ describe('Streaming', () => {
   })
 
   it('Suspense / renderToReadableStream', async () => {
+    let contentEvaluatedCount = 0
     const Content = () => {
+      contentEvaluatedCount++
       const content = new Promise<HtmlEscapedString>((resolve) =>
         setTimeout(() => resolve(<h1>Hello</h1>), 10)
       )
@@ -51,6 +53,55 @@ d.replaceWith(c.content)
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
       '<h1>Hello</h1>'
     )
+
+    expect(contentEvaluatedCount).toEqual(1)
+  })
+
+  it('`throw promise` inside Suspense', async () => {
+    let contentEvaluatedCount = 0
+    let resolvedContent: HtmlEscapedString | undefined = undefined
+    const Content = () => {
+      contentEvaluatedCount++
+      if (!resolvedContent) {
+        throw new Promise<void>((resolve) =>
+          setTimeout(() => {
+            resolvedContent = <p>thrown a promise then resolved</p> as HtmlEscapedString
+            resolve()
+          }, 10)
+        )
+      }
+      return resolvedContent
+    }
+
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Content />
+      </Suspense>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(chunks).toEqual([
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
+      `<template><p>thrown a promise then resolved</p></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:${suspenseCounter}')
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+    ])
+
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<p>thrown a promise then resolved</p>'
+    )
+
+    expect(contentEvaluatedCount).toEqual(2)
   })
 
   it('simple content inside Suspense', async () => {
@@ -139,8 +190,7 @@ d.replaceWith(c.content)
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual('<p></p>')
   })
 
-  // This test should end successfully , but vitest catches the global unhandledRejection and makes an error, so it temporarily skips
-  it.skip('reject()', async () => {
+  it('reject()', async () => {
     const Content = async () => {
       const content = await Promise.reject()
       return <p>{content}</p>
