@@ -43,5 +43,5 @@ export const html = (
   }
   buffer[0] += strings[strings.length - 1]
 
-  return buffer.length === 1 ? raw(buffer[0]) : stringBufferToString(buffer).then((str) => raw(str))
+  return buffer.length === 1 ? raw(buffer[0]) : stringBufferToString(buffer)
 }
