@@ -4,6 +4,7 @@ import { Hono } from '../../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, Fragment } from '../../jsx'
 import type { FC } from '../../jsx'
+import { Suspense } from '../../jsx/streaming'
 import { jsxRenderer, useRequestContext } from '.'
 
 const RequestUrl: FC = () => {
@@ -103,6 +104,135 @@ describe('JSX renderer', () => {
     expect(await res.text()).toBe(
       '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"><html><body><h1>Hello</h1></body></html>'
     )
+  })
+
+  it('Should return as streaming content with default headers', async () => {
+    const app = new Hono()
+    app.use(
+      '*',
+      jsxRenderer(
+        ({ children }) => {
+          return (
+            <html>
+              <body>{children}</body>
+            </html>
+          )
+        },
+        {
+          docType: true,
+          stream: true,
+        }
+      )
+    )
+    const AsyncComponent = async () => {
+      const c = useRequestContext()
+      return <p>Hello {c.req.query('name')}!</p>
+    }
+    app.get('/', (c) =>
+      c.render(
+        <Suspense fallback={<p>Loading...</p>}>
+          <AsyncComponent />
+        </Suspense>,
+        { title: 'Title' }
+      )
+    )
+    const res = await app.request('/?name=Hono')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Transfer-Encoding')).toEqual('chunked')
+    expect(res.headers.get('Content-Type')).toEqual('text/html; charset=UTF-8')
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+
+    const chunk: string[] = []
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (done) {
+        break
+      }
+      chunk.push(decoder.decode(value))
+    }
+    expect(chunk).toEqual([
+      '<!DOCTYPE html><html><body><template id="H:0"></template><p>Loading...</p><!--/$--></body></html>',
+      `<template><p>Hello Hono!</p></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:0')
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+    ])
+  })
+
+  it('Should return as streaming content with custom headers', async () => {
+    const app = new Hono()
+    app.use(
+      '*',
+      jsxRenderer(
+        ({ children }) => {
+          return (
+            <html>
+              <body>{children}</body>
+            </html>
+          )
+        },
+        {
+          docType: true,
+          stream: {
+            'Transfer-Encoding': 'chunked',
+            'Content-Type': 'text/html'
+          },
+        }
+      )
+    )
+    const AsyncComponent = async () => {
+      const c = useRequestContext()
+      return <p>Hello {c.req.query('name')} again!</p>
+    }
+    app.get('/', (c) =>
+      c.render(
+        <Suspense fallback={<p>Loading...</p>}>
+          <AsyncComponent />
+        </Suspense>,
+        { title: 'Title' }
+      )
+    )
+    const res = await app.request('/?name=Hono')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Transfer-Encoding')).toEqual('chunked')
+    expect(res.headers.get('Content-Type')).toEqual('text/html')
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+
+    const chunk: string[] = []
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (done) {
+        break
+      }
+      chunk.push(decoder.decode(value))
+    }
+    expect(chunk).toEqual([
+      '<!DOCTYPE html><html><body><template id="H:1"></template><p>Loading...</p><!--/$--></body></html>',
+      `<template><p>Hello Hono again!</p></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:1')
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+    ])
   })
 
   it('Env', async () => {

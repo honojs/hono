@@ -80,7 +80,7 @@ export const renderToReadableStream = (
 ): ReadableStream<Uint8Array> => {
   const reader = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const resolved = await (str instanceof Promise ? await str : str).toString()
+      const resolved = str instanceof Promise ? await str : await str.toString()
       controller.enqueue(textEncoder.encode(resolved))
 
       let resolvedCount = 0
