@@ -1,11 +1,12 @@
+import { raw } from '../helper/html/index.ts'
 import type { HtmlEscapedString } from '../utils/html.ts'
 import type { FC, Child } from './index.ts'
 
 let suspenseCounter = 0
 
-async function childrenToString(children: Child): Promise<string> {
+async function childrenToString(children: Child[]): Promise<HtmlEscapedString[]> {
   try {
-    return children.toString()
+    return children.map((c) => c.toString()) as HtmlEscapedString[]
   } catch (e) {
     if (e instanceof Promise) {
       await e
@@ -26,27 +27,29 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
   if (!children) {
     return fallback.toString()
   }
+  if (!Array.isArray(children)) {
+    children = [children]
+  }
 
-  let res
+  let resArray: HtmlEscapedString[] | Promise<HtmlEscapedString[]>[] = []
   try {
-    res = children.toString()
+    resArray = children.map((c) => c.toString()) as HtmlEscapedString[]
   } catch (e) {
     if (e instanceof Promise) {
-      res = e.then(() => childrenToString(children))
+      resArray = [e.then(() => childrenToString(children as Child[]))] as Promise<
+        HtmlEscapedString[]
+      >[]
     } else {
       throw e
     }
-  } finally {
+  }
+
+  if (resArray.some((res) => (res as {}) instanceof Promise)) {
     const index = suspenseCounter++
-    if (res instanceof Promise) {
-      const promise = res
-      res = new String(
-        `<template id="H:${index}"></template>${fallback.toString()}<!--/$-->`
-      ) as HtmlEscapedString
-      res.isEscaped = true
-      res.promises = [
-        promise.then((_html) => {
-          const html = `<template>${_html}</template><script>
+    return raw(`<template id="H:${index}"></template>${fallback.toString()}<!--/$-->`, [
+      Promise.all(resArray).then((htmlArray) => {
+        htmlArray = htmlArray.flat()
+        const html = `<template>${htmlArray.join('')}</template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${index}')
@@ -54,19 +57,16 @@ do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
 </script>`
-          if (!(_html as HtmlEscapedString).promises?.length) {
-            return html
-          }
+        if (htmlArray.every((html) => !(html as HtmlEscapedString).promises?.length)) {
+          return html
+        }
 
-          const promiseRes = new String(html) as HtmlEscapedString
-          promiseRes.isEscaped = true
-          promiseRes.promises = (_html as HtmlEscapedString).promises
-          return promiseRes
-        }),
-      ]
-    }
+        return raw(html, htmlArray.map((html) => (html as HtmlEscapedString).promises || []).flat())
+      }),
+    ])
+  } else {
+    return raw(resArray.join(''))
   }
-  return res as HtmlEscapedString
 }
 
 const textEncoder = new TextEncoder()

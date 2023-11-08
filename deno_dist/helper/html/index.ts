@@ -1,9 +1,10 @@
 import { escapeToBuffer, stringBufferToString } from '../../utils/html.ts'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html.ts'
 
-export const raw = (value: unknown): HtmlEscapedString => {
+export const raw = (value: unknown, promises?: Promise<string>[]): HtmlEscapedString => {
   const escapedString = new String(value) as HtmlEscapedString
   escapedString.isEscaped = true
+  escapedString.promises = promises
 
   return escapedString
 }
