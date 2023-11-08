@@ -31,7 +31,7 @@ export const env = <T extends Record<string, string>, C extends Context = Contex
       return Deno.env.toObject() as T
     },
     workerd: () => c.env,
-    // On Fastly Compute@Edge, you can use the ConfigStore to manage user-defined data.
+    // On Fastly Compute, you can use the ConfigStore to manage user-defined data.
     fastly: () => ({} as T),
     other: () => ({} as T),
   }
