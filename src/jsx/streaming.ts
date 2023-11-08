@@ -72,7 +72,7 @@ export const renderToReadableStream = (
 ): ReadableStream<Uint8Array> => {
   const reader = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const resolved = await str.toString()
+      const resolved = await (str instanceof Promise ? await str : str).toString()
       controller.enqueue(textEncoder.encode(resolved))
 
       let unresolvedCount = (resolved as HtmlEscapedString).promises?.length || 0

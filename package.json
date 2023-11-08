@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "test": "tsc --noEmit && vitest --run",
-    "test:deno": "env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno",
+    "test:deno": "env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno && deno test --no-lock -c runtime_tests/deno-jsx/deno.precompile.json runtime_tests/deno-jsx && deno test --no-lock -c runtime_tests/deno-jsx/deno.react-jsx.json runtime_tests/deno-jsx",
     "test:bun": "env NAME=Bun bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
     "test:fastly": "jest --config ./runtime_tests/fastly/jest.config.js",
     "test:lagon": "start-server-and-test \"lagon dev runtime_tests/lagon/index.ts -e runtime_tests/lagon/.env.lagon\" http://127.0.0.1:1234 \"yarn vitest --run runtime_tests/lagon/index.test.ts --config runtime_tests/lagon/vitest.config.ts\"",
