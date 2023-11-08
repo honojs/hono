@@ -1,3 +1,4 @@
+import { raw } from '../helper/html'
 import type { HtmlEscapedString } from '../utils/html'
 import type { FC, Child } from './index'
 
@@ -30,12 +31,14 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
     children = [children]
   }
 
-  let resArray: HtmlEscapedString[] | Promise<HtmlEscapedString>[] = []
+  let resArray: HtmlEscapedString[] | Promise<HtmlEscapedString[]>[] = []
   try {
     resArray = children.map((c) => c.toString()) as HtmlEscapedString[]
   } catch (e) {
     if (e instanceof Promise) {
-      resArray = [e.then(() => childrenToString(children as Child[]))] as Promise<HtmlEscapedString>[]
+      resArray = [e.then(() => childrenToString(children as Child[]))] as Promise<
+        HtmlEscapedString[]
+      >[]
     } else {
       throw e
     }
@@ -43,13 +46,8 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
 
   if (resArray.some((res) => (res as {}) instanceof Promise)) {
     const index = suspenseCounter++
-    const promises = resArray
-    const res = new String(
-      `<template id="H:${index}"></template>${fallback.toString()}<!--/$-->`
-    ) as HtmlEscapedString
-    res.isEscaped = true
-    res.promises = [
-      Promise.all(promises).then((htmlArray) => {
+    return raw(`<template id="H:${index}"></template>${fallback.toString()}<!--/$-->`, [
+      Promise.all(resArray).then((htmlArray) => {
         htmlArray = htmlArray.flat()
         const html = `<template>${htmlArray.join('')}</template><script>
 ((d,c,n) => {
@@ -63,19 +61,11 @@ d.replaceWith(c.content)
           return html
         }
 
-        const promiseRes = new String(html) as HtmlEscapedString
-        promiseRes.isEscaped = true
-        promiseRes.promises = htmlArray
-          .map((html) => (html as HtmlEscapedString).promises || [])
-          .flat()
-        return promiseRes
+        return raw(html, htmlArray.map((html) => (html as HtmlEscapedString).promises || []).flat())
       }),
-    ]
-    return res
+    ])
   } else {
-    const res = new String(resArray.join('')) as HtmlEscapedString
-    res.isEscaped = true
-    return res
+    return raw(resArray.join(''))
   }
 }
 
