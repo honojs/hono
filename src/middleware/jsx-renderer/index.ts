@@ -26,6 +26,7 @@ const createRenderer =
         : options?.docType === true
         ? '<!DOCTYPE html>'
         : ''
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     const body = html`${raw(docType)}${jsx(
       RequestContext.Provider,
       { value: c },
