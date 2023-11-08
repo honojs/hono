@@ -228,13 +228,13 @@ describe('url', () => {
       ])
       searchParams = new URLSearchParams()
       searchParams.append('炎 works on', 'Cloudflare Workers')
-      searchParams.append('炎 works on', 'Fastly Compute@Edge')
+      searchParams.append('炎 works on', 'Fastly Compute')
       expect(
         getQueryParams(
           `http://example.com/?${searchParams.toString()}`,
           searchParams.keys().next().value
         )
-      ).toEqual(['Cloudflare Workers', 'Fastly Compute@Edge'])
+      ).toEqual(['Cloudflare Workers', 'Fastly Compute'])
       expect(getQueryParams('http://example.com/?name=hey&age=20&tall=170', 'weight')).toEqual(
         undefined
       )
