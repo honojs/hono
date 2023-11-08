@@ -32,7 +32,7 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
     res = children.toString()
   } catch (e) {
     if (e instanceof Promise) {
-      res = e
+      res = e.then(() => childrenToString(children))
     } else {
       throw e
     }
@@ -45,8 +45,8 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
       ) as HtmlEscapedString
       res.isEscaped = true
       res.promises = [
-        promise.then(async () => {
-          return `<template>${await childrenToString(children)}</template><script>
+        promise.then((html) => {
+          return `<template>${html}</template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${index}')
