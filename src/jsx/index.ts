@@ -260,20 +260,31 @@ export const createContext = <T>(defaultValue: T): Context<T> => {
   const values = [defaultValue]
   return {
     values,
-    Provider(props): HtmlEscapedString {
+    Provider(props): HtmlEscapedString | Promise<HtmlEscapedString> {
       values.push(props.value)
-
-      const res = new String(
-        props.children
-          ? (Array.isArray(props.children)
-              ? new JSXFragmentNode('', {}, props.children)
-              : props.children
-            ).toString()
-          : ''
-      ) as HtmlEscapedString
-      res.isEscaped = true
-
+      const string = props.children
+        ? (Array.isArray(props.children)
+            ? new JSXFragmentNode('', {}, props.children)
+            : props.children
+          ).toString()
+        : ''
       values.pop()
+
+      let res: HtmlEscapedString | Promise<HtmlEscapedString>
+      if (string instanceof Promise) {
+        res = Promise.resolve().then<HtmlEscapedString>(async () => {
+          values.push(props.value)
+          const awaited = await string
+          const promiseRes = new String(awaited) as HtmlEscapedString
+          promiseRes.isEscaped = true
+          promiseRes.promises = (awaited as HtmlEscapedString).promises
+          values.pop()
+          return promiseRes
+        })
+      } else {
+        res = new String(string) as HtmlEscapedString
+        res.isEscaped = true
+      }
 
       return res
     },
