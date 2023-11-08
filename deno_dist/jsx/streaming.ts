@@ -83,9 +83,10 @@ export const renderToReadableStream = (
       const resolved = await (str instanceof Promise ? await str : str).toString()
       controller.enqueue(textEncoder.encode(resolved))
 
-      let unresolvedPromises = (resolved as HtmlEscapedString).promises || []
-      while (unresolvedPromises.length) {
-        const promises = unresolvedPromises.map((promise) =>
+      let resolvedCount = 0
+      const promises: Promise<void>[] = []
+      const then = (promise: Promise<string>) => {
+        promises.push(
           promise
             .catch((err) => {
               console.trace(err)
@@ -93,12 +94,16 @@ export const renderToReadableStream = (
             })
             .then((res) => {
               if ((res as HtmlEscapedString).promises) {
-                unresolvedPromises.push(...((res as HtmlEscapedString).promises || []))
+                const resPromises = (res as HtmlEscapedString).promises || []
+                resPromises.forEach(then)
               }
+              resolvedCount++
               controller.enqueue(textEncoder.encode(res))
             })
         )
-        unresolvedPromises = []
+      }
+      ;(resolved as HtmlEscapedString).promises?.map(then)
+      while (resolvedCount !== promises.length) {
         await Promise.all(promises)
       }
 

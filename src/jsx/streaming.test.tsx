@@ -374,6 +374,72 @@ d.replaceWith(c.content)
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
       '<h1>Hello</h1><h2>World</h2>'
     )
+    suspenseCounter++
+  })
+
+  it('In multiple Suspense, go ahead in the order of resolved', async () => {
+    const SubContent2 = () => {
+      const content = new Promise<HtmlEscapedString>((resolve) =>
+        setTimeout(() => resolve(<p>first</p>), 20)
+      )
+      return content
+    }
+    const SubContent1 = () => {
+      const content = new Promise<HtmlEscapedString>((resolve) =>
+        setTimeout(
+          () =>
+            resolve(
+              <Suspense fallback={<p>Loading content2...</p>}>
+                <SubContent2 />
+              </Suspense>
+            ),
+          10
+        )
+      )
+      return content
+    }
+    const SubContent3 = () => {
+      const content = new Promise<HtmlEscapedString>((resolve) =>
+        setTimeout(() => resolve(<p>last</p>), 40)
+      )
+      return content
+    }
+
+    const Content = () => {
+      const content = new Promise<HtmlEscapedString>((resolve) =>
+        setTimeout(
+          () =>
+            resolve(
+              <>
+                <Suspense fallback={<p>Loading content1...</p>}>
+                  <SubContent1 />
+                </Suspense>
+                <Suspense fallback={<p>Loading content3...</p>}>
+                  <SubContent3 />
+                </Suspense>
+              </>
+            ),
+          10
+        )
+      )
+      return content
+    }
+
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Content />
+      </Suspense>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<p>first</p><p>last</p>'
+    )
   })
 
   it('renderToReadableStream(str: string)', async () => {
