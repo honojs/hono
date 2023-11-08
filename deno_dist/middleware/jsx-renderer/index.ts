@@ -1,7 +1,9 @@
 import type { Context, Renderer } from '../../context.ts'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { html, raw } from '../../helper/html/index.ts'
 import { jsx, createContext, useContext } from '../../jsx/index.ts'
 import type { FC, JSXNode } from '../../jsx/index.ts'
+import { renderToReadableStream } from '../../jsx/streaming.ts'
 import type { Env, Input, MiddlewareHandler } from '../../types.ts'
 
 export const RequestContext = createContext<Context | null>(null)
@@ -12,6 +14,7 @@ type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unknown, in
 
 type RendererOptions = {
   docType?: boolean | string
+  stream?: boolean | Record<string, string>
 }
 
 const createRenderer =
@@ -23,16 +26,25 @@ const createRenderer =
         : options?.docType === true
         ? '<!DOCTYPE html>'
         : ''
+    const body = html`${raw(docType)}${jsx(
+      RequestContext.Provider,
+      { value: c },
+      (component ? component({ children, ...(props || {}) }) : children) as any
+    )}`
 
-    return c.html(
-      (docType +
-        /* eslint-disable @typescript-eslint/no-explicit-any */
-        jsx(
-          RequestContext.Provider,
-          { value: c },
-          (component ? component({ children, ...(props || {}) }) : children) as any
-        )) as any
-    )
+    if (options?.stream) {
+      return c.body(renderToReadableStream(body), {
+        headers:
+          options.stream === true
+            ? {
+                'Transfer-Encoding': 'chunked',
+                'Content-Type': 'text/html; charset=UTF-8',
+              }
+            : options.stream,
+      })
+    } else {
+      return c.html(body)
+    }
   }
 
 export const jsxRenderer =
