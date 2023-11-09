@@ -5,25 +5,13 @@ import type { LambdaContext, Handler } from './types'
 
 declare global {
   namespace awslambda {
+    // Note: Anticipated logic for AWS
+    // https://github.com/aws/aws-lambda-nodejs-runtime-interface-client/blob/main/src/HttpResponseStream.js
     export class HttpResponseStream {
       static from(
         underlyingStream: NodeJS.WritableStream,
         prelude: Record<string, unknown>
-      ): NodeJS.WritableStream {
-        underlyingStream.setContentType('application/vnd.awslambda.http-integration-response')
-
-        // JSON.stringify is required. NULL byte is not allowed in metadataPrelude.
-        const metadataPrelude = JSON.stringify(prelude)
-
-        underlyingStream['_onBeforeFirstWrite'] = (write: (chunk: any) => void) => {
-          write(Buffer.from(metadataPrelude, 'utf8'))
-
-          // Write 8 null bytes after the JSON prelude.
-          write(Buffer.alloc(8, 0))
-        }
-
-        return underlyingStream
-      }
+      ): NodeJS.WritableStream
     }
     function streamifyResponse(
       f: (

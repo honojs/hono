@@ -481,13 +481,12 @@ describe('streamHandle function', () => {
     mockReadableStream.push('3\n')
     mockReadableStream.push(null) // EOF
 
-    const res = await handler(event, mockReadableStream)
+    await handler(event, mockReadableStream)
 
     const chunks = []
     for await (const chunk of mockReadableStream) {
       chunks.push(chunk)
     }
-    console.log(res)
     expect(chunks.join('')).toContain('0\n1\n2\n3\n')
   })
 
@@ -508,6 +507,20 @@ describe('streamHandle function', () => {
       read() {},
     })
 
+    const initContentType = {
+      'Content-Type': 'application/vnd.awslambda.http-integration-response',
+    }
+    mockReadableStream.push(JSON.stringify(initContentType))
+
+    // Send JSON formatted response headers, followed by 8 NULL characters as a separator
+    const httpResponseMetadata = {
+      statusCode: 200,
+      headers: { 'Custom-Header': 'value' },
+      cookies: ['session=abcd1234'],
+    }
+    const jsonResponsePrelude = JSON.stringify(httpResponseMetadata) + Buffer.alloc(8, 0).toString()
+    mockReadableStream.push(jsonResponsePrelude)
+
     mockReadableStream.push('data: Message\ndata: It is 0\n\n')
     mockReadableStream.push('data: Message\ndata: It is 1\n\n')
     mockReadableStream.push(null) // EOF
@@ -523,5 +536,14 @@ describe('streamHandle function', () => {
     const output = Buffer.concat(chunks).toString()
     expect(output).toContain('data: Message\ndata: It is 0\n\n')
     expect(output).toContain('data: Message\ndata: It is 1\n\n')
+
+    // Assertions for the newly added header and prelude
+    expect(output).toContain('application/vnd.awslambda.http-integration-response')
+    expect(output).toContain('Custom-Header')
+    expect(output).toContain('session=abcd1234')
+
+    // Check for JSON prelude and NULL sequence
+    const nullSequence = '\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000'
+    expect(output).toContain(jsonResponsePrelude.replace(nullSequence, ''))
   })
 })
