@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { expectTypeOf } from 'vitest'
 import type { Context } from './context'
+import { createMiddleware } from './helper'
 import { Hono } from './hono'
 import { poweredBy } from './middleware/powered-by'
 import type {
@@ -19,6 +20,7 @@ import type {
   UndefinedIfHavingQuestion,
 } from './types'
 import type { Expect, Equal } from './utils/types'
+
 describe('Env', () => {
   test('Env', () => {
     type E = {
@@ -642,5 +644,93 @@ describe('jsonT() in an async handler', () => {
       }
     }
     type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+/**
+ * Other tests for `c.var` are written in `hono.test.ts`.
+ * This tests are only for types.
+ */
+describe('c.var with chaining - test only types', () => {
+  const mw1 = createMiddleware<{ Variables: { foo1: string } }>(async () => {})
+  const mw2 = createMiddleware<{ Variables: { foo2: string } }>(async () => {})
+  const mw3 = createMiddleware<{ Variables: { foo3: string } }>(async () => {})
+  const mw4 = createMiddleware<{ Variables: { foo4: string } }>(async () => {})
+  const mw5 = createMiddleware<{ Variables: { foo5: string } }>(async () => {})
+
+  it('Should not throw type errors', () => {
+    // app.get(handler...)
+
+    new Hono().get(mw1).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get(mw1, mw2).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get(mw1, mw2, mw3).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get(mw1, mw2, mw3, mw4).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get(mw1, mw2, mw3, mw4, mw5).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    // app.get('/', handler...)
+
+    new Hono().get('/', mw1).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get('/', mw1, mw2).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get('/', mw1, mw2, mw3).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get('/', mw1, mw2, mw3, mw4).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get('/', mw1, mw2, mw3, mw4, mw5).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+      return c.json(0)
+    })
   })
 })
