@@ -100,9 +100,15 @@ export const streamHandle = <
 
         // Check content type
         const contentType = res.headers.get('content-type')
-        if (!contentType) {
-          console.warn('Content Type is not set in the response.')
+        if (contentType) {
+          responseStream.setContentType(contentType)
+        } 
+
+        const httpResponseMetadata = {
+          statusCode: res.status,
+          headers: res.headers,
         }
+        responseStream = awslambda.HttpResponseStream.from(responseStream, httpResponseMetadata)
 
         if (res.body) {
           await streamToNodeStream(res.body.getReader(), responseStream)
