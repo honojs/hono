@@ -174,6 +174,19 @@ describe('Context', () => {
     expect(res.headers.get('foo')).toBe('bar')
   })
 
+  it('c.fetch()', async () => {
+    const req = new HonoRequest(new Request('http://localhost/'))
+    const ctx = new Context(req, {
+      env: {},
+      request: async () => {
+        return new Response('OK')
+      },
+    })
+    const res = await ctx.fetch('/some/path')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toMatch('OK')
+  })
+
   // The `c.runtime()` will be removed in v4.
   it('returns current runtime (node)', async () => {
     c = new Context(req)

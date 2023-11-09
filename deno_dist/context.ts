@@ -83,6 +83,12 @@ type ContextOptions<E extends Env> = {
   env: E['Bindings']
   executionCtx?: FetchEventLike | ExecutionContext | undefined
   notFoundHandler?: NotFoundHandler<E>
+  request?: (
+    input: RequestInfo | URL,
+    requestInit?: RequestInit,
+    Env?: E['Bindings'] | {},
+    executionCtx?: ExecutionContext
+  ) => Promise<Response>
 }
 
 const TEXT_PLAIN = 'text/plain; charset=UTF-8'
@@ -105,6 +111,14 @@ export class Context<
   private _h: Headers | undefined = undefined //  _headers
   private _pH: Record<string, string> | undefined = undefined // _preparedHeaders
   private _res: Response | undefined
+  private _request:
+    | ((
+        input: RequestInfo | URL,
+        requestInit?: RequestInit,
+        Env?: E['Bindings'] | {},
+        executionCtx?: ExecutionContext
+      ) => Promise<Response>)
+    | undefined = undefined
   private _init = true
   private _renderer: Renderer = (content: string) => this.html(content)
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
@@ -112,6 +126,7 @@ export class Context<
   constructor(req: HonoRequest<P, I['out']>, options?: ContextOptions<E>) {
     this.req = req
     if (options) {
+      this._request = options.request
       this._exCtx = options.executionCtx
       this.env = options.env
       if (options.notFoundHandler) {
@@ -227,6 +242,13 @@ export class Context<
   // c.var.propName is a read-only
   get var(): Readonly<E['Variables']> {
     return { ...this._var }
+  }
+
+  fetch = (input: RequestInfo, init?: RequestInit) => {
+    if (!this._request) {
+      throw Error('This context has no request function')
+    }
+    return this._request(input, init, this.env, this._exCtx)
   }
 
   newResponse: NewResponse = (
