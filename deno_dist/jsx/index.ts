@@ -1,3 +1,4 @@
+import { raw } from '../helper/html/index.ts'
 import { escapeToBuffer, stringBufferToString } from '../utils/html.ts'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html.ts'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements.ts'
@@ -142,9 +143,7 @@ export class JSXNode implements HtmlEscaped {
           throw 'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
         }
 
-        const escapedString = new String(v.__html) as HtmlEscapedString
-        escapedString.isEscaped = true
-        children = [escapedString]
+        children = [raw(v.__html)]
       } else {
         buffer[0] += ` ${key}="`
         escapeToBuffer(v.toString(), buffer)
@@ -270,23 +269,17 @@ export const createContext = <T>(defaultValue: T): Context<T> => {
         : ''
       values.pop()
 
-      let res: HtmlEscapedString | Promise<HtmlEscapedString>
       if (string instanceof Promise) {
-        res = Promise.resolve().then<HtmlEscapedString>(async () => {
+        return Promise.resolve().then<HtmlEscapedString>(async () => {
           values.push(props.value)
           const awaited = await string
-          const promiseRes = new String(awaited) as HtmlEscapedString
-          promiseRes.isEscaped = true
-          promiseRes.promises = (awaited as HtmlEscapedString).promises
+          const promiseRes = raw(awaited, (awaited as HtmlEscapedString).promises)
           values.pop()
           return promiseRes
         })
       } else {
-        res = new String(string) as HtmlEscapedString
-        res.isEscaped = true
+        return raw(string)
       }
-
-      return res
     },
   }
 }
