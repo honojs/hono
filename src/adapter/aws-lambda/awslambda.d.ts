@@ -3,13 +3,14 @@
 
 import type { LambdaContext, Handler } from './types'
 
-type METADATA_PRELUDE_CONTENT_TYPE = string
-
 declare global {
   namespace awslambda {
     export class HttpResponseStream {
-      static from(underlyingStream: NodeJS.WritableStream, prelude: Record<string, unknown>): NodeJS.WritableStream {
-        underlyingStream['setContentType'](METADATA_PRELUDE_CONTENT_TYPE)
+      static from(
+        underlyingStream: NodeJS.WritableStream,
+        prelude: Record<string, unknown>
+      ): NodeJS.WritableStream {
+        underlyingStream.setContentType('application/vnd.awslambda.http-integration-response')
 
         // JSON.stringify is required. NULL byte is not allowed in metadataPrelude.
         const metadataPrelude = JSON.stringify(prelude)
@@ -18,11 +19,11 @@ declare global {
           write(Buffer.from(metadataPrelude, 'utf8'))
 
           // Write 8 null bytes after the JSON prelude.
-          write(Buffer.alloc(DELIMITER_LEN, 0))
+          write(Buffer.alloc(8, 0))
         }
 
         return underlyingStream
-      } 
+      }
     }
     function streamifyResponse(
       f: (

@@ -99,19 +99,16 @@ export const streamHandle = <
         })
 
         // Check content type
-        const contentType = res.headers.get('content-type')
-        if (contentType) {
-          responseStream.setContentType(contentType)
-        } 
-
         const httpResponseMetadata = {
           statusCode: res.status,
-          headers: res.headers,
+          headers: Object.fromEntries(res.headers.entries()),
         }
-        responseStream = awslambda.HttpResponseStream.from(responseStream, httpResponseMetadata)
 
         if (res.body) {
-          await streamToNodeStream(res.body.getReader(), responseStream)
+          await streamToNodeStream(
+            res.body.getReader(),
+            awslambda.HttpResponseStream.from(responseStream, httpResponseMetadata)
+          )
         }
       } catch (error) {
         console.error('Error processing request:', error)
