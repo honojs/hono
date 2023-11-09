@@ -123,6 +123,64 @@ d.replaceWith(c.content)
     }
 
     expect(chunks).toEqual(['<h1>Hello</h1>'])
+
+    suspenseCounter -= 1 // fallback is not rendered
+  })
+
+  it('children Suspense', async () => {
+    const Content1 = () =>
+      new Promise<HtmlEscapedString>((resolve) => setTimeout(() => resolve(<h1>Hello</h1>), 10))
+    const Content2 = () =>
+      new Promise<HtmlEscapedString>((resolve) => setTimeout(() => resolve(<h2>Hono</h2>), 10))
+
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Suspense fallback={<p>Loading sub content1...</p>}>
+          <Content1 />
+        </Suspense>
+        <Suspense fallback={<p>Loading sub content2...</p>}>
+          <Content2 />
+        </Suspense>
+      </Suspense>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<h1>Hello</h1><h2>Hono</h2>'
+    )
+
+    suspenseCounter += 2
+  })
+
+  it('children Suspense: Suspense and string', async () => {
+    const Content1 = () =>
+      new Promise<HtmlEscapedString>((resolve) => setTimeout(() => resolve(<h1>Hello</h1>), 10))
+
+    const stream = renderToReadableStream(
+      <Suspense fallback={<p>Loading...</p>}>
+        <Suspense fallback={<p>Loading sub content1...</p>}>
+          <Content1 />
+        </Suspense>
+        Hono
+      </Suspense>
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<h1>Hello</h1>Hono'
+    )
+
+    suspenseCounter += 1
   })
 
   it('resolve(undefined)', async () => {
