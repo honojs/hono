@@ -196,11 +196,6 @@ class Hono<
     })
   }
 
-  /**
-   * @experimental
-   * `app.mount()` is an experimental feature.
-   * The API might be changed.
-   */
   mount(
     path: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
