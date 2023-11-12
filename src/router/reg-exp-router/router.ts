@@ -93,6 +93,50 @@ function buildMatcherFromPreprocessedRoutes<T>(
   // using `in` because indexReplacementMap is a sparse array
   for (const i in indexReplacementMap) {
     handlerMap[i] = handlerData[indexReplacementMap[i]]
+    const handlers: HandlerData<T> = []
+    const befores: HandlerData<T> = []
+    const afters: HandlerData<T> = []
+    for (let j = 0, len = handlerMap[i].length; j < len; j++) {
+      const handler = handlerMap[i][j][0]
+      if ((handler as any)['before']) {
+        befores.push(handlerMap[i][j])
+      } else if ((handler as any)['after']) {
+        afters.push(handlerMap[i][j])
+      } else {
+        handlers.push(handlerMap[i][j])
+      }
+    }
+
+    handlerMap[i] = [
+      [
+        (c: any, next: any) => {
+          for (let j = 0, len = befores.length; j < len; j++) {
+            ;(befores[j][0] as (c: any) => {})(c)
+          }
+          return next()
+        },
+        {},
+      ],
+      [
+        (c: any, next: any) => {
+          const res = next()
+          if (res instanceof Promise) {
+            return res.then(() => {
+              for (let j = 0, len = afters.length; j < len; j++) {
+                ;(afters[j][0] as (c: any) => {})(c)
+              }
+            })
+          } else {
+            for (let j = 0, len = afters.length; j < len; j++) {
+              ;(afters[j][0] as (c: any) => {})(c)
+            }
+            return res
+          }
+        },
+        {},
+      ],
+      ...handlers,
+    ] as HandlerData<T>
   }
 
   return [regexp, handlerMap, staticMap] as Matcher<T>

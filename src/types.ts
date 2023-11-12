@@ -48,6 +48,12 @@ export type MiddlewareHandler<
   I extends Input = {}
 > = (c: Context<E, P, I>, next: Next) => Promise<Response | void>
 
+export type SyncMiddlewareHandler<
+  E extends Env = any,
+  P extends string = string,
+  I extends Input = {}
+> = (c: Context<E, P, I>, next: Next) => void
+
 export type H<
   E extends Env = any,
   P extends string = any,
