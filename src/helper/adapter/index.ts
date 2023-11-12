@@ -10,7 +10,7 @@ export type Runtime =
   | 'lagon'
   | 'other'
 
-export const env = <T extends Record<string, string>, C extends Context = Context<{}>>(
+export const env = <T extends Record<string, unknown>, C extends Context = Context<{}>>(
   c: C,
   runtime?: Runtime
 ): T & C['env'] => {
