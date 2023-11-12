@@ -51,7 +51,7 @@ const errorHandler = (err: Error, c: Context) => {
   if (err instanceof HTTPException) {
     return err.getResponse()
   }
-  console.trace(err)
+  console.error(err)
   const message = 'Internal Server Error'
   return c.text(message, 500)
 }
