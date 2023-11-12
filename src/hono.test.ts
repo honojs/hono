@@ -830,6 +830,103 @@ describe('Middleware', () => {
     })
   })
 
+  describe('Without `await`', () => {
+    const app = new Hono()
+
+    // Custom Logger
+    app.use('*', (c, next) => {
+      console.log(`${c.req.method} : ${c.req.url}`)
+      next()
+    })
+
+    // Append Custom Header
+    app.use('*', (c, next) => {
+      next()
+      c.res.headers.append('x-custom', 'root')
+    })
+
+    app.use('/hello', async (c, next) => {
+      next()
+      c.res.headers.append('x-message', 'custom-header')
+    })
+
+    app.use('/hello/*', async (c, next) => {
+      next()
+      c.res.headers.append('x-message-2', 'custom-header-2')
+    })
+
+    app.get('/hello', (c) => {
+      return c.text('hello')
+    })
+
+    app.use('/json/*', async (c, next) => {
+      c.res.headers.append('foo', 'bar')
+      await next()
+    })
+
+    app.get('/json', (c) => {
+      // With a raw response
+      return new Response(
+        JSON.stringify({
+          message: 'hello',
+        }),
+        {
+          headers: {
+            'content-type': 'application/json',
+          },
+        }
+      )
+    })
+
+    app.get('/hello/:message', (c) => {
+      const message = c.req.param('message')
+      return c.text(`${message}`)
+    })
+
+    app.get('/error', () => {
+      throw new Error('Error!')
+    })
+
+    app.notFound((c) => {
+      return c.text('Not Found Foo', 404)
+    })
+
+    it('logging and custom header', async () => {
+      const res = await app.request('http://localhost/hello')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('hello')
+      expect(res.headers.get('x-custom')).toBe('root')
+      expect(res.headers.get('x-message')).toBe('custom-header')
+      expect(res.headers.get('x-message-2')).toBe('custom-header-2')
+    })
+
+    it('logging and custom header with named param', async () => {
+      const res = await app.request('http://localhost/hello/message')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('message')
+      expect(res.headers.get('x-custom')).toBe('root')
+      expect(res.headers.get('x-message-2')).toBe('custom-header-2')
+    })
+
+    it('should return correct the content-type header', async () => {
+      const res = await app.request('http://localhost/json')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('content-type')).toMatch(/^application\/json/)
+    })
+
+    it('not found', async () => {
+      const res = await app.request('http://localhost/foo')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Not Found Foo')
+    })
+
+    it('internal server error', async () => {
+      const res = await app.request('http://localhost/error')
+      expect(res.status).toBe(500)
+      console.log(await res.text())
+    })
+  })
+
   describe('Chained route', () => {
     const app = new Hono()
     app

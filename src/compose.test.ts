@@ -709,3 +709,52 @@ describe('Compose', function () {
     expect(ctx.next).toEqual(1)
   })
 })
+
+describe('compose without `await`', () => {
+  const middleware: MiddlewareTuple[] = []
+
+  const a = async (c: C, next: Function) => {
+    c.req['log'] = 'log'
+    next()
+  }
+
+  const b = async (c: C, next: Function) => {
+    next()
+    c.res['headers'] = 'custom-header'
+  }
+
+  const c = async (c: C, next: Function) => {
+    c.req['xxx'] = 'yyy'
+    next()
+    c.res['zzz'] = c.req['xxx']
+  }
+
+  const handler = async (c: C, next: Function) => {
+    c.req['log'] = `${c.req.log} message`
+    next()
+    c.res = { message: 'new response' }
+  }
+
+  middleware.push(buildMiddlewareTuple(a))
+  middleware.push(buildMiddlewareTuple(b))
+  middleware.push(buildMiddlewareTuple(c))
+  middleware.push(buildMiddlewareTuple(handler))
+
+  it('Request', async () => {
+    const c: C = { req: {}, res: {}, finalized: false }
+    const composed = compose<C>(middleware)
+    const context = await composed(c)
+    expect(context.req['log']).not.toBeNull()
+    expect(context.req['log']).toBe('log message')
+    expect(context.req['xxx']).toBe('yyy')
+  })
+  it('Response', async () => {
+    const c: C = { req: {}, res: {}, finalized: false }
+    const composed = compose<C>(middleware)
+    const context = await composed(c)
+    expect(context.res['headers']).not.toBeNull()
+    expect(context.res['headers']).toBe('custom-header')
+    expect(context.res['message']).toBe('new response')
+    expect(context.res['zzz']).toBe('yyy')
+  })
+})
