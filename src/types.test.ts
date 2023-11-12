@@ -734,3 +734,26 @@ describe('c.var with chaining - test only types', () => {
     })
   })
 })
+
+/**
+ *
+ * Declaring a ContextVariableMap for testing.
+ */
+declare module './context' {
+  interface ContextVariableMap {
+    payload: string
+  }
+}
+
+describe('c.var with ContextVariableMap - test only types', () => {
+  it('Should no throw a type error', () => {
+    new Hono().get((c) => {
+      expectTypeOf(c.get('payload')).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+    new Hono().get((c) => {
+      expectTypeOf(c.var.payload).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+  })
+})
