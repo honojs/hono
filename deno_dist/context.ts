@@ -225,8 +225,8 @@ export class Context<
   }
 
   // c.var.propName is a read-only
-  get var(): Readonly<E['Variables']> {
-    return { ...this._var }
+  get var(): Readonly<E['Variables'] & ContextVariableMap> {
+    return { ...this._var } as never
   }
 
   newResponse: NewResponse = (
