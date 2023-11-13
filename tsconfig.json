@@ -20,6 +20,7 @@
   },
   "include": [
     "src/**/*.ts",
+    "src/**/*.d.ts",
     "src/**/*.mts",
     "src/**/*.test.ts",
     "src/**/*.test.tsx"

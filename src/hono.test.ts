@@ -2409,7 +2409,7 @@ describe('HEAD method', () => {
 
 declare module './context' {
   interface ContextRenderer {
-    (content: string, head: { title: string }): Response
+    (content: string | Promise<string>, head: { title: string }): Response | Promise<Response>
   }
 }
 

@@ -47,6 +47,8 @@ jobs:
         with:
           deno-version: v1.x
       - run: env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno
+      - run: deno test -c runtime_tests/deno-jsx/deno.precompile.json runtime_tests/deno-jsx
+      - run: deno test -c runtime_tests/deno-jsx/deno.react-jsx.json runtime_tests/deno-jsx
 
   bun:
     name: 'Bun'

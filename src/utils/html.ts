@@ -1,11 +1,30 @@
-export type HtmlEscaped = { isEscaped: true }
+export type HtmlEscaped = { isEscaped: true; promises?: Promise<string>[] }
 export type HtmlEscapedString = string & HtmlEscaped
-export type StringBuffer = [string]
+export type StringBuffer = (string | Promise<string>)[]
+import { raw } from '../helper/html'
 
 // The `escapeToBuffer` implementation is based on code from the MIT licensed `react-dom` package.
 // https://github.com/facebook/react/blob/main/packages/react-dom-bindings/src/server/escapeTextForBrowser.js
 
 const escapeRe = /[&<>'"]/
+
+export const stringBufferToString = async (buffer: StringBuffer): Promise<HtmlEscapedString> => {
+  let str = ''
+  const promises: Promise<string>[] = []
+  for (let i = buffer.length - 1; i >= 0; i--) {
+    let r = await buffer[i]
+    if (typeof r === 'object') {
+      promises.push(...((r as HtmlEscapedString).promises || []))
+    }
+    r = await (typeof r === 'object' ? (r as HtmlEscapedString).toString() : r)
+    if (typeof r === 'object') {
+      promises.push(...((r as HtmlEscapedString).promises || []))
+    }
+    str += r
+  }
+
+  return raw(str, promises)
+}
 
 export const escapeToBuffer = (str: string, buffer: StringBuffer): void => {
   const match = str.search(escapeRe)

@@ -40,14 +40,20 @@ export const streamSSE = (c: Context, cb: (stream: SSEStreamingApi) => Promise<v
   return c.stream(async (originalStream: StreamingApi) => {
     const { readable, writable } = new TransformStream()
     const stream = new SSEStreamingApi(writable)
-    originalStream.pipe(readable)
+
+    originalStream.pipe(readable).catch((err) => {
+      console.error('Error in stream piping: ', err)
+      stream.close()
+    })
+
     setSSEHeaders(c)
 
     try {
       await cb(stream)
     } catch (err) {
       console.error('Error during streaming: ', err)
-      stream.close()
+    } finally {
+      await stream.close()
     }
   })
 }

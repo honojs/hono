@@ -1,4 +1,5 @@
-import { escapeToBuffer } from '../utils/html'
+import { raw } from '../helper/html'
+import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
 
@@ -8,7 +9,7 @@ type Props = Record<string, any>
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
-    type Element = HtmlEscapedString
+    type Element = HtmlEscapedString | Promise<HtmlEscapedString>
     interface ElementChildrenAttribute {
       children: Child
     }
@@ -76,7 +77,9 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
       typeof child === 'number' ||
       (child as unknown as { isEscaped: boolean }).isEscaped
     ) {
-      buffer[0] += child
+      ;(buffer[0] as string) += child
+    } else if (child instanceof Promise) {
+      buffer.unshift('', child)
     } else {
       // `child` type is `Child[]`, so stringify recursively
       childrenToStringToBuffer(child, buffer)
@@ -84,7 +87,7 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
   }
 }
 
-type Child = string | number | JSXNode | Child[]
+export type Child = string | Promise<string> | number | JSXNode | Child[]
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
   props: Props
@@ -96,10 +99,10 @@ export class JSXNode implements HtmlEscaped {
     this.children = children
   }
 
-  toString(): string {
+  toString(): string | Promise<string> {
     const buffer: StringBuffer = ['']
     this.toStringToBuffer(buffer)
-    return buffer[0]
+    return buffer.length === 1 ? buffer[0] : stringBufferToString(buffer)
   }
 
   toStringToBuffer(buffer: StringBuffer): void {
@@ -140,9 +143,7 @@ export class JSXNode implements HtmlEscaped {
           throw 'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
         }
 
-        const escapedString = new String(v.__html) as HtmlEscapedString
-        escapedString.isEscaped = true
-        children = [escapedString]
+        children = [raw(v.__html)]
       } else {
         buffer[0] += ` ${key}="`
         escapeToBuffer(v.toString(), buffer)
@@ -172,7 +173,9 @@ class JSXFunctionNode extends JSXNode {
       children: children.length <= 1 ? children[0] : children,
     })
 
-    if (res instanceof JSXNode) {
+    if (res instanceof Promise) {
+      buffer.unshift('', res)
+    } else if (res instanceof JSXNode) {
       res.toStringToBuffer(buffer)
     } else if (typeof res === 'number' || (res as HtmlEscaped).isEscaped) {
       buffer[0] += res
@@ -201,7 +204,9 @@ const jsxFn = (
   }
 }
 
-export type FC<T = Props> = (props: T & { children?: Child }) => HtmlEscapedString
+export type FC<T = Props> = (
+  props: T & { children?: Child }
+) => HtmlEscapedString | Promise<HtmlEscapedString>
 
 const shallowEqual = (a: Props, b: Props): boolean => {
   if (a === b) {
@@ -254,22 +259,27 @@ export const createContext = <T>(defaultValue: T): Context<T> => {
   const values = [defaultValue]
   return {
     values,
-    Provider(props): HtmlEscapedString {
+    Provider(props): HtmlEscapedString | Promise<HtmlEscapedString> {
       values.push(props.value)
-
-      const res = new String(
-        props.children
-          ? (Array.isArray(props.children)
-              ? new JSXFragmentNode('', {}, props.children)
-              : props.children
-            ).toString()
-          : ''
-      ) as HtmlEscapedString
-      res.isEscaped = true
-
+      const string = props.children
+        ? (Array.isArray(props.children)
+            ? new JSXFragmentNode('', {}, props.children)
+            : props.children
+          ).toString()
+        : ''
       values.pop()
 
-      return res
+      if (string instanceof Promise) {
+        return Promise.resolve().then<HtmlEscapedString>(async () => {
+          values.push(props.value)
+          const awaited = await string
+          const promiseRes = raw(awaited, (awaited as HtmlEscapedString).promises)
+          values.pop()
+          return promiseRes
+        })
+      } else {
+        return raw(string)
+      }
     },
   }
 }
