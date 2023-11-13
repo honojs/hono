@@ -1,16 +1,51 @@
+import { Readable } from 'stream'
 import type {
   ApiGatewayRequestContext,
   LambdaFunctionUrlRequestContext,
 } from '../../src/adapter/aws-lambda/custom-context'
-import { handle } from '../../src/adapter/aws-lambda/handler'
+import { handle, streamHandle } from '../../src/adapter/aws-lambda/handler'
 import type { LambdaContext } from '../../src/adapter/aws-lambda/types'
 import { getCookie, setCookie } from '../../src/helper/cookie'
+import { streamSSE } from '../../src/helper/streaming'
 import { Hono } from '../../src/hono'
 import { basicAuth } from '../../src/middleware/basic-auth'
+import './mock'
 
 type Bindings = {
   lambdaContext: LambdaContext
   requestContext: ApiGatewayRequestContext | LambdaFunctionUrlRequestContext
+}
+
+const testLambdaFunctionUrlRequestContext = {
+  accountId: '123456789012',
+  apiId: 'urlid',
+  authentication: null,
+  authorizer: {
+    iam: {
+      accessKey: 'AKIA...',
+      accountId: '111122223333',
+      callerId: 'AIDA...',
+      cognitoIdentity: null,
+      principalOrgId: null,
+      userArn: 'arn:aws:iam::111122223333:user/example-user',
+      userId: 'AIDA...',
+    },
+  },
+  domainName: 'example.com',
+  domainPrefix: '<url-id>',
+  http: {
+    method: 'POST',
+    path: '/my/path',
+    protocol: 'HTTP/1.1',
+    sourceIp: '123.123.123.123',
+    userAgent: 'agent',
+  },
+  requestId: 'id',
+  routeKey: '$default',
+  stage: '$default',
+  time: '12/Mar/2020:19:03:58 +0000',
+  timeEpoch: 1583348638390,
+  customProperty: 'customValue',
 }
 
 describe('AWS Lambda Adapter for Hono', () => {
@@ -109,38 +144,6 @@ describe('AWS Lambda Adapter for Hono', () => {
     requestTimeEpoch: 1583349317135,
     resourcePath: '/',
     stage: '$default',
-    customProperty: 'customValue',
-  }
-
-  const testLambdaFunctionUrlRequestContext = {
-    accountId: '123456789012',
-    apiId: 'urlid',
-    authentication: null,
-    authorizer: {
-      iam: {
-        accessKey: 'AKIA...',
-        accountId: '111122223333',
-        callerId: 'AIDA...',
-        cognitoIdentity: null,
-        principalOrgId: null,
-        userArn: 'arn:aws:iam::111122223333:user/example-user',
-        userId: 'AIDA...',
-      },
-    },
-    domainName: 'example.com',
-    domainPrefix: '<url-id>',
-    http: {
-      method: 'POST',
-      path: '/my/path',
-      protocol: 'HTTP/1.1',
-      sourceIp: '123.123.123.123',
-      userAgent: 'agent',
-    },
-    requestId: 'id',
-    routeKey: '$default',
-    stage: '$default',
-    time: '12/Mar/2020:19:03:58 +0000',
-    timeEpoch: 1583348638390,
     customProperty: 'customValue',
   }
 
@@ -347,7 +350,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(JSON.parse(response.body).callbackWaitsForEmptyEventLoop).toEqual(false)
   })
 
-  it('Shoul handle a POST request and return a 200 response with cookies set (APIGatewayProxyEvent V1 and V2)', async () => {
+  it('Should handle a POST request and return a 200 response with cookies set (APIGatewayProxyEvent V1 and V2)', async () => {
     const apiGatewayEvent = {
       httpMethod: 'POST',
       headers: { 'content-type': 'text/plain' },
@@ -384,7 +387,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     ])
   })
 
-  it('Shoul handle a POST request and return a 200 response if cookies match (APIGatewayProxyEvent V1 and V2)', async () => {
+  it('Should handle a POST request and return a 200 response if cookies match (APIGatewayProxyEvent V1 and V2)', async () => {
     const apiGatewayEvent = {
       httpMethod: 'GET',
       headers: {
@@ -421,5 +424,126 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(apiGatewayResponseV2.body).toBe('Valid Cookies')
     expect(apiGatewayResponseV2.headers['content-type']).toMatch(/^text\/plain/)
     expect(apiGatewayResponseV2.isBase64Encoded).toBe(false)
+  })
+})
+
+describe('streamHandle function', () => {
+  const app = new Hono<{ Bindings: Bindings }>()
+
+  app.get('/', (c) => {
+    return c.text('Hello Lambda!')
+  })
+
+  app.get('/stream/text', async (c) => {
+    return c.streamText(async (stream) => {
+      for (let i = 0; i < 3; i++) {
+        await stream.writeln(`${i}`)
+        await stream.sleep(1)
+      }
+    })
+  })
+
+  app.get('/sse', async (c) => {
+    return streamSSE(c, async (stream) => {
+      let id = 0
+      const maxIterations = 2
+
+      while (id < maxIterations) {
+        const message = `Message\nIt is ${id}`
+        await stream.writeSSE({ data: message, event: 'time-update', id: String(id++) })
+        await stream.sleep(10)
+      }
+    })
+  })
+
+  const handler = streamHandle(app)
+
+  it('Should streamHandle a GET request and return a 200 response (LambdaFunctionUrlEvent)', async () => {
+    const event = {
+      headers: { 'content-type': ' binary/octet-stream' },
+      rawPath: '/stream/text',
+      rawQueryString: '',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testLambdaFunctionUrlRequestContext,
+    }
+
+    testLambdaFunctionUrlRequestContext.http.method = 'GET'
+
+    const mockReadableStream = new Readable({
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      read() {},
+    })
+
+    mockReadableStream.push('0\n')
+    mockReadableStream.push('1\n')
+    mockReadableStream.push('2\n')
+    mockReadableStream.push('3\n')
+    mockReadableStream.push(null) // EOF
+
+    await handler(event, mockReadableStream)
+
+    const chunks = []
+    for await (const chunk of mockReadableStream) {
+      chunks.push(chunk)
+    }
+    expect(chunks.join('')).toContain('0\n1\n2\n3\n')
+  })
+
+  it('Should handle a GET request for an SSE stream and return the correct chunks', async () => {
+    const event = {
+      headers: { 'content-type': 'text/event-stream' },
+      rawPath: '/sse',
+      rawQueryString: '',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testLambdaFunctionUrlRequestContext,
+    }
+
+    testLambdaFunctionUrlRequestContext.http.method = 'GET'
+
+    const mockReadableStream = new Readable({
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      read() {},
+    })
+
+    const initContentType = {
+      'Content-Type': 'application/vnd.awslambda.http-integration-response',
+    }
+    mockReadableStream.push(JSON.stringify(initContentType))
+
+    // Send JSON formatted response headers, followed by 8 NULL characters as a separator
+    const httpResponseMetadata = {
+      statusCode: 200,
+      headers: { 'Custom-Header': 'value' },
+      cookies: ['session=abcd1234'],
+    }
+    const jsonResponsePrelude = JSON.stringify(httpResponseMetadata) + Buffer.alloc(8, 0).toString()
+    mockReadableStream.push(jsonResponsePrelude)
+
+    mockReadableStream.push('data: Message\ndata: It is 0\n\n')
+    mockReadableStream.push('data: Message\ndata: It is 1\n\n')
+    mockReadableStream.push(null) // EOF
+
+    await handler(event, mockReadableStream)
+
+    const chunks = []
+    for await (const chunk of mockReadableStream) {
+      chunks.push(chunk)
+    }
+
+    // If you have chunks, you might want to convert them to strings before checking
+    const output = Buffer.concat(chunks).toString()
+    expect(output).toContain('data: Message\ndata: It is 0\n\n')
+    expect(output).toContain('data: Message\ndata: It is 1\n\n')
+
+    // Assertions for the newly added header and prelude
+    expect(output).toContain('application/vnd.awslambda.http-integration-response')
+    expect(output).toContain('Custom-Header')
+    expect(output).toContain('session=abcd1234')
+
+    // Check for JSON prelude and NULL sequence
+    const nullSequence = '\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000'
+    expect(output).toContain(jsonResponsePrelude.replace(nullSequence, ''))
   })
 })

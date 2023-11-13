@@ -51,7 +51,7 @@ const errorHandler = (err: Error, c: Context) => {
   if (err instanceof HTTPException) {
     return err.getResponse()
   }
-  console.trace(err)
+  console.error(err)
   const message = 'Internal Server Error'
   return c.text(message, 500)
 }
@@ -196,11 +196,6 @@ class Hono<
     })
   }
 
-  /**
-   * @experimental
-   * `app.mount()` is an experimental feature.
-   * The API might be changed.
-   */
   mount(
     path: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

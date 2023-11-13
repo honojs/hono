@@ -19,7 +19,7 @@ export interface ContextVariableMap {}
 
 export interface ContextRenderer {}
 interface DefaultRenderer {
-  (content: string): Response | Promise<Response>
+  (content: string | Promise<string>): Response | Promise<Response>
 }
 export type Renderer = ContextRenderer extends Function ? ContextRenderer : DefaultRenderer
 
@@ -75,8 +75,10 @@ interface JSONTRespond {
 }
 
 interface HTMLRespond {
-  (html: string, status?: StatusCode, headers?: HeaderRecord): Response
-  (html: string, init?: ResponseInit): Response
+  (html: string | Promise<string>, status?: StatusCode, headers?: HeaderRecord):
+    | Response
+    | Promise<Response>
+  (html: string | Promise<string>, init?: ResponseInit): Response | Promise<Response>
 }
 
 type ContextOptions<E extends Env> = {
@@ -106,7 +108,7 @@ export class Context<
   private _pH: Record<string, string> | undefined = undefined // _preparedHeaders
   private _res: Response | undefined
   private _init = true
-  private _renderer: Renderer = (content: string) => this.html(content)
+  private _renderer: Renderer = (content: string | Promise<string>) => this.html(content)
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
   constructor(req: HonoRequest<P, I['out']>, options?: ContextOptions<E>) {
@@ -356,15 +358,29 @@ export class Context<
   }
 
   html: HTMLRespond = (
-    html: string,
+    html: string | Promise<string>,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
-  ): Response => {
+  ): Response | Promise<Response> => {
     this._pH ??= {}
     this._pH['content-type'] = 'text/html; charset=UTF-8'
+
+    if (typeof html === 'object') {
+      if (!(html instanceof Promise)) {
+        html = (html as string).toString() // HtmlEscapedString object to string
+      }
+      if ((html as string | Promise<string>) instanceof Promise) {
+        return (html as unknown as Promise<string>).then((html) => {
+          return typeof arg === 'number'
+            ? this.newResponse(html, arg, headers)
+            : this.newResponse(html, arg)
+        })
+      }
+    }
+
     return typeof arg === 'number'
-      ? this.newResponse(html, arg, headers)
-      : this.newResponse(html, arg)
+      ? this.newResponse(html as string, arg, headers)
+      : this.newResponse(html as string, arg)
   }
 
   redirect = (location: string, status: StatusCode = 302): Response => {

@@ -12,7 +12,7 @@ import type { LambdaContext } from './types'
 globalThis.crypto ??= crypto
 
 // When calling Lambda directly through function urls
-interface APIGatewayProxyEventV2 {
+export interface APIGatewayProxyEventV2 {
   httpMethod: string
   headers: Record<string, string | undefined>
   cookies?: string[]
@@ -24,7 +24,7 @@ interface APIGatewayProxyEventV2 {
 }
 
 // When calling Lambda through an API Gateway or an ELB
-interface APIGatewayProxyEvent {
+export interface APIGatewayProxyEvent {
   httpMethod: string
   headers: Record<string, string | undefined>
   multiValueHeaders?: {
@@ -38,7 +38,7 @@ interface APIGatewayProxyEvent {
 }
 
 // When calling Lambda through an Lambda Function URLs
-interface LambdaFunctionUrlEvent {
+export interface LambdaFunctionUrlEvent {
   headers: Record<string, string | undefined>
   rawPath: string
   rawQueryString: string
@@ -62,6 +62,62 @@ const getRequestContext = (
   event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent
 ): ApiGatewayRequestContext | LambdaFunctionUrlRequestContext => {
   return event.requestContext
+}
+
+const streamToNodeStream = async (
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  writer: NodeJS.WritableStream
+) => {
+  let readResult = await reader.read()
+  while (!readResult.done) {
+    writer.write(readResult.value)
+    readResult = await reader.read()
+  }
+  writer.end()
+}
+
+export const streamHandle = <
+  E extends Env = Env,
+  S extends Schema = {},
+  BasePath extends string = '/'
+>(
+  app: Hono<E, S, BasePath>
+) => {
+  return awslambda.streamifyResponse(
+    async (
+      event: APIGatewayProxyEvent | APIGatewayProxyEventV2 | LambdaFunctionUrlEvent,
+      responseStream: NodeJS.WritableStream,
+      context: LambdaContext
+    ) => {
+      try {
+        const req = createRequest(event)
+        const requestContext = getRequestContext(event)
+
+        const res = await app.fetch(req, {
+          requestContext,
+          context,
+        })
+
+        // Check content type
+        const httpResponseMetadata = {
+          statusCode: res.status,
+          headers: Object.fromEntries(res.headers.entries()),
+        }
+
+        if (res.body) {
+          await streamToNodeStream(
+            res.body.getReader(),
+            awslambda.HttpResponseStream.from(responseStream, httpResponseMetadata)
+          )
+        }
+      } catch (error) {
+        console.error('Error processing request:', error)
+        responseStream.write('Internal Server Error')
+      } finally {
+        responseStream.end()
+      }
+    }
+  )
 }
 
 /**
