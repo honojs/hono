@@ -307,7 +307,7 @@ export class Context<
     // Content-Type will be added automatically as `text/plain`.
     if (!this._pH) {
       if (this._init && !headers && !arg) {
-        return new Response(text)
+        return new Response(text, { status: this._status })
       }
       this._pH = {}
     }
