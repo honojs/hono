@@ -214,6 +214,7 @@ export class Context<
   }
 
   status = (status: StatusCode): void => {
+    this._init = false
     this._status = status
   }
 

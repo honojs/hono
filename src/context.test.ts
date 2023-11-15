@@ -17,6 +17,14 @@ describe('Context', () => {
     expect(res.headers.get('X-Custom')).toBe('Message')
   })
 
+  it('c.text() with c.status()', async () => {
+    c.status(404)
+    const res = c.text('not found')
+    expect(res.status).toBe(404)
+    expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
+    expect(await res.text()).toBe('not found')
+  })
+
   it('c.json()', async () => {
     const res = c.json({ message: 'Hello' }, 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
