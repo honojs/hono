@@ -306,7 +306,7 @@ export class Context<
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
     if (!this._pH) {
-      if (this._init && !headers && !arg) {
+      if (this._init && !headers && !arg && !this._status) {
         return new Response(text)
       }
       this._pH = {}
