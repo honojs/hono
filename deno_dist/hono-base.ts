@@ -328,8 +328,7 @@ class Hono<
 
     return (async () => {
       try {
-        const tmp = composed(c)
-        const context = tmp.constructor.name === 'Promise' ? await tmp : (tmp as Context)
+        const context = await composed(c)
         if (!context.finalized) {
           throw new Error(
             'Context is not finalized. You may forget returning Response object or `await next()`'

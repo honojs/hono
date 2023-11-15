@@ -17,7 +17,7 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
     let index = -1
     return dispatch(0)
 
-    function dispatch(i: number): C | Promise<C> {
+    async function dispatch(i: number): Promise<C> {
       if (i <= index) {
         throw new Error('next() called multiple times')
       }
@@ -42,9 +42,8 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
         }
       } else {
         try {
-          res = handler(context, () => {
-            const dispatchRes = dispatch(i + 1)
-            return dispatchRes instanceof Promise ? dispatchRes : Promise.resolve(dispatchRes)
+          res = await handler(context, () => {
+            return dispatch(i + 1)
           })
         } catch (err) {
           if (err instanceof Error && context instanceof Context && onError) {
@@ -57,34 +56,13 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
         }
       }
 
-      if (!(res instanceof Promise)) {
-        if (res !== undefined && 'response' in res) {
-          res = res['response']
-        }
-        if (res && (context.finalized === false || isError)) {
-          context.res = res
-        }
-        return context
-      } else {
-        return res
-          .then((res) => {
-            if (res !== undefined && 'response' in res) {
-              res = res['response']
-            }
-            if (res && context.finalized === false) {
-              context.res = res
-            }
-            return context
-          })
-          .catch(async (err) => {
-            if (err instanceof Error && context instanceof Context && onError) {
-              context.error = err
-              context.res = await onError(err, context)
-              return context
-            }
-            throw err
-          })
+      if (res !== undefined && 'response' in res) {
+        res = res['response']
       }
+      if (res && (context.finalized === false || isError)) {
+        context.res = res
+      }
+      return context
     }
   }
 }
