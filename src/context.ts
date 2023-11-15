@@ -214,6 +214,7 @@ export class Context<
   }
 
   status = (status: StatusCode): void => {
+    this._init = false
     this._status = status
   }
 
@@ -306,7 +307,7 @@ export class Context<
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
     if (!this._pH) {
-      if (this._init && !headers && !arg && !this._status) {
+      if (this._init && !headers && !arg) {
         return new Response(text)
       }
       this._pH = {}
