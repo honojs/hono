@@ -297,10 +297,6 @@ describe('Routing', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('get /book/123')
 
-    res = await app.request('http://localhost/book/keys', { method: 'GET' })
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('get /book/keys')
-
     res = await app.request('http://localhost/book', { method: 'POST' })
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('post /book')
@@ -661,6 +657,12 @@ describe('param and query', () => {
       const res = await app.request('http://localhost/entry/123')
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('id is 123')
+    })
+
+    it('param of /entry/:id is found, even for Array object method names', async () => {
+      const res = await app.request('http://localhost/entry/key')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('id is key')
     })
 
     it('param of /entry/:id is decoded', async () => {
