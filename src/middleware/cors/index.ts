@@ -31,7 +31,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
     }
   })(opts.origin)
 
-  return async (c, next) => {
+  return async function cors (c, next) {
     function set(key: string, value: string) {
       c.res.headers.set(key, value)
     }
