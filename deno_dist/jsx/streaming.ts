@@ -47,9 +47,19 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
   if (resArray.some((res) => (res as {}) instanceof Promise)) {
     const index = suspenseCounter++
     return raw(`<template id="H:${index}"></template>${fallback.toString()}<!--/$-->`, [
-      Promise.all(resArray).then((htmlArray) => {
-        htmlArray = htmlArray.flat()
-        const html = `<template>${htmlArray.join('')}</template><script>
+      ({ buffer }) => {
+        return Promise.all(resArray).then((htmlArray) => {
+          htmlArray = htmlArray.flat()
+          const content = htmlArray.join('')
+          if (buffer) {
+            buffer[0] = buffer[0].replace(
+              new RegExp(`<template id="H:${index}"></template>.*?<!--/\\$-->`),
+              content
+            )
+          }
+          const html = buffer
+            ? ''
+            : `<template>${content}</template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${index}')
@@ -57,12 +67,16 @@ do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
 </script>`
-        if (htmlArray.every((html) => !(html as HtmlEscapedString).promises?.length)) {
-          return html
-        }
+          if (htmlArray.every((html) => !(html as HtmlEscapedString).callbacks?.length)) {
+            return html
+          }
 
-        return raw(html, htmlArray.map((html) => (html as HtmlEscapedString).promises || []).flat())
-      }),
+          return raw(
+            html,
+            htmlArray.map((html) => (html as HtmlEscapedString).callbacks || []).flat()
+          )
+        })
+      },
     ])
   } else {
     return raw(resArray.join(''))
@@ -84,27 +98,27 @@ export const renderToReadableStream = (
       controller.enqueue(textEncoder.encode(resolved))
 
       let resolvedCount = 0
-      const promises: Promise<void>[] = []
+      const callbacks: Promise<void>[] = []
       const then = (promise: Promise<string>) => {
-        promises.push(
+        callbacks.push(
           promise
             .catch((err) => {
               console.trace(err)
               return ''
             })
             .then((res) => {
-              if ((res as HtmlEscapedString).promises) {
-                const resPromises = (res as HtmlEscapedString).promises || []
-                resPromises.forEach(then)
+              if ((res as HtmlEscapedString).callbacks) {
+                const callbacks = (res as HtmlEscapedString).callbacks || []
+                callbacks.map((c) => c({})).forEach(then)
               }
               resolvedCount++
               controller.enqueue(textEncoder.encode(res))
             })
         )
       }
-      ;(resolved as HtmlEscapedString).promises?.map(then)
-      while (resolvedCount !== promises.length) {
-        await Promise.all(promises)
+      ;(resolved as HtmlEscapedString).callbacks?.map((c) => c({})).forEach(then)
+      while (resolvedCount !== callbacks.length) {
+        await Promise.all(callbacks)
       }
 
       controller.close()

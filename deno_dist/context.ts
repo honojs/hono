@@ -3,6 +3,7 @@ import type { HonoRequest } from './request.ts'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
+import { resolveStream } from './utils/html.ts'
 import type { StatusCode } from './utils/http-status.ts'
 import { StreamingApi } from './utils/stream.ts'
 import type { JSONValue, InterfaceToType } from './utils/types.ts'
@@ -370,11 +371,13 @@ export class Context<
         html = (html as string).toString() // HtmlEscapedString object to string
       }
       if ((html as string | Promise<string>) instanceof Promise) {
-        return (html as unknown as Promise<string>).then((html) => {
-          return typeof arg === 'number'
-            ? this.newResponse(html, arg, headers)
-            : this.newResponse(html, arg)
-        })
+        return (html as unknown as Promise<string>)
+          .then((html) => resolveStream(html))
+          .then((html) => {
+            return typeof arg === 'number'
+              ? this.newResponse(html, arg, headers)
+              : this.newResponse(html, arg)
+          })
       }
     }
 

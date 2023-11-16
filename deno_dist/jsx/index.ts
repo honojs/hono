@@ -273,7 +273,7 @@ export const createContext = <T>(defaultValue: T): Context<T> => {
         return Promise.resolve().then<HtmlEscapedString>(async () => {
           values.push(props.value)
           const awaited = await string
-          const promiseRes = raw(awaited, (awaited as HtmlEscapedString).promises)
+          const promiseRes = raw(awaited, (awaited as HtmlEscapedString).callbacks)
           values.pop()
           return promiseRes
         })
