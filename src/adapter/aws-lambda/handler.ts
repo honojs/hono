@@ -11,7 +11,9 @@ import type { LambdaContext } from './types'
 // @ts-ignore
 globalThis.crypto ??= crypto
 
-// When calling Lambda directly through function urls
+export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2
+
+// When calling HTTP API or Lambda directly through function urls
 export interface APIGatewayProxyEventV2 {
   version: string
   routeKey: string
@@ -101,6 +103,7 @@ export const streamHandle = <
         const requestContext = getRequestContext(event)
 
         const res = await app.fetch(req, {
+          event,
           requestContext,
           context,
         })
@@ -141,6 +144,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
     const requestContext = getRequestContext(event)
 
     const res = await app.fetch(req, {
+      event,
       requestContext,
       lambdaContext,
     })

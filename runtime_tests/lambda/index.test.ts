@@ -4,6 +4,7 @@ import type {
   ApiGatewayRequestContextV2,
 } from '../../src/adapter/aws-lambda/custom-context'
 import { handle, streamHandle } from '../../src/adapter/aws-lambda/handler'
+import type { LambdaEvent } from '../../src/adapter/aws-lambda/handler'
 import type { LambdaContext } from '../../src/adapter/aws-lambda/types'
 import { getCookie, setCookie } from '../../src/helper/cookie'
 import { streamSSE } from '../../src/helper/streaming'
@@ -12,6 +13,7 @@ import { basicAuth } from '../../src/middleware/basic-auth'
 import './mock'
 
 type Bindings = {
+  event: LambdaEvent,
   lambdaContext: LambdaContext
   requestContext: ApiGatewayRequestContext | ApiGatewayRequestContextV2
 }
@@ -76,18 +78,33 @@ describe('AWS Lambda Adapter for Hono', () => {
   app.use('/auth/*', basicAuth({ username, password }))
   app.get('/auth/abc', (c) => c.text('Good Night Lambda!'))
 
+  app.get('/lambda-event', (c) => {
+    const event = c.env.event
+    return c.json(event)
+  })
+
   app.get('/lambda-context', (c) => {
     const fnctx = c.env.lambdaContext
     return c.json(fnctx)
   })
 
+  app.get('/custom-context/v1/apigw', (c) => {
+    const lambdaContext = c.env.requestContext
+    return c.json(lambdaContext)
+  })
+
   app.get('/custom-context/apigw', (c) => {
+    const lambdaContext = c.env.event.requestContext
+    return c.json(lambdaContext)
+  })
+
+  app.get('/custom-context/v1/lambda', (c) => {
     const lambdaContext = c.env.requestContext
     return c.json(lambdaContext)
   })
 
   app.get('/custom-context/lambda', (c) => {
-    const lambdaContext = c.env.requestContext
+    const lambdaContext = c.env.event.requestContext
     return c.json(lambdaContext)
   })
 
