@@ -1,4 +1,9 @@
-export type HtmlEscaped = { isEscaped: true; promises?: Promise<string>[] }
+type HtmlEscapedCallbackOpts = { buffer?: [string] }
+export type HtmlEscapedCallback = (opts: HtmlEscapedCallbackOpts) => Promise<string>
+export type HtmlEscaped = {
+  isEscaped: true
+  callbacks?: HtmlEscapedCallback[]
+}
 export type HtmlEscapedString = string & HtmlEscaped
 export type StringBuffer = (string | Promise<string>)[]
 import { raw } from '../helper/html'
@@ -10,20 +15,20 @@ const escapeRe = /[&<>'"]/
 
 export const stringBufferToString = async (buffer: StringBuffer): Promise<HtmlEscapedString> => {
   let str = ''
-  const promises: Promise<string>[] = []
+  const callbacks: HtmlEscapedCallback[] = []
   for (let i = buffer.length - 1; i >= 0; i--) {
     let r = await buffer[i]
     if (typeof r === 'object') {
-      promises.push(...((r as HtmlEscapedString).promises || []))
+      callbacks.push(...((r as HtmlEscapedString).callbacks || []))
     }
     r = await (typeof r === 'object' ? (r as HtmlEscapedString).toString() : r)
     if (typeof r === 'object') {
-      promises.push(...((r as HtmlEscapedString).promises || []))
+      callbacks.push(...((r as HtmlEscapedString).callbacks || []))
     }
     str += r
   }
 
-  return raw(str, promises)
+  return raw(str, callbacks)
 }
 
 export const escapeToBuffer = (str: string, buffer: StringBuffer): void => {
@@ -63,4 +68,13 @@ export const escapeToBuffer = (str: string, buffer: StringBuffer): void => {
   }
 
   buffer[0] += str.substring(lastIndex, index)
+}
+
+export const resolveStream = (str: string | HtmlEscapedString): Promise<string> => {
+  if (!(str as HtmlEscapedString).callbacks?.length) {
+    return Promise.resolve(str)
+  }
+  const callbacks = (str as HtmlEscapedString).callbacks as HtmlEscapedCallback[]
+  const buffer = [str] as [string]
+  return Promise.all(callbacks.map((c) => c({ buffer }))).then((res) => buffer[0] + res.join(''))
 }

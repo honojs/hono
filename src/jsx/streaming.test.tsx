@@ -1,5 +1,6 @@
 import { JSDOM } from 'jsdom'
 import { raw } from '../helper/html'
+import { resolveStream } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'
 import { Suspense, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -498,6 +499,26 @@ d.replaceWith(c.content)
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
       '<p>first</p><p>last</p>'
     )
+  })
+
+  it('Suspense with resolveStream', async () => {
+    let contentEvaluatedCount = 0
+    const Content = () => {
+      contentEvaluatedCount++
+      const content = new Promise<HtmlEscapedString>((resolve) =>
+        setTimeout(() => resolve(<h1>Hello</h1>), 10)
+      )
+      return content
+    }
+
+    const str = await resolveStream(await (
+      <Suspense fallback={<p>Loading...</p>}>
+        <Content />
+      </Suspense>
+    ).toString())
+
+    expect(str).toEqual('<h1>Hello</h1>')
+    expect(contentEvaluatedCount).toEqual(1)
   })
 
   it('renderToReadableStream(str: string)', async () => {
