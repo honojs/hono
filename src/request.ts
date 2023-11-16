@@ -57,7 +57,6 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   param(key?: string): unknown {
     if (key) {
       const param = (this._s ? this._s[this._p[key] as any] : this._p[key]) as string | undefined
-      console.log(param)
       return param ? (/\%/.test(param) ? decodeURIComponent_(param) : param) : undefined
     } else {
       const decoded: Record<string, string> = {}
