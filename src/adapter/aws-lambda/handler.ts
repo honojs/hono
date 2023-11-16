@@ -68,7 +68,7 @@ interface APIGatewayProxyResult {
 }
 
 const getRequestContext = (
-  event: APIGatewayProxyEvent | APIGatewayProxyEventV2
+  event: LambdaEvent
 ): ApiGatewayRequestContext | ApiGatewayRequestContextV2 => {
   return event.requestContext
 }
@@ -94,7 +94,7 @@ export const streamHandle = <
 ) => {
   return awslambda.streamifyResponse(
     async (
-      event: APIGatewayProxyEvent | APIGatewayProxyEventV2,
+      event: LambdaEvent,
       responseStream: NodeJS.WritableStream,
       context: LambdaContext
     ) => {
@@ -137,7 +137,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
   app: Hono<E, S, BasePath>
 ) => {
   return async (
-    event: APIGatewayProxyEvent | APIGatewayProxyEventV2,
+    event: LambdaEvent,
     lambdaContext?: LambdaContext
   ): Promise<APIGatewayProxyResult> => {
     const req = createRequest(event)
@@ -154,7 +154,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
 }
 
 const createResult = async (
-  event: APIGatewayProxyEvent | APIGatewayProxyEventV2,
+  event: LambdaEvent,
   res: Response
 ): Promise<APIGatewayProxyResult> => {
   const contentType = res.headers.get('content-type')
@@ -187,7 +187,7 @@ const createResult = async (
   return result
 }
 
-const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
+const createRequest = (event: LambdaEvent) => {
   const queryString = extractQueryString(event)
   const urlPath = `https://${event.requestContext.domainName}${
     isProxyEvent(event) ? event.path : event.rawPath
@@ -213,7 +213,7 @@ const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => 
   return new Request(url, requestInit)
 }
 
-const extractQueryString = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
+const extractQueryString = (event: LambdaEvent) => {
   if (isProxyEvent(event)) {
     return Object.entries(event.queryStringParameters || {})
       .filter(([, value]) => value)
@@ -223,14 +223,14 @@ const extractQueryString = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2
   return event.rawQueryString
 }
 
-const getCookies = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2, headers: Headers) => {
+const getCookies = (event: LambdaEvent, headers: Headers) => {
   if (isProxyEventV2(event) && Array.isArray(event.cookies)) {
     headers.set('Cookie', event.cookies.join('; '))
   }
 }
 
 const setCookies = (
-  event: APIGatewayProxyEvent | APIGatewayProxyEventV2,
+  event: LambdaEvent,
   res: Response,
   result: APIGatewayProxyResult
 ) => {
@@ -250,13 +250,13 @@ const setCookies = (
 }
 
 const isProxyEvent = (
-  event: APIGatewayProxyEvent | APIGatewayProxyEventV2
+  event: LambdaEvent
 ): event is APIGatewayProxyEvent => {
   return Object.prototype.hasOwnProperty.call(event, 'path')
 }
 
 const isProxyEventV2 = (
-  event: APIGatewayProxyEvent | APIGatewayProxyEventV2
+  event: LambdaEvent
 ): event is APIGatewayProxyEventV2 => {
   return Object.prototype.hasOwnProperty.call(event, 'rawPath')
 }
