@@ -13,7 +13,8 @@ globalThis.crypto ??= crypto
 
 // When calling Lambda directly through function urls
 export interface APIGatewayProxyEventV2 {
-  httpMethod: string
+  version: string
+  routeKey: string
   headers: Record<string, string | undefined>
   cookies?: string[]
   rawPath: string
@@ -21,10 +22,20 @@ export interface APIGatewayProxyEventV2 {
   body: string | null
   isBase64Encoded: boolean
   requestContext: ApiGatewayRequestContextV2
+  queryStringParameters?: {
+    [name: string]: string | undefined
+  }
+  pathParameters?: {
+    [name: string]: string | undefined
+  }
+  stageVariables?: {
+    [name: string]: string | undefined
+  }
 }
 
 // When calling Lambda through an API Gateway or an ELB
 export interface APIGatewayProxyEvent {
+  version: string
   httpMethod: string
   headers: Record<string, string | undefined>
   multiValueHeaders?: {
@@ -35,6 +46,12 @@ export interface APIGatewayProxyEvent {
   isBase64Encoded: boolean
   queryStringParameters?: Record<string, string | undefined>
   requestContext: ApiGatewayRequestContext
+  resource: string
+  multiValueQueryStringParameters?: {
+    [parameterKey: string]: string[]
+  }
+  pathParameters?: Record<string, string>
+  stageVariables?: Record<string, string>
 }
 
 interface APIGatewayProxyResult {
