@@ -187,6 +187,11 @@ class Hono<
     return this
   }
 
+  /**
+   * @deprecated
+   * Use `showRoutes()` utility methods provided by `helper` instead of `app.showRoutes()`.
+   * `app.showRoutes()` will be removed in v4.
+   */
   showRoutes() {
     const length = 8
     this.routes.map((route) => {
