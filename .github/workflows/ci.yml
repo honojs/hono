@@ -61,7 +61,7 @@ jobs:
       - run: bun run test:bun
 
   fastly:
-    name: 'Fastly Compute@Edge'
+    name: 'Fastly Compute'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
