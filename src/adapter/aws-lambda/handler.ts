@@ -4,7 +4,7 @@ import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 
 import { encodeBase64 } from '../../utils/encode'
-import type { ApiGatewayRequestContext, LambdaFunctionUrlRequestContext } from './custom-context'
+import type { ApiGatewayRequestContext, ApiGatewayRequestContextV2 } from './custom-context'
 import type { LambdaContext } from './types'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -20,7 +20,7 @@ export interface APIGatewayProxyEventV2 {
   rawQueryString: string
   body: string | null
   isBase64Encoded: boolean
-  requestContext: ApiGatewayRequestContext
+  requestContext: ApiGatewayRequestContextV2
 }
 
 // When calling Lambda through an API Gateway or an ELB
@@ -50,7 +50,7 @@ interface APIGatewayProxyResult {
 
 const getRequestContext = (
   event: APIGatewayProxyEvent | APIGatewayProxyEventV2
-): ApiGatewayRequestContext | LambdaFunctionUrlRequestContext => {
+): ApiGatewayRequestContext | ApiGatewayRequestContextV2 => {
   return event.requestContext
 }
 
@@ -181,7 +181,7 @@ const createRequest = (
     if (v) headers.set(k, v)
   }
 
-  const method = 'httpMethod' in event ? event.httpMethod : event.requestContext.http.method
+  const method = isProxyEvent(event) ? event.httpMethod : event.requestContext.http.method
   const requestInit: RequestInit = {
     headers,
     method,

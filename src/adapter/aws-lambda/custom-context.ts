@@ -61,7 +61,7 @@ interface Authorizer {
   }
 }
 
-export interface LambdaFunctionUrlRequestContext {
+export interface ApiGatewayRequestContextV2 {
   accountId: string
   apiId: string
   authentication: null
