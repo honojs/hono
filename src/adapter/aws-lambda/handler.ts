@@ -93,11 +93,7 @@ export const streamHandle = <
   app: Hono<E, S, BasePath>
 ) => {
   return awslambda.streamifyResponse(
-    async (
-      event: LambdaEvent,
-      responseStream: NodeJS.WritableStream,
-      context: LambdaContext
-    ) => {
+    async (event: LambdaEvent, responseStream: NodeJS.WritableStream, context: LambdaContext) => {
       try {
         const req = createRequest(event)
         const requestContext = getRequestContext(event)
@@ -153,10 +149,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
   }
 }
 
-const createResult = async (
-  event: LambdaEvent,
-  res: Response
-): Promise<APIGatewayProxyResult> => {
+const createResult = async (event: LambdaEvent, res: Response): Promise<APIGatewayProxyResult> => {
   const contentType = res.headers.get('content-type')
   let isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
 
@@ -229,11 +222,7 @@ const getCookies = (event: LambdaEvent, headers: Headers) => {
   }
 }
 
-const setCookies = (
-  event: LambdaEvent,
-  res: Response,
-  result: APIGatewayProxyResult
-) => {
+const setCookies = (event: LambdaEvent, res: Response, result: APIGatewayProxyResult) => {
   if (res.headers.has('set-cookie')) {
     const cookies = res.headers.get('set-cookie')?.split(', ')
     if (Array.isArray(cookies)) {
@@ -249,15 +238,11 @@ const setCookies = (
   }
 }
 
-const isProxyEvent = (
-  event: LambdaEvent
-): event is APIGatewayProxyEvent => {
+const isProxyEvent = (event: LambdaEvent): event is APIGatewayProxyEvent => {
   return Object.prototype.hasOwnProperty.call(event, 'path')
 }
 
-const isProxyEventV2 = (
-  event: LambdaEvent
-): event is APIGatewayProxyEventV2 => {
+const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => {
   return Object.prototype.hasOwnProperty.call(event, 'rawPath')
 }
 
