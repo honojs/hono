@@ -297,6 +297,10 @@ describe('Routing', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('get /book/123')
 
+    res = await app.request('http://localhost/book/keys', { method: 'GET' })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('get /book/keys')
+
     res = await app.request('http://localhost/book', { method: 'POST' })
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('post /book')
