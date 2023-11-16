@@ -13,7 +13,7 @@ import { basicAuth } from '../../src/middleware/basic-auth'
 import './mock'
 
 type Bindings = {
-  event: LambdaEvent,
+  event: LambdaEvent
   lambdaContext: LambdaContext
   requestContext: ApiGatewayRequestContext | ApiGatewayRequestContextV2
 }

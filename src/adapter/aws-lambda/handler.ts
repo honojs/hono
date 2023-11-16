@@ -187,9 +187,7 @@ const createResult = async (
   return result
 }
 
-const createRequest = (
-  event: APIGatewayProxyEvent | APIGatewayProxyEventV2
-) => {
+const createRequest = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
   const queryString = extractQueryString(event)
   const urlPath = `https://${event.requestContext.domainName}${
     isProxyEvent(event) ? event.path : event.rawPath
@@ -215,9 +213,7 @@ const createRequest = (
   return new Request(url, requestInit)
 }
 
-const extractQueryString = (
-  event: APIGatewayProxyEvent | APIGatewayProxyEventV2
-) => {
+const extractQueryString = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
   if (isProxyEvent(event)) {
     return Object.entries(event.queryStringParameters || {})
       .filter(([, value]) => value)
@@ -227,10 +223,7 @@ const extractQueryString = (
   return event.rawQueryString
 }
 
-const getCookies = (
-  event: APIGatewayProxyEvent | APIGatewayProxyEventV2,
-  headers: Headers
-) => {
+const getCookies = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2, headers: Headers) => {
   if (isProxyEventV2(event) && Array.isArray(event.cookies)) {
     headers.set('Cookie', event.cookies.join('; '))
   }
