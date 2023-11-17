@@ -17,7 +17,13 @@ async function childrenToString(children: Child[]): Promise<HtmlEscapedString[]>
   }
 }
 
-export const ErrorBoundary: FC<{ fallback: any }> = async ({ children, fallback }) => {
+type ErrorHandler = (error: Error) => void
+type FallbackRender = (error: Error) => HtmlEscapedString
+export const ErrorBoundary: FC<{
+  fallback?: HtmlEscapedString
+  fallbackRender?: FallbackRender
+  onError?: ErrorHandler
+}> = async ({ children, fallback, fallbackRender, onError }) => {
   if (!children) {
     return raw('')
   }
@@ -26,30 +32,33 @@ export const ErrorBoundary: FC<{ fallback: any }> = async ({ children, fallback 
     children = [children]
   }
 
-  const fallbackRes = fallback.toString()
+  const fallbackRes = (error: Error): HtmlEscapedString =>
+    (fallback || fallbackRender?.(error) || '').toString() as HtmlEscapedString
   let resArray: HtmlEscapedString[] | Promise<HtmlEscapedString[]>[] = []
   try {
     resArray = children.map((c) => c.toString()) as HtmlEscapedString[]
   } catch (e) {
     if (e instanceof Promise) {
       resArray = [
-        e.then(() => childrenToString(children as Child[])).catch(() => fallbackRes),
+        e.then(() => childrenToString(children as Child[])).catch((e) => fallbackRes(e)),
       ] as Promise<HtmlEscapedString[]>[]
     } else {
-      resArray = [fallbackRes]
+      resArray = [fallbackRes(e as Error)]
     }
   }
 
   if (resArray.some((res) => (res as {}) instanceof Promise)) {
     const index = errorBoundaryCounter++
     const replaceRe = RegExp(`(<template id="E:${index}"></template>.*?)(<!--_\\$-->)`)
-    const catchCallback = ({ buffer }: { buffer?: [string] }) => {
+    const catchCallback = ({ error, buffer }: { error: Error; buffer?: [string] }) => {
+      onError?.(error)
+      const fallbackResString = fallbackRes(error)
       if (buffer) {
-        buffer[0] = buffer[0].replace(replaceRe, fallbackRes)
+        buffer[0] = buffer[0].replace(replaceRe, fallbackResString)
       }
       return buffer
         ? ''
-        : `<template>${fallbackRes}</template><script>
+        : `<template>${fallbackResString}</template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('E:${index}')
@@ -89,11 +98,11 @@ d.parentElement.insertBefore(c.content,d.nextSibling)
                 .map(
                   (c) =>
                     ({ buffer }) =>
-                      c({ buffer }).catch(() => catchCallback({ buffer }))
+                      c({ buffer }).catch((error) => catchCallback({ error, buffer }))
                 )
             )
           })
-          .catch(() => catchCallback({ buffer }))
+          .catch((error) => catchCallback({ error, buffer }))
       },
     ])
   } else {

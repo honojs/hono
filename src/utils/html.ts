@@ -1,4 +1,4 @@
-type HtmlEscapedCallbackOpts = { buffer?: [string] }
+type HtmlEscapedCallbackOpts = { error?: Error; buffer?: [string] }
 export type HtmlEscapedCallback = (opts: HtmlEscapedCallbackOpts) => Promise<string>
 export type HtmlEscaped = {
   isEscaped: true
