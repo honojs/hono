@@ -1,21 +1,9 @@
 import { raw } from '../helper/html'
 import type { HtmlEscapedString } from '../utils/html'
+import { childrenToString } from './components'
 import type { FC, Child } from './index'
 
 let suspenseCounter = 0
-
-async function childrenToString(children: Child[]): Promise<HtmlEscapedString[]> {
-  try {
-    return children.map((c) => c.toString()) as HtmlEscapedString[]
-  } catch (e) {
-    if (e instanceof Promise) {
-      await e
-      return childrenToString(children)
-    } else {
-      throw e
-    }
-  }
-}
 
 /**
  * @experimental
