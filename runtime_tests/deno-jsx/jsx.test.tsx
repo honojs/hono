@@ -70,6 +70,7 @@ Deno.test('JSX: Suspense', async () => {
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:0')
+if(!d)return
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
