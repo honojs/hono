@@ -362,7 +362,9 @@ describe('Routing', () => {
   })
 
   describe('Grouped route', () => {
-    let one: Hono, two: Hono, three: Hono
+    let one: Hono
+    let two: Hono
+    let three: Hono
 
     beforeEach(() => {
       one = new Hono()

@@ -16,7 +16,8 @@
 		"useHtmlLang": "off"
 	  }, 
 	  "correctness": {
-		"noUndeclaredVariables": "off"
+		"noUndeclaredVariables": "off",
+		"noUnnecessaryContinue": "off"
 	  },
       "nursery": {
         "noUselessLoneBlockStatements": "off"

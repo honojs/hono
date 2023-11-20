@@ -344,7 +344,7 @@ describe('Validator middleware with Zod validates query params', () => {
     page: z
       .string()
       .refine((v) => {
-        return !isNaN(Number(v))
+        return !Number.isNaN(Number(v))
       })
       .transform((v) => {
         return Number(v)
@@ -527,7 +527,7 @@ describe('Validator middleware with Zod multiple validators', () => {
         page: z
           .string()
           .refine((v) => {
-            return !isNaN(Number(v))
+            return !Number.isNaN(Number(v))
           })
           .transform((v) => {
             return Number(v)
