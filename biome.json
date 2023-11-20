@@ -70,7 +70,7 @@
       "enabled": true,
       "quoteStyle": "single",
       "jsxQuoteStyle": "double",
-      "trailingComma": "none",
+      "trailingComma": "es5",
       "semicolons": "asNeeded",
       "arrowParentheses": "always",
       "indentStyle": "space",

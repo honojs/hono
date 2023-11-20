@@ -52,7 +52,7 @@ describe('Example', () => {
 
     test('POST /book', async () => {
       const res = await fetch('http://127.0.0.1:1234/book', {
-        method: 'POST'
+        method: 'POST',
       })
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('Create Book')
@@ -61,7 +61,7 @@ describe('Example', () => {
 
   test('GET /redirect', async () => {
     const res = await fetch('http://127.0.0.1:1234/redirect', {
-      redirect: 'manual'
+      redirect: 'manual',
     })
     expect(res.status).toBe(302)
     expect(res.headers.get('location')).toBe('/')
@@ -77,8 +77,8 @@ describe('Example', () => {
     test('GET /basic-auth/anyroute', async () => {
       const res = await fetch('http://127.0.0.1:1234/basic-auth/anyroute', {
         headers: {
-          authorization: `Basic ${btoa('hono:acoolproject')}`
-        }
+          authorization: `Basic ${btoa('hono:acoolproject')}`,
+        },
       })
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('You are authorized')
@@ -95,8 +95,8 @@ describe('Example', () => {
     test('GET /bearer-auth/anyroute', async () => {
       const res = await fetch('http://127.0.0.1:1234/bearer-auth/anyroute', {
         headers: {
-          authorization: 'Bearer secrettoken'
-        }
+          authorization: 'Bearer secrettoken',
+        },
       })
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('You are authorized')
@@ -119,8 +119,8 @@ describe('Example', () => {
   test('GET /user-agent', async () => {
     const res = await fetch('http://127.0.0.1:1234/user-agent', {
       headers: {
-        'user-agent': 'Lagon'
-      }
+        'user-agent': 'Lagon',
+      },
     })
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Your UserAgent is Lagon')
@@ -133,13 +133,13 @@ describe('Example', () => {
       { id: 1, title: 'Good Morning' },
       { id: 2, title: 'Good Aternoon' },
       { id: 3, title: 'Good Evening' },
-      { id: 4, title: 'Good Night' }
+      { id: 4, title: 'Good Night' },
     ])
   })
 
   test('POST /api/posts', async () => {
     const res = await fetch('http://127.0.0.1:1234/api/posts', {
-      method: 'POST'
+      method: 'POST',
     })
     expect(res.status).toBe(201)
     expect(await res.json()).toEqual({ message: 'Created!' })
@@ -156,14 +156,14 @@ describe('Example', () => {
       const res = await fetch('http://127.0.0.1:1234/form', {
         method: 'POST',
         headers: {
-          'content-type': 'application/x-www-form-urlencoded'
+          'content-type': 'application/x-www-form-urlencoded',
         },
-        body: 'username=john&password=Pa%24%24w0rd'
+        body: 'username=john&password=Pa%24%24w0rd',
       })
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({
         password: 'Pa$$w0rd',
-        username: 'john'
+        username: 'john',
       })
     })
 
@@ -172,7 +172,7 @@ describe('Example', () => {
         method: 'POST',
         headers: {
           'content-type':
-            'multipart/form-data; boundary=---------------------------9051914041544843365972754266'
+            'multipart/form-data; boundary=---------------------------9051914041544843365972754266',
         },
         body: `-----------------------------9051914041544843365972754266
 Content-Disposition: form-data; name="hello"
@@ -182,12 +182,12 @@ world!
 Content-Disposition: form-data; name="description"
 
 this is another field
------------------------------9051914041544843365972754266--`
+-----------------------------9051914041544843365972754266--`,
       })
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({
         description: 'this is another field',
-        hello: 'world!'
+        hello: 'world!',
       })
     })
   })

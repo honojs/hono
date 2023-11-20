@@ -83,7 +83,7 @@ describe('Etag Middleware', () => {
         date: 'Mon, Feb 27 2023 12:08:36 GMT',
         expires: 'Mon, Feb 27 2023 12:10:36 GMT',
         server: 'Upstream 1.2',
-        vary: 'Accept-Language'
+        vary: 'Accept-Language',
       })
     )
 
@@ -96,16 +96,16 @@ describe('Etag Middleware', () => {
     // conditional GET with the wrong ETag:
     res = await app.request('http://localhost/etag/ghi', {
       headers: {
-        'If-None-Match': '"not the right etag"'
-      }
+        'If-None-Match': '"not the right etag"',
+      },
     })
     expect(res.status).toBe(200)
 
     // conditional GET with matching ETag:
     res = await app.request('http://localhost/etag/ghi', {
       headers: {
-        'If-None-Match': etag
-      }
+        'If-None-Match': etag,
+      },
     })
     expect(res.status).toBe(304)
     expect(res.headers.get('Etag')).toBe(etag)
@@ -119,8 +119,8 @@ describe('Etag Middleware', () => {
     // conditional GET with matching ETag among list:
     res = await app.request('http://localhost/etag/ghi', {
       headers: {
-        'If-None-Match': `"mismatch 1", ${etag}, "mismatch 2"`
-      }
+        'If-None-Match': `"mismatch 1", ${etag}, "mismatch 2"`,
+      },
     })
     expect(res.status).toBe(304)
   })

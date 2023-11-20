@@ -7,9 +7,9 @@ describe('Wrangler', () => {
   beforeAll(async () => {
     worker = await unstable_dev('./runtime_tests/wrangler/index.ts', {
       vars: {
-        NAME: 'Cloudflare'
+        NAME: 'Cloudflare',
       },
-      experimental: { disableExperimentalWarning: true }
+      experimental: { disableExperimentalWarning: true },
     })
   })
 

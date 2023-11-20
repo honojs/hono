@@ -39,7 +39,7 @@ export const handle: HandleInterface =
       { ...eventContext.env, eventContext },
       {
         waitUntil: eventContext.waitUntil,
-        passThroughOnException: eventContext.passThroughOnException
+        passThroughOnException: eventContext.passThroughOnException,
       }
     )
   }

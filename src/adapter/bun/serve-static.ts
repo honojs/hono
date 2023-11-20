@@ -30,7 +30,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
     let path = getFilePath({
       filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
       root: options.root,
-      defaultDocument: DEFAULT_DOCUMENT
+      defaultDocument: DEFAULT_DOCUMENT,
     })
 
     if (!path) return await next()

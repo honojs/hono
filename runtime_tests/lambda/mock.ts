@@ -2,7 +2,7 @@ import { vi } from 'vitest'
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
-  LambdaFunctionUrlEvent
+  LambdaFunctionUrlEvent,
 } from '../../src/adapter/aws-lambda/handler'
 import type { LambdaContext } from '../../src/adapter/aws-lambda/types'
 
@@ -24,7 +24,7 @@ const mockStreamifyResponse: StreamifyResponseHandler = (handlerFunc) => {
       final(callback) {
         console.log('Finalizing stream.')
         callback()
-      }
+      },
     })
     mockWritableStream.on('finish', () => {
       console.log('Stream has finished')
@@ -36,7 +36,7 @@ const mockStreamifyResponse: StreamifyResponseHandler = (handlerFunc) => {
 }
 
 const awslambda = {
-  streamifyResponse: mockStreamifyResponse
+  streamifyResponse: mockStreamifyResponse,
 }
 
 vi.stubGlobal('awslambda', awslambda)

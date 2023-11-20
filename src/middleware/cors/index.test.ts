@@ -13,21 +13,21 @@ describe('CORS by Middleware', () => {
       allowMethods: ['POST', 'GET', 'OPTIONS'],
       exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
       maxAge: 600,
-      credentials: true
+      credentials: true,
     })
   )
 
   app.use(
     '/api3/*',
     cors({
-      origin: ['http://example.com', 'http://example.org', 'http://example.dev']
+      origin: ['http://example.com', 'http://example.org', 'http://example.dev'],
     })
   )
 
   app.use(
     '/api4/*',
     cors({
-      origin: (origin) => (origin.endsWith('.example.com') ? origin : 'http://example.com')
+      origin: (origin) => (origin.endsWith('.example.com') ? origin : 'http://example.com'),
     })
   )
 
@@ -36,13 +36,13 @@ describe('CORS by Middleware', () => {
   app.use(
     '/api6/*',
     cors({
-      origin: 'http://example.com'
+      origin: 'http://example.com',
     })
   )
   app.use(
     '/api6/*',
     cors({
-      origin: 'http://example.com'
+      origin: 'http://example.com',
     })
   )
 
@@ -78,7 +78,7 @@ describe('CORS by Middleware', () => {
     expect(res.headers.get('Access-Control-Allow-Methods')?.split(',')[0]).toBe('GET')
     expect(res.headers.get('Access-Control-Allow-Headers')?.split(',')).toEqual([
       'X-PINGOTHER',
-      'Content-Type'
+      'Content-Type',
     ])
   })
 
@@ -90,16 +90,16 @@ describe('CORS by Middleware', () => {
     expect(res.headers.get('Vary')?.split(/\s*,\s*/)).toEqual(expect.arrayContaining(['Origin']))
     expect(res.headers.get('Access-Control-Allow-Headers')?.split(/\s*,\s*/)).toEqual([
       'X-Custom-Header',
-      'Upgrade-Insecure-Requests'
+      'Upgrade-Insecure-Requests',
     ])
     expect(res.headers.get('Access-Control-Allow-Methods')?.split(/\s*,\s*/)).toEqual([
       'POST',
       'GET',
-      'OPTIONS'
+      'OPTIONS',
     ])
     expect(res.headers.get('Access-Control-Expose-Headers')?.split(/\s*,\s*/)).toEqual([
       'Content-Length',
-      'X-Kuma-Revision'
+      'X-Kuma-Revision',
     ])
     expect(res.headers.get('Access-Control-Max-Age')).toBe('600')
     expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
@@ -108,8 +108,8 @@ describe('CORS by Middleware', () => {
   it('Allow multiple origins', async () => {
     let req = new Request('http://localhost/api3/abc', {
       headers: {
-        Origin: 'http://example.org'
-      }
+        Origin: 'http://example.org',
+      },
     })
     let res = await app.request(req)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.org')
@@ -120,8 +120,8 @@ describe('CORS by Middleware', () => {
 
     req = new Request('http://localhost/api3/abc', {
       headers: {
-        Referer: 'http://example.net/'
-      }
+        Referer: 'http://example.net/',
+      },
     })
     res = await app.request(req)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
@@ -130,8 +130,8 @@ describe('CORS by Middleware', () => {
   it('Allow origins by function', async () => {
     let req = new Request('http://localhost/api4/abc', {
       headers: {
-        Origin: 'http://subdomain.example.com'
-      }
+        Origin: 'http://subdomain.example.com',
+      },
     })
     let res = await app.request(req)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://subdomain.example.com')
@@ -142,8 +142,8 @@ describe('CORS by Middleware', () => {
 
     req = new Request('http://localhost/api4/abc', {
       headers: {
-        Referer: 'http://evil-example.com/'
-      }
+        Referer: 'http://evil-example.com/',
+      },
     })
     res = await app.request(req)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')

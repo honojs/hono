@@ -30,7 +30,7 @@ describe('crypto', () => {
   it('Should not be the same values - compare difference objects', async () => {
     expect(await sha256({ foo: 'bar' })).not.toEqual(
       await sha256({
-        bar: 'foo'
+        bar: 'foo',
       })
     )
   })

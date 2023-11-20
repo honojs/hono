@@ -172,7 +172,7 @@ describe('Cookie Middleware', () => {
         httpOnly: true,
         maxAge: 1000,
         expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
-        sameSite: 'Strict'
+        sameSite: 'Strict',
       })
       return c.text('Give cookie')
     })
@@ -195,7 +195,7 @@ describe('Cookie Middleware', () => {
         httpOnly: true,
         maxAge: 1000,
         expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
-        sameSite: 'Strict'
+        sameSite: 'Strict',
       })
       return c.text('Give signed cookie')
     })
@@ -255,7 +255,7 @@ describe('Cookie Middleware', () => {
       deleteCookie(c, 'delicious_cookie', {
         path: '/',
         secure: true,
-        domain: 'example.com'
+        domain: 'example.com',
       })
       return c.text('Give cookie')
     })

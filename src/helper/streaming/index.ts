@@ -19,7 +19,7 @@ class SSEStreamingApi extends StreamingApi {
     const sseData = `${[
       message.event && `event: ${message.event}`,
       data,
-      message.id && `id: ${message.id}`
+      message.id && `id: ${message.id}`,
     ]
       .filter(Boolean)
       .join('\n')}\n\n`

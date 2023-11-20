@@ -78,7 +78,7 @@ describe('Parse cookie', () => {
 
   it('Should parse signed cookies with binary secret', async () => {
     const secret = new Uint8Array([
-      172, 142, 204, 63, 210, 136, 58, 143, 25, 18, 159, 16, 161, 34, 94
+      172, 142, 204, 63, 210, 136, 58, 143, 25, 18, 159, 16, 161, 34, 94,
     ])
     const cookieString =
       'yummy_cookie=choco.8Km4IwZETZdwiOfrT7KgYjKXwiO98XIkms0tOtRa2TA%3D; tasty_cookie = strawberry.TbV33P%2Bi1K0JTxMzNYq7FV9fB4s2VlQcBCBFDxTrUSg%3D'
@@ -162,7 +162,7 @@ describe('Set cookie', () => {
       maxAge: 1000,
       expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
       sameSite: 'Strict',
-      partitioned: true
+      partitioned: true,
     })
     expect(serialized).toBe(
       'great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Partitioned'
@@ -187,7 +187,7 @@ describe('Set cookie', () => {
       maxAge: 1000,
       expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
       sameSite: 'Strict',
-      partitioned: true
+      partitioned: true,
     })
     expect(serialized).toBe(
       'great_cookie=banana.hSo6gB7YT2db0WBiEAakEmh7dtwEL0DSp76G23WvHuQ%3D; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Partitioned'
@@ -196,14 +196,14 @@ describe('Set cookie', () => {
 
   it('Should serialize cookie with maxAge is 0', () => {
     const serialized = serialize('great_cookie', 'banana', {
-      maxAge: 0
+      maxAge: 0,
     })
     expect(serialized).toBe('great_cookie=banana; Max-Age=0')
   })
 
   it('Should serialize cookie with maxAge is -1', () => {
     const serialized = serialize('great_cookie', 'banana', {
-      maxAge: -1
+      maxAge: -1,
     })
     expect(serialized).toBe('great_cookie=banana')
   })

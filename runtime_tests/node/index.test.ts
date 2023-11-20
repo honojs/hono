@@ -52,7 +52,7 @@ describe('Basic Auth Middleware', () => {
     '/auth/*',
     basicAuth({
       username,
-      password
+      password,
     })
   )
 

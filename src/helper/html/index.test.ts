@@ -22,7 +22,7 @@ describe('Tagged Template Literals', () => {
       'Name:',
       ['John "Johnny" Smith', undefined, null],
       ' Contact:',
-      [html`<a href="http://example.com/">My Website</a>`]
+      [html`<a href="http://example.com/">My Website</a>`],
     ]
     expect(html`<p>${values}</p>`.toString()).toBe(
       '<p>Name:John &quot;Johnny&quot; Smith Contact:<a href="http://example.com/">My Website</a></p>'

@@ -35,7 +35,7 @@ const globalStore: Map<string | Request, Response> = new Map()
 const caches = {
   open: (name: string) => {
     return new MockCache(name, globalStore)
-  }
+  },
 }
 
 vi.stubGlobal('caches', caches)

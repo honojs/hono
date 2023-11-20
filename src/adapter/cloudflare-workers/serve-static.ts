@@ -29,7 +29,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Middlew
     const path = getFilePath({
       filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
       root: options.root,
-      defaultDocument: DEFAULT_DOCUMENT
+      defaultDocument: DEFAULT_DOCUMENT,
     })
 
     if (!path) return await next()
@@ -38,7 +38,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Middlew
       manifest: options.manifest,
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      namespace: options.namespace ? options.namespace : c.env ? c.env.__STATIC_CONTENT : undefined
+      namespace: options.namespace ? options.namespace : c.env ? c.env.__STATIC_CONTENT : undefined,
     })
     if (content) {
       const mimeType = getMimeType(path)

@@ -49,8 +49,8 @@ describe('JSX middleware', () => {
       const props = {
         name: 'JSX',
         siteData: {
-          title: 'with html middleware'
-        }
+          title: 'with html middleware',
+        },
       }
       return c.html(<Content {...props} />)
     })
@@ -348,7 +348,7 @@ describe('render to string', () => {
           style={{
             color: 'red',
             fontSize: 'small',
-            fontFamily: 'Menlo, Consolas, DejaVu Sans Mono, monospace'
+            fontFamily: 'Menlo, Consolas, DejaVu Sans Mono, monospace',
           }}
         >
           Hello

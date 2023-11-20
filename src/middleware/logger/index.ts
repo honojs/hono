@@ -4,7 +4,7 @@ import { getPath } from '../../utils/url'
 enum LogPrefix {
   Outgoing = '-->',
   Incoming = '<--',
-  Error = 'xxx'
+  Error = 'xxx',
 }
 
 const humanize = (times: string[]) => {
@@ -28,7 +28,7 @@ const colorStatus = (status: number) => {
     3: `\x1b[36m${status}\x1b[0m`,
     2: `\x1b[32m${status}\x1b[0m`,
     1: `\x1b[32m${status}\x1b[0m`,
-    0: `\x1b[33m${status}\x1b[0m`
+    0: `\x1b[33m${status}\x1b[0m`,
   }
 
   const calculateStatus = (status / 100) | 0

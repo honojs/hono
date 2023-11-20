@@ -5,6 +5,6 @@ export default defineConfig({
   test: {
     globals: true,
     include: ['**/runtime_tests/node/**/*.+(ts|tsx|js)'],
-    exclude: ['**/runtime_tests/node/vitest.config.ts']
-  }
+    exclude: ['**/runtime_tests/node/vitest.config.ts'],
+  },
 })

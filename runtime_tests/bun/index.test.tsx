@@ -51,7 +51,7 @@ describe('Basic Auth Middleware', () => {
     '/auth/*',
     basicAuth({
       username,
-      password
+      password,
     })
   )
 
@@ -88,14 +88,14 @@ describe('Serve Static Middleware', () => {
   app.get(
     '/static/*',
     serveStatic({
-      root: './runtime_tests/bun/'
+      root: './runtime_tests/bun/',
     })
   )
   app.get(
     '/dot-static/*',
     serveStatic({
       root: './runtime_tests/bun/',
-      rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static')
+      rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
     })
   )
 

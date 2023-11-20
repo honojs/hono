@@ -12,7 +12,7 @@ describe('Server-Timing API', () => {
   app.use(
     '*',
     timing({
-      totalDescription
+      totalDescription,
     })
   )
   app.get('/', (c) => c.text('/'))

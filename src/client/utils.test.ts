@@ -15,7 +15,7 @@ describe('replaceUrlParams', () => {
     const url = 'http://localhost/posts/:postId/comments/:commentId'
     const params = {
       postId: '123',
-      commentId: '456'
+      commentId: '456',
     }
     const replacedUrl = replaceUrlParam(url, params)
     expect(replacedUrl).toBe('http://localhost/posts/123/comments/456')
@@ -25,7 +25,7 @@ describe('replaceUrlParams', () => {
     const url = 'http://localhost/posts/:postId{[abc]+}/comments/:commentId{[0-9]+}'
     const params = {
       postId: 'abc',
-      commentId: '456'
+      commentId: '456',
     }
     const replacedUrl = replaceUrlParam(url, params)
     expect(replacedUrl).toBe('http://localhost/posts/abc/comments/456')
@@ -69,7 +69,7 @@ describe('deepMerge', () => {
     ).toStrictEqual({
       params: undefined,
       headers: { hono: '2', demo: 2 },
-      timeout: 2
+      timeout: 2,
     })
   })
 })

@@ -38,9 +38,9 @@ export const timing = (config?: Partial<TimingOptions>): MiddlewareHandler => {
       enabled: true,
       totalDescription: 'Total Response Time',
       autoEnd: true,
-      crossOrigin: false
+      crossOrigin: false,
     },
-    ...config
+    ...config,
   }
   return async (c, next) => {
     const headers: string[] = []

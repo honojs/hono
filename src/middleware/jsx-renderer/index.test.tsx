@@ -93,7 +93,7 @@ describe('JSX renderer', () => {
         },
         {
           docType:
-            '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'
+            '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">',
         }
       )
     )
@@ -120,7 +120,7 @@ describe('JSX renderer', () => {
         },
         {
           docType: true,
-          stream: true
+          stream: true,
         }
       )
     )
@@ -165,7 +165,7 @@ d=d.getElementById('H:0')
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
-</script>`
+</script>`,
     ])
   })
 
@@ -185,8 +185,8 @@ d.replaceWith(c.content)
           docType: true,
           stream: {
             'Transfer-Encoding': 'chunked',
-            'Content-Type': 'text/html'
-          }
+            'Content-Type': 'text/html',
+          },
         }
       )
     )
@@ -231,7 +231,7 @@ d=d.getElementById('H:1')
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
-</script>`
+</script>`,
     ])
   })
 

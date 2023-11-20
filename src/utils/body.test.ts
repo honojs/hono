@@ -6,7 +6,7 @@ describe('Parse Body Util', () => {
     data.append('message', 'hello')
     const req = new Request('https://localhost/form', {
       method: 'POST',
-      body: data
+      body: data,
       // `Content-Type` header must not be set.
     })
     expect(await parseBody(req)).toEqual({ message: 'hello' })
@@ -19,8 +19,8 @@ describe('Parse Body Util', () => {
       method: 'POST',
       body: searchParams,
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
     })
     expect(await parseBody(req)).toEqual({ message: 'hello' })
   })
@@ -32,11 +32,11 @@ describe('Parse Body Util', () => {
     data.append('message', 'hello')
     const req = new Request('https://localhost/form', {
       method: 'POST',
-      body: data
+      body: data,
     })
     expect(await parseBody(req)).toEqual({
       file: 'bbb',
-      message: 'hello'
+      message: 'hello',
     })
   })
 
@@ -47,11 +47,11 @@ describe('Parse Body Util', () => {
     data.append('message', 'hello')
     const req = new Request('https://localhost/form', {
       method: 'POST',
-      body: data
+      body: data,
     })
     expect(await parseBody(req, { all: true })).toEqual({
       file: ['aaa', 'bbb'],
-      message: 'hello'
+      message: 'hello',
     })
   })
 
@@ -62,11 +62,11 @@ describe('Parse Body Util', () => {
     data.append('message', 'hello')
     const req = new Request('https://localhost/form', {
       method: 'POST',
-      body: data
+      body: data,
     })
     expect(await parseBody(req, { all: true })).toEqual({
       'file[]': ['aaa', 'bbb'],
-      message: 'hello'
+      message: 'hello',
     })
   })
 
@@ -75,7 +75,7 @@ describe('Parse Body Util', () => {
     const req = new Request('http://localhost/json', {
       method: 'POST',
       body: JSON.stringify(payload),
-      headers: new Headers({ 'Content-Type': 'application/json' })
+      headers: new Headers({ 'Content-Type': 'application/json' }),
     })
     expect(await parseBody(req)).toEqual({})
   })
