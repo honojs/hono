@@ -47,7 +47,7 @@ export interface LambdaFunctionUrlEvent {
   requestContext: LambdaFunctionUrlRequestContext
 }
 
-interface APIGatewayProxyResult {
+export interface APIGatewayProxyResult {
   statusCode: number
   body: string
   headers: Record<string, string>
