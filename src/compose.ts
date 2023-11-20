@@ -56,9 +56,6 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
         }
       }
 
-      if (res !== undefined && 'response' in res) {
-        res = res['response']
-      }
       if (res && (context.finalized === false || isError)) {
         context.res = res
       }

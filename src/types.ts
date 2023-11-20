@@ -519,7 +519,6 @@ export type MergePath<A extends string, B extends string> = A extends ''
 ////////////////////////////////////////
 
 export type TypedResponse<T = unknown> = {
-  response: Response | Promise<Response>
   data: T
   format: 'json' // Currently, support only `json` with `c.jsonT()`
   status: StatusCode
