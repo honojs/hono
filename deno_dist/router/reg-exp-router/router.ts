@@ -191,11 +191,11 @@ export class RegExpRouter<T> implements Router<T> {
           routes[m][path] ||= [
             ...(findMiddleware(middleware[m], path) ||
               findMiddleware(middleware[METHOD_NAME_ALL], path) ||
-              []),
+              [])
           ]
           routes[m][path].push([
             handler,
-            paths.length === 2 && i === 0 ? paramCount - 1 : paramCount,
+            paths.length === 2 && i === 0 ? paramCount - 1 : paramCount
           ])
         }
       })

@@ -76,7 +76,7 @@ const HEADERS_MAP: HeadersMap = {
   xDownloadOptions: ['X-Download-Options', 'noopen'],
   xFrameOptions: ['X-Frame-Options', 'SAMEORIGIN'],
   xPermittedCrossDomainPolicies: ['X-Permitted-Cross-Domain-Policies', 'none'],
-  xXssProtection: ['X-XSS-Protection', '0'],
+  xXssProtection: ['X-XSS-Protection', '0']
 }
 
 const DEFAULT_OPTIONS: SecureHeadersOptions = {
@@ -91,7 +91,7 @@ const DEFAULT_OPTIONS: SecureHeadersOptions = {
   xDownloadOptions: true,
   xFrameOptions: true,
   xPermittedCrossDomainPolicies: true,
-  xXssProtection: true,
+  xXssProtection: true
 }
 
 export const secureHeaders = (customOptions?: Partial<SecureHeadersOptions>): MiddlewareHandler => {

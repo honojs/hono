@@ -4,20 +4,20 @@ import { getPath } from '../../utils/url.ts'
 enum LogPrefix {
   Outgoing = '-->',
   Incoming = '<--',
-  Error = 'xxx',
+  Error = 'xxx'
 }
 
 const humanize = (times: string[]) => {
   const [delimiter, separator] = [',', '.']
 
-  const orderTimes = times.map((v) => v.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1' + delimiter))
+  const orderTimes = times.map((v) => v.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, `$1${delimiter}`))
 
   return orderTimes.join(separator)
 }
 
 const time = (start: number) => {
   const delta = Date.now() - start
-  return humanize([delta < 1000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
+  return humanize([delta < 1000 ? `${delta}ms` : `${Math.round(delta / 1000)}s`])
 }
 
 const colorStatus = (status: number) => {
@@ -28,7 +28,7 @@ const colorStatus = (status: number) => {
     3: `\x1b[36m${status}\x1b[0m`,
     2: `\x1b[32m${status}\x1b[0m`,
     1: `\x1b[32m${status}\x1b[0m`,
-    0: `\x1b[33m${status}\x1b[0m`,
+    0: `\x1b[33m${status}\x1b[0m`
   }
 
   const calculateStatus = (status / 100) | 0

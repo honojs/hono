@@ -77,7 +77,7 @@ export class Node<T> {
       params: {},
       possibleKeys,
       name: this.name,
-      score: this.order,
+      score: this.order
     }
 
     m[method] = handlerSet

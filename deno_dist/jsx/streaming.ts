@@ -61,8 +61,11 @@ d.replaceWith(c.content)
           return html
         }
 
-        return raw(html, htmlArray.map((html) => (html as HtmlEscapedString).promises || []).flat())
-      }),
+        return raw(
+          html,
+          htmlArray.flatMap((html) => (html as HtmlEscapedString).promises || [])
+        )
+      })
     ])
   } else {
     return raw(resArray.join(''))
@@ -108,7 +111,7 @@ export const renderToReadableStream = (
       }
 
       controller.close()
-    },
+    }
   })
   return reader
 }

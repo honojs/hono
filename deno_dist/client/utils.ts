@@ -2,14 +2,14 @@ import type { ObjectType } from './types.ts'
 
 export const mergePath = (base: string, path: string) => {
   base = base.replace(/\/+$/, '')
-  base = base + '/'
+  base = `${base}/`
   path = path.replace(/^\/+/, '')
   return base + path
 }
 
 export const replaceUrlParam = (urlString: string, params: Record<string, string>) => {
   for (const [k, v] of Object.entries(params)) {
-    const reg = new RegExp('/:' + k + '({[^}]*})?')
+    const reg = new RegExp(`/:${k}({[^}]*})?`)
     urlString = urlString.replace(reg, `/${v}`)
   }
   return urlString

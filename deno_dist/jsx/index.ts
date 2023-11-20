@@ -34,7 +34,7 @@ const emptyTags = [
   'param',
   'source',
   'track',
-  'wbr',
+  'wbr'
 ]
 const booleanAttributes = [
   'allowfullscreen',
@@ -61,7 +61,7 @@ const booleanAttributes = [
   'readonly',
   'required',
   'reversed',
-  'selected',
+  'selected'
 ]
 
 const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void => {
@@ -170,7 +170,7 @@ class JSXFunctionNode extends JSXNode {
 
     const res = (this.tag as Function).call(null, {
       ...this.props,
-      children: children.length <= 1 ? children[0] : children,
+      children: children.length <= 1 ? children[0] : children
     })
 
     if (res instanceof Promise) {
@@ -280,7 +280,7 @@ export const createContext = <T>(defaultValue: T): Context<T> => {
       } else {
         return raw(string)
       }
-    },
+    }
   }
 }
 

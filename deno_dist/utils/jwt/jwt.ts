@@ -6,7 +6,7 @@ import {
   JwtTokenNotBefore,
   JwtTokenExpired,
   JwtTokenSignatureMismatched,
-  JwtAlgorithmNotImplemented,
+  JwtAlgorithmNotImplemented
 } from './types.ts'
 
 interface AlgorithmParams {
@@ -21,7 +21,7 @@ enum CryptoKeyFormat {
   RAW = 'raw',
   PKCS8 = 'pkcs8',
   SPKI = 'spki',
-  JWK = 'jwk',
+  JWK = 'jwk'
 }
 
 enum CryptoKeyUsage {
@@ -32,7 +32,7 @@ enum CryptoKeyUsage {
   Deriverkey = 'deriveKey',
   DeriveBits = 'deriveBits',
   WrapKey = 'wrapKey',
-  UnwrapKey = 'unwrapKey',
+  UnwrapKey = 'unwrapKey'
 }
 
 type AlgorithmTypeName = keyof typeof AlgorithmTypes
@@ -53,22 +53,22 @@ const param = (name: AlgorithmTypeName): AlgorithmParams => {
       return {
         name: 'HMAC',
         hash: {
-          name: 'SHA-256',
-        },
+          name: 'SHA-256'
+        }
       }
     case 'HS384':
       return {
         name: 'HMAC',
         hash: {
-          name: 'SHA-384',
-        },
+          name: 'SHA-384'
+        }
       }
     case 'HS512':
       return {
         name: 'HMAC',
         hash: {
-          name: 'SHA-512',
-        },
+          name: 'SHA-512'
+        }
       }
     default:
       throw new JwtAlgorithmNotImplemented(name)
@@ -152,7 +152,7 @@ export const decode = (token: string): { header: any; payload: any } => {
     const payload = decodeJwtPart(p)
     return {
       header,
-      payload,
+      payload
     }
   } catch (e) {
     throw new JwtTokenInvalid(token)

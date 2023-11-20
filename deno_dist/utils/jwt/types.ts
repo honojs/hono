@@ -49,5 +49,5 @@ export class JwtTokenSignatureMismatched extends Error {
 export enum AlgorithmTypes {
   HS256 = 'HS256',
   HS384 = 'HS384',
-  HS512 = 'HS512',
+  HS512 = 'HS512'
 }

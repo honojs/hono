@@ -36,7 +36,7 @@ export class LinearRouter<T> implements Router<T> {
       const hasStar = routePath.indexOf('*') !== -1
       const hasLabel = routePath.indexOf(':') !== -1
       if (!hasStar && !hasLabel) {
-        if (routePath === path || routePath + '/' === path) {
+        if (routePath === path || `${routePath}/` === path) {
           handlers.push([handler, emptyParams])
         }
       } else if (hasStar && !hasLabel) {
