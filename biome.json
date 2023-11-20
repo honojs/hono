@@ -9,40 +9,41 @@
       "all": true,
       "style": {
         "useNamingConvention": "off",
-		"noInferrableTypes": "off",
-		"noParameterAssign": "off",
-		"noNonNullAssertion": "off"
+        "noInferrableTypes": "off",
+        "noParameterAssign": "off",
+        "noNonNullAssertion": "off"
       },
-	  "a11y": {
-		"useHtmlLang": "off",
-		"useMediaCaption": "off"
-	  }, 
-	  "correctness": {
-		"noUndeclaredVariables": "off",
-		"noUnnecessaryContinue": "off"
-	  },
+      "a11y": {
+        "useHtmlLang": "off",
+        "useMediaCaption": "off"
+      },
+      "correctness": {
+        "noUndeclaredVariables": "off",
+        "noUnnecessaryContinue": "off"
+      },
       "nursery": {
         "noUselessLoneBlockStatements": "off"
       },
       "complexity": {
-		"useLiteralKeys": "off",
-		"useSimplifiedLogicExpression": "off",
-		"noBannedTypes" : "off",
-		"noForEach": "off",
-		"noUselessThisAlias": "off"
-      }, 
-	  "security": {
-		"noDangerouslySetInnerHtml": "off",
-		"noDangerouslySetInnerHtmlWithChildren": "off"
-	  },
-	  "suspicious": {
-		"noExplicitAny": "off",
-		"noRedeclare": "off",
-		"noAssignInExpressions": "off",
-		"noConfusingVoidType": "off",
-		"noEmptyInterface": "off",
-		"noShadowRestrictedNames": "off"
-	  }
+        "noStaticOnlyClass": "off",
+        "useLiteralKeys": "off",
+        "useSimplifiedLogicExpression": "off",
+        "noBannedTypes": "off",
+        "noForEach": "off",
+        "noUselessThisAlias": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "off",
+        "noDangerouslySetInnerHtmlWithChildren": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noRedeclare": "off",
+        "noAssignInExpressions": "off",
+        "noConfusingVoidType": "off",
+        "noEmptyInterface": "off",
+        "noShadowRestrictedNames": "off"
+      }
     }
   },
   "formatter": {
@@ -62,7 +63,7 @@
       "indentStyle": "space",
       "indentWidth": 2,
       "lineWidth": 100
-	}
+    }
   },
   "javascript": {
     "formatter": {
