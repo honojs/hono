@@ -46,32 +46,26 @@ interface TextRespond {
 }
 
 interface JSONRespond {
-  <T = JSONValue>(object: T, status?: StatusCode, headers?: HeaderRecord): Response
-  <T = JSONValue>(object: T, init?: ResponseInit): Response
-}
-
-interface JSONTRespond {
   <T>(
     object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
     status?: StatusCode,
     headers?: HeaderRecord
-  ): TypedResponse<
-    InterfaceToType<T> extends JSONValue
-      ? JSONValue extends InterfaceToType<T>
-        ? never
-        : T
-      : never
-  >
-  <T>(
-    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
-    init?: ResponseInit
-  ): TypedResponse<
-    InterfaceToType<T> extends JSONValue
-      ? JSONValue extends InterfaceToType<T>
-        ? never
-        : T
-      : never
-  >
+  ): Response &
+    TypedResponse<
+      InterfaceToType<T> extends JSONValue
+        ? JSONValue extends InterfaceToType<T>
+          ? never
+          : T
+        : never
+    >
+  <T>(object: InterfaceToType<T> extends JSONValue ? T : JSONValue, init?: ResponseInit): Response &
+    TypedResponse<
+      InterfaceToType<T> extends JSONValue
+        ? JSONValue extends InterfaceToType<T>
+          ? never
+          : T
+        : never
+    >
 }
 
 interface HTMLRespond {
@@ -322,40 +316,25 @@ export class Context<
       : this.newResponse(text, arg)
   }
 
-  json: JSONRespond = <T = {}>(
-    object: T,
-    arg?: StatusCode | ResponseInit,
-    headers?: HeaderRecord
-  ) => {
-    const body = JSON.stringify(object)
-    this._pH ??= {}
-    this._pH['content-type'] = 'application/json; charset=UTF-8'
-    return typeof arg === 'number'
-      ? this.newResponse(body, arg, headers)
-      : this.newResponse(body, arg)
-  }
-
-  jsonT: JSONTRespond = <T>(
+  json: JSONRespond = <T>(
     object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
-  ): TypedResponse<
-    InterfaceToType<T> extends JSONValue
-      ? JSONValue extends InterfaceToType<T>
-        ? never
-        : T
-      : never
-  > => {
-    const response =
-      typeof arg === 'number' ? this.json(object, arg, headers) : this.json(object, arg)
-
-    return {
-      response,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data: object as any,
-      format: 'json',
-      status: response.status,
-    }
+  ): Response &
+    TypedResponse<
+      InterfaceToType<T> extends JSONValue
+        ? JSONValue extends InterfaceToType<T>
+          ? never
+          : T
+        : never
+    > => {
+    const body = JSON.stringify(object)
+    this._pH ??= {}
+    this._pH['content-type'] = 'application/json; charset=UTF-8'
+    return (
+      typeof arg === 'number' ? this.newResponse(body, arg, headers) : this.newResponse(body, arg)
+    ) as // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any
   }
 
   html: HTMLRespond = (
