@@ -31,12 +31,12 @@ export const bearerAuth = (options: {
       const res = new Response('Unauthorized', {
         status: 401,
         headers: {
-          'WWW-Authenticate': `${options.prefix} realm="` + realm + '"'
+          'WWW-Authenticate': `${options.prefix} realm="${realm}"`
         }
       })
       throw new HTTPException(401, { res })
     } else {
-      const regexp = new RegExp('^' + options.prefix + ' +(' + TOKEN_STRINGS + ') *$')
+      const regexp = new RegExp(`^${options.prefix} +(${TOKEN_STRINGS}) *$`)
       const match = regexp.exec(headerToken)
       if (!match) {
         // Invalid Request

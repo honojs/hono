@@ -276,7 +276,7 @@ describe('Routing', () => {
     const book = app.basePath('/book')
     book.get('/', (c) => c.text('get /book'))
     book.get('/:id', (c) => {
-      return c.text('get /book/' + c.req.param('id'))
+      return c.text(`get /book/${c.req.param('id')}`)
     })
     book.post('/', (c) => c.text('post /book'))
 
@@ -285,7 +285,7 @@ describe('Routing', () => {
     user.post('/register', (c) => c.text('post /user/register'))
 
     const appForEachUser = user.basePath(':id')
-    appForEachUser.get('/profile', (c) => c.text('get /user/' + c.req.param('id') + '/profile'))
+    appForEachUser.get('/profile', (c) => c.text(`get /user/${c.req.param('id')}/profile`))
 
     app.get('/add-path-after-route-call', (c) => c.text('get /add-path-after-route-call'))
 
@@ -469,7 +469,7 @@ describe('Routing', () => {
   it('routing with request header', async () => {
     const app = new Hono({
       getPath: (req) =>
-        '/' + req.headers.get('host') + req.url.replace(/^https?:\/\/[^/]+(\/[^?]*)/, '$1'),
+        `/${req.headers.get('host')}${req.url.replace(/^https?:\/\/[^/]+(\/[^?]*)/, '$1')}`,
     })
 
     const sub = new Hono()
@@ -2192,7 +2192,7 @@ describe('app.mount()', () => {
         const queryStrings = new URL(req.url).searchParams.toString()
         return new Response(queryStrings)
       }
-      if (path == '/with-params') {
+      if (path === '/with-params') {
         return new Response(
           JSON.stringify({
             params,

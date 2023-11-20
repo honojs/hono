@@ -8,9 +8,6 @@ interface SSEMessage {
 }
 
 class SSEStreamingApi extends StreamingApi {
-  constructor(writable: WritableStream) {
-    super(writable)
-  }
 
   async writeSSE(message: SSEMessage) {
     const data = message.data
@@ -21,9 +18,9 @@ class SSEStreamingApi extends StreamingApi {
       .join('\n')
 
     const sseData =
-      [message.event && `event: ${message.event}`, data, message.id && `id: ${message.id}`]
+      `${[message.event && `event: ${message.event}`, data, message.id && `id: ${message.id}`]
         .filter(Boolean)
-        .join('\n') + '\n\n'
+        .join('\n')}\n\n`
 
     await this.write(sseData)
   }

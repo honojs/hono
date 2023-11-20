@@ -22,6 +22,8 @@
     "test:all": "yarn test && yarn test:deno && yarn test:bun && yarn test:fastly && yarn test:lagon && yarn test:node && yarn test:wrangler && yarn test:lambda && yarn test:lambda-edge",
     "lint": "eslint --ext js,ts src runtime_tests .eslintrc.cjs",
     "lint:fix": "eslint --ext js,ts src runtime_tests .eslintrc.cjs --fix",
+    "lintb": "biome lint src runtime_tests .eslintrc.cjs",
+    "lintb:fix": "biome lint --apply src runtime_tests .eslintrc.cjs",
     "format": "prettier --check 'src/**/*.{js,ts}' 'runtime_tests/**/*.{js,ts}'",
     "format:fix": "prettier --write 'src/**/*.{js,ts}' 'runtime_tests/**/*.{js,ts}'",
     "formatb": "biome format src/**/* runtime_tests/**/*",

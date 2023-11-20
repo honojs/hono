@@ -14,7 +14,7 @@ export const getContentFromKVAsset = async (
 ): Promise<ArrayBuffer | null> => {
   let ASSET_MANIFEST: Record<string, string> = {}
 
-  if (options && options.manifest) {
+  if (options?.manifest) {
     if (typeof options.manifest === 'string') {
       ASSET_MANIFEST = JSON.parse(options.manifest)
     } else {
@@ -29,7 +29,7 @@ export const getContentFromKVAsset = async (
   }
 
   let ASSET_NAMESPACE: KVNamespace
-  if (options && options.namespace) {
+  if (options?.namespace) {
     ASSET_NAMESPACE = options.namespace
   } else {
     ASSET_NAMESPACE = __STATIC_CONTENT

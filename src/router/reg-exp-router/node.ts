@@ -146,6 +146,6 @@ export class Node {
       return strList[0]
     }
 
-    return '(?:' + strList.join('|') + ')'
+    return `(?:${strList.join('|')})`
   }
 }

@@ -126,7 +126,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.status).toBe('200')
     expect(response.body).toBe('Hello Lambda!')
-    if (response.headers && response.headers['content-type']) {
+    if (response.headers?.['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
     } else {
       throw new Error("'content-type' header is missing in the response")
@@ -201,7 +201,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.status).toBe('200')
     expect(response.body).toBe('Hello Lambda!')
-    if (response.headers && response.headers['content-type']) {
+    if (response.headers?.['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
     } else {
       throw new Error("'content-type' header is missing in the response")
@@ -324,7 +324,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.status).toBe('200')
     expect(response.body).toBe('Hello Lambda!')
-    if (response.headers && response.headers['content-type']) {
+    if (response.headers?.['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
     } else {
       throw new Error("'content-type' header is missing in the response")
@@ -465,7 +465,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
     expect(response.status).toBe('200')
     expect(response.body).toBe('Hello Lambda!')
-    if (response.headers && response.headers['content-type']) {
+    if (response.headers?.['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
     } else {
       throw new Error("'content-type' header is missing in the response")
@@ -506,7 +506,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
     expect(response.status).toBe('200')
     expect(response.body).toBe('RmFrZSBJbWFnZQ==') // base64 encoded fake image
-    if (response.headers && response.headers['content-type']) {
+    if (response.headers?.['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^image\/png/)
     } else {
       throw new Error("'content-type' header is missing in the response")
@@ -892,7 +892,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     let called = false
     let headers: CloudFrontHeaders = {}
     await handler(event, {}, (_err, result) => {
-      if (result && result.headers) {
+      if (result?.headers) {
         headers = result.headers as CloudFrontHeaders
       }
       called = true
@@ -1038,7 +1038,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     let called = false
     let headers: CloudFrontHeaders = {}
     await handler(event, {}, (_err, result) => {
-      if (result && result.headers) {
+      if (result?.headers) {
         headers = result.headers as CloudFrontHeaders
       }
       called = true

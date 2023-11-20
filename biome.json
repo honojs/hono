@@ -8,14 +8,29 @@
     "rules": {
       "all": true,
       "style": {
-        "useNamingConvention": "off"
+        "useNamingConvention": "off",
+		"noInferrableTypes": "off",
+		"noParameterAssign": "off"
       },
+	  "a11y": {
+		"useHtmlLang": "off"
+	  }, 
+	  "correctness": {
+		"noUndeclaredVariables": "off"
+	  },
       "nursery": {
         "noUselessLoneBlockStatements": "off"
       },
       "complexity": {
-        "useSimplifiedLogicExpression": "off"
-      }
+		"useLiteralKeys": "off",
+		"useSimplifiedLogicExpression": "off",
+		"noBannedTypes" : "off",
+		"noForEach": "off"
+      }, 
+	  "suspicious": {
+		"noExplicitAny": "off",
+		"noRedeclare": "off" 
+	  }
     }
   },
   "formatter": {

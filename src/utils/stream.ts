@@ -22,7 +22,7 @@ export class StreamingApi {
   }
 
   async writeln(input: string) {
-    await this.write(input + '\n')
+    await this.write(`${input}\n`)
     return this
   }
 
