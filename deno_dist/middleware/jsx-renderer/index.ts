@@ -39,9 +39,9 @@ const createRenderer =
           options.stream === true
             ? {
                 'Transfer-Encoding': 'chunked',
-                'Content-Type': 'text/html; charset=UTF-8'
+                'Content-Type': 'text/html; charset=UTF-8',
               }
-            : options.stream
+            : options.stream,
       })
     } else {
       return c.html(body)

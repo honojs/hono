@@ -13,7 +13,7 @@ export class Hono<
   constructor(options: HonoOptions<E> = {}) {
     super(options)
     this.router = new SmartRouter({
-      routers: [new LinearRouter(), new TrieRouter()]
+      routers: [new LinearRouter(), new TrieRouter()],
     })
   }
 }

@@ -33,8 +33,8 @@ export const jwt = (options: {
         const res = new Response('Unauthorized', {
           status: 401,
           headers: {
-            'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="invalid credentials structure"`
-          }
+            'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="invalid credentials structure"`,
+          },
         })
         throw new HTTPException(401, { res })
       } else {
@@ -48,8 +48,8 @@ export const jwt = (options: {
       const res = new Response('Unauthorized', {
         status: 401,
         headers: {
-          'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="no authorization included in request"`
-        }
+          'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="no authorization included in request"`,
+        },
       })
       throw new HTTPException(401, { res })
     }
@@ -66,8 +66,8 @@ export const jwt = (options: {
         status: 401,
         statusText: msg,
         headers: {
-          'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_token",error_description="token verification failure"`
-        }
+          'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_token",error_description="token verification failure"`,
+        },
       })
       throw new HTTPException(401, { res })
     }

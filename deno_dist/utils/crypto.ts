@@ -47,7 +47,7 @@ export const createHash = async (data: Data, algorithm: Algorithm): Promise<stri
   if (crypto?.subtle) {
     const buffer = await crypto.subtle.digest(
       {
-        name: algorithm.name
+        name: algorithm.name,
       },
       sourceBuffer as ArrayBuffer
     )

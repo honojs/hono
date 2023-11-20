@@ -67,7 +67,7 @@ export const validator = <
           return c.json(
             {
               success: false,
-              message: 'Malformed JSON in request body'
+              message: 'Malformed JSON in request body',
             },
             400
           )
@@ -93,7 +93,7 @@ export const validator = <
           return c.json(
             {
               success: false,
-              message
+              message,
             },
             400
           )
