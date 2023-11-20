@@ -1,21 +1,9 @@
 import { raw } from '../helper/html/index.ts'
 import type { HtmlEscapedString } from '../utils/html.ts'
+import { childrenToString } from './components.ts'
 import type { FC, Child } from './index.ts'
 
 let suspenseCounter = 0
-
-async function childrenToString(children: Child[]): Promise<HtmlEscapedString[]> {
-  try {
-    return children.map((c) => c.toString()) as HtmlEscapedString[]
-  } catch (e) {
-    if (e instanceof Promise) {
-      await e
-      return childrenToString(children)
-    } else {
-      throw e
-    }
-  }
-}
 
 /**
  * @experimental
@@ -63,6 +51,7 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${index}')
+if(!d)return
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)

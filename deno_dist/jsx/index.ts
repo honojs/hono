@@ -2,6 +2,7 @@ import { raw } from '../helper/html/index.ts'
 import { escapeToBuffer, stringBufferToString } from '../utils/html.ts'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html.ts'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements.ts'
+export { ErrorBoundary } from './components.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Props = Record<string, any>

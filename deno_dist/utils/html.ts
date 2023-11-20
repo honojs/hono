@@ -70,11 +70,20 @@ export const escapeToBuffer = (str: string, buffer: StringBuffer): void => {
   buffer[0] += str.substring(lastIndex, index)
 }
 
-export const resolveStream = (str: string | HtmlEscapedString): Promise<string> => {
+export const resolveStream = (
+  str: string | HtmlEscapedString,
+  buffer?: [string]
+): Promise<string> => {
   if (!(str as HtmlEscapedString).callbacks?.length) {
     return Promise.resolve(str)
   }
   const callbacks = (str as HtmlEscapedString).callbacks as HtmlEscapedCallback[]
-  const buffer = [str] as [string]
-  return Promise.all(callbacks.map((c) => c({ buffer }))).then((res) => buffer[0] + res.join(''))
+  if (buffer) {
+    buffer[0] += str
+  } else {
+    buffer = [str]
+  }
+  return Promise.all(callbacks.map((c) => c({ buffer }))).then((res) =>
+    Promise.all(res.map((str) => resolveStream(str, buffer))).then(() => (buffer as [string])[0])
+  )
 }
