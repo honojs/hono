@@ -61,7 +61,10 @@ d.replaceWith(c.content)
           return html
         }
 
-        return raw(html, htmlArray.flatMap((html) => (html as HtmlEscapedString).promises || []))
+        return raw(
+          html,
+          htmlArray.flatMap((html) => (html as HtmlEscapedString).promises || [])
+        )
       })
     ])
   } else {

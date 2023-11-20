@@ -54,4 +54,4 @@ export type Handler<TEvent = any, TResult = any> = (
   event: TEvent,
   context: LambdaContext,
   callback: Callback<TResult>
-) => void | Promise<TResult>
+) => Promise<TResult>

@@ -140,7 +140,7 @@ describe('render to string', () => {
 
   describe('dangerouslySetInnerHTML', () => {
     it('Should render dangerouslySetInnerHTML', () => {
-      const template = <span dangerouslySetInnerHTML={{ __html: '" is allowed here' }}></span>
+      const template = <span dangerouslySetInnerHTML={{ __html: '" is allowed here' }} />
       expect(template.toString()).toBe('<span>" is allowed here</span>')
     })
 
@@ -414,7 +414,7 @@ describe('memo', () => {
   it('custom propsAreEqual', () => {
     const Body = memo(
       ({ counter }: { counter: number; refresh?: boolean }) => <span>{counter}</span>,
-      (_, nextProps) => (typeof nextProps.refresh == 'undefined' ? true : !nextProps.refresh)
+      (_, nextProps) => (typeof nextProps.refresh === 'undefined' ? true : !nextProps.refresh)
     )
 
     let template = <Body counter={0} />

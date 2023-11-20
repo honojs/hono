@@ -47,7 +47,7 @@ export interface ClientResponse<T> {
   arrayBuffer(): Promise<ArrayBuffer>
 }
 
-export interface Response extends ClientResponse<unknown> {}
+export type Response = ClientResponse<unknown>
 
 export type Fetch<T> = (
   args?: InferRequestType<T>,

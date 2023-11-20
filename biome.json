@@ -10,10 +10,12 @@
       "style": {
         "useNamingConvention": "off",
 		"noInferrableTypes": "off",
-		"noParameterAssign": "off"
+		"noParameterAssign": "off",
+		"noNonNullAssertion": "off"
       },
 	  "a11y": {
-		"useHtmlLang": "off"
+		"useHtmlLang": "off",
+		"useMediaCaption": "off"
 	  }, 
 	  "correctness": {
 		"noUndeclaredVariables": "off",
@@ -26,11 +28,20 @@
 		"useLiteralKeys": "off",
 		"useSimplifiedLogicExpression": "off",
 		"noBannedTypes" : "off",
-		"noForEach": "off"
+		"noForEach": "off",
+		"noUselessThisAlias": "off"
       }, 
+	  "security": {
+		"noDangerouslySetInnerHtml": "off",
+		"noDangerouslySetInnerHtmlWithChildren": "off"
+	  },
 	  "suspicious": {
 		"noExplicitAny": "off",
-		"noRedeclare": "off" 
+		"noRedeclare": "off",
+		"noAssignInExpressions": "off",
+		"noConfusingVoidType": "off",
+		"noEmptyInterface": "off",
+		"noShadowRestrictedNames": "off"
 	  }
     }
   },

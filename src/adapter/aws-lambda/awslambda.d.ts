@@ -7,12 +7,11 @@ declare global {
   namespace awslambda {
     // Note: Anticipated logic for AWS
     // https://github.com/aws/aws-lambda-nodejs-runtime-interface-client/blob/main/src/HttpResponseStream.js
-    export class HttpResponseStream {
-      static from(
-        underlyingStream: NodeJS.WritableStream,
-        prelude: Record<string, unknown>
-      ): NodeJS.WritableStream
-    }
+    export function httpResponseStreamFrom(
+      underlyingStream: NodeJS.WritableStream,
+      prelude: Record<string, unknown>
+    ): NodeJS.WritableStream
+
     function streamifyResponse(
       f: (
         event: any,
