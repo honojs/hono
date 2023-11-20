@@ -3,11 +3,11 @@ import { getContentFromKVAsset } from './cloudflare'
 // Mock
 const store: { [key: string]: string } = {
   'index.abcdef.html': 'This is index',
-  'assets/static/plain.abcdef.txt': 'Asset text',
+  'assets/static/plain.abcdef.txt': 'Asset text'
 }
 const manifest = JSON.stringify({
   'index.html': 'index.abcdef.html',
-  'assets/static/plain.txt': 'assets/static/plain.abcdef.txt',
+  'assets/static/plain.txt': 'assets/static/plain.abcdef.txt'
 })
 
 Object.assign(global, { __STATIC_CONTENT_MANIFEST: manifest })
@@ -15,8 +15,8 @@ Object.assign(global, {
   __STATIC_CONTENT: {
     get: (path: string) => {
       return store[path]
-    },
-  },
+    }
+  }
 })
 
 describe('Utils for Cloudflare Workers', () => {

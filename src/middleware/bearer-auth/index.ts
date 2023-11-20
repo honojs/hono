@@ -31,8 +31,8 @@ export const bearerAuth = (options: {
       const res = new Response('Unauthorized', {
         status: 401,
         headers: {
-          'WWW-Authenticate': `${options.prefix} realm="` + realm + '"',
-        },
+          'WWW-Authenticate': `${options.prefix} realm="` + realm + '"'
+        }
       })
       throw new HTTPException(401, { res })
     } else {
@@ -43,8 +43,8 @@ export const bearerAuth = (options: {
         const res = new Response('Bad Request', {
           status: 400,
           headers: {
-            'WWW-Authenticate': `${options.prefix} error="invalid_request"`,
-          },
+            'WWW-Authenticate': `${options.prefix} error="invalid_request"`
+          }
         })
         throw new HTTPException(400, { res })
       } else {
@@ -54,8 +54,8 @@ export const bearerAuth = (options: {
           const res = new Response('Unauthorized', {
             status: 401,
             headers: {
-              'WWW-Authenticate': `${options.prefix} error="invalid_token"`,
-            },
+              'WWW-Authenticate': `${options.prefix} error="invalid_token"`
+            }
           })
           throw new HTTPException(401, { res })
         }

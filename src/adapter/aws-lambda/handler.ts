@@ -95,13 +95,13 @@ export const streamHandle = <
 
         const res = await app.fetch(req, {
           requestContext,
-          context,
+          context
         })
 
         // Check content type
         const httpResponseMetadata = {
           statusCode: res.status,
-          headers: Object.fromEntries(res.headers.entries()),
+          headers: Object.fromEntries(res.headers.entries())
         }
 
         if (res.body) {
@@ -135,7 +135,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
 
     const res = await app.fetch(req, {
       requestContext,
-      lambdaContext,
+      lambdaContext
     })
 
     return createResult(event, res)
@@ -165,7 +165,7 @@ const createResult = async (
     body: body,
     headers: {},
     statusCode: res.status,
-    isBase64Encoded,
+    isBase64Encoded
   }
 
   setCookies(event, res, result)
@@ -194,7 +194,7 @@ const createRequest = (
   const method = 'httpMethod' in event ? event.httpMethod : event.requestContext.http.method
   const requestInit: RequestInit = {
     headers,
-    method,
+    method
   }
 
   if (event.body) {
@@ -238,7 +238,7 @@ const setCookies = (
         result.cookies = cookies
       } else {
         result.multiValueHeaders = {
-          'set-cookie': cookies,
+          'set-cookie': cookies
         }
       }
       res.headers.delete('set-cookie')

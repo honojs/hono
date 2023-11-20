@@ -13,7 +13,7 @@ describe('Adapter for Cloudflare Pages', () => {
   it('Should return 200 response', async () => {
     const request = new Request('http://localhost/api/foo')
     const env = {
-      TOKEN: 'HONOISCOOL',
+      TOKEN: 'HONOISCOOL'
     }
     const app = new Hono<Env>()
     app.get('/api/foo', (c) => {
@@ -27,7 +27,7 @@ describe('Adapter for Cloudflare Pages', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       TOKEN: 'HONOISCOOL',
-      requestURL: 'http://localhost/api/foo',
+      requestURL: 'http://localhost/api/foo'
     })
   })
 

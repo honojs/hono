@@ -48,7 +48,7 @@ d=d.getElementById('H:${suspenseCounter}')
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
-</script>`,
+</script>`
     ])
 
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
@@ -95,7 +95,7 @@ d=d.getElementById('H:${suspenseCounter}')
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
-</script>`,
+</script>`
     ])
 
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
@@ -210,7 +210,7 @@ d=d.getElementById('H:${suspenseCounter}')
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
-</script>`,
+</script>`
     ])
 
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual('<p></p>')
@@ -243,7 +243,7 @@ d=d.getElementById('H:${suspenseCounter}')
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
-</script>`,
+</script>`
     ])
 
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual('<p></p>')
@@ -269,7 +269,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      '',
+      ''
     ])
 
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
@@ -316,7 +316,7 @@ d=d.getElementById('H:${suspenseCounter}')
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
-</script>`,
+</script>`
     ])
 
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
@@ -361,7 +361,7 @@ d=d.getElementById('H:${suspenseCounter}')
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
-</script>`,
+</script>`
     ])
 
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
@@ -409,9 +409,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><h1>Hello</h1><template id=\"H:${
-        suspenseCounter + 1
-      }\"></template><p>Loading sub content...</p><!--/$--></template><script>
+      `<template><h1>Hello</h1><template id=\"H:${suspenseCounter + 1}\"></template><p>Loading sub content...</p><!--/$--></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -426,7 +424,7 @@ d=d.getElementById('H:${suspenseCounter + 1}')
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
-</script>`,
+</script>`
     ])
 
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(

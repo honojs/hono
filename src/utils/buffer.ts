@@ -51,8 +51,8 @@ export const bufferToString = (buffer: ArrayBuffer): string => {
 export const bufferToFormData = (arrayBuffer: ArrayBuffer, contentType: string) => {
   const response = new Response(arrayBuffer, {
     headers: {
-      'Content-Type': contentType,
-    },
+      'Content-Type': contentType
+    }
   })
   return response.formData()
 }

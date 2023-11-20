@@ -29,7 +29,7 @@ const isArrayField = (value: unknown): value is (string | File)[] => {
 export const parseBody = async <T extends BodyData = BodyData>(
   request: HonoRequest | Request,
   options: ParseBodyOptions = {
-    all: false,
+    all: false
   }
 ): Promise<T> => {
   let body: BodyData = {}

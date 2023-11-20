@@ -13,7 +13,7 @@ describe('Parse Compress Middleware', () => {
   it('gzip', async () => {
     const req = new Request('http://localhost/hello', {
       method: 'GET',
-      headers: new Headers({ 'Accept-Encoding': 'gzip' }),
+      headers: new Headers({ 'Accept-Encoding': 'gzip' })
     })
     const res = await app.request(req)
     expect(res).not.toBeNull()
@@ -25,7 +25,7 @@ describe('Parse Compress Middleware', () => {
   it('deflate', async () => {
     const req = new Request('http://localhost/hello', {
       method: 'GET',
-      headers: new Headers({ 'Accept-Encoding': 'deflate' }),
+      headers: new Headers({ 'Accept-Encoding': 'deflate' })
     })
     const res = await app.request(req)
     expect(res).not.toBeNull()
@@ -37,7 +37,7 @@ describe('Parse Compress Middleware', () => {
   it('gzip or deflate', async () => {
     const req = new Request('http://localhost/hello', {
       method: 'GET',
-      headers: new Headers({ 'Accept-Encoding': 'gzip, deflate' }),
+      headers: new Headers({ 'Accept-Encoding': 'gzip, deflate' })
     })
     const res = await app.request(req)
     expect(res).not.toBeNull()
@@ -48,7 +48,7 @@ describe('Parse Compress Middleware', () => {
 
   it('raw', async () => {
     const req = new Request('http://localhost/hello', {
-      method: 'GET',
+      method: 'GET'
     })
     const res = await app.request(req)
     expect(res).not.toBeNull()

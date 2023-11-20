@@ -14,9 +14,9 @@ const createProxy = (callback: Callback, path: string[]) => {
     apply(_1, _2, args) {
       return callback({
         path,
-        args,
+        args
       })
-    },
+    }
   })
   return proxy
 }
@@ -89,7 +89,7 @@ class ClientRequestImpl {
 
     const headerValues: Record<string, string> = {
       ...(args?.header ?? {}),
-      ...(opt?.headers ? opt.headers : {}),
+      ...(opt?.headers ? opt.headers : {})
     }
 
     if (args?.cookie) {
@@ -118,7 +118,7 @@ class ClientRequestImpl {
     return (opt?.fetch || fetch)(url, {
       body: setBody ? this.rBody : undefined,
       method: methodUpperCase,
-      headers: headers,
+      headers: headers
     })
   }
 }

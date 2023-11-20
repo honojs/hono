@@ -10,14 +10,14 @@ const store: Record<string, string> = {
   'assets/static/top/index.abcdef.html': '<h1>Top</h1>',
   'static-no-root/plain.abcdef.txt': 'That is plain.txt',
   'assets/static/options/foo.abcdef.txt': 'With options',
-  'assets/.static/plain.abcdef.txt': 'In the dot',
+  'assets/.static/plain.abcdef.txt': 'In the dot'
 }
 const manifest = JSON.stringify({
   'assets/static/plain.txt': 'assets/static/plain.abcdef.txt',
   'assets/static/hono.html': 'assets/static/hono.abcdef.html',
   'assets/static/top/index.html': 'assets/static/top/index.abcdef.html',
   'static-no-root/plain.txt': 'static-no-root/plain.abcdef.txt',
-  'assets/.static/plain.txt': 'assets/.static/plain.abcdef.txt',
+  'assets/.static/plain.txt': 'assets/.static/plain.abcdef.txt'
 })
 
 Object.assign(global, { __STATIC_CONTENT_MANIFEST: manifest })
@@ -25,8 +25,8 @@ Object.assign(global, {
   __STATIC_CONTENT: {
     get: (path: string) => {
       return store[path]
-    },
-  },
+    }
+  }
 })
 
 describe('ServeStatic Middleware', () => {
@@ -37,7 +37,7 @@ describe('ServeStatic Middleware', () => {
     '/dot-static/*',
     serveStatic({
       root: './assets',
-      rewriteRequestPath: (path) => path.replace(/^\/dot-static/, '/.static'),
+      rewriteRequestPath: (path) => path.replace(/^\/dot-static/, '/.static')
     })
   )
 
@@ -84,7 +84,7 @@ describe('ServeStatic Middleware', () => {
 
 describe('With options', () => {
   const manifest = {
-    'assets/static/options/foo.txt': 'assets/static/options/foo.abcdef.txt',
+    'assets/static/options/foo.txt': 'assets/static/options/foo.abcdef.txt'
   }
 
   const app = new Hono()

@@ -18,7 +18,7 @@ const RETAINED_304_HEADERS = [
   'date',
   'etag',
   'expires',
-  'vary',
+  'vary'
 ]
 
 function etagMatches(etag: string, ifNoneMatch: string | null) {
@@ -48,8 +48,8 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
         status: 304,
         statusText: 'Not Modified',
         headers: {
-          ETag: etag,
-        },
+          ETag: etag
+        }
       })
       c.res.headers.forEach((_, key) => {
         if (retainedHeaders.indexOf(key.toLowerCase()) === -1) {

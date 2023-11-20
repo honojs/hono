@@ -17,7 +17,7 @@ Deno.test('Basic Auth Middleware', async () => {
     '/auth/*',
     basicAuth({
       username,
-      password,
+      password
     })
   )
 
@@ -79,7 +79,7 @@ Deno.test('Serve Static middleware', async () => {
   app.get(
     '/static/*',
     serveStatic({
-      root: './runtime_tests/deno',
+      root: './runtime_tests/deno'
     })
   )
 
@@ -87,7 +87,7 @@ Deno.test('Serve Static middleware', async () => {
     '/dot-static/*',
     serveStatic({
       root: './runtime_tests/deno',
-      rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
+      rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static')
     })
   )
 

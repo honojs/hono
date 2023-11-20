@@ -158,8 +158,8 @@ describe('JWT', () => {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
       const req = new Request(url, {
         headers: new Headers({
-          Cookie: `access_token=${credential}`,
-        }),
+          Cookie: `access_token=${credential}`
+        })
       })
       const res = await app.request(req)
       expect(res).not.toBeNull()
@@ -174,8 +174,8 @@ describe('JWT', () => {
 
       const req = new Request('http://localhost/auth-unicode/a', {
         headers: new Headers({
-          Cookie: `access_token=${credential}`,
-        }),
+          Cookie: `access_token=${credential}`
+        })
       })
       const res = await app.request(req)
       expect(res).not.toBeNull()

@@ -11,7 +11,7 @@ const module = (options: ServeStaticOptions = { root: '' }) => {
     root: options.root,
     path: options.path,
     manifest: options.manifest ? options.manifest : manifest,
-    rewriteRequestPath: options.rewriteRequestPath,
+    rewriteRequestPath: options.rewriteRequestPath
   })
 }
 

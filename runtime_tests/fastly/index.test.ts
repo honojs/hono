@@ -38,7 +38,7 @@ describe('Basic Auth Middleware without `hashFunction`', () => {
     '/auth/*',
     basicAuth({
       username,
-      password,
+      password
     })
   )
 
@@ -62,7 +62,7 @@ describe('Basic Auth Middleware with `hashFunction`', () => {
     basicAuth({
       username,
       password,
-      hashFunction: (m: string) => SHA256(m).toString(),
+      hashFunction: (m: string) => SHA256(m).toString()
     })
   )
 

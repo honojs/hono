@@ -37,9 +37,9 @@ describe('Secure Headers Middleware', () => {
       '*',
       secureHeaders({
         contentSecurityPolicy: {
-          defaultSrc: ["'self'"],
+          defaultSrc: ["'self'"]
         },
-        crossOriginEmbedderPolicy: true,
+        crossOriginEmbedderPolicy: true
       })
     )
     app.get('/test', async (ctx) => {
@@ -134,7 +134,7 @@ describe('Secure Headers Middleware', () => {
       secureHeaders({
         strictTransportSecurity: 'max-age=31536000; includeSubDomains; preload;',
         xFrameOptions: 'DENY',
-        xXssProtection: '1',
+        xXssProtection: '1'
       })
     )
 
@@ -160,8 +160,8 @@ describe('Secure Headers Middleware', () => {
           objectSrc: ["'none'"],
           scriptSrc: ["'self'"],
           scriptSrcAttr: ["'none'"],
-          styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
-        },
+          styleSrc: ["'self'", 'https:', "'unsafe-inline'"]
+        }
       })
     )
 
@@ -182,8 +182,8 @@ describe('Secure Headers Middleware', () => {
       '/test',
       secureHeaders({
         contentSecurityPolicy: {
-          defaultSrc: ["'self'"],
-        },
+          defaultSrc: ["'self'"]
+        }
       })
     )
 
@@ -215,13 +215,13 @@ describe('Secure Headers Middleware', () => {
         reportingEndpoints: [
           {
             name: 'endpoint-1',
-            url: 'https://example.com/reports',
-          },
+            url: 'https://example.com/reports'
+          }
         ],
         contentSecurityPolicy: {
           defaultSrc: ["'self'"],
-          reportTo: 'endpoint-1',
-        },
+          reportTo: 'endpoint-1'
+        }
       })
     )
 
@@ -232,13 +232,13 @@ describe('Secure Headers Middleware', () => {
           {
             group: 'endpoint-1',
             max_age: 10886400,
-            endpoints: [{ url: 'https://example.com/reports' }],
-          },
+            endpoints: [{ url: 'https://example.com/reports' }]
+          }
         ],
         contentSecurityPolicy: {
           defaultSrc: ["'self'"],
-          reportTo: 'endpoint-1',
-        },
+          reportTo: 'endpoint-1'
+        }
       })
     )
 
@@ -251,22 +251,22 @@ describe('Secure Headers Middleware', () => {
             max_age: 10886400,
             endpoints: [
               { url: 'https://a.example.com/reports' },
-              { url: 'https://b.example.com/reports' },
-            ],
+              { url: 'https://b.example.com/reports' }
+            ]
           },
           {
             group: 'g2',
             max_age: 10886400,
             endpoints: [
               { url: 'https://c.example.com/reports' },
-              { url: 'https://d.example.com/reports' },
-            ],
-          },
+              { url: 'https://d.example.com/reports' }
+            ]
+          }
         ],
         contentSecurityPolicy: {
           defaultSrc: ["'self'"],
-          reportTo: 'g2',
-        },
+          reportTo: 'g2'
+        }
       })
     )
 
@@ -276,17 +276,17 @@ describe('Secure Headers Middleware', () => {
         reportingEndpoints: [
           {
             name: 'e1',
-            url: 'https://a.example.com/reports',
+            url: 'https://a.example.com/reports'
           },
           {
             name: 'e2',
-            url: 'https://b.example.com/reports',
-          },
+            url: 'https://b.example.com/reports'
+          }
         ],
         contentSecurityPolicy: {
           defaultSrc: ["'self'"],
-          reportTo: 'e1',
-        },
+          reportTo: 'e1'
+        }
       })
     )
 

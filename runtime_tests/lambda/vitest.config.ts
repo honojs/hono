@@ -5,6 +5,6 @@ export default defineConfig({
   test: {
     globals: true,
     include: ['**/runtime_tests/lambda/**/*.+(ts|tsx|js)'],
-    exclude: ['**/runtime_tests/lambda/vitest.config.ts', '**/runtime_tests/lambda/mock.ts'],
-  },
+    exclude: ['**/runtime_tests/lambda/vitest.config.ts', '**/runtime_tests/lambda/mock.ts']
+  }
 })

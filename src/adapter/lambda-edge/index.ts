@@ -5,5 +5,5 @@ export type {
   CloudFrontConfig,
   CloudFrontRequest,
   CloudFrontResponse,
-  CloudFrontEdgeEvent,
+  CloudFrontEdgeEvent
 } from './handler'

@@ -51,8 +51,8 @@ describe('Basic - JSON', () => {
           requestMessage: 'dummy',
           requestBody: {
             id: 123,
-            title: 'dummy',
-          },
+            title: 'dummy'
+          }
         })
       }
     )
@@ -72,7 +72,7 @@ describe('Basic - JSON', () => {
         requestContentType,
         requestHono,
         requestMessage,
-        requestBody,
+        requestBody
       }
       return res(ctx.status(200), ctx.json(payload))
     }),
@@ -87,7 +87,7 @@ describe('Basic - JSON', () => {
 
   const payload = {
     id: 123,
-    title: 'Hello! Hono!',
+    title: 'Hello! Hono!'
   }
 
   const client = hc<AppType>('http://localhost', { headers: { 'x-hono': 'hono' } })
@@ -97,11 +97,11 @@ describe('Basic - JSON', () => {
       {
         json: payload,
         header: {
-          'x-message': 'foobar',
+          'x-message': 'foobar'
         },
         cookie: {
-          debug: 'true',
-        },
+          debug: 'true'
+        }
       },
       {}
     )
@@ -135,7 +135,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
         return c.jsonT({
           q: 'fake',
           tag: ['fake'],
-          filter: 'fake',
+          filter: 'fake'
         })
       }
     )
@@ -143,7 +143,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
       '/posts',
       validator('queries', () => {
         return {
-          tags: ['a', 'b'],
+          tags: ['a', 'b']
         }
       }),
       (c) => {
@@ -155,7 +155,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
       '/posts/:id',
       validator('form', () => {
         return {
-          title: 'Hello',
+          title: 'Hello'
         }
       }),
       (c) => {
@@ -167,7 +167,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
       '/header',
       validator('header', () => {
         return {
-          'x-message-id': 'Hello',
+          'x-message-id': 'Hello'
         }
       }),
       (c) => {
@@ -179,7 +179,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
       '/cookie',
       validator('cookie', () => {
         return {
-          hello: 'world',
+          hello: 'world'
         }
       }),
       (c) => {
@@ -199,7 +199,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
         ctx.json({
           q: query,
           tag,
-          filter,
+          filter
         })
       )
     }),
@@ -209,7 +209,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
       return res(
         ctx.status(200),
         ctx.json({
-          tags: tags,
+          tags: tags
         })
       )
     }),
@@ -245,39 +245,39 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
         q: 'foobar',
         tag: ['a', 'b'],
         // @ts-expect-error
-        filter: undefined,
-      },
+        filter: undefined
+      }
     })
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       q: 'foobar',
       tag: ['a', 'b'],
-      filter: null,
+      filter: null
     })
   })
 
   it('Should get 200 response - queries', async () => {
     const res = await client.posts.$get({
       queries: {
-        tags: ['A', 'B', 'C'],
-      },
+        tags: ['A', 'B', 'C']
+      }
     })
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
-      tags: ['A', 'B', 'C'],
+      tags: ['A', 'B', 'C']
     })
   })
 
   it('Should get 200 response - form, params', async () => {
     const res = await client.posts[':id'].$put({
       form: {
-        title: 'Good Night',
+        title: 'Good Night'
       },
       param: {
-        id: '123',
-      },
+        id: '123'
+      }
     })
 
     expect(res.status).toBe(200)
@@ -286,10 +286,10 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
 
   it('Should get 200 response - header', async () => {
     const header = {
-      'x-message-id': 'Hello',
+      'x-message-id': 'Hello'
     }
     const res = await client.header.$get({
-      header,
+      header
     })
 
     expect(res.status).toBe(200)
@@ -298,10 +298,10 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
 
   it('Should get 200 response - cookie', async () => {
     const cookie = {
-      hello: 'world',
+      hello: 'world'
     }
     const res = await client.cookie.$get({
-      cookie,
+      cookie
     })
 
     expect(res.status).toBe(200)
@@ -316,23 +316,23 @@ describe('Infer the response/request type', () => {
     validator('query', () => {
       return {
         name: 'dummy',
-        age: 'dummy',
+        age: 'dummy'
       }
     }),
     validator('header', () => {
       return {
-        'x-request-id': 'dummy',
+        'x-request-id': 'dummy'
       }
     }),
     validator('cookie', () => {
       return {
-        name: 'dummy',
+        name: 'dummy'
       }
     }),
     (c) =>
       c.jsonT({
         id: 123,
-        title: 'Morning!',
+        title: 'Morning!'
       })
   )
 
@@ -415,28 +415,28 @@ describe('Merge path with `app.route()`', () => {
     rest.get('http://localhost/api/search', async (req, res, ctx) => {
       return res(
         ctx.json({
-          ok: true,
+          ok: true
         })
       )
     }),
     rest.get('http://localhost/api/foo', async (req, res, ctx) => {
       return res(
         ctx.json({
-          ok: true,
+          ok: true
         })
       )
     }),
     rest.post('http://localhost/api/bar', async (req, res, ctx) => {
       return res(
         ctx.json({
-          ok: true,
+          ok: true
         })
       )
     }),
     rest.get('http://localhost/v1/book', async (req, res, ctx) => {
       return res(
         ctx.json({
-          ok: true,
+          ok: true
         })
       )
     })

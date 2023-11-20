@@ -25,7 +25,7 @@ describe('Basic Auth by Middleware', () => {
     '/auth/*',
     basicAuth({
       username,
-      password,
+      password
     })
   )
   // Test multiple handlers
@@ -38,7 +38,7 @@ describe('Basic Auth by Middleware', () => {
     '/auth-unicode/*',
     basicAuth({
       username: username,
-      password: unicodePassword,
+      password: unicodePassword
     })
   )
 
@@ -47,11 +47,11 @@ describe('Basic Auth by Middleware', () => {
     basicAuth(
       {
         username: usernameB,
-        password: passwordB,
+        password: passwordB
       },
       {
         username: usernameC,
-        password: passwordC,
+        password: passwordC
       }
     )
   )
@@ -61,7 +61,7 @@ describe('Basic Auth by Middleware', () => {
     basicAuth({
       username: username,
       password: password,
-      hashFunction: (data: string) => SHA256(data).toString(),
+      hashFunction: (data: string) => SHA256(data).toString()
     })
   )
 

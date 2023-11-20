@@ -3,7 +3,7 @@ import type {
   Callback,
   CloudFrontConfig,
   CloudFrontRequest,
-  CloudFrontResponse,
+  CloudFrontResponse
 } from '../../src/adapter/lambda-edge/handler'
 import { handle } from '../../src/adapter/lambda-edge/handler'
 import { Hono } from '../../src/hono'
@@ -25,7 +25,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
   app.get('/binary', (c) => {
     return c.body('Fake Image', 200, {
-      'Content-Type': 'image/png',
+      'Content-Type': 'image/png'
     })
   })
 
@@ -67,14 +67,14 @@ describe('Lambda@Edge Adapter for Hono', () => {
     c.env.response.headers['Strict-Transport-Security'.toLowerCase()] = [
       {
         key: 'Strict-Transport-Security',
-        value: 'max-age=63072000; includeSubdomains; preload',
-      },
+        value: 'max-age=63072000; includeSubdomains; preload'
+      }
     ]
     c.env.response.headers['X-Custom'.toLowerCase()] = [
       {
         key: 'X-Custom',
-        value: 'Foo',
-      },
+        value: 'Foo'
+      }
     ]
     await next()
     c.env.callback(null, c.env.response)
@@ -91,7 +91,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'd111111abcdef8.cloudfront.net',
               distributionId: 'EDFDVBD6EXAMPLE',
               eventType: 'viewer-request',
-              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ=='
             },
             request: {
               clientIp: '203.0.113.178',
@@ -99,29 +99,29 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 host: [
                   {
                     key: 'Host',
-                    value: 'd111111abcdef8.cloudfront.net',
-                  },
+                    value: 'd111111abcdef8.cloudfront.net'
+                  }
                 ],
                 'user-agent': [
                   {
                     key: 'User-Agent',
-                    value: 'curl/7.66.0',
-                  },
+                    value: 'curl/7.66.0'
+                  }
                 ],
                 accept: [
                   {
                     key: 'accept',
-                    value: '*/*',
-                  },
-                ],
+                    value: '*/*'
+                  }
+                ]
               },
               method: 'GET',
               querystring: '',
-              uri: '/',
-            },
-          },
-        },
-      ],
+              uri: '/'
+            }
+          }
+        }
+      ]
     }
     const response = await handler(event)
     expect(response.status).toBe('200')
@@ -142,7 +142,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'd111111abcdef8.cloudfront.net',
               distributionId: 'EDFDVBD6EXAMPLE',
               eventType: 'origin-request',
-              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ=='
             },
             request: {
               clientIp: '203.0.113.178',
@@ -150,33 +150,33 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 'x-forwarded-for': [
                   {
                     key: 'X-Forwarded-For',
-                    value: '203.0.113.178',
-                  },
+                    value: '203.0.113.178'
+                  }
                 ],
                 'user-agent': [
                   {
                     key: 'User-Agent',
-                    value: 'Amazon CloudFront',
-                  },
+                    value: 'Amazon CloudFront'
+                  }
                 ],
                 via: [
                   {
                     key: 'Via',
-                    value: '2.0 2afae0d44e2540f472c0635ab62c232b.cloudfront.net (CloudFront)',
-                  },
+                    value: '2.0 2afae0d44e2540f472c0635ab62c232b.cloudfront.net (CloudFront)'
+                  }
                 ],
                 host: [
                   {
                     key: 'Host',
-                    value: 'example.org',
-                  },
+                    value: 'example.org'
+                  }
                 ],
                 'cache-control': [
                   {
                     key: 'Cache-Control',
-                    value: 'no-cache',
-                  },
-                ],
+                    value: 'no-cache'
+                  }
+                ]
               },
               method: 'GET',
               origin: {
@@ -188,15 +188,15 @@ describe('Lambda@Edge Adapter for Hono', () => {
                   port: 443,
                   protocol: 'https',
                   readTimeout: 30,
-                  sslProtocols: ['TLSv1', 'TLSv1.1', 'TLSv1.2'],
-                },
+                  sslProtocols: ['TLSv1', 'TLSv1.1', 'TLSv1.2']
+                }
               },
               querystring: '',
-              uri: '/',
-            },
-          },
-        },
-      ],
+              uri: '/'
+            }
+          }
+        }
+      ]
     }
     const response = await handler(event)
     expect(response.status).toBe('200')
@@ -217,7 +217,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'd111111abcdef8.cloudfront.net',
               distributionId: 'EDFDVBD6EXAMPLE',
               eventType: 'viewer-response',
-              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ=='
             },
             request: {
               clientIp: '203.0.113.178',
@@ -225,101 +225,101 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 host: [
                   {
                     key: 'Host',
-                    value: 'd111111abcdef8.cloudfront.net',
-                  },
+                    value: 'd111111abcdef8.cloudfront.net'
+                  }
                 ],
                 'user-agent': [
                   {
                     key: 'User-Agent',
-                    value: 'curl/7.66.0',
-                  },
+                    value: 'curl/7.66.0'
+                  }
                 ],
                 accept: [
                   {
                     key: 'accept',
-                    value: '*/*',
-                  },
-                ],
+                    value: '*/*'
+                  }
+                ]
               },
               method: 'GET',
               querystring: '',
-              uri: '/',
+              uri: '/'
             },
             response: {
               headers: {
                 'access-control-allow-credentials': [
                   {
                     key: 'Access-Control-Allow-Credentials',
-                    value: 'true',
-                  },
+                    value: 'true'
+                  }
                 ],
                 'access-control-allow-origin': [
                   {
                     key: 'Access-Control-Allow-Origin',
-                    value: '*',
-                  },
+                    value: '*'
+                  }
                 ],
                 date: [
                   {
                     key: 'Date',
-                    value: 'Mon, 13 Jan 2020 20:14:56 GMT',
-                  },
+                    value: 'Mon, 13 Jan 2020 20:14:56 GMT'
+                  }
                 ],
                 'referrer-policy': [
                   {
                     key: 'Referrer-Policy',
-                    value: 'no-referrer-when-downgrade',
-                  },
+                    value: 'no-referrer-when-downgrade'
+                  }
                 ],
                 server: [
                   {
                     key: 'Server',
-                    value: 'ExampleCustomOriginServer',
-                  },
+                    value: 'ExampleCustomOriginServer'
+                  }
                 ],
                 'x-content-type-options': [
                   {
                     key: 'X-Content-Type-Options',
-                    value: 'nosniff',
-                  },
+                    value: 'nosniff'
+                  }
                 ],
                 'x-frame-options': [
                   {
                     key: 'X-Frame-Options',
-                    value: 'DENY',
-                  },
+                    value: 'DENY'
+                  }
                 ],
                 'x-xss-protection': [
                   {
                     key: 'X-XSS-Protection',
-                    value: '1; mode=block',
-                  },
+                    value: '1; mode=block'
+                  }
                 ],
                 age: [
                   {
                     key: 'Age',
-                    value: '2402',
-                  },
+                    value: '2402'
+                  }
                 ],
                 'content-type': [
                   {
                     key: 'Content-Type',
-                    value: 'text/html; charset=utf-8',
-                  },
+                    value: 'text/html; charset=utf-8'
+                  }
                 ],
                 'content-length': [
                   {
                     key: 'Content-Length',
-                    value: '9593',
-                  },
-                ],
+                    value: '9593'
+                  }
+                ]
               },
               status: '200',
-              statusDescription: 'OK',
-            },
-          },
-        },
-      ],
+              statusDescription: 'OK'
+            }
+          }
+        }
+      ]
     }
     const response = await handler(event)
     expect(response.status).toBe('200')
@@ -340,7 +340,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'd111111abcdef8.cloudfront.net',
               distributionId: 'EDFDVBD6EXAMPLE',
               eventType: 'origin-response',
-              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ=='
             },
             request: {
               clientIp: '203.0.113.178',
@@ -348,33 +348,33 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 'x-forwarded-for': [
                   {
                     key: 'X-Forwarded-For',
-                    value: '203.0.113.178',
-                  },
+                    value: '203.0.113.178'
+                  }
                 ],
                 'user-agent': [
                   {
                     key: 'User-Agent',
-                    value: 'Amazon CloudFront',
-                  },
+                    value: 'Amazon CloudFront'
+                  }
                 ],
                 via: [
                   {
                     key: 'Via',
-                    value: '2.0 8f22423015641505b8c857a37450d6c0.cloudfront.net (CloudFront)',
-                  },
+                    value: '2.0 8f22423015641505b8c857a37450d6c0.cloudfront.net (CloudFront)'
+                  }
                 ],
                 host: [
                   {
                     key: 'Host',
-                    value: 'example.org',
-                  },
+                    value: 'example.org'
+                  }
                 ],
                 'cache-control': [
                   {
                     key: 'Cache-Control',
-                    value: 'no-cache',
-                  },
-                ],
+                    value: 'no-cache'
+                  }
+                ]
               },
               method: 'GET',
               origin: {
@@ -386,81 +386,81 @@ describe('Lambda@Edge Adapter for Hono', () => {
                   port: 443,
                   protocol: 'https',
                   readTimeout: 30,
-                  sslProtocols: ['TLSv1', 'TLSv1.1', 'TLSv1.2'],
-                },
+                  sslProtocols: ['TLSv1', 'TLSv1.1', 'TLSv1.2']
+                }
               },
               querystring: '',
-              uri: '/',
+              uri: '/'
             },
             response: {
               headers: {
                 'access-control-allow-credentials': [
                   {
                     key: 'Access-Control-Allow-Credentials',
-                    value: 'true',
-                  },
+                    value: 'true'
+                  }
                 ],
                 'access-control-allow-origin': [
                   {
                     key: 'Access-Control-Allow-Origin',
-                    value: '*',
-                  },
+                    value: '*'
+                  }
                 ],
                 date: [
                   {
                     key: 'Date',
-                    value: 'Mon, 13 Jan 2020 20:12:38 GMT',
-                  },
+                    value: 'Mon, 13 Jan 2020 20:12:38 GMT'
+                  }
                 ],
                 'referrer-policy': [
                   {
                     key: 'Referrer-Policy',
-                    value: 'no-referrer-when-downgrade',
-                  },
+                    value: 'no-referrer-when-downgrade'
+                  }
                 ],
                 server: [
                   {
                     key: 'Server',
-                    value: 'ExampleCustomOriginServer',
-                  },
+                    value: 'ExampleCustomOriginServer'
+                  }
                 ],
                 'x-content-type-options': [
                   {
                     key: 'X-Content-Type-Options',
-                    value: 'nosniff',
-                  },
+                    value: 'nosniff'
+                  }
                 ],
                 'x-frame-options': [
                   {
                     key: 'X-Frame-Options',
-                    value: 'DENY',
-                  },
+                    value: 'DENY'
+                  }
                 ],
                 'x-xss-protection': [
                   {
                     key: 'X-XSS-Protection',
-                    value: '1; mode=block',
-                  },
+                    value: '1; mode=block'
+                  }
                 ],
                 'content-type': [
                   {
                     key: 'Content-Type',
-                    value: 'text/html; charset=utf-8',
-                  },
+                    value: 'text/html; charset=utf-8'
+                  }
                 ],
                 'content-length': [
                   {
                     key: 'Content-Length',
-                    value: '9593',
-                  },
-                ],
+                    value: '9593'
+                  }
+                ]
               },
               status: '200',
-              statusDescription: 'OK',
-            },
-          },
-        },
-      ],
+              statusDescription: 'OK'
+            }
+          }
+        }
+      ]
     }
     const response = await handler(event)
     expect(response.status).toBe('200')
@@ -481,7 +481,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'example.com',
               distributionId: 'EXAMPLE123',
               eventType: 'viewer-request',
-              requestId: 'exampleRequestId',
+              requestId: 'exampleRequestId'
             },
             request: {
               clientIp: '123.123.123.123',
@@ -489,17 +489,17 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 host: [
                   {
                     key: 'Host',
-                    value: 'example.com',
-                  },
-                ],
+                    value: 'example.com'
+                  }
+                ]
               },
               method: 'GET',
               querystring: '',
-              uri: '/binary',
-            },
-          },
-        },
-      ],
+              uri: '/binary'
+            }
+          }
+        }
+      ]
     }
 
     const response = await handler(event)
@@ -522,7 +522,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'example.com',
               distributionId: 'EXAMPLE123',
               eventType: 'viewer-request',
-              requestId: 'exampleRequestId',
+              requestId: 'exampleRequestId'
             },
             request: {
               clientIp: '123.123.123.123',
@@ -530,17 +530,17 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 host: [
                   {
                     key: 'Host',
-                    value: 'example.com',
-                  },
-                ],
+                    value: 'example.com'
+                  }
+                ]
               },
               method: 'GET',
               querystring: '',
-              uri: '/nothing',
-            },
-          },
-        },
-      ],
+              uri: '/nothing'
+            }
+          }
+        }
+      ]
     }
 
     const response = await handler(event)
@@ -560,7 +560,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'example.com',
               distributionId: 'EXAMPLE123',
               eventType: 'viewer-request',
-              requestId: 'exampleRequestId',
+              requestId: 'exampleRequestId'
             },
             request: {
               clientIp: '123.123.123.123',
@@ -568,15 +568,15 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 host: [
                   {
                     key: 'Host',
-                    value: 'example.com',
-                  },
+                    value: 'example.com'
+                  }
                 ],
                 'content-type': [
                   {
                     key: 'Content-Type',
-                    value: 'application/x-www-form-urlencoded',
-                  },
-                ],
+                    value: 'application/x-www-form-urlencoded'
+                  }
+                ]
               },
               method: 'POST',
               querystring: '',
@@ -585,12 +585,12 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 inputTruncated: false,
                 action: 'read-only',
                 encoding: 'base64',
-                data: Buffer.from(searchParam.toString()).toString('base64'),
-              },
-            },
-          },
-        },
-      ],
+                data: Buffer.from(searchParam.toString()).toString('base64')
+              }
+            }
+          }
+        }
+      ]
     }
 
     const response = await handler(event)
@@ -610,7 +610,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'example.com',
               distributionId: 'EXAMPLE123',
               eventType: 'viewer-request',
-              requestId: 'exampleRequestId',
+              requestId: 'exampleRequestId'
             },
             request: {
               clientIp: '123.123.123.123',
@@ -618,15 +618,15 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 host: [
                   {
                     key: 'Host',
-                    value: 'example.com',
-                  },
+                    value: 'example.com'
+                  }
                 ],
                 'content-type': [
                   {
                     key: 'Content-Type',
-                    value: 'application/x-www-form-urlencoded',
-                  },
-                ],
+                    value: 'application/x-www-form-urlencoded'
+                  }
+                ]
               },
               method: 'POST',
               querystring: '',
@@ -635,12 +635,12 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 inputTruncated: false,
                 action: 'read-only',
                 encoding: 'base64',
-                data: buffer.toString('base64'),
-              },
-            },
-          },
-        },
-      ],
+                data: buffer.toString('base64')
+              }
+            }
+          }
+        }
+      ]
     }
 
     const response = await handler(event)
@@ -657,7 +657,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'example.com',
               distributionId: 'EXAMPLE123',
               eventType: 'viewer-request',
-              requestId: 'exampleRequestId',
+              requestId: 'exampleRequestId'
             },
             request: {
               clientIp: '123.123.123.123',
@@ -665,23 +665,23 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 host: [
                   {
                     key: 'Host',
-                    value: 'example.com',
-                  },
+                    value: 'example.com'
+                  }
                 ],
                 'content-type': [
                   {
                     key: 'Content-Type',
-                    value: 'plain/text',
-                  },
-                ],
+                    value: 'plain/text'
+                  }
+                ]
               },
               method: 'GET',
               querystring: '',
-              uri: '/auth/abc',
-            },
-          },
-        },
-      ],
+              uri: '/auth/abc'
+            }
+          }
+        }
+      ]
     }
 
     const response = await handler(event)
@@ -698,7 +698,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'example.com',
               distributionId: 'EXAMPLE123',
               eventType: 'viewer-request',
-              requestId: 'exampleRequestId',
+              requestId: 'exampleRequestId'
             },
             request: {
               clientIp: '123.123.123.123',
@@ -706,23 +706,23 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 host: [
                   {
                     key: 'Host',
-                    value: 'example.com',
-                  },
+                    value: 'example.com'
+                  }
                 ],
                 'content-type': [
                   {
                     key: 'Content-Type',
-                    value: 'plain/text',
-                  },
-                ],
+                    value: 'plain/text'
+                  }
+                ]
               },
               method: 'GET',
               querystring: '',
-              uri: '/auth/abc',
-            },
-          },
-        },
-      ],
+              uri: '/auth/abc'
+            }
+          }
+        }
+      ]
     }
 
     const response = await handler(event)
@@ -739,18 +739,18 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'example.com',
               distributionId: 'EXAMPLE123',
               eventType: 'viewer-request',
-              requestId: 'exampleRequestId',
+              requestId: 'exampleRequestId'
             },
             request: {
               clientIp: '123.123.123.123',
               headers: {},
               method: 'GET',
               querystring: '',
-              uri: '/callback/request',
-            },
-          },
-        },
-      ],
+              uri: '/callback/request'
+            }
+          }
+        }
+      ]
     }
 
     let called = false
@@ -776,7 +776,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'example.com',
               distributionId: 'EDFDVBD6EXAMPLE',
               eventType: 'viewer-response',
-              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ=='
             },
             request: {
               clientIp: '203.0.113.178',
@@ -784,101 +784,101 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 host: [
                   {
                     key: 'Host',
-                    value: 'example.com',
-                  },
+                    value: 'example.com'
+                  }
                 ],
                 'user-agent': [
                   {
                     key: 'User-Agent',
-                    value: 'curl/7.66.0',
-                  },
+                    value: 'curl/7.66.0'
+                  }
                 ],
                 accept: [
                   {
                     key: 'accept',
-                    value: '*/*',
-                  },
-                ],
+                    value: '*/*'
+                  }
+                ]
               },
               method: 'GET',
               querystring: '',
-              uri: '/callback/response',
+              uri: '/callback/response'
             },
             response: {
               headers: {
                 'access-control-allow-credentials': [
                   {
                     key: 'Access-Control-Allow-Credentials',
-                    value: 'true',
-                  },
+                    value: 'true'
+                  }
                 ],
                 'access-control-allow-origin': [
                   {
                     key: 'Access-Control-Allow-Origin',
-                    value: '*',
-                  },
+                    value: '*'
+                  }
                 ],
                 date: [
                   {
                     key: 'Date',
-                    value: 'Mon, 13 Jan 2020 20:14:56 GMT',
-                  },
+                    value: 'Mon, 13 Jan 2020 20:14:56 GMT'
+                  }
                 ],
                 'referrer-policy': [
                   {
                     key: 'Referrer-Policy',
-                    value: 'no-referrer-when-downgrade',
-                  },
+                    value: 'no-referrer-when-downgrade'
+                  }
                 ],
                 server: [
                   {
                     key: 'Server',
-                    value: 'ExampleCustomOriginServer',
-                  },
+                    value: 'ExampleCustomOriginServer'
+                  }
                 ],
                 'x-content-type-options': [
                   {
                     key: 'X-Content-Type-Options',
-                    value: 'nosniff',
-                  },
+                    value: 'nosniff'
+                  }
                 ],
                 'x-frame-options': [
                   {
                     key: 'X-Frame-Options',
-                    value: 'DENY',
-                  },
+                    value: 'DENY'
+                  }
                 ],
                 'x-xss-protection': [
                   {
                     key: 'X-XSS-Protection',
-                    value: '1; mode=block',
-                  },
+                    value: '1; mode=block'
+                  }
                 ],
                 age: [
                   {
                     key: 'Age',
-                    value: '2402',
-                  },
+                    value: '2402'
+                  }
                 ],
                 'content-type': [
                   {
                     key: 'Content-Type',
-                    value: 'text/html; charset=utf-8',
-                  },
+                    value: 'text/html; charset=utf-8'
+                  }
                 ],
                 'content-length': [
                   {
                     key: 'Content-Length',
-                    value: '9593',
-                  },
-                ],
+                    value: '9593'
+                  }
+                ]
               },
               status: '200',
-              statusDescription: 'OK',
-            },
-          },
-        },
-      ],
+              statusDescription: 'OK'
+            }
+          }
+        }
+      ]
     }
 
     interface CloudFrontHeaders {
@@ -902,14 +902,14 @@ describe('Lambda@Edge Adapter for Hono', () => {
     expect(headers['access-control-allow-credentials']).toEqual([
       {
         key: 'Access-Control-Allow-Credentials',
-        value: 'true',
-      },
+        value: 'true'
+      }
     ])
     expect(headers['access-control-allow-origin']).toEqual([
       {
         key: 'Access-Control-Allow-Origin',
-        value: '*',
-      },
+        value: '*'
+      }
     ])
   })
 
@@ -922,7 +922,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'example.com',
               distributionId: 'EDFDVBD6EXAMPLE',
               eventType: 'viewer-response',
-              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ=='
             },
             request: {
               clientIp: '203.0.113.178',
@@ -930,101 +930,101 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 host: [
                   {
                     key: 'Host',
-                    value: 'example.com',
-                  },
+                    value: 'example.com'
+                  }
                 ],
                 'user-agent': [
                   {
                     key: 'User-Agent',
-                    value: 'curl/7.66.0',
-                  },
+                    value: 'curl/7.66.0'
+                  }
                 ],
                 accept: [
                   {
                     key: 'accept',
-                    value: '*/*',
-                  },
-                ],
+                    value: '*/*'
+                  }
+                ]
               },
               method: 'GET',
               querystring: '',
-              uri: '/header/add',
+              uri: '/header/add'
             },
             response: {
               headers: {
                 'access-control-allow-credentials': [
                   {
                     key: 'Access-Control-Allow-Credentials',
-                    value: 'true',
-                  },
+                    value: 'true'
+                  }
                 ],
                 'access-control-allow-origin': [
                   {
                     key: 'Access-Control-Allow-Origin',
-                    value: '*',
-                  },
+                    value: '*'
+                  }
                 ],
                 date: [
                   {
                     key: 'Date',
-                    value: 'Mon, 13 Jan 2020 20:14:56 GMT',
-                  },
+                    value: 'Mon, 13 Jan 2020 20:14:56 GMT'
+                  }
                 ],
                 'referrer-policy': [
                   {
                     key: 'Referrer-Policy',
-                    value: 'no-referrer-when-downgrade',
-                  },
+                    value: 'no-referrer-when-downgrade'
+                  }
                 ],
                 server: [
                   {
                     key: 'Server',
-                    value: 'ExampleCustomOriginServer',
-                  },
+                    value: 'ExampleCustomOriginServer'
+                  }
                 ],
                 'x-content-type-options': [
                   {
                     key: 'X-Content-Type-Options',
-                    value: 'nosniff',
-                  },
+                    value: 'nosniff'
+                  }
                 ],
                 'x-frame-options': [
                   {
                     key: 'X-Frame-Options',
-                    value: 'DENY',
-                  },
+                    value: 'DENY'
+                  }
                 ],
                 'x-xss-protection': [
                   {
                     key: 'X-XSS-Protection',
-                    value: '1; mode=block',
-                  },
+                    value: '1; mode=block'
+                  }
                 ],
                 age: [
                   {
                     key: 'Age',
-                    value: '2402',
-                  },
+                    value: '2402'
+                  }
                 ],
                 'content-type': [
                   {
                     key: 'Content-Type',
-                    value: 'text/html; charset=utf-8',
-                  },
+                    value: 'text/html; charset=utf-8'
+                  }
                 ],
                 'content-length': [
                   {
                     key: 'Content-Length',
-                    value: '9593',
-                  },
-                ],
+                    value: '9593'
+                  }
+                ]
               },
               status: '200',
-              statusDescription: 'OK',
-            },
-          },
-        },
-      ],
+              statusDescription: 'OK'
+            }
+          }
+        }
+      ]
     }
 
     interface CloudFrontHeaders {
@@ -1048,14 +1048,14 @@ describe('Lambda@Edge Adapter for Hono', () => {
     expect(headers['strict-transport-security']).toEqual([
       {
         key: 'Strict-Transport-Security',
-        value: 'max-age=63072000; includeSubdomains; preload',
-      },
+        value: 'max-age=63072000; includeSubdomains; preload'
+      }
     ])
     expect(headers['x-custom']).toEqual([
       {
         key: 'X-Custom',
-        value: 'Foo',
-      },
+        value: 'Foo'
+      }
     ])
   })
 
@@ -1068,7 +1068,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
               distributionDomainName: 'example.com',
               distributionId: 'EDFDVBD6EXAMPLE',
               eventType: 'viewer-response',
-              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+              requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ=='
             },
             request: {
               clientIp: '203.0.113.178',
@@ -1076,17 +1076,17 @@ describe('Lambda@Edge Adapter for Hono', () => {
                 host: [
                   {
                     key: 'Host',
-                    value: 'example.com',
-                  },
-                ],
+                    value: 'example.com'
+                  }
+                ]
               },
               method: 'GET',
               querystring: '',
-              uri: '/config/eventCheck',
-            },
-          },
-        },
-      ],
+              uri: '/config/eventCheck'
+            }
+          }
+        }
+      ]
     }
 
     let called = false

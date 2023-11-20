@@ -8,7 +8,7 @@ import {
   JwtTokenInvalid,
   JwtTokenIssuedAt,
   JwtTokenNotBefore,
-  JwtTokenSignatureMismatched,
+  JwtTokenSignatureMismatched
 } from './types'
 
 describe('JWT', () => {
@@ -109,11 +109,11 @@ describe('JWT', () => {
     expect(JWT.decode(tok)).toEqual({
       header: {
         alg: 'HS256',
-        typ: 'JWT',
+        typ: 'JWT'
       },
       payload: {
-        message: 'hello world',
-      },
+        message: 'hello world'
+      }
     })
   })
 
@@ -151,11 +151,11 @@ describe('JWT', () => {
     expect(JWT.decode(tok)).toEqual({
       header: {
         alg: 'HS512',
-        typ: 'JWT',
+        typ: 'JWT'
       },
       payload: {
-        message: 'hello world',
-      },
+        message: 'hello world'
+      }
     })
   })
 

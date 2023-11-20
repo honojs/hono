@@ -73,6 +73,6 @@ d=d.getElementById('H:0')
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
-</script>`,
+</script>`
   ])
 })

@@ -88,7 +88,7 @@ describe('Malformed JSON', () => {
 
   it('Should return 400 response', async () => {
     const res = await app.request('http://localhost/post', {
-      method: 'POST',
+      method: 'POST'
     })
     expect(res.status).toBe(400)
   })
@@ -97,11 +97,11 @@ describe('Malformed JSON', () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
-        'Content-Type': 'text/plain;charset=utf-8',
+        'Content-Type': 'text/plain;charset=utf-8'
       },
       body: JSON.stringify({
-        any: 'thing',
-      }),
+        any: 'thing'
+      })
     })
     expect(res.status).toBe(400)
   })
@@ -110,11 +110,11 @@ describe('Malformed JSON', () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
-        'Content-Type': 'Xapplication/json',
+        'Content-Type': 'Xapplication/json'
       },
       body: JSON.stringify({
-        any: 'thing',
-      }),
+        any: 'thing'
+      })
     })
     expect(res.status).toBe(400)
   })
@@ -133,7 +133,7 @@ describe('Malformed FormData request', () => {
   it('Should return 400 response, for unsupported content type header', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
-      body: 'hi',
+      body: 'hi'
     })
     expect(res.status).toBe(400)
     const data = await res.json()
@@ -148,13 +148,13 @@ describe('Malformed FormData request', () => {
       method: 'POST',
       body: 'hi',
       headers: {
-        'content-type': 'multipart/form-data',
-      },
+        'content-type': 'multipart/form-data'
+      }
     })
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({
       success: false,
-      message: 'Malformed FormData request. Error: Multipart: Boundary not found',
+      message: 'Malformed FormData request. Error: Multipart: Boundary not found'
     })
   })
 })
@@ -164,7 +164,7 @@ describe('Validator middleware with a custom validation function', () => {
 
   const validationFunction: ValidationFunction<{ id: string }, { id: number }> = (v) => {
     return {
-      id: Number(v.id),
+      id: Number(v.id)
     }
   }
 
@@ -175,7 +175,7 @@ describe('Validator middleware with a custom validation function', () => {
     }
     type verify = Expect<Equal<Expected, typeof post>>
     return c.jsonT({
-      post,
+      post
     })
   })
 
@@ -203,17 +203,17 @@ describe('Validator middleware with a custom validation function', () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        id: '123',
-      }),
+        id: '123'
+      })
     })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       post: {
-        id: 123,
-      },
+        id: 123
+      }
     })
   })
 })
@@ -223,7 +223,7 @@ describe('Validator middleware with Zod validates JSON', () => {
 
   const schema = z.object({
     id: z.number(),
-    title: z.string(),
+    title: z.string()
   })
 
   const route = app.post('/post', zodValidator('json', schema), (c) => {
@@ -234,7 +234,7 @@ describe('Validator middleware with Zod validates JSON', () => {
     }
     type verify = Expect<Equal<Expected, typeof post>>
     return c.jsonT({
-      post: post,
+      post: post
     })
   })
 
@@ -265,19 +265,19 @@ describe('Validator middleware with Zod validates JSON', () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         id: 123,
-        title: 'Hello',
-      }),
+        title: 'Hello'
+      })
     })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       post: {
         id: 123,
-        title: 'Hello',
-      },
+        title: 'Hello'
+      }
     })
   })
 
@@ -285,12 +285,12 @@ describe('Validator middleware with Zod validates JSON', () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         id: '123',
-        title: 'Hello',
-      }),
+        title: 'Hello'
+      })
     })
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('Invalid!')
@@ -302,12 +302,12 @@ describe('Validator middleware with Zod validates Form data', () => {
 
   const schema = z.object({
     id: z.string(),
-    title: z.string(),
+    title: z.string()
   })
   app.post('/post', zodValidator('form', schema), (c) => {
     const post = c.req.valid('form')
     return c.jsonT({
-      post: post,
+      post: post
     })
   })
 
@@ -317,20 +317,20 @@ describe('Validator middleware with Zod validates Form data', () => {
     form.append('title', 'Hello')
     const res = await app.request('http://localhost/post', {
       method: 'POST',
-      body: form,
+      body: form
     })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       post: {
         id: '123',
-        title: 'Hello',
-      },
+        title: 'Hello'
+      }
     })
   })
 
   it('Should validate Form data and return 400 response', async () => {
     const res = await app.request('http://localhost/post', {
-      method: 'POST',
+      method: 'POST'
     })
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('Invalid!')
@@ -349,14 +349,14 @@ describe('Validator middleware with Zod validates query params', () => {
       .transform((v) => {
         return Number(v)
       }),
-    tag: z.array(z.string()),
+    tag: z.array(z.string())
   })
 
   app.get('/search', zodValidator('query', schema), (c) => {
     const res = c.req.valid('query')
     return c.jsonT({
       page: res.page,
-      tags: res.tag,
+      tags: res.tag
     })
   })
 
@@ -365,7 +365,7 @@ describe('Validator middleware with Zod validates query params', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       page: 123,
-      tags: ['a', 'b'],
+      tags: ['a', 'b']
     })
   })
 
@@ -380,13 +380,13 @@ describe('Validator middleware with Zod validates queries params - with `queries
   const app = new Hono()
 
   const schema = z.object({
-    tags: z.array(z.string()),
+    tags: z.array(z.string())
   })
 
   app.get('/posts', zodValidator('queries', schema), (c) => {
     const res = c.req.valid('queries')
     return c.jsonT({
-      tags: res.tags,
+      tags: res.tags
     })
   })
 
@@ -394,7 +394,7 @@ describe('Validator middleware with Zod validates queries params - with `queries
     const res = await app.request('http://localhost/posts?tags=book&tags=movie')
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
-      tags: ['book', 'movie'],
+      tags: ['book', 'movie']
     })
   })
 
@@ -415,12 +415,12 @@ describe('Validator middleware with Zod validates param', () => {
       .transform((v) => {
         return Number(v)
       }),
-    title: z.string(),
+    title: z.string()
   })
   app.get('/users/:id/books/:title', zodValidator('param', schema), (c) => {
     const param = c.req.valid('param')
     return c.jsonT({
-      param: param,
+      param: param
     })
   })
 
@@ -430,8 +430,8 @@ describe('Validator middleware with Zod validates param', () => {
     expect(await res.json()).toEqual({
       param: {
         id: 123,
-        title: 'Hello',
-      },
+        title: 'Hello'
+      }
     })
   })
 
@@ -446,34 +446,34 @@ describe('Validator middleware with Zod validates header values', () => {
   const app = new Hono()
 
   const schema = z.object({
-    'x-request-id': z.string().uuid(),
+    'x-request-id': z.string().uuid()
   })
 
   app.get('/ping', zodValidator('header', schema), (c) => {
     const data = c.req.valid('header')
     const xRequestId = data['x-request-id']
     return c.jsonT({
-      xRequestId,
+      xRequestId
     })
   })
 
   it('Should validate header values and return 200 response', async () => {
     const res = await app.request('/ping', {
       headers: {
-        'x-request-id': '6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b',
-      },
+        'x-request-id': '6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b'
+      }
     })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
-      xRequestId: '6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b',
+      xRequestId: '6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b'
     })
   })
 
   it('Should validate header values and return 400 response', async () => {
     const res = await app.request('http://localhost/ping', {
       headers: {
-        'x-request-id': 'invalid-key',
-      },
+        'x-request-id': 'invalid-key'
+      }
     })
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('Invalid!')
@@ -484,33 +484,33 @@ describe('Validator middleware with Zod validates cookies', () => {
   const app = new Hono()
 
   const schema = z.object({
-    debug: z.enum(['0', '1']),
+    debug: z.enum(['0', '1'])
   })
 
   app.get('/api/user', zodValidator('cookie', schema), (c) => {
     const { debug } = c.req.valid('cookie')
     return c.jsonT({
-      debug,
+      debug
     })
   })
 
   it('Should validate cookies and return 200 response', async () => {
     const res = await app.request('/api/user', {
       headers: {
-        Cookie: 'debug=0',
-      },
+        Cookie: 'debug=0'
+      }
     })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
-      debug: '0',
+      debug: '0'
     })
   })
 
   it('Should validate cookies and return 400 response', async () => {
     const res = await app.request('/api/user', {
       headers: {
-        Cookie: 'debug=true',
-      },
+        Cookie: 'debug=true'
+      }
     })
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('Invalid!')
@@ -531,13 +531,13 @@ describe('Validator middleware with Zod multiple validators', () => {
           })
           .transform((v) => {
             return Number(v)
-          }),
+          })
       })
     ),
     zodValidator(
       'form',
       z.object({
-        title: z.string(),
+        title: z.string()
       })
     ),
     (c) => {
@@ -580,18 +580,18 @@ describe('Validator middleware with Zod multiple validators', () => {
     form.append('title', 'Hello')
     const res = await app.request('http://localhost/posts?page=2', {
       method: 'POST',
-      body: form,
+      body: form
     })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       page: 2,
-      title: 'Hello',
+      title: 'Hello'
     })
   })
 
   it('Should validate both query param and form data and return 400 response', async () => {
     const res = await app.request('http://localhost/posts?page=2', {
-      method: 'POST',
+      method: 'POST'
     })
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('Invalid!')
@@ -605,7 +605,7 @@ it('With path parameters', () => {
     '/posts/:id',
     validator('form', () => {
       return {
-        title: 'Foo',
+        title: 'Foo'
       }
     }),
     (c) => {
@@ -642,17 +642,17 @@ it('`on`', () => {
     '/purge',
     validator('form', () => {
       return {
-        tag: 'foo',
+        tag: 'foo'
       }
     }),
     validator('query', () => {
       return {
-        q: 'bar',
+        q: 'bar'
       }
     }),
     (c) => {
       return c.jsonT({
-        success: true,
+        success: true
       })
     }
   )
@@ -688,33 +688,33 @@ it('`app.on`', () => {
       '/posts',
       validator('query', () => {
         return {
-          page: '2',
+          page: '2'
         }
       }),
       (c) => {
         return c.jsonT({
           posts: [
             {
-              title: 'foo',
-            },
-          ],
+              title: 'foo'
+            }
+          ]
         })
       }
     )
     .post(
       validator('json', () => {
         return {
-          title: 'Hello',
+          title: 'Hello'
         }
       }),
       validator('query', () => {
         return {
-          title: 'Hello',
+          title: 'Hello'
         }
       }),
       (c) => {
         return c.jsonT({
-          success: true,
+          success: true
         })
       }
     )
@@ -730,7 +730,7 @@ describe('Clone Request object', () => {
       '/',
       validator('json', () => {
         return {
-          foo: 'bar',
+          foo: 'bar'
         }
       }),
       async (c) => {
@@ -750,9 +750,9 @@ describe('Clone Request object', () => {
       const req = new Request('http://localhost', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ foo: 'bar' }),
+        body: JSON.stringify({ foo: 'bar' })
       })
       const res = await app.request(req)
       expect(res.status).toBe(200)
@@ -765,7 +765,7 @@ describe('Clone Request object', () => {
       '/',
       validator('form', () => {
         return {
-          foo: 'bar',
+          foo: 'bar'
         }
       }),
       async (c) => {
@@ -786,7 +786,7 @@ describe('Clone Request object', () => {
       body.append('foo', 'bar')
       const req = new Request('http://localhost', {
         method: 'POST',
-        body: body,
+        body: body
       })
       const res = await app.request(req)
       expect(res.status).toBe(200)
@@ -801,7 +801,7 @@ describe('Async validator function', () => {
     '/posts',
     validator('query', async () => {
       return {
-        page: '1',
+        page: '1'
       }
     }),
     (c) => {
@@ -814,7 +814,7 @@ describe('Async validator function', () => {
     const res = await app.request('/posts')
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
-      page: '1',
+      page: '1'
     })
   })
 })

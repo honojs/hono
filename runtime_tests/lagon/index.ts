@@ -16,13 +16,13 @@ app.use(
   '/basic-auth/*',
   basicAuth({
     username: 'hono',
-    password: 'acoolproject',
+    password: 'acoolproject'
   })
 )
 app.use(
   '/bearer-auth/*',
   bearerAuth({
-    token: 'secrettoken',
+    token: 'secrettoken'
   })
 )
 app.use('/etag/*', etag())
@@ -110,7 +110,7 @@ app.get('/api/posts', prettyJSON(), (c) => {
     { id: 1, title: 'Good Morning' },
     { id: 2, title: 'Good Aternoon' },
     { id: 3, title: 'Good Evening' },
-    { id: 4, title: 'Good Night' },
+    { id: 4, title: 'Good Night' }
   ]
   return c.json(posts)
 })

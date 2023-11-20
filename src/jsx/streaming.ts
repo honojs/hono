@@ -62,7 +62,7 @@ d.replaceWith(c.content)
         }
 
         return raw(html, htmlArray.map((html) => (html as HtmlEscapedString).promises || []).flat())
-      }),
+      })
     ])
   } else {
     return raw(resArray.join(''))
@@ -108,7 +108,7 @@ export const renderToReadableStream = (
       }
 
       controller.close()
-    },
+    }
   })
   return reader
 }

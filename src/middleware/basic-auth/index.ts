@@ -62,8 +62,8 @@ export const basicAuth = (
     const res = new Response('Unauthorized', {
       status: 401,
       headers: {
-        'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"',
-      },
+        'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"'
+      }
     })
     throw new HTTPException(401, { res })
   }

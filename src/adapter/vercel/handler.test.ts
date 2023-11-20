@@ -13,7 +13,7 @@ describe('Adapter for Next.js', () => {
          */
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        waitUntil: c.executionCtx.waitUntil(),
+        waitUntil: c.executionCtx.waitUntil()
       })
     })
     const handler = handle(app)
@@ -22,7 +22,7 @@ describe('Adapter for Next.js', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       path: '/api/foo',
-      waitUntil: 'waitUntil',
+      waitUntil: 'waitUntil'
     })
   })
 
@@ -40,7 +40,7 @@ describe('Adapter for Next.js', () => {
     const req = new Request('http://localhost/api/error')
     expect(() =>
       handler(req, {
-        waitUntil: () => {},
+        waitUntil: () => {}
       } as any)
     ).toThrowError('Custom Error')
   })

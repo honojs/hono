@@ -2,7 +2,7 @@
 import { decodeBase64Url, encodeBase64Url } from './encode'
 
 const toURLBase64 = (base64String: string): string =>
-  base64String.replace(/\+|\//g, (m) => ({ '+': '-', '/': '_' }[m] ?? m))
+  base64String.replace(/\+|\//g, (m) => ({ '+': '-', '/': '_' })[m] ?? m)
 
 const str2UInt8Array = (s: string): Uint8Array => {
   const buffer = new Uint8Array(new ArrayBuffer(s.length))
@@ -21,7 +21,7 @@ describe('base64', () => {
     [utf8Encoder.encode('🔥'), '8J+UpQ=='],
     [
       utf8Encoder.encode('http://github.com/honojs/hono'),
-      'aHR0cDovL2dpdGh1Yi5jb20vaG9ub2pzL2hvbm8=',
+      'aHR0cDovL2dpdGh1Yi5jb20vaG9ub2pzL2hvbm8='
     ],
 
     // RFC 3548 examples
@@ -46,7 +46,7 @@ describe('base64', () => {
     [str2UInt8Array('leasure.'), 'bGVhc3VyZS4='],
     [str2UInt8Array('easure.'), 'ZWFzdXJlLg=='],
     [str2UInt8Array('asure.'), 'YXN1cmUu'],
-    [str2UInt8Array('sure.'), 'c3VyZS4='],
+    [str2UInt8Array('sure.'), 'c3VyZS4=']
   ])('%s, %s', (stdDecoded, stdEncoded) => {
     it('encode', () => {
       const got = encodeBase64Url(stdDecoded)

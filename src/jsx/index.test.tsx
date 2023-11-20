@@ -49,8 +49,8 @@ describe('JSX middleware', () => {
       const props = {
         name: 'JSX',
         siteData: {
-          title: 'with html middleware',
-        },
+          title: 'with html middleware'
+        }
       }
       return c.html(<Content {...props} />)
     })
@@ -102,9 +102,7 @@ describe('JSX middleware', () => {
     }
 
     app.get('/', (c) => {
-      return c.html(
-        html`<html><body>${(<AsyncComponent />)}</body></html>`
-      )
+      return c.html(html`<html><body>${<AsyncComponent />}</body></html>`)
     })
     const res = await app.request('http://localhost/')
     expect(res.status).toBe(200)
@@ -176,53 +174,53 @@ describe('render to string', () => {
   // https://html.spec.whatwg.org/#attributes-3
   describe('Boolean attribute', () => {
     it('default prop value for checked', () => {
-      const template = <input type='checkbox' checked />
+      const template = <input type="checkbox" checked />
       expect(template.toString()).toBe('<input type="checkbox" checked=""/>')
     })
 
     it('default prop value for checked={true}', () => {
-      const template = <input type='checkbox' checked={true} />
+      const template = <input type="checkbox" checked={true} />
       expect(template.toString()).toBe('<input type="checkbox" checked=""/>')
     })
 
     it('no prop for checked={false}', () => {
-      const template = <input type='checkbox' checked={false} />
+      const template = <input type="checkbox" checked={false} />
       expect(template.toString()).toBe('<input type="checkbox"/>')
     })
 
     it('default prop value for disabled', () => {
-      const template = <input type='checkbox' disabled />
+      const template = <input type="checkbox" disabled />
       expect(template.toString()).toBe('<input type="checkbox" disabled=""/>')
     })
 
     it('default prop value for disabled={true}', () => {
-      const template = <input type='checkbox' disabled={true} />
+      const template = <input type="checkbox" disabled={true} />
       expect(template.toString()).toBe('<input type="checkbox" disabled=""/>')
     })
 
     it('no prop for disabled={false}', () => {
-      const template = <input type='checkbox' disabled={false} />
+      const template = <input type="checkbox" disabled={false} />
       expect(template.toString()).toBe('<input type="checkbox"/>')
     })
 
     it('default prop value for readonly', () => {
-      const template = <input type='checkbox' readonly />
+      const template = <input type="checkbox" readonly />
       expect(template.toString()).toBe('<input type="checkbox" readonly=""/>')
     })
 
     it('default prop value for readonly={true}', () => {
-      const template = <input type='checkbox' readonly={true} />
+      const template = <input type="checkbox" readonly={true} />
       expect(template.toString()).toBe('<input type="checkbox" readonly=""/>')
     })
 
     it('no prop for readonly={false}', () => {
-      const template = <input type='checkbox' readonly={false} />
+      const template = <input type="checkbox" readonly={false} />
       expect(template.toString()).toBe('<input type="checkbox"/>')
     })
 
     it('default prop value for selected', () => {
       const template = (
-        <option value='test' selected>
+        <option value="test" selected>
           Test
         </option>
       )
@@ -231,7 +229,7 @@ describe('render to string', () => {
 
     it('default prop value for selected={true}', () => {
       const template = (
-        <option value='test' selected={true}>
+        <option value="test" selected={true}>
           Test
         </option>
       )
@@ -240,7 +238,7 @@ describe('render to string', () => {
 
     it('no prop for selected={false}', () => {
       const template = (
-        <option value='test' selected={false}>
+        <option value="test" selected={false}>
           Test
         </option>
       )
@@ -275,14 +273,14 @@ describe('render to string', () => {
     })
 
     it('should render "false" value properly for other non-defined keys', () => {
-      const template = <input type='checkbox' testkey={false} />
+      const template = <input type="checkbox" testkey={false} />
       expect(template.toString()).toBe('<input type="checkbox" testkey="false"/>')
     })
 
     it('should support attributes for elements other than input', () => {
       const template = (
         <video controls autoplay>
-          <source src='movie.mp4' type='video/mp4' />
+          <source src="movie.mp4" type="video/mp4" />
         </video>
       )
       expect(template.toString()).toBe(
@@ -331,7 +329,7 @@ describe('render to string', () => {
       }
 
       const Top = (
-        <Layout title='Home page'>
+        <Layout title="Home page">
           <h1>Hono</h1>
           <p>Hono is great</p>
         </Layout>
@@ -350,7 +348,7 @@ describe('render to string', () => {
           style={{
             color: 'red',
             fontSize: 'small',
-            fontFamily: 'Menlo, Consolas, DejaVu Sans Mono, monospace',
+            fontFamily: 'Menlo, Consolas, DejaVu Sans Mono, monospace'
           }}
         >
           Hello
@@ -361,7 +359,7 @@ describe('render to string', () => {
       )
     })
     it('should not convert the strings', () => {
-      const template = <h1 style='color:red;font-size:small'>Hello</h1>
+      const template = <h1 style="color:red;font-size:small">Hello</h1>
       expect(template.toString()).toBe('<h1 style="color:red;font-size:small">Hello</h1>')
     })
   })
@@ -494,7 +492,7 @@ describe('Context', () => {
   describe('with .Provider', () => {
     it('has a child', () => {
       const template = (
-        <ThemeContext.Provider value='dark'>
+        <ThemeContext.Provider value="dark">
           <Consumer />
         </ThemeContext.Provider>
       )
@@ -503,7 +501,7 @@ describe('Context', () => {
 
     it('has children', () => {
       const template = (
-        <ThemeContext.Provider value='dark'>
+        <ThemeContext.Provider value="dark">
           <div>
             <Consumer />!
           </div>
@@ -517,9 +515,9 @@ describe('Context', () => {
 
     it('nested', () => {
       const template = (
-        <ThemeContext.Provider value='dark'>
+        <ThemeContext.Provider value="dark">
           <Consumer />
-          <ThemeContext.Provider value='black'>
+          <ThemeContext.Provider value="black">
             <Consumer />
           </ThemeContext.Provider>
           <Consumer />

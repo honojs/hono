@@ -14,11 +14,11 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
     origin: '*',
     allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH'],
     allowHeaders: [],
-    exposeHeaders: [],
+    exposeHeaders: []
   }
   const opts = {
     ...defaults,
-    ...options,
+    ...options
   }
 
   const findAllowOrigin = ((optsOrigin) => {
@@ -86,7 +86,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       return new Response(null, {
         headers: c.res.headers,
         status: 204,
-        statusText: c.res.statusText,
+        statusText: c.res.statusText
       })
     }
   }

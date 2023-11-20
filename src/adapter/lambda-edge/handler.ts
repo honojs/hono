@@ -117,7 +117,7 @@ export const handle = (app: Hono<any>) => {
       },
       config: event.Records[0].cf.config,
       request: event.Records[0].cf.request,
-      response: event.Records[0].cf.response,
+      response: event.Records[0].cf.response
     })
     return createResult(res)
   }
@@ -130,7 +130,7 @@ const createResult = async (res: Response): Promise<CloudFrontResult> => {
   return {
     status: res.status.toString(),
     headers: convertHeaders(res.headers),
-    body,
+    body
   }
 }
 
@@ -153,7 +153,7 @@ const createRequest = (event: CloudFrontEdgeEvent) => {
   return new Request(url, {
     headers,
     method: event.Records[0].cf.request.method,
-    body,
+    body
   })
 }
 

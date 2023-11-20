@@ -7,7 +7,7 @@ describe('RegExpRouter', () => {
     let router: SmartRouter<string>
     beforeEach(() => {
       router = new SmartRouter<string>({
-        routers: [new RegExpRouter(), new TrieRouter()],
+        routers: [new RegExpRouter(), new TrieRouter()]
       })
     })
 
@@ -75,7 +75,7 @@ describe('RegExpRouter', () => {
 
 describe('TrieRouter', () => {
   const router = new SmartRouter<string>({
-    routers: [new RegExpRouter(), new TrieRouter()],
+    routers: [new RegExpRouter(), new TrieRouter()]
   })
 
   router.add('GET', '/:user/entries', 'get user entries')
