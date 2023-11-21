@@ -2,6 +2,7 @@ import { raw } from '../helper/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
+export { ErrorBoundary } from './components'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Props = Record<string, any>
@@ -273,7 +274,7 @@ export const createContext = <T>(defaultValue: T): Context<T> => {
         return Promise.resolve().then<HtmlEscapedString>(async () => {
           values.push(props.value)
           const awaited = await string
-          const promiseRes = raw(awaited, (awaited as HtmlEscapedString).promises)
+          const promiseRes = raw(awaited, (awaited as HtmlEscapedString).callbacks)
           values.pop()
           return promiseRes
         })
