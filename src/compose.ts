@@ -38,7 +38,7 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
 
       if (!handler) {
         if (context instanceof Context && context.finalized === false && onNotFound) {
-          res = onNotFound(context)
+          res = await onNotFound(context)
         }
       } else {
         try {
