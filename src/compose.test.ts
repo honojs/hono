@@ -264,6 +264,22 @@ describe('compose with Context - 500 error', () => {
     expect(context.finalized).toBe(true)
   })
 
+  it('Error on handler - async', async () => {
+    const handler = () => {
+      throw new Error()
+    }
+
+    middleware.push(buildMiddlewareTuple(handler))
+    const onError = async (_error: Error, c: Context) => c.text('onError', 500)
+
+    const composed = compose<Context>(middleware, onError)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(500)
+    expect(await context.res.text()).toBe('onError')
+    expect(context.finalized).toBe(true)
+  })
+
   it('Run all the middlewares', async () => {
     const ctx: C = { req: {}, res: {}, finalized: false }
     const stack: number[] = []
