@@ -48,7 +48,7 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
         } catch (err) {
           if (err instanceof Error && context instanceof Context && onError) {
             context.error = err
-            res = onError(err, context)
+            res = await onError(err, context)
             isError = true
           } else {
             throw err
