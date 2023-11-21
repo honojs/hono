@@ -32,6 +32,39 @@ describe('Query', () => {
   })
 })
 
+describe('Param', () => {
+  test('req.param() withth ParamStash', () => {
+    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
+    const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', ['123', 'key'])
+
+    req.setParams({
+      id: 0,
+    })
+    expect(req.param('id')).toBe('123')
+    expect(req.param('name')).toBe(undefined)
+
+    req.setParams({
+      id: 0,
+      name: 1,
+    })
+    expect(req.param('id')).toBe('123')
+    expect(req.param('name')).toBe('key')
+  })
+
+  test('req.param() without ParamStash', () => {
+    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
+    const req = new HonoRequest<'/:id/:name'>(rawRequest)
+
+    req.setParams({
+      id: '456',
+      name: 'key',
+    })
+
+    expect(req.param('id')).toBe('456')
+    expect(req.param('name')).toBe('key')
+  })
+})
+
 describe('req.addValidatedData() and req.data()', () => {
   const rawRequest = new Request('http://localhost')
 

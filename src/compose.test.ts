@@ -149,9 +149,11 @@ describe('compose with Context - 404 not found', () => {
   const middleware: MiddlewareTuple[] = []
 
   const req = new HonoRequest(new Request('http://localhost/'))
-  const c: Context = new Context(req)
   const onNotFound = (c: Context) => {
     return c.text('onNotFound', 404)
+  }
+  const onNotFoundAsync = async (c: Context) => {
+    return c.text('onNotFoundAsync', 404)
   }
   const mHandler = async (_c: Context, next: Function) => {
     await next()
@@ -160,11 +162,22 @@ describe('compose with Context - 404 not found', () => {
   middleware.push(buildMiddlewareTuple(mHandler))
 
   it('Should return 404 Response', async () => {
+    const c: Context = new Context(req)
     const composed = compose<Context>(middleware, undefined, onNotFound)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(404)
     expect(await context.res.text()).toBe('onNotFound')
+    expect(context.finalized).toBe(true)
+  })
+
+  it('Should return 404 Response - async handler', async () => {
+    const c: Context = new Context(req)
+    const composed = compose<Context>(middleware, undefined, onNotFoundAsync)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(404)
+    expect(await context.res.text()).toBe('onNotFoundAsync')
     expect(context.finalized).toBe(true)
   })
 })
@@ -244,6 +257,22 @@ describe('compose with Context - 500 error', () => {
     const onError = (_error: Error, c: Context) => c.text('onError', 500)
 
     const composed = compose<Context>(middleware, onError, onNotFound)
+    const context = await composed(c)
+    expect(context.res).not.toBeNull()
+    expect(context.res.status).toBe(500)
+    expect(await context.res.text()).toBe('onError')
+    expect(context.finalized).toBe(true)
+  })
+
+  it('Error on handler - async', async () => {
+    const handler = () => {
+      throw new Error()
+    }
+
+    middleware.push(buildMiddlewareTuple(handler))
+    const onError = async (_error: Error, c: Context) => c.text('onError', 500)
+
+    const composed = compose<Context>(middleware, onError)
     const context = await composed(c)
     expect(context.res).not.toBeNull()
     expect(context.res.status).toBe(500)

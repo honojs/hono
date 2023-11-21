@@ -123,7 +123,7 @@ export interface HandlerInterface<
     E4 extends Env = E,
     E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>
   >(
-    ...handlers: [H<E2, P, I, R>, H<E3, P, I2, R>, H<E4, P, I3, R>, H<E5, P, I3, R>]
+    ...handlers: [H<E2, P, I, R>, H<E3, P, I2, R>, H<E4, P, I3, R>, H<E5, P, I4, R>]
   ): Hono<E & E2 & E3 & E4 & E5, S & ToSchema<M, P, I4['in'], MergeTypedResponseData<R>>, BasePath>
 
   // app.get(handler x 5)

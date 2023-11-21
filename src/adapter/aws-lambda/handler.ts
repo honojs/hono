@@ -56,7 +56,7 @@ export interface APIGatewayProxyEvent {
   stageVariables?: Record<string, string>
 }
 
-interface APIGatewayProxyResult {
+export interface APIGatewayProxyResult {
   statusCode: number
   body: string
   headers: Record<string, string>
