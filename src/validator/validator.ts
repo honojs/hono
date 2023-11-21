@@ -46,10 +46,10 @@ export const validator = <
 ): MiddlewareHandler<E, P, V> => {
   return async (c, next) => {
     let value = {}
+    const contentType = c.req.header('Content-Type')
 
     switch (target) {
       case 'json':
-        const contentType = c.req.header('Content-Type')
         if (!contentType || !contentType.startsWith('application/json')) {
           const message = `Invalid HTTP header: Content-Type=${contentType}`
           console.error(message)
