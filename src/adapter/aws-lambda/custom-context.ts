@@ -81,3 +81,8 @@ export interface ApiGatewayRequestContextV2 {
   time: string
   timeEpoch: number
 }
+
+/**
+ * @deprecated Use ApiGatewayRequestContextV2 instead. 
+ */
+export type LambdaFunctionUrlRequestContext = ApiGatewayRequestContextV2
