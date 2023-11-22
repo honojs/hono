@@ -2513,6 +2513,61 @@ describe('c.var - with testing types', () => {
       await next()
     }
 
+  const mw6 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo6: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo6', (str) => str)
+      await next()
+    }
+
+  const mw7 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo7: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo7', (str) => str)
+      await next()
+    }
+
+  const mw8 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo8: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo8', (str) => str)
+      await next()
+    }
+
+  const mw9 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo9: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo9', (str) => str)
+      await next()
+    }
+
+  const mw10 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo10: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo10', (str) => str)
+      await next()
+    }
+
   app.use('/no-path/1').get(mw(), (c) => {
     return c.text(c.var.echo('hello'))
   })
@@ -2531,21 +2586,103 @@ describe('c.var - with testing types', () => {
     )
   })
 
-  // @ts-expect-error
   app.use('/no-path/5').get(mw(), mw2(), mw3(), mw4(), mw5(), (c) => {
     return c.text(
-      // @ts-expect-error
       c.var.echo('hello') +
-        // @ts-expect-error
         c.var.echo2('hello2') +
-        // @ts-expect-error
         c.var.echo3('hello3') +
-        // @ts-expect-error
         c.var.echo4('hello4') +
-        // @ts-expect-error
         c.var.echo5('hello5')
     )
   })
+
+  app.use('/no-path/6').get(mw(), mw2(), mw3(), mw4(), mw5(), mw6(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6')
+    )
+  })
+
+  app.use('/no-path/7').get(mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7')
+    )
+  })
+
+  app.use('/no-path/8').get(mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8')
+    )
+  })
+
+  app.use('/no-path/9').get(mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), mw9(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8') +
+        c.var.echo9('hello9')
+    )
+  })
+
+  app.use('/no-path/10').get(
+    // @ts-expect-error
+    mw(),
+    mw2(),
+    mw3(),
+    mw4(),
+    mw5(),
+    mw6(),
+    mw7(),
+    mw8(),
+    mw9(),
+    mw10(),
+    (c) => {
+      return c.text(
+        // @ts-expect-error
+        c.var.echo('hello') +
+          // @ts-expect-error
+          c.var.echo2('hello2') +
+          // @ts-expect-error
+          c.var.echo3('hello3') +
+          // @ts-expect-error
+          c.var.echo4('hello4') +
+          // @ts-expect-error
+          c.var.echo5('hello5') +
+          // @ts-expect-error
+          c.var.echo6('hello6') +
+          // @ts-expect-error
+          c.var.echo7('hello7') +
+          // @ts-expect-error
+          c.var.echo8('hello8') +
+          // @ts-expect-error
+          c.var.echo9('hello9') +
+          // @ts-expect-error
+          c.var.echo10('hello10')
+      )
+    }
+  )
 
   app.get('*', mw())
 
@@ -2567,8 +2704,68 @@ describe('c.var - with testing types', () => {
     )
   })
 
-  // @ts-expect-error
   app.get('/path/5', mw(), mw2(), mw3(), mw4(), mw5(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5')
+    )
+  })
+
+  app.get('/path/6', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6')
+    )
+  })
+
+  app.get('/path/7', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7')
+    )
+  })
+
+  app.get('/path/8', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8')
+    )
+  })
+
+  app.get('/path/9', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), mw9(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8') +
+        c.var.echo9('hello9')
+    )
+  })
+
+  // @ts-expect-error
+  app.get('/path/10', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), mw9(), mw10(), (c) => {
     return c.text(
       // @ts-expect-error
       c.var.echo('hello') +
@@ -2579,7 +2776,17 @@ describe('c.var - with testing types', () => {
         // @ts-expect-error
         c.var.echo4('hello4') +
         // @ts-expect-error
-        c.var.echo5('hello5')
+        c.var.echo5('hello5') +
+        // @ts-expect-error
+        c.var.echo6('hello6') +
+        // @ts-expect-error
+        c.var.echo7('hello7') +
+        // @ts-expect-error
+        c.var.echo8('hello8') +
+        // @ts-expect-error
+        c.var.echo9('hello9') +
+        // @ts-expect-error
+        c.var.echo10('hello10')
     )
   })
 
