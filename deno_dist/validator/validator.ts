@@ -46,18 +46,26 @@ export const validator = <
 ): MiddlewareHandler<E, P, V> => {
   return async (c, next) => {
     let value = {}
+    const contentType = c.req.header('Content-Type')
 
     switch (target) {
       case 'json':
+        if (!contentType || !contentType.startsWith('application/json')) {
+          const message = `Invalid HTTP header: Content-Type=${contentType}`
+          console.error(message)
+          return c.json(
+            {
+              success: false,
+              message,
+            },
+            400
+          )
+        }
+        /**
+         * Get the arrayBuffer first, create JSON object via Response,
+         * and cache the arrayBuffer in the c.req.bodyCache.
+         */
         try {
-          const contentType = c.req.header('Content-Type')
-          if (!contentType || !contentType.startsWith('application/json')) {
-            throw new Error(`Invalid HTTP header: Content-Type=${contentType}`)
-          }
-          /**
-           * Get the arrayBuffer first, create JSON object via Response,
-           * and cache the arrayBuffer in the c.req.bodyCache.
-           */
           const arrayBuffer = c.req.bodyCache.arrayBuffer ?? (await c.req.raw.arrayBuffer())
           value = await new Response(arrayBuffer).json()
           c.req.bodyCache.json = value
