@@ -83,6 +83,6 @@ export interface ApiGatewayRequestContextV2 {
 }
 
 /**
- * @deprecated Use ApiGatewayRequestContextV2 instead. 
+ * @deprecated Use ApiGatewayRequestContextV2 instead.
  */
 export type LambdaFunctionUrlRequestContext = ApiGatewayRequestContextV2
