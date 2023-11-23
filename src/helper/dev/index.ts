@@ -1,123 +1,63 @@
 import type { Hono } from '../../hono'
+import type { RouterRoute } from '../../hono-base'
 
-interface RouterRoute {
-  method: string
-  path: string
-  handler: Function
-}
-
-type Writer<T = {}> = (
-  data: {
-    method: string
-    path: string
-    routes: RouterRoute[]
-    maxPathLength: number
-    maxHandlerNameLength: number
-  } & T
-) => void
-
-interface ShowRoutesOptionsCommon {
+interface ShowRoutesOptions {
   includeMiddleware?: boolean
-}
-
-interface DefaultWriterOptions {
   showList?: boolean
 }
 
-type ShowRoutesOptions =
-  | (ShowRoutesOptionsCommon & { writer: Writer })
-  | (ShowRoutesOptionsCommon & DefaultWriterOptions)
-
-const handlerName = (handler: Function) => {
-  return handler.name || (handler.length === 1 ? '[handler]' : '[middleware]')
+interface RouteData {
+  path: string
+  method: string
+  name: string
+  isMiddleware: boolean
 }
 
-const honoBaseRe = /hono-base|\/node_modules\/hono/
-const defaultWriter: Writer<DefaultWriterOptions> = ({
-  method,
-  path,
-  routes,
-  maxPathLength,
-  maxHandlerNameLength,
-  showList,
-}) => {
-  const length = 8
-  console.log(
-    `\x1b[32m${method}\x1b[0m ${' '.repeat(length - method.length)} ${path}${
-      routes.length > 1 ? `${' '.repeat(maxPathLength - path.length + 2)}` : ''
-    }`
-  )
-  if (!showList) {
-    return
-  }
+const isMiddleware = (handler: Function) => handler.length > 1
+const handlerName = (handler: Function) => {
+  return handler.name || (isMiddleware(handler) ? '[middleware]' : '[handler]')
+}
 
-  routes.forEach((route) => {
-    let file = ''
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((route as any).stack) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const stack = (route as any).stack.split('\n').reverse()
-      const honoBaseIndex = stack.findIndex((line: string) => !!line.match(honoBaseRe))
-      if (honoBaseIndex !== -1) {
-        file = (stack[honoBaseIndex - 1].match(/(\S+:\d+:\d+)/)?.[1] || '').replace(
-          /\(|file:\/\//g,
-          ''
-        )
-      }
-    }
-
-    const name = handlerName(route.handler)
-    console.log(
-      `${' '.repeat(length + 4)} ${name}${
-        file ? `${' '.repeat(maxHandlerNameLength - name.length + 2)}${file}` : ''
-      }`
-    )
-  })
+export const inspectRoutes = (hono: Hono): RouteData[] => {
+  return hono.routes.map(({ path, method, handler }: RouterRoute) => ({
+    path,
+    method,
+    name: handlerName(handler),
+    isMiddleware: isMiddleware(handler),
+  }))
 }
 
 export const showRoutes = (hono: Hono, opts?: ShowRoutesOptions) => {
-  const routeData: Record<string, RouterRoute[]> = {}
+  const routeData: Record<string, RouteData[]> = {}
+  let maxMethodLength = 0
   let maxPathLength = 0
-  let maxHandlerNameLength = 0
-  hono.routes
-    .filter(({ handler }) => opts?.includeMiddleware || handler.length === 1)
+
+  inspectRoutes(hono)
+    .filter(({ isMiddleware }) => opts?.includeMiddleware || !isMiddleware)
     .map((route) => {
       const key = `${route.method}-${route.path}`
       ;(routeData[key] ||= []).push(route)
       if (routeData[key].length > 1) {
         return
       }
+      maxMethodLength = Math.max(maxMethodLength, route.method.length)
       maxPathLength = Math.max(maxPathLength, route.path.length)
-      maxHandlerNameLength = Math.max(maxHandlerNameLength, handlerName(route.handler).length)
-      return { key, method: route.method, path: route.path }
+      return { method: route.method, path: route.path, routes: routeData[key] }
     })
     .forEach((data) => {
       if (!data) {
         return
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ;((opts as any)?.writer || defaultWriter)({
-        ...opts,
-        ...data,
-        routes: routeData[data.key],
-        maxPathLength,
-        maxHandlerNameLength,
+      const { method, path, routes } = data
+
+      console.log(`\x1b[32m${method}\x1b[0m ${' '.repeat(maxMethodLength - method.length)} ${path}`)
+
+      if (!opts?.showList) {
+        return
+      }
+
+      routes.forEach(({ name }) => {
+        console.log(`${' '.repeat(maxMethodLength + 3)} ${name}`)
       })
     })
-}
-
-export const captureRouteStackTrace = (app: Hono) => {
-  app.routes = new Proxy(app.routes, {
-    get(target, prop) {
-      if (prop === 'push') {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (route: any) => {
-          Error.captureStackTrace(route)
-          target.push(route)
-          return target
-        }
-      }
-      return Reflect.get(target, prop)
-    },
-  })
 }
