@@ -25,7 +25,7 @@ import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/ur
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
-interface RouterRoute {
+export interface RouterRoute {
   path: string
   method: string
   handler: H
