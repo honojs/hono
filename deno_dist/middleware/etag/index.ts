@@ -29,7 +29,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
   const retainedHeaders = options?.retainedHeaders ?? RETAINED_304_HEADERS
   const weak = options?.weak ?? false
 
-  return async (c, next) => {
+  return async function etag(c, next) {
     const ifNoneMatch = c.req.header('If-None-Match') ?? null
 
     await next()
