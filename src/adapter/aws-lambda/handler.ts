@@ -4,14 +4,18 @@ import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 
 import { encodeBase64 } from '../../utils/encode'
-import type { ApiGatewayRequestContext, ApiGatewayRequestContextV2 } from './custom-context'
+import type {
+  ApiGatewayRequestContext,
+  ApiGatewayRequestContextV2,
+  ALBRequestContext,
+} from './custom-context'
 import type { LambdaContext } from './types'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 globalThis.crypto ??= crypto
 
-export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2
+export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2 | ALBProxyEvent
 
 // When calling HTTP API or Lambda directly through function urls
 export interface APIGatewayProxyEventV2 {
@@ -35,7 +39,7 @@ export interface APIGatewayProxyEventV2 {
   }
 }
 
-// When calling Lambda through an API Gateway or an ELB
+// When calling Lambda through an API Gateway
 export interface APIGatewayProxyEvent {
   version: string
   httpMethod: string
@@ -56,8 +60,20 @@ export interface APIGatewayProxyEvent {
   stageVariables?: Record<string, string>
 }
 
+// When calling Lambda through an Application Load Balancer
+export interface ALBProxyEvent {
+  httpMethod: string
+  headers: Record<string, string | undefined>
+  path: string
+  body: string | null
+  isBase64Encoded: boolean
+  queryStringParameters?: Record<string, string | undefined>
+  requestContext: ALBRequestContext
+}
+
 export interface APIGatewayProxyResult {
   statusCode: number
+  statusDescription?: string
   body: string
   headers: Record<string, string>
   cookies?: string[]
@@ -69,7 +85,7 @@ export interface APIGatewayProxyResult {
 
 const getRequestContext = (
   event: LambdaEvent
-): ApiGatewayRequestContext | ApiGatewayRequestContextV2 => {
+): ApiGatewayRequestContext | ApiGatewayRequestContextV2 | ALBRequestContext => {
   return event.requestContext
 }
 
@@ -182,9 +198,12 @@ const createResult = async (event: LambdaEvent, res: Response): Promise<APIGatew
 
 const createRequest = (event: LambdaEvent) => {
   const queryString = extractQueryString(event)
-  const urlPath = `https://${event.requestContext.domainName}${
-    isProxyEvent(event) ? event.path : event.rawPath
-  }`
+  const domainName =
+    event.requestContext && 'domainName' in event.requestContext
+      ? event.requestContext.domainName
+      : event.headers['host']
+  const path = isProxyEventV2(event) ? event.rawPath : event.path
+  const urlPath = `https://${domainName}${path}`
   const url = queryString ? `${urlPath}?${queryString}` : urlPath
 
   const headers = new Headers()
@@ -193,7 +212,7 @@ const createRequest = (event: LambdaEvent) => {
     if (v) headers.set(k, v)
   }
 
-  const method = isProxyEvent(event) ? event.httpMethod : event.requestContext.http.method
+  const method = isProxyEventV2(event) ? event.requestContext.http.method : event.httpMethod
   const requestInit: RequestInit = {
     headers,
     method,
@@ -207,13 +226,12 @@ const createRequest = (event: LambdaEvent) => {
 }
 
 const extractQueryString = (event: LambdaEvent) => {
-  if (isProxyEvent(event)) {
-    return Object.entries(event.queryStringParameters || {})
-      .filter(([, value]) => value)
-      .map(([key, value]) => `${key}=${value}`)
-      .join('&')
-  }
-  return event.rawQueryString
+  return isProxyEventV2(event)
+    ? event.rawQueryString
+    : Object.entries(event.queryStringParameters || {})
+        .filter(([, value]) => value)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('&')
 }
 
 const getCookies = (event: LambdaEvent, headers: Headers) => {
@@ -236,10 +254,6 @@ const setCookies = (event: LambdaEvent, res: Response, result: APIGatewayProxyRe
       res.headers.delete('set-cookie')
     }
   }
-}
-
-const isProxyEvent = (event: LambdaEvent): event is APIGatewayProxyEvent => {
-  return Object.prototype.hasOwnProperty.call(event, 'path')
 }
 
 const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => {

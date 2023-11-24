@@ -196,6 +196,13 @@ describe('AWS Lambda Adapter for Hono', () => {
     customProperty: 'customValue',
   }
 
+  const testALBRequestContext = {
+    elb: {
+      targetGroupArn:
+        'arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/lambda-279XGJDqGZ5rsrHC2Fjr/49e9d65c45c6791a',
+    },
+  }
+
   it('Should handle a GET request and return a 200 response', async () => {
     const event = {
       version: '1.0',
@@ -247,6 +254,26 @@ describe('AWS Lambda Adapter for Hono', () => {
     }
 
     testApiGatewayRequestContextV2.http.method = 'GET'
+
+    const response = await handler(event)
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toBe('Hello Lambda!')
+    expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.isBase64Encoded).toBe(false)
+  })
+
+  it('Should handle a GET request and return a 200 response (ALBEvent)', async () => {
+    const event = {
+      headers: { 'content-type': 'text/plain' },
+      httpMethod: 'GET',
+      path: '/',
+      queryStringParameters: {
+        query: '1234ABCD',
+      },
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testALBRequestContext,
+    }
 
     const response = await handler(event)
     expect(response.statusCode).toBe(200)

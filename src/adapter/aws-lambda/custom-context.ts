@@ -82,6 +82,12 @@ export interface ApiGatewayRequestContextV2 {
   timeEpoch: number
 }
 
+export interface ALBRequestContext {
+  elb: {
+    targetGroupArn: string
+  }
+}
+
 /**
  * @deprecated Use ApiGatewayRequestContextV2 instead.
  */
