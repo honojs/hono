@@ -61,7 +61,7 @@ interface Authorizer {
   }
 }
 
-export interface LambdaFunctionUrlRequestContext {
+export interface ApiGatewayRequestContextV2 {
   accountId: string
   apiId: string
   authentication: null
@@ -81,3 +81,14 @@ export interface LambdaFunctionUrlRequestContext {
   time: string
   timeEpoch: number
 }
+
+export interface ALBRequestContext {
+  elb: {
+    targetGroupArn: string
+  }
+}
+
+/**
+ * @deprecated Use ApiGatewayRequestContextV2 instead.
+ */
+export type LambdaFunctionUrlRequestContext = ApiGatewayRequestContextV2
