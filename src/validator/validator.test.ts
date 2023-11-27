@@ -117,6 +117,10 @@ describe('Malformed JSON', () => {
       }),
     })
     expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({
+      success: false,
+      message: 'Invalid HTTP header: Content-Type=Xapplication/json',
+    })
   })
 })
 
