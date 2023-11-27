@@ -365,6 +365,14 @@ describe('render to string', () => {
       expect(template.toString()).toBe('<h1 style="color:red;font-size:small">Hello</h1>')
     })
   })
+
+  describe('HtmlEscaped in props', () => {
+    it('should not be double-escaped', () => {
+      const escapedString = html`${'<html-escaped-string>'}`
+      const template = <span data-text={escapedString}>Hello</span>
+      expect(template.toString()).toBe('<span data-text="&lt;html-escaped-string&gt;">Hello</span>')
+    })
+  })
 })
 
 describe('memo', () => {

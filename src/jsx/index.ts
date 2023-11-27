@@ -130,10 +130,10 @@ export class JSXNode implements HtmlEscaped {
         buffer[0] += ` ${key}="`
         escapeToBuffer(v, buffer)
         buffer[0] += '"'
-      } else if (typeof v === 'number') {
-        buffer[0] += ` ${key}="${v}"`
       } else if (v === null || v === undefined) {
         // Do nothing
+      } else if (typeof v === 'number' || (v as HtmlEscaped).isEscaped) {
+        buffer[0] += ` ${key}="${v}"`
       } else if (typeof v === 'boolean' && booleanAttributes.includes(key)) {
         if (v) {
           buffer[0] += ` ${key}=""`
