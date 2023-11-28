@@ -2808,21 +2808,236 @@ describe('c.var - with testing types', () => {
     )
   })
 
-  // @ts-expect-error
   app.on('GET', '/on/5', mw(), mw2(), mw3(), mw4(), mw5(), (c) => {
     return c.text(
-      // @ts-expect-error
       c.var.echo('hello') +
-        // @ts-expect-error
         c.var.echo2('hello2') +
-        // @ts-expect-error
         c.var.echo3('hello3') +
-        // @ts-expect-error
         c.var.echo4('hello4') +
-        // @ts-expect-error
         c.var.echo5('hello5')
     )
   })
+
+  app.on('GET', '/on/6', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6')
+    )
+  })
+
+  app.on('GET', '/on/7', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7')
+    )
+  })
+
+  app.on('GET', '/on/8', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8')
+    )
+  })
+
+  app.on('GET', '/on/9', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), mw9(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8') +
+        c.var.echo9('hello9')
+    )
+  })
+
+  // @ts-expect-error
+  app.on(
+    'GET',
+    '/on/10',
+    mw(),
+    mw2(),
+    mw3(),
+    mw4(),
+    mw5(),
+    mw6(),
+    mw7(),
+    mw8(),
+    mw9(),
+    mw10(),
+    (c) => {
+      return c.text(
+        // @ts-expect-error
+        c.var.echo('hello') +
+          // @ts-expect-error
+          c.var.echo2('hello2') +
+          // @ts-expect-error
+          c.var.echo3('hello3') +
+          // @ts-expect-error
+          c.var.echo4('hello4') +
+          // @ts-expect-error
+          c.var.echo5('hello5') +
+          // @ts-expect-error
+          c.var.echo6('hello6') +
+          // @ts-expect-error
+          c.var.echo7('hello7') +
+          // @ts-expect-error
+          c.var.echo8('hello8') +
+          // @ts-expect-error
+          c.var.echo9('hello9') +
+          // @ts-expect-error
+          c.var.echo10('hello10')
+      )
+    }
+  )
+
+  app.on(['GET', 'POST'], '/on/1', mw(), (c) => {
+    return c.text(c.var.echo('hello'))
+  })
+
+  app.on(['GET', 'POST'], '/on/2', mw(), mw2(), (c) => {
+    return c.text(c.var.echo('hello') + c.var.echo2('hello2'))
+  })
+
+  app.on(['GET', 'POST'], '/on/3', mw(), mw2(), mw3(), (c) => {
+    return c.text(c.var.echo('hello') + c.var.echo2('hello2') + c.var.echo3('hello3'))
+  })
+
+  app.on(['GET', 'POST'], '/on/4', mw(), mw2(), mw3(), mw4(), (c) => {
+    return c.text(
+      c.var.echo('hello') + c.var.echo2('hello2') + c.var.echo3('hello3') + c.var.echo4('hello4')
+    )
+  })
+
+  app.on(['GET', 'POST'], '/on/5', mw(), mw2(), mw3(), mw4(), mw5(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5')
+    )
+  })
+
+  app.on(['GET', 'POST'], '/on/6', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6')
+    )
+  })
+
+  app.on(['GET', 'POST'], '/on/7', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7')
+    )
+  })
+
+  app.on(['GET', 'POST'], '/on/8', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8')
+    )
+  })
+
+  app.on(
+    ['GET', 'POST'],
+    '/on/9',
+    mw(),
+    mw2(),
+    mw3(),
+    mw4(),
+    mw5(),
+    mw6(),
+    mw7(),
+    mw8(),
+    mw9(),
+    (c) => {
+      return c.text(
+        c.var.echo('hello') +
+          c.var.echo2('hello2') +
+          c.var.echo3('hello3') +
+          c.var.echo4('hello4') +
+          c.var.echo5('hello5') +
+          c.var.echo6('hello6') +
+          c.var.echo7('hello7') +
+          c.var.echo8('hello8') +
+          c.var.echo9('hello9')
+      )
+    }
+  )
+
+  // @ts-expect-error
+  app.on(
+    ['GET', 'POST'],
+    '/on/10',
+    mw(),
+    mw2(),
+    mw3(),
+    mw4(),
+    mw5(),
+    mw6(),
+    mw7(),
+    mw8(),
+    mw9(),
+    mw10(),
+    (c) => {
+      return c.text(
+        // @ts-expect-error
+        c.var.echo('hello') +
+          // @ts-expect-error
+          c.var.echo2('hello2') +
+          // @ts-expect-error
+          c.var.echo3('hello3') +
+          // @ts-expect-error
+          c.var.echo4('hello4') +
+          // @ts-expect-error
+          c.var.echo5('hello5') +
+          // @ts-expect-error
+          c.var.echo6('hello6') +
+          // @ts-expect-error
+          c.var.echo7('hello7') +
+          // @ts-expect-error
+          c.var.echo8('hello8') +
+          // @ts-expect-error
+          c.var.echo9('hello9') +
+          // @ts-expect-error
+          c.var.echo10('hello10')
+      )
+    }
+  )
 
   it('Should return the correct response - no-path', async () => {
     let res = await app.request('/no-path/1')
