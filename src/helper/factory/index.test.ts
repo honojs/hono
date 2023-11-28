@@ -1,7 +1,7 @@
 import { expectTypeOf } from 'vitest'
 import { hc } from '../../client'
 import { Hono } from '../../index'
-import type { ExtractSchema, ToSchema } from '../../types'
+import type { ToSchema } from '../../types'
 import { validator } from '../../validator'
 import { createMiddleware, createFactory } from './index'
 
@@ -33,12 +33,6 @@ describe('createMiddleware', () => {
     expect(url.pathname).toBe('/message')
   })
 })
-
-// A fake function for testing types.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function extractSchema<T = unknown>(_: T): ExtractSchema<T> {
-  return true as ExtractSchema<T>
-}
 
 describe('createHandler', () => {
   const mw = (message: string) =>
@@ -81,7 +75,7 @@ describe('createHandler', () => {
     const factory = createFactory<Env>()
     const app = new Hono<Env>()
 
-    const handlersA = factory.createHandlers(
+    const handlers = factory.createHandlers(
       validator('query', () => {
         return {
           page: '1',
@@ -93,44 +87,28 @@ describe('createHandler', () => {
         return c.jsonT({ page, foo })
       }
     )
-    const routesA = app.get('/posts', ...handlersA)
+    const routes = app.get('/posts', ...handlers)
 
-    type ExpectedA = {
-      '/posts': {
-        $get: {
-          input: {
-            query: {
-              page: string
-            }
-          }
-          output: {
-            foo: string
+    type Expected = Hono<
+      Env,
+      ToSchema<
+        'get',
+        '/posts',
+        {
+          query: {
             page: string
           }
+        },
+        {
+          page: string
+          foo: string
         }
-      }
-    }
+      >,
+      '/'
+    >
 
     it('Should return correct types', () => {
-      expectTypeOf(routesA).toEqualTypeOf<
-        Hono<
-          Env,
-          ToSchema<
-            'get',
-            '/posts',
-            {
-              query: {
-                page: string
-              }
-            },
-            {
-              page: string
-              foo: string
-            }
-          >,
-          '/'
-        >
-      >()
+      expectTypeOf(routes).toEqualTypeOf<Expected>()
     })
   })
 
@@ -143,7 +121,7 @@ describe('createHandler', () => {
     const factory = createFactory<Env>()
     const app = new Hono<Env>()
 
-    const handlersA = factory.createHandlers(
+    const handlers = factory.createHandlers(
       validator('header', () => {
         return {
           auth: 'token',
@@ -167,36 +145,38 @@ describe('createHandler', () => {
         return c.jsonT({ auth, page, foo, id })
       }
     )
-    const routesA = app.get('/posts', ...handlersA)
+    const routes = app.get('/posts', ...handlers)
 
-    type ExpectedA = {
-      '/posts': {
-        $get: {
-          input: {
-            header: {
-              auth: string
-            }
-          } & {
-            query: {
-              page: string
-            }
-          } & {
-            json: {
-              id: number
-            }
-          }
-          output: {
+    type Expected = Hono<
+      Env,
+      ToSchema<
+        'get',
+        '/posts',
+        {
+          header: {
             auth: string
+          }
+        } & {
+          query: {
             page: string
-            foo: string
+          }
+        } & {
+          json: {
             id: number
           }
+        },
+        {
+          auth: string
+          page: string
+          foo: string
+          id: number
         }
-      }
-    }
+      >,
+      '/'
+    >
 
     it('Should return correct types', () => {
-      expectTypeOf(extractSchema(routesA)).toEqualTypeOf<ExpectedA>()
+      expectTypeOf(routes).toEqualTypeOf<Expected>()
     })
   })
 })
