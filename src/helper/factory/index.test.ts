@@ -1,7 +1,7 @@
 import { expectTypeOf } from 'vitest'
 import { hc } from '../../client'
 import { Hono } from '../../index'
-import type { ExtractSchema } from '../../types'
+import type { ExtractSchema, ToSchema } from '../../types'
 import { validator } from '../../validator'
 import { createMiddleware, createFactory } from './index'
 
@@ -37,7 +37,7 @@ describe('createMiddleware', () => {
 // A fake function for testing types.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function extractSchema<T = unknown>(_: T): ExtractSchema<T> {
-  return 0 as ExtractSchema<T>
+  return true as ExtractSchema<T>
 }
 
 describe('createHandler', () => {
@@ -112,7 +112,25 @@ describe('createHandler', () => {
     }
 
     it('Should return correct types', () => {
-      expectTypeOf(extractSchema(routesA)).toEqualTypeOf<ExpectedA>()
+      expectTypeOf(routesA).toEqualTypeOf<
+        Hono<
+          Env,
+          ToSchema<
+            'get',
+            '/posts',
+            {
+              query: {
+                page: string
+              }
+            },
+            {
+              page: string
+              foo: string
+            }
+          >,
+          '/'
+        >
+      >()
     })
   })
 
