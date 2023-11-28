@@ -148,7 +148,19 @@ describe('Cookie Middleware', () => {
       const res = await app.request('http://localhost/set-cookie')
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('delicious_cookie=macha')
+      expect(header).toBe('delicious_cookie=macha; Path=/')
+    })
+
+    app.get('/a/set-cookie-path', (c) => {
+      setCookie(c, 'delicious_cookie', 'macha', { path: '/a' })
+      return c.text('Give cookie')
+    })
+
+    it('Set cookie with setCookie() and path option', async () => {
+      const res = await app.request('http://localhost/a/set-cookie-path')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe('delicious_cookie=macha; Path=/a')
     })
 
     app.get('/set-signed-cookie', async (c) => {
@@ -161,7 +173,24 @@ describe('Cookie Middleware', () => {
       const res = await app.request('http://localhost/set-signed-cookie')
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D')
+      expect(header).toBe(
+        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Path=/'
+      )
+    })
+
+    app.get('/a/set-signed-cookie-path', async (c) => {
+      const secret = 'secret chocolate chips'
+      await setSignedCookie(c, 'delicious_cookie', 'macha', secret, { path: '/a' })
+      return c.text('Give signed cookie')
+    })
+
+    it('Set signed cookie with setSignedCookie() and path option', async () => {
+      const res = await app.request('http://localhost/a/set-signed-cookie-path')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe(
+        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Path=/a'
+      )
     })
 
     app.get('/set-cookie-complex', (c) => {
@@ -219,7 +248,7 @@ describe('Cookie Middleware', () => {
       const res = await app.request('http://localhost/set-cookie-multiple')
       expect(res.status).toBe(200)
       const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('delicious_cookie=macha, delicious_cookie=choco')
+      expect(header).toBe('delicious_cookie=macha; Path=/, delicious_cookie=choco; Path=/')
     })
   })
 
@@ -235,7 +264,7 @@ describe('Cookie Middleware', () => {
       const res2 = await app.request('http://localhost/delete-cookie')
       expect(res2.status).toBe(200)
       const header2 = res2.headers.get('Set-Cookie')
-      expect(header2).toBe('delicious_cookie=; Max-Age=0')
+      expect(header2).toBe('delicious_cookie=; Max-Age=0; Path=/')
     })
 
     app.get('/delete-cookie-multiple', (c) => {
@@ -248,7 +277,9 @@ describe('Cookie Middleware', () => {
       const res2 = await app.request('http://localhost/delete-cookie-multiple')
       expect(res2.status).toBe(200)
       const header2 = res2.headers.get('Set-Cookie')
-      expect(header2).toBe('delicious_cookie=; Max-Age=0, delicious_cookie2=; Max-Age=0')
+      expect(header2).toBe(
+        'delicious_cookie=; Max-Age=0; Path=/, delicious_cookie2=; Max-Age=0; Path=/'
+      )
     })
 
     app.get('/delete-cookie-with-options', (c) => {
