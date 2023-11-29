@@ -2,8 +2,7 @@ import type { Hono } from '../../hono.ts'
 import type { RouterRoute } from '../../hono-base.ts'
 
 interface ShowRoutesOptions {
-  includeMiddleware?: boolean
-  showList?: boolean
+  verbose?: boolean
 }
 
 interface RouteData {
@@ -33,7 +32,7 @@ export const showRoutes = (hono: Hono, opts?: ShowRoutesOptions) => {
   let maxPathLength = 0
 
   inspectRoutes(hono)
-    .filter(({ isMiddleware }) => opts?.includeMiddleware || !isMiddleware)
+    .filter(({ isMiddleware }) => opts?.verbose || !isMiddleware)
     .map((route) => {
       const key = `${route.method}-${route.path}`
       ;(routeData[key] ||= []).push(route)
@@ -52,7 +51,7 @@ export const showRoutes = (hono: Hono, opts?: ShowRoutesOptions) => {
 
       console.log(`\x1b[32m${method}\x1b[0m ${' '.repeat(maxMethodLength - method.length)} ${path}`)
 
-      if (!opts?.showList) {
+      if (!opts?.verbose) {
         return
       }
 
