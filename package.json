@@ -263,6 +263,11 @@
       "types": "./dist/types/helper/testing/index.d.ts",
       "import": "./dist/helper/testing/index.js",
       "require": "./dist/cjs/helper/testing/index.js"
+    },
+    "./dev": {
+      "types": "./dist/types/helper/dev/index.d.ts",
+      "import": "./dist/helper/dev/index.js",
+      "require": "./dist/cjs/helper/dev/index.js"
     }
   },
   "typesVersions": {
@@ -401,6 +406,9 @@
       ],
       "testing": [
         "./dist/types/helper/testing"
+      ],
+      "dev": [
+        "./dist/types/helper/dev"
       ]
     }
   },

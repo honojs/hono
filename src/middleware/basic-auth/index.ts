@@ -39,7 +39,7 @@ export const basicAuth = (
   }
   users.unshift({ username: options.username, password: options.password })
 
-  return async (ctx, next) => {
+  return async function basicAuth(ctx, next) {
     const requestUser = auth(ctx.req)
     if (requestUser) {
       for (const user of users) {

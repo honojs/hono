@@ -7,7 +7,7 @@ interface CompressionOptions {
 }
 
 export const compress = (options?: CompressionOptions): MiddlewareHandler => {
-  return async (ctx, next) => {
+  return async function compress(ctx, next) {
     await next()
     const accepted = ctx.req.headers.get('Accept-Encoding')
     const encoding =

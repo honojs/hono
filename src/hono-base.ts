@@ -25,7 +25,7 @@ import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/ur
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
-interface RouterRoute {
+export interface RouterRoute {
   path: string
   method: string
   handler: H
@@ -187,6 +187,15 @@ class Hono<
     return this
   }
 
+  /**
+   * @deprecated
+   * Use `showRoutes()` utility methods provided by 'hono/helper' instead of `app.showRoutes()`.
+   * `app.showRoutes()` will be removed in v4.
+   * @example
+   * You could rewrite `app.showRoutes()` as follows
+   * import { showRoutes } from 'hono/helper'
+   * showRoutes(app)
+   */
   showRoutes() {
     const length = 8
     this.routes.map((route) => {
