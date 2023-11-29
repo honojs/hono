@@ -42,7 +42,7 @@ export const timing = (config?: Partial<TimingOptions>): MiddlewareHandler => {
     },
     ...config,
   }
-  return async (c, next) => {
+  return async function timing(c, next) {
     const headers: string[] = []
     const timers = new Map<string, Timer>()
     c.set('metric', { headers, timers })
