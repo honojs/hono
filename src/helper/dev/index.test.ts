@@ -66,30 +66,8 @@ describe('showRoutes()', () => {
     ])
   })
 
-  it('should render output includes handlers', async () => {
-    showRoutes(app, { showList: true })
-    expect(logs).toEqual([
-      '\x1b[32mGET\x1b[0m      /',
-      '           [handler]',
-      '\x1b[32mGET\x1b[0m      /named',
-      '           namedHandler',
-      '\x1b[32mPOST\x1b[0m     /',
-      '           [handler]',
-      '\x1b[32mPUT\x1b[0m      /',
-      '           [handler]',
-      '\x1b[32mPATCH\x1b[0m    /',
-      '           [handler]',
-      '\x1b[32mDELETE\x1b[0m   /',
-      '           [handler]',
-      '\x1b[32mOPTIONS\x1b[0m  /',
-      '           [handler]',
-      '\x1b[32mGET\x1b[0m      /static',
-      '           [handler]',
-    ])
-  })
-
   it('should render output includes handlers and middlewares', async () => {
-    showRoutes(app, { showList: true, includeMiddleware: true })
+    showRoutes(app, { verbose: true })
     expect(logs).toEqual([
       '\x1b[32mALL\x1b[0m      /*',
       '           [middleware]',
