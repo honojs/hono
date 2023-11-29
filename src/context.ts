@@ -337,6 +337,28 @@ export class Context<
     any
   }
 
+  /**
+   * @deprecated
+   * `c.jsonT()` will be removed in v4.
+   * Use `c.json()` instead of `c.jsonT()`.
+   * `c.json()` now returns data type, so you can just replace `c.jsonT()` to `c.json()`.
+   */
+  jsonT: JSONRespond = <T>(
+    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
+    arg?: StatusCode | ResponseInit,
+    headers?: HeaderRecord
+  ): Response &
+    TypedResponse<
+      InterfaceToType<T> extends JSONValue
+        ? JSONValue extends InterfaceToType<T>
+          ? never
+          : T
+        : never
+    > => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return this.json(object, arg as any, headers) as any
+  }
+
   html: HTMLRespond = (
     html: string | Promise<string>,
     arg?: StatusCode | ResponseInit,
