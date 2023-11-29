@@ -301,19 +301,10 @@ class Hono<
 
       if (res instanceof Response) return res
 
-      if ('response' in res) {
-        res = res.response
-      }
-
-      if (res instanceof Response) return res
-
       return (async () => {
-        let awaited: Response | TypedResponse | void
+        let awaited: Response | void
         try {
           awaited = await res
-          if (awaited !== undefined && 'response' in awaited) {
-            awaited = awaited['response'] as Response
-          }
           if (!awaited) {
             return this.notFoundHandler(c)
           }
