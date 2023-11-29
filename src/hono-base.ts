@@ -20,16 +20,11 @@ import type {
   MergeSchemaPath,
   FetchEventLike,
   Schema,
+  RouterRoute,
 } from './types'
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
-
-interface RouterRoute {
-  path: string
-  method: string
-  handler: H
-}
 
 function defineDynamicClass(): {
   new <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(): {
@@ -60,7 +55,7 @@ type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings']
 
 export type HonoOptions<E extends Env> = {
   strict?: boolean
-  router?: Router<H>
+  router?: Router<[H, RouterRoute]>
   getPath?: GetPath<E>
 }
 
@@ -73,7 +68,7 @@ class Hono<
     This class is like an abstract class and does not have a router.
     To use it, inherit the class and implement router in the constructor.
   */
-  router!: Router<H>
+  router!: Router<[H, RouterRoute]>
   readonly getPath: GetPath<E>
   private _basePath: string = '/'
   private path: string = '/'
@@ -248,8 +243,8 @@ class Hono<
   private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
-    this.router.add(method, path, handler)
     const r: RouterRoute = { path: path, method: method, handler: handler }
+    this.router.add(method, path, [handler, r])
     this.routes.push(r)
   }
 
@@ -277,21 +272,19 @@ class Hono<
     }
 
     const path = this.getPath(request, { env })
-    const [handlers, paramStash] = this.matchRoute(method, path)
+    const matchResult = this.matchRoute(method, path)
 
-    const c = new Context(new HonoRequest(request, path, paramStash), {
+    const c = new Context(new HonoRequest(request, path, matchResult), {
       env,
       executionCtx,
       notFoundHandler: this.notFoundHandler,
     })
 
     // Do not `compose` if it has only one handler
-    if (handlers.length === 1) {
+    if (matchResult[0].length === 1) {
       let res: ReturnType<H>
-
-      c.req.setParams(handlers[0][1])
       try {
-        res = handlers[0][0](c, async () => {})
+        res = matchResult[0][0][0][0](c, async () => {})
         if (!res) {
           return this.notFoundHandler(c)
         }
@@ -324,7 +317,7 @@ class Hono<
       })()
     }
 
-    const composed = compose<Context>(handlers, this.errorHandler, this.notFoundHandler)
+    const composed = compose<Context>(matchResult[0], this.errorHandler, this.notFoundHandler)
 
     return (async () => {
       try {
