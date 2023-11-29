@@ -331,10 +331,11 @@ export class Context<
     const body = JSON.stringify(object)
     this._pH ??= {}
     this._pH['content-type'] = 'application/json; charset=UTF-8'
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     return (
       typeof arg === 'number' ? this.newResponse(body, arg, headers) : this.newResponse(body, arg)
-    ) as // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    any
+    ) as any
+    /* eslint-enable @typescript-eslint/no-explicit-any */
   }
 
   /**
