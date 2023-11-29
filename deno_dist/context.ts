@@ -156,21 +156,11 @@ export class Context<
     this.finalized = true
   }
 
-  /**
-   * @experimental
-   * `c.render()` is an experimental feature.
-   * The API might be changed.
-   */
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render: Renderer = (...args: any[]) => this._renderer(...args)
 
-  /**
-   * @experimental
-   * `c.setRenderer()` is an experimental feature.
-   * The API might be changed.
-   */
   setRenderer = (renderer: Renderer) => {
     this._renderer = renderer
   }
