@@ -178,7 +178,7 @@ describe('Validator middleware with a custom validation function', () => {
       id: number
     }
     type verify = Expect<Equal<Expected, typeof post>>
-    return c.jsonT({
+    return c.json({
       post,
     })
   })
@@ -237,7 +237,7 @@ describe('Validator middleware with Zod validates JSON', () => {
       title: string
     }
     type verify = Expect<Equal<Expected, typeof post>>
-    return c.jsonT({
+    return c.json({
       post: post,
     })
   })
@@ -310,7 +310,7 @@ describe('Validator middleware with Zod validates Form data', () => {
   })
   app.post('/post', zodValidator('form', schema), (c) => {
     const post = c.req.valid('form')
-    return c.jsonT({
+    return c.json({
       post: post,
     })
   })
@@ -358,7 +358,7 @@ describe('Validator middleware with Zod validates query params', () => {
 
   app.get('/search', zodValidator('query', schema), (c) => {
     const res = c.req.valid('query')
-    return c.jsonT({
+    return c.json({
       page: res.page,
       tags: res.tag,
     })
@@ -389,7 +389,7 @@ describe('Validator middleware with Zod validates queries params - with `queries
 
   app.get('/posts', zodValidator('queries', schema), (c) => {
     const res = c.req.valid('queries')
-    return c.jsonT({
+    return c.json({
       tags: res.tags,
     })
   })
@@ -423,7 +423,7 @@ describe('Validator middleware with Zod validates param', () => {
   })
   app.get('/users/:id/books/:title', zodValidator('param', schema), (c) => {
     const param = c.req.valid('param')
-    return c.jsonT({
+    return c.json({
       param: param,
     })
   })
@@ -456,7 +456,7 @@ describe('Validator middleware with Zod validates header values', () => {
   app.get('/ping', zodValidator('header', schema), (c) => {
     const data = c.req.valid('header')
     const xRequestId = data['x-request-id']
-    return c.jsonT({
+    return c.json({
       xRequestId,
     })
   })
@@ -493,7 +493,7 @@ describe('Validator middleware with Zod validates cookies', () => {
 
   app.get('/api/user', zodValidator('cookie', schema), (c) => {
     const { debug } = c.req.valid('cookie')
-    return c.jsonT({
+    return c.json({
       debug,
     })
   })
@@ -551,7 +551,7 @@ describe('Validator middleware with Zod multiple validators', () => {
       type verify2 = Expect<Equal<{ title: string }, typeof formValidatedData>>
       const { page } = c.req.valid('query')
       const { title } = c.req.valid('form')
-      return c.jsonT({ page, title })
+      return c.json({ page, title })
     }
   )
 
@@ -655,7 +655,7 @@ it('`on`', () => {
       }
     }),
     (c) => {
-      return c.jsonT({
+      return c.json({
         success: true,
       })
     }
@@ -696,7 +696,7 @@ it('`app.on`', () => {
         }
       }),
       (c) => {
-        return c.jsonT({
+        return c.json({
           posts: [
             {
               title: 'foo',
@@ -717,7 +717,7 @@ it('`app.on`', () => {
         }
       }),
       (c) => {
-        return c.jsonT({
+        return c.json({
           success: true,
         })
       }

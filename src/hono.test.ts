@@ -2073,17 +2073,17 @@ describe('Show routes', () => {
   })
 })
 
-describe('jsonT', () => {
+describe('json', () => {
   const api = new Hono()
 
   api.get('/message', (c) => {
-    return c.jsonT({
+    return c.json({
       message: 'Hello',
     })
   })
 
   api.get('/message-async', async (c) => {
-    return c.jsonT({
+    return c.json({
       message: 'Hello',
     })
   })
@@ -2733,7 +2733,7 @@ describe('c.var - with testing types', () => {
     app.use(mw())
     app.use('*', mw())
 
-    const route = app.get('/posts', mw(), (c) => c.jsonT(0))
+    const route = app.get('/posts', mw(), (c) => c.json(0))
     const client = hc<typeof route>('/')
     type key = keyof typeof client
     type verify = Expect<Equal<'posts', key>>

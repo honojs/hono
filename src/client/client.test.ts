@@ -43,7 +43,7 @@ describe('Basic - JSON', () => {
         }
       }),
       (c) => {
-        return c.jsonT({
+        return c.json({
           success: true,
           message: 'dummy',
           requestContentType: 'dummy',
@@ -132,7 +132,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
         return {} as { q: string; tag: string[]; filter: string }
       }),
       (c) => {
-        return c.jsonT({
+        return c.json({
           q: 'fake',
           tag: ['fake'],
           filter: 'fake',
@@ -148,7 +148,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
       }),
       (c) => {
         const data = c.req.valid('queries')
-        return c.jsonT(data)
+        return c.json(data)
       }
     )
     .put(
@@ -160,7 +160,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
       }),
       (c) => {
         const data = c.req.valid('form')
-        return c.jsonT(data)
+        return c.json(data)
       }
     )
     .get(
@@ -172,7 +172,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
       }),
       (c) => {
         const data = c.req.valid('header')
-        return c.jsonT(data)
+        return c.json(data)
       }
     )
     .get(
@@ -184,7 +184,7 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
       }),
       (c) => {
         const data = c.req.valid('cookie')
-        return c.jsonT(data)
+        return c.json(data)
       }
     )
 
@@ -330,7 +330,7 @@ describe('Infer the response/request type', () => {
       }
     }),
     (c) =>
-      c.jsonT({
+      c.json({
         id: 123,
         title: 'Morning!',
       })
@@ -387,7 +387,7 @@ describe('Infer the response/request type', () => {
   })
 
   describe('Without input', () => {
-    const route = app.get('/', (c) => c.jsonT({ ok: true }))
+    const route = app.get('/', (c) => c.json({ ok: true }))
     type AppType = typeof route
 
     it('Should infer response type the type correctly', () => {
@@ -453,7 +453,7 @@ describe('Merge path with `app.route()`', () => {
   }
 
   it('Should have correct types', async () => {
-    const api = new Hono<Env>().get('/search', (c) => c.jsonT({ ok: true }))
+    const api = new Hono<Env>().get('/search', (c) => c.json({ ok: true }))
     const app = new Hono<Env>().route('/api', api)
     type AppType = typeof app
     const client = hc<AppType>('http://localhost')
@@ -465,7 +465,7 @@ describe('Merge path with `app.route()`', () => {
 
   it('Should have correct types - basePath() then get()', async () => {
     const base = new Hono<Env>().basePath('/api')
-    const app = base.get('/search', (c) => c.jsonT({ ok: true }))
+    const app = base.get('/search', (c) => c.json({ ok: true }))
     type AppType = typeof app
     const client = hc<AppType>('http://localhost')
     const res = await client.api.search.$get()
@@ -475,7 +475,7 @@ describe('Merge path with `app.route()`', () => {
   })
 
   it('Should have correct types - basePath(), route(), get()', async () => {
-    const book = new Hono().get('/', (c) => c.jsonT({ ok: true }))
+    const book = new Hono().get('/', (c) => c.json({ ok: true }))
     const app = new Hono().basePath('/v1').route('/book', book)
     type AppType = typeof app
     const client = hc<AppType>('http://localhost')
@@ -491,7 +491,7 @@ describe('Merge path with `app.route()`', () => {
     }
     const result: Result = { ok: true }
     const base = new Hono<Env>().basePath('/api')
-    const app = base.get('/search', (c) => c.jsonT(result))
+    const app = base.get('/search', (c) => c.json(result))
     type AppType = typeof app
     const client = hc<AppType>('http://localhost')
     const res = await client.api.search.$get()
@@ -503,7 +503,7 @@ describe('Merge path with `app.route()`', () => {
   it('Should not allow the incorrect JSON type', async () => {
     const app = new Hono()
     // @ts-expect-error
-    const route = app.get('/api/foo', (c) => c.jsonT({ datetime: new Date() }))
+    const route = app.get('/api/foo', (c) => c.json({ datetime: new Date() }))
     type AppType = typeof route
     const client = hc<AppType>('http://localhost')
     const res = await client.api.foo.$get()
@@ -513,8 +513,8 @@ describe('Merge path with `app.route()`', () => {
 
   describe('Multiple endpoints', () => {
     const api = new Hono()
-      .get('/foo', (c) => c.jsonT({ foo: '' }))
-      .post('/bar', (c) => c.jsonT({ bar: 0 }))
+      .get('/foo', (c) => c.json({ foo: '' }))
+      .post('/bar', (c) => c.json({ bar: 0 }))
     const app = new Hono().route('/api', api)
     type AppType = typeof app
     const client = hc<typeof app>('http://localhost')
@@ -541,7 +541,7 @@ describe('Use custom fetch method', () => {
   it('Should call the custom fetch method when provided', async () => {
     const fetchMock = vi.fn()
 
-    const api = new Hono().get('/search', (c) => c.jsonT({ ok: true }))
+    const api = new Hono().get('/search', (c) => c.json({ ok: true }))
     const app = new Hono().route('/api', api)
     type AppType = typeof app
     const client = hc<AppType>('http://localhost', { fetch: fetchMock })
@@ -554,7 +554,7 @@ describe('Use custom fetch method', () => {
     const returnValue = new Response(null, { status: 200 })
     fetchMock.mockReturnValueOnce(returnValue)
 
-    const api = new Hono().get('/search', (c) => c.jsonT({ ok: true }))
+    const api = new Hono().get('/search', (c) => c.json({ ok: true }))
     const app = new Hono().route('/api', api)
     type AppType = typeof app
     const client = hc<AppType>('http://localhost', { fetch: fetchMock })
@@ -566,7 +566,7 @@ describe('Use custom fetch method', () => {
 
 describe('Use custom fetch (app.request) method', () => {
   it('Should return Response from app request method', async () => {
-    const app = new Hono().get('/search', (c) => c.jsonT({ ok: true }))
+    const app = new Hono().get('/search', (c) => c.json({ ok: true }))
     type AppType = typeof app
     const client = hc<AppType>('', { fetch: app.request })
     const res = await client.search.$get()
