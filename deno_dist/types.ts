@@ -33,7 +33,7 @@ export type Input = {
 //////                            //////
 ////////////////////////////////////////
 
-type HandlerResponse<O> = Response | TypedResponse<O> | Promise<Response | TypedResponse<O>>
+export type HandlerResponse<O> = Response | TypedResponse<O> | Promise<Response | TypedResponse<O>>
 
 export type Handler<
   E extends Env = any,
