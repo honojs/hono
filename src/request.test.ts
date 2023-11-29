@@ -1,4 +1,5 @@
 import { HonoRequest } from './request'
+import type { RouterRoute } from './types'
 
 describe('Query', () => {
   test('req.query() and req.queries()', () => {
@@ -35,33 +36,81 @@ describe('Query', () => {
 describe('Param', () => {
   test('req.param() withth ParamStash', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
-    const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', ['123', 'key'])
+    const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
+      [
+        [[undefined, {} as RouterRoute], { id: 0 }],
+        [[undefined, {} as RouterRoute], { id: 0, name: 1 }],
+      ],
+      ['123', 'key'],
+    ])
 
-    req.setParams({
-      id: 0,
-    })
     expect(req.param('id')).toBe('123')
     expect(req.param('name')).toBe(undefined)
 
-    req.setParams({
-      id: 0,
-      name: 1,
-    })
+    req.routeIndex = 1
     expect(req.param('id')).toBe('123')
     expect(req.param('name')).toBe('key')
   })
 
   test('req.param() without ParamStash', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
-    const req = new HonoRequest<'/:id/:name'>(rawRequest)
+    const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
+      [
+        [[undefined, {} as RouterRoute], { id: '123' }],
+        [[undefined, {} as RouterRoute], { id: '456', name: 'key' }],
+      ],
+    ])
 
-    req.setParams({
-      id: '456',
-      name: 'key',
-    })
+    expect(req.param('id')).toBe('123')
+    expect(req.param('name')).toBe(undefined)
 
+    req.routeIndex = 1
     expect(req.param('id')).toBe('456')
     expect(req.param('name')).toBe('key')
+  })
+})
+
+describe('matchedRoutes', () => {
+  test('req.routePath', () => {
+    const handlerA = () => {}
+    const handlerB = () => {}
+    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
+    const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
+      [
+        [[handlerA, { handler: handlerA, method: 'GET', path: '/:id' }], { id: '123' }],
+        [
+          [handlerA, { handler: handlerB, method: 'GET', path: '/:id/:name' }],
+          { id: '456', name: 'key' },
+        ],
+      ],
+    ])
+
+    expect(req.matchedRoutes).toEqual([
+      { handler: handlerA, method: 'GET', path: '/:id' },
+      { handler: handlerB, method: 'GET', path: '/:id/:name' },
+    ])
+  })
+})
+
+describe('routePath', () => {
+  test('req.routePath', () => {
+    const handlerA = () => {}
+    const handlerB = () => {}
+    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
+    const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
+      [
+        [[handlerA, { handler: handlerA, method: 'GET', path: '/:id' }], { id: '123' }],
+        [
+          [handlerA, { handler: handlerB, method: 'GET', path: '/:id/:name' }],
+          { id: '456', name: 'key' },
+        ],
+      ],
+    ])
+
+    expect(req.routePath).toBe('/:id')
+
+    req.routeIndex = 1
+    expect(req.routePath).toBe('/:id/:name')
   })
 })
 
