@@ -39,7 +39,7 @@ export const getSignedCookie: GetSignedCookie = async (c, secret, key?) => {
 }
 
 export const setCookie = (c: Context, name: string, value: string, opt?: CookieOptions): void => {
-  const cookie = serialize(name, value, opt)
+  const cookie = serialize(name, value, { path: '/', ...opt })
   c.header('set-cookie', cookie, { append: true })
 }
 
@@ -50,7 +50,7 @@ export const setSignedCookie = async (
   secret: string | BufferSource,
   opt?: CookieOptions
 ): Promise<void> => {
-  const cookie = await serializeSigned(name, value, secret, opt)
+  const cookie = await serializeSigned(name, value, secret, { path: '/', ...opt })
   c.header('set-cookie', cookie, { append: true })
 }
 
