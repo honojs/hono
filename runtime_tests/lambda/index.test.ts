@@ -112,14 +112,14 @@ describe('AWS Lambda Adapter for Hono', () => {
     key: 'id',
     value: crypto.randomUUID(),
     get serialized() {
-      return `${this.key}=${this.value}`
+      return `${this.key}=${this.value}; Path=/`
     },
   }
   const testCookie2 = {
     key: 'secret',
     value: crypto.randomUUID(),
     get serialized() {
-      return `${this.key}=${this.value}`
+      return `${this.key}=${this.value}; Path=/`
     },
   }
 

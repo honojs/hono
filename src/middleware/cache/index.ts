@@ -13,7 +13,7 @@ export const cache = (options: {
     if (options.cacheControl) response.headers.set('Cache-Control', options.cacheControl)
   }
 
-  return async (c, next) => {
+  return async function cache(c, next) {
     const key = c.req.url
     const cache = await caches.open(options.cacheName)
     const response = await cache.match(key)

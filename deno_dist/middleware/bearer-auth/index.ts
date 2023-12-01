@@ -6,7 +6,7 @@ const TOKEN_STRINGS = '[A-Za-z0-9._~+/-]+=*'
 const PREFIX = 'Bearer'
 
 export const bearerAuth = (options: {
-  token: string
+  token: string | string[]
   realm?: string
   prefix?: string
   hashFunction?: Function
@@ -23,7 +23,7 @@ export const bearerAuth = (options: {
 
   const realm = options.realm?.replace(/"/g, '\\"')
 
-  return async (c, next) => {
+  return async function bearerAuth(c, next) {
     const headerToken = c.req.header('Authorization')
 
     if (!headerToken) {
@@ -48,7 +48,17 @@ export const bearerAuth = (options: {
         })
         throw new HTTPException(400, { res })
       } else {
-        const equal = await timingSafeEqual(options.token, match[1], options.hashFunction)
+        let equal = false
+        if (typeof options.token === 'string') {
+          equal = await timingSafeEqual(options.token, match[1], options.hashFunction)
+        } else if (Array.isArray(options.token) && options.token.length > 0) {
+          for (const token of options.token) {
+            if (await timingSafeEqual(token, match[1], options.hashFunction)) {
+              equal = true
+              break
+            }
+          }
+        }
         if (!equal) {
           // Invalid Token
           const res = new Response('Unauthorized', {

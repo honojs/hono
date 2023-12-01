@@ -48,9 +48,11 @@ const createRenderer =
     }
   }
 
-export const jsxRenderer =
-  (component?: FC<PropsForRenderer>, options?: RendererOptions): MiddlewareHandler =>
-  (c, next) => {
+export const jsxRenderer = (
+  component?: FC<PropsForRenderer>,
+  options?: RendererOptions
+): MiddlewareHandler =>
+  function jsxRenderer(c, next) {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     c.setRenderer(createRenderer(c, component, options) as any)
     return next()

@@ -92,7 +92,8 @@ class Hono<
             this.addRoute(method, this.path, handler)
           }
         })
-        return this
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return this as any
       }
     })
 
@@ -105,7 +106,8 @@ class Hono<
           this.addRoute(m.toUpperCase(), this.path, handler)
         })
       }
-      return this
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return this as any
     }
 
     // Implementation of app.use(...handlers[]) or app.get(path, ...handlers[])
@@ -182,6 +184,15 @@ class Hono<
     return this
   }
 
+  /**
+   * @deprecated
+   * Use `showRoutes()` utility methods provided by 'hono/helper' instead of `app.showRoutes()`.
+   * `app.showRoutes()` will be removed in v4.
+   * @example
+   * You could rewrite `app.showRoutes()` as follows
+   * import { showRoutes } from 'hono/helper'
+   * showRoutes(app)
+   */
   showRoutes() {
     const length = 8
     this.routes.map((route) => {
