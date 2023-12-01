@@ -1187,12 +1187,11 @@ describe('Error handling in middleware', () => {
 
   describe('Default route app.use', () => {
     const app = new Hono()
-    app.use(
-        async (c, next) => {
-          c.header('x-default-use', 'abc')
-          await next()
-        }
-      )
+    app
+      .use(async (c, next) => {
+        c.header('x-default-use', 'abc')
+        await next()
+      })
       .get('/multiple/abc', (c) => {
         return c.text('GET multiple')
       })
