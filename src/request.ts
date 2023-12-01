@@ -29,9 +29,9 @@ type BodyCache = Partial<Body & { parsedBody: BodyData }>
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   raw: Request
 
-  private _s: ParamStash | undefined
-  private vData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
-  private _p: ParamIndexMap | Params = {}
+  #paramStash: ParamStash | undefined
+  #validatedData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
+  #params: ParamIndexMap | Params = {}
   path: string
   bodyCache: BodyCache = {}
 
@@ -42,12 +42,12 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   ) {
     this.raw = request
     this.path = path
-    this._s = paramStash
-    this.vData = {}
+    this.#paramStash = paramStash
+    this.#validatedData = {}
   }
 
   setParams(params: ParamIndexMap | Params) {
-    this._p = params
+    this.#params = params
   }
 
   param<P2 extends string = P>(
@@ -56,15 +56,19 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   param<P2 extends string = P>(): UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>
   param(key?: string): unknown {
     if (key) {
-      const param = (this._s ? this._s[this._p[key] as any] : this._p[key]) as string | undefined
+      const param = (
+        this.#paramStash ? this.#paramStash[this.#params[key] as any] : this.#params[key]
+      ) as string | undefined
       return param ? (/\%/.test(param) ? decodeURIComponent_(param) : param) : undefined
     } else {
       const decoded: Record<string, string> = {}
 
-      const keys = Object.keys(this._p)
+      const keys = Object.keys(this.#params)
       for (let i = 0, len = keys.length; i < len; i++) {
         const key = keys[i]
-        const value = (this._s ? this._s[this._p[key] as any] : this._p[key]) as string | undefined
+        const value = (
+          this.#paramStash ? this.#paramStash[this.#params[key] as any] : this.#params[key]
+        ) as string | undefined
         if (value && typeof value === 'string') {
           decoded[key] = /\%/.test(value) ? decodeURIComponent_(value) : value
         }
@@ -176,12 +180,12 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   addValidatedData(target: keyof ValidationTargets, data: {}) {
-    this.vData[target] = data
+    this.#validatedData[target] = data
   }
 
   valid<T extends keyof I & keyof ValidationTargets>(target: T): InputToDataByTarget<I, T>
   valid(target: keyof ValidationTargets) {
-    return this.vData[target] as unknown
+    return this.#validatedData[target] as unknown
   }
 
   get url() {
