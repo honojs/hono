@@ -20,6 +20,7 @@ import type {
   UndefinedIfHavingQuestion,
 } from './types'
 import type { Expect, Equal } from './utils/types'
+import { validator } from './validator'
 
 describe('Env', () => {
   test('Env', () => {
@@ -952,5 +953,31 @@ describe('c.var with ContextVariableMap - test only types', () => {
       expectTypeOf(c.var.payload).toEqualTypeOf<string>()
       return c.json(0)
     })
+  })
+})
+
+/**
+ * It's challenge to test all cases. This is a minimal pattern.
+ */
+describe('Env types with chained routes - test only types', () => {
+  const app = new Hono<{ Variables: { testVar: string } }>()
+  it('Should not throw a type error', () => {
+    app
+      .post(
+        '/',
+        validator('json', (v) => v),
+        async (c) => {
+          expectTypeOf(c.get('testVar')).toEqualTypeOf<string>()
+          return c.jsonT({ success: true })
+        }
+      )
+      .patch(
+        '/',
+        validator('json', (v) => v),
+        async (c) => {
+          expectTypeOf(c.get('testVar')).toEqualTypeOf<string>()
+          return c.jsonT({ success: true })
+        }
+      )
   })
 })
