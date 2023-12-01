@@ -1,6 +1,8 @@
 export const METHOD_NAME_ALL = 'ALL' as const
 export const METHOD_NAME_ALL_LOWERCASE = 'all' as const
 export const METHODS = ['get', 'post', 'put', 'delete', 'options', 'patch'] as const
+export const MESSAGE_MATCHER_IS_ALREADY_BUILT =
+  'Can not add a route since the matcher is already built.'
 
 export interface Router<T> {
   name: string
