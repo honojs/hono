@@ -1185,6 +1185,25 @@ describe('Error handling in middleware', () => {
     )
   })
 
+  describe('Default route app.use', () => {
+    const app = new Hono()
+    app.use(
+        async (c, next) => {
+          c.header('x-default-use', 'abc')
+          await next()
+        }
+      )
+      .get('/multiple/abc', (c) => {
+        return c.text('GET multiple')
+      })
+    it('GET /multiple/abc', async () => {
+      const res = await app.request('http://localhost/multiple/abc')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET multiple')
+      expect(res.headers.get('x-default-use')).toBe('abc')
+    })
+  })
+
   describe('Error in `notFound()`', () => {
     const app = new Hono()
 

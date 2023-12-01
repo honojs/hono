@@ -119,6 +119,7 @@ class Hono<
       if (typeof arg1 === 'string') {
         this.path = arg1
       } else {
+        this.path = '*'
         handlers.unshift(arg1)
       }
       handlers.map((handler) => {
