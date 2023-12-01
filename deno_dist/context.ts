@@ -303,11 +303,7 @@ export class Context<
       }
       this._pH = {}
     }
-    // If Content-Type is not set, we don't have to set `text/plain`.
-    // Fewer the header values, it will be faster.
-    if (this._pH['content-type']) {
-      this._pH['content-type'] = TEXT_PLAIN
-    }
+    this._pH['content-type'] = TEXT_PLAIN
     return typeof arg === 'number'
       ? this.newResponse(text, arg, headers)
       : this.newResponse(text, arg)
