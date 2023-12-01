@@ -15,7 +15,6 @@ import type {
   Next,
   NotFoundHandler,
   OnHandlerInterface,
-  TypedResponse,
   MergePath,
   MergeSchemaPath,
   FetchEventLike,
