@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { Router, Result, ParamIndexMap } from '../../router'
-import { METHOD_NAME_ALL, METHODS, UnsupportedPathError } from '../../router'
+import {
+  METHOD_NAME_ALL,
+  METHODS,
+  UnsupportedPathError,
+  MESSAGE_MATCHER_IS_ALREADY_BUILT,
+} from '../../router'
 import { checkOptionalParameter } from '../../utils/url'
 import { PATH_ERROR, type ParamAssocArray } from './node'
 import { Trie } from './trie'
@@ -129,7 +134,7 @@ export class RegExpRouter<T> implements Router<T> {
     const { middleware, routes } = this
 
     if (!middleware || !routes) {
-      throw new Error('Can not add a route since the matcher is already built.')
+      throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT)
     }
 
     if (methodNames.indexOf(method) === -1) methodNames.push(method)
