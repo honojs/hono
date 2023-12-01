@@ -738,6 +738,34 @@ describe('c.req.path', () => {
   })
 })
 
+describe('Header', () => {
+  const app = new Hono()
+
+  app.get('/text', (c) => {
+    return c.text('Hello')
+  })
+
+  app.get('/text-with-custom-header', (c) => {
+    c.header('X-Custom', 'Message')
+    return c.text('Hello')
+  })
+
+  it('Should return correct headers - /text', async () => {
+    const res = await app.request('/text')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toMatch(/^text\/plain/)
+    expect(await res.text()).toBe('Hello')
+  })
+
+  it('Should return correct headers - /text-with-custom-header', async () => {
+    const res = await app.request('/text-with-custom-header')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('x-custom')).toBe('Message')
+    expect(res.headers.get('content-type')).toMatch(/^text\/plain/)
+    expect(await res.text()).toBe('Hello')
+  })
+})
+
 describe('Middleware', () => {
   describe('Basic', () => {
     const app = new Hono()
