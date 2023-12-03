@@ -19,6 +19,12 @@ export const childrenToString = async (children: Child[]): Promise<HtmlEscapedSt
 
 type ErrorHandler = (error: Error) => void
 type FallbackRender = (error: Error) => Child
+
+/**
+ * @experimental
+ * `ErrorBoundary` is an experimental feature.
+ * The API might be changed.
+ */
 export const ErrorBoundary: FC<{
   fallback?: Child
   fallbackRender?: FallbackRender
