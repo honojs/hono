@@ -72,14 +72,14 @@ describe('HandlerInterface', () => {
           }
         >
         expectTypeOf(c).toEqualTypeOf<Expected>()
-        return c.jsonT({
+        return c.json({
           message: 'Hello!',
         })
       })
       app.get(middleware, (c) => {
         const data = c.req.valid('json')
         expectTypeOf(data).toEqualTypeOf<Payload>()
-        return c.jsonT({
+        return c.json({
           message: 'Hello!',
         })
       })
@@ -113,7 +113,7 @@ describe('HandlerInterface', () => {
       const route = app.get('/foo', middleware, (c) => {
         type Expected = Context<Env, '/foo', { in: { json: Payload }; out: { json: Payload } }>
         expectTypeOf(c).toEqualTypeOf<Expected>()
-        return c.jsonT({
+        return c.json({
           message: 'Hello!',
         })
       })
@@ -240,7 +240,7 @@ describe('OnHandlerInterface', () => {
     const route = app.on('PURGE', '/purge', middleware, (c) => {
       const data = c.req.valid('form')
       expectTypeOf(data).toEqualTypeOf<{ id: number }>()
-      return c.jsonT({
+      return c.json({
         success: true,
       })
     })
@@ -361,7 +361,7 @@ describe('Test types of Handler', () => {
   })
 })
 
-describe('`jsonT()`', () => {
+describe('`json()`', () => {
   const app = new Hono<{ Variables: { foo: string } }>()
 
   app.get('/post/:id', (c) => {
@@ -371,12 +371,12 @@ describe('`jsonT()`', () => {
   })
 
   const route = app.get('/hello', (c) => {
-    return c.jsonT({
+    return c.json({
       message: 'Hello!',
     })
   })
 
-  test('jsonT', () => {
+  test('json', () => {
     type Actual = ExtractSchema<typeof route>
 
     type Expected = {
@@ -541,23 +541,23 @@ describe('merge path', () => {
   })
 })
 
-describe('Different types using jsonT()', () => {
+describe('Different types using json()', () => {
   describe('no path pattern', () => {
     const app = new Hono()
     test('Three different types', () => {
       const route = app.get((c) => {
         const flag = false
         if (flag) {
-          return c.jsonT({
+          return c.json({
             ng: true,
           })
         }
         if (!flag) {
-          return c.jsonT({
+          return c.json({
             ok: true,
           })
         }
-        return c.jsonT({
+        return c.json({
           default: true,
         })
       })
@@ -589,16 +589,16 @@ describe('Different types using jsonT()', () => {
       const route = app.get('/foo', (c) => {
         const flag = false
         if (flag) {
-          return c.jsonT({
+          return c.json({
             ng: true,
           })
         }
         if (!flag) {
-          return c.jsonT({
+          return c.json({
             ok: true,
           })
         }
-        return c.jsonT({
+        return c.json({
           default: true,
         })
       })
@@ -625,11 +625,11 @@ describe('Different types using jsonT()', () => {
   })
 })
 
-describe('jsonT() in an async handler', () => {
+describe('json() in an async handler', () => {
   const app = new Hono()
   test('Three different types', () => {
     const route = app.get(async (c) => {
-      return c.jsonT({
+      return c.json({
         ok: true,
       })
     })

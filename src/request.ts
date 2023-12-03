@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import type { ParamIndexMap, ParamStash, Params } from './router'
+import type { Result } from './router'
 import type {
   Input,
   InputToDataByTarget,
@@ -9,6 +8,7 @@ import type {
   RemoveQuestion,
   UndefinedIfHavingQuestion,
   ValidationTargets,
+  RouterRoute,
 } from './types'
 import { parseBody } from './utils/body'
 import type { BodyData, ParseBodyOptions } from './utils/body'
@@ -29,25 +29,21 @@ type BodyCache = Partial<Body & { parsedBody: BodyData }>
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   raw: Request
 
-  #paramStash: ParamStash | undefined
   #validatedData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
-  #params: ParamIndexMap | Params = {}
+  #matchResult: Result<[unknown, RouterRoute]>
+  routeIndex: number = 0
   path: string
   bodyCache: BodyCache = {}
 
   constructor(
     request: Request,
     path: string = '/',
-    paramStash: ParamStash | undefined = undefined
+    matchResult: Result<[unknown, RouterRoute]> = [[]]
   ) {
     this.raw = request
     this.path = path
-    this.#paramStash = paramStash
+    this.#matchResult = matchResult
     this.#validatedData = {}
-  }
-
-  setParams(params: ParamIndexMap | Params) {
-    this.#params = params
   }
 
   param<P2 extends string = P>(
@@ -57,17 +53,21 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   param(key?: string): unknown {
     if (key) {
       const param = (
-        this.#paramStash ? this.#paramStash[this.#params[key] as any] : this.#params[key]
+        this.#matchResult[1]
+          ? this.#matchResult[1][this.#matchResult[0][this.routeIndex][1][key] as any]
+          : this.#matchResult[0][this.routeIndex][1][key]
       ) as string | undefined
       return param ? (/\%/.test(param) ? decodeURIComponent_(param) : param) : undefined
     } else {
       const decoded: Record<string, string> = {}
 
-      const keys = Object.keys(this.#params)
+      const keys = Object.keys(this.#matchResult[0][this.routeIndex][1])
       for (let i = 0, len = keys.length; i < len; i++) {
         const key = keys[i]
         const value = (
-          this.#paramStash ? this.#paramStash[this.#params[key] as any] : this.#params[key]
+          this.#matchResult[1]
+            ? this.#matchResult[1][this.#matchResult[0][this.routeIndex][1][key] as any]
+            : this.#matchResult[0][this.routeIndex][1][key]
         ) as string | undefined
         if (value && typeof value === 'string') {
           decoded[key] = /\%/.test(value) ? decodeURIComponent_(value) : value
@@ -194,6 +194,14 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   get method() {
     return this.raw.method
+  }
+
+  get matchedRoutes(): RouterRoute[] {
+    return this.#matchResult[0].map(([[, route]]) => route)
+  }
+
+  get routePath(): string {
+    return this.#matchResult[0].map(([[, route]]) => route)[this.routeIndex].path
   }
 
   /** @deprecated

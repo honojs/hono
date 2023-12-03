@@ -1,5 +1,5 @@
 import type { Hono } from '../../hono'
-import type { RouterRoute } from '../../hono-base'
+import type { RouterRoute } from '../../types'
 
 interface ShowRoutesOptions {
   verbose?: boolean
