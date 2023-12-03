@@ -165,7 +165,7 @@ describe('JSX Middleware', () => {
   app.get('/nest', (c) => {
     return c.html(
       <h1>
-        <a href='/top'>Hello</a>
+        <a href="/top">Hello</a>
       </h1>
     )
   })

@@ -16,7 +16,7 @@ export const getFilePath = (options: FilePathOptions): string | undefined => {
     filename = filename.concat(defaultDocument)
   } else if (!filename.match(/\.[a-zA-Z0-9]+$/)) {
     // /top => /top/index.html
-    filename = filename.concat('/' + defaultDocument)
+    filename = filename.concat(`/${defaultDocument}`)
   }
 
   // /foo.html => foo.html
@@ -29,7 +29,7 @@ export const getFilePath = (options: FilePathOptions): string | undefined => {
   root = root.replace(/\/$/, '')
 
   // ./assets/foo.html => assets/foo.html
-  let path = root ? root + '/' + filename : filename
+  let path = root ? `${root}/${filename}` : filename
   path = path.replace(/^\.?\//, '')
 
   return path

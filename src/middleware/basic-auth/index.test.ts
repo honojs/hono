@@ -103,7 +103,7 @@ describe('Basic Auth by Middleware', () => {
   })
 
   it('Should authorize', async () => {
-    const credential = Buffer.from(username + ':' + password).toString('base64')
+    const credential = Buffer.from(`${username}:${password}`).toString('base64')
 
     const req = new Request('http://localhost/auth/a')
     req.headers.set('Authorization', `Basic ${credential}`)
@@ -116,7 +116,7 @@ describe('Basic Auth by Middleware', () => {
   })
 
   it('Should authorize Unicode', async () => {
-    const credential = Buffer.from(username + ':' + unicodePassword).toString('base64')
+    const credential = Buffer.from(`${username}:${unicodePassword}`).toString('base64')
 
     const req = new Request('http://localhost/auth-unicode/a')
     req.headers.set('Authorization', `Basic ${credential}`)
@@ -128,7 +128,7 @@ describe('Basic Auth by Middleware', () => {
   })
 
   it('Should authorize multiple users', async () => {
-    let credential = Buffer.from(usernameB + ':' + passwordB).toString('base64')
+    let credential = Buffer.from(`${usernameB}:${passwordB}`).toString('base64')
 
     let req = new Request('http://localhost/auth-multi/b')
     req.headers.set('Authorization', `Basic ${credential}`)
@@ -139,7 +139,7 @@ describe('Basic Auth by Middleware', () => {
     expect(await res.text()).toBe('auth')
 
     handlerExecuted = false
-    credential = Buffer.from(usernameC + ':' + passwordC).toString('base64')
+    credential = Buffer.from(`${usernameC}:${passwordC}`).toString('base64')
     req = new Request('http://localhost/auth-multi/c')
     req.headers.set('Authorization', `Basic ${credential}`)
     res = await app.request(req)
@@ -150,7 +150,7 @@ describe('Basic Auth by Middleware', () => {
   })
 
   it('Should authorize with sha256 function override', async () => {
-    const credential = Buffer.from(username + ':' + password).toString('base64')
+    const credential = Buffer.from(`${username}:${password}`).toString('base64')
 
     const req = new Request('http://localhost/auth-override-func/a')
     req.headers.set('Authorization', `Basic ${credential}`)
@@ -162,7 +162,7 @@ describe('Basic Auth by Middleware', () => {
   })
 
   it('Should authorize - nested', async () => {
-    const credential = Buffer.from(username + ':' + password).toString('base64')
+    const credential = Buffer.from(`${username}:${password}`).toString('base64')
 
     const req = new Request('http://localhost/nested')
     req.headers.set('Authorization', `Basic ${credential}`)

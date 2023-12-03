@@ -65,7 +65,7 @@ declare global {
       referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
     }
 
-    interface AudioHTMLAttributes extends MediaHTMLAttributes {}
+    type AudioHTMLAttributes = MediaHTMLAttributes
 
     interface AreaHTMLAttributes extends HTMLAttributes {
       alt?: string | undefined
@@ -603,4 +603,4 @@ declare global {
   }
 }
 
-export interface IntrinsicElements extends Hono.IntrinsicElements {}
+export type IntrinsicElements = Hono.IntrinsicElements

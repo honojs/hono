@@ -56,7 +56,7 @@ export const getPattern = (label: string): Pattern | null => {
   if (match) {
     if (!patternCache[label]) {
       if (match[2]) {
-        patternCache[label] = [label, match[1], new RegExp('^' + match[2] + '$')]
+        patternCache[label] = [label, match[1], new RegExp(`^${match[2]}$`)]
       } else {
         patternCache[label] = [label, match[1], true]
       }
@@ -76,7 +76,7 @@ export const getPath = (request: Request): string => {
 
 export const getQueryStrings = (url: string): string => {
   const queryIndex = url.indexOf('?', 8)
-  return queryIndex === -1 ? '' : '?' + url.slice(queryIndex + 1)
+  return queryIndex === -1 ? '' : `?${url.slice(queryIndex + 1)}`
 }
 
 export const getPathNoStrict = (request: Request): string => {
@@ -163,7 +163,7 @@ const _getQueryParam = (
         const valueIndex = keyIndex + key.length + 2
         const endIndex = url.indexOf('&', valueIndex)
         return _decodeURI(url.slice(valueIndex, endIndex === -1 ? undefined : endIndex))
-      } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
+      } else if (trailingKeyCode === 38 || Number.isNaN(trailingKeyCode)) {
         return ''
       }
       keyIndex = url.indexOf(`&${key}`, keyIndex + 1)

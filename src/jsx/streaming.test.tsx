@@ -409,9 +409,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><h1>Hello</h1><template id=\"H:${
-        suspenseCounter + 1
-      }\"></template><p>Loading sub content...</p><!--/$--></template><script>
+      `<template><h1>Hello</h1><template id=\"H:${suspenseCounter + 1}\"></template><p>Loading sub content...</p><!--/$--></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')

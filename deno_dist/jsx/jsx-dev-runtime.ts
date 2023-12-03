@@ -8,6 +8,6 @@ export function jsxDEV(tag: string | Function, props: Record<string, unknown>): 
     return jsx(tag, props)
   }
   const children = props.children as string | HtmlEscapedString
-  delete props['children']
+  props['children'] = undefined
   return Array.isArray(children) ? jsx(tag, props, ...children) : jsx(tag, props, children)
 }

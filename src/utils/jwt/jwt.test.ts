@@ -128,7 +128,7 @@ describe('JWT', () => {
     let err = null
     let authorized
     try {
-      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS256)
+      authorized = await JWT.verify(tok, `${secret}invalid`, AlgorithmTypes.HS256)
     } catch (e) {
       err = e
     }
@@ -170,7 +170,7 @@ describe('JWT', () => {
     let err = null
     let authorized
     try {
-      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS256)
+      authorized = await JWT.verify(tok, `${secret}invalid`, AlgorithmTypes.HS256)
     } catch (e) {
       err = e
     }
@@ -189,7 +189,7 @@ describe('JWT', () => {
     let err = null
     let authorized
     try {
-      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS256)
+      authorized = await JWT.verify(tok, `${secret}invalid`, AlgorithmTypes.HS256)
     } catch (e) {
       err = e
     }

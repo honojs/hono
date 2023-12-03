@@ -185,7 +185,7 @@ d.replaceWith(c.content)
           docType: true,
           stream: {
             'Transfer-Encoding': 'chunked',
-            'Content-Type': 'text/html'
+            'Content-Type': 'text/html',
           },
         }
       )

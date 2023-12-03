@@ -109,7 +109,7 @@ class ClientRequestImpl {
     url = replaceUrlParam(url, this.pathParams)
 
     if (this.queryParams) {
-      url = url + '?' + this.queryParams.toString()
+      url = `${url}?${this.queryParams.toString()}`
     }
     methodUpperCase = this.method.toUpperCase()
     setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')

@@ -128,7 +128,7 @@ class Hono<
     }
 
     const strict = options.strict ?? true
-    delete options.strict
+    options.strict = undefined
     Object.assign(this, options)
     this.getPath = strict ? options.getPath ?? getPath : getPathNoStrict
   }

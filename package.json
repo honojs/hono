@@ -20,10 +20,10 @@
     "test:lambda": "env NAME=Node vitest --run --config ./runtime_tests/lambda/vitest.config.ts",
     "test:lambda-edge": "env NAME=Node vitest --run --config ./runtime_tests/lambda-edge/vitest.config.ts",
     "test:all": "yarn test && yarn test:deno && yarn test:bun && yarn test:fastly && yarn test:lagon && yarn test:node && yarn test:wrangler && yarn test:lambda && yarn test:lambda-edge",
-    "lint": "eslint --ext js,ts src runtime_tests .eslintrc.cjs",
-    "lint:fix": "eslint --ext js,ts src runtime_tests .eslintrc.cjs --fix",
-    "format": "prettier --check 'src/**/*.{js,ts}' 'runtime_tests/**/*.{js,ts}'",
-    "format:fix": "prettier --write 'src/**/*.{js,ts}' 'runtime_tests/**/*.{js,ts}'",
+    "lint": "biome lint src runtime_tests .eslintrc.cjs",
+    "lint:fix": "biome lint --apply src runtime_tests .eslintrc.cjs",
+    "format": "biome format src/**/* runtime_tests/**/*",
+    "format:fix": "biome format --write src/**/* runtime_tests/**/*",
     "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.{ts,tsx}'",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
     "build": "rimraf dist && tsx ./build.ts && yarn copy:package.cjs.json",
@@ -433,6 +433,7 @@
     "nodejs"
   ],
   "devDependencies": {
+    "@biomejs/biome": "1.3.3",
     "@cloudflare/workers-types": "^4.20221111.1",
     "@hono/node-server": "^1.0.2",
     "@types/crypto-js": "^4.1.1",

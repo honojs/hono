@@ -32,8 +32,8 @@ export const env = <T extends Record<string, unknown>, C extends Context = Conte
     },
     workerd: () => c.env,
     // On Fastly Compute, you can use the ConfigStore to manage user-defined data.
-    fastly: () => ({} as T),
-    other: () => ({} as T),
+    fastly: () => ({}) as T,
+    other: () => ({}) as T,
   }
 
   return runtimeEnvHandlers[runtime]()
