@@ -3,20 +3,27 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "NODE_ENV=production ts-node index.tsx"
+    "bench:node": "esbuild --bundle src/benchmark.ts | node",
+    "bench:bun": "bun run src/benchmark.ts",
+    "bench:react-jsx:node": "esbuild --bundle src/react-jsx/benchmark.ts | node",
+    "compare-bundle-size": "esbuild --minify --minify-syntax --tree-shaking=true --bundle src/{hono,react,preact,nano}.ts --outdir=dist"
   },
   "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.19.8",
+    "node-html-parser": "^6.1.11"
+  },
   "dependencies": {
-    "@types/benchmark": "^2.1.1",
-    "@types/react": "^18.0.15",
-    "@types/react-dom": "^18.0.6",
+    "@types/benchmark": "^2.1.5",
+    "@types/react": "^18.2.40",
+    "@types/react-dom": "^18.2.17",
     "benchmark": "^2.1.4",
-    "nano-jsx": "^0.0.32",
-    "preact": "^10.10.0",
-    "preact-render-to-string": "^5.2.1",
+    "hono": "^3.10.4",
+    "nano-jsx": "^0.1.0",
+    "preact": "^10.19.2",
+    "preact-render-to-string": "^6.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "ts-node": "^10.9.1",
-    "typescript": "^4.7.4"
+    "typescript": "^5.3.2"
   }
 }
