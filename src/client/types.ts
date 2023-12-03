@@ -26,11 +26,7 @@ type ClientRequest<S extends Schema> = {
   $url: () => URL
 }
 
-type BlankRecordToNever<T> = T extends Record<infer R, unknown>
-  ? R extends never
-    ? never
-    : T
-  : never
+type BlankRecordToNever<T> = keyof T extends never ? never : T
 
 export interface ClientResponse<T> {
   ok: boolean
