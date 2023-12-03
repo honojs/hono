@@ -9,12 +9,12 @@ type C = {
   finalized: boolean
 }
 
-type MiddlewareTuple = [Function, Params]
+type MiddlewareTuple = [[Function, unknown], Params]
 
 class ExpectedError extends Error {}
 
 function buildMiddlewareTuple(fn: Function, params?: Params): MiddlewareTuple {
-  return [fn, params || {}]
+  return [[fn, undefined], params || {}]
 }
 
 describe('compose', () => {
@@ -697,13 +697,13 @@ describe('Compose', function () {
     }
     middleware.push(buildMiddlewareTuple(fn1))
 
-    for (const [fn] of middleware) {
+    for (const [[fn]] of middleware) {
       expect(fn).toEqual(fn1)
     }
 
     compose(middleware)
 
-    for (const [fn] of middleware) {
+    for (const [[fn]] of middleware) {
       expect(fn).toEqual(fn1)
     }
   })

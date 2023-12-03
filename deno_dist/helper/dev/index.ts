@@ -1,5 +1,5 @@
 import type { Hono } from '../../hono.ts'
-import type { RouterRoute } from '../../hono-base.ts'
+import type { RouterRoute } from '../../types.ts'
 
 interface ShowRoutesOptions {
   verbose?: boolean
