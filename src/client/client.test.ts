@@ -5,7 +5,7 @@ import FormData from 'form-data'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import _fetch, { Request as NodeFetchRequest } from 'node-fetch'
-import { vi } from 'vitest'
+import { vi, expectTypeOf } from 'vitest'
 import { Hono } from '../hono'
 import { parse } from '../utils/cookie'
 import type { Equal, Expect } from '../utils/types'
@@ -571,5 +571,20 @@ describe('Use custom fetch (app.request) method', () => {
     const client = hc<AppType>('', { fetch: app.request })
     const res = await client.search.$get()
     expect(res.ok).toBe(true)
+  })
+})
+
+describe('Optional parameters in JSON response', () => {
+  it('Should return the correct type', async () => {
+    const app = new Hono().get('/', (c) => {
+      return c.jsonT({ message: 'foo' } as { message?: string })
+    })
+    type AppType = typeof app
+    const client = hc<AppType>('', { fetch: app.request })
+    const res = await client.index.$get()
+    const data = await res.json()
+    expectTypeOf(data).toEqualTypeOf<{
+      message?: string
+    }>()
   })
 })
