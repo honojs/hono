@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import type { ParamIndexMap, ParamStash, Params } from './router.ts'
 import type { Result } from './router.ts'
 import type {
   Input,
