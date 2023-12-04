@@ -502,6 +502,7 @@ describe('Merge path with `app.route()`', () => {
 
   it('Should not allow the incorrect JSON type', async () => {
     const app = new Hono()
+    // @ts-expect-error
     const route = app.get('/api/foo', (c) => c.json({ datetime: new Date() }))
     type AppType = typeof route
     const client = hc<AppType>('http://localhost')
