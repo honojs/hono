@@ -130,7 +130,7 @@ export const secureHeaders = (customOptions?: Partial<SecureHeadersOptions>): Mi
     headersToSet.push(['Report-To', reportToOptions])
   }
 
-  return async (ctx, next) => {
+  return async function secureHeaders(ctx, next) {
     await next()
     headersToSet.forEach(([header, value]) => {
       ctx.res.headers.set(header, value)

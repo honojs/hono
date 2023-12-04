@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { Router, Result } from '../../router.ts'
-import { UnsupportedPathError } from '../../router.ts'
+import { UnsupportedPathError, MESSAGE_MATCHER_IS_ALREADY_BUILT } from '../../router.ts'
 
 export class SmartRouter<T> implements Router<T> {
   name: string = 'SmartRouter'
@@ -13,7 +13,7 @@ export class SmartRouter<T> implements Router<T> {
 
   add(method: string, path: string, handler: T) {
     if (!this.routes) {
-      throw new Error('Can not add a route since the matcher is already built.')
+      throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT)
     }
 
     this.routes.push([method, path, handler])

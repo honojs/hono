@@ -2101,17 +2101,17 @@ describe('Show routes', () => {
   })
 })
 
-describe('jsonT', () => {
+describe('json', () => {
   const api = new Hono()
 
   api.get('/message', (c) => {
-    return c.jsonT({
+    return c.json({
       message: 'Hello',
     })
   })
 
   api.get('/message-async', async (c) => {
-    return c.jsonT({
+    return c.json({
       message: 'Hello',
     })
   })
@@ -2541,6 +2541,61 @@ describe('c.var - with testing types', () => {
       await next()
     }
 
+  const mw6 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo6: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo6', (str) => str)
+      await next()
+    }
+
+  const mw7 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo7: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo7', (str) => str)
+      await next()
+    }
+
+  const mw8 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo8: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo8', (str) => str)
+      await next()
+    }
+
+  const mw9 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo9: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo9', (str) => str)
+      await next()
+    }
+
+  const mw10 =
+    (): MiddlewareHandler<{
+      Variables: {
+        echo10: (str: string) => string
+      }
+    }> =>
+    async (c, next) => {
+      c.set('echo10', (str) => str)
+      await next()
+    }
+
   app.use('/no-path/1').get(mw(), (c) => {
     return c.text(c.var.echo('hello'))
   })
@@ -2559,21 +2614,103 @@ describe('c.var - with testing types', () => {
     )
   })
 
-  // @ts-expect-error
   app.use('/no-path/5').get(mw(), mw2(), mw3(), mw4(), mw5(), (c) => {
     return c.text(
-      // @ts-expect-error
       c.var.echo('hello') +
-        // @ts-expect-error
         c.var.echo2('hello2') +
-        // @ts-expect-error
         c.var.echo3('hello3') +
-        // @ts-expect-error
         c.var.echo4('hello4') +
-        // @ts-expect-error
         c.var.echo5('hello5')
     )
   })
+
+  app.use('/no-path/6').get(mw(), mw2(), mw3(), mw4(), mw5(), mw6(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6')
+    )
+  })
+
+  app.use('/no-path/7').get(mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7')
+    )
+  })
+
+  app.use('/no-path/8').get(mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8')
+    )
+  })
+
+  app.use('/no-path/9').get(mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), mw9(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8') +
+        c.var.echo9('hello9')
+    )
+  })
+
+  app.use('/no-path/10').get(
+    // @ts-expect-error
+    mw(),
+    mw2(),
+    mw3(),
+    mw4(),
+    mw5(),
+    mw6(),
+    mw7(),
+    mw8(),
+    mw9(),
+    mw10(),
+    (c) => {
+      return c.text(
+        // @ts-expect-error
+        c.var.echo('hello') +
+          // @ts-expect-error
+          c.var.echo2('hello2') +
+          // @ts-expect-error
+          c.var.echo3('hello3') +
+          // @ts-expect-error
+          c.var.echo4('hello4') +
+          // @ts-expect-error
+          c.var.echo5('hello5') +
+          // @ts-expect-error
+          c.var.echo6('hello6') +
+          // @ts-expect-error
+          c.var.echo7('hello7') +
+          // @ts-expect-error
+          c.var.echo8('hello8') +
+          // @ts-expect-error
+          c.var.echo9('hello9') +
+          // @ts-expect-error
+          c.var.echo10('hello10')
+      )
+    }
+  )
 
   app.get('*', mw())
 
@@ -2595,8 +2732,68 @@ describe('c.var - with testing types', () => {
     )
   })
 
-  // @ts-expect-error
   app.get('/path/5', mw(), mw2(), mw3(), mw4(), mw5(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5')
+    )
+  })
+
+  app.get('/path/6', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6')
+    )
+  })
+
+  app.get('/path/7', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7')
+    )
+  })
+
+  app.get('/path/8', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8')
+    )
+  })
+
+  app.get('/path/9', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), mw9(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8') +
+        c.var.echo9('hello9')
+    )
+  })
+
+  // @ts-expect-error
+  app.get('/path/10', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), mw9(), mw10(), (c) => {
     return c.text(
       // @ts-expect-error
       c.var.echo('hello') +
@@ -2607,7 +2804,17 @@ describe('c.var - with testing types', () => {
         // @ts-expect-error
         c.var.echo4('hello4') +
         // @ts-expect-error
-        c.var.echo5('hello5')
+        c.var.echo5('hello5') +
+        // @ts-expect-error
+        c.var.echo6('hello6') +
+        // @ts-expect-error
+        c.var.echo7('hello7') +
+        // @ts-expect-error
+        c.var.echo8('hello8') +
+        // @ts-expect-error
+        c.var.echo9('hello9') +
+        // @ts-expect-error
+        c.var.echo10('hello10')
     )
   })
 
@@ -2629,21 +2836,236 @@ describe('c.var - with testing types', () => {
     )
   })
 
-  // @ts-expect-error
   app.on('GET', '/on/5', mw(), mw2(), mw3(), mw4(), mw5(), (c) => {
     return c.text(
-      // @ts-expect-error
       c.var.echo('hello') +
-        // @ts-expect-error
         c.var.echo2('hello2') +
-        // @ts-expect-error
         c.var.echo3('hello3') +
-        // @ts-expect-error
         c.var.echo4('hello4') +
-        // @ts-expect-error
         c.var.echo5('hello5')
     )
   })
+
+  app.on('GET', '/on/6', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6')
+    )
+  })
+
+  app.on('GET', '/on/7', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7')
+    )
+  })
+
+  app.on('GET', '/on/8', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8')
+    )
+  })
+
+  app.on('GET', '/on/9', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), mw9(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8') +
+        c.var.echo9('hello9')
+    )
+  })
+
+  // @ts-expect-error
+  app.on(
+    'GET',
+    '/on/10',
+    mw(),
+    mw2(),
+    mw3(),
+    mw4(),
+    mw5(),
+    mw6(),
+    mw7(),
+    mw8(),
+    mw9(),
+    mw10(),
+    (c) => {
+      return c.text(
+        // @ts-expect-error
+        c.var.echo('hello') +
+          // @ts-expect-error
+          c.var.echo2('hello2') +
+          // @ts-expect-error
+          c.var.echo3('hello3') +
+          // @ts-expect-error
+          c.var.echo4('hello4') +
+          // @ts-expect-error
+          c.var.echo5('hello5') +
+          // @ts-expect-error
+          c.var.echo6('hello6') +
+          // @ts-expect-error
+          c.var.echo7('hello7') +
+          // @ts-expect-error
+          c.var.echo8('hello8') +
+          // @ts-expect-error
+          c.var.echo9('hello9') +
+          // @ts-expect-error
+          c.var.echo10('hello10')
+      )
+    }
+  )
+
+  app.on(['GET', 'POST'], '/on/1', mw(), (c) => {
+    return c.text(c.var.echo('hello'))
+  })
+
+  app.on(['GET', 'POST'], '/on/2', mw(), mw2(), (c) => {
+    return c.text(c.var.echo('hello') + c.var.echo2('hello2'))
+  })
+
+  app.on(['GET', 'POST'], '/on/3', mw(), mw2(), mw3(), (c) => {
+    return c.text(c.var.echo('hello') + c.var.echo2('hello2') + c.var.echo3('hello3'))
+  })
+
+  app.on(['GET', 'POST'], '/on/4', mw(), mw2(), mw3(), mw4(), (c) => {
+    return c.text(
+      c.var.echo('hello') + c.var.echo2('hello2') + c.var.echo3('hello3') + c.var.echo4('hello4')
+    )
+  })
+
+  app.on(['GET', 'POST'], '/on/5', mw(), mw2(), mw3(), mw4(), mw5(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5')
+    )
+  })
+
+  app.on(['GET', 'POST'], '/on/6', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6')
+    )
+  })
+
+  app.on(['GET', 'POST'], '/on/7', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7')
+    )
+  })
+
+  app.on(['GET', 'POST'], '/on/8', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), (c) => {
+    return c.text(
+      c.var.echo('hello') +
+        c.var.echo2('hello2') +
+        c.var.echo3('hello3') +
+        c.var.echo4('hello4') +
+        c.var.echo5('hello5') +
+        c.var.echo6('hello6') +
+        c.var.echo7('hello7') +
+        c.var.echo8('hello8')
+    )
+  })
+
+  app.on(
+    ['GET', 'POST'],
+    '/on/9',
+    mw(),
+    mw2(),
+    mw3(),
+    mw4(),
+    mw5(),
+    mw6(),
+    mw7(),
+    mw8(),
+    mw9(),
+    (c) => {
+      return c.text(
+        c.var.echo('hello') +
+          c.var.echo2('hello2') +
+          c.var.echo3('hello3') +
+          c.var.echo4('hello4') +
+          c.var.echo5('hello5') +
+          c.var.echo6('hello6') +
+          c.var.echo7('hello7') +
+          c.var.echo8('hello8') +
+          c.var.echo9('hello9')
+      )
+    }
+  )
+
+  // @ts-expect-error
+  app.on(
+    ['GET', 'POST'],
+    '/on/10',
+    mw(),
+    mw2(),
+    mw3(),
+    mw4(),
+    mw5(),
+    mw6(),
+    mw7(),
+    mw8(),
+    mw9(),
+    mw10(),
+    (c) => {
+      return c.text(
+        // @ts-expect-error
+        c.var.echo('hello') +
+          // @ts-expect-error
+          c.var.echo2('hello2') +
+          // @ts-expect-error
+          c.var.echo3('hello3') +
+          // @ts-expect-error
+          c.var.echo4('hello4') +
+          // @ts-expect-error
+          c.var.echo5('hello5') +
+          // @ts-expect-error
+          c.var.echo6('hello6') +
+          // @ts-expect-error
+          c.var.echo7('hello7') +
+          // @ts-expect-error
+          c.var.echo8('hello8') +
+          // @ts-expect-error
+          c.var.echo9('hello9') +
+          // @ts-expect-error
+          c.var.echo10('hello10')
+      )
+    }
+  )
 
   it('Should return the correct response - no-path', async () => {
     let res = await app.request('/no-path/1')
@@ -2761,7 +3183,7 @@ describe('c.var - with testing types', () => {
     app.use(mw())
     app.use('*', mw())
 
-    const route = app.get('/posts', mw(), (c) => c.jsonT(0))
+    const route = app.get('/posts', mw(), (c) => c.json(0))
     const client = hc<typeof route>('/')
     type key = keyof typeof client
     type verify = Expect<Equal<'posts', key>>
