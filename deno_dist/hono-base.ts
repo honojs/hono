@@ -69,8 +69,8 @@ class Hono<
   */
   router!: Router<[H, RouterRoute]>
   readonly getPath: GetPath<E>
-  private _basePath: string = '/'
-  private path: string = '/'
+  #basePath: string = '/'
+  #path: string = '/'
 
   routes: RouterRoute[] = []
 
@@ -82,13 +82,13 @@ class Hono<
     allMethods.map((method) => {
       this[method] = (args1: string | H, ...args: H[]) => {
         if (typeof args1 === 'string') {
-          this.path = args1
+          this.#path = args1
         } else {
-          this.addRoute(method, this.path, args1)
+          this.addRoute(method, this.#path, args1)
         }
         args.map((handler) => {
           if (typeof handler !== 'string') {
-            this.addRoute(method, this.path, handler)
+            this.addRoute(method, this.#path, handler)
           }
         })
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -99,10 +99,10 @@ class Hono<
     // Implementation of app.on(method, path, ...handlers[])
     this.on = (method: string | string[], path: string, ...handlers: H[]) => {
       if (!method) return this
-      this.path = path
+      this.#path = path
       for (const m of [method].flat()) {
         handlers.map((handler) => {
-          this.addRoute(m.toUpperCase(), this.path, handler)
+          this.addRoute(m.toUpperCase(), this.#path, handler)
         })
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -113,12 +113,12 @@ class Hono<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.use = (arg1: string | MiddlewareHandler<any>, ...handlers: MiddlewareHandler<any>[]) => {
       if (typeof arg1 === 'string') {
-        this.path = arg1
+        this.#path = arg1
       } else {
         handlers.unshift(arg1)
       }
       handlers.map((handler) => {
-        this.addRoute(METHOD_NAME_ALL, this.path, handler)
+        this.addRoute(METHOD_NAME_ALL, this.#path, handler)
       })
       return this
     }
@@ -169,7 +169,7 @@ class Hono<
 
   basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
     const subApp = this.clone()
-    subApp._basePath = mergePath(this._basePath, path)
+    subApp.#basePath = mergePath(this.#basePath, path)
     return subApp
   }
 
@@ -207,7 +207,7 @@ class Hono<
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     optionHandler?: (c: Context) => unknown
   ): Hono<E, S, BasePath> {
-    const mergedPath = mergePath(this._basePath, path)
+    const mergedPath = mergePath(this.#basePath, path)
     const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
 
     const handler: MiddlewareHandler = async (c, next) => {
@@ -252,7 +252,7 @@ class Hono<
 
   private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
-    path = mergePath(this._basePath, path)
+    path = mergePath(this.#basePath, path)
     const r: RouterRoute = { path: path, method: method, handler: handler }
     this.router.add(method, path, [handler, r])
     this.routes.push(r)
