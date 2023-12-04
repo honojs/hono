@@ -13,7 +13,7 @@ describe('Adapter for Next.js', () => {
          */
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        waitUntil: c.executionCtx.waitUntil(),
+        waitUntil: c.executionCtx.waitUntil() as any,
       })
     })
     const handler = handle(app)
