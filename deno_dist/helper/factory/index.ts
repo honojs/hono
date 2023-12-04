@@ -257,30 +257,8 @@ export class Factory<E extends Env = any, P extends string = any> {
     H<E, P, I10, R>
   ]
 
-  createHandlers(
-    handler1: H,
-    handler2?: H,
-    handler3?: H,
-    handler4?: H,
-    handler5?: H,
-    handler6?: H,
-    handler7?: H,
-    handler8?: H,
-    handler9?: H,
-    handler10?: H
-  ) {
-    return [
-      handler1,
-      handler2,
-      handler3,
-      handler4,
-      handler5,
-      handler6,
-      handler7,
-      handler8,
-      handler9,
-      handler10,
-    ]
+  createHandlers(...handlers: H[]) {
+    return handlers.filter((handler) => handler !== undefined)
   }
 }
 
