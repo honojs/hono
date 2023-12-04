@@ -49,7 +49,7 @@ interface TextRespond {
 
 interface JSONRespond {
   <T>(
-    object: InterfaceToType<T> extends JSONValue ? T : T extends JSONValue ? JSONValue : T,
+    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
     status?: StatusCode,
     headers?: HeaderRecord
   ): Response &
@@ -305,7 +305,7 @@ export class Context<
   }
 
   json: JSONRespond = <T>(
-    object: InterfaceToType<T> extends JSONValue ? T : T extends JSONValue ? JSONValue : T,
+    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
   ): Response &
@@ -332,7 +332,7 @@ export class Context<
    * `c.json()` now returns data type, so you can just replace `c.jsonT()` to `c.json()`.
    */
   jsonT: JSONRespond = <T>(
-    object: InterfaceToType<T> extends JSONValue ? T : T extends JSONValue ? JSONValue : T,
+    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
   ): Response &
