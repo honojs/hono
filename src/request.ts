@@ -29,8 +29,8 @@ type BodyCache = Partial<Body & { parsedBody: BodyData }>
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   raw: Request
 
-  private vData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
-  private _r: Result<[unknown, RouterRoute]>
+  #validatedData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
+  #matchResult: Result<[unknown, RouterRoute]>
   routeIndex: number = 0
   path: string
   bodyCache: BodyCache = {}
@@ -42,8 +42,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   ) {
     this.raw = request
     this.path = path
-    this._r = matchResult
-    this.vData = {}
+    this.#matchResult = matchResult
+    this.#validatedData = {}
   }
 
   param<P2 extends string = P>(
@@ -53,21 +53,21 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   param(key?: string): unknown {
     if (key) {
       const param = (
-        this._r[1]
-          ? this._r[1][this._r[0][this.routeIndex][1][key] as any]
-          : this._r[0][this.routeIndex][1][key]
+        this.#matchResult[1]
+          ? this.#matchResult[1][this.#matchResult[0][this.routeIndex][1][key] as any]
+          : this.#matchResult[0][this.routeIndex][1][key]
       ) as string | undefined
       return param ? (/\%/.test(param) ? decodeURIComponent_(param) : param) : undefined
     } else {
       const decoded: Record<string, string> = {}
 
-      const keys = Object.keys(this._r[0][this.routeIndex][1])
+      const keys = Object.keys(this.#matchResult[0][this.routeIndex][1])
       for (let i = 0, len = keys.length; i < len; i++) {
         const key = keys[i]
         const value = (
-          this._r[1]
-            ? this._r[1][this._r[0][this.routeIndex][1][key] as any]
-            : this._r[0][this.routeIndex][1][key]
+          this.#matchResult[1]
+            ? this.#matchResult[1][this.#matchResult[0][this.routeIndex][1][key] as any]
+            : this.#matchResult[0][this.routeIndex][1][key]
         ) as string | undefined
         if (value && typeof value === 'string') {
           decoded[key] = /\%/.test(value) ? decodeURIComponent_(value) : value
@@ -180,12 +180,12 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   addValidatedData(target: keyof ValidationTargets, data: {}) {
-    this.vData[target] = data
+    this.#validatedData[target] = data
   }
 
   valid<T extends keyof I & keyof ValidationTargets>(target: T): InputToDataByTarget<I, T>
   valid(target: keyof ValidationTargets) {
-    return this.vData[target] as unknown
+    return this.#validatedData[target] as unknown
   }
 
   get url() {
@@ -197,11 +197,11 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   get matchedRoutes(): RouterRoute[] {
-    return this._r[0].map(([[, route]]) => route)
+    return this.#matchResult[0].map(([[, route]]) => route)
   }
 
   get routePath(): string {
-    return this._r[0].map(([[, route]]) => route)[this.routeIndex].path
+    return this.#matchResult[0].map(([[, route]]) => route)[this.routeIndex].path
   }
 
   /** @deprecated
