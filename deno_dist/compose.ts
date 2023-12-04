@@ -9,7 +9,7 @@ interface ComposeContext {
 
 // Based on the code in the MIT licensed `koa-compose` package.
 export const compose = <C extends ComposeContext, E extends Env = Env>(
-  middleware: [Function, ParamIndexMap | Params][],
+  middleware: [[Function, unknown], ParamIndexMap | Params][],
   onError?: ErrorHandler<E>,
   onNotFound?: NotFoundHandler<E>
 ) => {
@@ -28,9 +28,9 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
       let handler
 
       if (middleware[i]) {
-        handler = middleware[i][0]
+        handler = middleware[i][0][0]
         if (context instanceof Context) {
-          context.req.setParams(middleware[i][1])
+          context.req.routeIndex = i
         }
       } else {
         handler = (i === middleware.length && next) || undefined
@@ -56,9 +56,6 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
         }
       }
 
-      if (res !== undefined && 'response' in res) {
-        res = res['response']
-      }
       if (res && (context.finalized === false || isError)) {
         context.res = res
       }

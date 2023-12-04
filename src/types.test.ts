@@ -20,6 +20,7 @@ import type {
   UndefinedIfHavingQuestion,
 } from './types'
 import type { Expect, Equal } from './utils/types'
+import { validator } from './validator'
 
 describe('Env', () => {
   test('Env', () => {
@@ -71,14 +72,14 @@ describe('HandlerInterface', () => {
           }
         >
         expectTypeOf(c).toEqualTypeOf<Expected>()
-        return c.jsonT({
+        return c.json({
           message: 'Hello!',
         })
       })
       app.get(middleware, (c) => {
         const data = c.req.valid('json')
         expectTypeOf(data).toEqualTypeOf<Payload>()
-        return c.jsonT({
+        return c.json({
           message: 'Hello!',
         })
       })
@@ -112,7 +113,7 @@ describe('HandlerInterface', () => {
       const route = app.get('/foo', middleware, (c) => {
         type Expected = Context<Env, '/foo', { in: { json: Payload }; out: { json: Payload } }>
         expectTypeOf(c).toEqualTypeOf<Expected>()
-        return c.jsonT({
+        return c.json({
           message: 'Hello!',
         })
       })
@@ -239,7 +240,7 @@ describe('OnHandlerInterface', () => {
     const route = app.on('PURGE', '/purge', middleware, (c) => {
       const data = c.req.valid('form')
       expectTypeOf(data).toEqualTypeOf<{ id: number }>()
-      return c.jsonT({
+      return c.json({
         success: true,
       })
     })
@@ -360,7 +361,7 @@ describe('Test types of Handler', () => {
   })
 })
 
-describe('`jsonT()`', () => {
+describe('`json()`', () => {
   const app = new Hono<{ Variables: { foo: string } }>()
 
   app.get('/post/:id', (c) => {
@@ -370,12 +371,12 @@ describe('`jsonT()`', () => {
   })
 
   const route = app.get('/hello', (c) => {
-    return c.jsonT({
+    return c.json({
       message: 'Hello!',
     })
   })
 
-  test('jsonT', () => {
+  test('json', () => {
     type Actual = ExtractSchema<typeof route>
 
     type Expected = {
@@ -540,23 +541,23 @@ describe('merge path', () => {
   })
 })
 
-describe('Different types using jsonT()', () => {
+describe('Different types using json()', () => {
   describe('no path pattern', () => {
     const app = new Hono()
     test('Three different types', () => {
       const route = app.get((c) => {
         const flag = false
         if (flag) {
-          return c.jsonT({
+          return c.json({
             ng: true,
           })
         }
         if (!flag) {
-          return c.jsonT({
+          return c.json({
             ok: true,
           })
         }
-        return c.jsonT({
+        return c.json({
           default: true,
         })
       })
@@ -588,16 +589,16 @@ describe('Different types using jsonT()', () => {
       const route = app.get('/foo', (c) => {
         const flag = false
         if (flag) {
-          return c.jsonT({
+          return c.json({
             ng: true,
           })
         }
         if (!flag) {
-          return c.jsonT({
+          return c.json({
             ok: true,
           })
         }
-        return c.jsonT({
+        return c.json({
           default: true,
         })
       })
@@ -624,11 +625,11 @@ describe('Different types using jsonT()', () => {
   })
 })
 
-describe('jsonT() in an async handler', () => {
+describe('json() in an async handler', () => {
   const app = new Hono()
   test('Three different types', () => {
     const route = app.get(async (c) => {
-      return c.jsonT({
+      return c.json({
         ok: true,
       })
     })
@@ -652,11 +653,56 @@ describe('jsonT() in an async handler', () => {
  * This tests are only for types.
  */
 describe('c.var with chaining - test only types', () => {
-  const mw1 = createMiddleware<{ Variables: { foo1: string } }>(async () => {})
-  const mw2 = createMiddleware<{ Variables: { foo2: string } }>(async () => {})
-  const mw3 = createMiddleware<{ Variables: { foo3: string } }>(async () => {})
-  const mw4 = createMiddleware<{ Variables: { foo4: string } }>(async () => {})
-  const mw5 = createMiddleware<{ Variables: { foo5: string } }>(async () => {})
+  const mw1 = createMiddleware<
+    { Variables: { foo1: string } },
+    string,
+    { out: { query: { bar1: number } } }
+  >(async () => {})
+  const mw2 = createMiddleware<
+    { Variables: { foo2: string } },
+    string,
+    { out: { query: { bar2: number } } }
+  >(async () => {})
+  const mw3 = createMiddleware<
+    { Variables: { foo3: string } },
+    string,
+    { out: { query: { bar3: number } } }
+  >(async () => {})
+  const mw4 = createMiddleware<
+    { Variables: { foo4: string } },
+    string,
+    { out: { query: { bar4: number } } }
+  >(async () => {})
+  const mw5 = createMiddleware<
+    { Variables: { foo5: string } },
+    string,
+    { out: { query: { bar5: number } } }
+  >(async () => {})
+  const mw6 = createMiddleware<
+    { Variables: { foo6: string } },
+    string,
+    { out: { query: { bar6: number } } }
+  >(async () => {})
+  const mw7 = createMiddleware<
+    { Variables: { foo7: string } },
+    string,
+    { out: { query: { bar7: number } } }
+  >(async () => {})
+  const mw8 = createMiddleware<
+    { Variables: { foo8: string } },
+    string,
+    { out: { query: { bar8: number } } }
+  >(async () => {})
+  const mw9 = createMiddleware<
+    { Variables: { foo9: string } },
+    string,
+    { out: { query: { bar9: number } } }
+  >(async () => {})
+  const mw10 = createMiddleware<
+    { Variables: { foo10: string } },
+    string,
+    { out: { query: { bar10: number } } }
+  >(async () => {})
 
   it('Should not throw type errors', () => {
     // app.get(handler...)
@@ -696,6 +742,82 @@ describe('c.var with chaining - test only types', () => {
       return c.json(0)
     })
 
+    new Hono().get(mw1, mw2, mw3, mw4, mw5, mw6).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get(mw1, mw2, mw3, mw4, mw5, mw6, mw7).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get(mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get(mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo9).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get(mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9, mw10).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo9).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo10).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get(mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9, (c) => {
+      expectTypeOf(c.req.valid('query')).toMatchTypeOf<{
+        bar1: number
+        bar2: number
+        bar3: number
+        bar4: number
+        bar5: number
+        bar6: number
+        bar7: number
+        bar8: number
+        bar9: number
+      }>()
+
+      return c.jsonT(0)
+    })
+
     // app.get('/', handler...)
 
     new Hono().get('/', mw1).get('/', (c) => {
@@ -732,6 +854,82 @@ describe('c.var with chaining - test only types', () => {
       expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
       return c.json(0)
     })
+
+    new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo9).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9, mw10).get('/', (c) => {
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo9).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo10).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+
+    new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9, (c) => {
+      expectTypeOf(c.req.valid('query')).toMatchTypeOf<{
+        bar1: number
+        bar2: number
+        bar3: number
+        bar4: number
+        bar5: number
+        bar6: number
+        bar7: number
+        bar8: number
+        bar9: number
+      }>()
+
+      return c.jsonT(0)
+    })
   })
 })
 
@@ -755,5 +953,31 @@ describe('c.var with ContextVariableMap - test only types', () => {
       expectTypeOf(c.var.payload).toEqualTypeOf<string>()
       return c.json(0)
     })
+  })
+})
+
+/**
+ * It's challenge to test all cases. This is a minimal pattern.
+ */
+describe('Env types with chained routes - test only types', () => {
+  const app = new Hono<{ Variables: { testVar: string } }>()
+  it('Should not throw a type error', () => {
+    app
+      .post(
+        '/',
+        validator('json', (v) => v),
+        async (c) => {
+          expectTypeOf(c.get('testVar')).toEqualTypeOf<string>()
+          return c.jsonT({ success: true })
+        }
+      )
+      .patch(
+        '/',
+        validator('json', (v) => v),
+        async (c) => {
+          expectTypeOf(c.get('testVar')).toEqualTypeOf<string>()
+          return c.jsonT({ success: true })
+        }
+      )
   })
 })

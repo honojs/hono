@@ -254,15 +254,6 @@ describe('Pass a ResponseInit to respond methods', () => {
     expect(await res.text()).toBe('foo')
   })
 
-  it('c.jsonT()', async () => {
-    const originalResponse = new Response('foo')
-    const tRes = c.jsonT({ foo: 'bar' }, originalResponse)
-    const res = tRes['response'] as Response
-    expect(res.headers.get('content-type')).toMatch(/^application\/json/)
-    expect(await res.json()).toEqual({ foo: 'bar' })
-    expect(tRes.status).toEqual(200)
-  })
-
   it('c.html()', async () => {
     const originalResponse = new Response('foo')
     const res = await c.html('<h1>foo</h1>', originalResponse)

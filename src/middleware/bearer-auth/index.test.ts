@@ -5,11 +5,13 @@ describe('Bearer Auth by Middleware', () => {
   let app: Hono
   let handlerExecuted: boolean
   let token: string
+  let tokens: string[]
 
   beforeEach(async () => {
     app = new Hono()
     handlerExecuted = false
     token = 'abcdefg12345-._~+/='
+    tokens = ['abcdefg12345-._~+/=', 'alternative']
 
     app.use('/auth/*', bearerAuth({ token }))
     app.use('/auth/*', async (c, next) => {
@@ -34,6 +36,12 @@ describe('Bearer Auth by Middleware', () => {
     app.get('/nested/*', (c) => {
       handlerExecuted = true
       return c.text('auth nested')
+    })
+
+    app.use('/auths/*', bearerAuth({ token: tokens }))
+    app.get('/auths/*', (c) => {
+      handlerExecuted = true
+      return c.text('auths')
     })
   })
 
@@ -117,5 +125,23 @@ describe('Bearer Auth by Middleware', () => {
     expect(handlerExecuted).toBeFalsy()
     expect(res.status).toBe(401)
     expect(await res.text()).toBe('Unauthorized')
+  })
+
+  it('Should authorize - with any token in list', async () => {
+    const req1 = new Request('http://localhost/auths/a')
+    req1.headers.set('Authorization', 'Bearer abcdefg12345-._~+/=')
+    const res1 = await app.request(req1)
+    expect(res1).not.toBeNull()
+    expect(res1.status).toBe(200)
+    expect(handlerExecuted).toBeTruthy()
+    expect(await res1.text()).toBe('auths')
+
+    const req2 = new Request('http://localhost/auths/a')
+    req2.headers.set('Authorization', 'Bearer alternative')
+    const res2 = await app.request(req2)
+    expect(res2).not.toBeNull()
+    expect(res2.status).toBe(200)
+    expect(handlerExecuted).toBeTruthy()
+    expect(await res2.text()).toBe('auths')
   })
 })
