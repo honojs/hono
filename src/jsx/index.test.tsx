@@ -3,7 +3,7 @@
 import { html } from '../helper/html'
 import { Hono } from '../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, memo, Fragment, createContext, useContext } from './index'
+import { jsx, memo, Fragment, createContext, useContext, jsxNode } from './index'
 import type { Context, FC } from './index'
 
 interface SiteData {
@@ -339,6 +339,47 @@ describe('render to string', () => {
 
       expect(Top.toString()).toBe(
         '<html><head><title>Home page</title></head><body><h1>Hono</h1><p>Hono is great</p></body></html>'
+      )
+    })
+  })
+
+  describe('event', () => {
+    it('handle event for IntrinsicElements', async () => {
+      const html = jsxNode(
+        <html>
+          <head>
+            <style />
+          </head>
+          <body>
+            <h1 class='fs24'>Hono</h1>
+            <p class='fs14'>Hono is great</p>
+          </body>
+        </html>
+      )
+
+      let finalizeStyle = () => {}
+      const finalizeStylePromise = new Promise<void>((resolve) => (finalizeStyle = resolve))
+      const classes = new Set<string>()
+      html
+        .on('renderToString', ({ node }) => {
+          ;(node.props?.class || '')
+            .split(' ')
+            .filter(Boolean)
+            .forEach((c: string) => classes.add(c))
+        })
+        .on('renderToString.style', ({ setContent }) => {
+          setContent(
+            finalizeStylePromise.then(() =>
+              [...classes].map((c) => `.${c}{font-size:${c.substring(2)}px}`).join('')
+            )
+          )
+        })
+        .on('renderToString.html', () => {
+          finalizeStyle()
+        })
+
+      expect((await html.toString()).toString()).toBe(
+        '<html><head>.fs24{font-size:24px}.fs14{font-size:14px}</head><body><h1 class="fs24">Hono</h1><p class="fs14">Hono is great</p></body></html>'
       )
     })
   })
