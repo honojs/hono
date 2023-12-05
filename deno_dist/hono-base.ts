@@ -185,11 +185,11 @@ class Hono<
 
   /**
    * @deprecated
-   * Use `showRoutes()` utility methods provided by 'hono/helper' instead of `app.showRoutes()`.
+   * Use `showRoutes()` utility methods provided by 'hono/dev' instead of `app.showRoutes()`.
    * `app.showRoutes()` will be removed in v4.
    * @example
    * You could rewrite `app.showRoutes()` as follows
-   * import { showRoutes } from 'hono/helper'
+   * import { showRoutes } from 'hono/dev'
    * showRoutes(app)
    */
   showRoutes() {

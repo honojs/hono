@@ -1,5 +1,5 @@
 import type { Hono } from '../../hono.ts'
-import type { RouterRoute } from '../../types.ts'
+import type { Env, RouterRoute } from '../../types.ts'
 
 interface ShowRoutesOptions {
   verbose?: boolean
@@ -17,7 +17,7 @@ const handlerName = (handler: Function) => {
   return handler.name || (isMiddleware(handler) ? '[middleware]' : '[handler]')
 }
 
-export const inspectRoutes = (hono: Hono): RouteData[] => {
+export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
   return hono.routes.map(({ path, method, handler }: RouterRoute) => ({
     path,
     method,
@@ -26,7 +26,7 @@ export const inspectRoutes = (hono: Hono): RouteData[] => {
   }))
 }
 
-export const showRoutes = (hono: Hono, opts?: ShowRoutesOptions) => {
+export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions) => {
   const routeData: Record<string, RouteData[]> = {}
   let maxMethodLength = 0
   let maxPathLength = 0
