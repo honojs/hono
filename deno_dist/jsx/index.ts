@@ -283,11 +283,11 @@ const jsxFn = (
  * The API might be changed.
  * same as `as unknown as JSXNode`
  */
-export const jsxNode = (node: HtmlEscaped | Promise<HtmlEscaped>): JSXNode => {
+export const jsxNode = (node: HtmlEscaped | Promise<HtmlEscaped>): JSX.Element & JSXNode => {
   if (!(node instanceof JSXNode)) {
     throw new Error('Invalid node')
   }
-  return node as JSXNode
+  return node as JSX.Element & JSXNode
 }
 
 export type FC<T = Props> = (
