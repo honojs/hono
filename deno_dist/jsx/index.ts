@@ -65,7 +65,11 @@ const booleanAttributes = [
   'selected',
 ]
 
-const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void => {
+const childrenToStringToBuffer = (
+  children: Child[],
+  buffer: StringBuffer,
+  emitter?: EventEmitter
+): void => {
   for (let i = 0, len = children.length; i < len; i++) {
     const child = children[i]
     if (typeof child === 'string') {
@@ -73,7 +77,7 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
     } else if (typeof child === 'boolean' || child === null || child === undefined) {
       continue
     } else if (child instanceof JSXNode) {
-      child.toStringToBuffer(buffer)
+      child.toStringWithEmitter(buffer, emitter)
     } else if (
       typeof child === 'number' ||
       (child as unknown as { isEscaped: boolean }).isEscaped
@@ -88,25 +92,93 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
   }
 }
 
+type JSXEventName =
+  | 'renderToString'
+  | `renderToString.${string}`
+  | 'afterRenderToString'
+  | `afterRenderToString.${string}`
+
+interface JSXEvent {
+  node: JSXNode
+  buffer: StringBuffer
+  canceled: boolean
+  setContent: (content: string | Promise<string>) => void
+}
+type JSXEventListener = (event: JSXEvent) => void
+class EventEmitter {
+  #listeners: Record<string, ((event: JSXEvent) => void)[]> = {}
+  on(eventName: JSXEventName, listener: JSXEventListener): this {
+    ;(this.#listeners[eventName] ||= []).push(listener)
+    return this
+  }
+  emit(eventName: JSXEventName, event: JSXEvent): void {
+    ;(this.#listeners[eventName] ||= []).forEach((listener) => listener(event))
+  }
+}
+
 export type Child = string | Promise<string> | number | JSXNode | Child[]
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
   props: Props
   children: Child[]
   isEscaped: true = true as const
+  #emitter?: EventEmitter
   constructor(tag: string | Function, props: Props, children: Child[]) {
     this.tag = tag
     this.props = props
     this.children = children
   }
 
+  /**
+   * @experimental
+   * `on` is an experimental feature.
+   * The API might be changed.
+   */
+  on(event: JSXEventName, listener: JSXEventListener): this {
+    this.#emitter ||= new EventEmitter()
+    this.#emitter.on(event, listener)
+    return this
+  }
+
   toString(): string | Promise<string> {
     const buffer: StringBuffer = ['']
-    this.toStringToBuffer(buffer)
+    return this.toStringWithEmitter(buffer, this.#emitter)
+  }
+
+  toStringWithEmitter(buffer: StringBuffer, emitter?: EventEmitter): string | Promise<string> {
+    let name
+    let event: JSXEvent | undefined
+    if (emitter) {
+      name = typeof this.tag === 'function' ? this.tag.name || '' : this.tag
+      event = {
+        node: this,
+        buffer,
+        canceled: false,
+        setContent(content: string | Promise<string>) {
+          ;(event as JSXEvent).canceled = true
+          if (content instanceof Promise) {
+            buffer.unshift('', content)
+          } else {
+            buffer[0] += content
+          }
+        },
+      }
+      ;['', `.${name}`].forEach((suffix) => {
+        emitter.emit(`renderToString${suffix}` as JSXEventName, event as JSXEvent)
+      })
+    }
+    if (!emitter || !event?.canceled) {
+      this.toStringToBuffer(buffer, emitter)
+    }
+    if (emitter) {
+      ;['', `.${name}`].forEach((suffix) => {
+        emitter.emit(`afterRenderToString${suffix}` as JSXEventName, event as JSXEvent)
+      })
+    }
     return buffer.length === 1 ? buffer[0] : stringBufferToString(buffer)
   }
 
-  toStringToBuffer(buffer: StringBuffer): void {
+  toStringToBuffer(buffer: StringBuffer, emitter?: EventEmitter): void {
     const tag = this.tag as string
     const props = this.props
     let { children } = this
@@ -159,14 +231,14 @@ export class JSXNode implements HtmlEscaped {
 
     buffer[0] += '>'
 
-    childrenToStringToBuffer(children, buffer)
+    childrenToStringToBuffer(children, buffer, emitter)
 
     buffer[0] += `</${tag}>`
   }
 }
 
 class JSXFunctionNode extends JSXNode {
-  toStringToBuffer(buffer: StringBuffer): void {
+  toStringToBuffer(buffer: StringBuffer, emitter?: EventEmitter): void {
     const { children } = this
 
     const res = (this.tag as Function).call(null, {
@@ -177,7 +249,7 @@ class JSXFunctionNode extends JSXNode {
     if (res instanceof Promise) {
       buffer.unshift('', res)
     } else if (res instanceof JSXNode) {
-      res.toStringToBuffer(buffer)
+      res.toStringWithEmitter(buffer, emitter)
     } else if (typeof res === 'number' || (res as HtmlEscaped).isEscaped) {
       buffer[0] += res
     } else {
@@ -203,6 +275,19 @@ const jsxFn = (
   } else {
     return new JSXNode(tag, props, children)
   }
+}
+
+/**
+ * @experimental
+ * `jsxNode` is an experimental feature.
+ * The API might be changed.
+ * same as `as unknown as JSXNode`
+ */
+export const jsxNode = (node: HtmlEscaped | Promise<HtmlEscaped>): JSXNode => {
+  if (!(node instanceof JSXNode)) {
+    throw new Error('Invalid node')
+  }
+  return node as JSXNode
 }
 
 export type FC<T = Props> = (
