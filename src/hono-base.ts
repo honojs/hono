@@ -69,7 +69,8 @@ class Hono<
   */
   router!: Router<[H, RouterRoute]>
   readonly getPath: GetPath<E>
-  #basePath: string = '/'
+  // Cannot use `#` because it requires visibility at JavaScript runtime.
+  private _basePath: string = '/'
   #path: string = '/'
 
   routes: RouterRoute[] = []
@@ -169,7 +170,7 @@ class Hono<
 
   basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
     const subApp = this.clone()
-    subApp.#basePath = mergePath(this.#basePath, path)
+    subApp._basePath = mergePath(this._basePath, path)
     return subApp
   }
 
@@ -207,7 +208,7 @@ class Hono<
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     optionHandler?: (c: Context) => unknown
   ): Hono<E, S, BasePath> {
-    const mergedPath = mergePath(this.#basePath, path)
+    const mergedPath = mergePath(this._basePath, path)
     const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
 
     const handler: MiddlewareHandler = async (c, next) => {
@@ -252,7 +253,7 @@ class Hono<
 
   private addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
-    path = mergePath(this.#basePath, path)
+    path = mergePath(this._basePath, path)
     const r: RouterRoute = { path: path, method: method, handler: handler }
     this.router.add(method, path, [handler, r])
     this.routes.push(r)
