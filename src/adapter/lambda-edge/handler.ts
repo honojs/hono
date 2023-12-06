@@ -158,7 +158,7 @@ const createRequest = (event: CloudFrontEdgeEvent) => {
 }
 
 export const isContentTypeBinary = (contentType: string) => {
-  return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml)$/.test(
+  return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
     contentType
   )
 }
