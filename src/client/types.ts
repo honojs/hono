@@ -26,7 +26,8 @@ type ClientRequest<S extends Schema> = {
   $url: () => URL
 }
 
-type BlankRecordToNever<T> = keyof T extends never ? never : T
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type BlankRecordToNever<T> = T extends any ? (keyof T extends never ? never : T) : never
 
 export interface ClientResponse<T> {
   ok: boolean
