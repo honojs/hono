@@ -588,3 +588,21 @@ describe('Optional parameters in JSON response', () => {
     }>()
   })
 })
+
+describe('ClientResponse<T>.json() returns a Union type correctly', () => {
+  const condition = () => true
+  const app = new Hono().get('/', async (c) => {
+    const ok = condition()
+    if (ok) {
+      return c.json({ data: 'foo' })
+    }
+    return c.json({ message: 'error' })
+  })
+
+  const client = hc<typeof app>('', { fetch: app.request })
+  it('Should be a Union type', async () => {
+    const res = await client.index.$get()
+    const json = await res.json()
+    expectTypeOf(json).toEqualTypeOf<{ data: string } | { message: string }>()
+  })
+})
