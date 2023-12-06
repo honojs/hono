@@ -3198,3 +3198,26 @@ describe('c.var - with testing types', () => {
     } catch {}
   })
 })
+
+describe('Compatible with extended Hono classes, such Zod OpenAPI Hono.', () => {
+  class ExtendedHono extends Hono {
+    // @ts-ignore
+    route(path: string, app?: Hono) {
+      super.route(path, app)
+      return this
+    }
+    // @ts-ignore
+    basePath(path: string) {
+      return new ExtendedHono(super.basePath(path))
+    }
+  }
+  const a = new ExtendedHono()
+  const sub = new Hono()
+  sub.get('/foo', (c) => c.text('foo'))
+  a.route('/sub', sub)
+
+  it('Should return 200 response', async () => {
+    const res = await a.request('/sub/foo')
+    expect(res.status).toBe(200)
+  })
+})
