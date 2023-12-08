@@ -1,4 +1,5 @@
 import { UnsupportedPathError } from '../../router'
+import { PreparedRegExpRouter, buildInitParams, serializeInitParams } from './prepared-router'
 import { RegExpRouter } from './router'
 
 describe('Basic Usage', () => {
@@ -204,7 +205,7 @@ describe('Multi match', () => {
 describe('Check for duplicate parameter names', () => {
   it('self', () => {
     const router = new RegExpRouter<string>()
-    router.add('GET', '/:id/:id', 'get')
+    router.add('GET', '/:id/:id', 'GET')
     const [res, stash] = router.match('GET', '/123/456')
     expect(res.length).toBe(1)
     expect(stash?.[res[0][1]['id'] as number]).toBe('123')
@@ -558,20 +559,20 @@ describe('ALL star, ALL star, GET static, ALL star...', () => {
 
 describe('Routing with a hostname', () => {
   const router = new RegExpRouter<string>()
-  router.add('get', 'www1.example.com/hello', 'www1')
-  router.add('get', 'www2.example.com/hello', 'www2')
+  router.add('GET', 'www1.example.com/hello', 'www1')
+  router.add('GET', 'www2.example.com/hello', 'www2')
   it('GET www1.example.com/hello', () => {
-    const [res] = router.match('get', 'www1.example.com/hello')
+    const [res] = router.match('GET', 'www1.example.com/hello')
     expect(res.length).toBe(1)
     expect(res[0][0]).toEqual('www1')
   })
   it('GET www2.example.com/hello', () => {
-    const [res] = router.match('get', 'www2.example.com/hello')
+    const [res] = router.match('GET', 'www2.example.com/hello')
     expect(res.length).toBe(1)
     expect(res[0][0]).toEqual('www2')
   })
   it('GET /hello', () => {
-    const [res] = router.match('get', '/hello')
+    const [res] = router.match('GET', '/hello')
     expect(res.length).toBe(0)
   })
 })
@@ -579,80 +580,123 @@ describe('Routing with a hostname', () => {
 describe('Capture Group', () => {
   describe('Simple capturing group', () => {
     const router = new RegExpRouter<string>()
-    router.add('get', '/foo/:capture{(?:bar|baz)}', 'ok')
+    router.add('GET', '/foo/:capture{(?:bar|baz)}', 'ok')
     it('GET /foo/bar', () => {
-      const [res, stash] = router.match('get', '/foo/bar')
+      const [res, stash] = router.match('GET', '/foo/bar')
       expect(res.length).toBe(1)
       expect(res[0][0]).toBe('ok')
       expect(stash?.[res[0][1]['capture'] as number]).toBe('bar')
     })
 
     it('GET /foo/baz', () => {
-      const [res, stash] = router.match('get', '/foo/baz')
+      const [res, stash] = router.match('GET', '/foo/baz')
       expect(res.length).toBe(1)
       expect(res[0][0]).toBe('ok')
       expect(stash?.[res[0][1]['capture'] as number]).toBe('baz')
     })
 
     it('GET /foo/qux', () => {
-      const [res] = router.match('get', '/foo/qux')
+      const [res] = router.match('GET', '/foo/qux')
       expect(res.length).toBe(0)
     })
   })
 
   describe('Non-capturing group', () => {
     const router = new RegExpRouter<string>()
-    router.add('get', '/foo/:capture{(?:bar|baz)}', 'ok')
+    router.add('GET', '/foo/:capture{(?:bar|baz)}', 'ok')
     it('GET /foo/bar', () => {
-      const [res, stash] = router.match('get', '/foo/bar')
+      const [res, stash] = router.match('GET', '/foo/bar')
       expect(res.length).toBe(1)
       expect(res[0][0]).toBe('ok')
       expect(stash?.[res[0][1]['capture'] as number]).toBe('bar')
     })
 
     it('GET /foo/baz', () => {
-      const [res, stash] = router.match('get', '/foo/baz')
+      const [res, stash] = router.match('GET', '/foo/baz')
       expect(res.length).toBe(1)
       expect(res[0][0]).toBe('ok')
       expect(stash?.[res[0][1]['capture'] as number]).toBe('baz')
     })
 
     it('GET /foo/qux', () => {
-      const [res] = router.match('get', '/foo/qux')
+      const [res] = router.match('GET', '/foo/qux')
       expect(res.length).toBe(0)
     })
   })
 
   describe('Non-capturing group with prefix', () => {
     const router = new RegExpRouter<string>()
-    router.add('get', '/foo/:capture{ba(?:r|z)}', 'ok')
+    router.add('GET', '/foo/:capture{ba(?:r|z)}', 'ok')
     it('GET /foo/bar', () => {
-      const [res, stash] = router.match('get', '/foo/bar')
+      const [res, stash] = router.match('GET', '/foo/bar')
       expect(res.length).toBe(1)
       expect(res[0][0]).toBe('ok')
       expect(stash?.[res[0][1]['capture'] as number]).toBe('bar')
     })
 
     it('GET /foo/baz', () => {
-      const [res, stash] = router.match('get', '/foo/baz')
+      const [res, stash] = router.match('GET', '/foo/baz')
       expect(res.length).toBe(1)
       expect(res[0][0]).toBe('ok')
       expect(stash?.[res[0][1]['capture'] as number]).toBe('baz')
     })
 
     it('GET /foo/qux', () => {
-      const [res] = router.match('get', '/foo/qux')
+      const [res] = router.match('GET', '/foo/qux')
       expect(res.length).toBe(0)
     })
   })
 
   describe('Complex capturing group', () => {
     const router = new RegExpRouter<string>()
-    router.add('get', '/foo/:capture{ba(r|z)}', 'ok')
+    router.add('GET', '/foo/:capture{ba(r|z)}', 'ok')
     it('GET request', () => {
       expect(() => {
         router.match('GET', '/foo/bar')
       }).toThrowError(UnsupportedPathError)
     })
+  })
+})
+
+describe('PreparedRegExpRouter', () => {
+  const serialized = serializeInitParams(buildInitParams({
+    routes: [
+      {method: 'ALL', path: '*'},
+      {method: 'ALL', path: '/posts/:id/*'},
+      {method: 'GET', path: '*'},
+      {method: 'GET', path: '/'},
+      {method: 'GET', path: '/static'},
+      {method: 'GET', path: '/posts/:id/*'},
+      {method: 'GET', path: '/posts/:id'},
+      {method: 'GET', path: '/posts/:id/comments'},
+      {method: 'POST', path: '/posts'},
+      {method: 'PUT', path: '/posts/:id'},
+    ],
+  }))
+
+  let params: ConstructorParameters<typeof PreparedRegExpRouter<string>>
+  // eslint-disable-next-line prefer-const
+  params = [{}, {}]
+  eval(`params = ${serialized}`)
+  const router = new PreparedRegExpRouter<string>(...params)
+
+  router.add('ALL', '*', 'wildcard')
+  router.add('GET', '*', 'star1')
+  router.add('GET', '/static', 'static')
+  router.add('ALL', '/posts/:id/*', 'all star2')
+  router.add('GET', '/posts/:id/*', 'star2')
+  router.add('GET', '/posts/:id', 'post')
+  router.add('GET', '/posts/:id/comments', 'comments')
+  router.add('POST', '/posts', 'create')
+  router.add('PUT', '/posts/:id', 'update')
+
+  it('GET /posts/123/comments', async () => {
+    const [res] = router.match('GET', '/posts/123/comments')
+    expect(res.length).toBe(5)
+    expect(res[0][0]).toEqual('wildcard')
+    expect(res[1][0]).toEqual('star1')
+    expect(res[2][0]).toEqual('all star2')
+    expect(res[3][0]).toEqual('star2')
+    expect(res[4][0]).toEqual('comments')
   })
 })

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import type { Router, Result, ParamIndexMap } from '../../router'
+import type { Router, ParamIndexMap } from '../../router'
 import {
   METHOD_NAME_ALL,
   METHODS,
@@ -7,17 +7,15 @@ import {
   MESSAGE_MATCHER_IS_ALREADY_BUILT,
 } from '../../router'
 import { checkOptionalParameter } from '../../utils/url'
+import type { HandlerData, StaticMap, Matcher, MatcherMap } from './matcher'
+import { match, emptyParam, buildAllMatchersKey } from './matcher'
 import { PATH_ERROR, type ParamAssocArray } from './node'
 import { Trie } from './trie'
 
 const methodNames = [METHOD_NAME_ALL, ...METHODS].map((method) => method.toUpperCase())
 
-type HandlerData<T> = [T, ParamIndexMap][]
-type StaticMap<T> = Record<string, Result<T>>
-type Matcher<T> = [RegExp, HandlerData<T>[], StaticMap<T>]
 type HandlerWithMetadata<T> = [T, number] // [handler, paramCount]
 
-const emptyParam: string[] = []
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nullMatcher: Matcher<any> = [/^$/, [], {}]
 
@@ -207,33 +205,10 @@ export class RegExpRouter<T> implements Router<T> {
     }
   }
 
-  match(method: string, path: string): Result<T> {
-    clearWildcardRegExpCache() // no longer used.
+  match = match;
 
-    const matchers = this.buildAllMatchers()
-
-    this.match = (method, path) => {
-      const matcher = matchers[method]
-
-      const staticMatch = matcher[2][path]
-      if (staticMatch) {
-        return staticMatch
-      }
-
-      const match = path.match(matcher[0])
-      if (!match) {
-        return [[], emptyParam]
-      }
-
-      const index = match.indexOf('', 1)
-      return [matcher[1][index], match]
-    }
-
-    return this.match(method, path)
-  }
-
-  private buildAllMatchers(): Record<string, Matcher<T>> {
-    const matchers: Record<string, Matcher<T>> = {}
+  [buildAllMatchersKey](): MatcherMap<T> {
+    const matchers: MatcherMap<T> = {}
 
     methodNames.forEach((method) => {
       matchers[method] = this.buildMatcher(method) || matchers[METHOD_NAME_ALL]
@@ -241,6 +216,7 @@ export class RegExpRouter<T> implements Router<T> {
 
     // Release cache
     this.middleware = this.routes = undefined
+    clearWildcardRegExpCache()
 
     return matchers
   }
