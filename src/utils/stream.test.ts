@@ -4,8 +4,8 @@ import { StreamingApi } from './stream'
 describe('StreamingApi', () => {
   it('write(string)', async () => {
     const { readable, writable } = new TransformStream()
-    const api = new StreamingApi(writable)
-    const reader = readable.getReader()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.readable.getReader()
     api.write('foo')
     expect((await reader.read()).value).toEqual(new TextEncoder().encode('foo'))
     api.write('bar')
@@ -14,8 +14,8 @@ describe('StreamingApi', () => {
 
   it('write(Uint8Array)', async () => {
     const { readable, writable } = new TransformStream()
-    const api = new StreamingApi(writable)
-    const reader = readable.getReader()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.readable.getReader()
     api.write(new Uint8Array([1, 2, 3]))
     expect((await reader.read()).value).toEqual(new Uint8Array([1, 2, 3]))
     api.write(new Uint8Array([4, 5, 6]))
@@ -24,8 +24,8 @@ describe('StreamingApi', () => {
 
   it('writeln(string)', async () => {
     const { readable, writable } = new TransformStream()
-    const api = new StreamingApi(writable)
-    const reader = readable.getReader()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.readable.getReader()
     api.writeln('foo')
     expect((await reader.read()).value).toEqual(new TextEncoder().encode('foo\n'))
     api.writeln('bar')
@@ -45,7 +45,7 @@ describe('StreamingApi', () => {
 
     const { readable: receiverReadable, writable: receiverWritable } = new TransformStream()
 
-    const api = new StreamingApi(receiverWritable)
+    const api = new StreamingApi(receiverWritable, receiverReadable)
 
     // pipe readable to api in other scope
     ;(async () => {
@@ -53,30 +53,30 @@ describe('StreamingApi', () => {
     })()
 
     // read data from api
-    const reader = receiverReadable.getReader()
+    const reader = api.readable.getReader()
     expect((await reader.read()).value).toEqual(new TextEncoder().encode('foo'))
     expect((await reader.read()).value).toEqual(new TextEncoder().encode('bar'))
   })
 
   it('close()', async () => {
     const { readable, writable } = new TransformStream()
-    const api = new StreamingApi(writable)
-    const reader = readable.getReader()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.readable.getReader()
     await api.close()
     expect((await reader.read()).done).toBe(true)
   })
 
   it('should not throw an error in write()', async () => {
-    const { writable } = new TransformStream()
-    const api = new StreamingApi(writable)
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
     await api.close()
     const write = () => api.write('foo')
     expect(write).not.toThrow()
   })
 
   it('should not throw an error in close()', async () => {
-    const { writable } = new TransformStream()
-    const api = new StreamingApi(writable)
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
     const close = async () => {
       await api.close()
       await api.close()
@@ -85,12 +85,16 @@ describe('StreamingApi', () => {
   })
 
   it('onAbort()', async () => {
-    const { writable } = new TransformStream()
-    const handleAbortSubscriber = vi.fn()
-    const handleAbort = vi.fn()
-    const api = new StreamingApi(writable, handleAbortSubscriber)
-    expect(handleAbortSubscriber).not.toHaveBeenCalled()
-    api.onAbort(handleAbort)
-    expect(handleAbortSubscriber).toHaveBeenCalled()
+    const { readable, writable } = new TransformStream()
+    const handleAbort1 = vi.fn()
+    const handleAbort2 = vi.fn()
+    const api = new StreamingApi(writable, readable)
+    api.onAbort(handleAbort1)
+    api.onAbort(handleAbort2)
+    expect(handleAbort1).not.toBeCalled()
+    expect(handleAbort2).not.toBeCalled()
+    await api.readable.cancel()
+    expect(handleAbort1).toBeCalled()
+    expect(handleAbort2).toBeCalled()
   })
 })
