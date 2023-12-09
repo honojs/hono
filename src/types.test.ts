@@ -308,6 +308,24 @@ describe('Schema', () => {
   })
 })
 
+describe('Support c.json(undefined)', () => {
+  it('Should return a correct type', () => {
+    const app = new Hono().get('/this/is/a/test', async (c) => {
+      return c.json(undefined)
+    })
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '/this/is/a/test': {
+        $get: {
+          input: {}
+          output: undefined
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
 describe('Test types of Handler', () => {
   type E = {
     Variables: {
