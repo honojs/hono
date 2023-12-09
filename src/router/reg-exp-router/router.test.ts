@@ -1,3 +1,5 @@
+import { writeFile } from 'fs/promises'
+import { tmpdir } from 'os'
 import { UnsupportedPathError } from '../../router'
 import { PreparedRegExpRouter, buildInitParams, serializeInitParams } from './prepared-router'
 import { RegExpRouter } from './router'
@@ -658,26 +660,29 @@ describe('Capture Group', () => {
   })
 })
 
-describe('PreparedRegExpRouter', () => {
-  const serialized = serializeInitParams(buildInitParams({
-    routes: [
-      {method: 'ALL', path: '*'},
-      {method: 'ALL', path: '/posts/:id/*'},
-      {method: 'GET', path: '*'},
-      {method: 'GET', path: '/'},
-      {method: 'GET', path: '/static'},
-      {method: 'GET', path: '/posts/:id/*'},
-      {method: 'GET', path: '/posts/:id'},
-      {method: 'GET', path: '/posts/:id/comments'},
-      {method: 'POST', path: '/posts'},
-      {method: 'PUT', path: '/posts/:id'},
-    ],
-  }))
+describe('PreparedRegExpRouter', async () => {
+  const serialized = serializeInitParams(
+    buildInitParams({
+      routes: [
+        { method: 'ALL', path: '*' },
+        { method: 'ALL', path: '/posts/:id/*' },
+        { method: 'GET', path: '*' },
+        { method: 'GET', path: '/' },
+        { method: 'GET', path: '/static' },
+        { method: 'GET', path: '/posts/:id/*' },
+        { method: 'GET', path: '/posts/:id' },
+        { method: 'GET', path: '/posts/:id/comments' },
+        { method: 'POST', path: '/posts' },
+        { method: 'PUT', path: '/posts/:id' },
+      ],
+    })
+  )
 
-  let params: ConstructorParameters<typeof PreparedRegExpRouter<string>>
-  // eslint-disable-next-line prefer-const
-  params = [{}, {}]
-  eval(`params = ${serialized}`)
+  const path = `${tmpdir()}/params.ts`
+  await writeFile(path, `const params = ${serialized}; export default params`)
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  const params: ConstructorParameters<typeof PreparedRegExpRouter<string>> = (await import(path)).default
   const router = new PreparedRegExpRouter<string>(...params)
 
   router.add('ALL', '*', 'wildcard')
