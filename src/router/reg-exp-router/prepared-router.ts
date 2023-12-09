@@ -64,7 +64,7 @@ export class PreparedRegExpRouter<T> implements Router<T> {
     return this.#matchers
   }
 
-  match = match
+  match: typeof match<Router<T>, T> = match
 }
 
 export const buildInitParams: (params: {

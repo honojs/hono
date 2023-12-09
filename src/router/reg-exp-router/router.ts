@@ -205,7 +205,7 @@ export class RegExpRouter<T> implements Router<T> {
     }
   }
 
-  match = match;
+  match: typeof match<Router<T>, T> = match;
 
   [buildAllMatchersKey](): MatcherMap<T> {
     const matchers: MatcherMap<T> = {}
