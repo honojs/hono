@@ -311,6 +311,28 @@ describe('Pass a ResponseInit to respond methods', () => {
       expect(value).toEqual(new Uint8Array([i]))
     }
   })
+
+  it('c.stream() - with aborted during writing', async () => {
+    let aborted = false
+    const res = c.stream(async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.write(new Uint8Array([i]))
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    for (let i = 0; i < 2; i++) {
+      await reader.read()
+      await reader.cancel()
+    }
+    expect(aborted).toBe(true)
+  })
 })
 
 declare module './context' {

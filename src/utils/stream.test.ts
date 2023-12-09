@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import { StreamingApi } from './stream'
 
 describe('StreamingApi', () => {
@@ -81,5 +82,15 @@ describe('StreamingApi', () => {
       await api.close()
     }
     expect(close).not.toThrow()
+  })
+
+  it('onAbort()', async () => {
+    const { writable } = new TransformStream()
+    const handleAbortSubscriber = vi.fn()
+    const handleAbort = vi.fn()
+    const api = new StreamingApi(writable, handleAbortSubscriber)
+    expect(handleAbortSubscriber).not.toHaveBeenCalled()
+    api.onAbort(handleAbort)
+    expect(handleAbortSubscriber).toHaveBeenCalled()
   })
 })

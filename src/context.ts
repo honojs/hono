@@ -398,9 +398,30 @@ export class Context<
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
   ): Response => {
-    const { readable, writable } = new TransformStream()
-    const stream = new StreamingApi(writable)
+    let handleAbort: (() => void) | undefined
+
+    const transformer = new TransformStream()
+
+    const stream = new StreamingApi(transformer.writable, (listener) => {
+      handleAbort = listener
+    })
     cb(stream).finally(() => stream.close())
+
+    const reader = transformer.readable.getReader()
+
+    const readable = new ReadableStream({
+      async pull(controller) {
+        const { done, value } = await reader.read()
+        if (done) {
+          controller.close()
+        } else {
+          controller.enqueue(value)
+        }
+      },
+      cancel: () => {
+        handleAbort?.()
+      },
+    })
 
     return typeof arg === 'number'
       ? this.newResponse(readable, arg, headers)
