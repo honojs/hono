@@ -398,13 +398,14 @@ export class Context<
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
   ): Response => {
-    const { readable, writable } = new TransformStream()
-    const stream = new StreamingApi(writable)
+    const transformer = new TransformStream()
+
+    const stream = new StreamingApi(transformer.writable, transformer.readable)
     cb(stream).finally(() => stream.close())
 
     return typeof arg === 'number'
-      ? this.newResponse(readable, arg, headers)
-      : this.newResponse(readable, arg)
+      ? this.newResponse(stream.readable, arg, headers)
+      : this.newResponse(stream.readable, arg)
   }
 
   /** @deprecated
