@@ -3,7 +3,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Context } from './context.ts'
 import type { Hono } from './hono.ts'
-import type { StatusCode } from './utils/http-status.ts'
 import type { IntersectNonAnyTypes, UnionToIntersection } from './utils/types.ts'
 
 ////////////////////////////////////////
@@ -1424,7 +1423,7 @@ export type Schema = {
       input: Partial<ValidationTargets> & {
         param?: Record<string, string>
       }
-      output: {}
+      output: any
     }
   }
 }
