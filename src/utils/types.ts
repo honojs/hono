@@ -23,7 +23,7 @@ export type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...in
   ? IfAnyThenEmptyObject<Head> & IntersectNonAnyTypes<Rest>
   : {}
 
-export type JSONPrimitive = string | boolean | number | null | undefined
+export type JSONPrimitive = string | boolean | number | Date | null | undefined
 export type JSONArray = (JSONPrimitive | JSONObject | JSONArray)[]
 export type JSONObject = { [key: string]: JSONPrimitive | JSONArray | JSONObject }
 export type JSONValue = JSONObject | JSONArray | JSONPrimitive
