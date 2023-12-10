@@ -1,20 +1,10 @@
-import type { Router, ParamIndexMap } from '../../router'
+import type { Result, Router, ParamIndexMap } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 import type { Matcher, MatcherMap } from './matcher'
-import { match, buildAllMatchersKey } from './matcher'
+import { match, buildAllMatchersKey, emptyParam } from './matcher'
 import { RegExpRouter } from './router'
 
-type RelocateMap = Record<
-  string,
-  Record<
-    string,
-    [
-      string, // method
-      (number | string)[],
-      ParamIndexMap | undefined
-    ][]
-  >
->
+type RelocateMap = Record<string, [(number | string)[], ParamIndexMap | undefined][]>
 
 export class PreparedRegExpRouter<T> implements Router<T> {
   name: string = 'PreparedRegExpRouter'
@@ -27,6 +17,18 @@ export class PreparedRegExpRouter<T> implements Router<T> {
   }
 
   add(method: string, path: string, handler: T) {
+    const all = this.#matchers[METHOD_NAME_ALL]
+    this.#matchers[method] ||= [
+      all[0],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      all[1].map((list) => Array.isArray(list) ? list.slice() : 0) as any,
+      Object.keys(all[2]).reduce((obj, key) => {
+        obj[key] = [all[2][key][0].slice(), emptyParam]
+        return obj
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }, {} as any),
+    ]
+
     if (path === '/*' || path === '*') {
       const defaultHandlerData: [T, ParamIndexMap] = [handler, {}]
       ;(method === METHOD_NAME_ALL ? Object.keys(this.#matchers) : [method]).forEach((m) => {
@@ -39,24 +41,26 @@ export class PreparedRegExpRouter<T> implements Router<T> {
       return
     }
 
-    const data = this.#relocateMap[method]?.[path]
+    const data = this.#relocateMap[path]
     if (!data) {
       return
     }
-    for (const [m, indexes, map] of data) {
-      if (!map) {
-        // assumed to be a static route
-        this.#matchers[m][2][path][0].push([handler, {}])
-      } else {
-        indexes.forEach((index) => {
-          if (typeof index === 'number') {
-            this.#matchers[m][1][index].push([handler, map])
-          } else {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this.#matchers[m][2][index || path][0].push([handler, map as any])
-          }
-        })
-      }
+    for (const [indexes, map] of data) {
+      ;(method === METHOD_NAME_ALL ? Object.keys(this.#matchers) : [method]).forEach((m) => {
+        if (!map) {
+          // assumed to be a static route
+          this.#matchers[m][2][path][0].push([handler, {}])
+        } else {
+          indexes.forEach((index) => {
+            if (typeof index === 'number') {
+              this.#matchers[m][1][index].push([handler, map])
+            } else {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              this.#matchers[m][2][index || path][0].push([handler, map as any])
+            }
+          })
+        }
+      })
     }
   }
 
@@ -68,122 +72,57 @@ export class PreparedRegExpRouter<T> implements Router<T> {
 }
 
 export const buildInitParams: (params: {
-  routes: {
-    method: string
-    path: string
-  }[]
-}) => ConstructorParameters<typeof PreparedRegExpRouter> = ({ routes }) => {
+  paths: string[]
+}) => ConstructorParameters<typeof PreparedRegExpRouter> = ({ paths }) => {
   const router = new RegExpRouter<string>()
-  for (const { method, path } of routes) {
+  for (const path of paths) {
     if (path === '/*' || path === '*') {
       continue
     }
-    router.add(method.toUpperCase(), path, path)
+    router.add(METHOD_NAME_ALL, path, path)
   }
 
   const matchers = router[buildAllMatchersKey]()
-
   const all = matchers[METHOD_NAME_ALL]
-  if (all) {
-    for (const method of Object.keys(matchers)) {
-      if (method === METHOD_NAME_ALL) {
-        continue
-      }
-
-      if (
-        matchers[method][0].toString() !== all[0].toString() ||
-        JSON.stringify(matchers[method][1]) !== JSON.stringify(all[1]) ||
-        JSON.stringify(matchers[method][2]) !== JSON.stringify(all[2])
-      ) {
-        continue
-      }
-
+  Object.keys(matchers).forEach((method) => {
+    if (method !== METHOD_NAME_ALL) {
       delete matchers[method]
     }
-  }
+  })
 
   const relocateMap: RelocateMap = {}
-  for (const { method, path } of routes) {
-    if (method === METHOD_NAME_ALL) {
-      Object.keys(matchers).forEach((m) => {
-        matchers[m][1].forEach((list, i) => {
-          list.forEach(([p, map]) => {
-            if (p === path) {
-              relocateMap[method] ||= {}
-              relocateMap[method][path] ||= []
-              let target = relocateMap[method][path].find(([method]) => method === m)
-              if (!target) {
-                target = [m, [], map]
-                relocateMap[method][path].push(target)
-              }
-              if (target[1].findIndex((j) => j === i) === -1) {
-                target[1].push(i)
-              }
-            }
-          })
-        })
-        for (const path2 of Object.keys(matchers[m][2])) {
-          matchers[m][2][path2][0].forEach(([p, map]) => {
-            if (p === path) {
-              relocateMap[method] ||= {}
-              relocateMap[method][path] ||= []
-              let target = relocateMap[method][path].find(([method]) => method === m)
-              if (!target) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                target = [m, [], map as any]
-                relocateMap[method][path].push(target)
-              }
-              const value = path2 === path ? '' : path2
-              if (target[1].findIndex((v) => v === value) === -1) {
-                target[1].push(value)
-              }
-            }
-          })
+  for (const path of paths) {
+    all[1].forEach((list, i) => {
+      list.forEach(([p, map]) => {
+        if (p === path) {
+          relocateMap[path] ||= [[[], map]]
+          if (relocateMap[path][0][0].findIndex((j) => j === i) === -1) {
+            relocateMap[path][0][0].push(i)
+          }
         }
       })
-    } else {
-      const m = method.toUpperCase()
-      matchers[m][1].forEach((list, i) => {
-        list.forEach(([p, map]) => {
-          if (p === path) {
-            relocateMap[m] ||= {}
-            relocateMap[m][path] ||= [[m, [], map]]
-            if (relocateMap[m][path][0][1].findIndex((j) => j === i) === -1) {
-              relocateMap[m][path][0][1].push(i)
-            }
-          }
-        })
-      })
-      for (const path2 of Object.keys(matchers[m][2])) {
-        matchers[m][2][path2][0].forEach(([p, map]) => {
-          if (p === path) {
-            relocateMap[m] ||= {}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            relocateMap[m][path] ||= [[m, [], map as any]]
-            const value = path2 === path ? '' : path2
-            if (relocateMap[m][path][0][1].findIndex((v) => v === value) === -1) {
-              relocateMap[m][path][0][1].push(value)
-            }
-          }
-        })
-      }
-    }
-  }
-
-  for (const method of Object.keys(matchers)) {
-    if (matchers[method][1].length === 0 && Object.keys(matchers[method][2]).length === 0) {
-      delete matchers[method]
-      continue
-    }
-
-    for (let i = 0, len = matchers[method][1].length; i < len; i++) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      matchers[method][1][i] = matchers[method][1][i] ? [] : (0 as any)
-    }
-    Object.keys(matchers[method][2]).forEach((path) => {
-      matchers[method][2][path][0] = []
     })
+    for (const path2 of Object.keys(all[2])) {
+      all[2][path2][0].forEach(([p, map]) => {
+        if (p === path) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          relocateMap[path] ||= [[[], map as any]]
+          const value = path2 === path ? '' : path2
+          if (relocateMap[path][0][0].findIndex((v) => v === value) === -1) {
+            relocateMap[path][0][0].push(value)
+          }
+        }
+      })
+    }
   }
+
+  for (let i = 0, len = all[1].length; i < len; i++) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    all[1][i] = all[1][i] ? [] : (0 as any)
+  }
+  Object.keys(all[2]).forEach((path) => {
+    all[2][path][0] = []
+  })
 
   return [matchers, relocateMap]
 }

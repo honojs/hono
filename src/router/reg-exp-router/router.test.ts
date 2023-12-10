@@ -663,18 +663,7 @@ describe('Capture Group', () => {
 describe('PreparedRegExpRouter', async () => {
   const serialized = serializeInitParams(
     buildInitParams({
-      routes: [
-        { method: 'ALL', path: '*' },
-        { method: 'ALL', path: '/posts/:id/*' },
-        { method: 'GET', path: '*' },
-        { method: 'GET', path: '/' },
-        { method: 'GET', path: '/static' },
-        { method: 'GET', path: '/posts/:id/*' },
-        { method: 'GET', path: '/posts/:id' },
-        { method: 'GET', path: '/posts/:id/comments' },
-        { method: 'POST', path: '/posts' },
-        { method: 'PUT', path: '/posts/:id' },
-      ],
+      paths: ['*', '/static', '/posts/:id/*', '/posts/:id', '/posts/:id/comments', '/posts'],
     })
   )
 
