@@ -1,5 +1,5 @@
-import type { ServeStaticOptions } from './serve-static'
-import { serveStatic } from './serve-static'
+import type { ServeStaticOptions } from './serve-static.ts'
+import { serveStatic } from './serve-static.ts'
 
 const module = (options: ServeStaticOptions) => {
   return serveStatic({

@@ -8,7 +8,7 @@ import { getMimeType } from '../../utils/mime'
 export type ServeStaticOptions = {
   root?: string
   path?: string
-  manifest?: object | string
+  manifest: object | string
   namespace?: KVNamespace
   rewriteRequestPath?: (path: string) => string
 }
@@ -16,7 +16,7 @@ export type ServeStaticOptions = {
 const DEFAULT_DOCUMENT = 'index.html'
 
 // This middleware is available only on Cloudflare Workers.
-export const serveStatic = (options: ServeStaticOptions = { root: '' }): MiddlewareHandler => {
+export const serveStatic = (options: ServeStaticOptions): MiddlewareHandler => {
   return async (c, next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
@@ -28,7 +28,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Middlew
     const filename = options.path ?? decodeURI(url.pathname)
     const path = getFilePath({
       filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
-      root: options.root,
+      root: options.root ?? '',
       defaultDocument: DEFAULT_DOCUMENT,
     })
 

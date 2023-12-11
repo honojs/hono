@@ -31,11 +31,12 @@ Object.assign(global, {
 
 describe('ServeStatic Middleware', () => {
   const app = new Hono()
-  app.use('/static/*', serveStatic({ root: './assets' }))
-  app.use('/static-no-root/*', serveStatic())
+  app.use('/static/*', serveStatic({ root: './assets', manifest }))
+  app.use('/static-no-root/*', serveStatic({ manifest }))
   app.use(
     '/dot-static/*',
     serveStatic({
+      manifest,
       root: './assets',
       rewriteRequestPath: (path) => path.replace(/^\/dot-static/, '/.static'),
     })
@@ -100,8 +101,8 @@ describe('With options', () => {
 
 describe('With `file` options', () => {
   const app = new Hono()
-  app.get('/foo/*', serveStatic({ path: './assets/static/hono.html' }))
-  app.get('/bar/*', serveStatic({ path: './static/hono.html', root: './assets' }))
+  app.get('/foo/*', serveStatic({ manifest, path: './assets/static/hono.html' }))
+  app.get('/bar/*', serveStatic({ manifest, path: './static/hono.html', root: './assets' }))
 
   it('Should return hono.html', async () => {
     const res = await app.request('http://localhost/foo/fallback')
@@ -129,7 +130,7 @@ describe('With middleware', () => {
 
   app.use('/static/*', md1)
   app.use('/static/*', md2)
-  app.use('/static/*', serveStatic({ root: './assets' }))
+  app.use('/static/*', serveStatic({ manifest, root: './assets' }))
   app.get('/static/foo', (c) => {
     return c.text('bar')
   })
