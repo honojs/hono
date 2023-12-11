@@ -8,7 +8,13 @@ const emptyParamIndexMap = {}
 
 type HandlerData<T> = [T, ParamIndexMap][]
 type StaticMap<T> = Record<string, Result<T>>
-type MatcherWithHint<T> = [string, number, Record<string, number>, HandlerData<T>[], StaticMap<T>]
+type MatcherWithHint<T> = [
+  string | RegExp,
+  HandlerData<T>[],
+  StaticMap<T>,
+  number,
+  Record<string, number>
+]
 type Matcher<T> = [RegExp, HandlerData<T>[], StaticMap<T>]
 
 type Route<T> = [number, number, string, boolean, string, string[], T] // [sortScore, index, method, isMiddleware, regexpStr, params]
@@ -18,66 +24,67 @@ function addMatchers<T>(
   method: string,
   [, index, , isMiddleware, regexpStr, params, handler]: Route<T>
 ) {
+  const skipRegister = method === METHOD_NAME_ALL && matchersWithHint[METHOD_NAME_ALL]
+
   if (!matchersWithHint[method]) {
     // new method
     if (matchersWithHint[METHOD_NAME_ALL]) {
       const template = matchersWithHint[METHOD_NAME_ALL]
       matchersWithHint[method] = [
         template[0],
-        template[1],
-        { ...template[2] },
-        [...template[3]],
-        Object.keys(template[4]).reduce<StaticMap<T>>((map, k) => {
-          map[k] = [template[4][k][0].slice() as HandlerData<T>, emptyParam]
+        [...template[1]],
+        Object.keys(template[2]).reduce<StaticMap<T>>((map, k) => {
+          map[k] = [template[2][k][0].slice() as HandlerData<T>, emptyParam]
           return map
         }, {}),
+        template[3],
+        { ...template[4] },
       ]
     } else {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      matchersWithHint[method] = ['', 0, [] as any, [], {}]
+      matchersWithHint[method] = ['', [], {}, 0, {}]
     }
   }
   const matcher = matchersWithHint[method]
-  if (params.length === 0 && !isMiddleware) {
-    // static routes
-    ;(matcher[4][regexpStr] ||= [[], emptyParam] as Result<T>)[0][index] = [
-      handler,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      emptyParam as any,
-    ]
-    return
-  }
+  if (!skipRegister) {
+    if (params.length === 0 && !isMiddleware) {
+      // static routes
+      const handlers = []
+      handlers[index] = [handler, emptyParamIndexMap]
+      matcher[2][regexpStr] ||= [handlers, emptyParam] as Result<T>
+      return
+    }
 
-  if (matcher[2][regexpStr]) {
-    // already registered with the same routing
-    const handlerData = matcher[3][matcher[2][regexpStr]]
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    handlerData[index] = [handler, handlerData.find(Boolean)?.[1] as any]
-  } else {
-    const handlerData = []
-    handlerData[index] = [
-      handler,
-      params.length === 0
-        ? emptyParamIndexMap
-        : params.reduce<Record<string, number>>((map, param) => {
-            map[param] = ++matcher[1]
-            return map
-          }, {}),
-    ]
-    ++matcher[1]
-    matcher[2][regexpStr] = matcher[1]
-    matcher[3][matcher[1]] = handlerData as HandlerData<T>
-    matcher[0] += `${matcher[0].length === 0 ? '^' : '|'}${regexpStr}()`
+    if (matcher[4][regexpStr]) {
+      // already registered with the same routing
+      const handlerData = matcher[1][matcher[4][regexpStr]]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      handlerData[index] = [handler, handlerData.find(Boolean)?.[1] as any]
+    } else {
+      const handlerData = []
+      handlerData[index] = [
+        handler,
+        params.length === 0
+          ? emptyParamIndexMap
+          : params.reduce<Record<string, number>>((map, param) => {
+              map[param] = ++matcher[3]
+              return map
+            }, {}),
+      ]
+      matcher[1][(matcher[4][regexpStr] = ++matcher[3])] = handlerData as HandlerData<T>
+      matcher[0] += `${(matcher[0] as string).length === 0 ? '^' : '|'}${regexpStr}()`
+    }
   }
 
   if (isMiddleware) {
     // search for existing handlers with forward matching and add handlers to those that match
-    Object.keys(matcher[2]).forEach((k) => {
+    Object.keys(matcher[4]).forEach((k) => {
       if (k === regexpStr) {
+        // already added for myself
         return
       }
       if (k.startsWith(regexpStr)) {
-        const handlerData = matcher[3][matcher[2][k]]
+        const handlerData = matcher[1][matcher[4][k]]
         const paramIndexMap =
           params.length === 0
             ? emptyParamIndexMap
@@ -89,9 +96,9 @@ function addMatchers<T>(
         handlerData[index] = [handler, paramIndexMap]
       }
     })
-    Object.keys(matcher[4]).forEach((k) => {
+    Object.keys(matcher[2]).forEach((k) => {
       if (k.startsWith(regexpStr)) {
-        ;(matcher[4][k][0] as [[T, ParamIndexMap]])[index] = [handler, emptyParamIndexMap]
+        ;(matcher[2][k][0] as [[T, ParamIndexMap]])[index] = [handler, emptyParamIndexMap]
       }
     })
   }
@@ -151,44 +158,40 @@ export class FilePatternRouter<T> implements Router<T> {
     ])
   }
 
-  match(method: string, path: string): Result<T> {
-    const matchersWithHint: Record<string, MatcherWithHint<T>> = {}
+  private buildMatcher(
+    matchers: Record<string, MatcherWithHint<T>>,
+    method: string
+  ): MatcherWithHint<T> {
     this.#routes
       .sort((a, b) => b[0] - a[0])
       .forEach((route) => {
         if (route[2] === METHOD_NAME_ALL) {
-          addMatchers(matchersWithHint, METHOD_NAME_ALL, route)
-          Object.keys(matchersWithHint).forEach((m) => {
-            addMatchers(matchersWithHint, m, route)
-          })
-        } else {
-          addMatchers(matchersWithHint, route[2], route)
+          addMatchers(matchers, METHOD_NAME_ALL, route)
+          addMatchers(matchers, method, route)
+        } else if (route[2] === method) {
+          addMatchers(matchers, method, route)
         }
       })
 
-    const matchers: Record<string, Matcher<T>> = Object.keys(matchersWithHint).reduce<
-      Record<string, Matcher<T>>
-    >((map, method) => {
-      const matcher = matchersWithHint[method]
-      map[method] = [
-        new RegExp(matcher[0] || /^$/),
-        matcher[3].map((d) => d && d.filter(Boolean)),
-        Object.keys(matcher[4]).reduce<StaticMap<T>>((map, k) => {
-          map[k] = [matcher[4][k][0].filter(Boolean) as HandlerData<T>, emptyParam]
-          return map
-        }, {}),
-      ]
-      return map
-    }, {})
-    matchers[METHOD_NAME_ALL] ||= [
-      /^$/,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      0 as any, // never used
-      emptyParamIndexMap,
-    ]
+    if (matchers[method]) {
+      matchers[method][0] = new RegExp(matchers[method][0] || '^$') as any
+      matchers[method][1].forEach((v, i) => {
+        matchers[method][1][i] = v?.filter(Boolean)
+      })
+      Object.keys(matchers[method][2]).forEach((k) => {
+        matchers[method][2][k][0] = matchers[method][2][k][0].filter(Boolean) as any
+      })
+    } else {
+      matchers[method] = matchers[METHOD_NAME_ALL] || ([/^$/, 0, {}] as any)
+    }
+    return matchers[method]
+  }
 
+  match(method: string, path: string): Result<T> {
+    const matchers: Record<string, MatcherWithHint<T>> = {}
     const match = (method: string, path: string): Result<T> => {
-      const matcher = matchers[method] || matchers[METHOD_NAME_ALL]
+      const matcher = (matchers[method] ||
+        this.buildMatcher(matchers, method)) as unknown as Matcher<T>
 
       const staticMatch = matcher[2][path]
       if (staticMatch) {
