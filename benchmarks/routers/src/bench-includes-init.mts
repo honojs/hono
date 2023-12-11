@@ -4,6 +4,7 @@ import findMyWay from 'find-my-way'
 import KoaRouter from 'koa-tree-router'
 import { run, bench, group } from 'mitata'
 import TrekRouter from 'trek-router'
+import { FilePatternRouter } from '../../../src/router/file-pattern-router/index.ts'
 import { LinearRouter } from '../../../src/router/linear-router/index.ts'
 import { RegExpRouter } from '../../../src/router/reg-exp-router/index.ts'
 import { TrieRouter } from '../../../src/router/trie-router/index.ts'
@@ -66,6 +67,13 @@ for (const benchRoute of benchRoutes) {
     })
     bench('LinearRouter', () => {
       const router = new LinearRouter()
+      for (const route of routes) {
+        router.add(route.method, route.path, () => {})
+      }
+      router.match(benchRoute.method, benchRoute.path)
+    })
+    bench('FilePatternRouter', () => {
+      const router = new FilePatternRouter()
       for (const route of routes) {
         router.add(route.method, route.path, () => {})
       }
