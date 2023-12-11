@@ -19,6 +19,7 @@ function addMatchers<T>(
   [, index, , isMiddleware, regexpStr, params, handler]: Route<T>
 ) {
   if (!matchersWithHint[method]) {
+    // new method
     if (matchersWithHint[METHOD_NAME_ALL]) {
       const template = matchersWithHint[METHOD_NAME_ALL]
       matchersWithHint[method] = [
@@ -26,7 +27,10 @@ function addMatchers<T>(
         template[1],
         { ...template[2] },
         [...template[3]],
-        {},
+        Object.keys(template[4]).reduce<StaticMap<T>>((map, k) => {
+          map[k] = [template[4][k][0].slice() as HandlerData<T>, emptyParam]
+          return map
+        }, {}),
       ]
     } else {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,17 +39,20 @@ function addMatchers<T>(
   }
   const matcher = matchersWithHint[method]
   if (params.length === 0 && !isMiddleware) {
-    ;(matcher[4][regexpStr] ||= [[], emptyParam] as Result<T>)[0].push([
+    // static routes
+    ;(matcher[4][regexpStr] ||= [[], emptyParam] as Result<T>)[0][index] = [
       handler,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       emptyParam as any,
-    ])
+    ]
     return
   }
 
   if (matcher[2][regexpStr]) {
+    // already registered with the same routing
     const handlerData = matcher[3][matcher[2][regexpStr]]
-    handlerData[index] = [handler, handlerData[0][1]]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    handlerData[index] = [handler, handlerData.find(Boolean)?.[1] as any]
   } else {
     const handlerData = []
     handlerData[index] = [
@@ -64,6 +71,7 @@ function addMatchers<T>(
   }
 
   if (isMiddleware) {
+    // search for existing handlers with forward matching and add handlers to those that match
     Object.keys(matcher[2]).forEach((k) => {
       if (k === regexpStr) {
         return
@@ -74,7 +82,8 @@ function addMatchers<T>(
           params.length === 0
             ? emptyParamIndexMap
             : params.reduce<Record<string, number>>((map, param) => {
-                map[param] = handlerData[0][1][param]
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                map[param] = handlerData.find(Boolean)?.[1][param] as any
                 return map
               }, {})
         handlerData[index] = [handler, paramIndexMap]
@@ -82,7 +91,7 @@ function addMatchers<T>(
     })
     Object.keys(matcher[4]).forEach((k) => {
       if (k.startsWith(regexpStr)) {
-        ;(matcher[4][k][0] as [[T, ParamIndexMap]]).push([handler, emptyParamIndexMap])
+        ;(matcher[4][k][0] as [[T, ParamIndexMap]])[index] = [handler, emptyParamIndexMap]
       }
     })
   }
@@ -98,7 +107,7 @@ export class FilePatternRouter<T> implements Router<T> {
       path = path.slice(0, -2)
     }
 
-    if (path.indexOf(':') !== -1) {
+    if (!isMiddleware && path.indexOf(':') === -1) {
       this.#routes.push([
         STATIC_SORT_SCORE,
         this.#routes.length,
@@ -113,21 +122,26 @@ export class FilePatternRouter<T> implements Router<T> {
 
     let sortScore: number = 0
     const params: string[] = []
+    let ratio = 1
 
     const parts = path.split(/(:\w+)/)
-    for (let i = 0, len = parts.length, ratio = 1; i < len; i++, ratio /= MAX_PATH_LENGTH + 1) {
-      if (parts[i][0] === ':') {
+    for (let i = 0, len = parts.length; i < len; i++) {
+      if (parts[i].length === 0) {
+        // skip
+      } else if (parts[i][0] === ':') {
         params.push(parts[i].slice(1))
-        parts[i] = '/([^/]+)'
-        sortScore += MAX_PATH_LENGTH * ratio
+        parts[i] = '([^/]+)'
+        sortScore += 1 * ratio
       } else {
-        sortScore += (parts[i].length + (isMiddleware ? 0.01 : 0)) * ratio
+        sortScore += parts[i].length
       }
+
+      ratio /= MAX_PATH_LENGTH + 1
     }
 
     const regexpStr = parts.join('')
     this.#routes.push([
-      sortScore,
+      isMiddleware ? sortScore + 0.01 * ratio : sortScore,
       this.#routes.length,
       method,
       isMiddleware,
@@ -143,14 +157,10 @@ export class FilePatternRouter<T> implements Router<T> {
       .sort((a, b) => b[0] - a[0])
       .forEach((route) => {
         if (route[2] === METHOD_NAME_ALL) {
-          const methods = Object.keys(matchersWithHint)
-          if (methods.length === 0) {
-            addMatchers(matchersWithHint, METHOD_NAME_ALL, route)
-          } else {
-            methods.forEach((m) => {
-              addMatchers(matchersWithHint, m, route)
-            })
-          }
+          addMatchers(matchersWithHint, METHOD_NAME_ALL, route)
+          Object.keys(matchersWithHint).forEach((m) => {
+            addMatchers(matchersWithHint, m, route)
+          })
         } else {
           addMatchers(matchersWithHint, route[2], route)
         }
@@ -160,7 +170,14 @@ export class FilePatternRouter<T> implements Router<T> {
       Record<string, Matcher<T>>
     >((map, method) => {
       const matcher = matchersWithHint[method]
-      map[method] = [new RegExp(matcher[0]), matcher[3].map((d) => d.filter(Boolean)), matcher[4]]
+      map[method] = [
+        new RegExp(matcher[0] || /^$/),
+        matcher[3].map((d) => d && d.filter(Boolean)),
+        Object.keys(matcher[4]).reduce<StaticMap<T>>((map, k) => {
+          map[k] = [matcher[4][k][0].filter(Boolean) as HandlerData<T>, emptyParam]
+          return map
+        }, {}),
+      ]
       return map
     }, {})
     matchers[METHOD_NAME_ALL] ||= [
