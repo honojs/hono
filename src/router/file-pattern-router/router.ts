@@ -173,17 +173,20 @@ export class FilePatternRouter<T> implements Router<T> {
         }
       })
 
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     if (matchers[method]) {
+      // force convert MatcherWithHint<T> to Matcher<T>
       matchers[method][0] = new RegExp(matchers[method][0] || '^$') as any
       matchers[method][1].forEach((v, i) => {
         matchers[method][1][i] = v?.filter(Boolean)
       })
       Object.keys(matchers[method][2]).forEach((k) => {
-        matchers[method][2][k][0] = matchers[method][2][k][0].filter(Boolean) as any
+        matchers[method][2][k][0] = (matchers[method][2][k][0] as any).filter(Boolean) as any
       })
     } else {
       matchers[method] = matchers[METHOD_NAME_ALL] || ([/^$/, 0, {}] as any)
     }
+    /* eslint-enable @typescript-eslint/no-explicit-any */
     return matchers[method]
   }
 
