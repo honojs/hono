@@ -99,7 +99,7 @@ describe('Azure Functions adapter', () => {
     }
   }
 
-  it('should be able to handle a request', async () => {
+  it('should be able to handle a GET request', async () => {
     const req = buildRequest({
       method: 'GET', 
       url: 'http://localhost/api/test?foo=bar',
@@ -131,6 +131,80 @@ describe('Azure Functions adapter', () => {
     } catch (err) {
       console.error(err)
       expect(err).toBeNull()
+    }
+  })
+
+  it('should be able to handle a POST request', async () => {
+    const req = buildRequest({
+      method: 'POST', 
+      url: 'http://localhost/api/test?foo=bar&boo=bee&foo=baz',
+      query: {
+        foo: 'bar,baz',
+        boo: 'bee',
+      },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: {
+        hoge: ['fuga', 'huga'],
+        piyo: 'puyo',
+      },
+      params: {
+        funcname: 'test',
+      },
+    })
+    const context = await handle(app)({context: buildContext('test'), req})
+    expect(context.res).not.toBeUndefined()
+    expect(context.res?.body).toBeDefined()
+    expect(context.res?.body).not.toBeNull()
+    expect(context.res?.body).not.toBe('')
+    expect(context.res?.body).not.toBeUndefined()
+    try {
+      const res_json = JSON.parse(context.res?.body)
+      expect(res_json).not.toBeUndefined()
+      expect(res_json).not.toBeNull()
+      expect(res_json).toStrictEqual({
+        message: 'Hello, Azure Functions and Hono!',
+        query: {
+          foo: ['bar', 'baz'],
+          boo: ['bee'],
+        },
+        json_body: {
+          hoge: ['fuga', 'huga'],
+          piyo: 'puyo',
+        },
+        headers: {
+          'content-type': 'application/json',
+        },
+      })
+    } catch (err) {
+      console.error(err)
+      expect(err).toBeNull()
+    }
+  })
+
+  it('should be fail to handle a POST request', async () => {
+    const req = buildRequest({
+      method: 'POST', 
+      url: 'http://localhost/api/test?foo=bar&boo=bee&foo=baz',
+      query: {
+        foo: 'bar,baz',
+        boo: 'bee',
+      },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // body is not JSON, undefined. handler should fail.
+      params: {
+        funcname: 'test',
+      },
+    })
+    try {
+      await handle(app)({context: buildContext('test'), req})
+    } catch (err) {
+      console.error(err)
+      expect(err).not.toBeNull()
+      expect(err).toStrictEqual(new TypeError('Cannot read property \'toString\' of undefined'))
     }
   })
 })
