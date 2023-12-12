@@ -1,8 +1,10 @@
+import type { Hono } from '../../hono'
 import type {
   Context as AzureFunctionsContext,
+} from './Context'
+import type {
   HttpRequest as AzureFunctionsHttpRequest,
-} from '@azure/functions'
-import type { Hono } from '../../hono'
+} from './http'
 
 export interface AzureFunctionsHTTPEvent {
   context: AzureFunctionsContext
@@ -11,25 +13,34 @@ export interface AzureFunctionsHTTPEvent {
 
 export const handle = (app: Hono) => {
   return async (event: AzureFunctionsHTTPEvent): Promise<AzureFunctionsContext> => {
-    const req = createRequest(event)
-    const res = await app.fetch(req)
+    try {
+      const req = createRequest(event)
+      const res = await app.fetch(req)
 
-    return createResult(event.context, res)
+      return createResult(event.context, res)
+    } catch (err) {
+      event.context.log.error(err)
+      event.context.res = {
+        status: 500,
+        body: err,
+      }
+      return event.context
+    }
   }
 }
 
 const createRequest = (event: AzureFunctionsHTTPEvent): Request => {
   const urlPath = event.req.url
-  const url = urlPath
+  const url = urlPath ?? ''
 
-  const headersKV = {}
+  const headersKV: { [key: string]: string } = {}
   for (const [k, v] of Object.entries(event.req.headers)) {
-    if (v) headersKV[k] = v
+    if (v !== undefined) headersKV[k] = v as string
   }
 
   const headers = new Headers(headersKV)
 
-  const method = event.req.method
+  const method = event.req.method ?? 'GET'
   const requestInit: RequestInit = {
     headers,
     method,
@@ -46,12 +57,14 @@ const createResult = async (
   context: AzureFunctionsContext,
   res: Response
 ): Promise<AzureFunctionsContext> => {
+  if (context.res === undefined) context.res = {} 
+  if (context.res.headers === undefined) context.res.headers = {} 
+
+  for (const [k, v] of Object.entries(res.headers)) {
+    context.res.headers[k] = v
+  }
+
   const contentType = res.headers.get('content-type')
-
-  res.headers.forEach((value, key) => {
-    context.res.headers[key] = value
-  })
-
   context.res.headers['Content-Type'] = contentType ?? 'text/plain'
   context.res.body = await res.text()
 
