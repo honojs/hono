@@ -230,17 +230,11 @@ export class Context<
       })
     }
 
-    // Return Response immediately if arg is ResponseInit.
     if (arg && typeof arg !== 'number') {
-      const res = new Response(data, arg)
-      const contentType = this.#preparedHeaders?.['content-type']
-      if (contentType) {
-        res.headers.set('content-type', contentType)
-      }
-      return res
+      this.res = new Response(data, arg)
     }
 
-    const status = arg ?? this.#status
+    let status = typeof arg === 'number' ? arg : this.#status
     this.#preparedHeaders ??= {}
 
     this.#headers ??= new Headers()
@@ -255,6 +249,7 @@ export class Context<
       for (const [k, v] of Object.entries(this.#preparedHeaders)) {
         this.#headers.set(k, v)
       }
+      status = this.#res.status
     }
 
     headers ??= {}
