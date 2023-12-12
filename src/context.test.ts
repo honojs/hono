@@ -205,6 +205,16 @@ describe('Context header', () => {
     const res = c.text('foo')
     expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
   })
+
+  it('Should set header values if the #this.headers is set and the arg is ResponseInit', async () => {
+    c.header('foo', 'bar')
+    const res = c.body('foo', {
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+    })
+    expect(res.headers.get('foo')).toBe('bar')
+  })
 })
 
 describe('Pass a ResponseInit to respond methods', () => {
