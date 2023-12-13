@@ -500,15 +500,14 @@ describe('Merge path with `app.route()`', () => {
     expect(data.ok).toBe(true)
   })
 
-  it('Should not allow the incorrect JSON type', async () => {
+  it('Should allow a Date object and return it as a string', async () => {
     const app = new Hono()
-    // @ts-expect-error
     const route = app.get('/api/foo', (c) => c.json({ datetime: new Date() }))
     type AppType = typeof route
     const client = hc<AppType>('http://localhost')
     const res = await client.api.foo.$get()
-    const data = await res.json()
-    type verify = Expect<Equal<never, typeof data>>
+    const { datetime } = await res.json()
+    type verify = Expect<Equal<string, typeof datetime>>
   })
 
   describe('Multiple endpoints', () => {

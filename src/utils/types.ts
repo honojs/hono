@@ -25,8 +25,11 @@ export type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...in
 
 export type JSONPrimitive = string | boolean | number | null | undefined
 export type JSONArray = (JSONPrimitive | JSONObject | JSONArray)[]
-export type JSONObject = { [key: string]: JSONPrimitive | JSONArray | JSONObject }
+export type JSONObject = { [key: string]: JSONPrimitive | JSONArray | JSONObject | object }
 export type JSONValue = JSONObject | JSONArray | JSONPrimitive
+export type JSONParsed<T> = {
+  [k in keyof T]: T[k] extends JSONValue ? T[k] : string
+}
 
 export type InterfaceToType<T> = T extends Function ? T : { [K in keyof T]: InterfaceToType<T[K]> }
 
