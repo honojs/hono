@@ -442,7 +442,7 @@
   ],
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20221111.1",
-    "@hono/eslint-config": "^0.0.1",
+    "@hono/eslint-config": "^0.0.2",
     "@hono/node-server": "^1.0.2",
     "@types/crypto-js": "^4.1.1",
     "@types/glob": "^8.0.0",
