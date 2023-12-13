@@ -6,7 +6,7 @@ import { serialize } from './utils/cookie'
 import { resolveStream } from './utils/html'
 import type { StatusCode } from './utils/http-status'
 import { StreamingApi } from './utils/stream'
-import type { JSONValue, InterfaceToType } from './utils/types'
+import type { JSONValue, InterfaceToType, JSONParsed } from './utils/types'
 
 type HeaderRecord = Record<string, string | string[]>
 type Data = string | ArrayBuffer | ReadableStream
@@ -57,7 +57,7 @@ interface JSONRespond {
       InterfaceToType<T> extends JSONValue
         ? JSONValue extends InterfaceToType<T>
           ? never
-          : T
+          : JSONParsed<T>
         : never
     >
   <T>(object: InterfaceToType<T> extends JSONValue ? T : JSONValue, init?: ResponseInit): Response &
@@ -65,7 +65,7 @@ interface JSONRespond {
       InterfaceToType<T> extends JSONValue
         ? JSONValue extends InterfaceToType<T>
           ? never
-          : T
+          : JSONParsed<T>
         : never
     >
 }
@@ -308,7 +308,7 @@ export class Context<
       InterfaceToType<T> extends JSONValue
         ? JSONValue extends InterfaceToType<T>
           ? never
-          : T
+          : JSONParsed<T>
         : never
     > => {
     const body = JSON.stringify(object)
