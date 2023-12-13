@@ -65,6 +65,7 @@ describe('CORS by Middleware', () => {
   it('GET default', async () => {
     const res = await app.request('http://localhost/api/abc')
 
+    expect(res.status).toBe(200)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(res.headers.get('Vary')).toBeNull()
   })
