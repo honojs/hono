@@ -234,7 +234,7 @@ export class Context<
       this.res = new Response(data, arg)
     }
 
-    let status = typeof arg === 'number' ? arg : this.#status
+    const status = typeof arg === 'number' ? arg : arg ? arg.status : this.#status
     this.#preparedHeaders ??= {}
 
     this.#headers ??= new Headers()
@@ -249,7 +249,6 @@ export class Context<
       for (const [k, v] of Object.entries(this.#preparedHeaders)) {
         this.#headers.set(k, v)
       }
-      status = this.#res.status
     }
 
     headers ??= {}
