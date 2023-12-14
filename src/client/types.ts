@@ -14,7 +14,7 @@ export type ClientRequestOptions<T = unknown> = keyof T extends never
       fetch?: typeof fetch | HonoRequest
     }
 
-type ClientRequest<S extends Schema> = {
+export type ClientRequest<S extends Schema> = {
   [M in keyof S]: S[M] extends { input: infer R; output: infer O }
     ? R extends object
       ? HasRequiredKeys<R> extends true
