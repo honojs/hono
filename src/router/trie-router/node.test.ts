@@ -89,6 +89,21 @@ describe('Name path', () => {
     expect(res[0][0]).toEqual('get events')
     expect(res[0][1]['location']).toBe('yokohama')
   })
+
+  it('Should not return a previous param value', () => {
+    const node = new Node()
+    node.insert('delete', '/resource/:id', 'resource')
+    const [resA] = node.search('delete', '/resource/a')
+    const [resB] = node.search('delete', '/resource/b')
+    expect(resA).not.toBeNull()
+    expect(resA.length).toBe(1)
+    expect(resA[0][0]).toEqual('resource')
+    expect(resA[0][1]).toEqual({ id: 'a' })
+    expect(resB).not.toBeNull()
+    expect(resB.length).toBe(1)
+    expect(resB[0][0]).toEqual('resource')
+    expect(resB[0][1]).toEqual({ id: 'b' })
+  })
 })
 
 describe('Name path - Multiple route', () => {
