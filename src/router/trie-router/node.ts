@@ -5,10 +5,13 @@ import { splitPath, splitRoutingPath, getPattern } from '../../utils/url'
 
 type HandlerSet<T> = {
   handler: T
-  params: Record<string, string>
   possibleKeys: string[]
   score: number
   name: string // For debug
+}
+
+type HandlerParamsSet<T> = HandlerSet<T> & {
+  params: Record<string, string>
 }
 
 export class Node<T> {
@@ -26,7 +29,7 @@ export class Node<T> {
     this.name = ''
     if (method && handler) {
       const m: Record<string, HandlerSet<T>> = {}
-      m[method] = { handler, params: {}, possibleKeys: [], score: 0, name: this.name }
+      m[method] = { handler, possibleKeys: [], score: 0, name: this.name }
       this.methods = [m]
     }
     this.patterns = []
@@ -74,7 +77,6 @@ export class Node<T> {
 
     const handlerSet: HandlerSet<T> = {
       handler,
-      params: {},
       possibleKeys,
       name: this.name,
       score: this.order,
@@ -87,12 +89,17 @@ export class Node<T> {
   }
 
   // getHandlerSets
-  private gHSets(node: Node<T>, method: string, params: Record<string, string>): HandlerSet<T>[] {
-    const handlerSets: HandlerSet<T>[] = []
+  private gHSets(
+    node: Node<T>,
+    method: string,
+    params: Record<string, string>
+  ): HandlerParamsSet<T>[] {
+    const handlerSets: HandlerParamsSet<T>[] = []
     for (let i = 0, len = node.methods.length; i < len; i++) {
       const m = node.methods[i]
-      const handlerSet = m[method] || m[METHOD_NAME_ALL]
+      const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>
       if (handlerSet !== undefined) {
+        handlerSet.params = {}
         handlerSet.possibleKeys.map((key) => {
           handlerSet.params[key] = params[key]
         })
@@ -103,7 +110,7 @@ export class Node<T> {
   }
 
   search(method: string, path: string): [[T, Params][]] {
-    const handlerSets: HandlerSet<T>[] = []
+    const handlerSets: HandlerParamsSet<T>[] = []
 
     const params: Record<string, string> = {}
     this.params = {}
@@ -126,11 +133,9 @@ export class Node<T> {
           if (isLast === true) {
             // '/hello/*' => match '/hello'
             if (nextNode.children['*']) {
-              handlerSets.push(
-                ...this.gHSets(nextNode.children['*'], method, { ...params, ...node.params })
-              )
+              handlerSets.push(...this.gHSets(nextNode.children['*'], method, node.params))
             }
-            handlerSets.push(...this.gHSets(nextNode, method, { ...params, ...node.params }))
+            handlerSets.push(...this.gHSets(nextNode, method, node.params))
           } else {
             tempNodes.push(nextNode)
           }
@@ -144,7 +149,7 @@ export class Node<T> {
           if (pattern === '*') {
             const astNode = node.children['*']
             if (astNode) {
-              handlerSets.push(...this.gHSets(astNode, method, { ...params, ...node.params }))
+              handlerSets.push(...this.gHSets(astNode, method, node.params))
               tempNodes.push(astNode)
             }
             continue
