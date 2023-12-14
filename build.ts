@@ -11,7 +11,7 @@ import path from 'path'
 import arg from 'arg'
 import { build } from 'esbuild'
 import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
-import glob from 'glob'
+import { glob } from 'glob'
 
 const args = arg({
   '--watch': Boolean,
