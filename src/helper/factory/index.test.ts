@@ -1,5 +1,6 @@
 import { expectTypeOf } from 'vitest'
 import { hc } from '../../client'
+import type { ClientRequest } from '../../client/types'
 import { Hono } from '../../index'
 import type { ToSchema } from '../../types'
 import { validator } from '../../validator'
@@ -48,7 +49,7 @@ describe('createHandler', () => {
     const handlersA = factory.createHandlers((c) => {
       return c.text('A')
     })
-    app.get('/a', ...handlersA)
+    const routesA = app.get('/a', ...handlersA)
 
     const handlersB = factory.createHandlers(mw('B'), (c) => {
       return c.text('B')
@@ -66,6 +67,18 @@ describe('createHandler', () => {
       expect(res.status).toBe(200)
       expect(res.headers.get('x-message')).toBe('B')
       expect(await res.text()).toBe('B')
+    })
+
+    it('Should return correct path types - /a', () => {
+      const client = hc<typeof routesA>('/')
+      expectTypeOf(client).toEqualTypeOf<{
+        a: ClientRequest<{
+          $get: {
+            input: {}
+            output: {}
+          }
+        }>
+      }>()
     })
   })
 
