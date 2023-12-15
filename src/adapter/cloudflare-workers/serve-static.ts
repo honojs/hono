@@ -11,6 +11,7 @@ export type ServeStaticOptions = {
   manifest?: object | string
   namespace?: KVNamespace
   rewriteRequestPath?: (path: string) => string
+  onNotFound?: (path: string) => void | Promise<void>
 }
 
 const DEFAULT_DOCUMENT = 'index.html'
@@ -40,6 +41,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Middlew
       // @ts-ignore
       namespace: options.namespace ? options.namespace : c.env ? c.env.__STATIC_CONTENT : undefined,
     })
+
     if (content) {
       const mimeType = getMimeType(path)
       if (mimeType) {
@@ -47,10 +49,10 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Middlew
       }
       // Return Response object
       return c.body(content)
-    } else {
-      console.warn(`Static file: ${path} is not found`)
-      await next()
     }
+
+    await options.onNotFound?.(path)
+    await next()
     return
   }
 }
