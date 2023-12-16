@@ -31,9 +31,10 @@ describe('Tagged Template Literals', () => {
 
   describe('Promise', () => {
     it('Should return Promise<string> when some variables contains Promise<string> in variables', async () => {
-      const name = Promise.resolve(`John "Johnny" Smith`)
+      const name = Promise.resolve('John "Johnny" Smith')
       const res = html`<p>I'm ${name}.</p>`
       expect(res).toBeInstanceOf(Promise)
+      // eslint-disable-next-line quotes
       expect((await res).toString()).toBe("<p>I'm John &quot;Johnny&quot; Smith.</p>")
     })
 
@@ -41,7 +42,7 @@ describe('Tagged Template Literals', () => {
       const name = Promise.resolve(raw('John "Johnny" Smith'))
       const res = html`<p>I'm ${name}.</p>`
       expect(res).toBeInstanceOf(Promise)
-      expect((await res).toString()).toBe(`<p>I'm John "Johnny" Smith.</p>`)
+      expect((await res).toString()).toBe('<p>I\'m John "Johnny" Smith.</p>')
     })
   })
 })
