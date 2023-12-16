@@ -28,6 +28,22 @@ describe('Tagged Template Literals', () => {
       '<p>Name:John &quot;Johnny&quot; Smith Contact:<a href="http://example.com/">My Website</a></p>'
     )
   })
+
+  describe('Promise', () => {
+    it('Should return Promise<string> when some variables contains Promise<string> in variables', async () => {
+      const name = Promise.resolve(`John "Johnny" Smith`)
+      const res = html`<p>I'm ${name}.</p>`
+      expect(res).toBeInstanceOf(Promise)
+      expect((await res).toString()).toBe("<p>I'm John &quot;Johnny&quot; Smith.</p>")
+    })
+
+    it('Should return raw value when some variables contains Promise<HtmlEscapedString> in variables', async () => {
+      const name = Promise.resolve(raw('John "Johnny" Smith'))
+      const res = html`<p>I'm ${name}.</p>`
+      expect(res).toBeInstanceOf(Promise)
+      expect((await res).toString()).toBe(`<p>I'm John "Johnny" Smith.</p>`)
+    })
+  })
 })
 
 describe('raw', () => {
