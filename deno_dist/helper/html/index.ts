@@ -42,6 +42,8 @@ export const html = (
         } else {
           buffer[0] += tmp
         }
+      } else if (child instanceof Promise) {
+        buffer.unshift('', child)
       } else {
         escapeToBuffer(child.toString(), buffer)
       }
