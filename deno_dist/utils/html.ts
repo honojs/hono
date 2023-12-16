@@ -5,7 +5,23 @@ export type HtmlEscaped = {
   callbacks?: HtmlEscapedCallback[]
 }
 export type HtmlEscapedString = string & HtmlEscaped
+
+/**
+ * StringBuffer contains string and Promise<string> alternately
+ * The length of the array will be odd, the odd numbered element will be a string,
+ * and the even numbered element will be a Promise<string>.
+ * When concatenating into a single string, it must be processed from the tail.
+ * @example
+ * [
+ *   'framework.',
+ *   Promise.resolve('ultra fast'),
+ *   'a ',
+ *   Promise.resolve('is '),
+ *   'Hono',
+ * ]
+ */
 export type StringBuffer = (string | Promise<string>)[]
+
 import { raw } from '../helper/html/index.ts'
 
 // The `escapeToBuffer` implementation is based on code from the MIT licensed `react-dom` package.
@@ -16,16 +32,31 @@ const escapeRe = /[&<>'"]/
 export const stringBufferToString = async (buffer: StringBuffer): Promise<HtmlEscapedString> => {
   let str = ''
   const callbacks: HtmlEscapedCallback[] = []
-  for (let i = buffer.length - 1; i >= 0; i--) {
+  for (let i = buffer.length - 1; ; i--) {
+    str += buffer[i]
+    i--
+    if (i < 0) {
+      break
+    }
+
     let r = await buffer[i]
     if (typeof r === 'object') {
       callbacks.push(...((r as HtmlEscapedString).callbacks || []))
     }
+
+    const isEscaped = (r as HtmlEscapedString).isEscaped
     r = await (typeof r === 'object' ? (r as HtmlEscapedString).toString() : r)
     if (typeof r === 'object') {
       callbacks.push(...((r as HtmlEscapedString).callbacks || []))
     }
-    str += r
+
+    if ((r as HtmlEscapedString).isEscaped ?? isEscaped) {
+      str += r
+    } else {
+      const buf = [str]
+      escapeToBuffer(r, buf)
+      str = buf[0]
+    }
   }
 
   return raw(str, callbacks)
