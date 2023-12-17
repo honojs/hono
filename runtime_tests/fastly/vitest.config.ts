@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vitest/config'
 import fastlyCompute from 'vite-plugin-fastly-js-compute'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [fastlyCompute()],
