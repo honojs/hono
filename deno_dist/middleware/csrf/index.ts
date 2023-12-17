@@ -40,7 +40,7 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
       const res = new Response('Forbidden', {
         status: 403,
       })
-      throw new HTTPException(401, { res })
+      throw new HTTPException(403, { res })
     }
 
     await next()
