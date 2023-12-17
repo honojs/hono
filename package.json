@@ -469,7 +469,7 @@
     "ts-jest": "^29.1.1",
     "tsx": "^3.11.0",
     "typescript": "^5.3.3",
-    "vite-plugin-fastly-js-compute": "^0.4.0",
+    "vite-plugin-fastly-js-compute": "^0.4.2",
     "vitest": "^0.34.3",
     "wrangler": "3.17.1",
     "zod": "^3.20.2"

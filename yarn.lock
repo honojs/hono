@@ -6750,10 +6750,10 @@ vite-node@0.34.3:
     picocolors "^1.0.0"
     vite "^3.0.0 || ^4.0.0"
 
-vite-plugin-fastly-js-compute@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/vite-plugin-fastly-js-compute/-/vite-plugin-fastly-js-compute-0.4.0.tgz#2cb52e0c7991f051034c86bfece3a4ee0a8f9594"
-  integrity sha512-4L0iRBy1mV7tTfnu1IppGd21vDw94NXf0n4yuDhKkSuXEVXjJVLa00sF0iYf5udAzG/yMfILF+4sz1LGHmC9Ew==
+vite-plugin-fastly-js-compute@^0.4.2:
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/vite-plugin-fastly-js-compute/-/vite-plugin-fastly-js-compute-0.4.2.tgz#85dbdcbc1ac1c627968099b2010a5a04e07793fe"
+  integrity sha512-Z7jtm6fyrtK4sxKWcsIvnV8W+WBLawUzYgZYXpXYSaoy8hcMheKhswop5MdRiucT4UQUHI3xkjoQuKOPr/DWEg==
   dependencies:
     "@fastly/js-compute" "^3.7.3"
     node-fetch "^3.3.2"
