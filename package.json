@@ -466,7 +466,6 @@
     "rimraf": "^3.0.2",
     "start-server-and-test": "^1.15.2",
     "supertest": "^6.3.3",
-    "ts-jest": "^29.1.1",
     "tsx": "^3.11.0",
     "typescript": "^5.3.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
