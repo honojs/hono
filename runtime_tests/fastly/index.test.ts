@@ -89,9 +89,9 @@ describe('JWT Auth Middleware does not work', () => {
   const app = new Hono()
 
   // Since nodejs 20 or later, global WebCrypto object becomes stable (experimental on nodejs 18)
-  // but WebCrypto does not have compatibility with Fastly Compute runtime (lacking make object in Fastly)
+  // but WebCrypto does not have compatibility with Fastly Compute runtime (lacking some objects/methods in Fastly)
   // so following test should run only be polyfill-ed via vite-plugin-fastly-js-compute plugin.
-  // To confirm polyfill-ed or not, check __fastlyComputeNodeDefaultCrypto field is true
+  // To confirm polyfill-ed or not, check __fastlyComputeNodeDefaultCrypto field is true.
   it.runIf(!globalThis.__fastlyComputeNodeDefaultCrypto)('Should throw error', () => {
     expect(() => {
       app.use('/jwt/*', jwt({ secret: 'secret' }))
