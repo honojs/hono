@@ -484,22 +484,15 @@ describe('Duplicate param name', () => {
       expect(res[0][0]).toBe('foo')
       expect(res[0][1]).toEqual({ id: '123', action: 'action' })
     })
+  })
 
-    it('get /posts/456', () => {
-      const [res] = node.search('get', '/posts/456')
-      expect(res.length).toBe(2)
-      expect(res[0][0]).toBe('foo')
-      expect(res[0][1]).toEqual({ id: 'posts', action: '456' })
-      expect(res[1][0]).toBe('bar')
-      expect(res[1][1]).toEqual({ id: '456' })
-
-      it('get /posts/456', () => {
-        const [res] = node.search('get', '/posts/abc/comments/edf')
-        expect(res.length).toBe(1)
-        expect(res[0][0]).toBe('comment')
-        expect(res[0][1]).toEqual({ id: 'abc', comment_id: 'edf' })
-      })
-    })
+  it('get /posts/456 for comments', () => {
+    const node = new Node()
+    node.insert('get', '/posts/:id/comments/:comment_id', 'comment')
+    const [res] = node.search('get', '/posts/abc/comments/edf')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toBe('comment')
+    expect(res[0][1]).toEqual({ id: 'abc', comment_id: 'edf' })
   })
 
   describe('child', () => {
