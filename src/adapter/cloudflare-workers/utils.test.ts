@@ -1,4 +1,4 @@
-import { getContentFromKVAsset } from './cloudflare'
+import { getContentFromKVAsset } from './utils'
 
 // Mock
 const store: { [key: string]: string } = {
