@@ -3,7 +3,7 @@ import type { KVNamespace } from '@cloudflare/workers-types'
 import type { MiddlewareHandler } from '../../types'
 import { getFilePath } from '../../utils/filepath'
 import { getMimeType } from '../../utils/mime'
-import { getContentFromKVAsset } from './cloudflare'
+import { getContentFromKVAsset } from './utils'
 
 export type ServeStaticOptions = {
   root?: string
