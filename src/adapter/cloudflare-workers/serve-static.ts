@@ -1,9 +1,9 @@
 // @denoify-ignore
 import type { KVNamespace } from '@cloudflare/workers-types'
 import type { MiddlewareHandler } from '../../types'
-import { getContentFromKVAsset } from './cloudflare'
 import { getFilePath } from '../../utils/filepath'
 import { getMimeType } from '../../utils/mime'
+import { getContentFromKVAsset } from './cloudflare'
 
 export type ServeStaticOptions = {
   root?: string
