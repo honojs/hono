@@ -174,12 +174,12 @@ class Hono<
     return subApp
   }
 
-  onError(handler: ErrorHandler<E>) {
+  onError = (handler: ErrorHandler<E>) => {
     this.errorHandler = handler
     return this
   }
 
-  notFound(handler: NotFoundHandler<E>) {
+  notFound = (handler: NotFoundHandler<E>) => {
     this.notFoundHandler = handler
     return this
   }
