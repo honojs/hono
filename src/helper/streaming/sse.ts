@@ -1,6 +1,6 @@
-import { stream } from '.'
 import type { Context } from '../../context'
 import { StreamingApi } from '../../utils/stream'
+import { stream } from '.'
 
 interface SSEMessage {
   data: string
