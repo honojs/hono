@@ -1,3 +1,4 @@
+import { stream } from '.'
 import type { Context } from '../../context'
 import { StreamingApi } from '../../utils/stream'
 
@@ -37,7 +38,7 @@ const setSSEHeaders = (context: Context) => {
 }
 
 export const streamSSE = (c: Context, cb: (stream: SSEStreamingApi) => Promise<void>) => {
-  return c.stream(async (originalStream: StreamingApi) => {
+  return stream(c, async (originalStream: StreamingApi) => {
     const { readable, writable } = new TransformStream()
     const stream = new SSEStreamingApi(writable)
 
