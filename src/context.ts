@@ -8,7 +8,7 @@ import type { StatusCode } from './utils/http-status'
 import { StreamingApi } from './utils/stream'
 import type { JSONValue, InterfaceToType, JSONParsed } from './utils/types'
 
-type HeaderRecord = Record<string, string | string[]>
+export type HeaderRecord = Record<string, string | string[]>
 type Data = string | ArrayBuffer | ReadableStream
 
 export interface ExecutionContext {
@@ -83,7 +83,7 @@ type ContextOptions<E extends Env> = {
   notFoundHandler?: NotFoundHandler<E>
 }
 
-const TEXT_PLAIN = 'text/plain; charset=UTF-8'
+export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
