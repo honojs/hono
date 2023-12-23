@@ -375,6 +375,9 @@ export class Context<
     return this.newResponse(null, status)
   }
 
+  /** @deprecated
+   * Use `streamText()` in `hono/helper/streaming` instead of `c.streamText()`. The `c.streamText()` will be removed in v4.
+   */
   streamText = (
     cb: (stream: StreamingApi) => Promise<void>,
     arg?: StatusCode | ResponseInit,
@@ -387,6 +390,9 @@ export class Context<
     return this.stream(cb, arg, headers)
   }
 
+  /** @deprecated
+   * Use `stream()` in `hono/helper/streaming` instead of `c.stream()`. The `c.stream()` will be removed in v4.
+   */
   stream = (
     cb: (stream: StreamingApi) => Promise<void>,
     arg?: StatusCode | ResponseInit,
