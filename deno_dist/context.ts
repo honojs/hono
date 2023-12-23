@@ -8,7 +8,7 @@ import type { StatusCode } from './utils/http-status.ts'
 import { StreamingApi } from './utils/stream.ts'
 import type { JSONValue, InterfaceToType, JSONParsed } from './utils/types.ts'
 
-type HeaderRecord = Record<string, string | string[]>
+export type HeaderRecord = Record<string, string | string[]>
 type Data = string | ArrayBuffer | ReadableStream
 
 export interface ExecutionContext {
@@ -83,7 +83,7 @@ type ContextOptions<E extends Env> = {
   notFoundHandler?: NotFoundHandler<E>
 }
 
-const TEXT_PLAIN = 'text/plain; charset=UTF-8'
+export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -375,6 +375,9 @@ export class Context<
     return this.newResponse(null, status)
   }
 
+  /** @deprecated
+   * Use `streamText()` in `hono/helper/streaming` instead of `c.streamText()`. The `c.streamText()` will be removed in v4.
+   */
   streamText = (
     cb: (stream: StreamingApi) => Promise<void>,
     arg?: StatusCode | ResponseInit,
@@ -387,6 +390,9 @@ export class Context<
     return this.stream(cb, arg, headers)
   }
 
+  /** @deprecated
+   * Use `stream()` in `hono/helper/streaming` instead of `c.stream()`. The `c.stream()` will be removed in v4.
+   */
   stream = (
     cb: (stream: StreamingApi) => Promise<void>,
     arg?: StatusCode | ResponseInit,
