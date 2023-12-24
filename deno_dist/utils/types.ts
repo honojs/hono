@@ -36,7 +36,7 @@ export type JSONParsed<T> = T extends { toJSON(): infer J }
   ? T
   : T extends Array<infer U>
   ? Array<JSONParsed<U>>
-  : T extends JSONObject | {}
+  : T extends object
   ? { [K in keyof T]: JSONParsed<T[K]> }
   : never
 
