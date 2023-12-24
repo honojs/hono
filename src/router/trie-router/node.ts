@@ -130,6 +130,7 @@ export class Node<T> {
         const nextNode = node.children[part]
 
         if (nextNode) {
+          nextNode.params = node.params
           if (isLast === true) {
             // '/hello/*' => match '/hello'
             if (nextNode.children['*']) {

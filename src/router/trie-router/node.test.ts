@@ -60,6 +60,7 @@ describe('Name path', () => {
   node.insert('get', '/entry/:id', 'get entry')
   node.insert('get', '/entry/:id/comment/:comment_id', 'get comment')
   node.insert('get', '/map/:location/events', 'get events')
+  node.insert('get', '/about/:name/address/map', 'get address')
 
   it('get /entry/123', () => {
     const [res] = node.search('get', '/entry/123')
@@ -88,6 +89,13 @@ describe('Name path', () => {
     expect(res.length).toBe(1)
     expect(res[0][0]).toEqual('get events')
     expect(res[0][1]['location']).toBe('yokohama')
+  })
+
+  it('get /about/:name/address/map', () => {
+    const [res] = node.search('get', '/about/foo/address/map')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('get address')
+    expect(res[0][1]['name']).toBe('foo')
   })
 
   it('Should not return a previous param value', () => {
