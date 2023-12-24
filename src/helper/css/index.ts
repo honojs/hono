@@ -30,10 +30,9 @@ export const css = (strings: TemplateStringsArray, ...values: string[]): string 
 }
 
 export const renderStyles = (): string => {
-  const styleString = Object.entries(styles)
+  return Object.entries(styles)
     .map(([className, style]) => {
       return `.${className} { ${style} }`
     })
     .join()
-  return styleString
 }
