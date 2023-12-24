@@ -17,6 +17,18 @@ type RendererOptions = {
   stream?: boolean | Record<string, string>
 }
 
+let finalize = () => {}
+const finalizePromise = new Promise<void>((resolve) => (finalize = resolve))
+const stylesVariableName = '__styles'
+const toHash = (str: string): string => {
+  let i = 0,
+    out = 11
+  while (i < str.length) {
+    out = (101 * out + str.charCodeAt(i++)) >>> 0
+  }
+  return 'css-' + out
+}
+
 const createRenderer =
   (c: Context, component?: FC<PropsForRenderer>, options?: RendererOptions) =>
   (children: JSXNode, props: PropsForRenderer) => {
@@ -27,11 +39,27 @@ const createRenderer =
         ? '<!DOCTYPE html>'
         : ''
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    const body = html`${raw(docType)}${jsx(
+    const template = jsx(
       RequestContext.Provider,
       { value: c },
-      (component ? component({ children, ...(props || {}) }) : children) as any
-    )}`
+      (component
+        ? (component({ children: children, ...(props || {}) }) as unknown as JSXNode)
+            .on('renderToString.cssStyle', ({ setContent }) => {
+              setContent(
+                finalizePromise.then(() => {
+                  return `<style>${Object.entries(c.get(stylesVariableName))
+                    .map(([className, style]) => {
+                      return `.${className} { ${style} }`
+                    })
+                    .join()}</style>`
+                })
+              )
+            })
+            .on('afterRenderToString.html', finalize)
+        : children) as any
+    )
+
+    const body = html`${raw(docType)}${template}`
 
     if (options?.stream) {
       return c.body(renderToReadableStream(body), {
@@ -68,4 +96,25 @@ export const useRequestContext = <
     throw new Error('RequestContext is not provided.')
   }
   return c
+}
+
+export const css = (strings: TemplateStringsArray, ...values: string[]): string => {
+  const c = useRequestContext()
+
+  let styleString = ''
+  strings.forEach((string, index) => {
+    string = string.trim().replace(/\n\s*/g, ' ')
+    styleString += string + (values[index] || '')
+  })
+
+  const className = toHash(styleString)
+
+  if (!c.get(stylesVariableName)) {
+    c.set(stylesVariableName, {})
+  }
+  if (!c.get(stylesVariableName)[className]) {
+    c.get(stylesVariableName)[className] = styleString.trim()
+  }
+
+  return className
 }
