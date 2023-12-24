@@ -52,7 +52,20 @@ describe('JSONParsed', () => {
     type Expected = {
       datetime: string
     }
+    type Actual = JSONParsed<Post>
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    type verify = Expect<Equal<Expected, JSONParsed<Post>>>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should convert bigint to never', () => {
+    type Post = {
+      num: bigint
+    }
+    type Expected = {
+      num: never
+    }
+    type Actual = JSONParsed<Post>
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    type verify = Expect<Equal<Expected, Actual>>
   })
 })
