@@ -450,7 +450,7 @@
     "@types/node": "^20.8.2",
     "@types/node-fetch": "^2.6.2",
     "@types/supertest": "^2.0.12",
-    "@vitest/coverage-v8": "^1.0.4",
+    "@vitest/coverage-v8": "^1.1.0",
     "arg": "^5.0.2",
     "crypto-js": "^4.1.1",
     "denoify": "^1.6.6",
@@ -469,7 +469,7 @@
     "tsx": "^3.11.0",
     "typescript": "^5.3.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
-    "vitest": "^1.0.4",
+    "vitest": "^1.1.0",
     "wrangler": "3.17.1",
     "zod": "^3.20.2"
   },
