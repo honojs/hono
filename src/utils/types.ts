@@ -27,9 +27,18 @@ export type JSONPrimitive = string | boolean | number | null | undefined
 export type JSONArray = (JSONPrimitive | JSONObject | JSONArray)[]
 export type JSONObject = { [key: string]: JSONPrimitive | JSONArray | JSONObject | object }
 export type JSONValue = JSONObject | JSONArray | JSONPrimitive
-export type JSONParsed<T> = {
-  [k in keyof T]: T[k] extends JSONValue ? T[k] : string
-}
+// Non-JSON values such as `Date` implement `.toJSON()`, so they can be transformed to a value assignable to `JSONObject`:
+export type JSONParsed<T> = T extends { toJSON(): infer J }
+  ? (() => J) extends () => JSONObject
+    ? J
+    : JSONParsed<J>
+  : T extends JSONPrimitive
+  ? T
+  : T extends Array<infer U>
+  ? Array<JSONParsed<U>>
+  : T extends JSONObject | {}
+  ? { [K in keyof T]: JSONParsed<T[K]> }
+  : never
 
 export type InterfaceToType<T> = T extends Function ? T : { [K in keyof T]: InterfaceToType<T[K]> }
 
