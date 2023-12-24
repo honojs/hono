@@ -44,7 +44,7 @@ const createRenderer =
       { value: c },
       (component
         ? (component({ children: children, ...(props || {}) }) as unknown as JSXNode)
-            .on('renderToString.cssStyle', ({ setContent }) => {
+            .on('renderToString.css', ({ setContent }) => {
               setContent(
                 finalizePromise.then(() => {
                   return `<style>${Object.entries(c.get(stylesVariableName))
