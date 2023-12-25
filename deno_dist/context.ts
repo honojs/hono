@@ -8,7 +8,7 @@ import type { StatusCode } from './utils/http-status.ts'
 import { StreamingApi } from './utils/stream.ts'
 import type { JSONValue, InterfaceToType, JSONParsed } from './utils/types.ts'
 
-export type HeaderRecord = Record<string, string | string[]>
+type HeaderRecord = Record<string, string | string[]>
 type Data = string | ArrayBuffer | ReadableStream
 
 export interface ExecutionContext {
