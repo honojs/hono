@@ -376,7 +376,7 @@ export class Context<
   }
 
   /** @deprecated
-   * Use `streamText()` in `hono/helper/streaming` instead of `c.streamText()`. The `c.streamText()` will be removed in v4.
+   * Use `streamText()` in `hono/streaming` instead of `c.streamText()`. The `c.streamText()` will be removed in v4.
    */
   streamText = (
     cb: (stream: StreamingApi) => Promise<void>,
@@ -391,7 +391,7 @@ export class Context<
   }
 
   /** @deprecated
-   * Use `stream()` in `hono/helper/streaming` instead of `c.stream()`. The `c.stream()` will be removed in v4.
+   * Use `stream()` in `hono/streaming` instead of `c.stream()`. The `c.stream()` will be removed in v4.
    */
   stream = (
     cb: (stream: StreamingApi) => Promise<void>,
