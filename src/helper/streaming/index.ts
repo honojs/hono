@@ -1,13 +1,13 @@
 import type { Context } from '../../context'
 import { StreamingApi } from '../../utils/stream'
 
-interface SSEMessage {
+export interface SSEMessage {
   data: string
   event?: string
   id?: string
 }
 
-class SSEStreamingApi extends StreamingApi {
+export class SSEStreamingApi extends StreamingApi {
   constructor(writable: WritableStream) {
     super(writable)
   }
