@@ -3,7 +3,7 @@ import type { HonoRequest } from './request'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types'
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
-import { resolveStream } from './utils/html'
+import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html'
 import type { StatusCode } from './utils/http-status'
 import { StreamingApi } from './utils/stream'
 import type { JSONValue, InterfaceToType, JSONParsed } from './utils/types'
@@ -355,7 +355,7 @@ export class Context<
       }
       if ((html as string | Promise<string>) instanceof Promise) {
         return (html as unknown as Promise<string>)
-          .then((html) => resolveStream(html))
+          .then((html) => resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false))
           .then((html) => {
             return typeof arg === 'number'
               ? this.newResponse(html, arg, headers)

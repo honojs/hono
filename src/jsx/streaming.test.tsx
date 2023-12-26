@@ -1,6 +1,6 @@
 import { JSDOM } from 'jsdom'
 import { raw } from '../helper/html'
-import { resolveStream } from '../utils/html'
+import { resolveCallback } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'
 import { Suspense, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -519,7 +519,7 @@ d.replaceWith(c.content)
       return content
     }
 
-    const str = await resolveStream(await (
+    const str = await resolveCallback(await (
       <Suspense fallback={<p>Loading...</p>}>
         <Content />
       </Suspense>
