@@ -355,7 +355,7 @@ export class Context<
       }
       if ((html as string | Promise<string>) instanceof Promise) {
         return (html as unknown as Promise<string>)
-          .then((html) => resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false))
+          .then((html) => resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}))
           .then((html) => {
             return typeof arg === 'number'
               ? this.newResponse(html, arg, headers)
