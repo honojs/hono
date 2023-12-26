@@ -1,59 +1,12 @@
 import type { Context } from '../../context'
 import { StreamingApi } from '../../utils/stream'
 
-interface SSEMessage {
-  data: string
-  event?: string
-  id?: string
+export const stream = (c: Context, cb: (stream: StreamingApi) => Promise<void>): Response => {
+  const { readable, writable } = new TransformStream()
+  const stream = new StreamingApi(writable)
+  cb(stream).finally(() => stream.close())
+  return c.newResponse(readable)
 }
 
-class SSEStreamingApi extends StreamingApi {
-  constructor(writable: WritableStream) {
-    super(writable)
-  }
-
-  async writeSSE(message: SSEMessage) {
-    const data = message.data
-      .split('\n')
-      .map((line) => {
-        return `data: ${line}`
-      })
-      .join('\n')
-
-    const sseData =
-      [message.event && `event: ${message.event}`, data, message.id && `id: ${message.id}`]
-        .filter(Boolean)
-        .join('\n') + '\n\n'
-
-    await this.write(sseData)
-  }
-}
-
-const setSSEHeaders = (context: Context) => {
-  context.header('Transfer-Encoding', 'chunked')
-  context.header('Content-Type', 'text/event-stream')
-  context.header('Cache-Control', 'no-cache')
-  context.header('Connection', 'keep-alive')
-}
-
-export const streamSSE = (c: Context, cb: (stream: SSEStreamingApi) => Promise<void>) => {
-  return c.stream(async (originalStream: StreamingApi) => {
-    const { readable, writable } = new TransformStream()
-    const stream = new SSEStreamingApi(writable)
-
-    originalStream.pipe(readable).catch((err) => {
-      console.error('Error in stream piping: ', err)
-      stream.close()
-    })
-
-    setSSEHeaders(c)
-
-    try {
-      await cb(stream)
-    } catch (err) {
-      console.error('Error during streaming: ', err)
-    } finally {
-      await stream.close()
-    }
-  })
-}
+export { streamSSE } from './sse'
+export { streamText } from './text'
