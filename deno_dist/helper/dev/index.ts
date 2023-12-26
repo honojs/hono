@@ -60,3 +60,8 @@ export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOption
       })
     })
 }
+
+export const getRouterName = <E extends Env>(app: Hono<E>) => {
+  app.router.match('GET', '/')
+  return app.router.name
+}
