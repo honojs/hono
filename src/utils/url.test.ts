@@ -251,6 +251,9 @@ describe('url', () => {
       })
       expect(getQueryParams('http://example.com/?pretty', 'pretty')).toEqual([''])
       expect(getQueryParams('http://example.com/?pretty', 'prtt')).toBe(undefined)
+      expect(getQueryParams('http://example.com/?toString')).toEqual({
+        toString: [''],
+      })
     })
   })
 })

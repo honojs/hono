@@ -211,7 +211,10 @@ const _getQueryParam = (
     }
 
     if (multiple) {
-      ;((results[name] ??= []) as string[]).push(value)
+      if (!(results[name] && Array.isArray(results[name]))) {
+        results[name] = []
+      }
+      ;(results[name] as string[]).push(value)
     } else {
       results[name] ??= value
     }
