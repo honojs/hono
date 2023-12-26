@@ -94,6 +94,11 @@
       "import": "./dist/middleware/cors/index.js",
       "require": "./dist/cjs/middleware/cors/index.js"
     },
+    "./csrf": {
+      "types": "./dist/types/middleware/csrf/index.d.ts",
+      "import": "./dist/middleware/csrf/index.js",
+      "require": "./dist/cjs/middleware/csrf/index.js"
+    },
     "./etag": {
       "types": "./dist/types/middleware/etag/index.d.ts",
       "import": "./dist/middleware/etag/index.js",
@@ -304,6 +309,9 @@
       ],
       "cors": [
         "./dist/types/middleware/cors"
+      ],
+      "csrf": [
+        "./dist/types/middleware/csrf"
       ],
       "etag": [
         "./dist/types/middleware/etag"
