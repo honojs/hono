@@ -30,6 +30,8 @@ export type ClientRequest<S extends Schema> = {
 type BlankRecordToNever<T> = T extends any ? (keyof T extends never ? never : T) : never
 
 export interface ClientResponse<T> {
+  readonly body: ReadableStream | null
+  readonly bodyUsed: boolean
   ok: boolean
   status: number
   statusText: string
