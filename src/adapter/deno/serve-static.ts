@@ -11,6 +11,7 @@ export type ServeStaticOptions = {
   root?: string
   path?: string
   rewriteRequestPath?: (path: string) => string
+  onNotFound?: (path: string) => void | Promise<void>
 }
 
 const DEFAULT_DOCUMENT = 'index.html'
@@ -50,10 +51,10 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
       }
       // Return Response object with stream
       return c.body(file.readable)
-    } else {
-      console.warn(`Static file: ${path} is not found`)
-      await next()
     }
+
+    await options.onNotFound?.(path)
+    await next()
     return
   }
 }
