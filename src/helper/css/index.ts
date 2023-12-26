@@ -24,7 +24,7 @@ type contextCssData = [
   { [className: string]: true }, // class name to add
   { [className: string]: true } // class name already added
 ]
-const cssMap: Map<unknown, contextCssData> = new Map()
+const cssMap: WeakMap<Object, contextCssData> = new WeakMap()
 export const css = (() => {
   let id = DEFAULT_STYLE_ID
 
