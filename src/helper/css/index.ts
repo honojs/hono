@@ -1,5 +1,5 @@
 import { raw } from '../../helper/html'
-import { HtmlEscapedCallbackPhase, type HtmlEscapedCallback } from '../../utils/html'
+import { type HtmlEscapedCallback } from '../../utils/html'
 
 type Styles = Record<string, string>
 const styles: Styles = {}
@@ -20,6 +20,17 @@ const toHash = (str: string): string => {
   return 'css-' + out
 }
 
+export const keyframes = (strings: TemplateStringsArray, ...values: string[]): string => {
+  let styleString = ''
+  strings.forEach((string, index) => {
+    string = string.trim().replace(/\n\s*/g, ' ')
+    styleString += string + (values[index] || '')
+  })
+  const className = `@keyframes ${toHash(styleString)}`
+  styles[className] = styleString
+  return className
+}
+
 type contextCssData = [
   { [className: string]: true }, // class name to add
   { [className: string]: true } // class name already added
@@ -29,13 +40,30 @@ export const css = (() => {
   let id = DEFAULT_STYLE_ID
 
   const css = async (strings: TemplateStringsArray, ...values: string[]): Promise<string> => {
+    const selectors: string[] = []
     let styleString = ''
     strings.forEach((string, index) => {
       string = string.trim().replace(/\n\s*/g, ' ')
-      styleString += string + (values[index] || '')
+      const value = values[index]
+      if (value && value.startsWith('@keyframes ')) {
+        selectors.push(value)
+        styleString += `${string} ${value.substring(11)} `
+      } else {
+        styleString += string + (value || '')
+      }
     })
-    const className = toHash(styleString)
-    styles[className] = styleString
+    const selector = `.${toHash(styleString)}`
+    styles[selector] = styleString
+      .replace(
+        /(^|;)([^;]*)({[^}]+})([\s\r\n]*}[\s\r\n]*$)?/,
+        (_, pre, subSelector, content, close) => {
+          return `${pre}}${subSelector.replace(/&/g, selector)}${content}${
+            close ? '' : `${selector}{`
+          }`
+        }
+      )
+      .replace(/{}/g, '')
+    selectors.push(selector)
 
     const appendStyle: HtmlEscapedCallback = ({ buffer, context }): Promise<string> | undefined => {
       const [toAdd, added] = cssMap.get(context) as contextCssData
@@ -47,7 +75,7 @@ export const css = (() => {
 
       const stylesStr = names.reduce((acc, className) => {
         added[className] = true
-        acc += `.${className}{${styles[className]}}`
+        acc += `${className}{${styles[className]}}`
         return acc
       }, '')
       cssMap.set(context, [{}, added])
@@ -82,19 +110,21 @@ export const css = (() => {
         cssMap.set(context, [{}, {}])
       }
       const [toAdd, added] = cssMap.get(context) as contextCssData
-      if (added[className]) {
+      let allAdded = true
+      selectors.forEach((className) => {
+        if (!added[className]) {
+          allAdded = false
+          toAdd[className] = true
+        }
+      })
+      if (allAdded) {
         return
-      }
-      toAdd[className] = true
-
-      if (phase === HtmlEscapedCallbackPhase.Stream) {
-        return appendStyle({ phase, context })
       }
 
       return Promise.resolve(raw('', [appendStyle]))
     }
 
-    return raw(className, [addClassNameToContext])
+    return raw(selector.slice(1), [addClassNameToContext])
   }
 
   Object.defineProperty(css, 'id', {
