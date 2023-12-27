@@ -70,10 +70,8 @@ const minify = (css: string): string => {
 }
 
 type usedClassNameData = [
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  Map<String, true>, // class name to add
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  Map<String, true> // class name already added
+  Record<string, string>, // class name to add
+  Record<string, true> // class name already added
 ]
 // eslint-disable-next-line @typescript-eslint/ban-types
 type CssVariableBasicType = string | String | number
@@ -144,7 +142,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
 
     const appendStyle: HtmlEscapedCallback = ({ buffer, context }): Promise<string> | undefined => {
       const [toAdd, added] = contextMap.get(context) as usedClassNameData
-      const names = [...toAdd.keys()]
+      const names = Object.keys(toAdd)
 
       if (!names.length) {
         return
@@ -152,12 +150,10 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
 
       let stylesStr = ''
       names.forEach((className) => {
-        added.set(className, true)
-        stylesStr += `${className[0] === '@' ? '' : '.'}${className}{${
-          (className as CssClassName).styleString
-        }}`
+        added[className] = true
+        stylesStr += `${className[0] === '@' ? '' : '.'}${className}{${toAdd[className]}}`
       })
-      contextMap.set(context, [new Map(), added])
+      contextMap.set(context, [{}, added])
 
       if (buffer && replaceStyleRe.test(buffer[0])) {
         buffer[0] = buffer[0].replace(replaceStyleRe, (_, pre, post) => `${pre}${stylesStr}${post}`)
@@ -177,14 +173,14 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
 
     const addClassNameToContext: HtmlEscapedCallback = ({ context }) => {
       if (!contextMap.get(context)) {
-        contextMap.set(context, [new Map(), new Map()])
+        contextMap.set(context, [{}, {}])
       }
       const [toAdd, added] = contextMap.get(context) as usedClassNameData
       let allAdded = true
       ;[selector, ...selectors].forEach((className) => {
-        if (!added.has(className)) {
+        if (!added[`${className}`]) {
           allAdded = false
-          toAdd.set(className, true)
+          toAdd[`${className}`] = (className as CssClassName).styleString
         }
       })
       if (allAdded) {

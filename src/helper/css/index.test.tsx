@@ -71,7 +71,26 @@ describe('CSS Helper', () => {
         </>
       )
       expect(await toString(template)).toBe(
-        '<style id="hono-css">@keyframes css-9294673{from{opacity:0}to{opacity:1}}.css-1580801783{background-color:blue;animation:css-9294673 1s ease-in-out}</style><h1 class="css-1580801783">Hello!</h1>'
+        '<style id="hono-css">.css-1580801783{background-color:blue;animation:css-9294673 1s ease-in-out}@keyframes css-9294673{from{opacity:0}to{opacity:1}}</style><h1 class="css-1580801783">Hello!</h1>'
+      )
+    })
+
+    it('Should not output the same class name multiple times.', async () => {
+      const headerClass = css`
+        background-color: blue;
+      `
+      const headerClass2 = css`
+        background-color: blue;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+          <h1 class={headerClass2}>Hello2!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-2458908649{background-color:blue}</style><h1 class="css-2458908649">Hello!</h1><h1 class="css-2458908649">Hello2!</h1>'
       )
     })
 
