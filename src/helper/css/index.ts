@@ -1,11 +1,16 @@
 import { raw } from '../../helper/html'
 import { type HtmlEscapedCallback } from '../../utils/html'
 
-export type CssEscaped = {
+type CssEscaped = {
   isCssEscaped: true
 }
-export type CssEscapedString = string & CssEscaped
+type CssEscapedString = string & CssEscaped
 
+/**
+ * @experimental
+ * `rawCssString` is an experimental feature.
+ * The API might be changed.
+ */
 export const rawCssString = (value: string): CssEscapedString => {
   const escapedString = new String(value) as CssEscapedString
   escapedString.isCssEscaped = true
@@ -67,6 +72,12 @@ type usedClassNameData = [
   // eslint-disable-next-line @typescript-eslint/ban-types
   Map<String, true> // class name already added
 ]
+
+/**
+ * @experimental
+ * `createCssContext` is an experimental feature.
+ * The API might be changed.
+ */
 export const createCssContext = ({ id }: { id: Readonly<string> }) => {
   const contextMap: WeakMap<object, usedClassNameData> = new WeakMap()
 
@@ -181,5 +192,25 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
   }
 }
 
-const { css, keyframes, Style } = createCssContext({ id: DEFAULT_STYLE_ID })
-export { css, keyframes, Style }
+const defaultContext = createCssContext({ id: DEFAULT_STYLE_ID })
+
+/**
+ * @experimental
+ * `css` is an experimental feature.
+ * The API might be changed.
+ */
+export const css = defaultContext.css
+
+/**
+ * @experimental
+ * `keyframes` is an experimental feature.
+ * The API might be changed.
+ */
+export const keyframes = defaultContext.keyframes
+
+/**
+ * @experimental
+ * `Style` is an experimental feature.
+ * The API might be changed.
+ */
+export const Style = defaultContext.Style
