@@ -244,6 +244,11 @@
       "import": "./dist/adapter/nextjs/index.js",
       "require": "./dist/cjs/adapter/nextjs/index.js"
     },
+    "./sveltekit": {
+      "types": "./dist/types/adapter/sveltekit/index.d.ts",
+      "import": "./dist/adapter/sveltekit/index.js",
+      "require": "./dist/cjs/adapter/sveltekit/index.js"
+    },
     "./aws-lambda": {
       "types": "./dist/types/adapter/aws-lambda/index.d.ts",
       "import": "./dist/adapter/aws-lambda/index.js",
