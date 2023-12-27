@@ -12,7 +12,8 @@ export const rawCssString = (value: string): CssEscapedString => {
   return escapedString
 }
 
-type Styles = WeakMap<Object, string>
+// eslint-disable-next-line @typescript-eslint/ban-types
+type Styles = WeakMap<object, String>
 const styles: Styles = new WeakMap()
 
 const DEFAULT_STYLE_ID = 'hono-css'
@@ -33,6 +34,7 @@ const toHash = (str: string): string => {
 
 const cssStringReStr = [
   '"(?:(?:\\\\[\\s\\S]|[^"\\\\])*)"', // double quoted string
+  // eslint-disable-next-line quotes
   "'(?:(?:\\\\[\\s\\S]|[^'\\\\])*)'", // single quoted string
 ].join('|')
 const minifyCssRe = new RegExp(
@@ -60,18 +62,22 @@ const minify = (css: string): string => {
 }
 
 type usedClassNameData = [
+  // eslint-disable-next-line @typescript-eslint/ban-types
   Map<String, true>, // class name to add
+  // eslint-disable-next-line @typescript-eslint/ban-types
   Map<String, true> // class name already added
 ]
 export const createCssContext = ({ id }: { id: Readonly<string> }) => {
-  const contextMap: WeakMap<Object, usedClassNameData> = new WeakMap()
+  const contextMap: WeakMap<object, usedClassNameData> = new WeakMap()
 
   const replaceStyleRe = new RegExp(`(<style id="${id}">.*?)(</style>)`)
 
   const css = async (
     strings: TemplateStringsArray,
-    ...values: (string | String | Promise<string> | Promise<String>)[]
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    ...values: (string | string | Promise<string> | Promise<String>)[]
   ): Promise<string> => {
+    // eslint-disable-next-line @typescript-eslint/ban-types
     const selectors: String[] = []
     let styleString = ''
     for (let i = 0; i < strings.length; i++) {
@@ -149,7 +155,8 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
   const keyframes = async (
     strings: TemplateStringsArray,
     ...values: (string | Promise<string>)[]
-  ): Promise<String> => {
+  ): // eslint-disable-next-line @typescript-eslint/ban-types
+  Promise<String> => {
     let styleString = ''
     for (let i = 0; i < strings.length; i++) {
       const string = strings[i]

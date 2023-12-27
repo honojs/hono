@@ -94,9 +94,10 @@ export const renderToReadableStream = (
 ): ReadableStream<Uint8Array> => {
   const reader = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const context = str instanceof Promise ? await str : await str.toString()
+      const tmp = str instanceof Promise ? await str : await str.toString()
+      const context = typeof tmp === 'object' ? tmp : {}
       const resolved = await resolveCallback(
-        context,
+        tmp,
         HtmlEscapedCallbackPhase.BeforeStream,
         true,
         context
@@ -116,6 +117,7 @@ export const renderToReadableStream = (
               res = await resolveCallback(res, HtmlEscapedCallbackPhase.BeforeStream, true, context)
               ;(res as HtmlEscapedString).callbacks
                 ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .filter<Promise<string>>(Boolean as any)
                 .forEach(then)
               resolvedCount++
@@ -125,6 +127,7 @@ export const renderToReadableStream = (
       }
       ;(resolved as HtmlEscapedString).callbacks
         ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter<Promise<string>>(Boolean as any)
         .forEach(then)
       while (resolvedCount !== callbacks.length) {

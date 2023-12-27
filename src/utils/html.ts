@@ -6,7 +6,7 @@ export const HtmlEscapedCallbackPhase = {
 type HtmlEscapedCallbackOpts = {
   buffer?: [string]
   phase: typeof HtmlEscapedCallbackPhase[keyof typeof HtmlEscapedCallbackPhase]
-  context: Object // An object unique to each JSX tree. This object is used as the WeakMap key.
+  context: object // An object unique to each JSX tree. This object is used as the WeakMap key.
 }
 export type HtmlEscapedCallback = (opts: HtmlEscapedCallbackOpts) => Promise<string> | undefined
 export type HtmlEscaped = {
@@ -114,7 +114,7 @@ export const resolveCallback = async (
   str: string | HtmlEscapedString,
   phase: typeof HtmlEscapedCallbackPhase[keyof typeof HtmlEscapedCallbackPhase],
   preserveCallbacks: boolean,
-  context: Object,
+  context: object,
   buffer?: [string]
 ): Promise<string> => {
   const callbacks = (str as HtmlEscapedString).callbacks as HtmlEscapedCallback[]
@@ -129,7 +129,10 @@ export const resolveCallback = async (
 
   const resStr = Promise.all(callbacks.map((c) => c({ phase, buffer, context }))).then((res) =>
     Promise.all(
-      res.filter<string>(Boolean as any).map((str) => resolveCallback(str, phase, false, context, buffer))
+      res
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter<string>(Boolean as any)
+        .map((str) => resolveCallback(str, phase, false, context, buffer))
     ).then(() => (buffer as [string])[0])
   )
 

@@ -1,9 +1,10 @@
 import { Hono } from '../../'
+import { html } from '../../helper/html'
 import { jsx, Fragment, JSXNode } from '../../jsx'
 import { Suspense, renderToReadableStream } from '../../jsx/streaming'
-import { html } from '../../helper/html'
+import type { HtmlEscapedString} from '../../utils/html'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
 import { css, keyframes, rawCssString, Style, createCssContext } from './index'
-import { HtmlEscapedCallbackPhase, HtmlEscapedString, resolveCallback } from '../../utils/html'
 
 async function toString(
   template: JSXNode | Promise<HtmlEscapedString> | Promise<string> | HtmlEscapedString
@@ -77,7 +78,7 @@ describe('CSS Helper', () => {
     it('Should render CSS with variable', async () => {
       const headerClass = css`
         background-color: blue;
-        content: '${`I'm a variable!`}';
+        content: '${'I\'m a variable!'}';
       `
       const template = (
         <>
@@ -86,14 +87,14 @@ describe('CSS Helper', () => {
         </>
       )
       expect(await toString(template)).toBe(
-        `<style id="hono-css">.css-4027435072{background-color:blue;content:'I\\'m a variable!'}</style><h1 class="css-4027435072">Hello!</h1>`
+        '<style id="hono-css">.css-4027435072{background-color:blue;content:\'I\\\'m a variable!\'}</style><h1 class="css-4027435072">Hello!</h1>'
       )
     })
 
     it('Should render CSS with escaped variable', async () => {
       const headerClass = css`
         background-color: blue;
-        content: '${rawCssString(`say "Hello!"`)}';
+        content: '${rawCssString('say "Hello!"')}';
       `
       const template = (
         <>
@@ -102,7 +103,7 @@ describe('CSS Helper', () => {
         </>
       )
       expect(await toString(template)).toBe(
-        `<style id="hono-css">.css-2238574885{background-color:blue;content:'say "Hello!"'}</style><h1 class="css-2238574885">Hello!</h1>`
+        '<style id="hono-css">.css-2238574885{background-color:blue;content:\'say "Hello!"\'}</style><h1 class="css-2238574885">Hello!</h1>'
       )
     })
 
@@ -111,7 +112,7 @@ describe('CSS Helper', () => {
         background-color: blue;
         content: '${(async () => {
           await new Promise((resolve) => setTimeout(resolve, 100))
-          return `I'm an async variable!`
+          return 'I\'m an async variable!'
         })()}';
       `
       const template = (
@@ -121,7 +122,7 @@ describe('CSS Helper', () => {
         </>
       )
       expect(await toString(template)).toBe(
-        `<style id="hono-css">.css-1399451752{background-color:blue;content:'I\\'m an async variable!'}</style><h1 class="css-1399451752">Hello!</h1>`
+        '<style id="hono-css">.css-1399451752{background-color:blue;content:\'I\\\'m an async variable!\'}</style><h1 class="css-1399451752">Hello!</h1>'
       )
     })
   })
@@ -157,7 +158,7 @@ describe('CSS Helper', () => {
           content: "Hel  \\\n  \\'  lo!";
           content: 'Hel  \\\n  \\"  lo!';
         `,
-        `.css-123{background-color:blue;color:white;padding:1rem;content:"Hel  \\\n  \\\'  lo!";content:'Hel  \\\n  \\\"  lo!'}`,
+        '.css-123{background-color:blue;color:white;padding:1rem;content:"Hel  \\\n  \\\'  lo!";content:\'Hel  \\\n  \\\"  lo!\'}',
       ],
       [
         'preserve nested selectors',

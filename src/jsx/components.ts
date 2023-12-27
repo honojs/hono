@@ -3,7 +3,7 @@ import {
   HtmlEscapedCallbackPhase,
   resolveCallback,
   type HtmlEscapedString,
-  HtmlEscapedCallback,
+  type HtmlEscapedCallback,
 } from '../utils/html'
 import type { FC, Child } from './index'
 

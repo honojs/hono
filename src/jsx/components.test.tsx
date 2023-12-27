@@ -1,9 +1,14 @@
 import { JSDOM } from 'jsdom'
-import { resolveCallback } from '../utils/html'
+import type { HtmlEscapedString } from '../utils/html'
+import { HtmlEscapedCallbackPhase, resolveCallback as rawResolveCallback } from '../utils/html'
 import { ErrorBoundary } from './components'
 import { Suspense, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, Fragment } from './index'
+import { jsx } from './index'
+
+function resolveCallback(template: string | HtmlEscapedString) {
+  return rawResolveCallback(template, HtmlEscapedCallbackPhase.Stream, false, {})
+}
 
 function replacementResult(html: string) {
   const document = new JSDOM(html, { runScripts: 'dangerously' }).window.document
