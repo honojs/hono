@@ -143,20 +143,55 @@ describe('CSS Helper', () => {
     })
 
     it('Should render CSS with array', async () => {
+      const animation = keyframes`
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      `
       const headerClass = css`
         background-color: blue;
-        ${[1, 2].map((i) => css`:nth-child(${i}) { color: red; }`)}
+        animation: ${animation} 1s ease-in-out;
+      `
+      const extendedHeaderClass = css`
+        ${headerClass}
+        color: red;
       `
       const template = (
         <>
           <Style />
-          <h1 class={headerClass}>Hello!</h1>
+          <h1 class={extendedHeaderClass}>Hello!</h1>
         </>
       )
       expect(await toString(template)).toBe(
-        '<style id="hono-css">.css-1539881271{background-color:blue;:nth-child(1){color:red}:nth-child(2){color:red}}</style><h1 class="css-1539881271">Hello!</h1>'
+        '<style id="hono-css">.css-2558359670{background-color:blue;animation:css-9294673 1s ease-in-out;color:red}@keyframes css-9294673{from{opacity:0}to{opacity:1}}</style><h1 class="css-2558359670">Hello!</h1>'
       )
     })
+  })
+
+  it('Should render sub CSS with keyframe', async () => {
+    const headerClass = css`
+      background-color: blue;
+      ${[1, 2].map(
+        (i) =>
+          css`
+            :nth-child(${i}) {
+              color: red;
+            }
+          `
+      )}
+    `
+    const template = (
+      <>
+        <Style />
+        <h1 class={headerClass}>Hello!</h1>
+      </>
+    )
+    expect(await toString(template)).toBe(
+      '<style id="hono-css">.css-1539881271{background-color:blue;:nth-child(1){color:red}:nth-child(2){color:red}}</style><h1 class="css-1539881271">Hello!</h1>'
+    )
   })
 
   describe('minify', () => {

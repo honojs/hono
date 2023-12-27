@@ -4,6 +4,8 @@ import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
 type CssClassName = HtmlEscapedString & {
   isCssClassName: true
   styleString: string
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  selectors: String[]
 }
 
 type CssEscaped = {
@@ -108,6 +110,7 @@ const buildStyleString = async (
         styleString += ` ${value.substring(11)} `
       } else {
         if ((value as CssClassName).isCssClassName) {
+          selectors.push(...(value as CssClassName).selectors)
           value = (value as CssClassName).styleString
         } else if (!(value as CssEscapedString).isCssEscaped && /([\\"'\/])/.test(value)) {
           value = value.replace(/([\\"'\/])/g, '\\$1')
@@ -138,7 +141,6 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     const selectors: String[] = []
     const styleString = await buildStyleString(strings, values, selectors)
     const selector = new String(toHash(styleString))
-    selectors.push(selector)
 
     const appendStyle: HtmlEscapedCallback = ({ buffer, context }): Promise<string> | undefined => {
       const [toAdd, added] = contextMap.get(context) as usedClassNameData
@@ -179,7 +181,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       }
       const [toAdd, added] = contextMap.get(context) as usedClassNameData
       let allAdded = true
-      selectors.forEach((className) => {
+      ;[selector, ...selectors].forEach((className) => {
         if (!added.has(className)) {
           allAdded = false
           toAdd.set(className, true)
@@ -196,6 +198,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       isEscaped: true,
       isCssClassName: true,
       styleString,
+      selectors,
       callbacks: [addClassNameToContext],
     })
 
@@ -213,6 +216,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       isEscaped: true,
       isCssClassName: true,
       styleString,
+      selectors: [],
     })
     return className
   }
