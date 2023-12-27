@@ -102,9 +102,7 @@ Deno.test('Serve Static middleware', async () => {
   assertEquals(res.status, 404)
   assertMatch(res.headers.get('Content-Type') || '', /^text\/plain/)
   assertEquals(res.headers.get('X-Custom'), 'Deno')
-  assertSpyCall(onNotFound, 0, {
-    args: ['./runtime_tests/deno/favicon-notfound.ico'],
-  })
+  assertSpyCall(onNotFound, 0)
 
   res = await app.request('http://localhost/static/plain.txt')
   assertEquals(res.status, 200)

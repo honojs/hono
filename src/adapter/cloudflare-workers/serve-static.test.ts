@@ -63,7 +63,7 @@ describe('ServeStatic Middleware', () => {
   it('Should return 404 response', async () => {
     const res = await app.request('http://localhost/static/not-found.html')
     expect(res.status).toBe(404)
-    expect(onNotFound).toHaveBeenCalledWith('assets/static/not-found.html')
+    expect(onNotFound).toHaveBeenCalledWith('assets/static/not-found.html', expect.anything())
   })
 
   it('Should return plan.txt', async () => {
