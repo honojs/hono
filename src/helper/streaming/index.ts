@@ -1,3 +1,4 @@
 export { stream } from './stream'
-export { streamSSE } from './sse'
+export type { SSEMessage } from './sse'
+export { streamSSE, SSEStreamingApi } from './sse'
 export { streamText } from './text'
