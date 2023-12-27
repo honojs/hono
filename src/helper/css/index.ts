@@ -1,8 +1,19 @@
 import { raw } from '../../helper/html'
 import { type HtmlEscapedCallback } from '../../utils/html'
 
-type Styles = Record<string, string>
-const styles: Styles = {}
+export type CssEscaped = {
+  isCssEscaped: true
+}
+export type CssEscapedString = string & CssEscaped
+
+export const rawCssString = (value: string): CssEscapedString => {
+  const escapedString = new String(value) as CssEscapedString
+  escapedString.isCssEscaped = true
+  return escapedString
+}
+
+type Styles = WeakMap<Object, string>
+const styles: Styles = new WeakMap()
 
 const DEFAULT_STYLE_ID = 'hono-css'
 
@@ -20,78 +31,86 @@ const toHash = (str: string): string => {
   return 'css-' + out
 }
 
-export const keyframes = (strings: TemplateStringsArray, ...values: string[]): string => {
-  let styleString = ''
-  strings.forEach((string, index) => {
-    string = string.trim().replace(/\n\s*/g, ' ')
-    styleString += string + (values[index] || '')
-  })
-  const className = `@keyframes ${toHash(styleString)}`
-  styles[className] = styleString
-  return className
+const cssStringReStr = [
+  '"(?:(?:\\\\[\\s\\S]|[^"\\\\])*)"', // double quoted string
+  "'(?:(?:\\\\[\\s\\S]|[^'\\\\])*)'", // single quoted string
+].join('|')
+const minifyCssRe = new RegExp(
+  [
+    '(' + cssStringReStr + ')', // $1: quoted string
+
+    '(?:' +
+      [
+        '^\\s+', // head whitespace
+        '\\/\\*.*?\\*\\/\\s*', // multi-line comment
+        '\\/\\/.*\\n\\s*', // single-line comment
+        '\\s+$', // tail whitespace
+      ].join('|') +
+      ')',
+
+    ';\\s*(}|$)\\s*', // $2: trailing semicolon
+    '\\s*([{};:,])\\s*', // $3: whitespace around { } : , ;
+    '(\\s)\\s+', // $4: 2+ spaces
+  ].join('|'),
+  'g'
+)
+
+const minify = (css: string): string => {
+  return css.replace(minifyCssRe, (_, $1, $2, $3, $4) => $1 || $2 || $3 || $4 || '')
 }
 
-type contextCssData = [
-  { [className: string]: true }, // class name to add
-  { [className: string]: true } // class name already added
+type usedClassNameData = [
+  Map<String, true>, // class name to add
+  Map<String, true> // class name already added
 ]
-const cssMap: WeakMap<Object, contextCssData> = new WeakMap()
-export const css = (() => {
-  let id = DEFAULT_STYLE_ID
+export const createCssContext = ({ id }: { id: Readonly<string> }) => {
+  const contextMap: WeakMap<Object, usedClassNameData> = new WeakMap()
 
-  const css = async (strings: TemplateStringsArray, ...values: string[]): Promise<string> => {
-    const selectors: string[] = []
+  const replaceStyleRe = new RegExp(`(<style id="${id}">.*?)(</style>)`)
+
+  const css = async (
+    strings: TemplateStringsArray,
+    ...values: (string | String | Promise<string> | Promise<String>)[]
+  ): Promise<string> => {
+    const selectors: String[] = []
     let styleString = ''
-    strings.forEach((string, index) => {
-      string = string.trim().replace(/\n\s*/g, ' ')
-      const value = values[index]
+    for (let i = 0; i < strings.length; i++) {
+      const string = strings[i]
+      let value = (values[i] instanceof Promise ? await values[i] : values[i]) as string
       if (value && value.startsWith('@keyframes ')) {
         selectors.push(value)
         styleString += `${string} ${value.substring(11)} `
       } else {
-        styleString += string + (value || '')
-      }
-    })
-    const selector = `.${toHash(styleString)}`
-    styles[selector] = styleString
-      .replace(
-        /(^|;)([^;]*)({[^}]+})([\s\r\n]*}[\s\r\n]*$)?/,
-        (_, pre, subSelector, content, close) => {
-          return `${pre}}${subSelector.replace(/&/g, selector)}${content}${
-            close ? '' : `${selector}{`
-          }`
+        if (value && !(value as CssEscapedString).isCssEscaped && /([\\"'\/])/.test(value)) {
+          value = value.replace(/([\\"'\/])/g, '\\$1')
         }
-      )
-      .replace(/{}/g, '')
+        styleString += `${string}${value || ''}`
+      }
+    }
+    styleString = minify(styleString)
+    const selector = new String(toHash(styleString))
+    styles.set(selector, styleString)
     selectors.push(selector)
 
     const appendStyle: HtmlEscapedCallback = ({ buffer, context }): Promise<string> | undefined => {
-      const [toAdd, added] = cssMap.get(context) as contextCssData
-      const names = Object.keys(toAdd)
+      const [toAdd, added] = contextMap.get(context) as usedClassNameData
+      const names = [...toAdd.keys()]
 
       if (!names.length) {
         return
       }
 
-      const stylesStr = names.reduce((acc, className) => {
-        added[className] = true
-        acc += `${className}{${styles[className]}}`
-        return acc
-      }, '')
-      cssMap.set(context, [{}, added])
+      let stylesStr = ''
+      names.forEach((className) => {
+        added.set(className, true)
+        const content = styles.get(className)
+        stylesStr += `${className[0] === '@' ? '' : '.'}${className}{${content}}`
+      })
+      contextMap.set(context, [new Map(), added])
 
-      if (buffer) {
-        let replaced = false
-        buffer[0] = buffer[0].replace(
-          new RegExp(`(<style id="${id}">.*?)(</style>)`),
-          (_, pre, post) => {
-            replaced = true
-            return `${pre}${stylesStr}${post}`
-          }
-        )
-        if (replaced) {
-          return
-        }
+      if (buffer && replaceStyleRe.test(buffer[0])) {
+        buffer[0] = buffer[0].replace(replaceStyleRe, (_, pre, post) => `${pre}${stylesStr}${post}`)
+        return
       }
 
       const appendStyleScript = `<script>document.querySelector('#${id}').textContent+=${JSON.stringify(
@@ -105,16 +124,16 @@ export const css = (() => {
       return Promise.resolve(appendStyleScript)
     }
 
-    const addClassNameToContext: HtmlEscapedCallback = ({ phase, context }) => {
-      if (!cssMap.get(context)) {
-        cssMap.set(context, [{}, {}])
+    const addClassNameToContext: HtmlEscapedCallback = ({ context }) => {
+      if (!contextMap.get(context)) {
+        contextMap.set(context, [new Map(), new Map()])
       }
-      const [toAdd, added] = cssMap.get(context) as contextCssData
+      const [toAdd, added] = contextMap.get(context) as usedClassNameData
       let allAdded = true
       selectors.forEach((className) => {
-        if (!added[className]) {
+        if (!added.has(className)) {
           allAdded = false
-          toAdd[className] = true
+          toAdd.set(className, true)
         }
       })
       if (allAdded) {
@@ -124,18 +143,36 @@ export const css = (() => {
       return Promise.resolve(raw('', [appendStyle]))
     }
 
-    return raw(selector.slice(1), [addClassNameToContext])
+    return raw(selector, [addClassNameToContext])
   }
 
-  Object.defineProperty(css, 'id', {
-    get: () => id,
-    set: (newId: string) => {
-      id = newId
-    },
-  })
+  const keyframes = async (
+    strings: TemplateStringsArray,
+    ...values: (string | Promise<string>)[]
+  ): Promise<String> => {
+    let styleString = ''
+    for (let i = 0; i < strings.length; i++) {
+      const string = strings[i]
+      let value = (values[i] instanceof Promise ? await values[i] : values[i]) as string
+      if (value && !(value as CssEscapedString).isCssEscaped && /([\\"'\/])/.test(value)) {
+        value = value.replace(/([\\"'\/])/g, '\\$1')
+      }
+      styleString += `${string}${value || ''}`
+    }
+    styleString = minify(styleString)
+    const className = new String(`@keyframes ${toHash(styleString)}`)
+    styles.set(className, styleString)
+    return className
+  }
 
-  return css
-})()
+  const Style = () => raw(`<style id="${id}"></style>`)
 
-export const Style = ({ id }: { id?: string } = {}) =>
-  raw(`<style id="${id || DEFAULT_STYLE_ID}"></style>`)
+  return {
+    css,
+    keyframes,
+    Style,
+  }
+}
+
+const { css, keyframes, Style } = createCssContext({ id: DEFAULT_STYLE_ID })
+export { css, keyframes, Style }
