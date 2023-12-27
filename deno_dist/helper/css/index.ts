@@ -1,5 +1,10 @@
 import { raw } from '../../helper/html/index.ts'
-import { type HtmlEscapedCallback } from '../../utils/html.ts'
+import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html.ts'
+
+type CssClassName = HtmlEscapedString & {
+  isCssClassName: true
+  styleString: string
+}
 
 type CssEscaped = {
   isCssEscaped: true
@@ -16,10 +21,6 @@ export const rawCssString = (value: string): CssEscapedString => {
   escapedString.isCssEscaped = true
   return escapedString
 }
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-type Styles = WeakMap<object, String>
-const styles: Styles = new WeakMap()
 
 const DEFAULT_STYLE_ID = 'hono-css'
 
@@ -72,6 +73,52 @@ type usedClassNameData = [
   // eslint-disable-next-line @typescript-eslint/ban-types
   Map<String, true> // class name already added
 ]
+// eslint-disable-next-line @typescript-eslint/ban-types
+type CssVariableBasicType = string | String | number
+type CssVariableAsyncType = Promise<CssVariableBasicType>
+type CssVariableArrayType = (CssVariableBasicType | CssVariableAsyncType)[]
+type CssVariableType = CssVariableBasicType | CssVariableAsyncType | CssVariableArrayType
+
+const buildStyleString = async (
+  strings: TemplateStringsArray,
+  values: CssVariableType[],
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  selectors: String[]
+): Promise<string> => {
+  let styleString = ''
+  for (let i = 0; i < strings.length; i++) {
+    styleString += strings[i]
+    let vArray = values[i]
+    if (!vArray) {
+      continue
+    }
+
+    if (!Array.isArray(vArray)) {
+      vArray = [vArray] as CssVariableArrayType
+    }
+    for (let j = 0; j < vArray.length; j++) {
+      let value = (vArray[j] instanceof Promise ? await vArray[j] : vArray[j]) as string
+      if (!value) {
+        continue
+      }
+      if (typeof value === 'number') {
+        styleString += value
+      } else if (value.startsWith('@keyframes ')) {
+        selectors.push(value)
+        styleString += ` ${value.substring(11)} `
+      } else {
+        if ((value as CssClassName).isCssClassName) {
+          value = (value as CssClassName).styleString
+        } else if (!(value as CssEscapedString).isCssEscaped && /([\\"'\/])/.test(value)) {
+          value = value.replace(/([\\"'\/])/g, '\\$1')
+        }
+        styleString += `${value || ''}`
+      }
+    }
+  }
+
+  return minify(styleString)
+}
 
 /**
  * @experimental
@@ -85,28 +132,12 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
 
   const css = async (
     strings: TemplateStringsArray,
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    ...values: (string | string | Promise<string> | Promise<String>)[]
+    ...values: CssVariableType[]
   ): Promise<string> => {
     // eslint-disable-next-line @typescript-eslint/ban-types
     const selectors: String[] = []
-    let styleString = ''
-    for (let i = 0; i < strings.length; i++) {
-      const string = strings[i]
-      let value = (values[i] instanceof Promise ? await values[i] : values[i]) as string
-      if (value && value.startsWith('@keyframes ')) {
-        selectors.push(value)
-        styleString += `${string} ${value.substring(11)} `
-      } else {
-        if (value && !(value as CssEscapedString).isCssEscaped && /([\\"'\/])/.test(value)) {
-          value = value.replace(/([\\"'\/])/g, '\\$1')
-        }
-        styleString += `${string}${value || ''}`
-      }
-    }
-    styleString = minify(styleString)
+    const styleString = await buildStyleString(strings, values, selectors)
     const selector = new String(toHash(styleString))
-    styles.set(selector, styleString)
     selectors.push(selector)
 
     const appendStyle: HtmlEscapedCallback = ({ buffer, context }): Promise<string> | undefined => {
@@ -120,8 +151,9 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       let stylesStr = ''
       names.forEach((className) => {
         added.set(className, true)
-        const content = styles.get(className)
-        stylesStr += `${className[0] === '@' ? '' : '.'}${className}{${content}}`
+        stylesStr += `${className[0] === '@' ? '' : '.'}${className}{${
+          (className as CssClassName).styleString
+        }}`
       })
       contextMap.set(context, [new Map(), added])
 
@@ -160,26 +192,28 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       return Promise.resolve(raw('', [appendStyle]))
     }
 
-    return raw(selector, [addClassNameToContext])
+    Object.assign(selector as CssClassName, {
+      isEscaped: true,
+      isCssClassName: true,
+      styleString,
+      callbacks: [addClassNameToContext],
+    })
+
+    return selector as string
   }
 
   const keyframes = async (
     strings: TemplateStringsArray,
-    ...values: (string | Promise<string>)[]
+    ...values: CssVariableType[]
   ): // eslint-disable-next-line @typescript-eslint/ban-types
   Promise<String> => {
-    let styleString = ''
-    for (let i = 0; i < strings.length; i++) {
-      const string = strings[i]
-      let value = (values[i] instanceof Promise ? await values[i] : values[i]) as string
-      if (value && !(value as CssEscapedString).isCssEscaped && /([\\"'\/])/.test(value)) {
-        value = value.replace(/([\\"'\/])/g, '\\$1')
-      }
-      styleString += `${string}${value || ''}`
-    }
-    styleString = minify(styleString)
+    const styleString = await buildStyleString(strings, values, [])
     const className = new String(`@keyframes ${toHash(styleString)}`)
-    styles.set(className, styleString)
+    Object.assign(className as CssClassName, {
+      isEscaped: true,
+      isCssClassName: true,
+      styleString,
+    })
     return className
   }
 
