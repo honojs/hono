@@ -1,5 +1,6 @@
 // @denoify-ignore
 import type { KVNamespace } from '@cloudflare/workers-types'
+import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 import { getFilePath } from '../../utils/filepath'
 import { getMimeType } from '../../utils/mime'
@@ -11,7 +12,7 @@ export type ServeStaticOptions = {
   manifest?: object | string
   namespace?: KVNamespace
   rewriteRequestPath?: (path: string) => string
-  onNotFound?: (path: string) => void | Promise<void>
+  onNotFound?: (path: string, c: Context) => void | Promise<void>
 }
 
 const DEFAULT_DOCUMENT = 'index.html'
@@ -51,7 +52,7 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Middlew
       return c.body(content)
     }
 
-    await options.onNotFound?.(path)
+    await options.onNotFound?.(path, c)
     await next()
     return
   }
