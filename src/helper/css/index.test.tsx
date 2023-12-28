@@ -2,7 +2,7 @@ import { Hono } from '../../'
 import { html } from '../../helper/html'
 import { jsx, Fragment, JSXNode } from '../../jsx'
 import { Suspense, renderToReadableStream } from '../../jsx/streaming'
-import type { HtmlEscapedString} from '../../utils/html'
+import type { HtmlEscapedString } from '../../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
 import { css, keyframes, rawCssString, Style, createCssContext } from './index'
 
@@ -276,7 +276,7 @@ describe('CSS Helper', () => {
           content: "Hel  \\\n  \\'  lo!";
           content: 'Hel  \\\n  \\"  lo!';
         `,
-        '.css-123{background-color:blue;color:white;padding:1rem;content:"Hel  \\\n  \\\'  lo!";content:\'Hel  \\\n  \\\"  lo!\'}',
+        '.css-123{background-color:blue;color:white;padding:1rem;content:"Hel  \\\n  \\\'  lo!";content:\'Hel  \\\n  \\"  lo!\'}',
       ],
       [
         'preserve nested selectors',
