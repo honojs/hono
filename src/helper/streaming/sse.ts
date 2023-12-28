@@ -39,10 +39,10 @@ const setSSEHeaders = (context: Context) => {
 
 export const streamSSE = (c: Context, cb: (stream: SSEStreamingApi) => Promise<void>) => {
   return stream(c, async (originalStream: StreamingApi) => {
-    const { readable, writable } = new TransformStream()
-    const stream = new SSEStreamingApi(writable, readable)
+    const transformer = new TransformStream()
+    const stream = new SSEStreamingApi(transformer.writable, transformer.readable)
 
-    originalStream.pipe(readable).catch((err) => {
+    originalStream.pipe(stream.readable).catch((err) => {
       console.error('Error in stream piping: ', err)
       stream.close()
     })
