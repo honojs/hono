@@ -111,7 +111,7 @@ const buildStyleString = async (
           selectors.push(...(value as CssClassName).selectors)
           value = (value as CssClassName).styleString
         } else if (!(value as CssEscapedString).isCssEscaped && /([\\"'\/])/.test(value)) {
-          value = value.replace(/([\\"'\/])/g, '\\$1')
+          value = value.replace(/([\\"']|(?<=<)\/)/g, '\\$1')
         }
         styleString += `${value || ''}`
       }

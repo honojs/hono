@@ -110,6 +110,38 @@ describe('CSS Helper', () => {
       )
     })
 
+    it('Should escape </style>', async () => {
+      const headerClass = css`
+        background-color: blue;
+        content: '${'</style>'}';
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-372954897{background-color:blue;content:\'<\\/style>\'}</style><h1 class="css-372954897">Hello!</h1>'
+      )
+    })
+
+    it('Should not escape URL', async () => {
+      const headerClass = css`
+        background-color: blue;
+        background: url('${'http://www.example.com/path/to/file.jpg'}');
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-1321888780{background-color:blue;background:url(\'http://www.example.com/path/to/file.jpg\')}</style><h1 class="css-1321888780">Hello!</h1>'
+      )
+    })
+
     it('Should render CSS with escaped variable', async () => {
       const headerClass = css`
         background-color: blue;
