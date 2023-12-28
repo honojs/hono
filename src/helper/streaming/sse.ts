@@ -9,8 +9,8 @@ export interface SSEMessage {
 }
 
 export class SSEStreamingApi extends StreamingApi {
-  constructor(writable: WritableStream) {
-    super(writable)
+  constructor(writable: WritableStream, readable: ReadableStream) {
+    super(writable, readable)
   }
 
   async writeSSE(message: SSEMessage) {
@@ -40,7 +40,7 @@ const setSSEHeaders = (context: Context) => {
 export const streamSSE = (c: Context, cb: (stream: SSEStreamingApi) => Promise<void>) => {
   return stream(c, async (originalStream: StreamingApi) => {
     const { readable, writable } = new TransformStream()
-    const stream = new SSEStreamingApi(writable)
+    const stream = new SSEStreamingApi(writable, readable)
 
     originalStream.pipe(readable).catch((err) => {
       console.error('Error in stream piping: ', err)

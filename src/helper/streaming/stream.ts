@@ -2,8 +2,8 @@ import type { Context } from '../../context'
 import { StreamingApi } from '../../utils/stream'
 
 export const stream = (c: Context, cb: (stream: StreamingApi) => Promise<void>): Response => {
-  const { readable, writable } = new TransformStream()
-  const stream = new StreamingApi(writable)
+  const transformer = new TransformStream()
+  const stream = new StreamingApi(transformer.writable, transformer.readable)
   cb(stream).finally(() => stream.close())
-  return c.newResponse(readable)
+  return c.newResponse(stream.readable)
 }
