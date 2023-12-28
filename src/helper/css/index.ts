@@ -110,6 +110,10 @@ const buildStyleString = async (
         if ((value as CssClassName).isCssClassName) {
           selectors.push(...(value as CssClassName).selectors)
           value = (value as CssClassName).styleString
+          const lastChar = value[value.length - 1]
+          if (lastChar !== ';' && lastChar !== '}') {
+            value += ';'
+          }
         } else if (!(value as CssEscapedString).isCssEscaped && /([\\"'\/])/.test(value)) {
           value = value.replace(/([\\"']|(?<=<)\/)/g, '\\$1')
         }
