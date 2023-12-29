@@ -399,12 +399,12 @@ export class Context<
     headers?: HeaderRecord
   ): Response => {
     const { readable, writable } = new TransformStream()
-    const stream = new StreamingApi(writable)
+    const stream = new StreamingApi(writable, readable)
     cb(stream).finally(() => stream.close())
 
     return typeof arg === 'number'
-      ? this.newResponse(readable, arg, headers)
-      : this.newResponse(readable, arg)
+      ? this.newResponse(stream.responseReadable, arg, headers)
+      : this.newResponse(stream.responseReadable, arg)
   }
 
   /** @deprecated
