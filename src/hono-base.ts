@@ -23,7 +23,7 @@ import type {
 } from './types'
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
 
-export const composedHandler = Symbol('composedHandler')
+export const COMPOSED_HANDLER = Symbol('composedHandler')
 
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
@@ -167,7 +167,7 @@ class Hono<
         handler = async (c: Context, next: Next) =>
           (await compose<Context>([], app.errorHandler)(c, () => r.handler(c, next))).res
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(handler as any)[composedHandler] = r.handler
+        ;(handler as any)[COMPOSED_HANDLER] = r.handler
       }
 
       subApp.addRoute(r.method, r.path, handler)

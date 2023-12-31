@@ -1,5 +1,5 @@
 import type { Hono } from '../../hono.ts'
-import { composedHandler } from '../../hono-base.ts'
+import { COMPOSED_HANDLER } from '../../hono-base.ts'
 import type { Env, RouterRoute } from '../../types.ts'
 
 interface ShowRoutesOptions {
@@ -19,9 +19,9 @@ const handlerName = (handler: Function) => {
 }
 const findTargetHandler = (handler: Function): Function => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (handler as any)[composedHandler]
+  return (handler as any)[COMPOSED_HANDLER]
     ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      findTargetHandler((handler as any)[composedHandler])
+      findTargetHandler((handler as any)[COMPOSED_HANDLER])
     : handler
 }
 
