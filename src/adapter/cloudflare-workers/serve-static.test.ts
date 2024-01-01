@@ -155,3 +155,23 @@ describe('With middleware', () => {
     expect(await res.text()).toBe('bar')
   })
 })
+
+describe('Types of middleware', () => {
+  it('Should pass env type from generics of serveStatic', async () => {
+    type Env = {
+      Bindings: {
+        HOGE: string
+      }
+    }
+    const app = new Hono<Env>()
+    app.use(
+      '/static/*',
+      serveStatic<Env>({
+        root: './assets',
+        onNotFound: (_, c) => {
+          expectTypeOf(c.env).toEqualTypeOf<Env['Bindings']>()
+        },
+      })
+    )
+  })
+})
