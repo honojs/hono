@@ -35,6 +35,24 @@ describe('inspectRoutes()', () => {
       { path: '/static', method: 'GET', name: '[handler]', isMiddleware: false },
     ])
   })
+
+  it('should return [handler] also for sub app', async () => {
+    const subApp = new Hono()
+
+    subApp.get('/', (c) => c.json(0))
+    subApp.onError((_, c) => c.json(0))
+
+    const mainApp = new Hono()
+    mainApp.route('/', subApp)
+    expect(inspectRoutes(mainApp)).toEqual([
+      {
+        isMiddleware: false,
+        method: 'GET',
+        name: '[handler]',
+        path: '/',
+      },
+    ])
+  })
 })
 
 describe('showRoutes()', () => {
