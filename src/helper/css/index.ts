@@ -1,12 +1,16 @@
 import { raw } from '../../helper/html'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
 
+const IS_CSS_CLASS_NAME = Symbol('IS_CSS_CLASS_NAME')
+const STYLE_STRING = Symbol('STYLE_STRING')
+const SELECTORS = Symbol('SELECTORS')
+const EXTERNAL_CLASS_NAMES = Symbol('EXTERNAL_CLASS_NAMES')
 type CssClassName = HtmlEscapedString & {
-  isCssClassName: true
-  styleString: string
+  [IS_CSS_CLASS_NAME]: true
+  [STYLE_STRING]: string
   // eslint-disable-next-line @typescript-eslint/ban-types
-  selectors: String[]
-  externalClassNames: string[]
+  [SELECTORS]: String[]
+  [EXTERNAL_CLASS_NAMES]: string[]
 }
 
 type CssEscaped = {
@@ -111,10 +115,10 @@ const buildStyleString = async (
         selectors.push(value)
         styleString += ` ${value.substring(11)} `
       } else {
-        if ((value as CssClassName).isCssClassName) {
-          selectors.push(...(value as CssClassName).selectors)
-          externalClassNames.push(...(value as CssClassName).externalClassNames)
-          value = (value as CssClassName).styleString
+        if ((value as CssClassName)[IS_CSS_CLASS_NAME]) {
+          selectors.push(...(value as CssClassName)[SELECTORS])
+          externalClassNames.push(...(value as CssClassName)[EXTERNAL_CLASS_NAMES])
+          value = (value as CssClassName)[STYLE_STRING]
           if (value.length > 0) {
             const lastChar = value[value.length - 1]
             if (lastChar !== ';' && lastChar !== '}') {
@@ -200,7 +204,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       selectors.forEach((className) => {
         if (!added[`${className}`]) {
           allAdded = false
-          toAdd[`${className}`] = (className as CssClassName).styleString
+          toAdd[`${className}`] = (className as CssClassName)[STYLE_STRING]
         }
       })
       if (allAdded) {
@@ -212,11 +216,11 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
 
     Object.assign(className, {
       isEscaped: true,
-      isCssClassName: true,
-      styleString: thisStyleString,
-      selectors,
-      externalClassNames,
       callbacks: [addClassNameToContext],
+      [IS_CSS_CLASS_NAME]: true,
+      [STYLE_STRING]: thisStyleString,
+      [SELECTORS]: selectors,
+      [EXTERNAL_CLASS_NAMES]: externalClassNames,
     })
 
     return className as string
@@ -228,14 +232,14 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     const resolvedArgs = await Promise.all(args)
     for (let i = 0; i < resolvedArgs.length; i++) {
       const arg = resolvedArgs[i]
-      if (typeof arg === 'string' && !(arg as CssClassName).isCssClassName) {
+      if (typeof arg === 'string' && !(arg as CssClassName)[IS_CSS_CLASS_NAME]) {
         const externalClassName = new String(arg) as CssClassName
         resolvedArgs[i] = Object.assign(externalClassName, {
           isEscaped: true,
-          isCssClassName: true,
-          styleString: '',
-          selectors: [],
-          externalClassNames: [arg],
+          [IS_CSS_CLASS_NAME]: true,
+          [STYLE_STRING]: '',
+          [SELECTORS]: [],
+          [EXTERNAL_CLASS_NAMES]: [arg],
         })
       }
     }
@@ -253,10 +257,10 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     const className = new String(`@keyframes ${toHash(styleString)}`)
     Object.assign(className as CssClassName, {
       isEscaped: true,
-      isCssClassName: true,
-      styleString,
-      selectors: [],
-      externalClassNames: [],
+      [IS_CSS_CLASS_NAME]: true,
+      [STYLE_STRING]: styleString,
+      [SELECTORS]: [],
+      [EXTERNAL_CLASS_NAMES]: [],
     })
     return className
   }
