@@ -1,11 +1,16 @@
 import { raw } from '../../helper/html/index.ts'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html.ts'
 
+const IS_CSS_CLASS_NAME = Symbol('IS_CSS_CLASS_NAME')
+const STYLE_STRING = Symbol('STYLE_STRING')
+const SELECTORS = Symbol('SELECTORS')
+const EXTERNAL_CLASS_NAMES = Symbol('EXTERNAL_CLASS_NAMES')
 type CssClassName = HtmlEscapedString & {
-  isCssClassName: true
-  styleString: string
+  [IS_CSS_CLASS_NAME]: true
+  [STYLE_STRING]: string
   // eslint-disable-next-line @typescript-eslint/ban-types
-  selectors: String[]
+  [SELECTORS]: String[]
+  [EXTERNAL_CLASS_NAMES]: string[]
 }
 
 type CssEscaped = {
@@ -83,7 +88,8 @@ const buildStyleString = async (
   strings: TemplateStringsArray,
   values: CssVariableType[],
   // eslint-disable-next-line @typescript-eslint/ban-types
-  selectors: String[]
+  selectors: String[],
+  externalClassNames: string[]
 ): Promise<string> => {
   let styleString = ''
   for (let i = 0; i < strings.length; i++) {
@@ -109,12 +115,15 @@ const buildStyleString = async (
         selectors.push(value)
         styleString += ` ${value.substring(11)} `
       } else {
-        if ((value as CssClassName).isCssClassName) {
-          selectors.push(...(value as CssClassName).selectors)
-          value = (value as CssClassName).styleString
-          const lastChar = value[value.length - 1]
-          if (lastChar !== ';' && lastChar !== '}') {
-            value += ';'
+        if ((value as CssClassName)[IS_CSS_CLASS_NAME]) {
+          selectors.push(...(value as CssClassName)[SELECTORS])
+          externalClassNames.push(...(value as CssClassName)[EXTERNAL_CLASS_NAMES])
+          value = (value as CssClassName)[STYLE_STRING]
+          if (value.length > 0) {
+            const lastChar = value[value.length - 1]
+            if (lastChar !== ';' && lastChar !== '}') {
+              value += ';'
+            }
           }
         } else if (
           !(value as CssEscapedString).isCssEscaped &&
@@ -146,8 +155,10 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
   ): Promise<string> => {
     // eslint-disable-next-line @typescript-eslint/ban-types
     const selectors: String[] = []
-    const styleString = await buildStyleString(strings, values, selectors)
-    const selector = new String(toHash(styleString))
+    const externalClassNames: string[] = []
+    const thisStyleString = await buildStyleString(strings, values, selectors, externalClassNames)
+    const thisSelector = toHash(thisStyleString)
+    const className = new String([thisSelector, ...externalClassNames].join(' ')) as CssClassName
 
     const appendStyle: HtmlEscapedCallback = ({ buffer, context }): Promise<string> | undefined => {
       const [toAdd, added] = contextMap.get(context) as usedClassNameData
@@ -186,10 +197,14 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       }
       const [toAdd, added] = contextMap.get(context) as usedClassNameData
       let allAdded = true
-      ;[selector, ...selectors].forEach((className) => {
+      if (!added[thisSelector]) {
+        allAdded = false
+        toAdd[thisSelector] = thisStyleString
+      }
+      selectors.forEach((className) => {
         if (!added[`${className}`]) {
           allAdded = false
-          toAdd[`${className}`] = (className as CssClassName).styleString
+          toAdd[`${className}`] = (className as CssClassName)[STYLE_STRING]
         }
       })
       if (allAdded) {
@@ -199,33 +214,53 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       return Promise.resolve(raw('', [appendStyle]))
     }
 
-    Object.assign(selector as CssClassName, {
+    Object.assign(className, {
       isEscaped: true,
-      isCssClassName: true,
-      styleString,
-      selectors,
       callbacks: [addClassNameToContext],
+      [IS_CSS_CLASS_NAME]: true,
+      [STYLE_STRING]: thisStyleString,
+      [SELECTORS]: selectors,
+      [EXTERNAL_CLASS_NAMES]: externalClassNames,
     })
 
-    return selector as string
+    return className as string
   }
 
-  const cx = async (...args: Promise<string>[]): Promise<string> =>
+  const cx = async (
+    ...args: (string | boolean | null | undefined | Promise<string | boolean | null | undefined>)[]
+  ): Promise<string> => {
+    const resolvedArgs = await Promise.all(args)
+    for (let i = 0; i < resolvedArgs.length; i++) {
+      const arg = resolvedArgs[i]
+      if (typeof arg === 'string' && !(arg as CssClassName)[IS_CSS_CLASS_NAME]) {
+        const externalClassName = new String(arg) as CssClassName
+        resolvedArgs[i] = Object.assign(externalClassName, {
+          isEscaped: true,
+          [IS_CSS_CLASS_NAME]: true,
+          [STYLE_STRING]: '',
+          [SELECTORS]: [],
+          [EXTERNAL_CLASS_NAMES]: [arg],
+        })
+      }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    css(Array(args.length).fill('') as any, ...args)
+    return css(Array(resolvedArgs.length).fill('') as any, ...resolvedArgs)
+  }
 
   const keyframes = async (
     strings: TemplateStringsArray,
     ...values: CssVariableType[]
   ): // eslint-disable-next-line @typescript-eslint/ban-types
   Promise<String> => {
-    const styleString = await buildStyleString(strings, values, [])
+    const styleString = await buildStyleString(strings, values, [], [])
     const className = new String(`@keyframes ${toHash(styleString)}`)
     Object.assign(className as CssClassName, {
       isEscaped: true,
-      isCssClassName: true,
-      styleString,
-      selectors: [],
+      [IS_CSS_CLASS_NAME]: true,
+      [STYLE_STRING]: styleString,
+      [SELECTORS]: [],
+      [EXTERNAL_CLASS_NAMES]: [],
     })
     return className
   }
