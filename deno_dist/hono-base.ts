@@ -186,7 +186,7 @@ class Hono<
 
   /**
    * @deprecated
-   * Use `showRoutes()` utility methods provided by 'hono/dev' instead of `app.showRoutes()`.
+   * Use `showRoutes()` provided by `hono/dev` instead of `app.showRoutes()`.
    * `app.showRoutes()` will be removed in v4.
    * @example
    * You could rewrite `app.showRoutes()` as follows
@@ -238,8 +238,8 @@ class Hono<
 
   /**
    * @deprecated
-   * `app.routerName()` will be removed in v4.
-   * Use `getRouterName()` in `hono/dev` instead of `app.routerName()`.
+   * Use `getRouterName()` provided by `hono/dev` instead of `app.routerName`.
+   * `app.getRouterName()` will be removed in v4.
    */
   get routerName() {
     this.matchRoute('GET', '/')
