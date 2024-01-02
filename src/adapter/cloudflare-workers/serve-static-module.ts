@@ -8,13 +8,9 @@ import type { ServeStaticOptions } from './serve-static'
 import { serveStatic } from './serve-static'
 
 const module = <E extends Env = Env>(options: ServeStaticOptions<E> = { root: '' }) => {
-  return serveStatic<E>({
-    root: options.root,
-    path: options.path,
-    manifest: options.manifest ? options.manifest : manifest,
-    rewriteRequestPath: options.rewriteRequestPath,
-    onNotFound: options.onNotFound,
-  })
+  options.manifest ??= manifest
+  delete options.namespace
+  return serveStatic<E>(options)
 }
 
 export { module as serveStatic }
