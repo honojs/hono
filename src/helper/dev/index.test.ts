@@ -110,6 +110,24 @@ describe('showRoutes()', () => {
       '           [handler]',
     ])
   })
+
+  it('should render output specified by the `callback` option', async () => {
+    showRoutes(app, {
+      callback: ({ method, path }) => {
+        console.log(`${method} ${path}`)
+      },
+    })
+    expect(logs).toEqual([
+      'GET /',
+      'GET /named',
+      'POST /',
+      'PUT /',
+      'PATCH /',
+      'DELETE /',
+      'OPTIONS /',
+      'GET /static',
+    ])
+  })
 })
 
 describe('geRouterName()', () => {

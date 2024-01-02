@@ -2,15 +2,16 @@ import type { Hono } from '../../hono'
 import { COMPOSED_HANDLER } from '../../hono-base'
 import type { Env, RouterRoute } from '../../types'
 
-interface ShowRoutesOptions {
-  verbose?: boolean
-}
-
 interface RouteData {
   path: string
   method: string
   name: string
   isMiddleware: boolean
+}
+
+interface ShowRoutesOptions {
+  verbose?: boolean
+  callback?: (data: { method: string; path: string; routes: RouteData[] }) => void
 }
 
 const isMiddleware = (handler: Function) => handler.length > 1
@@ -58,6 +59,12 @@ export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOption
       if (!data) {
         return
       }
+
+      if (opts?.callback) {
+        opts.callback(data)
+        return
+      }
+
       const { method, path, routes } = data
 
       console.log(`\x1b[32m${method}\x1b[0m ${' '.repeat(maxMethodLength - method.length)} ${path}`)
