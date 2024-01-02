@@ -23,6 +23,8 @@ import type {
 } from './types'
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
 
+export const COMPOSED_HANDLER = Symbol('composedHandler')
+
 type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
 function defineDynamicClass(): {
@@ -110,7 +112,7 @@ class Hono<
       return this as any
     }
 
-    // Implementation of app.use(...handlers[]) or app.get(path, ...handlers[])
+    // Implementation of app.use(...handlers[]) or app.use(path, ...handlers[])
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.use = (arg1: string | MiddlewareHandler<any>, ...handlers: MiddlewareHandler<any>[]) => {
       if (typeof arg1 === 'string') {
@@ -158,11 +160,16 @@ class Hono<
     }
 
     app.routes.map((r) => {
-      const handler =
-        app.errorHandler === errorHandler
-          ? r.handler
-          : async (c: Context, next: Next) =>
-              (await compose<Context>([], app.errorHandler)(c, () => r.handler(c, next))).res
+      let handler
+      if (app.errorHandler === errorHandler) {
+        handler = r.handler
+      } else {
+        handler = async (c: Context, next: Next) =>
+          (await compose<Context>([], app.errorHandler)(c, () => r.handler(c, next))).res
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(handler as any)[COMPOSED_HANDLER] = r.handler
+      }
+
       subApp.addRoute(r.method, r.path, handler)
     })
     return this
