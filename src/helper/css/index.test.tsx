@@ -299,6 +299,43 @@ describe('CSS Helper', () => {
         '<style id="hono-css">.css-2395710522{border-radius:4px;background-color:blue;color:white}</style><h1 class="css-2395710522">Hello!</h1>'
       )
     })
+
+    it('Should render CSS with cx() includes external class name', async () => {
+      const btn = css`
+        border-radius: 4px;
+      `
+
+      const template = (
+        <>
+          <Style />
+          <h1 class={cx(btn, 'external-class')}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-3467431616{border-radius:4px}</style><h1 class="css-3467431616 external-class">Hello!</h1>'
+      )
+    })
+
+    it('Should render CSS with cx() includes nested external class name', async () => {
+      const btn = css`
+        border-radius: 4px;
+      `
+      const btn2 = cx(btn, 'external-class')
+      const btn3 = css`
+        ${btn2}
+        color: white;
+      `
+      const btn4 = cx(btn3, 'external-class2')
+      const template = (
+        <>
+          <Style />
+          <h1 class={btn4}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-3358636561{border-radius:4px;color:white}</style><h1 class="css-3358636561 external-class external-class2">Hello!</h1>'
+      )
+    })
   })
 
   describe('minify', () => {
