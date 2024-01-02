@@ -114,7 +114,10 @@ describe('Serve Static Middleware', () => {
     const res = await app.request(new Request('http://localhost/favicon-notfound.ico'))
     expect(res.status).toBe(404)
     expect(res.headers.get('X-Custom')).toBe('Bun')
-    expect(onNotFound).toHaveBeenCalledWith('./runtime_tests/bun/favicon-notfound.ico')
+    expect(onNotFound).toHaveBeenCalledWith(
+      './runtime_tests/bun/favicon-notfound.ico',
+      expect.anything()
+    )
   })
 
   it('Should return 200 response - /static/plain.txt', async () => {
