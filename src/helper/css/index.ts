@@ -74,7 +74,7 @@ type usedClassNameData = [
   Record<string, true> // class name already added
 ]
 // eslint-disable-next-line @typescript-eslint/ban-types
-type CssVariableBasicType = string | String | number
+type CssVariableBasicType = string | String | number | boolean | null | undefined
 type CssVariableAsyncType = Promise<CssVariableBasicType>
 type CssVariableArrayType = (CssVariableBasicType | CssVariableAsyncType)[]
 type CssVariableType = CssVariableBasicType | CssVariableAsyncType | CssVariableArrayType
@@ -89,7 +89,7 @@ const buildStyleString = async (
   for (let i = 0; i < strings.length; i++) {
     styleString += strings[i]
     let vArray = values[i]
-    if (!vArray) {
+    if (typeof vArray === 'boolean' || vArray === null || vArray === undefined) {
       continue
     }
 
@@ -97,8 +97,10 @@ const buildStyleString = async (
       vArray = [vArray] as CssVariableArrayType
     }
     for (let j = 0; j < vArray.length; j++) {
-      let value = (vArray[j] instanceof Promise ? await vArray[j] : vArray[j]) as string
-      if (!value) {
+      let value = (
+        vArray[j] instanceof Promise ? await vArray[j] : vArray[j]
+      ) as CssVariableBasicType
+      if (typeof value === 'boolean' || value === null || value === undefined) {
         continue
       }
       if (typeof value === 'number') {
@@ -114,7 +116,10 @@ const buildStyleString = async (
           if (lastChar !== ';' && lastChar !== '}') {
             value += ';'
           }
-        } else if (!(value as CssEscapedString).isCssEscaped && /([\\"'\/])/.test(value)) {
+        } else if (
+          !(value as CssEscapedString).isCssEscaped &&
+          /([\\"'\/])/.test(value as string)
+        ) {
           value = value.replace(/([\\"']|(?<=<)\/)/g, '\\$1')
         }
         styleString += `${value || ''}`

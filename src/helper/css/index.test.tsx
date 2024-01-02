@@ -220,6 +220,40 @@ describe('CSS Helper', () => {
         '<style id="hono-css">.css-2558359670{background-color:blue;animation:css-9294673 1s ease-in-out;color:red}@keyframes css-9294673{from{opacity:0}to{opacity:1}}</style><h1 class="css-2558359670">Hello!</h1>'
       )
     })
+
+    describe('Booleans, Null, and Undefined Are Ignored', () => {
+      it.each([true, false, undefined, null])('%s', async (value) => {
+        const headerClass = css`
+          ${value}
+          background-color: blue;
+        `
+        const template = (
+          <>
+            <Style />
+            <h1 class={headerClass}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-2458908649{background-color:blue}</style><h1 class="css-2458908649">Hello!</h1>'
+        )
+      })
+
+      it('falsy value', async () => {
+        const value = 0
+        const headerClass = css`
+          padding: ${value};
+        `
+        const template = (
+          <>
+            <Style />
+            <h1 class={headerClass}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-478287868{padding:0}</style><h1 class="css-478287868">Hello!</h1>'
+        )
+      })
+    })
   })
 
   it('Should render sub CSS with keyframe', async () => {
