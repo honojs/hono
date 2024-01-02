@@ -7,9 +7,10 @@ import type { Env } from '../../types'
 import type { ServeStaticOptions } from './serve-static'
 import { serveStatic } from './serve-static'
 
-const module = <E extends Env = Env>(options: ServeStaticOptions<E> = { root: '' }) => {
+const module = <E extends Env = Env>(
+  options: Omit<ServeStaticOptions<E>, 'namespace'> = { root: '' }
+) => {
   options.manifest ??= manifest
-  delete options.namespace
   return serveStatic<E>(options)
 }
 
