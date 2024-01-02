@@ -60,7 +60,7 @@ export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOption
       }
       const { method, path, routes } = data
 
-      console.log(`\x1b[32m${method}\x1b[0m ${' '.repeat(maxMethodLength - method.length)} ${path}`)
+      console.log(`${method} ${' '.repeat(maxMethodLength - method.length)} ${path}`)
 
       if (!opts?.verbose) {
         return
