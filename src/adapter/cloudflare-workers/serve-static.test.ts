@@ -63,7 +63,7 @@ describe('ServeStatic Middleware', () => {
   it('Should return 404 response', async () => {
     const res = await app.request('http://localhost/static/not-found.html')
     expect(res.status).toBe(404)
-    expect(onNotFound).toHaveBeenCalledWith('assets/static/not-found.html')
+    expect(onNotFound).toHaveBeenCalledWith('assets/static/not-found.html', expect.anything())
   })
 
   it('Should return plan.txt', async () => {
@@ -153,5 +153,25 @@ describe('With middleware', () => {
     const res = await app.request('http://localhost/static/foo')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('bar')
+  })
+})
+
+describe('Types of middleware', () => {
+  it('Should pass env type from generics of serveStatic', async () => {
+    type Env = {
+      Bindings: {
+        HOGE: string
+      }
+    }
+    const app = new Hono<Env>()
+    app.use(
+      '/static/*',
+      serveStatic<Env>({
+        root: './assets',
+        onNotFound: (_, c) => {
+          expectTypeOf(c.env).toEqualTypeOf<Env['Bindings']>()
+        },
+      })
+    )
   })
 })
