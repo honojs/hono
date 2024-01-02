@@ -13,6 +13,7 @@ const module = <E extends Env = Env>(options: ServeStaticOptions<E> = { root: ''
     path: options.path,
     manifest: options.manifest ? options.manifest : manifest,
     rewriteRequestPath: options.rewriteRequestPath,
+    onNotFound: options.onNotFound,
   })
 }
 
