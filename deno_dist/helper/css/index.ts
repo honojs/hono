@@ -1,5 +1,5 @@
-import { raw } from '../../helper/html'
-import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
+import { raw } from '../../helper/html/index.ts'
+import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html.ts'
 
 const IS_CSS_CLASS_NAME = Symbol('IS_CSS_CLASS_NAME')
 const STYLE_STRING = Symbol('STYLE_STRING')
