@@ -4,6 +4,8 @@ import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html.ts
 type CssClassName = HtmlEscapedString & {
   isCssClassName: true
   styleString: string
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  selectors: String[]
 }
 
 type CssEscaped = {
@@ -68,13 +70,11 @@ const minify = (css: string): string => {
 }
 
 type usedClassNameData = [
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  Map<String, true>, // class name to add
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  Map<String, true> // class name already added
+  Record<string, string>, // class name to add
+  Record<string, true> // class name already added
 ]
 // eslint-disable-next-line @typescript-eslint/ban-types
-type CssVariableBasicType = string | String | number
+type CssVariableBasicType = string | String | number | boolean | null | undefined
 type CssVariableAsyncType = Promise<CssVariableBasicType>
 type CssVariableArrayType = (CssVariableBasicType | CssVariableAsyncType)[]
 type CssVariableType = CssVariableBasicType | CssVariableAsyncType | CssVariableArrayType
@@ -89,7 +89,7 @@ const buildStyleString = async (
   for (let i = 0; i < strings.length; i++) {
     styleString += strings[i]
     let vArray = values[i]
-    if (!vArray) {
+    if (typeof vArray === 'boolean' || vArray === null || vArray === undefined) {
       continue
     }
 
@@ -97,8 +97,10 @@ const buildStyleString = async (
       vArray = [vArray] as CssVariableArrayType
     }
     for (let j = 0; j < vArray.length; j++) {
-      let value = (vArray[j] instanceof Promise ? await vArray[j] : vArray[j]) as string
-      if (!value) {
+      let value = (
+        vArray[j] instanceof Promise ? await vArray[j] : vArray[j]
+      ) as CssVariableBasicType
+      if (typeof value === 'boolean' || value === null || value === undefined) {
         continue
       }
       if (typeof value === 'number') {
@@ -108,9 +110,17 @@ const buildStyleString = async (
         styleString += ` ${value.substring(11)} `
       } else {
         if ((value as CssClassName).isCssClassName) {
+          selectors.push(...(value as CssClassName).selectors)
           value = (value as CssClassName).styleString
-        } else if (!(value as CssEscapedString).isCssEscaped && /([\\"'\/])/.test(value)) {
-          value = value.replace(/([\\"'\/])/g, '\\$1')
+          const lastChar = value[value.length - 1]
+          if (lastChar !== ';' && lastChar !== '}') {
+            value += ';'
+          }
+        } else if (
+          !(value as CssEscapedString).isCssEscaped &&
+          /([\\"'\/])/.test(value as string)
+        ) {
+          value = value.replace(/([\\"']|(?<=<)\/)/g, '\\$1')
         }
         styleString += `${value || ''}`
       }
@@ -138,11 +148,10 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     const selectors: String[] = []
     const styleString = await buildStyleString(strings, values, selectors)
     const selector = new String(toHash(styleString))
-    selectors.push(selector)
 
     const appendStyle: HtmlEscapedCallback = ({ buffer, context }): Promise<string> | undefined => {
       const [toAdd, added] = contextMap.get(context) as usedClassNameData
-      const names = [...toAdd.keys()]
+      const names = Object.keys(toAdd)
 
       if (!names.length) {
         return
@@ -150,12 +159,10 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
 
       let stylesStr = ''
       names.forEach((className) => {
-        added.set(className, true)
-        stylesStr += `${className[0] === '@' ? '' : '.'}${className}{${
-          (className as CssClassName).styleString
-        }}`
+        added[className] = true
+        stylesStr += `${className[0] === '@' ? '' : '.'}${className}{${toAdd[className]}}`
       })
-      contextMap.set(context, [new Map(), added])
+      contextMap.set(context, [{}, added])
 
       if (buffer && replaceStyleRe.test(buffer[0])) {
         buffer[0] = buffer[0].replace(replaceStyleRe, (_, pre, post) => `${pre}${stylesStr}${post}`)
@@ -175,14 +182,14 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
 
     const addClassNameToContext: HtmlEscapedCallback = ({ context }) => {
       if (!contextMap.get(context)) {
-        contextMap.set(context, [new Map(), new Map()])
+        contextMap.set(context, [{}, {}])
       }
       const [toAdd, added] = contextMap.get(context) as usedClassNameData
       let allAdded = true
-      selectors.forEach((className) => {
-        if (!added.has(className)) {
+      ;[selector, ...selectors].forEach((className) => {
+        if (!added[`${className}`]) {
           allAdded = false
-          toAdd.set(className, true)
+          toAdd[`${className}`] = (className as CssClassName).styleString
         }
       })
       if (allAdded) {
@@ -196,11 +203,16 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       isEscaped: true,
       isCssClassName: true,
       styleString,
+      selectors,
       callbacks: [addClassNameToContext],
     })
 
     return selector as string
   }
+
+  const cx = async (...args: Promise<string>[]): Promise<string> =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    css(Array(args.length).fill('') as any, ...args)
 
   const keyframes = async (
     strings: TemplateStringsArray,
@@ -213,6 +225,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       isEscaped: true,
       isCssClassName: true,
       styleString,
+      selectors: [],
     })
     return className
   }
@@ -221,6 +234,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
 
   return {
     css,
+    cx,
     keyframes,
     Style,
   }
@@ -234,6 +248,13 @@ const defaultContext = createCssContext({ id: DEFAULT_STYLE_ID })
  * The API might be changed.
  */
 export const css = defaultContext.css
+
+/**
+ * @experimental
+ * `cx` is an experimental feature.
+ * The API might be changed.
+ */
+export const cx = defaultContext.cx
 
 /**
  * @experimental
