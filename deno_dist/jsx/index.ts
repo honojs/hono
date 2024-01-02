@@ -145,6 +145,9 @@ export class JSXNode implements HtmlEscaped {
         }
 
         children = [raw(v.__html)]
+      } else if (v instanceof Promise) {
+        buffer[0] += ` ${key}="`
+        buffer.unshift('"', v)
       } else {
         buffer[0] += ` ${key}="`
         escapeToBuffer(v.toString(), buffer)
