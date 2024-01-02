@@ -205,6 +205,10 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     return selector as string
   }
 
+  const cx = async (...args: Promise<string>[]): Promise<string> =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    css(Array(args.length).fill('') as any, ...args)
+
   const keyframes = async (
     strings: TemplateStringsArray,
     ...values: CssVariableType[]
@@ -225,6 +229,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
 
   return {
     css,
+    cx,
     keyframes,
     Style,
   }
@@ -238,6 +243,13 @@ const defaultContext = createCssContext({ id: DEFAULT_STYLE_ID })
  * The API might be changed.
  */
 export const css = defaultContext.css
+
+/**
+ * @experimental
+ * `cx` is an experimental feature.
+ * The API might be changed.
+ */
+export const cx = defaultContext.cx
 
 /**
  * @experimental

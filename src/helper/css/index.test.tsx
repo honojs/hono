@@ -4,7 +4,7 @@ import { jsx, Fragment, JSXNode } from '../../jsx'
 import { Suspense, renderToReadableStream } from '../../jsx/streaming'
 import type { HtmlEscapedString } from '../../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
-import { css, keyframes, rawCssString, Style, createCssContext } from './index'
+import { css, cx, keyframes, rawCssString, Style, createCssContext } from './index'
 
 async function toString(
   template: JSXNode | Promise<HtmlEscapedString> | Promise<string> | HtmlEscapedString
@@ -243,6 +243,28 @@ describe('CSS Helper', () => {
     expect(await toString(template)).toBe(
       '<style id="hono-css">.css-1539881271{background-color:blue;:nth-child(1){color:red}:nth-child(2){color:red}}</style><h1 class="css-1539881271">Hello!</h1>'
     )
+  })
+
+  describe('cx()', () => {
+    it('Should render CSS with cx()', async () => {
+      const btn = css`
+        border-radius: 4px;
+      `
+      const btnPrimary = css`
+        background-color: blue;
+        color: white;
+      `
+
+      const template = (
+        <>
+          <Style />
+          <h1 class={cx(btn, btnPrimary)}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-2395710522{border-radius:4px;background-color:blue;color:white}</style><h1 class="css-2395710522">Hello!</h1>'
+      )
+    })
   })
 
   describe('minify', () => {
