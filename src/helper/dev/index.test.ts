@@ -110,6 +110,20 @@ describe('showRoutes()', () => {
       '           [handler]',
     ])
   })
+
+  it('should render not colorized output', async () => {
+    showRoutes(app, { colorize: false })
+    expect(logs).toEqual([
+      'GET      /',
+      'GET      /named',
+      'POST     /',
+      'PUT      /',
+      'PATCH    /',
+      'DELETE   /',
+      'OPTIONS  /',
+      'GET      /static',
+    ])
+  })
 })
 
 describe('geRouterName()', () => {
