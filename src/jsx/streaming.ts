@@ -1,4 +1,5 @@
 import { raw } from '../helper/html'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'
 import { childrenToString } from './components'
 import type { FC, Child } from './index'
@@ -34,9 +35,14 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
 
   if (resArray.some((res) => (res as {}) instanceof Promise)) {
     const index = suspenseCounter++
-    return raw(`<template id="H:${index}"></template>${fallback.toString()}<!--/$-->`, [
-      ({ buffer }) => {
-        return Promise.all(resArray).then((htmlArray) => {
+    const fallbackStr = await fallback.toString()
+    return raw(`<template id="H:${index}"></template>${fallbackStr}<!--/$-->`, [
+      ...(fallbackStr.callbacks || []),
+      ({ phase, buffer, context }) => {
+        if (phase === HtmlEscapedCallbackPhase.BeforeStream) {
+          return
+        }
+        return Promise.all(resArray).then(async (htmlArray) => {
           htmlArray = htmlArray.flat()
           const content = htmlArray.join('')
           if (buffer) {
@@ -45,7 +51,7 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
               content
             )
           }
-          const html = buffer
+          let html = buffer
             ? ''
             : `<template>${content}</template><script>
 ((d,c,n) => {
@@ -56,14 +62,19 @@ do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
 </script>`
-          if (htmlArray.every((html) => !(html as HtmlEscapedString).callbacks?.length)) {
+
+          const callbacks = htmlArray
+            .map((html) => (html as HtmlEscapedString).callbacks || [])
+            .flat()
+          if (!callbacks.length) {
             return html
           }
 
-          return raw(
-            html,
-            htmlArray.map((html) => (html as HtmlEscapedString).callbacks || []).flat()
-          )
+          if (phase === HtmlEscapedCallbackPhase.Stream) {
+            html = await resolveCallback(html, HtmlEscapedCallbackPhase.BeforeStream, true, context)
+          }
+
+          return raw(html, callbacks)
         })
       },
     ])
@@ -83,7 +94,14 @@ export const renderToReadableStream = (
 ): ReadableStream<Uint8Array> => {
   const reader = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const resolved = str instanceof Promise ? await str : await str.toString()
+      const tmp = str instanceof Promise ? await str : await str.toString()
+      const context = typeof tmp === 'object' ? tmp : {}
+      const resolved = await resolveCallback(
+        tmp,
+        HtmlEscapedCallbackPhase.BeforeStream,
+        true,
+        context
+      )
       controller.enqueue(textEncoder.encode(resolved))
 
       let resolvedCount = 0
@@ -95,17 +113,23 @@ export const renderToReadableStream = (
               console.trace(err)
               return ''
             })
-            .then((res) => {
-              if ((res as HtmlEscapedString).callbacks) {
-                const callbacks = (res as HtmlEscapedString).callbacks || []
-                callbacks.map((c) => c({})).forEach(then)
-              }
+            .then(async (res) => {
+              res = await resolveCallback(res, HtmlEscapedCallbackPhase.BeforeStream, true, context)
+              ;(res as HtmlEscapedString).callbacks
+                ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .filter<Promise<string>>(Boolean as any)
+                .forEach(then)
               resolvedCount++
               controller.enqueue(textEncoder.encode(res))
             })
         )
       }
-      ;(resolved as HtmlEscapedString).callbacks?.map((c) => c({})).forEach(then)
+      ;(resolved as HtmlEscapedString).callbacks
+        ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter<Promise<string>>(Boolean as any)
+        .forEach(then)
       while (resolvedCount !== callbacks.length) {
         await Promise.all(callbacks)
       }

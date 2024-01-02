@@ -109,6 +109,11 @@
       "import": "./dist/helper/html/index.js",
       "require": "./dist/cjs/helper/html/index.js"
     },
+    "./css": {
+      "types": "./dist/types/helper/css/index.d.ts",
+      "import": "./dist/helper/css/index.js",
+      "require": "./dist/cjs/helper/css/index.js"
+    },
     "./jsx": {
       "types": "./dist/types/jsx/index.d.ts",
       "import": "./dist/jsx/index.js",
@@ -318,6 +323,9 @@
       ],
       "html": [
         "./dist/types/helper/html"
+      ],
+      "css": [
+        "./dist/types/helper/css"
       ],
       "jsx": [
         "./dist/types/jsx"

@@ -1,5 +1,10 @@
 import { raw } from '../helper/html'
-import type { HtmlEscapedString } from '../utils/html'
+import {
+  HtmlEscapedCallbackPhase,
+  resolveCallback,
+  type HtmlEscapedString,
+  type HtmlEscapedCallback,
+} from '../utils/html'
 import type { FC, Child } from './index'
 
 let errorBoundaryCounter = 0
@@ -38,14 +43,16 @@ export const ErrorBoundary: FC<{
     children = [children]
   }
 
+  let fallbackStr: string | undefined
   const fallbackRes = (error: Error): HtmlEscapedString => {
     onError?.(error)
-    return (fallback || fallbackRender?.(error) || '').toString() as HtmlEscapedString
+    return (fallbackStr || fallbackRender?.(error) || '').toString() as HtmlEscapedString
   }
   let resArray: HtmlEscapedString[] | Promise<HtmlEscapedString[]>[] = []
   try {
     resArray = children.map((c) => c.toString()) as HtmlEscapedString[]
   } catch (e) {
+    fallbackStr = await fallback?.toString()
     if (e instanceof Promise) {
       resArray = [
         e.then(() => childrenToString(children as Child[])).catch((e) => fallbackRes(e)),
@@ -56,6 +63,7 @@ export const ErrorBoundary: FC<{
   }
 
   if (resArray.some((res) => (res as {}) instanceof Promise)) {
+    fallbackStr ||= await fallback?.toString()
     const index = errorBoundaryCounter++
     const replaceRe = RegExp(`(<template id="E:${index}"></template>.*?)(.*?)(<!--E:${index}-->)`)
     const caught = false
@@ -81,12 +89,15 @@ d.replaceWith(c.content)
 </script>`
     }
     return raw(`<template id="E:${index}"></template><!--E:${index}-->`, [
-      ({ buffer }) => {
+      ({ phase, buffer, context }) => {
+        if (phase === HtmlEscapedCallbackPhase.BeforeStream) {
+          return
+        }
         return Promise.all(resArray)
-          .then((htmlArray) => {
+          .then(async (htmlArray) => {
             htmlArray = htmlArray.flat()
             const content = htmlArray.join('')
-            const html = buffer
+            let html = buffer
               ? ''
               : `<template>${content}</template><script>
 ((d,c) => {
@@ -115,12 +126,21 @@ d.parentElement.insertBefore(c.content,d.nextSibling)
               .map((html) => (html as HtmlEscapedString).callbacks || [])
               .flat()
 
+            if (phase === HtmlEscapedCallbackPhase.Stream) {
+              html = await resolveCallback(
+                html,
+                HtmlEscapedCallbackPhase.BeforeStream,
+                true,
+                context
+              )
+            }
+
             let resolvedCount = 0
-            const promises = callbacks.map(
+            const promises = callbacks.map<HtmlEscapedCallback>(
               (c) =>
-                ({ buffer }: { buffer: [string] }) =>
-                  c({ buffer })
-                    .then((content) => {
+                (...args) =>
+                  c(...args)
+                    ?.then((content) => {
                       resolvedCount++
 
                       if (buffer) {
