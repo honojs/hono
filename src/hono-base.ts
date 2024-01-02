@@ -112,7 +112,7 @@ class Hono<
       return this as any
     }
 
-    // Implementation of app.use(...handlers[]) or app.get(path, ...handlers[])
+    // Implementation of app.use(...handlers[]) or app.use(path, ...handlers[])
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.use = (arg1: string | MiddlewareHandler<any>, ...handlers: MiddlewareHandler<any>[]) => {
       if (typeof arg1 === 'string') {
