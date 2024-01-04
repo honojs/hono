@@ -1,7 +1,8 @@
-import * as path from 'path'
-import { inspectRoutes } from '../../helper/dev'
-import type { Hono } from '../../hono'
-import type { Env } from '../../types'
+import { Buffer } from "node:buffer";
+import * as path from 'node:path'
+import { inspectRoutes } from '../../helper/dev/index.ts'
+import type { Hono } from '../../hono.ts'
+import type { Env } from '../../types.ts'
 
 interface FileSystemModule {
   writeFile(path: string, data: string | Buffer): Promise<void>
