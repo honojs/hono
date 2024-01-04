@@ -3,16 +3,15 @@
 // @ts-ignore
 // For ES module mode
 import manifest from '__STATIC_CONTENT_MANIFEST'
+import type { Env } from '../../types'
 import type { ServeStaticOptions } from './serve-static'
 import { serveStatic } from './serve-static'
 
-const module = (options: ServeStaticOptions = { root: '' }) => {
-  return serveStatic({
-    root: options.root,
-    path: options.path,
-    manifest: options.manifest ? options.manifest : manifest,
-    rewriteRequestPath: options.rewriteRequestPath,
-  })
+const module = <E extends Env = Env>(
+  options: Omit<ServeStaticOptions<E>, 'namespace'> = { root: '' }
+) => {
+  options.manifest ??= manifest
+  return serveStatic<E>(options)
 }
 
 export { module as serveStatic }

@@ -1,23 +1,26 @@
-import { Hono } from '../../hono'
+import { Context } from '../../context'
+import { HonoRequest } from '../../request'
 import { streamSSE } from '.'
 
-describe('SSE Streaming headers', () => {
-  it('Check SSE Response', async () => {
-    const app = new Hono()
-    app.get('/sse', async (c) => {
-      return streamSSE(c, async (stream) => {
-        let id = 0
-        const maxIterations = 5
+describe('SSE Streaming helper', () => {
+  const req = new HonoRequest(new Request('http://localhost/'))
+  let c: Context
+  beforeEach(() => {
+    c = new Context(req)
+  })
 
-        while (id < maxIterations) {
-          const message = `Message\nIt is ${id}`
-          await stream.writeSSE({ data: message, event: 'time-update', id: String(id++) })
-          await stream.sleep(100)
-        }
-      })
+  it('Check streamSSE Response', async () => {
+    const res = streamSSE(c, async (stream) => {
+      let id = 0
+      const maxIterations = 5
+
+      while (id < maxIterations) {
+        const message = `Message\nIt is ${id}`
+        await stream.writeSSE({ data: message, event: 'time-update', id: String(id++) })
+        await stream.sleep(100)
+      }
     })
 
-    const res = await app.request('/sse')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('Transfer-Encoding')).toEqual('chunked')

@@ -1,5 +1,5 @@
 import type { Context } from '../../context.ts'
-import type { Next } from '../../types.ts'
+import type { Env, MiddlewareHandler } from '../../types.ts'
 import { getFilePath } from '../../utils/filepath.ts'
 import { getMimeType } from '../../utils/mime.ts'
 
@@ -7,16 +7,19 @@ import { getMimeType } from '../../utils/mime.ts'
 // @ts-ignore
 const { open } = Deno
 
-export type ServeStaticOptions = {
+export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
   path?: string
   rewriteRequestPath?: (path: string) => string
+  onNotFound?: (path: string, c: Context<E>) => void | Promise<void>
 }
 
 const DEFAULT_DOCUMENT = 'index.html'
 
-export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
-  return async (c: Context, next: Next) => {
+export const serveStatic = <E extends Env = Env>(
+  options: ServeStaticOptions<E> = { root: '' }
+): MiddlewareHandler => {
+  return async (c, next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
       await next()
@@ -50,10 +53,10 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
       }
       // Return Response object with stream
       return c.body(file.readable)
-    } else {
-      console.warn(`Static file: ${path} is not found`)
-      await next()
     }
+
+    await options.onNotFound?.(path, c)
+    await next()
     return
   }
 }

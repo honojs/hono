@@ -1,5 +1,14 @@
-type HtmlEscapedCallbackOpts = { error?: Error; buffer?: [string] }
-export type HtmlEscapedCallback = (opts: HtmlEscapedCallbackOpts) => Promise<string>
+export const HtmlEscapedCallbackPhase = {
+  Stringify: 1,
+  BeforeStream: 2,
+  Stream: 3,
+} as const
+type HtmlEscapedCallbackOpts = {
+  buffer?: [string]
+  phase: typeof HtmlEscapedCallbackPhase[keyof typeof HtmlEscapedCallbackPhase]
+  context: object // An object unique to each JSX tree. This object is used as the WeakMap key.
+}
+export type HtmlEscapedCallback = (opts: HtmlEscapedCallbackOpts) => Promise<string> | undefined
 export type HtmlEscaped = {
   isEscaped: true
   callbacks?: HtmlEscapedCallback[]
@@ -101,20 +110,35 @@ export const escapeToBuffer = (str: string, buffer: StringBuffer): void => {
   buffer[0] += str.substring(lastIndex, index)
 }
 
-export const resolveStream = (
+export const resolveCallback = async (
   str: string | HtmlEscapedString,
+  phase: typeof HtmlEscapedCallbackPhase[keyof typeof HtmlEscapedCallbackPhase],
+  preserveCallbacks: boolean,
+  context: object,
   buffer?: [string]
 ): Promise<string> => {
-  if (!(str as HtmlEscapedString).callbacks?.length) {
+  const callbacks = (str as HtmlEscapedString).callbacks as HtmlEscapedCallback[]
+  if (!callbacks?.length) {
     return Promise.resolve(str)
   }
-  const callbacks = (str as HtmlEscapedString).callbacks as HtmlEscapedCallback[]
   if (buffer) {
     buffer[0] += str
   } else {
     buffer = [str]
   }
-  return Promise.all(callbacks.map((c) => c({ buffer }))).then((res) =>
-    Promise.all(res.map((str) => resolveStream(str, buffer))).then(() => (buffer as [string])[0])
+
+  const resStr = Promise.all(callbacks.map((c) => c({ phase, buffer, context }))).then((res) =>
+    Promise.all(
+      res
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter<string>(Boolean as any)
+        .map((str) => resolveCallback(str, phase, false, context, buffer))
+    ).then(() => (buffer as [string])[0])
   )
+
+  if (preserveCallbacks) {
+    return raw(await resStr, callbacks)
+  } else {
+    return resStr
+  }
 }

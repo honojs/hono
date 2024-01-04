@@ -31,7 +31,8 @@ Object.assign(global, {
 
 describe('ServeStatic Middleware', () => {
   const app = new Hono()
-  app.use('/static/*', serveStatic({ root: './assets' }))
+  const onNotFound = vi.fn(() => {})
+  app.use('/static/*', serveStatic({ root: './assets', onNotFound }))
   app.use('/static-no-root/*', serveStatic())
   app.use(
     '/dot-static/*',
@@ -41,11 +42,14 @@ describe('ServeStatic Middleware', () => {
     })
   )
 
+  beforeEach(() => onNotFound.mockClear())
+
   it('Should return plain.txt', async () => {
     const res = await app.request('http://localhost/static/plain.txt')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('This is plain.txt')
     expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8')
+    expect(onNotFound).not.toHaveBeenCalled()
   })
 
   it('Should return hono.html', async () => {
@@ -53,11 +57,13 @@ describe('ServeStatic Middleware', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<h1>Hono!</h1>')
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=utf-8')
+    expect(onNotFound).not.toHaveBeenCalled()
   })
 
   it('Should return 404 response', async () => {
     const res = await app.request('http://localhost/static/not-found.html')
     expect(res.status).toBe(404)
+    expect(onNotFound).toHaveBeenCalledWith('assets/static/not-found.html', expect.anything())
   })
 
   it('Should return plan.txt', async () => {
@@ -147,5 +153,25 @@ describe('With middleware', () => {
     const res = await app.request('http://localhost/static/foo')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('bar')
+  })
+})
+
+describe('Types of middleware', () => {
+  it('Should pass env type from generics of serveStatic', async () => {
+    type Env = {
+      Bindings: {
+        HOGE: string
+      }
+    }
+    const app = new Hono<Env>()
+    app.use(
+      '/static/*',
+      serveStatic<Env>({
+        root: './assets',
+        onNotFound: (_, c) => {
+          expectTypeOf(c.env).toEqualTypeOf<Env['Bindings']>()
+        },
+      })
+    )
   })
 })

@@ -142,6 +142,9 @@ export const hc = <T extends Hono<any, any, any>>(
     const path = parts.join('/')
     const url = mergePath(baseUrl, path)
     if (method === 'url') {
+      if (opts.args[0] && opts.args[0].param) {
+        return new URL(replaceUrlParam(url, opts.args[0].param))
+      }
       return new URL(url)
     }
 
