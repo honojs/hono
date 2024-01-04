@@ -23,7 +23,7 @@ declare global {
     interface HTMLAttributes extends JSXAttributes, AnyAttributes {
       accesskey?: string | undefined
       autofocus?: boolean | undefined
-      class?: string | undefined
+      class?: string | Promise<string> | undefined
       contenteditable?: boolean | 'inherit' | undefined
       contextmenu?: string | undefined
       dir?: string | undefined

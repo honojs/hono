@@ -605,3 +605,23 @@ describe('ClientResponse<T>.json() returns a Union type correctly', () => {
     expectTypeOf(json).toEqualTypeOf<{ data: string } | { message: string }>()
   })
 })
+
+describe('$url() with a param option', () => {
+  const app = new Hono().get('/posts/:id/comments', (c) => c.json({ ok: true }))
+  type AppType = typeof app
+  const client = hc<AppType>('http://localhost')
+
+  it('Should return the correct path - /posts/123/comments', async () => {
+    const url = client.posts[':id'].comments.$url({
+      param: {
+        id: '123',
+      },
+    })
+    expect(url.pathname).toBe('/posts/123/comments')
+  })
+
+  it('Should return the correct path - /posts/:id/comments', async () => {
+    const url = client.posts[':id'].comments.$url()
+    expect(url.pathname).toBe('/posts/:id/comments')
+  })
+})

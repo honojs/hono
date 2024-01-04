@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it, mock, beforeEach } from 'bun:test'
 import { serveStatic } from '../../src/adapter/bun'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
@@ -76,10 +76,11 @@ describe('Basic Auth Middleware', () => {
 
 describe('Serve Static Middleware', () => {
   const app = new Hono()
+  const onNotFound = mock(() => {})
   app.all('/favicon.ico', serveStatic({ path: './runtime_tests/bun/favicon.ico' }))
   app.all(
     '/favicon-notfound.ico',
-    serveStatic({ path: './runtime_tests/bun/favicon-notfound.ico' })
+    serveStatic({ path: './runtime_tests/bun/favicon-notfound.ico', onNotFound })
   )
   app.use('/favicon-notfound.ico', async (c, next) => {
     await next()
@@ -89,6 +90,7 @@ describe('Serve Static Middleware', () => {
     '/static/*',
     serveStatic({
       root: './runtime_tests/bun/',
+      onNotFound,
     })
   )
   app.get(
@@ -98,6 +100,8 @@ describe('Serve Static Middleware', () => {
       rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
     })
   )
+
+  beforeEach(() => onNotFound.mockClear())
 
   it('Should return static file correctly', async () => {
     const res = await app.request(new Request('http://localhost/favicon.ico'))
@@ -110,12 +114,17 @@ describe('Serve Static Middleware', () => {
     const res = await app.request(new Request('http://localhost/favicon-notfound.ico'))
     expect(res.status).toBe(404)
     expect(res.headers.get('X-Custom')).toBe('Bun')
+    expect(onNotFound).toHaveBeenCalledWith(
+      './runtime_tests/bun/favicon-notfound.ico',
+      expect.anything()
+    )
   })
 
   it('Should return 200 response - /static/plain.txt', async () => {
     const res = await app.request(new Request('http://localhost/static/plain.txt'))
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Bun!')
+    expect(onNotFound).not.toHaveBeenCalled()
   })
 
   it('Should return 200 response - /dot-static/plain.txt', async () => {

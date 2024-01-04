@@ -4,6 +4,7 @@ import type { Env, RouterRoute } from '../../types.ts'
 
 interface ShowRoutesOptions {
   verbose?: boolean
+  colorize?: boolean
 }
 
 interface RouteData {
@@ -60,7 +61,8 @@ export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOption
       }
       const { method, path, routes } = data
 
-      console.log(`\x1b[32m${method}\x1b[0m ${' '.repeat(maxMethodLength - method.length)} ${path}`)
+      const methodStr = opts?.colorize ?? true ? `\x1b[32m${method}\x1b[0m` : method
+      console.log(`${methodStr} ${' '.repeat(maxMethodLength - method.length)} ${path}`)
 
       if (!opts?.verbose) {
         return
@@ -70,4 +72,9 @@ export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOption
         console.log(`${' '.repeat(maxMethodLength + 3)} ${name}`)
       })
     })
+}
+
+export const getRouterName = <E extends Env>(app: Hono<E>) => {
+  app.router.match('GET', '/')
+  return app.router.name
 }

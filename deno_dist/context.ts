@@ -3,7 +3,7 @@ import type { HonoRequest } from './request.ts'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types.ts'
 import type { CookieOptions } from './utils/cookie.ts'
 import { serialize } from './utils/cookie.ts'
-import { resolveStream } from './utils/html.ts'
+import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html.ts'
 import type { StatusCode } from './utils/http-status.ts'
 import { StreamingApi } from './utils/stream.ts'
 import type { JSONValue, InterfaceToType, JSONParsed } from './utils/types.ts'
@@ -83,7 +83,7 @@ type ContextOptions<E extends Env> = {
   notFoundHandler?: NotFoundHandler<E>
 }
 
-const TEXT_PLAIN = 'text/plain; charset=UTF-8'
+export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -355,7 +355,7 @@ export class Context<
       }
       if ((html as string | Promise<string>) instanceof Promise) {
         return (html as unknown as Promise<string>)
-          .then((html) => resolveStream(html))
+          .then((html) => resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}))
           .then((html) => {
             return typeof arg === 'number'
               ? this.newResponse(html, arg, headers)
@@ -375,6 +375,9 @@ export class Context<
     return this.newResponse(null, status)
   }
 
+  /** @deprecated
+   * Use `streamText()` in `hono/streaming` instead of `c.streamText()`. The `c.streamText()` will be removed in v4.
+   */
   streamText = (
     cb: (stream: StreamingApi) => Promise<void>,
     arg?: StatusCode | ResponseInit,
@@ -387,18 +390,21 @@ export class Context<
     return this.stream(cb, arg, headers)
   }
 
+  /** @deprecated
+   * Use `stream()` in `hono/streaming` instead of `c.stream()`. The `c.stream()` will be removed in v4.
+   */
   stream = (
     cb: (stream: StreamingApi) => Promise<void>,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
   ): Response => {
     const { readable, writable } = new TransformStream()
-    const stream = new StreamingApi(writable)
+    const stream = new StreamingApi(writable, readable)
     cb(stream).finally(() => stream.close())
 
     return typeof arg === 'number'
-      ? this.newResponse(readable, arg, headers)
-      : this.newResponse(readable, arg)
+      ? this.newResponse(stream.responseReadable, arg, headers)
+      : this.newResponse(stream.responseReadable, arg)
   }
 
   /** @deprecated
