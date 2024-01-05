@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { Hono } from '../../hono'
 import { toSsg } from './index'
+import { jsxRenderer, useRequestContext } from 'hono/jsx-renderer'
+import { jsx } from '../../jsx'
 
 describe('toSsg function', () => {
   it('Should correctly generate static HTML files for Hono routes', async () => {
@@ -10,7 +12,21 @@ describe('toSsg function', () => {
     app.get('/about/some', (c) => c.text('About Page 2tier'))
     app.post('/about/some/thing', (c) => c.text('About Page 3tier'))
     app.get('/bravo', (c) => c.html('Bravo Page'))
-    app.get('/Charlie')
+    app.use('/Charlie', async (c, next) => {
+      c.setRenderer((content) => {
+        return c.html(
+          <html>
+            <body>
+              <p>{content}</p>
+            </body>
+          </html>
+        )
+      })
+      await next()
+    })
+    app.get('/Charlie', (c) => {
+      return c.render('Hello!')
+    })
 
     const fsMock = {
       writeFile: vitest.fn((path, data) => {
