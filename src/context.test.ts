@@ -342,4 +342,26 @@ describe('c.render', () => {
     expect(res.headers.get('foo')).toBe('bar')
     expect(await res.text()).toBe('<html><head>title</head><body><h1>content</h1></body></html>')
   })
+
+  it('c.stream() - with aborted during writing', async () => {
+    let aborted = false
+    const res = c.stream(async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.write(new Uint8Array([i]))
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    for (let i = 0; i < 2; i++) {
+      await reader.read()
+      await reader.cancel()
+    }
+    expect(aborted).toBe(true)
+  })
 })

@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "3.11.12",
+  "version": "3.12.0",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -94,6 +94,11 @@
       "import": "./dist/middleware/cors/index.js",
       "require": "./dist/cjs/middleware/cors/index.js"
     },
+    "./csrf": {
+      "types": "./dist/types/middleware/csrf/index.d.ts",
+      "import": "./dist/middleware/csrf/index.js",
+      "require": "./dist/cjs/middleware/csrf/index.js"
+    },
     "./etag": {
       "types": "./dist/types/middleware/etag/index.d.ts",
       "import": "./dist/middleware/etag/index.js",
@@ -103,6 +108,11 @@
       "types": "./dist/types/helper/html/index.d.ts",
       "import": "./dist/helper/html/index.js",
       "require": "./dist/cjs/helper/html/index.js"
+    },
+    "./css": {
+      "types": "./dist/types/helper/css/index.d.ts",
+      "import": "./dist/helper/css/index.js",
+      "require": "./dist/cjs/helper/css/index.js"
     },
     "./jsx": {
       "types": "./dist/types/jsx/index.d.ts",
@@ -310,11 +320,17 @@
       "cors": [
         "./dist/types/middleware/cors"
       ],
+      "csrf": [
+        "./dist/types/middleware/csrf"
+      ],
       "etag": [
         "./dist/types/middleware/etag"
       ],
       "html": [
         "./dist/types/helper/html"
+      ],
+      "css": [
+        "./dist/types/helper/css"
       ],
       "jsx": [
         "./dist/types/jsx"
