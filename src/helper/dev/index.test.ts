@@ -1,6 +1,7 @@
 import { Hono } from '../../hono'
+import { RegExpRouter } from '../../router/reg-exp-router'
 import type { Handler, MiddlewareHandler } from '../../types'
-import { inspectRoutes, showRoutes } from '.'
+import { inspectRoutes, showRoutes, getRouterName } from '.'
 
 const namedMiddleware: MiddlewareHandler = (_, next) => next()
 const namedHandler: Handler = (c) => c.text('hi')
@@ -108,5 +109,28 @@ describe('showRoutes()', () => {
       '\x1b[32mGET\x1b[0m      /static',
       '           [handler]',
     ])
+  })
+
+  it('should render not colorized output', async () => {
+    showRoutes(app, { colorize: false })
+    expect(logs).toEqual([
+      'GET      /',
+      'GET      /named',
+      'POST     /',
+      'PUT      /',
+      'PATCH    /',
+      'DELETE   /',
+      'OPTIONS  /',
+      'GET      /static',
+    ])
+  })
+})
+
+describe('geRouterName()', () => {
+  it('Should return the correct router name', async () => {
+    const app = new Hono({
+      router: new RegExpRouter(),
+    })
+    expect(getRouterName(app)).toBe('RegExpRouter')
   })
 })

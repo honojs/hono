@@ -243,6 +243,11 @@ class Hono<
     return this
   }
 
+  /**
+   * @deprecated
+   * `app.routerName()` will be removed in v4.
+   * Use `getRouterName()` in `hono/dev` instead of `app.routerName()`.
+   */
   get routerName() {
     this.matchRoute('GET', '/')
     return this.router.name

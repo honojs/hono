@@ -23,7 +23,13 @@ export type ClientRequest<S extends Schema> = {
       : never
     : never
 } & {
-  $url: () => URL
+  $url: (
+    arg?: S[keyof S] extends { input: infer R }
+      ? R extends { param: infer P }
+        ? { param: P }
+        : {}
+      : {}
+  ) => URL
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

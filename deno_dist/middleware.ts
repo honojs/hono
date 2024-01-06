@@ -5,6 +5,7 @@ export * from './middleware/cache/index.ts'
 export * from './helper/cookie/index.ts' // will be moved to helper.ts in v4
 export * from './middleware/compress/index.ts'
 export * from './middleware/cors/index.ts'
+export * from './middleware/csrf/index.ts'
 export * from './middleware/etag/index.ts'
 export * from './helper/html/index.ts' // will be moved to helper.ts in v4
 export * from './jsx/index.ts'
