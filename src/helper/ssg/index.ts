@@ -8,6 +8,11 @@ interface FileSystemModule {
   mkdir(path: string, options: { recursive: boolean }): Promise<void>
 }
 
+const generateFilePath = (routePath: string) => {
+  const fileName = routePath === '/' ? 'index.html' : routePath + '.html'
+  return path.join('./static', fileName)
+}
+
 export const toSsg = async <
   E extends Env = Env,
   S extends Schema = {},
@@ -16,23 +21,22 @@ export const toSsg = async <
   app: Hono<E, S, BasePath>,
   fsModule: FileSystemModule
 ) => {
-  const routes = inspectRoutes(app).map((route) => route.path)
   const baseURL = 'http://localhost'
 
-  await Promise.all(
-    routes.map(async (route) => {
-      const url = new URL(route, baseURL).toString()
-      const response = await app.fetch(new Request(url))
-      const html = await response.text()
+  for (const route of inspectRoutes(app)) {
+    if (route.isMiddleware) continue
 
-      const filePath = path.join('./static', route === '/' ? 'index.html' : route + '.html')
-      const dirPath = path.dirname(filePath)
+    const url = new URL(route.path, baseURL).toString()
+    const response = await app.fetch(new Request(url))
+    const html = await response.text()
 
-      await fsModule.mkdir(dirPath, { recursive: true })
-      await fsModule.writeFile(filePath, html)
-      console.log(`File written: ${filePath}`)
-    })
-  )
+    const filePath = generateFilePath(route.path)
+    const dirPath = path.dirname(filePath)
+
+    await fsModule.mkdir(dirPath, { recursive: true })
+    await fsModule.writeFile(filePath, html)
+    console.log(`File written: ${filePath}`)
+  }
 
   console.log('Static site generation completed.')
 }

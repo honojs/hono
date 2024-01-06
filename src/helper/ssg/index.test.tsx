@@ -12,10 +12,13 @@ describe('toSsg function', () => {
     app.get('/about/some', (c) => c.text('About Page 2tier'))
     app.post('/about/some/thing', (c) => c.text('About Page 3tier'))
     app.get('/bravo', (c) => c.html('Bravo Page'))
-    app.use('/Charlie', async (c, next) => {
-      c.setRenderer((content) => {
+    app.get('/Charlie', async (c, next) => {
+      c.setRenderer((content, head) => {
         return c.html(
           <html>
+            <head>
+              <title>{head.title || ''}</title>
+            </head>
             <body>
               <p>{content}</p>
             </body>
@@ -25,7 +28,7 @@ describe('toSsg function', () => {
       await next()
     })
     app.get('/Charlie', (c) => {
-      return c.render('Hello!')
+      return c.render('Hello!', { title: 'Charlies Page' })
     })
 
     const fsMock = {
@@ -49,6 +52,11 @@ describe('toSsg function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith(
       expect.any(String),
       expect.stringContaining('About Page')
+    )
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.stringContaining('<title>Charlies Page</title>')
     )
   })
 })
