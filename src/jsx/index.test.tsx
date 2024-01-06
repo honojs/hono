@@ -3,7 +3,7 @@
 import { html } from '../helper/html'
 import { Hono } from '../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, memo, Fragment, createContext, useContext } from './index'
+import { jsx, memo, Fragment, createContext, useContext, Component } from './index'
 import type { Context, FC } from './index'
 
 interface SiteData {
@@ -103,6 +103,7 @@ describe('JSX middleware', () => {
 
     app.get('/', (c) => {
       return c.html(
+        // prettier-ignore
         html`<html><body>${(<AsyncComponent />)}</body></html>`
       )
     })
@@ -340,6 +341,23 @@ describe('render to string', () => {
       expect(Top.toString()).toBe(
         '<html><head><title>Home page</title></head><body><h1>Hono</h1><p>Hono is great</p></body></html>'
       )
+    })
+  })
+
+  describe('Class Components', () => {
+    it('Should render Class Components', () => {
+      class Welcome extends Component<{ name: string }> {
+        render() {
+          return <h1>Hello, {this.props.name}</h1>
+        }
+      }
+      const App = (
+        <div>
+          <Welcome name='Hono' />
+        </div>
+      )
+
+      expect(App.toString()).toBe('<div><h1>Hello, Hono</h1></div>')
     })
   })
 

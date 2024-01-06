@@ -90,11 +90,11 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
 
 export type Child = string | Promise<string> | number | JSXNode | Child[]
 export class JSXNode implements HtmlEscaped {
-  tag: string | Function
+  tag: string | Function | typeof Component
   props: Props
   children: Child[]
   isEscaped: true = true as const
-  constructor(tag: string | Function, props: Props, children: Child[]) {
+  constructor(tag: string | Function | typeof Component, props: Props, children: Child[]) {
     this.tag = tag
     this.props = props
     this.children = children
@@ -143,7 +143,6 @@ export class JSXNode implements HtmlEscaped {
         if (children.length > 0) {
           throw 'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
         }
-
         children = [raw(v.__html)]
       } else if (v instanceof Promise) {
         buffer[0] += ` ${key}="`
@@ -189,28 +188,59 @@ class JSXFunctionNode extends JSXNode {
   }
 }
 
+class JSXClassNode extends JSXNode {
+  toStringToBuffer(buffer: StringBuffer): void {
+    const { children } = this
+    const Klass = this.tag as typeof Component
+    const instance = new Klass({
+      ...this.props,
+      children: children.length <= 1 ? children[0] : children,
+    })
+
+    const fc = instance.render() as unknown as JSXFunctionNode
+    return fc.toStringToBuffer(buffer)
+  }
+}
+
 class JSXFragmentNode extends JSXNode {
   toStringToBuffer(buffer: StringBuffer): void {
     childrenToStringToBuffer(this.children, buffer)
   }
 }
 
-export { jsxFn as jsx }
 const jsxFn = (
-  tag: string | Function,
+  tag: string | Function | typeof Component,
   props: Props,
   ...children: (string | HtmlEscapedString)[]
 ): JSXNode => {
-  if (typeof tag === 'function') {
+  if (typeof tag === 'string') {
+    return new JSXNode(tag, props, children)
+  } else if (typeof tag === 'function') {
+    if (tag.prototype && tag.prototype.render) {
+      return new JSXClassNode(tag, props, children)
+    }
     return new JSXFunctionNode(tag, props, children)
   } else {
+    // Fallback
     return new JSXNode(tag, props, children)
   }
 }
 
+export { jsxFn as jsx }
+
 export type FC<T = Props> = (
   props: T & { children?: Child }
 ) => HtmlEscapedString | Promise<HtmlEscapedString>
+
+export class Component<T = Props> {
+  props: T & { children?: Child }
+  constructor(props: T & { children?: Child }) {
+    this.props = props
+  }
+  render(): HtmlEscapedString | Promise<HtmlEscapedString> {
+    return Fragment(this.props)
+  }
+}
 
 const shallowEqual = (a: Props, b: Props): boolean => {
   if (a === b) {
