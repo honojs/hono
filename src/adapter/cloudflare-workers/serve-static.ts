@@ -13,6 +13,7 @@ export type ServeStaticOptions<E extends Env = Env> = {
   namespace?: KVNamespace
   rewriteRequestPath?: (path: string) => string
   onNotFound?: (path: string, c: Context<E>) => void | Promise<void>
+  headers?: Headers
 }
 
 const DEFAULT_DOCUMENT = 'index.html'
@@ -49,6 +50,11 @@ export const serveStatic = <E extends Env = Env>(
       const mimeType = getMimeType(path)
       if (mimeType) {
         c.header('Content-Type', mimeType)
+      }
+      if (options.headers) {
+        for (const entry of options.headers.entries()) {
+          c.header(...entry)
+        }
       }
       // Return Response object
       return c.body(content)

@@ -92,10 +92,23 @@ Deno.test('Serve Static middleware', async () => {
       rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
     })
   )
+  const headers = new Headers()
+  headers.set('foo', 'bar')
+  app.all(
+    '/favicon-with-headers.ico',
+    serveStatic({ path: './runtime_tests/deno/favicon.ico', headers })
+  )
 
   let res = await app.request('http://localhost/favicon.ico')
   assertEquals(res.status, 200)
   assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
+  assertEquals(res.headers.get('foo'), null)
+  await res.body?.cancel()
+
+  res = await app.request('http://localhost/favicon-with-headers.ico')
+  assertEquals(res.status, 200)
+  assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
+  assertEquals(res.headers.get('foo'), 'bar')
   await res.body?.cancel()
 
   res = await app.request('http://localhost/favicon-notfound.ico')

@@ -101,6 +101,13 @@ describe('Serve Static Middleware', () => {
     })
   )
 
+  const headers = new Headers()
+  headers.set('foo', 'bar')
+  app.all(
+    '/favicon-with-headers.ico',
+    serveStatic({ path: './runtime_tests/bun/favicon.ico', headers })
+  )
+
   beforeEach(() => onNotFound.mockClear())
 
   it('Should return static file correctly', async () => {
@@ -108,6 +115,15 @@ describe('Serve Static Middleware', () => {
     await res.arrayBuffer()
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/x-icon')
+    expect(res.headers.get('foo')).toBe(null)
+  })
+
+  it('Should return static file correctly with headers', async () => {
+    const res = await app.request(new Request('http://localhost/favicon-with-headers.ico'))
+    await res.arrayBuffer()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('image/x-icon')
+    expect(res.headers.get('foo')).toBe('bar')
   })
 
   it('Should return 404 response', async () => {

@@ -88,7 +88,7 @@ describe('ServeStatic Middleware', () => {
   })
 })
 
-describe('With options', () => {
+describe('With `manifest` options', () => {
   const manifest = {
     'assets/static/options/foo.txt': 'assets/static/options/foo.abcdef.txt',
   }
@@ -101,6 +101,25 @@ describe('With options', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('With options')
     expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8')
+  })
+})
+
+describe('With `headers` options', () => {
+  const manifest = {
+    'assets/static/options/foo.txt': 'assets/static/options/foo.abcdef.txt',
+  }
+  const headers = new Headers()
+  headers.set('x-foo', 'x-bar')
+
+  const app = new Hono()
+  app.use('/static/*', serveStatic({ root: './assets', manifest, headers }))
+
+  it('Should return foo.txt', async () => {
+    const res = await app.request('http://localhost/static/options/foo.txt')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('With options')
+    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8')
+    expect(res.headers.get('x-foo')).toBe('x-bar')
   })
 })
 
@@ -147,6 +166,43 @@ describe('With middleware', () => {
     expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8')
     expect(res.headers.get('x-foo')).toBe('bar')
     expect(res.headers.get('x-foo2')).toBe('bar2')
+  })
+
+  it('Should return 200 Response', async () => {
+    const res = await app.request('http://localhost/static/foo')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('bar')
+  })
+})
+
+describe('With middleware and headers option', () => {
+  const app = new Hono()
+  const md1 = async (c: Context, next: Next) => {
+    await next()
+    c.res.headers.append('x-foo', 'bar')
+  }
+  const md2 = async (c: Context, next: Next) => {
+    await next()
+    c.res.headers.append('x-foo2', 'bar2')
+  }
+  const headers = new Headers()
+  headers.set('x-foo3', 'bar3')
+
+  app.use('/static/*', md1)
+  app.use('/static/*', md2)
+  app.use('/static/*', serveStatic({ root: './assets', headers }))
+  app.get('/static/foo', (c) => {
+    return c.text('bar')
+  })
+
+  it('Should return plain.txt with correct headers including serveStatic optional headers', async () => {
+    const res = await app.request('http://localhost/static/plain.txt')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('This is plain.txt')
+    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8')
+    expect(res.headers.get('x-foo')).toBe('bar')
+    expect(res.headers.get('x-foo2')).toBe('bar2')
+    expect(res.headers.get('x-foo3')).toBe('bar3')
   })
 
   it('Should return 200 Response', async () => {
