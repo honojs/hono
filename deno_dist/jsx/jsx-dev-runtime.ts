@@ -4,7 +4,7 @@ import type { JSXNode } from './index.ts'
 export { Fragment } from './index.ts'
 
 export function jsxDEV(tag: string | Function, props: Record<string, unknown>): JSXNode {
-  if (!props?.children) {
+  if (!props || !('children' in props)) {
     return jsx(tag, props)
   }
   const children = props.children as string | HtmlEscapedString
