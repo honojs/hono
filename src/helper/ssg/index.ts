@@ -13,14 +13,14 @@ const generateFilePath = (routePath: string) => {
   return path.join('./static', fileName)
 }
 
-export const toSsg = async <
+export const generateHtmlMap = async <
   E extends Env = Env,
   S extends Schema = {},
   BasePath extends string = '/'
 >(
-  app: Hono<E, S, BasePath>,
-  fsModule: FileSystemModule
-) => {
+  app: Hono<E, S, BasePath>
+): Promise<Map<string, string>> => {
+  const htmlMap = new Map<string, string>()
   const baseURL = 'http://localhost'
 
   for (const route of inspectRoutes(app)) {
@@ -30,13 +30,35 @@ export const toSsg = async <
     const response = await app.fetch(new Request(url))
     const html = await response.text()
 
-    const filePath = generateFilePath(route.path)
+    htmlMap.set(route.path, html)
+  }
+
+  return htmlMap
+}
+
+export const saveHtmlToLocal = async (
+  htmlMap: Map<string, string>,
+  fsModule: FileSystemModule
+): Promise<void> => {
+  for (const [routePath, html] of htmlMap) {
+    const filePath = generateFilePath(routePath)
     const dirPath = path.dirname(filePath)
 
     await fsModule.mkdir(dirPath, { recursive: true })
     await fsModule.writeFile(filePath, html)
-    console.log(`File written: ${filePath}`)
+    console.log(`Written: ${filePath}`)
   }
+}
 
+export const toSsg = async <
+  E extends Env = Env,
+  S extends Schema = {},
+  BasePath extends string = '/'
+>(
+  app: Hono<E, S, BasePath>,
+  fsModule: FileSystemModule
+): Promise<void> => {
+  const maps = await generateHtmlMap(app)
+  await saveHtmlToLocal(maps, fsModule)
   console.log('Static site generation completed.')
 }
