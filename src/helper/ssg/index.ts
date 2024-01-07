@@ -19,8 +19,8 @@ export const generateHtmlMap = async <
   BasePath extends string = '/'
 >(
   app: Hono<E, S, BasePath>
-) => {
-  const htmlMap = new Map()
+): Promise<Map<string, string>> => {
+  const htmlMap = new Map<string, string>()
   const baseURL = 'http://localhost'
 
   for (const route of inspectRoutes(app)) {
@@ -36,9 +36,12 @@ export const generateHtmlMap = async <
   return htmlMap
 }
 
-export const saveHtmlToLocal = async (htmlMap, fsModule) => {
-  for (const [path, html] of htmlMap) {
-    const filePath = generateFilePath(path)
+export const saveHtmlToLocal = async (
+  htmlMap: Map<string, string>,
+  fsModule: FileSystemModule
+): Promise<void> => {
+  for (const [routePath, html] of htmlMap) {
+    const filePath = generateFilePath(routePath)
     const dirPath = path.dirname(filePath)
 
     await fsModule.mkdir(dirPath, { recursive: true })
@@ -54,9 +57,8 @@ export const toSsg = async <
 >(
   app: Hono<E, S, BasePath>,
   fsModule: FileSystemModule
-) => {
-
-  const maps = generateHtmlMap(app)
-  saveHtmlToLocal(maps, fsModule)
+): Promise<void> => {
+  const maps = await generateHtmlMap(app)
+  await saveHtmlToLocal(maps, fsModule)
   console.log('Static site generation completed.')
 }

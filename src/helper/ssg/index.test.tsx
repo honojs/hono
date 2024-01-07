@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { Hono } from '../../hono'
 import { toSsg } from './index'
-import { jsxRenderer, useRequestContext } from 'hono/jsx-renderer'
+import { jsxRenderer, useRequestContext } from '../../middleware/jsx-renderer'
 import { jsx } from '../../jsx'
 
 describe('toSsg function', () => {
