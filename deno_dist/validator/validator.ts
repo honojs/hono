@@ -1,6 +1,6 @@
 import type { Context } from '../context.ts'
 import { getCookie } from '../helper/cookie/index.ts'
-import type { Env, ValidationTargets, MiddlewareHandler } from '../types.ts'
+import type { Env, ValidationTargets, MiddlewareHandler, TypedResponse } from '../types.ts'
 import type { BodyData } from '../utils/body.ts'
 import { bufferToFormData } from '../utils/buffer.ts'
 
@@ -19,6 +19,9 @@ export type ValidationFunction<
   c: Context<E, P>
 ) => OutputType | Response | Promise<OutputType> | Promise<Response>
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ExcludeResponseType<T> = T extends Response & TypedResponse<any> ? never : T
+
 export const validator = <
   InputType,
   P extends string,
@@ -28,10 +31,10 @@ export const validator = <
   P2 extends string = P,
   V extends {
     in: { [K in U]: unknown extends InputType ? OutputType : InputType }
-    out: { [K in U]: OutputType }
+    out: { [K in U]: ExcludeResponseType<OutputType> }
   } = {
     in: { [K in U]: unknown extends InputType ? OutputType : InputType }
-    out: { [K in U]: OutputType }
+    out: { [K in U]: ExcludeResponseType<OutputType> }
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any

@@ -822,3 +822,35 @@ describe('Async validator function', () => {
     })
   })
 })
+
+describe('Validator with using Zod directly', () => {
+  it('Should exclude Response & TypedResponse type', () => {
+    const testSchema = z.object({
+      name: z.string(),
+      age: z.number(),
+      type: z.enum(['a']),
+    })
+    const app = new Hono()
+
+    app.post(
+      '/posts',
+      validator('json', (value, c) => {
+        const parsed = testSchema.safeParse(value)
+        if (!parsed.success) {
+          return c.json({ foo: 'bar' }, 401)
+        }
+        return parsed.data
+      }),
+      (c) => {
+        const data = c.req.valid('json')
+        expectTypeOf(data.name).toEqualTypeOf<string>()
+        return c.json(
+          {
+            message: 'Created!',
+          },
+          201
+        )
+      }
+    )
+  })
+})
