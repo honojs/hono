@@ -1,3 +1,5 @@
+import { HtmlEscapedCallbackPhase, resolveCallback } from './html'
+
 export class StreamingApi {
   private writer: WritableStreamDefaultWriter<Uint8Array>
   private encoder: TextEncoder
@@ -27,10 +29,23 @@ export class StreamingApi {
     })
   }
 
-  async write(input: Uint8Array | string) {
+  async write(input: Uint8Array | string | Promise<string>) {
     try {
+      // JSX handling is a same process as c.html
+      if (typeof input === 'object' && !(input instanceof Uint8Array)) {
+        // this is a JSXNode
+        if (!(input instanceof Promise)) {
+          input = (input as string).toString() // HtmlEscapedString object to string
+        }
+        if (input instanceof Promise) {
+          ;(input as unknown as Promise<string>)
+            .then((html) => resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}))
+            .then((html) => this.write(html))
+          return this
+        }
+      }
       if (typeof input === 'string') {
-        input = this.encoder.encode(input)
+        input = this.encoder.encode(input.toString())
       }
       await this.writer.write(input)
     } catch (e) {
