@@ -1,3 +1,4 @@
+import { jsx } from '../jsx'
 import { StreamingApi } from './stream'
 
 describe('StreamingApi', () => {
@@ -19,6 +20,36 @@ describe('StreamingApi', () => {
     expect((await reader.read()).value).toEqual(new Uint8Array([1, 2, 3]))
     api.write(new Uint8Array([4, 5, 6]))
     expect((await reader.read()).value).toEqual(new Uint8Array([4, 5, 6]))
+  })
+
+  it('write(no promised hono/jsx)', async () => {
+    const Component1 = () => <span>foo</span>
+    const Component2 = () => <span>bar</span>
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.responseReadable.getReader()
+    api.write(<Component1 />)
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('<span>foo</span>'))
+    api.write(<Component2 />)
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('<span>bar</span>'))
+  })
+
+  it('write(promised hono/jsx)', async () => {
+    const Component1 = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      return <span>foo</span>
+    }
+    const Component2 = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      return <span>bar</span>
+    }
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.responseReadable.getReader()
+    api.write(<Component1 />)
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('<span>foo</span>'))
+    api.write(<Component2 />)
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('<span>bar</span>'))
   })
 
   it('writeln(string)', async () => {
