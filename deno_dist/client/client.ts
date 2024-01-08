@@ -12,6 +12,10 @@ const createProxy = (callback: Callback, path: string[]) => {
       return createProxy(callback, [...path, key])
     },
     apply(_1, _2, args) {
+      if (path.length === 1 && path[0] === "then") 
+        return Promise.resolve(this).then(...args)
+      
+
       return callback({
         path,
         args,
