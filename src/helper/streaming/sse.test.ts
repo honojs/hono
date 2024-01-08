@@ -45,4 +45,27 @@ describe('SSE Streaming helper', () => {
       expect(decodedValue).toBe(expectedValue)
     }
   })
+
+  it('Check streamSSE Response if aborted by client', async () => {
+    let aborted = false
+    const res = streamSSE(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.writeSSE({
+          data: `Message ${i}`,
+        })
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toEqual(new TextEncoder().encode('data: Message 0\n\n'))
+    reader.cancel()
+    expect(aborted).toBeTruthy()
+  })
 })
