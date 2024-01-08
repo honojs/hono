@@ -1653,6 +1653,30 @@ describe('Multiple methods with `app.on`', () => {
   })
 })
 
+describe('Multiple paths with one handler', () => {
+  const app = new Hono()
+
+  const paths = ['/hello', '/ja/hello', '/en/hello']
+  app.on('GET', paths, (c) => {
+    return c.json({
+      path: c.req.path,
+      routePath: c.req.routePath,
+    })
+  })
+
+  it('Should handle multiple paths', async () => {
+    paths.map(async (path) => {
+      const res = await app.request(path)
+      expect(res.status).toBe(200)
+      const data = await res.json()
+      expect(data).toEqual({
+        path,
+        routePath: path,
+      })
+    })
+  })
+})
+
 describe('Multiple handler', () => {
   describe('handler + handler', () => {
     const app = new Hono()
@@ -1692,7 +1716,6 @@ describe('Multiple handler', () => {
         expect(res.ok).toBe(true)
         expect(await res.text()).toBe('type: car, url: good-car')
       })
-
       it('Should return a correct param - GET /foo/food/good-food', async () => {
         const res = await app.request('/foo/food/good-food')
         expect(res.ok).toBe(true)
