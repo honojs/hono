@@ -139,6 +139,16 @@
       "import": "./dist/middleware/jsx-renderer/index.js",
       "require": "./dist/cjs/middleware/jsx-renderer/index.js"
     },
+    "./jsx/hooks": {
+      "types": "./dist/types/jsx/hooks/index.d.ts",
+      "import": "./dist/jsx/hooks/index.js",
+      "require": "./dist/cjs/jsx/hooks/index.js"
+    },
+    "./jsx/dom": {
+      "types": "./dist/types/jsx/dom/index.d.ts",
+      "import": "./dist/jsx/dom/index.js",
+      "require": "./dist/cjs/jsx/dom/index.js"
+    },
     "./jwt": {
       "types": "./dist/types/middleware/jwt/index.d.ts",
       "import": "./dist/middleware/jwt/index.js",

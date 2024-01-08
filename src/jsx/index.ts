@@ -5,7 +5,7 @@ import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-
 export { ErrorBoundary } from './components'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Props = Record<string, any>
+export type Props = Record<string, any>
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -168,7 +168,7 @@ export class JSXNode implements HtmlEscaped {
   }
 }
 
-class JSXFunctionNode extends JSXNode {
+export class JSXFunctionNode extends JSXNode {
   toStringToBuffer(buffer: StringBuffer): void {
     const { children } = this
 
@@ -177,6 +177,15 @@ class JSXFunctionNode extends JSXNode {
       children: children.length <= 1 ? children[0] : children,
     })
 
+    if ((this.tag as any).honoFunctionId) {
+      const attr = JSON.stringify({
+        id: (this.tag as any).honoFunctionId,
+        props: this.props,
+      })
+      const tmpBuf = ['']
+      escapeToBuffer(attr, tmpBuf)
+      buffer[0] += `<hono-component data-hono-function="${tmpBuf[0]}">`
+    }
     if (res instanceof Promise) {
       buffer.unshift('', res)
     } else if (res instanceof JSXNode) {
@@ -185,6 +194,9 @@ class JSXFunctionNode extends JSXNode {
       buffer[0] += res
     } else {
       escapeToBuffer(res, buffer)
+    }
+    if ((this.tag as any).honoFunctionId) {
+      buffer[0] += '</hono-component>'
     }
   }
 }
