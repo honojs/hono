@@ -1,5 +1,7 @@
 import { JSXNode } from '..'
 import type { Props, Child } from '..'
+import type { HtmlEscapedString } from '../../utils/html'
+import { HtmlEscapedCallbackPhase } from '../../utils/html'
 
 export interface VirtualNode {
   tag: string
@@ -53,6 +55,12 @@ const mount = (node: JSXNode, container: HTMLElement, replaceElement?: HTMLEleme
         const el = document.createTextNode(res)
         container.appendChild(el)
         return
+      } else {
+        const wrap = document.createElement('div')
+        wrap.innerHTML = res
+        wrap.childNodes.forEach((child) => {
+          container.appendChild(child as HTMLElement)
+        })
       }
     }
     const updateData: UpdateData = [update, 0, UpdatePhase.Updating]
@@ -78,6 +86,19 @@ const mount = (node: JSXNode, container: HTMLElement, replaceElement?: HTMLEleme
     if (key.startsWith('on')) {
       const eventName = key.slice(2).toLowerCase()
       el.addEventListener(eventName, value)
+    } else if (value instanceof Promise) {
+      value.then((v) => {
+        const callbacks = (v as HtmlEscapedString).callbacks
+        if (callbacks) {
+          callbacks.forEach((c) =>
+            c({
+              phase: HtmlEscapedCallbackPhase.BeforeDom,
+              context: {},
+            })
+          )
+        }
+        container.setAttribute(key, v)
+      })
     } else {
       el.setAttribute(key, value)
     }
@@ -117,6 +138,19 @@ const patch = (oldNode: JSXNode, newNode: JSXNode, container: HTMLElement) => {
         const eventName = key.slice(2).toLowerCase()
         container.removeEventListener(eventName, oldNode.props[key])
         container.addEventListener(eventName, value)
+      } else if (value instanceof Promise) {
+        value.then((v) => {
+          const callbacks = (v as HtmlEscapedString).callbacks
+          if (callbacks) {
+            callbacks.forEach((c) =>
+              c({
+                phase: HtmlEscapedCallbackPhase.BeforeDom,
+                context: {},
+              })
+            )
+          }
+          container.setAttribute(key, v)
+        })
       } else {
         container.setAttribute(key, value)
       }

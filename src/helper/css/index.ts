@@ -1,5 +1,6 @@
 import { raw } from '../../helper/html'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
+import { HtmlEscapedCallbackPhase } from '../../utils/html'
 
 const IS_CSS_CLASS_NAME = Symbol('IS_CSS_CLASS_NAME')
 const STYLE_STRING = Symbol('STYLE_STRING')
@@ -191,7 +192,19 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       return Promise.resolve(appendStyleScript)
     }
 
-    const addClassNameToContext: HtmlEscapedCallback = ({ context }) => {
+    const addClassNameToContext: HtmlEscapedCallback = ({ context, phase }) => {
+      if (phase === HtmlEscapedCallbackPhase.BeforeDom) {
+        for (const sheet of document.styleSheets) {
+          if ((sheet.ownerNode as Element)?.id === id) {
+            if (!sheet.cssRules?.[0]?.cssText?.includes(thisSelector)) {
+              sheet.insertRule(`.${thisSelector}{${thisStyleString}}`)
+              break
+            }
+          }
+        }
+        return
+      }
+
       if (!contextMap.get(context)) {
         contextMap.set(context, [{}, {}])
       }
