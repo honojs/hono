@@ -195,11 +195,11 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     const addClassNameToContext: HtmlEscapedCallback = ({ context, phase }) => {
       /* eslint-disable @typescript-eslint/ban-ts-comment */
       if (phase === HtmlEscapedCallbackPhase.BeforeDom) {
-        // @ts-ignore
+        // @ts-ignore XXX: "document" is required `"lib": ["dom"]` in tsconfig, but user may not use it
         const styleSheets = document.styleSheets
         for (let i = 0; i < styleSheets.length; i++) {
           const sheet = styleSheets[i]
-          // @ts-ignore
+          // @ts-ignore XXX: "Element" is required `"lib": ["dom"]` in tsconfig, but user may not use it
           if ((sheet.ownerNode as Element)?.id === id) {
             if (!sheet.cssRules?.[0]?.cssText?.includes(thisSelector)) {
               sheet.insertRule(`.${thisSelector}{${thisStyleString}}`)
