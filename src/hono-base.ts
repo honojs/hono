@@ -55,7 +55,19 @@ const errorHandler = (err: Error, c: Context) => {
 type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings'] }) => string
 
 export type HonoOptions<E extends Env> = {
+  /**
+   * `strict` option specifies whether to distinguish whether the last path is a directory or not.
+   * @default true
+   * @see https://hono.dev/api/hono#strict-mode
+   */
   strict?: boolean
+  /**
+   * `router` option specifices which router to use.
+   * ```ts
+   * const app = new Hono({ router: new RegExpRouter() })
+   * ```
+   * @see https://hono.dev/api/hono#router-option
+   */
   router?: Router<[H, RouterRoute]>
   getPath?: GetPath<E>
 }
@@ -181,11 +193,29 @@ class Hono<
     return subApp
   }
 
+  /**
+   * `.onError()` handles an error and returns a customized Response.
+   * ```ts
+   * app.onError((err, c) => {
+   *   console.error(`${err}`)
+   *   return c.text('Custom Error Message', 500)
+   * })
+   * ```
+   */
   onError = (handler: ErrorHandler<E>) => {
     this.errorHandler = handler
     return this
   }
 
+  /**
+   * `.notFound()` allows you to customize a Not Found Response.
+   * ```ts
+   * app.notFound((c) => {
+   *   return c.text('Custom 404 Message', 404)
+   * })
+   * ```
+   * @see https://hono.dev/api/hono#not-found
+   */
   notFound = (handler: NotFoundHandler<E>) => {
     this.notFoundHandler = handler
     return this
@@ -209,6 +239,10 @@ class Hono<
     })
   }
 
+   /**
+    * `.mount()` allows you to mount applications built with other frameworks.
+    * @see https://hono.dev/api/hono#request
+    */
   mount(
     path: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -357,10 +391,26 @@ class Hono<
     return this.dispatch(event.request, event, undefined, event.request.method)
   }
 
+  /**
+   * `.fetch()` will be entry point of your app.
+   * @see https://hono.dev/api/hono#fetch
+   */
   fetch = (request: Request, Env?: E['Bindings'] | {}, executionCtx?: ExecutionContext) => {
     return this.dispatch(request, executionCtx, Env, request.method)
   }
 
+  /**
+   * `.request()` is a useful method for testing.
+   * You can pass a URL or pathname to send a GET request.
+   * app will return a Response object.
+   * ```ts
+   * test('GET /hello is ok', async () => {
+   *   const res = await app.request('/hello')
+   *   expect(res.status).toBe(200)
+   * })
+   * ```
+   * @see https://hono.dev/api/hono#request
+   */
   request = (
     input: RequestInfo | URL,
     requestInit?: RequestInit,
@@ -379,6 +429,13 @@ class Hono<
     return this.fetch(req, Env, executionCtx)
   }
 
+  /**
+   * `.fire()` automatically adds a global fetch event listener.
+   * This can be useful for environments that adhere to the Service Worker API, such as non-ES module Cloudflare Workers.
+   * @see https://hono.dev/api/hono#fire
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
+   * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/
+   */
   fire = () => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
