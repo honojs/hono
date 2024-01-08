@@ -46,6 +46,16 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     this.#validatedData = {}
   }
 
+  /**
+   * `.req.param()` gets the path parameters.
+   * @example
+   * ```ts
+   * const name = c.req.param('name')
+   * // or all parameters at once
+   * const { id, comment_id } = c.req.param()
+   * ```
+   * @see https://hono.dev/api/routing#path-parameter
+   */
   param<P2 extends string = P>(
     key: RemoveQuestion<ParamKeys<P2>>
   ): UndefinedIfHavingQuestion<ParamKeys<P2>>

@@ -187,6 +187,14 @@ class Hono<
     return this
   }
 
+  /**
+   * `.basePath()` allows base paths to be specified.
+   * @example
+   * ```ts
+   * const api = new Hono().basePath('/api')
+   * ```
+   * @see https://hono.dev/api/routing#base-path
+   */
   basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
     const subApp = this.clone()
     subApp._basePath = mergePath(this._basePath, path)
