@@ -352,6 +352,12 @@
       "jsx-renderer": [
         "./dist/types/middleware/jsx-renderer"
       ],
+      "jsx/hooks": [
+        "./dist/types/jsx/hooks"
+      ],
+      "jsx/dom": [
+        "./dist/types/jsx/dom"
+      ],
       "jwt": [
         "./dist/types/middleware/jwt"
       ],
