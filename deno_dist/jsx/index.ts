@@ -4,8 +4,11 @@ import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements.ts'
 export { ErrorBoundary } from './components.ts'
 
+export const HONO_COMPONENT = 'hono-component'
+export const HONO_COMPONENT_ID = 'hono-component-id'
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Props = Record<string, any>
+export type Props = Record<string, any>
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -92,6 +95,7 @@ export type Child = string | Promise<string> | number | JSXNode | Child[]
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
   props: Props
+  key?: string
   children: Child[]
   isEscaped: true = true as const
   constructor(tag: string | Function, props: Props, children: Child[]) {
@@ -169,6 +173,19 @@ export class JSXNode implements HtmlEscaped {
 }
 
 class JSXFunctionNode extends JSXNode {
+  constructor(tag: Function, props: Props, children: Child[]) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((tag as any)[HONO_COMPONENT_ID]) {
+      props = Object.keys(props).reduce((acc, key) => {
+        if (/^on[A-Z]/.test(key)) {
+          acc[key] = props[key]
+        }
+        return acc
+      }, {} as Props)
+    }
+    super(tag, props, children)
+  }
+
   toStringToBuffer(buffer: StringBuffer): void {
     const { children } = this
 
@@ -176,6 +193,18 @@ class JSXFunctionNode extends JSXNode {
       ...this.props,
       children: children.length <= 1 ? children[0] : children,
     })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((this.tag as any)[HONO_COMPONENT_ID]) {
+      const attr = JSON.stringify({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        id: (this.tag as any)[HONO_COMPONENT_ID],
+        props: this.props,
+      })
+      const tmpBuf = ['']
+      escapeToBuffer(attr, tmpBuf)
+      buffer[0] += `<${HONO_COMPONENT} data-hono="${tmpBuf[0]}">`
+    }
 
     if (res instanceof Promise) {
       buffer.unshift('', res)
@@ -185,6 +214,11 @@ class JSXFunctionNode extends JSXNode {
       buffer[0] += res
     } else {
       escapeToBuffer(res, buffer)
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((this.tag as any)[HONO_COMPONENT_ID]) {
+      buffer[0] += `</${HONO_COMPONENT}>`
     }
   }
 }
