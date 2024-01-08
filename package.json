@@ -179,6 +179,11 @@
       "import": "./dist/validator/index.js",
       "require": "./dist/cjs/validator/index.js"
     },
+    "./router": {
+      "types": "./dist/types/router.d.ts",
+      "import": "./dist/router.js",
+      "require": "./dist/cjs/router.js"
+    },
     "./router/reg-exp-router": {
       "types": "./dist/types/router/reg-exp-router/index.d.ts",
       "import": "./dist/router/reg-exp-router/index.js",
@@ -365,6 +370,9 @@
       ],
       "validator": [
         "./dist/types/validator/index.d.ts"
+      ],
+      "router": [
+        "./dist/types/router.d.ts"
       ],
       "router/reg-exp-router": [
         "./dist/types/router/reg-exp-router/router.d.ts"
