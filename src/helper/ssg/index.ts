@@ -5,7 +5,7 @@ import type { Env, Schema } from '../../types'
 
 interface FileSystemModule {
   writeFile(path: string, data: string | Buffer): Promise<void>
-  mkdir(path: string, options: { recursive: boolean }): Promise<void>
+  mkdir(path: string, options: { recursive: boolean }): Promise<void | string>
 }
 
 const generateFilePath = (routePath: string) => {
