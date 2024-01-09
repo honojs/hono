@@ -1,6 +1,5 @@
 import type { Context } from '../../context.ts'
 import { StreamingApi } from '../../utils/stream.ts'
-import { stream } from './index.ts'
 
 export interface SSEMessage {
   data: string

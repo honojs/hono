@@ -1,6 +1,5 @@
 import type { Context } from '../../context'
 import { StreamingApi } from '../../utils/stream'
-import { stream } from '.'
 
 export interface SSEMessage {
   data: string
