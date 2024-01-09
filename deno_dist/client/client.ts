@@ -8,14 +8,10 @@ import { deepMerge, mergePath, removeIndexString, replaceUrlParam } from './util
 const createProxy = (callback: Callback, path: string[]) => {
   const proxy: unknown = new Proxy(() => {}, {
     get(_obj, key) {
-      if (typeof key !== 'string') return undefined
+      if (typeof key !== 'string' || key === 'then') return undefined
       return createProxy(callback, [...path, key])
     },
     apply(_1, _2, args) {
-      if (path.length === 1 && path[0] === "then") 
-        return Promise.resolve(this).then(...args)
-      
-
       return callback({
         path,
         args,
