@@ -2,6 +2,7 @@ export const HtmlEscapedCallbackPhase = {
   Stringify: 1,
   BeforeStream: 2,
   Stream: 3,
+  BeforeDom: 4,
 } as const
 type HtmlEscapedCallbackOpts = {
   buffer?: [string]

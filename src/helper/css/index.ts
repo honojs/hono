@@ -1,5 +1,6 @@
 import { raw } from '../../helper/html'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
+import { HtmlEscapedCallbackPhase } from '../../utils/html'
 
 const IS_CSS_CLASS_NAME = Symbol('IS_CSS_CLASS_NAME')
 const STYLE_STRING = Symbol('STYLE_STRING')
@@ -191,7 +192,25 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       return Promise.resolve(appendStyleScript)
     }
 
-    const addClassNameToContext: HtmlEscapedCallback = ({ context }) => {
+    const addClassNameToContext: HtmlEscapedCallback = ({ context, phase }) => {
+      /* eslint-disable @typescript-eslint/ban-ts-comment */
+      if (phase === HtmlEscapedCallbackPhase.BeforeDom) {
+        // @ts-ignore XXX: "document" is required `"lib": ["dom"]` in tsconfig, but user may not use it
+        const styleSheets = document.styleSheets
+        for (let i = 0; i < styleSheets.length; i++) {
+          const sheet = styleSheets[i]
+          // @ts-ignore XXX: "Element" is required `"lib": ["dom"]` in tsconfig, but user may not use it
+          if ((sheet.ownerNode as Element)?.id === id) {
+            if (!sheet.cssRules?.[0]?.cssText?.includes(thisSelector)) {
+              sheet.insertRule(`.${thisSelector}{${thisStyleString}}`)
+              break
+            }
+          }
+        }
+        return
+      }
+      /* eslint-enable @typescript-eslint/ban-ts-comment */
+
       if (!contextMap.get(context)) {
         contextMap.set(context, [{}, {}])
       }
