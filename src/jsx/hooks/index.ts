@@ -1,4 +1,4 @@
-import { updateStack, updateCallbacks, UpdatePhase } from '../dom'
+import { updateStack, updateCallbacks, invokeUpdate, UpdatePhase } from '../dom'
 import type { UpdateData } from '../dom'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,10 +35,7 @@ export const useState = <T>(
       if (updateData[2] === UpdatePhase.Updating) {
         updateData[2] = UpdatePhase.UpdateAgain
       } else {
-        updateStack.push(updateData)
-        updateData[1] = 0
-        updateData[0]()
-        updateStack.pop()
+        invokeUpdate(updateData)
       }
     }
   }

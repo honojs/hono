@@ -1,14 +1,7 @@
+import type { Child } from '..'
 import { JSXNode } from '..'
-import type { Props, Child } from '..'
 import type { HtmlEscapedString } from '../../utils/html'
 import { HtmlEscapedCallbackPhase } from '../../utils/html'
-
-export interface VirtualNode {
-  tag: string
-  props: Props
-  children: Child[]
-  jsxNode?: JSXNode
-}
 
 type ContextNode = [JSXNode, JSXNode, HTMLElement | undefined]
 export const nodeMap = new WeakMap<HTMLElement, ContextNode[]>()
@@ -22,7 +15,8 @@ export const UpdatePhase = {
 export type UpdateData = [
   Function, // update function
   number, // hook index
-  typeof UpdatePhase[keyof typeof UpdatePhase]
+  typeof UpdatePhase[keyof typeof UpdatePhase], // update phase
+  () => ContextNode | undefined // get context node function
 ]
 export const updateStack: UpdateData[] = []
 
@@ -50,6 +44,33 @@ const removeElement = (element: HTMLElement | undefined) => {
     callback()
   }
   element.remove()
+}
+
+export const invokeUpdate = (updateData: UpdateData) => {
+  const [update, , , getContextNode] = updateData
+  updateData[2] = UpdatePhase.Updating
+  updateStack.push(updateData)
+  do {
+    updateData[1] = 0
+    update()
+  } while (
+    (updateData[2] as typeof UpdatePhase[keyof typeof UpdatePhase]) === UpdatePhase.UpdateAgain
+  )
+  updateData[2] = UpdatePhase.Done
+  const callbacks = updateCallbacks.get(update)
+  if (callbacks) {
+    updateCallbacks.set(update, [])
+    for (const callback of callbacks) {
+      const unload = callback()
+      if (unload) {
+        const el = getContextNode()?.[2] as HTMLElement
+        if (el) {
+          unloadCallbacks.set(el, [...(unloadCallbacks.get(el) || []), unload])
+        }
+      }
+    }
+  }
+  updateStack.pop()
 }
 
 const mount = (
@@ -110,21 +131,8 @@ const mount = (
         })
       }
     }
-    const updateData: UpdateData = [update, 0, UpdatePhase.Updating]
-    updateStack.push(updateData)
-    do {
-      updateData[1] = 0
-      update()
-    } while (updateData[2] === UpdatePhase.UpdateAgain)
-    updateData[2] = UpdatePhase.Done
-    for (const callback of updateCallbacks.get(update) || []) {
-      const unload = callback()
-      if (unload) {
-        const el = (contextNode as [JSXNode, JSXNode, HTMLElement])[2]
-        unloadCallbacks.set(el, [...(unloadCallbacks.get(el) || []), unload])
-      }
-    }
-    updateStack.pop()
+    const updateData: UpdateData = [update, 0, UpdatePhase.Updating, () => contextNode]
+    invokeUpdate(updateData)
     return
   }
 
@@ -268,13 +276,6 @@ const patchChildren = (oldChildren: Child[], newChildren: Child[], container: HT
 }
 
 const patch = (oldNode: JSXNode, newNode: JSXNode, container: HTMLElement, nth: number) => {
-  if (!container) {
-    // show stack trace
-    // console.log(oldNode)
-    // console.log(newNode)
-    console.log(new Error('Invalid container').stack)
-  }
-
   if (typeof oldNode.tag === 'function') {
     const contextNode = nodeMap
       .get(container.parentElement as HTMLElement)
