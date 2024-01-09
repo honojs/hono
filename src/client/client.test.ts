@@ -625,3 +625,13 @@ describe('$url() with a param option', () => {
     expect(url.pathname).toBe('/posts/:id/comments')
   })
 })
+
+describe('Client can be awaited', () => {
+  it('Can be awaited without side effects', async () => {
+    const client = hc('http://localhost')
+
+    const awaited = await client
+
+    expect(awaited).toEqual(client)
+  })
+})
