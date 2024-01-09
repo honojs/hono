@@ -100,13 +100,15 @@ class Hono<
     })
 
     // Implementation of app.on(method, path, ...handlers[])
-    this.on = (method: string | string[], path: string, ...handlers: H[]) => {
+    this.on = (method: string | string[], path: string | string[], ...handlers: H[]) => {
       if (!method) return this
-      this.#path = path
-      for (const m of [method].flat()) {
-        handlers.map((handler) => {
-          this.addRoute(m.toUpperCase(), this.#path, handler)
-        })
+      for (const p of [path].flat()) {
+        this.#path = p
+        for (const m of [method].flat()) {
+          handlers.map((handler) => {
+            this.addRoute(m.toUpperCase(), this.#path, handler)
+          })
+        }
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return this as any
