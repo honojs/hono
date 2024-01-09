@@ -221,6 +221,56 @@ describe('CSS Helper', () => {
       )
     })
 
+    it('Should be used as a class name for syntax `${className} {`', async () => {
+      const headerClass = css`
+        font-weight: bold;
+      `
+      const containerClass = css`
+        ${headerClass} {
+          h1 {
+            color: red;
+          }
+        }
+      `
+      const template = (
+        <>
+          <Style />
+          <div class={containerClass}>
+            <h1 class={headerClass}>Hello!</h1>
+          </div>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-4220297002{.css-1032195302{h1{color:red}}}.css-1032195302{font-weight:bold}</style><div class="css-4220297002"><h1 class="css-1032195302">Hello!</h1></div>'
+      )
+    })
+
+    it('Should be inserted to global if style string starts with :-hono-root`', async () => {
+      const headerClass = css`
+        display: flex;
+      `
+      const specialHeaderClass = css`
+        :-hono-global {
+          ${headerClass} {
+            h1 {
+              color: red;
+            }
+          }
+        }
+      `
+      const template = (
+        <>
+          <Style />
+          <div class={specialHeaderClass}>
+            <h1>Hello!</h1>
+          </div>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-3980466870{h1{color:red}}.css-3980466870{display:flex}</style><div class=""><h1>Hello!</h1></div>'
+      )
+    })
+
     describe('Booleans, Null, and Undefined Are Ignored', () => {
       it.each([true, false, undefined, null])('%s', async (value) => {
         const headerClass = css`
