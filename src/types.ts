@@ -1407,6 +1407,13 @@ export interface OnHandlerInterface<
     S & ToSchema<string, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>,
     BasePath
   >
+
+  // app.on(method | method[], path[], ...handlers[])
+  <I extends Input = {}, R extends HandlerResponse<any> = any>(
+    methods: string | string[],
+    paths: string[],
+    ...handlers: H<E, any, I, R>[]
+  ): Hono<E, S & ToSchema<string, string, I['in'], MergeTypedResponseData<R>>, BasePath>
 }
 
 type ExtractKey<S> = S extends Record<infer Key, unknown>
