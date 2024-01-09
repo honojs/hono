@@ -92,7 +92,8 @@ const buildStyleString = async (
   // eslint-disable-next-line @typescript-eslint/ban-types
   selectors: String[],
   externalClassNames: string[]
-): Promise<string> => {
+): Promise<[string, string]> => {
+  const label = strings[0].match(/^\s*\/\*(.*?)\*\//)?.[1] || ''
   let styleString = ''
   for (let i = 0; i < strings.length; i++) {
     styleString += strings[i]
@@ -144,7 +145,7 @@ const buildStyleString = async (
     }
   }
 
-  return minify(styleString)
+  return [label, minify(styleString)]
 }
 
 /**
@@ -164,12 +165,18 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     // eslint-disable-next-line @typescript-eslint/ban-types
     const selectors: String[] = []
     const externalClassNames: string[] = []
-    let thisStyleString = await buildStyleString(strings, values, selectors, externalClassNames)
+    let [label, thisStyleString] = await buildStyleString(
+      strings,
+      values,
+      selectors,
+      externalClassNames
+    )
     const isPseudoGlobal = isPseudoGlobalSelectorRe.exec(thisStyleString)
     if (isPseudoGlobal) {
       thisStyleString = isPseudoGlobal[1]
     }
-    const thisSelector = (isPseudoGlobal ? PSEUDO_GLOBAL_SELECTOR : '') + toHash(thisStyleString)
+    const thisSelector =
+      (isPseudoGlobal ? PSEUDO_GLOBAL_SELECTOR : '') + toHash(label + thisStyleString)
     const className = new String(
       isPseudoGlobal ? '' : [thisSelector, ...externalClassNames].join(' ')
     ) as CssClassName
@@ -269,8 +276,8 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     ...values: CssVariableType[]
   ): // eslint-disable-next-line @typescript-eslint/ban-types
   Promise<String> => {
-    const styleString = await buildStyleString(strings, values, [], [])
-    const className = new String(`@keyframes ${toHash(styleString)}`)
+    const [label, styleString] = await buildStyleString(strings, values, [], [])
+    const className = new String(`@keyframes ${toHash(label + styleString)}`)
     Object.assign(className as CssClassName, {
       isEscaped: true,
       [IS_CSS_CLASS_NAME]: true,

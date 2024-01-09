@@ -245,7 +245,7 @@ describe('CSS Helper', () => {
       )
     })
 
-    it('Should be inserted to global if style string starts with :-hono-root`', async () => {
+    it('Should be inserted to global if style string starts with :-hono-root', async () => {
       const headerClass = css`
         display: flex;
       `
@@ -268,6 +268,27 @@ describe('CSS Helper', () => {
       )
       expect(await toString(template)).toBe(
         '<style id="hono-css">.css-3980466870{h1{color:red}}.css-3980466870{display:flex}</style><div class=""><h1>Hello!</h1></div>'
+      )
+    })
+
+    it('Should be generated deferent class name for deferent first line comment even if the content is the same', async () => {
+      const headerClassA = css`
+        /* class A */
+        display: flex;
+      `
+      const headerClassB = css`
+        /* class B */
+        display: flex;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClassA}>Hello!</h1>
+          <h1 class={headerClassB}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-3170754153{display:flex}.css-896513246{display:flex}</style><h1 class="css-3170754153">Hello!</h1><h1 class="css-896513246">Hello!</h1>'
       )
     })
 
