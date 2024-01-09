@@ -50,7 +50,7 @@ export const saveHtmlToLocal = async (
   }
 }
 
-export const toSsg = async <
+export const toSSG = async <
   E extends Env = Env,
   S extends Schema = {},
   BasePath extends string = '/'

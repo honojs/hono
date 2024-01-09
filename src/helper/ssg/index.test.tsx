@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { Hono } from '../../hono'
-import { toSsg } from './index'
+import { toSSG } from './index'
 import { jsxRenderer, useRequestContext } from '../../middleware/jsx-renderer'
 import { jsx } from '../../jsx'
 
@@ -42,7 +42,7 @@ describe('toSsg function', () => {
       }),
     }
 
-    await toSsg(app, fsMock)
+    await toSSG(app, fsMock)
 
     expect(fsMock.mkdir).toHaveBeenCalledWith(expect.any(String), { recursive: true })
     expect(fsMock.writeFile).toHaveBeenCalledWith(
