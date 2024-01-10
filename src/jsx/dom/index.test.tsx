@@ -14,10 +14,19 @@ describe('DOM', () => {
       runScripts: 'dangerously',
     })
     global.document = dom.window.document
+    global.HTMLElement = dom.window.HTMLElement
     root = document.getElementById('root') as HTMLElement
   })
 
   it('simple App', async () => {
+    const App = <h1>Hello</h1>
+    render(App, root)
+    expect(root.innerHTML).toBe('<h1>Hello</h1>')
+  })
+
+  it('replace', async () => {
+    dom.window.document.body.innerHTML = '<div id="root">Existing content</div>'
+    root = document.getElementById('root') as HTMLElement
     const App = <h1>Hello</h1>
     render(App, root)
     expect(root.innerHTML).toBe('<h1>Hello</h1>')
