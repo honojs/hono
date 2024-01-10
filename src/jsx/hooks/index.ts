@@ -35,8 +35,8 @@ export const useState = <T>(
 
     if (newState !== latestState) {
       ;(stateArray as unknown[])[hookIndex] = newState
-      if (updateData[2] === UpdatePhase.Updating) {
-        updateData[2] = UpdatePhase.UpdateAgain
+      if (updateData[3] === UpdatePhase.Updating) {
+        updateData[3] = UpdatePhase.UpdateAgain
       } else {
         invokeUpdate(updateData)
       }

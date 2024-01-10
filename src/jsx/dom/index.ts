@@ -1,16 +1,43 @@
-import type { Child } from '..'
-import { JSXNode } from '..'
+import type { FC, Child, Props } from '..'
+import { JSXNode, Fragment } from '..'
 import type { HtmlEscapedString } from '../../utils/html'
 import { HtmlEscapedCallbackPhase } from '../../utils/html'
+import type { RefObject } from '../hooks'
+
+export const RENDER_TO_DOM = Symbol('RENDER_TO_DOM')
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type HasRenderToDom = FC<any> & { [RENDER_TO_DOM]: FC<any> }
+
+const IS_TAG_FUNCTION_RESULT = Symbol('IS_TAG_FUNCTION_RESULT')
+export const tagFunctionResultWithFallback = (
+  jsxNode: JSXNode,
+  fallback?: JSXNode,
+  errorHandler?: ErrorHandler
+): TagFunctionResult => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return [jsxNode, fallback, errorHandler, IS_TAG_FUNCTION_RESULT] as any
+}
+const isTagFunctionResult = (v: unknown): v is TagFunctionResult => {
+  return Array.isArray(v) && v[3] === IS_TAG_FUNCTION_RESULT
+}
 
 type Container = HTMLElement | DocumentFragment
 
 type ContextNode = [
   JSXNode, // source node
   JSXNode, // rendered node
-  HTMLElement | undefined // rendered HTML element
+  HTMLElement[] | undefined // rendered HTML element
 ]
-export const nodeMap = new WeakMap<Container, ContextNode[]>()
+
+type ErrorHandler = (e: unknown) => JSXNode | undefined
+type TagFunctionResult = [
+  JSXNode, // result
+  JSXNode | undefined, // fallback
+  ErrorHandler | undefined // error handler
+]
+
+const nodeMap = new WeakMap<Container, ContextNode[]>()
+const propsMap = new WeakMap<HTMLElement, Props>()
 export const updateCallbacks = new WeakMap<Function, Function[]>()
 export const cleanupCallbacks = new WeakMap<Container, Function[]>()
 export const UpdatePhase = {
@@ -19,12 +46,22 @@ export const UpdatePhase = {
   Done: 3,
 } as const
 export type UpdateData = [
+  RenderContext, // render context
   Function, // update function
   number, // hook index
   typeof UpdatePhase[keyof typeof UpdatePhase], // update phase
   () => ContextNode | undefined // get context node function
 ]
 export const updateStack: UpdateData[] = []
+
+type CatcherData = [Container, number, ErrorHandler | undefined, UpdateData, Function]
+type RenderContext = [
+  CatcherData[], // catcher stack
+  Promise<unknown>[], // promises
+  (TagFunctionResult | undefined)[], // snapshots
+  WeakMap<UpdateData, true>, // snapshot initialized
+  0 | 1 | 2 // use snapshot 0: no snapshot context, 1: consume snapshot, 2: save snapshot
+]
 
 const getContextNode = (
   container: Container,
@@ -42,30 +79,71 @@ const getContextNode = (
   )
 }
 
-const removeElement = (element: Container | undefined) => {
-  if (!(element instanceof HTMLElement)) {
+const prepareRemoveElement = (element: Container | undefined) => {
+  if (!(element instanceof HTMLElement || element instanceof Text)) {
     return
   }
   for (const callback of cleanupCallbacks.get(element) || []) {
     callback()
   }
+}
+
+const removeElement = (element: Container | undefined) => {
+  if (!(element instanceof HTMLElement || element instanceof Text)) {
+    return
+  }
+  prepareRemoveElement(element)
   element.remove()
 }
 
-export const invokeUpdate = (updateData: UpdateData) => {
-  const [update, , , getContextNode] = updateData
-  updateData[2] = UpdatePhase.Updating
+const invokeTag = (
+  renderContext: RenderContext,
+  tag: Function,
+  props: Record<string, unknown>,
+  children: Child[]
+): TagFunctionResult => {
+  // return from snapshot
+  if (renderContext[4] === 1 && renderContext[2].length) {
+    const v = renderContext[2].shift()
+    if (v) {
+      // resolved promise value
+      return v
+    }
+  }
+
+  const func = (tag as HasRenderToDom)[RENDER_TO_DOM] || tag
+  const res = func.call(null, {
+    ...props,
+    children: children.length <= 1 ? children[0] : children,
+  })
+
+  const tagFunctionResult = (Array.isArray(res) && res[3] === IS_TAG_FUNCTION_RESULT
+    ? res
+    : [res]) as unknown as TagFunctionResult
+
+  if (renderContext[4] === 2 && renderContext[2]) {
+    renderContext[2].push(undefined) // push placeholder
+  }
+
+  return tagFunctionResult
+}
+
+export const invokeUpdate = (updateData: UpdateData, result?: TagFunctionResult) => {
+  const [, update, , , getContextNode] = updateData
+  updateData[3] = UpdatePhase.Updating
   updateStack.push(updateData)
+  let promise = undefined
   do {
-    updateData[1] = 0
-    update()
+    updateData[2] = 0
+    promise = update(result)
+    result = undefined
   } while (
-    (updateData[2] as typeof UpdatePhase[keyof typeof UpdatePhase]) === UpdatePhase.UpdateAgain
+    (updateData[3] as typeof UpdatePhase[keyof typeof UpdatePhase]) === UpdatePhase.UpdateAgain
   )
-  updateData[2] = UpdatePhase.Done
+  updateData[3] = UpdatePhase.Done
   const callbacks = updateCallbacks.get(update)
   if (callbacks) {
-    const el = getContextNode()?.[2] as Container
+    const el = getContextNode()?.[2]?.[0] as Container
     if (el) {
       updateCallbacks.set(update, [])
     }
@@ -78,25 +156,185 @@ export const invokeUpdate = (updateData: UpdateData) => {
     }
   }
   updateStack.pop()
+
+  if (promise) {
+    promise.then((res?: TagFunctionResult) => {
+      if (res) {
+        invokeUpdate(updateData, isTagFunctionResult(res) ? res : undefined)
+      }
+    })
+  }
+}
+
+const handleResponsePromise = (
+  renderContext: RenderContext,
+  res: Promise<unknown>
+): Promise<unknown> => {
+  const closestErrorHandler = renderContext[0].reverse().find(([, , handler]) => handler)
+  return (
+    res
+      // for `use` hook
+      .then((v) =>
+        typeof v === 'string' || typeof v === 'number' || v === undefined || v === null
+          ? v
+          : Array.isArray(v)
+          ? v
+          : [v]
+      )
+      .catch((e) => {
+        // for async ErrorBoundary
+        if (closestErrorHandler) {
+          e = e instanceof Error ? e : new Error(e)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const v = closestErrorHandler[2]?.(e) as any
+          invokeUpdate(
+            closestErrorHandler[3],
+            tagFunctionResultWithFallback(v) as TagFunctionResult
+          )
+        } else {
+          throw e
+        }
+      })
+  )
+}
+
+const applyAttributes = (container: HTMLElement, attributes: Props, oldAttributes: Props = {}) => {
+  for (const [key, value] of Object.entries(attributes)) {
+    if (oldAttributes[key] !== value) {
+      if (key === 'ref') {
+        if (typeof value === 'function') {
+          value(container)
+        } else {
+          ;(value as RefObject<HTMLElement>).current = container
+        }
+      } else if (key.startsWith('on') && typeof value === 'function') {
+        const eventName = key.slice(2).toLowerCase()
+        container.removeEventListener(eventName, oldAttributes[key])
+        container.addEventListener(eventName, value)
+      } else if (value instanceof Promise) {
+        value.then((v) => {
+          const callbacks = (v as HtmlEscapedString).callbacks
+          if (callbacks) {
+            callbacks.forEach((c) =>
+              c({
+                phase: HtmlEscapedCallbackPhase.BeforeDom,
+                context: {},
+              })
+            )
+          }
+          container.setAttribute(key, v)
+        })
+      } else {
+        container.setAttribute(key, value)
+      }
+    }
+  }
+  for (const [key, value] of Object.entries(oldAttributes)) {
+    if (!(key in attributes)) {
+      if (key === 'ref') {
+        if (typeof value === 'function') {
+          value(null)
+        } else {
+          value.current = null
+        }
+      } else if (key.startsWith('on')) {
+        const eventName = key.slice(2).toLowerCase()
+        container.removeEventListener(eventName, value)
+      } else {
+        container.removeAttribute(key)
+      }
+    }
+  }
+}
+
+const preProcessUpdateDom = (renderContext: RenderContext, res: JSXNode) => {
+  if (res instanceof Promise) {
+    const stack = renderContext[0].reverse().find(([, , handler]) => handler)
+    if (stack) {
+      throw handleResponsePromise(renderContext, res)
+    } else {
+      const snapshot = renderContext[2]
+      const snapshotIndex = snapshot.length - 1
+      res.then((v) => {
+        snapshot[snapshotIndex] = tagFunctionResultWithFallback(v)
+      })
+      renderContext[1].push(res)
+      res = Fragment({ children: [] }) as unknown as JSXNode
+    }
+  }
+  return res
+}
+
+const prepareSnapshotEnvironment = (
+  fallback: JSXNode | undefined,
+  handler: ErrorHandler | undefined,
+  renderContext: RenderContext,
+  updateData: UpdateData
+) => {
+  if (fallback && !handler && !renderContext[3].get(updateData)) {
+    renderContext[2] = []
+    renderContext[4] = 2
+    renderContext[3].set(updateData, true)
+  }
+}
+
+const finalizeSnapshotEnvironment = (
+  fallback: JSXNode | undefined,
+  renderContext: RenderContext,
+  updateData: UpdateData,
+  updateDom: (res: JSXNode) => void,
+  originalRes: JSXNode
+) => {
+  if (fallback && renderContext[1].length) {
+    const promises = renderContext[1]
+    renderContext[1] = []
+    const backup = renderContext[2]
+    renderContext[2] = []
+    Promise.all(promises)
+      .then(() => {
+        renderContext[2] = backup
+        renderContext[4] = 1
+        updateDom(originalRes)
+        renderContext[2] = []
+        renderContext[4] = 0
+        renderContext[3].delete(updateData)
+      })
+      .catch(() => {})
+
+    updateDom(fallback)
+  }
 }
 
 const mount = (
+  renderContext: RenderContext,
   node: JSXNode,
   container: Container,
   nth: number = 0,
-  replaceElement?: Container
-) => {
+  replaceElement?: Container[],
+  insertBefore?: Container
+): HTMLElement | undefined => {
   if (typeof node === 'boolean' || node === null || node === undefined) {
-    removeElement(replaceElement)
+    replaceElement?.forEach(removeElement)
     return
   }
 
   if (Array.isArray(node)) {
+    const replacementParents =
+      nodeMap
+        .get(container)
+        ?.filter((node) => node[2]?.every((el, i) => replaceElement?.[i] === el)) || []
+    insertBefore ||= replaceElement?.at(-1)?.nextSibling as Container
+    replaceElement?.forEach(removeElement)
     const tagCounter = new Map<unknown, number>()
-    node.forEach((child) => {
-      const nth = tagCounter.get(child.tag) || 0
-      tagCounter.set(child.tag, nth + 1)
-      mount(child, container, nth)
+    const newElms = node
+      .map((child) => {
+        const nth = tagCounter.get(child.tag) || 0
+        tagCounter.set(child.tag, nth + 1)
+        return mount(renderContext, child, container, nth, undefined, insertBefore)
+      })
+      .filter(Boolean) as HTMLElement[]
+    replacementParents.forEach((parent) => {
+      parent[2] = newElms
     })
     return
   }
@@ -106,70 +344,82 @@ const mount = (
   let nodes = nodeMap.get(container)
   if (typeof tag === 'function') {
     let contextNode = getContextNode(container, node, nth)
-    const update = () => {
-      const res = (tag as Function).call(null, {
-        ...props,
-        children: children.length <= 1 ? children[0] : children,
-      })
-      if (res instanceof JSXNode) {
-        if (contextNode) {
-          patch(contextNode[1], res, contextNode[2] as HTMLElement, nth)
-          contextNode[1] = res
-        } else {
-          contextNode = [node, res, undefined]
-          if (!nodes) {
-            nodes = []
-            nodeMap.set(container, nodes)
-          }
-          nodes.push(contextNode)
+    const update = (result?: TagFunctionResult) => {
+      const [res, fallback, handler] =
+        result || invokeTag(renderContext, tag as Function, props, children)
 
-          mount(res, container, nth, replaceElement)
+      if (fallback || handler) {
+        renderContext[0].push([container, nth, handler, updateData, tag])
+      }
+      const updateDom = (res: JSXNode) => {
+        res = preProcessUpdateDom(renderContext, res)
+        if (res instanceof JSXNode || Array.isArray(res)) {
+          prepareSnapshotEnvironment(fallback, handler, renderContext, updateData)
+
+          if (contextNode && contextNode[2]) {
+            patch(renderContext, contextNode[1], res, contextNode[2], nth)
+            contextNode[1] = res
+            nodes?.forEach((node) => {
+              node[2] ||= contextNode?.[2]
+            })
+          } else {
+            contextNode = [node, res, undefined]
+            if (!nodes) {
+              nodes = []
+              nodeMap.set(container, nodes)
+            }
+            nodes.push(contextNode)
+
+            mount(renderContext, res, container, nth, replaceElement)
+          }
+
+          finalizeSnapshotEnvironment(fallback, renderContext, updateData, updateDom, res)
+        } else if (typeof res === 'string') {
+          const el = document.createTextNode(res)
+          container.appendChild(el)
+        } else {
+          const wrap = document.createElement('div')
+          wrap.innerHTML = res
+          wrap.childNodes.forEach((child) => {
+            container.appendChild(child as Container)
+          })
         }
-      } else if (typeof res === 'string') {
-        const el = document.createTextNode(res)
-        container.appendChild(el)
-      } else {
-        const wrap = document.createElement('div')
-        wrap.innerHTML = res
-        wrap.childNodes.forEach((child) => {
-          container.appendChild(child as HTMLElement)
-        })
+      }
+
+      try {
+        updateDom(res)
+      } catch (e) {
+        if (fallback && e instanceof Promise) {
+          updateDom(fallback)
+          return handleResponsePromise(renderContext, e)
+        } else if (handler) {
+          const res = handler(e)
+          if (res) {
+            updateDom(res)
+          }
+        } else {
+          throw e
+        }
+      } finally {
+        if (fallback || handler) {
+          renderContext[0].pop()
+        }
       }
     }
-    const updateData: UpdateData = [update, 0, UpdatePhase.Updating, () => contextNode]
+    const updateData: UpdateData = [
+      renderContext,
+      update,
+      0,
+      UpdatePhase.Updating,
+      () => contextNode,
+    ]
     invokeUpdate(updateData)
     return
   }
 
   const el = document.createElement(tag as string)
-
-  for (const [key, value] of Object.entries(node.props)) {
-    if (key === 'ref') {
-      if (typeof value === 'function') {
-        value(el)
-      } else {
-        value.current = el
-      }
-    } else if (key.startsWith('on')) {
-      const eventName = key.slice(2).toLowerCase()
-      el.addEventListener(eventName, value)
-    } else if (value instanceof Promise) {
-      value.then((v) => {
-        const callbacks = (v as HtmlEscapedString).callbacks
-        if (callbacks) {
-          callbacks.forEach((c) =>
-            c({
-              phase: HtmlEscapedCallbackPhase.BeforeDom,
-              context: {},
-            })
-          )
-        }
-        el.setAttribute(key, v)
-      })
-    } else {
-      el.setAttribute(key, value)
-    }
-  }
+  propsMap.set(el, node.props)
+  applyAttributes(el, node.props)
 
   const tagCounter = new Map<unknown, number>()
   for (const child of node.children) {
@@ -178,30 +428,42 @@ const mount = (
     } else if (child instanceof JSXNode) {
       const nth = tagCounter.get(child.tag) || 0
       tagCounter.set(child.tag, nth + 1)
-      mount(child, el, nth)
+      mount(renderContext, child, el, nth)
     } else {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mount(child as any, el, nth)
+      mount(renderContext, child as any, el, nth)
     }
   }
+
   if (nodes) {
-    for (const node of nodes) {
-      node[2] ||= el
-    }
+    nodes.forEach((n) => {
+      if (!n[2] || n[2].every((el, i) => replaceElement?.[i] === el)) {
+        n[2] = [el]
+      }
+    })
+    nodeMap.set(container, nodes)
   }
 
   if (replaceElement) {
-    if (nodes) {
-      nodes = nodes.filter(([, , oldReplaceElement]) => oldReplaceElement !== replaceElement)
-      nodeMap.set(container, nodes)
-    }
-    container.replaceChild(el, replaceElement)
+    insertBefore = replaceElement.at(-1)?.nextSibling as Container
+  }
+
+  if (replaceElement || insertBefore) {
+    replaceElement?.forEach(removeElement)
+    container.insertBefore(el, insertBefore || null)
   } else {
     container.appendChild(el)
   }
+
+  return el
 }
 
-const patchChildren = (oldChildren: Child[], newChildren: Child[], container: Container) => {
+const patchChildren = (
+  renderContext: RenderContext,
+  oldChildren: Child[],
+  newChildren: Child[],
+  container: Container
+) => {
   oldChildren = oldChildren.flat()
   newChildren = newChildren.flat()
 
@@ -256,22 +518,25 @@ const patchChildren = (oldChildren: Child[], newChildren: Child[], container: Co
       if (typeof newChildren[i] === 'string' || typeof newChildren[i] === 'number') {
         container.appendChild(document.createTextNode((newChildren[i] as string).toString()))
       } else {
-        mount(newChildren[i] as JSXNode, container, nth)
+        mount(renderContext, newChildren[i] as JSXNode, container, nth)
       }
     } else {
       if (typeof newChildren[i] === 'string' || typeof newChildren[i] === 'number') {
+        const replaced = container.childNodes[j]
+        prepareRemoveElement(replaced as Container)
         container.replaceChild(
           document.createTextNode((newChildren[i] as string).toString()),
-          container.childNodes[i]
+          replaced
         )
       } else {
-        if (Array.isArray(oldChildren[i]) && Array.isArray(newChildren[i])) {
-          patchChildren(oldChildren[i] as Child[], newChildren[i] as Child[], container)
+        if (container.childNodes[j] === undefined) {
+          mount(renderContext, newChildren[i] as JSXNode, container, nth)
         } else {
           patch(
+            renderContext,
             oldChildren[i] as JSXNode,
             newChildren[i] as JSXNode,
-            container.childNodes[j] as Container,
+            [container.childNodes[j] as Container],
             nth
           )
         }
@@ -280,94 +545,109 @@ const patchChildren = (oldChildren: Child[], newChildren: Child[], container: Co
   }
 }
 
-const patch = (oldNode: JSXNode, newNode: JSXNode, container: Container, nth: number) => {
+const patch = (
+  renderContext: RenderContext,
+  oldNode: JSXNode,
+  newNode: JSXNode,
+  containers: Container[],
+  nth: number
+) => {
+  const container = containers[0]
+  if (Array.isArray(newNode)) {
+    if (Array.isArray(oldNode)) {
+      patchChildren(renderContext, oldNode, newNode, container.parentElement as Container)
+    } else {
+      mount(renderContext, newNode, container.parentElement as Container, 0, containers)
+    }
+    return
+  }
+
   if (typeof oldNode.tag === 'function') {
-    const contextNode = nodeMap
-      .get(container.parentElement as HTMLElement)
-      ?.find(([n]) => n === oldNode)
-    const replaceElement = contextNode?.[2] as HTMLElement
+    const contextNode = getContextNode(container.parentElement as Container, oldNode, nth)
+    const replaceElement = contextNode?.[2]
     if (typeof newNode.tag === 'function') {
       if (oldNode.tag !== newNode.tag) {
-        mount(newNode, container.parentElement as Container, nth, replaceElement)
+        mount(renderContext, newNode, container.parentElement as Container, nth, replaceElement)
         return
       }
       if (contextNode) {
         const { tag, props, children } = newNode
-        const update = () => {
-          const res = (tag as Function).call(null, {
-            ...props,
-            children: children.length <= 1 ? children[0] : children,
-          })
-          patch(contextNode[1], res, contextNode[2] as HTMLElement, 0)
-          contextNode[1] = res
+        const update = (result?: TagFunctionResult) => {
+          const [res, fallback, handler] =
+            result || invokeTag(renderContext, tag as Function, props, children)
+
+          if (fallback || handler) {
+            renderContext[0].push([container, nth, handler, updateData, tag])
+          }
+          const updateDom = (res: JSXNode) => {
+            res = preProcessUpdateDom(renderContext, res)
+
+            prepareSnapshotEnvironment(fallback, handler, renderContext, updateData)
+
+            patch(
+              renderContext,
+              contextNode[1],
+              res,
+              contextNode[2] as Container[], // contextNode[2] may be updated, so we need to use contextNode[2] instead of replaceElement
+              0
+            )
+            contextNode[1] = res
+
+            finalizeSnapshotEnvironment(fallback, renderContext, updateData, updateDom, res)
+          }
+          try {
+            updateDom(res)
+          } catch (e) {
+            if (fallback && e instanceof Promise) {
+              updateDom(fallback)
+              return handleResponsePromise(renderContext, e)
+            } else if (handler) {
+              const res = handler(e)
+              if (res) {
+                updateDom(res)
+              }
+            } else {
+              throw e
+            }
+          } finally {
+            if (fallback || handler) {
+              renderContext[0].pop()
+            }
+          }
         }
-        const updateData: UpdateData = [update, 0, UpdatePhase.Updating, () => contextNode]
+        const updateData: UpdateData = [
+          renderContext,
+          update,
+          0,
+          UpdatePhase.Updating,
+          () => contextNode,
+        ]
         invokeUpdate(updateData)
       } else {
-        mount(newNode, container.parentElement as Container, nth, replaceElement)
+        mount(renderContext, newNode, container.parentElement as Container, nth, replaceElement)
       }
       return
     } else {
-      mount(newNode, container.parentElement as Container, nth, replaceElement)
+      mount(renderContext, newNode, container.parentElement as Container, nth, replaceElement)
       return
     }
   }
 
-  if (oldNode.tag !== newNode.tag) {
-    mount(newNode, container.parentElement as Container, nth, container)
+  if (
+    oldNode.key !== newNode.key ||
+    oldNode.tag !== newNode.tag ||
+    newNode.tag.toUpperCase() !== container.nodeName
+  ) {
+    mount(renderContext, newNode, container.parentElement as Container, nth, containers)
     return
   }
 
   if (container instanceof HTMLElement) {
-    for (const [key, value] of Object.entries(newNode.props)) {
-      if (oldNode.props[key] !== value) {
-        if (key === 'ref') {
-          if (typeof value === 'function') {
-            value(container)
-          } else {
-            value.current = container
-          }
-        } else if (key.startsWith('on')) {
-          const eventName = key.slice(2).toLowerCase()
-          container.removeEventListener(eventName, oldNode.props[key])
-          container.addEventListener(eventName, value)
-        } else if (value instanceof Promise) {
-          value.then((v) => {
-            const callbacks = (v as HtmlEscapedString).callbacks
-            if (callbacks) {
-              callbacks.forEach((c) =>
-                c({
-                  phase: HtmlEscapedCallbackPhase.BeforeDom,
-                  context: {},
-                })
-              )
-            }
-            container.setAttribute(key, v)
-          })
-        } else {
-          container.setAttribute(key, value)
-        }
-      }
-    }
-    for (const [key, value] of Object.entries(oldNode.props)) {
-      if (!(key in newNode.props)) {
-        if (key === 'ref') {
-          if (typeof value === 'function') {
-            value(null)
-          } else {
-            value.current = null
-          }
-        } else if (key.startsWith('on')) {
-          const eventName = key.slice(2).toLowerCase()
-          container.removeEventListener(eventName, value)
-        } else {
-          container.removeAttribute(key)
-        }
-      }
-    }
+    const oldProps = propsMap.get(container)
+    applyAttributes(container, newNode.props, oldProps)
   }
 
-  patchChildren(oldNode.children, newNode.children, container)
+  patchChildren(renderContext, oldNode.children, newNode.children, container)
 }
 
 export const render = (node: unknown, container: Container) => {
@@ -375,8 +655,15 @@ export const render = (node: unknown, container: Container) => {
     throw new Error('Invalid node')
   }
 
+  const renderContext: RenderContext = [
+    [], // catcher stack
+    [], // promises
+    [], // snapshots
+    new WeakMap(), // snapshots
+    0, // no snapshot context
+  ]
   const fragment = document.createDocumentFragment()
-  mount(node, fragment)
+  mount(renderContext, node, fragment)
 
   // copy meta data
   nodeMap.set(container, nodeMap.get(fragment) || [])
