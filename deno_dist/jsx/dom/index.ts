@@ -1,7 +1,7 @@
-import type { HtmlEscapedString } from '../../utils/html.ts'
-import { HtmlEscapedCallbackPhase } from '../../utils/html.ts'
 import type { Child } from '../index.ts'
 import { JSXNode } from '../index.ts'
+import type { HtmlEscapedString } from '../../utils/html.ts'
+import { HtmlEscapedCallbackPhase } from '../../utils/html.ts'
 
 type Container = HTMLElement | DocumentFragment
 
