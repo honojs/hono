@@ -380,35 +380,6 @@ describe('Validator middleware with Zod validates query params', () => {
   })
 })
 
-describe('Validator middleware with Zod validates queries params - with `queries` will be obsolete in v4', () => {
-  const app = new Hono()
-
-  const schema = z.object({
-    tags: z.array(z.string()),
-  })
-
-  app.get('/posts', zodValidator('queries', schema), (c) => {
-    const res = c.req.valid('queries')
-    return c.json({
-      tags: res.tags,
-    })
-  })
-
-  it('Should validate queries params and return 200 response', async () => {
-    const res = await app.request('http://localhost/posts?tags=book&tags=movie')
-    expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({
-      tags: ['book', 'movie'],
-    })
-  })
-
-  it('Should validate queries params and return 400 response', async () => {
-    const res = await app.request('http://localhost/posts')
-    expect(res.status).toBe(400)
-    expect(await res.text()).toBe('Invalid!')
-  })
-})
-
 describe('Validator middleware with Zod validates param', () => {
   const app = new Hono()
 
