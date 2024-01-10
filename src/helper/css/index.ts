@@ -178,7 +178,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     const thisSelector =
       (isPseudoGlobal ? PSEUDO_GLOBAL_SELECTOR : '') + toHash(label + thisStyleString)
     const className = new String(
-      isPseudoGlobal ? '' : [thisSelector, ...externalClassNames].join(' ')
+      (isPseudoGlobal ? selectors.map(String) : [thisSelector, ...externalClassNames]).join(' ')
     ) as CssClassName
 
     const appendStyle: HtmlEscapedCallback = ({ buffer, context }): Promise<string> | undefined => {
@@ -288,7 +288,12 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     return className
   }
 
-  const Style = () => raw(`<style id="${id}"></style>`)
+  const Style = ({ children }: { children?: Promise<string> } = {}) =>
+    children
+      ? children.then((cssData) =>
+          raw(`<style id="${id}">${(cssData as CssClassName)[STYLE_STRING]}</style>`)
+        )
+      : raw(`<style id="${id}"></style>`)
 
   return {
     css,
