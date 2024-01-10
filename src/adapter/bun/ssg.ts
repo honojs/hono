@@ -13,7 +13,7 @@ export const bunFileSystemModule: FileSystemModule = {
   },
 }
 
-export const ToSsg: ToSsgInterface = async (app, bunFileSystemModule, options: { dir: string }) => {
+export const toSSG: ToSsgInterface = async (app, bunFileSystemModule, options: { dir: string }) => {
   const maps = await generateHtmlMap(app)
   await saveHtmlToLocal(maps, bunFileSystemModule, options.dir)
   console.log('Static site generation completed.')
