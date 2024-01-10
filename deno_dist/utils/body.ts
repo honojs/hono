@@ -1,4 +1,3 @@
-import { Hono } from '../index.ts'
 import { HonoRequest } from '../request.ts'
 
 export type BodyData = Record<string, string | File | (string | File)[]>
