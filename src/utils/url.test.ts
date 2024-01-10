@@ -159,6 +159,10 @@ describe('url', () => {
         '/v1/leaderboard/:version',
         '/v1/leaderboard/:version/:platform',
       ])
+      expect(checkOptionalParameter('/api/:version/animal/:type?')).toEqual([
+        '/api/:version/animal',
+        '/api/:version/animal/:type',
+      ])
     })
   })
 

@@ -134,16 +134,19 @@ export const checkOptionalParameter = (path: string): string[] | null => {
   segments.forEach((segment) => {
     if (segment !== '' && !/\:/.test(segment)) {
       basePath += '/' + segment
-    } else if (/\?/.test(segment)) {
-      const optionalSegment = segment.replace('?', '')
-      const optionalPath = basePath + '/' + optionalSegment
-      if (results.length === 0 && basePath === '') {
-        results.push('/')
-      } else {
+    } else if (/\:/.test(segment)) {
+      if (/\?/.test(segment)) {
+        if (results.length === 0 && basePath === '') {
+          results.push('/')
+        } else {
+          results.push(basePath)
+        }
+        const optionalSegment = segment.replace('?', '')
+        basePath += '/' + optionalSegment
         results.push(basePath)
+      } else {
+        basePath += '/' + segment
       }
-      results.push(optionalPath)
-      basePath = optionalPath
     }
   })
 
