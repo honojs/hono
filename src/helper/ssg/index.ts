@@ -3,14 +3,20 @@ import { inspectRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 
-interface FileSystemModule {
+export interface FileSystemModule {
   writeFile(path: string, data: string | Buffer): Promise<void>
   mkdir(path: string, options: { recursive: boolean }): Promise<void | string>
 }
 
-const generateFilePath = (routePath: string) => {
+export interface ToSsgResult {
+  success: boolean
+  files?: string[]
+  error?: Error
+}
+
+const generateFilePath = (routePath: string, outDir: string) => {
   const fileName = routePath === '/' ? 'index.html' : routePath + '.html'
-  return path.join('./static', fileName)
+  return path.join(outDir, fileName)
 }
 
 export const generateHtmlMap = async <
@@ -38,27 +44,36 @@ export const generateHtmlMap = async <
 
 export const saveHtmlToLocal = async (
   htmlMap: Map<string, string>,
-  fsModule: FileSystemModule
-): Promise<void> => {
+  fsModule: FileSystemModule,
+  outDir: string
+): Promise<string[]> => {
+  const files: string[] = []
+
   for (const [routePath, html] of htmlMap) {
-    const filePath = generateFilePath(routePath)
+    const filePath = generateFilePath(routePath, outDir)
     const dirPath = path.dirname(filePath)
 
     await fsModule.mkdir(dirPath, { recursive: true })
     await fsModule.writeFile(filePath, html)
-    console.log(`Written: ${filePath}`)
+    files.push(filePath)
   }
+
+  return files
 }
 
-export const toSSG = async <
-  E extends Env = Env,
-  S extends Schema = {},
-  BasePath extends string = '/'
->(
-  app: Hono<E, S, BasePath>,
-  fsModule: FileSystemModule
-): Promise<void> => {
-  const maps = await generateHtmlMap(app)
-  await saveHtmlToLocal(maps, fsModule)
-  console.log('Static site generation completed.')
+export const toSSG = async (
+  app: Hono,
+  fsModule: FileSystemModule,
+  options: { dir: string }
+): Promise<ToSsgResult> => {
+  try {
+    const maps = await generateHtmlMap(app)
+    const files = await saveHtmlToLocal(maps, fsModule, options.dir)
+
+    console.log('Static site generation completed.')
+    return { success: true, files }
+  } catch (error) {
+    const errorObj = error instanceof Error ? error : new Error(String(error))
+    return { success: false, error: errorObj }
+  }
 }

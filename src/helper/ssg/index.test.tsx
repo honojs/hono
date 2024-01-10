@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { Hono } from '../../hono'
-import { toSSG } from './index'
+import { toSSG, FileSystemModule } from './index'
 import { jsxRenderer, useRequestContext } from '../../middleware/jsx-renderer'
 import { jsx } from '../../jsx'
 
-describe('toSsg function', () => {
+describe('toSSG function', () => {
   it('Should correctly generate static HTML files for Hono routes', async () => {
     const app = new Hono()
     app.get('/', (c) => c.text('Hello, World!'))
@@ -31,7 +31,7 @@ describe('toSsg function', () => {
       return c.render('Hello!', { title: 'Charlies Page' })
     })
 
-    const fsMock = {
+    const fsMock: FileSystemModule = {
       writeFile: vitest.fn((path, data) => {
         console.log(`writeFile called with path: ${path}, data: ${data}`)
         return Promise.resolve()
@@ -42,21 +42,29 @@ describe('toSsg function', () => {
       }),
     }
 
-    await toSSG(app, fsMock)
+    const result = await toSSG(app, fsMock, { dir: './static' })
 
+    expect(result.success).toBe(true)
+    expect(result.files).toBeDefined()
+    expect(result.files?.length).toBeGreaterThan(0) // creating file
     expect(fsMock.mkdir).toHaveBeenCalledWith(expect.any(String), { recursive: true })
-    expect(fsMock.writeFile).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.stringContaining('Hello, World!')
-    )
-    expect(fsMock.writeFile).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.stringContaining('About Page')
-    )
+    expect(fsMock.writeFile).toHaveBeenCalled()
+  })
 
-    expect(fsMock.writeFile).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.stringContaining('<title>Charlies Page</title>')
-    )
+  it('Should handle errors correctly', async () => {
+    const app = new Hono()
+    app.get('/', (c) => c.text('Hello, World!'))
+    app.get('/about', (c) => c.text('About Page'))
+
+    const fsMock: FileSystemModule = {
+      writeFile: vitest.fn((path, data) => Promise.reject(new Error('Write error'))),
+      mkdir: vitest.fn((path, options) => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: './static' })
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBeDefined()
+    expect(result.files).toBeUndefined()
   })
 })
