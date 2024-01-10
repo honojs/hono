@@ -311,6 +311,40 @@ describe('DOM', () => {
       button.click()
       expect(root.innerHTML).toBe('<div data-cleanup="true"><button>hide</button></div>')
     })
+
+    it('cleanup for deps', async () => {
+      let effectCount = 0
+      let cleanupCount = 0
+
+      const App = () => {
+        const [count, setCount] = useState(0)
+        const [count2, setCount2] = useState(0)
+        useEffect(() => {
+          effectCount++
+          return () => {
+            cleanupCount++
+          }
+        }, [count])
+        return (
+          <div>
+            <p>{count}</p>
+            <p>{count2}</p>
+            <button onClick={() => setCount(count + 1)}>+</button>
+            <button onClick={() => setCount2(count2 + 1)}>+</button>
+          </div>
+        )
+      }
+      const app = <App />
+      render(app, root)
+      expect(effectCount).toBe(1)
+      expect(cleanupCount).toBe(0)
+      root.querySelectorAll('button')[0].click() // count++
+      expect(effectCount).toBe(2)
+      expect(cleanupCount).toBe(1)
+      root.querySelectorAll('button')[1].click() // count2++
+      expect(effectCount).toBe(2)
+      expect(cleanupCount).toBe(1)
+    })
   })
 
   describe('useCallback', () => {
@@ -360,7 +394,7 @@ describe('DOM', () => {
       const app = <Counter />
       render(app, root)
       expect(root.innerHTML).toBe('<div><p>0</p><button>+</button><p>0</p><button>+</button></div>')
-      const [,button] = root.querySelectorAll('button')
+      const [, button] = root.querySelectorAll('button')
       button.click()
       expect(root.innerHTML).toBe('<div><p>0</p><button>+</button><p>1</p><button>+</button></div>')
       expect(callbackSet.size).toBe(1)
