@@ -223,7 +223,14 @@ class JSXFunctionNode extends JSXNode {
   }
 }
 
-class JSXFragmentNode extends JSXNode {
+const FragmentNodeFn: FC<{}> = function Fragment({ children }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return children as any
+}
+export class JSXFragmentNode extends JSXNode {
+  constructor(_: string | Function, props: Props, children: Child[]) {
+    super(FragmentNodeFn, props, children)
+  }
   toStringToBuffer(buffer: StringBuffer): void {
     childrenToStringToBuffer(this.children, buffer)
   }
@@ -281,11 +288,17 @@ export const memo = <T>(
   }) as FC<T>
 }
 
-export const Fragment = (props: {
+export const Fragment = ({
+  children,
+}: {
   key?: string
   children?: Child | HtmlEscapedString
 }): HtmlEscapedString => {
-  return new JSXFragmentNode('', {}, props.children ? [props.children] : []) as never
+  return new JSXFragmentNode(
+    '',
+    {},
+    Array.isArray(children) ? children : children ? [children] : []
+  ) as never
 }
 
 export interface Context<T> {
