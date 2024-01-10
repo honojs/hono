@@ -57,15 +57,6 @@ class ClientRequestImpl {
         }
       }
 
-      if (args.queries) {
-        for (const [k, v] of Object.entries(args.queries)) {
-          for (const v2 of v) {
-            this.queryParams ||= new URLSearchParams()
-            this.queryParams.append(k, v2)
-          }
-        }
-      }
-
       if (args.form) {
         const form = new FormData()
         for (const [k, v] of Object.entries(args.form)) {

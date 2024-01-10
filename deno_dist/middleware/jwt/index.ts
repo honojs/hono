@@ -1,3 +1,4 @@
+import { getCookie } from '../../helper.ts'
 import { HTTPException } from '../../http-exception.ts'
 import type { MiddlewareHandler } from '../../types.ts'
 import { Jwt } from '../../utils/jwt/index.ts'
@@ -25,7 +26,7 @@ export const jwt = (options: {
   }
 
   return async function jwt(ctx, next) {
-    const credentials = ctx.req.headers.get('Authorization')
+    const credentials = ctx.req.raw.headers.get('Authorization')
     let token
     if (credentials) {
       const parts = credentials.split(/\s+/)
@@ -41,7 +42,7 @@ export const jwt = (options: {
         token = parts[1]
       }
     } else if (options.cookie) {
-      token = ctx.req.cookie(options.cookie)
+      token = getCookie(ctx)[options.cookie]
     }
 
     if (!token) {

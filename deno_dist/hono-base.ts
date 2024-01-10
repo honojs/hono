@@ -194,24 +194,6 @@ class Hono<
     return this
   }
 
-  /**
-   * @deprecated
-   * Use `showRoutes()` utility methods provided by 'hono/dev' instead of `app.showRoutes()`.
-   * `app.showRoutes()` will be removed in v4.
-   * @example
-   * You could rewrite `app.showRoutes()` as follows
-   * import { showRoutes } from 'hono/dev'
-   * showRoutes(app)
-   */
-  showRoutes() {
-    const length = 8
-    this.routes.map((route) => {
-      console.log(
-        `\x1b[32m${route.method}\x1b[0m ${' '.repeat(length - route.method.length)} ${route.path}`
-      )
-    })
-  }
-
   mount(
     path: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -243,26 +225,6 @@ class Hono<
       await next()
     }
     this.addRoute(METHOD_NAME_ALL, mergePath(path, '*'), handler)
-    return this
-  }
-
-  /**
-   * @deprecated
-   * `app.routerName()` will be removed in v4.
-   * Use `getRouterName()` in `hono/dev` instead of `app.routerName()`.
-   */
-  get routerName() {
-    this.matchRoute('GET', '/')
-    return this.router.name
-  }
-
-  /**
-   * @deprecated
-   * `app.head()` is no longer used.
-   * `app.get()` implicitly handles the HEAD method.
-   */
-  head = () => {
-    console.warn('`app.head()` is no longer used. `app.get()` implicitly handles the HEAD method.')
     return this
   }
 
@@ -349,15 +311,6 @@ class Hono<
         return this.handleError(err, c)
       }
     })()
-  }
-
-  /**
-   * @deprecated
-   * `app.handleEvent()` will be removed in v4.
-   * Use `app.fetch()` instead of `app.handleEvent()`.
-   */
-  handleEvent = (event: FetchEventLike) => {
-    return this.dispatch(event.request, event, undefined, event.request.method)
   }
 
   fetch = (request: Request, Env?: E['Bindings'] | {}, executionCtx?: ExecutionContext) => {
