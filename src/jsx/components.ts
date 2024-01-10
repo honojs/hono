@@ -1,11 +1,10 @@
 import { raw } from '../helper/html'
-import {
-  HtmlEscapedCallbackPhase,
-  resolveCallback,
-  type HtmlEscapedString,
-  type HtmlEscapedCallback,
-} from '../utils/html'
-import type { FC, Child } from './index'
+import type { HtmlEscapedString, HtmlEscapedCallback } from '../utils/html'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
+import type { HasRenderToDom } from './dom'
+import { RENDER_TO_DOM, tagFunctionResultWithFallback } from './dom'
+import type { FC, Child } from '.'
+import { JSXNode } from '.'
 
 let errorBoundaryCounter = 0
 
@@ -181,3 +180,22 @@ d.remove()
     return raw(resArray.join(''))
   }
 }
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const ErrorBoundaryFragment: FC<any> = ({ children }) => children
+const ErrorBoundaryDomRenderer: FC<{
+  fallback?: Child
+  fallbackRender?: FallbackRender
+  onError?: ErrorHandler
+}> = ({ children, fallback, fallbackRender, onError }) => {
+  return tagFunctionResultWithFallback(
+    new JSXNode(ErrorBoundaryFragment, {}, children as any),
+    new JSXNode(ErrorBoundaryFragment, {}, []) as any,
+    ((e: any) => {
+      onError?.(e)
+      return fallbackRender?.(e) || fallback
+    }) as any
+  ) as any
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+;(ErrorBoundary as HasRenderToDom)[RENDER_TO_DOM] = ErrorBoundaryDomRenderer

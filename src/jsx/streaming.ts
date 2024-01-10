@@ -2,7 +2,10 @@ import { raw } from '../helper/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'
 import { childrenToString } from './components'
-import type { FC, Child } from './index'
+import { RENDER_TO_DOM, tagFunctionResultWithFallback } from './dom'
+import type { HasRenderToDom } from './dom'
+import type { FC, Child } from '.'
+import { JSXNode } from '.'
 
 let suspenseCounter = 0
 
@@ -82,6 +85,17 @@ d.replaceWith(c.content)
     return raw(resArray.join(''))
   }
 }
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const SuspenseFragment: FC<any> = ({ children }) => children
+const SuspenseDomRenderer: FC<{ fallback: any }> = ({ children, fallback }) => {
+  return tagFunctionResultWithFallback(
+    new JSXNode(SuspenseFragment, {}, children as any),
+    fallback
+  ) as any
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+;(Suspense as HasRenderToDom)[RENDER_TO_DOM] = SuspenseDomRenderer
 
 const textEncoder = new TextEncoder()
 /**

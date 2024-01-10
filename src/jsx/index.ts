@@ -3,6 +3,7 @@ import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
 export { ErrorBoundary } from './components'
+export { Suspense } from './streaming'
 
 export const HONO_COMPONENT = 'hono-component'
 export const HONO_COMPONENT_ID = 'hono-component-id'
