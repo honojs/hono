@@ -6,11 +6,13 @@ const stateMap = new WeakMap<UpdateData, any[]>()
 type DepsData = [readonly unknown[] | undefined, (() => void) | undefined]
 const effectDepsMap = new WeakMap<UpdateData, DepsData[]>()
 const callbackMap = new WeakMap<UpdateData, [Function, readonly unknown[]][]>()
+const useResultStash = new WeakMap<UpdateData, Map<number, unknown>>()
+const promiseMap = new WeakMap<Promise<unknown>, unknown>()
 
 export const useState = <T>(
   initialState: T
 ): [T, (newState: T | ((currentState: T) => T)) => void] => {
-  const updateData = updateStack[updateStack.length - 1]
+  const updateData = updateStack.at(-1)
   if (!updateData) {
     return [initialState, () => {}]
   }
@@ -21,8 +23,8 @@ export const useState = <T>(
     stateMap.set(updateData, stateArray)
   }
 
-  const [, hookIndex] = updateData
-  updateData[1]++
+  const [, , hookIndex] = updateData
+  updateData[2]++
   const currentState =
     stateArray.length > hookIndex ? stateArray[hookIndex] : (stateArray[hookIndex] = initialState)
   const setState = (newState: T | ((currentState: T) => T)) => {
@@ -44,7 +46,7 @@ export const useState = <T>(
 }
 
 export const useEffect = (effect: () => void | (() => void), deps?: readonly unknown[]): void => {
-  const updateData = updateStack[updateStack.length - 1]
+  const updateData = updateStack.at(-1)
   if (!updateData) {
     return
   }
@@ -55,8 +57,8 @@ export const useEffect = (effect: () => void | (() => void), deps?: readonly unk
     effectDepsMap.set(updateData, effectDepsArray)
   }
 
-  const [, hookIndex] = updateData
-  updateData[1]++
+  const [, , hookIndex] = updateData
+  updateData[2]++
   const [prevDeps, cleanup] = effectDepsArray[hookIndex] || []
   if (!deps || !prevDeps || deps.some((dep, i) => dep !== prevDeps[i])) {
     if (cleanup) {
@@ -73,7 +75,7 @@ export const useEffect = (effect: () => void | (() => void), deps?: readonly unk
     }
     effectDepsArray[hookIndex] = depsData
 
-    updateCallbacks.set(updateData[0], [...(updateCallbacks.get(updateData[0]) || []), executer])
+    updateCallbacks.set(updateData[1], [...(updateCallbacks.get(updateData[1]) || []), executer])
   }
 }
 
@@ -81,7 +83,7 @@ export const useCallback = <T extends (...args: unknown[]) => unknown>(
   callback: T,
   deps: readonly unknown[]
 ): T => {
-  const updateData = updateStack[updateStack.length - 1]
+  const updateData = updateStack.at(-1)
   if (!updateData) {
     return callback
   }
@@ -92,8 +94,8 @@ export const useCallback = <T extends (...args: unknown[]) => unknown>(
     callbackMap.set(updateData, callbackArray)
   }
 
-  const [, hookIndex] = updateData
-  updateData[1]++
+  const [, , hookIndex] = updateData
+  updateData[2]++
 
   const prevDeps = callbackArray[hookIndex]
   if (!prevDeps || deps.some((dep, i) => dep !== prevDeps[1][i])) {
@@ -107,4 +109,32 @@ export const useCallback = <T extends (...args: unknown[]) => unknown>(
 export type RefObject<T> = { current: T | null }
 export const useRef = <T>(initialValue: T | null): RefObject<T> => {
   return { current: initialValue }
+}
+
+export const use = <T>(promise: Promise<T>): T => {
+  const cachedRes = promiseMap.get(promise)
+  if (cachedRes) {
+    return cachedRes as T
+  }
+  promise.then((res) => promiseMap.set(promise, res))
+
+  const updateData = updateStack.at(-1)
+  if (!updateData) {
+    throw promise
+  }
+
+  const useMap = useResultStash.get(updateData) || new Map<number, unknown>()
+  if (useMap.size === 0) {
+    useResultStash.set(updateData, useMap)
+  }
+
+  const [, , hookIndex] = updateData
+  updateData[2]++
+
+  if (useMap.has(hookIndex)) {
+    return useMap.get(hookIndex) as T
+  }
+
+  promise.then((res) => useMap.set(hookIndex, res))
+  throw promise
 }
