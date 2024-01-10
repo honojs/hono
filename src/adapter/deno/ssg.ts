@@ -13,8 +13,8 @@ export const denoFileSystemModule: FileSystemModule = {
   },
 }
 
-export const toSSG: ToSsgInterface = async (app, denoFileSystemModule) => {
+export const toSSG: ToSsgInterface = async (app, denoFileSystemModule, options: { dir: string }) => {
   const maps = await generateHtmlMap(app)
-  await saveHtmlToLocal(maps, denoFileSystemModule)
+  await saveHtmlToLocal(maps, denoFileSystemModule, options.dir)
   console.log('Static site generation completed.')
 }

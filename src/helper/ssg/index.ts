@@ -68,20 +68,3 @@ export interface ToSsgInterface<
 > {
   (app: Hono<E, S, BasePath>, fsModule: FileSystemModule, options: { dir: string }): Promise<void>
 }
-
-export const toSSG = async (
-  app: Hono,
-  fsModule: FileSystemModule,
-  options: { dir: string }
-): Promise<ToSsgResult> => {
-  try {
-    const maps = await generateHtmlMap(app)
-    const files = await saveHtmlToLocal(maps, fsModule, options.dir)
-
-    console.log('Static site generation completed.')
-    return { success: true, files }
-  } catch (error) {
-    const errorObj = error instanceof Error ? error : new Error(String(error))
-    return { success: false, error: errorObj }
-  }
-}
