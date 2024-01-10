@@ -154,6 +154,15 @@ describe('url', () => {
       expect(checkOptionalParameter('/api/:animals?/type')).toBeNull()
       expect(checkOptionalParameter('/api/animals/:type?/')).toBeNull()
       expect(checkOptionalParameter('/:optional?')).toEqual(['/', '/:optional'])
+      expect(checkOptionalParameter('/v1/leaderboard/:version?/:platform?')).toEqual([
+        '/v1/leaderboard',
+        '/v1/leaderboard/:version',
+        '/v1/leaderboard/:version/:platform',
+      ])
+      expect(checkOptionalParameter('/api/:version/animal/:type?')).toEqual([
+        '/api/:version/animal',
+        '/api/:version/animal/:type',
+      ])
     })
   })
 
