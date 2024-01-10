@@ -221,6 +221,151 @@ describe('CSS Helper', () => {
       )
     })
 
+    it('Should be used as a class name for syntax `${className} {`', async () => {
+      const headerClass = css`
+        font-weight: bold;
+      `
+      const containerClass = css`
+        ${headerClass} {
+          h1 {
+            color: red;
+          }
+        }
+      `
+      const template = (
+        <>
+          <Style />
+          <div class={containerClass}>
+            <h1 class={headerClass}>Hello!</h1>
+          </div>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-4220297002{.css-1032195302{h1{color:red}}}.css-1032195302{font-weight:bold}</style><div class="css-4220297002"><h1 class="css-1032195302">Hello!</h1></div>'
+      )
+    })
+
+    it('Should be inserted to global if style string starts with :-hono-root', async () => {
+      const globalClass = css`
+        :-hono-global {
+          html {
+            color: red;
+          }
+          body {
+            display: flex;
+          }
+        }
+      `
+      const template = (
+        <>
+          <Style />
+          <div class={globalClass}>
+            <h1>Hello!</h1>
+          </div>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">html{color:red}body{display:flex}</style><div class=""><h1>Hello!</h1></div>'
+      )
+    })
+
+    it('Should be inserted to global if style string starts with :-hono-root and extends class name', async () => {
+      const headerClass = css`
+        display: flex;
+      `
+      const specialHeaderClass = css`
+        :-hono-global {
+          ${headerClass} {
+            h1 {
+              color: red;
+            }
+          }
+        }
+      `
+      const template = (
+        <>
+          <Style />
+          <div class={specialHeaderClass}>
+            <h1>Hello!</h1>
+          </div>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-3980466870{h1{color:red}}.css-3980466870{display:flex}</style><div class="css-3980466870"><h1>Hello!</h1></div>'
+      )
+    })
+
+    it('Should be inserted as global css if passed css`` to Style component', async () => {
+      const headerClass = css`
+        font-size: 1rem;
+      `
+      const template = (
+        <>
+          <Style>{css`
+            html {
+              color: red;
+            }
+            body {
+              display: flex;
+            }
+          `}</Style>
+          <div>
+            <h1 class={headerClass}>Hello!</h1>
+          </div>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">html{color:red}body{display:flex}.css-1740067317{font-size:1rem}</style><div><h1 class="css-1740067317">Hello!</h1></div>'
+      )
+    })
+
+    it('Should be ignored :-hono-root inside Style component', async () => {
+      const headerClass = css`
+        font-size: 1rem;
+      `
+      const template = (
+        <>
+          <Style>{css`
+            :-hono-global {
+              html {
+                color: red;
+              }
+              body {
+                display: flex;
+              }
+            }
+          `}</Style>
+          <div>
+            <h1 class={headerClass}>Hello!</h1>
+          </div>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">html{color:red}body{display:flex}.css-1740067317{font-size:1rem}</style><div><h1 class="css-1740067317">Hello!</h1></div>'
+      )
+    })
+
+    it('Should be generated deferent class name for deferent first line comment even if the content is the same', async () => {
+      const headerClassA = css`
+        /* class A */
+        display: flex;
+      `
+      const headerClassB = css`
+        /* class B */
+        display: flex;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClassA}>Hello!</h1>
+          <h1 class={headerClassB}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-3170754153{display:flex}.css-896513246{display:flex}</style><h1 class="css-3170754153">Hello!</h1><h1 class="css-896513246">Hello!</h1>'
+      )
+    })
+
     describe('Booleans, Null, and Undefined Are Ignored', () => {
       it.each([true, false, undefined, null])('%s', async (value) => {
         const headerClass = css`

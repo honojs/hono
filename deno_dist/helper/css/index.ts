@@ -30,6 +30,8 @@ export const rawCssString = (value: string): CssEscapedString => {
   return escapedString
 }
 
+const PSEUDO_GLOBAL_SELECTOR = ':-hono-global'
+const isPseudoGlobalSelectorRe = new RegExp(`^${PSEUDO_GLOBAL_SELECTOR}{(.*)}$`)
 const DEFAULT_STYLE_ID = 'hono-css'
 
 /**
@@ -91,7 +93,8 @@ const buildStyleString = async (
   // eslint-disable-next-line @typescript-eslint/ban-types
   selectors: String[],
   externalClassNames: string[]
-): Promise<string> => {
+): Promise<[string, string]> => {
+  const label = strings[0].match(/^\s*\/\*(.*?)\*\//)?.[1] || ''
   let styleString = ''
   for (let i = 0; i < strings.length; i++) {
     styleString += strings[i]
@@ -117,13 +120,19 @@ const buildStyleString = async (
         styleString += ` ${value.substring(11)} `
       } else {
         if ((value as CssClassName)[IS_CSS_CLASS_NAME]) {
-          selectors.push(...(value as CssClassName)[SELECTORS])
-          externalClassNames.push(...(value as CssClassName)[EXTERNAL_CLASS_NAMES])
-          value = (value as CssClassName)[STYLE_STRING]
-          if (value.length > 0) {
-            const lastChar = value[value.length - 1]
-            if (lastChar !== ';' && lastChar !== '}') {
-              value += ';'
+          if (strings[i + 1]?.match(/^\s*{/)) {
+            // assume this value is a class name
+            selectors.push(value as CssClassName)
+            value = `.${value}`
+          } else {
+            selectors.push(...(value as CssClassName)[SELECTORS])
+            externalClassNames.push(...(value as CssClassName)[EXTERNAL_CLASS_NAMES])
+            value = (value as CssClassName)[STYLE_STRING]
+            if (value.length > 0) {
+              const lastChar = value[value.length - 1]
+              if (lastChar !== ';' && lastChar !== '}') {
+                value += ';'
+              }
             }
           }
         } else if (
@@ -137,7 +146,7 @@ const buildStyleString = async (
     }
   }
 
-  return minify(styleString)
+  return [label, minify(styleString)]
 }
 
 /**
@@ -157,9 +166,21 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     // eslint-disable-next-line @typescript-eslint/ban-types
     const selectors: String[] = []
     const externalClassNames: string[] = []
-    const thisStyleString = await buildStyleString(strings, values, selectors, externalClassNames)
-    const thisSelector = toHash(thisStyleString)
-    const className = new String([thisSelector, ...externalClassNames].join(' ')) as CssClassName
+    let [label, thisStyleString] = await buildStyleString(
+      strings,
+      values,
+      selectors,
+      externalClassNames
+    )
+    const isPseudoGlobal = isPseudoGlobalSelectorRe.exec(thisStyleString)
+    if (isPseudoGlobal) {
+      thisStyleString = isPseudoGlobal[1]
+    }
+    const thisSelector =
+      (isPseudoGlobal ? PSEUDO_GLOBAL_SELECTOR : '') + toHash(label + thisStyleString)
+    const className = new String(
+      (isPseudoGlobal ? selectors.map(String) : [thisSelector, ...externalClassNames]).join(' ')
+    ) as CssClassName
 
     const appendStyle: HtmlEscapedCallback = ({ buffer, context }): Promise<string> | undefined => {
       const [toAdd, added] = contextMap.get(context) as usedClassNameData
@@ -172,7 +193,9 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       let stylesStr = ''
       names.forEach((className) => {
         added[className] = true
-        stylesStr += `${className[0] === '@' ? '' : '.'}${className}{${toAdd[className]}}`
+        stylesStr += className.startsWith(PSEUDO_GLOBAL_SELECTOR)
+          ? toAdd[className]
+          : `${className[0] === '@' ? '' : '.'}${className}{${toAdd[className]}}`
       })
       contextMap.set(context, [{}, added])
 
@@ -272,8 +295,8 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     ...values: CssVariableType[]
   ): // eslint-disable-next-line @typescript-eslint/ban-types
   Promise<String> => {
-    const styleString = await buildStyleString(strings, values, [], [])
-    const className = new String(`@keyframes ${toHash(styleString)}`)
+    const [label, styleString] = await buildStyleString(strings, values, [], [])
+    const className = new String(`@keyframes ${toHash(label + styleString)}`)
     Object.assign(className as CssClassName, {
       isEscaped: true,
       [IS_CSS_CLASS_NAME]: true,
@@ -284,7 +307,12 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     return className
   }
 
-  const Style = () => raw(`<style id="${id}"></style>`)
+  const Style = ({ children }: { children?: Promise<string> } = {}) =>
+    children
+      ? children.then((cssData) =>
+          raw(`<style id="${id}">${(cssData as CssClassName)[STYLE_STRING]}</style>`)
+        )
+      : raw(`<style id="${id}"></style>`)
 
   return {
     css,
