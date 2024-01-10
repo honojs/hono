@@ -3,10 +3,16 @@ import { JSXNode } from '../index.ts'
 import type { HtmlEscapedString } from '../../utils/html.ts'
 import { HtmlEscapedCallbackPhase } from '../../utils/html.ts'
 
-type ContextNode = [JSXNode, JSXNode, HTMLElement | undefined]
-export const nodeMap = new WeakMap<HTMLElement, ContextNode[]>()
+type Container = HTMLElement | DocumentFragment
+
+type ContextNode = [
+  JSXNode, // source node
+  JSXNode, // rendered node
+  HTMLElement | undefined // rendered HTML element
+]
+export const nodeMap = new WeakMap<Container, ContextNode[]>()
 export const updateCallbacks = new WeakMap<Function, Function[]>()
-export const cleanupCallbacks = new WeakMap<HTMLElement, Function[]>()
+export const cleanupCallbacks = new WeakMap<Container, Function[]>()
 export const UpdatePhase = {
   Updating: 1,
   UpdateAgain: 2,
@@ -21,7 +27,7 @@ export type UpdateData = [
 export const updateStack: UpdateData[] = []
 
 const getContextNode = (
-  container: HTMLElement,
+  container: Container,
   node: JSXNode,
   nth: number
 ): ContextNode | undefined => {
@@ -36,8 +42,8 @@ const getContextNode = (
   )
 }
 
-const removeElement = (element: HTMLElement | undefined) => {
-  if (!element) {
+const removeElement = (element: Container | undefined) => {
+  if (!(element instanceof HTMLElement)) {
     return
   }
   for (const callback of cleanupCallbacks.get(element) || []) {
@@ -59,7 +65,7 @@ export const invokeUpdate = (updateData: UpdateData) => {
   updateData[2] = UpdatePhase.Done
   const callbacks = updateCallbacks.get(update)
   if (callbacks) {
-    const el = getContextNode()?.[2] as HTMLElement
+    const el = getContextNode()?.[2] as Container
     if (el) {
       updateCallbacks.set(update, [])
     }
@@ -76,9 +82,9 @@ export const invokeUpdate = (updateData: UpdateData) => {
 
 const mount = (
   node: JSXNode,
-  container: HTMLElement,
+  container: Container,
   nth: number = 0,
-  replaceElement?: HTMLElement
+  replaceElement?: Container
 ) => {
   if (typeof node === 'boolean' || node === null || node === undefined) {
     removeElement(replaceElement)
@@ -158,7 +164,7 @@ const mount = (
             })
           )
         }
-        container.setAttribute(key, v)
+        el.setAttribute(key, v)
       })
     } else {
       el.setAttribute(key, value)
@@ -195,7 +201,7 @@ const mount = (
   }
 }
 
-const patchChildren = (oldChildren: Child[], newChildren: Child[], container: HTMLElement) => {
+const patchChildren = (oldChildren: Child[], newChildren: Child[], container: Container) => {
   oldChildren = oldChildren.flat()
   newChildren = newChildren.flat()
 
@@ -235,7 +241,7 @@ const patchChildren = (oldChildren: Child[], newChildren: Child[], container: HT
     const newChild = newChildren[i]
 
     if (typeof newChild === 'boolean' || newChild === null || newChild === undefined) {
-      removeElement(container.childNodes[j] as HTMLElement)
+      removeElement(container.childNodes[j] as Container)
       j--
       continue
     }
@@ -265,7 +271,7 @@ const patchChildren = (oldChildren: Child[], newChildren: Child[], container: HT
           patch(
             oldChildren[i] as JSXNode,
             newChildren[i] as JSXNode,
-            container.childNodes[j] as HTMLElement,
+            container.childNodes[j] as Container,
             nth
           )
         }
@@ -274,7 +280,7 @@ const patchChildren = (oldChildren: Child[], newChildren: Child[], container: HT
   }
 }
 
-const patch = (oldNode: JSXNode, newNode: JSXNode, container: HTMLElement, nth: number) => {
+const patch = (oldNode: JSXNode, newNode: JSXNode, container: Container, nth: number) => {
   if (typeof oldNode.tag === 'function') {
     const contextNode = nodeMap
       .get(container.parentElement as HTMLElement)
@@ -282,7 +288,7 @@ const patch = (oldNode: JSXNode, newNode: JSXNode, container: HTMLElement, nth: 
     const replaceElement = contextNode?.[2] as HTMLElement
     if (typeof newNode.tag === 'function') {
       if (oldNode.tag !== newNode.tag) {
-        mount(newNode, container.parentElement as HTMLElement, nth, replaceElement)
+        mount(newNode, container.parentElement as Container, nth, replaceElement)
         return
       }
       if (contextNode) {
@@ -298,63 +304,65 @@ const patch = (oldNode: JSXNode, newNode: JSXNode, container: HTMLElement, nth: 
         const updateData: UpdateData = [update, 0, UpdatePhase.Updating, () => contextNode]
         invokeUpdate(updateData)
       } else {
-        mount(newNode, container.parentElement as HTMLElement, nth, replaceElement)
+        mount(newNode, container.parentElement as Container, nth, replaceElement)
       }
       return
     } else {
-      mount(newNode, container.parentElement as HTMLElement, nth, replaceElement)
+      mount(newNode, container.parentElement as Container, nth, replaceElement)
       return
     }
   }
 
   if (oldNode.tag !== newNode.tag) {
-    mount(newNode, container.parentElement as HTMLElement, nth, container)
+    mount(newNode, container.parentElement as Container, nth, container)
     return
   }
 
-  for (const [key, value] of Object.entries(newNode.props)) {
-    if (oldNode.props[key] !== value) {
-      if (key === 'ref') {
-        if (typeof value === 'function') {
-          value(container)
-        } else {
-          value.current = container
-        }
-      } else if (key.startsWith('on')) {
-        const eventName = key.slice(2).toLowerCase()
-        container.removeEventListener(eventName, oldNode.props[key])
-        container.addEventListener(eventName, value)
-      } else if (value instanceof Promise) {
-        value.then((v) => {
-          const callbacks = (v as HtmlEscapedString).callbacks
-          if (callbacks) {
-            callbacks.forEach((c) =>
-              c({
-                phase: HtmlEscapedCallbackPhase.BeforeDom,
-                context: {},
-              })
-            )
+  if (container instanceof HTMLElement) {
+    for (const [key, value] of Object.entries(newNode.props)) {
+      if (oldNode.props[key] !== value) {
+        if (key === 'ref') {
+          if (typeof value === 'function') {
+            value(container)
+          } else {
+            value.current = container
           }
-          container.setAttribute(key, v)
-        })
-      } else {
-        container.setAttribute(key, value)
+        } else if (key.startsWith('on')) {
+          const eventName = key.slice(2).toLowerCase()
+          container.removeEventListener(eventName, oldNode.props[key])
+          container.addEventListener(eventName, value)
+        } else if (value instanceof Promise) {
+          value.then((v) => {
+            const callbacks = (v as HtmlEscapedString).callbacks
+            if (callbacks) {
+              callbacks.forEach((c) =>
+                c({
+                  phase: HtmlEscapedCallbackPhase.BeforeDom,
+                  context: {},
+                })
+              )
+            }
+            container.setAttribute(key, v)
+          })
+        } else {
+          container.setAttribute(key, value)
+        }
       }
     }
-  }
-  for (const [key, value] of Object.entries(oldNode.props)) {
-    if (!(key in newNode.props)) {
-      if (key === 'ref') {
-        if (typeof value === 'function') {
-          value(null)
+    for (const [key, value] of Object.entries(oldNode.props)) {
+      if (!(key in newNode.props)) {
+        if (key === 'ref') {
+          if (typeof value === 'function') {
+            value(null)
+          } else {
+            value.current = null
+          }
+        } else if (key.startsWith('on')) {
+          const eventName = key.slice(2).toLowerCase()
+          container.removeEventListener(eventName, value)
         } else {
-          value.current = null
+          container.removeAttribute(key)
         }
-      } else if (key.startsWith('on')) {
-        const eventName = key.slice(2).toLowerCase()
-        container.removeEventListener(eventName, value)
-      } else {
-        container.removeAttribute(key)
       }
     }
   }
@@ -362,9 +370,17 @@ const patch = (oldNode: JSXNode, newNode: JSXNode, container: HTMLElement, nth: 
   patchChildren(oldNode.children, newNode.children, container)
 }
 
-export const render = (node: unknown, container: HTMLElement) => {
+export const render = (node: unknown, container: Container) => {
   if (!(node instanceof JSXNode)) {
     throw new Error('Invalid node')
   }
-  mount(node, container)
+
+  const fragment = document.createDocumentFragment()
+  mount(node, fragment)
+
+  // copy meta data
+  nodeMap.set(container, nodeMap.get(fragment) || [])
+  cleanupCallbacks.set(container, cleanupCallbacks.get(fragment) || [])
+
+  container.replaceChildren(fragment)
 }
