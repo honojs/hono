@@ -3,7 +3,8 @@ import type { UpdateData } from '../dom'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const stateMap = new WeakMap<UpdateData, any[]>()
-const effectDepsMap = new WeakMap<UpdateData, (readonly unknown[])[]>()
+type DepsData = [readonly unknown[] | undefined, (() => void) | undefined]
+const effectDepsMap = new WeakMap<UpdateData, DepsData[]>()
 const callbackMap = new WeakMap<UpdateData, [Function, readonly unknown[]][]>()
 
 export const useState = <T>(
@@ -56,12 +57,23 @@ export const useEffect = (effect: () => void | (() => void), deps?: readonly unk
 
   const [, hookIndex] = updateData
   updateData[1]++
-  const prevDeps = effectDepsArray[hookIndex]
+  const [prevDeps, cleanup] = effectDepsArray[hookIndex] || []
   if (!deps || !prevDeps || deps.some((dep, i) => dep !== prevDeps[i])) {
-    if (deps) {
-      effectDepsArray[hookIndex] = deps
+    if (cleanup) {
+      cleanup()
     }
-    updateCallbacks.set(updateData[0], [...(updateCallbacks.get(updateData[0]) || []), effect])
+
+    const depsData: DepsData = [deps, undefined]
+    const executer = () => {
+      const cleanup = effect()
+      if (cleanup) {
+        depsData[1] = cleanup
+      }
+      return cleanup
+    }
+    effectDepsArray[hookIndex] = depsData
+
+    updateCallbacks.set(updateData[0], [...(updateCallbacks.get(updateData[0]) || []), executer])
   }
 }
 

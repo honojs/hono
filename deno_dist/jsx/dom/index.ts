@@ -6,7 +6,7 @@ import { HtmlEscapedCallbackPhase } from '../../utils/html.ts'
 type ContextNode = [JSXNode, JSXNode, HTMLElement | undefined]
 export const nodeMap = new WeakMap<HTMLElement, ContextNode[]>()
 export const updateCallbacks = new WeakMap<Function, Function[]>()
-export const unloadCallbacks = new WeakMap<HTMLElement, Function[]>()
+export const cleanupCallbacks = new WeakMap<HTMLElement, Function[]>()
 export const UpdatePhase = {
   Updating: 1,
   UpdateAgain: 2,
@@ -40,7 +40,7 @@ const removeElement = (element: HTMLElement | undefined) => {
   if (!element) {
     return
   }
-  for (const callback of unloadCallbacks.get(element) || []) {
+  for (const callback of cleanupCallbacks.get(element) || []) {
     callback()
   }
   element.remove()
@@ -59,14 +59,15 @@ export const invokeUpdate = (updateData: UpdateData) => {
   updateData[2] = UpdatePhase.Done
   const callbacks = updateCallbacks.get(update)
   if (callbacks) {
-    updateCallbacks.set(update, [])
+    const el = getContextNode()?.[2] as HTMLElement
+    if (el) {
+      updateCallbacks.set(update, [])
+    }
+    cleanupCallbacks.set(el, [])
     for (const callback of callbacks) {
-      const unload = callback()
-      if (unload) {
-        const el = getContextNode()?.[2] as HTMLElement
-        if (el) {
-          unloadCallbacks.set(el, [...(unloadCallbacks.get(el) || []), unload])
-        }
+      const cleanup = callback()
+      if (cleanup && el) {
+        cleanupCallbacks.set(el, [...(cleanupCallbacks.get(el) || []), cleanup])
       }
     }
   }
@@ -118,11 +119,9 @@ const mount = (
 
           mount(res, container, nth, replaceElement)
         }
-        return
       } else if (typeof res === 'string') {
         const el = document.createTextNode(res)
         container.appendChild(el)
-        return
       } else {
         const wrap = document.createElement('div')
         wrap.innerHTML = res
@@ -288,12 +287,16 @@ const patch = (oldNode: JSXNode, newNode: JSXNode, container: HTMLElement, nth: 
       }
       if (contextNode) {
         const { tag, props, children } = newNode
-        const res = (tag as Function).call(null, {
-          ...props,
-          children: children.length <= 1 ? children[0] : children,
-        })
-        patch(contextNode[1], res, contextNode[2] as HTMLElement, 0)
-        contextNode[1] = res
+        const update = () => {
+          const res = (tag as Function).call(null, {
+            ...props,
+            children: children.length <= 1 ? children[0] : children,
+          })
+          patch(contextNode[1], res, contextNode[2] as HTMLElement, 0)
+          contextNode[1] = res
+        }
+        const updateData: UpdateData = [update, 0, UpdatePhase.Updating, () => contextNode]
+        invokeUpdate(updateData)
       } else {
         mount(newNode, container.parentElement as HTMLElement, nth, replaceElement)
       }
