@@ -1503,7 +1503,6 @@ export type ValidationTargets = {
   json: any
   form: Record<string, string | File>
   query: Record<string, string | string[]>
-  queries: Record<string, string[]> // Deprecated. Will be obsolete in v4.
   param: Record<string, string>
   header: Record<string, string>
   cookie: Record<string, string>

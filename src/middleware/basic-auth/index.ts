@@ -8,7 +8,7 @@ const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) 
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/
 const utf8Decoder = new TextDecoder()
 const auth = (req: HonoRequest) => {
-  const match = CREDENTIALS_REGEXP.exec(req.headers.get('Authorization') || '')
+  const match = CREDENTIALS_REGEXP.exec(req.header('Authorization') || '')
   if (!match) {
     return undefined
   }

@@ -833,7 +833,7 @@ describe('c.var with chaining - test only types', () => {
         bar9: number
       }>()
 
-      return c.jsonT(0)
+      return c.json(0)
     })
 
     // app.get('/', handler...)
@@ -946,7 +946,7 @@ describe('c.var with chaining - test only types', () => {
         bar9: number
       }>()
 
-      return c.jsonT(0)
+      return c.json(0)
     })
   })
 })
@@ -986,7 +986,7 @@ describe('Env types with chained routes - test only types', () => {
         validator('json', (v) => v),
         async (c) => {
           expectTypeOf(c.get('testVar')).toEqualTypeOf<string>()
-          return c.jsonT({ success: true })
+          return c.json({ success: true })
         }
       )
       .patch(
@@ -994,7 +994,7 @@ describe('Env types with chained routes - test only types', () => {
         validator('json', (v) => v),
         async (c) => {
           expectTypeOf(c.get('testVar')).toEqualTypeOf<string>()
-          return c.jsonT({ success: true })
+          return c.json({ success: true })
         }
       )
   })

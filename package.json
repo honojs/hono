@@ -264,11 +264,6 @@
       "import": "./dist/adapter/bun/index.js",
       "require": "./dist/cjs/adapter/bun/index.js"
     },
-    "./nextjs": {
-      "types": "./dist/types/adapter/nextjs/index.d.ts",
-      "import": "./dist/adapter/nextjs/index.js",
-      "require": "./dist/cjs/adapter/nextjs/index.js"
-    },
     "./aws-lambda": {
       "types": "./dist/types/adapter/aws-lambda/index.d.ts",
       "import": "./dist/adapter/aws-lambda/index.js",

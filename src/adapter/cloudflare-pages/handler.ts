@@ -1,6 +1,6 @@
 // @denoify-ignore
-import { Hono } from '../../hono'
-import type { Env, MiddlewareHandler } from '../../types'
+import type { Hono } from '../../hono'
+import type { MiddlewareHandler } from '../../types'
 
 // Ref: https://github.com/cloudflare/workerd/blob/main/types/defines/pages.d.ts
 
@@ -22,27 +22,18 @@ export type EventContext<Env = {}, P extends string = any, Data = {}> = {
 interface HandleInterface {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (app: Hono<any, any, any>): (eventContext: EventContext) => Response | Promise<Response>
-  /** @deprecated
-   * Use `app.basePath()` to set a sub path instead of passing the second argument.
-   * The `handle` will have only one argument in v4.
-   */
-  <E extends Env, S extends {}, BasePath extends string>(app: Hono<E, S, BasePath>, path: string): (
-    eventContext: EventContext
-  ) => Response | Promise<Response>
 }
 
-export const handle: HandleInterface =
-  (subApp: Hono, path?: string) => (eventContext: EventContext) => {
-    const app = path ? new Hono().route(path, subApp as never) : subApp
-    return app.fetch(
-      eventContext.request,
-      { ...eventContext.env, eventContext },
-      {
-        waitUntil: eventContext.waitUntil,
-        passThroughOnException: eventContext.passThroughOnException,
-      }
-    )
-  }
+export const handle: HandleInterface = (app: Hono) => (eventContext: EventContext) => {
+  return app.fetch(
+    eventContext.request,
+    { ...eventContext.env, eventContext },
+    {
+      waitUntil: eventContext.waitUntil,
+      passThroughOnException: eventContext.passThroughOnException,
+    }
+  )
+}
 
 declare abstract class FetcherLike {
   fetch(input: RequestInfo, init?: RequestInit): Promise<Response>

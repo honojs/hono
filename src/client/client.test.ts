@@ -139,18 +139,6 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
         })
       }
     )
-    .get(
-      '/posts',
-      validator('queries', () => {
-        return {
-          tags: ['a', 'b'],
-        }
-      }),
-      (c) => {
-        const data = c.req.valid('queries')
-        return c.json(data)
-      }
-    )
     .put(
       '/posts/:id',
       validator('form', () => {
@@ -254,19 +242,6 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
       q: 'foobar',
       tag: ['a', 'b'],
       filter: null,
-    })
-  })
-
-  it('Should get 200 response - queries', async () => {
-    const res = await client.posts.$get({
-      queries: {
-        tags: ['A', 'B', 'C'],
-      },
-    })
-
-    expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({
-      tags: ['A', 'B', 'C'],
     })
   })
 
@@ -576,7 +551,7 @@ describe('Use custom fetch (app.request) method', () => {
 describe('Optional parameters in JSON response', () => {
   it('Should return the correct type', async () => {
     const app = new Hono().get('/', (c) => {
-      return c.jsonT({ message: 'foo' } as { message?: string })
+      return c.json({ message: 'foo' } as { message?: string })
     })
     type AppType = typeof app
     const client = hc<AppType>('', { fetch: app.request })
