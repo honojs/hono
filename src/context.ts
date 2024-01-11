@@ -156,6 +156,10 @@ export class Context<
     this.renderer = renderer
   }
 
+  getRenderer = (renderer: Renderer) => {
+    this.renderer = renderer
+  }
+
   header = (name: string, value: string | undefined, options?: { append?: boolean }): void => {
     // Clear the header
     if (value === undefined) {

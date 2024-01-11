@@ -5,7 +5,7 @@ describe('Wrangler', () => {
   let worker: UnstableDevWorker
 
   beforeAll(async () => {
-    worker = await unstable_dev('./runtime_tests/wrangler/index.ts', {
+    worker = await unstable_dev('./runtime_tests/wrangler/index.tsx', {
       vars: {
         NAME: 'Cloudflare',
       },
@@ -25,6 +25,12 @@ describe('Wrangler', () => {
 
   it('Should return the environment variable', async () => {
     const res = await worker.fetch('/env')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Cloudflare')
+  })
+
+  it('Should return the page with the layout', async () => {
+    const res = await worker.fetch('/layout')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Cloudflare')
   })
