@@ -1,5 +1,6 @@
-import { describe, expect, it, mock, beforeEach } from 'bun:test'
-import { serveStatic } from '../../src/adapter/bun'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { FileSystemModule } from '../../src/helper/ssg'
+import { serveStatic, toSSG } from '../../src/adapter/bun'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { Hono } from '../../src/index'
@@ -76,7 +77,7 @@ describe('Basic Auth Middleware', () => {
 
 describe('Serve Static Middleware', () => {
   const app = new Hono()
-  const onNotFound = mock(() => {})
+  const onNotFound = vi.fn(() => {})
   app.all('/favicon.ico', serveStatic({ path: './runtime_tests/bun/favicon.ico' }))
   app.all(
     '/favicon-notfound.ico',
@@ -205,5 +206,70 @@ describe('JSX Middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
     expect(await res.text()).toBe('<html><p>hello</p></html>')
+  })
+})
+
+describe('toSSG function', () => {
+  it('Should correctly generate static HTML files for Hono routes', async () => {
+    const app = new Hono()
+    app.get('/', (c) => c.text('Hello, World!'))
+    app.get('/about', (c) => c.text('About Page'))
+    app.get('/about/some', (c) => c.text('About Page 2tier'))
+    app.post('/about/some/thing', (c) => c.text('About Page 3tier'))
+    app.get('/bravo', (c) => c.html('Bravo Page'))
+    app.get('/Charlie', async (c, next) => {
+      c.setRenderer((content, head) => {
+        return c.html(
+          <html>
+            <head>
+              <title>{head.title || ''}</title>
+            </head>
+            <body>
+              <p>{content}</p>
+            </body>
+          </html>
+        )
+      })
+      await next()
+    })
+    app.get('/Charlie', (c) => {
+      return c.render('Hello!', { title: 'Charlies Page' })
+    })
+
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn((path, data) => {
+        console.log(`writeFile called with path: ${path}, data: ${data}`)
+        return Promise.resolve()
+      }),
+      mkdir: vi.fn((path, options) => {
+        console.log(`mkdir called with path: ${path}, options: ${JSON.stringify(options)}`)
+        return Promise.resolve()
+      }),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: './static' })
+
+    expect(result.success).toBe(true)
+    expect(result.files).toBeDefined()
+    expect(result.files?.length).toBeGreaterThan(0) // creating file
+    expect(fsMock.mkdir).toHaveBeenCalledWith(expect.any(String), { recursive: true })
+    expect(fsMock.writeFile).toHaveBeenCalled()
+  })
+
+  it('Should handle errors correctly', async () => {
+    const app = new Hono()
+    app.get('/', (c) => c.text('Hello, World!'))
+    app.get('/about', (c) => c.text('About Page'))
+
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn((path, data) => Promise.reject(new Error('Write error'))),
+      mkdir: vi.fn((path, options) => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: './static' })
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBeDefined()
+    expect(result.files).toBeUndefined()
   })
 })

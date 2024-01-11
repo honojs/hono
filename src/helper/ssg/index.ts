@@ -61,10 +61,14 @@ export const saveHtmlToLocal = async (
   return files
 }
 
-export interface ToSsgInterface<
+export interface ToSSGInterface<
   E extends Env = Env,
   S extends Schema = {},
   BasePath extends string = '/'
 > {
-  (app: Hono<E, S, BasePath>, fsModule: FileSystemModule, options: { dir: string }): Promise<void>
+  (app: Hono<E, S, BasePath>, fsModule: FileSystemModule, options: { dir: string }): Promise<{
+    success: boolean
+    files?: string[]
+    error?: Error
+  }>
 }
