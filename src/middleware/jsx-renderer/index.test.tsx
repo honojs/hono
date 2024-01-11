@@ -1,4 +1,5 @@
 import { expectTypeOf } from 'vitest'
+import { showRoutes } from '../../helper'
 import { html } from '../../helper/html'
 import { Hono } from '../../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -56,7 +57,7 @@ describe('JSX renderer', () => {
       '*',
       jsxRenderer(({ children }) => <div class='nested'>{children}</div>)
     )
-    app2.get('/', (c) => c.render(<h1>NESTED</h1>, { title: 'Nested' }))
+    app2.get('/', (c) => c.render(<h1>http://localhost/nested</h1>, { title: 'Nested' }))
 
     app.route('/nested', app2)
 
@@ -64,7 +65,7 @@ describe('JSX renderer', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe(
-      '<html><head>Title</head><body><h1>http://localhost/</h1></body></html>'
+      '<html><head>Nested</head><body><div class="nested"><h1>http://localhost/nested</h1></div></body></html>'
     )
   })
 

@@ -32,7 +32,7 @@ const createRenderer =
 
     const parentLayout = c.getLayout()
     if (parentLayout) {
-      currentLayout = parentLayout({ children: currentLayout })
+      currentLayout = parentLayout({ children: currentLayout, ...(props || {}) })
     }
 
     /* eslint-disable @typescript-eslint/no-explicit-any */
