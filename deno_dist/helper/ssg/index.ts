@@ -9,7 +9,7 @@ export interface FileSystemModule {
   mkdir(path: string, options: { recursive: boolean }): Promise<void | string>
 }
 
-export interface ToSsgResult {
+export interface ToSSGResult {
   success: boolean
   files?: string[]
   error?: Error

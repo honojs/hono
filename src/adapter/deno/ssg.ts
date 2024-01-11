@@ -7,10 +7,7 @@ export const denoFileSystemModule: FileSystemModule = {
     await Deno.writeFile(path, uint8Data)
   },
   mkdir: async (path, options) => {
-    const mkdirOptions: Deno.MkdirOptions = {
-      recursive: options?.recursive ?? false,
-    }
-    return Deno.mkdir(path, mkdirOptions)
+    return Deno.mkdir(path, { recursive: options?.recursive ?? false })
   },
 }
 

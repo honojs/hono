@@ -5,6 +5,7 @@
     "moduleResolution": "Bundler",
     "outDir": "./dist",
     "rootDir": "./",
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
