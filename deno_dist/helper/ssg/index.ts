@@ -70,6 +70,29 @@ export interface ToSSGInterface<
   (
     app: Hono<E, S, BasePath>,
     fsModule: FileSystemModule,
-    options: { dir: string }
+    options?: { dir?: string }
   ): Promise<ToSSGResult>
+}
+
+export interface ToSSGAdaptorInterface<
+  E extends Env = Env,
+  S extends Schema = {},
+  BasePath extends string = '/'
+> {
+  (
+    app: Hono<E, S, BasePath>,
+    options?: { dir?: string }
+  ): Promise<ToSSGResult>
+}
+
+export const toSSG: ToSSGInterface = async (app, fs, options) => {
+  try {
+    const outputDir = options?.dir ?? './static'
+    const maps = await generateHtmlMap(app)
+    const files = await saveHtmlToLocal(maps, fs, outputDir)
+    return { success: true, files }
+  } catch (error) {
+    const errorObj = error instanceof Error ? error : new Error(String(error))
+    return { success: false, error: errorObj }
+  }
 }
