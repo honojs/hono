@@ -1,5 +1,6 @@
-import { describe, expect, it, mock, beforeEach } from 'bun:test'
-import { serveStatic } from '../../src/adapter/bun'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { FileSystemModule } from '../../src/helper/ssg'
+import { serveStatic, toSSG } from '../../src/adapter/bun'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { Hono } from '../../src/index'
@@ -76,7 +77,7 @@ describe('Basic Auth Middleware', () => {
 
 describe('Serve Static Middleware', () => {
   const app = new Hono()
-  const onNotFound = mock(() => {})
+  const onNotFound = vi.fn(() => {})
   app.all('/favicon.ico', serveStatic({ path: './runtime_tests/bun/favicon.ico' }))
   app.all(
     '/favicon-notfound.ico',

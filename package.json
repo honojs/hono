@@ -179,6 +179,11 @@
       "import": "./dist/middleware/secure-headers/index.js",
       "require": "./dist/cjs/middleware/secure-headers/index.js"
     },
+    "./ssg": {
+      "types": "./dist/types/helper/ssg/index.d.ts",
+      "import": "./dist/helper/ssg/index.js",
+      "require": "./dist/cjs/helper/ssg/index.js"
+    },
     "./streaming": {
       "types": "./dist/types/helper/streaming/index.d.ts",
       "import": "./dist/helper/streaming/index.js",
@@ -380,6 +385,9 @@
       ],
       "streaming": [
         "./dist/types/helper/streaming"
+      ],
+      "ssg": [
+        "./dist/types/helper/ssg"
       ],
       "secure-headers": [
         "./dist/types/middleware/secure-headers"
