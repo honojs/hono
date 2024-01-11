@@ -67,9 +67,9 @@ export interface ToSSGInterface<
   S extends Schema = {},
   BasePath extends string = '/'
 > {
-  (app: Hono<E, S, BasePath>, fsModule: FileSystemModule, options: { dir: string }): Promise<{
-    success: boolean
-    files?: string[]
-    error?: Error
-  }>
+  (
+    app: Hono<E, S, BasePath>,
+    fsModule: FileSystemModule,
+    options: { dir: string }
+  ): Promise<ToSSGResult>
 }
