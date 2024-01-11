@@ -10,11 +10,14 @@ const useResultStash = new WeakMap<UpdateData, Map<number, unknown>>()
 const promiseMap = new WeakMap<Promise<unknown>, unknown>()
 
 export const useState = <T>(
-  initialState: T
+  initialState: T | (() => T)
 ): [T, (newState: T | ((currentState: T) => T)) => void] => {
+  const resolveInitialState = () =>
+    typeof initialState === 'function' ? (initialState as () => T)() : initialState
+
   const updateData = updateStack.at(-1)
   if (!updateData) {
-    return [initialState, () => {}]
+    return [resolveInitialState(), () => {}]
   }
 
   let stateArray = stateMap.get(updateData) as T[]
@@ -26,7 +29,9 @@ export const useState = <T>(
   const [, , hookIndex] = updateData
   updateData[2]++
   const currentState =
-    stateArray.length > hookIndex ? stateArray[hookIndex] : (stateArray[hookIndex] = initialState)
+    stateArray.length > hookIndex
+      ? stateArray[hookIndex]
+      : (stateArray[hookIndex] = resolveInitialState())
   const setState = (newState: T | ((currentState: T) => T)) => {
     const latestState = stateArray[hookIndex] || currentState
     if (typeof newState === 'function') {
