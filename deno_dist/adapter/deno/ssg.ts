@@ -1,5 +1,5 @@
-import { generateHtmlMap, saveHtmlToLocal } from '../../helper/ssg/index.ts'
-import type { FileSystemModule, ToSSGAdaptorInterface, toSSG as baseToSSG } from '../../helper/ssg/index.ts'
+import { toSSG as baseToSSG } from '../../helper/ssg/index.ts'
+import type { FileSystemModule, ToSSGAdaptorInterface } from '../../helper/ssg/index.ts'
 
 export const denoFileSystemModule: FileSystemModule = {
   writeFile: async (path, data) => {

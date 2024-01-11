@@ -79,10 +79,7 @@ export interface ToSSGAdaptorInterface<
   S extends Schema = {},
   BasePath extends string = '/'
 > {
-  (
-    app: Hono<E, S, BasePath>,
-    options?: { dir?: string }
-  ): Promise<ToSSGResult>
+  (app: Hono<E, S, BasePath>, options?: { dir?: string }): Promise<ToSSGResult>
 }
 
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
