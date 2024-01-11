@@ -3,6 +3,7 @@ import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
+    silent: false,
     globals: true,
     include: ['**/src/**/(*.)+(spec|test).+(ts|tsx|js)'],
     exclude: [...configDefaults.exclude, '**/sandbox/**'],

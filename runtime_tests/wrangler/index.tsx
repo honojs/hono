@@ -3,8 +3,18 @@
 
 import { env } from '../../src/helper/adapter'
 import { Hono } from '../../src/hono'
+import { jsxRenderer } from '../../src/middleware/jsx-renderer'
 
 const app = new Hono()
+app.use(
+  jsxRenderer(({ children }) => {
+    return (
+      <html>
+        <body>{children}</body>
+      </html>
+    )
+  })
+)
 
 app.get('/', (c) => c.text('Hello Wrangler!'))
 
@@ -14,10 +24,7 @@ app.get('/env', (c) => {
 })
 
 app.get('/layout', (c) => {
-  c.setRenderer((content) => {
-    return c.html(<html>{content}</html>)
-  })
-  return c.render(<div></div>)
+  return c.render(<div>LAYOUT</div>)
 })
 
 export default app

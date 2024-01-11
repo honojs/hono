@@ -1,3 +1,5 @@
+import type { FC } from './jsx'
+import type { PropsForRenderer } from './middleware'
 import type { HonoRequest } from './request'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types'
 import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html'
@@ -100,6 +102,7 @@ export class Context<
   #preparedHeaders: Record<string, string> | undefined = undefined
   #res: Response | undefined
   #isFresh = true
+  private layout: FC<PropsForRenderer> | undefined = undefined
   private renderer: Renderer = (content: string | Promise<string>) => this.html(content)
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
@@ -152,11 +155,10 @@ export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render: Renderer = (...args: any[]) => this.renderer(...args)
 
-  setRenderer = (renderer: Renderer) => {
-    this.renderer = renderer
-  }
+  setLayout = (layout: FC<PropsForRenderer>) => (this.layout = layout)
+  getLayout = () => this.layout
 
-  getRenderer = (renderer: Renderer) => {
+  setRenderer = (renderer: Renderer) => {
     this.renderer = renderer
   }
 
