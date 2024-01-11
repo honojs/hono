@@ -171,6 +171,28 @@ describe('Optional route', () => {
     expect(res[0][0]).toEqual('animals')
     expect(res[0][1]['type']).toBeUndefined()
   })
+  router.add('GET', '/v1/:version?/:platform?', 'result')
+  it('GET /v1/123/abc', () => {
+    const [res] = router.match('GET', '/v1/123/abc')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('result')
+    expect(res[0][1]['version']).toBe('123')
+    expect(res[0][1]['platform']).toBe('abc')
+  })
+  it('GET /v1/123', () => {
+    const [res] = router.match('GET', '/v1/123')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('result')
+    expect(res[0][1]['version']).toBe('123')
+    expect(res[0][1]['platform']).toBeUndefined()
+  })
+  it('GET /v1', () => {
+    const [res] = router.match('GET', '/v1')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('result')
+    expect(res[0][1]['version']).toBeUndefined()
+    expect(res[0][1]['platform']).toBeUndefined()
+  })
 })
 
 describe('routing order with named parameters', () => {
