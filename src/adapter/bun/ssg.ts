@@ -18,7 +18,6 @@ export const toSSG: ToSSGInterface = async (app, bunFileSystemModule, options: {
     const maps = await generateHtmlMap(app)
     const files = await saveHtmlToLocal(maps, bunFileSystemModule, options.dir)
 
-    console.log('Static site generation completed.')
     return { success: true, files }
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error(String(error))

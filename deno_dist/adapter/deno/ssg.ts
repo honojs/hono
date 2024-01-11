@@ -20,7 +20,6 @@ export const toSSG: ToSSGInterface = async (
     const maps = await generateHtmlMap(app)
     const files = await saveHtmlToLocal(maps, denoFileSystemModule, options.dir)
 
-    console.log('Static site generation completed.')
     return { success: true, files }
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error(String(error))
