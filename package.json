@@ -269,6 +269,11 @@
       "import": "./dist/adapter/vercel/index.js",
       "require": "./dist/cjs/adapter/vercel/index.js"
     },
+    "./netlify": {
+      "types": "./dist/types/adapter/netlify/index.d.ts",
+      "import": "./dist/adapter/netlify/index.js",
+      "require": "./dist/cjs/adapter/netlify/index.js"
+    },
     "./lambda-edge": {
       "types": "./dist/types/adapter/lambda-edge/index.d.ts",
       "import": "./dist/adapter/lambda-edge/index.js",
