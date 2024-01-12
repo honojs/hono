@@ -1,8 +1,8 @@
-import type { Context } from './context'
-import { FileSystemWrapper, FsObj } from './filesystem-wrapper'
-import type { Env, MiddlewareHandler } from './types'
-import { getFilePath } from './utils/filepath'
-import { getMimeType } from './utils/mime'
+import type { Context } from '../../context'
+import type { FileSystemWrapper, FsObj } from '../../filesystem-wrapper'
+import type { Env, MiddlewareHandler } from '../../types'
+import { getFilePath } from '../../utils/filepath'
+import { getMimeType } from '../../utils/mime'
 
 export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
