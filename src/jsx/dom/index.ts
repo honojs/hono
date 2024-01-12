@@ -664,6 +664,7 @@ const patch = (
   if (container instanceof HTMLElement) {
     const oldProps = propsMap.get(container)
     applyAttributes(container, newNode.props, oldProps)
+    propsMap.set(container, newNode.props)
   }
 
   patchChildren(renderContext, oldNode.children, newNode.children, container)
