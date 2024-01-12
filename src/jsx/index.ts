@@ -237,11 +237,25 @@ export class JSXFragmentNode extends JSXNode {
   }
 }
 
-export { jsxFn as jsx }
-const jsxFn = (
+export const jsx = (
   tag: string | Function,
   props: Props,
   ...children: (string | HtmlEscapedString)[]
+): JSXNode => {
+  let key
+  if (props) {
+    key = props?.key
+    delete props['key']
+  }
+  const node = jsxFn(tag, props, children)
+  node.key = key
+  return node
+}
+
+export const jsxFn = (
+  tag: string | Function,
+  props: Props,
+  children: (string | HtmlEscapedString)[]
 ): JSXNode => {
   if (typeof tag === 'function') {
     return new JSXFunctionNode(tag, props, children)
