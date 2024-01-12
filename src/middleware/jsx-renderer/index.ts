@@ -31,9 +31,8 @@ const createRenderer =
     let currentLayout = (component ? component({ children, ...(props || {}) }) : children) as any
 
     const parentLayout = c.getLayout()
-    if (parentLayout) {
+    if (parentLayout && parentLayout !== component)
       currentLayout = parentLayout({ children: currentLayout, ...(props || {}) })
-    }
 
     /* eslint-disable @typescript-eslint/no-explicit-any */
     const body = html`${raw(docType)}${jsx(RequestContext.Provider, { value: c }, currentLayout)}`
