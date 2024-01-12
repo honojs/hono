@@ -26,11 +26,12 @@ const isTagFunctionResult = (v: unknown): v is TagFunctionResult => {
 }
 
 type Container = HTMLElement | DocumentFragment
+type RenderedElement = HTMLElement | Text
 
 type ContextNode = [
   JSXNode, // source node
   JSXNode, // rendered node
-  HTMLElement[] | undefined // rendered HTML element
+  RenderedElement[] | undefined // rendered HTML element
 ]
 
 type ErrorHandler = (e: unknown) => JSXNode | undefined
@@ -43,7 +44,7 @@ type TagFunctionResult = [
 const nodeMap = new WeakMap<Container, ContextNode[]>()
 const propsMap = new WeakMap<HTMLElement, Props>()
 export const updateCallbacks = new WeakMap<Function, Function[]>()
-export const cleanupCallbacks = new WeakMap<Container, Function[]>()
+export const cleanupCallbacks = new WeakMap<Container | RenderedElement, Function[]>()
 export const UpdatePhase = {
   Updating: 1,
   UpdateAgain: 2,
@@ -58,7 +59,7 @@ export type UpdateData = [
 ]
 export const updateStack: UpdateData[] = []
 
-type CatcherData = [Container, number, ErrorHandler | undefined, UpdateData, Function]
+type CatcherData = [ErrorHandler | undefined, UpdateData]
 type RenderContext = [
   CatcherData[], // catcher stack
   Promise<unknown>[], // promises
@@ -83,7 +84,7 @@ const getContextNode = (
   )
 }
 
-const prepareRemoveElement = (element: Container | undefined) => {
+const prepareRemoveElement = (element: RenderedElement | undefined) => {
   if (!(element instanceof HTMLElement || element instanceof Text)) {
     return
   }
@@ -92,7 +93,7 @@ const prepareRemoveElement = (element: Container | undefined) => {
   }
 }
 
-const removeElement = (element: Container | undefined) => {
+const removeElement = (element: RenderedElement | undefined) => {
   if (!(element instanceof HTMLElement || element instanceof Text)) {
     return
   }
@@ -149,7 +150,7 @@ export const invokeUpdate = (updateData: UpdateData, result?: TagFunctionResult)
     updateData[3] = UpdatePhase.Done
     const callbacks = updateCallbacks.get(update)
     if (callbacks) {
-      const el = getContextNode()?.[2]?.[0] as Container
+      const el = getContextNode()?.[2]?.[0] as RenderedElement
       if (el) {
         updateCallbacks.set(update, [])
       }
@@ -174,11 +175,19 @@ export const invokeUpdate = (updateData: UpdateData, result?: TagFunctionResult)
   }
 }
 
+const findClosestErrorHandler = (renderContext: RenderContext): CatcherData | undefined => {
+  for (let i = renderContext[0].length - 1; i >= 0; i--) {
+    if (renderContext[0][i][0]) {
+      return renderContext[0][i]
+    }
+  }
+}
+
 const handleResponsePromise = (
   renderContext: RenderContext,
   res: Promise<unknown>
 ): Promise<unknown> => {
-  const closestErrorHandler = renderContext[0].reverse().find(([, , handler]) => handler)
+  const closestErrorHandler = findClosestErrorHandler(renderContext)
   return (
     res
       // for `use` hook
@@ -194,9 +203,9 @@ const handleResponsePromise = (
         if (closestErrorHandler) {
           e = e instanceof Error ? e : new Error(e)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const v = closestErrorHandler[2]?.(e) as any
+          const v = closestErrorHandler[0]?.(e) as any
           invokeUpdate(
-            closestErrorHandler[3],
+            closestErrorHandler[1],
             tagFunctionResultWithFallback(v) as TagFunctionResult
           )
         } else {
@@ -268,8 +277,7 @@ const applyAttributes = (container: HTMLElement, attributes: Props, oldAttribute
 
 const preProcessUpdateDom = (renderContext: RenderContext, res: JSXNode) => {
   if (res instanceof Promise) {
-    const stack = renderContext[0].reverse().find(([, , handler]) => handler)
-    if (stack) {
+    if (findClosestErrorHandler(renderContext)) {
       throw handleResponsePromise(renderContext, res)
     } else {
       const snapshot = renderContext[2]
@@ -329,9 +337,9 @@ const mount = (
   node: JSXNode,
   container: Container,
   nth: number = 0,
-  replaceElement?: Container[],
-  insertBefore?: Container
-): HTMLElement | undefined => {
+  replaceElement?: RenderedElement[],
+  insertBefore?: RenderedElement
+): RenderedElement | undefined => {
   if (typeof node === 'boolean' || node === null || node === undefined) {
     replaceElement?.forEach(removeElement)
     return
@@ -341,8 +349,8 @@ const mount = (
     const replacementParents =
       nodeMap
         .get(container)
-        ?.filter((node) => node[2]?.every((el, i) => replaceElement?.[i] === el)) || []
-    insertBefore ||= replaceElement?.at(-1)?.nextSibling as Container
+        ?.filter((node) => !node[2] || node[2].every((el, i) => replaceElement?.[i] === el)) || []
+    insertBefore ||= replaceElement?.at(-1)?.nextSibling as RenderedElement
     replaceElement?.forEach(removeElement)
     const tagCounter = new Map<unknown, number>()
     const newElms = node
@@ -352,57 +360,47 @@ const mount = (
         return mount(renderContext, child, container, nth, undefined, insertBefore)
       })
       .filter(Boolean) as HTMLElement[]
-    replacementParents.forEach((parent) => {
-      parent[2] = newElms
-    })
+    if (newElms.length) {
+      replacementParents.forEach((parent) => {
+        parent[2] = newElms
+      })
+    }
     return
   }
 
-  const { tag, props, children } = node as JSXNode
-
   let nodes = nodeMap.get(container)
-  if (typeof tag === 'function') {
+  if (typeof node.tag === 'function') {
+    const { tag, props, children } = node
     let contextNode = getContextNode(container, node, nth)
     const update = (result?: TagFunctionResult) => {
       const [res, fallback, handler] =
         result || invokeTag(renderContext, tag as Function, props, children)
 
       if (fallback || handler) {
-        renderContext[0].push([container, nth, handler, updateData, tag])
+        renderContext[0].push([handler, updateData])
       }
       const updateDom = (res: JSXNode) => {
         res = preProcessUpdateDom(renderContext, res)
-        if (res instanceof JSXNode || Array.isArray(res)) {
-          prepareSnapshotEnvironment(fallback, handler, renderContext, updateData)
+        prepareSnapshotEnvironment(fallback, handler, renderContext, updateData)
 
-          if (contextNode && contextNode[2]) {
-            patch(renderContext, contextNode[1], res, contextNode[2], nth)
-            contextNode[1] = res
-            nodes?.forEach((node) => {
-              node[2] ||= contextNode?.[2]
-            })
-          } else {
-            contextNode = [node, res, undefined]
-            if (!nodes) {
-              nodes = []
-              nodeMap.set(container, nodes)
-            }
-            nodes.push(contextNode)
-
-            mount(renderContext, res, container, nth, replaceElement)
-          }
-
-          finalizeSnapshotEnvironment(fallback, renderContext, updateData, updateDom, res)
-        } else if (typeof res === 'string') {
-          const el = document.createTextNode(res)
-          container.appendChild(el)
-        } else {
-          const wrap = document.createElement('div')
-          wrap.innerHTML = res
-          wrap.childNodes.forEach((child) => {
-            container.appendChild(child as Container)
+        if (contextNode && contextNode[2]) {
+          patch(renderContext, contextNode[1], res, contextNode[2], nth)
+          contextNode[1] = res
+          nodes?.forEach((node) => {
+            node[2] ||= contextNode?.[2]
           })
+        } else {
+          contextNode = [node, res, undefined]
+          if (!nodes) {
+            nodes = []
+            nodeMap.set(container, nodes)
+          }
+          nodes.push(contextNode)
+
+          mount(renderContext, res, container, nth, replaceElement)
         }
+
+        finalizeSnapshotEnvironment(fallback, renderContext, updateData, updateDom, res)
       }
 
       try {
@@ -436,22 +434,27 @@ const mount = (
     return
   }
 
-  const el = document.createElement(tag as string)
-  propsMap.set(el, node.props)
-  applyAttributes(el, node.props)
+  let el: RenderedElement
+  if (typeof node === 'string' || typeof node === 'number') {
+    el = document.createTextNode(node)
+  } else {
+    el = document.createElement(node.tag)
+    propsMap.set(el, node.props)
+    applyAttributes(el, node.props)
 
-  const tagCounter = new Map<unknown, number>()
-  for (const child of node.children) {
-    if (typeof child === 'string' || typeof child === 'number') {
-      el.appendChild(document.createTextNode(child.toString()))
-    } else if (child instanceof JSXNode) {
-      const nth = tagCounter.get(child.tag) || 0
-      tagCounter.set(child.tag, nth + 1)
-      mount(renderContext, child, el, nth)
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mount(renderContext, child as any, el, nth)
-    }
+    const tagCounter = new Map<unknown, number>()
+    node.children.forEach((child) => {
+      if (typeof child === 'string' || typeof child === 'number') {
+        el.appendChild(document.createTextNode(child.toString()))
+      } else if (child instanceof JSXNode) {
+        const nth = tagCounter.get(child.tag) || 0
+        tagCounter.set(child.tag, nth + 1)
+        mount(renderContext, child, el as Container, nth)
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        mount(renderContext, child as any, el as Container, nth)
+      }
+    })
   }
 
   if (nodes) {
@@ -464,7 +467,7 @@ const mount = (
   }
 
   if (replaceElement) {
-    insertBefore = replaceElement.at(-1)?.nextSibling as Container
+    insertBefore = replaceElement.at(-1)?.nextSibling as RenderedElement
   }
 
   if (replaceElement || insertBefore) {
@@ -522,7 +525,7 @@ const patchChildren = (
     const newChild = newChildren[i]
 
     if (typeof newChild === 'boolean' || newChild === null || newChild === undefined) {
-      removeElement(container.childNodes[j] as Container)
+      removeElement(container.childNodes[j] as RenderedElement)
       j--
       continue
     }
@@ -542,7 +545,7 @@ const patchChildren = (
     } else {
       if (typeof newChildren[i] === 'string' || typeof newChildren[i] === 'number') {
         const replaced = container.childNodes[j]
-        prepareRemoveElement(replaced as Container)
+        prepareRemoveElement(replaced as RenderedElement)
         container.replaceChild(
           document.createTextNode((newChildren[i] as string).toString()),
           replaced
@@ -555,7 +558,7 @@ const patchChildren = (
             renderContext,
             oldChildren[i] as JSXNode,
             newChildren[i] as JSXNode,
-            [container.childNodes[j] as Container],
+            [container.childNodes[j] as RenderedElement],
             nth
           )
         }
@@ -568,7 +571,7 @@ const patch = (
   renderContext: RenderContext,
   oldNode: JSXNode,
   newNode: JSXNode,
-  containers: Container[],
+  containers: RenderedElement[],
   nth: number
 ) => {
   const container = containers[0]
@@ -578,6 +581,14 @@ const patch = (
     } else {
       mount(renderContext, newNode, container.parentElement as Container, 0, containers)
     }
+    return
+  }
+  if (newNode === null || newNode === undefined || typeof newNode === 'boolean') {
+    containers.forEach(removeElement)
+    return
+  }
+  if (typeof newNode === 'string' || typeof newNode === 'number') {
+    mount(renderContext, newNode, container.parentElement as Container, nth, containers)
     return
   }
 
@@ -596,7 +607,7 @@ const patch = (
             result || invokeTag(renderContext, tag as Function, props, children)
 
           if (fallback || handler) {
-            renderContext[0].push([container, nth, handler, updateData, tag])
+            renderContext[0].push([handler, updateData])
           }
           const updateDom = (res: JSXNode) => {
             res = preProcessUpdateDom(renderContext, res)
@@ -607,7 +618,7 @@ const patch = (
               renderContext,
               contextNode[1],
               res,
-              contextNode[2] as Container[], // contextNode[2] may be updated, so we need to use contextNode[2] instead of replaceElement
+              contextNode[2] as RenderedElement[], // contextNode[2] may be updated, so we need to use contextNode[2] instead of replaceElement
               0
             )
             contextNode[1] = res
@@ -667,7 +678,7 @@ const patch = (
     propsMap.set(container, newNode.props)
   }
 
-  patchChildren(renderContext, oldNode.children, newNode.children, container)
+  patchChildren(renderContext, oldNode.children, newNode.children, container as Container)
 }
 
 export const render = (node: unknown, container: Container) => {
