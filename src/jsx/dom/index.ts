@@ -4,6 +4,10 @@ import type { HtmlEscapedString } from '../../utils/html'
 import { HtmlEscapedCallbackPhase } from '../../utils/html'
 import type { RefObject } from '../hooks'
 
+const eventAliasMap: Record<string, string> = {
+  change: 'input',
+}
+
 export const RENDER_TO_DOM = Symbol('RENDER_TO_DOM')
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type HasRenderToDom = FC<any> & { [RENDER_TO_DOM]: FC<any> }
@@ -208,7 +212,8 @@ const applyAttributes = (container: HTMLElement, attributes: Props, oldAttribute
           ;(value as RefObject<HTMLElement>).current = container
         }
       } else if (key.startsWith('on') && typeof value === 'function') {
-        const eventName = key.slice(2).toLowerCase()
+        const jsxEventName = key.slice(2).toLowerCase()
+        const eventName = eventAliasMap[jsxEventName] || jsxEventName
         container.removeEventListener(eventName, oldAttributes[key])
         container.addEventListener(eventName, value)
       } else if (value instanceof Promise) {
