@@ -36,7 +36,9 @@ export const serveStatic = <E extends Env = Env>(
 
     path = `./${path}`
 
-    let file: FsObj | null = null
+    let file: FsObj<{
+      read: true
+    }> | null = null
 
     try {
       file = await fileSystemWrapper.open(path)
@@ -49,7 +51,7 @@ export const serveStatic = <E extends Env = Env>(
         c.header('Content-Type', mimeType)
       }
       // Return Response object with stream
-      return c.body(file.readable())
+      return c.body(file.readable)
     }
 
     await options.onNotFound?.(path, c)

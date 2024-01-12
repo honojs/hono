@@ -22,37 +22,48 @@ export type FsObjInfo = ObjectKind & {
    * File size (number)
    */
   size: number
-
-  /**
-   * File path
-   */
-  path: string
 }
 
 /**
  * Interface for defining object in filesystem such as directlys, files, and symlinks.
  */
-export type FsObj = {
+export type FsObj<OpenOptionsType extends OpenOptions> = {
   /**
    * Get file info
    */
   stat (): Promise<FsObjInfo>
-} & {
+  /**
+   * Close file.
+   */
+  close (): Promise<void>
+} & (OpenOptionsType['read'] extends false ? {} : {
   /**
    * Get file readable stream
    */
-  readable (): ReadableStream<Uint8Array>
+  readonly readable: ReadableStream<Uint8Array>
+}) & (OpenOptionsType['write'] extends true ? {
   /**
    * Get file writable stream
    */
-  writable (): WritableStream<Uint8Array>
-}
+  readonly writable: WritableStream<Uint8Array>
+} : {})
 
 export interface OpenOptions {
   /**
    * Create new file if target path is not exists when it's true.
    */
   create?: boolean
+
+  /**
+   * You can read file if it's true.
+   * Default is `true`
+   */
+  read?: boolean
+  /**
+   * You can read file if it's true.
+   * Default is `false`
+   */
+  write?: boolean
 }
 
 /**
@@ -62,7 +73,7 @@ export interface FileSystemWrapper {
   /**
    * Open filesystem object
    */
-  open (path: string | URL, options?: OpenOptions): Promise<FsObj>
+  open <OpenOptionsType extends OpenOptions>(path: string | URL, options?: OpenOptionsType): Promise<FsObj<OpenOptionsType>>
   
   /**
    * Remove filesystem object.
@@ -70,9 +81,9 @@ export interface FileSystemWrapper {
   remove (path: string | URL): Promise<void>
 
   /**
-   * Walk dir
+   * Read dir
    */
-  walk (): AsyncGenerator<string>
+  readDir (path: string | URL): AsyncGenerator<string>
 
   /**
    * Make dir
@@ -83,4 +94,21 @@ export interface FileSystemWrapper {
    * Make symlink
    */
   symlink (oldpath: string | URL, newpath: string | URL, type?: 'file' | 'dir'): Promise<void>
+
+  /**
+   * Rename
+   */
+  rename (oldpath: string | URL, newpath: string | URL): Promise<void>
+
+  /**
+   * Watch files
+   */
+  watch(paths: string[], options?: { recursive: boolean; }): {
+    [Symbol.asyncIterator]: () => AsyncGenerator<{
+      kind: 'any' | 'access' | 'create' | 'modify' | 'remove' | 'other'
+      paths: string[]
+    }, unknown, unknown>
+    close(): Promise<void>
+  }
 }
+
