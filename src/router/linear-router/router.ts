@@ -1,5 +1,6 @@
 import type { Router, Result, Params } from '../../router'
 import { METHOD_NAME_ALL, UnsupportedPathError } from '../../router'
+import { checkOptionalParameter } from '../../utils/url'
 
 type RegExpMatchArrayWithIndices = RegExpMatchArray & { indices: [number, number][] }
 
@@ -12,13 +13,9 @@ export class LinearRouter<T> implements Router<T> {
   routes: [string, string, T][] = []
 
   add(method: string, path: string, handler: T) {
-    if (path.charCodeAt(path.length - 1) === 63) {
-      // /path/to/:label? means /path/to/:label or /path/to
-      this.routes.push([method, path.slice(0, -1), handler])
-      this.routes.push([method, path.replace(/\/[^/]+$/, ''), handler])
-    } else {
-      this.routes.push([method, path, handler])
-    }
+    ;(checkOptionalParameter(path) || [path]).forEach((p) => {
+      this.routes.push([method, p, handler])
+    })
   }
 
   match(method: string, path: string): Result<T> {
