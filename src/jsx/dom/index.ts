@@ -202,10 +202,9 @@ const handleResponsePromise = (
   )
 }
 
-const applyAttributes = (container: HTMLElement, attributes: Props, oldAttributes: Props = {}) => {
-  const hasOldAttributes = Object.keys(oldAttributes).length > 0
+const applyAttributes = (container: HTMLElement, attributes: Props, oldAttributes?: Props) => {
   for (const [key, value] of Object.entries(attributes)) {
-    if (hasOldAttributes && oldAttributes[key] !== value) {
+    if (!oldAttributes || oldAttributes[key] !== value) {
       if (key === 'dangerouslySetInnerHTML' && value) {
         container.innerHTML = value.__html
       } else if (key === 'ref') {
@@ -217,7 +216,9 @@ const applyAttributes = (container: HTMLElement, attributes: Props, oldAttribute
       } else if (key.startsWith('on') && typeof value === 'function') {
         const jsxEventName = key.slice(2).toLowerCase()
         const eventName = eventAliasMap[jsxEventName] || jsxEventName
-        container.removeEventListener(eventName, oldAttributes[key])
+        if (oldAttributes) {
+          container.removeEventListener(eventName, oldAttributes[key])
+        }
         container.addEventListener(eventName, value)
       } else if (value instanceof Promise) {
         value.then((v) => {
@@ -233,7 +234,7 @@ const applyAttributes = (container: HTMLElement, attributes: Props, oldAttribute
           container.setAttribute(key, v)
         })
       } else {
-        if (value) {
+        if (value === null || value === undefined || value === false) {
           container.setAttribute(key, value)
         } else {
           container.removeAttribute(key)
@@ -241,19 +242,21 @@ const applyAttributes = (container: HTMLElement, attributes: Props, oldAttribute
       }
     }
   }
-  for (const [key, value] of Object.entries(oldAttributes)) {
-    if (!(key in attributes)) {
-      if (key === 'ref') {
-        if (typeof value === 'function') {
-          value(null)
+  if (oldAttributes) {
+    for (const [key, value] of Object.entries(oldAttributes)) {
+      if (!(key in attributes)) {
+        if (key === 'ref') {
+          if (typeof value === 'function') {
+            value(null)
+          } else {
+            value.current = null
+          }
+        } else if (key.startsWith('on')) {
+          const eventName = key.slice(2).toLowerCase()
+          container.removeEventListener(eventName, value)
         } else {
-          value.current = null
+          container.removeAttribute(key)
         }
-      } else if (key.startsWith('on')) {
-        const eventName = key.slice(2).toLowerCase()
-        container.removeEventListener(eventName, value)
-      } else {
-        container.removeAttribute(key)
       }
     }
   }
