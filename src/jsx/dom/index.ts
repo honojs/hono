@@ -118,7 +118,7 @@ const invokeTag = (
   const func = (tag as HasRenderToDom)[RENDER_TO_DOM] || tag
   const res = func.call(null, {
     ...props,
-    children: children.length <= 1 ? children[0] : children,
+    children,
   })
 
   const tagFunctionResult = (Array.isArray(res) && res[3] === IS_TAG_FUNCTION_RESULT
