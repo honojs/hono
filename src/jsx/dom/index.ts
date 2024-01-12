@@ -239,9 +239,9 @@ const applyAttributes = (container: HTMLElement, attributes: Props, oldAttribute
         })
       } else {
         if (value === null || value === undefined || value === false) {
-          container.setAttribute(key, value)
-        } else {
           container.removeAttribute(key)
+        } else {
+          container.setAttribute(key, value)
         }
       }
     }
