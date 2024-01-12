@@ -1,11 +1,9 @@
 import type { Context, Renderer } from '../../context'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { html, raw } from '../../helper/html'
 import { jsx, createContext, useContext } from '../../jsx'
 import type { FC, JSXNode } from '../../jsx'
 import { renderToReadableStream } from '../../jsx/streaming'
 import type { Env, Input, MiddlewareHandler } from '../../types'
-import { HtmlEscapedString } from '../../utils/html'
 
 export const RequestContext = createContext<Context | null>(null)
 
@@ -28,13 +26,13 @@ const createRenderer =
         ? '<!DOCTYPE html>'
         : ''
 
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     let currentLayout = (component ? component({ children, ...(props || {}) }) : children) as any
 
     const parentLayout = c.getLayout()
     if (parentLayout && parentLayout !== component)
       currentLayout = parentLayout({ children: currentLayout, ...(props || {}) })
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     const body = html`${raw(docType)}${jsx(RequestContext.Provider, { value: c }, currentLayout)}`
 
     if (options?.stream) {

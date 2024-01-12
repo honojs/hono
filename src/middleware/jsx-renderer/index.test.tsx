@@ -1,5 +1,4 @@
 import { expectTypeOf } from 'vitest'
-import { showRoutes } from '../../helper'
 import { html } from '../../helper/html'
 import { Hono } from '../../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
