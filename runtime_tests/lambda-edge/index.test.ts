@@ -1130,6 +1130,6 @@ describe('Lambda@Edge Adapter for Hono', () => {
     const response = await handler(event)
 
     expect(response.body).toBe('RmFrZSBJbWFnZQ==') // base64 encoded "Fake Image"
-    expect(response.bodyEncoding).toBe('base64') 
+    expect(response.bodyEncoding).toBe('base64')
   })
 })
