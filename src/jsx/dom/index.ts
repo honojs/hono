@@ -137,29 +137,33 @@ export const invokeUpdate = (updateData: UpdateData, result?: TagFunctionResult)
   updateData[3] = UpdatePhase.Updating
   updateStack.push(updateData)
   let promise = undefined
-  do {
-    updateData[2] = 0
-    promise = update(result)
-    result = undefined
-  } while (
-    (updateData[3] as typeof UpdatePhase[keyof typeof UpdatePhase]) === UpdatePhase.UpdateAgain
-  )
-  updateData[3] = UpdatePhase.Done
-  const callbacks = updateCallbacks.get(update)
-  if (callbacks) {
-    const el = getContextNode()?.[2]?.[0] as Container
-    if (el) {
-      updateCallbacks.set(update, [])
-    }
-    cleanupCallbacks.set(el, [])
-    for (const callback of callbacks) {
-      const cleanup = callback()
-      if (cleanup && el) {
-        cleanupCallbacks.set(el, [...(cleanupCallbacks.get(el) || []), cleanup])
+
+  try {
+    do {
+      updateData[2] = 0
+      promise = update(result)
+      result = undefined
+    } while (
+      (updateData[3] as typeof UpdatePhase[keyof typeof UpdatePhase]) === UpdatePhase.UpdateAgain
+    )
+    updateData[3] = UpdatePhase.Done
+    const callbacks = updateCallbacks.get(update)
+    if (callbacks) {
+      const el = getContextNode()?.[2]?.[0] as Container
+      if (el) {
+        updateCallbacks.set(update, [])
+      }
+      cleanupCallbacks.set(el, [])
+      for (const callback of callbacks) {
+        const cleanup = callback()
+        if (cleanup && el) {
+          cleanupCallbacks.set(el, [...(cleanupCallbacks.get(el) || []), cleanup])
+        }
       }
     }
+  } finally {
+    updateStack.pop()
   }
-  updateStack.pop()
 
   if (promise) {
     promise.then((res?: TagFunctionResult) => {
