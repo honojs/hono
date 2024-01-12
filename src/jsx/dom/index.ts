@@ -203,9 +203,12 @@ const handleResponsePromise = (
 }
 
 const applyAttributes = (container: HTMLElement, attributes: Props, oldAttributes: Props = {}) => {
+  const hasOldAttributes = Object.keys(oldAttributes).length > 0
   for (const [key, value] of Object.entries(attributes)) {
-    if (oldAttributes[key] !== value) {
-      if (key === 'ref') {
+    if (hasOldAttributes && oldAttributes[key] !== value) {
+      if (key === 'dangerouslySetInnerHTML' && value) {
+        container.innerHTML = value.__html
+      } else if (key === 'ref') {
         if (typeof value === 'function') {
           value(container)
         } else {
@@ -230,7 +233,11 @@ const applyAttributes = (container: HTMLElement, attributes: Props, oldAttribute
           container.setAttribute(key, v)
         })
       } else {
-        container.setAttribute(key, value)
+        if (value) {
+          container.setAttribute(key, value)
+        } else {
+          container.removeAttribute(key)
+        }
       }
     }
   }
