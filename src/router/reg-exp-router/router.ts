@@ -198,7 +198,7 @@ export class RegExpRouter<T> implements Router<T> {
               findMiddleware(middleware[METHOD_NAME_ALL], path) ||
               []),
           ]
-          routes[m][path].push([handler, paths.length > 1 ? i : paramCount])
+          routes[m][path].push([handler, paramCount - len + i + 1])
         }
       })
     }
