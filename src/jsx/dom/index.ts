@@ -64,7 +64,7 @@ type RenderContext = [
   Promise<unknown>[], // promises
   (TagFunctionResult | undefined)[], // snapshots
   WeakMap<UpdateData, true>, // snapshot initialized
-  0 | 1 | 2 // use snapshot 0: no snapshot context, 1: consume snapshot, 2: save snapshot
+  0 | 1 | 2 // use snapshot: 0 is no snapshot context, 1 is consume snapshot, 2 is save snapshot
 ]
 
 const getContextNode = (
