@@ -1096,4 +1096,40 @@ describe('Lambda@Edge Adapter for Hono', () => {
 
     expect(called).toBe(true)
   })
+
+  it('Should return a response where bodyEncoding is "base64" with binary', async () => {
+    const event = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'example.com',
+              distributionId: 'EXAMPLE123',
+              eventType: 'viewer-request',
+              requestId: 'exampleRequestId',
+            },
+            request: {
+              clientIp: '123.123.123.123',
+              headers: {
+                host: [
+                  {
+                    key: 'Host',
+                    value: 'example.com',
+                  },
+                ],
+              },
+              method: 'GET',
+              querystring: '',
+              uri: '/binary',
+            },
+          },
+        },
+      ],
+    }
+
+    const response = await handler(event)
+
+    expect(response.body).toBe('RmFrZSBJbWFnZQ==') // base64 encoded "Fake Image"
+    expect(response.bodyEncoding).toBe('base64') 
+  })
 })

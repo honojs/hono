@@ -131,6 +131,7 @@ const createResult = async (res: Response): Promise<CloudFrontResult> => {
     status: res.status.toString(),
     headers: convertHeaders(res.headers),
     body,
+    ...(isBase64Encoded ? { bodyEncoding: 'base64' } : { }),
   }
 }
 
