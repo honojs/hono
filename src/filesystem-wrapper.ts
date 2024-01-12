@@ -71,7 +71,7 @@ export interface OpenOptions {
  */
 export interface FileSystemWrapper {
   /**
-   * Open filesystem object
+   * Open filesystem object.
    */
   open <OpenOptionsType extends OpenOptions>(path: string | URL, options?: OpenOptionsType): Promise<FsObj<OpenOptionsType>>
   

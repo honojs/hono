@@ -1,2 +1,2 @@
 // @denoify-ignore
-export { serveStatic } from './serve-static'
+export { fsWrapper } from './fs-wrapper'
