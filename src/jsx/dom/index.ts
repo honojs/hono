@@ -583,7 +583,7 @@ const patch = (
 
   if (typeof oldNode.tag === 'function') {
     const contextNode = getContextNode(container.parentElement as Container, oldNode, nth)
-    const replaceElement = contextNode?.[2]
+    const replaceElement = contextNode?.[2] || containers
     if (typeof newNode.tag === 'function') {
       if (oldNode.tag !== newNode.tag) {
         mount(renderContext, newNode, container.parentElement as Container, nth, replaceElement)
