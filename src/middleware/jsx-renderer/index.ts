@@ -32,6 +32,7 @@ const createRenderer =
     const parentLayout = c.getLayout()
     if (parentLayout && parentLayout !== component)
       currentLayout = parentLayout({ children: currentLayout, ...(props || {}) })
+    // setting c.setLayout to currentLayout here would potentially enable recursive layouts in the future
 
     const body = html`${raw(docType)}${jsx(RequestContext.Provider, { value: c }, currentLayout)}`
 
