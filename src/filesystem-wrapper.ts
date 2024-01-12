@@ -1,28 +1,17 @@
-type ObjectKind = {
+type ObjectKindName = 'file' | 'dir' | 'symlink'
+type ObjectKind<Kind extends ObjectKindName = ObjectKindName> = {
   /**
    * If this is info for a file, it's true.
    */
-  isFile: boolean
+  isFile: Kind extends 'file' ? true : false
   /**
    * If this is info for a directory, it's true.
    */
-  isDirectory: boolean
+  isDirectory: Kind extends 'dir' ? true : false
   /**
    * If this is info for a symlink, it's true.
    */
-  isSymlink: boolean
-} & {
-  isFile: true
-  isDirectory: false
-  isSymlink: false
-} | {
-  isFile: false
-  isDirectory: true
-  isSymlink: false
-} | {
-  isFile: false
-  isDirectory: false
-  isSymlink: true
+  isSymlink: Kind extends 'symlink' ? true : false
 }
 
 /**
@@ -34,9 +23,6 @@ export type FsObjInfo = ObjectKind & {
    */
   size: number
 
-  readable (): ReadableStream<Uint8Array>
-  writable (): WritableStream<Uint8Array>
-
   /**
    * File path
    */
@@ -46,11 +32,20 @@ export type FsObjInfo = ObjectKind & {
 /**
  * Interface for defining object in filesystem such as directlys, files, and symlinks.
  */
-export interface FsObj {
+export type FsObj = {
   /**
    * Get file info
    */
   stat (): Promise<FsObjInfo>
+} & {
+  /**
+   * Get file readable stream
+   */
+  readable (): ReadableStream<Uint8Array>
+  /**
+   * Get file writable stream
+   */
+  writable (): WritableStream<Uint8Array>
 }
 
 export interface OpenOptions {
