@@ -104,6 +104,11 @@
       "import": "./dist/middleware/etag/index.js",
       "require": "./dist/cjs/middleware/etag/index.js"
     },
+    "./serve-static": {
+      "types": "./dist/types/middleware/serve-static/index.d.ts",
+      "import": "./dist/middleware/serve-static/index.js",
+      "require": "./dist/cjs/middleware/serve-static/index.js"
+    },
     "./html": {
       "types": "./dist/types/helper/html/index.d.ts",
       "import": "./dist/helper/html/index.js",
@@ -320,6 +325,9 @@
       ],
       "etag": [
         "./dist/types/middleware/etag"
+      ],
+      "serve-static": [
+        "./dist/types/middleware/serve-static"
       ],
       "html": [
         "./dist/types/helper/html"
