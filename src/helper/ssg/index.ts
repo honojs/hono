@@ -1,8 +1,8 @@
 import * as path from 'path'
+import { replaceUrlParam } from '../../client/utils'
 import { inspectRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
 import type { Env, MiddlewareHandler, Schema } from '../../types'
-import { replaceUrlParam } from '../../client/utils'
 
 export interface FileSystemModule {
   writeFile(path: string, data: string | Buffer): Promise<void>
