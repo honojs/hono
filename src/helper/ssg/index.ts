@@ -42,7 +42,7 @@ const parseResponseContent = async (response: Response): Promise<string | ArrayB
   }
 }
 
-function determineExtension(mimeType) {
+const determineExtension = (mimeType: string): string => {
   switch (mimeType) {
     case 'text/html':
       return '.html'
@@ -54,7 +54,7 @@ function determineExtension(mimeType) {
   }
 }
 
-export const generateHtmlMap = async <
+export const fetchRoutesContent = async <
   E extends Env = Env,
   S extends Schema = {},
   BasePath extends string = '/'
@@ -69,10 +69,8 @@ export const generateHtmlMap = async <
 
     const url = new URL(route.path, baseURL).toString()
     const response = await app.fetch(new Request(url))
+    const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
     const content = await parseResponseContent(response)
-
-    const contentType = response.headers.get('Content-Type')
-    const mimeType = contentType ? contentType.split(';')[0] : 'text/plain'
 
     htmlMap.set(route.path, { content, mimeType })
   }
@@ -80,7 +78,7 @@ export const generateHtmlMap = async <
   return htmlMap
 }
 
-export const saveHtmlToLocal = async (
+export const saveContentToFiles = async (
   htmlMap: Map<string, { content: string | ArrayBuffer; mimeType: string }>,
   fsModule: FileSystemModule,
   outDir: string
@@ -94,9 +92,9 @@ export const saveHtmlToLocal = async (
     const dirPath = path.dirname(filePath)
 
     await fsModule.mkdir(dirPath, { recursive: true })
-    if (Buffer.isBuffer(content) || typeof content === 'string') {
+    if (typeof content === 'string') {
       await fsModule.writeFile(filePath, content)
-    } else {
+    } else if (content instanceof ArrayBuffer) {
       await fsModule.writeFile(filePath, Buffer.from(content))
     }
     files.push(filePath)
@@ -128,8 +126,8 @@ export interface ToSSGAdaptorInterface<
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
   try {
     const outputDir = options?.dir ?? './static'
-    const maps = await generateHtmlMap(app)
-    const files = await saveHtmlToLocal(maps, fs, outputDir)
+    const maps = await fetchRoutesContent(app)
+    const files = await saveContentToFiles(maps, fs, outputDir)
     return { success: true, files }
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error(String(error))
