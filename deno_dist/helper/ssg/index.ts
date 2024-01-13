@@ -2,7 +2,8 @@ import { Buffer } from "node:buffer";
 import * as path from 'node:path'
 import { inspectRoutes } from '../../helper/dev/index.ts'
 import type { Hono } from '../../hono.ts'
-import type { Env, Schema } from '../../types.ts'
+import type { Env, MiddlewareHandler, Schema } from '../../types.ts'
+import { replaceUrlParam } from '../../client/utils.ts'
 
 export interface FileSystemModule {
   writeFile(path: string, data: string | Buffer): Promise<void>
@@ -20,24 +21,87 @@ const generateFilePath = (routePath: string, outDir: string) => {
   return path.join(outDir, fileName)
 }
 
+interface SSGParam {
+  [key: string]: string
+}
+type SSGParams = SSGParam[]
+interface SSGParamsMiddleware {
+  (generateParams: () => (SSGParams | Promise<SSGParams>)): MiddlewareHandler
+  (isSSG: boolean): MiddlewareHandler
+}
+type AddedSSGDataRequest = Request & {
+  ssgData?: {
+    ssg: true
+    params: SSGParams
+  } | {
+    ssg: false
+  }
+}
+/**
+ * Define SSG Route
+ */
+export const ssgParams: SSGParamsMiddleware = (
+  init
+) => async (c, next) => {
+  (c.req.raw as AddedSSGDataRequest).ssgData = await (async () => {
+    if (init === false) {
+      // Don't SSG
+      return {
+        ssg: false
+      }
+    } else if (init === true) {
+      // Will SSG
+      return {
+        ssg: true,
+        params: [{}]
+      }
+    } else {
+      const params = await init()
+      return {
+        ssg: true,
+        params,
+      }
+    }
+  })()
+  await next()
+}
+
 export const generateHtmlMap = async <
   E extends Env = Env,
   S extends Schema = {},
   BasePath extends string = '/'
 >(
-  app: Hono<E, S, BasePath>
+  app: Hono<E, S, BasePath>,
+  options: ToSSGOptions
 ): Promise<Map<string, string>> => {
   const htmlMap = new Map<string, string>()
-  const baseURL = 'http://localhost'
 
   for (const route of inspectRoutes(app)) {
     if (route.isMiddleware) continue
 
-    const url = new URL(route.path, baseURL).toString()
-    const response = await app.fetch(new Request(url))
-    const html = await response.text()
+    // GET Route Info
+    const baseURL = 'http://localhost'
+    const thisRouteBaseURL = new URL(route.path, baseURL).toString()
+    const forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
+    await app.fetch(forGetInfoURLRequest)
+    if (!forGetInfoURLRequest.ssgData) {
+      forGetInfoURLRequest.ssgData = options.default === 'ssr' ? {
+        ssg: false,
+      } : {
+        ssg: true,
+        params: [{}]
+      }
+    }
 
-    htmlMap.set(route.path, html)
+    if (!forGetInfoURLRequest.ssgData.ssg) {
+      continue // Don't SSG
+    }
+
+    for (const param of forGetInfoURLRequest.ssgData.params) {
+      const replacedUrlParam = replaceUrlParam(route.path, param)
+      const response = await app.request(replacedUrlParam)
+      htmlMap.set(replacedUrlParam, await response.text())
+    }
   }
 
   return htmlMap
@@ -62,6 +126,10 @@ export const saveHtmlToLocal = async (
   return files
 }
 
+export interface ToSSGOptions {
+  dir?: string
+  default?: 'ssg' | 'ssr'
+}
 export interface ToSSGInterface<
   E extends Env = Env,
   S extends Schema = {},
@@ -70,7 +138,7 @@ export interface ToSSGInterface<
   (
     app: Hono<E, S, BasePath>,
     fsModule: FileSystemModule,
-    options?: { dir?: string }
+    options?: ToSSGOptions
   ): Promise<ToSSGResult>
 }
 
@@ -85,7 +153,7 @@ export interface ToSSGAdaptorInterface<
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
   try {
     const outputDir = options?.dir ?? './static'
-    const maps = await generateHtmlMap(app)
+    const maps = await generateHtmlMap(app, options ?? {})
     const files = await saveHtmlToLocal(maps, fs, outputDir)
     return { success: true, files }
   } catch (error) {
