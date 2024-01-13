@@ -86,9 +86,7 @@ export const saveContentToFiles = async (
   const files: string[] = []
 
   for (const [routePath, { content, mimeType }] of htmlMap) {
-    const extension = determineExtension(mimeType)
-    const fileName = routePath === '/' ? `index${extension}` : `${routePath}${extension}`
-    const filePath = path.join(outDir, fileName)
+    const filePath = generateFilePath(routePath, outDir, mimeType)
     const dirPath = path.dirname(filePath)
 
     await fsModule.mkdir(dirPath, { recursive: true })
