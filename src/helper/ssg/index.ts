@@ -27,7 +27,7 @@ export const joinPaths = (...paths: string[]) => {
       // Handle `.` or `./`
       path = path.replace(/^\./g, '')
     }
-    if (path !== ''){
+    if (path !== '') {
       resultPaths.push(path)
     }
   }
