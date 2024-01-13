@@ -12,8 +12,6 @@ import type {
 } from './types.ts'
 import { parseBody } from './utils/body.ts'
 import type { BodyData, ParseBodyOptions } from './utils/body.ts'
-import type { Cookie } from './utils/cookie.ts'
-import { parse } from './utils/cookie.ts'
 import type { UnionToIntersection } from './utils/types.ts'
 import { getQueryParam, getQueryParams, decodeURIComponent_ } from './utils/url.ts'
 
