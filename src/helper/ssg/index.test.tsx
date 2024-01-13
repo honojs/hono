@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { Hono } from '../../hono'
 import { jsx } from '../../jsx'
-import { generateHtmlMap, saveHtmlToLocal, toSSG } from './index'
+import { generateHtmlMap, saveHtmlToLocal, ssgParams, toSSG } from './index'
 import type { FileSystemModule } from './index'
 
 describe('toSSG function', () => {
@@ -31,19 +31,31 @@ describe('toSSG function', () => {
       return c.render('Hello!', { title: 'Charlies Page' })
     })
 
+    // Included params
+    app.get('/post/:post', ssgParams(() => [
+      {
+        post: '1'
+      },
+      {
+        post: '2'
+      }
+    ]), c => c.html(<h1>{c.req.param('post')}</h1>))
+    
+    // Exclude
+    app.get('/api', ssgParams(false), c => c.json({ status: 'OK' }))
+
     const fsMock = {
       writeFile: vi.fn((path, data) => Promise.resolve()),
       mkdir: vi.fn((path, options) => Promise.resolve()),
     }
 
-    const htmlMap = await generateHtmlMap(app)
+    const htmlMap = await generateHtmlMap(app, {})
     const files = await saveHtmlToLocal(htmlMap, fsMock, './static')
 
     expect(files.length).toBeGreaterThan(0)
     expect(fsMock.mkdir).toHaveBeenCalledWith(expect.any(String), { recursive: true })
     expect(fsMock.writeFile).toHaveBeenCalled()
   })
-
   it('Should handle errors correctly', async () => {
     const app = new Hono()
     app.get('/', (c) => c.text('Hello, World!'))
@@ -76,7 +88,7 @@ describe('toSSG function', () => {
     }
 
     try {
-      const htmlMap = await generateHtmlMap(app)
+      const htmlMap = await generateHtmlMap(app, {})
       await saveHtmlToLocal(htmlMap, fsMock, './static')
       expect(true).toBe(false) // Should not reach here
     } catch (error) {
