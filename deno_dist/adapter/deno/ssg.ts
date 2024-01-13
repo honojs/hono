@@ -1,6 +1,11 @@
 import { toSSG as baseToSSG } from '../../helper/ssg/index.ts'
 import type { FileSystemModule, ToSSGAdaptorInterface } from '../../helper/ssg/index.ts'
 
+/**
+ * @experimental
+ * `denoFileSystemModule` is an experimental feature.
+ * The API might be changed.
+ */
 export const denoFileSystemModule: FileSystemModule = {
   writeFile: async (path, data) => {
     const uint8Data = typeof data === 'string' ? new TextEncoder().encode(data) : data
@@ -11,6 +16,11 @@ export const denoFileSystemModule: FileSystemModule = {
   },
 }
 
+/**
+ * @experimental
+ * `toSSG` is an experimental feature.
+ * The API might be changed.
+ */
 export const toSSG: ToSSGAdaptorInterface = async (app, options) => {
   return baseToSSG(app, denoFileSystemModule, options)
 }
