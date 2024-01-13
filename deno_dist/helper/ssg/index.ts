@@ -1,8 +1,39 @@
 import { Buffer } from "node:buffer";
-import * as path from 'node:path'
 import { inspectRoutes } from '../../helper/dev/index.ts'
 import type { Hono } from '../../hono.ts'
 import type { Env, Schema } from '../../types.ts'
+
+export const dirname = (path: string) => {
+  const splitedPath = path.split(/[\/\\]/)
+
+  return splitedPath.slice(0, -1).join('/') // Windows supports slash path
+}
+export const joinPaths = (...paths: string[]) => {
+  const nomalizedPaths: string[] = []
+  for (const path of paths) {
+    const nomalizedPath = path.replace(/(\\)/g, '/').replace(/\/$/g, '')
+    nomalizedPaths.push(nomalizedPath)
+  }
+  const resultPaths: string[] = []
+  for (let path of nomalizedPaths.join('/').split('/')) {
+    // Handle `..` or `../`
+    if (path === '..') {
+      if (resultPaths.length === 0) {
+        resultPaths.push('..')
+      } else {
+        resultPaths.pop()
+      }
+      continue
+    } else {
+      // Handle `.` or `./`
+      path = path.replace(/^\./g, '')
+    }
+    if (path !== ''){
+      resultPaths.push(path)
+    }
+  }
+  return resultPaths.join('/')
+}
 
 export interface FileSystemModule {
   writeFile(path: string, data: string | Buffer): Promise<void>
@@ -17,7 +48,7 @@ export interface ToSSGResult {
 
 const generateFilePath = (routePath: string, outDir: string) => {
   const fileName = routePath === '/' ? 'index.html' : routePath + '.html'
-  return path.join(outDir, fileName)
+  return joinPaths(outDir, fileName)
 }
 
 export const generateHtmlMap = async <
@@ -52,7 +83,7 @@ export const saveHtmlToLocal = async (
 
   for (const [routePath, html] of htmlMap) {
     const filePath = generateFilePath(routePath, outDir)
-    const dirPath = path.dirname(filePath)
+    const dirPath = dirname(filePath)
 
     await fsModule.mkdir(dirPath, { recursive: true })
     await fsModule.writeFile(filePath, html)
