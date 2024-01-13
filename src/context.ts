@@ -179,9 +179,17 @@ export class Context<
     this.#isFresh = false
     if (this.#res && _res) {
       this.#res.headers.delete('content-type')
-      this.#res.headers.forEach((v, k) => {
-        _res.headers.set(k, v)
-      })
+      for (const [k, v] of this.#res.headers.entries()) {
+        if (k === 'set-cookie') {
+          const cookies = this.#res.headers.getSetCookie()
+          _res.headers.delete('set-cookie')
+          for (const cookie of cookies) {
+            _res.headers.append('set-cookie', cookie)
+          }
+        } else {
+          _res.headers.set(k, v)
+        }
+      }
     }
     this.#res = _res
     this.finalized = true

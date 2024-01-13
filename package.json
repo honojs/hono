@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "3.12.0",
+  "version": "3.12.3",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -22,9 +22,9 @@
     "test:all": "yarn test && yarn test:deno && yarn test:bun && yarn test:fastly && yarn test:lagon && yarn test:node && yarn test:wrangler && yarn test:lambda && yarn test:lambda-edge",
     "lint": "eslint --ext js,ts src runtime_tests",
     "lint:fix": "eslint --ext js,ts src runtime_tests --fix",
-    "format": "prettier --check 'src/**/*.{js,ts}' 'runtime_tests/**/*.{js,ts}'",
-    "format:fix": "prettier --write 'src/**/*.{js,ts}' 'runtime_tests/**/*.{js,ts}'",
-    "denoify": "rimraf deno_dist && denoify && rimraf 'deno_dist/**/*.test.{ts,tsx}'",
+    "format": "prettier --check \"src/**/*.{js,ts}\" \"runtime_tests/**/*.{js,ts}\"",
+    "format:fix": "prettier --write \"src/**/*.{js,ts}\" \"runtime_tests/**/*.{js,ts}\"",
+    "denoify": "rimraf deno_dist && denoify && rimraf \"deno_dist/**/*.test.{ts,tsx}\"",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
     "build": "rimraf dist && tsx ./build.ts && yarn copy:package.cjs.json",
     "postbuild": "publint",
@@ -179,6 +179,11 @@
       "import": "./dist/validator/index.js",
       "require": "./dist/cjs/validator/index.js"
     },
+    "./router": {
+      "types": "./dist/types/router.d.ts",
+      "import": "./dist/router.js",
+      "require": "./dist/cjs/router.js"
+    },
     "./router/reg-exp-router": {
       "types": "./dist/types/router/reg-exp-router/index.d.ts",
       "import": "./dist/router/reg-exp-router/index.js",
@@ -263,6 +268,11 @@
       "types": "./dist/types/adapter/vercel/index.d.ts",
       "import": "./dist/adapter/vercel/index.js",
       "require": "./dist/cjs/adapter/vercel/index.js"
+    },
+    "./netlify": {
+      "types": "./dist/types/adapter/netlify/index.d.ts",
+      "import": "./dist/adapter/netlify/index.js",
+      "require": "./dist/cjs/adapter/netlify/index.js"
     },
     "./lambda-edge": {
       "types": "./dist/types/adapter/lambda-edge/index.d.ts",
@@ -365,6 +375,9 @@
       ],
       "validator": [
         "./dist/types/validator/index.d.ts"
+      ],
+      "router": [
+        "./dist/types/router.d.ts"
       ],
       "router/reg-exp-router": [
         "./dist/types/router/reg-exp-router/router.d.ts"

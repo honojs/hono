@@ -344,6 +344,28 @@ describe('Optional route', () => {
     expect(res[0][0]).toEqual('animals')
     expect(stash?.[res[0][1]['type'] as number]).toBeUndefined()
   })
+  router.add('GET', '/v1/:version?/:platform?', 'result')
+  it('GET /v1/123/abc', () => {
+    const [res, stash] = router.match('GET', '/v1/123/abc')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('result')
+    expect(stash?.[res[0][1]['version'] as number]).toBe('123')
+    expect(stash?.[res[0][1]['platform'] as number]).toBe('abc')
+  })
+  it('GET /v1/123', () => {
+    const [res, stash] = router.match('GET', '/v1/123')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('result')
+    expect(stash?.[res[0][1]['version'] as number]).toBe('123')
+    expect(stash?.[res[0][1]['platform'] as number]).toBeUndefined()
+  })
+  it('GET /v1', () => {
+    const [res, stash] = router.match('GET', '/v1')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('result')
+    expect(stash?.[res[0][1]['version'] as number]).toBeUndefined()
+    expect(stash?.[res[0][1]['platform'] as number]).toBeUndefined()
+  })
 })
 
 describe('All', () => {

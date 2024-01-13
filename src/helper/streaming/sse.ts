@@ -1,6 +1,5 @@
 import type { Context } from '../../context'
 import { StreamingApi } from '../../utils/stream'
-import { stream } from '.'
 
 export interface SSEMessage {
   data: string
@@ -38,23 +37,9 @@ const setSSEHeaders = (context: Context) => {
 }
 
 export const streamSSE = (c: Context, cb: (stream: SSEStreamingApi) => Promise<void>) => {
-  return stream(c, async (originalStream: StreamingApi) => {
-    const { readable, writable } = new TransformStream()
-    const stream = new SSEStreamingApi(writable, readable)
-
-    originalStream.pipe(stream.responseReadable).catch((err) => {
-      console.error('Error in stream piping: ', err)
-      stream.close()
-    })
-
-    setSSEHeaders(c)
-
-    try {
-      await cb(stream)
-    } catch (err) {
-      console.error('Error during streaming: ', err)
-    } finally {
-      await stream.close()
-    }
-  })
+  const { readable, writable } = new TransformStream()
+  const stream = new SSEStreamingApi(writable, readable)
+  cb(stream).finally(() => stream.close())
+  setSSEHeaders(c)
+  return c.newResponse(stream.responseReadable)
 }

@@ -9,7 +9,7 @@ describe('Basic Streaming Helper', () => {
     c = new Context(req)
   })
 
-  it('Check SSE Response', async () => {
+  it('Check stream Response', async () => {
     const res = stream(c, async (stream) => {
       for (let i = 0; i < 3; i++) {
         await stream.write(new Uint8Array([i]))
@@ -24,5 +24,26 @@ describe('Basic Streaming Helper', () => {
       const { value } = await reader.read()
       expect(value).toEqual(new Uint8Array([i]))
     }
+  })
+
+  it('Check stream Response if aborted by client', async () => {
+    let aborted = false
+    const res = stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.write(new Uint8Array([i]))
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toEqual(new Uint8Array([0]))
+    reader.cancel()
+    expect(aborted).toBeTruthy()
   })
 })
