@@ -92,10 +92,37 @@ export class Context<
   P extends string = any,
   I extends Input = {}
 > {
+  /**
+   * `.req` is the instance of {@link HonoRequest}.
+   */
   req: HonoRequest<P, I['out']>
+  /**
+   * `.env` can get bindings (environment variables, secrets, KV namespaces, D1 database, R2 bucket etc.) in Cloudflare Workers.
+   * @example
+   * ```ts
+   * // Environment object for Cloudflare Workers
+   * app.get('*', async c => {
+   *   const counter = c.env.COUNTER
+   * })
+   * ```
+   * @see https://hono.dev/api/context#env
+   */
   env: E['Bindings'] = {}
   private _var: E['Variables'] = {}
   finalized: boolean = false
+  /**
+   * `.error` can get the error object from the middleware if the Handler throws an error.
+   * @example
+   * ```ts
+   * app.use('*', async (c, next) => {
+   *   await next()
+   *   if (c.error) {
+   *     // do something...
+   *   }
+   * })
+   * ```
+   * @see https://hono.dev/api/context#error
+   */
   error: Error | undefined = undefined
 
   #status: StatusCode = 200
@@ -118,6 +145,9 @@ export class Context<
     }
   }
 
+  /**
+   * @see https://hono.dev/api/context#event
+   */
   get event(): FetchEventLike {
     if (this.#executionCtx && 'respondWith' in this.#executionCtx) {
       return this.#executionCtx
@@ -126,6 +156,9 @@ export class Context<
     }
   }
 
+  /**
+   * @see https://hono.dev/api/context#executionctx
+   */
   get executionCtx(): ExecutionContext {
     if (this.#executionCtx) {
       return this.#executionCtx as ExecutionContext
@@ -134,6 +167,9 @@ export class Context<
     }
   }
 
+  /**
+   * @see https://hono.dev/api/context#res
+   */
   get res(): Response {
     this.#isFresh = false
     return (this.#res ||= new Response('404 Not Found', { status: 404 }))
@@ -151,11 +187,40 @@ export class Context<
     this.finalized = true
   }
 
+  /**
+   * `.render()` can create a response within a layout.
+   * @example
+   * ```ts
+   * app.get('/', (c) => {
+   *   return c.render('Hello!')
+   * })
+   * ```
+   * @see https://hono.dev/api/context#render-setrenderer
+   */
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render: Renderer = (...args: any[]) => this.renderer(...args)
 
+  /**
+   * `.setRenderer()` can set the layout in the custom middleware.
+   * @example
+   * ```tsx
+   * app.use('*', async (c, next) => {
+   *   c.setRenderer((content) => {
+   *     return c.html(
+   *       <html>
+   *         <body>
+   *           <p>{content}</p>
+   *         </body>
+   *       </html>
+   *     )
+   *   })
+   *   await next()
+   * })
+   * ```
+   * @see https://hono.dev/api/context#render-setrenderer
+   */
   setRenderer = (renderer: Renderer) => {
     this.renderer = renderer
   }
@@ -204,15 +269,46 @@ export class Context<
     this.#status = status
   }
 
+  /**
+   * `.set()` can set the value specified by the key.
+   * @example
+   * ```ts
+   * app.use('*', async (c, next) => {
+   *   c.set('message', 'Hono is cool!!')
+   *   await next()
+   * })
+   * ```
+   * @see https://hono.dev/api/context#set-get
+```
+   */
   set: Set<E> = (key: string, value: unknown) => {
     this._var ??= {}
     this._var[key as string] = value
   }
 
+  /**
+   * `.get()` can use the value specified by the key.
+   * @example
+   * ```ts
+   * app.get('/', (c) => {
+   *   const message = c.get('message')
+   *   return c.text(`The message is "${message}"`)
+   * })
+   * ```
+   * @see https://hono.dev/api/context#set-get
+   */
   get: Get<E> = (key: string) => {
     return this._var ? this._var[key] : undefined
   }
 
+  /**
+   * `.var` can access the value of a variable.
+   * @example
+   * ```ts
+   * const result = c.var.client.oneMethod()
+   * ```
+   * @see https://hono.dev/api/context#var
+   */
   // c.var.propName is a read-only
   get var(): Readonly<E['Variables'] & ContextVariableMap> {
     return { ...this._var } as never
@@ -269,6 +365,25 @@ export class Context<
     })
   }
 
+  /**
+   * `.body()` can return the HTTP response.
+   * You can set headers with `.header()` and set HTTP status code with `.status`.
+   * This can also be set in `.text()`, `.json()` and so on.
+   * @example
+   * ```ts
+   * app.get('/welcome', (c) => {
+   *   // Set headers
+   *   c.header('X-Message', 'Hello!')
+   *   c.header('Content-Type', 'text/plain')
+   *   // Set HTTP status code
+   *   c.status(201)
+   * 
+   *   // Return the response body
+   *   return c.body('Thank you for coming')
+   * })
+   * ```
+   * @see https://hono.dev/api/context#body
+   */
   body: BodyRespond = (
     data: Data | null,
     arg?: StatusCode | ResponseInit,
@@ -279,6 +394,16 @@ export class Context<
       : this.newResponse(data, arg)
   }
 
+  /**
+   * `.text()` can render text as `Content-Type:text/plain`.
+   * @example
+   * ```ts
+   * app.get('/say', (c) => {
+   *   return c.text('Hello!')
+   * })
+   * ```
+   * @see https://hono.dev/api/context#text
+   */
   text: TextRespond = (
     text: string,
     arg?: StatusCode | ResponseInit,
@@ -298,6 +423,16 @@ export class Context<
       : this.newResponse(text, arg)
   }
 
+  /**
+   * `.json()` can render JSON as `Content-Type:application/json`.
+   * @example
+   * ```ts
+   * app.get('/api', (c) => {
+   *   return c.json({ message: 'Hello!' })
+   * })
+   * ```
+   * @see https://hono.dev/api/context#json
+   */
   json: JSONRespond = <T>(
     object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
     arg?: StatusCode | ResponseInit,
@@ -341,6 +476,16 @@ export class Context<
     return this.json(object, arg as any, headers) as any
   }
 
+  /**
+   * `.html()` can render HTML as `Content-Type:text/html`.
+   * @example
+   * ```ts
+   * app.get('/', (c) => {
+   *   return c.html('<h1>Hello! Hono!</h1>')
+   * })
+   * ```
+   * @see https://hono.dev/api/context#html
+   */
   html: HTMLRespond = (
     html: string | Promise<string>,
     arg?: StatusCode | ResponseInit,
@@ -369,6 +514,19 @@ export class Context<
       : this.newResponse(html as string, arg)
   }
 
+  /**
+   * `.redirect()` can Redirect, default status code is 302.
+   * @example
+   * ```ts
+   * app.get('/redirect', (c) => {
+   *   return c.redirect('/')
+   * })
+   * app.get('/redirect-permanently', (c) => {
+   *   return c.redirect('/', 301)
+   * })
+   * ```
+   * @see https://hono.dev/api/context#redirect
+   */
   redirect = (location: string, status: StatusCode = 302): Response => {
     this.#headers ??= new Headers()
     this.#headers.set('Location', location)
@@ -424,6 +582,16 @@ export class Context<
     this.header('set-cookie', cookie, { append: true })
   }
 
+  /**
+   * `.notFound()` can return the Not Found Response.
+   * @example
+   * ```ts
+   * app.get('/notfound', (c) => {
+   *   return c.notFound()
+   * })
+   * ```
+   * @see https://hono.dev/api/context#notfound
+   */
   notFound = (): Response | Promise<Response> => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
