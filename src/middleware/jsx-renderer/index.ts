@@ -34,7 +34,8 @@ const createRenderer =
     const currentLayout = component
       ? component({
           children,
-          ...{ Layout, ...props },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ...{ Layout, ...(props as any) },
         })
       : children
 
