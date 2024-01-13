@@ -1,13 +1,13 @@
 import type { Context, Renderer } from '../../context'
 import { html, raw } from '../../helper/html'
-import { jsx, createContext, useContext } from '../../jsx'
+import { jsx, createContext, useContext, Fragment } from '../../jsx'
 import type { FC, JSXNode } from '../../jsx'
 import { renderToReadableStream } from '../../jsx/streaming'
 import type { Env, Input, MiddlewareHandler } from '../../types'
 
 export const RequestContext = createContext<Context | null>(null)
 
-type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unknown, infer Props]
+export type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unknown, infer Props]
   ? Props
   : unknown
 
@@ -17,7 +17,7 @@ type RendererOptions = {
 }
 
 const createRenderer =
-  (c: Context, component?: FC<PropsForRenderer>, options?: RendererOptions) =>
+  (c: Context, component?: FC<PropsForRenderer & { Layout: FC }>, options?: RendererOptions) =>
   (children: JSXNode, props: PropsForRenderer) => {
     const docType =
       typeof options?.docType === 'string'
@@ -26,15 +26,24 @@ const createRenderer =
         ? '<!DOCTYPE html>'
         : ''
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    let currentLayout = (component ? component({ children, ...(props || {}) }) : children) as any
+    const Layout: FC = (props) => {
+      const parentLayout = c.getLayout() as FC
+      return parentLayout({ ...props, Layout: Fragment })
+    }
 
-    const parentLayout = c.getLayout()
-    if (parentLayout && parentLayout !== component)
-      currentLayout = parentLayout({ children: currentLayout, ...(props || {}) })
-    // setting c.setLayout to currentLayout here would potentially enable recursive layouts in the future
+    const currentLayout = component
+      ? component({
+          children,
+          ...{ Layout, ...props },
+        })
+      : children
 
-    const body = html`${raw(docType)}${jsx(RequestContext.Provider, { value: c }, currentLayout)}`
+    const body = html`${raw(docType)}${jsx(
+      RequestContext.Provider,
+      { value: c },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      currentLayout as any
+    )}`
 
     if (options?.stream) {
       return c.body(renderToReadableStream(body), {
@@ -52,7 +61,7 @@ const createRenderer =
   }
 
 export const jsxRenderer = (
-  component?: FC<PropsForRenderer>,
+  component?: FC<PropsForRenderer & { Layout: FC }>,
   options?: RendererOptions
 ): MiddlewareHandler =>
   function jsxRenderer(c, next) {
