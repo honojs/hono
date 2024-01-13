@@ -14,9 +14,44 @@ export interface ToSSGResult {
   error?: Error
 }
 
-const generateFilePath = (routePath: string, outDir: string) => {
-  const fileName = routePath === '/' ? 'index.html' : routePath + '.html'
+const generateFilePath = (routePath: string, outDir: string, mimeType: string) => {
+  const extension = determineExtension(mimeType)
+  const fileName = routePath === '/' ? `index${extension}` : `${routePath}${extension}`
   return path.join(outDir, fileName)
+}
+
+const parseResponseContent = async (response: Response): Promise<string | ArrayBuffer> => {
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  const contentType = response.headers.get('Content-Type')
+
+  try {
+    if (contentType?.includes('text')) {
+      return await response.text()
+    } else if (contentType?.includes('json')) {
+      return JSON.stringify(await response.json())
+    } else {
+      return await response.arrayBuffer()
+    }
+  } catch (error) {
+    throw new Error(
+      `Error processing response: ${error instanceof Error ? error.message : 'Unknown error'}`
+    )
+  }
+}
+
+function determineExtension(mimeType) {
+  switch (mimeType) {
+    case 'text/html':
+      return '.html'
+    case 'text/xml':
+    case 'application/xml':
+      return '.xml'
+    default:
+      return '.html'
+  }
 }
 
 export const generateHtmlMap = async <
@@ -25,8 +60,8 @@ export const generateHtmlMap = async <
   BasePath extends string = '/'
 >(
   app: Hono<E, S, BasePath>
-): Promise<Map<string, string>> => {
-  const htmlMap = new Map<string, string>()
+): Promise<Map<string, { content: string | ArrayBuffer; mimeType: string }>> => {
+  const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
   const baseURL = 'http://localhost'
 
   for (const route of inspectRoutes(app)) {
@@ -34,27 +69,36 @@ export const generateHtmlMap = async <
 
     const url = new URL(route.path, baseURL).toString()
     const response = await app.fetch(new Request(url))
-    const html = await response.text()
+    const content = await parseResponseContent(response)
 
-    htmlMap.set(route.path, html)
+    const contentType = response.headers.get('Content-Type')
+    const mimeType = contentType ? contentType.split(';')[0] : 'text/plain'
+
+    htmlMap.set(route.path, { content, mimeType })
   }
 
   return htmlMap
 }
 
 export const saveHtmlToLocal = async (
-  htmlMap: Map<string, string>,
+  htmlMap: Map<string, { content: string | ArrayBuffer; mimeType: string }>,
   fsModule: FileSystemModule,
   outDir: string
 ): Promise<string[]> => {
   const files: string[] = []
 
-  for (const [routePath, html] of htmlMap) {
-    const filePath = generateFilePath(routePath, outDir)
+  for (const [routePath, { content, mimeType }] of htmlMap) {
+    const extension = determineExtension(mimeType)
+    const fileName = routePath === '/' ? `index${extension}` : `${routePath}${extension}`
+    const filePath = path.join(outDir, fileName)
     const dirPath = path.dirname(filePath)
 
     await fsModule.mkdir(dirPath, { recursive: true })
-    await fsModule.writeFile(filePath, html)
+    if (Buffer.isBuffer(content) || typeof content === 'string') {
+      await fsModule.writeFile(filePath, content)
+    } else {
+      await fsModule.writeFile(filePath, Buffer.from(content))
+    }
     files.push(filePath)
   }
 
