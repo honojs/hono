@@ -6,7 +6,7 @@ export const HtmlEscapedCallbackPhase = {
 } as const
 type HtmlEscapedCallbackOpts = {
   buffer?: [string]
-  phase: typeof HtmlEscapedCallbackPhase[keyof typeof HtmlEscapedCallbackPhase]
+  phase: (typeof HtmlEscapedCallbackPhase)[keyof typeof HtmlEscapedCallbackPhase]
   context: object // An object unique to each JSX tree. This object is used as the WeakMap key.
 }
 export type HtmlEscapedCallback = (opts: HtmlEscapedCallbackOpts) => Promise<string> | undefined
@@ -113,7 +113,7 @@ export const escapeToBuffer = (str: string, buffer: StringBuffer): void => {
 
 export const resolveCallback = async (
   str: string | HtmlEscapedString,
-  phase: typeof HtmlEscapedCallbackPhase[keyof typeof HtmlEscapedCallbackPhase],
+  phase: (typeof HtmlEscapedCallbackPhase)[keyof typeof HtmlEscapedCallbackPhase],
   preserveCallbacks: boolean,
   context: object,
   buffer?: [string]
