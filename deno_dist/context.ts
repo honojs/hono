@@ -1,3 +1,5 @@
+import type { FC } from './jsx/index.ts'
+import type { PropsForRenderer } from './middleware/jsx-renderer/index.ts'
 import type { HonoRequest } from './request.ts'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types.ts'
 import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html.ts'
@@ -100,6 +102,7 @@ export class Context<
   #preparedHeaders: Record<string, string> | undefined = undefined
   #res: Response | undefined
   #isFresh = true
+  private layout: FC<PropsForRenderer & { Layout: FC }> | undefined = undefined
   private renderer: Renderer = (content: string | Promise<string>) => this.html(content)
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
@@ -150,6 +153,9 @@ export class Context<
   // @ts-expect-error It is unknown how many arguments the renderer will receive.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render: Renderer = (...args: any[]) => this.renderer(...args)
+
+  setLayout = (layout: FC<PropsForRenderer & { Layout: FC }>) => (this.layout = layout)
+  getLayout = () => this.layout
 
   setRenderer = (renderer: Renderer) => {
     this.renderer = renderer
