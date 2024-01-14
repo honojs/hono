@@ -6,6 +6,12 @@ describe('joinPath', () => {
     expect(joinPaths('test', 'test2')).toBe('test/test2')
     expect(joinPaths('test', 'test2', '../test3')).toBe('test/test3')
     expect(joinPaths('.', '../')).toBe('..')
+    expect(joinPaths('test/', 'test2/')).toBe('test/test2') // trailing slashes
+    expect(joinPaths('./test', './test2')).toBe('test/test2') // dot and slash
+    expect(joinPaths('', 'test')).toBe('test') // empty path
+    expect(joinPaths('/test', '/test2')).toBe('test/test2') // root path
+    expect(joinPaths('../', 'test')).toBe('../test') // parent and single
+    console.log(joinPaths('/test', '/test2'))
   })
   it('Should windows path is valid.', () => {
     expect(joinPaths('a\\b\\c', 'd\\e')).toBe('a/b/c/d/e')
