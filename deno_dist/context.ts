@@ -147,8 +147,7 @@ export class Context<
     this.finalized = true
   }
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
+  // @ts-expect-error It is unknown how many arguments the renderer will receive.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render: Renderer = (...args: any[]) => this.renderer(...args)
 
@@ -350,8 +349,6 @@ export class Context<
   }
 
   notFound = (): Response | Promise<Response> => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     return this.notFoundHandler(this)
   }
 }
