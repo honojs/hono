@@ -11,7 +11,6 @@ describe('joinPath', () => {
     expect(joinPaths('', 'test')).toBe('test') // empty path
     expect(joinPaths('/test', '/test2')).toBe('test/test2') // root path
     expect(joinPaths('../', 'test')).toBe('../test') // parent and single
-    console.log(joinPaths('/test', '/test2'))
   })
   it('Should windows path is valid.', () => {
     expect(joinPaths('a\\b\\c', 'd\\e')).toBe('a/b/c/d/e')
