@@ -21,7 +21,7 @@ const handleDotDot = (resultPaths: string[]) => {
 }
 
 const handleNonDot = (path: string, resultPaths: string[]) => {
-  path = path.replace(/^\.(?!\.)/g, '')
+  path = path.replace(/^\.(?!.)/g, '')
   if (path !== '') {
     resultPaths.push(path)
   }
