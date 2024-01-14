@@ -17,7 +17,7 @@ describe('joinPath', () => {
     expect(joinPaths('test', '..', 'test2')).toBe('test2') // single triple dot and single
     expect(joinPaths('test', '...', 'test2')).toBe('test/.../test2') // single triple dot and single
     expect(joinPaths('test', './test2', '.test3.')).toBe('test/test2/.test3.') // single and single with slash and single with dot
-    expect(joinPaths('test', '../', '.test2')).toBe('.test2')  // single and parent and single with dot
+    expect(joinPaths('test', '../', '.test2')).toBe('.test2') // single and parent and single with dot
   })
   it('Should windows path is valid.', () => {
     expect(joinPaths('a\\b\\c', 'd\\e')).toBe('a/b/c/d/e')
