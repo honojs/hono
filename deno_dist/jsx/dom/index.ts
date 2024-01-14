@@ -21,7 +21,7 @@ export const UpdatePhase = {
 export type UpdateData = [
   Function, // update function
   number, // hook index
-  typeof UpdatePhase[keyof typeof UpdatePhase], // update phase
+  (typeof UpdatePhase)[keyof typeof UpdatePhase], // update phase
   () => ContextNode | undefined // get context node function
 ]
 export const updateStack: UpdateData[] = []
@@ -60,7 +60,7 @@ export const invokeUpdate = (updateData: UpdateData) => {
     updateData[1] = 0
     update()
   } while (
-    (updateData[2] as typeof UpdatePhase[keyof typeof UpdatePhase]) === UpdatePhase.UpdateAgain
+    (updateData[2] as (typeof UpdatePhase)[keyof typeof UpdatePhase]) === UpdatePhase.UpdateAgain
   )
   updateData[2] = UpdatePhase.Done
   const callbacks = updateCallbacks.get(update)
