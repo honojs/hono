@@ -1,8 +1,8 @@
 import { Buffer } from "node:buffer";
-import * as path from 'node:path'
 import { inspectRoutes } from '../../helper/dev/index.ts'
 import type { Hono } from '../../hono.ts'
 import type { Env, Schema } from '../../types.ts'
+import { joinPaths, dirname } from './utils.ts'
 
 /**
  * @experimental
@@ -27,7 +27,7 @@ export interface ToSSGResult {
 
 const generateFilePath = (routePath: string, outDir: string) => {
   const fileName = routePath === '/' ? 'index.html' : routePath + '.html'
-  return path.join(outDir, fileName)
+  return joinPaths(outDir, fileName)
 }
 
 /**
@@ -72,7 +72,7 @@ export const saveHtmlToLocal = async (
 
   for (const [routePath, html] of htmlMap) {
     const filePath = generateFilePath(routePath, outDir)
-    const dirPath = path.dirname(filePath)
+    const dirPath = dirname(filePath)
 
     await fsModule.mkdir(dirPath, { recursive: true })
     await fsModule.writeFile(filePath, html)
