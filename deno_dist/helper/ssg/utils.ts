@@ -30,5 +30,5 @@ export const joinPaths = (...paths: string[]) => {
       resultPaths.push(path)
     }
   }
-  return resultPaths.join('/')
+  return (paths[0][0] === '/' ? '/' : '') + resultPaths.join('/')
 }
