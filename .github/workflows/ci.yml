@@ -72,19 +72,6 @@ jobs:
       - run: npm run build
       - run: npm run test:fastly
 
-  lagon:
-    name: 'Lagon'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18.x
-      - run: yarn install --frozen-lockfile
-      - run: npm run build
-      - run: npm i -g @lagon/cli@latest esbuild@latest
-      - run: npm run test:lagon
-
   node:
     name: 'Node.js v${{ matrix.node }}'
     runs-on: ubuntu-latest
