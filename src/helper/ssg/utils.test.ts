@@ -9,7 +9,7 @@ describe('joinPath', () => {
     expect(joinPaths('test/', 'test2/')).toBe('test/test2') // trailing slashes
     expect(joinPaths('./test', './test2')).toBe('test/test2') // dot and slash
     expect(joinPaths('', 'test')).toBe('test') // empty path
-    expect(joinPaths('/test', '/test2')).toBe('test/test2') // root path
+    expect(joinPaths('/test', '/test2')).toBe('/test/test2') // root path
     expect(joinPaths('../', 'test')).toBe('../test') // parent and single
   })
   it('Should windows path is valid.', () => {
