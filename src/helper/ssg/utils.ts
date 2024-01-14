@@ -9,7 +9,7 @@ export const dirname = (path: string) => {
 }
 
 export const joinPaths = (...paths: string[]) => {
-  paths = paths.map(path => {
+  paths = paths.map((path) => {
     return path.replace(/(\\)/g, '/').replace(/\/$/g, '')
   })
   const resultPaths: string[] = []
@@ -32,4 +32,3 @@ export const joinPaths = (...paths: string[]) => {
   }
   return resultPaths.join('/')
 }
-
