@@ -25,7 +25,7 @@ import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/ur
 
 export const COMPOSED_HANDLER = Symbol('composedHandler')
 
-type Methods = typeof METHODS[number] | typeof METHOD_NAME_ALL_LOWERCASE
+type Methods = (typeof METHODS)[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
 function defineDynamicClass(): {
   new <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(): {
