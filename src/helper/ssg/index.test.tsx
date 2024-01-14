@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { Hono } from '../../hono'
 import { jsx } from '../../jsx'
-import { dirname, generateHtmlMap, joinPaths, saveHtmlToLocal, toSSG } from './index'
+import { generateHtmlMap, saveHtmlToLocal, toSSG } from './index'
 import type { FileSystemModule } from './index'
 
 describe('toSSG function', () => {
@@ -151,18 +151,5 @@ describe('toSSG function', () => {
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
     expect(result.files).toBeUndefined()
-  })
-})
-
-describe('Path utils', () => {
-  it('Should joined path is valid.', () => {
-    expect(joinPaths('test', 'test2')).toBe('test/test2')
-    expect(joinPaths('test', 'test2', '../test3')).toBe('test/test3')
-    expect(joinPaths('.', '../')).toBe('..')
-    expect(joinPaths('a\\b\\c', 'd\\e')).toBe('a/b/c/d/e')
-  })
-  it('Should dirname is valid.', () => {
-    expect(dirname('parent/child')).toBe('parent')
-    expect(dirname('windows\\test.txt')).toBe('windows')
   })
 })

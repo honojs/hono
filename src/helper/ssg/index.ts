@@ -1,38 +1,7 @@
 import { inspectRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
-
-export const dirname = (path: string) => {
-  const splitedPath = path.split(/[\/\\]/)
-
-  return splitedPath.slice(0, -1).join('/') // Windows supports slash path
-}
-export const joinPaths = (...paths: string[]) => {
-  const nomalizedPaths: string[] = []
-  for (const path of paths) {
-    const nomalizedPath = path.replace(/(\\)/g, '/').replace(/\/$/g, '')
-    nomalizedPaths.push(nomalizedPath)
-  }
-  const resultPaths: string[] = []
-  for (let path of nomalizedPaths.join('/').split('/')) {
-    // Handle `..` or `../`
-    if (path === '..') {
-      if (resultPaths.length === 0) {
-        resultPaths.push('..')
-      } else {
-        resultPaths.pop()
-      }
-      continue
-    } else {
-      // Handle `.` or `./`
-      path = path.replace(/^\./g, '')
-    }
-    if (path !== '') {
-      resultPaths.push(path)
-    }
-  }
-  return resultPaths.join('/')
-}
+import { joinPaths, dirname } from './utils'
 
 export interface FileSystemModule {
   writeFile(path: string, data: string | Buffer): Promise<void>
