@@ -1,13 +1,23 @@
-import * as path from 'path'
 import { inspectRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
+import { joinPaths, dirname } from './utils'
 
+/**
+ * @experimental
+ * `FileSystemModule` is an experimental feature.
+ * The API might be changed.
+ */
 export interface FileSystemModule {
   writeFile(path: string, data: string | Buffer): Promise<void>
   mkdir(path: string, options: { recursive: boolean }): Promise<void | string>
 }
 
+/**
+ * @experimental
+ * `ToSSGResult` is an experimental feature.
+ * The API might be changed.
+ */
 export interface ToSSGResult {
   success: boolean
   files?: string[]
@@ -17,7 +27,7 @@ export interface ToSSGResult {
 const generateFilePath = (routePath: string, outDir: string, mimeType: string) => {
   const extension = determineExtension(mimeType)
   const fileName = routePath === '/' ? `index${extension}` : `${routePath}${extension}`
-  return path.join(outDir, fileName)
+  return joinPaths(outDir, fileName)
 }
 
 const parseResponseContent = async (response: Response): Promise<string | ArrayBuffer> => {
@@ -54,6 +64,11 @@ const determineExtension = (mimeType: string): string => {
   }
 }
 
+/**
+ * @experimental
+ * `fetchRoutesContent` is an experimental feature.
+ * The API might be changed.
+ */
 export const fetchRoutesContent = async <
   E extends Env = Env,
   S extends Schema = {},
@@ -78,6 +93,11 @@ export const fetchRoutesContent = async <
   return htmlMap
 }
 
+/**
+ * @experimental
+ * `saveContentToFiles` is an experimental feature.
+ * The API might be changed.
+ */
 export const saveContentToFiles = async (
   htmlMap: Map<string, { content: string | ArrayBuffer; mimeType: string }>,
   fsModule: FileSystemModule,
@@ -87,7 +107,7 @@ export const saveContentToFiles = async (
 
   for (const [routePath, { content, mimeType }] of htmlMap) {
     const filePath = generateFilePath(routePath, outDir, mimeType)
-    const dirPath = path.dirname(filePath)
+    const dirPath = dirname(filePath)
 
     await fsModule.mkdir(dirPath, { recursive: true })
     if (typeof content === 'string') {
@@ -101,6 +121,11 @@ export const saveContentToFiles = async (
   return files
 }
 
+/**
+ * @experimental
+ * `ToSSGInterface` is an experimental feature.
+ * The API might be changed.
+ */
 export interface ToSSGInterface<
   E extends Env = Env,
   S extends Schema = {},
@@ -113,6 +138,11 @@ export interface ToSSGInterface<
   ): Promise<ToSSGResult>
 }
 
+/**
+ * @experimental
+ * `ToSSGAdaptorInterface` is an experimental feature.
+ * The API might be changed.
+ */
 export interface ToSSGAdaptorInterface<
   E extends Env = Env,
   S extends Schema = {},
@@ -121,6 +151,11 @@ export interface ToSSGAdaptorInterface<
   (app: Hono<E, S, BasePath>, options?: { dir?: string }): Promise<ToSSGResult>
 }
 
+/**
+ * @experimental
+ * `toSSG` is an experimental feature.
+ * The API might be changed.
+ */
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
   try {
     const outputDir = options?.dir ?? './static'
