@@ -2,8 +2,8 @@ import { raw } from '../helper/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'
 import { childrenToString } from './components'
-import { RENDER_TO_DOM, ERROR_HANDLER } from './dom/render'
-import type { HasRenderToDom } from './dom/render'
+import { RENDER_TO_DOM, ERROR_HANDLER, nodeStack, STASH } from './dom/render'
+import type { HasRenderToDom, NodeObject } from './dom/render'
 import type { FC, Child } from '.'
 import { Fragment } from '.'
 
@@ -24,16 +24,32 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
   }
 
   let resArray: HtmlEscapedString[] | Promise<HtmlEscapedString[]>[] = []
+
+  // for use() hook
+  const stackNode = { [STASH]: [0, []] } as unknown as NodeObject
+  const popNodeStack = (value?: unknown) => {
+    nodeStack.pop()
+    return value
+  }
+
   try {
+    stackNode[STASH][0] = 0
+    nodeStack.push(stackNode)
     resArray = children.map((c) => c.toString()) as HtmlEscapedString[]
   } catch (e) {
     if (e instanceof Promise) {
-      resArray = [e.then(() => childrenToString(children as Child[]))] as Promise<
-        HtmlEscapedString[]
-      >[]
+      resArray = [
+        e.then(() => {
+          stackNode[STASH][0] = 0
+          nodeStack.push(stackNode)
+          return childrenToString(children as Child[]).then(popNodeStack)
+        }),
+      ] as Promise<HtmlEscapedString[]>[]
     } else {
       throw e
     }
+  } finally {
+    popNodeStack()
   }
 
   if (resArray.some((res) => (res as {}) instanceof Promise)) {
