@@ -125,11 +125,12 @@ const invokeTag = (node: NodeObject): Child => {
 
 const getNextChildren = (
   node: NodeObject,
-  container: Container
-): [Node[], Node[], EffectData[]] => {
-  const nextChildren: Node[] = []
-  const childrenToRemove: Node[] = [...node.vR]
-  const callbacks: EffectData[] = []
+  container: Container,
+  nextChildren: Node[],
+  childrenToRemove: Node[],
+  callbacks: EffectData[]
+) => {
+  childrenToRemove.push(...node.vR)
   if (typeof node.tag === 'function') {
     node[STASH][1][STASH_EFFECT]?.forEach((data: EffectData) => callbacks.push(data))
   }
@@ -139,24 +140,32 @@ const getNextChildren = (
     } else {
       if (typeof child.tag === 'function' || child.tag === '') {
         child.c = container
-        const [next, remove, cbs] = getNextChildren(child, container)
-        nextChildren.push(...next)
-        childrenToRemove.push(...remove)
-        callbacks.push(...cbs)
+        getNextChildren(child, container, nextChildren, childrenToRemove, callbacks)
       } else {
         nextChildren.push(child)
         childrenToRemove.push(...child.vR)
       }
     }
   })
-
-  return [nextChildren, childrenToRemove, callbacks]
 }
 
 const findInsertBefore = (node: Node | undefined): ChildNode | null => {
-  return !node
-    ? null
-    : node.e || node.vC?.map(findInsertBefore).filter(Boolean)[0] || findInsertBefore(node.nN)
+  if (!node) {
+    return null
+  } else if (node.e) {
+    return node.e
+  }
+
+  if (node.vC) {
+    for (let i = 0; i < node.vC.length; i++) {
+      const e = findInsertBefore(node.vC[i])
+      if (e) {
+        return e
+      }
+    }
+  }
+
+  return findInsertBefore(node.nN)
 }
 
 const removeNode = (node: Node) => {
@@ -182,7 +191,10 @@ const applyNode = (node: Node, container: Container) => {
 }
 
 const applyNodeObject = (node: NodeObject, container: Container) => {
-  const [next, remove, callbacks] = getNextChildren(node, container)
+  const next: Node[] = []
+  const remove: Node[] = []
+  const callbacks: EffectData[] = []
+  getNextChildren(node, container, next, remove, callbacks)
   let offset = container.childNodes.length
   const insertBefore = findInsertBefore(node.nN)
   if (insertBefore) {
@@ -237,50 +249,46 @@ const build = (
   try {
     children.flat().forEach((c: Child) => {
       let child = buildNode(c)
+      if (child) {
+        if (prevNode) {
+          prevNode.nN = child
+        }
+        prevNode = child
 
-      if (!child) {
-        return
-      } else if (child instanceof Promise) {
-        return
-      }
+        let oldChild: Node | undefined
+        const i = oldVChildren.findIndex((c) => c.key === (child as Node).key)
+        if (i !== -1) {
+          oldChild = oldVChildren[i]
+          oldVChildren.splice(i, 1)
+        }
 
-      if (prevNode) {
-        prevNode.nN = child
-      }
-      prevNode = child
-
-      let oldChild: Node | undefined
-      const i = oldVChildren.findIndex((c) => c.key === (child as Node).key)
-      if (i !== -1) {
-        oldChild = oldVChildren[i]
-        oldVChildren.splice(i, 1)
-      }
-
-      if (oldChild) {
-        if (isNodeString(child)) {
-          if (!isNodeString(oldChild)) {
+        if (oldChild) {
+          if (isNodeString(child)) {
+            if (!isNodeString(oldChild)) {
+              vChildrenToRemove.push(oldChild)
+            } else {
+              oldChild[0] = child[0]
+              child = oldChild
+            }
+          } else if (oldChild.tag !== child.tag) {
             vChildrenToRemove.push(oldChild)
           } else {
-            child.e = oldChild.e
+            oldChild.pP = oldChild.props
+            oldChild.props = child.props
+            oldChild.children = child.children
+            child = oldChild
           }
-        } else if (oldChild.tag !== child.tag) {
-          vChildrenToRemove.push(oldChild)
-        } else {
-          oldChild.pP = oldChild.props
-          oldChild.props = child.props
-          oldChild.children = child.children
-          child = oldChild
         }
-      }
 
-      if (!isNodeString(child)) {
-        build(child, topLevelErrorHandlerNode)
+        if (!isNodeString(child)) {
+          build(child, topLevelErrorHandlerNode)
+        }
+        vChildren.push(child)
       }
-      vChildren.push(child)
     })
     node.vC = vChildren
-    node.vR =
-      vChildrenToRemove.length || oldVChildren.length ? [...vChildrenToRemove, ...oldVChildren] : []
+    vChildrenToRemove.push(...oldVChildren)
+    node.vR = vChildrenToRemove
   } catch (e) {
     if (errorHandler) {
       const fallback = errorHandler(e, () => update(topLevelErrorHandlerNode as NodeObject))
