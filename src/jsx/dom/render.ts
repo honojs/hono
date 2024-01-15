@@ -267,7 +267,8 @@ const build = (
             if (!isNodeString(oldChild)) {
               vChildrenToRemove.push(oldChild)
             } else {
-              child.e = oldChild.e
+              oldChild[0] = child[0]
+              child = oldChild
             }
           } else if (oldChild.tag !== child.tag) {
             vChildrenToRemove.push(oldChild)
