@@ -80,28 +80,6 @@ describe('Suspense', () => {
     await new Promise((resolve) => setTimeout(resolve))
     expect(root.innerHTML).toBe('<p>1</p><p>2</p>')
   })
-
-  it.skip('with async component', async () => {
-    let resolve: (value: number) => void = () => {}
-    const promise = new Promise<number>((_resolve) => (resolve = _resolve))
-    const Content = async () => {
-      const num = await promise
-      return <p>{num}</p>
-    }
-    const Component = () => {
-      return (
-        <Suspense fallback={<div>Loading...</div>}>
-          <Content />
-        </Suspense>
-      )
-    }
-    const App = <Component />
-    render(App, root)
-    expect(root.innerHTML).toBe('<div>Loading...</div>')
-    resolve(1)
-    await new Promise((resolve) => setTimeout(resolve))
-    expect(root.innerHTML).toBe('<p>1</p>')
-  })
 })
 
 describe('ErrorBoundary', () => {
