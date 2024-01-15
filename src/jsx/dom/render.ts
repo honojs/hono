@@ -249,50 +249,45 @@ const build = (
   try {
     children.flat().forEach((c: Child) => {
       let child = buildNode(c)
+      if (child) {
+        if (prevNode) {
+          prevNode.nN = child
+        }
+        prevNode = child
 
-      if (!child) {
-        return
-      } else if (child instanceof Promise) {
-        return
-      }
+        let oldChild: Node | undefined
+        const i = oldVChildren.findIndex((c) => c.key === (child as Node).key)
+        if (i !== -1) {
+          oldChild = oldVChildren[i]
+          oldVChildren.splice(i, 1)
+        }
 
-      if (prevNode) {
-        prevNode.nN = child
-      }
-      prevNode = child
-
-      let oldChild: Node | undefined
-      const i = oldVChildren.findIndex((c) => c.key === (child as Node).key)
-      if (i !== -1) {
-        oldChild = oldVChildren[i]
-        oldVChildren.splice(i, 1)
-      }
-
-      if (oldChild) {
-        if (isNodeString(child)) {
-          if (!isNodeString(oldChild)) {
+        if (oldChild) {
+          if (isNodeString(child)) {
+            if (!isNodeString(oldChild)) {
+              vChildrenToRemove.push(oldChild)
+            } else {
+              child.e = oldChild.e
+            }
+          } else if (oldChild.tag !== child.tag) {
             vChildrenToRemove.push(oldChild)
           } else {
-            child.e = oldChild.e
+            oldChild.pP = oldChild.props
+            oldChild.props = child.props
+            oldChild.children = child.children
+            child = oldChild
           }
-        } else if (oldChild.tag !== child.tag) {
-          vChildrenToRemove.push(oldChild)
-        } else {
-          oldChild.pP = oldChild.props
-          oldChild.props = child.props
-          oldChild.children = child.children
-          child = oldChild
         }
-      }
 
-      if (!isNodeString(child)) {
-        build(child, topLevelErrorHandlerNode)
+        if (!isNodeString(child)) {
+          build(child, topLevelErrorHandlerNode)
+        }
+        vChildren.push(child)
       }
-      vChildren.push(child)
     })
     node.vC = vChildren
-    node.vR =
-      vChildrenToRemove.length || oldVChildren.length ? [...vChildrenToRemove, ...oldVChildren] : []
+    vChildrenToRemove.push(...oldVChildren)
+    node.vR = vChildrenToRemove
   } catch (e) {
     if (errorHandler) {
       const fallback = errorHandler(e, () => update(topLevelErrorHandlerNode as NodeObject))
