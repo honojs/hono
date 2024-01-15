@@ -1,5 +1,5 @@
 {
   "compilerOptions": {
-    "lib": ["deno.ns", "dom"]
+    "lib": ["deno.ns", "dom", "dom.iterable"]
   }
 }
