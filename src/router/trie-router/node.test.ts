@@ -741,3 +741,16 @@ describe('Routing order With named parameters', () => {
     expect(res[1][1]).toEqual({})
   })
 })
+
+describe('The same name is used for path params', () => {
+  const node = new Node()
+  node.insert('get', '/:a', 'a')
+  node.insert('get', '/:b/:a', 'ba')
+  it('/about/me', () => {
+    const [res] = node.search('get', '/about/me')
+    expect(res).not.toBeNull()
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('ba')
+    expect(res[0][1]).toEqual({ b: 'about', a: 'me' })
+  })
+})
