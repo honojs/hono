@@ -125,11 +125,12 @@ const invokeTag = (node: NodeObject): Child => {
 
 const getNextChildren = (
   node: NodeObject,
-  container: Container
-): [Node[], Node[], EffectData[]] => {
-  const nextChildren: Node[] = []
-  const childrenToRemove: Node[] = [...node.vR]
-  const callbacks: EffectData[] = []
+  container: Container,
+  nextChildren: Node[],
+  childrenToRemove: Node[],
+  callbacks: EffectData[]
+) => {
+  childrenToRemove.push(...node.vR)
   if (typeof node.tag === 'function') {
     node[STASH][1][STASH_EFFECT]?.forEach((data: EffectData) => callbacks.push(data))
   }
@@ -139,18 +140,13 @@ const getNextChildren = (
     } else {
       if (typeof child.tag === 'function' || child.tag === '') {
         child.c = container
-        const [next, remove, cbs] = getNextChildren(child, container)
-        nextChildren.push(...next)
-        childrenToRemove.push(...remove)
-        callbacks.push(...cbs)
+        getNextChildren(child, container, nextChildren, childrenToRemove, callbacks)
       } else {
         nextChildren.push(child)
         childrenToRemove.push(...child.vR)
       }
     }
   })
-
-  return [nextChildren, childrenToRemove, callbacks]
 }
 
 const findInsertBefore = (node: Node | undefined): ChildNode | null => {
@@ -182,7 +178,10 @@ const applyNode = (node: Node, container: Container) => {
 }
 
 const applyNodeObject = (node: NodeObject, container: Container) => {
-  const [next, remove, callbacks] = getNextChildren(node, container)
+  const next: Node[] = []
+  const remove: Node[] = []
+  const callbacks: EffectData[] = []
+  getNextChildren(node, container, next, remove, callbacks)
   let offset = container.childNodes.length
   const insertBefore = findInsertBefore(node.nN)
   if (insertBefore) {
