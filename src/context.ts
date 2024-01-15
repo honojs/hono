@@ -1,3 +1,5 @@
+import type { FC } from './jsx'
+import type { PropsForRenderer } from './middleware/jsx-renderer'
 import type { HonoRequest } from './request'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types'
 import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html'
@@ -100,6 +102,7 @@ export class Context<
   #preparedHeaders: Record<string, string> | undefined = undefined
   #res: Response | undefined
   #isFresh = true
+  private layout: FC<PropsForRenderer & { Layout: FC }> | undefined = undefined
   private renderer: Renderer = (content: string | Promise<string>) => this.html(content)
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
@@ -139,18 +142,28 @@ export class Context<
     this.#isFresh = false
     if (this.#res && _res) {
       this.#res.headers.delete('content-type')
-      this.#res.headers.forEach((v, k) => {
-        _res.headers.set(k, v)
-      })
+      for (const [k, v] of this.#res.headers.entries()) {
+        if (k === 'set-cookie') {
+          const cookies = this.#res.headers.getSetCookie()
+          _res.headers.delete('set-cookie')
+          for (const cookie of cookies) {
+            _res.headers.append('set-cookie', cookie)
+          }
+        } else {
+          _res.headers.set(k, v)
+        }
+      }
     }
     this.#res = _res
     this.finalized = true
   }
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
+  // @ts-expect-error It is unknown how many arguments the renderer will receive.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render: Renderer = (...args: any[]) => this.renderer(...args)
+
+  setLayout = (layout: FC<PropsForRenderer & { Layout: FC }>) => (this.layout = layout)
+  getLayout = () => this.layout
 
   setRenderer = (renderer: Renderer) => {
     this.renderer = renderer
@@ -350,8 +363,6 @@ export class Context<
   }
 
   notFound = (): Response | Promise<Response> => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     return this.notFoundHandler(this)
   }
 }

@@ -209,6 +209,15 @@ describe('Context header', () => {
     })
     expect(res.headers.get('foo')).toBe('bar')
   })
+
+  it('Should set cookie headers when re-assigning Response to `c.res`', () => {
+    c.res = new Response(null)
+    const res = new Response(null)
+    res.headers.append('set-cookie', 'foo=bar; Path=/')
+    res.headers.append('set-cookie', 'foo2=bar2; Path=/')
+    c.res = res
+    expect(c.res.headers.getSetCookie().length).toBe(2)
+  })
 })
 
 describe('Pass a ResponseInit to respond methods', () => {

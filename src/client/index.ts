@@ -1,2 +1,9 @@
 export { hc } from './client'
-export type { InferResponseType, InferRequestType, Fetch, ClientRequestOptions } from './types'
+export type {
+  InferResponseType,
+  InferRequestType,
+  Fetch,
+  ClientRequestOptions,
+  ClientRequest,
+  ClientResponse,
+} from './types'
