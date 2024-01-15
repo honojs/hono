@@ -216,13 +216,10 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     }
 
     const addClassNameToContext: HtmlEscapedCallback = ({ context, phase }) => {
-      /* eslint-disable @typescript-eslint/ban-ts-comment */
       if (phase === HtmlEscapedCallbackPhase.BeforeDom) {
-        // @ts-ignore XXX: "document" is required `"lib": ["dom"]` in tsconfig, but user may not use it
         const styleSheets = document.styleSheets
         for (let i = 0; i < styleSheets.length; i++) {
           const sheet = styleSheets[i]
-          // @ts-ignore XXX: "Element" is required `"lib": ["dom"]` in tsconfig, but user may not use it
           if ((sheet.ownerNode as Element)?.id === id) {
             if (!sheet.cssRules?.[0]?.cssText?.includes(thisSelector)) {
               sheet.insertRule(`.${thisSelector}{${thisStyleString}}`)
@@ -232,7 +229,6 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
         }
         return
       }
-      /* eslint-enable @typescript-eslint/ban-ts-comment */
 
       if (!contextMap.get(context)) {
         contextMap.set(context, [{}, {}])
