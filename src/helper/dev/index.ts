@@ -14,6 +14,16 @@ interface RouteData {
   isMiddleware: boolean
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const { process, Deno, Bun } = globalThis as any
+const noColor =
+  typeof process !== 'undefined'
+    ? (process?.env?.NO_COLOR ? true : false)
+    : typeof Deno?.noColor === 'boolean'
+    ? (Deno.noColor as boolean)
+    : typeof Bun?.noColor === 'boolean'
+    ? (Bun.noColor as boolean)
+    : false
 const isMiddleware = (handler: Function) => handler.length > 1
 const handlerName = (handler: Function) => {
   return handler.name || (isMiddleware(handler) ? '[middleware]' : '[handler]')
@@ -39,6 +49,7 @@ export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
 }
 
 export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions) => {
+  const colorEnabled = opts?.colorize ?? !noColor
   const routeData: Record<string, RouteData[]> = {}
   let maxMethodLength = 0
   let maxPathLength = 0
@@ -61,7 +72,7 @@ export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOption
       }
       const { method, path, routes } = data
 
-      const methodStr = opts?.colorize ?? true ? `\x1b[32m${method}\x1b[0m` : method
+      const methodStr = colorEnabled ? `\x1b[32m${method}\x1b[0m` : method
       console.log(`${methodStr} ${' '.repeat(maxMethodLength - method.length)} ${path}`)
 
       if (!opts?.verbose) {
