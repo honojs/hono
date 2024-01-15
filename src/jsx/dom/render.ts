@@ -150,9 +150,22 @@ const getNextChildren = (
 }
 
 const findInsertBefore = (node: Node | undefined): ChildNode | null => {
-  return !node
-    ? null
-    : node.e || node.vC?.map(findInsertBefore).filter(Boolean)[0] || findInsertBefore(node.nN)
+  if (!node) {
+    return null
+  } else if (node.e) {
+    return node.e
+  }
+
+  if (node.vC) {
+    for (let i = 0; i < node.vC.length; i++) {
+      const e = findInsertBefore(node.vC[i])
+      if (e) {
+        return e
+      }
+    }
+  }
+
+  return findInsertBefore(node.nN)
 }
 
 const removeNode = (node: Node) => {
