@@ -18,7 +18,9 @@ interface RouteData {
 const { process, Deno, Bun } = globalThis as any
 const noColor =
   typeof process !== 'undefined'
-    ? (process?.env?.NO_COLOR ? true : false)
+    ? process?.env?.NO_COLOR
+      ? true
+      : false
     : typeof Deno?.noColor === 'boolean'
     ? (Deno.noColor as boolean)
     : typeof Bun?.noColor === 'boolean'
