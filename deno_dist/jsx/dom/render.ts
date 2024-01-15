@@ -235,50 +235,49 @@ const build = (
   const vChildrenToRemove: Node[] = []
   let prevNode: Node | undefined
   try {
-    children
-      .flat()
-      .map((c) => buildNode(c))
-      .forEach((child: Node | undefined) => {
-        if (!child) {
-          return
-        } else if (child instanceof Promise) {
-          return
-        }
+    children.flat().forEach((c: Child) => {
+      let child = buildNode(c)
 
-        if (prevNode) {
-          prevNode.nN = child
-        }
-        prevNode = child
+      if (!child) {
+        return
+      } else if (child instanceof Promise) {
+        return
+      }
 
-        let oldChild: Node | undefined
-        const i = oldVChildren.findIndex((c) => c.key === (child as Node).key)
-        if (i !== -1) {
-          oldChild = oldVChildren[i]
-          oldVChildren.splice(i, 1)
-        }
+      if (prevNode) {
+        prevNode.nN = child
+      }
+      prevNode = child
 
-        if (oldChild) {
-          if (isNodeString(child)) {
-            if (!isNodeString(oldChild)) {
-              vChildrenToRemove.push(oldChild)
-            } else {
-              child.e = oldChild.e
-            }
-          } else if (oldChild.tag !== child.tag) {
+      let oldChild: Node | undefined
+      const i = oldVChildren.findIndex((c) => c.key === (child as Node).key)
+      if (i !== -1) {
+        oldChild = oldVChildren[i]
+        oldVChildren.splice(i, 1)
+      }
+
+      if (oldChild) {
+        if (isNodeString(child)) {
+          if (!isNodeString(oldChild)) {
             vChildrenToRemove.push(oldChild)
           } else {
-            oldChild.pP = oldChild.props
-            oldChild.props = child.props
-            oldChild.children = child.children
-            child = oldChild
+            child.e = oldChild.e
           }
+        } else if (oldChild.tag !== child.tag) {
+          vChildrenToRemove.push(oldChild)
+        } else {
+          oldChild.pP = oldChild.props
+          oldChild.props = child.props
+          oldChild.children = child.children
+          child = oldChild
         }
+      }
 
-        if (!isNodeString(child)) {
-          build(child, topLevelErrorHandlerNode)
-        }
-        vChildren.push(child)
-      })
+      if (!isNodeString(child)) {
+        build(child, topLevelErrorHandlerNode)
+      }
+      vChildren.push(child)
+    })
     node.vC = vChildren
     node.vR =
       vChildrenToRemove.length || oldVChildren.length ? [...vChildrenToRemove, ...oldVChildren] : []
