@@ -2,6 +2,7 @@ import { Buffer } from "node:buffer";
 import { inspectRoutes } from '../../helper/dev/index.ts'
 import type { Hono } from '../../hono.ts'
 import type { Env, Schema } from '../../types.ts'
+import { getExtension } from '../../utils/mime.ts'
 import { joinPaths, dirname } from './utils.ts'
 
 /**
@@ -35,10 +36,8 @@ const parseResponseContent = async (response: Response): Promise<string | ArrayB
   const contentType = response.headers.get('Content-Type')
 
   try {
-    if (contentType?.includes('text')) {
+    if (contentType?.includes('text') || contentType?.includes('json')) {
       return await response.text()
-    } else if (contentType?.includes('json')) {
-      return JSON.stringify(await response.json())
     } else {
       return await response.arrayBuffer()
     }
@@ -56,8 +55,10 @@ const determineExtension = (mimeType: string): string => {
     case 'text/xml':
     case 'application/xml':
       return '.xml'
-    default:
-      return '.html'
+    default: {
+      const extension = getExtension(mimeType)
+      return extension || '.html'
+    }
   }
 }
 
