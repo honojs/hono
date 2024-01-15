@@ -1,9 +1,9 @@
 /** @jsxRuntime automatic @jsxImportSource .. */
 import { JSDOM } from 'jsdom'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx } from '..'
-import { useState, useEffect, useCallback, useRef } from '../hooks'
+import { jsx, Fragment } from '..'
 import type { RefObject } from '../hooks'
+import { useState, useEffect, useCallback, useRef } from '../hooks'
 import { render } from '.'
 
 describe('DOM', () => {
@@ -15,21 +15,102 @@ describe('DOM', () => {
     })
     global.document = dom.window.document
     global.HTMLElement = dom.window.HTMLElement
+    global.Text = dom.window.Text
     root = document.getElementById('root') as HTMLElement
   })
 
-  it('simple App', async () => {
+  it('simple App', () => {
     const App = <h1>Hello</h1>
     render(App, root)
     expect(root.innerHTML).toBe('<h1>Hello</h1>')
   })
 
-  it('replace', async () => {
+  it('replace', () => {
     dom.window.document.body.innerHTML = '<div id="root">Existing content</div>'
     root = document.getElementById('root') as HTMLElement
     const App = <h1>Hello</h1>
     render(App, root)
     expect(root.innerHTML).toBe('<h1>Hello</h1>')
+  })
+
+  it('render text directly', () => {
+    const App = () => <>{'Hello'}</>
+    render(<App />, root)
+    expect(root.innerHTML).toBe('Hello')
+  })
+
+  describe('replace content', () => {
+    it('text to text', () => {
+      let setCount: (count: number) => void = () => {}
+      const App = () => {
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        return <>{count}</>
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('0')
+      setCount(1)
+      expect(root.innerHTML).toBe('1')
+    })
+
+    it('text to element', () => {
+      let setCount: (count: number) => void = () => {}
+      const App = () => {
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        return count === 0 ? <>{count}</> : <div>{count}</div>
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('0')
+      setCount(1)
+      expect(root.innerHTML).toBe('<div>1</div>')
+    })
+
+    it('element to element', () => {
+      let setCount: (count: number) => void = () => {}
+      const App = () => {
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        return <div>{count}</div>
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div>0</div>')
+      setCount(1)
+      expect(root.innerHTML).toBe('<div>1</div>')
+    })
+
+    it('element to text to element', () => {
+      let setCount: (count: number) => void = () => {}
+      const App = () => {
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        return count % 2 === 0 ? <div>{count}</div> : <>{count}</>
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div>0</div>')
+      setCount(1)
+      expect(root.innerHTML).toBe('1')
+      setCount(2)
+      expect(root.innerHTML).toBe('<div>2</div>')
+    })
+
+    it('text to child component to text', () => {
+      let setCount: (count: number) => void = () => {}
+      const Child = () => {
+        return <div>Child</div>
+      }
+      const App = () => {
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        return count % 2 === 0 ? <>{count}</> : <Child />
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('0')
+      setCount(1)
+      expect(root.innerHTML).toBe('<div>Child</div>')
+      setCount(2)
+      expect(root.innerHTML).toBe('2')
+    })
   })
 
   it('simple Counter', async () => {
