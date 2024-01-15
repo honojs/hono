@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import type { Context } from '../../index.ts'
 import { replaceUrlParam } from '../../client/utils.ts'
 import { inspectRoutes } from '../../helper/dev/index.ts'
 import type { Hono } from '../../hono.ts'
@@ -36,44 +37,21 @@ interface SSGParam {
 }
 type SSGParams = SSGParam[]
 interface SSGParamsMiddleware {
-  (generateParams: () => SSGParams | Promise<SSGParams>): MiddlewareHandler
-  (isSSG: boolean): MiddlewareHandler
+  (generateParams: (c: Context) => SSGParams | Promise<SSGParams>): MiddlewareHandler
 }
 type AddedSSGDataRequest = Request & {
-  ssgData?:
-    | {
-        ssg: true
-        params: SSGParams
-      }
-    | {
-        ssg: false
-      }
+  ssgParams?: SSGParams
 }
 /**
  * Define SSG Route
  */
-export const ssgParams: SSGParamsMiddleware = (init) => async (c, next) => {
-  ;(c.req.raw as AddedSSGDataRequest).ssgData = await (async () => {
-    if (init === false) {
-      // Don't SSG
-      return {
-        ssg: false,
-      }
-    } else if (init === true) {
-      // Will SSG
-      return {
-        ssg: true,
-        params: [{}],
-      }
-    } else {
-      const params = await init()
-      return {
-        ssg: true,
-        params,
-      }
-    }
-  })()
+export const ssgParams: SSGParamsMiddleware = (generateParams) => async (c, next) => {
+  ;(c.req.raw as AddedSSGDataRequest).ssgParams = await generateParams(c)
   await next()
+}
+
+export interface ToSSGOptions {
+  dir?: string
 }
 
 /**
@@ -99,23 +77,12 @@ export const generateHtmlMap = async <
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
     const forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
     await app.fetch(forGetInfoURLRequest)
-    if (!forGetInfoURLRequest.ssgData) {
-      forGetInfoURLRequest.ssgData =
-        options.default === 'ssr'
-          ? {
-              ssg: false,
-            }
-          : {
-              ssg: true,
-              params: [{}],
-            }
+
+    if (!forGetInfoURLRequest.ssgParams) {
+      forGetInfoURLRequest.ssgParams = [{}]
     }
 
-    if (!forGetInfoURLRequest.ssgData.ssg) {
-      continue // Don't SSG
-    }
-
-    for (const param of forGetInfoURLRequest.ssgData.params) {
+    for (const param of forGetInfoURLRequest.ssgParams) {
       const replacedUrlParam = replaceUrlParam(route.path, param)
       const response = await app.request(replacedUrlParam)
       htmlMap.set(replacedUrlParam, await response.text())
