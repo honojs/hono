@@ -15,7 +15,7 @@ interface RouteData {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { process, Deno, Bun } = globalThis as any
+const { process, Deno } = globalThis as any
 const noColor =
   typeof process !== 'undefined'
     ? process?.env?.NO_COLOR
@@ -23,8 +23,6 @@ const noColor =
       : false
     : typeof Deno?.noColor === 'boolean'
     ? (Deno.noColor as boolean)
-    : typeof Bun?.noColor === 'boolean'
-    ? (Bun.noColor as boolean)
     : false
 const isMiddleware = (handler: Function) => handler.length > 1
 const handlerName = (handler: Function) => {
