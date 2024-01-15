@@ -99,11 +99,16 @@ export const useRef = <T>(initialValue: T | null): RefObject<T> => {
 }
 
 export const use = <T>(promise: Promise<T>): T => {
-  const cachedRes = resolvedPromiseValueMap.get(promise)
+  const cachedRes = resolvedPromiseValueMap.get(promise) as [T] | [undefined, unknown] | undefined
   if (cachedRes) {
-    return cachedRes as T
+    if (cachedRes.length === 2) {
+      throw cachedRes[1]
+    }
+    return cachedRes[0] as T
   }
-  promise.then((res) => resolvedPromiseValueMap.set(promise, res))
+  promise
+    .then((res) => resolvedPromiseValueMap.set(promise, [res]))
+    .catch((e) => resolvedPromiseValueMap.set(promise, [undefined, e]))
 
   const node = nodeStack.at(-1) as NodeObject
   if (!node) {
@@ -113,12 +118,20 @@ export const use = <T>(promise: Promise<T>): T => {
   const promiseArray = (node[STASH][1][STASH_USE] ||= [])
   const hookIndex = node[STASH][0]++
 
-  promise.then((res) => {
-    promiseArray[hookIndex] = [res]
-  })
+  promise
+    .then((res) => {
+      promiseArray[hookIndex] = [res]
+    })
+    .catch((e) => {
+      promiseArray[hookIndex] = [undefined, e]
+    })
 
-  if (promiseArray[hookIndex]) {
-    return promiseArray[hookIndex][0] as T
+  const res = promiseArray[hookIndex]
+  if (res) {
+    if (res.length === 2) {
+      throw res[1]
+    }
+    return res[0] as T
   }
 
   throw promise

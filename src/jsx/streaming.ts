@@ -93,7 +93,7 @@ const SuspenseDomRenderer: FC<{ fallback: any }> = ({ children, fallback }) => {
     if (!(err instanceof Promise)) {
       throw err
     }
-    err.then(retry)
+    err.then(retry).catch(retry)
     return fallback
   }
   return res
