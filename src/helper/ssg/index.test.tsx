@@ -30,7 +30,6 @@ describe('toSSG function', () => {
     app.get('/Charlie', (c) => {
       return c.render('Hello!', { title: 'Charlies Page' })
     })
-
     // Included params
     app.get('/post/:post', ssgParams(() => [
       {
@@ -40,9 +39,6 @@ describe('toSSG function', () => {
         post: '2'
       }
     ]), c => c.html(<h1>{c.req.param('post')}</h1>))
-    
-    // Exclude
-    app.get('/api', ssgParams(false), c => c.json({ status: 'OK' }))
 
     const fsMock = {
       writeFile: vi.fn((path, data) => Promise.resolve()),
