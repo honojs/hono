@@ -6,7 +6,7 @@ const toURLBase64 = (base64String: string): string =>
 
 const str2UInt8Array = (s: string): Uint8Array => {
   const buffer = new Uint8Array(new ArrayBuffer(s.length))
-  for (let i = 0; i < buffer.byteLength; i++) {
+  for (let i = 0, len = buffer.byteLength; i < len; i++) {
     buffer[i] = s.charCodeAt(i)
   }
   return buffer
