@@ -31,10 +31,6 @@ const generateFilePath = (routePath: string, outDir: string, mimeType: string) =
 }
 
 const parseResponseContent = async (response: Response): Promise<string | ArrayBuffer> => {
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
-  }
-
   const contentType = response.headers.get('Content-Type')
 
   try {
