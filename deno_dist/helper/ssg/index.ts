@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
-import type { Context } from '../../index.ts'
 import { replaceUrlParam } from '../../client/utils.ts'
+import type { Context } from '../../context.ts'
 import { inspectRoutes } from '../../helper/dev/index.ts'
 import type { Hono } from '../../hono.ts'
 import type { Env, MiddlewareHandler, Schema } from '../../types.ts'

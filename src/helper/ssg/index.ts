@@ -1,5 +1,5 @@
-import type { Context } from '../..'
 import { replaceUrlParam } from '../../client/utils'
+import type { Context } from '../../context'
 import { inspectRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
 import type { Env, MiddlewareHandler, Schema } from '../../types'
