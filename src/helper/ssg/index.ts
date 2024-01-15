@@ -1,3 +1,4 @@
+import { Context } from '../..'
 import { replaceUrlParam } from '../../client/utils'
 import { inspectRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
@@ -35,7 +36,7 @@ interface SSGParam {
 }
 type SSGParams = SSGParam[]
 interface SSGParamsMiddleware {
-  (generateParams: () => SSGParams | Promise<SSGParams>): MiddlewareHandler
+  (generateParams: (c: Context) => SSGParams | Promise<SSGParams>): MiddlewareHandler
 }
 type AddedSSGDataRequest = Request & {
   ssgParams?: SSGParams
@@ -44,7 +45,7 @@ type AddedSSGDataRequest = Request & {
  * Define SSG Route
  */
 export const ssgParams: SSGParamsMiddleware = (generateParams) => async (c, next) => {
-  ;(c.req.raw as AddedSSGDataRequest).ssgParams = await generateParams()
+  ;(c.req.raw as AddedSSGDataRequest).ssgParams = await generateParams(c)
   await next()
 }
 
