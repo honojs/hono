@@ -111,8 +111,6 @@ export class Node<T> {
 
   search(method: string, path: string): [[T, Params][]] {
     const handlerSets: HandlerParamsSet<T>[] = []
-
-    const params: Record<string, string> = {}
     this.params = {}
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -143,6 +141,7 @@ export class Node<T> {
         }
 
         for (let k = 0, len3 = node.patterns.length; k < len3; k++) {
+          const params: Record<string, string> = {}
           const pattern = node.patterns[k]
 
           // Wildcard
