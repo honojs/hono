@@ -1,4 +1,4 @@
-import { Context } from '../..'
+import type { Context } from '../..'
 import { replaceUrlParam } from '../../client/utils'
 import { inspectRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
@@ -76,7 +76,7 @@ export const generateHtmlMap = async <
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
     const forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
     await app.fetch(forGetInfoURLRequest)
-    
+
     if (!forGetInfoURLRequest.ssgParams) {
       forGetInfoURLRequest.ssgParams = [{}]
     }
