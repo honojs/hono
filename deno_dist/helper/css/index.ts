@@ -96,7 +96,7 @@ const buildStyleString = async (
 ): Promise<[string, string]> => {
   const label = strings[0].match(/^\s*\/\*(.*?)\*\//)?.[1] || ''
   let styleString = ''
-  for (let i = 0; i < strings.length; i++) {
+  for (let i = 0, len = strings.length; i < len; i++) {
     styleString += strings[i]
     let vArray = values[i]
     if (typeof vArray === 'boolean' || vArray === null || vArray === undefined) {
@@ -106,7 +106,7 @@ const buildStyleString = async (
     if (!Array.isArray(vArray)) {
       vArray = [vArray] as CssVariableArrayType
     }
-    for (let j = 0; j < vArray.length; j++) {
+    for (let j = 0, len = vArray.length; j < len; j++) {
       let value = (
         vArray[j] instanceof Promise ? await vArray[j] : vArray[j]
       ) as CssVariableBasicType
@@ -128,8 +128,9 @@ const buildStyleString = async (
             selectors.push(...(value as CssClassName)[SELECTORS])
             externalClassNames.push(...(value as CssClassName)[EXTERNAL_CLASS_NAMES])
             value = (value as CssClassName)[STYLE_STRING]
-            if (value.length > 0) {
-              const lastChar = value[value.length - 1]
+            const valueLen = value.length
+            if (valueLen > 0) {
+              const lastChar = value[valueLen - 1]
               if (lastChar !== ';' && lastChar !== '}') {
                 value += ';'
               }
@@ -220,7 +221,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       if (phase === HtmlEscapedCallbackPhase.BeforeDom) {
         // @ts-ignore XXX: "document" is required `"lib": ["dom"]` in tsconfig, but user may not use it
         const styleSheets = document.styleSheets
-        for (let i = 0; i < styleSheets.length; i++) {
+        for (let i = 0, len = styleSheets.length; i < len; i++) {
           const sheet = styleSheets[i]
           // @ts-ignore XXX: "Element" is required `"lib": ["dom"]` in tsconfig, but user may not use it
           if ((sheet.ownerNode as Element)?.id === id) {
@@ -272,7 +273,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     ...args: (string | boolean | null | undefined | Promise<string | boolean | null | undefined>)[]
   ): Promise<string> => {
     const resolvedArgs = await Promise.all(args)
-    for (let i = 0; i < resolvedArgs.length; i++) {
+    for (let i = 0, len = resolvedArgs.length; i < len; i++) {
       const arg = resolvedArgs[i]
       if (typeof arg === 'string' && !(arg as CssClassName)[IS_CSS_CLASS_NAME]) {
         const externalClassName = new String(arg) as CssClassName
