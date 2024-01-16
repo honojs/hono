@@ -1,5 +1,5 @@
-import { nodeStack, update, STASH } from '../dom/render'
-import type { NodeObject } from '../dom/render'
+import { buildDataStack, update, build, STASH } from '../dom/render'
+import type { Node, NodeObject, Context, PendingType } from '../dom/render'
 
 type UpdateStateFunction<T> = (newState: T | ((currentState: T) => T)) => void
 
@@ -16,14 +16,54 @@ export type EffectData = [
 
 const resolvedPromiseValueMap = new WeakMap<Promise<unknown>, unknown>()
 
+type PendingStackItem = [PendingType, Map<Node, Function>]
+const pendingStack: PendingStackItem[] = []
+const runCallback = (type: PendingType, callback: Function): void => {
+  const map = new Map()
+  pendingStack.push([type, map])
+  try {
+    callback()
+  } finally {
+    pendingStack.pop()
+  }
+  map.forEach((cb) => cb())
+}
+
+export const startTransition = (callback: () => void): void => {
+  runCallback(1, callback)
+}
+const startTransitionHook = (callback: () => void): void => {
+  runCallback(2, callback)
+}
+
+export const useTransition = (): [boolean, (callback: () => void) => void] => {
+  const buildData = buildDataStack.at(-1) as [Context, NodeObject]
+  if (!buildData) {
+    return [false, () => {}]
+  }
+  const [context] = buildData
+  return [context[0] === 2, startTransitionHook]
+}
+
+const setShadow = (node: Node) => {
+  if (node.vC) {
+    node.s = node.vC
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(node as any).vC = undefined
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(node as any).s?.forEach(setShadow)
+}
+
 export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunction<T>] => {
   const resolveInitialState = () =>
     typeof initialState === 'function' ? (initialState as () => T)() : initialState
 
-  const node = nodeStack.at(-1) as NodeObject
-  if (!node) {
+  const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
+  if (!buildData) {
     return [resolveInitialState(), () => {}]
   }
+  const [, node] = buildData
 
   const stateArray = (node[STASH][1][STASH_SATE] ||= [])
   const hookIndex = node[STASH][0]++
@@ -35,19 +75,53 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
       if (typeof newState === 'function') {
         newState = (newState as (currentState: T) => T)(stateData[0])
       }
+
       if (newState !== stateData[0]) {
         stateData[0] = newState
-        update(node)
+        if (pendingStack.length) {
+          const [type, map] = pendingStack.at(-1) as PendingStackItem
+          map.set(node, () => {
+            const context: Context = [type, false]
+            let promise: Promise<Node[]> | undefined
+            let done: ((lastVC: Node[]) => void) | undefined
+            if (type === 2) {
+              promise = new Promise<Node[]>((resolve) => (done = resolve))
+              setTimeout(async () => {
+                const shadowNode = Object.assign({}, node) as NodeObject
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ;(shadowNode as any).vC = undefined
+                build([], shadowNode, undefined)
+                setShadow(shadowNode)
+
+                const lastVC = await promise
+                // `node` is not rerendered after current transition
+                if (lastVC === node.vC) {
+                  node.s = shadowNode.s
+                  update([], node)
+                }
+              }, 10)
+            }
+
+            update(context, node)
+            if (done) {
+              done(node.vC)
+            }
+          })
+        } else {
+          update([], node)
+        }
       }
     },
   ])
 }
 
 export const useEffect = (effect: () => void | (() => void), deps?: readonly unknown[]): void => {
-  const node = nodeStack.at(-1) as NodeObject
-  if (!node) {
+  const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
+  if (!buildData) {
     return
   }
+  const [, node] = buildData
 
   const effectDepsArray = (node[STASH][1][STASH_EFFECT] ||= [])
   const hookIndex = node[STASH][0]++
@@ -76,10 +150,11 @@ export const useCallback = <T extends (...args: unknown[]) => unknown>(
   callback: T,
   deps: readonly unknown[]
 ): T => {
-  const node = nodeStack.at(-1) as NodeObject
-  if (!node) {
+  const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
+  if (!buildData) {
     return callback
   }
+  const [, node] = buildData
 
   const callbackArray = (node[STASH][1][STASH_CALLBACK] ||= [])
   const hookIndex = node[STASH][0]++
@@ -110,10 +185,11 @@ export const use = <T>(promise: Promise<T>): T => {
     .then((res) => resolvedPromiseValueMap.set(promise, [res]))
     .catch((e) => resolvedPromiseValueMap.set(promise, [undefined, e]))
 
-  const node = nodeStack.at(-1) as NodeObject
-  if (!node) {
+  const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
+  if (!buildData) {
     throw promise
   }
+  const [, node] = buildData
 
   const promiseArray = (node[STASH][1][STASH_USE] ||= [])
   const hookIndex = node[STASH][0]++
