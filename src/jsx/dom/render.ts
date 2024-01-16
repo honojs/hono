@@ -2,8 +2,8 @@ import type { FC, Child, Props } from '..'
 import type { JSXNode } from '..'
 import type { HtmlEscapedString } from '../../utils/html'
 import { HtmlEscapedCallbackPhase } from '../../utils/html'
-import type { EffectData } from '../hooks/impl'
-import { STASH_EFFECT } from '../hooks/impl'
+import type { EffectData } from '../hooks'
+import { STASH_EFFECT } from '../hooks'
 
 const eventAliasMap: Record<string, string> = {
   change: 'input',
