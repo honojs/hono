@@ -64,7 +64,6 @@ export const generateHtmlMap = async <
   BasePath extends string = '/'
 >(
   app: Hono<E, S, BasePath>,
-  options: ToSSGOptions
 ): Promise<Map<string, string>> => {
   const htmlMap = new Map<string, string>()
 
@@ -153,7 +152,7 @@ export interface ToSSGAdaptorInterface<
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
   try {
     const outputDir = options?.dir ?? './static'
-    const maps = await generateHtmlMap(app, options ?? {})
+    const maps = await generateHtmlMap(app)
     const files = await saveHtmlToLocal(maps, fs, outputDir)
     return { success: true, files }
   } catch (error) {
