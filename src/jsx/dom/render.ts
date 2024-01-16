@@ -218,7 +218,7 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
   let offset = container.childNodes.length
   const insertBefore = findInsertBefore(node.nN)
   if (insertBefore) {
-    for (let i = 0; i < container.childNodes.length; i++) {
+    for (let i = 0; i < offset; i++) {
       if (container.childNodes[i] === insertBefore) {
         offset = i
         break
