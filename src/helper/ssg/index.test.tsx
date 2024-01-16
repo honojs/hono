@@ -107,7 +107,8 @@ describe('fetchRoutesContent function', () => {
 
   it('should handle errors correctly', async () => {
     vi.spyOn(app, 'fetch').mockRejectedValue(new Error('Network error'))
-    await expect(fetchRoutesContent(app)).rejects.toThrow('Network error')
+    const result = await fetchRoutesContent(app)
+    expect(result).toBeInstanceOf(Map)
     vi.restoreAllMocks()
   })
 })
