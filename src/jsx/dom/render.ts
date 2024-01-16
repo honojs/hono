@@ -131,16 +131,16 @@ const invokeTag = (context: Context, node: NodeObject): Child[] => {
   node[STASH][0] = 0
   buildDataStack.push([context, node])
   const func = (node.tag as HasRenderToDom)[RENDER_TO_DOM] || node.tag
-  let res
   try {
-    res = func.call(null, {
-      ...node.props,
-      children: node.children,
-    })
+    return [
+      func.call(null, {
+        ...node.props,
+        children: node.children,
+      }),
+    ]
   } finally {
     buildDataStack.pop()
   }
-  return [res]
 }
 
 const getNextChildren = (
