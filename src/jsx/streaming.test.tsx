@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { JSDOM } from 'jsdom'
 import { raw } from '../helper/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'

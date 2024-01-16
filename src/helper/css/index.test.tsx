@@ -1,5 +1,6 @@
 import { Hono } from '../../'
 import { html } from '../../helper/html'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, Fragment, JSXNode } from '../../jsx'
 import { Suspense, renderToReadableStream } from '../../jsx/streaming'
 import type { HtmlEscapedString } from '../../utils/html'
@@ -97,7 +98,7 @@ describe('CSS Helper', () => {
     it('Should render CSS with variable', async () => {
       const headerClass = css`
         background-color: blue;
-        content: '${'I\'m a variable!'}';
+        content: '${"I'm a variable!"}';
       `
       const template = (
         <>
@@ -163,7 +164,7 @@ describe('CSS Helper', () => {
         background-color: blue;
         content: '${(async () => {
           await new Promise((resolve) => setTimeout(resolve, 100))
-          return 'I\'m an async variable!'
+          return "I'm an async variable!"
         })()}';
       `
       const template = (
