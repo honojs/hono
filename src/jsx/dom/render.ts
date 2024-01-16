@@ -48,7 +48,6 @@ export const nodeStack: Node[] = []
 const isNodeString = (node: Node): node is NodeString => Array.isArray(node)
 
 const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: Props) => {
-  attributes ||= {}
   for (const [key, value] of Object.entries(attributes)) {
     if (!oldAttributes || oldAttributes[key] !== value) {
       if (key === 'dangerouslySetInnerHTML' && value) {

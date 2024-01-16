@@ -2,6 +2,7 @@ import { Buffer } from "node:buffer";
 import { inspectRoutes } from '../../helper/dev/index.ts'
 import type { Hono } from '../../hono.ts'
 import type { Env, Schema } from '../../types.ts'
+import { getExtension } from '../../utils/mime.ts'
 import { joinPaths, dirname } from './utils.ts'
 
 /**
@@ -25,24 +26,55 @@ export interface ToSSGResult {
   error?: Error
 }
 
-const generateFilePath = (routePath: string, outDir: string) => {
-  const fileName = routePath === '/' ? 'index.html' : routePath + '.html'
+const generateFilePath = (routePath: string, outDir: string, mimeType: string) => {
+  const extension = determineExtension(mimeType)
+  const fileName = routePath === '/' ? `index${extension}` : `${routePath}${extension}`
   return joinPaths(outDir, fileName)
+}
+
+const parseResponseContent = async (response: Response): Promise<string | ArrayBuffer> => {
+  const contentType = response.headers.get('Content-Type')
+
+  try {
+    if (contentType?.includes('text') || contentType?.includes('json')) {
+      return await response.text()
+    } else {
+      return await response.arrayBuffer()
+    }
+  } catch (error) {
+    throw new Error(
+      `Error processing response: ${error instanceof Error ? error.message : 'Unknown error'}`
+    )
+  }
+}
+
+const determineExtension = (mimeType: string): string => {
+  switch (mimeType) {
+    case 'text/html':
+      return '.html'
+    case 'text/xml':
+    case 'application/xml':
+      return '.xml'
+    default: {
+      const extension = getExtension(mimeType)
+      return extension || '.html'
+    }
+  }
 }
 
 /**
  * @experimental
- * `generateHtmlMap` is an experimental feature.
+ * `fetchRoutesContent` is an experimental feature.
  * The API might be changed.
  */
-export const generateHtmlMap = async <
+export const fetchRoutesContent = async <
   E extends Env = Env,
   S extends Schema = {},
   BasePath extends string = '/'
 >(
   app: Hono<E, S, BasePath>
-): Promise<Map<string, string>> => {
-  const htmlMap = new Map<string, string>()
+): Promise<Map<string, { content: string | ArrayBuffer; mimeType: string }>> => {
+  const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
   const baseURL = 'http://localhost'
 
   for (const route of inspectRoutes(app)) {
@@ -50,9 +82,10 @@ export const generateHtmlMap = async <
 
     const url = new URL(route.path, baseURL).toString()
     const response = await app.fetch(new Request(url))
-    const html = await response.text()
+    const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
+    const content = await parseResponseContent(response)
 
-    htmlMap.set(route.path, html)
+    htmlMap.set(route.path, { content, mimeType })
   }
 
   return htmlMap
@@ -60,22 +93,26 @@ export const generateHtmlMap = async <
 
 /**
  * @experimental
- * `saveHtmlToLocal` is an experimental feature.
+ * `saveContentToFiles` is an experimental feature.
  * The API might be changed.
  */
-export const saveHtmlToLocal = async (
-  htmlMap: Map<string, string>,
+export const saveContentToFiles = async (
+  htmlMap: Map<string, { content: string | ArrayBuffer; mimeType: string }>,
   fsModule: FileSystemModule,
   outDir: string
 ): Promise<string[]> => {
   const files: string[] = []
 
-  for (const [routePath, html] of htmlMap) {
-    const filePath = generateFilePath(routePath, outDir)
+  for (const [routePath, { content, mimeType }] of htmlMap) {
+    const filePath = generateFilePath(routePath, outDir, mimeType)
     const dirPath = dirname(filePath)
 
     await fsModule.mkdir(dirPath, { recursive: true })
-    await fsModule.writeFile(filePath, html)
+    if (typeof content === 'string') {
+      await fsModule.writeFile(filePath, content)
+    } else if (content instanceof ArrayBuffer) {
+      await fsModule.writeFile(filePath, Buffer.from(content))
+    }
     files.push(filePath)
   }
 
@@ -120,8 +157,8 @@ export interface ToSSGAdaptorInterface<
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
   try {
     const outputDir = options?.dir ?? './static'
-    const maps = await generateHtmlMap(app)
-    const files = await saveHtmlToLocal(maps, fs, outputDir)
+    const maps = await fetchRoutesContent(app)
+    const files = await saveContentToFiles(maps, fs, outputDir)
     return { success: true, files }
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error(String(error))

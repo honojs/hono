@@ -36,7 +36,8 @@ const verifySignature = async (
   try {
     const signatureBinStr = atob(base64Signature)
     const signature = new Uint8Array(signatureBinStr.length)
-    for (let i = 0; i < signatureBinStr.length; i++) signature[i] = signatureBinStr.charCodeAt(i)
+    for (let i = 0, len = signatureBinStr.length; i < len; i++)
+      signature[i] = signatureBinStr.charCodeAt(i)
     return await crypto.subtle.verify(algorithm, secret, signature, new TextEncoder().encode(value))
   } catch (e) {
     return false
