@@ -1,11 +1,10 @@
 import { raw } from '../helper/html/index.ts'
-import {
-  HtmlEscapedCallbackPhase,
-  resolveCallback,
-  type HtmlEscapedString,
-  type HtmlEscapedCallback,
-} from '../utils/html.ts'
+import type { HtmlEscapedString, HtmlEscapedCallback } from '../utils/html.ts'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html.ts'
+import type { HasRenderToDom } from './dom/render.ts'
+import { RENDER_TO_DOM, ERROR_HANDLER } from './dom/render.ts'
 import type { FC, Child } from './index.ts'
+import { Fragment } from './index.ts'
 
 let errorBoundaryCounter = 0
 
@@ -181,3 +180,22 @@ d.remove()
     return raw(resArray.join(''))
   }
 }
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const ErrorBoundaryDomRenderer: FC<{
+  fallback?: Child
+  fallbackRender?: FallbackRender
+  onError?: ErrorHandler
+}> = ({ children, fallback, fallbackRender, onError }) => {
+  const res = Fragment({ children })
+  ;(res as any)[ERROR_HANDLER] = (err: any) => {
+    if (err instanceof Promise) {
+      throw err
+    }
+    onError?.(err)
+    return fallbackRender?.(err) || fallback
+  }
+  return res
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+;(ErrorBoundary as HasRenderToDom)[RENDER_TO_DOM] = ErrorBoundaryDomRenderer
