@@ -77,17 +77,41 @@ export const fetchRoutesContent = async <
   const baseURL = 'http://localhost'
 
   for (const route of inspectRoutes(app)) {
-    if (route.isMiddleware) continue
+    if (route.isMiddleware || isDynamicRoute(route.path)) continue
 
-    const url = new URL(route.path, baseURL).toString()
-    const response = await app.fetch(new Request(url))
-    const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
-    const content = await parseResponseContent(response)
-
-    htmlMap.set(route.path, { content, mimeType })
+    const contentData = await fetchRouteContent(app, route.path, baseURL)
+    if (contentData) {
+      htmlMap.set(route.path, contentData)
+    }
   }
 
   return htmlMap
+}
+
+interface RouteContent {
+  content: string | ArrayBuffer;
+  mimeType: string;
+}
+
+const fetchRouteContent = async <E extends Env = Env, S extends Schema = {}>(
+  app: Hono<E, S>,
+  path: string,
+  baseURL: string
+): Promise<RouteContent | null> => {
+  try {
+    const url = new URL(path, baseURL).toString()
+    const response = await app.fetch(new Request(url))
+    const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
+    const content = await parseResponseContent(response)
+    return { content, mimeType }
+  } catch (error) {
+    console.error(`Error fetching content for path: ${path}`, error)
+    return null
+  }
+}
+
+const isDynamicRoute = (path: string): boolean => {
+  return /:\w+|\*/.test(path)
 }
 
 /**

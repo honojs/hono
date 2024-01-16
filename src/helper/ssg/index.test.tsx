@@ -150,3 +150,28 @@ describe('saveContentToFiles function', () => {
   })
     
 })
+
+describe('Dynamic route handling', () => {
+  let app: Hono
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/shops/:id', (c) => c.html('Shop Page'))
+    app.get('/shops/:id/:comments([0-9]+)', (c) => c.html('Comments Page'))
+    app.get('/foo/*', (c) => c.html('Foo Page'))
+  })
+
+  it('should skip /shops/:id dynamic route', async () => {
+    const htmlMap = await fetchRoutesContent(app)
+    expect(htmlMap.has('/shops/:id')).toBeFalsy()
+  })
+
+  it('should skip /shops/:id/:comments([0-9]+) dynamic route', async () => {
+    const htmlMap = await fetchRoutesContent(app)
+    expect(htmlMap.has('/shops/:id/:comments([0-9]+)')).toBeFalsy()
+  })
+
+  it('should skip /foo/* dynamic route', async () => {
+    const htmlMap = await fetchRoutesContent(app)
+    expect(htmlMap.has('/foo/*')).toBeFalsy()
+  })
+})
