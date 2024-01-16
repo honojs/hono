@@ -3,7 +3,7 @@ import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html.ts'
 import type { HtmlEscapedString } from '../utils/html.ts'
 import { childrenToString } from './components.ts'
 import { Suspense as SuspenseDomRenderer } from './dom/components.ts'
-import { RENDER_TO_DOM, nodeStack, STASH } from './dom/render.ts'
+import { RENDER_TO_DOM, buildDataStack, STASH } from './dom/render.ts'
 import type { HasRenderToDom, NodeObject } from './dom/render.ts'
 import type { FC, Child } from './index.ts'
 
@@ -28,20 +28,20 @@ export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) =>
   // for use() hook
   const stackNode = { [STASH]: [0, []] } as unknown as NodeObject
   const popNodeStack = (value?: unknown) => {
-    nodeStack.pop()
+    buildDataStack.pop()
     return value
   }
 
   try {
     stackNode[STASH][0] = 0
-    nodeStack.push(stackNode)
+    buildDataStack.push([[], stackNode])
     resArray = children.map((c) => c.toString()) as HtmlEscapedString[]
   } catch (e) {
     if (e instanceof Promise) {
       resArray = [
         e.then(() => {
           stackNode[STASH][0] = 0
-          nodeStack.push(stackNode)
+          buildDataStack.push([[], stackNode])
           return childrenToString(children as Child[]).then(popNodeStack)
         }),
       ] as Promise<HtmlEscapedString[]>[]
