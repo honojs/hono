@@ -89,8 +89,8 @@ export const fetchRoutesContent = async <
 }
 
 interface RouteContent {
-  content: string | ArrayBuffer;
-  mimeType: string;
+  content: string | ArrayBuffer
+  mimeType: string
 }
 
 const fetchRouteContent = async <E extends Env = Env, S extends Schema = {}>(
