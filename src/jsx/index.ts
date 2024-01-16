@@ -1,7 +1,11 @@
 import { raw } from '../helper/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html'
+import { createContextProviderFunction } from './dom/context'
+import type { Context } from './dom/context'
+import { RENDER_TO_DOM } from './dom/render'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
+
 export { ErrorBoundary } from './components'
 export { Suspense } from './streaming'
 export {
@@ -15,6 +19,8 @@ export {
   useDeferredValue,
 } from './hooks'
 export type { RefObject } from './hooks'
+export { useContext } from './dom/context'
+export type { Context } from './dom/context'
 
 export const HONO_COMPONENT = 'hono-component'
 export const HONO_COMPONENT_ID = 'hono-component-id'
@@ -320,14 +326,9 @@ export const Fragment = ({
   ) as never
 }
 
-export interface Context<T> {
-  values: T[]
-  Provider: FC<{ value: T }>
-}
-
 export const createContext = <T>(defaultValue: T): Context<T> => {
   const values = [defaultValue]
-  return {
+  const context: Context<T> = {
     values,
     Provider(props): HtmlEscapedString | Promise<HtmlEscapedString> {
       values.push(props.value)
@@ -352,8 +353,7 @@ export const createContext = <T>(defaultValue: T): Context<T> => {
       }
     },
   }
-}
-
-export const useContext = <T>(context: Context<T>): T => {
-  return context.values[context.values.length - 1]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(context.Provider as any)[RENDER_TO_DOM] = createContextProviderFunction(values)
+  return context
 }
