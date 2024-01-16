@@ -233,10 +233,8 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
     if (isNodeString(child)) {
       if (child.e) {
         child.e.textContent = child[0]
-      } else {
-        child.e = document.createTextNode(child[0])
       }
-      el = child.e
+      el = child.e ||= document.createTextNode(child[0])
     } else {
       el = child.e ||= document.createElement(child.tag as string)
       applyProps(el as HTMLElement, child.props, child.pP)
