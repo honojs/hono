@@ -45,6 +45,14 @@ export const useTransition = (): [boolean, (callback: () => void) => void] => {
   return [context[0] === 2, startTransitionHook]
 }
 
+export const useDeferredValue = <T>(value: T): T => {
+  const buildData = buildDataStack.at(-1) as [Context, NodeObject]
+  if (buildData) {
+    buildData[0][0] = 1
+  }
+  return value
+}
+
 const setShadow = (node: Node) => {
   if (node.vC) {
     node.s = node.vC

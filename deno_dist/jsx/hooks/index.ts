@@ -6,5 +6,6 @@ export {
   use,
   startTransition,
   useTransition,
+  useDeferredValue,
 } from './impl.ts'
 export type { RefObject } from './impl.ts'
