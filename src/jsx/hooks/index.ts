@@ -143,11 +143,8 @@ export const useEffect = (effect: () => void | (() => void), deps?: readonly unk
     const data: EffectData = [
       deps,
       () => {
-        data[1] = undefined
-        const cleanup = effect()
-        if (cleanup) {
-          data[2] = cleanup
-        }
+        data[1] = undefined // clear this effect in order to avoid calling effect twice
+        data[2] = effect() as (() => void) | undefined
       },
       undefined,
     ]
