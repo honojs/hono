@@ -5,7 +5,7 @@ import { JSDOM } from 'jsdom'
 import { jsx, Fragment } from '..'
 import { Suspense } from '../dom'
 import { render } from '../dom'
-import { useState, use, startTransition, useTransition, useDeferredValue } from './impl'
+import { useState, use, startTransition, useTransition, useDeferredValue } from '.'
 
 describe('startTransition()', () => {
   let dom: JSDOM

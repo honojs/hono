@@ -4,6 +4,17 @@ import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements.ts'
 export { ErrorBoundary } from './components.ts'
 export { Suspense } from './streaming.ts'
+export {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  use,
+  startTransition,
+  useTransition,
+  useDeferredValue,
+} from './hooks/index.ts'
+export type { RefObject } from './hooks/index.ts'
 
 export const HONO_COMPONENT = 'hono-component'
 export const HONO_COMPONENT_ID = 'hono-component-id'

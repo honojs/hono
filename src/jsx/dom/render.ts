@@ -2,8 +2,8 @@ import type { FC, Child, Props } from '..'
 import type { JSXNode } from '..'
 import type { HtmlEscapedString } from '../../utils/html'
 import { HtmlEscapedCallbackPhase } from '../../utils/html'
-import type { EffectData } from '../hooks/impl'
-import { STASH_EFFECT } from '../hooks/impl'
+import type { EffectData } from '../hooks'
+import { STASH_EFFECT } from '../hooks'
 
 const eventAliasMap: Record<string, string> = {
   change: 'input',
@@ -131,16 +131,16 @@ const invokeTag = (context: Context, node: NodeObject): Child[] => {
   node[STASH][0] = 0
   buildDataStack.push([context, node])
   const func = (node.tag as HasRenderToDom)[RENDER_TO_DOM] || node.tag
-  let res
   try {
-    res = func.call(null, {
-      ...node.props,
-      children: node.children,
-    })
+    return [
+      func.call(null, {
+        ...node.props,
+        children: node.children,
+      }),
+    ]
   } finally {
     buildDataStack.pop()
   }
-  return [res]
 }
 
 const getNextChildren = (
@@ -218,7 +218,7 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
   let offset = container.childNodes.length
   const insertBefore = findInsertBefore(node.nN)
   if (insertBefore) {
-    for (let i = 0; i < container.childNodes.length; i++) {
+    for (let i = 0; i < offset; i++) {
       if (container.childNodes[i] === insertBefore) {
         offset = i
         break
@@ -233,10 +233,8 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
     if (isNodeString(child)) {
       if (child.e) {
         child.e.textContent = child[0]
-      } else {
-        child.e = document.createTextNode(child[0])
       }
-      el = child.e
+      el = child.e ||= document.createTextNode(child[0])
     } else {
       el = child.e ||= document.createElement(child.tag as string)
       applyProps(el as HTMLElement, child.props, child.pP)
@@ -246,8 +244,8 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
       container.insertBefore(el, container.childNodes[offset] || null)
     }
   }
-  remove?.forEach(removeNode)
-  callbacks?.forEach(([, cb]) => cb?.())
+  remove.forEach(removeNode)
+  callbacks.forEach(([, cb]) => cb?.())
 }
 
 export const build = (
@@ -288,7 +286,7 @@ export const build = (
             if (!isNodeString(oldChild)) {
               vChildrenToRemove.push(oldChild)
             } else {
-              oldChild[0] = child[0]
+              oldChild[0] = child[0] // update text content
               child = oldChild
             }
           } else if (oldChild.tag !== child.tag) {
