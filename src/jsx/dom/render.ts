@@ -244,8 +244,8 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
       container.insertBefore(el, container.childNodes[offset] || null)
     }
   }
-  remove?.forEach(removeNode)
-  callbacks?.forEach(([, cb]) => cb?.())
+  remove.forEach(removeNode)
+  callbacks.forEach(([, cb]) => cb?.())
 }
 
 export const build = (
