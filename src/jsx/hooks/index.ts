@@ -98,11 +98,12 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
                 const shadowNode = Object.assign({}, node) as NodeObject
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                ;(shadowNode as any).vC = undefined
+                ;(shadowNode as any).vC = undefined // delete the prev build data and build with clean state
                 build([], shadowNode, undefined)
-                setShadow(shadowNode)
+                setShadow(shadowNode) // save the `shadowNode.vC` of the virtual DOM of the build result as a result of shadow virtual DOM `shadowNode.s`
 
-                const lastVC = await promise
+                const lastVC = await promise // wait for the first render with "pending" state
+
                 // `node` is not rerendered after current transition
                 if (lastVC === node.vC) {
                   node.s = shadowNode.s
