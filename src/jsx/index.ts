@@ -3,6 +3,7 @@ import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
 export { ErrorBoundary } from './components'
+export { Suspense } from './streaming'
 
 export const HONO_COMPONENT = 'hono-component'
 export const HONO_COMPONENT_ID = 'hono-component-id'
@@ -229,11 +230,25 @@ class JSXFragmentNode extends JSXNode {
   }
 }
 
-export { jsxFn as jsx }
-const jsxFn = (
+export const jsx = (
   tag: string | Function,
   props: Props,
   ...children: (string | HtmlEscapedString)[]
+): JSXNode => {
+  let key
+  if (props) {
+    key = props?.key
+    delete props['key']
+  }
+  const node = jsxFn(tag, props, children)
+  node.key = key
+  return node
+}
+
+export const jsxFn = (
+  tag: string | Function,
+  props: Props,
+  children: (string | HtmlEscapedString)[]
 ): JSXNode => {
   if (typeof tag === 'function') {
     return new JSXFunctionNode(tag, props, children)
@@ -281,11 +296,17 @@ export const memo = <T>(
   }) as FC<T>
 }
 
-export const Fragment = (props: {
+export const Fragment = ({
+  children,
+}: {
   key?: string
   children?: Child | HtmlEscapedString
 }): HtmlEscapedString => {
-  return new JSXFragmentNode('', {}, props.children ? [props.children] : []) as never
+  return new JSXFragmentNode(
+    '',
+    {},
+    Array.isArray(children) ? children : children ? [children] : []
+  ) as never
 }
 
 export interface Context<T> {
