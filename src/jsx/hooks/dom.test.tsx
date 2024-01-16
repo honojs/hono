@@ -217,7 +217,7 @@ describe('useDeferredValue()', () => {
   it('deferred', async () => {
     const promiseMap = {} as Record<number, Promise<number>>
     const getPromise = (count: number) => {
-      return promiseMap[count] ||= new Promise((r) => setTimeout(() => r(count+1)))
+      return (promiseMap[count] ||= new Promise((r) => setTimeout(() => r(count + 1))))
     }
     const ShowCount = ({ count }: { count: number }) => {
       if (count === 0) return <div>0</div>
