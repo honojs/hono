@@ -102,6 +102,7 @@ describe('JSX middleware', () => {
     }
 
     app.get('/', (c) => {
+      // prettier-ignore
       return c.html(
         html`<html><body>${(<AsyncComponent />)}</body></html>`
       )
