@@ -286,7 +286,7 @@ export const build = (
             if (!isNodeString(oldChild)) {
               vChildrenToRemove.push(oldChild)
             } else {
-              oldChild[0] = child[0]
+              oldChild[0] = child[0] // update text content
               child = oldChild
             }
           } else if (oldChild.tag !== child.tag) {
