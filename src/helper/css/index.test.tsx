@@ -1,3 +1,4 @@
+/* eslint-disable quotes */
 import { Hono } from '../../'
 import { html } from '../../helper/html'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
