@@ -24,6 +24,7 @@ export type NodeObject = {
   nN: Node | undefined // next node
   vC: Node[] // virtual dom children
   vR: Node[] // virtual dom children to remove
+  s?: Node[] // shadow virtual dom children
   c: Container | undefined // container
   e: HTMLElement | Text | undefined // rendered element
   [STASH]: [
@@ -41,9 +42,21 @@ type NodeString = [string] & {
   key: undefined
   tag: undefined
 }
-type Node = NodeString | NodeObject
+export type Node = NodeString | NodeObject
 
-export const nodeStack: Node[] = []
+export type PendingType =
+  | 0 // no pending
+  | 1 // global
+  | 2 // hook
+export type Context =
+  | [
+      PendingType, // PendingType
+      boolean // got an error
+    ]
+  | [PendingType]
+  | []
+
+export const buildDataStack: [Context, Node][] = []
 
 const isNodeString = (node: Node): node is NodeString => Array.isArray(node)
 
@@ -108,9 +121,15 @@ const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: P
   }
 }
 
-const invokeTag = (node: NodeObject): Child => {
+const invokeTag = (context: Context, node: NodeObject): Child[] => {
+  if (node.s) {
+    const res = node.s
+    node.s = undefined
+    return res
+  }
+
   node[STASH][0] = 0
-  nodeStack.push(node)
+  buildDataStack.push([context, node])
   const func = (node.tag as HasRenderToDom)[RENDER_TO_DOM] || node.tag
   let res
   try {
@@ -119,9 +138,9 @@ const invokeTag = (node: NodeObject): Child => {
       children: node.children,
     })
   } finally {
-    nodeStack.pop()
+    buildDataStack.pop()
   }
-  return res
+  return [res]
 }
 
 const getNextChildren = (
@@ -231,13 +250,14 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
   callbacks?.forEach(([, cb]) => cb?.())
 }
 
-const build = (
+export const build = (
+  context: Context,
   node: NodeObject,
   topLevelErrorHandlerNode: NodeObject | undefined,
   children?: Child[]
 ): void => {
   let errorHandler: ErrorHandler | undefined
-  children ||= typeof node.tag == 'function' ? [invokeTag(node)] : node.children
+  children ||= typeof node.tag == 'function' ? invokeTag(context, node) : node.children
   if ((children[0] as JSXNode)?.tag === '') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     errorHandler = (children[0] as any)[ERROR_HANDLER] as ErrorHandler
@@ -282,7 +302,7 @@ const build = (
         }
 
         if (!isNodeString(child)) {
-          build(child, topLevelErrorHandlerNode)
+          build(context, child, topLevelErrorHandlerNode)
         }
         vChildren.push(child)
       }
@@ -292,9 +312,14 @@ const build = (
     node.vR = vChildrenToRemove
   } catch (e) {
     if (errorHandler) {
-      const fallback = errorHandler(e, () => update(topLevelErrorHandlerNode as NodeObject))
+      const fallback = errorHandler(e, () => update([], topLevelErrorHandlerNode as NodeObject))
       if (fallback) {
-        return build(node, topLevelErrorHandlerNode, [fallback])
+        if (context[0] === 1) {
+          context[1] = true
+        } else {
+          build(context, node, topLevelErrorHandlerNode, [fallback])
+        }
+        return
       }
     }
     throw e
@@ -321,14 +346,16 @@ const replaceContainer = (node: NodeObject, from: DocumentFragment, to: Containe
   }
 }
 
-export const update = (node: NodeObject) => {
-  build(node, undefined)
-  apply(node, node.c as Container)
+export const update = (context: Context, node: NodeObject) => {
+  build(context, node, undefined)
+  if (context[0] !== 1 || !context[1]) {
+    apply(node, node.c as Container)
+  }
 }
 
 export const render = (jsxNode: unknown, container: Container) => {
   const node = buildNode({ children: [jsxNode] } as JSXNode) as NodeObject
-  build(node, undefined)
+  build([], node, undefined)
 
   const fragment = document.createDocumentFragment()
   apply(node, fragment)

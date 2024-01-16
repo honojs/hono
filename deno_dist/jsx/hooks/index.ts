@@ -1,2 +1,10 @@
-export { useState, useEffect, useRef, useCallback, use } from './impl.ts'
+export {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  use,
+  startTransition,
+  useTransition,
+} from './impl.ts'
 export type { RefObject } from './impl.ts'
