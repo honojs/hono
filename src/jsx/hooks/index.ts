@@ -6,5 +6,6 @@ export {
   use,
   startTransition,
   useTransition,
+  useDeferredValue,
 } from './impl'
 export type { RefObject } from './impl'
