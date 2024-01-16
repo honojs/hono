@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "test": "tsc --noEmit && vitest --run",
+    "test": "tsc --noEmit && vitest --run && vitest -c .vitest.config/jsx-runtime-default.ts --run && vitest -c .vitest.config/jsx-runtime-dom.ts --run",
     "test:deno": "env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno && deno test --no-lock -c runtime_tests/deno-jsx/deno.precompile.json runtime_tests/deno-jsx && deno test --no-lock -c runtime_tests/deno-jsx/deno.react-jsx.json runtime_tests/deno-jsx",
     "test:bun": "env NAME=Bun bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
     "test:fastly": "vitest --run --config ./runtime_tests/fastly/vitest.config.ts",
@@ -147,6 +147,16 @@
       "types": "./dist/types/jsx/dom/index.d.ts",
       "import": "./dist/jsx/dom/index.js",
       "require": "./dist/cjs/jsx/dom/index.js"
+    },
+    "./jsx/dom/jsx-dev-runtime": {
+      "types": "./dist/types/jsx/dom/jsx-dev-runtime.d.ts",
+      "import": "./dist/jsx/dom/jsx-dev-runtime.js",
+      "require": "./dist/cjs/jsx/dom/jsx-dev-runtime.js"
+    },
+    "./jsx/dom/jsx-runtime": {
+      "types": "./dist/types/jsx/dom/jsx-runtime.d.ts",
+      "import": "./dist/jsx/dom/jsx-runtime.js",
+      "require": "./dist/cjs/jsx/dom/jsx-runtime.js"
     },
     "./jwt": {
       "types": "./dist/types/middleware/jwt/index.d.ts",

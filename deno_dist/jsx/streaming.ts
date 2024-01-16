@@ -2,10 +2,10 @@ import { raw } from '../helper/html/index.ts'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html.ts'
 import type { HtmlEscapedString } from '../utils/html.ts'
 import { childrenToString } from './components.ts'
-import { RENDER_TO_DOM, ERROR_HANDLER, nodeStack, STASH } from './dom/render.ts'
+import { Suspense as SuspenseDomRenderer } from './dom/components.ts'
+import { RENDER_TO_DOM, nodeStack, STASH } from './dom/render.ts'
 import type { HasRenderToDom, NodeObject } from './dom/render.ts'
 import type { FC, Child } from './index.ts'
-import { Fragment } from './index.ts'
 
 let suspenseCounter = 0
 
@@ -101,20 +101,6 @@ d.replaceWith(c.content)
     return raw(resArray.join(''))
   }
 }
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const SuspenseDomRenderer: FC<{ fallback: any }> = ({ children, fallback }) => {
-  const res = Fragment({ children })
-  ;(res as any)[ERROR_HANDLER] = (err: any, retry: () => void) => {
-    if (!(err instanceof Promise)) {
-      throw err
-    }
-    err.then(retry).catch(retry)
-    return fallback
-  }
-  return res
-}
-/* eslint-enable @typescript-eslint/no-explicit-any */
 ;(Suspense as HasRenderToDom)[RENDER_TO_DOM] = SuspenseDomRenderer
 
 const textEncoder = new TextEncoder()
