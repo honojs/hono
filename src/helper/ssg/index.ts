@@ -77,7 +77,7 @@ export const fetchRoutesContent = async <
   const baseURL = 'http://localhost'
 
   for (const route of inspectRoutes(app)) {
-    if (route.isMiddleware) continue
+    if (route.isMiddleware || isDynamicRoute(route.path)) continue
 
     const url = new URL(route.path, baseURL).toString()
     const response = await app.fetch(new Request(url))
@@ -88,6 +88,10 @@ export const fetchRoutesContent = async <
   }
 
   return htmlMap
+}
+
+const isDynamicRoute = (path: string): boolean => {
+  return path.split('/').some((segment) => segment.startsWith(':') || segment.includes('*'))
 }
 
 /**
