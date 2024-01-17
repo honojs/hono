@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Context } from './context.ts'
 import type { Hono } from './hono.ts'
-import type { IntersectNonAnyTypes, UnionToIntersection } from './utils/types.ts'
+import type { IfAnyThenEmptyObject, UnionToIntersection } from './utils/types.ts'
 
 ////////////////////////////////////////
 //////                            //////
@@ -1560,6 +1560,11 @@ export type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | un
 export type ExtractSchema<T> = UnionToIntersection<
   T extends Hono<infer _, infer S, any> ? S : never
 >
+
+type EnvOrEmpty<T> = T extends Env ? (Env extends T ? {} : T) : T
+type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...infer Rest]
+  ? IfAnyThenEmptyObject<EnvOrEmpty<Head>> & IntersectNonAnyTypes<Rest>
+  : {}
 
 ////////////////////////////////////////
 //////                            //////

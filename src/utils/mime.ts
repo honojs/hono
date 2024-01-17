@@ -9,6 +9,10 @@ export const getMimeType = (filename: string): string | undefined => {
   return mimeType
 }
 
+export const getExtension = (mimeType: string): string | undefined => {
+  return Object.keys(mimes).find((ext) => mimes[ext] === mimeType)
+}
+
 const mimes: Record<string, string> = {
   aac: 'audio/aac',
   abw: 'application/x-abiword',

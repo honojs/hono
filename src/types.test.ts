@@ -839,17 +839,23 @@ describe('c.var with chaining - test only types', () => {
     // app.get('/', handler...)
 
     new Hono().get('/', mw1).get('/', (c) => {
+      expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
       return c.json(0)
     })
 
     new Hono().get('/', mw1, mw2).get('/', (c) => {
+      expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo2')).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
       return c.json(0)
     })
 
     new Hono().get('/', mw1, mw2, mw3).get('/', (c) => {
+      expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo2')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo3')).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
@@ -857,6 +863,10 @@ describe('c.var with chaining - test only types', () => {
     })
 
     new Hono().get('/', mw1, mw2, mw3, mw4).get('/', (c) => {
+      expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo2')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo3')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo4')).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
@@ -865,6 +875,11 @@ describe('c.var with chaining - test only types', () => {
     })
 
     new Hono().get('/', mw1, mw2, mw3, mw4, mw5).get('/', (c) => {
+      expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo2')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo3')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo4')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo5')).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
@@ -874,6 +889,12 @@ describe('c.var with chaining - test only types', () => {
     })
 
     new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6).get('/', (c) => {
+      expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo2')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo3')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo4')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo5')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo6')).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
@@ -884,6 +905,13 @@ describe('c.var with chaining - test only types', () => {
     })
 
     new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7).get('/', (c) => {
+      expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo2')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo3')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo4')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo5')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo6')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo7')).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
@@ -895,6 +923,14 @@ describe('c.var with chaining - test only types', () => {
     })
 
     new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8).get('/', (c) => {
+      expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo2')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo3')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo4')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo5')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo6')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo7')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo8')).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
@@ -907,6 +943,15 @@ describe('c.var with chaining - test only types', () => {
     })
 
     new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9).get('/', (c) => {
+      expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo2')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo3')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo4')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo5')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo6')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo7')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo8')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo9')).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
@@ -920,6 +965,16 @@ describe('c.var with chaining - test only types', () => {
     })
 
     new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9, mw10).get('/', (c) => {
+      expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo2')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo3')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo4')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo5')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo6')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo7')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo8')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo9')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo10')).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
       expectTypeOf(c.var.foo3).toEqualTypeOf<string>()

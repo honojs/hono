@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { FileSystemModule } from '../../src/helper/ssg'
-import { serveStatic, toSSG } from '../../src/adapter/bun'
+import { serveStatic } from '../../src/adapter/bun'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { Hono } from '../../src/index'
