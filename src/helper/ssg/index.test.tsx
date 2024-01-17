@@ -9,6 +9,11 @@ import type { FileSystemModule } from './index'
 describe('toSSG function', () => {
   let app: Hono
 
+  const postParams = [
+    { post: '1' },
+    { post: '2' }
+  ]
+
   beforeEach(() => {
     app = new Hono()
     app.get('/', (c) => c.text('Hello, World!'))
@@ -36,16 +41,8 @@ describe('toSSG function', () => {
     })
 
     // Included params
-    const postParams = [
-      {
-        post: '1'
-      },
-      {
-        post: '2'
-      }
-    ]
     app.get('/post/:post', ssgParams(() => postParams), c => c.html(<h1>{c.req.param('post')}</h1>))
-
+  })
   it('Should correctly generate static HTML files for Hono routes', async () => {
     const fsMock: FileSystemModule = {
       writeFile: vi.fn(() => Promise.resolve()),
@@ -56,7 +53,7 @@ describe('toSSG function', () => {
 
     for (const postParam of postParams) {
       const html = htmlMap.get(`/post/${postParam.post}`)
-      expect(html).toBe(`<h1>${postParam.post}</h1>`)
+      expect(html?.content).toBe(`<h1>${postParam.post}</h1>`)
     }
 
     const files = await saveContentToFiles(htmlMap, fsMock, './static')
