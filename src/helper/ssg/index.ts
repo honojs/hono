@@ -1,6 +1,7 @@
 import { inspectRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
+import { bufferToString } from '../../utils/buffer'
 import { getExtension } from '../../utils/mime'
 import { joinPaths, dirname } from './utils'
 
@@ -10,7 +11,7 @@ import { joinPaths, dirname } from './utils'
  * The API might be changed.
  */
 export interface FileSystemModule {
-  writeFile(path: string, data: string | Buffer): Promise<void>
+  writeFile(path: string, data: string | ArrayBuffer | Uint8Array): Promise<void>
   mkdir(path: string, options: { recursive: boolean }): Promise<void | string>
 }
 
@@ -110,7 +111,7 @@ export const saveContentToFiles = async (
     if (typeof content === 'string') {
       await fsModule.writeFile(filePath, content)
     } else if (content instanceof ArrayBuffer) {
-      await fsModule.writeFile(filePath, Buffer.from(content))
+      await fsModule.writeFile(filePath, bufferToString(content))
     }
     files.push(filePath)
   }
