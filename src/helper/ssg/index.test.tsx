@@ -30,22 +30,30 @@ describe('toSSG function', () => {
     app.get('/Charlie', (c) => {
       return c.render('Hello!', { title: 'Charlies Page' })
     })
+
     // Included params
-    app.get('/post/:post', ssgParams(() => [
+    const postParams = [
       {
         post: '1'
       },
       {
         post: '2'
       }
-    ]), c => c.html(<h1>{c.req.param('post')}</h1>))
+    ]
+    app.get('/post/:post', ssgParams(() => postParams), c => c.html(<h1>{c.req.param('post')}</h1>))
 
     const fsMock = {
       writeFile: vi.fn((path, data) => Promise.resolve()),
       mkdir: vi.fn((path, options) => Promise.resolve()),
     }
 
-    const htmlMap = await generateHtmlMap(app, {})
+    const htmlMap = await generateHtmlMap(app)
+
+    for (const postParam of postParams) {
+      const html = htmlMap.get(`/post/${postParam.post}`)
+      expect(html).toBe(`<h1>${postParam.post}</h1>`)
+    }
+
     const files = await saveHtmlToLocal(htmlMap, fsMock, './static')
 
     expect(files.length).toBeGreaterThan(0)
