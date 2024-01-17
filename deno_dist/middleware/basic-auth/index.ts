@@ -44,16 +44,8 @@ export const basicAuth = (
     if (requestUser) {
       for (const user of users) {
         const [usernameEqual, passwordEqual] = await Promise.all([
-          timingSafeEqual(
-            user.username,
-            requestUser.username,
-            options.hashFunction
-          ),
-          timingSafeEqual(
-            user.password,
-            requestUser.password,
-            options.hashFunction
-          )
+          timingSafeEqual(user.username, requestUser.username, options.hashFunction),
+          timingSafeEqual(user.password, requestUser.password, options.hashFunction),
         ])
         if (usernameEqual && passwordEqual) {
           await next()
