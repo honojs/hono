@@ -32,7 +32,7 @@ export const jwt = (options: {
       const parts = credentials.split(/\s+/)
       if (parts.length !== 2) {
         throw new HTTPException(401, {
-          res: UnauthorizedResponse({
+          res: unauthorizedResponse({
             ctx,
             error: 'invalid_request',
             errDescription: 'invalid credentials structure',
@@ -47,7 +47,7 @@ export const jwt = (options: {
 
     if (!token) {
       throw new HTTPException(401, {
-        res: UnauthorizedResponse({
+        res: unauthorizedResponse({
           ctx,
           error: 'invalid_request',
           errDescription: 'no authorization included in request',
@@ -64,7 +64,7 @@ export const jwt = (options: {
     }
     if (!payload) {
       throw new HTTPException(401, {
-        res: UnauthorizedResponse({
+        res: unauthorizedResponse({
           ctx,
           error: 'invalid_token',
           statusText: msg,
@@ -79,7 +79,7 @@ export const jwt = (options: {
   }
 }
 
-function UnauthorizedResponse(opts: {
+function unauthorizedResponse(opts: {
   ctx: Context
   error: string
   errDescription: string
