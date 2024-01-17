@@ -1,9 +1,6 @@
 import { raw } from '../helper/html/index.ts'
 import { escapeToBuffer, stringBufferToString } from '../utils/html.ts'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html.ts'
-import { createContextProviderFunction } from './dom/context.ts'
-import type { Context } from './dom/context.ts'
-import { RENDER_TO_DOM } from './dom/render.ts'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements.ts'
 
 export { ErrorBoundary } from './components.ts'
@@ -19,8 +16,8 @@ export {
   useDeferredValue,
 } from './hooks/index.ts'
 export type { RefObject } from './hooks/index.ts'
-export { useContext } from './dom/context.ts'
-export type { Context } from './dom/context.ts'
+export { createContext, useContext } from './context.ts'
+export type { Context } from './context.ts'
 
 export const HONO_COMPONENT = 'hono-component'
 export const HONO_COMPONENT_ID = 'hono-component-id'
@@ -241,7 +238,7 @@ class JSXFunctionNode extends JSXNode {
   }
 }
 
-class JSXFragmentNode extends JSXNode {
+export class JSXFragmentNode extends JSXNode {
   toStringToBuffer(buffer: StringBuffer): void {
     childrenToStringToBuffer(this.children, buffer)
   }
@@ -324,36 +321,4 @@ export const Fragment = ({
     {},
     Array.isArray(children) ? children : children ? [children] : []
   ) as never
-}
-
-export const createContext = <T>(defaultValue: T): Context<T> => {
-  const values = [defaultValue]
-  const context: Context<T> = {
-    values,
-    Provider(props): HtmlEscapedString | Promise<HtmlEscapedString> {
-      values.push(props.value)
-      const string = props.children
-        ? (Array.isArray(props.children)
-            ? new JSXFragmentNode('', {}, props.children)
-            : props.children
-          ).toString()
-        : ''
-      values.pop()
-
-      if (string instanceof Promise) {
-        return Promise.resolve().then<HtmlEscapedString>(async () => {
-          values.push(props.value)
-          const awaited = await string
-          const promiseRes = raw(awaited, (awaited as HtmlEscapedString).callbacks)
-          values.pop()
-          return promiseRes
-        })
-      } else {
-        return raw(string)
-      }
-    },
-  }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(context.Provider as any)[RENDER_TO_DOM] = createContextProviderFunction(values)
-  return context
 }

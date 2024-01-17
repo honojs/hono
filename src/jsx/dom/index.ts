@@ -1,3 +1,5 @@
 export { render } from './render'
 export { Suspense, ErrorBoundary } from './components'
-export { createContext, useContext } from './context'
+export { useContext } from '../context'
+export type { Context } from '../context'
+export { createContext } from './context'

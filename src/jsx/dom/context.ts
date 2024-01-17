@@ -1,11 +1,7 @@
-import type { FC, Child } from '..'
+import type { Child } from '..'
+import type { Context } from '../context'
 import { Fragment } from './jsx-runtime'
 import { ERROR_HANDLER } from './render'
-
-export interface Context<T> {
-  values: T[]
-  Provider: FC<{ value: T }>
-}
 
 export const createContextProviderFunction =
   <T>(values: T[]) =>
@@ -40,8 +36,4 @@ export const createContext = <T>(defaultValue: T): Context<T> => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Provider: createContextProviderFunction(values) as any,
   }
-}
-
-export const useContext = <T>(context: Context<T>): T => {
-  return context.values.at(-1) as T
 }
