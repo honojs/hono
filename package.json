@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "test": "tsc --noEmit && vitest --run",
+    "test": "tsc --noEmit && vitest --run && vitest -c .vitest.config/jsx-runtime-default.ts --run && vitest -c .vitest.config/jsx-runtime-dom.ts --run",
     "test:deno": "env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno && deno test --no-lock -c runtime_tests/deno-jsx/deno.precompile.json runtime_tests/deno-jsx && deno test --no-lock -c runtime_tests/deno-jsx/deno.react-jsx.json runtime_tests/deno-jsx",
     "test:bun": "env NAME=Bun bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
     "test:fastly": "vitest --run --config ./runtime_tests/fastly/vitest.config.ts",
@@ -19,10 +19,10 @@
     "test:lambda": "env NAME=Node vitest --run --config ./runtime_tests/lambda/vitest.config.ts",
     "test:lambda-edge": "env NAME=Node vitest --run --config ./runtime_tests/lambda-edge/vitest.config.ts",
     "test:all": "yarn test && yarn test:deno && yarn test:bun && yarn test:fastly && yarn test:node && yarn test:wrangler && yarn test:lambda && yarn test:lambda-edge",
-    "lint": "eslint --ext js,ts src runtime_tests",
-    "lint:fix": "eslint --ext js,ts src runtime_tests --fix",
-    "format": "prettier --check \"src/**/*.{js,ts}\" \"runtime_tests/**/*.{js,ts}\"",
-    "format:fix": "prettier --write \"src/**/*.{js,ts}\" \"runtime_tests/**/*.{js,ts}\"",
+    "lint": "eslint --ext js,ts,tsx src runtime_tests",
+    "lint:fix": "eslint --ext js,ts,tsx src runtime_tests --fix",
+    "format": "prettier --check \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
+    "format:fix": "prettier --write \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
     "denoify": "rimraf deno_dist && denoify && rimraf \"deno_dist/**/*.test.{ts,tsx}\"",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
     "build": "rimraf dist && tsx ./build.ts && yarn copy:package.cjs.json",
@@ -138,15 +138,20 @@
       "import": "./dist/middleware/jsx-renderer/index.js",
       "require": "./dist/cjs/middleware/jsx-renderer/index.js"
     },
-    "./jsx/hooks": {
-      "types": "./dist/types/jsx/hooks/index.d.ts",
-      "import": "./dist/jsx/hooks/index.js",
-      "require": "./dist/cjs/jsx/hooks/index.js"
-    },
     "./jsx/dom": {
       "types": "./dist/types/jsx/dom/index.d.ts",
       "import": "./dist/jsx/dom/index.js",
       "require": "./dist/cjs/jsx/dom/index.js"
+    },
+    "./jsx/dom/jsx-dev-runtime": {
+      "types": "./dist/types/jsx/dom/jsx-dev-runtime.d.ts",
+      "import": "./dist/jsx/dom/jsx-dev-runtime.js",
+      "require": "./dist/cjs/jsx/dom/jsx-dev-runtime.js"
+    },
+    "./jsx/dom/jsx-runtime": {
+      "types": "./dist/types/jsx/dom/jsx-runtime.d.ts",
+      "import": "./dist/jsx/dom/jsx-runtime.js",
+      "require": "./dist/cjs/jsx/dom/jsx-runtime.js"
     },
     "./jwt": {
       "types": "./dist/types/middleware/jwt/index.d.ts",
@@ -360,9 +365,6 @@
       ],
       "jsx-renderer": [
         "./dist/types/middleware/jsx-renderer"
-      ],
-      "jsx/hooks": [
-        "./dist/types/jsx/hooks"
       ],
       "jsx/dom": [
         "./dist/types/jsx/dom"

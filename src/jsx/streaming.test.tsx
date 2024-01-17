@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { JSDOM } from 'jsdom'
 import { raw } from '../helper/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'
+import { use } from './hooks'
 import { Suspense, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, Fragment } from './index'
@@ -557,5 +559,66 @@ d.replaceWith(c.content)
     }
 
     expect(chunks).toEqual(['<h1>Hello</h1>'])
+
+    suspenseCounter++
+  })
+
+  describe('use()', async () => {
+    it('render to string', async () => {
+      const Content = () => {
+        const promise = new Promise((resolve) => setTimeout(() => resolve('Hello from use()'), 0))
+        const message = use(promise)
+        return <h1>{message}</h1>
+      }
+
+      const str = await resolveCallback(
+        await (
+          <Suspense fallback={<p>Loading...</p>}>
+            <Content />
+          </Suspense>
+        ).toString(),
+        HtmlEscapedCallbackPhase.Stream,
+        false,
+        {}
+      )
+      expect(str).toEqual('<h1>Hello from use()</h1>')
+    })
+
+    it('render to stream', async () => {
+      const Content = () => {
+        const promise = new Promise((resolve) => setTimeout(() => resolve('Hello from use()'), 0))
+        const message = use(promise)
+        return <h1>{message}</h1>
+      }
+
+      const stream = renderToReadableStream(
+        <Suspense fallback={<p>Loading...</p>}>
+          <Content />
+        </Suspense>
+      )
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(chunks).toEqual([
+        `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
+        `<template><h1>Hello from use()</h1></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:${suspenseCounter}')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+      ])
+
+      expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+        '<h1>Hello from use()</h1>'
+      )
+    })
   })
 })

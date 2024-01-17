@@ -20,7 +20,7 @@ export class LinearRouter<T> implements Router<T> {
 
   match(method: string, path: string): Result<T> {
     const handlers: [T, Params][] = []
-    ROUTES_LOOP: for (let i = 0; i < this.routes.length; i++) {
+    ROUTES_LOOP: for (let i = 0, len = this.routes.length; i < len; i++) {
       const [routeMethod, routePath, handler] = this.routes[i]
       if (routeMethod !== method && routeMethod !== METHOD_NAME_ALL) {
         continue
@@ -41,7 +41,7 @@ export class LinearRouter<T> implements Router<T> {
         const parts = (endsWithStar ? routePath.slice(0, -2) : routePath).split(splitByStarRe)
 
         const lastIndex = parts.length - 1
-        for (let j = 0, pos = 0; j < parts.length; j++) {
+        for (let j = 0, pos = 0, len = parts.length; j < len; j++) {
           const part = parts[j]
           const index = path.indexOf(part, pos)
           if (index !== pos) {
@@ -70,7 +70,7 @@ export class LinearRouter<T> implements Router<T> {
         const parts = routePath.match(splitPathRe) as string[]
 
         const lastIndex = parts.length - 1
-        for (let j = 0, pos = 0; j < parts.length; j++) {
+        for (let j = 0, pos = 0, len = parts.length; j < len; j++) {
           if (pos === -1 || pos >= path.length) {
             continue ROUTES_LOOP
           }

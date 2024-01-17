@@ -1,5 +1,6 @@
 /** @jsx jsx */
 /** @jsxFrag Fragment */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { basicAuth, jsx, Fragment, serveStatic, jwt } from '../../deno_dist/middleware.ts'
 import { Hono } from '../../deno_dist/mod.ts'
 import { assertEquals, assertMatch, assertSpyCall, assertSpyCalls, spy } from './deps.ts'
