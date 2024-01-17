@@ -83,8 +83,10 @@ export const fetchRoutesContent = async <
     const response = await app.fetch(new Request(url))
     const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
     const content = await parseResponseContent(response)
+
     htmlMap.set(route.path, { content, mimeType })
   }
+
   return htmlMap
 }
 
