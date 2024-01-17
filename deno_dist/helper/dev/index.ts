@@ -18,7 +18,8 @@ interface RouteData {
 const { process, Deno } = globalThis as any
 const noColor =
   typeof process !== 'undefined'
-    ? 'NO_COLOR' in process?.env
+    ? // eslint-disable-next-line no-unsafe-optional-chaining
+      'NO_COLOR' in process?.env
     : typeof Deno?.noColor === 'boolean'
     ? (Deno.noColor as boolean)
     : false
