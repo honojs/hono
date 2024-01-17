@@ -1,18 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { Hono } from '../../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
-import { fetchRoutesContent, saveContentToFiles, toSSG, ssgParams } from './index'
+import { fetchRoutesContent, saveContentToFiles, ssgParams, toSSG } from './index'
 import type { FileSystemModule } from './index'
 
 describe('toSSG function', () => {
   let app: Hono
 
-  const postParams = [
-    { post: '1' },
-    { post: '2' }
-  ]
+  const postParams = [{ post: '1' }, { post: '2' }]
 
   beforeEach(() => {
     app = new Hono()
@@ -41,7 +38,11 @@ describe('toSSG function', () => {
     })
 
     // Included params
-    app.get('/post/:post', ssgParams(() => postParams), c => c.html(<h1>{c.req.param('post')}</h1>))
+    app.get(
+      '/post/:post',
+      ssgParams(() => postParams),
+      (c) => c.html(<h1>{c.req.param('post')}</h1>)
+    )
   })
   it('Should correctly generate static HTML files for Hono routes', async () => {
     const fsMock: FileSystemModule = {
@@ -59,7 +60,9 @@ describe('toSSG function', () => {
     const files = await saveContentToFiles(htmlMap, fsMock, './static')
 
     expect(files.length).toBeGreaterThan(0)
-    expect(fsMock.mkdir).toHaveBeenCalledWith(expect.any(String), { recursive: true })
+    expect(fsMock.mkdir).toHaveBeenCalledWith(expect.any(String), {
+      recursive: true,
+    })
     expect(fsMock.writeFile).toHaveBeenCalled()
   })
 
@@ -109,8 +112,14 @@ describe('fetchRoutesContent function', () => {
 
   it('should fetch the correct content and MIME type for each route', async () => {
     const htmlMap = await fetchRoutesContent(app)
-    expect(htmlMap.get('/text')).toEqual({ content: 'Text Response', mimeType: 'text/plain' })
-    expect(htmlMap.get('/html')).toEqual({ content: '<p>HTML Response</p>', mimeType: 'text/html' })
+    expect(htmlMap.get('/text')).toEqual({
+      content: 'Text Response',
+      mimeType: 'text/plain',
+    })
+    expect(htmlMap.get('/html')).toEqual({
+      content: '<p>HTML Response</p>',
+      mimeType: 'text/html',
+    })
     expect(htmlMap.get('/json')).toEqual({
       content: '{"message":"JSON Response"}',
       mimeType: 'application/json',
