@@ -102,7 +102,7 @@ export const fetchRoutesContent = async <
   const baseURL = 'http://localhost'
 
   for (const route of inspectRoutes(app)) {
-    if (route.isMiddleware || isDynamicRoute(route.path)) continue
+    if (route.isMiddleware) continue
 
     // GET Route Info
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
@@ -110,6 +110,7 @@ export const fetchRoutesContent = async <
     await app.fetch(forGetInfoURLRequest)
 
     if (!forGetInfoURLRequest.ssgParams) {
+      if (isDynamicRoute(route.path)) continue
       forGetInfoURLRequest.ssgParams = [{}]
     }
 
