@@ -1,6 +1,8 @@
+import { replaceUrlParam } from '../../client/utils'
+import type { Context } from '../../context'
 import { inspectRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
-import type { Env, Schema } from '../../types'
+import type { Env, MiddlewareHandler, Schema } from '../../types'
 import { getExtension } from '../../utils/mime'
 import { joinPaths, dirname } from './utils'
 
@@ -61,6 +63,28 @@ const determineExtension = (mimeType: string): string => {
   }
 }
 
+interface SSGParam {
+  [key: string]: string
+}
+type SSGParams = SSGParam[]
+interface SSGParamsMiddleware {
+  (generateParams: (c: Context) => SSGParams | Promise<SSGParams>): MiddlewareHandler
+}
+type AddedSSGDataRequest = Request & {
+  ssgParams?: SSGParams
+}
+/**
+ * Define SSG Route
+ */
+export const ssgParams: SSGParamsMiddleware = (generateParams) => async (c, next) => {
+  ;(c.req.raw as AddedSSGDataRequest).ssgParams = await generateParams(c)
+  await next()
+}
+
+export interface ToSSGOptions {
+  dir?: string
+}
+
 /**
  * @experimental
  * `fetchRoutesContent` is an experimental feature.
@@ -79,12 +103,25 @@ export const fetchRoutesContent = async <
   for (const route of inspectRoutes(app)) {
     if (route.isMiddleware || isDynamicRoute(route.path)) continue
 
-    const url = new URL(route.path, baseURL).toString()
-    const response = await app.fetch(new Request(url))
-    const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
-    const content = await parseResponseContent(response)
+    // GET Route Info
+    const thisRouteBaseURL = new URL(route.path, baseURL).toString()
+    const forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
+    await app.fetch(forGetInfoURLRequest)
 
-    htmlMap.set(route.path, { content, mimeType })
+    if (!forGetInfoURLRequest.ssgParams) {
+      forGetInfoURLRequest.ssgParams = [{}]
+    }
+
+    for (const param of forGetInfoURLRequest.ssgParams) {
+      const replacedUrlParam = replaceUrlParam(route.path, param)
+      const response = await app.request(replacedUrlParam)
+      const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
+      const content = await parseResponseContent(response)
+      htmlMap.set(replacedUrlParam, {
+        mimeType,
+        content,
+      })
+    }
   }
 
   return htmlMap
@@ -135,7 +172,7 @@ export interface ToSSGInterface<
   (
     app: Hono<E, S, BasePath>,
     fsModule: FileSystemModule,
-    options?: { dir?: string }
+    options?: ToSSGOptions
   ): Promise<ToSSGResult>
 }
 
