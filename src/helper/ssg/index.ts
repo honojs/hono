@@ -111,7 +111,7 @@ const fetchRouteContent = async <E extends Env = Env, S extends Schema = {}>(
 }
 
 const isDynamicRoute = (path: string): boolean => {
-  return /:\w+|\*/.test(path)
+  return path.split('/').some((segment) => segment.startsWith(':') || segment.includes('*'))
 }
 
 /**
