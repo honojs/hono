@@ -120,7 +120,7 @@ export const fetchRoutesContent = async <
       const content = await parseResponseContent(response)
       htmlMap.set(replacedUrlParam, {
         mimeType,
-        content
+        content,
       })
     }
   }
