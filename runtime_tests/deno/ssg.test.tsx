@@ -1,4 +1,5 @@
-/** @jsxImportSource ../../deno_dist/jsx */
+/** @jsx jsx */
+/** @jsxFrag Fragment */
 
 import { toDenoSSG } from '../../deno_dist/helper.ts'
 import { Hono } from '../../deno_dist/mod.ts'
@@ -27,12 +28,12 @@ Deno.test('toSSG function', async () => {
     return c.render('Hello!')
   })
 
-  const result = await toDenoSSG(app, { dir: './static' })
+  const result = await toDenoSSG(app, { dir: './ssg-static' })
   assertEquals(result.success, true)
   assertEquals(result.error, undefined)
   assertEquals(result.files !== undefined, true)
 
-  await deleteDirectory('./static')
+  await deleteDirectory('./ssg-static')
 })
 
 async function deleteDirectory(dirPath: string): Promise<void> {
