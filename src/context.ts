@@ -233,6 +233,20 @@ export class Context<
     this.renderer = renderer
   }
 
+  /**
+   * `.header()` can set headers.
+   * @example
+   * ```ts
+   * app.get('/welcome', (c) => {
+   *   // Set headers
+   *   c.header('X-Message', 'Hello!')
+   *   c.header('Content-Type', 'text/plain')
+   * 
+   *   return c.body('Thank you for coming')
+   * })
+   * ```
+   * @see https://hono.dev/api/context#body
+   */
   header = (name: string, value: string | undefined, options?: { append?: boolean }): void => {
     // Clear the header
     if (value === undefined) {
