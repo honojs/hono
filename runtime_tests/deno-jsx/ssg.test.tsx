@@ -1,6 +1,6 @@
 /** @jsxImportSource ../../deno_dist/jsx */
 
-import { toSSG } from '../../deno_dist/adapter/deno.ts'
+import { toSSG } from '../../deno_dist/middleware.ts'
 import { Hono } from '../../deno_dist/mod.ts'
 import { assertEquals } from '../deno/deps.ts'
 
