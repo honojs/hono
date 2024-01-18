@@ -1277,6 +1277,26 @@ describe('Request methods with custom middleware', () => {
   })
 })
 
+describe('Middleware + c.json(0, requestInit)', () => {
+  const app = new Hono()
+  app.use('/', async (c, next) => {
+    await next()
+  })
+  app.get('/', (c) => {
+    return c.json(0, {
+      status: 200,
+      headers: {
+        foo: 'bar',
+      },
+    })
+  })
+  it('Should return a correct headers', async () => {
+    const res = await app.request('/')
+    expect(res.headers.get('content-type')).toMatch(/^application\/json/)
+    expect(res.headers.get('foo')).toBe('bar')
+  })
+})
+
 describe('Hono with `app.route`', () => {
   describe('Basic', () => {
     const app = new Hono()
