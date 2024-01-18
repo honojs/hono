@@ -27,6 +27,17 @@ interface CloudFrontCustomOrigin {
   readTimeout: number
   sslProtocols: string[]
 }
+// https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
+interface CloudFrontS3Origin {
+  authMethod: 'origin-access-identity' | 'none'
+  customHeaders: CloudFrontHeaders
+  domainName: string
+  path: string
+  region: string
+}
+type CloudFrontOrigin =
+  | { s3: CloudFrontS3Origin; custom?: never }
+  | { custom: CloudFrontCustomOrigin; s3?: never }
 
 export interface CloudFrontRequest {
   clientIp: string
@@ -40,9 +51,7 @@ export interface CloudFrontRequest {
     encoding: string
     data: string
   }
-  origin?: {
-    custom: CloudFrontCustomOrigin
-  }
+  origin?: CloudFrontOrigin
 }
 
 export interface CloudFrontResponse {
