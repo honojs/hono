@@ -90,10 +90,7 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
           const [type, map] = pendingStack.at(-1) as PendingStackItem
           map.set(node, () => {
             const context: Context = [type, false]
-            let promise: Promise<Node[]> | undefined
-            let done: ((lastVC: Node[]) => void) | undefined
             if (type === 2) {
-              promise = new Promise<Node[]>((resolve) => (done = resolve))
               setTimeout(async () => {
                 const shadowNode = Object.assign({}, node) as NodeObject
 
@@ -102,20 +99,16 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
                 build([], shadowNode, undefined)
                 setShadow(shadowNode) // save the `shadowNode.vC` of the virtual DOM of the build result as a result of shadow virtual DOM `shadowNode.s`
 
-                const lastVC = await promise // wait for the first render with "pending" state
-
                 // `node` is not rerendered after current transition
                 if (lastVC === node.vC) {
                   node.s = shadowNode.s
                   update([], node)
                 }
-              }, 10)
+              })
             }
 
             update(context, node)
-            if (done) {
-              done(node.vC)
-            }
+            const lastVC = node.vC
           })
         } else {
           update([], node)

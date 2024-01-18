@@ -1,13 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { Hono } from '../../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
-import { fetchRoutesContent, saveContentToFiles, toSSG } from './index'
+import { fetchRoutesContent, saveContentToFiles, ssgParams, toSSG } from './index'
 import type { FileSystemModule } from './index'
 
 describe('toSSG function', () => {
   let app: Hono
+
+  const postParams = [{ post: '1' }, { post: '2' }]
 
   beforeEach(() => {
     app = new Hono()
@@ -34,8 +36,14 @@ describe('toSSG function', () => {
     app.get('/Charlie', (c) => {
       return c.render('Hello!', { title: 'Charlies Page' })
     })
-  })
 
+    // Included params
+    app.get(
+      '/post/:post',
+      ssgParams(() => postParams),
+      (c) => c.html(<h1>{c.req.param('post')}</h1>)
+    )
+  })
   it('Should correctly generate static HTML files for Hono routes', async () => {
     const fsMock: FileSystemModule = {
       writeFile: vi.fn(() => Promise.resolve()),
@@ -43,10 +51,18 @@ describe('toSSG function', () => {
     }
 
     const htmlMap = await fetchRoutesContent(app)
+
+    for (const postParam of postParams) {
+      const html = htmlMap.get(`/post/${postParam.post}`)
+      expect(html?.content).toBe(`<h1>${postParam.post}</h1>`)
+    }
+
     const files = await saveContentToFiles(htmlMap, fsMock, './static')
 
     expect(files.length).toBeGreaterThan(0)
-    expect(fsMock.mkdir).toHaveBeenCalledWith(expect.any(String), { recursive: true })
+    expect(fsMock.mkdir).toHaveBeenCalledWith(expect.any(String), {
+      recursive: true,
+    })
     expect(fsMock.writeFile).toHaveBeenCalled()
   })
 
@@ -96,8 +112,14 @@ describe('fetchRoutesContent function', () => {
 
   it('should fetch the correct content and MIME type for each route', async () => {
     const htmlMap = await fetchRoutesContent(app)
-    expect(htmlMap.get('/text')).toEqual({ content: 'Text Response', mimeType: 'text/plain' })
-    expect(htmlMap.get('/html')).toEqual({ content: '<p>HTML Response</p>', mimeType: 'text/html' })
+    expect(htmlMap.get('/text')).toEqual({
+      content: 'Text Response',
+      mimeType: 'text/plain',
+    })
+    expect(htmlMap.get('/html')).toEqual({
+      content: '<p>HTML Response</p>',
+      mimeType: 'text/html',
+    })
     expect(htmlMap.get('/json')).toEqual({
       content: '{"message":"JSON Response"}',
       mimeType: 'application/json',
@@ -153,5 +175,36 @@ describe('saveContentToFiles function', () => {
     await expect(saveContentToFiles(htmlMap, fsMock, './static')).rejects.toThrow(
       'File write error'
     )
+  })
+})
+
+describe('Dynamic route handling', () => {
+  let app: Hono
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/shops/:id', (c) => c.html('Shop Page'))
+    app.get('/shops/:id/:comments([0-9]+)', (c) => c.html('Comments Page'))
+    app.get('/foo/*', (c) => c.html('Foo Page'))
+    app.get('/foo:bar', (c) => c.html('Foo Bar Page'))
+  })
+
+  it('should skip /shops/:id dynamic route', async () => {
+    const htmlMap = await fetchRoutesContent(app)
+    expect(htmlMap.has('/shops/:id')).toBeFalsy()
+  })
+
+  it('should skip /shops/:id/:comments([0-9]+) dynamic route', async () => {
+    const htmlMap = await fetchRoutesContent(app)
+    expect(htmlMap.has('/shops/:id/:comments([0-9]+)')).toBeFalsy()
+  })
+
+  it('should skip /foo/* dynamic route', async () => {
+    const htmlMap = await fetchRoutesContent(app)
+    expect(htmlMap.has('/foo/*')).toBeFalsy()
+  })
+
+  it('should not skip /foo:bar dynamic route', async () => {
+    const htmlMap = await fetchRoutesContent(app)
+    expect(htmlMap.has('/foo:bar')).toBeTruthy()
   })
 })

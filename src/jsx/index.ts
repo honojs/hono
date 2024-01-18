@@ -2,6 +2,7 @@ import { raw } from '../helper/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
+
 export { ErrorBoundary } from './components'
 export { Suspense } from './streaming'
 export {
@@ -15,6 +16,8 @@ export {
   useDeferredValue,
 } from './hooks'
 export type { RefObject } from './hooks'
+export { createContext, useContext } from './context'
+export type { Context } from './context'
 
 export const HONO_COMPONENT = 'hono-component'
 export const HONO_COMPONENT_ID = 'hono-component-id'
@@ -235,7 +238,7 @@ class JSXFunctionNode extends JSXNode {
   }
 }
 
-class JSXFragmentNode extends JSXNode {
+export class JSXFragmentNode extends JSXNode {
   toStringToBuffer(buffer: StringBuffer): void {
     childrenToStringToBuffer(this.children, buffer)
   }
@@ -318,42 +321,4 @@ export const Fragment = ({
     {},
     Array.isArray(children) ? children : children ? [children] : []
   ) as never
-}
-
-export interface Context<T> {
-  values: T[]
-  Provider: FC<{ value: T }>
-}
-
-export const createContext = <T>(defaultValue: T): Context<T> => {
-  const values = [defaultValue]
-  return {
-    values,
-    Provider(props): HtmlEscapedString | Promise<HtmlEscapedString> {
-      values.push(props.value)
-      const string = props.children
-        ? (Array.isArray(props.children)
-            ? new JSXFragmentNode('', {}, props.children)
-            : props.children
-          ).toString()
-        : ''
-      values.pop()
-
-      if (string instanceof Promise) {
-        return Promise.resolve().then<HtmlEscapedString>(async () => {
-          values.push(props.value)
-          const awaited = await string
-          const promiseRes = raw(awaited, (awaited as HtmlEscapedString).callbacks)
-          values.pop()
-          return promiseRes
-        })
-      } else {
-        return raw(string)
-      }
-    },
-  }
-}
-
-export const useContext = <T>(context: Context<T>): T => {
-  return context.values[context.values.length - 1]
 }
