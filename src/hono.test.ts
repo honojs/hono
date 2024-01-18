@@ -3134,6 +3134,17 @@ describe('c.var - with testing types', () => {
       app.use(['foo', 'bar'], poweredBy())
     } catch {}
   })
+
+  it('Should not throw type errors', async (c) => {
+    app.get('/chained/1', mw(), (c) => {
+      return c.text(c.var.echo('hello'))
+    }).get('/chained/2', (c) => {
+      expectTypeOf(c.var).not.toHaveProperty('echo')
+      return c.text('echo' in c.var ? 'echo is undefined. ' : 'echo is defined.')
+    })
+    const resp = await app.request('/chained/3')
+    expect(await resp.text()).toBe('echo is undefined. ')
+  })
 })
 
 describe('Compatible with extended Hono classes, such Zod OpenAPI Hono.', () => {
