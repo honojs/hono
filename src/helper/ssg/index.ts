@@ -76,10 +76,10 @@ type AddedSSGDataRequest = Request & {
  */
 export const ssgParams =
   <E extends Env = Env>(
-    generateParams: (c: Context<E>) => SSGParams | Promise<SSGParams>
+    params: ((c: Context<E>) => SSGParams | Promise<SSGParams>) | SSGParams
   ): MiddlewareHandler<E> =>
   async (c, next) => {
-    ;(c.req.raw as AddedSSGDataRequest).ssgParams = await generateParams(c)
+    ;(c.req.raw as AddedSSGDataRequest).ssgParams = Array.isArray(params) ? params : await params(c)
     await next()
   }
 
