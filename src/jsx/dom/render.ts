@@ -205,7 +205,6 @@ const applyNode = (node: Node, container: Container) => {
   if (isNodeString(node)) {
     container.textContent = node[0]
   } else {
-    applyProps(container as HTMLElement, node.props)
     applyNodeObject(node, container)
   }
 }
