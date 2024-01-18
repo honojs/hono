@@ -83,7 +83,19 @@ export const ssgParams: SSGParamsMiddleware = (generateParams) => async (c, next
 }
 
 export interface ToSSGOptions {
+  /** The directory to save the generated files. */
   dir?: string
+  /** Whether to fetch each route in parallel. */
+  parallel?: boolean
+  /** The interval between requests. (enabled only when `parallel` is `false`) */
+  interval?: number
+}
+
+export interface FetchRoutesContentOptions {
+  /** Whether to fetch each route in parallel. */
+  parallel: boolean
+  /** The interval between requests. (enabled only when `parallel` is `false`) */
+  interval: number
 }
 
 /**
@@ -96,7 +108,11 @@ export const fetchRoutesContent = async <
   S extends Schema = {},
   BasePath extends string = '/'
 >(
-  app: Hono<E, S, BasePath>
+  app: Hono<E, S, BasePath>,
+  options: Partial<FetchRoutesContentOptions> = {
+    parallel: true,
+    interval: 0,
+  }
 ): Promise<Map<string, { content: string | ArrayBuffer; mimeType: string }>> => {
   const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
   const baseURL = 'http://localhost'
@@ -114,7 +130,7 @@ export const fetchRoutesContent = async <
       forGetInfoURLRequest.ssgParams = [{}]
     }
 
-    for (const param of forGetInfoURLRequest.ssgParams) {
+    const execDynamicRequest = async (param: SSGParam) => {
       const replacedUrlParam = replaceUrlParam(route.path, param)
       const response = await app.request(replacedUrlParam)
       const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
@@ -123,6 +139,15 @@ export const fetchRoutesContent = async <
         mimeType,
         content,
       })
+    }
+
+    if (options.parallel) {
+      await Promise.all(forGetInfoURLRequest.ssgParams.map(execDynamicRequest))
+    } else {
+      for (const param of forGetInfoURLRequest.ssgParams) {
+        await execDynamicRequest(param)
+        await new Promise((resolve) => setTimeout(resolve, options.interval))
+      }
     }
   }
 
@@ -198,9 +223,8 @@ export interface ToSSGAdaptorInterface<
  */
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
   try {
-    const outputDir = options?.dir ?? './static'
-    const maps = await fetchRoutesContent(app)
-    const files = await saveContentToFiles(maps, fs, outputDir)
+    const maps = await fetchRoutesContent(app, options)
+    const files = await saveContentToFiles(maps, fs, options?.dir ?? './static')
     return { success: true, files }
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error(String(error))
