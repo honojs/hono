@@ -42,6 +42,7 @@ describe('matchAccept', () => {
       req: {
         header: () => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any
     const options: MatchAcceptConfig = {
       header: 'Accept',
@@ -57,6 +58,7 @@ describe('matchAccept', () => {
       req: {
         header: () => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any
     const options: MatchAcceptConfig = {
       header: 'Accept',
@@ -72,6 +74,7 @@ describe('matchAccept', () => {
       req: {
         header: () => undefined,
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any
     const options: MatchAcceptConfig = {
       header: 'Accept',
@@ -87,6 +90,7 @@ describe('matchAccept', () => {
       req: {
         header: () => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any
     // this match function will return the least q value
     const match = (accepts: Accept[], config: MatchAcceptConfig) => {
