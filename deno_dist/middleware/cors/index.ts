@@ -55,11 +55,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       set('Access-Control-Expose-Headers', opts.exposeHeaders.join(','))
     }
 
-    if (c.req.method !== 'OPTIONS') {
-      await next()
-    } else {
-      // Preflight
-
+    if (c.req.method === 'OPTIONS') {
       if (opts.maxAge != null) {
         set('Access-Control-Max-Age', opts.maxAge.toString())
       }
@@ -89,5 +85,6 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
         statusText: c.res.statusText,
       })
     }
+    await next()
   }
 }

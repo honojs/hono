@@ -43,16 +43,10 @@ export const basicAuth = (
     const requestUser = auth(ctx.req)
     if (requestUser) {
       for (const user of users) {
-        const usernameEqual = await timingSafeEqual(
-          user.username,
-          requestUser.username,
-          options.hashFunction
-        )
-        const passwordEqual = await timingSafeEqual(
-          user.password,
-          requestUser.password,
-          options.hashFunction
-        )
+        const [usernameEqual, passwordEqual] = await Promise.all([
+          timingSafeEqual(user.username, requestUser.username, options.hashFunction),
+          timingSafeEqual(user.password, requestUser.password, options.hashFunction),
+        ])
         if (usernameEqual && passwordEqual) {
           await next()
           return
