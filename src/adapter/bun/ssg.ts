@@ -9,8 +9,8 @@ import type { FileSystemModule, ToSSGAdaptorInterface } from '../../helper/ssg'
  * The API might be changed.
  */
 export const bunFileSystemModule: FileSystemModule = {
-  writeFile: (path, data) => {
-    Bun.write(path, data)
+  writeFile: async (path, data) => {
+    await Bun.write(path, data)
   },
   mkdir: async () => {},
 }
