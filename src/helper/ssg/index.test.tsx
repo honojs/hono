@@ -43,6 +43,24 @@ describe('toSSG function', () => {
       ssgParams(() => postParams),
       (c) => c.html(<h1>{c.req.param('post')}</h1>)
     )
+
+    type Env = {
+      Bindings: {
+        HOGE_DB: string
+      }
+      Variables: {
+        HOGE_VAR: string
+      }
+    }
+
+    app.get(
+      '/env-type-check',
+      ssgParams<Env>((c) => {
+        expectTypeOf<typeof c.env.HOGE_DB>().toBeString()
+        expectTypeOf<typeof c.var.HOGE_VAR>().toBeString()
+        return []
+      })
+    )
   })
   it('Should correctly generate static HTML files for Hono routes', async () => {
     const fsMock: FileSystemModule = {
