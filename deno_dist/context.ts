@@ -85,6 +85,11 @@ type ContextOptions<E extends Env> = {
 
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
+const setHeaders = (headers: Headers, map: Record<string, string> = {}) => {
+  Object.entries(map).forEach(([key, value]) => headers.set(key, value))
+  return headers
+}
+
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any,
@@ -239,24 +244,24 @@ export class Context<
     }
 
     if (arg && typeof arg !== 'number') {
-      this.res = new Response(data, arg)
+      const headers = setHeaders(new Headers(arg.headers), this.#preparedHeaders)
+      return new Response(data, {
+        headers,
+        status: arg.status,
+      })
     }
 
-    const status = typeof arg === 'number' ? arg : arg ? arg.status : this.#status
+    const status = typeof arg === 'number' ? arg : this.#status
     this.#preparedHeaders ??= {}
 
     this.#headers ??= new Headers()
-    for (const [k, v] of Object.entries(this.#preparedHeaders)) {
-      this.#headers.set(k, v)
-    }
+    setHeaders(this.#headers, this.#preparedHeaders)
 
     if (this.#res) {
       this.#res.headers.forEach((v, k) => {
         this.#headers?.set(k, v)
       })
-      for (const [k, v] of Object.entries(this.#preparedHeaders)) {
-        this.#headers.set(k, v)
-      }
+      setHeaders(this.#headers, this.#preparedHeaders)
     }
 
     headers ??= {}
