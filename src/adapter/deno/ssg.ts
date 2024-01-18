@@ -19,9 +19,9 @@ export const denoFileSystemModule: FileSystemModule = {
 
 /**
  * @experimental
- * `toSSG` is an experimental feature.
+ * `toDenoSSG` is an experimental feature.
  * The API might be changed.
  */
-export const toSSG: ToSSGAdaptorInterface = async (app, options) => {
+export const toDenoSSG: ToSSGAdaptorInterface = async (app, options) => {
   return baseToSSG(app, denoFileSystemModule, options)
 }

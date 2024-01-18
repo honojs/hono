@@ -1,6 +1,6 @@
 /** @jsxImportSource ../../deno_dist/jsx */
 
-import { toSSG } from '../../deno_dist/middleware.ts'
+import { toDenoSSG } from '../../deno_dist/helper.ts'
 import { Hono } from '../../deno_dist/mod.ts'
 import { assertEquals } from '../deno/deps.ts'
 
@@ -12,12 +12,9 @@ Deno.test('toSSG function', async () => {
   app.post('/about/some/thing', (c) => c.text('About Page 3tier'))
   app.get('/bravo', (c) => c.html('Bravo Page'))
   app.get('/Charlie', async (c, next) => {
-    c.setRenderer((content, head) => {
+    c.setRenderer((content) => {
       return c.html(
         <html>
-          <head>
-            <title>{head.title || ''}</title>
-          </head>
           <body>
             <p>{content}</p>
           </body>
@@ -27,10 +24,10 @@ Deno.test('toSSG function', async () => {
     await next()
   })
   app.get('/Charlie', (c) => {
-    return c.render('Hello!', { title: 'Charlies Page' })
+    return c.render('Hello!')
   })
 
-  const result = await toSSG(app, { dir: './static' })
+  const result = await toDenoSSG(app, { dir: './static' })
   assertEquals(result.success, true)
   assertEquals(result.error, undefined)
   assertEquals(result.files !== undefined, true)

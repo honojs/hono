@@ -1,2 +1,2 @@
 export { serveStatic } from './serve-static'
-export { toSSG, denoFileSystemModule } from './ssg'
+export { toDenoSSG, denoFileSystemModule } from './ssg'
