@@ -16,6 +16,16 @@ export type EffectData = [
 
 const resolvedPromiseValueMap = new WeakMap<Promise<unknown>, unknown>()
 
+let updateWithStartViewTransition = false
+export const startViewTransition = (callback: () => void): void => {
+  updateWithStartViewTransition = true
+  try {
+    callback()
+  } finally {
+    updateWithStartViewTransition = false
+  }
+}
+
 type PendingStackItem = [PendingType, Map<Node, Function>]
 const pendingStack: PendingStackItem[] = []
 const runCallback = (type: PendingType, callback: Function): void => {
@@ -102,16 +112,16 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
                 // `node` is not rerendered after current transition
                 if (lastVC === node.vC) {
                   node.s = shadowNode.s
-                  update([], node)
+                  update([], node, false)
                 }
               })
             }
 
-            update(context, node)
+            update(context, node, false)
             const lastVC = node.vC
           })
         } else {
-          update([], node)
+          update([], node, updateWithStartViewTransition)
         }
       }
     },

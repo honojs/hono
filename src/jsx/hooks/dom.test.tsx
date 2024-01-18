@@ -5,7 +5,14 @@ import { JSDOM } from 'jsdom'
 import { jsx, Fragment } from '..'
 import { Suspense } from '../dom'
 import { render } from '../dom'
-import { useState, use, startTransition, useTransition, useDeferredValue } from '.'
+import {
+  useState,
+  use,
+  startTransition,
+  useTransition,
+  useDeferredValue,
+  startViewTransition,
+} from '.'
 
 describe('startTransition()', () => {
   let dom: JSDOM
@@ -246,5 +253,80 @@ describe('useDeferredValue()', () => {
     expect(root.innerHTML).toBe('<div><button>+1</button></div><div>0</div>')
     await new Promise((r) => setTimeout(r))
     expect(root.innerHTML).toBe('<div><button>+1</button></div><div>2</div>')
+  })
+})
+
+describe('startViewTransition()', () => {
+  let dom: JSDOM
+  let root: HTMLElement
+  beforeEach(() => {
+    dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
+      runScripts: 'dangerously',
+    })
+    global.document = dom.window.document
+    global.HTMLElement = dom.window.HTMLElement
+    global.Text = dom.window.Text
+    root = document.getElementById('root') as HTMLElement
+  })
+  afterEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (dom.window.document as any).startViewTransition
+  })
+
+  it('supported browser', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(dom.window.document as any).startViewTransition = vi.fn((cb: Function) =>
+      Promise.resolve().then(() => cb())
+    )
+
+    const App = () => {
+      const [count, setCount] = useState(0)
+      return (
+        <Suspense fallback={<div>Loading...</div>}>
+          <div>
+            <button
+              onClick={() => {
+                startViewTransition(() => {
+                  setCount((c) => c + 1)
+                })
+              }}
+            >
+              {count}
+            </button>
+          </div>
+        </Suspense>
+      )
+    }
+    render(<App />, root)
+    expect(root.innerHTML).toBe('<div><button>0</button></div>')
+    root.querySelector('button')?.click()
+    expect(root.innerHTML).toBe('<div><button>0</button></div>')
+    await Promise.resolve() // updated in microtask
+    expect(root.innerHTML).toBe('<div><button>1</button></div>')
+  })
+
+  it('unsupported browser', () => {
+    const App = () => {
+      const [count, setCount] = useState(0)
+      return (
+        <Suspense fallback={<div>Loading...</div>}>
+          <div>
+            <button
+              onClick={() => {
+                startViewTransition(() => {
+                  setCount((c) => c + 1)
+                })
+              }}
+            >
+              {count}
+            </button>
+          </div>
+        </Suspense>
+      )
+    }
+    render(<App />, root)
+    expect(root.innerHTML).toBe('<div><button>0</button></div>')
+    root.querySelector('button')?.click()
+    expect(root.innerHTML).toBe('<div><button>1</button></div>')
   })
 })
