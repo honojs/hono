@@ -5,11 +5,11 @@ import { JSDOM } from 'jsdom'
 import { jsx, Fragment } from '..'
 import type { RefObject } from '../hooks'
 import { useState, useEffect, useCallback, useRef } from '../hooks'
+import type { NodeObject } from './render'
 import { render } from '.'
-import type { Node } from '.'
 
-const getContainer = (element: JSX.Element): HTMLElement => {
-  return (element as Node).c
+const getContainer = (element: JSX.Element): DocumentFragment | HTMLElement | undefined => {
+  return (element as unknown as NodeObject).c
 }
 
 describe('DOM', () => {
@@ -81,7 +81,7 @@ describe('DOM', () => {
       }
       const app = <App />
       render(app, root)
-      const container = getContainer(app)
+      const container = getContainer(app) as HTMLElement
       expect(root.innerHTML).toBe('<div>0</div>')
 
       const insertBeforeSpy = vi.spyOn(container, 'insertBefore')
