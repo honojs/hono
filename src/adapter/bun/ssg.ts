@@ -3,6 +3,9 @@
 import { toSSG as baseToSSG } from '../../helper/ssg'
 import type { FileSystemModule, ToSSGAdaptorInterface } from '../../helper/ssg'
 
+// @ts-ignore
+const { write } = Bun
+
 /**
  * @experimental
  * `bunFileSystemModule` is an experimental feature.
@@ -10,7 +13,7 @@ import type { FileSystemModule, ToSSGAdaptorInterface } from '../../helper/ssg'
  */
 export const bunFileSystemModule: FileSystemModule = {
   writeFile: async (path, data) => {
-    await Bun.write(path, data)
+    await write(path, data)
   },
   mkdir: async () => {},
 }
