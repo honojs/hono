@@ -51,8 +51,10 @@ export type PendingType =
 export type Context =
   | [
       PendingType, // PendingType
-      boolean // got an error
+      boolean, // got an error
+      boolean // with startViewTransition
     ]
+  | [PendingType, boolean]
   | [PendingType]
   | []
 
@@ -309,7 +311,10 @@ export const build = (
     node.vR = vChildrenToRemove
   } catch (e) {
     if (errorHandler) {
-      const fallback = errorHandler(e, () => update([], topLevelErrorHandlerNode as NodeObject))
+      const withStartViewTransition = context[2]
+      const fallback = errorHandler(e, () =>
+        update([], topLevelErrorHandlerNode as NodeObject, !!withStartViewTransition)
+      )
       if (fallback) {
         if (context[0] === 1) {
           context[1] = true
@@ -343,10 +348,24 @@ const replaceContainer = (node: NodeObject, from: DocumentFragment, to: Containe
   }
 }
 
-export const update = (context: Context, node: NodeObject) => {
+const updateSync = (context: Context, node: NodeObject) => {
   build(context, node, undefined)
   if (context[0] !== 1 || !context[1]) {
     apply(node, node.c as Container)
+  }
+}
+
+export const update = (context: Context, node: NodeObject, withStartViewTransition: boolean) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (withStartViewTransition && (document as any).startViewTransition) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(document as any).startViewTransition(() => {
+      const localContext: Context = [...context]
+      localContext[2] = true
+      updateSync(localContext, node)
+    })
+  } else {
+    updateSync(context, node)
   }
 }
 
