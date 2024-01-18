@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.0.0-rc.0",
+  "version": "4.0.0-rc.1",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
