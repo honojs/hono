@@ -23,6 +23,6 @@ export const bunFileSystemModule: FileSystemModule = {
  * `toBunSSG` is an experimental feature.
  * The API might be changed.
  */
-export const toBunSSG: ToSSGAdaptorInterface = async (app, options) => {
+export const toSSG: ToSSGAdaptorInterface = async (app, options) => {
   return baseToSSG(app, bunFileSystemModule, options)
 }

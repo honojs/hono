@@ -1,7 +1,7 @@
 /** @jsx jsx */
 /** @jsxFrag Fragment */
 
-import { toDenoSSG } from '../../deno_dist/helper.ts'
+import { toSSG } from '../../deno_dist/middleware.ts'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from '../../deno_dist/middleware.ts'
 import { Hono } from '../../deno_dist/mod.ts'
@@ -30,7 +30,7 @@ Deno.test('toSSG function', async () => {
     return c.render('Hello!')
   })
 
-  const result = await toDenoSSG(app, { dir: './ssg-static' })
+  const result = await toSSG(app, { dir: './ssg-static' })
   assertEquals(result.success, true)
   assertEquals(result.error, undefined)
   assertEquals(result.files !== undefined, true)

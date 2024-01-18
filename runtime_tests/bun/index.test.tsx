@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
-import { serveStatic, toBunSSG } from '../../src/adapter/bun'
+import { serveStatic, toSSG } from '../../src/adapter/bun'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { Hono } from '../../src/index'
@@ -239,7 +239,7 @@ describe('toSSG function', () => {
   })
 
   it('Should correctly generate static HTML files for Hono routes', async () => {
-    const result = await toBunSSG(app, { dir: './static' })
+    const result = await toSSG(app, { dir: './static' })
     expect(result.success).toBeTruly
     expect(result.error).toBeUndefined()
     expect(result.files).toBeDefined()
