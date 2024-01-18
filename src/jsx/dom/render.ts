@@ -216,7 +216,7 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
   const callbacks: EffectData[] = []
   getNextChildren(node, container, next, remove, callbacks)
   let offset = container.childNodes.length
-  const insertBefore = findInsertBefore(node.nN)
+  const insertBefore = findInsertBefore(node.nN) || next.find((n) => n.e)?.e
   if (insertBefore) {
     for (let i = 0; i < offset; i++) {
       if (container.childNodes[i] === insertBefore) {
