@@ -26,36 +26,18 @@ const findTargetHandler = (handler: Function): Function => {
     : handler
 }
 
-interface RouteData {
-  path: string
-  method: string
-  name: string
-  isMiddleware: boolean
-  middlewareNames?: string[] // ミドルウェアの名前を格納するためのフィールドを追加
-}
-
-const getMiddlewareNames = (handler: Function): string[] => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const composed = (handler as any)[COMPOSED_HANDLER];
-  if (composed) {
-    return [handler.name, ...getMiddlewareNames(composed)];
-  }
-  return [handler.name];
-}
-
 export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
   return hono.routes.map(({ path, method, handler }: RouterRoute) => {
-    const targetHandler = findTargetHandler(handler);
-    const middlewareNames = isMiddleware(targetHandler) ? getMiddlewareNames(targetHandler) : [];
+    const targetHandler = findTargetHandler(handler)
     return {
       path,
       method,
       name: handlerName(targetHandler),
       isMiddleware: isMiddleware(targetHandler),
-      middlewareNames: middlewareNames // ミドルウェアの名前をRouteDataに追加
-    };
-  });
-};
+    }
+  })
+}
+
 export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions) => {
   const routeData: Record<string, RouteData[]> = {}
   let maxMethodLength = 0

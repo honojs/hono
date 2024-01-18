@@ -35,23 +35,23 @@ Deno.test('toSSG function', async () => {
   assertEquals(result.error, undefined)
   assertEquals(result.files !== undefined, true)
 
-  await deleteDirectory('./static');
+  await deleteDirectory('./static')
 })
 
 async function deleteDirectory(dirPath: string): Promise<void> {
   try {
-    const stat = await Deno.stat(dirPath);
+    const stat = await Deno.stat(dirPath)
 
     if (stat.isDirectory) {
       for await (const dirEntry of Deno.readDir(dirPath)) {
-        const entryPath = `${dirPath}/${dirEntry.name}`;
-        await deleteDirectory(entryPath);
+        const entryPath = `${dirPath}/${dirEntry.name}`
+        await deleteDirectory(entryPath)
       }
-      await Deno.remove(dirPath);
+      await Deno.remove(dirPath)
     } else {
-      await Deno.remove(dirPath);
+      await Deno.remove(dirPath)
     }
   } catch (error) {
-    console.error(`Error deleting directory: ${error}`);
+    console.error(`Error deleting directory: ${error}`)
   }
 }

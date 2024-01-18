@@ -18,6 +18,7 @@ interface BunFile {
   text(): Promise<string>
   stream(): ReadableStream
   arrayBuffer(): Promise<ArrayBuffer>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   json(): Promise<any>
   writer(params: { highWaterMark?: number }): FileSink
 }
