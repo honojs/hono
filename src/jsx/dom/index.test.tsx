@@ -5,7 +5,12 @@ import { JSDOM } from 'jsdom'
 import { jsx, Fragment } from '..'
 import type { RefObject } from '../hooks'
 import { useState, useEffect, useCallback, useRef } from '../hooks'
+import type { NodeObject } from './render'
 import { render } from '.'
+
+const getContainer = (element: JSX.Element): DocumentFragment | HTMLElement | undefined => {
+  return (element as unknown as NodeObject).c
+}
 
 describe('DOM', () => {
   let dom: JSDOM
@@ -74,10 +79,15 @@ describe('DOM', () => {
         setCount = _setCount
         return <div>{count}</div>
       }
-      render(<App />, root)
+      const app = <App />
+      render(app, root)
+      const container = getContainer(app) as HTMLElement
       expect(root.innerHTML).toBe('<div>0</div>')
+
+      const insertBeforeSpy = vi.spyOn(container, 'insertBefore')
       setCount(1)
       expect(root.innerHTML).toBe('<div>1</div>')
+      expect(insertBeforeSpy).not.toHaveBeenCalled()
     })
 
     it('element to text to element', () => {

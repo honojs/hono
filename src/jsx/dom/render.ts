@@ -205,7 +205,6 @@ const applyNode = (node: Node, container: Container) => {
   if (isNodeString(node)) {
     container.textContent = node[0]
   } else {
-    applyProps(container as HTMLElement, node.props)
     applyNodeObject(node, container)
   }
 }
@@ -216,7 +215,7 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
   const callbacks: EffectData[] = []
   getNextChildren(node, container, next, remove, callbacks)
   let offset = container.childNodes.length
-  const insertBefore = findInsertBefore(node.nN)
+  const insertBefore = findInsertBefore(node.nN) || next.find((n) => n.e)?.e
   if (insertBefore) {
     for (let i = 0; i < offset; i++) {
       if (container.childNodes[i] === insertBefore) {
