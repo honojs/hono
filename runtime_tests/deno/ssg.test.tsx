@@ -31,6 +31,7 @@ Deno.test('toSSG function', async () => {
   })
 
   const result = await toDenoSSG(app, { dir: './ssg-static' })
+  console.log(result)
   assertEquals(result.success, true)
   assertEquals(result.error, undefined)
   assertEquals(result.files !== undefined, true)
