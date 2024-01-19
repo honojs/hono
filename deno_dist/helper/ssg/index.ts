@@ -69,20 +69,22 @@ interface SSGParam {
 }
 type SSGParams = SSGParam[]
 
+interface SSGParamsMiddleware {
+  <E extends Env = Env>(
+    generateParams: (c: Context<E>) => SSGParams | Promise<SSGParams>
+  ): MiddlewareHandler<E>
+}
+
 type AddedSSGDataRequest = Request & {
   ssgParams?: SSGParams
 }
 /**
  * Define SSG Route
  */
-export const ssgParams =
-  <E extends Env = Env>(
-    params: ((c: Context<E>) => SSGParams | Promise<SSGParams>) | SSGParams
-  ): MiddlewareHandler<E> =>
-  async (c, next) => {
-    ;(c.req.raw as AddedSSGDataRequest).ssgParams = Array.isArray(params) ? params : await params(c)
-    await next()
-  }
+export const ssgParams: SSGParamsMiddleware = (params) => async (c, next) => {
+  ;(c.req.raw as AddedSSGDataRequest).ssgParams = Array.isArray(params) ? params : await params(c)
+  await next()
+}
 
 export interface ToSSGOptions {
   dir?: string
