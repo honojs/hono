@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { serveStatic } from '../../src/adapter/bun'
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
+import { serveStatic, toSSG } from '../../src/adapter/bun'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { Hono } from '../../src/index'
@@ -207,3 +207,64 @@ describe('JSX Middleware', () => {
     expect(await res.text()).toBe('<html><p>hello</p></html>')
   })
 })
+
+describe('toSSG function', () => {
+  let app: Hono
+
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/', (c) => c.text('Hello, World!'))
+    app.get('/about', (c) => c.text('About Page'))
+    app.get('/about/some', (c) => c.text('About Page 2tier'))
+    app.post('/about/some/thing', (c) => c.text('About Page 3tier'))
+    app.get('/bravo', (c) => c.html('Bravo Page'))
+    app.get('/Charlie', async (c, next) => {
+      c.setRenderer((content, head) => {
+        return c.html(
+          <html>
+            <head>
+              <title>{head.title || ''}</title>
+            </head>
+            <body>
+              <p>{content}</p>
+            </body>
+          </html>
+        )
+      })
+      await next()
+    })
+    app.get('/Charlie', (c) => {
+      return c.render('Hello!', { title: 'Charlies Page' })
+    })
+  })
+
+  it('Should correctly generate static HTML files for Hono routes', async () => {
+    const result = await toSSG(app, { dir: './static' })
+    expect(result.success).toBeTruly
+    expect(result.error).toBeUndefined()
+    expect(result.files).toBeDefined()
+    afterAll(async () => {
+      await deleteDirectory('./static')
+    })
+  })
+})
+
+const fs = require('fs').promises
+const path = require('path')
+
+async function deleteDirectory(dirPath) {
+  if (
+    await fs
+      .stat(dirPath)
+      .then((stat) => stat.isDirectory())
+      .catch(() => false)
+  ) {
+    for (const entry of await fs.readdir(dirPath)) {
+      const entryPath = path.join(dirPath, entry)
+      await deleteDirectory(entryPath)
+    }
+    await fs.rmdir(dirPath)
+  } else {
+    await fs.unlink(dirPath)
+  }
+}

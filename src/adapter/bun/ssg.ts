@@ -1,8 +1,10 @@
 // @denoify-ignore
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { mkdir, writeFile } from 'fs/promises'
 import { toSSG as baseToSSG } from '../../helper/ssg'
 import type { FileSystemModule, ToSSGAdaptorInterface } from '../../helper/ssg'
+
+// @ts-ignore
+const { write } = Bun
 
 /**
  * @experimental
@@ -10,12 +12,10 @@ import type { FileSystemModule, ToSSGAdaptorInterface } from '../../helper/ssg'
  * The API might be changed.
  */
 export const bunFileSystemModule: FileSystemModule = {
-  writeFile: (path, data) => {
-    return writeFile(path, data)
+  writeFile: async (path, data) => {
+    await write(path, data)
   },
-  mkdir: async (path, options) => {
-    await mkdir(path, options)
-  },
+  mkdir: async () => {},
 }
 
 /**
