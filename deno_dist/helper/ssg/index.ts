@@ -1,9 +1,9 @@
-import { Buffer } from "node:buffer";
 import { replaceUrlParam } from '../../client/utils.ts'
 import type { Context } from '../../context.ts'
 import { inspectRoutes } from '../../helper/dev/index.ts'
 import type { Hono } from '../../hono.ts'
 import type { Env, MiddlewareHandler, Schema } from '../../types.ts'
+import { bufferToString } from '../../utils/buffer.ts'
 import { getExtension } from '../../utils/mime.ts'
 import { joinPaths, dirname } from './utils.ts'
 
@@ -13,7 +13,7 @@ import { joinPaths, dirname } from './utils.ts'
  * The API might be changed.
  */
 export interface FileSystemModule {
-  writeFile(path: string, data: string | Buffer): Promise<void>
+  writeFile(path: string, data: string | ArrayBuffer | Uint8Array): Promise<void>
   mkdir(path: string, options: { recursive: boolean }): Promise<void | string>
 }
 
@@ -153,7 +153,7 @@ export const saveContentToFiles = async (
     if (typeof content === 'string') {
       await fsModule.writeFile(filePath, content)
     } else if (content instanceof ArrayBuffer) {
-      await fsModule.writeFile(filePath, Buffer.from(content))
+      await fsModule.writeFile(filePath, bufferToString(content))
     }
     files.push(filePath)
   }
