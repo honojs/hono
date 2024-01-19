@@ -20,7 +20,7 @@ export const bunFileSystemModule: FileSystemModule = {
 
 /**
  * @experimental
- * `toBunSSG` is an experimental feature.
+ * `toSSG` is an experimental feature.
  * The API might be changed.
  */
 export const toSSG: ToSSGAdaptorInterface = async (app, options) => {
