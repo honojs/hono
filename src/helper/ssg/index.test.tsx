@@ -44,6 +44,12 @@ describe('toSSG function', () => {
       (c) => c.html(<h1>{c.req.param('post')}</h1>)
     )
 
+    app.get(
+      '/user/:user_id',
+      ssgParams([{ user_id: '1' }, { user_id: '2' }, { user_id: '3' }]),
+      (c) => c.html(<h1>{c.req.param('user_id')}</h1>)
+    )
+
     type Env = {
       Bindings: {
         FOO_DB: string
@@ -73,6 +79,11 @@ describe('toSSG function', () => {
     for (const postParam of postParams) {
       const html = htmlMap.get(`/post/${postParam.post}`)
       expect(html?.content).toBe(`<h1>${postParam.post}</h1>`)
+    }
+
+    for (let i = 1; i <= 3; i++) {
+      const html = htmlMap.get(`/user/${i}`)
+      expect(html?.content).toBe(`<h1>${i}</h1>`)
     }
 
     const files = await saveContentToFiles(htmlMap, fsMock, './static')
