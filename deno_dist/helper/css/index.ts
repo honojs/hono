@@ -304,11 +304,14 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     return className
   }
 
-  const Style = ({ children }: { children?: Promise<string> } = {}) =>
+  const Style = ({ children }: { children?: Promise<string> } = {}): Promise<HtmlEscapedString> =>
     children
-      ? children.then((cssData) =>
-          raw(`<style id="${id}">${(cssData as CssClassName)[STYLE_STRING]}</style>`)
-        )
+      ? children instanceof Promise
+        ? children.then((cssData) =>
+            raw(`<style id="${id}">${(cssData as CssClassName)[STYLE_STRING]}</style>`)
+          )
+        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ({ tag: 'style', children, props: { id } } as any) // TBD: <Style>{css``}</Style> is currently not working. only support <Style/>
       : raw(`<style id="${id}"></style>`)
 
   return {
