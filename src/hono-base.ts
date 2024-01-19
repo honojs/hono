@@ -126,7 +126,8 @@ class Hono<
       handlers.map((handler) => {
         this.addRoute(METHOD_NAME_ALL, this.#path, handler)
       })
-      return this
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return this as any
     }
 
     const strict = options.strict ?? true

@@ -1054,3 +1054,26 @@ describe('Env types with chained routes - test only types', () => {
       )
   })
 })
+
+describe('Env types with `use` middleware - test only types', () => {
+  const app = new Hono()
+
+  const mw1 = createMiddleware<{ Variables: { foo1: string } }>(async () => {})
+  const mw2 = createMiddleware<{ Variables: { foo2: string } }>(async () => {})
+
+  it('Should not throw a type error', () => {
+    app
+      .use(mw1)
+      .use(mw2)
+      .get('/', (c) => {
+        expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
+        expectTypeOf(c.get('foo2')).toEqualTypeOf<string>()
+        return c.json({ success: true })
+      })
+    app.use(mw1, mw2).get('/', (c) => {
+      expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
+      expectTypeOf(c.get('foo2')).toEqualTypeOf<string>()
+      return c.json({ success: true })
+    })
+  })
+})
