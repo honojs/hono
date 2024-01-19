@@ -13,8 +13,8 @@ describe('toSSG function', () => {
 
   beforeEach(() => {
     app = new Hono()
-    app.get('/', (c) => c.text('Hello, World!'))
-    app.get('/about', (c) => c.text('About Page'))
+    app.get('/', (c) => c.html('Hello, World!'))
+    app.get('/about', (c) => c.html('About Page'))
     app.get('/about/some', (c) => c.text('About Page 2tier'))
     app.post('/about/some/thing', (c) => c.text('About Page 3tier'))
     app.get('/bravo', (c) => c.html('Bravo Page'))
@@ -96,6 +96,24 @@ describe('toSSG function', () => {
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
     expect(result.files).toBeUndefined()
+  })
+
+  it('Should correctly generate files with the expected paths', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const htmlMap = await fetchRoutesContent(app)
+    await saveContentToFiles(htmlMap, fsMock, './static')
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/some.txt', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/some/thing.txt', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.html', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/Charlie.html', expect.any(String))
   })
 })
 
