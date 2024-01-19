@@ -13,7 +13,7 @@ import { joinPaths, dirname } from './utils.ts'
  * The API might be changed.
  */
 export interface FileSystemModule {
-  writeFile(path: string, data: string | ArrayBuffer | Uint8Array): Promise<void>
+  writeFile(path: string, data: string | Uint8Array): Promise<void>
   mkdir(path: string, options: { recursive: boolean }): Promise<void | string>
 }
 
