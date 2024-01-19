@@ -46,18 +46,18 @@ describe('toSSG function', () => {
 
     type Env = {
       Bindings: {
-        HOGE_DB: string
+        FOO_DB: string
       }
       Variables: {
-        HOGE_VAR: string
+        FOO_VAR: string
       }
     }
 
     app.get(
       '/env-type-check',
       ssgParams<Env>((c) => {
-        expectTypeOf<typeof c.env.HOGE_DB>().toBeString()
-        expectTypeOf<typeof c.var.HOGE_VAR>().toBeString()
+        expectTypeOf<typeof c.env.FOO_DB>().toBeString()
+        expectTypeOf<typeof c.var.FOO_VAR>().toBeString()
         return []
       })
     )
