@@ -3,7 +3,7 @@ import { Hono } from '../../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
-import { fetchRoutesContent, saveContentToFiles, ssgParams, toSSG } from './index'
+import { fetchRoutesContent, isSSG, isSSR, saveContentToFiles, ssgParams, toSSG } from './index'
 import type { FileSystemModule } from './index'
 
 describe('toSSG function', () => {
@@ -50,7 +50,7 @@ describe('toSSG function', () => {
       mkdir: vi.fn(() => Promise.resolve()),
     }
 
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await fetchRoutesContent(app, {})
 
     for (const postParam of postParams) {
       const html = htmlMap.get(`/post/${postParam.post}`)
@@ -73,7 +73,7 @@ describe('toSSG function', () => {
     }
 
     try {
-      const htmlMap = await fetchRoutesContent(app)
+      const htmlMap = await fetchRoutesContent(app, {})
       await saveContentToFiles(htmlMap, fsMock, './static')
       expect(true).toBe(false) // This should not be reached
     } catch (error) {
@@ -104,7 +104,7 @@ describe('toSSG function', () => {
       mkdir: vi.fn(() => Promise.resolve()),
     }
 
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await fetchRoutesContent(app, {})
     await saveContentToFiles(htmlMap, fsMock, './static')
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', expect.any(String))
@@ -129,7 +129,7 @@ describe('fetchRoutesContent function', () => {
   })
 
   it('should fetch the correct content and MIME type for each route', async () => {
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await fetchRoutesContent(app, {})
     expect(htmlMap.get('/text')).toEqual({
       content: 'Text Response',
       mimeType: 'text/plain',
@@ -145,13 +145,13 @@ describe('fetchRoutesContent function', () => {
   })
 
   it('should skip middleware routes', async () => {
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await fetchRoutesContent(app, {})
     expect(htmlMap.has('*')).toBeFalsy()
   })
 
   it('should handle errors correctly', async () => {
     vi.spyOn(app, 'fetch').mockRejectedValue(new Error('Network error'))
-    await expect(fetchRoutesContent(app)).rejects.toThrow('Network error')
+    await expect(fetchRoutesContent(app, {})).rejects.toThrow('Network error')
     vi.restoreAllMocks()
   })
 })
@@ -207,22 +207,67 @@ describe('Dynamic route handling', () => {
   })
 
   it('should skip /shops/:id dynamic route', async () => {
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await fetchRoutesContent(app, {})
     expect(htmlMap.has('/shops/:id')).toBeFalsy()
   })
 
   it('should skip /shops/:id/:comments([0-9]+) dynamic route', async () => {
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await fetchRoutesContent(app, {})
     expect(htmlMap.has('/shops/:id/:comments([0-9]+)')).toBeFalsy()
   })
 
   it('should skip /foo/* dynamic route', async () => {
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await fetchRoutesContent(app, {})
     expect(htmlMap.has('/foo/*')).toBeFalsy()
   })
 
   it('should not skip /foo:bar dynamic route', async () => {
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await fetchRoutesContent(app, {})
     expect(htmlMap.has('/foo:bar')).toBeTruthy()
+  })
+})
+
+describe('isSSG/isSSR middlewares', () => {
+  let app: Hono
+  beforeEach(() => {
+    app = new Hono()
+
+    // Default
+    app.get('/default', c => c.html(<h1>default</h1>))
+
+    // Force SSG
+    app.get('/ssg', isSSG(), c => c.html(<h1>SSG</h1>))
+    // Force SSR
+    app.get('/ssg', isSSR(), c => c.html(<h1>SSR</h1>))
+  })
+  it('Should result is expected state when SSG-Based mode.', async () => {
+    const htmlMap = await fetchRoutesContent(app, {
+      default: 'ssg'
+    })
+
+    expect(htmlMap.has('/default')).toBe(true)
+
+    expect(htmlMap.has('/ssg')).toBe(true)
+    expect(htmlMap.has('/ssr')).toBe(false)
+  })
+
+  it('Should result is expected state when SSR-Based mode.', async () => {
+    const htmlMap = await fetchRoutesContent(app, {
+      default: 'ssr'
+    })
+
+    expect(htmlMap.has('/default')).toBe(false)
+
+    expect(htmlMap.has('/ssg')).toBe(true)
+    expect(htmlMap.has('/ssr')).toBe(false)
+  })
+
+  it('Should result is expected state when default is undefined', async () => {
+    const htmlMap = await fetchRoutesContent(app, {})
+
+    expect(htmlMap.has('/default')).toBe(true)
+
+    expect(htmlMap.has('/ssg')).toBe(true)
+    expect(htmlMap.has('/ssr')).toBe(false)
   })
 })
