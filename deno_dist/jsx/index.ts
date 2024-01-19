@@ -14,6 +14,7 @@ export {
   startTransition,
   useTransition,
   useDeferredValue,
+  startViewTransition,
 } from './hooks/index.ts'
 export type { RefObject } from './hooks/index.ts'
 export { createContext, useContext } from './context.ts'
