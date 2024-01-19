@@ -73,6 +73,7 @@ interface SSGParamsMiddleware {
   <E extends Env = Env>(
     generateParams: (c: Context<E>) => SSGParams | Promise<SSGParams>
   ): MiddlewareHandler<E>
+  <E extends Env = Env>(params: SSGParams): MiddlewareHandler<E>
 }
 
 type AddedSSGDataRequest = Request & {
