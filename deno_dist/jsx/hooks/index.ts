@@ -1,5 +1,5 @@
 import { buildDataStack, update, build, STASH } from '../dom/render.ts'
-import type { Node, NodeObject, Context, PendingType } from '../dom/render.ts'
+import type { Node, NodeObject, Context, PendingType, UpdateHook } from '../dom/render.ts'
 
 type UpdateStateFunction<T> = (newState: T | ((currentState: T) => T)) => void
 
@@ -16,27 +16,41 @@ export type EffectData = [
 
 const resolvedPromiseValueMap = new WeakMap<Promise<unknown>, unknown>()
 
-let updateWithStartViewTransition = false
+let updateHook: UpdateHook | undefined = undefined
+
 export const startViewTransition = (callback: () => void): void => {
-  updateWithStartViewTransition = true
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!(document as any).startViewTransition) {
+    callback()
+    return
+  }
+
+  updateHook = (cb) => {
+    let resolve: (() => void) | undefined
+    const promise = new Promise<void>((r) => (resolve = r))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(document as any).startViewTransition(() => {
+      cb()
+      ;(resolve as () => void)()
+    })
+    return promise
+  }
+
   try {
     callback()
   } finally {
-    updateWithStartViewTransition = false
+    updateHook = undefined
   }
 }
 
-type PendingStackItem = [PendingType, Map<Node, Function>]
-const pendingStack: PendingStackItem[] = []
+const pendingStack: PendingType[] = []
 const runCallback = (type: PendingType, callback: Function): void => {
-  const map = new Map()
-  pendingStack.push([type, map])
+  pendingStack.push(type)
   try {
     callback()
   } finally {
     pendingStack.pop()
   }
-  map.forEach((cb) => cb())
 }
 
 export const startTransition = (callback: () => void): void => {
@@ -89,6 +103,7 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
   return (stateArray[hookIndex] ||= [
     resolveInitialState(),
     (newState: T | ((currentState: T) => T)) => {
+      const localUpdateHook = updateHook
       const stateData = stateArray[hookIndex]
       if (typeof newState === 'function') {
         newState = (newState as (currentState: T) => T)(stateData[0])
@@ -97,11 +112,21 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
       if (newState !== stateData[0]) {
         stateData[0] = newState
         if (pendingStack.length) {
-          const [type, map] = pendingStack.at(-1) as PendingStackItem
-          map.set(node, () => {
-            const context: Context = [type, false]
-            if (type === 2) {
-              setTimeout(async () => {
+          const pendingType = pendingStack.at(-1) as PendingType
+          update([pendingType, false, localUpdateHook as UpdateHook], node).then((node) => {
+            if (!node || pendingType !== 2) {
+              return
+            }
+
+            const lastVC = node.vC
+
+            const addUpdateTask = () => {
+              setTimeout(() => {
+                // `node` is not rerendered after current transition
+                if (lastVC !== node.vC) {
+                  return
+                }
+
                 const shadowNode = Object.assign({}, node) as NodeObject
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,19 +134,20 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
                 build([], shadowNode, undefined)
                 setShadow(shadowNode) // save the `shadowNode.vC` of the virtual DOM of the build result as a result of shadow virtual DOM `shadowNode.s`
 
-                // `node` is not rerendered after current transition
-                if (lastVC === node.vC) {
-                  node.s = shadowNode.s
-                  update([], node, false)
-                }
+                node.s = shadowNode.s
+                update([0, false, localUpdateHook as UpdateHook], node)
               })
             }
 
-            update(context, node, false)
-            const lastVC = node.vC
+            if (localUpdateHook) {
+              // wait for next animation frame, then invoke `update()`
+              requestAnimationFrame(addUpdateTask)
+            } else {
+              addUpdateTask()
+            }
           })
         } else {
-          update([], node, updateWithStartViewTransition)
+          update([0, false, localUpdateHook as UpdateHook], node)
         }
       }
     },
