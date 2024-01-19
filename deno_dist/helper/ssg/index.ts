@@ -72,6 +72,7 @@ interface SSGParamsMiddleware {
 }
 type AddedSSGDataRequest = Request & {
   ssgParams?: SSGParams
+  ssgMode?: 'ssg' | 'ssr'
 }
 /**
  * Define SSG Route
@@ -81,8 +82,18 @@ export const ssgParams: SSGParamsMiddleware = (generateParams) => async (c, next
   await next()
 }
 
+export const isSSG = (): MiddlewareHandler => async (c, next) => {
+  ;(c.req.raw as AddedSSGDataRequest).ssgMode = 'ssg'
+  await next()
+}
+export const isSSR = (): MiddlewareHandler => async (c, next) => {
+  ;(c.req.raw as AddedSSGDataRequest).ssgMode = 'ssr'
+  await next()
+}
+
 export interface ToSSGOptions {
   dir?: string
+  default?: 'ssr' | 'ssg'
 }
 
 /**
@@ -95,7 +106,8 @@ export const fetchRoutesContent = async <
   S extends Schema = {},
   BasePath extends string = '/'
 >(
-  app: Hono<E, S, BasePath>
+  app: Hono<E, S, BasePath>,
+  options: ToSSGOptions
 ): Promise<Map<string, { content: string | ArrayBuffer; mimeType: string }>> => {
   const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
   const baseURL = 'http://localhost'
@@ -108,6 +120,13 @@ export const fetchRoutesContent = async <
     const forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
     await app.fetch(forGetInfoURLRequest)
 
+    if (!forGetInfoURLRequest.ssgMode) {
+      forGetInfoURLRequest.ssgMode = options.default ?? 'ssg'
+    }
+    if (forGetInfoURLRequest.ssgMode !== 'ssg') {
+      // Don't SSG
+      continue
+    }
     if (!forGetInfoURLRequest.ssgParams) {
       if (isDynamicRoute(route.path)) continue
       forGetInfoURLRequest.ssgParams = [{}]
@@ -198,7 +217,7 @@ export interface ToSSGAdaptorInterface<
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
   try {
     const outputDir = options?.dir ?? './static'
-    const maps = await fetchRoutesContent(app)
+    const maps = await fetchRoutesContent(app, options ?? {})
     const files = await saveContentToFiles(maps, fs, outputDir)
     return { success: true, files }
   } catch (error) {
