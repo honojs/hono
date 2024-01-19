@@ -233,16 +233,16 @@ describe('isSSG/isSSR middlewares', () => {
     app = new Hono()
 
     // Default
-    app.get('/default', c => c.html(<h1>default</h1>))
+    app.get('/default', (c) => c.html(<h1>default</h1>))
 
     // Force SSG
-    app.get('/ssg', isSSG(), c => c.html(<h1>SSG</h1>))
+    app.get('/ssg', isSSG(), (c) => c.html(<h1>SSG</h1>))
     // Force SSR
-    app.get('/ssg', isSSR(), c => c.html(<h1>SSR</h1>))
+    app.get('/ssg', isSSR(), (c) => c.html(<h1>SSR</h1>))
   })
   it('Should result is expected state when SSG-Based mode.', async () => {
     const htmlMap = await fetchRoutesContent(app, {
-      default: 'ssg'
+      default: 'ssg',
     })
 
     expect(htmlMap.has('/default')).toBe(true)
@@ -253,7 +253,7 @@ describe('isSSG/isSSR middlewares', () => {
 
   it('Should result is expected state when SSR-Based mode.', async () => {
     const htmlMap = await fetchRoutesContent(app, {
-      default: 'ssr'
+      default: 'ssr',
     })
 
     expect(htmlMap.has('/default')).toBe(false)
