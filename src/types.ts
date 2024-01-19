@@ -28,7 +28,6 @@ export type Input = {
 
 export type BlankSchema = {}
 export type BlankInput = {}
-export type Path = string
 
 ////////////////////////////////////////
 //////                            //////
@@ -65,7 +64,7 @@ export type MiddlewareHandler<
 
 export type H<
   E extends Env = any,
-  P extends Path = Path,
+  P extends string = any,
   I extends Input = BlankInput,
   R extends HandlerResponse<any> = any
 > = Handler<E, P, I, R> | MiddlewareHandler<E, P, I>
@@ -387,7 +386,7 @@ export interface HandlerInterface<
 
   // app.get(path, handler)
   <
-    P extends Path,
+    P extends string,
     MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
     R extends HandlerResponse<any> = any,
     I extends Input = BlankInput,
