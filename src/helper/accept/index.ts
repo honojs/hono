@@ -1,1 +1,1 @@
-export { matchAccept } from './accept'
+export { accepts } from './accept'

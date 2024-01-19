@@ -1,6 +1,6 @@
 import { Hono } from '../..'
-import type { Accept, MatchAcceptConfig, MatchAcceptOptions } from './accept'
-import { parseAccept, defaultMatch, matchAccept } from './accept'
+import type { Accept, acceptsConfig, acceptsOptions } from './accept'
+import { parseAccept, defaultMatch, accepts } from './accept'
 
 describe('parseAccept', () => {
   test('should parse accept header', () => {
@@ -26,7 +26,7 @@ describe('defaultMatch', () => {
       { type: 'image/webp', params: {}, q: 1 },
       { type: '*/*', params: { q: '0.8' }, q: 0.8 },
     ]
-    const config: MatchAcceptConfig = {
+    const config: acceptsConfig = {
       header: 'Accept',
       supports: ['text/html'],
       default: 'text/html',
@@ -36,7 +36,7 @@ describe('defaultMatch', () => {
   })
 })
 
-describe('matchAccept', () => {
+describe('accepts', () => {
   test('should return matched support', () => {
     const c = {
       req: {
@@ -44,12 +44,12 @@ describe('matchAccept', () => {
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any
-    const options: MatchAcceptConfig = {
+    const options: acceptsConfig = {
       header: 'Accept',
       supports: ['application/xml', 'text/html'],
       default: 'application/json',
     }
-    const result = matchAccept(c, options)
+    const result = accepts(c, options)
     expect(result).toBe('text/html')
   })
 
@@ -60,12 +60,12 @@ describe('matchAccept', () => {
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any
-    const options: MatchAcceptConfig = {
+    const options: acceptsConfig = {
       header: 'Accept',
       supports: ['application/json'],
       default: 'text/html',
     }
-    const result = matchAccept(c, options)
+    const result = accepts(c, options)
     expect(result).toBe('text/html')
   })
 
@@ -76,12 +76,12 @@ describe('matchAccept', () => {
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any
-    const options: MatchAcceptConfig = {
+    const options: acceptsConfig = {
       header: 'Accept',
       supports: ['application/json'],
       default: 'text/html',
     }
-    const result = matchAccept(c, options)
+    const result = accepts(c, options)
     expect(result).toBe('text/html')
   })
 
@@ -93,20 +93,20 @@ describe('matchAccept', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any
     // this match function will return the least q value
-    const match = (accepts: Accept[], config: MatchAcceptConfig) => {
+    const match = (accepts: Accept[], config: acceptsConfig) => {
       const { supports, default: defaultSupport } = config
       const accept = accepts
         .sort((a, b) => a.q - b.q)
         .find((accept) => supports.includes(accept.type))
       return accept ? accept.type : defaultSupport
     }
-    const options: MatchAcceptOptions = {
+    const options: acceptsOptions = {
       header: 'Accept',
       supports: ['application/xml', 'text/html'],
       default: 'application/json',
       match,
     }
-    const result = matchAccept(c, options)
+    const result = accepts(c, options)
     expect(result).toBe('application/xml')
   })
 })
@@ -115,7 +115,7 @@ describe('Usage', () => {
   test('decide compression by Accept-Encoding header', async () => {
     const app = new Hono()
     app.get('/compressed', async (c) => {
-      const encoding = matchAccept(c, {
+      const encoding = accepts(c, {
         header: 'Accept-Encoding',
         supports: ['gzip', 'deflate'],
         default: 'identity',
@@ -157,7 +157,7 @@ describe('Usage', () => {
     const app = new Hono()
     const SUPPORTED_LANGS = ['en', 'ja', 'zh']
     app.get('/*', async (c) => {
-      const lang = matchAccept(c, {
+      const lang = accepts(c, {
         header: 'Accept-Language',
         supports: SUPPORTED_LANGS,
         default: 'en',
