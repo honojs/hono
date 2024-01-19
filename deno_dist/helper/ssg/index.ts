@@ -67,17 +67,22 @@ interface SSGParam {
   [key: string]: string
 }
 type SSGParams = SSGParam[]
+
 interface SSGParamsMiddleware {
-  (generateParams: (c: Context) => SSGParams | Promise<SSGParams>): MiddlewareHandler
+  <E extends Env = Env>(
+    generateParams: (c: Context<E>) => SSGParams | Promise<SSGParams>
+  ): MiddlewareHandler<E>
+  <E extends Env = Env>(params: SSGParams): MiddlewareHandler<E>
 }
+
 type AddedSSGDataRequest = Request & {
   ssgParams?: SSGParams
 }
 /**
  * Define SSG Route
  */
-export const ssgParams: SSGParamsMiddleware = (generateParams) => async (c, next) => {
-  ;(c.req.raw as AddedSSGDataRequest).ssgParams = await generateParams(c)
+export const ssgParams: SSGParamsMiddleware = (params) => async (c, next) => {
+  ;(c.req.raw as AddedSSGDataRequest).ssgParams = Array.isArray(params) ? params : await params(c)
   await next()
 }
 
