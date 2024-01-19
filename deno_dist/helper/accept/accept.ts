@@ -15,14 +15,14 @@ export interface Accept {
   q: number
 }
 
-export interface MatchAcceptConfig {
+export interface acceptsConfig {
   header: AcceptHeader
   supports: string[]
   default: string
 }
 
-export interface MatchAcceptOptions extends MatchAcceptConfig {
-  match?: (accepts: Accept[], config: MatchAcceptConfig) => string
+export interface acceptsOptions extends acceptsConfig {
+  match?: (accepts: Accept[], config: acceptsConfig) => string
 }
 
 export const parseAccept = (acceptHeader: string) => {
@@ -42,7 +42,7 @@ export const parseAccept = (acceptHeader: string) => {
   })
 }
 
-export const defaultMatch = (accepts: Accept[], config: MatchAcceptConfig) => {
+export const defaultMatch = (accepts: Accept[], config: acceptsConfig) => {
   const { supports, default: defaultSupport } = config
   const accept = accepts.sort((a, b) => b.q - a.q).find((accept) => supports.includes(accept.type))
   return accept ? accept.type : defaultSupport
@@ -53,7 +53,7 @@ export const defaultMatch = (accepts: Accept[], config: MatchAcceptConfig) => {
  * @example
  * ```ts
  * app.get('/users', (c) => {
- *   const lang = matchAccept(c, {
+ *   const lang = accepts(c, {
  *     header: 'Accept-Language',
  *     supports: ['en', 'zh'],
  *     default: 'en',
@@ -61,7 +61,7 @@ export const defaultMatch = (accepts: Accept[], config: MatchAcceptConfig) => {
  * })
  * ```
  */
-export const matchAccept = (c: Context, options: MatchAcceptOptions) => {
+export const accepts = (c: Context, options: acceptsOptions) => {
   const acceptHeader = c.req.header(options.header)
   if (!acceptHeader) return options.default
   const accepts = parseAccept(acceptHeader)
