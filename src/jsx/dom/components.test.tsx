@@ -4,7 +4,7 @@ import { JSDOM } from 'jsdom'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from '..'
 import { Suspense as SuspenseCommon, ErrorBoundary as ErrorBoundaryCommon } from '..' // for common
-import { use } from '../hooks'
+import { use, useState } from '../hooks'
 import { Suspense as SuspenseDom, ErrorBoundary as ErrorBoundaryDom } from '.' // for dom
 import { render } from '.'
 
@@ -90,6 +90,44 @@ function runner(
         resolve2(2)
         await new Promise((resolve) => setTimeout(resolve))
         expect(root.innerHTML).toBe('<p>1</p><p>2</p>')
+      })
+
+      it('race condition', async () => {
+        let resolve: (value: number) => void = () => {}
+        const promise = new Promise<number>((_resolve) => (resolve = _resolve))
+        const Content = () => {
+          const num = use(promise)
+          return <p>{num}</p>
+        }
+        const Component = () => {
+          const [show, setShow] = useState(false)
+          return (
+            <div>
+              <button onClick={() => setShow((s) => !s)}>{show ? 'Hide' : 'Show'}</button>
+              {show && (
+                <Suspense fallback={<div>Loading...</div>}>
+                  <Content />
+                </Suspense>
+              )}
+            </div>
+          )
+        }
+        const App = <Component />
+        render(App, root)
+        expect(root.innerHTML).toBe('<div><button>Show</button></div>')
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><button>Hide</button><div>Loading...</div></div>')
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><button>Show</button></div>')
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><button>Hide</button><div>Loading...</div></div>')
+        resolve(2)
+        await Promise.resolve()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><button>Hide</button><p>2</p></div>')
       })
     })
 

@@ -192,14 +192,19 @@ const findInsertBefore = (node: Node | undefined): ChildNode | null => {
 }
 
 const removeNode = (node: Node) => {
-  node.e?.remove()
   if (!isNodeString(node)) {
     node[STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => data[2]?.())
     node.vC?.forEach(removeNode)
   }
+  node.e?.remove()
+  node.tag = undefined
 }
 
 const apply = (node: NodeObject, container: Container) => {
+  if (node.tag === undefined) {
+    return
+  }
+
   node.c = container
   applyNodeObject(node, container)
 }
@@ -256,6 +261,10 @@ export const build = (
   topLevelErrorHandlerNode: NodeObject | undefined,
   children?: Child[]
 ): void => {
+  if (node.tag === undefined) {
+    return
+  }
+
   let errorHandler: ErrorHandler | undefined
   children ||= typeof node.tag == 'function' ? invokeTag(context, node) : node.children
   if ((children[0] as JSXNode)?.tag === '') {
@@ -395,7 +404,7 @@ export const update = async (
 }
 
 export const render = (jsxNode: unknown, container: Container) => {
-  const node = buildNode({ children: [jsxNode] } as JSXNode) as NodeObject
+  const node = buildNode({ tag: '', children: [jsxNode] } as JSXNode) as NodeObject
   build([], node, undefined)
 
   const fragment = document.createDocumentFragment()
