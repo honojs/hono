@@ -947,10 +947,3 @@ describe('Env types with `use` middleware - test only types', () => {
     })
   })
 })
-
-describe('Env types with chained routes with middlewares - test only types', () => {
-  const app = new Hono()
-
-  const mw1 = createMiddleware<{ Variables: { foo1: string } }>(async () => {})
-  const mw2 = createMiddleware<{ Variables: { foo2: string } }>(async () => {})
-})
