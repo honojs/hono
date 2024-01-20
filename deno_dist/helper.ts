@@ -1,4 +1,5 @@
 // This file is for Deno to import helpers from `hono/helper.ts`.
+export * from './helper/accept/index.ts'
 export * from './helper/adapter/index.ts'
 export * from './helper/cookie/index.ts'
 export * from './helper/css/index.ts'

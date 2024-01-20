@@ -1,4 +1,4 @@
-import type { Context } from '../../index.ts'
+import type { Context } from '../../context.ts'
 
 export type AcceptHeader =
   | 'Accept'
