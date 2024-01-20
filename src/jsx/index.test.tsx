@@ -102,6 +102,7 @@ describe('JSX middleware', () => {
     }
 
     app.get('/', (c) => {
+      // prettier-ignore
       return c.html(
         html`<html><body>${(<AsyncComponent />)}</body></html>`
       )
@@ -312,7 +313,7 @@ describe('render to string', () => {
 
       const template = <ListOfTenThings />
       expect(template.toString()).toBe(
-        '<div><div key="0">This is item 0 in the list</div><div key="1">This is item 1 in the list</div><div key="2">This is item 2 in the list</div><div key="3">This is item 3 in the list</div><div key="4">This is item 4 in the list</div><div key="5">This is item 5 in the list</div><div key="6">This is item 6 in the list</div><div key="7">This is item 7 in the list</div><div key="8">This is item 8 in the list</div><div key="9">This is item 9 in the list</div></div>'
+        '<div><div>This is item 0 in the list</div><div>This is item 1 in the list</div><div>This is item 2 in the list</div><div>This is item 3 in the list</div><div>This is item 4 in the list</div><div>This is item 5 in the list</div><div>This is item 6 in the list</div><div>This is item 7 in the list</div><div>This is item 8 in the list</div><div>This is item 9 in the list</div></div>'
       )
     })
   })

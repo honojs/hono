@@ -1,5 +1,6 @@
 import type { Context } from '../context'
 import { getCookie } from '../helper/cookie'
+import { HTTPException } from '../http-exception'
 import type { Env, ValidationTargets, MiddlewareHandler, TypedResponse } from '../types'
 import type { BodyData } from '../utils/body'
 import { bufferToFormData } from '../utils/buffer'
@@ -55,14 +56,7 @@ export const validator = <
       case 'json':
         if (!contentType || !contentType.startsWith('application/json')) {
           const message = `Invalid HTTP header: Content-Type=${contentType}`
-          console.error(message)
-          return c.json(
-            {
-              success: false,
-              message,
-            },
-            400
-          )
+          throw new HTTPException(400, { message })
         }
         /**
          * Get the arrayBuffer first, create JSON object via Response,
@@ -74,14 +68,8 @@ export const validator = <
           c.req.bodyCache.json = value
           c.req.bodyCache.arrayBuffer = arrayBuffer
         } catch {
-          console.error('Error: Malformed JSON in request body')
-          return c.json(
-            {
-              success: false,
-              message: 'Malformed JSON in request body',
-            },
-            400
-          )
+          const message = 'Malformed JSON in request body'
+          throw new HTTPException(400, { message })
         }
         break
       case 'form': {
@@ -101,13 +89,7 @@ export const validator = <
         } catch (e) {
           let message = 'Malformed FormData request.'
           message += e instanceof Error ? ` ${e.message}` : ` ${String(e)}`
-          return c.json(
-            {
-              success: false,
-              message,
-            },
-            400
-          )
+          throw new HTTPException(400, { message })
         }
         break
       }
@@ -117,10 +99,6 @@ export const validator = <
             return v.length === 1 ? [k, v[0]] : [k, v]
           })
         )
-        break
-      case 'queries':
-        value = c.req.queries()
-        console.log('Warnings: Validate type `queries` is deprecated. Use `query` instead.')
         break
       case 'param':
         value = c.req.param() as Record<string, string>

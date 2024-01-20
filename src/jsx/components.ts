@@ -1,11 +1,10 @@
 import { raw } from '../helper/html'
-import {
-  HtmlEscapedCallbackPhase,
-  resolveCallback,
-  type HtmlEscapedString,
-  type HtmlEscapedCallback,
-} from '../utils/html'
-import type { FC, Child } from './index'
+import type { HtmlEscapedString, HtmlEscapedCallback } from '../utils/html'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
+import { ErrorBoundary as ErrorBoundaryDomRenderer } from './dom/components'
+import type { HasRenderToDom } from './dom/render'
+import { RENDER_TO_DOM } from './dom/render'
+import type { FC, Child } from '.'
 
 let errorBoundaryCounter = 0
 
@@ -22,8 +21,8 @@ export const childrenToString = async (children: Child[]): Promise<HtmlEscapedSt
   }
 }
 
-type ErrorHandler = (error: Error) => void
-type FallbackRender = (error: Error) => Child
+export type ErrorHandler = (error: Error) => void
+export type FallbackRender = (error: Error) => Child
 
 /**
  * @experimental
@@ -181,3 +180,4 @@ d.remove()
     return raw(resArray.join(''))
   }
 }
+;(ErrorBoundary as HasRenderToDom)[RENDER_TO_DOM] = ErrorBoundaryDomRenderer

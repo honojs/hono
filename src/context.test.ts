@@ -181,12 +181,6 @@ describe('Context', () => {
     expect(res.headers.get('foo')).not.toBeNull()
     expect(res.headers.get('foo')).toBe('bar')
   })
-
-  // The `c.runtime()` will be removed in v4.
-  it('returns current runtime (node)', async () => {
-    c = new Context(req)
-    expect(c.runtime).toBe('node')
-  })
 })
 
 describe('Context header', () => {
@@ -279,47 +273,6 @@ describe('Pass a ResponseInit to respond methods', () => {
     expect(res.headers.get('content-type')).toMatch(/^text\/html/)
     expect(await res.text()).toBe('<h1>foo</h1>')
   })
-
-  it('c.streamText()', async () => {
-    const res = c.streamText(async (stream) => {
-      for (let i = 0; i < 3; i++) {
-        await stream.write(`${i}`)
-        await stream.sleep(1)
-      }
-    })
-
-    expect(res.status).toBe(200)
-    expect(res.headers.get('content-type')).toMatch(/^text\/plain/)
-    expect(res.headers.get('x-content-type-options')).toBe('nosniff')
-    expect(res.headers.get('transfer-encoding')).toBe('chunked')
-
-    if (!res.body) {
-      throw new Error('Body is null')
-    }
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    for (let i = 0; i < 3; i++) {
-      const { value } = await reader.read()
-      expect(decoder.decode(value)).toEqual(`${i}`)
-    }
-  })
-
-  it('c.stream()', async () => {
-    const res = c.stream(async (stream) => {
-      for (let i = 0; i < 3; i++) {
-        await stream.write(new Uint8Array([i]))
-        await stream.sleep(1)
-      }
-    })
-    if (!res.body) {
-      throw new Error('Body is null')
-    }
-    const reader = res.body.getReader()
-    for (let i = 0; i < 3; i++) {
-      const { value } = await reader.read()
-      expect(value).toEqual(new Uint8Array([i]))
-    }
-  })
 })
 
 declare module './context' {
@@ -350,27 +303,5 @@ describe('c.render', () => {
     const res = await c.render('<h1>content</h1>', { title: 'title' })
     expect(res.headers.get('foo')).toBe('bar')
     expect(await res.text()).toBe('<html><head>title</head><body><h1>content</h1></body></html>')
-  })
-
-  it('c.stream() - with aborted during writing', async () => {
-    let aborted = false
-    const res = c.stream(async (stream) => {
-      stream.onAbort(() => {
-        aborted = true
-      })
-      for (let i = 0; i < 3; i++) {
-        await stream.write(new Uint8Array([i]))
-        await stream.sleep(1)
-      }
-    })
-    if (!res.body) {
-      throw new Error('Body is null')
-    }
-    const reader = res.body.getReader()
-    for (let i = 0; i < 2; i++) {
-      await reader.read()
-      await reader.cancel()
-    }
-    expect(aborted).toBe(true)
   })
 })

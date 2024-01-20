@@ -13,7 +13,7 @@ const RequestUrl: FC = () => {
 }
 
 describe('JSX renderer', () => {
-  it('with layout', async () => {
+  it('basic', async () => {
     const app = new Hono()
     app.use(
       '*',
@@ -32,29 +32,61 @@ describe('JSX renderer', () => {
         { title: 'Title' }
       )
     )
-    const res = await app.request('http://localhost/')
+
+    const app2 = new Hono()
+    app2.use(
+      '*',
+      jsxRenderer(({ children }) => <div class='nested'>{children}</div>)
+    )
+    app2.get('/', (c) => c.render(<h1>http://localhost/nested</h1>, { title: 'Title' }))
+    app.route('/nested', app2)
+
+    let res = await app.request('http://localhost/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe(
       '<html><head>Title</head><body><h1>http://localhost/</h1></body></html>'
     )
-  })
 
-  it('without layout', async () => {
-    const app = new Hono()
-    app.use('*', jsxRenderer())
-    app.get('/', (c) =>
-      c.render(
-        <h1>
-          <RequestUrl />
-        </h1>,
-        { title: 'Title' }
-      )
-    )
-    const res = await app.request('http://localhost/')
+    res = await app.request('http://localhost/nested')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('<h1>http://localhost/</h1>')
+    expect(await res.text()).toBe('<div class="nested"><h1>http://localhost/nested</h1></div>')
+  })
+
+  it('nested layout with Layout', async () => {
+    const app = new Hono()
+    app.use(
+      '*',
+      jsxRenderer(({ children, title, Layout }) => (
+        <Layout>
+          <html>
+            <head>{title}</head>
+            <body>{children}</body>
+          </html>
+        </Layout>
+      ))
+    )
+
+    const app2 = new Hono()
+    app2.use(
+      '*',
+      jsxRenderer(({ children, Layout, title }) => (
+        <Layout title={title}>
+          <div class='nested'>{children}</div>
+        </Layout>
+      ))
+    )
+    app2.get('/', (c) => c.render(<h1>http://localhost/nested</h1>, { title: 'Nested' }))
+
+    app.route('/nested', app2)
+
+    const res = await app.request('http://localhost/nested')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe(
+      '<html><head>Nested</head><body><div class="nested"><h1>http://localhost/nested</h1></div></body></html>'
+    )
   })
 
   it('Should return a default doctype', async () => {
@@ -170,6 +202,8 @@ d.replaceWith(c.content)
     ])
   })
 
+  // this test relies upon 'Should return as streaming content with default headers'
+  // this should be refactored to prevent tests depending on each other
   it('Should return as streaming content with custom headers', async () => {
     const app = new Hono()
     app.use(
@@ -186,7 +220,7 @@ d.replaceWith(c.content)
           docType: true,
           stream: {
             'Transfer-Encoding': 'chunked',
-            'Content-Type': 'text/html'
+            'Content-Type': 'text/html',
           },
         }
       )

@@ -741,3 +741,31 @@ describe('Routing order With named parameters', () => {
     expect(res[1][1]).toEqual({})
   })
 })
+
+describe('The same name is used for path params', () => {
+  describe('Basic', () => {
+    const node = new Node()
+    node.insert('get', '/:a/:b/:c', 'abc')
+    node.insert('get', '/:a/:b/:c/:d', 'abcd')
+    it('/1/2/3', () => {
+      const [res] = node.search('get', '/1/2/3')
+      expect(res).not.toBeNull()
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('abc')
+      expect(res[0][1]).toEqual({ a: '1', b: '2', c: '3' })
+    })
+  })
+
+  describe('Complex', () => {
+    const node = new Node()
+    node.insert('get', '/:a', 'a')
+    node.insert('get', '/:b/:a', 'ba')
+    it('/about/me', () => {
+      const [res] = node.search('get', '/about/me')
+      expect(res).not.toBeNull()
+      expect(res.length).toBe(1)
+      expect(res[0][0]).toEqual('ba')
+      expect(res[0][1]).toEqual({ b: 'about', a: 'me' })
+    })
+  })
+})

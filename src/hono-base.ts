@@ -130,13 +130,15 @@ class Hono<
     })
 
     // Implementation of app.on(method, path, ...handlers[])
-    this.on = (method: string | string[], path: string, ...handlers: H[]) => {
+    this.on = (method: string | string[], path: string | string[], ...handlers: H[]) => {
       if (!method) return this
-      this.#path = path
-      for (const m of [method].flat()) {
-        handlers.map((handler) => {
-          this.addRoute(m.toUpperCase(), this.#path, handler)
-        })
+      for (const p of [path].flat()) {
+        this.#path = p
+        for (const m of [method].flat()) {
+          handlers.map((handler) => {
+            this.addRoute(m.toUpperCase(), this.#path, handler)
+          })
+        }
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return this as any
@@ -148,12 +150,14 @@ class Hono<
       if (typeof arg1 === 'string') {
         this.#path = arg1
       } else {
+        this.#path = '*'
         handlers.unshift(arg1)
       }
       handlers.map((handler) => {
         this.addRoute(METHOD_NAME_ALL, this.#path, handler)
       })
-      return this
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return this as any
     }
 
     const strict = options.strict ?? true
@@ -247,28 +251,6 @@ class Hono<
     return this
   }
 
-  /**
-   * @deprecated
-   * Use `showRoutes()` utility methods provided by 'hono/dev' instead of `app.showRoutes()`.
-   * `app.showRoutes()` will be removed in v4.
-   * @example
-   * You could rewrite `app.showRoutes()` as follows
-   * import { showRoutes } from 'hono/dev'
-   * showRoutes(app)
-   */
-  showRoutes() {
-    const length = 8
-    this.routes.map((route) => {
-      console.log(
-        `\x1b[32m${route.method}\x1b[0m ${' '.repeat(length - route.method.length)} ${route.path}`
-      )
-    })
-  }
-
-   /**
-    * `.mount()` allows you to mount applications built with other frameworks.
-    * @see https://hono.dev/api/hono#request
-    */
   mount(
     path: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -300,26 +282,6 @@ class Hono<
       await next()
     }
     this.addRoute(METHOD_NAME_ALL, mergePath(path, '*'), handler)
-    return this
-  }
-
-  /**
-   * @deprecated
-   * `app.routerName()` will be removed in v4.
-   * Use `getRouterName()` in `hono/dev` instead of `app.routerName()`.
-   */
-  get routerName() {
-    this.matchRoute('GET', '/')
-    return this.router.name
-  }
-
-  /**
-   * @deprecated
-   * `app.head()` is no longer used.
-   * `app.get()` implicitly handles the HEAD method.
-   */
-  head = () => {
-    console.warn('`app.head()` is no longer used. `app.get()` implicitly handles the HEAD method.')
     return this
   }
 
@@ -409,15 +371,6 @@ class Hono<
   }
 
   /**
-   * @deprecated
-   * `app.handleEvent()` will be removed in v4.
-   * Use `app.fetch()` instead of `app.handleEvent()`.
-   */
-  handleEvent = (event: FetchEventLike) => {
-    return this.dispatch(event.request, event, undefined, event.request.method)
-  }
-
-  /**
    * `.fetch()` will be entry point of your app.
    * @see https://hono.dev/api/hono#fetch
    */
@@ -463,8 +416,7 @@ class Hono<
    * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/
    */
   fire = () => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
+    // @ts-expect-error `event` is not the type expected by addEventListener
     addEventListener('fetch', (event: FetchEventLike): void => {
       event.respondWith(this.dispatch(event.request, event, undefined, event.request.method))
     })

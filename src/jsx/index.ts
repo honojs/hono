@@ -2,10 +2,29 @@ import { raw } from '../helper/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
+
 export { ErrorBoundary } from './components'
+export { Suspense } from './streaming'
+export {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  use,
+  startTransition,
+  useTransition,
+  useDeferredValue,
+  startViewTransition,
+} from './hooks'
+export type { RefObject } from './hooks'
+export { createContext, useContext } from './context'
+export type { Context } from './context'
+
+export const HONO_COMPONENT = 'hono-component'
+export const HONO_COMPONENT_ID = 'hono-component-id'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Props = Record<string, any>
+export type Props = Record<string, any>
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -92,6 +111,7 @@ export type Child = string | Promise<string> | number | JSXNode | Child[]
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
   props: Props
+  key?: string
   children: Child[]
   isEscaped: true = true as const
   constructor(tag: string | Function, props: Props, children: Child[]) {
@@ -169,6 +189,19 @@ export class JSXNode implements HtmlEscaped {
 }
 
 class JSXFunctionNode extends JSXNode {
+  constructor(tag: Function, props: Props, children: Child[]) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((tag as any)[HONO_COMPONENT_ID]) {
+      props = Object.keys(props).reduce((acc, key) => {
+        if (/^on[A-Z]/.test(key)) {
+          acc[key] = props[key]
+        }
+        return acc
+      }, {} as Props)
+    }
+    super(tag, props, children)
+  }
+
   toStringToBuffer(buffer: StringBuffer): void {
     const { children } = this
 
@@ -176,6 +209,18 @@ class JSXFunctionNode extends JSXNode {
       ...this.props,
       children: children.length <= 1 ? children[0] : children,
     })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((this.tag as any)[HONO_COMPONENT_ID]) {
+      const attr = JSON.stringify({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        id: (this.tag as any)[HONO_COMPONENT_ID],
+        props: this.props,
+      })
+      const tmpBuf = ['']
+      escapeToBuffer(attr, tmpBuf)
+      buffer[0] += `<${HONO_COMPONENT} data-hono="${tmpBuf[0]}">`
+    }
 
     if (res instanceof Promise) {
       buffer.unshift('', res)
@@ -186,20 +231,39 @@ class JSXFunctionNode extends JSXNode {
     } else {
       escapeToBuffer(res, buffer)
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((this.tag as any)[HONO_COMPONENT_ID]) {
+      buffer[0] += `</${HONO_COMPONENT}>`
+    }
   }
 }
 
-class JSXFragmentNode extends JSXNode {
+export class JSXFragmentNode extends JSXNode {
   toStringToBuffer(buffer: StringBuffer): void {
     childrenToStringToBuffer(this.children, buffer)
   }
 }
 
-export { jsxFn as jsx }
-const jsxFn = (
+export const jsx = (
   tag: string | Function,
   props: Props,
   ...children: (string | HtmlEscapedString)[]
+): JSXNode => {
+  let key
+  if (props) {
+    key = props?.key
+    delete props['key']
+  }
+  const node = jsxFn(tag, props, children)
+  node.key = key
+  return node
+}
+
+export const jsxFn = (
+  tag: string | Function,
+  props: Props,
+  children: (string | HtmlEscapedString)[]
 ): JSXNode => {
   if (typeof tag === 'function') {
     return new JSXFunctionNode(tag, props, children)
@@ -247,47 +311,15 @@ export const memo = <T>(
   }) as FC<T>
 }
 
-export const Fragment = (props: {
+export const Fragment = ({
+  children,
+}: {
   key?: string
   children?: Child | HtmlEscapedString
 }): HtmlEscapedString => {
-  return new JSXFragmentNode('', {}, props.children ? [props.children] : []) as never
-}
-
-export interface Context<T> {
-  values: T[]
-  Provider: FC<{ value: T }>
-}
-
-export const createContext = <T>(defaultValue: T): Context<T> => {
-  const values = [defaultValue]
-  return {
-    values,
-    Provider(props): HtmlEscapedString | Promise<HtmlEscapedString> {
-      values.push(props.value)
-      const string = props.children
-        ? (Array.isArray(props.children)
-            ? new JSXFragmentNode('', {}, props.children)
-            : props.children
-          ).toString()
-        : ''
-      values.pop()
-
-      if (string instanceof Promise) {
-        return Promise.resolve().then<HtmlEscapedString>(async () => {
-          values.push(props.value)
-          const awaited = await string
-          const promiseRes = raw(awaited, (awaited as HtmlEscapedString).callbacks)
-          values.pop()
-          return promiseRes
-        })
-      } else {
-        return raw(string)
-      }
-    },
-  }
-}
-
-export const useContext = <T>(context: Context<T>): T => {
-  return context.values[context.values.length - 1]
+  return new JSXFragmentNode(
+    '',
+    {},
+    Array.isArray(children) ? children : children ? [children] : []
+  ) as never
 }

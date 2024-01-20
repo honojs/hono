@@ -2,7 +2,8 @@
 import type { ZodSchema } from 'zod'
 import { z } from 'zod'
 import { Hono } from '../hono'
-import type { ExtractSchema, MiddlewareHandler, ValidationTargets } from '../types'
+import { HTTPException } from '../http-exception'
+import type { ErrorHandler, ExtractSchema, MiddlewareHandler, ValidationTargets } from '../types'
 import type { Equal, Expect } from '../utils/types'
 import type { ValidationFunction } from './validator'
 import { validator } from './validator'
@@ -75,9 +76,15 @@ describe('Validator middleware', () => {
   })
 })
 
+const onErrorHandler: ErrorHandler = (e, c) => {
+  if (e instanceof HTTPException) {
+    return c.json({ message: e.message, success: false }, e.status)
+  }
+  return c.json({ message: e.message }, 500)
+}
+
 describe('Malformed JSON', () => {
   const app = new Hono()
-
   app.post(
     '/post',
     validator('json', (value, c) => {}),
@@ -85,6 +92,7 @@ describe('Malformed JSON', () => {
       return c.text('Valid!')
     }
   )
+  app.onError(onErrorHandler)
 
   it('Should return 400 response', async () => {
     const res = await app.request('http://localhost/post', {
@@ -133,6 +141,7 @@ describe('Malformed FormData request', () => {
       return c.text('Valid!')
     }
   )
+  app.onError(onErrorHandler)
 
   it('Should return 400 response, for unsupported content type header', async () => {
     const res = await app.request('http://localhost/post', {
@@ -375,35 +384,6 @@ describe('Validator middleware with Zod validates query params', () => {
 
   it('Should validate query params and return 400 response', async () => {
     const res = await app.request('http://localhost/search?page=onetwothree')
-    expect(res.status).toBe(400)
-    expect(await res.text()).toBe('Invalid!')
-  })
-})
-
-describe('Validator middleware with Zod validates queries params - with `queries` will be obsolete in v4', () => {
-  const app = new Hono()
-
-  const schema = z.object({
-    tags: z.array(z.string()),
-  })
-
-  app.get('/posts', zodValidator('queries', schema), (c) => {
-    const res = c.req.valid('queries')
-    return c.json({
-      tags: res.tags,
-    })
-  })
-
-  it('Should validate queries params and return 200 response', async () => {
-    const res = await app.request('http://localhost/posts?tags=book&tags=movie')
-    expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({
-      tags: ['book', 'movie'],
-    })
-  })
-
-  it('Should validate queries params and return 400 response', async () => {
-    const res = await app.request('http://localhost/posts')
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('Invalid!')
   })

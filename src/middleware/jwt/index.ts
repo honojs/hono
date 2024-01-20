@@ -1,3 +1,5 @@
+import type { Context } from '../../context'
+import { getCookie } from '../../helper'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 import { Jwt } from '../../utils/jwt'
@@ -25,33 +27,33 @@ export const jwt = (options: {
   }
 
   return async function jwt(ctx, next) {
-    const credentials = ctx.req.headers.get('Authorization')
+    const credentials = ctx.req.raw.headers.get('Authorization')
     let token
     if (credentials) {
       const parts = credentials.split(/\s+/)
       if (parts.length !== 2) {
-        const res = new Response('Unauthorized', {
-          status: 401,
-          headers: {
-            'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="invalid credentials structure"`,
-          },
+        throw new HTTPException(401, {
+          res: unauthorizedResponse({
+            ctx,
+            error: 'invalid_request',
+            errDescription: 'invalid credentials structure',
+          }),
         })
-        throw new HTTPException(401, { res })
       } else {
         token = parts[1]
       }
     } else if (options.cookie) {
-      token = ctx.req.cookie(options.cookie)
+      token = getCookie(ctx)[options.cookie]
     }
 
     if (!token) {
-      const res = new Response('Unauthorized', {
-        status: 401,
-        headers: {
-          'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_request",error_description="no authorization included in request"`,
-        },
+      throw new HTTPException(401, {
+        res: unauthorizedResponse({
+          ctx,
+          error: 'invalid_request',
+          errDescription: 'no authorization included in request',
+        }),
       })
-      throw new HTTPException(401, { res })
     }
 
     let payload
@@ -62,20 +64,35 @@ export const jwt = (options: {
       msg = `${e}`
     }
     if (!payload) {
-      const res = new Response('Unauthorized', {
-        status: 401,
-        statusText: msg,
-        headers: {
-          'WWW-Authenticate': `Bearer realm="${ctx.req.url}",error="invalid_token",error_description="token verification failure"`,
-        },
+      throw new HTTPException(401, {
+        res: unauthorizedResponse({
+          ctx,
+          error: 'invalid_token',
+          statusText: msg,
+          errDescription: 'token verification failure',
+        }),
       })
-      throw new HTTPException(401, { res })
     }
 
     ctx.set('jwtPayload', payload)
 
     await next()
   }
+}
+
+function unauthorizedResponse(opts: {
+  ctx: Context
+  error: string
+  errDescription: string
+  statusText?: string
+}) {
+  return new Response('Unauthorized', {
+    status: 401,
+    statusText: opts.statusText,
+    headers: {
+      'WWW-Authenticate': `Bearer realm="${opts.ctx.req.url}",error="${opts.error}",error_description="${opts.errDescription}"`,
+    },
+  })
 }
 
 export const verify = Jwt.verify

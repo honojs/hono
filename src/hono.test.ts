@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { expectTypeOf, vi } from 'vitest'
+import { expectTypeOf } from 'vitest'
 import { hc } from './client'
 import type { Context } from './context'
 import { Hono } from './hono'
@@ -1213,6 +1213,24 @@ describe('Error handling in middleware', () => {
     )
   })
 
+  describe('Default route app.use', () => {
+    const app = new Hono()
+    app
+      .use(async (c, next) => {
+        c.header('x-default-use', 'abc')
+        await next()
+      })
+      .get('/multiple/abc', (c) => {
+        return c.text('GET multiple')
+      })
+    it('GET /multiple/abc', async () => {
+      const res = await app.request('http://localhost/multiple/abc')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET multiple')
+      expect(res.headers.get('x-default-use')).toBe('abc')
+    })
+  })
+
   describe('Error in `notFound()`', () => {
     const app = new Hono()
 
@@ -1274,6 +1292,26 @@ describe('Request methods with custom middleware', () => {
     expect(res.headers.get('X-Query-2')).toBe('bar')
     expect(res.headers.get('X-Param-2')).toBe(null)
     expect(res.headers.get('X-Header-2')).toBe('bar')
+  })
+})
+
+describe('Middleware + c.json(0, requestInit)', () => {
+  const app = new Hono()
+  app.use('/', async (c, next) => {
+    await next()
+  })
+  app.get('/', (c) => {
+    return c.json(0, {
+      status: 200,
+      headers: {
+        foo: 'bar',
+      },
+    })
+  })
+  it('Should return a correct headers', async () => {
+    const res = await app.request('/')
+    expect(res.headers.get('content-type')).toMatch(/^application\/json/)
+    expect(res.headers.get('foo')).toBe('bar')
   })
 })
 
@@ -1653,6 +1691,30 @@ describe('Multiple methods with `app.on`', () => {
   })
 })
 
+describe('Multiple paths with one handler', () => {
+  const app = new Hono()
+
+  const paths = ['/hello', '/ja/hello', '/en/hello']
+  app.on('GET', paths, (c) => {
+    return c.json({
+      path: c.req.path,
+      routePath: c.req.routePath,
+    })
+  })
+
+  it('Should handle multiple paths', async () => {
+    paths.map(async (path) => {
+      const res = await app.request(path)
+      expect(res.status).toBe(200)
+      const data = await res.json()
+      expect(data).toEqual({
+        path,
+        routePath: path,
+      })
+    })
+  })
+})
+
 describe('Multiple handler', () => {
   describe('handler + handler', () => {
     const app = new Hono()
@@ -1692,7 +1754,6 @@ describe('Multiple handler', () => {
         expect(res.ok).toBe(true)
         expect(await res.text()).toBe('type: car, url: good-car')
       })
-
       it('Should return a correct param - GET /foo/food/good-food', async () => {
         const res = await app.request('/foo/food/good-food')
         expect(res.ok).toBe(true)
@@ -1818,106 +1879,6 @@ describe('Context is not finalized', () => {
     const res = await app.request('http://localhost/foo')
     expect(res.status).toBe(500)
     expect(await res.text()).toMatch(/^Context is not finalized/)
-  })
-})
-
-describe('Cookie', () => {
-  describe('Parse cookie', () => {
-    const apps: Record<string, Hono> = {}
-    apps['get by name'] = (() => {
-      const app = new Hono()
-
-      app.get('/cookie', (c) => {
-        const yummyCookie = c.req.cookie('yummy_cookie')
-        const tastyCookie = c.req.cookie('tasty_cookie')
-        const res = new Response('Good cookie')
-        if (yummyCookie && tastyCookie) {
-          res.headers.set('Yummy-Cookie', yummyCookie)
-          res.headers.set('Tasty-Cookie', tastyCookie)
-        }
-        return res
-      })
-
-      return app
-    })()
-
-    apps['get all as an object'] = (() => {
-      const app = new Hono()
-
-      app.get('/cookie', (c) => {
-        const { yummy_cookie: yummyCookie, tasty_cookie: tastyCookie } = c.req.cookie()
-        const res = new Response('Good cookie')
-        res.headers.set('Yummy-Cookie', yummyCookie)
-        res.headers.set('Tasty-Cookie', tastyCookie)
-        return res
-      })
-
-      return app
-    })()
-
-    describe.each(Object.keys(apps))('%s', (name) => {
-      const app = apps[name]
-      it('Parse cookie on c.req.cookie', async () => {
-        const req = new Request('http://localhost/cookie')
-        const cookieString = 'yummy_cookie=choco; tasty_cookie = strawberry '
-        req.headers.set('Cookie', cookieString)
-        const res = await app.request(req)
-
-        expect(res.headers.get('Yummy-Cookie')).toBe('choco')
-        expect(res.headers.get('Tasty-Cookie')).toBe('strawberry')
-      })
-    })
-  })
-
-  describe('Set cookie', () => {
-    const app = new Hono()
-
-    app.get('/set-cookie', (c) => {
-      c.cookie('delicious_cookie', 'macha')
-      return c.text('Give cookie')
-    })
-
-    it('Set cookie on c.cookie', async () => {
-      const res = await app.request('http://localhost/set-cookie')
-      expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('delicious_cookie=macha')
-    })
-
-    app.get('/set-cookie-complex', (c) => {
-      c.cookie('great_cookie', 'banana', {
-        path: '/',
-        secure: true,
-        domain: 'example.com',
-        httpOnly: true,
-        maxAge: 1000,
-        expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
-        sameSite: 'Strict',
-      })
-      return c.text('Give cookie')
-    })
-
-    it('Complex pattern', async () => {
-      const res = await app.request('http://localhost/set-cookie-complex')
-      expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe(
-        'great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
-      )
-    })
-
-    app.get('/set-cookie-multiple', (c) => {
-      c.cookie('delicious_cookie', 'macha')
-      c.cookie('delicious_cookie', 'choco')
-      return c.text('Give cookie')
-    })
-
-    it('Multiple values', async () => {
-      const res = await app.request('http://localhost/set-cookie-multiple')
-      expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('delicious_cookie=macha, delicious_cookie=choco')
-    })
   })
 })
 
@@ -2087,17 +2048,6 @@ describe('Handler as variables', () => {
     const res = await app.request('http://localhost/posts/123')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Post id is 123')
-  })
-})
-
-describe('Show routes', () => {
-  const app = new Hono()
-  vi.spyOn(console, 'log')
-  it('Should call `console.log()` with `app.showRoutes()`', async () => {
-    app.get('/', (c) => c.text('/'))
-    app.get('/foo', (c) => c.text('/'))
-    app.showRoutes()
-    expect(console.log).toBeCalled()
   })
 })
 
@@ -2396,19 +2346,6 @@ describe('app.mount()', () => {
       expect(res.status).toBe(404)
       expect(await res.text()).toBe('Not Found from AnotherApp')
     })
-  })
-})
-
-describe('Router Name', () => {
-  it('Should return the correct router name', async () => {
-    const app = new Hono({
-      router: new RegExpRouter(),
-    })
-    app.get('/router-name', (c) => {
-      return c.text(app.routerName ?? 'N/A')
-    })
-    const res = await app.request('/router-name')
-    expect(await res.text()).toBe('RegExpRouter')
   })
 })
 

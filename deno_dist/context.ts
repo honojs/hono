@@ -1,11 +1,9 @@
-import type { Runtime } from './helper/adapter/index.ts'
+import type { FC } from './jsx/index.ts'
+import type { PropsForRenderer } from './middleware/jsx-renderer/index.ts'
 import type { HonoRequest } from './request.ts'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types.ts'
-import type { CookieOptions } from './utils/cookie.ts'
-import { serialize } from './utils/cookie.ts'
 import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html.ts'
 import type { StatusCode } from './utils/http-status.ts'
-import { StreamingApi } from './utils/stream.ts'
 import type { JSONValue, InterfaceToType, JSONParsed } from './utils/types.ts'
 
 type HeaderRecord = Record<string, string | string[]>
@@ -85,6 +83,11 @@ type ContextOptions<E extends Env> = {
 
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
+const setHeaders = (headers: Headers, map: Record<string, string> = {}) => {
+  Object.entries(map).forEach(([key, value]) => headers.set(key, value))
+  return headers
+}
+
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any,
@@ -104,6 +107,7 @@ export class Context<
   #preparedHeaders: Record<string, string> | undefined = undefined
   #res: Response | undefined
   #isFresh = true
+  private layout: FC<PropsForRenderer & { Layout: FC }> | undefined = undefined
   private renderer: Renderer = (content: string | Promise<string>) => this.html(content)
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
@@ -159,10 +163,12 @@ export class Context<
     this.finalized = true
   }
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
+  // @ts-expect-error It is unknown how many arguments the renderer will receive.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render: Renderer = (...args: any[]) => this.renderer(...args)
+
+  setLayout = (layout: FC<PropsForRenderer & { Layout: FC }>) => (this.layout = layout)
+  getLayout = () => this.layout
 
   setRenderer = (renderer: Renderer) => {
     this.renderer = renderer
@@ -239,24 +245,24 @@ export class Context<
     }
 
     if (arg && typeof arg !== 'number') {
-      this.res = new Response(data, arg)
+      const headers = setHeaders(new Headers(arg.headers), this.#preparedHeaders)
+      return new Response(data, {
+        headers,
+        status: arg.status,
+      })
     }
 
-    const status = typeof arg === 'number' ? arg : arg ? arg.status : this.#status
+    const status = typeof arg === 'number' ? arg : this.#status
     this.#preparedHeaders ??= {}
 
     this.#headers ??= new Headers()
-    for (const [k, v] of Object.entries(this.#preparedHeaders)) {
-      this.#headers.set(k, v)
-    }
+    setHeaders(this.#headers, this.#preparedHeaders)
 
     if (this.#res) {
       this.#res.headers.forEach((v, k) => {
         this.#headers?.set(k, v)
       })
-      for (const [k, v] of Object.entries(this.#preparedHeaders)) {
-        this.#headers.set(k, v)
-      }
+      setHeaders(this.#headers, this.#preparedHeaders)
     }
 
     headers ??= {}
@@ -327,28 +333,6 @@ export class Context<
     ) as any
   }
 
-  /**
-   * @deprecated
-   * `c.jsonT()` will be removed in v4.
-   * Use `c.json()` instead of `c.jsonT()`.
-   * `c.json()` now returns data type, so you can just replace `c.jsonT()` to `c.json()`.
-   */
-  jsonT: JSONRespond = <T>(
-    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
-    arg?: StatusCode | ResponseInit,
-    headers?: HeaderRecord
-  ): Response &
-    TypedResponse<
-      InterfaceToType<T> extends JSONValue
-        ? JSONValue extends InterfaceToType<T>
-          ? never
-          : T
-        : never
-    > => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this.json(object, arg as any, headers) as any
-  }
-
   html: HTMLRespond = (
     html: string | Promise<string>,
     arg?: StatusCode | ResponseInit,
@@ -383,105 +367,7 @@ export class Context<
     return this.newResponse(null, status)
   }
 
-  /** @deprecated
-   * Use `streamText()` in `hono/streaming` instead of `c.streamText()`. The `c.streamText()` will be removed in v4.
-   */
-  streamText = (
-    cb: (stream: StreamingApi) => Promise<void>,
-    arg?: StatusCode | ResponseInit,
-    headers?: HeaderRecord
-  ): Response => {
-    headers ??= {}
-    this.header('content-type', TEXT_PLAIN)
-    this.header('x-content-type-options', 'nosniff')
-    this.header('transfer-encoding', 'chunked')
-    return this.stream(cb, arg, headers)
-  }
-
-  /** @deprecated
-   * Use `stream()` in `hono/streaming` instead of `c.stream()`. The `c.stream()` will be removed in v4.
-   */
-  stream = (
-    cb: (stream: StreamingApi) => Promise<void>,
-    arg?: StatusCode | ResponseInit,
-    headers?: HeaderRecord
-  ): Response => {
-    const { readable, writable } = new TransformStream()
-    const stream = new StreamingApi(writable, readable)
-    cb(stream).finally(() => stream.close())
-
-    return typeof arg === 'number'
-      ? this.newResponse(stream.responseReadable, arg, headers)
-      : this.newResponse(stream.responseReadable, arg)
-  }
-
-  /** @deprecated
-   * Use Cookie Middleware instead of `c.cookie()`. The `c.cookie()` will be removed in v4.
-   *
-   * @example
-   *
-   * import { setCookie } from 'hono/cookie'
-   * // ...
-   * app.get('/', (c) => {
-   *   setCookie(c, 'key', 'value')
-   *   //...
-   * })
-   */
-  cookie = (name: string, value: string, opt?: CookieOptions): void => {
-    const cookie = serialize(name, value, opt)
-    this.header('set-cookie', cookie, { append: true })
-  }
-
   notFound = (): Response | Promise<Response> => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     return this.notFoundHandler(this)
-  }
-
-  /** @deprecated
-   * Use `getRuntimeKey()` exported from `hono/adapter` instead of `c.runtime()`. The `c.runtime()` will be removed in v4.
-   *
-   * @example
-   *
-   * import { getRuntimeKey } from 'hono/adapter'
-   * // ...
-   * app.get('/', (c) => {
-   *   const key = getRuntimeKey()
-   *   //...
-   * })
-   */
-  get runtime(): Runtime {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const global = globalThis as any
-
-    if (global?.Deno !== undefined) {
-      return 'deno'
-    }
-
-    if (global?.Bun !== undefined) {
-      return 'bun'
-    }
-
-    if (typeof global?.WebSocketPair === 'function') {
-      return 'workerd'
-    }
-
-    if (typeof global?.EdgeRuntime === 'string') {
-      return 'edge-light'
-    }
-
-    if (global?.fastly !== undefined) {
-      return 'fastly'
-    }
-
-    if (global?.__lagon__ !== undefined) {
-      return 'lagon'
-    }
-
-    if (global?.process?.release?.name === 'node') {
-      return 'node'
-    }
-
-    return 'other'
   }
 }
