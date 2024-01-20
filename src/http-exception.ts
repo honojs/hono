@@ -10,9 +10,9 @@ type HTTPExceptionOptions = {
  * @example
  * ```ts
  * import { HTTPException } from 'hono/http-exception'
- * 
+ *
  * // ...
- * 
+ *
  * app.post('/auth', async (c, next) => {
  *   // authentication
  *   if (authorized === false) {

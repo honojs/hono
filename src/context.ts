@@ -252,7 +252,7 @@ export class Context<
    *   // Set headers
    *   c.header('X-Message', 'Hello!')
    *   c.header('Content-Type', 'text/plain')
-   * 
+   *
    *   return c.body('Thank you for coming')
    * })
    * ```
@@ -410,7 +410,7 @@ export class Context<
    *   c.header('Content-Type', 'text/plain')
    *   // Set HTTP status code
    *   c.status(201)
-   * 
+   *
    *   // Return the response body
    *   return c.body('Thank you for coming')
    * })
