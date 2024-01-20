@@ -111,7 +111,8 @@ export const fetchRoutesContent = async <
     // GET Route Info
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
     const forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
-    await app.fetch(forGetInfoURLRequest)
+    const preResponse = await app.fetch(forGetInfoURLRequest)
+    if (preResponse.status !== 200) continue
 
     if (!forGetInfoURLRequest.ssgParams) {
       if (isDynamicRoute(route.path)) continue
@@ -120,7 +121,7 @@ export const fetchRoutesContent = async <
 
     for (const param of forGetInfoURLRequest.ssgParams) {
       const replacedUrlParam = replaceUrlParam(route.path, param)
-      const response = await app.request(replacedUrlParam)
+      const response = await app.request(replaceUrlParam(route.path, param))
       const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
       const content = await parseResponseContent(response)
       htmlMap.set(replacedUrlParam, {

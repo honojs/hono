@@ -139,7 +139,6 @@ describe('toSSG function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/some.txt', expect.any(String))
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/some/thing.txt', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/Charlie.html', expect.any(String))
@@ -253,5 +252,36 @@ describe('Dynamic route handling', () => {
   it('should not skip /foo:bar dynamic route', async () => {
     const htmlMap = await fetchRoutesContent(app)
     expect(htmlMap.has('/foo:bar')).toBeTruthy()
+  })
+})
+
+describe('Non Status 200 route handling', () => {
+  let app: Hono
+  beforeEach(() => {
+    app = new Hono()
+    app.all('/all', (c) => c.html('all'))
+    app.get('/get', (c) => c.html('get'))
+    app.get('/not-found', (c) => c.notFound())
+    app.get('/redirect', (c) => c.redirect('https:/example.com'))
+    app.post('/post', (c) => c.html('post'))
+    app.put('/put', (c) => c.html('put'))
+    app.delete('/delete', (c) => c.html('delete'))
+
+    const app2 = new Hono()
+    app2.get('/mount/get', (c) => c.html('mount-get'))
+    app.mount('/mount', app2.fetch)
+  })
+
+  it('should skip routes that return not a 200 status code', async () => {
+    const htmlMap = await fetchRoutesContent(app)
+    expect(htmlMap.has('/all')).toBeTruthy()
+    expect(htmlMap.has('/get')).toBeTruthy()
+
+    expect(htmlMap.has('/not-found')).toBeFalsy()
+    expect(htmlMap.has('/redirect')).toBeFalsy()
+    expect(htmlMap.has('/post')).toBeFalsy()
+    expect(htmlMap.has('/put')).toBeFalsy()
+    expect(htmlMap.has('/delete')).toBeFalsy()
+    expect(htmlMap.has('/mount')).toBeFalsy()
   })
 })
