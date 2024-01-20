@@ -22,49 +22,80 @@ export type ParseBodyOptions = {
   all?: boolean
 }
 
-const isArrayField = (value: unknown): value is (string | File)[] => {
-  return Array.isArray(value)
-}
-
 export const parseBody = async <T extends BodyData = BodyData>(
   request: HonoRequest | Request,
-  options: ParseBodyOptions = {
-    all: false,
-  }
+  options: ParseBodyOptions = { all: false }
 ): Promise<T> => {
-  let body: BodyData = {}
   const contentType = request.headers.get('Content-Type')
 
-  if (
-    contentType &&
-    (contentType.startsWith('multipart/form-data') ||
-      contentType.startsWith('application/x-www-form-urlencoded'))
-  ) {
-    const formData = await request.formData()
-    if (formData) {
-      const form: BodyData = {}
-      formData.forEach((value, key) => {
-        const shouldParseAllValues = options.all || key.slice(-2) === '[]'
-
-        if (!shouldParseAllValues) {
-          form[key] = value // override if same key
-          return
-        }
-
-        if (form[key] && isArrayField(form[key])) {
-          ;(form[key] as (string | File)[]).push(value) // append if same key
-          return
-        }
-
-        if (form[key]) {
-          form[key] = [form[key] as string | File, value] // convert to array if multiple values
-          return
-        }
-
-        form[key] = value
-      })
-      body = form
-    }
+  if (isFormDataContent(contentType)) {
+    return parseFormData<T>(request, options)
   }
-  return body as T
+
+  return {} as T
+}
+
+function isFormDataContent(contentType: string | null): boolean {
+  if (contentType === null) {
+    return false
+  }
+
+  return (
+    contentType.startsWith('multipart/form-data') ||
+    contentType.startsWith('application/x-www-form-urlencoded')
+  )
+}
+
+async function parseFormData<T extends BodyData = BodyData>(
+  request: HonoRequest | Request,
+  options: ParseBodyOptions
+): Promise<T> {
+  const formData = await (request as Request).formData()
+
+  if (formData) {
+    return convertFormDataToBodyData<T>(formData, options)
+  }
+
+  return {} as T
+}
+
+function convertFormDataToBodyData<T extends BodyData = BodyData>(
+  formData: FormData,
+  options: ParseBodyOptions
+): T {
+  const form: BodyData = {}
+
+  formData.forEach((value, key) => {
+    const shouldParseAllValues = options.all || key.endsWith('[]')
+
+    if (!shouldParseAllValues) {
+      form[key] = value
+    } else {
+      handleParsingAllValues(form, key, value)
+    }
+  })
+
+  return form as T
+}
+
+const handleParsingAllValues = (form: BodyData, key: string, value: FormDataEntryValue): void => {
+  if (form[key] && isArrayField(form[key])) {
+    appendToExistingArray(form[key] as (string | File)[], value)
+  } else if (form[key]) {
+    convertToNewArray(form, key, value)
+  } else {
+    form[key] = value
+  }
+}
+
+function isArrayField(field: unknown): field is (string | File)[] {
+  return Array.isArray(field)
+}
+
+const appendToExistingArray = (arr: (string | File)[], value: FormDataEntryValue): void => {
+  arr.push(value)
+}
+
+const convertToNewArray = (form: BodyData, key: string, value: FormDataEntryValue): void => {
+  form[key] = [form[key] as string | File, value]
 }
