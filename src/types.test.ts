@@ -836,8 +836,6 @@ describe('c.var with chaining - test only types', () => {
       return c.json(0)
     })
 
-    // app.get('/', handler...)
-
     new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9, (c) => {
       expectTypeOf(c.req.valid('query')).toMatchTypeOf<{
         bar1: number
@@ -851,6 +849,28 @@ describe('c.var with chaining - test only types', () => {
         bar9: number
       }>()
 
+      return c.json(0)
+    })
+
+    type Env = {
+      Variables: {
+        init: number
+      }
+    }
+    
+    new Hono<Env>().get('/', mw1, (c) => {
+      expectTypeOf(c.get('init')).toEqualTypeOf<number>()
+      expectTypeOf(c.var.init).toEqualTypeOf<number>()
+      expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
+      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+      return c.json(0)
+    }).get('/', (c) => {
+      expectTypeOf(c.get('init')).toEqualTypeOf<number>()
+      expectTypeOf(c.var.init).toEqualTypeOf<number>()
+      // @ts-expect-error foo1 is not typed
+      c.get('foo1')
+      // @ts-expect-error foo1 is not typed
+      c.var.foo1
       return c.json(0)
     })
   })
