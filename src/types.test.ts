@@ -857,22 +857,24 @@ describe('c.var with chaining - test only types', () => {
         init: number
       }
     }
-    
-    new Hono<Env>().get('/', mw1, (c) => {
-      expectTypeOf(c.get('init')).toEqualTypeOf<number>()
-      expectTypeOf(c.var.init).toEqualTypeOf<number>()
-      expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
-      expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
-      return c.json(0)
-    }).get('/', (c) => {
-      expectTypeOf(c.get('init')).toEqualTypeOf<number>()
-      expectTypeOf(c.var.init).toEqualTypeOf<number>()
-      // @ts-expect-error foo1 is not typed
-      c.get('foo1')
-      // @ts-expect-error foo1 is not typed
-      c.var.foo1
-      return c.json(0)
-    })
+
+    new Hono<Env>()
+      .get('/', mw1, (c) => {
+        expectTypeOf(c.get('init')).toEqualTypeOf<number>()
+        expectTypeOf(c.var.init).toEqualTypeOf<number>()
+        expectTypeOf(c.get('foo1')).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+      .get('/', (c) => {
+        expectTypeOf(c.get('init')).toEqualTypeOf<number>()
+        expectTypeOf(c.var.init).toEqualTypeOf<number>()
+        // @ts-expect-error foo1 is not typed
+        c.get('foo1')
+        // @ts-expect-error foo1 is not typed
+        c.var.foo1
+        return c.json(0)
+      })
   })
 })
 
