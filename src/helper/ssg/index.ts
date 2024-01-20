@@ -121,7 +121,7 @@ export const fetchRoutesContent = async <
 
     for (const param of forGetInfoURLRequest.ssgParams) {
       const replacedUrlParam = replaceUrlParam(route.path, param)
-      const response = await app.request(replaceUrlParam(route.path, param))
+      const response = await app.request(replacedUrlParam)
       const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
       const content = await parseResponseContent(response)
       htmlMap.set(replacedUrlParam, {
