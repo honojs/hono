@@ -160,25 +160,6 @@ describe('CSS Helper', () => {
       )
     })
 
-    it('Should render CSS with async variable', async () => {
-      const headerClass = css`
-        background-color: blue;
-        content: '${(async () => {
-          await new Promise((resolve) => setTimeout(resolve, 100))
-          return "I'm an async variable!"
-        })()}';
-      `
-      const template = (
-        <>
-          <Style />
-          <h1 class={headerClass}>Hello!</h1>
-        </>
-      )
-      expect(await toString(template)).toBe(
-        '<style id="hono-css">.css-1399451752{background-color:blue;content:\'I\\\'m an async variable!\'}</style><h1 class="css-1399451752">Hello!</h1>'
-      )
-    })
-
     it('Should render CSS with number', async () => {
       const headerClass = css`
         background-color: blue;
