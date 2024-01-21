@@ -16,7 +16,7 @@ interface RouteData {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { process, Deno } = globalThis as any
-const noColor =
+const isNoColor =
   typeof process !== 'undefined'
     ? // eslint-disable-next-line no-unsafe-optional-chaining
       'NO_COLOR' in process?.env
@@ -48,7 +48,7 @@ export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
 }
 
 export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions) => {
-  const colorEnabled = opts?.colorize ?? !noColor
+  const colorEnabled = opts?.colorize ?? !isNoColor
   const routeData: Record<string, RouteData[]> = {}
   let maxMethodLength = 0
   let maxPathLength = 0

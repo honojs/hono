@@ -3,6 +3,7 @@ import { RegExpRouter } from '../../router/reg-exp-router'
 import type { Handler, MiddlewareHandler } from '../../types'
 import { inspectRoutes, showRoutes, getRouterName } from '.'
 
+const isNoColor = 'NO_COLOR' in process.env
 const namedMiddleware: MiddlewareHandler = (_, next) => next()
 const namedHandler: Handler = (c) => c.text('hi')
 const app = new Hono()
@@ -56,7 +57,7 @@ describe('inspectRoutes()', () => {
   })
 })
 
-describe('showRoutes()', () => {
+describe.runIf(!isNoColor)('showRoutes()', () => {
   let logs: string[] = []
 
   let originalLog: typeof console.log
@@ -122,6 +123,49 @@ describe('showRoutes()', () => {
       'DELETE   /',
       'OPTIONS  /',
       'GET      /static',
+    ])
+  })
+})
+
+describe.runIf(isNoColor)('showRoutes() in NO_COLOR', () => {
+  let logs: string[] = []
+
+  let originalLog: typeof console.log
+  beforeAll(() => {
+    originalLog = console.log
+    console.log = (...args) => logs.push(...args)
+  })
+  afterAll(() => {
+    console.log = originalLog
+  })
+
+  beforeEach(() => {
+    logs = []
+  })
+  it('should render not colorized output', async () => {
+    showRoutes(app)
+    expect(logs).toEqual([
+      'GET      /',
+      'GET      /named',
+      'POST     /',
+      'PUT      /',
+      'PATCH    /',
+      'DELETE   /',
+      'OPTIONS  /',
+      'GET      /static',
+    ])
+  })
+  it('should render colorized output if colorize: true', async () => {
+    showRoutes(app, { colorize: true })
+    expect(logs).toEqual([
+      '\x1b[32mGET\x1b[0m      /',
+      '\x1b[32mGET\x1b[0m      /named',
+      '\x1b[32mPOST\x1b[0m     /',
+      '\x1b[32mPUT\x1b[0m      /',
+      '\x1b[32mPATCH\x1b[0m    /',
+      '\x1b[32mDELETE\x1b[0m   /',
+      '\x1b[32mOPTIONS\x1b[0m  /',
+      '\x1b[32mGET\x1b[0m      /static',
     ])
   })
 })
