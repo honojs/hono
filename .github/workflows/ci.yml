@@ -19,7 +19,7 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: NODE_OPTIONS="--no-warnings" npm test
-      - run: NODE_OPTIONS="--no-warnings" npm test:no-color
+      - run: NODE_OPTIONS="--no-warnings" npm run test:no-color
 
   denoify:
     name: "Checking if you've done denoify"
