@@ -77,7 +77,7 @@ export class Node<T> {
 
     const handlerSet: HandlerSet<T> = {
       handler,
-      possibleKeys,
+      possibleKeys: possibleKeys.filter((v, i, a) => a.indexOf(v) === i),
       name: this.name,
       score: this.order,
     }
@@ -92,16 +92,21 @@ export class Node<T> {
   private gHSets(
     node: Node<T>,
     method: string,
+    nodeParams: Record<string, string>,
     params: Record<string, string>
   ): HandlerParamsSet<T>[] {
     const handlerSets: HandlerParamsSet<T>[] = []
     for (let i = 0, len = node.methods.length; i < len; i++) {
       const m = node.methods[i]
       const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>
+      const processedSet: Record<string, boolean> = {}
       if (handlerSet !== undefined) {
         handlerSet.params = {}
-        handlerSet.possibleKeys.map((key) => {
-          handlerSet.params[key] = params[key]
+        handlerSet.possibleKeys.forEach((key) => {
+          const processed = processedSet[handlerSet.name]
+          handlerSet.params[key] =
+            params[key] && !processed ? params[key] : nodeParams[key] ?? params[key]
+          processedSet[handlerSet.name] = true
         })
         handlerSets.push(handlerSet)
       }
@@ -112,6 +117,7 @@ export class Node<T> {
   search(method: string, path: string): [[T, Params][]] {
     const handlerSets: HandlerParamsSet<T>[] = []
     this.params = {}
+    const params: Record<string, string> = {}
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const curNode: Node<T> = this
@@ -132,16 +138,15 @@ export class Node<T> {
           if (isLast === true) {
             // '/hello/*' => match '/hello'
             if (nextNode.children['*']) {
-              handlerSets.push(...this.gHSets(nextNode.children['*'], method, node.params))
+              handlerSets.push(...this.gHSets(nextNode.children['*'], method, node.params, {}))
             }
-            handlerSets.push(...this.gHSets(nextNode, method, node.params))
+            handlerSets.push(...this.gHSets(nextNode, method, node.params, {}))
           } else {
             tempNodes.push(nextNode)
           }
         }
 
         for (let k = 0, len3 = node.patterns.length; k < len3; k++) {
-          const params: Record<string, string> = {}
           const pattern = node.patterns[k]
 
           // Wildcard
@@ -149,7 +154,7 @@ export class Node<T> {
           if (pattern === '*') {
             const astNode = node.children['*']
             if (astNode) {
-              handlerSets.push(...this.gHSets(astNode, method, node.params))
+              handlerSets.push(...this.gHSets(astNode, method, node.params, {}))
               tempNodes.push(astNode)
             }
             continue
@@ -165,7 +170,7 @@ export class Node<T> {
           const restPathString = parts.slice(i).join('/')
           if (matcher instanceof RegExp && matcher.test(restPathString)) {
             params[name] = restPathString
-            handlerSets.push(...this.gHSets(child, method, { ...params, ...node.params }))
+            handlerSets.push(...this.gHSets(child, method, node.params, params))
             continue
           }
 
@@ -173,11 +178,9 @@ export class Node<T> {
             if (typeof key === 'string') {
               params[name] = part
               if (isLast === true) {
-                handlerSets.push(...this.gHSets(child, method, { ...params, ...node.params }))
+                handlerSets.push(...this.gHSets(child, method, params, node.params))
                 if (child.children['*']) {
-                  handlerSets.push(
-                    ...this.gHSets(child.children['*'], method, { ...params, ...node.params })
-                  )
+                  handlerSets.push(...this.gHSets(child.children['*'], method, node.params, params))
                 }
               } else {
                 child.params = { ...params }

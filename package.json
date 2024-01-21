@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "3.12.4",
+  "version": "3.12.6",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -11,6 +11,7 @@
   ],
   "scripts": {
     "test": "tsc --noEmit && vitest --run",
+    "test:watch": "vitest --watch",
     "test:no-color": "env NO_COLOR=1 vitest --run ./src/helper/dev/index.test.ts",
     "test:deno": "env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno && deno test --no-lock -c runtime_tests/deno-jsx/deno.precompile.json runtime_tests/deno-jsx && deno test --no-lock -c runtime_tests/deno-jsx/deno.react-jsx.json runtime_tests/deno-jsx",
     "test:bun": "env NAME=Bun bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
