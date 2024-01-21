@@ -35,18 +35,13 @@ describe('Style and css', () => {
       )
     }
     render(<App />, root)
-    expect(root.innerHTML).toBe('<div><style id="hono-css"></style><div>red</div></div>')
-    while (root.innerHTML === '<div><style id="hono-css"></style><div>red</div></div>') {
-      await Promise.resolve()
-    }
     expect(root.innerHTML).toBe(
       '<div><style id="hono-css"></style><div class="css-3142110215">red</div></div>'
     )
     // maybe rules are inserted to style[id="hono-css"]
   })
 
-  // TODO: not yet supported children
-  it.todo('<Style>{css`global`}</Style>', async () => {
+  it('<Style>{css`global`}</Style>', async () => {
     const App = () => {
       return (
         <div>
@@ -64,5 +59,8 @@ describe('Style and css', () => {
       )
     }
     render(<App />, root)
+    expect(root.innerHTML).toBe(
+      '<div><style id="hono-css">color:red</style><div class="css-3142110215">red</div></div>'
+    )
   })
 })
