@@ -46,13 +46,15 @@ export type PendingType =
   | 0 // no pending
   | 1 // global
   | 2 // hook
-export type UpdateHook = (cb: () => void) => Promise<void>
+export type UpdateHook = (context: Context, cb: (context: Context) => void) => Promise<void>
 export type Context =
   | [
       PendingType, // PendingType
       boolean, // got an error
-      UpdateHook // update hook
+      UpdateHook, // update hook
+      boolean // is in view transition
     ]
+  | [PendingType, boolean, UpdateHook]
   | [PendingType, boolean]
   | [PendingType]
   | []
@@ -375,7 +377,7 @@ export const update = async (
     resolve as UpdateMapResolve,
     () => {
       if (context[2]) {
-        context[2](() => {
+        context[2](context, (context) => {
           updateSync(context, node)
         }).then(() => (resolve as UpdateMapResolve)(node))
       } else {

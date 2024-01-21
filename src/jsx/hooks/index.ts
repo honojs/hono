@@ -16,31 +16,56 @@ export type EffectData = [
 
 const resolvedPromiseValueMap = new WeakMap<Promise<unknown>, unknown>()
 
+const isViewTransitionStack: [boolean, boolean][] = []
+
+const documentStartViewTransition: (cb: () => void) => { finished: Promise<void> } = (cb) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((document as any)?.startViewTransition) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (document as any).startViewTransition(cb)
+  } else {
+    cb()
+    return { finished: Promise.resolve() }
+  }
+}
+
 let updateHook: UpdateHook | undefined = undefined
+const viewTransitionHook = (context: Context, cb: (context: Context) => void): Promise<void> =>
+  documentStartViewTransition(() => {
+    isViewTransitionStack.push([true, false])
+    cb(context)
+  })
+    .finished.then(() => {
+      const top = isViewTransitionStack.at(-1)
+      if (top?.[1]) {
+        isViewTransitionStack[isViewTransitionStack.length - 1][0] = false
+        cb(context)
+      }
+    })
+    .finally(() => {
+      isViewTransitionStack.pop()
+    })
 
 export const startViewTransition = (callback: () => void): void => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (!(document as any).startViewTransition) {
-    callback()
-    return
-  }
-
-  updateHook = (cb) => {
-    let resolve: (() => void) | undefined
-    const promise = new Promise<void>((r) => (resolve = r))
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(document as any).startViewTransition(() => {
-      cb()
-      ;(resolve as () => void)()
-    })
-    return promise
-  }
+  updateHook = viewTransitionHook
 
   try {
     callback()
   } finally {
     updateHook = undefined
   }
+}
+
+export const useViewTransition = (): [boolean, (callback: () => void) => void] => {
+  const buildData = buildDataStack.at(-1) as [Context, NodeObject]
+  if (!buildData) {
+    return [false, () => {}]
+  }
+  const top = isViewTransitionStack.at(-1)
+  if (top) {
+    top[1] = true
+  }
+  return [!!top?.[0], startViewTransition]
 }
 
 const pendingStack: PendingType[] = []

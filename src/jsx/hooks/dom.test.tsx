@@ -279,9 +279,10 @@ describe('startViewTransition()', () => {
 
   it('supported browser', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(dom.window.document as any).startViewTransition = vi.fn((cb: Function) =>
+    ;(dom.window.document as any).startViewTransition = vi.fn((cb: Function) => {
       Promise.resolve().then(() => cb())
-    )
+      return { finished: Promise.resolve() }
+    })
 
     const App = () => {
       const [count, setCount] = useState(0)
@@ -338,9 +339,10 @@ describe('startViewTransition()', () => {
 
   it('with useTransition()', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(dom.window.document as any).startViewTransition = vi.fn((cb: Function) =>
+    ;(dom.window.document as any).startViewTransition = vi.fn((cb: Function) => {
       Promise.resolve().then(() => cb())
-    )
+      return { finished: Promise.resolve() }
+    })
 
     let called = 0
     const App = () => {
