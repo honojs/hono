@@ -15,11 +15,7 @@ export class StreamingApi {
     this.responseReadable = new ReadableStream({
       async pull(controller) {
         const { done, value } = await reader.read()
-        if (done) {
-          controller.close()
-        } else {
-          controller.enqueue(value)
-        }
+        done ? controller.close() : controller.enqueue(value)
       },
       cancel: () => {
         this.abortSubscribers.forEach((subscriber) => subscriber())
