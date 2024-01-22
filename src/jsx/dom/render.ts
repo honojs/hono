@@ -91,6 +91,8 @@ const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: P
       } else {
         if (value === null || value === undefined || value === false) {
           container.removeAttribute(key)
+        } else if (value === true) {
+          container.setAttribute(key, '')
         } else if (typeof value === 'string' || typeof value === 'number') {
           container.setAttribute(key, value as string)
         } else {
