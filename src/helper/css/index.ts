@@ -121,7 +121,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
   const keyframes = keyframesCommon
 
   type ViewTransitionType = {
-    (strings: TemplateStringsArray, values: CssVariableType[]): Promise<string>
+    (strings: TemplateStringsArray, ...values: CssVariableType[]): Promise<string>
     (content: Promise<string>): Promise<string>
     (): Promise<string>
   }
