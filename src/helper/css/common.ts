@@ -67,7 +67,7 @@ const minifyCssRe = new RegExp(
       ].join('|') +
       ')',
 
-    ';\\s*(}|$)\\s*', // $2: trailing semicolon
+    '\\s*;\\s*(}|$)\\s*', // $2: trailing semicolon
     '\\s*([{};:,])\\s*', // $3: whitespace around { } : , ;
     '(\\s)\\s+', // $4: 2+ spaces
   ].join('|'),
@@ -174,8 +174,6 @@ export const cssCommon = (
     [EXTERNAL_CLASS_NAMES]: externalClassNames,
   }
 }
-const css = (strings: TemplateStringsArray, ...values: CssVariableType[]): CssClassName =>
-  cssCommon(strings, values)
 
 export const cxCommon = (
   args: (string | boolean | null | undefined | CssClassName)[]
@@ -230,9 +228,8 @@ export const viewTransitionCommon: ViewTransitionType = ((
     : (strings as CssClassName)
 
   const transitionName = content[CLASS_NAME]
-  const res = css`
-    view-transition-name: ${transitionName};
-  `
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = cssCommon(['view-transition-name:', ''] as any, [transitionName])
 
   content[CLASS_NAME] = PSEUDO_GLOBAL_SELECTOR + content[CLASS_NAME]
   content[STYLE_STRING] = content[STYLE_STRING].replace(
