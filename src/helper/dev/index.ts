@@ -14,15 +14,6 @@ interface RouteData {
   isMiddleware: boolean
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { process, Deno } = globalThis as any
-const isNoColor =
-  typeof process !== 'undefined'
-    ? // eslint-disable-next-line no-unsafe-optional-chaining
-      'NO_COLOR' in process?.env
-    : typeof Deno?.noColor === 'boolean'
-    ? (Deno.noColor as boolean)
-    : false
 const isMiddleware = (handler: Function) => handler.length > 1
 const handlerName = (handler: Function) => {
   return handler.name || (isMiddleware(handler) ? '[middleware]' : '[handler]')
@@ -48,6 +39,15 @@ export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
 }
 
 export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { process, Deno } = globalThis as any
+  const isNoColor =
+    typeof process !== 'undefined'
+      ? // eslint-disable-next-line no-unsafe-optional-chaining
+        'NO_COLOR' in process?.env
+      : typeof Deno?.noColor === 'boolean'
+      ? (Deno.noColor as boolean)
+      : false
   const colorEnabled = opts?.colorize ?? !isNoColor
   const routeData: Record<string, RouteData[]> = {}
   let maxMethodLength = 0

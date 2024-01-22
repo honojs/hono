@@ -3,7 +3,6 @@ import { RegExpRouter } from '../../router/reg-exp-router'
 import type { Handler, MiddlewareHandler } from '../../types'
 import { inspectRoutes, showRoutes, getRouterName } from '.'
 
-const isNoColor = 'NO_COLOR' in process.env
 const namedMiddleware: MiddlewareHandler = (_, next) => next()
 const namedHandler: Handler = (c) => c.text('hi')
 const app = new Hono()
@@ -57,7 +56,7 @@ describe('inspectRoutes()', () => {
   })
 })
 
-describe.runIf(!isNoColor)('showRoutes()', () => {
+describe('showRoutes()', () => {
   let logs: string[] = []
 
   let originalLog: typeof console.log
@@ -127,15 +126,17 @@ describe.runIf(!isNoColor)('showRoutes()', () => {
   })
 })
 
-describe.runIf(isNoColor)('showRoutes() in NO_COLOR', () => {
+describe('showRoutes() in NO_COLOR', () => {
   let logs: string[] = []
 
   let originalLog: typeof console.log
   beforeAll(() => {
+    vi.stubEnv('NO_COLOR', '1')
     originalLog = console.log
     console.log = (...args) => logs.push(...args)
   })
   afterAll(() => {
+    vi.unstubAllEnvs()
     console.log = originalLog
   })
 

@@ -12,7 +12,6 @@
   "scripts": {
     "test": "tsc --noEmit && vitest --run",
     "test:watch": "vitest --watch",
-    "test:no-color": "env NO_COLOR=1 vitest --run ./src/helper/dev/index.test.ts",
     "test:deno": "env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno && deno test --no-lock -c runtime_tests/deno-jsx/deno.precompile.json runtime_tests/deno-jsx && deno test --no-lock -c runtime_tests/deno-jsx/deno.react-jsx.json runtime_tests/deno-jsx",
     "test:bun": "env NAME=Bun bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
     "test:fastly": "vitest --run --config ./runtime_tests/fastly/vitest.config.ts",
@@ -21,7 +20,7 @@
     "test:wrangler": "vitest --run --config ./runtime_tests/wrangler/vitest.config.ts",
     "test:lambda": "env NAME=Node vitest --run --config ./runtime_tests/lambda/vitest.config.ts",
     "test:lambda-edge": "env NAME=Node vitest --run --config ./runtime_tests/lambda-edge/vitest.config.ts",
-    "test:all": "yarn test && yarn:no-color && yarn test:deno && yarn test:bun && yarn test:fastly && yarn test:lagon && yarn test:node && yarn test:wrangler && yarn test:lambda && yarn test:lambda-edge",
+    "test:all": "yarn test && yarn test:deno && yarn test:bun && yarn test:fastly && yarn test:lagon && yarn test:node && yarn test:wrangler && yarn test:lambda && yarn test:lambda-edge",
     "lint": "eslint --ext js,ts src runtime_tests",
     "lint:fix": "eslint --ext js,ts src runtime_tests --fix",
     "format": "prettier --check \"src/**/*.{js,ts}\" \"runtime_tests/**/*.{js,ts}\"",
