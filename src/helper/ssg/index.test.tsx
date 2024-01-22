@@ -4,7 +4,7 @@ import { Hono } from '../../hono'
 import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
 import { fetchRoutesContent, saveContentToFiles, ssgParams, toSSG } from './index'
-import type { FileSystemModule } from './index'
+import type { BeforeRequestHook, AfterResponseHook, FileSystemModule } from './index'
 
 describe('toSSG function', () => {
   let app: Hono
@@ -143,6 +143,40 @@ describe('toSSG function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/Charlie.html', expect.any(String))
+  })
+
+  it('should modify the request if the hook is provided', async () => {
+    const beforeRequest: BeforeRequestHook = (req) => {
+      if (req.method === 'GET') {
+        return req
+      }
+      return false
+    }
+    const htmlMap = await fetchRoutesContent(app, beforeRequest)
+    expect(htmlMap.size).toBe(11)
+  })
+
+  it('should skip the route if the request hook returns false', async () => {
+    const beforeRequest: BeforeRequestHook = () => false
+    const htmlMap = await fetchRoutesContent(app, beforeRequest)
+    expect(htmlMap.size).toBe(0)
+  })
+
+  it('should modify the response if the hook is provided', async () => {
+    const afterResponse: AfterResponseHook = (res) => {
+      if (res.status === 200 || res.status === 500) {
+        return res
+      }
+      return false
+    }
+
+    await fetchRoutesContent(app, undefined, afterResponse)
+  })
+
+  it('should skip the route if the response hook returns false', async () => {
+    const afterResponse: AfterResponseHook = () => false
+    const htmlMap = await fetchRoutesContent(app, undefined, afterResponse)
+    expect(htmlMap.size).toBe(0)
   })
 })
 

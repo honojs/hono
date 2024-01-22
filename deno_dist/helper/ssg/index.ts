@@ -86,8 +86,13 @@ export const ssgParams: SSGParamsMiddleware = (params) => async (c, next) => {
   await next()
 }
 
+export type BeforeRequestHook = (req: Request) => Request | false
+export type AfterResponseHook = (res: Response) => Response | false
+
 export interface ToSSGOptions {
   dir?: string
+  beforeRequestHook?: BeforeRequestHook
+  afterResponseHook?: AfterResponseHook
 }
 
 /**
@@ -100,7 +105,9 @@ export const fetchRoutesContent = async <
   S extends Schema = {},
   BasePath extends string = '/'
 >(
-  app: Hono<E, S, BasePath>
+  app: Hono<E, S, BasePath>,
+  beforeRequestHook?: BeforeRequestHook,
+  afterResponseHook?: AfterResponseHook
 ): Promise<Map<string, { content: string | ArrayBuffer; mimeType: string }>> => {
   const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
   const baseURL = 'http://localhost'
@@ -111,6 +118,7 @@ export const fetchRoutesContent = async <
     // GET Route Info
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
     const forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
+    if (beforeRequestHook && !beforeRequestHook(forGetInfoURLRequest)) continue
     await app.fetch(forGetInfoURLRequest)
 
     if (!forGetInfoURLRequest.ssgParams) {
@@ -121,6 +129,7 @@ export const fetchRoutesContent = async <
     for (const param of forGetInfoURLRequest.ssgParams) {
       const replacedUrlParam = replaceUrlParam(route.path, param)
       const response = await app.request(replacedUrlParam)
+      if (afterResponseHook && !afterResponseHook(response)) continue
       const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
       const content = await parseResponseContent(response)
       htmlMap.set(replacedUrlParam, {
@@ -192,7 +201,7 @@ export interface ToSSGAdaptorInterface<
   S extends Schema = {},
   BasePath extends string = '/'
 > {
-  (app: Hono<E, S, BasePath>, options?: { dir?: string }): Promise<ToSSGResult>
+  (app: Hono<E, S, BasePath>, options?: ToSSGOptions): Promise<ToSSGResult>
 }
 
 /**
