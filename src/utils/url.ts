@@ -9,15 +9,13 @@ export const splitPath = (path: string): string[] => {
 }
 
 export const splitRoutingPath = (routePath: string): string[] => {
-   const { groups, path } =  extractGroupsFromPath(routePath)
+  const { groups, path } = extractGroupsFromPath(routePath)
 
   const paths = splitPath(path)
-  replaceGroupMarks(paths, groups)
-
-  return paths
+  return replaceGroupMarks(paths, groups)
 }
 
-const extractGroupsFromPath = (path: string): { groups: [string, string][], path: string } => {
+const extractGroupsFromPath = (path: string): { groups: [string, string][]; path: string } => {
   const groups: [string, string][] = []
 
   path = path.replace(/\{[^}]+\}/g, (match, index) => {
@@ -29,7 +27,7 @@ const extractGroupsFromPath = (path: string): { groups: [string, string][], path
   return { groups, path }
 }
 
-const replaceGroupMarks = (paths: string[], groups: [string, string][]): void => {
+const replaceGroupMarks = (paths: string[], groups: [string, string][]): string[] => {
   for (let i = groups.length - 1; i >= 0; i--) {
     const [mark] = groups[i]
 
@@ -40,6 +38,8 @@ const replaceGroupMarks = (paths: string[], groups: [string, string][]): void =>
       }
     }
   }
+
+  return paths
 }
 
 const patternCache: { [key: string]: Pattern } = {}
