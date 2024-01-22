@@ -89,7 +89,7 @@ export const createCssJsxDomObjects = ({ id }: { id: Readonly<string> }) => {
         ? splitRule(styleString)
         : [`${className[0] === '@' ? '' : '.'}${className}{${styleString}}`]
       ).forEach((rule) => {
-        sheet.insertRule(rule)
+        sheet.insertRule(rule, sheet.cssRules.length)
       })
     }
   }
