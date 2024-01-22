@@ -12,6 +12,7 @@ import {
   useTransition,
   useDeferredValue,
   startViewTransition,
+  useViewTransition,
 } from '.'
 
 describe('startTransition()', () => {
@@ -373,6 +374,65 @@ describe('startViewTransition()', () => {
     expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
     expect(called).toBe(2)
     await new Promise((r) => setTimeout(r))
+    await new Promise((r) => setTimeout(r))
+    expect(root.innerHTML).toBe('<div><button>1</button></div>')
+    expect(called).toBe(3)
+  })
+})
+
+describe('useViewTransition()', () => {
+  let dom: JSDOM
+  let root: HTMLElement
+  beforeEach(() => {
+    dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
+      runScripts: 'dangerously',
+    })
+    global.document = dom.window.document
+    global.HTMLElement = dom.window.HTMLElement
+    global.Text = dom.window.Text
+    root = document.getElementById('root') as HTMLElement
+  })
+  afterEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (dom.window.document as any).startViewTransition
+  })
+
+  it('supported browser', async () => {
+    let resolved: (() => void) | undefined 
+    const promise = new Promise<void>((r) => (resolved = r))
+    let called = 0
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(global.document as any).startViewTransition = vi.fn((cb: Function) => {
+      Promise.resolve().then(() => cb())
+      return { finished: promise }
+    })
+
+    const App = () => {
+      const [count, setCount] = useState(0)
+      const [isUpdating, startViewTransition] = useViewTransition()
+      called++
+
+      return (
+        <div>
+          <button
+            onClick={() => {
+              startViewTransition(() => {
+                setCount((c) => c + 1)
+              })
+            }}
+          >
+            {isUpdating ? 'Pending...' : count}
+          </button>
+        </div>
+      )
+    }
+    render(<App />, root)
+    expect(root.innerHTML).toBe('<div><button>0</button></div>')
+    root.querySelector('button')?.click()
+    await new Promise((r) => setTimeout(r))
+    expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
+    expect(called).toBe(2)
+    resolved?.()
     await new Promise((r) => setTimeout(r))
     expect(root.innerHTML).toBe('<div><button>1</button></div>')
     expect(called).toBe(3)
