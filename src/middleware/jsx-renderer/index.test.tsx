@@ -45,13 +45,13 @@ describe('JSX renderer', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe(
-      '<html><head>Title</head><body><h1>http://localhost/</h1></body></html>'
+      '<!DOCTYPE html><html><head>Title</head><body><h1>http://localhost/</h1></body></html>'
     )
 
     res = await app.request('http://localhost/nested')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('<div class="nested"><h1>http://localhost/nested</h1></div>')
+    expect(await res.text()).toBe('<!DOCTYPE html><div class="nested"><h1>http://localhost/nested</h1></div>')
   })
 
   it('nested layout with Layout', async () => {
@@ -85,7 +85,7 @@ describe('JSX renderer', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe(
-      '<html><head>Nested</head><body><div class="nested"><h1>http://localhost/nested</h1></div></body></html>'
+      '<!DOCTYPE html><html><head>Nested</head><body><div class="nested"><h1>http://localhost/nested</h1></div></body></html>'
     )
   })
 
@@ -109,6 +109,28 @@ describe('JSX renderer', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<!DOCTYPE html><html><body><h1>Hello</h1></body></html>')
+  })
+
+  it('Should return a non includes doctype', async () => {
+    const app = new Hono()
+    app.use(
+      '*',
+      jsxRenderer(
+        ({ children }) => {
+          return (
+            <html>
+              <body>{children}</body>
+            </html>
+          )
+        },
+        { docType: false }
+      )
+    )
+    app.get('/', (c) => c.render(<h1>Hello</h1>, { title: 'Title' }))
+    const res = await app.request('/')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('<html><body><h1>Hello</h1></body></html>')
   })
 
   it('Should return a custom doctype', async () => {
@@ -312,6 +334,6 @@ d.replaceWith(c.content)
     const res = await app.request('http://localhost/', undefined, { bar: 'barValue' })
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('<h1>fooValue</h1><p>barValue</p>')
+    expect(await res.text()).toBe('<!DOCTYPE html><h1>fooValue</h1><p>barValue</p>')
   })
 })
