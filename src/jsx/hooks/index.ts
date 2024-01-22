@@ -9,14 +9,19 @@ const STASH_CALLBACK = 2
 const STASH_USE = 3
 
 export type EffectData = [
-  readonly unknown[] | undefined,
-  (() => void | (() => void)) | undefined,
-  (() => void) | undefined
+  readonly unknown[] | undefined, // deps
+  (() => void | (() => void)) | undefined, // effect
+  (() => void) | undefined // cleanup
 ]
 
 const resolvedPromiseValueMap = new WeakMap<Promise<unknown>, unknown>()
 
-const isViewTransitionStack: [boolean, boolean][] = []
+let viewTransitionState:
+  | [
+      boolean, // isUpdating
+      boolean // useViewTransition() is called
+    ]
+  | undefined = undefined
 
 const documentStartViewTransition: (cb: () => void) => { finished: Promise<void> } = (cb) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,21 +35,29 @@ const documentStartViewTransition: (cb: () => void) => { finished: Promise<void>
 }
 
 let updateHook: UpdateHook | undefined = undefined
-const viewTransitionHook = (context: Context, cb: (context: Context) => void): Promise<void> =>
-  documentStartViewTransition(() => {
-    isViewTransitionStack.push([true, false])
-    cb(context)
+const viewTransitionHook = (
+  context: Context,
+  node: Node,
+  cb: (context: Context) => void
+): Promise<void> => {
+  const state: [boolean, boolean] = [true, false]
+  let lastVC = node.vC
+  return documentStartViewTransition(() => {
+    if (lastVC === node.vC) {
+      viewTransitionState = state
+      cb(context)
+      viewTransitionState = undefined
+      lastVC = node.vC
+    }
+  }).finished.then(() => {
+    if (state[1] && lastVC === node.vC) {
+      state[0] = false
+      viewTransitionState = state
+      cb(context)
+      viewTransitionState = undefined
+    }
   })
-    .finished.then(() => {
-      const top = isViewTransitionStack.at(-1)
-      if (top?.[1]) {
-        isViewTransitionStack[isViewTransitionStack.length - 1][0] = false
-        cb(context)
-      }
-    })
-    .finally(() => {
-      isViewTransitionStack.pop()
-    })
+}
 
 export const startViewTransition = (callback: () => void): void => {
   updateHook = viewTransitionHook
@@ -61,11 +74,11 @@ export const useViewTransition = (): [boolean, (callback: () => void) => void] =
   if (!buildData) {
     return [false, () => {}]
   }
-  const top = isViewTransitionStack.at(-1)
-  if (top) {
-    top[1] = true
+
+  if (viewTransitionState) {
+    viewTransitionState[1] = true
   }
-  return [!!top?.[0], startViewTransition]
+  return [!!viewTransitionState?.[0], startViewTransition]
 }
 
 const pendingStack: PendingType[] = []
