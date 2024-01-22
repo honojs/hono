@@ -6,6 +6,7 @@ import { jsx } from '..'
 import { Style, css, rawCssString, createCssContext } from '../../helper/css'
 import { minify } from '../../helper/css/common'
 import { renderTest } from '../../helper/css/common.test'
+import type { JSXNode } from '../../jsx'
 import { render } from '.'
 
 describe('Style and css for jsx/dom', () => {
@@ -82,7 +83,7 @@ describe('render', () => {
     global.Text = dom.window.Text
     const root = document.getElementById('root') as HTMLElement
 
-    const toString = async (node: any) => {
+    const toString = async (node: JSXNode) => {
       render(node, root)
       await Promise.resolve()
       const style = root.querySelector('style')

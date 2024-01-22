@@ -1,3 +1,4 @@
+/* eslint-disable quotes */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, Fragment } from '../../jsx'
 import type {
@@ -31,6 +32,7 @@ export const renderTest = (
   let keyframes: typeof keyframesHelper
   let viewTransition: typeof viewTransitionHelper
   let rawCssString: typeof rawCssStringHelper
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let toString: (template: any) => Promise<string>
   let Style: typeof StyleComponent
   beforeEach(() => {
@@ -99,7 +101,7 @@ export const renderTest = (
     it('Should render CSS with variable', async () => {
       const headerClass = css`
         background-color: blue;
-        content: '${'I\'m a variable!'}';
+        content: '${"I'm a variable!"}';
       `
       const template = (
         <>

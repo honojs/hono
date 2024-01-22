@@ -398,7 +398,7 @@ describe('useViewTransition()', () => {
   })
 
   it('supported browser', async () => {
-    let resolved: (() => void) | undefined 
+    let resolved: (() => void) | undefined
     const promise = new Promise<void>((r) => (resolved = r))
     let called = 0
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
