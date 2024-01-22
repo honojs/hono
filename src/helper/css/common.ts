@@ -74,7 +74,7 @@ const minifyCssRe = new RegExp(
   'g'
 )
 
-const minify = (css: string): string => {
+export const minify = (css: string): string => {
   return css.replace(minifyCssRe, (_, $1, $2, $3, $4) => $1 || $2 || $3 || $4 || '')
 }
 
