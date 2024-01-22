@@ -1,4 +1,5 @@
 import { describe, expect, it, mock, beforeEach } from 'bun:test'
+import { vi } from 'vitest'
 import { serveStatic } from '../../src/adapter/bun'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
@@ -11,6 +12,8 @@ import { HonoRequest } from '../../src/request'
 
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.
+
+vi.stubEnv('NAME', 'Bun')
 
 describe('Basic', () => {
   const app = new Hono()
