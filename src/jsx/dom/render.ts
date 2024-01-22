@@ -90,6 +90,7 @@ const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: P
         if (typeof value === 'string') {
           container.style.cssText = value
         } else {
+          container.style.cssText = ''
           Object.assign(container.style, value)
         }
       } else {
