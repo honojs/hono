@@ -4,7 +4,12 @@ import { Hono } from '../../hono'
 import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
 import { fetchRoutesContent, saveContentToFiles, ssgParams, toSSG } from './index'
-import type { BeforeRequestHook, AfterResponseHook, FileSystemModule } from './index'
+import type {
+  BeforeRequestHook,
+  AfterResponseHook,
+  AfterGenerateHook,
+  FileSystemModule,
+} from './index'
 
 describe('toSSG function', () => {
   let app: Hono
@@ -13,7 +18,7 @@ describe('toSSG function', () => {
 
   beforeEach(() => {
     app = new Hono()
-    app.get('/', (c) => c.html('Hello, World!'))
+    app.all('/', (c) => c.html('Hello, World!'))
     app.get('/about', (c) => c.html('About Page'))
     app.get('/about/some', (c) => c.text('About Page 2tier'))
     app.post('/about/some/thing', (c) => c.text('About Page 3tier'))
@@ -146,14 +151,18 @@ describe('toSSG function', () => {
   })
 
   it('should modify the request if the hook is provided', async () => {
-    const beforeRequest: BeforeRequestHook = (req) => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+    const beforeRequestHook: BeforeRequestHook = (req) => {
       if (req.method === 'GET') {
         return req
       }
       return false
     }
-    const htmlMap = await fetchRoutesContent(app, beforeRequest)
-    expect(htmlMap.size).toBe(11)
+    const result = await toSSG(app, fsMock, { beforeRequestHook })
+    expect(result.files).toHaveLength(11)
   })
 
   it('should skip the route if the request hook returns false', async () => {
@@ -163,20 +172,41 @@ describe('toSSG function', () => {
   })
 
   it('should modify the response if the hook is provided', async () => {
-    const afterResponse: AfterResponseHook = (res) => {
+    const afterResponseHook: AfterResponseHook = (res) => {
       if (res.status === 200 || res.status === 500) {
         return res
       }
       return false
     }
-
-    await fetchRoutesContent(app, undefined, afterResponse)
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+    const result = await toSSG(app, fsMock, { afterResponseHook })
+    expect(result.files).toHaveLength(10)
   })
 
   it('should skip the route if the response hook returns false', async () => {
     const afterResponse: AfterResponseHook = () => false
     const htmlMap = await fetchRoutesContent(app, undefined, afterResponse)
     expect(htmlMap.size).toBe(0)
+  })
+
+  it('should execute additional processing using afterGenerateHook', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+    const afterGenerateHookMock: AfterGenerateHook = vi.fn((result) => {
+      if (result.files) {
+        result.files.forEach(file => console.log(file))
+      }
+    })
+  
+    await toSSG(app, fsMock, { dir: './static', afterGenerateHook: afterGenerateHookMock })
+  
+    expect(afterGenerateHookMock).toHaveBeenCalled()
+    expect(afterGenerateHookMock).toHaveBeenCalledWith(expect.anything())
   })
 })
 
