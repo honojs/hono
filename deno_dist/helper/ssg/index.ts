@@ -30,8 +30,13 @@ export interface ToSSGResult {
 
 const generateFilePath = (routePath: string, outDir: string, mimeType: string) => {
   const extension = determineExtension(mimeType)
-  const fileName = routePath === '/' ? `index.${extension}` : `${routePath}.${extension}`
-  return joinPaths(outDir, fileName)
+  if (routePath === '/') {
+    return joinPaths(outDir, `index.${extension}`)
+  }
+  if (routePath.endsWith('/')) {
+    return joinPaths(outDir, routePath, `index.${extension}`)
+  }
+  return joinPaths(outDir, `${routePath}.${extension}`)
 }
 
 const parseResponseContent = async (response: Response): Promise<string | ArrayBuffer> => {
