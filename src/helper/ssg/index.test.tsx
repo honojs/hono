@@ -197,6 +197,7 @@ describe('saveContentToFiles function', () => {
     htmlMap = new Map([
       ['/', { content: 'Home Page', mimeType: 'text/html' }],
       ['/about', { content: 'About Page', mimeType: 'text/html' }],
+      ['/about/', { content: 'About Page', mimeType: 'text/html' }],
     ])
   })
 
@@ -205,6 +206,7 @@ describe('saveContentToFiles function', () => {
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', 'Home Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/index.html', 'About Page')
   })
 
   it('should correctly create directories if they do not exist', async () => {
