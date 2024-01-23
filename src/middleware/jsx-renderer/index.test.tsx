@@ -51,7 +51,9 @@ describe('JSX renderer', () => {
     res = await app.request('http://localhost/nested')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('<!DOCTYPE html><div class="nested"><h1>http://localhost/nested</h1></div>')
+    expect(await res.text()).toBe(
+      '<!DOCTYPE html><div class="nested"><h1>http://localhost/nested</h1></div>'
+    )
   })
 
   it('nested layout with Layout', async () => {
