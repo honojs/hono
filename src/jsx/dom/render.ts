@@ -1,7 +1,5 @@
 import type { FC, Child, Props } from '..'
 import type { JSXNode } from '..'
-import type { HtmlEscapedString } from '../../utils/html'
-import { HtmlEscapedCallbackPhase } from '../../utils/html'
 import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
 
@@ -48,13 +46,19 @@ export type PendingType =
   | 0 // no pending
   | 1 // global
   | 2 // hook
-export type UpdateHook = (cb: () => void) => Promise<void>
+export type UpdateHook = (
+  context: Context,
+  node: Node,
+  cb: (context: Context) => void
+) => Promise<void>
 export type Context =
   | [
       PendingType, // PendingType
       boolean, // got an error
-      UpdateHook // update hook
+      UpdateHook, // update hook
+      boolean // is in view transition
     ]
+  | [PendingType, boolean, UpdateHook]
   | [PendingType, boolean]
   | [PendingType]
   | []
@@ -82,24 +86,22 @@ const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: P
           container.removeEventListener(eventName, oldAttributes[key])
         }
         container.addEventListener(eventName, value)
-      } else if (value instanceof Promise) {
-        value.then((v) => {
-          const callbacks = (v as HtmlEscapedString).callbacks
-          if (callbacks) {
-            callbacks.forEach((c) =>
-              c({
-                phase: HtmlEscapedCallbackPhase.BeforeDom,
-                context: {},
-              })
-            )
-          }
-          container.setAttribute(key, v)
-        })
+      } else if (key === 'style') {
+        if (typeof value === 'string') {
+          container.style.cssText = value
+        } else {
+          container.style.cssText = ''
+          Object.assign(container.style, value)
+        }
       } else {
         if (value === null || value === undefined || value === false) {
           container.removeAttribute(key)
+        } else if (value === true) {
+          container.setAttribute(key, '')
+        } else if (typeof value === 'string' || typeof value === 'number') {
+          container.setAttribute(key, value as string)
         } else {
-          container.setAttribute(key, value)
+          container.setAttribute(key, value.toString())
         }
       }
     }
@@ -382,7 +384,7 @@ export const update = async (
     resolve as UpdateMapResolve,
     () => {
       if (context[2]) {
-        context[2](() => {
+        context[2](context, node, (context) => {
           updateSync(context, node)
         }).then(() => (resolve as UpdateMapResolve)(node))
       } else {

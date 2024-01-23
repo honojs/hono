@@ -9,38 +9,76 @@ const STASH_CALLBACK = 2
 const STASH_USE = 3
 
 export type EffectData = [
-  readonly unknown[] | undefined,
-  (() => void | (() => void)) | undefined,
-  (() => void) | undefined
+  readonly unknown[] | undefined, // deps
+  (() => void | (() => void)) | undefined, // effect
+  (() => void) | undefined // cleanup
 ]
 
 const resolvedPromiseValueMap = new WeakMap<Promise<unknown>, unknown>()
 
+let viewTransitionState:
+  | [
+      boolean, // isUpdating
+      boolean // useViewTransition() is called
+    ]
+  | undefined = undefined
+
+const documentStartViewTransition: (cb: () => void) => { finished: Promise<void> } = (cb) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((document as any)?.startViewTransition) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (document as any).startViewTransition(cb)
+  } else {
+    cb()
+    return { finished: Promise.resolve() }
+  }
+}
+
 let updateHook: UpdateHook | undefined = undefined
+const viewTransitionHook = (
+  context: Context,
+  node: Node,
+  cb: (context: Context) => void
+): Promise<void> => {
+  const state: [boolean, boolean] = [true, false]
+  let lastVC = node.vC
+  return documentStartViewTransition(() => {
+    if (lastVC === node.vC) {
+      viewTransitionState = state
+      cb(context)
+      viewTransitionState = undefined
+      lastVC = node.vC
+    }
+  }).finished.then(() => {
+    if (state[1] && lastVC === node.vC) {
+      state[0] = false
+      viewTransitionState = state
+      cb(context)
+      viewTransitionState = undefined
+    }
+  })
+}
 
 export const startViewTransition = (callback: () => void): void => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (!(document as any).startViewTransition) {
-    callback()
-    return
-  }
-
-  updateHook = (cb) => {
-    let resolve: (() => void) | undefined
-    const promise = new Promise<void>((r) => (resolve = r))
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(document as any).startViewTransition(() => {
-      cb()
-      ;(resolve as () => void)()
-    })
-    return promise
-  }
+  updateHook = viewTransitionHook
 
   try {
     callback()
   } finally {
     updateHook = undefined
   }
+}
+
+export const useViewTransition = (): [boolean, (callback: () => void) => void] => {
+  const buildData = buildDataStack.at(-1) as [Context, NodeObject]
+  if (!buildData) {
+    return [false, () => {}]
+  }
+
+  if (viewTransitionState) {
+    viewTransitionState[1] = true
+  }
+  return [!!viewTransitionState?.[0], startViewTransition]
 }
 
 const pendingStack: PendingType[] = []

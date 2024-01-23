@@ -159,6 +159,11 @@
       "import": "./dist/jsx/dom/jsx-runtime.js",
       "require": "./dist/cjs/jsx/dom/jsx-runtime.js"
     },
+    "./jsx/dom/css": {
+      "types": "./dist/types/jsx/dom/css.d.ts",
+      "import": "./dist/jsx/dom/css.js",
+      "require": "./dist/cjs/jsx/dom/css.js"
+    },
     "./jwt": {
       "types": "./dist/types/middleware/jwt/index.d.ts",
       "import": "./dist/middleware/jwt/index.js",
@@ -374,6 +379,9 @@
       ],
       "jsx/dom": [
         "./dist/types/jsx/dom"
+      ],
+      "jsx/dom/css": [
+        "./dist/types/jsx/dom/css.d.ts"
       ],
       "jwt": [
         "./dist/types/middleware/jwt"
