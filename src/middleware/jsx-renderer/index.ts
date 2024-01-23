@@ -22,9 +22,9 @@ const createRenderer =
     const docType =
       typeof options?.docType === 'string'
         ? options.docType
-        : options?.docType === true
-        ? '<!DOCTYPE html>'
-        : ''
+        : options?.docType === false
+        ? ''
+        : '<!DOCTYPE html>'
 
     const Layout: FC = (props) => {
       const parentLayout = c.getLayout() as FC
