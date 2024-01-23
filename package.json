@@ -84,10 +84,10 @@
       "import": "./dist/helper/cookie/index.js",
       "require": "./dist/cjs/helper/cookie/index.js"
     },
-    "./accept": {
-      "types": "./dist/types/helper/accept/index.d.ts",
-      "import": "./dist/helper/accept/index.js",
-      "require": "./dist/cjs/helper/accept/index.js"
+    "./accepts": {
+      "types": "./dist/types/helper/accepts/index.d.ts",
+      "import": "./dist/helper/accepts/index.js",
+      "require": "./dist/cjs/helper/accepts/index.js"
     },
     "./compress": {
       "types": "./dist/types/middleware/compress/index.d.ts",
