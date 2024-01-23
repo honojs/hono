@@ -39,6 +39,16 @@ export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
 }
 
 export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { process, Deno } = globalThis as any
+  const isNoColor =
+    typeof process !== 'undefined'
+      ? // eslint-disable-next-line no-unsafe-optional-chaining
+        'NO_COLOR' in process?.env
+      : typeof Deno?.noColor === 'boolean'
+      ? (Deno.noColor as boolean)
+      : false
+  const colorEnabled = opts?.colorize ?? !isNoColor
   const routeData: Record<string, RouteData[]> = {}
   let maxMethodLength = 0
   let maxPathLength = 0
@@ -61,7 +71,7 @@ export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOption
       }
       const { method, path, routes } = data
 
-      const methodStr = opts?.colorize ?? true ? `\x1b[32m${method}\x1b[0m` : method
+      const methodStr = colorEnabled ? `\x1b[32m${method}\x1b[0m` : method
       console.log(`${methodStr} ${' '.repeat(maxMethodLength - method.length)} ${path}`)
 
       if (!opts?.verbose) {
