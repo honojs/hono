@@ -12,6 +12,8 @@ import { HonoRequest } from '../../src/request'
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.
 
+Bun.env.NAME = 'Bun'
+
 describe('Basic', () => {
   const app = new Hono()
   app.get('/a/:foo', (c) => {
