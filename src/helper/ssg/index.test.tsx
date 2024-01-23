@@ -199,12 +199,12 @@ describe('toSSG function', () => {
     }
     const afterGenerateHookMock: AfterGenerateHook = vi.fn((result) => {
       if (result.files) {
-        result.files.forEach(file => console.log(file))
+        result.files.forEach((file) => console.log(file))
       }
     })
-  
+
     await toSSG(app, fsMock, { dir: './static', afterGenerateHook: afterGenerateHookMock })
-  
+
     expect(afterGenerateHookMock).toHaveBeenCalled()
     expect(afterGenerateHookMock).toHaveBeenCalledWith(expect.anything())
   })
