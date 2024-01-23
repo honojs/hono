@@ -7,6 +7,8 @@ import { assertEquals } from './deps.ts'
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.
 
+Deno.env.set('NAME', 'Deno')
+
 Deno.test('Hello World', async () => {
   const app = new Hono()
   app.get('/:foo', (c) => {
