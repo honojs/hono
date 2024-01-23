@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from '../helper/html'
 import { Hono } from '../hono'
+import { Suspense, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, memo, Fragment, createContext, useContext } from './index'
 import type { Context, FC } from './index'
@@ -491,9 +492,14 @@ describe('Fragment', () => {
 describe('Context', () => {
   let ThemeContext: Context<string>
   let Consumer: FC
+  let AsyncConsumer: FC
   beforeAll(() => {
     ThemeContext = createContext('light')
     Consumer = () => {
+      const theme = useContext(ThemeContext)
+      return <span>{theme}</span>
+    }
+    AsyncConsumer = async () => {
       const theme = useContext(ThemeContext)
       return <span>{theme}</span>
     }
@@ -540,5 +546,68 @@ describe('Context', () => {
   it('default value', () => {
     const template = <Consumer />
     expect(template.toString()).toBe('<span>light</span>')
+  })
+
+  describe('with Suspence', () => {
+    const RedTheme = () => (
+      <ThemeContext.Provider value='red'>
+        <Consumer />
+      </ThemeContext.Provider>
+    )
+
+    it('Should preserve context in sync component', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <Suspense fallback={<RedTheme />}>
+            <Consumer />
+            <ThemeContext.Provider value='black'>
+              <Consumer />
+            </ThemeContext.Provider>
+          </Suspense>
+        </ThemeContext.Provider>
+      )
+      const stream = renderToReadableStream(template)
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(chunks).toEqual(['<span>dark</span><span>black</span>'])
+    })
+
+    it('Should preserve context in async component', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <Suspense fallback={<RedTheme />}>
+            <Consumer />
+            <ThemeContext.Provider value='black'>
+              <AsyncConsumer />
+            </ThemeContext.Provider>
+          </Suspense>
+        </ThemeContext.Provider>
+      )
+      const stream = renderToReadableStream(template)
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(chunks).toEqual([
+        '<template id="H:0"></template><span>red</span><!--/$-->',
+        `<template><span>dark</span><span>black</span></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:0')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+      ])
+    })
   })
 })
