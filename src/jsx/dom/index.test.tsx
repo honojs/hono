@@ -45,6 +45,77 @@ describe('DOM', () => {
     expect(root.innerHTML).toBe('Hello')
   })
 
+  describe('attribute', () => {
+    it('simple', () => {
+      const App = () => <div id='app' class='app' />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div id="app" class="app"></div>')
+    })
+
+    it('boolean', () => {
+      const App = () => <div hidden />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div hidden=""></div>')
+    })
+
+    it('event', () => {
+      const App = () => <button onClick={() => {}} />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<button></button>')
+    })
+
+    it('style', () => {
+      const App = () => <div style={{ fontSize: '10px' }} />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div style="font-size: 10px;"></div>')
+    })
+
+    it('update style', () => {
+      const App = () => <div style={{ fontSize: '10px' }} />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div style="font-size: 10px;"></div>')
+    })
+
+    it('style with string', async () => {
+      const App = () => {
+        const [style, setStyle] = useState<{ fontSize?: string; color?: string }>({
+          fontSize: '10px',
+        })
+        return <div style={style} onClick={() => setStyle({ color: 'red' })} />
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div style="font-size: 10px;"></div>')
+      root.querySelector('div')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div style="color: red;"></div>')
+    })
+
+    it('toString() is called', () => {
+      const App = () => <div x-value={{ toString: () => 'value' }} />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div x-value="value"></div>')
+    })
+
+    it('ref', () => {
+      const App = () => {
+        const ref = useRef<HTMLDivElement>(null)
+        return <div ref={ref} />
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div></div>')
+    })
+
+    it('ref with callback', () => {
+      const ref = useRef<HTMLDivElement>(null)
+      const App = () => {
+        return <div ref={(node: HTMLDivElement) => (ref.current = node)} />
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div></div>')
+      expect(ref.current).toBeInstanceOf(HTMLElement)
+    })
+  })
+
   describe('replace content', () => {
     it('text to text', async () => {
       let setCount: (count: number) => void = () => {}
