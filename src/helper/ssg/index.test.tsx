@@ -129,7 +129,7 @@ describe('toSSG function', () => {
 
     expect(result.success).toBe(false)
     expect(result.error).toBeDefined()
-    expect(result.files).toBeUndefined()
+    expect(result.files).toStrictEqual([])
   })
 
   it('Should correctly generate files with the expected paths', async () => {
