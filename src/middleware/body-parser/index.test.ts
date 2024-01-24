@@ -63,7 +63,6 @@ describe('bodyParse works', () => {
     expect(await res.json()).toEqual(data)
   })
 
-
   app.post(
     '/max-64mb/json-error',
     bodyParser({
@@ -80,18 +79,17 @@ describe('bodyParse works', () => {
       hono: 'is',
     }cool`
 
-      const res = await app.request(
-        new Request('https://localhost/max-64mb/json-error', {
-          method: 'POST',
-          body: data,
-        })
-      )
+    const res = await app.request(
+      new Request('https://localhost/max-64mb/json-error', {
+        method: 'POST',
+        body: data,
+      })
+    )
 
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(500)
-      expect(await res.text()).toBe("Internal Server Error")
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe('Internal Server Error')
   })
-
 
   app.post(
     '/max-64mb/text',

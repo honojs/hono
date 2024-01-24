@@ -3,7 +3,7 @@ import { Context, MiddlewareHandler } from '../..'
 type bodyParserOptions = {
   type?: 'body' | 'json' | 'form' | 'text'
   limit?: number
-  handler?: (c: Context) => Response,
+  handler?: (c: Context) => Response
   onError?: (c: Context) => Response
 }
 
@@ -14,8 +14,8 @@ const defaultOptions: bodyParserOptions = {
     return c.text('413 Request Entity Too Large', 413)
   },
   onError: (c: Context) => {
-    return c.text("Internal Server Error", 500)
-  }
+    return c.text('Internal Server Error', 500)
+  },
 }
 
 const allowMethods = ['POST', 'PUT', 'PATCH']
