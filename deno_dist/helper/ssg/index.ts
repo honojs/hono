@@ -24,7 +24,7 @@ export interface FileSystemModule {
  */
 export interface ToSSGResult {
   success: boolean
-  files?: string[]
+  files: string[]
   error?: Error
 }
 
@@ -238,7 +238,7 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
     result = { success: true, files }
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error(String(error))
-    result = { success: false, error: errorObj }
+    result = { success: false, files: [], error: errorObj }
   }
   await options?.afterGenerateHook?.(result)
   return result
