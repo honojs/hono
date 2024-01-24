@@ -4,7 +4,7 @@ import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from 
 import type { CookieOptions } from './utils/cookie'
 import { serialize } from './utils/cookie'
 import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html'
-import type { StatusCode } from './utils/http-status'
+import type { RedirectStatusCode, StatusCode } from './utils/http-status'
 import { StreamingApi } from './utils/stream'
 import type { JSONValue, InterfaceToType, JSONParsed } from './utils/types'
 
@@ -382,7 +382,7 @@ export class Context<
       : this.newResponse(html as string, arg)
   }
 
-  redirect = (location: string, status: StatusCode = 302): Response => {
+  redirect = (location: string, status: RedirectStatusCode = 302): Response => {
     this.#headers ??= new Headers()
     this.#headers.set('Location', location)
     return this.newResponse(null, status)
