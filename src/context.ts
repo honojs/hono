@@ -3,7 +3,7 @@ import type { PropsForRenderer } from './middleware/jsx-renderer'
 import type { HonoRequest } from './request'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types'
 import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html'
-import type { StatusCode } from './utils/http-status'
+import type { RedirectStatusCode, StatusCode } from './utils/http-status'
 import type { JSONValue, InterfaceToType, JSONParsed } from './utils/types'
 
 type HeaderRecord = Record<string, string | string[]>
@@ -528,7 +528,7 @@ export class Context<
    * ```
    * @see https://hono.dev/api/context#redirect
    */
-  redirect = (location: string, status: StatusCode = 302): Response => {
+  redirect = (location: string, status: RedirectStatusCode = 302): Response => {
     this.#headers ??= new Headers()
     this.#headers.set('Location', location)
     return this.newResponse(null, status)
