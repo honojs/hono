@@ -5,6 +5,11 @@ describe('Parse Compress Middleware', () => {
   const app = new Hono()
 
   app.use('*', compress())
+
+  app.notFound((c) => {
+    return c.json({ message: 'error message' }, 400)
+  })
+
   app.get('/hello', async (ctx) => {
     ctx.header('Content-Length', '5')
     return ctx.text('hello')
@@ -55,5 +60,16 @@ describe('Parse Compress Middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Encoding')).toBeNull()
     expect(res.headers.get('Content-Length')).toBe('5')
+  })
+
+  it('custom error message 400 Not Found', async () => {
+    const res = await app.request('http://localhost/err', {
+      method: 'GET',
+      headers: new Headers({ 'Accept-Encoding': 'gzip' }),
+    })
+    expect(res.status).toBe(400)
+    expect(res.headers.get('Content-Encoding')).toEqual('gzip')
+    expect(res.headers.get('Content-Length')).toBeNull()
+    expect(await res.json()).toEqual({ message: 'error message' })
   })
 })
