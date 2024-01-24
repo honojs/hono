@@ -1,4 +1,4 @@
-import { Context, MiddlewareHandler } from '../..'
+import type { Context, MiddlewareHandler } from '../..'
 
 type bodyParserOptions = {
   type?: 'body' | 'json' | 'form' | 'text'
