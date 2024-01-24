@@ -33,8 +33,21 @@ export type ClientErrorStatusCode =
   | 431
   | 451
 export type ServerErrorStatusCode = 500 | 501 | 502 | 503 | 504 | 505 | 506 | 507 | 508 | 510 | 511
+/**
+ * `UnOfficalStatusCode` can be used to specify an informal status code.
+ * @example
+ *
+ * ```ts
+ * app.get('/', (c) => {
+ *   return c.text("hono is cool", 666 as UnOfficalStatusCode)
+ * })
+ * ```
+ */
 export type UnOfficalStatusCode = -1
 
+/**
+ * If you want to use an unofficial status, use `UnOfficalStatusCode`.
+ */
 export type StatusCode =
   | InfoStatusCode
   | SuccessStatusCode
