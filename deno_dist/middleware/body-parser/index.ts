@@ -4,17 +4,13 @@ type bodyParserOptions = {
   type?: 'body' | 'json' | 'form' | 'text'
   limit?: number
   handler?: (c: Context) => Response
-  onError?: (c: Context) => Response
 }
 
 const defaultOptions: bodyParserOptions = {
   type: 'body',
-  limit: 2147483647,
+  limit: 0,
   handler: (c: Context) => {
     return c.text('413 Request Entity Too Large', 413)
-  },
-  onError: (c: Context) => {
-    return c.text('Internal Server Error', 500)
   },
 }
 
@@ -44,9 +40,8 @@ export const bodyParser = (
       const blob = await req.blob()
       const bodySize = blob.size
 
-      if (bodySize >= parseOptions.limit) {
-        c.res = parseOptions.handler(c)
-        c.finalized = true
+      if (parseOptions.limit !== 0 && bodySize >= parseOptions.limit) {
+        return parseOptions.handler(c)
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
