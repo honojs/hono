@@ -270,5 +270,5 @@ export class Factory<E extends Env = any, P extends string = any> {
 export const createFactory = <E extends Env = any, P extends string = any>() => new Factory<E, P>()
 
 export const createMiddleware = <E extends Env = any, P extends string = any, I extends Input = {}>(
-  middleware: MiddlewareHandler
+  middleware: MiddlewareHandler<E, P, I>
 ) => createFactory<E, P>().createMiddleware<I>(middleware)
