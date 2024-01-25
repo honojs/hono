@@ -8,10 +8,11 @@ import { createMiddleware, createFactory } from './index'
 
 describe('createMiddleware', () => {
   type Env = { Variables: { foo: string } }
-  const app = new Hono<Env>()
+  const app = new Hono()
 
   const mw = (message: string) =>
     createMiddleware<Env>(async (c, next) => {
+      expectTypeOf(c.var.foo).toEqualTypeOf<string>()
       c.set('foo', 'bar')
       await next()
       c.header('X-Message', message)
