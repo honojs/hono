@@ -1051,6 +1051,64 @@ describe('Not Found', () => {
     expect(res.status).toBe(404)
     expect(await res.text()).toBe('Custom 404 Not Found')
   })
+
+  describe('Not Found with a middleware', () => {
+    const app = new Hono()
+
+    app.get('/', (c) => c.text('hello'))
+    app.use('*', async (c, next) => {
+      await next()
+      c.res = new Response((await c.res.text()) + ' + Middleware', c.res)
+    })
+
+    it('Custom 404 Not Found', async () => {
+      let res = await app.request('http://localhost/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('hello')
+      res = await app.request('http://localhost/foo')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('404 Not Found + Middleware')
+    })
+  })
+
+  describe('Not Found with some middleware', () => {
+    const app = new Hono()
+
+    app.get('/', (c) => c.text('hello'))
+    app.use('*', async (c, next) => {
+      await next()
+      c.res = new Response((await c.res.text()) + ' + Middleware 1', c.res)
+    })
+    app.use('*', async (c, next) => {
+      await next()
+      c.res = new Response((await c.res.text()) + ' + Middleware 2', c.res)
+    })
+
+    it('Custom 404 Not Found', async () => {
+      let res = await app.request('http://localhost/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('hello')
+      res = await app.request('http://localhost/foo')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('404 Not Found + Middleware 2 + Middleware 1')
+    })
+  })
+
+  describe('No response from a handler', () => {
+    const app = new Hono()
+
+    app.get('/', (c) => c.text('hello'))
+    app.get('/not-found', async (c) => undefined)
+
+    it('Custom 404 Not Found', async () => {
+      let res = await app.request('http://localhost/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('hello')
+      res = await app.request('http://localhost/not-found')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('404 Not Found')
+    })
+  })
 })
 
 describe('Redirect', () => {
