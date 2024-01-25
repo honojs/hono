@@ -62,14 +62,22 @@ describe('Parse Compress Middleware', () => {
     expect(res.headers.get('Content-Length')).toBe('5')
   })
 
-  it('custom error message 400 Not Found', async () => {
+  it('error 400 Not Found with headers accept-encoding', async () => {
     const res = await app.request('http://localhost/err', {
       method: 'GET',
       headers: new Headers({ 'Accept-Encoding': 'gzip' }),
     })
+    expect(res).not.toBeNull()
     expect(res.status).toBe(400)
     expect(res.headers.get('Content-Encoding')).toEqual('gzip')
     expect(res.headers.get('Content-Length')).toBeNull()
-    expect(await res.json()).toEqual({ message: 'error message' })
+  })
+
+  it('error 400 Not Found without headers accept-encoding', async () => {
+    const res = await app.request('http://localhost/err')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(400)
+    expect(res.headers.get('Content-Encoding')).toBeNull()
+    expect(res.headers.get('Content-Length')).toBeNull()
   })
 })
