@@ -9,8 +9,6 @@ import type {
   AfterResponseHook,
   AfterGenerateHook,
   FileSystemModule,
-  isSSG,
-  isSSR
 } from './index'
 
 describe('toSSG function', () => {
@@ -168,8 +166,8 @@ describe('toSSG function', () => {
   })
 
   it('should skip the route if the request hook returns false', async () => {
-    const beforeRequest: BeforeRequestHook = () => false
-    const htmlMap = await fetchRoutesContent(app, beforeRequest)
+    const beforeRequestHook: BeforeRequestHook = () => false
+    const htmlMap = await fetchRoutesContent(app, { beforeRequestHook })
     expect(htmlMap.size).toBe(0)
   })
 
@@ -189,8 +187,8 @@ describe('toSSG function', () => {
   })
 
   it('should skip the route if the response hook returns false', async () => {
-    const afterResponse: AfterResponseHook = () => false
-    const htmlMap = await fetchRoutesContent(app, undefined, afterResponse)
+    const afterResponseHook: AfterResponseHook = () => false
+    const htmlMap = await fetchRoutesContent(app, { afterResponseHook })
     expect(htmlMap.size).toBe(0)
   })
 
