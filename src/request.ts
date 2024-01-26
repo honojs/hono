@@ -51,31 +51,32 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   ): UndefinedIfHavingQuestion<ParamKeys<P2>>
   param<P2 extends string = P>(): UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>
   param(key?: string): unknown {
-    if (key) {
-      const param = (
-        this.#matchResult[1]
-          ? this.#matchResult[1][this.#matchResult[0][this.routeIndex][1][key] as any]
-          : this.#matchResult[0][this.routeIndex][1][key]
-      ) as string | undefined
-      return param ? (/\%/.test(param) ? decodeURIComponent_(param) : param) : undefined
-    } else {
-      const decoded: Record<string, string> = {}
+    return key ? this.getDecodedParam(key) : this.getAllDecodedParams()
+  }
 
-      const keys = Object.keys(this.#matchResult[0][this.routeIndex][1])
-      for (let i = 0, len = keys.length; i < len; i++) {
-        const key = keys[i]
-        const value = (
-          this.#matchResult[1]
-            ? this.#matchResult[1][this.#matchResult[0][this.routeIndex][1][key] as any]
-            : this.#matchResult[0][this.routeIndex][1][key]
-        ) as string | undefined
-        if (value && typeof value === 'string') {
-          decoded[key] = /\%/.test(value) ? decodeURIComponent_(value) : value
-        }
+  private getDecodedParam(key: string): string | undefined {
+    const paramKey = this.#matchResult[0][this.routeIndex][1][key]
+    const param = this.getParamValue(paramKey)
+
+    return param ? (/\%/.test(param) ? decodeURIComponent_(param) : param) : undefined
+  }
+
+  private getAllDecodedParams(): Record<string, string> {
+    const decoded: Record<string, string> = {}
+
+    const keys = Object.keys(this.#matchResult[0][this.routeIndex][1])
+    for (const key of keys) {
+      const value = this.getParamValue(this.#matchResult[0][this.routeIndex][1][key])
+      if (value && typeof value === 'string') {
+        decoded[key] = /\%/.test(value) ? decodeURIComponent_(value) : value
       }
-
-      return decoded
     }
+
+    return decoded
+  }
+
+  private getParamValue(paramKey: any): string | undefined {
+    return this.#matchResult[1] ? this.#matchResult[1][paramKey as any] : paramKey
   }
 
   query(key: string): string | undefined
