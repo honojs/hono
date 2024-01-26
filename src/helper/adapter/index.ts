@@ -7,7 +7,6 @@ export type Runtime =
   | 'workerd'
   | 'fastly'
   | 'edge-light'
-  | 'lagon'
   | 'other'
 
 export const env = <T extends Record<string, unknown>, C extends Context = Context<{}>>(
@@ -24,7 +23,6 @@ export const env = <T extends Record<string, unknown>, C extends Context = Conte
     bun: () => globalEnv,
     node: () => globalEnv,
     'edge-light': () => globalEnv,
-    lagon: () => globalEnv,
     deno: () => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -48,7 +46,6 @@ export const getRuntimeKey = () => {
   if (typeof global?.WebSocketPair === 'function') return 'workerd'
   if (typeof global?.EdgeRuntime === 'string') return 'edge-light'
   if (global?.fastly !== undefined) return 'fastly'
-  if (global?.__lagon__ !== undefined) return 'lagon'
   if (global?.process?.release?.name === 'node') return 'node'
 
   return 'other'
