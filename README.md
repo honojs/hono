@@ -100,6 +100,14 @@ Yusuke Wada <https://github.com/yusukebe>
 
 _RegExpRouter_, _SmartRouter_, _LinearRouter_, and _PatternRouter_ are created by Taku Amano <https://github.com/usualoma>
 
+## Local Development
+
+```
+$ git clone git@github.com:honojs/hono.git && cd hono/.devcontainer && yarn install
+$ docker compose up -d --build
+$ docker compose exec hono bash
+```
+
 ## License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
