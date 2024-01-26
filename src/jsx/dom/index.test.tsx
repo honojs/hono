@@ -45,8 +45,79 @@ describe('DOM', () => {
     expect(root.innerHTML).toBe('Hello')
   })
 
+  describe('attribute', () => {
+    it('simple', () => {
+      const App = () => <div id='app' class='app' />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div id="app" class="app"></div>')
+    })
+
+    it('boolean', () => {
+      const App = () => <div hidden />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div hidden=""></div>')
+    })
+
+    it('event', () => {
+      const App = () => <button onClick={() => {}} />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<button></button>')
+    })
+
+    it('style', () => {
+      const App = () => <div style={{ fontSize: '10px' }} />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div style="font-size: 10px;"></div>')
+    })
+
+    it('update style', () => {
+      const App = () => <div style={{ fontSize: '10px' }} />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div style="font-size: 10px;"></div>')
+    })
+
+    it('style with string', async () => {
+      const App = () => {
+        const [style, setStyle] = useState<{ fontSize?: string; color?: string }>({
+          fontSize: '10px',
+        })
+        return <div style={style} onClick={() => setStyle({ color: 'red' })} />
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div style="font-size: 10px;"></div>')
+      root.querySelector('div')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div style="color: red;"></div>')
+    })
+
+    it('toString() is called', () => {
+      const App = () => <div x-value={{ toString: () => 'value' }} />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div x-value="value"></div>')
+    })
+
+    it('ref', () => {
+      const App = () => {
+        const ref = useRef<HTMLDivElement>(null)
+        return <div ref={ref} />
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div></div>')
+    })
+
+    it('ref with callback', () => {
+      const ref = useRef<HTMLDivElement>(null)
+      const App = () => {
+        return <div ref={(node: HTMLDivElement) => (ref.current = node)} />
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div></div>')
+      expect(ref.current).toBeInstanceOf(HTMLElement)
+    })
+  })
+
   describe('replace content', () => {
-    it('text to text', () => {
+    it('text to text', async () => {
       let setCount: (count: number) => void = () => {}
       const App = () => {
         const [count, _setCount] = useState(0)
@@ -56,10 +127,11 @@ describe('DOM', () => {
       render(<App />, root)
       expect(root.innerHTML).toBe('0')
       setCount(1)
+      await Promise.resolve()
       expect(root.innerHTML).toBe('1')
     })
 
-    it('text to element', () => {
+    it('text to element', async () => {
       let setCount: (count: number) => void = () => {}
       const App = () => {
         const [count, _setCount] = useState(0)
@@ -69,10 +141,11 @@ describe('DOM', () => {
       render(<App />, root)
       expect(root.innerHTML).toBe('0')
       setCount(1)
+      await Promise.resolve()
       expect(root.innerHTML).toBe('<div>1</div>')
     })
 
-    it('element to element', () => {
+    it('element to element', async () => {
       let setCount: (count: number) => void = () => {}
       const App = () => {
         const [count, _setCount] = useState(0)
@@ -86,11 +159,12 @@ describe('DOM', () => {
 
       const insertBeforeSpy = vi.spyOn(container, 'insertBefore')
       setCount(1)
+      await Promise.resolve()
       expect(root.innerHTML).toBe('<div>1</div>')
       expect(insertBeforeSpy).not.toHaveBeenCalled()
     })
 
-    it('element to text to element', () => {
+    it('element to text to element', async () => {
       let setCount: (count: number) => void = () => {}
       const App = () => {
         const [count, _setCount] = useState(0)
@@ -100,12 +174,14 @@ describe('DOM', () => {
       render(<App />, root)
       expect(root.innerHTML).toBe('<div>0</div>')
       setCount(1)
+      await Promise.resolve()
       expect(root.innerHTML).toBe('1')
       setCount(2)
+      await Promise.resolve()
       expect(root.innerHTML).toBe('<div>2</div>')
     })
 
-    it('text to child component to text', () => {
+    it('text to child component to text', async () => {
       let setCount: (count: number) => void = () => {}
       const Child = () => {
         return <div>Child</div>
@@ -118,8 +194,10 @@ describe('DOM', () => {
       render(<App />, root)
       expect(root.innerHTML).toBe('0')
       setCount(1)
+      await Promise.resolve()
       expect(root.innerHTML).toBe('<div>Child</div>')
       setCount(2)
+      await Promise.resolve()
       expect(root.innerHTML).toBe('2')
     })
   })
@@ -139,13 +217,16 @@ describe('DOM', () => {
     expect(root.innerHTML).toBe('<div><p>Count: 0</p><button>+</button></div>')
     const button = root.querySelector('button') as HTMLButtonElement
     button.click()
+    await Promise.resolve()
     expect(root.innerHTML).toBe('<div><p>Count: 1</p><button>+</button></div>')
   })
 
   it('multiple useState()', async () => {
+    let called = 0
     const Counter = () => {
       const [countA, setCountA] = useState(0)
       const [countB, setCountB] = useState(0)
+      called++
       return (
         <div>
           <p>A: {countA}</p>
@@ -160,16 +241,82 @@ describe('DOM', () => {
     expect(root.innerHTML).toBe(
       '<div><p>A: 0</p><button>+</button><p>B: 0</p><button>+</button></div>'
     )
+    expect(called).toBe(1)
     const [buttonA, buttonB] = root.querySelectorAll('button')
     for (let i = 0; i < 3; i++) {
       buttonA.click()
+      await Promise.resolve()
     }
     for (let i = 0; i < 4; i++) {
       buttonB.click()
+      await Promise.resolve()
     }
     expect(root.innerHTML).toBe(
       '<div><p>A: 3</p><button>+</button><p>B: 4</p><button>+</button></div>'
     )
+    expect(called).toBe(8)
+  })
+
+  it('multiple update state calls at once in onClick attributes', async () => {
+    let called = 0
+    const Counter = () => {
+      const [countA, setCountA] = useState(0)
+      const [countB, setCountB] = useState(0)
+      called++
+      return (
+        <div>
+          <button
+            onClick={() => {
+              setCountA(countA + 1)
+              setCountB(countB + 2)
+            }}
+          >
+            +
+          </button>
+          {countA} {countB}
+        </div>
+      )
+    }
+    const app = <Counter />
+    render(app, root)
+    expect(root.innerHTML).toBe('<div><button>+</button>0 0</div>')
+    expect(called).toBe(1)
+    root.querySelector('button')?.click()
+    expect(called).toBe(1)
+    await Promise.resolve()
+    expect(called).toBe(2)
+  })
+
+  it('multiple update state calls at once in dom events', async () => {
+    let called = 0
+    const Counter = () => {
+      const [countA, setCountA] = useState(0)
+      const [countB, setCountB] = useState(0)
+      const buttonRef = useRef<HTMLButtonElement>(null)
+      called++
+
+      useEffect(() => {
+        buttonRef.current?.addEventListener('click', () => {
+          setCountA(countA + 1)
+          setCountB(countB + 2)
+        })
+      }, [])
+
+      return (
+        <div>
+          <button ref={buttonRef}>+</button>
+          {countA} {countB}
+        </div>
+      )
+    }
+    const app = <Counter />
+    render(app, root)
+    expect(root.innerHTML).toBe('<div><button>+</button>0 0</div>')
+    expect(called).toBe(1)
+    root.querySelector('button')?.click()
+    expect(called).toBe(1)
+    await Promise.resolve()
+    expect(called).toBe(2)
   })
 
   it('nested useState()', async () => {
@@ -200,9 +347,11 @@ describe('DOM', () => {
     const [button, childButton] = root.querySelectorAll('button')
     for (let i = 0; i < 5; i++) {
       button.click()
+      await Promise.resolve()
     }
     for (let i = 0; i < 6; i++) {
       childButton.click()
+      await Promise.resolve()
     }
     expect(root.innerHTML).toBe(
       '<div><p>Count: 5</p><button>+</button><div><p>Child Count: 6</p><button>+</button></div></div>'
@@ -226,8 +375,10 @@ describe('DOM', () => {
     expect(root.innerHTML).toBe('<div><p>Even</p><button>+</button></div>')
     const button = root.querySelector('button') as HTMLButtonElement
     button.click()
+    await Promise.resolve()
     expect(root.innerHTML).toBe('<div><div>Odd</div><button>+</button></div>')
     button.click()
+    await Promise.resolve()
     expect(root.innerHTML).toBe('<div><p>Even</p><button>+</button></div>')
   })
 
@@ -254,16 +405,19 @@ describe('DOM', () => {
     )
     const [addButton] = root.querySelectorAll('button')
     addButton.click()
+    await Promise.resolve()
     expect(root.innerHTML).toBe(
       '<div><div>a</div><div>b</div><div>c</div><div>d</div><button>add</button><button>remove</button><button>swap</button></div>'
     )
     const [, , swapButton] = root.querySelectorAll('button')
     swapButton.click()
+    await Promise.resolve()
     expect(root.innerHTML).toBe(
       '<div><div>a</div><div>c</div><div>b</div><div>d</div><button>add</button><button>remove</button><button>swap</button></div>'
     )
     const [, removeButton] = root.querySelectorAll('button')
     removeButton.click()
+    await Promise.resolve()
     expect(root.innerHTML).toBe(
       '<div><div>a</div><div>c</div><div>b</div><button>add</button><button>remove</button><button>swap</button></div>'
     )
@@ -298,12 +452,14 @@ describe('DOM', () => {
     const [nameInput] = root.querySelectorAll('input')
     nameInput.value = 'John'
     nameInput.dispatchEvent(new dom.window.Event('input'))
+    await Promise.resolve()
     expect(root.innerHTML).toBe(
       '<form><div><label>Name</label><input></div><div><label>Email</label><input></div><span>{"name":"John"}</span></form>'
     )
     const [, emailInput] = root.querySelectorAll('input')
     emailInput.value = 'john@example.com'
     emailInput.dispatchEvent(new dom.window.Event('input'))
+    await Promise.resolve()
     expect(root.innerHTML).toBe(
       '<form><div><label>Name</label><input></div><div><label>Email</label><input></div><span>{"name":"John","email":"john@example.com"}</span></form>'
     )
@@ -351,6 +507,7 @@ describe('DOM', () => {
     emailInput.value = 'john@example.com'
     const [button] = root.querySelectorAll('button')
     button.click()
+    await Promise.resolve()
     expect(root.innerHTML).toBe(
       '<form><div><label>Name</label><input></div><div><label>Email</label><input></div><button>serialize</button><span>{"name":"John","email":"john@example.com"}</span></form>'
     )
@@ -367,6 +524,7 @@ describe('DOM', () => {
       }
       const app = <Counter />
       render(app, root)
+      await Promise.resolve()
       expect(root.innerHTML).toBe('<div>1</div>')
     })
 
@@ -383,6 +541,7 @@ describe('DOM', () => {
       }
       const app = <Counter />
       render(app, root)
+      await Promise.resolve()
       expect(root.innerHTML).toBe('<div>2</div>')
     })
 
@@ -410,6 +569,7 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<div><div>Child</div><button>hide</button></div>')
       const [button] = root.querySelectorAll('button')
       button.click()
+      await Promise.resolve()
       expect(root.innerHTML).toBe('<div data-cleanup="true"><button>hide</button></div>')
     })
 
@@ -440,9 +600,11 @@ describe('DOM', () => {
       expect(effectCount).toBe(1)
       expect(cleanupCount).toBe(0)
       root.querySelectorAll('button')[0].click() // count++
+      await Promise.resolve()
       expect(effectCount).toBe(2)
       expect(cleanupCount).toBe(1)
       root.querySelectorAll('button')[1].click() // count2++
+      await Promise.resolve()
       expect(effectCount).toBe(2)
       expect(cleanupCount).toBe(1)
     })
@@ -469,6 +631,7 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<div><p>0</p><button>+</button></div>')
       const button = root.querySelector('button') as HTMLButtonElement
       button.click()
+      await Promise.resolve()
       expect(root.innerHTML).toBe('<div><p>1</p><button>+</button></div>')
       expect(callbackSet.size).toBe(2)
     })
@@ -497,6 +660,7 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<div><p>0</p><button>+</button><p>0</p><button>+</button></div>')
       const [, button] = root.querySelectorAll('button')
       button.click()
+      await Promise.resolve()
       expect(root.innerHTML).toBe('<div><p>0</p><button>+</button><p>1</p><button>+</button></div>')
       expect(callbackSet.size).toBe(1)
     })

@@ -1,7 +1,5 @@
 import type { FC, Child, Props } from '../index.ts'
 import type { JSXNode } from '../index.ts'
-import type { HtmlEscapedString } from '../../utils/html.ts'
-import { HtmlEscapedCallbackPhase } from '../../utils/html.ts'
 import type { EffectData } from '../hooks/index.ts'
 import { STASH_EFFECT } from '../hooks/index.ts'
 
@@ -48,12 +46,19 @@ export type PendingType =
   | 0 // no pending
   | 1 // global
   | 2 // hook
+export type UpdateHook = (
+  context: Context,
+  node: Node,
+  cb: (context: Context) => void
+) => Promise<void>
 export type Context =
   | [
       PendingType, // PendingType
       boolean, // got an error
-      boolean // with startViewTransition
+      UpdateHook, // update hook
+      boolean // is in view transition
     ]
+  | [PendingType, boolean, UpdateHook]
   | [PendingType, boolean]
   | [PendingType]
   | []
@@ -81,24 +86,22 @@ const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: P
           container.removeEventListener(eventName, oldAttributes[key])
         }
         container.addEventListener(eventName, value)
-      } else if (value instanceof Promise) {
-        value.then((v) => {
-          const callbacks = (v as HtmlEscapedString).callbacks
-          if (callbacks) {
-            callbacks.forEach((c) =>
-              c({
-                phase: HtmlEscapedCallbackPhase.BeforeDom,
-                context: {},
-              })
-            )
-          }
-          container.setAttribute(key, v)
-        })
+      } else if (key === 'style') {
+        if (typeof value === 'string') {
+          container.style.cssText = value
+        } else {
+          container.style.cssText = ''
+          Object.assign(container.style, value)
+        }
       } else {
         if (value === null || value === undefined || value === false) {
           container.removeAttribute(key)
+        } else if (value === true) {
+          container.setAttribute(key, '')
+        } else if (typeof value === 'string' || typeof value === 'number') {
+          container.setAttribute(key, value as string)
         } else {
-          container.setAttribute(key, value)
+          container.setAttribute(key, value.toString())
         }
       }
     }
@@ -191,14 +194,19 @@ const findInsertBefore = (node: Node | undefined): ChildNode | null => {
 }
 
 const removeNode = (node: Node) => {
-  node.e?.remove()
   if (!isNodeString(node)) {
     node[STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => data[2]?.())
     node.vC?.forEach(removeNode)
   }
+  node.e?.remove()
+  node.tag = undefined
 }
 
 const apply = (node: NodeObject, container: Container) => {
+  if (node.tag === undefined) {
+    return
+  }
+
   node.c = container
   applyNodeObject(node, container)
 }
@@ -255,6 +263,10 @@ export const build = (
   topLevelErrorHandlerNode: NodeObject | undefined,
   children?: Child[]
 ): void => {
+  if (node.tag === undefined) {
+    return
+  }
+
   let errorHandler: ErrorHandler | undefined
   children ||= typeof node.tag == 'function' ? invokeTag(context, node) : node.children
   if ((children[0] as JSXNode)?.tag === '') {
@@ -311,9 +323,8 @@ export const build = (
     node.vR = vChildrenToRemove
   } catch (e) {
     if (errorHandler) {
-      const withStartViewTransition = context[2]
       const fallback = errorHandler(e, () =>
-        update([], topLevelErrorHandlerNode as NodeObject, !!withStartViewTransition)
+        update([0, false, context[2] as UpdateHook], topLevelErrorHandlerNode as NodeObject)
       )
       if (fallback) {
         if (context[0] === 1) {
@@ -355,22 +366,47 @@ const updateSync = (context: Context, node: NodeObject) => {
   }
 }
 
-export const update = (context: Context, node: NodeObject, withStartViewTransition: boolean) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (withStartViewTransition && (document as any).startViewTransition) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(document as any).startViewTransition(() => {
-      const localContext: Context = [...context]
-      localContext[2] = true
-      updateSync(localContext, node)
-    })
-  } else {
-    updateSync(context, node)
+type UpdateMapResolve = (node: NodeObject | undefined) => void
+const updateMap = new WeakMap<NodeObject, [UpdateMapResolve, Function]>()
+export const update = async (
+  context: Context,
+  node: NodeObject
+): Promise<NodeObject | undefined> => {
+  const existing = updateMap.get(node)
+  if (existing) {
+    // execute only the last update() call, so the previous update will be canceled.
+    existing[0](undefined)
   }
+
+  let resolve: UpdateMapResolve | undefined
+  const promise = new Promise<NodeObject | undefined>((r) => (resolve = r))
+  updateMap.set(node, [
+    resolve as UpdateMapResolve,
+    () => {
+      if (context[2]) {
+        context[2](context, node, (context) => {
+          updateSync(context, node)
+        }).then(() => (resolve as UpdateMapResolve)(node))
+      } else {
+        updateSync(context, node)
+        ;(resolve as UpdateMapResolve)(node)
+      }
+    },
+  ])
+
+  await Promise.resolve()
+
+  const latest = updateMap.get(node)
+  if (latest) {
+    updateMap.delete(node)
+    latest[1]()
+  }
+
+  return promise
 }
 
 export const render = (jsxNode: unknown, container: Container) => {
-  const node = buildNode({ children: [jsxNode] } as JSXNode) as NodeObject
+  const node = buildNode({ tag: '', children: [jsxNode] } as JSXNode) as NodeObject
   build([], node, undefined)
 
   const fragment = document.createDocumentFragment()

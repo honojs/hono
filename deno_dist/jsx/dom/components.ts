@@ -26,7 +26,7 @@ export const Suspense: FC<{ fallback: any }> = (({ children, fallback }: any) =>
     if (!(err instanceof Promise)) {
       throw err
     }
-    err.then(retry).catch(retry)
+    err.finally(retry)
     return fallback
   }
   return res

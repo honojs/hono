@@ -13,7 +13,7 @@ import { joinPaths, dirname } from './utils'
  * The API might be changed.
  */
 export interface FileSystemModule {
-  writeFile(path: string, data: string | ArrayBuffer | Uint8Array): Promise<void>
+  writeFile(path: string, data: string | Uint8Array): Promise<void>
   mkdir(path: string, options: { recursive: boolean }): Promise<void | string>
 }
 
@@ -24,14 +24,19 @@ export interface FileSystemModule {
  */
 export interface ToSSGResult {
   success: boolean
-  files?: string[]
+  files: string[]
   error?: Error
 }
 
 const generateFilePath = (routePath: string, outDir: string, mimeType: string) => {
   const extension = determineExtension(mimeType)
-  const fileName = routePath === '/' ? `index.${extension}` : `${routePath}.${extension}`
-  return joinPaths(outDir, fileName)
+  if (routePath === '/') {
+    return joinPaths(outDir, `index.${extension}`)
+  }
+  if (routePath.endsWith('/')) {
+    return joinPaths(outDir, routePath, `index.${extension}`)
+  }
+  return joinPaths(outDir, `${routePath}.${extension}`)
 }
 
 const parseResponseContent = async (response: Response): Promise<string | ArrayBuffer> => {
@@ -67,9 +72,14 @@ interface SSGParam {
   [key: string]: string
 }
 type SSGParams = SSGParam[]
+
 interface SSGParamsMiddleware {
-  (generateParams: (c: Context) => SSGParams | Promise<SSGParams>): MiddlewareHandler
+  <E extends Env = Env>(
+    generateParams: (c: Context<E>) => SSGParams | Promise<SSGParams>
+  ): MiddlewareHandler<E>
+  <E extends Env = Env>(params: SSGParams): MiddlewareHandler<E>
 }
+
 type AddedSSGDataRequest = Request & {
   ssgParams?: SSGParams
   ssgMode?: 'ssg' | 'ssr'
@@ -77,10 +87,14 @@ type AddedSSGDataRequest = Request & {
 /**
  * Define SSG Route
  */
-export const ssgParams: SSGParamsMiddleware = (generateParams) => async (c, next) => {
-  ;(c.req.raw as AddedSSGDataRequest).ssgParams = await generateParams(c)
+export const ssgParams: SSGParamsMiddleware = (params) => async (c, next) => {
+  ;(c.req.raw as AddedSSGDataRequest).ssgParams = Array.isArray(params) ? params : await params(c)
   await next()
 }
+
+export type BeforeRequestHook = (req: Request) => Request | false
+export type AfterResponseHook = (res: Response) => Response | false
+export type AfterGenerateHook = (result: ToSSGResult) => void | Promise<void>
 
 export const isSSG = (): MiddlewareHandler => async (c, next) => {
   ;(c.req.raw as AddedSSGDataRequest).ssgMode = 'ssg'
@@ -93,6 +107,9 @@ export const isSSR = (): MiddlewareHandler => async (c, next) => {
 
 export interface ToSSGOptions {
   dir?: string
+  beforeRequestHook?: BeforeRequestHook
+  afterResponseHook?: AfterResponseHook
+  afterGenerateHook?: AfterGenerateHook
   default?: 'ssr' | 'ssg'
 }
 
@@ -109,6 +126,7 @@ export const fetchRoutesContent = async <
   app: Hono<E, S, BasePath>,
   options: ToSSGOptions
 ): Promise<Map<string, { content: string | ArrayBuffer; mimeType: string }>> => {
+  const { beforeRequestHook, afterResponseHook } = options
   const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
   const baseURL = 'http://localhost'
 
@@ -117,7 +135,13 @@ export const fetchRoutesContent = async <
 
     // GET Route Info
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
-    const forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
+
+    let forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
+    if (beforeRequestHook) {
+      const maybeRequest = beforeRequestHook(forGetInfoURLRequest)
+      if (!maybeRequest) continue
+      forGetInfoURLRequest = maybeRequest as unknown as AddedSSGDataRequest
+    }
     await app.fetch(forGetInfoURLRequest)
 
     if (!forGetInfoURLRequest.ssgMode) {
@@ -134,7 +158,12 @@ export const fetchRoutesContent = async <
 
     for (const param of forGetInfoURLRequest.ssgParams) {
       const replacedUrlParam = replaceUrlParam(route.path, param)
-      const response = await app.request(replacedUrlParam)
+      let response = await app.request(replacedUrlParam, forGetInfoURLRequest)
+      if (afterResponseHook) {
+        const maybeResponse = afterResponseHook(response)
+        if (!maybeResponse) continue
+        response = maybeResponse
+      }
       const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
       const content = await parseResponseContent(response)
       htmlMap.set(replacedUrlParam, {
@@ -206,7 +235,7 @@ export interface ToSSGAdaptorInterface<
   S extends Schema = {},
   BasePath extends string = '/'
 > {
-  (app: Hono<E, S, BasePath>, options?: { dir?: string }): Promise<ToSSGResult>
+  (app: Hono<E, S, BasePath>, options?: ToSSGOptions): Promise<ToSSGResult>
 }
 
 /**
@@ -215,13 +244,16 @@ export interface ToSSGAdaptorInterface<
  * The API might be changed.
  */
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
+  let result: ToSSGResult | undefined = undefined
   try {
     const outputDir = options?.dir ?? './static'
     const maps = await fetchRoutesContent(app, options ?? {})
     const files = await saveContentToFiles(maps, fs, outputDir)
-    return { success: true, files }
+    result = { success: true, files }
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error(String(error))
-    return { success: false, error: errorObj }
+    result = { success: false, files: [], error: errorObj }
   }
+  await options?.afterGenerateHook?.(result)
+  return result
 }

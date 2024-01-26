@@ -1,5 +1,5 @@
 import { buildDataStack, update, build, STASH } from '../dom/render'
-import type { Node, NodeObject, Context, PendingType } from '../dom/render'
+import type { Node, NodeObject, Context, PendingType, UpdateHook } from '../dom/render'
 
 type UpdateStateFunction<T> = (newState: T | ((currentState: T) => T)) => void
 
@@ -9,34 +9,86 @@ const STASH_CALLBACK = 2
 const STASH_USE = 3
 
 export type EffectData = [
-  readonly unknown[] | undefined,
-  (() => void | (() => void)) | undefined,
-  (() => void) | undefined
+  readonly unknown[] | undefined, // deps
+  (() => void | (() => void)) | undefined, // effect
+  (() => void) | undefined // cleanup
 ]
 
 const resolvedPromiseValueMap = new WeakMap<Promise<unknown>, unknown>()
 
-let updateWithStartViewTransition = false
-export const startViewTransition = (callback: () => void): void => {
-  updateWithStartViewTransition = true
-  try {
-    callback()
-  } finally {
-    updateWithStartViewTransition = false
+let viewTransitionState:
+  | [
+      boolean, // isUpdating
+      boolean // useViewTransition() is called
+    ]
+  | undefined = undefined
+
+const documentStartViewTransition: (cb: () => void) => { finished: Promise<void> } = (cb) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((document as any)?.startViewTransition) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (document as any).startViewTransition(cb)
+  } else {
+    cb()
+    return { finished: Promise.resolve() }
   }
 }
 
-type PendingStackItem = [PendingType, Map<Node, Function>]
-const pendingStack: PendingStackItem[] = []
+let updateHook: UpdateHook | undefined = undefined
+const viewTransitionHook = (
+  context: Context,
+  node: Node,
+  cb: (context: Context) => void
+): Promise<void> => {
+  const state: [boolean, boolean] = [true, false]
+  let lastVC = node.vC
+  return documentStartViewTransition(() => {
+    if (lastVC === node.vC) {
+      viewTransitionState = state
+      cb(context)
+      viewTransitionState = undefined
+      lastVC = node.vC
+    }
+  }).finished.then(() => {
+    if (state[1] && lastVC === node.vC) {
+      state[0] = false
+      viewTransitionState = state
+      cb(context)
+      viewTransitionState = undefined
+    }
+  })
+}
+
+export const startViewTransition = (callback: () => void): void => {
+  updateHook = viewTransitionHook
+
+  try {
+    callback()
+  } finally {
+    updateHook = undefined
+  }
+}
+
+export const useViewTransition = (): [boolean, (callback: () => void) => void] => {
+  const buildData = buildDataStack.at(-1) as [Context, NodeObject]
+  if (!buildData) {
+    return [false, () => {}]
+  }
+
+  if (viewTransitionState) {
+    viewTransitionState[1] = true
+  }
+  return [!!viewTransitionState?.[0], startViewTransition]
+}
+
+const pendingStack: PendingType[] = []
 const runCallback = (type: PendingType, callback: Function): void => {
-  const map = new Map()
-  pendingStack.push([type, map])
+  pendingStack.push(type)
   try {
     callback()
   } finally {
     pendingStack.pop()
   }
-  map.forEach((cb) => cb())
 }
 
 export const startTransition = (callback: () => void): void => {
@@ -89,6 +141,7 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
   return (stateArray[hookIndex] ||= [
     resolveInitialState(),
     (newState: T | ((currentState: T) => T)) => {
+      const localUpdateHook = updateHook
       const stateData = stateArray[hookIndex]
       if (typeof newState === 'function') {
         newState = (newState as (currentState: T) => T)(stateData[0])
@@ -97,11 +150,21 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
       if (newState !== stateData[0]) {
         stateData[0] = newState
         if (pendingStack.length) {
-          const [type, map] = pendingStack.at(-1) as PendingStackItem
-          map.set(node, () => {
-            const context: Context = [type, false]
-            if (type === 2) {
-              setTimeout(async () => {
+          const pendingType = pendingStack.at(-1) as PendingType
+          update([pendingType, false, localUpdateHook as UpdateHook], node).then((node) => {
+            if (!node || pendingType !== 2) {
+              return
+            }
+
+            const lastVC = node.vC
+
+            const addUpdateTask = () => {
+              setTimeout(() => {
+                // `node` is not rerendered after current transition
+                if (lastVC !== node.vC) {
+                  return
+                }
+
                 const shadowNode = Object.assign({}, node) as NodeObject
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,19 +172,20 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
                 build([], shadowNode, undefined)
                 setShadow(shadowNode) // save the `shadowNode.vC` of the virtual DOM of the build result as a result of shadow virtual DOM `shadowNode.s`
 
-                // `node` is not rerendered after current transition
-                if (lastVC === node.vC) {
-                  node.s = shadowNode.s
-                  update([], node, false)
-                }
+                node.s = shadowNode.s
+                update([0, false, localUpdateHook as UpdateHook], node)
               })
             }
 
-            update(context, node, false)
-            const lastVC = node.vC
+            if (localUpdateHook) {
+              // wait for next animation frame, then invoke `update()`
+              requestAnimationFrame(addUpdateTask)
+            } else {
+              addUpdateTask()
+            }
           })
         } else {
-          update([], node, updateWithStartViewTransition)
+          update([0, false, localUpdateHook as UpdateHook], node)
         }
       }
     },
