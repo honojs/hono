@@ -10,3 +10,5 @@ RUN curl -fsSL https://bun.sh/install | bash
 
 # Install Lagon
 RUN yarn global add @lagon/cli esbuild
+
+WORKDIR /hono
