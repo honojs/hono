@@ -9,6 +9,7 @@ import { getContentFromKVAsset } from './utils'
 export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
   path?: string
+  mime?: Record<string, string>
   manifest: object | string
   namespace?: KVNamespace
   rewriteRequestPath?: (path: string) => string
@@ -46,7 +47,7 @@ export const serveStatic = <E extends Env = Env>(
     })
 
     if (content) {
-      const mimeType = getMimeType(path)
+      const mimeType = getMimeType(path, options.mime)
       if (mimeType) {
         c.header('Content-Type', mimeType)
       }

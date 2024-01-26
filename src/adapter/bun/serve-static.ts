@@ -12,6 +12,7 @@ const { file } = Bun
 export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
   path?: string
+  mime?: Record<string, string>
   rewriteRequestPath?: (path: string) => string
   onNotFound?: (path: string, c: Context<E>) => void | Promise<void>
 }
@@ -43,7 +44,7 @@ export const serveStatic = <E extends Env = Env>(
     if (existsSync(path)) {
       const content = file(path)
       if (content) {
-        const mimeType = getMimeType(path)
+        const mimeType = getMimeType(path, options.mime)
         if (mimeType) {
           c.header('Content-Type', mimeType)
         }

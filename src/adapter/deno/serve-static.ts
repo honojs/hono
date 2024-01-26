@@ -10,6 +10,7 @@ const { open } = Deno
 export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
   path?: string
+  mime?: Record<string, string>
   rewriteRequestPath?: (path: string) => string
   onNotFound?: (path: string, c: Context<E>) => void | Promise<void>
 }

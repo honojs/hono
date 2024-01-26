@@ -1,16 +1,16 @@
-export const getMimeType = (filename: string): string | undefined => {
+export const getMimeType = (filename: string, mime = mimes): string | undefined => {
   const regexp = /\.([a-zA-Z0-9]+?)$/
   const match = filename.match(regexp)
   if (!match) return
-  let mimeType = mimes[match[1]]
+  let mimeType = mime[match[1]]
   if ((mimeType && mimeType.startsWith('text')) || mimeType === 'application/json') {
     mimeType += '; charset=utf-8'
   }
   return mimeType
 }
 
-export const getExtension = (mimeType: string): string | undefined => {
-  return Object.keys(mimes).find((ext) => mimes[ext] === mimeType)
+export const getExtension = (mimeType: string, mime = mimes): string | undefined => {
+  return Object.keys(mime).find((ext) => mime[ext] === mimeType)
 }
 
 const mimes: Record<string, string> = {
