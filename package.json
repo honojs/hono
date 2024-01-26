@@ -344,6 +344,9 @@
       "cookie": [
         "./dist/types/helper/cookie"
       ],
+      "accepts": [
+        "./dist/types/helper/accepts"
+      ],
       "compress": [
         "./dist/types/middleware/compress"
       ],
