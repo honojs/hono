@@ -4,7 +4,7 @@ const bodyTypes = ['body', 'json', 'form', 'text'] as const
 
 type bodyLimitOptions = {
   type?: typeof bodyTypes[number]
-  limit?: number
+  maxSize?: number
   handler?: (c: Context) => Response
 }[]
 
@@ -34,7 +34,7 @@ const deleteSameType = (options: bodyLimitOptions): bodyLimitObject => {
     const option = options[i]
     objects[option.type ?? 'body'] = {
       type: 'body',
-      limit: NaN,
+      maxSize: NaN,
       handler: (c: Context) => {
         return c.text('413 Request Entity Too Large', 413)
       },
@@ -99,18 +99,18 @@ export const bodyLimit = (
 
       if (
         limitOption &&
-        limitOption.limit &&
+        limitOption.maxSize &&
         limitOption.handler &&
-        !isNaN(limitOption.limit) &&
-        bodySize > limitOption.limit
+        !isNaN(limitOption.maxSize) &&
+        bodySize > limitOption.maxSize
       ) {
         return limitOption.handler(c)
       } else if (
         bodyLimitOption &&
-        bodyLimitOption.limit &&
+        bodyLimitOption.maxSize &&
         bodyLimitOption.handler &&
-        !isNaN(bodyLimitOption.limit) &&
-        bodySize > bodyLimitOption.limit
+        !isNaN(bodyLimitOption.maxSize) &&
+        bodySize > bodyLimitOption.maxSize
       ) {
         return bodyLimitOption.handler(c)
       }

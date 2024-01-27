@@ -26,7 +26,7 @@ describe('bodyLimit by Middleware', () => {
   app.post(
     '/body-limit-15byte',
     bodyLimit({
-      limit: 15 * Unit.b,
+      maxSize: 15 * Unit.b,
     }),
     (c) => {
       return c.text('yes')
@@ -59,7 +59,7 @@ describe('bodyLimit by Middleware', () => {
     '/text-limit-15byte',
     bodyLimit({
       type: 'text',
-      limit: 15 * Unit.b,
+      maxSize: 15 * Unit.b,
     }),
     (c) => {
       return c.text('yes')
@@ -92,7 +92,7 @@ describe('bodyLimit by Middleware', () => {
     '/json-limit-35byte',
     bodyLimit({
       type: 'json',
-      limit: 35 * Unit.b,
+      maxSize: 35 * Unit.b,
     }),
     (c) => {
       return c.text('yes')
@@ -131,7 +131,7 @@ describe('bodyLimit by Middleware', () => {
     '/form-limit-300byte',
     bodyLimit({
       type: 'form',
-      limit: 300 * Unit.b,
+      maxSize: 300 * Unit.b,
     }),
     (c) => {
       return c.text('yes')
@@ -170,7 +170,7 @@ describe('bodyLimit by Middleware', () => {
     '/text-limit-15byte-custom',
     bodyLimit({
       type: 'text',
-      limit: 15 * Unit.b,
+      maxSize: 15 * Unit.b,
       handler: (c) => {
         return c.text('no', 413)
       },
@@ -195,7 +195,7 @@ describe('bodyLimit by Middleware', () => {
     '/json-limit-35byte-custom',
     bodyLimit({
       type: 'json',
-      limit: 35 * Unit.b,
+      maxSize: 35 * Unit.b,
       handler: (c) => {
         return c.text('no', 413)
       },
@@ -224,14 +224,14 @@ describe('bodyLimit by Middleware', () => {
     bodyLimit([
       {
         type: 'json',
-        limit: 35 * Unit.b,
+        maxSize: 35 * Unit.b,
         handler: (c) => {
           return c.text('no', 413)
         },
       },
       {
         type: 'text',
-        limit: 35 * Unit.b,
+        maxSize: 35 * Unit.b,
         handler: (c) => {
           return c.text('no', 413)
         },
