@@ -103,9 +103,9 @@ _RegExpRouter_, _SmartRouter_, _LinearRouter_, and _PatternRouter_ are created b
 ## Local Development
 
 ```
-$ git clone git@github.com:honojs/hono.git && cd hono/.devcontainer && yarn install
-$ docker compose up -d --build
-$ docker compose exec hono bash
+git clone git@github.com:honojs/hono.git && cd hono/.devcontainer && yarn install
+docker compose up -d --build
+docker compose exec hono bash
 ```
 
 ## License
