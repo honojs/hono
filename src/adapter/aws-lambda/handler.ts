@@ -174,13 +174,8 @@ const createResult = async (event: LambdaEvent, res: Response): Promise<APIGatew
     isBase64Encoded = isContentEncodingBinary(contentEncoding)
   }
 
-  let body: string
-  if (isBase64Encoded) {
-    const buffer = await res.arrayBuffer()
-    body = encodeBase64(buffer)
-  } else {
-    body = await res.text()
-  }
+  const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
+
   const result: APIGatewayProxyResult = {
     body: body,
     headers: {},

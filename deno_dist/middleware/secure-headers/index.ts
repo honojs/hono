@@ -1,3 +1,4 @@
+import type { Context } from '../../context.ts'
 import type { MiddlewareHandler } from '../../types.ts'
 
 interface ContentSecurityPolicyOptions {
@@ -96,46 +97,61 @@ const DEFAULT_OPTIONS: SecureHeadersOptions = {
 
 export const secureHeaders = (customOptions?: Partial<SecureHeadersOptions>): MiddlewareHandler => {
   const options = { ...DEFAULT_OPTIONS, ...customOptions }
-  const headersToSet = Object.entries(HEADERS_MAP)
-    .filter(([key]) => options[key as keyof SecureHeadersOptions])
-    .map(([key, defaultValue]) => {
-      const overrideValue = options[key as keyof SecureHeadersOptions]
-      if (typeof overrideValue === 'string') return [defaultValue[0], overrideValue]
-      return defaultValue
-    })
+  const headersToSet = getFilteredHeaders(options)
 
   if (options.contentSecurityPolicy) {
-    const cspDirectives = Object.entries(options.contentSecurityPolicy)
-      .map(([directive, value]) => {
-        // convert camelCase to kebab-case directives (e.g. `defaultSrc` -> `default-src`)
-        directive = directive.replace(
-          /[A-Z]+(?![a-z])|[A-Z]/g,
-          (match, offset) => (offset ? '-' : '') + match.toLowerCase()
-        )
-        return `${directive} ${Array.isArray(value) ? value.join(' ') : value}`
-      })
-      .join('; ')
-    headersToSet.push(['Content-Security-Policy', cspDirectives])
+    headersToSet.push(['Content-Security-Policy', getCSPDirectives(options.contentSecurityPolicy)])
   }
 
   if (options.reportingEndpoints) {
-    const reportingEndpoints = options.reportingEndpoints
-      .map((endpoint) => `${endpoint.name}="${endpoint.url}"`)
-      .join(', ')
-    headersToSet.push(['Reporting-Endpoints', reportingEndpoints])
+    headersToSet.push(['Reporting-Endpoints', getReportingEndpoints(options.reportingEndpoints)])
   }
 
   if (options.reportTo) {
-    const reportToOptions = options.reportTo.map((option) => JSON.stringify(option)).join(', ')
-    headersToSet.push(['Report-To', reportToOptions])
+    headersToSet.push(['Report-To', getReportToOptions(options.reportTo)])
   }
 
   return async function secureHeaders(ctx, next) {
     await next()
-    headersToSet.forEach(([header, value]) => {
-      ctx.res.headers.set(header, value)
-    })
-
+    setHeaders(ctx, headersToSet)
     ctx.res.headers.delete('X-Powered-By')
   }
+}
+
+function getFilteredHeaders(options: SecureHeadersOptions): [string, string][] {
+  return Object.entries(HEADERS_MAP)
+    .filter(([key]) => options[key as keyof SecureHeadersOptions])
+    .map(([key, defaultValue]) => {
+      const overrideValue = options[key as keyof SecureHeadersOptions]
+      return typeof overrideValue === 'string' ? [defaultValue[0], overrideValue] : defaultValue
+    })
+}
+
+function getCSPDirectives(
+  contentSecurityPolicy: SecureHeadersOptions['contentSecurityPolicy']
+): string {
+  return Object.entries(contentSecurityPolicy || [])
+    .map(([directive, value]) => {
+      const kebabCaseDirective = directive.replace(/[A-Z]+(?![a-z])|[A-Z]/g, (match, offset) =>
+        offset ? '-' + match.toLowerCase() : match.toLowerCase()
+      )
+      return `${kebabCaseDirective} ${Array.isArray(value) ? value.join(' ') : value}`
+    })
+    .join('; ')
+}
+
+function getReportingEndpoints(
+  reportingEndpoints: SecureHeadersOptions['reportingEndpoints'] = []
+): string {
+  return reportingEndpoints.map((endpoint) => `${endpoint.name}="${endpoint.url}"`).join(', ')
+}
+
+function getReportToOptions(reportTo: SecureHeadersOptions['reportTo'] = []): string {
+  return reportTo.map((option) => JSON.stringify(option)).join(', ')
+}
+
+function setHeaders(ctx: Context, headersToSet: [string, string][]) {
+  headersToSet.forEach(([header, value]) => {
+    ctx.res.headers.set(header, value)
+  })
 }
