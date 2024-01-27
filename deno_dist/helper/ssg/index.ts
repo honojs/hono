@@ -7,6 +7,9 @@ import { bufferToString } from '../../utils/buffer.ts'
 import { getExtension } from '../../utils/mime.ts'
 import { joinPaths, dirname } from './utils.ts'
 
+export const X_HONO_SSG_HEADER_KEY = 'x-hono-ssg'
+export const X_HONO_DISABLE_SSG_HEADER_KEY = 'x-hono-disable-ssg'
+
 /**
  * @experimental
  * `FileSystemModule` is an experimental feature.
@@ -126,6 +129,7 @@ export const fetchRoutesContent = async <
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
 
     let forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
+    forGetInfoURLRequest.headers.set(X_HONO_SSG_HEADER_KEY, 'true')
     if (beforeRequestHook) {
       const maybeRequest = beforeRequestHook(forGetInfoURLRequest)
       if (!maybeRequest) continue
@@ -141,6 +145,7 @@ export const fetchRoutesContent = async <
     for (const param of forGetInfoURLRequest.ssgParams) {
       const replacedUrlParam = replaceUrlParam(route.path, param)
       let response = await app.request(replacedUrlParam, forGetInfoURLRequest)
+      if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) continue
       if (afterResponseHook) {
         const maybeResponse = afterResponseHook(response)
         if (!maybeResponse) continue
@@ -243,3 +248,29 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
   await options?.afterGenerateHook?.(result)
   return result
 }
+
+/**
+ * @experimental
+ * `disableSSG` is an experimental feature.
+ * The API might be changed.
+ */
+
+export const disableSSG = (): MiddlewareHandler =>
+  async function disableSSG(c, next) {
+    await next()
+    c.header(X_HONO_DISABLE_SSG_HEADER_KEY, 'true')
+  }
+
+/**
+ * @experimental
+ * `onlySSG` is an experimental feature.
+ * The API might be changed.
+ */
+export const onlySSG = (): MiddlewareHandler =>
+  async function onlySSG(c, next) {
+    const headerValue = c.req.raw.headers.get(X_HONO_SSG_HEADER_KEY)
+    if (headerValue) {
+      await next()
+    }
+    return c.notFound()
+  }
