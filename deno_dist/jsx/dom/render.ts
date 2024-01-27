@@ -182,7 +182,7 @@ const findInsertBefore = (node: Node | undefined): ChildNode | null => {
   }
 
   if (node.vC) {
-    for (let i = 0; i < node.vC.length; i++) {
+    for (let i = 0, len = node.vC.length; i < len; i++) {
       const e = findInsertBefore(node.vC[i])
       if (e) {
         return e
@@ -235,7 +235,7 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
     }
   }
 
-  for (let i = 0; i < next.length; i++, offset++) {
+  for (let i = 0, len = next.length; i < len; i++, offset++) {
     const child = next[i]
 
     let el: HTMLElement | Text
