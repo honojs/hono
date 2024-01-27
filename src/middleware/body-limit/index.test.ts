@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { Uint, bodyLimit } from '.'
+import { Unit, bodyLimit } from '.'
 
 describe('bodyLimit by Middleware', () => {
   const app = new Hono()
@@ -26,7 +26,7 @@ describe('bodyLimit by Middleware', () => {
   app.post(
     '/body-limit-15byte',
     bodyLimit({
-      limit: 15 * Uint.b,
+      limit: 15 * Unit.b,
     }),
     (c) => {
       return c.text('yes')
@@ -59,7 +59,7 @@ describe('bodyLimit by Middleware', () => {
     '/text-limit-15byte',
     bodyLimit({
       type: 'text',
-      limit: 15 * Uint.b,
+      limit: 15 * Unit.b,
     }),
     (c) => {
       return c.text('yes')
@@ -92,7 +92,7 @@ describe('bodyLimit by Middleware', () => {
     '/json-limit-35byte',
     bodyLimit({
       type: 'json',
-      limit: 35 * Uint.b,
+      limit: 35 * Unit.b,
     }),
     (c) => {
       return c.text('yes')
@@ -131,7 +131,7 @@ describe('bodyLimit by Middleware', () => {
     '/form-limit-300byte',
     bodyLimit({
       type: 'form',
-      limit: 300 * Uint.b,
+      limit: 300 * Unit.b,
     }),
     (c) => {
       return c.text('yes')
@@ -170,7 +170,7 @@ describe('bodyLimit by Middleware', () => {
     '/text-limit-15byte-custom',
     bodyLimit({
       type: 'text',
-      limit: 15 * Uint.b,
+      limit: 15 * Unit.b,
       handler: (c) => {
         return c.text('no', 413)
       },
@@ -195,7 +195,7 @@ describe('bodyLimit by Middleware', () => {
     '/json-limit-35byte-custom',
     bodyLimit({
       type: 'json',
-      limit: 35 * Uint.b,
+      limit: 35 * Unit.b,
       handler: (c) => {
         return c.text('no', 413)
       },
@@ -224,14 +224,14 @@ describe('bodyLimit by Middleware', () => {
     bodyLimit([
       {
         type: 'json',
-        limit: 35 * Uint.b,
+        limit: 35 * Unit.b,
         handler: (c) => {
           return c.text('no', 413)
         },
       },
       {
         type: 'text',
-        limit: 35 * Uint.b,
+        limit: 35 * Unit.b,
         handler: (c) => {
           return c.text('no', 413)
         },
@@ -267,13 +267,13 @@ describe('bodyLimit by Middleware', () => {
     expect(await res.text()).toBe('no')
   })
 
-  it('Uint test', () => {
-    let beforeSize = 1 / 1000
+  it('Unit test', () => {
+    let beforeSize = 1 / 1024
 
-    for (let i = 0, keys = Object.keys(Uint), len = keys.length; i < len; i++) {
+    for (let i = 0, keys = Object.keys(Unit), len = keys.length; i < len; i++) {
       // @ts-expect-error: <safe access>
-      const size = Uint[keys[i]]
-      expect(size === beforeSize * 1000).toBeTruthy()
+      const size = Unit[keys[i]]
+      expect(size === beforeSize * 1024).toBeTruthy()
       beforeSize = size
     }
   })

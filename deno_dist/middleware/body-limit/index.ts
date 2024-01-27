@@ -54,7 +54,7 @@ const deleteSameType = (options: bodyLimitOptions): bodyLimitObject => {
  *  '/hello',
  *  bodyLimit({
  *    type: 'text', // body | json | form | text
- *    limit: 15 * Uint.b, // byte,
+ *    limit: 15 * Unit.b, // byte,
  *    handler: (c) => {
  *      return c.text("oveflow :(");
  *    }
@@ -121,11 +121,11 @@ export const bodyLimit = (
 }
 
 /**
- * Uint any
+ * Unit any
  * @example
  * ```ts
- * const limit = 100 * Uint.kb // 100kb
+ * const limit = 100 * Unit.kb // 100kb
  * const limit2 = 1 * Unit.gb // 1gb
  * ```
  */
-export const Uint = { b: 1, kb: 1000, mb: 1000 ** 2, gb: 1000 ** 3, tb: 1000 ** 4, pb: 1000 ** 5 }
+export const Unit = { b: 1, kb: 1024, mb: 1024 ** 2, gb: 1024 ** 3, tb: 1024 ** 4, pb: 1024 ** 5 }
