@@ -315,14 +315,14 @@ class Hono<
         return this.handleError(err, c)
       }
 
-      if (res instanceof Response) return res
-
-      return res
-        .then(
-          (resolved: Response | undefined) =>
-            resolved || (c.finalized ? c.res : this.notFoundHandler(c))
-        )
-        .catch((err: Error) => this.handleError(err, c))
+      return res instanceof Promise
+        ? res
+            .then(
+              (resolved: Response | undefined) =>
+                resolved || (c.finalized ? c.res : this.notFoundHandler(c))
+            )
+            .catch((err: Error) => this.handleError(err, c))
+        : res
     }
 
     const composed = compose<Context>(matchResult[0], this.errorHandler, this.notFoundHandler)

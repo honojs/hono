@@ -20,73 +20,222 @@ function throwExpression(errorMessage: string): never {
 }
 
 describe('GET Request', () => {
-  const app = new Hono()
+  describe('without middleware', () => {
+    // In other words, this is a test for cases that do not use `compose()`
 
-  app.get('/hello', async () => {
-    return new Response('hello', {
-      status: 200,
-      statusText: 'Hono is OK',
+    const app = new Hono()
+
+    app.get('/hello', async () => {
+      return new Response('hello', {
+        status: 200,
+        statusText: 'Hono is OK',
+      })
+    })
+
+    app.get('/hello-with-shortcuts', (c) => {
+      c.header('X-Custom', 'This is Hono')
+      c.status(201)
+      return c.html('<h1>Hono!!!</h1>')
+    })
+
+    app.get('/hello-env', (c) => {
+      return c.json(c.env)
+    })
+
+    app.get(
+      '/proxy-object',
+      () =>
+        new Proxy(new Response('proxy'), {
+          get(target, prop: keyof Response) {
+            return target[prop]
+          },
+        })
+    )
+
+    app.get(
+      '/async-proxy-object',
+      async () =>
+        new Proxy(new Response('proxy'), {
+          get(target, prop: keyof Response) {
+            return target[prop]
+          },
+        })
+    )
+
+    it('GET http://localhost/hello is ok', async () => {
+      const res = await app.request('http://localhost/hello')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(res.statusText).toBe('Hono is OK')
+      expect(await res.text()).toBe('hello')
+    })
+
+    it('GET httphello is ng', async () => {
+      const res = await app.request('httphello')
+      expect(res.status).toBe(404)
+    })
+
+    it('GET /hello is ok', async () => {
+      const res = await app.request('/hello')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(res.statusText).toBe('Hono is OK')
+      expect(await res.text()).toBe('hello')
+    })
+
+    it('GET hello is ok', async () => {
+      const res = await app.request('hello')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(res.statusText).toBe('Hono is OK')
+      expect(await res.text()).toBe('hello')
+    })
+
+    it('GET /hello-with-shortcuts is ok', async () => {
+      const res = await app.request('http://localhost/hello-with-shortcuts')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(201)
+      expect(res.headers.get('X-Custom')).toBe('This is Hono')
+      expect(res.headers.get('Content-Type')).toMatch(/text\/html/)
+      expect(await res.text()).toBe('<h1>Hono!!!</h1>')
+    })
+
+    it('GET / is not found', async () => {
+      const res = await app.request('http://localhost/')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(404)
+    })
+
+    it('GET /hello-env is ok', async () => {
+      const res = await app.request('/hello-env', undefined, { HELLO: 'world' })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ HELLO: 'world' })
+    })
+
+    it('GET /proxy-object is ok', async () => {
+      const res = await app.request('/proxy-object')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('proxy')
+    })
+
+    it('GET /async-proxy-object is ok', async () => {
+      const res = await app.request('/proxy-object')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('proxy')
     })
   })
 
-  app.get('/hello-with-shortcuts', (c) => {
-    c.header('X-Custom', 'This is Hono')
-    c.status(201)
-    return c.html('<h1>Hono!!!</h1>')
-  })
+  describe('with middleware', () => {
+    // when using `compose()`
 
-  app.get('/hello-env', (c) => {
-    return c.json(c.env)
-  })
+    const app = new Hono()
 
-  it('GET http://localhost/hello is ok', async () => {
-    const res = await app.request('http://localhost/hello')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(200)
-    expect(res.statusText).toBe('Hono is OK')
-    expect(await res.text()).toBe('hello')
-  })
+    app.use('*', async (ctx, next) => {
+      await next()
+    })
 
-  it('GET httphello is ng', async () => {
-    const res = await app.request('httphello')
-    expect(res.status).toBe(404)
-  })
+    app.get('/hello', async () => {
+      return new Response('hello', {
+        status: 200,
+        statusText: 'Hono is OK',
+      })
+    })
 
-  it('GET /hello is ok', async () => {
-    const res = await app.request('/hello')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(200)
-    expect(res.statusText).toBe('Hono is OK')
-    expect(await res.text()).toBe('hello')
-  })
+    app.get('/hello-with-shortcuts', (c) => {
+      c.header('X-Custom', 'This is Hono')
+      c.status(201)
+      return c.html('<h1>Hono!!!</h1>')
+    })
 
-  it('GET hello is ok', async () => {
-    const res = await app.request('hello')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(200)
-    expect(res.statusText).toBe('Hono is OK')
-    expect(await res.text()).toBe('hello')
-  })
+    app.get('/hello-env', (c) => {
+      return c.json(c.env)
+    })
 
-  it('GET /hello-with-shortcuts is ok', async () => {
-    const res = await app.request('http://localhost/hello-with-shortcuts')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(201)
-    expect(res.headers.get('X-Custom')).toBe('This is Hono')
-    expect(res.headers.get('Content-Type')).toMatch(/text\/html/)
-    expect(await res.text()).toBe('<h1>Hono!!!</h1>')
-  })
+    app.get(
+      '/proxy-object',
+      () =>
+        new Proxy(new Response('proxy'), {
+          get(target, prop: keyof Response) {
+            return target[prop]
+          },
+        })
+    )
 
-  it('GET / is not found', async () => {
-    const res = await app.request('http://localhost/')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(404)
-  })
+    app.get(
+      '/async-proxy-object',
+      async () =>
+        new Proxy(new Response('proxy'), {
+          get(target, prop: keyof Response) {
+            return target[prop]
+          },
+        })
+    )
 
-  it('GET /hello-env is ok', async () => {
-    const res = await app.request('/hello-env', undefined, { HELLO: 'world' })
-    expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ HELLO: 'world' })
+    it('GET http://localhost/hello is ok', async () => {
+      const res = await app.request('http://localhost/hello')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(res.statusText).toBe('Hono is OK')
+      expect(await res.text()).toBe('hello')
+    })
+
+    it('GET httphello is ng', async () => {
+      const res = await app.request('httphello')
+      expect(res.status).toBe(404)
+    })
+
+    it('GET /hello is ok', async () => {
+      const res = await app.request('/hello')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(res.statusText).toBe('Hono is OK')
+      expect(await res.text()).toBe('hello')
+    })
+
+    it('GET hello is ok', async () => {
+      const res = await app.request('hello')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(res.statusText).toBe('Hono is OK')
+      expect(await res.text()).toBe('hello')
+    })
+
+    it('GET /hello-with-shortcuts is ok', async () => {
+      const res = await app.request('http://localhost/hello-with-shortcuts')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(201)
+      expect(res.headers.get('X-Custom')).toBe('This is Hono')
+      expect(res.headers.get('Content-Type')).toMatch(/text\/html/)
+      expect(await res.text()).toBe('<h1>Hono!!!</h1>')
+    })
+
+    it('GET / is not found', async () => {
+      const res = await app.request('http://localhost/')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(404)
+    })
+
+    it('GET /hello-env is ok', async () => {
+      const res = await app.request('/hello-env', undefined, { HELLO: 'world' })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ HELLO: 'world' })
+    })
+
+    it('GET /proxy-object is ok', async () => {
+      const res = await app.request('/proxy-object')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('proxy')
+    })
+
+    it('GET /async-proxy-object is ok', async () => {
+      const res = await app.request('/proxy-object')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('proxy')
+    })
   })
 })
 
