@@ -330,18 +330,14 @@ class Hono<
         return this.handleError(err, c)
       }
 
-      if (res instanceof Response) return res
-
-      return (async () => {
-        let awaited: Response | void
-        try {
-          awaited = await res
-          if (!awaited) return this.notFoundHandler(c)
-        } catch (err) {
-          return this.handleError(err, c)
-        }
-        return awaited
-      })()
+      return res instanceof Promise
+        ? res
+            .then(
+              (resolved: Response | undefined) =>
+                resolved || (c.finalized ? c.res : this.notFoundHandler(c))
+            )
+            .catch((err: Error) => this.handleError(err, c))
+        : res
     }
 
     const composed = compose<Context>(matchResult[0], this.errorHandler, this.notFoundHandler)
