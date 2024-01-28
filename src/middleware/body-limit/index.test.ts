@@ -267,6 +267,20 @@ describe('bodyLimit by Middleware', () => {
     expect(await res.text()).toBe('no')
   })
 
+  it('enum limit with custom handler', async () => {
+    const res = await app.request('/enum-limit-custom', {
+      method: 'POST',
+      headers: new Headers({
+        'Content-Type': 'application/json, text/plain',
+      }),
+      body: JSON.stringify(exampleJSON2),
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(413)
+    expect(await res.text()).toBe('no')
+  })
+
   it('Unit test', () => {
     let beforeSize = 1 / 1024
 

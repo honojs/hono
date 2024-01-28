@@ -79,7 +79,7 @@ export const bodyLimit = (
 
   return async function bodylimit(c: Context, next: () => Promise<void>) {
     if (allowMethods.includes(c.req.method.toUpperCase())) {
-      const req = c.req.raw.clone()
+      const req = c.req.raw
       let cachedBody = null;
 
       const cacheRequestBody = async () => {
