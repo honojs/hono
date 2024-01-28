@@ -1,4 +1,4 @@
-export const getMimeType = (filename: string, mime = mimes): string | undefined => {
+export const getMimeType = (filename: string, mime = baseMime): string | undefined => {
   const regexp = /\.([a-zA-Z0-9]+?)$/
   const match = filename.match(regexp)
   if (!match) return
@@ -10,10 +10,10 @@ export const getMimeType = (filename: string, mime = mimes): string | undefined 
 }
 
 export const getExtension = (mimeType: string): string | undefined => {
-  return Object.keys(mimes).find((ext) => mimes[ext] === mimeType)
+  return Object.keys(baseMime).find((ext) => baseMime[ext] === mimeType)
 }
 
-const mimes: Record<string, string> = {
+const baseMime: Record<string, string> = {
   aac: 'audio/aac',
   abw: 'application/x-abiword',
   arc: 'application/x-freearc',
