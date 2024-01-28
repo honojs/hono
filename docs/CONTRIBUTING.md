@@ -36,3 +36,11 @@ It may be under the "honojs organization" and distributed in the `@honojs` names
 
 The monorepo "[honojs/middleware](https://github.com/honojs/middleware)" manages these middleware.
 If you want to do it, create the issue about your middleware.
+
+## Local Development
+
+```
+git clone git@github.com:honojs/hono.git && cd hono/.devcontainer && yarn install
+docker compose up -d --build
+docker compose exec hono bash
+```
