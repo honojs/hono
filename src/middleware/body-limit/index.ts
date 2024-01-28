@@ -8,7 +8,7 @@ type bodyLimitOptions = {
   handler?: (c: Context) => Response
 }[]
 
-type bodyLimitOption = bodyLimitOptions[number];
+type bodyLimitOption = bodyLimitOptions[number]
 
 type bodyLimitObject = {
   body?: bodyLimitOption
