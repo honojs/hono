@@ -80,8 +80,35 @@ export const bodyLimit = (
   return async function bodylimit(c: Context, next: () => Promise<void>) {
     if (allowMethods.includes(c.req.method.toUpperCase())) {
       const req = c.req.raw.clone()
-      const blob = await req.blob()
-      const bodySize = blob.size
+      let cachedBody = null;
+
+      const cacheRequestBody = async () => {
+        const reader = req.body.getReader();
+        const chunks = [];
+
+        for (;;) {
+          const { done, value } = await reader.read();
+
+          if (done) break;
+
+          chunks.push(value);
+        }
+
+        const body = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+        let offset = 0;
+
+        for (const chunk of chunks) {
+          body.set(chunk, offset);
+          offset += chunk.length;
+        }
+
+        cachedBody = body;
+      };
+
+      await cacheRequestBody();
+
+      const blob = new Blob([cachedBody]);
+      const bodySize = blob.size;
 
       let type: typeof bodyTypes[number] = 'body'
       const ContentType = req.headers.get('Content-Type')?.trim() ?? ''
