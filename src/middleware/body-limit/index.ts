@@ -83,59 +83,61 @@ export const bodyLimit = (
     if (allowMethods.includes(c.req.method.toUpperCase())) {
       const req = c.req.raw
 
-      const reader = req.body.getReader()
-      const chunks = []
+      if (req.body) {
+        const reader = req.body.getReader()
+        const chunks = []
 
-      for (;;) {
-        const { done, value } = await reader.read()
+        for (;;) {
+          const { done, value } = await reader.read()
 
-        if (done) break
+          if (done) break
 
-        chunks.push(value)
-      }
+          chunks.push(value)
+        }
 
-      const body = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
-      let offset = 0
+        const body = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
+        let offset = 0
 
-      for (const chunk of chunks) {
-        body.set(chunk, offset)
-        offset += chunk.length
-      }
+        for (const chunk of chunks) {
+          body.set(chunk, offset)
+          offset += chunk.length
+        }
 
-      c.req.bodyCache.arrayBuffer = body
+        c.req.bodyCache.arrayBuffer = body
 
-      const bodySize = body.length
+        const bodySize = body.length
 
-      let type: typeof bodyTypes[number] = 'body'
-      const ContentType = req.headers.get('Content-Type')?.trim() ?? ''
+        let type: typeof bodyTypes[number] = 'body'
+        const ContentType = req.headers.get('Content-Type')?.trim() ?? ''
 
-      if (ContentType.startsWith('text/plain')) {
-        type = 'text'
-      } else if (ContentType.startsWith('application/json')) {
-        type = 'json'
-      } else if (ContentType.startsWith('application/x-www-form-urlencoded')) {
-        type = 'form'
-      }
+        if (ContentType.startsWith('text/plain')) {
+          type = 'text'
+        } else if (ContentType.startsWith('application/json')) {
+          type = 'json'
+        } else if (ContentType.startsWith('application/x-www-form-urlencoded')) {
+          type = 'form'
+        }
 
-      const limitOption = limitOptions[type]
-      const bodyLimitOption = limitOptions['body']
+        const limitOption = limitOptions[type]
+        const bodyLimitOption = limitOptions['body']
 
-      if (
-        limitOption &&
-        limitOption.maxSize &&
-        limitOption.handler &&
-        !isNaN(limitOption.maxSize) &&
-        bodySize > limitOption.maxSize
-      ) {
-        return limitOption.handler(c)
-      } else if (
-        bodyLimitOption &&
-        bodyLimitOption.maxSize &&
-        bodyLimitOption.handler &&
-        !isNaN(bodyLimitOption.maxSize) &&
-        bodySize > bodyLimitOption.maxSize
-      ) {
-        return bodyLimitOption.handler(c)
+        if (
+          limitOption &&
+          limitOption.maxSize &&
+          limitOption.handler &&
+          !isNaN(limitOption.maxSize) &&
+          bodySize > limitOption.maxSize
+        ) {
+          return limitOption.handler(c)
+        } else if (
+          bodyLimitOption &&
+          bodyLimitOption.maxSize &&
+          bodyLimitOption.handler &&
+          !isNaN(bodyLimitOption.maxSize) &&
+          bodySize > bodyLimitOption.maxSize
+        ) {
+          return bodyLimitOption.handler(c)
+        }
       }
     }
 

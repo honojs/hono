@@ -8,11 +8,13 @@ type bodyLimitOptions = {
   handler?: (c: Context) => Response
 }[]
 
+type bodyLimitOption = bodyLimitOptions[number]
+
 type bodyLimitObject = {
-  body?: bodyLimitOptions[number]
-  json?: bodyLimitOptions[number]
-  form?: bodyLimitOptions[number]
-  text?: bodyLimitOptions[number]
+  body?: bodyLimitOption
+  json?: bodyLimitOption
+  form?: bodyLimitOption
+  text?: bodyLimitOption
 }
 
 const defaultOptions: bodyLimitOptions = bodyTypes.map((bodyType) => {
@@ -73,46 +75,69 @@ const deleteSameType = (options: bodyLimitOptions): bodyLimitObject => {
  * ```
  */
 export const bodyLimit = (
-  options: bodyLimitOptions | bodyLimitOptions[number] = defaultOptions
+  options: bodyLimitOptions | bodyLimitOption = defaultOptions
 ): MiddlewareHandler => {
   const limitOptions: bodyLimitObject = deleteSameType([...defaultOptions, ...[options].flat()])
 
   return async function bodylimit(c: Context, next: () => Promise<void>) {
     if (allowMethods.includes(c.req.method.toUpperCase())) {
-      const req = c.req.raw.clone()
-      const blob = await req.blob()
-      const bodySize = blob.size
+      const req = c.req.raw
 
-      let type: typeof bodyTypes[number] = 'body'
-      const ContentType = req.headers.get('Content-Type')?.trim() ?? ''
+      if (req.body) {
+        const reader = req.body.getReader()
+        const chunks = []
 
-      if (ContentType.startsWith('text/plain')) {
-        type = 'text'
-      } else if (ContentType.startsWith('application/json')) {
-        type = 'json'
-      } else if (ContentType.startsWith('application/x-www-form-urlencoded')) {
-        type = 'form'
-      }
+        for (;;) {
+          const { done, value } = await reader.read()
 
-      const limitOption = limitOptions[type]
-      const bodyLimitOption = limitOptions['body']
+          if (done) break
 
-      if (
-        limitOption &&
-        limitOption.maxSize &&
-        limitOption.handler &&
-        !isNaN(limitOption.maxSize) &&
-        bodySize > limitOption.maxSize
-      ) {
-        return limitOption.handler(c)
-      } else if (
-        bodyLimitOption &&
-        bodyLimitOption.maxSize &&
-        bodyLimitOption.handler &&
-        !isNaN(bodyLimitOption.maxSize) &&
-        bodySize > bodyLimitOption.maxSize
-      ) {
-        return bodyLimitOption.handler(c)
+          chunks.push(value)
+        }
+
+        const body = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
+        let offset = 0
+
+        for (const chunk of chunks) {
+          body.set(chunk, offset)
+          offset += chunk.length
+        }
+
+        c.req.bodyCache.arrayBuffer = body
+
+        const bodySize = body.length
+
+        let type: typeof bodyTypes[number] = 'body'
+        const ContentType = req.headers.get('Content-Type')?.trim() ?? ''
+
+        if (ContentType.startsWith('text/plain')) {
+          type = 'text'
+        } else if (ContentType.startsWith('application/json')) {
+          type = 'json'
+        } else if (ContentType.startsWith('application/x-www-form-urlencoded')) {
+          type = 'form'
+        }
+
+        const limitOption = limitOptions[type]
+        const bodyLimitOption = limitOptions['body']
+
+        if (
+          limitOption &&
+          limitOption.maxSize &&
+          limitOption.handler &&
+          !isNaN(limitOption.maxSize) &&
+          bodySize > limitOption.maxSize
+        ) {
+          return limitOption.handler(c)
+        } else if (
+          bodyLimitOption &&
+          bodyLimitOption.maxSize &&
+          bodyLimitOption.handler &&
+          !isNaN(bodyLimitOption.maxSize) &&
+          bodySize > bodyLimitOption.maxSize
+        ) {
+          return bodyLimitOption.handler(c)
+        }
       }
     }
 
