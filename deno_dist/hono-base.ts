@@ -48,8 +48,7 @@ const errorHandler = (err: Error, c: Context) => {
     return err.getResponse()
   }
   console.error(err)
-  const message = 'Internal Server Error'
-  return c.text(message, 500)
+  return c.text('Internal Server Error', 500)
 }
 
 type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings'] }) => string
@@ -189,9 +188,7 @@ class Hono<
   ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
     const subApp = this.basePath(path)
 
-    if (!app) {
-      return subApp
-    }
+    if (!app) return subApp
 
     app.routes.map((r) => {
       let handler
@@ -298,9 +295,7 @@ class Hono<
   }
 
   private handleError(err: unknown, c: Context<E>) {
-    if (err instanceof Error) {
-      return this.errorHandler(err, c)
-    }
+    if (err instanceof Error) return this.errorHandler(err, c)
     throw err
   }
 
@@ -330,27 +325,19 @@ class Hono<
       let res: ReturnType<H>
       try {
         res = matchResult[0][0][0][0](c, async () => {})
-        if (!res) {
-          return this.notFoundHandler(c)
-        }
+        if (!res) return this.notFoundHandler(c)
       } catch (err) {
         return this.handleError(err, c)
       }
 
-      if (res instanceof Response) return res
-
-      return (async () => {
-        let awaited: Response | void
-        try {
-          awaited = await res
-          if (!awaited) {
-            return this.notFoundHandler(c)
-          }
-        } catch (err) {
-          return this.handleError(err, c)
-        }
-        return awaited
-      })()
+      return res instanceof Promise
+        ? res
+            .then(
+              (resolved: Response | undefined) =>
+                resolved || (c.finalized ? c.res : this.notFoundHandler(c))
+            )
+            .catch((err: Error) => this.handleError(err, c))
+        : res
     }
 
     const composed = compose<Context>(matchResult[0], this.errorHandler, this.notFoundHandler)
@@ -363,6 +350,7 @@ class Hono<
             'Context is not finalized. You may forget returning Response object or `await next()`'
           )
         }
+
         return context.res
       } catch (err) {
         return this.handleError(err, c)

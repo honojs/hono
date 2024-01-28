@@ -11,5 +11,6 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text'],
     },
+    pool: 'forks',
   },
 })

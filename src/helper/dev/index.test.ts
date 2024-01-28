@@ -126,6 +126,51 @@ describe('showRoutes()', () => {
   })
 })
 
+describe('showRoutes() in NO_COLOR', () => {
+  let logs: string[] = []
+
+  let originalLog: typeof console.log
+  beforeAll(() => {
+    vi.stubEnv('NO_COLOR', '1')
+    originalLog = console.log
+    console.log = (...args) => logs.push(...args)
+  })
+  afterAll(() => {
+    vi.unstubAllEnvs()
+    console.log = originalLog
+  })
+
+  beforeEach(() => {
+    logs = []
+  })
+  it('should render not colorized output', async () => {
+    showRoutes(app)
+    expect(logs).toEqual([
+      'GET      /',
+      'GET      /named',
+      'POST     /',
+      'PUT      /',
+      'PATCH    /',
+      'DELETE   /',
+      'OPTIONS  /',
+      'GET      /static',
+    ])
+  })
+  it('should render colorized output if colorize: true', async () => {
+    showRoutes(app, { colorize: true })
+    expect(logs).toEqual([
+      '\x1b[32mGET\x1b[0m      /',
+      '\x1b[32mGET\x1b[0m      /named',
+      '\x1b[32mPOST\x1b[0m     /',
+      '\x1b[32mPUT\x1b[0m      /',
+      '\x1b[32mPATCH\x1b[0m    /',
+      '\x1b[32mDELETE\x1b[0m   /',
+      '\x1b[32mOPTIONS\x1b[0m  /',
+      '\x1b[32mGET\x1b[0m      /static',
+    ])
+  })
+})
+
 describe('geRouterName()', () => {
   it('Should return the correct router name', async () => {
     const app = new Hono({

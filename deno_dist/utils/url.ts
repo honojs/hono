@@ -8,30 +8,31 @@ export const splitPath = (path: string): string[] => {
   return paths
 }
 
-export const splitRoutingPath = (path: string): string[] => {
-  const groups: [string, string][] = [] // [mark, original string]
-  for (let i = 0; ; ) {
-    let replaced = false
-    path = path.replace(/\{[^}]+\}/g, (m) => {
-      const mark = `@\\${i}`
-      groups[i] = [mark, m]
-      i++
-      replaced = true
-      return mark
-    })
-    if (!replaced) {
-      break
-    }
-  }
+export const splitRoutingPath = (routePath: string): string[] => {
+  const { groups, path } = extractGroupsFromPath(routePath)
 
-  const paths = path.split('/')
-  if (paths[0] === '') {
-    paths.shift()
-  }
+  const paths = splitPath(path)
+  return replaceGroupMarks(paths, groups)
+}
+
+const extractGroupsFromPath = (path: string): { groups: [string, string][]; path: string } => {
+  const groups: [string, string][] = []
+
+  path = path.replace(/\{[^}]+\}/g, (match, index) => {
+    const mark = `@${index}`
+    groups.push([mark, match])
+    return mark
+  })
+
+  return { groups, path }
+}
+
+const replaceGroupMarks = (paths: string[], groups: [string, string][]): string[] => {
   for (let i = groups.length - 1; i >= 0; i--) {
     const [mark] = groups[i]
+
     for (let j = paths.length - 1; j >= 0; j--) {
-      if (paths[j].indexOf(mark) !== -1) {
+      if (paths[j].includes(mark)) {
         paths[j] = paths[j].replace(mark, groups[i][1])
         break
       }
