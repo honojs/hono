@@ -8,11 +8,13 @@ type bodyLimitOptions = {
   handler?: (c: Context) => Response
 }[]
 
+type bodyLimitOption = bodyLimitOptions[number];
+
 type bodyLimitObject = {
-  body?: bodyLimitOptions[number]
-  json?: bodyLimitOptions[number]
-  form?: bodyLimitOptions[number]
-  text?: bodyLimitOptions[number]
+  body?: bodyLimitOption
+  json?: bodyLimitOption
+  form?: bodyLimitOption
+  text?: bodyLimitOption
 }
 
 const defaultOptions: bodyLimitOptions = bodyTypes.map((bodyType) => {
@@ -73,42 +75,36 @@ const deleteSameType = (options: bodyLimitOptions): bodyLimitObject => {
  * ```
  */
 export const bodyLimit = (
-  options: bodyLimitOptions | bodyLimitOptions[number] = defaultOptions
+  options: bodyLimitOptions | bodyLimitOption = defaultOptions
 ): MiddlewareHandler => {
   const limitOptions: bodyLimitObject = deleteSameType([...defaultOptions, ...[options].flat()])
 
   return async function bodylimit(c: Context, next: () => Promise<void>) {
     if (allowMethods.includes(c.req.method.toUpperCase())) {
       const req = c.req.raw
-      let cachedBody = null;
 
-      const cacheRequestBody = async () => {
-        const reader = req.body.getReader();
-        const chunks = [];
+      const reader = req.body.getReader()
+      const chunks = []
 
-        for (;;) {
-          const { done, value } = await reader.read();
+      for (;;) {
+        const { done, value } = await reader.read()
 
-          if (done) break;
+        if (done) break
 
-          chunks.push(value);
-        }
+        chunks.push(value)
+      }
 
-        const body = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
-        let offset = 0;
+      const body = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
+      let offset = 0
 
-        for (const chunk of chunks) {
-          body.set(chunk, offset);
-          offset += chunk.length;
-        }
+      for (const chunk of chunks) {
+        body.set(chunk, offset)
+        offset += chunk.length
+      }
 
-        cachedBody = body;
-      };
+      c.req.bodyCache.arrayBuffer = body
 
-      await cacheRequestBody();
-
-      const blob = new Blob([cachedBody]);
-      const bodySize = blob.size;
+      const bodySize = body.length
 
       let type: typeof bodyTypes[number] = 'body'
       const ContentType = req.headers.get('Content-Type')?.trim() ?? ''
