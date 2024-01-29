@@ -5,9 +5,6 @@ sandbox
 worker
 .wrangler
 
-# Bun
-bun.lockb
-
 # Logs
 logs
 *.log
