@@ -12,8 +12,12 @@ import { css, cx, keyframes, viewTransition, rawCssString, Style, createCssConte
 async function toString(
   template: JSXNode | Promise<HtmlEscapedString> | Promise<string> | HtmlEscapedString
 ) {
-  if (template instanceof Promise) template = (await template) as HtmlEscapedString
-  if (template instanceof JSXNode) template = template.toString() as Promise<HtmlEscapedString>
+  if (template instanceof Promise) {
+    template = (await template) as HtmlEscapedString
+  }
+  if (template instanceof JSXNode) {
+    template = template.toString() as Promise<HtmlEscapedString>
+  }
   return resolveCallback(await template, HtmlEscapedCallbackPhase.Stringify, false, template)
 }
 

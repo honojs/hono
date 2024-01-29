@@ -161,7 +161,9 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   header(name: string): string | undefined
   header(): Record<string, string>
   header(name?: string) {
-    if (name) return this.raw.headers.get(name.toLowerCase()) ?? undefined
+    if (name) {
+      return this.raw.headers.get(name.toLowerCase()) ?? undefined
+    }
 
     const headerData: Record<string, string | undefined> = {}
     this.raw.headers.forEach((value, key) => {
@@ -181,7 +183,9 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * @see https://hono.dev/api/request#parsebody
    */
   async parseBody<T extends BodyData = BodyData>(options?: ParseBodyOptions): Promise<T> {
-    if (this.bodyCache.parsedBody) return this.bodyCache.parsedBody as T
+    if (this.bodyCache.parsedBody) {
+      return this.bodyCache.parsedBody as T
+    }
     const parsedBody = await parseBody<T>(this, options)
     this.bodyCache.parsedBody = parsedBody
     return parsedBody
@@ -190,7 +194,9 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   private cachedBody = (key: keyof Body) => {
     const { bodyCache, raw } = this
     const cachedBody = bodyCache[key]
-    if (cachedBody) return cachedBody
+    if (cachedBody) {
+      return cachedBody
+    }
     /**
      * If an arrayBuffer cache is exist,
      * use it for creating a text, json, and others.

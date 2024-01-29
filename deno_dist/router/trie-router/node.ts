@@ -53,7 +53,9 @@ export class Node<T> {
         parentPatterns.push(...curNode.patterns)
         curNode = curNode.children[p]
         const pattern = getPattern(p)
-        if (pattern) possibleKeys.push(pattern[1])
+        if (pattern) {
+          possibleKeys.push(pattern[1])
+        }
         continue
       }
 
@@ -160,7 +162,9 @@ export class Node<T> {
             continue
           }
 
-          if (part === '') continue
+          if (part === '') {
+            continue
+          }
 
           const [key, name, matcher] = pattern
 

@@ -231,7 +231,9 @@ describe('useDeferredValue()', () => {
       return (promiseMap[count] ||= new Promise((r) => setTimeout(() => r(count + 1))))
     }
     const ShowCount = ({ count }: { count: number }) => {
-      if (count === 0) return <div>0</div>
+      if (count === 0) {
+        return <div>0</div>
+      }
 
       const c = use(getPromise(count))
       return <div>{c}</div>

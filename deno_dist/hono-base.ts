@@ -130,7 +130,9 @@ class Hono<
 
     // Implementation of app.on(method, path, ...handlers[])
     this.on = (method: string | string[], path: string | string[], ...handlers: H[]) => {
-      if (!method) return this
+      if (!method) {
+        return this
+      }
       for (const p of [path].flat()) {
         this.#path = p
         for (const m of [method].flat()) {
@@ -188,7 +190,9 @@ class Hono<
   ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
     const subApp = this.basePath(path)
 
-    if (!app) return subApp
+    if (!app) {
+      return subApp
+    }
 
     app.routes.map((r) => {
       let handler
@@ -274,7 +278,9 @@ class Hono<
         ...optionsArray
       )
 
-      if (res) return res
+      if (res) {
+        return res
+      }
 
       await next()
     }
@@ -295,7 +301,9 @@ class Hono<
   }
 
   private handleError(err: unknown, c: Context<E>) {
-    if (err instanceof Error) return this.errorHandler(err, c)
+    if (err instanceof Error) {
+      return this.errorHandler(err, c)
+    }
     throw err
   }
 
@@ -325,7 +333,9 @@ class Hono<
       let res: ReturnType<H>
       try {
         res = matchResult[0][0][0][0](c, async () => {})
-        if (!res) return this.notFoundHandler(c)
+        if (!res) {
+          return this.notFoundHandler(c)
+        }
       } catch (err) {
         return this.handleError(err, c)
       }
