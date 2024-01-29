@@ -36,8 +36,9 @@ const verifySignature = async (
   try {
     const signatureBinStr = atob(base64Signature)
     const signature = new Uint8Array(signatureBinStr.length)
-    for (let i = 0, len = signatureBinStr.length; i < len; i++)
+    for (let i = 0, len = signatureBinStr.length; i < len; i++) {
       signature[i] = signatureBinStr.charCodeAt(i)
+    }
     return await crypto.subtle.verify(algorithm, secret, signature, new TextEncoder().encode(value))
   } catch (e) {
     return false
@@ -60,16 +61,22 @@ export const parse = (cookie: string, name?: string): Cookie => {
   return pairs.reduce((parsedCookie, pairStr) => {
     pairStr = pairStr.trim()
     const valueStartPos = pairStr.indexOf('=')
-    if (valueStartPos === -1) return parsedCookie
+    if (valueStartPos === -1) {
+      return parsedCookie
+    }
 
     const cookieName = pairStr.substring(0, valueStartPos).trim()
-    if ((name && name !== cookieName) || !validCookieNameRegEx.test(cookieName)) return parsedCookie
+    if ((name && name !== cookieName) || !validCookieNameRegEx.test(cookieName)) {
+      return parsedCookie
+    }
 
     let cookieValue = pairStr.substring(valueStartPos + 1).trim()
-    if (cookieValue.startsWith('"') && cookieValue.endsWith('"'))
+    if (cookieValue.startsWith('"') && cookieValue.endsWith('"')) {
       cookieValue = cookieValue.slice(1, -1)
-    if (validCookieValueRegEx.test(cookieValue))
+    }
+    if (validCookieValueRegEx.test(cookieValue)) {
       parsedCookie[cookieName] = decodeURIComponent_(cookieValue)
+    }
 
     return parsedCookie
   }, {} as Cookie)
@@ -85,11 +92,15 @@ export const parseSigned = async (
 
   for (const [key, value] of Object.entries(parse(cookie, name))) {
     const signatureStartPos = value.lastIndexOf('.')
-    if (signatureStartPos < 1) continue
+    if (signatureStartPos < 1) {
+      continue
+    }
 
     const signedValue = value.substring(0, signatureStartPos)
     const signature = value.substring(signatureStartPos + 1)
-    if (signature.length !== 44 || !signature.endsWith('=')) continue
+    if (signature.length !== 44 || !signature.endsWith('=')) {
+      continue
+    }
 
     const isVerified = await verifySignature(signature, signedValue, secretKey)
     parsedCookie[key] = isVerified ? signedValue : false

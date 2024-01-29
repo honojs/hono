@@ -36,7 +36,9 @@ export const serveStatic = <E extends Env = Env>(
       defaultDocument: DEFAULT_DOCUMENT,
     })
 
-    if (!path) return await next()
+    if (!path) {
+      return await next()
+    }
 
     const content = await getContentFromKVAsset(path, {
       manifest: options.manifest,

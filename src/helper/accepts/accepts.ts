@@ -63,7 +63,9 @@ export const defaultMatch = (accepts: Accept[], config: acceptsConfig) => {
  */
 export const accepts = (c: Context, options: acceptsOptions) => {
   const acceptHeader = c.req.header(options.header)
-  if (!acceptHeader) return options.default
+  if (!acceptHeader) {
+    return options.default
+  }
   const accepts = parseAccept(acceptHeader)
   const match = options.match || defaultMatch
 

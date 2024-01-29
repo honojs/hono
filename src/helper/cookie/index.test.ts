@@ -122,7 +122,9 @@ describe('Cookie Middleware', () => {
       app.get('/cookie', (c) => {
         const yummyCookie = getCookie(c, 'yummy_cookie')
         const res = new Response('Good cookie')
-        if (yummyCookie) res.headers.set('Yummy-Cookie', yummyCookie)
+        if (yummyCookie) {
+          res.headers.set('Yummy-Cookie', yummyCookie)
+        }
         return res
       })
 
