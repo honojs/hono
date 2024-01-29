@@ -126,8 +126,8 @@ describe('With `file` options', () => {
   })
 })
 
-describe('With `mime` options', () => {
-  const mime = {
+describe('With `mimes` options', () => {
+  const mimes = {
     m3u8: 'application/vnd.apple.mpegurl',
     ts: 'video/mp2t',
   }
@@ -138,7 +138,7 @@ describe('With `mime` options', () => {
   }
 
   const app = new Hono()
-  app.use('/static/*', serveStatic({ root: './assets', mime, manifest }))
+  app.use('/static/*', serveStatic({ root: './assets', mimes, manifest }))
 
   it('Should return content-type of m3u8', async () => {
     const res = await app.request('http://localhost/static/video/morning-routine.m3u8')
@@ -153,7 +153,7 @@ describe('With `mime` options', () => {
   it('Should return content-type of default', async () => {
     const res = await app.request('http://localhost/static/video/introduction.mp4')
     expect(res.status).toBe(200)
-    expect(res.headers.get('Content-Type')).not.toBe('video/mp4')
+    expect(res.headers.get('Content-Type')).toBe('video/mp4')
   })
 })
 

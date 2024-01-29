@@ -1,8 +1,8 @@
-export const getMimeType = (filename: string, mime = baseMime): string | undefined => {
+export const getMimeType = (filename: string, mimes = baseMimes): string | undefined => {
   const regexp = /\.([a-zA-Z0-9]+?)$/
   const match = filename.match(regexp)
   if (!match) return
-  let mimeType = mime[match[1]]
+  let mimeType = mimes[match[1]]
   if ((mimeType && mimeType.startsWith('text')) || mimeType === 'application/json') {
     mimeType += '; charset=utf-8'
   }
@@ -10,10 +10,10 @@ export const getMimeType = (filename: string, mime = baseMime): string | undefin
 }
 
 export const getExtension = (mimeType: string): string | undefined => {
-  return Object.keys(baseMime).find((ext) => baseMime[ext] === mimeType)
+  return Object.keys(baseMimes).find((ext) => baseMimes[ext] === mimeType)
 }
 
-const baseMime: Record<string, string> = {
+const baseMimes: Record<string, string> = {
   aac: 'audio/aac',
   abw: 'application/x-abiword',
   arc: 'application/x-freearc',
