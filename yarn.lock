@@ -496,10 +496,10 @@
   dependencies:
     "@hapi/hoek" "^9.0.0"
 
-"@hono/eslint-config@^0.0.3":
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/@hono/eslint-config/-/eslint-config-0.0.3.tgz#15978d401c53c5497156f0a80dc2b261e94139c9"
-  integrity sha512-A4pbMilmx+HpY9TPZuC7+1eEhdTfTWKo7wJjWULOkJiH3pf580ZhaRZ+GvArCDPW6YkvTVvaGxr0wkt8VApzDg==
+"@hono/eslint-config@^0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@hono/eslint-config/-/eslint-config-0.0.4.tgz#11bf12fd606b63302b4c4f5880f6965cc33ddcd2"
+  integrity sha512-CaL3LBdI2tw7Luo4vGDhhrdntA02Nsts6P0FjAz3U5piy3UhWzgEvEN+L9M0fsG7Mm1cgd+kM3hF8CRJOH0aGA==
   dependencies:
     "@typescript-eslint/eslint-plugin" "^6.14.0"
     "@typescript-eslint/parser" "^6.14.0"

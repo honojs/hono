@@ -15,11 +15,15 @@ interface GetSignedCookie {
 export const getCookie: GetCookie = (c, key?) => {
   const cookie = c.req.raw.headers.get('Cookie')
   if (typeof key === 'string') {
-    if (!cookie) return undefined
+    if (!cookie) {
+      return undefined
+    }
     const obj = parse(cookie, key)
     return obj[key]
   }
-  if (!cookie) return {}
+  if (!cookie) {
+    return {}
+  }
   const obj = parse(cookie)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return obj as any
@@ -28,11 +32,15 @@ export const getCookie: GetCookie = (c, key?) => {
 export const getSignedCookie: GetSignedCookie = async (c, secret, key?) => {
   const cookie = c.req.raw.headers.get('Cookie')
   if (typeof key === 'string') {
-    if (!cookie) return undefined
+    if (!cookie) {
+      return undefined
+    }
     const obj = await parseSigned(cookie, secret, key)
     return obj[key]
   }
-  if (!cookie) return {}
+  if (!cookie) {
+    return {}
+  }
   const obj = await parseSigned(cookie, secret)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return obj as any
