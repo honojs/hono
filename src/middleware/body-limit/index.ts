@@ -43,11 +43,13 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
       return next()
     }
 
-    const contentLength = parseInt(c.req.raw.headers.get('content-length') || '0', 10)
-    if (contentLength > maxSize) {
-      // if user explicitly set content-length header and it is larger than maxSize immediately return error
-      return onError(c)
+    if (c.req.raw.headers.has('content-length')) {
+      // we can trust content-length header because it's already validated by server
+      const contentLength = parseInt(c.req.raw.headers.get('content-length') || '0', 10)
+      return contentLength > maxSize ? onError(c) : next()
     }
+
+    // maybe chunked transfer encoding
 
     let size = 0
     const rawReader = c.req.raw.body.getReader()
