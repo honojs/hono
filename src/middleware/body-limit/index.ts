@@ -16,7 +16,7 @@ type BodyLimitOptions = {
  *  bodyLimit({
  *    maxSize: 15 * Unit.b,
  *    onError: (c) => {
- *      return c.text('oveflow :(', 413)
+ *      return c.text('overflow :(', 413)
  *    }
  *  }),
  *  (c) => {
