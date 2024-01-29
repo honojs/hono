@@ -150,7 +150,7 @@ describe('With `mimes` options', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('video/mp2t')
   })
-  it('Should return content-type of default', async () => {
+  it('Should return content-type of default on Hono', async () => {
     const res = await app.request('http://localhost/static/video/introduction.mp4')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('video/mp4')
