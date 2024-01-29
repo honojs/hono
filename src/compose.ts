@@ -18,9 +18,8 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
     return dispatch(0)
 
     async function dispatch(i: number): Promise<C> {
-      if (i <= index) {
-        throw new Error('next() called multiple times')
-      }
+      if (i <= index) throw new Error('next() called multiple times')
+
       index = i
 
       let res
@@ -29,22 +28,12 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
 
       if (middleware[i]) {
         handler = middleware[i][0][0]
-        if (context instanceof Context) {
-          context.req.routeIndex = i
-        }
-      } else {
-        handler = (i === middleware.length && next) || undefined
-      }
+        if (context instanceof Context) context.req.routeIndex = i
+      } else handler = (i === middleware.length && next) || undefined
 
-      if (!handler) {
-        if (context instanceof Context && context.finalized === false && onNotFound) {
-          res = await onNotFound(context)
-        }
-      } else {
+      if (handler) {
         try {
-          res = await handler(context, () => {
-            return dispatch(i + 1)
-          })
+          res = await handler(context, () => dispatch(i + 1))
         } catch (err) {
           if (err instanceof Error && context instanceof Context && onError) {
             context.error = err
@@ -54,11 +43,14 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
             throw err
           }
         }
+      } else {
+        if (context instanceof Context && context.finalized === false && onNotFound) {
+          res = await onNotFound(context)
+        }
       }
 
-      if (res && (context.finalized === false || isError)) {
-        context.res = res
-      }
+      if (res && (context.finalized === false || isError)) context.res = res
+
       return context
     }
   }
