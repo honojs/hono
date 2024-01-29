@@ -67,7 +67,9 @@ export const jsxRenderer = (
 ): MiddlewareHandler =>
   function jsxRenderer(c, next) {
     const parentLayout = c.getLayout()
-    if (!parentLayout && component) c.setLayout(component)
+    if (!parentLayout && component) {
+      c.setLayout(component)
+    }
 
     /* eslint-disable @typescript-eslint/no-explicit-any */
     c.setRenderer(createRenderer(c, component, options) as any)

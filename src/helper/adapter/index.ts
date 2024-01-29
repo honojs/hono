@@ -34,12 +34,24 @@ export const getRuntimeKey = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const global = globalThis as any
 
-  if (global?.Deno !== undefined) return 'deno'
-  if (global?.Bun !== undefined) return 'bun'
-  if (typeof global?.WebSocketPair === 'function') return 'workerd'
-  if (typeof global?.EdgeRuntime === 'string') return 'edge-light'
-  if (global?.fastly !== undefined) return 'fastly'
-  if (global?.process?.release?.name === 'node') return 'node'
+  if (global?.Deno !== undefined) {
+    return 'deno'
+  }
+  if (global?.Bun !== undefined) {
+    return 'bun'
+  }
+  if (typeof global?.WebSocketPair === 'function') {
+    return 'workerd'
+  }
+  if (typeof global?.EdgeRuntime === 'string') {
+    return 'edge-light'
+  }
+  if (global?.fastly !== undefined) {
+    return 'fastly'
+  }
+  if (global?.process?.release?.name === 'node') {
+    return 'node'
+  }
 
   return 'other'
 }

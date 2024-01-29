@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+  hono:
+    build: .
+    container_name: hono
+    volumes:
+      - ../:/hono
+    networks:
+      - hono
+    command: bash
+    stdin_open: true
+    tty: true
+    restart: 'no'
+
+networks:
+  hono:
+    driver: bridge

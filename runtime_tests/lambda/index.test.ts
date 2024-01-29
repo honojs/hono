@@ -133,7 +133,9 @@ describe('AWS Lambda Adapter for Hono', () => {
     const validCookies =
       getCookie(c, testCookie1.key) === testCookie1.value &&
       getCookie(c, testCookie2.key) === testCookie2.value
-    if (!validCookies) return c.text('Invalid Cookies')
+    if (!validCookies) {
+      return c.text('Invalid Cookies')
+    }
     return c.text('Valid Cookies')
   })
 

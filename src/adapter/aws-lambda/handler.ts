@@ -204,7 +204,9 @@ const createRequest = (event: LambdaEvent) => {
   const headers = new Headers()
   getCookies(event, headers)
   for (const [k, v] of Object.entries(event.headers)) {
-    if (v) headers.set(k, v)
+    if (v) {
+      headers.set(k, v)
+    }
   }
 
   const method = isProxyEventV2(event) ? event.requestContext.http.method : event.httpMethod
