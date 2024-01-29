@@ -1,13 +1,9 @@
 // @denoify-ignore
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { existsSync } from 'fs'
 import type { Context } from '../../context'
 import type { Env, MiddlewareHandler } from '../../types'
 import { getFilePath } from '../../utils/filepath'
 import { getMimeType } from '../../utils/mime'
-
-// @ts-ignore
-const { file } = Bun
 
 export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
@@ -42,16 +38,16 @@ export const serveStatic = <E extends Env = Env>(
 
     path = `./${path}`
 
-    if (existsSync(path)) {
-      const content = file(path)
-      if (content) {
-        const mimeType = getMimeType(path)
-        if (mimeType) {
-          c.header('Content-Type', mimeType)
-        }
-        // Return Response object
-        return c.body(content)
+    // @ts-ignore
+    const file = Bun.file(path)
+    const isExists = await file.exists()
+    if (isExists) {
+      const mimeType = getMimeType(path)
+      if (mimeType) {
+        c.header('Content-Type', mimeType)
       }
+      // Return Response object
+      return c.body(file)
     }
 
     await options.onNotFound?.(path, c)
