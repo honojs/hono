@@ -151,7 +151,9 @@ export const fetchRoutesContent = async <
     for (const param of forGetInfoURLRequest.ssgParams) {
       const replacedUrlParam = replaceUrlParam(route.path, param)
       let response = await app.request(replacedUrlParam, forGetInfoURLRequest)
-      if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) continue
+      if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) {
+        continue
+      }
       if (afterResponseHook) {
         const maybeResponse = afterResponseHook(response)
         if (!maybeResponse) {
