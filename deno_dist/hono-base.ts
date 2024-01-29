@@ -101,7 +101,9 @@ class Hono<
 
     // Implementation of app.on(method, path, ...handlers[])
     this.on = (method: string | string[], path: string, ...handlers: H[]) => {
-      if (!method) return this
+      if (!method) {
+        return this
+      }
       this.#path = path
       for (const m of [method].flat()) {
         handlers.map((handler) => {
@@ -236,7 +238,9 @@ class Hono<
         ...optionsArray
       )
 
-      if (res) return res
+      if (res) {
+        return res
+      }
 
       await next()
     }

@@ -8,7 +8,9 @@ import { deepMerge, mergePath, removeIndexString, replaceUrlParam } from './util
 const createProxy = (callback: Callback, path: string[]) => {
   const proxy: unknown = new Proxy(() => {}, {
     get(_obj, key) {
-      if (typeof key !== 'string' || key === 'then') return undefined
+      if (typeof key !== 'string' || key === 'then') {
+        return undefined
+      }
       return createProxy(callback, [...path, key])
     },
     apply(_1, _2, args) {
@@ -100,7 +102,9 @@ class ClientRequestImpl {
       headerValues['Cookie'] = cookies.join(',')
     }
 
-    if (this.cType) headerValues['Content-Type'] = this.cType
+    if (this.cType) {
+      headerValues['Content-Type'] = this.cType
+    }
 
     const headers = new Headers(headerValues ?? undefined)
     let url = this.url
