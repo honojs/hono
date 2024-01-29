@@ -1,9 +1,17 @@
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
+type OnError = (c: Context) => Response | Promise<Response>
 type BodyLimitOptions = {
   maxSize: number
-  onError?: (c: Context) => Response | Promise<Response>
+  onError?: OnError
+}
+
+class BodyLimitError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'BodyLimitError'
+  }
 }
 
 /**
@@ -25,42 +33,53 @@ type BodyLimitOptions = {
  * )
  * ```
  */
-export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler =>
-  async function bodyLimit(c, next) {
-    if (!c.req.raw.body) return next()
+export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
+  const onError: OnError = options.onError || ((c) => c.text('413 Request Entity Too Large', 413))
+  const maxSize = options.maxSize
 
-    const maxSize = options.maxSize
-    let size = 0
-
-    const reader = c.req.raw.body.getReader()
-    const chunks: Uint8Array[] = []
-
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) break
-      if (value) {
-        size += value.length
-        if (size > maxSize) {
-          if (options?.onError) {
-            return options?.onError(c)
-          }
-          return c.text('413 Request Entity Too Large', 413)
-        }
-        chunks.push(value)
-      }
+  return async function bodyLimit(c, next) {
+    if (!c.req.raw.body) {
+      // maybe GET or HEAD request
+      return next()
     }
 
-    const bodyUint8Array = chunks.reduce((acc: Uint8Array, val: Uint8Array) => {
-      const temp = new Uint8Array(acc.length + val.length)
-      temp.set(acc, 0)
-      temp.set(val, acc.length)
-      return temp
-    }, new Uint8Array())
+    const contentLength = parseInt(c.req.raw.headers.get('content-length') || '0', 10)
+    if (contentLength > maxSize) {
+      // if user explicitly set content-length header and it is larger than maxSize immediately return error
+      return onError(c)
+    }
 
-    c.req.bodyCache.arrayBuffer = bodyUint8Array
+    let size = 0
+    const rawReader = c.req.raw.body.getReader()
+    const reader = new ReadableStream({
+      async start(controller) {
+        try {
+          for (;;) {
+            const { done, value } = await rawReader.read()
+            if (done) {
+              break
+            }
+            size += value.length
+            if (size > maxSize) {
+              throw new BodyLimitError('413 Request Entity Too Large')
+            }
+            controller.enqueue(value)
+          }
+        } finally {
+          controller.close()
+        }
+      },
+    })
+
+    c.req.raw = new Request(c.req.raw, { body: reader })
 
     await next()
+
+    if (c.error instanceof BodyLimitError) {
+      c.res = await onError(c)
+    }
   }
+}
 
 /**
  * Unit any
