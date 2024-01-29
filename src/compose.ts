@@ -39,9 +39,7 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
             context.error = err
             res = await onError(err, context)
             isError = true
-          } else {
-            throw err
-          }
+          } else throw err
         }
       } else {
         if (context instanceof Context && context.finalized === false && onNotFound) {
