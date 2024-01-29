@@ -126,7 +126,9 @@ export const checkOptionalParameter = (path: string): string[] | null => {
    in other cases it will return null
   */
 
-  if (!path.match(/\:.+\?$/)) return null
+  if (!path.match(/\:.+\?$/)) {
+    return null
+  }
 
   const segments = path.split('/')
   const results: string[] = []
