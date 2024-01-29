@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import FormData from 'form-data'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import _fetch, { Request as NodeFetchRequest } from 'node-fetch'
 import { vi, expectTypeOf } from 'vitest'
 import { Hono } from '../hono'
 import { parse } from '../utils/cookie'
@@ -12,13 +9,6 @@ import type { Equal, Expect } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
 import type { InferRequestType, InferResponseType } from './types'
-
-// @ts-ignore
-global.fetch = _fetch
-// @ts-ignore
-global.Request = NodeFetchRequest
-// @ts-ignore
-global.FormData = FormData
 
 describe('Basic - JSON', () => {
   const app = new Hono()
