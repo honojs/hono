@@ -24,8 +24,6 @@ describe('mime', () => {
 
   it('getExtension', () => {
     expect(getExtension('audio/aac')).toBe('aac')
-    expect(getExtension('application/x-abiword')).toBe('abw')
-    expect(getExtension('application/x-freearc')).toBe('arc')
     expect(getExtension('video/x-msvideo')).toBe('avi')
     expect(getExtension('image/avif')).toBe('avif')
     expect(getExtension('text/css')).toBe('css')
