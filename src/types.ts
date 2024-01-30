@@ -1621,8 +1621,28 @@ export type Schema = {
   }
 }
 
-export type MergeSchemaPath<OrigSchema, SubPath extends string> = {
-  [K in keyof OrigSchema as `${MergePath<SubPath, K & string>}`]: OrigSchema[K]
+type ExtractParams<Path extends string> = string extends Path
+  ? Record<string, string>
+  : Path extends `${infer Start}:${infer Param}/${infer Rest}`
+  ? { [K in Param | keyof ExtractParams<`/${Rest}`>]: string }
+  : Path extends `${infer Start}:${infer Param}`
+  ? { [K in Param]: string }
+  : never
+
+export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = {
+  [P in keyof OrigSchema as MergePath<SubPath, P & string>]: {
+    [M in keyof OrigSchema[P]]: OrigSchema[P][M] extends {
+      input: infer Input
+      output: infer Output
+    }
+      ? {
+          input: Input extends { param: infer Params }
+            ? { param: Params & ExtractParams<SubPath> }
+            : Input
+          output: Output
+        }
+      : never
+  }
 }
 
 export type AddParam<I, P extends string> = ParamKeys<P> extends never
