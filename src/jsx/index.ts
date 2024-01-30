@@ -88,12 +88,14 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
   }
 }
 
+type LocalContexts = [Context<unknown>, unknown][]
 export type Child = string | Promise<string> | number | JSXNode | Child[]
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
   props: Props
   children: Child[]
   isEscaped: true = true as const
+  localContexts?: LocalContexts
   constructor(tag: string | Function, props: Props, children: Child[]) {
     this.tag = tag
     this.props = props
@@ -102,7 +104,16 @@ export class JSXNode implements HtmlEscaped {
 
   toString(): string | Promise<string> {
     const buffer: StringBuffer = ['']
-    this.toStringToBuffer(buffer)
+    this.localContexts?.forEach(([context, value]) => {
+      context.values.push(value)
+    })
+    try {
+      this.toStringToBuffer(buffer)
+    } finally {
+      this.localContexts?.forEach(([context]) => {
+        context.values.pop()
+      })
+    }
     return buffer.length === 1 ? buffer[0] : stringBufferToString(buffer)
   }
 
@@ -178,7 +189,24 @@ class JSXFunctionNode extends JSXNode {
     })
 
     if (res instanceof Promise) {
-      buffer.unshift('', res)
+      if (globalContexts.length === 0) {
+        buffer.unshift('', res)
+      } else {
+        // save current contexts for resuming
+        const currentContexts: LocalContexts = globalContexts.map((c) => [
+          c,
+          c.values[c.values.length - 1],
+        ])
+        buffer.unshift(
+          '',
+          res.then((childRes) => {
+            if (childRes instanceof JSXNode) {
+              childRes.localContexts = currentContexts
+            }
+            return childRes
+          })
+        )
+      }
     } else if (res instanceof JSXNode) {
       res.toStringToBuffer(buffer)
     } else if (typeof res === 'number' || (res as HtmlEscaped).isEscaped) {
@@ -259,33 +287,37 @@ export interface Context<T> {
   Provider: FC<{ value: T }>
 }
 
+const globalContexts: Context<unknown>[] = []
+
 export const createContext = <T>(defaultValue: T): Context<T> => {
   const values = [defaultValue]
-  return {
+  const context: Context<T> = {
     values,
     Provider(props): HtmlEscapedString | Promise<HtmlEscapedString> {
       values.push(props.value)
-      const string = props.children
-        ? (Array.isArray(props.children)
-            ? new JSXFragmentNode('', {}, props.children)
-            : props.children
-          ).toString()
-        : ''
-      values.pop()
+      let string
+      try {
+        string = props.children
+          ? (Array.isArray(props.children)
+              ? new JSXFragmentNode('', {}, props.children)
+              : props.children
+            ).toString()
+          : ''
+      } finally {
+        values.pop()
+      }
 
       if (string instanceof Promise) {
-        return Promise.resolve().then<HtmlEscapedString>(async () => {
-          values.push(props.value)
-          const awaited = await string
-          const promiseRes = raw(awaited, (awaited as HtmlEscapedString).callbacks)
-          values.pop()
-          return promiseRes
-        })
+        return string.then((resString) =>
+          raw(resString, (resString as HtmlEscapedString).callbacks)
+        )
       } else {
         return raw(string)
       }
     },
   }
+  globalContexts.push(context as Context<unknown>)
+  return context
 }
 
 export const useContext = <T>(context: Context<T>): T => {
