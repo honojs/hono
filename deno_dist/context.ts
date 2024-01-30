@@ -4,7 +4,7 @@ import type { HonoRequest } from './request.ts'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types.ts'
 import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html.ts'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status.ts'
-import type { JSONValue, InterfaceToType, JSONParsed } from './utils/types.ts'
+import type { JSONValue, InterfaceToType, JSONParsed, IsAny } from './utils/types.ts'
 
 type HeaderRecord = Record<string, string | string[]>
 type Data = string | ArrayBuffer | ReadableStream
@@ -343,7 +343,8 @@ export class Context<
    * @see https://hono.dev/api/context#var
    */
   // c.var.propName is a read-only
-  get var(): Readonly<E['Variables'] & ContextVariableMap> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get var(): Readonly<ContextVariableMap & (IsAny<E['Variables']> extends true ? Record<string, any> : E['Variables'])> {
     return { ...this._var } as never
   }
 
