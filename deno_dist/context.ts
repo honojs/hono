@@ -343,8 +343,10 @@ export class Context<
    * @see https://hono.dev/api/context#var
    */
   // c.var.propName is a read-only
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get var(): Readonly<ContextVariableMap & (IsAny<E['Variables']> extends true ? Record<string, any> : E['Variables'])> {
+  get var(): Readonly<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ContextVariableMap & (IsAny<E['Variables']> extends true ? Record<string, any> : E['Variables'])
+  > {
     return { ...this._var } as never
   }
 
