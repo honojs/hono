@@ -1,6 +1,8 @@
 import { raw } from '../helper/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html'
+import type { Context } from './context'
+import { globalContexts } from './context'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
 
 export { ErrorBoundary } from './components'
@@ -108,6 +110,7 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
   }
 }
 
+type LocalContexts = [Context<unknown>, unknown][]
 export type Child = string | Promise<string> | number | JSXNode | Child[]
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
@@ -115,6 +118,7 @@ export class JSXNode implements HtmlEscaped {
   key?: string
   children: Child[]
   isEscaped: true = true as const
+  localContexts?: LocalContexts
   constructor(tag: string | Function, props: Props, children: Child[]) {
     this.tag = tag
     this.props = props
@@ -123,7 +127,16 @@ export class JSXNode implements HtmlEscaped {
 
   toString(): string | Promise<string> {
     const buffer: StringBuffer = ['']
-    this.toStringToBuffer(buffer)
+    this.localContexts?.forEach(([context, value]) => {
+      context.values.push(value)
+    })
+    try {
+      this.toStringToBuffer(buffer)
+    } finally {
+      this.localContexts?.forEach(([context]) => {
+        context.values.pop()
+      })
+    }
     return buffer.length === 1 ? buffer[0] : stringBufferToString(buffer)
   }
 
@@ -224,7 +237,24 @@ class JSXFunctionNode extends JSXNode {
     }
 
     if (res instanceof Promise) {
-      buffer.unshift('', res)
+      if (globalContexts.length === 0) {
+        buffer.unshift('', res)
+      } else {
+        // save current contexts for resuming
+        const currentContexts: LocalContexts = globalContexts.map((c) => [
+          c,
+          c.values[c.values.length - 1],
+        ])
+        buffer.unshift(
+          '',
+          res.then((childRes) => {
+            if (childRes instanceof JSXNode) {
+              childRes.localContexts = currentContexts
+            }
+            return childRes
+          })
+        )
+      }
     } else if (res instanceof JSXNode) {
       res.toStringToBuffer(buffer)
     } else if (typeof res === 'number' || (res as HtmlEscaped).isEscaped) {
