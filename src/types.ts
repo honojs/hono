@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Context } from './context'
 import type { Hono } from './hono'
-import type { IntersectNonAnyTypes, UnionToIntersection } from './utils/types'
+import type { IntersectNonAnyTypes, RemoveBlankRecord, UnionToIntersection } from './utils/types'
 
 ////////////////////////////////////////
 //////                            //////
@@ -1638,7 +1638,9 @@ export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> =
       ? {
           input: Input extends { param: infer Params }
             ? { param: Params & ExtractParams<SubPath> }
-            : Input
+            : RemoveBlankRecord<ExtractParams<SubPath>> extends never
+            ? Input
+            : Input & { param: ExtractParams<SubPath> }
           output: Output
         }
       : never
