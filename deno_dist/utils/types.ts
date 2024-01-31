@@ -48,3 +48,5 @@ export type RequiredKeysOf<BaseType extends object> = Exclude<
 export type HasRequiredKeys<BaseType extends object> = RequiredKeysOf<BaseType> extends never
   ? false
   : true
+
+export type IsAny<T> = boolean extends (T extends never ? true : false) ? true : false
