@@ -525,7 +525,6 @@ describe('merge path', () => {
             message: string
           }
         }
-      } & {
         $get: {
           input: {}
           output: {
@@ -556,6 +555,42 @@ describe('merge path', () => {
     type Sub = ToSchema<'get', '/', {}, {}>
     type Actual = MergeSchemaPath<Sub, '/tags'>
     type verify = Expect<Equal<'/tags', GetKey<Actual>>>
+  })
+
+  test('MergeSchemaPath - SubPath has path params', () => {
+    type Actual = MergeSchemaPath<ToSchema<'get', '/', {}, {}>, '/a/:b'>
+    type Expected = {
+      '/a/:b': {
+        $get: {
+          input: {
+            param: {
+              b: string
+            }
+          }
+          output: {}
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('MergeSchemaPath - Path and SubPath have path params', () => {
+    type Actual = MergeSchemaPath<ToSchema<'get', '/c/:d', {}, {}>, '/a/:b'>
+    type Expected = {
+      '/a/:b/c/:d': {
+        $get: {
+          input: {
+            param: {
+              d: string
+            } & {
+              b: string
+            }
+          }
+          output: {}
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
   })
 })
 
