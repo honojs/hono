@@ -311,14 +311,21 @@ const shallowEqual = (a: Props, b: Props): boolean => {
     return true
   }
 
-  const aKeys = Object.keys(a)
-  const bKeys = Object.keys(b)
+  const aKeys = Object.keys(a).sort()
+  const bKeys = Object.keys(b).sort()
   if (aKeys.length !== bKeys.length) {
     return false
   }
 
   for (let i = 0, len = aKeys.length; i < len; i++) {
-    if (a[aKeys[i]] !== b[aKeys[i]]) {
+    if (
+      aKeys[i] === 'children' &&
+      bKeys[i] === 'children' &&
+      !a.children?.length &&
+      !b.children?.length
+    ) {
+      continue
+    } else if (a[aKeys[i]] !== b[aKeys[i]]) {
       return false
     }
   }
@@ -330,9 +337,9 @@ export const memo = <T>(
   component: FC<T>,
   propsAreEqual: (prevProps: Readonly<T>, nextProps: Readonly<T>) => boolean = shallowEqual
 ): FC<T> => {
-  let computed = undefined
+  let computed: HtmlEscapedString | Promise<HtmlEscapedString> | undefined = undefined
   let prevProps: T | undefined = undefined
-  return ((props: T & { children?: Child }): HtmlEscapedString => {
+  return ((props: T & { children?: Child }): HtmlEscapedString | Promise<HtmlEscapedString> => {
     if (prevProps && !propsAreEqual(prevProps, props)) {
       computed = undefined
     }
