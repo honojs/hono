@@ -768,4 +768,19 @@ describe('The same name is used for path params', () => {
       expect(res[0][1]).toEqual({ b: 'about', a: 'me' })
     })
   })
+
+  describe('Complex with tails', () => {
+    const node = new Node()
+    node.insert('get', '/:id/:id2/comments', 'a')
+    node.insert('get', '/posts/:id/comments', 'b')
+    it('/posts/123/comments', () => {
+      const [res] = node.search('get', '/posts/123/comments')
+      expect(res).not.toBeNull()
+      expect(res.length).toBe(2)
+      expect(res[0][0]).toEqual('a')
+      expect(res[0][1]).toEqual({ id: 'posts', id2: '123' })
+      expect(res[1][0]).toEqual('b')
+      expect(res[1][1]).toEqual({ id: '123' })
+    })
+  })
 })
