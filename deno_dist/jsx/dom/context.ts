@@ -1,7 +1,8 @@
 import type { Child } from '../index.ts'
+import { DOM_ERROR_HANDLER } from '../constants.ts'
 import type { Context } from '../context.ts'
+import { globalContexts } from '../context.ts'
 import { Fragment } from './jsx-runtime.ts'
-import { ERROR_HANDLER } from './render.ts'
 
 export const createContextProviderFunction =
   <T>(values: T[]) =>
@@ -22,7 +23,7 @@ export const createContextProviderFunction =
       ],
     })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(res as any)[ERROR_HANDLER] = (err: unknown) => {
+    ;(res as any)[DOM_ERROR_HANDLER] = (err: unknown) => {
       values.pop()
       throw err
     }
@@ -31,9 +32,11 @@ export const createContextProviderFunction =
 
 export const createContext = <T>(defaultValue: T): Context<T> => {
   const values = [defaultValue]
-  return {
+  const context = {
     values,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Provider: createContextProviderFunction(values) as any,
   }
+  globalContexts.push(context)
+  return context
 }
