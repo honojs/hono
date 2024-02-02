@@ -602,7 +602,7 @@ it('With path parameters', () => {
       $put: {
         input: {
           form: {
-            title: string
+            title: string | File
           }
         } & {
           param: {
@@ -646,11 +646,11 @@ it('`on`', () => {
       $purge: {
         input: {
           form: {
-            tag: string
+            tag: string | File
           }
         } & {
           query: {
-            q: string
+            q: string | string[]
           }
         }
         output: {
@@ -832,5 +832,41 @@ describe('Validator with using Zod directly', () => {
         )
       }
     )
+  })
+})
+
+describe('Transform', () => {
+  it('Should be number when the type is transformed', () => {
+    const route = new Hono().get(
+      '/',
+      validator('query', async () => {
+        return {
+          page: 1,
+        }
+      }),
+      (c) => {
+        const { page } = c.req.valid('query')
+        expectTypeOf(page).toEqualTypeOf<number>()
+        return c.json({ page })
+      }
+    )
+
+    type Expected = {
+      '/': {
+        $get: {
+          input: {
+            query: {
+              page: string | string[]
+            }
+          }
+          output: {
+            page: number
+          }
+        }
+      }
+    }
+
+    type Actual = ExtractSchema<typeof route>
+    type verify = Expect<Equal<Expected, Actual>>
   })
 })
