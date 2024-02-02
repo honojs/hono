@@ -322,8 +322,8 @@ describe('Infer the response/request type', () => {
 
     type Actual = InferRequestType<typeof req>
     type Expected = {
-      age: string
-      name: string
+      age: string | string[]
+      name: string | string[]
     }
     type verify = Expect<Equal<Expected, Actual['query']>>
   })
