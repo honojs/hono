@@ -255,6 +255,9 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
   }
   remove.forEach(removeNode)
   callbacks.forEach(([, cb]) => cb?.())
+  requestAnimationFrame(() => {
+    callbacks.forEach(([, , , cb]) => cb?.())
+  })
 }
 
 export const build = (

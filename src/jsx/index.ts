@@ -18,6 +18,8 @@ export {
   useDeferredValue,
   startViewTransition,
   useViewTransition,
+  useMemo,
+  useLayoutEffect,
 } from './hooks'
 export type { RefObject } from './hooks'
 export { createContext, useContext } from './context'

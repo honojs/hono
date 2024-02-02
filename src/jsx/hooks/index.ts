@@ -7,14 +7,25 @@ const STASH_SATE = 0
 export const STASH_EFFECT = 1
 const STASH_CALLBACK = 2
 const STASH_USE = 3
+const STASH_MEMO = 4
 
 export type EffectData = [
   readonly unknown[] | undefined, // deps
-  (() => void | (() => void)) | undefined, // effect
-  (() => void) | undefined // cleanup
+  (() => void | (() => void)) | undefined, // layout effect
+  (() => void) | undefined, // cleanup
+  (() => void) | undefined // effect
 ]
 
 const resolvedPromiseValueMap = new WeakMap<Promise<unknown>, unknown>()
+
+const isDepsChanged = (
+  prevDeps: readonly unknown[] | undefined,
+  deps: readonly unknown[] | undefined
+): boolean =>
+  !prevDeps ||
+  !deps ||
+  prevDeps.length !== deps.length ||
+  deps.some((dep, i) => dep !== prevDeps[i])
 
 let viewTransitionState:
   | [
@@ -192,7 +203,11 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
   ])
 }
 
-export const useEffect = (effect: () => void | (() => void), deps?: readonly unknown[]): void => {
+const useEffectCommon = (
+  index: number,
+  effect: () => void | (() => void),
+  deps?: readonly unknown[]
+): void => {
   const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
   if (!buildData) {
     return
@@ -203,21 +218,25 @@ export const useEffect = (effect: () => void | (() => void), deps?: readonly unk
   const hookIndex = node[STASH][0]++
 
   const [prevDeps, , prevCleanup] = (effectDepsArray[hookIndex] ||= [])
-  if (!deps || !prevDeps || deps.some((dep, i) => dep !== prevDeps[i])) {
+  if (isDepsChanged(prevDeps, deps)) {
     if (prevCleanup) {
       prevCleanup()
     }
-    const data: EffectData = [
-      deps,
-      () => {
-        data[1] = undefined // clear this effect in order to avoid calling effect twice
-        data[2] = effect() as (() => void) | undefined
-      },
-      undefined,
-    ]
+    const runner = () => {
+      data[index] = undefined // clear this effect in order to avoid calling effect twice
+      data[2] = effect() as (() => void) | undefined
+    }
+    const data: EffectData = [deps, undefined, undefined, undefined]
+    data[index] = runner
     effectDepsArray[hookIndex] = data
   }
 }
+export const useEffect = (effect: () => void | (() => void), deps?: readonly unknown[]): void =>
+  useEffectCommon(3, effect, deps)
+export const useLayoutEffect = (
+  effect: () => void | (() => void),
+  deps?: readonly unknown[]
+): void => useEffectCommon(1, effect, deps)
 
 export const useCallback = <T extends (...args: unknown[]) => unknown>(
   callback: T,
@@ -233,7 +252,7 @@ export const useCallback = <T extends (...args: unknown[]) => unknown>(
   const hookIndex = node[STASH][0]++
 
   const prevDeps = callbackArray[hookIndex]
-  if (!prevDeps || deps.some((dep, i) => dep !== prevDeps[1][i])) {
+  if (isDepsChanged(prevDeps?.[1], deps)) {
     callbackArray[hookIndex] = [callback, deps]
   } else {
     callback = callbackArray[hookIndex][0] as T
@@ -284,4 +303,21 @@ export const use = <T>(promise: Promise<T>): T => {
   }
 
   throw promise
+}
+
+export const useMemo = <T>(factory: () => T, deps: readonly unknown[]): T => {
+  const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
+  if (!buildData) {
+    return factory()
+  }
+  const [, node] = buildData
+
+  const memoArray = (node[STASH][1][STASH_MEMO] ||= [])
+  const hookIndex = node[STASH][0]++
+
+  const prevDeps = memoArray[hookIndex]
+  if (isDepsChanged(prevDeps?.[1], deps)) {
+    memoArray[hookIndex] = [factory(), deps]
+  }
+  return memoArray[hookIndex][0] as T
 }
