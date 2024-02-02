@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Context, Renderer } from '../../context'
 import { html, raw } from '../../helper/html'
 import { jsx, createContext, useContext, Fragment } from '../../jsx'
@@ -17,7 +18,12 @@ type RendererOptions = {
 }
 
 const createRenderer =
-  (c: Context, component?: FC<PropsForRenderer & { Layout: FC }>, options?: RendererOptions) =>
+  (
+    c: Context,
+    Layout: FC,
+    component?: FC<PropsForRenderer & { Layout: FC }>,
+    options?: RendererOptions
+  ) =>
   (children: JSXNode, props: PropsForRenderer) => {
     const docType =
       typeof options?.docType === 'string'
@@ -25,11 +31,6 @@ const createRenderer =
         : options?.docType === false
         ? ''
         : '<!DOCTYPE html>'
-
-    const Layout: FC = (props) => {
-      const parentLayout = c.getLayout() as FC
-      return parentLayout({ ...props, Layout: Fragment })
-    }
 
     const currentLayout = component
       ? component({
@@ -66,13 +67,13 @@ export const jsxRenderer = (
   options?: RendererOptions
 ): MiddlewareHandler =>
   function jsxRenderer(c, next) {
-    const parentLayout = c.getLayout()
-    if (!parentLayout && component) {
-      c.setLayout(component)
+    const Layout = (c.getLayout() ?? Fragment) as FC
+    if (component) {
+      c.setLayout((props) => {
+        return component({ ...props, Layout })
+      })
     }
-
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    c.setRenderer(createRenderer(c, component, options) as any)
+    c.setRenderer(createRenderer(c, Layout, component, options) as any)
     return next()
   }
 
