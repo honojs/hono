@@ -119,7 +119,6 @@ export class Node<T> {
   search(method: string, path: string): [[T, Params][]] {
     const handlerSets: HandlerParamsSet<T>[] = []
     this.params = {}
-    const params: Record<string, string> = {}
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const curNode: Node<T> = this
@@ -150,6 +149,8 @@ export class Node<T> {
 
         for (let k = 0, len3 = node.patterns.length; k < len3; k++) {
           const pattern = node.patterns[k]
+
+          const params = { ...node.params }
 
           // Wildcard
           // '/hello/*/foo' => match /hello/bar/foo
@@ -184,10 +185,10 @@ export class Node<T> {
               if (isLast === true) {
                 handlerSets.push(...this.gHSets(child, method, params, node.params))
                 if (child.children['*']) {
-                  handlerSets.push(...this.gHSets(child.children['*'], method, node.params, params))
+                  handlerSets.push(...this.gHSets(child.children['*'], method, params, node.params))
                 }
               } else {
-                child.params = { ...params }
+                child.params = params
                 tempNodes.push(child)
               }
             }
