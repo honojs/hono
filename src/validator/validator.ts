@@ -31,10 +31,18 @@ export const validator = <
   OutputType = ValidationTargets[U],
   P2 extends string = P,
   V extends {
-    in: { [K in U]: unknown extends InputType ? OutputType : InputType }
+    in: {
+      [K in U]: K extends 'json'
+        ? InputType
+        : { [K2 in keyof ExcludeResponseType<OutputType>]: ValidationTargets[K][K2] }
+    }
     out: { [K in U]: ExcludeResponseType<OutputType> }
   } = {
-    in: { [K in U]: unknown extends InputType ? OutputType : InputType }
+    in: {
+      [K in U]: K extends 'json'
+        ? InputType
+        : { [K2 in keyof ExcludeResponseType<OutputType>]: ValidationTargets[K][K2] }
+    }
     out: { [K in U]: ExcludeResponseType<OutputType> }
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
