@@ -54,7 +54,7 @@ describe('Validator middleware', () => {
     '/search': {
       $get: {
         input: {
-          query: {}
+          query: undefined
         }
         output: {}
       }

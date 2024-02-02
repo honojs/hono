@@ -29,21 +29,22 @@ export const validator = <
   M extends string,
   U extends ValidationTargetByMethod<M>,
   OutputType = ValidationTargets[U],
+  OutputTypeExcludeResponseType = ExcludeResponseType<OutputType>,
   P2 extends string = P,
   V extends {
     in: {
       [K in U]: K extends 'json'
         ? InputType
-        : { [K2 in keyof ExcludeResponseType<OutputType>]: ValidationTargets[K][K2] }
+        : { [K2 in keyof OutputTypeExcludeResponseType]: ValidationTargets[K][K2] }
     }
-    out: { [K in U]: ExcludeResponseType<OutputType> }
+    out: { [K in U]: OutputTypeExcludeResponseType }
   } = {
     in: {
       [K in U]: K extends 'json'
         ? InputType
-        : { [K2 in keyof ExcludeResponseType<OutputType>]: ValidationTargets[K][K2] }
+        : { [K2 in keyof OutputTypeExcludeResponseType]: ValidationTargets[K][K2] }
     }
-    out: { [K in U]: ExcludeResponseType<OutputType> }
+    out: { [K in U]: OutputTypeExcludeResponseType }
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any
