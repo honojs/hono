@@ -3,10 +3,11 @@ import { JSDOM } from 'jsdom'
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, Fragment } from '..'
+import { memo, isValidElement, cloneElement } from '..'
 import type { RefObject } from '../hooks'
-import { useState, useEffect, useCallback, useRef } from '../hooks'
+import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from '../hooks'
 import type { NodeObject } from './render'
-import { render } from '.'
+import { render, cloneElement as cloneElementForDom } from '.'
 
 const getContainer = (element: JSX.Element): DocumentFragment | HTMLElement | undefined => {
   return (element as unknown as NodeObject).c
@@ -470,6 +471,40 @@ describe('DOM', () => {
     )
   })
 
+  it('memo', async () => {
+    let renderCount = 0
+    const Counter = ({ count }: { count: number }) => {
+      renderCount++
+      return (
+        <div>
+          <p>Count: {count}</p>
+        </div>
+      )
+    }
+    const MemoCounter = memo(Counter)
+    const App = () => {
+      const [count, setCount] = useState(0)
+      return (
+        <div>
+          <MemoCounter count={Math.min(count, 1)} />
+          <button onClick={() => setCount(count + 1)}>+</button>
+        </div>
+      )
+    }
+    const app = <App />
+    render(app, root)
+    expect(root.innerHTML).toBe('<div><div><p>Count: 0</p></div><button>+</button></div>')
+    expect(renderCount).toBe(1)
+    root.querySelector('button')?.click()
+    await Promise.resolve()
+    expect(root.innerHTML).toBe('<div><div><p>Count: 1</p></div><button>+</button></div>')
+    expect(renderCount).toBe(2)
+    root.querySelector('button')?.click()
+    await Promise.resolve()
+    expect(root.innerHTML).toBe('<div><div><p>Count: 1</p></div><button>+</button></div>')
+    expect(renderCount).toBe(2)
+  })
+
   it('useRef', async () => {
     const Input = ({ label, ref }: { label: string; ref: RefObject<HTMLInputElement> }) => {
       return (
@@ -620,6 +655,103 @@ describe('DOM', () => {
     })
   })
 
+  describe('useLayoutEffect', () => {
+    it('simple', async () => {
+      const Counter = () => {
+        const [count, setCount] = useState(0)
+        useLayoutEffect(() => {
+          setCount(count + 1)
+        }, [])
+        return <div>{count}</div>
+      }
+      const app = <Counter />
+      render(app, root)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div>1</div>')
+    })
+
+    it('multiple', async () => {
+      const Counter = () => {
+        const [count, setCount] = useState(0)
+        useLayoutEffect(() => {
+          setCount((c) => c + 1)
+        }, [])
+        useLayoutEffect(() => {
+          setCount((c) => c + 1)
+        }, [])
+        return <div>{count}</div>
+      }
+      const app = <Counter />
+      render(app, root)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div>2</div>')
+    })
+
+    it('cleanup', async () => {
+      const Child = ({ parent }: { parent: RefObject<HTMLElement> }) => {
+        useLayoutEffect(() => {
+          return () => {
+            parent.current?.setAttribute('data-cleanup', 'true')
+          }
+        }, [])
+        return <div>Child</div>
+      }
+      const Parent = () => {
+        const [show, setShow] = useState(true)
+        const ref = useRef<HTMLElement>(null)
+        return (
+          <div ref={ref}>
+            {show && <Child parent={ref} />}
+            <button onClick={() => setShow(false)}>hide</button>
+          </div>
+        )
+      }
+      const app = <Parent />
+      render(app, root)
+      expect(root.innerHTML).toBe('<div><div>Child</div><button>hide</button></div>')
+      const [button] = root.querySelectorAll('button')
+      button.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div data-cleanup="true"><button>hide</button></div>')
+    })
+
+    it('cleanup for deps', async () => {
+      let effectCount = 0
+      let cleanupCount = 0
+
+      const App = () => {
+        const [count, setCount] = useState(0)
+        const [count2, setCount2] = useState(0)
+        useLayoutEffect(() => {
+          effectCount++
+          return () => {
+            cleanupCount++
+          }
+        }, [count])
+        return (
+          <div>
+            <p>{count}</p>
+            <p>{count2}</p>
+            <button onClick={() => setCount(count + 1)}>+</button>
+            <button onClick={() => setCount2(count2 + 1)}>+</button>
+          </div>
+        )
+      }
+      const app = <App />
+      render(app, root)
+      expect(effectCount).toBe(1)
+      expect(cleanupCount).toBe(0)
+      root.querySelectorAll('button')[0].click() // count++
+      await Promise.resolve()
+      expect(effectCount).toBe(2)
+      expect(cleanupCount).toBe(1)
+      root.querySelectorAll('button')[1].click() // count2++
+      await Promise.resolve()
+      expect(effectCount).toBe(2)
+      expect(cleanupCount).toBe(1)
+    })
+  })
+
   describe('useCallback', () => {
     it('deferent callbacks', async () => {
       const callbackSet = new Set<Function>()
@@ -673,6 +805,89 @@ describe('DOM', () => {
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div><p>0</p><button>+</button><p>1</p><button>+</button></div>')
       expect(callbackSet.size).toBe(1)
+    })
+  })
+
+  describe('useMemo', () => {
+    it('simple', async () => {
+      let factoryCalled = 0
+      const Counter = () => {
+        const [count, setCount] = useState(0)
+        const [count2, setCount2] = useState(0)
+        const memo = useMemo(() => {
+          factoryCalled++
+          return count + 1
+        }, [count])
+        return (
+          <div>
+            <p>{count}</p>
+            <p>{count2}</p>
+            <p>{memo}</p>
+            <button onClick={() => setCount(count + 1)}>+</button>
+            <button onClick={() => setCount2(count2 + 1)}>+</button>
+          </div>
+        )
+      }
+      const app = <Counter />
+      render(app, root)
+      expect(root.innerHTML).toBe(
+        '<div><p>0</p><p>0</p><p>1</p><button>+</button><button>+</button></div>'
+      )
+      expect(factoryCalled).toBe(1)
+      root.querySelectorAll('button')[0].click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><p>1</p><p>0</p><p>2</p><button>+</button><button>+</button></div>'
+      )
+      expect(factoryCalled).toBe(2)
+      root.querySelectorAll('button')[1].click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><p>1</p><p>1</p><p>2</p><button>+</button><button>+</button></div>'
+      )
+      expect(factoryCalled).toBe(2)
+    })
+  })
+
+  describe('isValidElement', () => {
+    it('valid', () => {
+      expect(isValidElement(<div />)).toBe(true)
+    })
+
+    it('invalid', () => {
+      expect(isValidElement({})).toBe(false)
+    })
+  })
+
+  describe('cloneElement', () => {
+    it('simple', async () => {
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return <div>{cloneElement(<p>{count}</p>, { onClick: () => setCount(count + 1) })}</div>
+      }
+      const app = <App />
+      render(app, root)
+      expect(root.innerHTML).toBe('<div><p>0</p></div>')
+      root.querySelector('p')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><p>1</p></div>')
+    })
+  })
+
+  describe('dom-specific cloneElement', () => {
+    it('simple', async () => {
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <div>{cloneElementForDom(<p>{count}</p>, { onClick: () => setCount(count + 1) })}</div>
+        )
+      }
+      const app = <App />
+      render(app, root)
+      expect(root.innerHTML).toBe('<div><p>0</p></div>')
+      root.querySelector('p')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><p>1</p></div>')
     })
   })
 })
