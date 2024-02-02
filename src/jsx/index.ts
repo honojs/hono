@@ -356,3 +356,26 @@ export const Fragment = ({
     Array.isArray(children) ? children : children ? [children] : []
   ) as never
 }
+
+export const isValidElement = (element: unknown): element is JSXNode => {
+  return !!(
+    element &&
+    typeof element === 'object' &&
+    'tag' in element &&
+    'props' in element &&
+    'children' in element
+  )
+}
+
+export const cloneElement = <T extends JSXNode | JSX.Element>(
+  element: T,
+  props: Partial<Props>,
+  ...children: Child[]
+): T => {
+  return jsxFn(
+    (element as JSXNode).tag,
+    { ...(element as JSXNode).props, ...props },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    children.length ? children : ((element as JSXNode).children as any) || []
+  ) as T
+}
