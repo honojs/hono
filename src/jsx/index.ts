@@ -243,10 +243,7 @@ class JSXFunctionNode extends JSXNode {
         buffer.unshift('', res)
       } else {
         // save current contexts for resuming
-        const currentContexts: LocalContexts = globalContexts.map((c) => [
-          c,
-          c.values[c.values.length - 1],
-        ])
+        const currentContexts: LocalContexts = globalContexts.map((c) => [c, c.values.at(-1)])
         buffer.unshift(
           '',
           res.then((childRes) => {

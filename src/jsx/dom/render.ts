@@ -1,5 +1,7 @@
 import type { FC, Child, Props } from '..'
 import type { JSXNode } from '..'
+import type { Context as JSXContext } from '../context'
+import { globalContexts as globalJSXContexts } from '../context'
 import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
 
@@ -16,6 +18,7 @@ export type HasRenderToDom = FC<any> & { [RENDER_TO_DOM]: FC<any> }
 export type ErrorHandler = (error: any, retry: () => void) => Child | undefined
 
 type Container = HTMLElement | DocumentFragment
+type LocalJSXContexts = [JSXContext<unknown>, unknown][] | undefined
 
 export type NodeObject = {
   pP: Props | undefined // previous props
@@ -25,11 +28,18 @@ export type NodeObject = {
   s?: Node[] // shadow virtual dom children
   c: Container | undefined // container
   e: HTMLElement | Text | undefined // rendered element
-  [STASH]: [
-    number, // current hook index
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    any[][] // stash for hooks
-  ]
+  [STASH]:
+    | [
+        number, // current hook index
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        any[][], // stash for hooks
+        LocalJSXContexts // context
+      ]
+    | [
+        number,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        any[][]
+      ]
 } & JSXNode
 type NodeString = [string] & {
   e?: Text
@@ -290,6 +300,10 @@ export const build = (
         }
         prevNode = child
 
+        if (typeof child.tag === 'function' && globalJSXContexts.length > 0) {
+          child[STASH][2] = globalJSXContexts.map((c) => [c, c.values.at(-1)])
+        }
+
         let oldChild: Node | undefined
         const i = oldVChildren.findIndex((c) => c.key === (child as Node).key)
         if (i !== -1) {
@@ -363,7 +377,13 @@ const replaceContainer = (node: NodeObject, from: DocumentFragment, to: Containe
 }
 
 const updateSync = (context: Context, node: NodeObject) => {
+  node[STASH][2]?.forEach(([c, v]) => {
+    c.values.push(v)
+  })
   build(context, node, undefined)
+  node[STASH][2]?.forEach(([c]) => {
+    c.values.pop()
+  })
   if (context[0] !== 1 || !context[1]) {
     apply(node, node.c as Container)
   }
