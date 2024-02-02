@@ -81,13 +81,32 @@ describe('JSX renderer', () => {
     )
     app2.get('/', (c) => c.render(<h1>http://localhost/nested</h1>, { title: 'Nested' }))
 
+    const app3 = new Hono()
+    app3.use(
+      '*',
+      jsxRenderer(({ children, Layout, title }) => (
+        <Layout title={title}>
+          <div class='nested2'>{children}</div>
+        </Layout>
+      ))
+    )
+    app3.get('/', (c) => c.render(<h1>http://localhost/nested</h1>, { title: 'Nested2' }))
+    app2.route('/nested2', app3)
+
     app.route('/nested', app2)
 
-    const res = await app.request('http://localhost/nested')
+    let res = await app.request('http://localhost/nested')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe(
       '<!DOCTYPE html><html><head>Nested</head><body><div class="nested"><h1>http://localhost/nested</h1></div></body></html>'
+    )
+
+    res = await app.request('http://localhost/nested/nested2')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe(
+      '<!DOCTYPE html><html><head>Nested2</head><body><div class="nested"><div class="nested2"><h1>http://localhost/nested</h1></div></div></body></html>'
     )
   })
 
