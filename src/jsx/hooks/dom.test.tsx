@@ -16,6 +16,10 @@ import {
 } from '.'
 
 describe('startTransition()', () => {
+  beforeAll(() => {
+    global.requestAnimationFrame = (cb) => setTimeout(cb)
+  })
+
   let dom: JSDOM
   let root: HTMLElement
   beforeEach(() => {

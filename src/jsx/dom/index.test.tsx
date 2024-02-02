@@ -13,6 +13,10 @@ const getContainer = (element: JSX.Element): DocumentFragment | HTMLElement | un
 }
 
 describe('DOM', () => {
+  beforeAll(() => {
+    global.requestAnimationFrame = (cb) => setTimeout(cb)
+  })
+
   let dom: JSDOM
   let root: HTMLElement
   beforeEach(() => {
@@ -313,6 +317,7 @@ describe('DOM', () => {
     render(app, root)
     expect(root.innerHTML).toBe('<div><button>+</button>0 0</div>')
     expect(called).toBe(1)
+    await new Promise((resolve) => setTimeout(resolve))
     root.querySelector('button')?.click()
     expect(called).toBe(1)
     await Promise.resolve()
@@ -524,6 +529,7 @@ describe('DOM', () => {
       }
       const app = <Counter />
       render(app, root)
+      await new Promise((resolve) => setTimeout(resolve))
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div>1</div>')
     })
@@ -541,6 +547,7 @@ describe('DOM', () => {
       }
       const app = <Counter />
       render(app, root)
+      await new Promise((resolve) => setTimeout(resolve))
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div>2</div>')
     })
@@ -567,6 +574,7 @@ describe('DOM', () => {
       const app = <Parent />
       render(app, root)
       expect(root.innerHTML).toBe('<div><div>Child</div><button>hide</button></div>')
+      await new Promise((resolve) => setTimeout(resolve))
       const [button] = root.querySelectorAll('button')
       button.click()
       await Promise.resolve()
@@ -597,10 +605,12 @@ describe('DOM', () => {
       }
       const app = <App />
       render(app, root)
+      await new Promise((resolve) => setTimeout(resolve))
       expect(effectCount).toBe(1)
       expect(cleanupCount).toBe(0)
       root.querySelectorAll('button')[0].click() // count++
       await Promise.resolve()
+      await new Promise((resolve) => setTimeout(resolve))
       expect(effectCount).toBe(2)
       expect(cleanupCount).toBe(1)
       root.querySelectorAll('button')[1].click() // count2++

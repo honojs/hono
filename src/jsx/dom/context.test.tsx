@@ -17,6 +17,10 @@ function runner(
   useContext: typeof useContextCommon
 ) {
   describe(name, () => {
+    beforeAll(() => {
+      global.requestAnimationFrame = (cb) => setTimeout(cb)
+    })
+
     describe('Context', () => {
       let dom: JSDOM
       let root: HTMLElement
