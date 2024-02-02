@@ -1,7 +1,7 @@
 import { raw } from '../helper/html'
 import type { HtmlEscapedString } from '../utils/html'
+import { DOM_RENDERER } from './constants'
 import { createContextProviderFunction } from './dom/context'
-import { RENDER_TO_DOM } from './dom/render'
 import { JSXFragmentNode } from '.'
 import type { FC } from '.'
 
@@ -40,7 +40,7 @@ export const createContext = <T>(defaultValue: T): Context<T> => {
     },
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(context.Provider as any)[RENDER_TO_DOM] = createContextProviderFunction(values)
+  ;(context.Provider as any)[DOM_RENDERER] = createContextProviderFunction(values)
 
   globalContexts.push(context as Context<unknown>)
 

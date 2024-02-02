@@ -1,4 +1,5 @@
-import { buildDataStack, update, build, STASH } from '../dom/render'
+import { DOM_STASH } from '../constants'
+import { buildDataStack, update, build } from '../dom/render'
 import type { Node, NodeObject, Context, PendingType, UpdateHook } from '../dom/render'
 
 type UpdateStateFunction<T> = (newState: T | ((currentState: T) => T)) => void
@@ -146,8 +147,8 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
   }
   const [, node] = buildData
 
-  const stateArray = (node[STASH][1][STASH_SATE] ||= [])
-  const hookIndex = node[STASH][0]++
+  const stateArray = (node[DOM_STASH][1][STASH_SATE] ||= [])
+  const hookIndex = node[DOM_STASH][0]++
 
   return (stateArray[hookIndex] ||= [
     resolveInitialState(),
@@ -214,8 +215,8 @@ const useEffectCommon = (
   }
   const [, node] = buildData
 
-  const effectDepsArray = (node[STASH][1][STASH_EFFECT] ||= [])
-  const hookIndex = node[STASH][0]++
+  const effectDepsArray = (node[DOM_STASH][1][STASH_EFFECT] ||= [])
+  const hookIndex = node[DOM_STASH][0]++
 
   const [prevDeps, , prevCleanup] = (effectDepsArray[hookIndex] ||= [])
   if (isDepsChanged(prevDeps, deps)) {
@@ -248,8 +249,8 @@ export const useCallback = <T extends (...args: unknown[]) => unknown>(
   }
   const [, node] = buildData
 
-  const callbackArray = (node[STASH][1][STASH_CALLBACK] ||= [])
-  const hookIndex = node[STASH][0]++
+  const callbackArray = (node[DOM_STASH][1][STASH_CALLBACK] ||= [])
+  const hookIndex = node[DOM_STASH][0]++
 
   const prevDeps = callbackArray[hookIndex]
   if (isDepsChanged(prevDeps?.[1], deps)) {
@@ -283,8 +284,8 @@ export const use = <T>(promise: Promise<T>): T => {
   }
   const [, node] = buildData
 
-  const promiseArray = (node[STASH][1][STASH_USE] ||= [])
-  const hookIndex = node[STASH][0]++
+  const promiseArray = (node[DOM_STASH][1][STASH_USE] ||= [])
+  const hookIndex = node[DOM_STASH][0]++
 
   promise
     .then((res) => {
@@ -312,8 +313,8 @@ export const useMemo = <T>(factory: () => T, deps: readonly unknown[]): T => {
   }
   const [, node] = buildData
 
-  const memoArray = (node[STASH][1][STASH_MEMO] ||= [])
-  const hookIndex = node[STASH][0]++
+  const memoArray = (node[DOM_STASH][1][STASH_MEMO] ||= [])
+  const hookIndex = node[DOM_STASH][0]++
 
   const prevDeps = memoArray[hookIndex]
   if (isDepsChanged(prevDeps?.[1], deps)) {
