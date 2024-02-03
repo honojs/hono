@@ -31,7 +31,13 @@ export type HtmlEscapedString = string & HtmlEscaped
  */
 export type StringBuffer = (string | Promise<string>)[]
 
-import { raw } from '../helper/html'
+export const raw = (value: unknown, callbacks?: HtmlEscapedCallback[]): HtmlEscapedString => {
+  const escapedString = new String(value) as HtmlEscapedString
+  escapedString.isEscaped = true
+  escapedString.callbacks = callbacks
+
+  return escapedString
+}
 
 // The `escapeToBuffer` implementation is based on code from the MIT licensed `react-dom` package.
 // https://github.com/facebook/react/blob/main/packages/react-dom-bindings/src/server/escapeTextForBrowser.js
