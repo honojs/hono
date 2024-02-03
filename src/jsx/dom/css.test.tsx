@@ -10,6 +10,10 @@ import type { JSXNode } from '../../jsx'
 import { render } from '.'
 
 describe('Style and css for jsx/dom', () => {
+  beforeAll(() => {
+    global.requestAnimationFrame = (cb) => setTimeout(cb)
+  })
+
   let dom: JSDOM
   let root: HTMLElement
   beforeEach(() => {

@@ -1,6 +1,6 @@
 import { raw } from '../../helper/html'
+import { DOM_RENDERER } from '../../jsx/constants'
 import { createCssJsxDomObjects } from '../../jsx/dom/css'
-import { RENDER_TO_DOM } from '../../jsx/dom/render'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
 import type { CssClassName as CssClassNameCommon, CssVariableType } from './common'
 import {
@@ -138,7 +138,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
       ? raw(`<style id="${id}">${(children as unknown as CssClassName)[STYLE_STRING]}</style>`)
       : raw(`<style id="${id}"></style>`)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(Style as any)[RENDER_TO_DOM] = StyleRenderToDom
+  ;(Style as any)[DOM_RENDERER] = StyleRenderToDom
 
   return {
     css,
