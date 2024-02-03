@@ -1,4 +1,5 @@
 import { JSDOM } from 'jsdom'
+import type { FC } from '..'
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -469,6 +470,28 @@ describe('DOM', () => {
     expect(root.innerHTML).toBe(
       '<form><div><label>Name</label><input></div><div><label>Email</label><input></div><span>{"name":"John","email":"john@example.com"}</span></form>'
     )
+  })
+
+  describe('className', () => {
+    it('should convert to class attribute for intrinsic elements', () => {
+      const App = <h1 className='h1'>Hello</h1>
+      render(App, root)
+      expect(root.innerHTML).toBe('<h1 class="h1">Hello</h1>')
+    })
+
+    it('should convert to class attribute for custom elements', () => {
+      const App = <custom-element className='h1'>Hello</custom-element>
+      render(App, root)
+      expect(root.innerHTML).toBe('<custom-element class="h1">Hello</custom-element>')
+    })
+
+    it('should not convert to class attribute for custom components', () => {
+      const App: FC<{ className: string }> = ({ className }) => (
+        <div data-class-name={className}>Hello</div>
+      )
+      render(<App className='h1' />, root)
+      expect(root.innerHTML).toBe('<div data-class-name="h1">Hello</div>')
+    })
   })
 
   it('memo', async () => {

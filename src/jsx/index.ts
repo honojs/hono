@@ -4,6 +4,7 @@ import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html
 import type { Context } from './context'
 import { globalContexts } from './context'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
+import { normalizeIntrinsicElementProps } from './utils'
 
 export { ErrorBoundary } from './components'
 export { Suspense } from './streaming'
@@ -265,6 +266,7 @@ export const jsxFn = (
   if (typeof tag === 'function') {
     return new JSXFunctionNode(tag, props, children)
   } else {
+    normalizeIntrinsicElementProps(props)
     return new JSXNode(tag, props, children)
   }
 }
