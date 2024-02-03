@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from '../helper/html'
 import { Hono } from '../hono'
+import { Suspense, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, memo, Fragment, createContext, useContext } from './index'
 import type { Context, FC } from './index'
@@ -492,11 +493,24 @@ describe('Fragment', () => {
 describe('Context', () => {
   let ThemeContext: Context<string>
   let Consumer: FC
+  let ErrorConsumer: FC
+  let AsyncConsumer: FC
+  let AsyncErrorConsumer: FC
   beforeAll(() => {
     ThemeContext = createContext('light')
     Consumer = () => {
       const theme = useContext(ThemeContext)
       return <span>{theme}</span>
+    }
+    ErrorConsumer = () => {
+      throw new Error('ErrorConsumer')
+    }
+    AsyncConsumer = async () => {
+      const theme = useContext(ThemeContext)
+      return <span>{theme}</span>
+    }
+    AsyncErrorConsumer = async () => {
+      throw new Error('AsyncErrorConsumer')
     }
   })
 
@@ -536,10 +550,139 @@ describe('Context', () => {
       )
       expect(template.toString()).toBe('<span>dark</span><span>black</span><span>dark</span>')
     })
+
+    it('should reset context by error', () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <ErrorConsumer />
+        </ThemeContext.Provider>
+      )
+      expect(() => template.toString()).toThrow()
+
+      const nextRequest = <Consumer />
+      expect(nextRequest.toString()).toBe('<span>light</span>')
+    })
   })
 
   it('default value', () => {
     const template = <Consumer />
     expect(template.toString()).toBe('<span>light</span>')
+  })
+
+  describe('with Suspence', () => {
+    const RedTheme = () => (
+      <ThemeContext.Provider value='red'>
+        <Consumer />
+      </ThemeContext.Provider>
+    )
+
+    it('Should preserve context in sync component', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <Suspense fallback={<RedTheme />}>
+            <Consumer />
+            <ThemeContext.Provider value='black'>
+              <Consumer />
+            </ThemeContext.Provider>
+          </Suspense>
+        </ThemeContext.Provider>
+      )
+      const stream = renderToReadableStream(template)
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(chunks).toEqual(['<span>dark</span><span>black</span>'])
+    })
+
+    it('Should preserve context in async component', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <Suspense fallback={<RedTheme />}>
+            <Consumer />
+            <ThemeContext.Provider value='black'>
+              <AsyncConsumer />
+            </ThemeContext.Provider>
+          </Suspense>
+        </ThemeContext.Provider>
+      )
+      const stream = renderToReadableStream(template)
+
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(chunks).toEqual([
+        '<template id="H:0"></template><span>red</span><!--/$-->',
+        `<template><span>dark</span><span>black</span></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:0')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`,
+      ])
+    })
+  })
+
+  describe('async component', () => {
+    const ParentAsyncConsumer = async () => {
+      const theme = useContext(ThemeContext)
+      return (
+        <div>
+          <span>{theme}</span>
+          <AsyncConsumer />
+        </div>
+      )
+    }
+
+    const ParentAsyncErrorConsumer = async () => {
+      const theme = useContext(ThemeContext)
+      return (
+        <div>
+          <span>{theme}</span>
+          <AsyncErrorConsumer />
+        </div>
+      )
+    }
+
+    it('simple', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <AsyncConsumer />
+        </ThemeContext.Provider>
+      )
+      expect((await template.toString()).toString()).toBe('<span>dark</span>')
+    })
+
+    it('nested', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <ParentAsyncConsumer />
+        </ThemeContext.Provider>
+      )
+      expect((await template.toString()).toString()).toBe(
+        '<div><span>dark</span><span>dark</span></div>'
+      )
+    })
+
+    it('should reset context by error', async () => {
+      const template = (
+        <ThemeContext.Provider value='dark'>
+          <ParentAsyncErrorConsumer />
+        </ThemeContext.Provider>
+      )
+      expect(async () => (await template.toString()).toString()).rejects.toThrow()
+
+      const nextRequest = <Consumer />
+      expect(nextRequest.toString()).toBe('<span>light</span>')
+    })
   })
 })

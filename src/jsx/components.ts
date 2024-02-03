@@ -1,9 +1,9 @@
 import { raw } from '../helper/html'
 import type { HtmlEscapedString, HtmlEscapedCallback } from '../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
+import { DOM_RENDERER } from './constants'
 import { ErrorBoundary as ErrorBoundaryDomRenderer } from './dom/components'
 import type { HasRenderToDom } from './dom/render'
-import { RENDER_TO_DOM } from './dom/render'
 import type { FC, Child } from '.'
 
 let errorBoundaryCounter = 0
@@ -180,4 +180,4 @@ d.remove()
     return raw(resArray.join(''))
   }
 }
-;(ErrorBoundary as HasRenderToDom)[RENDER_TO_DOM] = ErrorBoundaryDomRenderer
+;(ErrorBoundary as HasRenderToDom)[DOM_RENDERER] = ErrorBoundaryDomRenderer

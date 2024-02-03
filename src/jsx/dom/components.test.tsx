@@ -17,6 +17,10 @@ function runner(
   ErrorBoundary: typeof ErrorBoundaryDom
 ) {
   describe(name, () => {
+    beforeAll(() => {
+      global.requestAnimationFrame = (cb) => setTimeout(cb)
+    })
+
     describe('Suspense', () => {
       let dom: JSDOM
       let root: HTMLElement

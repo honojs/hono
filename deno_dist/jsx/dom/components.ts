@@ -1,7 +1,7 @@
 import type { FC, Child } from '../index.ts'
 import type { FallbackRender, ErrorHandler } from '../components.ts'
+import { DOM_ERROR_HANDLER } from '../constants.ts'
 import { Fragment } from './jsx-runtime.ts'
-import { ERROR_HANDLER } from './render.ts'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const ErrorBoundary: FC<{
@@ -10,7 +10,7 @@ export const ErrorBoundary: FC<{
   onError?: ErrorHandler
 }> = (({ children, fallback, fallbackRender, onError }: any) => {
   const res = Fragment({ children })
-  ;(res as any)[ERROR_HANDLER] = (err: any) => {
+  ;(res as any)[DOM_ERROR_HANDLER] = (err: any) => {
     if (err instanceof Promise) {
       throw err
     }
@@ -22,7 +22,7 @@ export const ErrorBoundary: FC<{
 
 export const Suspense: FC<{ fallback: any }> = (({ children, fallback }: any) => {
   const res = Fragment({ children })
-  ;(res as any)[ERROR_HANDLER] = (err: any, retry: () => void) => {
+  ;(res as any)[DOM_ERROR_HANDLER] = (err: any, retry: () => void) => {
     if (!(err instanceof Promise)) {
       throw err
     }

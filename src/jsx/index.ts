@@ -1,6 +1,8 @@
 import { raw } from '../helper/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html'
+import type { Context } from './context'
+import { globalContexts } from './context'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
 
 export { ErrorBoundary } from './components'
@@ -16,6 +18,8 @@ export {
   useDeferredValue,
   startViewTransition,
   useViewTransition,
+  useMemo,
+  useLayoutEffect,
 } from './hooks'
 export type { RefObject } from './hooks'
 export { createContext, useContext } from './context'
@@ -108,6 +112,7 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
   }
 }
 
+type LocalContexts = [Context<unknown>, unknown][]
 export type Child = string | Promise<string> | number | JSXNode | Child[]
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
@@ -115,6 +120,7 @@ export class JSXNode implements HtmlEscaped {
   key?: string
   children: Child[]
   isEscaped: true = true as const
+  localContexts?: LocalContexts
   constructor(tag: string | Function, props: Props, children: Child[]) {
     this.tag = tag
     this.props = props
@@ -123,7 +129,16 @@ export class JSXNode implements HtmlEscaped {
 
   toString(): string | Promise<string> {
     const buffer: StringBuffer = ['']
-    this.toStringToBuffer(buffer)
+    this.localContexts?.forEach(([context, value]) => {
+      context.values.push(value)
+    })
+    try {
+      this.toStringToBuffer(buffer)
+    } finally {
+      this.localContexts?.forEach(([context]) => {
+        context.values.pop()
+      })
+    }
     return buffer.length === 1 ? buffer[0] : stringBufferToString(buffer)
   }
 
@@ -224,7 +239,21 @@ class JSXFunctionNode extends JSXNode {
     }
 
     if (res instanceof Promise) {
-      buffer.unshift('', res)
+      if (globalContexts.length === 0) {
+        buffer.unshift('', res)
+      } else {
+        // save current contexts for resuming
+        const currentContexts: LocalContexts = globalContexts.map((c) => [c, c.values.at(-1)])
+        buffer.unshift(
+          '',
+          res.then((childRes) => {
+            if (childRes instanceof JSXNode) {
+              childRes.localContexts = currentContexts
+            }
+            return childRes
+          })
+        )
+      }
     } else if (res instanceof JSXNode) {
       res.toStringToBuffer(buffer)
     } else if (typeof res === 'number' || (res as HtmlEscaped).isEscaped) {
@@ -282,14 +311,21 @@ const shallowEqual = (a: Props, b: Props): boolean => {
     return true
   }
 
-  const aKeys = Object.keys(a)
-  const bKeys = Object.keys(b)
+  const aKeys = Object.keys(a).sort()
+  const bKeys = Object.keys(b).sort()
   if (aKeys.length !== bKeys.length) {
     return false
   }
 
   for (let i = 0, len = aKeys.length; i < len; i++) {
-    if (a[aKeys[i]] !== b[aKeys[i]]) {
+    if (
+      aKeys[i] === 'children' &&
+      bKeys[i] === 'children' &&
+      !a.children?.length &&
+      !b.children?.length
+    ) {
+      continue
+    } else if (a[aKeys[i]] !== b[aKeys[i]]) {
       return false
     }
   }
@@ -301,9 +337,9 @@ export const memo = <T>(
   component: FC<T>,
   propsAreEqual: (prevProps: Readonly<T>, nextProps: Readonly<T>) => boolean = shallowEqual
 ): FC<T> => {
-  let computed = undefined
+  let computed: HtmlEscapedString | Promise<HtmlEscapedString> | undefined = undefined
   let prevProps: T | undefined = undefined
-  return ((props: T & { children?: Child }): HtmlEscapedString => {
+  return ((props: T & { children?: Child }): HtmlEscapedString | Promise<HtmlEscapedString> => {
     if (prevProps && !propsAreEqual(prevProps, props)) {
       computed = undefined
     }
@@ -323,4 +359,27 @@ export const Fragment = ({
     {},
     Array.isArray(children) ? children : children ? [children] : []
   ) as never
+}
+
+export const isValidElement = (element: unknown): element is JSXNode => {
+  return !!(
+    element &&
+    typeof element === 'object' &&
+    'tag' in element &&
+    'props' in element &&
+    'children' in element
+  )
+}
+
+export const cloneElement = <T extends JSXNode | JSX.Element>(
+  element: T,
+  props: Partial<Props>,
+  ...children: Child[]
+): T => {
+  return jsxFn(
+    (element as JSXNode).tag,
+    { ...(element as JSXNode).props, ...props },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    children.length ? children : ((element as JSXNode).children as any) || []
+  ) as T
 }
