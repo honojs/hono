@@ -1,9 +1,5 @@
 import { escapeToBuffer, stringBufferToString, raw } from '../../utils/html.ts'
-import type {
-  StringBuffer,
-  HtmlEscaped,
-  HtmlEscapedString,
-} from '../../utils/html.ts'
+import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html.ts'
 
 export { raw }
 
