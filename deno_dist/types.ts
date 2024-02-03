@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Context } from './context.ts'
 import type { Hono } from './hono.ts'
-import type { IfAnyThenEmptyObject, UnionToIntersection } from './utils/types.ts'
+import type { IfAnyThenEmptyObject, RemoveBlankRecord, UnionToIntersection } from './utils/types.ts'
 
 ////////////////////////////////////////
 //////                            //////
@@ -1595,8 +1595,30 @@ export type Schema = {
   }
 }
 
-export type MergeSchemaPath<OrigSchema, SubPath extends string> = {
-  [K in keyof OrigSchema as `${MergePath<SubPath, K & string>}`]: OrigSchema[K]
+type ExtractParams<Path extends string> = string extends Path
+  ? Record<string, string>
+  : Path extends `${infer Start}:${infer Param}/${infer Rest}`
+  ? { [K in Param | keyof ExtractParams<`/${Rest}`>]: string }
+  : Path extends `${infer Start}:${infer Param}`
+  ? { [K in Param]: string }
+  : never
+
+export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = {
+  [P in keyof OrigSchema as MergePath<SubPath, P & string>]: {
+    [M in keyof OrigSchema[P]]: OrigSchema[P][M] extends {
+      input: infer Input
+      output: infer Output
+    }
+      ? {
+          input: Input extends { param: infer Params }
+            ? { param: Params & ExtractParams<SubPath> }
+            : RemoveBlankRecord<ExtractParams<SubPath>> extends never
+            ? Input
+            : Input & { param: ExtractParams<SubPath> }
+          output: Output
+        }
+      : never
+  }
 }
 
 export type AddParam<I, P extends string> = ParamKeys<P> extends never
