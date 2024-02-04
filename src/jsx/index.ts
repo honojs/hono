@@ -16,4 +16,7 @@ export {
   useLayoutEffect,
 } from './hooks'
 export { createContext, useContext } from './context'
-export type * from './types'
+
+// TODO: change to `export type *` after denoify bug is fixed
+// https://github.com/garronej/denoify/issues/124
+export * from './types'
