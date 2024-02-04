@@ -1,7 +1,7 @@
 import type { HtmlEscapedString } from '../utils/html.ts'
-import { jsxFn } from './index.ts'
-import type { JSXNode } from './index.ts'
-export { Fragment } from './index.ts'
+import { jsxFn } from './base.ts'
+import type { JSXNode } from './base.ts'
+export { Fragment } from './base.ts'
 
 export function jsxDEV(
   tag: string | Function,

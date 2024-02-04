@@ -1,5 +1,5 @@
-import type { FC, Child, Props } from '../index.ts'
-import type { JSXNode } from '../index.ts'
+import type { JSXNode } from '../base.ts'
+import type { FC, Child, Props } from '../base.ts'
 import { DOM_RENDERER, DOM_ERROR_HANDLER, DOM_STASH } from '../constants.ts'
 import type { Context as JSXContext } from '../context.ts'
 import { globalContexts as globalJSXContexts } from '../context.ts'
