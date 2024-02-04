@@ -377,6 +377,26 @@ describe('render to string', () => {
   })
 })
 
+describe('className', () => {
+  it('should convert to class attribute for intrinsic elements', () => {
+    const template = <h1 className='h1'>Hello</h1>
+    expect(template.toString()).toBe('<h1 class="h1">Hello</h1>')
+  })
+
+  it('should convert to class attribute for custom elements', () => {
+    const template = <custom-element className='h1'>Hello</custom-element>
+    expect(template.toString()).toBe('<custom-element class="h1">Hello</custom-element>')
+  })
+
+  it('should not convert to class attribute for custom components', () => {
+    const CustomComponent: FC<{ className: string }> = ({ className }) => (
+      <div data-class-name={className}>Hello</div>
+    )
+    const template = <CustomComponent className='h1' />
+    expect(template.toString()).toBe('<div data-class-name="h1">Hello</div>')
+  })
+})
+
 describe('memo', () => {
   it('memoized', () => {
     let counter = 0
