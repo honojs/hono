@@ -1,8 +1,17 @@
 import type { Props } from '..'
+import { normalizeIntrinsicElementProps } from '../utils'
 
 export const jsxDEV = (tag: string | Function, props: Props, key: string | undefined) => {
-  const children = 'children' in props ? props.children : []
-  delete props['children']
+  if (typeof tag === 'string') {
+    normalizeIntrinsicElementProps(props)
+  }
+  let children
+  if (props && 'children' in props) {
+    children = props.children
+    delete props['children']
+  } else {
+    children = []
+  }
   return {
     tag,
     props,
