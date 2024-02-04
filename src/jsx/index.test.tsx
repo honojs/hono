@@ -4,8 +4,8 @@ import { html } from '../helper/html'
 import { Hono } from '../hono'
 import { Suspense, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, memo, Fragment, createContext, useContext } from './index'
-import type { Context, FC } from './index'
+import { jsx, memo, Fragment, createContext, useContext } from '.'
+import type { Context, FC, PropsWithChildren } from '.'
 
 interface SiteData {
   title: string
@@ -321,7 +321,7 @@ describe('render to string', () => {
 
   describe('FC', () => {
     it('Should define the type correctly', () => {
-      const Layout: FC<{ title: string }> = (props) => {
+      const Layout: FC<PropsWithChildren<{ title: string }>> = (props) => {
         return (
           <html>
             <head>

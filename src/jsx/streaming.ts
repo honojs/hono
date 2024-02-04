@@ -6,7 +6,7 @@ import { DOM_RENDERER, DOM_STASH } from './constants'
 import { Suspense as SuspenseDomRenderer } from './dom/components'
 import { buildDataStack } from './dom/render'
 import type { HasRenderToDom, NodeObject } from './dom/render'
-import type { FC, Child } from '.'
+import type { FC, PropsWithChildren, Child } from '.'
 
 let suspenseCounter = 0
 
@@ -16,7 +16,10 @@ let suspenseCounter = 0
  * The API might be changed.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const Suspense: FC<{ fallback: any }> = async ({ children, fallback }) => {
+export const Suspense: FC<PropsWithChildren<{ fallback: any }>> = async ({
+  children,
+  fallback,
+}) => {
   if (!children) {
     return fallback.toString()
   }

@@ -1,5 +1,5 @@
-import type { FC, Child, Props } from '..'
-import type { JSXNode } from '..'
+import type { JSXNode } from '../base'
+import type { FC, Child, Props } from '../base'
 import { DOM_RENDERER, DOM_ERROR_HANDLER, DOM_STASH } from '../constants'
 import type { Context as JSXContext } from '../context'
 import { globalContexts as globalJSXContexts } from '../context'
