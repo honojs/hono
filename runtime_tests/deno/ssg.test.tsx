@@ -1,7 +1,7 @@
 /** @jsx jsx */
 /** @jsxFrag Fragment */
 
-import { toSSG } from '../../deno_dist/middleware.ts'
+import { toSSG } from '../../deno_dist/helper.ts'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from '../../deno_dist/middleware.ts'
 import { Hono } from '../../deno_dist/mod.ts'
