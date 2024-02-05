@@ -6,6 +6,7 @@ import { createMiddleware } from './helper'
 import { Hono } from './hono'
 import { poweredBy } from './middleware/powered-by'
 import type {
+  AddParam,
   Env,
   ExtractSchema,
   Handler,
@@ -475,8 +476,57 @@ describe('For HonoRequest', () => {
   })
 })
 
-describe('merge path', () => {
-  test('MergePath', () => {
+describe('AddParam', () => {
+  it('Should add params to input correctly', () => {
+    type Actual = AddParam<
+      {
+        param: {
+          id: string
+        }
+      } & {
+        query: {
+          page: string
+        }
+      },
+      '/:id'
+    >
+    type Expected = {
+      query: {
+        page: string
+      }
+    } & {
+      param: {
+        id: string
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+describe('ToSchema', () => {
+  it('Should convert parameters to schema correctly', () => {
+    type Actual = ToSchema<'get', '/:id', { param: { id: string }; query: { page: string } }, {}>
+    type Expected = {
+      '/:id': {
+        $get: {
+          input: {
+            param: {
+              id: string
+            }
+            query: {
+              page: string
+            }
+          }
+          output: {}
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+describe('MergePath', () => {
+  it('Should merge paths correctly', () => {
     type path1 = MergePath<'/api', '/book'>
     type verify1 = Expect<Equal<'/api/book', path1>>
     type path2 = MergePath<'/api/', '/book'>
@@ -486,8 +536,10 @@ describe('merge path', () => {
     type path4 = MergePath<'/api', '/'>
     type verify4 = Expect<Equal<'/api', path4>>
   })
+})
 
-  test('MergeSchemaPath', () => {
+describe('MergeSchemaPath', () => {
+  it('Should merge schema and sub path correctly', () => {
     type Sub = ToSchema<
       'post',
       '/posts',
@@ -537,7 +589,7 @@ describe('merge path', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 
-  test('MergeSchemePath - with params and the subpath does not have params', () => {
+  it('Should merge schema which has params and sub path does not have params', () => {
     type Actual = MergeSchemaPath<
       {
         '/': {
@@ -545,6 +597,9 @@ describe('merge path', () => {
             input: {
               param: {
                 id: string
+              }
+              query: {
+                page: string
               }
             }
             output: {}
@@ -559,6 +614,9 @@ describe('merge path', () => {
           input: {
             param: {
               id: string
+            }
+            query: {
+              page: string
             }
           }
           output: {}
