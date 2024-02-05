@@ -2,7 +2,8 @@
 import { Hono } from '../../'
 import { html } from '../../helper/html'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, Fragment, JSXNode } from '../../jsx'
+import { jsx, Fragment, isValidElement } from '../../jsx'
+import type { JSXNode } from '../../jsx'
 import { Suspense, renderToReadableStream } from '../../jsx/streaming'
 import type { HtmlEscapedString } from '../../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
@@ -15,7 +16,7 @@ async function toString(
   if (template instanceof Promise) {
     template = (await template) as HtmlEscapedString
   }
-  if (template instanceof JSXNode) {
+  if (isValidElement(template)) {
     template = template.toString() as Promise<HtmlEscapedString>
   }
   return resolveCallback(await template, HtmlEscapedCallbackPhase.Stringify, false, template)

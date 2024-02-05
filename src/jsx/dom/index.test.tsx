@@ -4,10 +4,10 @@ import type { FC } from '..'
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, Fragment } from '..'
-import { memo, isValidElement, cloneElement } from '..'
 import type { RefObject } from '../hooks'
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from '../hooks'
 import type { NodeObject } from './render'
+import { memo, isValidElement, cloneElement } from '.'
 import { render, cloneElement as cloneElementForDom } from '.'
 
 const getContainer = (element: JSX.Element): DocumentFragment | HTMLElement | undefined => {

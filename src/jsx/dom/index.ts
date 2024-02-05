@@ -17,9 +17,9 @@ export { Suspense, ErrorBoundary } from './components'
 export { useContext } from '../context'
 export type { Context } from '../context'
 export { createContext } from './context'
-export { memo, isValidElement } from '..'
+export { memo, isValidElement } from '../base'
 
-import type { Props, Child, JSXNode } from '..'
+import type { Props, Child, JSXNode } from '../base'
 import { jsx } from './jsx-runtime'
 export const cloneElement = <T extends JSXNode | JSX.Element>(
   element: T,

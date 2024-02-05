@@ -1,4 +1,4 @@
-import type { Child } from '..'
+import type { Child } from '../base'
 import { DOM_ERROR_HANDLER } from '../constants'
 import type { Context } from '../context'
 import { globalContexts } from '../context'

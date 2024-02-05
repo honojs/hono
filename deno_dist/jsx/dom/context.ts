@@ -1,4 +1,4 @@
-import type { Child } from '../index.ts'
+import type { Child } from '../base.ts'
 import { DOM_ERROR_HANDLER } from '../constants.ts'
 import type { Context } from '../context.ts'
 import { globalContexts } from '../context.ts'

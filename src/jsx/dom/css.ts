@@ -1,3 +1,4 @@
+import type { FC, PropsWithChildren } from '..'
 import type { CssClassName, CssVariableType } from '../../helper/css/common'
 import {
   SELECTOR,
@@ -11,7 +12,6 @@ import {
   keyframesCommon,
   viewTransitionCommon,
 } from '../../helper/css/common'
-import type { FC } from '../../jsx'
 export { rawCssString } from '../../helper/css/common'
 
 const splitRule = (rule: string): string[] => {
@@ -107,7 +107,7 @@ export const createCssJsxDomObjects = ({ id }: { id: Readonly<string> }) => {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const Style: FC<void> = ({ children }) =>
+  const Style: FC<PropsWithChildren<void>> = ({ children }) =>
     ({
       tag: 'style',
       children: (Array.isArray(children) ? children : [children]).map(

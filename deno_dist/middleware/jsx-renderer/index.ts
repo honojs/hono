@@ -2,7 +2,7 @@
 import type { Context, Renderer } from '../../context.ts'
 import { html, raw } from '../../helper/html/index.ts'
 import { jsx, createContext, useContext, Fragment } from '../../jsx/index.ts'
-import type { FC, JSXNode } from '../../jsx/index.ts'
+import type { FC, PropsWithChildren, JSXNode } from '../../jsx/index.ts'
 import { renderToReadableStream } from '../../jsx/streaming.ts'
 import type { Env, Input, MiddlewareHandler } from '../../types.ts'
 
@@ -63,7 +63,7 @@ const createRenderer =
   }
 
 export const jsxRenderer = (
-  component?: FC<PropsForRenderer & { Layout: FC }>,
+  component?: FC<PropsWithChildren<PropsForRenderer & { Layout: FC }>>,
   options?: RendererOptions
 ): MiddlewareHandler =>
   function jsxRenderer(c, next) {
