@@ -1627,7 +1627,7 @@ type ExtractParams<Path extends string> = string extends Path
   ? { [K in Param | keyof ExtractParams<`/${Rest}`>]: string }
   : Path extends `${infer Start}:${infer Param}`
   ? { [K in Param]: string }
-  : never
+  : {}
 
 export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = {
   [P in keyof OrigSchema as MergePath<SubPath, P & string>]: {
