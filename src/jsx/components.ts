@@ -4,7 +4,7 @@ import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import { DOM_RENDERER } from './constants'
 import { ErrorBoundary as ErrorBoundaryDomRenderer } from './dom/components'
 import type { HasRenderToDom } from './dom/render'
-import type { FC, Child } from '.'
+import type { FC, PropsWithChildren, Child } from '.'
 
 let errorBoundaryCounter = 0
 
@@ -29,11 +29,13 @@ export type FallbackRender = (error: Error) => Child
  * `ErrorBoundary` is an experimental feature.
  * The API might be changed.
  */
-export const ErrorBoundary: FC<{
-  fallback?: Child
-  fallbackRender?: FallbackRender
-  onError?: ErrorHandler
-}> = async ({ children, fallback, fallbackRender, onError }) => {
+export const ErrorBoundary: FC<
+  PropsWithChildren<{
+    fallback?: Child
+    fallbackRender?: FallbackRender
+    onError?: ErrorHandler
+  }>
+> = async ({ children, fallback, fallbackRender, onError }) => {
   if (!children) {
     return raw('')
   }

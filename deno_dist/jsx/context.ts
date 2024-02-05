@@ -1,13 +1,13 @@
 import { raw } from '../helper/html/index.ts'
 import type { HtmlEscapedString } from '../utils/html.ts'
+import { JSXFragmentNode } from './base.ts'
 import { DOM_RENDERER } from './constants.ts'
 import { createContextProviderFunction } from './dom/context.ts'
-import { JSXFragmentNode } from './index.ts'
-import type { FC } from './index.ts'
+import type { FC, PropsWithChildren } from './index.ts'
 
 export interface Context<T> {
   values: T[]
-  Provider: FC<{ value: T }>
+  Provider: FC<PropsWithChildren<{ value: T }>>
 }
 
 export const globalContexts: Context<unknown>[] = []

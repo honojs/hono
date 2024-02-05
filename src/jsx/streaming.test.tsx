@@ -3,10 +3,10 @@ import { JSDOM } from 'jsdom'
 import { raw } from '../helper/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'
+import { jsx, Fragment } from './base'
 import { use } from './hooks'
-import { Suspense, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, Fragment } from './index'
+import { Suspense, renderToReadableStream } from './streaming'
 
 function replacementResult(html: string) {
   const document = new JSDOM(html, { runScripts: 'dangerously' }).window.document
