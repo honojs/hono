@@ -537,6 +537,37 @@ describe('merge path', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 
+  test('MergeSchemePath - with params and the subpath does not have params', () => {
+    type Actual = MergeSchemaPath<
+      {
+        '/': {
+          $get: {
+            input: {
+              param: {
+                id: string
+              }
+            }
+            output: {}
+          }
+        }
+      },
+      '/something'
+    >
+    type Expected = {
+      '/something': {
+        $get: {
+          input: {
+            param: {
+              id: string
+            }
+          }
+          output: {}
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
   type GetKey<T> = T extends Record<infer K, unknown> ? K : never
 
   it('Should remove a slash - `/` + `/`', () => {
