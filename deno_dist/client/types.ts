@@ -2,7 +2,7 @@ import type { Hono } from '../hono.ts'
 import type { Schema } from '../types.ts'
 import type { HasRequiredKeys } from '../utils/types.ts'
 
-type HonoRequest = (typeof Hono.prototype)['request']
+type HonoRequest = typeof Hono.prototype['request']
 
 export type ClientRequestOptions<T = unknown> = keyof T extends never
   ? {
