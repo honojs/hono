@@ -7,7 +7,8 @@ import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
 
 const eventAliasMap: Record<string, string> = {
-  change: 'input',
+  Change: 'Input',
+  DoubleClick: 'DblClick',
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
