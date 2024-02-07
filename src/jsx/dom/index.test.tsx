@@ -279,6 +279,40 @@ describe('DOM', () => {
       root.querySelector('button')?.click()
       expect(clicked).toEqual(['div'])
     })
+
+    it('remove capture phase event', async () => {
+      const clicked: string[] = []
+      const App = () => {
+        const [canceled, setCanceled] = useState(false)
+        return (
+          <div
+            {...(canceled
+              ? {}
+              : {
+                  onClickCapture: () => {
+                    clicked.push('div')
+                  },
+                })}
+          >
+            <button
+              onClickCapture={() => {
+                setCanceled(true)
+                clicked.push('button')
+              }}
+            >
+              Click
+            </button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>Click</button></div>')
+      root.querySelector('button')?.click()
+      expect(clicked).toEqual(['div', 'button'])
+      await Promise.resolve()
+      root.querySelector('button')?.click()
+      expect(clicked).toEqual(['div', 'button', 'button'])
+    })
   })
 
   it('simple Counter', async () => {
