@@ -3,9 +3,9 @@ import { JSDOM } from 'jsdom'
 import { raw } from '../helper/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, Fragment } from './base'
 import { use } from './hooks'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Suspense, renderToReadableStream } from './streaming'
 
 function replacementResult(html: string) {

@@ -293,6 +293,20 @@ describe('render to string', () => {
     })
   })
 
+  describe('Function', () => {
+    it('should be ignored used in on* props', () => {
+      const onClick = () => {}
+      const template = <button onClick={onClick}>Click</button>
+      expect(template.toString()).toBe('<button>Click</button>')
+    })
+
+    it('should raise an error if used in other props', () => {
+      const onClick = () => {}
+      const template = <button data-handler={onClick}>Click</button>
+      expect(() => template.toString()).toThrow()
+    })
+  })
+
   // https://en.reactjs.org/docs/jsx-in-depth.html#functions-as-children
   describe('Functions as Children', () => {
     it('Function', () => {
