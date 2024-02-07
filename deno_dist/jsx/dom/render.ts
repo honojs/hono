@@ -7,7 +7,8 @@ import type { EffectData } from '../hooks/index.ts'
 import { STASH_EFFECT } from '../hooks/index.ts'
 
 const eventAliasMap: Record<string, string> = {
-  change: 'input',
+  Change: 'Input',
+  DoubleClick: 'DblClick',
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,11 +76,30 @@ export const buildDataStack: [Context, Node][] = []
 
 const isNodeString = (node: Node): node is NodeString => Array.isArray(node)
 
+const getEventSpec = (key: string): [string, boolean] | undefined => {
+  const match = key.match(/^on([A-Z][a-zA-Z]+?)((?<!Pointer)Capture)?$/)
+  if (match) {
+    const [, eventName, capture] = match
+    return [(eventAliasMap[eventName] || eventName).toLowerCase(), !!capture]
+  }
+  return undefined
+}
+
 const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: Props) => {
   attributes ||= {}
   for (const [key, value] of Object.entries(attributes)) {
     if (!oldAttributes || oldAttributes[key] !== value) {
-      if (key === 'dangerouslySetInnerHTML' && value) {
+      const eventSpec = getEventSpec(key)
+      if (eventSpec) {
+        if (typeof value !== 'function') {
+          throw new Error(`Event handler for "${key}" is not a function`)
+        }
+
+        if (oldAttributes) {
+          container.removeEventListener(eventSpec[0], oldAttributes[key], eventSpec[1])
+        }
+        container.addEventListener(eventSpec[0], value, eventSpec[1])
+      } else if (key === 'dangerouslySetInnerHTML' && value) {
         container.innerHTML = value.__html
       } else if (key === 'ref') {
         if (typeof value === 'function') {
@@ -87,13 +107,6 @@ const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: P
         } else if ('current' in value) {
           value.current = container
         }
-      } else if (key.startsWith('on') && typeof value === 'function') {
-        const jsxEventName = key.slice(2).toLowerCase()
-        const eventName = eventAliasMap[jsxEventName] || jsxEventName
-        if (oldAttributes) {
-          container.removeEventListener(eventName, oldAttributes[key])
-        }
-        container.addEventListener(eventName, value)
       } else if (key === 'style') {
         if (typeof value === 'string') {
           container.style.cssText = value
@@ -117,15 +130,15 @@ const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: P
   if (oldAttributes) {
     for (const [key, value] of Object.entries(oldAttributes)) {
       if (!(key in attributes)) {
-        if (key === 'ref') {
+        const eventSpec = getEventSpec(key)
+        if (eventSpec) {
+          container.removeEventListener(eventSpec[0], value, eventSpec[1])
+        } else if (key === 'ref') {
           if (typeof value === 'function') {
             value(null)
           } else {
             value.current = null
           }
-        } else if (key.startsWith('on')) {
-          const eventName = key.slice(2).toLowerCase()
-          container.removeEventListener(eventName, value)
         } else {
           container.removeAttribute(key)
         }
