@@ -64,12 +64,6 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<div hidden=""></div>')
     })
 
-    it('event', () => {
-      const App = () => <button onClick={() => {}} />
-      render(<App />, root)
-      expect(root.innerHTML).toBe('<button></button>')
-    })
-
     it('style', () => {
       const App = () => <div style={{ fontSize: '10px' }} />
       render(<App />, root)
@@ -205,6 +199,85 @@ describe('DOM', () => {
       setCount(2)
       await Promise.resolve()
       expect(root.innerHTML).toBe('2')
+    })
+  })
+
+  describe('Event', () => {
+    it('bubbling phase', async () => {
+      const clicked: string[] = []
+      const App = () => {
+        return (
+          <div
+            onClick={() => {
+              clicked.push('div')
+            }}
+          >
+            <button
+              onClick={() => {
+                clicked.push('button')
+              }}
+            >
+              Click
+            </button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>Click</button></div>')
+      root.querySelector('button')?.click()
+      expect(clicked).toEqual(['button', 'div'])
+    })
+
+    it('ev.stopPropagation()', async () => {
+      const clicked: string[] = []
+      const App = () => {
+        return (
+          <div
+            onClick={() => {
+              clicked.push('div')
+            }}
+          >
+            <button
+              onClick={(ev) => {
+                ev.stopPropagation()
+                clicked.push('button')
+              }}
+            >
+              Click
+            </button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>Click</button></div>')
+      root.querySelector('button')?.click()
+      expect(clicked).toEqual(['button'])
+    })
+
+    it('capture phase', async () => {
+      const clicked: string[] = []
+      const App = () => {
+        return (
+          <div
+            onClickCapture={(ev) => {
+              ev.stopPropagation()
+              clicked.push('div')
+            }}
+          >
+            <button
+              onClickCapture={() => {
+                clicked.push('button')
+              }}
+            >
+              Click
+            </button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>Click</button></div>')
+      root.querySelector('button')?.click()
+      expect(clicked).toEqual(['div'])
     })
   })
 

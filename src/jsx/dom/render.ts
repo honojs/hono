@@ -80,6 +80,7 @@ const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: P
   attributes ||= {}
   for (const [key, value] of Object.entries(attributes)) {
     if (!oldAttributes || oldAttributes[key] !== value) {
+      const eventNameMatch = key.match(/^on([A-Z][a-zA-Z]+?)((?<!Pointer)Capture)?$/)
       if (key === 'dangerouslySetInnerHTML' && value) {
         container.innerHTML = value.__html
       } else if (key === 'ref') {
@@ -88,13 +89,15 @@ const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: P
         } else if ('current' in value) {
           value.current = container
         }
-      } else if (key.startsWith('on') && typeof value === 'function') {
-        const jsxEventName = key.slice(2).toLowerCase()
-        const eventName = eventAliasMap[jsxEventName] || jsxEventName
+      } else if (eventNameMatch && typeof value === 'function') {
+        const [, jsxEventName, capture] = eventNameMatch
+        const eventName = (eventAliasMap[jsxEventName] || jsxEventName).toLowerCase()
         if (oldAttributes) {
-          container.removeEventListener(eventName, oldAttributes[key])
+          container.removeEventListener(eventName, oldAttributes[key], {
+            capture: !!capture,
+          })
         }
-        container.addEventListener(eventName, value)
+        container.addEventListener(eventName, value, { capture: !!capture })
       } else if (key === 'style') {
         if (typeof value === 'string') {
           container.style.cssText = value
