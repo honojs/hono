@@ -6,7 +6,7 @@ export { Fragment } from './base'
 export function jsxDEV(
   tag: string | Function,
   props: Record<string, unknown>,
-  key: string | undefined
+  key?: string
 ): JSXNode {
   let node: JSXNode
   if (!props || !('children' in props)) {
