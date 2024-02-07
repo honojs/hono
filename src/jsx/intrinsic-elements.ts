@@ -137,10 +137,10 @@ declare global {
       onSelectCapture?: (event: Event) => void
       onSelectChange?: (event: Event) => void
       onSelectChangeCapture?: (event: Event) => void
-      onInput?: (event: Event) => void
-      onInputCapture?: (event: Event) => void
-      onBeforeInput?: (event: Event) => void
-      onBeforeInputCapture?: (event: Event) => void
+      onInput?: (event: InputEvent) => void
+      onInputCapture?: (event: InputEvent) => void
+      onBeforeInput?: (event: InputEvent) => void
+      onBeforeInputCapture?: (event: InputEvent) => void
       onChange?: (event: Event) => void
       onChangeCapture?: (event: Event) => void
     }

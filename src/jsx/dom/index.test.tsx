@@ -509,7 +509,7 @@ describe('DOM', () => {
         <div>
           <label>{label}</label>
           <input
-            onInput={(e: MouseEvent) => onInput((e.target as HTMLInputElement)?.value || '')}
+            onInput={(e: InputEvent) => onInput((e.target as HTMLInputElement)?.value || '')}
           />
         </div>
       )
