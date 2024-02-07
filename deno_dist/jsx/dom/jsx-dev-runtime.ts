@@ -1,7 +1,7 @@
 import type { Props } from '../base.ts'
 import { normalizeIntrinsicElementProps } from '../utils.ts'
 
-export const jsxDEV = (tag: string | Function, props: Props, key: string | undefined) => {
+export const jsxDEV = (tag: string | Function, props: Props, key?: string) => {
   if (typeof tag === 'string') {
     normalizeIntrinsicElementProps(props)
   }
