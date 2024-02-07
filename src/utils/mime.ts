@@ -12,7 +12,11 @@ export const getMimeType = (filename: string, mimes = baseMimes): string | undef
 }
 
 export const getExtension = (mimeType: string): string | undefined => {
-  return Object.keys(baseMimes).find((ext) => baseMimes[ext] === mimeType)
+  for (const ext in baseMimes) {
+    if (baseMimes[ext] === mimeType) {
+      return ext
+    }
+  }
 }
 
 const baseMimes: Record<string, string> = {
