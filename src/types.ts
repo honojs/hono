@@ -1603,6 +1603,8 @@ type ExtractParams<Path extends string> = string extends Path
   ? { [K in Param]: string }
   : never
 
+type FlattenIfIntersect<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
+
 export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = {
   [P in keyof OrigSchema as MergePath<SubPath, P & string>]: {
     [M in keyof OrigSchema[P]]: OrigSchema[P][M] extends {
@@ -1610,8 +1612,10 @@ export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> =
       output: infer Output
     }
       ? {
-          input: Input extends { param: infer Params }
-            ? { param: Params & ExtractParams<SubPath> }
+          input: Input extends { param: infer _ }
+            ? ExtractParams<SubPath> extends never
+              ? Input
+              : FlattenIfIntersect<Input & { param: ExtractParams<SubPath> }>
             : RemoveBlankRecord<ExtractParams<SubPath>> extends never
             ? Input
             : Input & { param: ExtractParams<SubPath> }
@@ -1622,6 +1626,8 @@ export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> =
 }
 
 export type AddParam<I, P extends string> = ParamKeys<P> extends never
+  ? I
+  : I extends { param: infer _ }
   ? I
   : I & { param: UnionToIntersection<ParamKeyToRecord<ParamKeys<P>>> }
 
