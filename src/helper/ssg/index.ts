@@ -1,7 +1,8 @@
 import { replaceUrlParam } from '../../client/utils'
-import type { Context } from '../../context'
+import { Context } from '../../context'
 import { inspectRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
+import { HonoRequest } from '../../request'
 import type { Env, MiddlewareHandler, Schema } from '../../types'
 import { bufferToString } from '../../utils/buffer'
 import { getExtension } from '../../utils/mime'
@@ -9,6 +10,8 @@ import { joinPaths, dirname } from './utils'
 
 export const X_HONO_SSG_HEADER_KEY = 'x-hono-ssg'
 export const X_HONO_DISABLE_SSG_HEADER_KEY = 'x-hono-disable-ssg'
+
+const IS_SSG_PARAMS_MIDDLEWARE = Symbol('isSsgParamsMiddleware')
 
 /**
  * @experimental
@@ -89,9 +92,19 @@ type AddedSSGDataRequest = Request & {
 /**
  * Define SSG Route
  */
-export const ssgParams: SSGParamsMiddleware = (params) => async (c, next) => {
-  ;(c.req.raw as AddedSSGDataRequest).ssgParams = Array.isArray(params) ? params : await params(c)
-  await next()
+export const ssgParams: SSGParamsMiddleware = (params) => {
+  const handler = async (c: Context, next: Function | undefined) => {
+    if (next) {
+      // normal request
+      return await next()
+    } else {
+      // to get ssg params
+      return Array.isArray(params) ? params : params(c)
+    }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(handler as any)[IS_SSG_PARAMS_MIDDLEWARE] = true
+  return handler as unknown as MiddlewareHandler
 }
 
 export type BeforeRequestHook = (req: Request) => Request | false
@@ -122,13 +135,13 @@ export const fetchRoutesContent = async <
   const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
   const baseURL = 'http://localhost'
 
-  for (const route of inspectRoutes(app)) {
-    if (route.isMiddleware) {
+  for (const { isMiddleware, path } of inspectRoutes(app)) {
+    if (isMiddleware) {
       continue
     }
 
     // GET Route Info
-    const thisRouteBaseURL = new URL(route.path, baseURL).toString()
+    const thisRouteBaseURL = new URL(path, baseURL).toString()
 
     let forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
     forGetInfoURLRequest.headers.set(X_HONO_SSG_HEADER_KEY, 'true')
@@ -139,17 +152,25 @@ export const fetchRoutesContent = async <
       }
       forGetInfoURLRequest = maybeRequest as unknown as AddedSSGDataRequest
     }
-    await app.fetch(forGetInfoURLRequest)
 
-    if (!forGetInfoURLRequest.ssgParams) {
-      if (isDynamicRoute(route.path)) {
+    let ssgParams
+    const ssgParamsMiddleware = app.routes.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ({ path: p, handler }) => p === path && (handler as any)[IS_SSG_PARAMS_MIDDLEWARE]
+    )?.handler
+    if (ssgParamsMiddleware) {
+      ssgParams = await (ssgParamsMiddleware as Function)(
+        new Context(new HonoRequest(forGetInfoURLRequest, path))
+      )
+    } else {
+      if (isDynamicRoute(path)) {
         continue
       }
-      forGetInfoURLRequest.ssgParams = [{}]
+      ssgParams = [{}]
     }
 
-    for (const param of forGetInfoURLRequest.ssgParams) {
-      const replacedUrlParam = replaceUrlParam(route.path, param)
+    for (const param of ssgParams) {
+      const replacedUrlParam = replaceUrlParam(path, param)
       let response = await app.request(replacedUrlParam, forGetInfoURLRequest)
       if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) {
         continue
