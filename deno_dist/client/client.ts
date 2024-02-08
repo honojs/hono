@@ -135,9 +135,16 @@ export const hc = <T extends Hono<any, any, any>>(
   createProxy((opts) => {
     const parts = [...opts.path]
 
-    let method = ''
+    let method = '',
+      $request = false
     if (/^\$/.test(parts[parts.length - 1])) {
-      const last = parts.pop()
+      let last = parts.pop()
+
+      $request = last === '$request'
+      if ($request) {
+        last = parts.pop()
+      }
+
       if (last) {
         method = last.replace(/^\$/, '')
       }
@@ -156,6 +163,11 @@ export const hc = <T extends Hono<any, any, any>>(
     if (method) {
       options ??= {}
       const args = deepMerge<ClientRequestOptions>(options, { ...(opts.args[1] ?? {}) })
+
+      if ($request) {
+        return new Request(url, { method, headers: args.headers })
+      }
+
       return req.fetch(opts.args[0], args)
     }
     return req

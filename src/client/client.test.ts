@@ -516,7 +516,7 @@ describe('Merge path with `app.route()`', () => {
       .post('/bar', (c) => c.json({ bar: 0 }))
     const app = new Hono().route('/api', api)
     type AppType = typeof app
-    const client = hc<typeof app>('http://localhost')
+    const client = hc<typeof app>('http://localhost', { headers: { 'x-hono': 'hono' } })
 
     it('Should return correct types - GET /api/foo', async () => {
       const res = await client.api.foo.$get()
@@ -532,6 +532,13 @@ describe('Merge path with `app.route()`', () => {
     it('Should work with $url', async () => {
       const url = client.api.bar.$url()
       expect(url.href).toBe('http://localhost/api/bar')
+    })
+    it('Should work with $request', async () => {
+      // @ts-expect-error need a type here
+      const request = client.api.bar.$post.$request()
+      expect(request.url).toBe('http://localhost/api/bar')
+      expect(request.method).toBe('POST')
+      expect(Object.fromEntries(request.headers)).toStrictEqual({ 'x-hono': 'hono' })
     })
   })
 })
