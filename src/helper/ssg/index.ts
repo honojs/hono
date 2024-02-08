@@ -91,7 +91,10 @@ type AddedSSGDataRequest = Request & {
  * Define SSG Route
  */
 export const ssgParams: SSGParamsMiddleware = (params) => async (c, next) => {
-  ;(c.req.raw as AddedSSGDataRequest).ssgParams = Array.isArray(params) ? params : await params(c)
+  if (c.req.raw.headers.get(X_HONO_SSG_HEADER_KEY)) {
+    ;(c.req.raw as AddedSSGDataRequest).ssgParams = Array.isArray(params) ? params : await params(c)
+    return c.text('')
+  }
   await next()
 }
 
@@ -162,6 +165,9 @@ export const fetchRoutesContent = function* <
           }
           forGetInfoURLRequest.ssgParams = [{}]
         }
+
+        // FIXME: I want to skip ssgParams somehow.
+        forGetInfoURLRequest.headers.delete(X_HONO_SSG_HEADER_KEY)
 
         resolveGetInfo(
           (function* () {
