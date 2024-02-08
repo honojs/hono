@@ -177,7 +177,10 @@ export const fetchRoutesContent = function* <
                 try {
                   const replacedUrlParam = replaceUrlParam(route.path, param)
                   let response = await pool.run(() =>
-                    app.request(replacedUrlParam, forGetInfoURLRequest)
+                    app.request(replacedUrlParam, {
+                      method: forGetInfoURLRequest.method,
+                      headers: forGetInfoURLRequest.headers,
+                    })
                   )
                   if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) {
                     resolveReq(undefined)
