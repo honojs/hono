@@ -24,6 +24,7 @@ import type {
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url.ts'
 
 export const COMPOSED_HANDLER = Symbol('composedHandler')
+export const PSEUDO_MIDDLEWARE = Symbol('pseudoMiddleware')
 
 type Methods = (typeof METHODS)[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
@@ -292,7 +293,10 @@ class Hono<
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
     const r: RouterRoute = { path: path, method: method, handler: handler }
-    this.router.add(method, path, [handler, r])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!(handler as any)[PSEUDO_MIDDLEWARE]) {
+      this.router.add(method, path, [handler, r])
+    }
     this.routes.push(r)
   }
 
