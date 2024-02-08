@@ -217,6 +217,21 @@ describe('toSSG function', () => {
   })
 })
 
+describe('ssgParams', () => {
+  it('callback', async () => {
+    const app = new Hono()
+    const cb = vi.fn(() => [{ post: '1' }, { post: '2' }])
+    app.get('/post/:post', ssgParams(cb), (c) => c.html(<h1>{c.req.param('post')}</h1>))
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+    await toSSG(app, fsMock)
+
+    expect(cb).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('fetchRoutesContent function', () => {
   let app: Hono
 
