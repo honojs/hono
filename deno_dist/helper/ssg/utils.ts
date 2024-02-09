@@ -1,3 +1,8 @@
+import { findTargetHandler, isMiddleware } from '../../helper/dev/index.ts'
+import type { Hono } from '../../hono.ts'
+import { METHOD_NAME_ALL } from '../../router.ts'
+import type { Env, RouterRoute } from '../../types.ts'
+
 /**
  * Get dirname
  * @param path File Path
@@ -44,4 +49,23 @@ export const joinPaths = (...paths: string[]) => {
   const resultPaths: string[] = []
   handleSegments(paths.join('/').split('/'), resultPaths)
   return (paths[0][0] === '/' ? '/' : '') + resultPaths.join('/')
+}
+
+interface FilterStaticGenerateRouteData {
+  path: string
+}
+
+export const filterStaticGenerateRoutes = <E extends Env>(
+  hono: Hono<E>
+): FilterStaticGenerateRouteData[] => {
+  return hono.routes
+    .filter(({ method, handler }: RouterRoute) => {
+      const targetHandler = findTargetHandler(handler)
+      return ['GET', METHOD_NAME_ALL].includes(method) && !isMiddleware(targetHandler)
+    })
+    .map(({ path }: RouterRoute) => {
+      return {
+        path,
+      }
+    })
 }

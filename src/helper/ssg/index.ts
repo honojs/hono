@@ -1,11 +1,10 @@
 import { replaceUrlParam } from '../../client/utils'
 import type { Context } from '../../context'
-import { filterStaticGenerateRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
 import type { Env, MiddlewareHandler, Schema } from '../../types'
 import { bufferToString } from '../../utils/buffer'
 import { getExtension } from '../../utils/mime'
-import { joinPaths, dirname } from './utils'
+import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils'
 
 export const X_HONO_SSG_HEADER_KEY = 'x-hono-ssg'
 export const X_HONO_DISABLE_SSG_HEADER_KEY = 'x-hono-disable-ssg'

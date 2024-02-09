@@ -1,6 +1,5 @@
 import type { Hono } from '../../hono'
 import { COMPOSED_HANDLER } from '../../hono-base'
-import { METHOD_NAME_ALL } from '../../router'
 import type { Env, RouterRoute } from '../../types'
 
 interface ShowRoutesOptions {
@@ -15,15 +14,11 @@ interface RouteData {
   isMiddleware: boolean
 }
 
-interface FilterStaticGenerateRouteData {
-  path: string
-}
-
-const isMiddleware = (handler: Function) => handler.length > 1
+export const isMiddleware = (handler: Function) => handler.length > 1
 const handlerName = (handler: Function) => {
   return handler.name || (isMiddleware(handler) ? '[middleware]' : '[handler]')
 }
-const findTargetHandler = (handler: Function): Function => {
+export const findTargetHandler = (handler: Function): Function => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (handler as any)[COMPOSED_HANDLER]
     ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,21 +36,6 @@ export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
       isMiddleware: isMiddleware(targetHandler),
     }
   })
-}
-
-export const filterStaticGenerateRoutes = <E extends Env>(
-  hono: Hono<E>
-): FilterStaticGenerateRouteData[] => {
-  return hono.routes
-    .filter(({ method, handler }: RouterRoute) => {
-      const targetHandler = findTargetHandler(handler)
-      return ['GET', METHOD_NAME_ALL].includes(method) && !isMiddleware(targetHandler)
-    })
-    .map(({ path }: RouterRoute) => {
-      return {
-        path,
-      }
-    })
 }
 
 export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions) => {
