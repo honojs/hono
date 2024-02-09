@@ -1,6 +1,6 @@
 import { replaceUrlParam } from '../../client/utils'
 import type { Context } from '../../context'
-import { inspectRoutes } from '../../helper/dev'
+import { filterStaticGenerateRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
 import type { Env, MiddlewareHandler, Schema } from '../../types'
 import { bufferToString } from '../../utils/buffer'
@@ -122,11 +122,7 @@ export const fetchRoutesContent = async <
   const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
   const baseURL = 'http://localhost'
 
-  for (const route of inspectRoutes(app)) {
-    if (route.isMiddleware) {
-      continue
-    }
-
+  for (const route of filterStaticGenerateRoutes(app)) {
     // GET Route Info
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
 

@@ -1,5 +1,6 @@
 import type { Hono } from '../../hono.ts'
 import { COMPOSED_HANDLER } from '../../hono-base.ts'
+import { METHOD_NAME_ALL } from '../../router.ts'
 import type { Env, RouterRoute } from '../../types.ts'
 
 interface ShowRoutesOptions {
@@ -12,6 +13,10 @@ interface RouteData {
   method: string
   name: string
   isMiddleware: boolean
+}
+
+interface FilterStaticGenerateRouteData {
+  path: string
 }
 
 const isMiddleware = (handler: Function) => handler.length > 1
@@ -36,6 +41,21 @@ export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
       isMiddleware: isMiddleware(targetHandler),
     }
   })
+}
+
+export const filterStaticGenerateRoutes = <E extends Env>(
+  hono: Hono<E>
+): FilterStaticGenerateRouteData[] => {
+  return hono.routes
+    .filter(({ method, handler }: RouterRoute) => {
+      const targetHandler = findTargetHandler(handler)
+      return ['GET', METHOD_NAME_ALL].includes(method) && !isMiddleware(targetHandler)
+    })
+    .map(({ path }: RouterRoute) => {
+      return {
+        path,
+      }
+    })
 }
 
 export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions) => {
