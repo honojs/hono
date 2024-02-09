@@ -153,15 +153,15 @@ export const fetchRoutesContent = async <
       let response = await app.request(replacedUrlParam, forGetInfoURLRequest, {
         [SSG_CONTEXT]: true,
       })
+      if (response === SSG_DISABLED_RESPONSE) {
+        continue
+      }
       if (afterResponseHook) {
         const maybeResponse = afterResponseHook(response)
         if (!maybeResponse) {
           continue
         }
         response = maybeResponse
-      }
-      if (response === SSG_DISABLED_RESPONSE) {
-        continue
       }
       const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
       const content = await parseResponseContent(response)
