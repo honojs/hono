@@ -58,14 +58,11 @@ interface FilterStaticGenerateRouteData {
 export const filterStaticGenerateRoutes = <E extends Env>(
   hono: Hono<E>
 ): FilterStaticGenerateRouteData[] => {
-  return hono.routes
-    .filter(({ method, handler }: RouterRoute) => {
-      const targetHandler = findTargetHandler(handler)
-      return ['GET', METHOD_NAME_ALL].includes(method) && !isMiddleware(targetHandler)
-    })
-    .map(({ path }: RouterRoute) => {
-      return {
-        path,
-      }
-    })
+  return hono.routes.reduce((acc, { method, handler, path }: RouterRoute) => {
+    const targetHandler = findTargetHandler(handler)
+    if (['GET', METHOD_NAME_ALL].includes(method) && !isMiddleware(targetHandler)) {
+      acc.push({ path })
+    }
+    return acc
+  }, [] as FilterStaticGenerateRouteData[])
 }
