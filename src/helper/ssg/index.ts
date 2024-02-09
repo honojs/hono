@@ -11,6 +11,8 @@ import { joinPaths, dirname } from './utils'
 export const X_HONO_SSG_HEADER_KEY = 'x-hono-ssg'
 export const X_HONO_DISABLE_SSG_HEADER_KEY = 'x-hono-disable-ssg'
 
+const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
+
 /**
  * @experimental
  * `FileSystemModule` is an experimental feature.
@@ -283,11 +285,13 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
   const savePromises: Promise<string | undefined>[] = []
   try {
     const outputDir = options?.dir ?? './static'
+    const concurrency = options?.concurrency ?? DEFAULT_CONCURRENCY
+
     const getInfoGen = fetchRoutesContent(
       app,
       options?.beforeRequestHook,
       options?.afterResponseHook,
-      options?.concurrency
+      concurrency
     )
     for (const getInfo of getInfoGen) {
       getInfoPromises.push(
