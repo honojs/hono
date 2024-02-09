@@ -8,7 +8,7 @@ import { bufferToString } from '../../utils/buffer'
 import { getExtension } from '../../utils/mime'
 import { joinPaths, dirname } from './utils'
 
-export const X_HONO_SSG_HEADER_KEY = 'x-hono-ssg'
+const SSG_CONTEXT = 'HONO_SSG_CONTEXT'
 export const X_HONO_DISABLE_SSG_HEADER_KEY = 'x-hono-disable-ssg'
 
 /**
@@ -259,6 +259,13 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
   await options?.afterGenerateHook?.(result)
   return result
 }
+
+/**
+ * @experimental
+ * `isSSGContext` is an experimental feature.
+ * The API might be changed.
+ */
+export const isSSGContext = (c: Context): boolean => !!c.env?.[SSG_CONTEXT]
 
 /**
  * @experimental

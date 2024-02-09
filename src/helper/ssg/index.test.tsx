@@ -8,6 +8,7 @@ import {
   saveContentToFiles,
   ssgParams,
   toSSG,
+  isSSGContext,
   disableSSG,
   onlySSG,
 } from './index'
@@ -325,6 +326,24 @@ describe('Dynamic route handling', () => {
   it('should not skip /foo:bar dynamic route', async () => {
     const htmlMap = await fetchRoutesContent(app)
     expect(htmlMap.has('/foo:bar')).toBeTruthy()
+  })
+})
+
+describe('isSSGContext()', () => {
+  const app = new Hono()
+  app.get('/', (c) => c.html(<h1>{isSSGContext(c) ? 'SSG' : 'noSSG'}</h1>))
+
+  it('Should not generate the page if disableSSG is set', async () => {
+    const htmlMap = await fetchRoutesContent(app)
+    expect(await htmlMap.get('/')).toEqual({
+      content: '<h1>SSG</h1>',
+      mimeType: 'text/html',
+    })
+  })
+
+  it('Should return 404 response if onlySSG() is set', async () => {
+    const res = await app.request('/')
+    expect(await res.text()).toBe('<h1>noSSG</h1>')
   })
 })
 
