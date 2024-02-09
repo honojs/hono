@@ -2,6 +2,7 @@ import { replaceUrlParam } from '../../client/utils'
 import type { Context } from '../../context'
 import { inspectRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
+import { METHOD_NAME_ALL } from '../../router'
 import type { Env, MiddlewareHandler, Schema } from '../../types'
 import { bufferToString } from '../../utils/buffer'
 import { getExtension } from '../../utils/mime'
@@ -123,7 +124,7 @@ export const fetchRoutesContent = async <
   const baseURL = 'http://localhost'
 
   for (const route of inspectRoutes(app)) {
-    if (route.isMiddleware) {
+    if (route.isMiddleware || (route.method !== 'GET' && route.method !== METHOD_NAME_ALL)) {
       continue
     }
 

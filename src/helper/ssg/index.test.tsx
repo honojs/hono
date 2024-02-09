@@ -151,7 +151,6 @@ describe('toSSG function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/some.txt', expect.any(String))
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/some/thing.txt', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/Charlie.html', expect.any(String))
@@ -169,7 +168,7 @@ describe('toSSG function', () => {
       return false
     }
     const result = await toSSG(app, fsMock, { beforeRequestHook })
-    expect(result.files).toHaveLength(11)
+    expect(result.files).toHaveLength(10)
   })
 
   it('should skip the route if the request hook returns false', async () => {
