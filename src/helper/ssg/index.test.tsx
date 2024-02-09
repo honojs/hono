@@ -4,6 +4,7 @@ import { Hono } from '../../hono'
 import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
 import {
+  SSG_DISABLED_RESPONSE,
   fetchRoutesContent,
   saveContentToFiles,
   ssgParams,
@@ -351,6 +352,7 @@ describe('disableSSG/onlySSG middlewares', () => {
   const app = new Hono()
   app.get('/', (c) => c.html(<h1>Hello</h1>))
   app.get('/api', disableSSG(), (c) => c.text('an-api'))
+  app.get('/disable-by-response', () => SSG_DISABLED_RESPONSE)
   app.get('/static-page', onlySSG(), (c) => c.html(<h1>Welcome to my site</h1>))
 
   it('Should not generate the page if disableSSG is set', async () => {
@@ -358,6 +360,7 @@ describe('disableSSG/onlySSG middlewares', () => {
     expect(htmlMap.has('/')).toBe(true)
     expect(htmlMap.has('/static-page')).toBe(true)
     expect(htmlMap.has('/api')).toBe(false)
+    expect(htmlMap.has('/disable-by-response')).toBe(false)
   })
 
   it('Should return 404 response if onlySSG() is set', async () => {

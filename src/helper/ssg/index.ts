@@ -9,7 +9,7 @@ import { getExtension } from '../../utils/mime'
 import { joinPaths, dirname } from './utils'
 
 const SSG_CONTEXT = 'HONO_SSG_CONTEXT'
-export const X_HONO_DISABLE_SSG_HEADER_KEY = 'x-hono-disable-ssg'
+export const SSG_DISABLED_RESPONSE = new Response('SSG is disabled', { status: 404 })
 
 /**
  * @experimental
@@ -132,7 +132,6 @@ export const fetchRoutesContent = async <
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
 
     let forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
-    forGetInfoURLRequest.headers.set(X_HONO_SSG_HEADER_KEY, 'true')
     if (beforeRequestHook) {
       const maybeRequest = beforeRequestHook(forGetInfoURLRequest)
       if (!maybeRequest) {
@@ -151,16 +150,18 @@ export const fetchRoutesContent = async <
 
     for (const param of forGetInfoURLRequest.ssgParams) {
       const replacedUrlParam = replaceUrlParam(route.path, param)
-      let response = await app.request(replacedUrlParam, forGetInfoURLRequest)
-      if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) {
-        continue
-      }
+      let response = await app.request(replacedUrlParam, forGetInfoURLRequest, {
+        [SSG_CONTEXT]: true,
+      })
       if (afterResponseHook) {
         const maybeResponse = afterResponseHook(response)
         if (!maybeResponse) {
           continue
         }
         response = maybeResponse
+      }
+      if (response === SSG_DISABLED_RESPONSE) {
+        continue
       }
       const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
       const content = await parseResponseContent(response)
@@ -272,11 +273,12 @@ export const isSSGContext = (c: Context): boolean => !!c.env?.[SSG_CONTEXT]
  * `disableSSG` is an experimental feature.
  * The API might be changed.
  */
-
 export const disableSSG = (): MiddlewareHandler =>
   async function disableSSG(c, next) {
+    if (isSSGContext(c)) {
+      return SSG_DISABLED_RESPONSE
+    }
     await next()
-    c.header(X_HONO_DISABLE_SSG_HEADER_KEY, 'true')
   }
 
 /**
@@ -286,9 +288,8 @@ export const disableSSG = (): MiddlewareHandler =>
  */
 export const onlySSG = (): MiddlewareHandler =>
   async function onlySSG(c, next) {
-    const headerValue = c.req.raw.headers.get(X_HONO_SSG_HEADER_KEY)
-    if (headerValue) {
-      await next()
+    if (!isSSGContext(c)) {
+      return c.notFound()
     }
-    return c.notFound()
+    await next()
   }
