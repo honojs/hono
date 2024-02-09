@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import FormData from 'form-data'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import _fetch, { Request as NodeFetchRequest } from 'node-fetch'
 import { vi, expectTypeOf } from 'vitest'
 import { Hono } from '../hono'
 import { parse } from '../utils/cookie'
@@ -12,13 +10,6 @@ import type { Equal, Expect } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
 import type { InferRequestType, InferResponseType } from './types'
-
-// @ts-ignore
-global.fetch = _fetch
-// @ts-ignore
-global.Request = NodeFetchRequest
-// @ts-ignore
-global.FormData = FormData
 
 describe('Basic - JSON', () => {
   const app = new Hono()
@@ -139,18 +130,6 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
         })
       }
     )
-    .get(
-      '/posts',
-      validator('queries', () => {
-        return {
-          tags: ['a', 'b'],
-        }
-      }),
-      (c) => {
-        const data = c.req.valid('queries')
-        return c.json(data)
-      }
-    )
     .put(
       '/posts/:id',
       validator('form', () => {
@@ -257,19 +236,6 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
     })
   })
 
-  it('Should get 200 response - queries', async () => {
-    const res = await client.posts.$get({
-      queries: {
-        tags: ['A', 'B', 'C'],
-      },
-    })
-
-    expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({
-      tags: ['A', 'B', 'C'],
-    })
-  })
-
   it('Should get 200 response - form, params', async () => {
     const res = await client.posts[':id'].$put({
       form: {
@@ -356,8 +322,8 @@ describe('Infer the response/request type', () => {
 
     type Actual = InferRequestType<typeof req>
     type Expected = {
-      age: string
-      name: string
+      age: string | string[]
+      name: string | string[]
     }
     type verify = Expect<Equal<Expected, Actual['query']>>
   })
@@ -576,7 +542,7 @@ describe('Use custom fetch (app.request) method', () => {
 describe('Optional parameters in JSON response', () => {
   it('Should return the correct type', async () => {
     const app = new Hono().get('/', (c) => {
-      return c.jsonT({ message: 'foo' } as { message?: string })
+      return c.json({ message: 'foo' } as { message?: string })
     })
     type AppType = typeof app
     const client = hc<AppType>('', { fetch: app.request })

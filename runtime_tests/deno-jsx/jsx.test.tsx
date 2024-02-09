@@ -37,6 +37,7 @@ Deno.test('JSX: Async Component', async () => {
 
   const chunks: string[] = []
   const textDecoder = new TextDecoder()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for await (const chunk of stream as any) {
     chunks.push(textDecoder.decode(chunk))
   }
@@ -60,6 +61,7 @@ Deno.test('JSX: Suspense', async () => {
 
   const chunks: string[] = []
   const textDecoder = new TextDecoder()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for await (const chunk of stream as any) {
     chunks.push(textDecoder.decode(chunk))
   }

@@ -9,7 +9,8 @@ import { getContentFromKVAsset } from './utils'
 export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
   path?: string
-  manifest?: object | string
+  mimes?: Record<string, string>
+  manifest: object | string
   namespace?: KVNamespace
   rewriteRequestPath?: (path: string) => string
   onNotFound?: (path: string, c: Context<E>) => void | Promise<void>
@@ -19,7 +20,7 @@ const DEFAULT_DOCUMENT = 'index.html'
 
 // This middleware is available only on Cloudflare Workers.
 export const serveStatic = <E extends Env = Env>(
-  options: ServeStaticOptions<E> = { root: '' }
+  options: ServeStaticOptions<E>
 ): MiddlewareHandler => {
   return async (c, next) => {
     // Do nothing if Response is already set
@@ -48,7 +49,12 @@ export const serveStatic = <E extends Env = Env>(
     })
 
     if (content) {
-      const mimeType = getMimeType(path)
+      let mimeType: string | undefined = undefined
+      if (options.mimes) {
+        mimeType = getMimeType(path, options.mimes) ?? getMimeType(path)
+      } else {
+        mimeType = getMimeType(path)
+      }
       if (mimeType) {
         c.header('Content-Type', mimeType)
       }

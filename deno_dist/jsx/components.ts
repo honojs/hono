@@ -1,11 +1,10 @@
 import { raw } from '../helper/html/index.ts'
-import {
-  HtmlEscapedCallbackPhase,
-  resolveCallback,
-  type HtmlEscapedString,
-  type HtmlEscapedCallback,
-} from '../utils/html.ts'
-import type { FC, Child } from './index.ts'
+import type { HtmlEscapedString, HtmlEscapedCallback } from '../utils/html.ts'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html.ts'
+import { DOM_RENDERER } from './constants.ts'
+import { ErrorBoundary as ErrorBoundaryDomRenderer } from './dom/components.ts'
+import type { HasRenderToDom } from './dom/render.ts'
+import type { FC, PropsWithChildren, Child } from './index.ts'
 
 let errorBoundaryCounter = 0
 
@@ -22,19 +21,21 @@ export const childrenToString = async (children: Child[]): Promise<HtmlEscapedSt
   }
 }
 
-type ErrorHandler = (error: Error) => void
-type FallbackRender = (error: Error) => Child
+export type ErrorHandler = (error: Error) => void
+export type FallbackRender = (error: Error) => Child
 
 /**
  * @experimental
  * `ErrorBoundary` is an experimental feature.
  * The API might be changed.
  */
-export const ErrorBoundary: FC<{
-  fallback?: Child
-  fallbackRender?: FallbackRender
-  onError?: ErrorHandler
-}> = async ({ children, fallback, fallbackRender, onError }) => {
+export const ErrorBoundary: FC<
+  PropsWithChildren<{
+    fallback?: Child
+    fallbackRender?: FallbackRender
+    onError?: ErrorHandler
+  }>
+> = async ({ children, fallback, fallbackRender, onError }) => {
   if (!children) {
     return raw('')
   }
@@ -181,3 +182,4 @@ d.remove()
     return raw(resArray.join(''))
   }
 }
+;(ErrorBoundary as HasRenderToDom)[DOM_RENDERER] = ErrorBoundaryDomRenderer
