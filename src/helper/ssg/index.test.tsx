@@ -215,6 +215,27 @@ describe('toSSG function', () => {
     expect(afterGenerateHookMock).toHaveBeenCalled()
     expect(afterGenerateHookMock).toHaveBeenCalledWith(expect.anything())
   })
+
+  it('should avoid memory leak from `req.signal.addEventListener()`', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const signalAddEventListener = vi.fn(() => {})
+    const app = new Hono()
+    app.get('/post/:post', ssgParams([{ post: '1' }, { post: '2' }]), (c) =>
+      c.html(<h1>{c.req.param('post')}</h1>)
+    )
+    await toSSG(app, fsMock, {
+      beforeRequestHook: (req) => {
+        req.signal.addEventListener = signalAddEventListener
+        return req
+      },
+    })
+
+    expect(signalAddEventListener).not.toHaveBeenCalled()
+  })
 })
 
 describe('fetchRoutesContent function', () => {
