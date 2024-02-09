@@ -1,7 +1,7 @@
-import { findTargetHandler, isMiddleware } from '../../helper/dev'
 import type { Hono } from '../../hono'
 import { METHOD_NAME_ALL } from '../../router'
 import type { Env, RouterRoute } from '../../types'
+import { findTargetHandler, isMiddleware } from '../../utils/handler'
 
 /**
  * Get dirname

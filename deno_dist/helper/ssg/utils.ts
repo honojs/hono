@@ -1,7 +1,7 @@
-import { findTargetHandler, isMiddleware } from '../../helper/dev/index.ts'
 import type { Hono } from '../../hono.ts'
 import { METHOD_NAME_ALL } from '../../router.ts'
 import type { Env, RouterRoute } from '../../types.ts'
+import { findTargetHandler, isMiddleware } from '../../utils/handler.ts'
 
 /**
  * Get dirname
