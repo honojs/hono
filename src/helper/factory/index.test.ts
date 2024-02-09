@@ -98,7 +98,7 @@ describe('createHandler', () => {
       (c) => {
         const foo = c.var.foo
         const { page } = c.req.valid('query')
-        return c.jsonT({ page, foo })
+        return c.json({ page, foo })
       }
     )
     const routes = app.get('/posts', ...handlers)
@@ -156,7 +156,7 @@ describe('createHandler', () => {
         const { auth } = c.req.valid('header')
         const { page } = c.req.valid('query')
         const { id } = c.req.valid('json')
-        return c.jsonT({ auth, page, foo, id })
+        return c.json({ auth, page, foo, id })
       }
     )
     const routes = app.get('/posts', ...handlers)

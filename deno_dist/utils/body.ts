@@ -1,4 +1,4 @@
-import type { HonoRequest } from '../request.ts'
+import { HonoRequest } from '../request.ts'
 
 export type BodyData = Record<string, string | File | (string | File)[]>
 export type ParseBodyOptions = {
@@ -26,7 +26,8 @@ export const parseBody = async <T extends BodyData = BodyData>(
   request: HonoRequest | Request,
   options: ParseBodyOptions = { all: false }
 ): Promise<T> => {
-  const contentType = request.headers.get('Content-Type')
+  const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
+  const contentType = headers.get('Content-Type')
 
   if (isFormDataContent(contentType)) {
     return parseFormData<T>(request, options)

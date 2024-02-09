@@ -11,6 +11,9 @@ const store: Record<string, string> = {
   'static-no-root/plain.abcdef.txt': 'That is plain.txt',
   'assets/static/options/foo.abcdef.txt': 'With options',
   'assets/.static/plain.abcdef.txt': 'In the dot',
+  'assets/static/video/morning-routine.abcdef.m3u8': 'Good morning',
+  'assets/static/video/morning-routine1.abcdef.ts': 'Good',
+  'assets/static/video/introduction.abcdef.mp4': 'Let me introduce myself',
 }
 const manifest = JSON.stringify({
   'assets/static/plain.txt': 'assets/static/plain.abcdef.txt',
@@ -32,13 +35,14 @@ Object.assign(global, {
 describe('ServeStatic Middleware', () => {
   const app = new Hono()
   const onNotFound = vi.fn(() => {})
-  app.use('/static/*', serveStatic({ root: './assets', onNotFound }))
-  app.use('/static-no-root/*', serveStatic())
+  app.use('/static/*', serveStatic({ root: './assets', onNotFound, manifest }))
+  app.use('/static-no-root/*', serveStatic({ manifest }))
   app.use(
     '/dot-static/*',
     serveStatic({
       root: './assets',
       rewriteRequestPath: (path) => path.replace(/^\/dot-static/, '/.static'),
+      manifest,
     })
   )
 
@@ -106,8 +110,8 @@ describe('With options', () => {
 
 describe('With `file` options', () => {
   const app = new Hono()
-  app.get('/foo/*', serveStatic({ path: './assets/static/hono.html' }))
-  app.get('/bar/*', serveStatic({ path: './static/hono.html', root: './assets' }))
+  app.get('/foo/*', serveStatic({ path: './assets/static/hono.html', manifest }))
+  app.get('/bar/*', serveStatic({ path: './static/hono.html', root: './assets', manifest }))
 
   it('Should return hono.html', async () => {
     const res = await app.request('http://localhost/foo/fallback')
@@ -119,6 +123,37 @@ describe('With `file` options', () => {
     const res = await app.request('http://localhost/bar/fallback')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<h1>Hono!</h1>')
+  })
+})
+
+describe('With `mimes` options', () => {
+  const mimes = {
+    m3u8: 'application/vnd.apple.mpegurl',
+    ts: 'video/mp2t',
+  }
+  const manifest = {
+    'assets/static/video/morning-routine.m3u8': 'assets/static/video/morning-routine.abcdef.m3u8',
+    'assets/static/video/morning-routine1.ts': 'assets/static/video/morning-routine1.abcdef.ts',
+    'assets/static/video/introduction.mp4': 'assets/static/video/introduction.abcdef.mp4',
+  }
+
+  const app = new Hono()
+  app.use('/static/*', serveStatic({ root: './assets', mimes, manifest }))
+
+  it('Should return content-type of m3u8', async () => {
+    const res = await app.request('http://localhost/static/video/morning-routine.m3u8')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('application/vnd.apple.mpegurl')
+  })
+  it('Should return content-type of ts', async () => {
+    const res = await app.request('http://localhost/static/video/morning-routine1.ts')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('video/mp2t')
+  })
+  it('Should return content-type of default on Hono', async () => {
+    const res = await app.request('http://localhost/static/video/introduction.mp4')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('video/mp4')
   })
 })
 
@@ -135,7 +170,7 @@ describe('With middleware', () => {
 
   app.use('/static/*', md1)
   app.use('/static/*', md2)
-  app.use('/static/*', serveStatic({ root: './assets' }))
+  app.use('/static/*', serveStatic({ root: './assets', manifest }))
   app.get('/static/foo', (c) => {
     return c.text('bar')
   })
@@ -171,6 +206,7 @@ describe('Types of middleware', () => {
         onNotFound: (_, c) => {
           expectTypeOf(c.env).toEqualTypeOf<Env['Bindings']>()
         },
+        manifest,
       })
     )
   })

@@ -18,9 +18,25 @@ So, if you propose great ideas, but I do not appropriate them, the idea may not 
 Although, don't worry!
 Hono is tested well, polished by the contributors, and used by many developers. And I'll try my best to make Hono cool, beautiful, and ultrafast.
 
+## Installing dependencies
+
+The `honojs/hono` project uses [Bun](https://bun.sh/) as its package manager. Developers should install Bun.
+
+After that, please install the dependency environment.
+
+```txt
+bun install
+```
+
+If you can't do that, there is also a `yarn.lock` file, so you can do the same with the `yarn` command.
+
+```txt
+yarn install --frozen-lockfile
+```
+
 ## PRs
 
-Please ensure your PR passes tests with `yarn test:all`. Also please ensure the Deno code is generated with `yarn denoify`.
+Please ensure your PR passes tests with `bun run test` or `yarn test`. Also please ensure the Deno code is generated with `yarn denoify`.
 
 ## Third-party middleware
 

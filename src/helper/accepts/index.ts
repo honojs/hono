@@ -1,0 +1,1 @@
+export { accepts } from './accepts'

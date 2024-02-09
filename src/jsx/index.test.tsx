@@ -4,8 +4,8 @@ import { html } from '../helper/html'
 import { Hono } from '../hono'
 import { Suspense, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, memo, Fragment, createContext, useContext } from './index'
-import type { Context, FC } from './index'
+import { jsx, memo, Fragment, createContext, useContext } from '.'
+import type { Context, FC, PropsWithChildren } from '.'
 
 interface SiteData {
   title: string
@@ -103,6 +103,7 @@ describe('JSX middleware', () => {
     }
 
     app.get('/', (c) => {
+      // prettier-ignore
       return c.html(
         html`<html><body>${(<AsyncComponent />)}</body></html>`
       )
@@ -292,6 +293,20 @@ describe('render to string', () => {
     })
   })
 
+  describe('Function', () => {
+    it('should be ignored used in on* props', () => {
+      const onClick = () => {}
+      const template = <button onClick={onClick}>Click</button>
+      expect(template.toString()).toBe('<button>Click</button>')
+    })
+
+    it('should raise an error if used in other props', () => {
+      const onClick = () => {}
+      const template = <button data-handler={onClick}>Click</button>
+      expect(() => template.toString()).toThrow()
+    })
+  })
+
   // https://en.reactjs.org/docs/jsx-in-depth.html#functions-as-children
   describe('Functions as Children', () => {
     it('Function', () => {
@@ -313,14 +328,14 @@ describe('render to string', () => {
 
       const template = <ListOfTenThings />
       expect(template.toString()).toBe(
-        '<div><div key="0">This is item 0 in the list</div><div key="1">This is item 1 in the list</div><div key="2">This is item 2 in the list</div><div key="3">This is item 3 in the list</div><div key="4">This is item 4 in the list</div><div key="5">This is item 5 in the list</div><div key="6">This is item 6 in the list</div><div key="7">This is item 7 in the list</div><div key="8">This is item 8 in the list</div><div key="9">This is item 9 in the list</div></div>'
+        '<div><div>This is item 0 in the list</div><div>This is item 1 in the list</div><div>This is item 2 in the list</div><div>This is item 3 in the list</div><div>This is item 4 in the list</div><div>This is item 5 in the list</div><div>This is item 6 in the list</div><div>This is item 7 in the list</div><div>This is item 8 in the list</div><div>This is item 9 in the list</div></div>'
       )
     })
   })
 
   describe('FC', () => {
     it('Should define the type correctly', () => {
-      const Layout: FC<{ title: string }> = (props) => {
+      const Layout: FC<PropsWithChildren<{ title: string }>> = (props) => {
         return (
           <html>
             <head>
@@ -373,6 +388,26 @@ describe('render to string', () => {
       const template = <span data-text={escapedString}>Hello</span>
       expect(template.toString()).toBe('<span data-text="&lt;html-escaped-string&gt;">Hello</span>')
     })
+  })
+})
+
+describe('className', () => {
+  it('should convert to class attribute for intrinsic elements', () => {
+    const template = <h1 className='h1'>Hello</h1>
+    expect(template.toString()).toBe('<h1 class="h1">Hello</h1>')
+  })
+
+  it('should convert to class attribute for custom elements', () => {
+    const template = <custom-element className='h1'>Hello</custom-element>
+    expect(template.toString()).toBe('<custom-element class="h1">Hello</custom-element>')
+  })
+
+  it('should not convert to class attribute for custom components', () => {
+    const CustomComponent: FC<{ className: string }> = ({ className }) => (
+      <div data-class-name={className}>Hello</div>
+    )
+    const template = <CustomComponent className='h1' />
+    expect(template.toString()).toBe('<div data-class-name="h1">Hello</div>')
   })
 })
 

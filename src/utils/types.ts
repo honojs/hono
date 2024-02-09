@@ -19,10 +19,6 @@ export type RemoveBlankRecord<T> = T extends Record<infer K, unknown>
 
 export type IfAnyThenEmptyObject<T> = 0 extends 1 & T ? {} : T
 
-export type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...infer Rest]
-  ? IfAnyThenEmptyObject<Head> & IntersectNonAnyTypes<Rest>
-  : {}
-
 export type JSONPrimitive = string | boolean | number | null | undefined
 export type JSONArray = (JSONPrimitive | JSONObject | JSONArray)[]
 export type JSONObject = { [key: string]: JSONPrimitive | JSONArray | JSONObject | object }
@@ -52,3 +48,5 @@ export type RequiredKeysOf<BaseType extends object> = Exclude<
 export type HasRequiredKeys<BaseType extends object> = RequiredKeysOf<BaseType> extends never
   ? false
   : true
+
+export type IsAny<T> = boolean extends (T extends never ? true : false) ? true : false

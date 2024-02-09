@@ -1,14 +1,6 @@
 import type { Context } from '../../context'
 
-export type Runtime =
-  | 'node'
-  | 'deno'
-  | 'bun'
-  | 'workerd'
-  | 'fastly'
-  | 'edge-light'
-  | 'lagon'
-  | 'other'
+export type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'other'
 
 export const env = <T extends Record<string, unknown>, C extends Context = Context<{}>>(
   c: C,
@@ -24,7 +16,6 @@ export const env = <T extends Record<string, unknown>, C extends Context = Conte
     bun: () => globalEnv,
     node: () => globalEnv,
     'edge-light': () => globalEnv,
-    lagon: () => globalEnv,
     deno: () => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -57,9 +48,6 @@ export const getRuntimeKey = () => {
   }
   if (global?.fastly !== undefined) {
     return 'fastly'
-  }
-  if (global?.__lagon__ !== undefined) {
-    return 'lagon'
   }
   if (global?.process?.release?.name === 'node') {
     return 'node'

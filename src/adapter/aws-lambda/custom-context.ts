@@ -87,8 +87,3 @@ export interface ALBRequestContext {
     targetGroupArn: string
   }
 }
-
-/**
- * @deprecated Use ApiGatewayRequestContextV2 instead.
- */
-export type LambdaFunctionUrlRequestContext = ApiGatewayRequestContextV2
