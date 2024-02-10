@@ -5,7 +5,7 @@ import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
 import {
   fetchRoutesContent,
-  saveContentToFiles,
+  saveContentToFile,
   ssgParams,
   toSSG,
   disableSSG,
@@ -18,8 +18,30 @@ import type {
   FileSystemModule,
 } from './index'
 
+const resolveRoutesContent = async (res: ReturnType<typeof fetchRoutesContent>) => {
+  const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
+  for (const getInfoPromise of res) {
+    const getInfo = await getInfoPromise
+    if (!getInfo) {
+      continue
+    }
+    for (const dataPromise of getInfo) {
+      const data = await dataPromise
+      if (!data) {
+        continue
+      }
+      htmlMap.set(data.routePath, {
+        content: data.content,
+        mimeType: data.mimeType,
+      })
+    }
+  }
+  return htmlMap
+}
+
 describe('toSSG function', () => {
   let app: Hono
+  let fsMock: FileSystemModule
 
   const postParams = [{ post: '1' }, { post: '2' }]
 
@@ -79,32 +101,38 @@ describe('toSSG function', () => {
         return []
       })
     )
-  })
-  it('Should correctly generate static HTML files for Hono routes', async () => {
-    const fsMock: FileSystemModule = {
+
+    fsMock = {
       writeFile: vi.fn(() => Promise.resolve()),
       mkdir: vi.fn(() => Promise.resolve()),
     }
+  })
+  it('Should correctly generate static HTML files for Hono routes', async () => {
+    const writtenFiles: Record<string, string> = {}
+    const fsMock: FileSystemModule = {
+      writeFile: (path, data) => {
+        writtenFiles[path] = typeof data === 'string' ? data : data.toString()
+        return Promise.resolve()
+      },
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
 
-    const htmlMap = await fetchRoutesContent(app)
+    const result = await toSSG(app, fsMock, { dir: './static' })
 
     for (const postParam of postParams) {
-      const html = htmlMap.get(`/post/${postParam.post}`)
-      expect(html?.content).toBe(`<h1>${postParam.post}</h1>`)
+      const html = writtenFiles[`static/post/${postParam.post}.html`]
+      expect(html).toBe(`<h1>${postParam.post}</h1>`)
     }
 
     for (let i = 1; i <= 3; i++) {
-      const html = htmlMap.get(`/user/${i}`)
-      expect(html?.content).toBe(`<h1>${i}</h1>`)
+      const html = writtenFiles[`static/user/${i}.html`]
+      expect(html).toBe(`<h1>${i}</h1>`)
     }
 
-    const files = await saveContentToFiles(htmlMap, fsMock, './static')
-
-    expect(files.length).toBeGreaterThan(0)
+    expect(result.files.length).toBe(11)
     expect(fsMock.mkdir).toHaveBeenCalledWith(expect.any(String), {
       recursive: true,
     })
-    expect(fsMock.writeFile).toHaveBeenCalled()
   })
 
   it('Should handle file system errors correctly in saveContentToFiles', async () => {
@@ -113,17 +141,10 @@ describe('toSSG function', () => {
       mkdir: vi.fn(() => Promise.resolve()),
     }
 
-    try {
-      const htmlMap = await fetchRoutesContent(app)
-      await saveContentToFiles(htmlMap, fsMock, './static')
-      expect(true).toBe(false) // This should not be reached
-    } catch (error) {
-      if (error instanceof Error) {
-        expect(error.message).toBe('Write error')
-      } else {
-        throw error
-      }
-    }
+    const result = await toSSG(app, fsMock, { dir: './static' })
+    expect(result.success).toBe(false)
+    expect(result.files).toStrictEqual([])
+    expect(result.error?.message).toBe('Write error')
   })
 
   it('Should handle overall process errors correctly in toSSG', async () => {
@@ -140,13 +161,7 @@ describe('toSSG function', () => {
   })
 
   it('Should correctly generate files with the expected paths', async () => {
-    const fsMock: FileSystemModule = {
-      writeFile: vi.fn(() => Promise.resolve()),
-      mkdir: vi.fn(() => Promise.resolve()),
-    }
-
-    const htmlMap = await fetchRoutesContent(app)
-    await saveContentToFiles(htmlMap, fsMock, './static')
+    await toSSG(app, fsMock, { dir: './static' })
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
@@ -158,10 +173,6 @@ describe('toSSG function', () => {
   })
 
   it('should modify the request if the hook is provided', async () => {
-    const fsMock: FileSystemModule = {
-      writeFile: vi.fn(() => Promise.resolve()),
-      mkdir: vi.fn(() => Promise.resolve()),
-    }
     const beforeRequestHook: BeforeRequestHook = (req) => {
       if (req.method === 'GET') {
         return req
@@ -174,8 +185,9 @@ describe('toSSG function', () => {
 
   it('should skip the route if the request hook returns false', async () => {
     const beforeRequest: BeforeRequestHook = () => false
-    const htmlMap = await fetchRoutesContent(app, beforeRequest)
-    expect(htmlMap.size).toBe(0)
+    const result = await toSSG(app, fsMock, { beforeRequestHook: beforeRequest })
+    expect(result.success).toBe(true)
+    expect(result.files).toStrictEqual([])
   })
 
   it('should modify the response if the hook is provided', async () => {
@@ -185,18 +197,15 @@ describe('toSSG function', () => {
       }
       return false
     }
-    const fsMock: FileSystemModule = {
-      writeFile: vi.fn(() => Promise.resolve()),
-      mkdir: vi.fn(() => Promise.resolve()),
-    }
     const result = await toSSG(app, fsMock, { afterResponseHook })
     expect(result.files).toHaveLength(10)
   })
 
   it('should skip the route if the response hook returns false', async () => {
     const afterResponse: AfterResponseHook = () => false
-    const htmlMap = await fetchRoutesContent(app, undefined, afterResponse)
-    expect(htmlMap.size).toBe(0)
+    const result = await toSSG(app, fsMock, { afterResponseHook: afterResponse })
+    expect(result.success).toBe(true)
+    expect(result.files).toStrictEqual([])
   })
 
   it('should execute additional processing using afterGenerateHook', async () => {
@@ -229,7 +238,8 @@ describe('fetchRoutesContent function', () => {
   })
 
   it('should fetch the correct content and MIME type for each route', async () => {
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
+
     expect(htmlMap.get('/text')).toEqual({
       content: 'Text Response',
       mimeType: 'text/plain',
@@ -245,35 +255,37 @@ describe('fetchRoutesContent function', () => {
   })
 
   it('should skip middleware routes', async () => {
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
     expect(htmlMap.has('*')).toBeFalsy()
   })
 
   it('should handle errors correctly', async () => {
     vi.spyOn(app, 'fetch').mockRejectedValue(new Error('Network error'))
-    await expect(fetchRoutesContent(app)).rejects.toThrow('Network error')
+    await expect(resolveRoutesContent(fetchRoutesContent(app))).rejects.toThrow('Network error')
     vi.restoreAllMocks()
   })
 })
 
-describe('saveContentToFiles function', () => {
+describe('saveContentToFile function', () => {
   let fsMock: FileSystemModule
-  let htmlMap: Map<string, { content: string | ArrayBuffer; mimeType: string }>
 
   beforeEach(() => {
     fsMock = {
       writeFile: vi.fn(() => Promise.resolve()),
       mkdir: vi.fn(() => Promise.resolve()),
     }
-    htmlMap = new Map([
-      ['/', { content: 'Home Page', mimeType: 'text/html' }],
-      ['/about', { content: 'About Page', mimeType: 'text/html' }],
-      ['/about/', { content: 'About Page', mimeType: 'text/html' }],
-    ])
   })
 
   it('should correctly create files with the right content and paths', async () => {
-    await saveContentToFiles(htmlMap, fsMock, './static')
+    const fileData = [
+      { routePath: '/', content: 'Home Page', mimeType: 'text/html' },
+      { routePath: '/about', content: 'About Page', mimeType: 'text/html' },
+      { routePath: '/about/', content: 'About Page', mimeType: 'text/html' },
+    ]
+
+    for (const data of fileData) {
+      await saveContentToFile(Promise.resolve(data), fsMock, './static')
+    }
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', 'Home Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', 'About Page')
@@ -281,9 +293,16 @@ describe('saveContentToFiles function', () => {
   })
 
   it('should correctly create directories if they do not exist', async () => {
-    await saveContentToFiles(htmlMap, fsMock, './static')
-
-    expect(fsMock.mkdir).toHaveBeenCalledWith('static', { recursive: true })
+    await saveContentToFile(
+      Promise.resolve({
+        routePath: '/new-dir/index.html',
+        content: 'New Page',
+        mimeType: 'text/html',
+      }),
+      fsMock,
+      './static'
+    )
+    expect(fsMock.mkdir).toHaveBeenCalledWith('static/new-dir', { recursive: true })
   })
 
   it('should handle file writing or directory creation errors', async () => {
@@ -292,9 +311,17 @@ describe('saveContentToFiles function', () => {
       mkdir: vi.fn(() => Promise.reject(new Error('File write error'))),
     }
 
-    await expect(saveContentToFiles(htmlMap, fsMock, './static')).rejects.toThrow(
-      'File write error'
-    )
+    await expect(
+      saveContentToFile(
+        Promise.resolve({
+          routePath: '/error-dir/index.html',
+          content: 'New Page',
+          mimeType: 'text/html',
+        }),
+        fsMock,
+        './static'
+      )
+    ).rejects.toThrow('File write error')
   })
 })
 
@@ -309,22 +336,22 @@ describe('Dynamic route handling', () => {
   })
 
   it('should skip /shops/:id dynamic route', async () => {
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
     expect(htmlMap.has('/shops/:id')).toBeFalsy()
   })
 
   it('should skip /shops/:id/:comments([0-9]+) dynamic route', async () => {
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
     expect(htmlMap.has('/shops/:id/:comments([0-9]+)')).toBeFalsy()
   })
 
   it('should skip /foo/* dynamic route', async () => {
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
     expect(htmlMap.has('/foo/*')).toBeFalsy()
   })
 
   it('should not skip /foo:bar dynamic route', async () => {
-    const htmlMap = await fetchRoutesContent(app)
+    const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
     expect(htmlMap.has('/foo:bar')).toBeTruthy()
   })
 })
@@ -335,11 +362,16 @@ describe('disableSSG/onlySSG middlewares', () => {
   app.get('/api', disableSSG(), (c) => c.text('an-api'))
   app.get('/static-page', onlySSG(), (c) => c.html(<h1>Welcome to my site</h1>))
 
+  const fsMock: FileSystemModule = {
+    writeFile: vi.fn(() => Promise.resolve()),
+    mkdir: vi.fn(() => Promise.resolve()),
+  }
+
   it('Should not generate the page if disableSSG is set', async () => {
-    const htmlMap = await fetchRoutesContent(app)
-    expect(htmlMap.has('/')).toBe(true)
-    expect(htmlMap.has('/static-page')).toBe(true)
-    expect(htmlMap.has('/api')).toBe(false)
+    await toSSG(app, fsMock, { dir: './static' })
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/static-page.html', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/api.html', expect.any(String))
   })
 
   it('Should return 404 response if onlySSG() is set', async () => {
