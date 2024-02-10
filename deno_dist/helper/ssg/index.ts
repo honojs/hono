@@ -4,11 +4,14 @@ import { inspectRoutes } from '../../helper/dev/index.ts'
 import type { Hono } from '../../hono.ts'
 import type { Env, MiddlewareHandler, Schema } from '../../types.ts'
 import { bufferToString } from '../../utils/buffer.ts'
+import { createPool } from '../../utils/concurrent.ts'
 import { getExtension } from '../../utils/mime.ts'
 import { joinPaths, dirname } from './utils.ts'
 
 export const X_HONO_SSG_HEADER_KEY = 'x-hono-ssg'
 export const X_HONO_DISABLE_SSG_HEADER_KEY = 'x-hono-disable-ssg'
+
+const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
 
 /**
  * @experimental
@@ -103,6 +106,7 @@ export interface ToSSGOptions {
   beforeRequestHook?: BeforeRequestHook
   afterResponseHook?: AfterResponseHook
   afterGenerateHook?: AfterGenerateHook
+  concurrency?: number
 }
 
 /**
@@ -110,17 +114,25 @@ export interface ToSSGOptions {
  * `fetchRoutesContent` is an experimental feature.
  * The API might be changed.
  */
-export const fetchRoutesContent = async <
+export const fetchRoutesContent = function* <
   E extends Env = Env,
   S extends Schema = {},
   BasePath extends string = '/'
 >(
   app: Hono<E, S, BasePath>,
   beforeRequestHook?: BeforeRequestHook,
-  afterResponseHook?: AfterResponseHook
-): Promise<Map<string, { content: string | ArrayBuffer; mimeType: string }>> => {
-  const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
+  afterResponseHook?: AfterResponseHook,
+  concurrency?: number
+): Generator<
+  Promise<
+    | Generator<
+        Promise<{ routePath: string; mimeType: string; content: string | ArrayBuffer } | undefined>
+      >
+    | undefined
+  >
+> {
   const baseURL = 'http://localhost'
+  const pool = createPool({ concurrency })
 
   for (const route of inspectRoutes(app)) {
     if (route.isMiddleware) {
@@ -139,38 +151,62 @@ export const fetchRoutesContent = async <
       }
       forGetInfoURLRequest = maybeRequest as unknown as AddedSSGDataRequest
     }
-    await app.fetch(forGetInfoURLRequest)
 
-    if (!forGetInfoURLRequest.ssgParams) {
-      if (isDynamicRoute(route.path)) {
-        continue
-      }
-      forGetInfoURLRequest.ssgParams = [{}]
-    }
+    // eslint-disable-next-line no-async-promise-executor
+    yield new Promise(async (resolveGetInfo, rejectGetInfo) => {
+      try {
+        await pool.run(() => app.fetch(forGetInfoURLRequest))
 
-    for (const param of forGetInfoURLRequest.ssgParams) {
-      const replacedUrlParam = replaceUrlParam(route.path, param)
-      let response = await app.request(replacedUrlParam, forGetInfoURLRequest)
-      if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) {
-        continue
-      }
-      if (afterResponseHook) {
-        const maybeResponse = afterResponseHook(response)
-        if (!maybeResponse) {
-          continue
+        if (!forGetInfoURLRequest.ssgParams) {
+          if (isDynamicRoute(route.path)) {
+            resolveGetInfo(undefined)
+            return
+          }
+          forGetInfoURLRequest.ssgParams = [{}]
         }
-        response = maybeResponse
-      }
-      const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
-      const content = await parseResponseContent(response)
-      htmlMap.set(replacedUrlParam, {
-        mimeType,
-        content,
-      })
-    }
-  }
 
-  return htmlMap
+        resolveGetInfo(
+          (function* () {
+            for (const param of forGetInfoURLRequest.ssgParams as SSGParams) {
+              // eslint-disable-next-line no-async-promise-executor
+              yield new Promise(async (resolveReq, rejectReq) => {
+                try {
+                  const replacedUrlParam = replaceUrlParam(route.path, param)
+                  let response = await pool.run(() =>
+                    app.request(replacedUrlParam, forGetInfoURLRequest)
+                  )
+                  if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) {
+                    resolveReq(undefined)
+                    return
+                  }
+                  if (afterResponseHook) {
+                    const maybeResponse = afterResponseHook(response)
+                    if (!maybeResponse) {
+                      resolveReq(undefined)
+                      return
+                    }
+                    response = maybeResponse
+                  }
+                  const mimeType =
+                    response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
+                  const content = await parseResponseContent(response)
+                  resolveReq({
+                    routePath: replacedUrlParam,
+                    mimeType,
+                    content,
+                  })
+                } catch (error) {
+                  rejectReq(error)
+                }
+              })
+            }
+          })()
+        )
+      } catch (error) {
+        rejectGetInfo(error)
+      }
+    })
+  }
 }
 
 const isDynamicRoute = (path: string): boolean => {
@@ -179,30 +215,33 @@ const isDynamicRoute = (path: string): boolean => {
 
 /**
  * @experimental
- * `saveContentToFiles` is an experimental feature.
+ * `saveContentToFile` is an experimental feature.
  * The API might be changed.
  */
-export const saveContentToFiles = async (
-  htmlMap: Map<string, { content: string | ArrayBuffer; mimeType: string }>,
+const createdDirs: Set<string> = new Set()
+export const saveContentToFile = async (
+  data: Promise<{ routePath: string; content: string | ArrayBuffer; mimeType: string } | undefined>,
   fsModule: FileSystemModule,
   outDir: string
-): Promise<string[]> => {
-  const files: string[] = []
-
-  for (const [routePath, { content, mimeType }] of htmlMap) {
-    const filePath = generateFilePath(routePath, outDir, mimeType)
-    const dirPath = dirname(filePath)
-
-    await fsModule.mkdir(dirPath, { recursive: true })
-    if (typeof content === 'string') {
-      await fsModule.writeFile(filePath, content)
-    } else if (content instanceof ArrayBuffer) {
-      await fsModule.writeFile(filePath, bufferToString(content))
-    }
-    files.push(filePath)
+): Promise<string | undefined> => {
+  const awaitedData = await data
+  if (!awaitedData) {
+    return
   }
+  const { routePath, content, mimeType } = awaitedData
+  const filePath = generateFilePath(routePath, outDir, mimeType)
+  const dirPath = dirname(filePath)
 
-  return files
+  if (!createdDirs.has(dirPath)) {
+    await fsModule.mkdir(dirPath, { recursive: true })
+    createdDirs.add(dirPath)
+  }
+  if (typeof content === 'string') {
+    await fsModule.writeFile(filePath, content)
+  } else if (content instanceof ArrayBuffer) {
+    await fsModule.writeFile(filePath, bufferToString(content))
+  }
+  return filePath
 }
 
 /**
@@ -242,14 +281,40 @@ export interface ToSSGAdaptorInterface<
  */
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
   let result: ToSSGResult | undefined = undefined
+  const getInfoPromises: Promise<unknown>[] = []
+  const savePromises: Promise<string | undefined>[] = []
   try {
     const outputDir = options?.dir ?? './static'
-    const maps = await fetchRoutesContent(
+    const concurrency = options?.concurrency ?? DEFAULT_CONCURRENCY
+
+    const getInfoGen = fetchRoutesContent(
       app,
       options?.beforeRequestHook,
-      options?.afterResponseHook
+      options?.afterResponseHook,
+      concurrency
     )
-    const files = await saveContentToFiles(maps, fs, outputDir)
+    for (const getInfo of getInfoGen) {
+      getInfoPromises.push(
+        getInfo.then((getContentGen) => {
+          if (!getContentGen) {
+            return
+          }
+          for (const content of getContentGen) {
+            savePromises.push(saveContentToFile(content, fs, outputDir).catch((e) => e))
+          }
+        })
+      )
+    }
+    await Promise.all(getInfoPromises)
+    const files: string[] = []
+    for (const savePromise of savePromises) {
+      const fileOrError = await savePromise
+      if (typeof fileOrError === 'string') {
+        files.push(fileOrError)
+      } else if (fileOrError) {
+        throw fileOrError
+      }
+    }
     result = { success: true, files }
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error(String(error))
