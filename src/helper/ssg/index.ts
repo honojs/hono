@@ -300,13 +300,21 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
             return
           }
           for (const content of getContentGen) {
-            savePromises.push(saveContentToFile(content, fs, outputDir))
+            savePromises.push(saveContentToFile(content, fs, outputDir).catch((e) => e))
           }
         })
       )
     }
     await Promise.all(getInfoPromises)
-    const files = (await Promise.all(savePromises)).filter(Boolean) as string[]
+    const files: string[] = []
+    for (const savePromise of savePromises) {
+      const fileOrError = await savePromise
+      if (typeof fileOrError === 'string') {
+        files.push(fileOrError)
+      } else if (fileOrError) {
+        throw fileOrError
+      }
+    }
     result = { success: true, files }
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error(String(error))
