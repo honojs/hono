@@ -7,6 +7,7 @@ import { Suspense } from '../dom'
 import { render } from '../dom'
 import {
   useState,
+  useReducer,
   use,
   startTransition,
   useTransition,
@@ -14,6 +15,40 @@ import {
   startViewTransition,
   useViewTransition,
 } from '.'
+
+describe('useReducer()', () => {
+  beforeAll(() => {
+    global.requestAnimationFrame = (cb) => setTimeout(cb)
+  })
+
+  let dom: JSDOM
+  let root: HTMLElement
+  beforeEach(() => {
+    dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
+      runScripts: 'dangerously',
+    })
+    global.document = dom.window.document
+    global.HTMLElement = dom.window.HTMLElement
+    global.Text = dom.window.Text
+    root = document.getElementById('root') as HTMLElement
+  })
+
+  it('simple', async () => {
+    const App = () => {
+      const [state, dispatch] = useReducer((state: number, action: number) => state + action, 0)
+      return (
+        <div>
+          <button onClick={() => dispatch(1)}>{state}</button>
+        </div>
+      )
+    }
+    render(<App />, root)
+    expect(root.innerHTML).toBe('<div><button>0</button></div>')
+    root.querySelector('button')?.click()
+    await Promise.resolve()
+    expect(root.innerHTML).toBe('<div><button>1</button></div>')
+  })
+})
 
 describe('startTransition()', () => {
   beforeAll(() => {

@@ -204,6 +204,20 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
   ])
 }
 
+export const useReducer = <T, A>(
+  reducer: (state: T, action: A) => T,
+  initialArg: T,
+  init?: (initialState: T) => T
+): [T, (action: A) => void] => {
+  const [state, setState] = useState(() => (init ? init(initialArg) : initialArg))
+  return [
+    state,
+    (action: A) => {
+      setState((state) => reducer(state, action))
+    },
+  ]
+}
+
 const useEffectCommon = (
   index: number,
   effect: () => void | (() => void),
