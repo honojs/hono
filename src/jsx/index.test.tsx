@@ -4,7 +4,7 @@ import { html } from '../helper/html'
 import { Hono } from '../hono'
 import { Suspense, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, memo, Fragment, createContext, useContext } from '.'
+import DefaultExport, { jsx, memo, Fragment, createContext, useContext } from '.'
 import type { Context, FC, PropsWithChildren } from '.'
 
 interface SiteData {
@@ -717,6 +717,39 @@ d.replaceWith(c.content)
 
       const nextRequest = <Consumer />
       expect(nextRequest.toString()).toBe('<span>light</span>')
+    })
+  })
+})
+
+describe('default export', () => {
+  ;[
+    'memo',
+    'Fragment',
+    'isValidElement',
+    'createElement',
+    'cloneElement',
+    'ErrorBoundary',
+    'createContext',
+    'useContext',
+    'useState',
+    'useEffect',
+    'useRef',
+    'useCallback',
+    'useReducer',
+    'useDebugValue',
+    'use',
+    'startTransition',
+    'useTransition',
+    'useDeferredValue',
+    'startViewTransition',
+    'useViewTransition',
+    'useMemo',
+    'useLayoutEffect',
+    'Suspense',
+  ].forEach((key) => {
+    it(key, () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((DefaultExport as any)[key]).toBeDefined()
     })
   })
 })

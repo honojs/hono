@@ -4,6 +4,7 @@ import type { FC } from '..'
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, Fragment } from '..'
+import DefaultExport from '..'
 import type { RefObject } from '../hooks'
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from '../hooks'
 import type { NodeObject } from './render'
@@ -1048,6 +1049,39 @@ describe('DOM', () => {
       root.querySelector('p')?.click()
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div><p>1</p></div>')
+    })
+  })
+})
+
+describe('default export', () => {
+  ;[
+    'memo',
+    'Fragment',
+    'isValidElement',
+    'createElement',
+    'cloneElement',
+    'ErrorBoundary',
+    'createContext',
+    'useContext',
+    'useState',
+    'useEffect',
+    'useRef',
+    'useCallback',
+    'useReducer',
+    'useDebugValue',
+    'use',
+    'startTransition',
+    'useTransition',
+    'useDeferredValue',
+    'startViewTransition',
+    'useViewTransition',
+    'useMemo',
+    'useLayoutEffect',
+    'Suspense',
+  ].forEach((key) => {
+    it(key, () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((DefaultExport as any)[key]).toBeDefined()
     })
   })
 })

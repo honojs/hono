@@ -1,4 +1,7 @@
-export {
+import type { Props, Child, JSXNode } from '../base'
+import { memo, isValidElement } from '../base'
+import { useContext } from '../context'
+import {
   useState,
   useEffect,
   useRef,
@@ -11,18 +14,16 @@ export {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  useReducer,
+  useDebugValue,
 } from '../hooks'
-export { render } from './render'
-export { Suspense, ErrorBoundary } from './components'
-export { useContext } from '../context'
-export type { Context } from '../context'
-export { createContext } from './context'
-export { memo, isValidElement } from '../base'
-
-import type { Props, Child, JSXNode } from '../base'
+import { Suspense, ErrorBoundary } from './components'
+import { createContext } from './context'
 import { jsx } from './jsx-runtime'
 
-export const createElement = (
+export { render } from './render'
+
+const createElement = (
   tag: string | ((props: Props) => JSXNode),
   props: Props,
   ...children: Child[]
@@ -37,7 +38,7 @@ export const createElement = (
   return jsx(tag, jsxProps, key) as any
 }
 
-export const cloneElement = <T extends JSXNode | JSX.Element>(
+const cloneElement = <T extends JSXNode | JSX.Element>(
   element: T,
   props: Props,
   ...children: Child[]
@@ -52,3 +53,55 @@ export const cloneElement = <T extends JSXNode | JSX.Element>(
     (element as JSXNode).key
   ) as T
 }
+
+export {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  use,
+  startTransition,
+  useTransition,
+  useDeferredValue,
+  startViewTransition,
+  useViewTransition,
+  useMemo,
+  useLayoutEffect,
+  useReducer,
+  useDebugValue,
+  Suspense,
+  ErrorBoundary,
+  createContext,
+  useContext,
+  memo,
+  isValidElement,
+  createElement,
+  cloneElement,
+}
+
+export default {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  use,
+  startTransition,
+  useTransition,
+  useDeferredValue,
+  startViewTransition,
+  useViewTransition,
+  useMemo,
+  useLayoutEffect,
+  useReducer,
+  useDebugValue,
+  Suspense,
+  ErrorBoundary,
+  createContext,
+  useContext,
+  memo,
+  isValidElement,
+  createElement,
+  cloneElement,
+}
+
+export type { Context } from '../context'
