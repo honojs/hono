@@ -68,4 +68,29 @@ describe('SSE Streaming helper', () => {
     reader.cancel()
     expect(aborted).toBeTruthy()
   })
+
+  it('Should include retry in the SSE message', async () => {
+    const retryTime = 3000 // 3 seconds
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: 'This is a test message',
+        retry: retryTime,
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+
+    // Check if the retry parameter is included in the SSE message
+    const expectedRetryValue = `retry: ${retryTime}\n\n`
+    expect(decodedValue).toContain(expectedRetryValue)
+  })
 })
