@@ -14,6 +14,7 @@ import {
   useDeferredValue,
   startViewTransition,
   useViewTransition,
+  useDebugValue,
 } from '.'
 
 describe('useReducer()', () => {
@@ -477,5 +478,30 @@ describe('useViewTransition()', () => {
     await new Promise((r) => setTimeout(r))
     expect(root.innerHTML).toBe('<div><button>1</button></div>')
     expect(called).toBe(3)
+  })
+})
+
+describe('useDebugValue()', () => {
+  let dom: JSDOM
+  let root: HTMLElement
+  beforeEach(() => {
+    dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
+      runScripts: 'dangerously',
+    })
+    global.document = dom.window.document
+    global.HTMLElement = dom.window.HTMLElement
+    global.Text = dom.window.Text
+    root = document.getElementById('root') as HTMLElement
+  })
+
+  it('simple', () => {
+    const spy = vi.fn()
+    const App = () => {
+      useDebugValue('hello', spy)
+      return <div />
+    }
+    render(<App />, root)
+    expect(root.innerHTML).toBe('<div></div>')
+    expect(spy).not.toBeCalled()
   })
 })
