@@ -7,8 +7,8 @@ import { jsx, Fragment } from '..'
 import type { RefObject } from '../hooks'
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from '../hooks'
 import type { NodeObject } from './render'
-import { memo, isValidElement, cloneElement } from '.'
-import { render, cloneElement as cloneElementForDom } from '.'
+import { memo, isValidElement, createElement, cloneElement } from '.'
+import { render, createElement as createElementForDom, cloneElement as cloneElementForDom } from '.'
 
 const getContainer = (element: JSX.Element): DocumentFragment | HTMLElement | undefined => {
   return (element as unknown as NodeObject).c
@@ -986,6 +986,36 @@ describe('DOM', () => {
 
     it('invalid', () => {
       expect(isValidElement({})).toBe(false)
+    })
+  })
+
+  describe('createElement', () => {
+    it('simple', async () => {
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return <div>{createElement('p', { onClick: () => setCount(count + 1) }, count)}</div>
+      }
+      const app = <App />
+      render(app, root)
+      expect(root.innerHTML).toBe('<div><p>0</p></div>')
+      root.querySelector('p')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><p>1</p></div>')
+    })
+  })
+
+  describe('dom-specific createElement', () => {
+    it('simple', async () => {
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return <div>{createElementForDom('p', { onClick: () => setCount(count + 1) }, count)}</div>
+      }
+      const app = <App />
+      render(app, root)
+      expect(root.innerHTML).toBe('<div><p>0</p></div>')
+      root.querySelector('p')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><p>1</p></div>')
     })
   })
 
