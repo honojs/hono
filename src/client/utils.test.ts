@@ -32,7 +32,7 @@ describe('replaceUrlParams', () => {
   })
 
   it('Should replace correctly when there is regex pattern with length limit', () => {
-    const url = 'http://localhost/year/:year{[0-9]{4}}/month/:month{[0-9]{2}}'
+    const url = 'http://localhost/year/:year{[1-9]{1}[0-9]{3}}/month/:month{[0-9]{2}}'
     const params = {
       year: '2024',
       month: '2',
