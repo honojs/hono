@@ -30,6 +30,16 @@ describe('replaceUrlParams', () => {
     const replacedUrl = replaceUrlParam(url, params)
     expect(replacedUrl).toBe('http://localhost/posts/abc/comments/456')
   })
+
+  it('Should replace correctly when there is regex pattern with length limit', () => {
+    const url = 'http://localhost/year/:year{[0-9]{4}}/month/:month{[0-9]{2}}'
+    const params = {
+      year: '2024',
+      month: '2',
+    }
+    const replacedUrl = replaceUrlParam(url, params)
+    expect(replacedUrl).toBe('http://localhost/year/2024/month/2')
+  })
 })
 
 describe('removeIndexString', () => {
