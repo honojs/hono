@@ -200,6 +200,30 @@ describe('DOM', () => {
       await Promise.resolve()
       expect(root.innerHTML).toBe('2')
     })
+
+    it('one child is updated', async () => {
+      let setCount: (count: number) => void = () => {}
+      const App = () => {
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        return <div>{count}</div>
+      }
+      const app = (
+        <>
+          <App />
+          <div>Footer</div>
+        </>
+      )
+      render(app, root)
+      const container = getContainer(app) as HTMLElement
+      expect(root.innerHTML).toBe('<div>0</div><div>Footer</div>')
+
+      const insertBeforeSpy = vi.spyOn(container, 'insertBefore')
+      setCount(1)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div>1</div><div>Footer</div>')
+      expect(insertBeforeSpy).not.toHaveBeenCalled()
+    })
   })
 
   describe('Event', () => {

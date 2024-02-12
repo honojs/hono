@@ -256,6 +256,7 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
     }
   }
 
+  const childNodes = container.childNodes
   for (let i = 0, len = next.length; i < len; i++, offset++) {
     const child = next[i]
 
@@ -270,8 +271,8 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
       applyProps(el as HTMLElement, child.props, child.pP)
       applyNode(child, el as HTMLElement)
     }
-    if (container.childNodes[offset] !== el) {
-      container.insertBefore(el, container.childNodes[offset] || null)
+    if (childNodes[offset] !== el && childNodes[offset - 1] !== child.e) {
+      container.insertBefore(el, childNodes[offset] || null)
     }
   }
   remove.forEach(removeNode)
