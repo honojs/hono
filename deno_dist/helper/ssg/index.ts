@@ -1,11 +1,10 @@
 import { replaceUrlParam } from '../../client/utils.ts'
 import type { Context } from '../../context.ts'
-import { inspectRoutes } from '../../helper/dev/index.ts'
 import type { Hono } from '../../hono.ts'
 import type { Env, MiddlewareHandler, Schema } from '../../types.ts'
 import { bufferToString } from '../../utils/buffer.ts'
 import { getExtension } from '../../utils/mime.ts'
-import { joinPaths, dirname } from './utils.ts'
+import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils.ts'
 
 export const X_HONO_SSG_HEADER_KEY = 'x-hono-ssg'
 export const X_HONO_DISABLE_SSG_HEADER_KEY = 'x-hono-disable-ssg'
@@ -122,11 +121,7 @@ export const fetchRoutesContent = async <
   const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
   const baseURL = 'http://localhost'
 
-  for (const route of inspectRoutes(app)) {
-    if (route.isMiddleware) {
-      continue
-    }
-
+  for (const route of filterStaticGenerateRoutes(app)) {
     // GET Route Info
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
 
