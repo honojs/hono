@@ -1,12 +1,10 @@
 import { replaceUrlParam } from '../../client/utils'
 import type { Context } from '../../context'
-import { inspectRoutes } from '../../helper/dev'
 import type { Hono } from '../../hono'
-import { METHOD_NAME_ALL } from '../../router'
 import type { Env, MiddlewareHandler, Schema } from '../../types'
 import { bufferToString } from '../../utils/buffer'
 import { getExtension } from '../../utils/mime'
-import { joinPaths, dirname } from './utils'
+import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils'
 
 const SSG_CONTEXT = 'HONO_SSG_CONTEXT'
 export const SSG_DISABLED_RESPONSE = new Response('SSG is disabled', { status: 404 })
@@ -123,11 +121,7 @@ export const fetchRoutesContent = async <
   const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
   const baseURL = 'http://localhost'
 
-  for (const route of inspectRoutes(app)) {
-    if (route.isMiddleware || (route.method !== 'GET' && route.method !== METHOD_NAME_ALL)) {
-      continue
-    }
-
+  for (const route of filterStaticGenerateRoutes(app)) {
     // GET Route Info
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
 
@@ -148,9 +142,13 @@ export const fetchRoutesContent = async <
       forGetInfoURLRequest.ssgParams = [{}]
     }
 
+    const requestInit = {
+      method: forGetInfoURLRequest.method,
+      headers: forGetInfoURLRequest.headers,
+    }
     for (const param of forGetInfoURLRequest.ssgParams) {
       const replacedUrlParam = replaceUrlParam(route.path, param)
-      let response = await app.request(replacedUrlParam, forGetInfoURLRequest, {
+      let response = await app.request(replacedUrlParam, requestInit, {
         [SSG_CONTEXT]: true,
       })
       if (response === SSG_DISABLED_RESPONSE) {

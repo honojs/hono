@@ -153,6 +153,10 @@ describe('toSSG function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/some.txt', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith(
+      'static/about/some/thing.txt',
+      expect.any(String)
+    )
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/Charlie.html', expect.any(String))
@@ -215,6 +219,27 @@ describe('toSSG function', () => {
 
     expect(afterGenerateHookMock).toHaveBeenCalled()
     expect(afterGenerateHookMock).toHaveBeenCalledWith(expect.anything())
+  })
+
+  it('should avoid memory leak from `req.signal.addEventListener()`', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const signalAddEventListener = vi.fn(() => {})
+    const app = new Hono()
+    app.get('/post/:post', ssgParams([{ post: '1' }, { post: '2' }]), (c) =>
+      c.html(<h1>{c.req.param('post')}</h1>)
+    )
+    await toSSG(app, fsMock, {
+      beforeRequestHook: (req) => {
+        req.signal.addEventListener = signalAddEventListener
+        return req
+      },
+    })
+
+    expect(signalAddEventListener).not.toHaveBeenCalled()
   })
 })
 

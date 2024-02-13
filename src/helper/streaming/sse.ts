@@ -5,6 +5,7 @@ export interface SSEMessage {
   data: string
   event?: string
   id?: string
+  retry?: number
 }
 
 export class SSEStreamingApi extends StreamingApi {
@@ -21,7 +22,12 @@ export class SSEStreamingApi extends StreamingApi {
       .join('\n')
 
     const sseData =
-      [message.event && `event: ${message.event}`, data, message.id && `id: ${message.id}`]
+      [
+        message.event && `event: ${message.event}`,
+        data,
+        message.id && `id: ${message.id}`,
+        message.retry && `retry: ${message.retry}`,
+      ]
         .filter(Boolean)
         .join('\n') + '\n\n'
 

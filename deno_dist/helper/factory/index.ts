@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Env, Input, MiddlewareHandler, H, HandlerResponse } from '../../types.ts'
+import type { Env, H, HandlerResponse, Input, MiddlewareHandler } from '../../types.ts'
 
 export class Factory<E extends Env = any, P extends string = any> {
   createMiddleware = <I extends Input = {}>(middleware: MiddlewareHandler<E, P, I>) => middleware
 
-  createHandlers<I extends Input = {}>(handler1: H<E, P, I>): [H<E, P, I>]
+  createHandlers<I extends Input = {}, R extends HandlerResponse<any> = any>(
+    handler1: H<E, P, I, R>
+  ): [H<E, P, I, R>]
 
   // handler x2
   createHandlers<I extends Input = {}, I2 extends Input = I, R extends HandlerResponse<any> = any>(

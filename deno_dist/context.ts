@@ -209,10 +209,10 @@ export class Context<
    * ```
    * @see https://hono.dev/api/context#render-setrenderer
    */
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  render: Renderer = (...args: any[]) => this.renderer(...args)
+  render: Renderer = (...args) => this.renderer(...args)
+
+  setLayout = (layout: FC<PropsForRenderer & { Layout: FC }>) => (this.layout = layout)
+  getLayout = () => this.layout
 
   /**
    * `.setRenderer()` can set the layout in the custom middleware.
@@ -233,13 +233,6 @@ export class Context<
    * ```
    * @see https://hono.dev/api/context#render-setrenderer
    */
-  // @ts-expect-error It is unknown how many arguments the renderer will receive.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  render: Renderer = (...args: any[]) => this.renderer(...args)
-
-  setLayout = (layout: FC<PropsForRenderer & { Layout: FC }>) => (this.layout = layout)
-  getLayout = () => this.layout
-
   setRenderer = (renderer: Renderer) => {
     this.renderer = renderer
   }
