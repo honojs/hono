@@ -1,6 +1,6 @@
 import type { Hono } from '../../hono'
-import { COMPOSED_HANDLER } from '../../hono-base'
 import type { Env, RouterRoute } from '../../types'
+import { findTargetHandler, isMiddleware } from '../../utils/handler'
 
 interface ShowRoutesOptions {
   verbose?: boolean
@@ -14,16 +14,8 @@ interface RouteData {
   isMiddleware: boolean
 }
 
-const isMiddleware = (handler: Function) => handler.length > 1
 const handlerName = (handler: Function) => {
   return handler.name || (isMiddleware(handler) ? '[middleware]' : '[handler]')
-}
-const findTargetHandler = (handler: Function): Function => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (handler as any)[COMPOSED_HANDLER]
-    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      findTargetHandler((handler as any)[COMPOSED_HANDLER])
-    : handler
 }
 
 export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
