@@ -24,7 +24,7 @@ const createRenderer =
     component?: FC<PropsForRenderer & { Layout: FC }>,
     options?: RendererOptions
   ) =>
-  (children: JSXNode, props: PropsForRenderer) => {
+  async (children: JSXNode, props: PropsForRenderer) => {
     const docType =
       typeof options?.docType === 'string'
         ? options.docType
@@ -32,13 +32,17 @@ const createRenderer =
         ? ''
         : '<!DOCTYPE html>'
 
-    const currentLayout = component
+    let currentLayout = component
       ? component({
           children,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ...{ Layout, ...(props as any) },
         })
       : children
+
+    if (currentLayout instanceof Promise) {
+      currentLayout = await currentLayout
+    }
 
     const body = html`${raw(docType)}${jsx(
       RequestContext.Provider,
