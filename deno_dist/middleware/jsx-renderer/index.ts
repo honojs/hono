@@ -24,7 +24,7 @@ const createRenderer =
     component?: FC<PropsForRenderer & { Layout: FC }>,
     options?: RendererOptions
   ) =>
-  async (children: JSXNode, props: PropsForRenderer) => {
+  (children: JSXNode, props: PropsForRenderer) => {
     const docType =
       typeof options?.docType === 'string'
         ? options.docType
@@ -32,24 +32,23 @@ const createRenderer =
         ? ''
         : '<!DOCTYPE html>'
 
-    let currentLayout = component
-      ? component({
-          children,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ...{ Layout, ...(props as any) },
-        })
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const currentLayout = component
+      ? jsx(
+          component,
+          {
+            ...{ Layout, ...(props as any) },
+          },
+          children as any
+        )
       : children
-
-    if (currentLayout instanceof Promise) {
-      currentLayout = await currentLayout
-    }
 
     const body = html`${raw(docType)}${jsx(
       RequestContext.Provider,
       { value: c },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       currentLayout as any
     )}`
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     if (options?.stream) {
       return c.body(renderToReadableStream(body), {
@@ -82,7 +81,9 @@ export const jsxRenderer = (
   }
 
 export const useRequestContext = <
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   P extends string = any,
   I extends Input = {}
 >(): Context<E, P, I> => {
