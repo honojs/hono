@@ -212,7 +212,7 @@ d.replaceWith(c.content)
 d=d.getElementById('E:${errorBoundaryCounter}')
 if(!d)return
 n=d.nextSibling
-do{n=n.nextSibling}while(n.nodeType!=8||n.nodeValue!='E:${errorBoundaryCounter}')
+while(n.nodeType!=8||n.nodeValue!='E:${errorBoundaryCounter}'){n=n.nextSibling}
 n.remove()
 d.remove()
 })(document)

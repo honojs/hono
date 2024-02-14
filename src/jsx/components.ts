@@ -161,7 +161,7 @@ d.parentElement.insertBefore(c.content,d.nextSibling)
 d=d.getElementById('E:${index}')
 if(!d)return
 n=d.nextSibling
-do{n=n.nextSibling}while(n.nodeType!=8||n.nodeValue!='E:${index}')
+while(n.nodeType!=8||n.nodeValue!='E:${index}'){n=n.nextSibling}
 n.remove()
 d.remove()
 })(document)
