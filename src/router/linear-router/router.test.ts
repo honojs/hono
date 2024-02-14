@@ -90,6 +90,15 @@ describe('Complex', () => {
     expect(res[1][0]).toEqual('posts')
     expect(res[2][0]).toEqual('fallback')
   })
+
+  it('Should support regexp quantifiers', async () => {
+    router.add('GET', '/year/:year{[0-9]{4}}/month/:month{[0-9]{1,2}}', 'handler')
+    const [res] = router.match('GET', '/year/2024/month/2')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toBe('handler')
+    expect(res[0][1]['year']).toBe('2024')
+    expect(res[0][1]['month']).toBe('2')
+  })
 })
 
 describe('Multi match', () => {
