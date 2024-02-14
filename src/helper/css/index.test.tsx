@@ -240,7 +240,7 @@ describe('CSS Helper', () => {
       const res = await app.request('http://localhost/stream')
       expect(res).not.toBeNull()
       expect(await res.text()).toBe(
-        `<style id="hono-css"></style><template id="H:0"></template><p>Loading...</p><!--/$--><script>document.querySelector('#hono-css').textContent+=".css-2458908649{background-color:blue}"</script><template><h1 class="css-2458908649">Hello!</h1></template><script>
+        `<style id="hono-css"></style><template id="H:0"></template><p>Loading...</p><!--/$--><script>document.querySelector('#hono-css').textContent+=".css-2458908649{background-color:blue}"</script><template data-hono-target="H:0"><h1 class="css-2458908649">Hello!</h1></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:0')

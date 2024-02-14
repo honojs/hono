@@ -233,7 +233,7 @@ describe('JSX renderer', () => {
     }
     expect(chunk).toEqual([
       '<!DOCTYPE html><html><body><template id="H:0"></template><p>Loading...</p><!--/$--></body></html>',
-      `<template><p>Hello Hono!</p></template><script>
+      `<template data-hono-target="H:0"><p>Hello Hono!</p></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:0')
@@ -302,7 +302,7 @@ d.replaceWith(c.content)
     }
     expect(chunk).toEqual([
       '<!DOCTYPE html><html><body><template id="H:1"></template><p>Loading...</p><!--/$--></body></html>',
-      `<template><p>Hello Hono again!</p></template><script>
+      `<template data-hono-target="H:1"><p>Hello Hono again!</p></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:1')

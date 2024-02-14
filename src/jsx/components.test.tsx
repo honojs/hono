@@ -191,7 +191,7 @@ describe('ErrorBoundary', () => {
 
       expect(chunks).toEqual([
         `<template id="E:${errorBoundaryCounter}"></template><!--E:${errorBoundaryCounter}-->`,
-        `<template><template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$--></template><script>
+        `<template data-hono-target="E:${errorBoundaryCounter}"><template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$--></template><script>
 ((d,c) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('E:${errorBoundaryCounter}')
@@ -199,7 +199,7 @@ if(!d)return
 d.parentElement.insertBefore(c.content,d.nextSibling)
 })(document)
 </script>`,
-        `<template><div>Hello</div></template><script>
+        `<template data-hono-target="H:${suspenseCounter}"><div>Hello</div></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
