@@ -8,7 +8,7 @@ import DefaultExport from '..'
 import type { RefObject } from '../hooks'
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from '../hooks'
 import type { NodeObject } from './render'
-import { memo, isValidElement, createElement, cloneElement } from '.'
+import { jsx as jsxForDom, memo, isValidElement, createElement, cloneElement } from '.'
 import { render, createElement as createElementForDom, cloneElement as cloneElementForDom } from '.'
 
 const getContainer = (element: JSX.Element): DocumentFragment | HTMLElement | undefined => {
@@ -1050,6 +1050,13 @@ describe('DOM', () => {
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div><p>1</p></div>')
     })
+  })
+})
+
+describe('jsx', () => {
+  it('exported as an alias of createElement', () => {
+    expect(jsx).toBeDefined()
+    expect(jsx('div', {}, 'Hello')).toBeInstanceOf(Object)
   })
 })
 

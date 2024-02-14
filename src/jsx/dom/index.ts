@@ -55,6 +55,7 @@ const cloneElement = <T extends JSXNode | JSX.Element>(
 }
 
 export {
+  createElement as jsx,
   useState,
   useEffect,
   useRef,
