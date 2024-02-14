@@ -357,4 +357,13 @@ d.replaceWith(c.content)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<!DOCTYPE html><h1>fooValue</h1><p>barValue</p>')
   })
+
+  it('Should return a resolved content', async () => {
+    const app = new Hono()
+    app.use(jsxRenderer(async ({ children }) => <div>{children}</div>))
+    app.get('/', (c) => c.render('Hi', { title: 'Hi' }))
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('<!DOCTYPE html><div>Hi</div>')
+  })
 })
