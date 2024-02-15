@@ -11,32 +11,32 @@
  * ```
  */
 
-const prefix = "http://";
+const prefix = 'http://'
 
 export const toPunyCode = (
   string: string,
   options: {
-    strict?: boolean;
+    strict?: boolean
   } = {
     strict: true,
-  },
+  }
 ): string => {
-  const { strict } = options;
+  const { strict } = options
 
-  let punyCode = "";
+  let punyCode = ''
   try {
-    punyCode = new URL(string).href;
+    punyCode = new URL(string).href
   } catch {
     if (strict) {
-      punyCode = string;
+      punyCode = string
     } else {
-      const isEndSlash = string.endsWith("/");
-      punyCode = new URL(prefix + string).href.replace(prefix, "");
+      const isEndSlash = string.endsWith('/')
+      punyCode = new URL(prefix + string).href.replace(prefix, '')
       if (!isEndSlash) {
-        punyCode = punyCode.slice(0, -1);
+        punyCode = punyCode.slice(0, -1)
       }
     }
   }
 
-  return punyCode;
-};
+  return punyCode
+}
