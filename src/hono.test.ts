@@ -1258,6 +1258,26 @@ describe('Not Found', () => {
       expect(await res.text()).toBe('404 Not Found')
     })
   })
+
+  describe('Custom 404 Not Found with a middleware like Compress Middleware', () => {
+    const app = new Hono()
+
+    // Custom Middleware which creates a new Response object after `next()`.
+    app.use('*', async (c, next) => {
+      await next()
+      c.res = new Response(await c.res.text(), c.res)
+    })
+
+    app.notFound((c) => {
+      return c.text('Custom NotFound', 404)
+    })
+
+    it('Custom 404 Not Found', async () => {
+      const res = await app.request('http://localhost/')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Custom NotFound')
+    })
+  })
 })
 
 describe('Redirect', () => {
