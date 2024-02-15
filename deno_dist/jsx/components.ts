@@ -79,7 +79,7 @@ export const ErrorBoundary: FC<
       }
       return buffer
         ? ''
-        : `<template>${fallbackResString}</template><script>
+        : `<template data-hono-target="E:${index}">${fallbackResString}</template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('E:${index}')
@@ -100,7 +100,7 @@ d.replaceWith(c.content)
             const content = htmlArray.join('')
             let html = buffer
               ? ''
-              : `<template>${content}</template><script>
+              : `<template data-hono-target="E:${index}">${content}</template><script>
 ((d,c) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('E:${index}')
@@ -161,7 +161,7 @@ d.parentElement.insertBefore(c.content,d.nextSibling)
 d=d.getElementById('E:${index}')
 if(!d)return
 n=d.nextSibling
-do{n=n.nextSibling}while(n.nodeType!=8||n.nodeValue!='E:${index}')
+while(n.nodeType!=8||n.nodeValue!='E:${index}'){n=n.nextSibling}
 n.remove()
 d.remove()
 })(document)

@@ -76,7 +76,7 @@ export const Suspense: FC<PropsWithChildren<{ fallback: any }>> = async ({
           }
           let html = buffer
             ? ''
-            : `<template>${content}</template><script>
+            : `<template data-hono-target="H:${index}">${content}</template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${index}')
