@@ -128,6 +128,20 @@ describe('Context', () => {
     expect(c.res.status).toBe(201)
   })
 
+  it('Inherit current status if not specified', async () => {
+    c.status(201)
+    const res = c.newResponse('this is body', {
+      headers: {
+        'x-custom3': 'Message3',
+        'x-custom2': 'Message2-Override',
+      },
+    })
+    expect(res.headers.get('x-Custom2')).toBe('Message2-Override')
+    expect(res.headers.get('x-Custom3')).toBe('Message3')
+    expect(res.status).toBe(201)
+    expect(await res.text()).toBe('this is body')
+  })
+
   it('Should append the previous headers to new Response', () => {
     c.res.headers.set('x-Custom1', 'Message1')
     const res2 = new Response('foo2', {

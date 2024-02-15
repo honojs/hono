@@ -359,7 +359,7 @@ export class Context<
       const headers = setHeaders(new Headers(arg.headers), this.#preparedHeaders)
       return new Response(data, {
         headers,
-        status: arg.status,
+        status: arg.status ?? this.#status,
       })
     }
 

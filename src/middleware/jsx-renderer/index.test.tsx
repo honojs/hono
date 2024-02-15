@@ -366,4 +366,53 @@ d.replaceWith(c.content)
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<!DOCTYPE html><div>Hi</div>')
   })
+
+  describe('keep context status', async () => {
+    it('Should keep context status', async () => {
+      const app = new Hono()
+      app.use(
+        '*',
+        jsxRenderer(({ children }) => {
+          return (
+            <html>
+              <body>{children}</body>
+            </html>
+          )
+        })
+      )
+      app.get('/', (c) => {
+        c.status(201)
+        return c.render(<h1>Hello</h1>, { title: 'Title' })
+      })
+      const res = await app.request('/')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(201)
+      expect(await res.text()).toBe('<!DOCTYPE html><html><body><h1>Hello</h1></body></html>')
+    })
+
+    it('Should keep context status with stream option', async () => {
+      const app = new Hono()
+      app.use(
+        '*',
+        jsxRenderer(
+          ({ children }) => {
+            return (
+              <html>
+                <body>{children}</body>
+              </html>
+            )
+          },
+          { stream: true }
+        )
+      )
+      app.get('/', (c) => {
+        c.status(201)
+        return c.render(<h1>Hello</h1>, { title: 'Title' })
+      })
+      const res = await app.request('/')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(201)
+      expect(await res.text()).toBe('<!DOCTYPE html><html><body><h1>Hello</h1></body></html>')
+    })
+  })
 })
