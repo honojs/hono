@@ -114,6 +114,11 @@
       "import": "./dist/helper/html/index.js",
       "require": "./dist/cjs/helper/html/index.js"
     },
+    "./punycode": {
+      "types": "./dist/types/helper/punycode/index.d.ts",
+      "import": "./dist/helper/punycode/index.js",
+      "require": "./dist/cjs/helper/punycode/index.js"
+    },
     "./css": {
       "types": "./dist/types/helper/css/index.d.ts",
       "import": "./dist/helper/css/index.js",
@@ -361,6 +366,9 @@
       ],
       "html": [
         "./dist/types/helper/html"
+      ],
+      "punycode": [
+        "./dist/types/helper/punycode"
       ],
       "css": [
         "./dist/types/helper/css"
