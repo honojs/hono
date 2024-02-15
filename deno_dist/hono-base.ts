@@ -332,10 +332,9 @@ class Hono<
     if (matchResult[0].length === 1) {
       let res: ReturnType<H>
       try {
-        res = matchResult[0][0][0][0](c, async () => {})
-        if (!res) {
-          return this.notFoundHandler(c)
-        }
+        res = matchResult[0][0][0][0](c, async () => {
+          c.res = await this.notFoundHandler(c)
+        })
       } catch (err) {
         return this.handleError(err, c)
       }
