@@ -653,7 +653,7 @@ describe('Context', () => {
 
       expect(chunks).toEqual([
         '<template id="H:0"></template><span>red</span><!--/$-->',
-        `<template><span>dark</span><span>black</span></template><script>
+        `<template data-hono-target="H:0"><span>dark</span><span>black</span></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:0')
