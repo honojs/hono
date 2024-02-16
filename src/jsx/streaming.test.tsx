@@ -44,7 +44,7 @@ describe('Streaming', () => {
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><h1>Hello</h1></template><script>
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -92,7 +92,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><p>thrown a promise then resolved</p></template><script>
+      `<template data-hono-target="H:${suspenseCounter}"><p>thrown a promise then resolved</p></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -208,7 +208,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><p></p></template><script>
+      `<template data-hono-target="H:${suspenseCounter}"><p></p></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -242,7 +242,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><p></p></template><script>
+      `<template data-hono-target="H:${suspenseCounter}"><p></p></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -316,7 +316,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><h1>Hello</h1><h2>World</h2></template><script>
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1><h2>World</h2></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -362,7 +362,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template>Loading<span>...</span><!--/$-->`,
-      `<template><h1>Hello</h1></template><script>
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -418,7 +418,7 @@ d.replaceWith(c.content)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-      `<template><h1>Hello</h1><template id=\"H:${
+      `<template data-hono-target="H:${suspenseCounter}"><h1>Hello</h1><template id=\"H:${
         suspenseCounter + 1
       }\"></template><p>Loading sub content...</p><!--/$--></template><script>
 ((d,c,n) => {
@@ -429,7 +429,7 @@ do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
 })(document)
 </script>`,
-      `<template><h2>World</h2></template><script>
+      `<template data-hono-target="H:${suspenseCounter + 1}"><h2>World</h2></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter + 1}')
@@ -605,7 +605,7 @@ d.replaceWith(c.content)
 
       expect(chunks).toEqual([
         `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
-        `<template><h1>Hello from use()</h1></template><script>
+        `<template data-hono-target="H:${suspenseCounter}"><h1>Hello from use()</h1></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')

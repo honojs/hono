@@ -68,7 +68,7 @@ Deno.test('JSX: Suspense', async () => {
 
   assertEquals(chunks, [
     '<template id="H:0"></template><p>Loading...</p><!--/$-->',
-    `<template><h1>Hello</h1></template><script>
+    `<template data-hono-target="H:0"><h1>Hello</h1></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:0')
