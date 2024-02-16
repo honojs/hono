@@ -1,5 +1,6 @@
 import { expectTypeOf } from 'vitest'
 import { hc } from '../../client'
+import type { ClientRequest } from '../../client/types'
 import { Hono } from '../../index'
 import type { ToSchema } from '../../types'
 import { validator } from '../../validator'
@@ -7,10 +8,11 @@ import { createMiddleware, createFactory } from './index'
 
 describe('createMiddleware', () => {
   type Env = { Variables: { foo: string } }
-  const app = new Hono<Env>()
+  const app = new Hono()
 
   const mw = (message: string) =>
     createMiddleware<Env>(async (c, next) => {
+      expectTypeOf(c.var.foo).toEqualTypeOf<string>()
       c.set('foo', 'bar')
       await next()
       c.header('X-Message', message)
@@ -48,7 +50,7 @@ describe('createHandler', () => {
     const handlersA = factory.createHandlers((c) => {
       return c.text('A')
     })
-    app.get('/a', ...handlersA)
+    const routesA = app.get('/a', ...handlersA)
 
     const handlersB = factory.createHandlers(mw('B'), (c) => {
       return c.text('B')
@@ -67,6 +69,18 @@ describe('createHandler', () => {
       expect(res.headers.get('x-message')).toBe('B')
       expect(await res.text()).toBe('B')
     })
+
+    it('Should return correct path types - /a', () => {
+      const client = hc<typeof routesA>('/')
+      expectTypeOf(client).toEqualTypeOf<{
+        a: ClientRequest<{
+          $get: {
+            input: {}
+            output: {}
+          }
+        }>
+      }>()
+    })
   })
 
   describe('Types', () => {
@@ -84,7 +98,7 @@ describe('createHandler', () => {
       (c) => {
         const foo = c.var.foo
         const { page } = c.req.valid('query')
-        return c.jsonT({ page, foo })
+        return c.json({ page, foo })
       }
     )
     const routes = app.get('/posts', ...handlers)
@@ -142,7 +156,7 @@ describe('createHandler', () => {
         const { auth } = c.req.valid('header')
         const { page } = c.req.valid('query')
         const { id } = c.req.valid('json')
-        return c.jsonT({ auth, page, foo, id })
+        return c.json({ auth, page, foo, id })
       }
     )
     const routes = app.get('/posts', ...handlers)

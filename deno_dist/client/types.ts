@@ -2,7 +2,7 @@ import type { Hono } from '../hono.ts'
 import type { Schema } from '../types.ts'
 import type { HasRequiredKeys } from '../utils/types.ts'
 
-type HonoRequest = typeof Hono.prototype['request']
+type HonoRequest = (typeof Hono.prototype)['request']
 
 export type ClientRequestOptions<T = unknown> = keyof T extends never
   ? {
@@ -14,7 +14,7 @@ export type ClientRequestOptions<T = unknown> = keyof T extends never
       fetch?: typeof fetch | HonoRequest
     }
 
-type ClientRequest<S extends Schema> = {
+export type ClientRequest<S extends Schema> = {
   [M in keyof S]: S[M] extends { input: infer R; output: infer O }
     ? R extends object
       ? HasRequiredKeys<R> extends true
@@ -23,13 +23,21 @@ type ClientRequest<S extends Schema> = {
       : never
     : never
 } & {
-  $url: () => URL
+  $url: (
+    arg?: S[keyof S] extends { input: infer R }
+      ? R extends { param: infer P }
+        ? { param: P }
+        : {}
+      : {}
+  ) => URL
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type BlankRecordToNever<T> = T extends any ? (keyof T extends never ? never : T) : never
 
 export interface ClientResponse<T> {
+  readonly body: ReadableStream | null
+  readonly bodyUsed: boolean
   ok: boolean
   status: number
   statusText: string

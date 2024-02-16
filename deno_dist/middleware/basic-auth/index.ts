@@ -8,7 +8,7 @@ const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) 
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/
 const utf8Decoder = new TextDecoder()
 const auth = (req: HonoRequest) => {
-  const match = CREDENTIALS_REGEXP.exec(req.headers.get('Authorization') || '')
+  const match = CREDENTIALS_REGEXP.exec(req.header('Authorization') || '')
   if (!match) {
     return undefined
   }
@@ -43,16 +43,10 @@ export const basicAuth = (
     const requestUser = auth(ctx.req)
     if (requestUser) {
       for (const user of users) {
-        const usernameEqual = await timingSafeEqual(
-          user.username,
-          requestUser.username,
-          options.hashFunction
-        )
-        const passwordEqual = await timingSafeEqual(
-          user.password,
-          requestUser.password,
-          options.hashFunction
-        )
+        const [usernameEqual, passwordEqual] = await Promise.all([
+          timingSafeEqual(user.username, requestUser.username, options.hashFunction),
+          timingSafeEqual(user.password, requestUser.password, options.hashFunction),
+        ])
         if (usernameEqual && passwordEqual) {
           await next()
           return

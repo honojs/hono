@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { expectTypeOf, vi } from 'vitest'
+import { expectTypeOf } from 'vitest'
 import { hc } from './client'
 import type { Context } from './context'
 import { Hono } from './hono'
@@ -20,73 +20,222 @@ function throwExpression(errorMessage: string): never {
 }
 
 describe('GET Request', () => {
-  const app = new Hono()
+  describe('without middleware', () => {
+    // In other words, this is a test for cases that do not use `compose()`
 
-  app.get('/hello', async () => {
-    return new Response('hello', {
-      status: 200,
-      statusText: 'Hono is OK',
+    const app = new Hono()
+
+    app.get('/hello', async () => {
+      return new Response('hello', {
+        status: 200,
+        statusText: 'Hono is OK',
+      })
+    })
+
+    app.get('/hello-with-shortcuts', (c) => {
+      c.header('X-Custom', 'This is Hono')
+      c.status(201)
+      return c.html('<h1>Hono!!!</h1>')
+    })
+
+    app.get('/hello-env', (c) => {
+      return c.json(c.env)
+    })
+
+    app.get(
+      '/proxy-object',
+      () =>
+        new Proxy(new Response('proxy'), {
+          get(target, prop: keyof Response) {
+            return target[prop]
+          },
+        })
+    )
+
+    app.get(
+      '/async-proxy-object',
+      async () =>
+        new Proxy(new Response('proxy'), {
+          get(target, prop: keyof Response) {
+            return target[prop]
+          },
+        })
+    )
+
+    it('GET http://localhost/hello is ok', async () => {
+      const res = await app.request('http://localhost/hello')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(res.statusText).toBe('Hono is OK')
+      expect(await res.text()).toBe('hello')
+    })
+
+    it('GET httphello is ng', async () => {
+      const res = await app.request('httphello')
+      expect(res.status).toBe(404)
+    })
+
+    it('GET /hello is ok', async () => {
+      const res = await app.request('/hello')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(res.statusText).toBe('Hono is OK')
+      expect(await res.text()).toBe('hello')
+    })
+
+    it('GET hello is ok', async () => {
+      const res = await app.request('hello')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(res.statusText).toBe('Hono is OK')
+      expect(await res.text()).toBe('hello')
+    })
+
+    it('GET /hello-with-shortcuts is ok', async () => {
+      const res = await app.request('http://localhost/hello-with-shortcuts')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(201)
+      expect(res.headers.get('X-Custom')).toBe('This is Hono')
+      expect(res.headers.get('Content-Type')).toMatch(/text\/html/)
+      expect(await res.text()).toBe('<h1>Hono!!!</h1>')
+    })
+
+    it('GET / is not found', async () => {
+      const res = await app.request('http://localhost/')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(404)
+    })
+
+    it('GET /hello-env is ok', async () => {
+      const res = await app.request('/hello-env', undefined, { HELLO: 'world' })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ HELLO: 'world' })
+    })
+
+    it('GET /proxy-object is ok', async () => {
+      const res = await app.request('/proxy-object')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('proxy')
+    })
+
+    it('GET /async-proxy-object is ok', async () => {
+      const res = await app.request('/proxy-object')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('proxy')
     })
   })
 
-  app.get('/hello-with-shortcuts', (c) => {
-    c.header('X-Custom', 'This is Hono')
-    c.status(201)
-    return c.html('<h1>Hono!!!</h1>')
-  })
+  describe('with middleware', () => {
+    // when using `compose()`
 
-  app.get('/hello-env', (c) => {
-    return c.json(c.env)
-  })
+    const app = new Hono()
 
-  it('GET http://localhost/hello is ok', async () => {
-    const res = await app.request('http://localhost/hello')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(200)
-    expect(res.statusText).toBe('Hono is OK')
-    expect(await res.text()).toBe('hello')
-  })
+    app.use('*', async (ctx, next) => {
+      await next()
+    })
 
-  it('GET httphello is ng', async () => {
-    const res = await app.request('httphello')
-    expect(res.status).toBe(404)
-  })
+    app.get('/hello', async () => {
+      return new Response('hello', {
+        status: 200,
+        statusText: 'Hono is OK',
+      })
+    })
 
-  it('GET /hello is ok', async () => {
-    const res = await app.request('/hello')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(200)
-    expect(res.statusText).toBe('Hono is OK')
-    expect(await res.text()).toBe('hello')
-  })
+    app.get('/hello-with-shortcuts', (c) => {
+      c.header('X-Custom', 'This is Hono')
+      c.status(201)
+      return c.html('<h1>Hono!!!</h1>')
+    })
 
-  it('GET hello is ok', async () => {
-    const res = await app.request('hello')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(200)
-    expect(res.statusText).toBe('Hono is OK')
-    expect(await res.text()).toBe('hello')
-  })
+    app.get('/hello-env', (c) => {
+      return c.json(c.env)
+    })
 
-  it('GET /hello-with-shortcuts is ok', async () => {
-    const res = await app.request('http://localhost/hello-with-shortcuts')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(201)
-    expect(res.headers.get('X-Custom')).toBe('This is Hono')
-    expect(res.headers.get('Content-Type')).toMatch(/text\/html/)
-    expect(await res.text()).toBe('<h1>Hono!!!</h1>')
-  })
+    app.get(
+      '/proxy-object',
+      () =>
+        new Proxy(new Response('proxy'), {
+          get(target, prop: keyof Response) {
+            return target[prop]
+          },
+        })
+    )
 
-  it('GET / is not found', async () => {
-    const res = await app.request('http://localhost/')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(404)
-  })
+    app.get(
+      '/async-proxy-object',
+      async () =>
+        new Proxy(new Response('proxy'), {
+          get(target, prop: keyof Response) {
+            return target[prop]
+          },
+        })
+    )
 
-  it('GET /hello-env is ok', async () => {
-    const res = await app.request('/hello-env', undefined, { HELLO: 'world' })
-    expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ HELLO: 'world' })
+    it('GET http://localhost/hello is ok', async () => {
+      const res = await app.request('http://localhost/hello')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(res.statusText).toBe('Hono is OK')
+      expect(await res.text()).toBe('hello')
+    })
+
+    it('GET httphello is ng', async () => {
+      const res = await app.request('httphello')
+      expect(res.status).toBe(404)
+    })
+
+    it('GET /hello is ok', async () => {
+      const res = await app.request('/hello')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(res.statusText).toBe('Hono is OK')
+      expect(await res.text()).toBe('hello')
+    })
+
+    it('GET hello is ok', async () => {
+      const res = await app.request('hello')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(res.statusText).toBe('Hono is OK')
+      expect(await res.text()).toBe('hello')
+    })
+
+    it('GET /hello-with-shortcuts is ok', async () => {
+      const res = await app.request('http://localhost/hello-with-shortcuts')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(201)
+      expect(res.headers.get('X-Custom')).toBe('This is Hono')
+      expect(res.headers.get('Content-Type')).toMatch(/text\/html/)
+      expect(await res.text()).toBe('<h1>Hono!!!</h1>')
+    })
+
+    it('GET / is not found', async () => {
+      const res = await app.request('http://localhost/')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(404)
+    })
+
+    it('GET /hello-env is ok', async () => {
+      const res = await app.request('/hello-env', undefined, { HELLO: 'world' })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ HELLO: 'world' })
+    })
+
+    it('GET /proxy-object is ok', async () => {
+      const res = await app.request('/proxy-object')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('proxy')
+    })
+
+    it('GET /async-proxy-object is ok', async () => {
+      const res = await app.request('/proxy-object')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('proxy')
+    })
   })
 })
 
@@ -1051,6 +1200,84 @@ describe('Not Found', () => {
     expect(res.status).toBe(404)
     expect(await res.text()).toBe('Custom 404 Not Found')
   })
+
+  describe('Not Found with a middleware', () => {
+    const app = new Hono()
+
+    app.get('/', (c) => c.text('hello'))
+    app.use('*', async (c, next) => {
+      await next()
+      c.res = new Response((await c.res.text()) + ' + Middleware', c.res)
+    })
+
+    it('Custom 404 Not Found', async () => {
+      let res = await app.request('http://localhost/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('hello')
+      res = await app.request('http://localhost/foo')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('404 Not Found + Middleware')
+    })
+  })
+
+  describe('Not Found with some middleware', () => {
+    const app = new Hono()
+
+    app.get('/', (c) => c.text('hello'))
+    app.use('*', async (c, next) => {
+      await next()
+      c.res = new Response((await c.res.text()) + ' + Middleware 1', c.res)
+    })
+    app.use('*', async (c, next) => {
+      await next()
+      c.res = new Response((await c.res.text()) + ' + Middleware 2', c.res)
+    })
+
+    it('Custom 404 Not Found', async () => {
+      let res = await app.request('http://localhost/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('hello')
+      res = await app.request('http://localhost/foo')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('404 Not Found + Middleware 2 + Middleware 1')
+    })
+  })
+
+  describe('No response from a handler', () => {
+    const app = new Hono()
+
+    app.get('/', (c) => c.text('hello'))
+    app.get('/not-found', async (c) => undefined)
+
+    it('Custom 404 Not Found', async () => {
+      let res = await app.request('http://localhost/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('hello')
+      res = await app.request('http://localhost/not-found')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('404 Not Found')
+    })
+  })
+
+  describe('Custom 404 Not Found with a middleware like Compress Middleware', () => {
+    const app = new Hono()
+
+    // Custom Middleware which creates a new Response object after `next()`.
+    app.use('*', async (c, next) => {
+      await next()
+      c.res = new Response(await c.res.text(), c.res)
+    })
+
+    app.notFound((c) => {
+      return c.text('Custom NotFound', 404)
+    })
+
+    it('Custom 404 Not Found', async () => {
+      const res = await app.request('http://localhost/')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Custom NotFound')
+    })
+  })
 })
 
 describe('Redirect', () => {
@@ -1213,6 +1440,24 @@ describe('Error handling in middleware', () => {
     )
   })
 
+  describe('Default route app.use', () => {
+    const app = new Hono()
+    app
+      .use(async (c, next) => {
+        c.header('x-default-use', 'abc')
+        await next()
+      })
+      .get('/multiple/abc', (c) => {
+        return c.text('GET multiple')
+      })
+    it('GET /multiple/abc', async () => {
+      const res = await app.request('http://localhost/multiple/abc')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('GET multiple')
+      expect(res.headers.get('x-default-use')).toBe('abc')
+    })
+  })
+
   describe('Error in `notFound()`', () => {
     const app = new Hono()
 
@@ -1274,6 +1519,26 @@ describe('Request methods with custom middleware', () => {
     expect(res.headers.get('X-Query-2')).toBe('bar')
     expect(res.headers.get('X-Param-2')).toBe(null)
     expect(res.headers.get('X-Header-2')).toBe('bar')
+  })
+})
+
+describe('Middleware + c.json(0, requestInit)', () => {
+  const app = new Hono()
+  app.use('/', async (c, next) => {
+    await next()
+  })
+  app.get('/', (c) => {
+    return c.json(0, {
+      status: 200,
+      headers: {
+        foo: 'bar',
+      },
+    })
+  })
+  it('Should return a correct headers', async () => {
+    const res = await app.request('/')
+    expect(res.headers.get('content-type')).toMatch(/^application\/json/)
+    expect(res.headers.get('foo')).toBe('bar')
   })
 })
 
@@ -1653,6 +1918,30 @@ describe('Multiple methods with `app.on`', () => {
   })
 })
 
+describe('Multiple paths with one handler', () => {
+  const app = new Hono()
+
+  const paths = ['/hello', '/ja/hello', '/en/hello']
+  app.on('GET', paths, (c) => {
+    return c.json({
+      path: c.req.path,
+      routePath: c.req.routePath,
+    })
+  })
+
+  it('Should handle multiple paths', async () => {
+    paths.map(async (path) => {
+      const res = await app.request(path)
+      expect(res.status).toBe(200)
+      const data = await res.json()
+      expect(data).toEqual({
+        path,
+        routePath: path,
+      })
+    })
+  })
+})
+
 describe('Multiple handler', () => {
   describe('handler + handler', () => {
     const app = new Hono()
@@ -1692,7 +1981,6 @@ describe('Multiple handler', () => {
         expect(res.ok).toBe(true)
         expect(await res.text()).toBe('type: car, url: good-car')
       })
-
       it('Should return a correct param - GET /foo/food/good-food', async () => {
         const res = await app.request('/foo/food/good-food')
         expect(res.ok).toBe(true)
@@ -1818,106 +2106,6 @@ describe('Context is not finalized', () => {
     const res = await app.request('http://localhost/foo')
     expect(res.status).toBe(500)
     expect(await res.text()).toMatch(/^Context is not finalized/)
-  })
-})
-
-describe('Cookie', () => {
-  describe('Parse cookie', () => {
-    const apps: Record<string, Hono> = {}
-    apps['get by name'] = (() => {
-      const app = new Hono()
-
-      app.get('/cookie', (c) => {
-        const yummyCookie = c.req.cookie('yummy_cookie')
-        const tastyCookie = c.req.cookie('tasty_cookie')
-        const res = new Response('Good cookie')
-        if (yummyCookie && tastyCookie) {
-          res.headers.set('Yummy-Cookie', yummyCookie)
-          res.headers.set('Tasty-Cookie', tastyCookie)
-        }
-        return res
-      })
-
-      return app
-    })()
-
-    apps['get all as an object'] = (() => {
-      const app = new Hono()
-
-      app.get('/cookie', (c) => {
-        const { yummy_cookie: yummyCookie, tasty_cookie: tastyCookie } = c.req.cookie()
-        const res = new Response('Good cookie')
-        res.headers.set('Yummy-Cookie', yummyCookie)
-        res.headers.set('Tasty-Cookie', tastyCookie)
-        return res
-      })
-
-      return app
-    })()
-
-    describe.each(Object.keys(apps))('%s', (name) => {
-      const app = apps[name]
-      it('Parse cookie on c.req.cookie', async () => {
-        const req = new Request('http://localhost/cookie')
-        const cookieString = 'yummy_cookie=choco; tasty_cookie = strawberry '
-        req.headers.set('Cookie', cookieString)
-        const res = await app.request(req)
-
-        expect(res.headers.get('Yummy-Cookie')).toBe('choco')
-        expect(res.headers.get('Tasty-Cookie')).toBe('strawberry')
-      })
-    })
-  })
-
-  describe('Set cookie', () => {
-    const app = new Hono()
-
-    app.get('/set-cookie', (c) => {
-      c.cookie('delicious_cookie', 'macha')
-      return c.text('Give cookie')
-    })
-
-    it('Set cookie on c.cookie', async () => {
-      const res = await app.request('http://localhost/set-cookie')
-      expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('delicious_cookie=macha')
-    })
-
-    app.get('/set-cookie-complex', (c) => {
-      c.cookie('great_cookie', 'banana', {
-        path: '/',
-        secure: true,
-        domain: 'example.com',
-        httpOnly: true,
-        maxAge: 1000,
-        expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
-        sameSite: 'Strict',
-      })
-      return c.text('Give cookie')
-    })
-
-    it('Complex pattern', async () => {
-      const res = await app.request('http://localhost/set-cookie-complex')
-      expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe(
-        'great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
-      )
-    })
-
-    app.get('/set-cookie-multiple', (c) => {
-      c.cookie('delicious_cookie', 'macha')
-      c.cookie('delicious_cookie', 'choco')
-      return c.text('Give cookie')
-    })
-
-    it('Multiple values', async () => {
-      const res = await app.request('http://localhost/set-cookie-multiple')
-      expect(res.status).toBe(200)
-      const header = res.headers.get('Set-Cookie')
-      expect(header).toBe('delicious_cookie=macha, delicious_cookie=choco')
-    })
   })
 })
 
@@ -2087,17 +2275,6 @@ describe('Handler as variables', () => {
     const res = await app.request('http://localhost/posts/123')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Post id is 123')
-  })
-})
-
-describe('Show routes', () => {
-  const app = new Hono()
-  vi.spyOn(console, 'log')
-  it('Should call `console.log()` with `app.showRoutes()`', async () => {
-    app.get('/', (c) => c.text('/'))
-    app.get('/foo', (c) => c.text('/'))
-    app.showRoutes()
-    expect(console.log).toBeCalled()
   })
 })
 
@@ -2396,19 +2573,6 @@ describe('app.mount()', () => {
       expect(res.status).toBe(404)
       expect(await res.text()).toBe('Not Found from AnotherApp')
     })
-  })
-})
-
-describe('Router Name', () => {
-  it('Should return the correct router name', async () => {
-    const app = new Hono({
-      router: new RegExpRouter(),
-    })
-    app.get('/router-name', (c) => {
-      return c.text(app.routerName ?? 'N/A')
-    })
-    const res = await app.request('/router-name')
-    expect(await res.text()).toBe('RegExpRouter')
   })
 })
 

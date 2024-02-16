@@ -137,7 +137,9 @@ export class RegExpRouter<T> implements Router<T> {
       throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT)
     }
 
-    if (methodNames.indexOf(method) === -1) methodNames.push(method)
+    if (methodNames.indexOf(method) === -1) {
+      methodNames.push(method)
+    }
     if (!middleware[method]) {
       ;[middleware, routes].forEach((handlerMap) => {
         handlerMap[method] = {}
@@ -198,10 +200,7 @@ export class RegExpRouter<T> implements Router<T> {
               findMiddleware(middleware[METHOD_NAME_ALL], path) ||
               []),
           ]
-          routes[m][path].push([
-            handler,
-            paths.length === 2 && i === 0 ? paramCount - 1 : paramCount,
-          ])
+          routes[m][path].push([handler, paramCount - len + i + 1])
         }
       })
     }

@@ -8,7 +8,7 @@
 
 <p align="center">
 <a href="https://hono.dev"><b>Documentation :point_right: hono.dev</b></a><br />
-<i>v3 has been released!</i> <a href="docs/MIGRATION.md">Migration guide</b>
+<i>v4 has been released!</i> <a href="docs/MIGRATION.md">Migration guide</b>
 </p>
 
 <hr />
@@ -26,7 +26,7 @@
 [![Discord badge](https://img.shields.io/discord/1011308539819597844?label=Discord&logo=Discord)](https://discord.gg/KMh2eNSdxV)
 
 Hono - _**\[炎\] means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework for the Edges.
-It works on any JavaScript runtime: Cloudflare Workers, Fastly Compute, Deno, Bun, Vercel, Lagon, AWS Lambda, Lambda@Edge, and Node.js.
+It works on any JavaScript runtime: Cloudflare Workers, Fastly Compute, Deno, Bun, Vercel, AWS Lambda, Lambda@Edge, and Node.js.
 
 Fast, but not only fast.
 
@@ -42,14 +42,14 @@ export default app
 ## Quick Start
 
 ```
-npm create hono@latest my-app
+npm create hono@latest
 ```
 
 ## Features
 
 - **Ultrafast** 🚀 - The router `RegExpRouter` is really fast. Not using linear loops. Fast.
-- **Lightweight** 🪶 - The `hono/tiny` preset is under 12kB. Hono has zero dependencies and uses only the Web Standard API.
-- **Multi-runtime** 🌍 - Works on Cloudflare Workers, Fastly Compute, Deno, Bun, Lagon, AWS Lambda, Lambda@Edge, or Node.js. The same code runs on all platforms.
+- **Lightweight** 🪶 - The `hono/tiny` preset is under 13kB. Hono has zero dependencies and uses only the Web Standard API.
+- **Multi-runtime** 🌍 - Works on Cloudflare Workers, Fastly Compute, Deno, Bun, AWS Lambda, Lambda@Edge, or Node.js. The same code runs on all platforms.
 - **Batteries Included** 🔋 - Hono has built-in middleware, custom middleware, and third-party middleware. Batteries included.
 - **Delightful DX** 😃 - Super clean APIs. First-class TypeScript support. Now, we've got "Types".
 

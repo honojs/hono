@@ -1,18 +1,7 @@
-import { escapeToBuffer, stringBufferToString } from '../../utils/html.ts'
-import type {
-  StringBuffer,
-  HtmlEscaped,
-  HtmlEscapedString,
-  HtmlEscapedCallback,
-} from '../../utils/html.ts'
+import { escapeToBuffer, stringBufferToString, raw } from '../../utils/html.ts'
+import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html.ts'
 
-export const raw = (value: unknown, callbacks?: HtmlEscapedCallback[]): HtmlEscapedString => {
-  const escapedString = new String(value) as HtmlEscapedString
-  escapedString.isEscaped = true
-  escapedString.callbacks = callbacks
-
-  return escapedString
-}
+export { raw }
 
 export const html = (
   strings: TemplateStringsArray,
@@ -42,6 +31,8 @@ export const html = (
         } else {
           buffer[0] += tmp
         }
+      } else if (child instanceof Promise) {
+        buffer.unshift('', child)
       } else {
         escapeToBuffer(child.toString(), buffer)
       }

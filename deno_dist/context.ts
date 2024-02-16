@@ -1,12 +1,10 @@
-import type { Runtime } from './helper/adapter/index.ts'
+import type { FC } from './jsx/index.ts'
+import type { PropsForRenderer } from './middleware/jsx-renderer/index.ts'
 import type { HonoRequest } from './request.ts'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types.ts'
-import type { CookieOptions } from './utils/cookie.ts'
-import { serialize } from './utils/cookie.ts'
-import { resolveStream } from './utils/html.ts'
-import type { StatusCode } from './utils/http-status.ts'
-import { StreamingApi } from './utils/stream.ts'
-import type { JSONValue, InterfaceToType } from './utils/types.ts'
+import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html.ts'
+import type { RedirectStatusCode, StatusCode } from './utils/http-status.ts'
+import type { JSONValue, InterfaceToType, JSONParsed, IsAny } from './utils/types.ts'
 
 type HeaderRecord = Record<string, string | string[]>
 type Data = string | ArrayBuffer | ReadableStream
@@ -57,7 +55,7 @@ interface JSONRespond {
       InterfaceToType<T> extends JSONValue
         ? JSONValue extends InterfaceToType<T>
           ? never
-          : T
+          : JSONParsed<T>
         : never
     >
   <T>(object: InterfaceToType<T> extends JSONValue ? T : JSONValue, init?: ResponseInit): Response &
@@ -65,7 +63,7 @@ interface JSONRespond {
       InterfaceToType<T> extends JSONValue
         ? JSONValue extends InterfaceToType<T>
           ? never
-          : T
+          : JSONParsed<T>
         : never
     >
 }
@@ -83,7 +81,12 @@ type ContextOptions<E extends Env> = {
   notFoundHandler?: NotFoundHandler<E>
 }
 
-const TEXT_PLAIN = 'text/plain; charset=UTF-8'
+export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
+
+const setHeaders = (headers: Headers, map: Record<string, string> = {}) => {
+  Object.entries(map).forEach(([key, value]) => headers.set(key, value))
+  return headers
+}
 
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,10 +95,37 @@ export class Context<
   P extends string = any,
   I extends Input = {}
 > {
+  /**
+   * `.req` is the instance of {@link HonoRequest}.
+   */
   req: HonoRequest<P, I['out']>
+  /**
+   * `.env` can get bindings (environment variables, secrets, KV namespaces, D1 database, R2 bucket etc.) in Cloudflare Workers.
+   * @example
+   * ```ts
+   * // Environment object for Cloudflare Workers
+   * app.get('*', async c => {
+   *   const counter = c.env.COUNTER
+   * })
+   * ```
+   * @see https://hono.dev/api/context#env
+   */
   env: E['Bindings'] = {}
   private _var: E['Variables'] = {}
   finalized: boolean = false
+  /**
+   * `.error` can get the error object from the middleware if the Handler throws an error.
+   * @example
+   * ```ts
+   * app.use('*', async (c, next) => {
+   *   await next()
+   *   if (c.error) {
+   *     // do something...
+   *   }
+   * })
+   * ```
+   * @see https://hono.dev/api/context#error
+   */
   error: Error | undefined = undefined
 
   #status: StatusCode = 200
@@ -104,6 +134,7 @@ export class Context<
   #preparedHeaders: Record<string, string> | undefined = undefined
   #res: Response | undefined
   #isFresh = true
+  private layout: FC<PropsForRenderer & { Layout: FC }> | undefined = undefined
   private renderer: Renderer = (content: string | Promise<string>) => this.html(content)
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
@@ -118,6 +149,9 @@ export class Context<
     }
   }
 
+  /**
+   * @see https://hono.dev/api/context#event
+   */
   get event(): FetchEventLike {
     if (this.#executionCtx && 'respondWith' in this.#executionCtx) {
       return this.#executionCtx
@@ -126,6 +160,9 @@ export class Context<
     }
   }
 
+  /**
+   * @see https://hono.dev/api/context#executionctx
+   */
   get executionCtx(): ExecutionContext {
     if (this.#executionCtx) {
       return this.#executionCtx as ExecutionContext
@@ -134,6 +171,9 @@ export class Context<
     }
   }
 
+  /**
+   * @see https://hono.dev/api/context#res
+   */
   get res(): Response {
     this.#isFresh = false
     return (this.#res ||= new Response('404 Not Found', { status: 404 }))
@@ -143,23 +183,74 @@ export class Context<
     this.#isFresh = false
     if (this.#res && _res) {
       this.#res.headers.delete('content-type')
-      this.#res.headers.forEach((v, k) => {
-        _res.headers.set(k, v)
-      })
+      for (const [k, v] of this.#res.headers.entries()) {
+        if (k === 'set-cookie') {
+          const cookies = this.#res.headers.getSetCookie()
+          _res.headers.delete('set-cookie')
+          for (const cookie of cookies) {
+            _res.headers.append('set-cookie', cookie)
+          }
+        } else {
+          _res.headers.set(k, v)
+        }
+      }
     }
     this.#res = _res
     this.finalized = true
   }
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  render: Renderer = (...args: any[]) => this.renderer(...args)
+  /**
+   * `.render()` can create a response within a layout.
+   * @example
+   * ```ts
+   * app.get('/', (c) => {
+   *   return c.render('Hello!')
+   * })
+   * ```
+   * @see https://hono.dev/api/context#render-setrenderer
+   */
+  render: Renderer = (...args) => this.renderer(...args)
 
+  setLayout = (layout: FC<PropsForRenderer & { Layout: FC }>) => (this.layout = layout)
+  getLayout = () => this.layout
+
+  /**
+   * `.setRenderer()` can set the layout in the custom middleware.
+   * @example
+   * ```tsx
+   * app.use('*', async (c, next) => {
+   *   c.setRenderer((content) => {
+   *     return c.html(
+   *       <html>
+   *         <body>
+   *           <p>{content}</p>
+   *         </body>
+   *       </html>
+   *     )
+   *   })
+   *   await next()
+   * })
+   * ```
+   * @see https://hono.dev/api/context#render-setrenderer
+   */
   setRenderer = (renderer: Renderer) => {
     this.renderer = renderer
   }
 
+  /**
+   * `.header()` can set headers.
+   * @example
+   * ```ts
+   * app.get('/welcome', (c) => {
+   *   // Set headers
+   *   c.header('X-Message', 'Hello!')
+   *   c.header('Content-Type', 'text/plain')
+   *
+   *   return c.body('Thank you for coming')
+   * })
+   * ```
+   * @see https://hono.dev/api/context#body
+   */
   header = (name: string, value: string | undefined, options?: { append?: boolean }): void => {
     // Clear the header
     if (value === undefined) {
@@ -204,17 +295,51 @@ export class Context<
     this.#status = status
   }
 
+  /**
+   * `.set()` can set the value specified by the key.
+   * @example
+   * ```ts
+   * app.use('*', async (c, next) => {
+   *   c.set('message', 'Hono is cool!!')
+   *   await next()
+   * })
+   * ```
+   * @see https://hono.dev/api/context#set-get
+```
+   */
   set: Set<E> = (key: string, value: unknown) => {
     this._var ??= {}
     this._var[key as string] = value
   }
 
+  /**
+   * `.get()` can use the value specified by the key.
+   * @example
+   * ```ts
+   * app.get('/', (c) => {
+   *   const message = c.get('message')
+   *   return c.text(`The message is "${message}"`)
+   * })
+   * ```
+   * @see https://hono.dev/api/context#set-get
+   */
   get: Get<E> = (key: string) => {
     return this._var ? this._var[key] : undefined
   }
 
+  /**
+   * `.var` can access the value of a variable.
+   * @example
+   * ```ts
+   * const result = c.var.client.oneMethod()
+   * ```
+   * @see https://hono.dev/api/context#var
+   */
   // c.var.propName is a read-only
-  get var(): Readonly<E['Variables'] & ContextVariableMap> {
+  get var(): Readonly<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ContextVariableMap & (IsAny<E['Variables']> extends true ? Record<string, any> : E['Variables'])
+  > {
     return { ...this._var } as never
   }
 
@@ -230,31 +355,25 @@ export class Context<
       })
     }
 
-    // Return Response immediately if arg is ResponseInit.
     if (arg && typeof arg !== 'number') {
-      const res = new Response(data, arg)
-      const contentType = this.#preparedHeaders?.['content-type']
-      if (contentType) {
-        res.headers.set('content-type', contentType)
-      }
-      return res
+      const headers = setHeaders(new Headers(arg.headers), this.#preparedHeaders)
+      return new Response(data, {
+        headers,
+        status: arg.status ?? this.#status,
+      })
     }
 
-    const status = arg ?? this.#status
+    const status = typeof arg === 'number' ? arg : this.#status
     this.#preparedHeaders ??= {}
 
     this.#headers ??= new Headers()
-    for (const [k, v] of Object.entries(this.#preparedHeaders)) {
-      this.#headers.set(k, v)
-    }
+    setHeaders(this.#headers, this.#preparedHeaders)
 
     if (this.#res) {
       this.#res.headers.forEach((v, k) => {
         this.#headers?.set(k, v)
       })
-      for (const [k, v] of Object.entries(this.#preparedHeaders)) {
-        this.#headers.set(k, v)
-      }
+      setHeaders(this.#headers, this.#preparedHeaders)
     }
 
     headers ??= {}
@@ -275,6 +394,25 @@ export class Context<
     })
   }
 
+  /**
+   * `.body()` can return the HTTP response.
+   * You can set headers with `.header()` and set HTTP status code with `.status`.
+   * This can also be set in `.text()`, `.json()` and so on.
+   * @example
+   * ```ts
+   * app.get('/welcome', (c) => {
+   *   // Set headers
+   *   c.header('X-Message', 'Hello!')
+   *   c.header('Content-Type', 'text/plain')
+   *   // Set HTTP status code
+   *   c.status(201)
+   *
+   *   // Return the response body
+   *   return c.body('Thank you for coming')
+   * })
+   * ```
+   * @see https://hono.dev/api/context#body
+   */
   body: BodyRespond = (
     data: Data | null,
     arg?: StatusCode | ResponseInit,
@@ -285,6 +423,16 @@ export class Context<
       : this.newResponse(data, arg)
   }
 
+  /**
+   * `.text()` can render text as `Content-Type:text/plain`.
+   * @example
+   * ```ts
+   * app.get('/say', (c) => {
+   *   return c.text('Hello!')
+   * })
+   * ```
+   * @see https://hono.dev/api/context#text
+   */
   text: TextRespond = (
     text: string,
     arg?: StatusCode | ResponseInit,
@@ -304,6 +452,16 @@ export class Context<
       : this.newResponse(text, arg)
   }
 
+  /**
+   * `.json()` can render JSON as `Content-Type:application/json`.
+   * @example
+   * ```ts
+   * app.get('/api', (c) => {
+   *   return c.json({ message: 'Hello!' })
+   * })
+   * ```
+   * @see https://hono.dev/api/context#json
+   */
   json: JSONRespond = <T>(
     object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
     arg?: StatusCode | ResponseInit,
@@ -313,7 +471,7 @@ export class Context<
       InterfaceToType<T> extends JSONValue
         ? JSONValue extends InterfaceToType<T>
           ? never
-          : T
+          : JSONParsed<T>
         : never
     > => {
     const body = JSON.stringify(object)
@@ -323,28 +481,6 @@ export class Context<
     return (
       typeof arg === 'number' ? this.newResponse(body, arg, headers) : this.newResponse(body, arg)
     ) as any
-  }
-
-  /**
-   * @deprecated
-   * `c.jsonT()` will be removed in v4.
-   * Use `c.json()` instead of `c.jsonT()`.
-   * `c.json()` now returns data type, so you can just replace `c.jsonT()` to `c.json()`.
-   */
-  jsonT: JSONRespond = <T>(
-    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
-    arg?: StatusCode | ResponseInit,
-    headers?: HeaderRecord
-  ): Response &
-    TypedResponse<
-      InterfaceToType<T> extends JSONValue
-        ? JSONValue extends InterfaceToType<T>
-          ? never
-          : T
-        : never
-    > => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this.json(object, arg as any, headers) as any
   }
 
   html: HTMLRespond = (
@@ -361,7 +497,7 @@ export class Context<
       }
       if ((html as string | Promise<string>) instanceof Promise) {
         return (html as unknown as Promise<string>)
-          .then((html) => resolveStream(html))
+          .then((html) => resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}))
           .then((html) => {
             return typeof arg === 'number'
               ? this.newResponse(html, arg, headers)
@@ -375,105 +511,36 @@ export class Context<
       : this.newResponse(html as string, arg)
   }
 
-  redirect = (location: string, status: StatusCode = 302): Response => {
+  /**
+   * `.redirect()` can Redirect, default status code is 302.
+   * @example
+   * ```ts
+   * app.get('/redirect', (c) => {
+   *   return c.redirect('/')
+   * })
+   * app.get('/redirect-permanently', (c) => {
+   *   return c.redirect('/', 301)
+   * })
+   * ```
+   * @see https://hono.dev/api/context#redirect
+   */
+  redirect = (location: string, status: RedirectStatusCode = 302): Response => {
     this.#headers ??= new Headers()
     this.#headers.set('Location', location)
     return this.newResponse(null, status)
   }
 
-  streamText = (
-    cb: (stream: StreamingApi) => Promise<void>,
-    arg?: StatusCode | ResponseInit,
-    headers?: HeaderRecord
-  ): Response => {
-    headers ??= {}
-    this.header('content-type', TEXT_PLAIN)
-    this.header('x-content-type-options', 'nosniff')
-    this.header('transfer-encoding', 'chunked')
-    return this.stream(cb, arg, headers)
-  }
-
-  stream = (
-    cb: (stream: StreamingApi) => Promise<void>,
-    arg?: StatusCode | ResponseInit,
-    headers?: HeaderRecord
-  ): Response => {
-    const { readable, writable } = new TransformStream()
-    const stream = new StreamingApi(writable)
-    cb(stream).finally(() => stream.close())
-
-    return typeof arg === 'number'
-      ? this.newResponse(readable, arg, headers)
-      : this.newResponse(readable, arg)
-  }
-
-  /** @deprecated
-   * Use Cookie Middleware instead of `c.cookie()`. The `c.cookie()` will be removed in v4.
-   *
+  /**
+   * `.notFound()` can return the Not Found Response.
    * @example
-   *
-   * import { setCookie } from 'hono/cookie'
-   * // ...
-   * app.get('/', (c) => {
-   *   setCookie(c, 'key', 'value')
-   *   //...
+   * ```ts
+   * app.get('/notfound', (c) => {
+   *   return c.notFound()
    * })
+   * ```
+   * @see https://hono.dev/api/context#notfound
    */
-  cookie = (name: string, value: string, opt?: CookieOptions): void => {
-    const cookie = serialize(name, value, opt)
-    this.header('set-cookie', cookie, { append: true })
-  }
-
   notFound = (): Response | Promise<Response> => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     return this.notFoundHandler(this)
-  }
-
-  /** @deprecated
-   * Use `getRuntimeKey()` exported from `hono/adapter` instead of `c.runtime()`. The `c.runtime()` will be removed in v4.
-   *
-   * @example
-   *
-   * import { getRuntimeKey } from 'hono/adapter'
-   * // ...
-   * app.get('/', (c) => {
-   *   const key = getRuntimeKey()
-   *   //...
-   * })
-   */
-  get runtime(): Runtime {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const global = globalThis as any
-
-    if (global?.Deno !== undefined) {
-      return 'deno'
-    }
-
-    if (global?.Bun !== undefined) {
-      return 'bun'
-    }
-
-    if (typeof global?.WebSocketPair === 'function') {
-      return 'workerd'
-    }
-
-    if (typeof global?.EdgeRuntime === 'string') {
-      return 'edge-light'
-    }
-
-    if (global?.fastly !== undefined) {
-      return 'fastly'
-    }
-
-    if (global?.__lagon__ !== undefined) {
-      return 'lagon'
-    }
-
-    if (global?.process?.release?.name === 'node') {
-      return 'node'
-    }
-
-    return 'other'
   }
 }

@@ -37,6 +37,7 @@ Deno.test('JSX: Async Component', async () => {
 
   const chunks: string[] = []
   const textDecoder = new TextDecoder()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for await (const chunk of stream as any) {
     chunks.push(textDecoder.decode(chunk))
   }
@@ -60,13 +61,14 @@ Deno.test('JSX: Suspense', async () => {
 
   const chunks: string[] = []
   const textDecoder = new TextDecoder()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for await (const chunk of stream as any) {
     chunks.push(textDecoder.decode(chunk))
   }
 
   assertEquals(chunks, [
     '<template id="H:0"></template><p>Loading...</p><!--/$-->',
-    `<template><h1>Hello</h1></template><script>
+    `<template data-hono-target="H:0"><h1>Hello</h1></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:0')

@@ -78,6 +78,15 @@ describe('Complex', () => {
     ;[res] = router.match('GET', '/post/123/123')
     expect(res.length).toBe(0)
   })
+
+  it('Should support regexp quantifiers', async () => {
+    router.add('GET', '/year/:year{[0-9]{4}}/month/:month{[0-9]{1,2}}', 'handler')
+    const [res] = router.match('GET', '/year/2024/month/2')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toBe('handler')
+    expect(res[0][1]['year']).toBe('2024')
+    expect(res[0][1]['month']).toBe('2')
+  })
 })
 
 describe('Multi match', () => {
@@ -170,6 +179,28 @@ describe('Optional route', () => {
     const [res] = router.match('GET', '/api/animals')
     expect(res[0][0]).toEqual('animals')
     expect(res[0][1]['type']).toBeUndefined()
+  })
+  router.add('GET', '/v1/:version?/:platform?', 'result')
+  it('GET /v1/123/abc', () => {
+    const [res] = router.match('GET', '/v1/123/abc')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('result')
+    expect(res[0][1]['version']).toBe('123')
+    expect(res[0][1]['platform']).toBe('abc')
+  })
+  it('GET /v1/123', () => {
+    const [res] = router.match('GET', '/v1/123')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('result')
+    expect(res[0][1]['version']).toBe('123')
+    expect(res[0][1]['platform']).toBeUndefined()
+  })
+  it('GET /v1', () => {
+    const [res] = router.match('GET', '/v1')
+    expect(res.length).toBe(1)
+    expect(res[0][0]).toEqual('result')
+    expect(res[0][1]['version']).toBeUndefined()
+    expect(res[0][1]['platform']).toBeUndefined()
   })
 })
 

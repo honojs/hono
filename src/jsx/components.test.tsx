@@ -1,9 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { JSDOM } from 'jsdom'
-import { resolveStream } from '../utils/html'
+import type { HtmlEscapedString } from '../utils/html'
+import { HtmlEscapedCallbackPhase, resolveCallback as rawResolveCallback } from '../utils/html'
 import { ErrorBoundary } from './components'
 import { Suspense, renderToReadableStream } from './streaming'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, Fragment } from './index'
+import { jsx } from '.'
+
+function resolveCallback(template: string | HtmlEscapedString) {
+  return rawResolveCallback(template, HtmlEscapedCallbackPhase.Stream, false, {})
+}
 
 function replacementResult(html: string) {
   const document = new JSDOM(html, { runScripts: 'dangerously' }).window.document
@@ -36,7 +42,7 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       )
 
-      expect((await resolveStream(await html.toString())).toString()).toEqual('<div>Hello</div>')
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('<div>Hello</div>')
 
       errorBoundaryCounter--
       suspenseCounter--
@@ -49,7 +55,7 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       )
 
-      expect((await resolveStream(await html.toString())).toString()).toEqual(
+      expect((await resolveCallback(await html.toString())).toString()).toEqual(
         '<div>Out Of Service</div>'
       )
 
@@ -73,7 +79,7 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       )
 
-      expect((await resolveStream(await html.toString())).toString()).toEqual('<div>Hello</div>')
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('<div>Hello</div>')
 
       errorBoundaryCounter--
       suspenseCounter--
@@ -86,7 +92,7 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       )
 
-      expect((await resolveStream(await html.toString())).toString()).toEqual(
+      expect((await resolveCallback(await html.toString())).toString()).toEqual(
         '<div>Out Of Service</div>'
       )
 
@@ -113,7 +119,7 @@ describe('ErrorBoundary', () => {
 
       Object.values(handlers).forEach(({ resolve }) => resolve(undefined))
 
-      expect((await resolveStream(await html)).toString()).toEqual('<div>1</div><div>2</div>')
+      expect((await resolveCallback(await html)).toString()).toEqual('<div>1</div><div>2</div>')
 
       errorBoundaryCounter++
       suspenseCounter--
@@ -132,7 +138,7 @@ describe('ErrorBoundary', () => {
       handlers[2].resolve(undefined)
       handlers[1].reject()
 
-      expect((await resolveStream(await html)).toString()).toEqual('<div>Out Of Service</div>')
+      expect((await resolveCallback(await html)).toString()).toEqual('<div>Out Of Service</div>')
 
       errorBoundaryCounter++
       suspenseCounter--
@@ -151,7 +157,7 @@ describe('ErrorBoundary', () => {
       handlers[1].resolve(undefined)
       handlers[2].reject()
 
-      expect((await resolveStream(await html)).toString()).toEqual(
+      expect((await resolveCallback(await html)).toString()).toEqual(
         '<div>1</div><div>Out Of Service</div>'
       )
 
@@ -185,7 +191,7 @@ describe('ErrorBoundary', () => {
 
       expect(chunks).toEqual([
         `<template id="E:${errorBoundaryCounter}"></template><!--E:${errorBoundaryCounter}-->`,
-        `<template><template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$--></template><script>
+        `<template data-hono-target="E:${errorBoundaryCounter}"><template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$--></template><script>
 ((d,c) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('E:${errorBoundaryCounter}')
@@ -193,7 +199,7 @@ if(!d)return
 d.parentElement.insertBefore(c.content,d.nextSibling)
 })(document)
 </script>`,
-        `<template><div>Hello</div></template><script>
+        `<template data-hono-target="H:${suspenseCounter}"><div>Hello</div></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
@@ -206,7 +212,7 @@ d.replaceWith(c.content)
 d=d.getElementById('E:${errorBoundaryCounter}')
 if(!d)return
 n=d.nextSibling
-do{n=n.nextSibling}while(n.nodeType!=8||n.nodeValue!='E:${errorBoundaryCounter}')
+while(n.nodeType!=8||n.nodeValue!='E:${errorBoundaryCounter}'){n=n.nextSibling}
 n.remove()
 d.remove()
 })(document)
@@ -225,7 +231,7 @@ d.remove()
         </ErrorBoundary>
       )
 
-      expect((await resolveStream(await html.toString())).toString()).toEqual(
+      expect((await resolveCallback(await html.toString())).toString()).toEqual(
         '<div>Out Of Service</div>'
       )
     })
@@ -404,7 +410,7 @@ d.remove()
         </ErrorBoundary>
       )
 
-      expect((await resolveStream(await html.toString())).toString()).toEqual('<div>Hello</div>')
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('<div>Hello</div>')
 
       errorBoundaryCounter--
       suspenseCounter--
@@ -420,7 +426,7 @@ d.remove()
         </ErrorBoundary>
       )
 
-      expect((await resolveStream(await html.toString())).toString()).toEqual(
+      expect((await resolveCallback(await html.toString())).toString()).toEqual(
         '<div>Out Of Service</div>'
       )
 
@@ -447,7 +453,7 @@ d.remove()
         </ErrorBoundary>
       )
 
-      expect((await resolveStream(await html.toString())).toString()).toEqual('<div>Hello</div>')
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('<div>Hello</div>')
 
       errorBoundaryCounter--
       suspenseCounter--
@@ -462,7 +468,7 @@ d.remove()
         </ErrorBoundary>
       )
 
-      expect((await resolveStream(await html.toString())).toString()).toEqual(
+      expect((await resolveCallback(await html.toString())).toString()).toEqual(
         '<div data-error="true">Error</div>'
       )
 

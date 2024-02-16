@@ -18,9 +18,25 @@ So, if you propose great ideas, but I do not appropriate them, the idea may not 
 Although, don't worry!
 Hono is tested well, polished by the contributors, and used by many developers. And I'll try my best to make Hono cool, beautiful, and ultrafast.
 
+## Installing dependencies
+
+The `honojs/hono` project uses [Bun](https://bun.sh/) as its package manager. Developers should install Bun.
+
+After that, please install the dependency environment.
+
+```txt
+bun install
+```
+
+If you can't do that, there is also a `yarn.lock` file, so you can do the same with the `yarn` command.
+
+```txt
+yarn install --frozen-lockfile
+```
+
 ## PRs
 
-Please ensure your PR passes tests with `yarn test:all`. Also please ensure the Deno code is generated with `yarn denoify`.
+Please ensure your PR passes tests with `bun run test` or `yarn test`. Also please ensure the Deno code is generated with `yarn denoify`.
 
 ## Third-party middleware
 
@@ -36,3 +52,11 @@ It may be under the "honojs organization" and distributed in the `@honojs` names
 
 The monorepo "[honojs/middleware](https://github.com/honojs/middleware)" manages these middleware.
 If you want to do it, create the issue about your middleware.
+
+## Local Development
+
+```
+git clone git@github.com:honojs/hono.git && cd hono/.devcontainer && yarn install
+docker compose up -d --build
+docker compose exec hono bash
+```

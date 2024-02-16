@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'bun:test'
-import { serveStatic } from '../../src/adapter/bun'
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
+import { serveStatic, toSSG } from '../../src/adapter/bun'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { Hono } from '../../src/index'
@@ -11,6 +11,8 @@ import { HonoRequest } from '../../src/request'
 
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.
+
+Bun.env.NAME = 'Bun'
 
 describe('Basic', () => {
   const app = new Hono()
@@ -76,10 +78,11 @@ describe('Basic Auth Middleware', () => {
 
 describe('Serve Static Middleware', () => {
   const app = new Hono()
+  const onNotFound = vi.fn(() => {})
   app.all('/favicon.ico', serveStatic({ path: './runtime_tests/bun/favicon.ico' }))
   app.all(
     '/favicon-notfound.ico',
-    serveStatic({ path: './runtime_tests/bun/favicon-notfound.ico' })
+    serveStatic({ path: './runtime_tests/bun/favicon-notfound.ico', onNotFound })
   )
   app.use('/favicon-notfound.ico', async (c, next) => {
     await next()
@@ -89,6 +92,7 @@ describe('Serve Static Middleware', () => {
     '/static/*',
     serveStatic({
       root: './runtime_tests/bun/',
+      onNotFound,
     })
   )
   app.get(
@@ -98,6 +102,8 @@ describe('Serve Static Middleware', () => {
       rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
     })
   )
+
+  beforeEach(() => onNotFound.mockClear())
 
   it('Should return static file correctly', async () => {
     const res = await app.request(new Request('http://localhost/favicon.ico'))
@@ -110,12 +116,17 @@ describe('Serve Static Middleware', () => {
     const res = await app.request(new Request('http://localhost/favicon-notfound.ico'))
     expect(res.status).toBe(404)
     expect(res.headers.get('X-Custom')).toBe('Bun')
+    expect(onNotFound).toHaveBeenCalledWith(
+      './runtime_tests/bun/favicon-notfound.ico',
+      expect.anything()
+    )
   })
 
   it('Should return 200 response - /static/plain.txt', async () => {
     const res = await app.request(new Request('http://localhost/static/plain.txt'))
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Bun!')
+    expect(onNotFound).not.toHaveBeenCalled()
   })
 
   it('Should return 200 response - /dot-static/plain.txt', async () => {
@@ -198,3 +209,64 @@ describe('JSX Middleware', () => {
     expect(await res.text()).toBe('<html><p>hello</p></html>')
   })
 })
+
+describe('toSSG function', () => {
+  let app: Hono
+
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/', (c) => c.text('Hello, World!'))
+    app.get('/about', (c) => c.text('About Page'))
+    app.get('/about/some', (c) => c.text('About Page 2tier'))
+    app.post('/about/some/thing', (c) => c.text('About Page 3tier'))
+    app.get('/bravo', (c) => c.html('Bravo Page'))
+    app.get('/Charlie', async (c, next) => {
+      c.setRenderer((content, head) => {
+        return c.html(
+          <html>
+            <head>
+              <title>{head.title || ''}</title>
+            </head>
+            <body>
+              <p>{content}</p>
+            </body>
+          </html>
+        )
+      })
+      await next()
+    })
+    app.get('/Charlie', (c) => {
+      return c.render('Hello!', { title: 'Charlies Page' })
+    })
+  })
+
+  it('Should correctly generate static HTML files for Hono routes', async () => {
+    const result = await toSSG(app, { dir: './static' })
+    expect(result.success).toBeTruly
+    expect(result.error).toBeUndefined()
+    expect(result.files).toBeDefined()
+    afterAll(async () => {
+      await deleteDirectory('./static')
+    })
+  })
+})
+
+const fs = require('fs').promises
+const path = require('path')
+
+async function deleteDirectory(dirPath) {
+  if (
+    await fs
+      .stat(dirPath)
+      .then((stat) => stat.isDirectory())
+      .catch(() => false)
+  ) {
+    for (const entry of await fs.readdir(dirPath)) {
+      const entryPath = path.join(dirPath, entry)
+      await deleteDirectory(entryPath)
+    }
+    await fs.rmdir(dirPath)
+  } else {
+    await fs.unlink(dirPath)
+  }
+}

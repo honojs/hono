@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import FormData from 'form-data'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import _fetch, { Request as NodeFetchRequest } from 'node-fetch'
 import { vi, expectTypeOf } from 'vitest'
 import { Hono } from '../hono'
 import { parse } from '../utils/cookie'
@@ -12,13 +10,6 @@ import type { Equal, Expect } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
 import type { InferRequestType, InferResponseType } from './types'
-
-// @ts-ignore
-global.fetch = _fetch
-// @ts-ignore
-global.Request = NodeFetchRequest
-// @ts-ignore
-global.FormData = FormData
 
 describe('Basic - JSON', () => {
   const app = new Hono()
@@ -139,18 +130,6 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
         })
       }
     )
-    .get(
-      '/posts',
-      validator('queries', () => {
-        return {
-          tags: ['a', 'b'],
-        }
-      }),
-      (c) => {
-        const data = c.req.valid('queries')
-        return c.json(data)
-      }
-    )
     .put(
       '/posts/:id',
       validator('form', () => {
@@ -257,19 +236,6 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
     })
   })
 
-  it('Should get 200 response - queries', async () => {
-    const res = await client.posts.$get({
-      queries: {
-        tags: ['A', 'B', 'C'],
-      },
-    })
-
-    expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({
-      tags: ['A', 'B', 'C'],
-    })
-  })
-
   it('Should get 200 response - form, params', async () => {
     const res = await client.posts[':id'].$put({
       form: {
@@ -356,8 +322,8 @@ describe('Infer the response/request type', () => {
 
     type Actual = InferRequestType<typeof req>
     type Expected = {
-      age: string
-      name: string
+      age: string | string[]
+      name: string | string[]
     }
     type verify = Expect<Equal<Expected, Actual['query']>>
   })
@@ -500,15 +466,14 @@ describe('Merge path with `app.route()`', () => {
     expect(data.ok).toBe(true)
   })
 
-  it('Should not allow the incorrect JSON type', async () => {
+  it('Should allow a Date object and return it as a string', async () => {
     const app = new Hono()
-    // @ts-expect-error
     const route = app.get('/api/foo', (c) => c.json({ datetime: new Date() }))
     type AppType = typeof route
     const client = hc<AppType>('http://localhost')
     const res = await client.api.foo.$get()
-    const data = await res.json()
-    type verify = Expect<Equal<never, typeof data>>
+    const { datetime } = await res.json()
+    type verify = Expect<Equal<string, typeof datetime>>
   })
 
   describe('Multiple endpoints', () => {
@@ -577,7 +542,7 @@ describe('Use custom fetch (app.request) method', () => {
 describe('Optional parameters in JSON response', () => {
   it('Should return the correct type', async () => {
     const app = new Hono().get('/', (c) => {
-      return c.jsonT({ message: 'foo' } as { message?: string })
+      return c.json({ message: 'foo' } as { message?: string })
     })
     type AppType = typeof app
     const client = hc<AppType>('', { fetch: app.request })
@@ -604,5 +569,35 @@ describe('ClientResponse<T>.json() returns a Union type correctly', () => {
     const res = await client.index.$get()
     const json = await res.json()
     expectTypeOf(json).toEqualTypeOf<{ data: string } | { message: string }>()
+  })
+})
+
+describe('$url() with a param option', () => {
+  const app = new Hono().get('/posts/:id/comments', (c) => c.json({ ok: true }))
+  type AppType = typeof app
+  const client = hc<AppType>('http://localhost')
+
+  it('Should return the correct path - /posts/123/comments', async () => {
+    const url = client.posts[':id'].comments.$url({
+      param: {
+        id: '123',
+      },
+    })
+    expect(url.pathname).toBe('/posts/123/comments')
+  })
+
+  it('Should return the correct path - /posts/:id/comments', async () => {
+    const url = client.posts[':id'].comments.$url()
+    expect(url.pathname).toBe('/posts/:id/comments')
+  })
+})
+
+describe('Client can be awaited', () => {
+  it('Can be awaited without side effects', async () => {
+    const client = hc('http://localhost')
+
+    const awaited = await client
+
+    expect(awaited).toEqual(client)
   })
 })

@@ -5,10 +5,13 @@ import { splitPath, splitRoutingPath, getPattern } from '../../utils/url.ts'
 
 type HandlerSet<T> = {
   handler: T
-  params: Record<string, string>
   possibleKeys: string[]
   score: number
   name: string // For debug
+}
+
+type HandlerParamsSet<T> = HandlerSet<T> & {
+  params: Record<string, string>
 }
 
 export class Node<T> {
@@ -26,7 +29,7 @@ export class Node<T> {
     this.name = ''
     if (method && handler) {
       const m: Record<string, HandlerSet<T>> = {}
-      m[method] = { handler, params: {}, possibleKeys: [], score: 0, name: this.name }
+      m[method] = { handler, possibleKeys: [], score: 0, name: this.name }
       this.methods = [m]
     }
     this.patterns = []
@@ -50,7 +53,9 @@ export class Node<T> {
         parentPatterns.push(...curNode.patterns)
         curNode = curNode.children[p]
         const pattern = getPattern(p)
-        if (pattern) possibleKeys.push(pattern[1])
+        if (pattern) {
+          possibleKeys.push(pattern[1])
+        }
         continue
       }
 
@@ -74,8 +79,7 @@ export class Node<T> {
 
     const handlerSet: HandlerSet<T> = {
       handler,
-      params: {},
-      possibleKeys,
+      possibleKeys: possibleKeys.filter((v, i, a) => a.indexOf(v) === i),
       name: this.name,
       score: this.order,
     }
@@ -87,14 +91,24 @@ export class Node<T> {
   }
 
   // getHandlerSets
-  private gHSets(node: Node<T>, method: string, params: Record<string, string>): HandlerSet<T>[] {
-    const handlerSets: HandlerSet<T>[] = []
+  private gHSets(
+    node: Node<T>,
+    method: string,
+    nodeParams: Record<string, string>,
+    params: Record<string, string>
+  ): HandlerParamsSet<T>[] {
+    const handlerSets: HandlerParamsSet<T>[] = []
     for (let i = 0, len = node.methods.length; i < len; i++) {
       const m = node.methods[i]
-      const handlerSet = m[method] || m[METHOD_NAME_ALL]
+      const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>
+      const processedSet: Record<string, boolean> = {}
       if (handlerSet !== undefined) {
-        handlerSet.possibleKeys.map((key) => {
-          handlerSet.params[key] = params[key]
+        handlerSet.params = {}
+        handlerSet.possibleKeys.forEach((key) => {
+          const processed = processedSet[handlerSet.name]
+          handlerSet.params[key] =
+            params[key] && !processed ? params[key] : nodeParams[key] ?? params[key]
+          processedSet[handlerSet.name] = true
         })
         handlerSets.push(handlerSet)
       }
@@ -103,9 +117,7 @@ export class Node<T> {
   }
 
   search(method: string, path: string): [[T, Params][]] {
-    const handlerSets: HandlerSet<T>[] = []
-
-    const params: Record<string, string> = {}
+    const handlerSets: HandlerParamsSet<T>[] = []
     this.params = {}
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -123,14 +135,13 @@ export class Node<T> {
         const nextNode = node.children[part]
 
         if (nextNode) {
+          nextNode.params = node.params
           if (isLast === true) {
             // '/hello/*' => match '/hello'
             if (nextNode.children['*']) {
-              handlerSets.push(
-                ...this.gHSets(nextNode.children['*'], method, { ...params, ...node.params })
-              )
+              handlerSets.push(...this.gHSets(nextNode.children['*'], method, node.params, {}))
             }
-            handlerSets.push(...this.gHSets(nextNode, method, { ...params, ...node.params }))
+            handlerSets.push(...this.gHSets(nextNode, method, node.params, {}))
           } else {
             tempNodes.push(nextNode)
           }
@@ -139,18 +150,22 @@ export class Node<T> {
         for (let k = 0, len3 = node.patterns.length; k < len3; k++) {
           const pattern = node.patterns[k]
 
+          const params = { ...node.params }
+
           // Wildcard
           // '/hello/*/foo' => match /hello/bar/foo
           if (pattern === '*') {
             const astNode = node.children['*']
             if (astNode) {
-              handlerSets.push(...this.gHSets(astNode, method, { ...params, ...node.params }))
+              handlerSets.push(...this.gHSets(astNode, method, node.params, {}))
               tempNodes.push(astNode)
             }
             continue
           }
 
-          if (part === '') continue
+          if (part === '') {
+            continue
+          }
 
           const [key, name, matcher] = pattern
 
@@ -160,7 +175,7 @@ export class Node<T> {
           const restPathString = parts.slice(i).join('/')
           if (matcher instanceof RegExp && matcher.test(restPathString)) {
             params[name] = restPathString
-            handlerSets.push(...this.gHSets(child, method, { ...params, ...node.params }))
+            handlerSets.push(...this.gHSets(child, method, node.params, params))
             continue
           }
 
@@ -168,14 +183,12 @@ export class Node<T> {
             if (typeof key === 'string') {
               params[name] = part
               if (isLast === true) {
-                handlerSets.push(...this.gHSets(child, method, { ...params, ...node.params }))
+                handlerSets.push(...this.gHSets(child, method, params, node.params))
                 if (child.children['*']) {
-                  handlerSets.push(
-                    ...this.gHSets(child.children['*'], method, { ...params, ...node.params })
-                  )
+                  handlerSets.push(...this.gHSets(child.children['*'], method, params, node.params))
                 }
               } else {
-                child.params = { ...params }
+                child.params = params
                 tempNodes.push(child)
               }
             }

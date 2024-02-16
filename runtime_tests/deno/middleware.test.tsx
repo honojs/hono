@@ -1,8 +1,9 @@
 /** @jsx jsx */
 /** @jsxFrag Fragment */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { basicAuth, jsx, Fragment, serveStatic, jwt } from '../../deno_dist/middleware.ts'
 import { Hono } from '../../deno_dist/mod.ts'
-import { assertEquals, assertMatch } from './deps.ts'
+import { assertEquals, assertMatch, assertSpyCall, assertSpyCalls, spy } from './deps.ts'
 
 // Test just only minimal patterns.
 // Because others are already tested well in Cloudflare Workers environment.
@@ -66,10 +67,11 @@ Deno.test('JSX middleware', async () => {
 
 Deno.test('Serve Static middleware', async () => {
   const app = new Hono()
+  const onNotFound = spy(() => {})
   app.all('/favicon.ico', serveStatic({ path: './runtime_tests/deno/favicon.ico' }))
   app.all(
     '/favicon-notfound.ico',
-    serveStatic({ path: './runtime_tests/deno/favicon-notfound.ico' })
+    serveStatic({ path: './runtime_tests/deno/favicon-notfound.ico', onNotFound })
   )
   app.use('/favicon-notfound.ico', async (c, next) => {
     await next()
@@ -80,6 +82,7 @@ Deno.test('Serve Static middleware', async () => {
     '/static/*',
     serveStatic({
       root: './runtime_tests/deno',
+      onNotFound,
     })
   )
 
@@ -100,6 +103,7 @@ Deno.test('Serve Static middleware', async () => {
   assertEquals(res.status, 404)
   assertMatch(res.headers.get('Content-Type') || '', /^text\/plain/)
   assertEquals(res.headers.get('X-Custom'), 'Deno')
+  assertSpyCall(onNotFound, 0)
 
   res = await app.request('http://localhost/static/plain.txt')
   assertEquals(res.status, 200)
@@ -108,6 +112,7 @@ Deno.test('Serve Static middleware', async () => {
   res = await app.request('http://localhost/dot-static/plain.txt')
   assertEquals(res.status, 200)
   assertEquals(await res.text(), 'Deno!!')
+  assertSpyCalls(onNotFound, 1)
 })
 
 Deno.test('JWT Authentication middleware', async () => {

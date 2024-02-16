@@ -1,13 +1,21 @@
 import type { HtmlEscapedString } from '../utils/html.ts'
-import { jsx } from './index.ts'
-import type { JSXNode } from './index.ts'
-export { Fragment } from './index.ts'
+import { jsxFn } from './base.ts'
+import type { JSXNode } from './base.ts'
+export { Fragment } from './base.ts'
 
-export function jsxDEV(tag: string | Function, props: Record<string, unknown>): JSXNode {
-  if (!props?.children) {
-    return jsx(tag, props)
+export function jsxDEV(
+  tag: string | Function,
+  props: Record<string, unknown>,
+  key?: string
+): JSXNode {
+  let node: JSXNode
+  if (!props || !('children' in props)) {
+    node = jsxFn(tag, props, [])
+  } else {
+    const children = props.children as string | HtmlEscapedString
+    delete props['children']
+    node = Array.isArray(children) ? jsxFn(tag, props, children) : jsxFn(tag, props, [children])
   }
-  const children = props.children as string | HtmlEscapedString
-  delete props['children']
-  return Array.isArray(children) ? jsx(tag, props, ...children) : jsx(tag, props, children)
+  node.key = key
+  return node
 }

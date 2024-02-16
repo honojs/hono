@@ -1,6 +1,7 @@
 import type { Context } from '../context'
 import { getCookie } from '../helper/cookie'
-import type { Env, ValidationTargets, MiddlewareHandler } from '../types'
+import { HTTPException } from '../http-exception'
+import type { Env, ValidationTargets, MiddlewareHandler, TypedResponse } from '../types'
 import type { BodyData } from '../utils/body'
 import { bufferToFormData } from '../utils/buffer'
 
@@ -19,19 +20,31 @@ export type ValidationFunction<
   c: Context<E, P>
 ) => OutputType | Response | Promise<OutputType> | Promise<Response>
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ExcludeResponseType<T> = T extends Response & TypedResponse<any> ? never : T
+
 export const validator = <
   InputType,
   P extends string,
   M extends string,
   U extends ValidationTargetByMethod<M>,
   OutputType = ValidationTargets[U],
+  OutputTypeExcludeResponseType = ExcludeResponseType<OutputType>,
   P2 extends string = P,
   V extends {
-    in: { [K in U]: unknown extends InputType ? OutputType : InputType }
-    out: { [K in U]: OutputType }
+    in: {
+      [K in U]: K extends 'json'
+        ? InputType
+        : { [K2 in keyof OutputTypeExcludeResponseType]: ValidationTargets[K][K2] }
+    }
+    out: { [K in U]: OutputTypeExcludeResponseType }
   } = {
-    in: { [K in U]: unknown extends InputType ? OutputType : InputType }
-    out: { [K in U]: OutputType }
+    in: {
+      [K in U]: K extends 'json'
+        ? InputType
+        : { [K2 in keyof OutputTypeExcludeResponseType]: ValidationTargets[K][K2] }
+    }
+    out: { [K in U]: OutputTypeExcludeResponseType }
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any
@@ -52,14 +65,7 @@ export const validator = <
       case 'json':
         if (!contentType || !contentType.startsWith('application/json')) {
           const message = `Invalid HTTP header: Content-Type=${contentType}`
-          console.error(message)
-          return c.json(
-            {
-              success: false,
-              message,
-            },
-            400
-          )
+          throw new HTTPException(400, { message })
         }
         /**
          * Get the arrayBuffer first, create JSON object via Response,
@@ -71,14 +77,8 @@ export const validator = <
           c.req.bodyCache.json = value
           c.req.bodyCache.arrayBuffer = arrayBuffer
         } catch {
-          console.error('Error: Malformed JSON in request body')
-          return c.json(
-            {
-              success: false,
-              message: 'Malformed JSON in request body',
-            },
-            400
-          )
+          const message = 'Malformed JSON in request body'
+          throw new HTTPException(400, { message })
         }
         break
       case 'form': {
@@ -98,13 +98,7 @@ export const validator = <
         } catch (e) {
           let message = 'Malformed FormData request.'
           message += e instanceof Error ? ` ${e.message}` : ` ${String(e)}`
-          return c.json(
-            {
-              success: false,
-              message,
-            },
-            400
-          )
+          throw new HTTPException(400, { message })
         }
         break
       }
@@ -114,10 +108,6 @@ export const validator = <
             return v.length === 1 ? [k, v[0]] : [k, v]
           })
         )
-        break
-      case 'queries':
-        value = c.req.queries()
-        console.log('Warnings: Validate type `queries` is deprecated. Use `query` instead.')
         break
       case 'param':
         value = c.req.param() as Record<string, string>

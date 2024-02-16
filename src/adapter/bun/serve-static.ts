@@ -1,24 +1,24 @@
 // @denoify-ignore
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { existsSync } from 'fs'
 import type { Context } from '../../context'
-import type { Next } from '../../types'
+import type { Env, MiddlewareHandler } from '../../types'
 import { getFilePath } from '../../utils/filepath'
 import { getMimeType } from '../../utils/mime'
 
-// @ts-ignore
-const { file } = Bun
-
-export type ServeStaticOptions = {
+export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
   path?: string
+  mimes?: Record<string, string>
   rewriteRequestPath?: (path: string) => string
+  onNotFound?: (path: string, c: Context<E>) => void | Promise<void>
 }
 
 const DEFAULT_DOCUMENT = 'index.html'
 
-export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
-  return async (c: Context, next: Next) => {
+export const serveStatic = <E extends Env = Env>(
+  options: ServeStaticOptions<E> = { root: '' }
+): MiddlewareHandler => {
+  return async (c, next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
       await next()
@@ -33,23 +33,30 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }) => {
       defaultDocument: DEFAULT_DOCUMENT,
     })
 
-    if (!path) return await next()
+    if (!path) {
+      return await next()
+    }
 
     path = `./${path}`
 
-    if (existsSync(path)) {
-      const content = file(path)
-      if (content) {
-        const mimeType = getMimeType(path)
-        if (mimeType) {
-          c.header('Content-Type', mimeType)
-        }
-        // Return Response object
-        return c.body(content)
+    // @ts-ignore
+    const file = Bun.file(path)
+    const isExists = await file.exists()
+    if (isExists) {
+      let mimeType: string | undefined = undefined
+      if (options.mimes) {
+        mimeType = getMimeType(path, options.mimes) ?? getMimeType(path)
+      } else {
+        mimeType = getMimeType(path)
       }
+      if (mimeType) {
+        c.header('Content-Type', mimeType)
+      }
+      // Return Response object
+      return c.body(file)
     }
 
-    console.warn(`Static file: ${path} is not found`)
+    await options.onNotFound?.(path, c)
     await next()
     return
   }

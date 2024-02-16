@@ -128,6 +128,20 @@ describe('Context', () => {
     expect(c.res.status).toBe(201)
   })
 
+  it('Inherit current status if not specified', async () => {
+    c.status(201)
+    const res = c.newResponse('this is body', {
+      headers: {
+        'x-custom3': 'Message3',
+        'x-custom2': 'Message2-Override',
+      },
+    })
+    expect(res.headers.get('x-Custom2')).toBe('Message2-Override')
+    expect(res.headers.get('x-Custom3')).toBe('Message3')
+    expect(res.status).toBe(201)
+    expect(await res.text()).toBe('this is body')
+  })
+
   it('Should append the previous headers to new Response', () => {
     c.res.headers.set('x-Custom1', 'Message1')
     const res2 = new Response('foo2', {
@@ -181,12 +195,6 @@ describe('Context', () => {
     expect(res.headers.get('foo')).not.toBeNull()
     expect(res.headers.get('foo')).toBe('bar')
   })
-
-  // The `c.runtime()` will be removed in v4.
-  it('returns current runtime (node)', async () => {
-    c = new Context(req)
-    expect(c.runtime).toBe('node')
-  })
 })
 
 describe('Context header', () => {
@@ -204,6 +212,25 @@ describe('Context header', () => {
     c.res = await c.html('foo')
     const res = c.text('foo')
     expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
+  })
+
+  it('Should set header values if the #this.headers is set and the arg is ResponseInit', async () => {
+    c.header('foo', 'bar')
+    const res = c.body('foo', {
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+    })
+    expect(res.headers.get('foo')).toBe('bar')
+  })
+
+  it('Should set cookie headers when re-assigning Response to `c.res`', () => {
+    c.res = new Response(null)
+    const res = new Response(null)
+    res.headers.append('set-cookie', 'foo=bar; Path=/')
+    res.headers.append('set-cookie', 'foo2=bar2; Path=/')
+    c.res = res
+    expect(c.res.headers.getSetCookie().length).toBe(2)
   })
 })
 
@@ -259,47 +286,6 @@ describe('Pass a ResponseInit to respond methods', () => {
     const res = await c.html('<h1>foo</h1>', originalResponse)
     expect(res.headers.get('content-type')).toMatch(/^text\/html/)
     expect(await res.text()).toBe('<h1>foo</h1>')
-  })
-
-  it('c.streamText()', async () => {
-    const res = c.streamText(async (stream) => {
-      for (let i = 0; i < 3; i++) {
-        await stream.write(`${i}`)
-        await stream.sleep(1)
-      }
-    })
-
-    expect(res.status).toBe(200)
-    expect(res.headers.get('content-type')).toMatch(/^text\/plain/)
-    expect(res.headers.get('x-content-type-options')).toBe('nosniff')
-    expect(res.headers.get('transfer-encoding')).toBe('chunked')
-
-    if (!res.body) {
-      throw new Error('Body is null')
-    }
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    for (let i = 0; i < 3; i++) {
-      const { value } = await reader.read()
-      expect(decoder.decode(value)).toEqual(`${i}`)
-    }
-  })
-
-  it('c.stream()', async () => {
-    const res = c.stream(async (stream) => {
-      for (let i = 0; i < 3; i++) {
-        await stream.write(new Uint8Array([i]))
-        await stream.sleep(1)
-      }
-    })
-    if (!res.body) {
-      throw new Error('Body is null')
-    }
-    const reader = res.body.getReader()
-    for (let i = 0; i < 3; i++) {
-      const { value } = await reader.read()
-      expect(value).toEqual(new Uint8Array([i]))
-    }
   })
 })
 

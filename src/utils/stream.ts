@@ -2,11 +2,25 @@ export class StreamingApi {
   private writer: WritableStreamDefaultWriter<Uint8Array>
   private encoder: TextEncoder
   private writable: WritableStream
+  private abortSubscribers: (() => void | Promise<void>)[] = []
+  responseReadable: ReadableStream
 
-  constructor(writable: WritableStream) {
+  constructor(writable: WritableStream, _readable: ReadableStream) {
     this.writable = writable
     this.writer = writable.getWriter()
     this.encoder = new TextEncoder()
+
+    const reader = _readable.getReader()
+
+    this.responseReadable = new ReadableStream({
+      async pull(controller) {
+        const { done, value } = await reader.read()
+        done ? controller.close() : controller.enqueue(value)
+      },
+      cancel: () => {
+        this.abortSubscribers.forEach((subscriber) => subscriber())
+      },
+    })
   }
 
   async write(input: Uint8Array | string) {
@@ -42,5 +56,9 @@ export class StreamingApi {
     this.writer.releaseLock()
     await body.pipeTo(this.writable, { preventClose: true })
     this.writer = this.writable.getWriter()
+  }
+
+  async onAbort(listener: () => void | Promise<void>) {
+    this.abortSubscribers.push(listener)
   }
 }

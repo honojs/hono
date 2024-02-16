@@ -3,9 +3,7 @@ sandbox
 
 # Cloudflare Workers
 worker
-
-# Bun
-bun.lockb
+.wrangler
 
 # Logs
 logs
