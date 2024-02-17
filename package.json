@@ -499,7 +499,7 @@
     "cloudflare",
     "workers",
     "fastly",
-    "compute@edge",
+    "compute",
     "deno",
     "bun",
     "lambda",
