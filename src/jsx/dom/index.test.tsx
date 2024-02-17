@@ -6,13 +6,8 @@ import type { FC } from '..'
 import { jsx, Fragment } from '..'
 import type { RefObject } from '../hooks'
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from '../hooks'
-import type { NodeObject } from './render'
 import { memo, isValidElement, cloneElement } from '.'
 import { render, cloneElement as cloneElementForDom } from '.'
-
-const getContainer = (element: JSX.Element): DocumentFragment | HTMLElement | undefined => {
-  return (element as unknown as NodeObject).c
-}
 
 describe('DOM', () => {
   beforeAll(() => {
@@ -154,10 +149,9 @@ describe('DOM', () => {
       }
       const app = <App />
       render(app, root)
-      const container = getContainer(app) as HTMLElement
       expect(root.innerHTML).toBe('<div>0</div>')
 
-      const insertBeforeSpy = vi.spyOn(container, 'insertBefore')
+      const insertBeforeSpy = vi.spyOn(dom.window.Node.prototype, 'insertBefore')
       setCount(1)
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div>1</div>')
@@ -215,13 +209,39 @@ describe('DOM', () => {
         </>
       )
       render(app, root)
-      const container = getContainer(app) as HTMLElement
       expect(root.innerHTML).toBe('<div>0</div><div>Footer</div>')
 
-      const insertBeforeSpy = vi.spyOn(container, 'insertBefore')
+      const insertBeforeSpy = vi.spyOn(dom.window.Node.prototype, 'insertBefore')
       setCount(1)
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div>1</div><div>Footer</div>')
+      expect(insertBeforeSpy).not.toHaveBeenCalled()
+    })
+
+    it('should not call insertBefore for unchanged complex dom tree', async () => {
+      let setCount: (count: number) => void = () => {}
+      const App = () => {
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        return (
+          <form>
+            <div>
+              <label>label</label>
+              <input />
+            </div>
+            <p>{count}</p>
+          </form>
+        )
+      }
+      const app = <App />
+
+      render(app, root)
+      expect(root.innerHTML).toBe('<form><div><label>label</label><input></div><p>0</p></form>')
+
+      const insertBeforeSpy = vi.spyOn(dom.window.Node.prototype, 'insertBefore')
+      setCount(1)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<form><div><label>label</label><input></div><p>1</p></form>')
       expect(insertBeforeSpy).not.toHaveBeenCalled()
     })
   })
