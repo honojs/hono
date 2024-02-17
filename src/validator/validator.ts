@@ -67,9 +67,12 @@ export const validator = <
           const message = `Invalid HTTP header: Content-Type=${contentType}`
           throw new HTTPException(400, { message })
         }
+        if (c.req.bodyCache.json) {
+          value = await c.req.bodyCache.json
+          break
+        }
         /**
-         * Get the arrayBuffer first, create JSON object via Response,
-         * and cache the arrayBuffer in the c.req.bodyCache.
+         * Get the arrayBuffer, create JSON object via Response, and cache the arrayBuffer in the c.req.bodyCache if there is no cached content in c.req.bodyCache.json.
          */
         try {
           const arrayBuffer = c.req.bodyCache.arrayBuffer ?? (await c.req.raw.arrayBuffer())
@@ -82,6 +85,10 @@ export const validator = <
         }
         break
       case 'form': {
+        if (c.req.bodyCache.formData) {
+          value = c.req.bodyCache.formData
+          break
+        }
         try {
           const contentType = c.req.header('Content-Type')
           if (contentType) {
