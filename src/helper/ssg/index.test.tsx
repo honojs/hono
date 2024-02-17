@@ -295,6 +295,10 @@ describe('saveContentToFiles function', () => {
       ['/', { content: 'Home Page', mimeType: 'text/html' }],
       ['/about', { content: 'About Page', mimeType: 'text/html' }],
       ['/about/', { content: 'About Page', mimeType: 'text/html' }],
+      ['/bravo/index.html', { content: 'About Page', mimeType: 'text/html' }],
+      ['/bravo/index.tar.gz', { content: 'About Page', mimeType: 'application/gzip' }],
+      ['/bravo.text/index.html', { content: 'About Page', mimeType: 'text/html' }],
+      ['/bravo.text/', { content: 'Bravo Page', mimeType: 'text/html' }],
     ])
   })
 
@@ -304,6 +308,10 @@ describe('saveContentToFiles function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', 'Home Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', 'About Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/index.html', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo/index.html', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo/index.tar.gz', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'Bravo Page')
   })
 
   it('should correctly create directories if they do not exist', async () => {
@@ -321,6 +329,11 @@ describe('saveContentToFiles function', () => {
     await expect(saveContentToFiles(htmlMap, fsMock, './static')).rejects.toThrow(
       'File write error'
     )
+  })
+  it('check extensions', async () => {
+    await saveContentToFiles(htmlMap, fsMock, './static')
+
+    expect(fsMock.mkdir).toHaveBeenCalledWith('static', { recursive: true })
   })
 })
 
