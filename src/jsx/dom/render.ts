@@ -240,23 +240,35 @@ const applyNode = (node: Node, container: Container) => {
   }
 }
 
+const findChildNodeIndex = (
+  childNodes: NodeListOf<ChildNode>,
+  child: ChildNode | null | undefined
+): number | undefined => {
+  if (!child) {
+    return
+  }
+
+  for (let i = 0, len = childNodes.length; i < len; i++) {
+    if (childNodes[i] === child) {
+      return i
+    }
+  }
+
+  return
+}
+
 const applyNodeObject = (node: NodeObject, container: Container) => {
   const next: Node[] = []
   const remove: Node[] = []
   const callbacks: EffectData[] = []
   getNextChildren(node, container, next, remove, callbacks)
-  let offset = container.childNodes.length
-  const insertBefore = findInsertBefore(node.nN) || next.find((n) => n.e)?.e
-  if (insertBefore) {
-    for (let i = 0; i < offset; i++) {
-      if (container.childNodes[i] === insertBefore) {
-        offset = i
-        break
-      }
-    }
-  }
 
   const childNodes = container.childNodes
+  let offset =
+    findChildNodeIndex(childNodes, findInsertBefore(node.nN)) ??
+    findChildNodeIndex(childNodes, next.find((n) => n.e)?.e) ??
+    childNodes.length
+
   for (let i = 0, len = next.length; i < len; i++, offset++) {
     const child = next[i]
 
