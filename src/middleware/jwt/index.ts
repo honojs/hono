@@ -1,5 +1,5 @@
 import type { Context } from '../../context'
-import { getCookie } from '../../helper'
+import { getCookie } from '../../helper/cookie'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 import { Jwt } from '../../utils/jwt'
