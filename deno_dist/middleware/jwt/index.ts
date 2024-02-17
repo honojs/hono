@@ -1,5 +1,5 @@
 import type { Context } from '../../context.ts'
-import { getCookie } from '../../helper.ts'
+import { getCookie } from '../../helper/cookie/index.ts'
 import { HTTPException } from '../../http-exception.ts'
 import type { MiddlewareHandler } from '../../types.ts'
 import { Jwt } from '../../utils/jwt/index.ts'
