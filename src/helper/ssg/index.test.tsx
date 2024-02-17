@@ -298,6 +298,7 @@ describe('saveContentToFiles function', () => {
       ['/bravo/index.html', { content: 'About Page', mimeType: 'text/html' }],
       ['/bravo/index.tar.gz', { content: 'About Page', mimeType: 'application/gzip' }],
       ['/bravo.text/index.html', { content: 'About Page', mimeType: 'text/html' }],
+      ['/bravo.text/', { content: 'Bravo Page', mimeType: 'text/html' }],
     ])
   })
 
@@ -310,6 +311,7 @@ describe('saveContentToFiles function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo/index.html', 'About Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo/index.tar.gz', 'About Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'Bravo Page')
   })
 
   it('should correctly create directories if they do not exist', async () => {
