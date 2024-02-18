@@ -10,7 +10,7 @@ import { useContext, createContext } from '.'
 const eventAliasMap: Record<string, string> = {
   Change: 'Input',
   DoubleClick: 'DblClick',
-}
+} as const
 
 const nameSpaceMap: Record<string, string> = {
   svg: 'http://www.w3.org/2000/svg',
