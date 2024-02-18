@@ -111,9 +111,13 @@ export const validator = <
       }
       case 'query':
         value = Object.fromEntries(
-          Object.entries(c.req.queries()).map(([k, v]) => {
-            return v.length === 1 ? [k, v[0]] : [k, v]
-          })
+          Object.entries(c.req.queries())
+            .filter((query): query is [string, string[]] => {
+              return typeof query[1] !== 'undefined'
+            })
+            .map(([k, v]) => {
+              return v.length === 1 ? [k, v[0]] : [k, v]
+            })
         )
         break
       case 'param':

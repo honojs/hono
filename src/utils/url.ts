@@ -171,7 +171,12 @@ const _getQueryParam = (
   url: string,
   key?: string,
   multiple?: boolean
-): string | undefined | Record<string, string> | string[] | Record<string, string[]> => {
+):
+  | string
+  | undefined
+  | Record<string, string | undefined>
+  | string[]
+  | Record<string, string[] | undefined> => {
   let encoded
 
   if (!multiple && key && !/[%+]/.test(key)) {
@@ -250,16 +255,19 @@ const _getQueryParam = (
 export const getQueryParam: (
   url: string,
   key?: string
-) => string | undefined | Record<string, string> = _getQueryParam as (
+) => string | undefined | Record<string, string | undefined> = _getQueryParam as (
   url: string,
   key?: string
-) => string | undefined | Record<string, string>
+) => string | undefined | Record<string, string | undefined>
 
 export const getQueryParams = (
   url: string,
   key?: string
-): string[] | undefined | Record<string, string[]> => {
-  return _getQueryParam(url, key, true) as string[] | undefined | Record<string, string[]>
+): string[] | undefined | Record<string, string[] | undefined> => {
+  return _getQueryParam(url, key, true) as
+    | string[]
+    | undefined
+    | Record<string, string[] | undefined>
 }
 
 // `decodeURIComponent` is a long name.
