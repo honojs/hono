@@ -30,25 +30,11 @@ export interface ToSSGResult {
   error?: Error
 }
 
-const getPathWithExpectedExtension = (
-  routePath: string,
-  expectedExtension: string
-): string | null => {
-  const match = routePath.match(/\.(?<extension>[^\.\/]+)$/)
-  const existingExtension = match ? match[0] : ''
-
-  if (existingExtension === `.${expectedExtension}`) {
-    return routePath
-  }
-  return null
-}
-
 const generateFilePath = (routePath: string, outDir: string, mimeType: string) => {
   const extension = determineExtension(mimeType)
 
-  const adjustedPath = getPathWithExpectedExtension(routePath, extension)
-  if (adjustedPath) {
-    return joinPaths(outDir, adjustedPath)
+  if (routePath.endsWith(`.${extension}`)) {
+    return joinPaths(outDir, routePath)
   }
 
   if (routePath === '/') {
