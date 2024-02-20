@@ -31,12 +31,12 @@ export interface ToSSGResult {
 }
 
 const generateFilePath = (routePath: string, outDir: string, mimeType: string) => {
-  const hasExtension = /\.[^\/]+$/.test(routePath)
-  if (hasExtension) {
+  const extension = determineExtension(mimeType)
+
+  if (routePath.endsWith(`.${extension}`)) {
     return joinPaths(outDir, routePath)
   }
 
-  const extension = determineExtension(mimeType)
   if (routePath === '/') {
     return joinPaths(outDir, `index.${extension}`)
   }
