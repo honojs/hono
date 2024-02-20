@@ -5,11 +5,17 @@ import type { Context as JSXContext } from '../context'
 import { globalContexts as globalJSXContexts } from '../context'
 import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
+import { useContext, createContext } from '.'
 
 const eventAliasMap: Record<string, string> = {
   Change: 'Input',
   DoubleClick: 'DblClick',
-}
+} as const
+
+const nameSpaceMap: Record<string, string> = {
+  svg: 'http://www.w3.org/2000/svg',
+  math: 'http://www.w3.org/1998/Math/MathML',
+} as const
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type HasRenderToDom = FC<any> & { [DOM_RENDERER]: FC<any> }
@@ -18,6 +24,7 @@ export type ErrorHandler = (error: any, retry: () => void) => Child | undefined
 
 type Container = HTMLElement | DocumentFragment
 type LocalJSXContexts = [JSXContext<unknown>, unknown][] | undefined
+type SupportedElement = HTMLElement | SVGElement | MathMLElement
 
 export type NodeObject = {
   pP: Props | undefined // previous props
@@ -25,8 +32,9 @@ export type NodeObject = {
   vC: Node[] // virtual dom children
   vR: Node[] // virtual dom children to remove
   s?: Node[] // shadow virtual dom children
+  n?: string // namespace
   c: Container | undefined // container
-  e: HTMLElement | Text | undefined // rendered element
+  e: SupportedElement | Text | undefined // rendered element
   [DOM_STASH]:
     | [
         number, // current hook index
@@ -74,6 +82,8 @@ export type Context =
 
 export const buildDataStack: [Context, Node][] = []
 
+let nameSpaceContext: JSXContext<string> | undefined = undefined
+
 const isNodeString = (node: Node): node is NodeString => Array.isArray(node)
 
 const getEventSpec = (key: string): [string, boolean] | undefined => {
@@ -85,7 +95,7 @@ const getEventSpec = (key: string): [string, boolean] | undefined => {
   return undefined
 }
 
-const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: Props) => {
+const applyProps = (container: SupportedElement, attributes: Props, oldAttributes?: Props) => {
   attributes ||= {}
   for (const [key, value] of Object.entries(attributes)) {
     if (!oldAttributes || oldAttributes[key] !== value) {
@@ -272,14 +282,16 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
   for (let i = 0, len = next.length; i < len; i++, offset++) {
     const child = next[i]
 
-    let el: HTMLElement | Text
+    let el: SupportedElement | Text
     if (isNodeString(child)) {
       if (child.e) {
         child.e.textContent = child[0]
       }
       el = child.e ||= document.createTextNode(child[0])
     } else {
-      el = child.e ||= document.createElement(child.tag as string)
+      el = child.e ||= child.n
+        ? (document.createElementNS(child.n, child.tag as string) as SVGElement | MathMLElement)
+        : document.createElement(child.tag as string)
       applyProps(el as HTMLElement, child.props, child.pP)
       applyNode(child, el as HTMLElement)
     }
@@ -351,6 +363,11 @@ export const build = (
             oldChild.children = child.children
             child = oldChild
           }
+        } else if (!isNodeString(child) && nameSpaceContext) {
+          const ns = useContext(nameSpaceContext)
+          if (ns) {
+            child.n = ns
+          }
         }
 
         if (!isNodeString(child)) {
@@ -388,6 +405,22 @@ const buildNode = (node: Child): Node | undefined => {
   } else {
     if (typeof (node as JSXNode).tag === 'function') {
       ;(node as NodeObject)[DOM_STASH] = [0, []]
+    } else {
+      const ns = nameSpaceMap[(node as JSXNode).tag as string]
+      if (ns) {
+        ;(node as NodeObject).n = ns
+        nameSpaceContext ||= createContext('')
+        ;(node as JSXNode).children = [
+          {
+            tag: nameSpaceContext.Provider,
+            props: {
+              value: ns,
+            },
+            children: (node as JSXNode).children,
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ] as any
+      }
     }
     return node as NodeObject
   }
