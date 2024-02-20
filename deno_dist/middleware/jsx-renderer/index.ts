@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Context, Renderer } from '../../context.ts'
+import type { Context, PropsForRenderer } from '../../context.ts'
 import { html, raw } from '../../helper/html/index.ts'
 import { jsx, createContext, useContext, Fragment } from '../../jsx/index.ts'
 import type { FC, PropsWithChildren, JSXNode } from '../../jsx/index.ts'
@@ -7,10 +7,6 @@ import { renderToReadableStream } from '../../jsx/streaming.ts'
 import type { Env, Input, MiddlewareHandler } from '../../types.ts'
 
 export const RequestContext = createContext<Context | null>(null)
-
-export type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unknown, infer Props]
-  ? Props
-  : unknown
 
 type RendererOptions = {
   docType?: boolean | string
