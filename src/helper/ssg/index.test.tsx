@@ -455,6 +455,22 @@ describe('toSSG function with defaultContentType option', () => {
     expect(fsMock.writeFile).toHaveBeenCalled()
   })
 
+  it('Should use wrong defaultContentType when Content-Type is missing', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const defaultContentType = 'aaaa'
+    const result = await toSSG(app, fsMock, { dir: './static', defaultContentType })
+
+    expect(result.success).toBe(true)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/text.txt', 'Text Response')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.html', '<p>HTML Response</p>')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/json.json', '{"message":"JSON Response"}')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/no-content-type.html', '')
+  })
+
   it('Should throw an error when Content-Type is missing and no defaultContentType is provided', async () => {
     const fsMock: FileSystemModule = {
       writeFile: vi.fn(() => Promise.resolve()),
