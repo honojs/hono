@@ -293,10 +293,15 @@ describe('saveContentToFiles function', () => {
     }
     htmlMap = new Map([
       ['/', { content: 'Home Page', mimeType: 'text/html' }],
+      ['/index.html', { content: 'Home Page2', mimeType: 'text/html' }],
       ['/about', { content: 'About Page', mimeType: 'text/html' }],
       ['/about/', { content: 'About Page', mimeType: 'text/html' }],
       ['/bravo/index.html', { content: 'About Page', mimeType: 'text/html' }],
       ['/bravo/index.tar.gz', { content: 'About Page', mimeType: 'application/gzip' }],
+      ['/bravo/release-4.0.0', { content: 'Release 4.0.0', mimeType: 'text/html' }],
+      ['/bravo/2024.02.18-sweet-memories', { content: 'Sweet Memories', mimeType: 'text/html' }],
+      ['/bravo/deep.dive.to.html', { content: 'Deep Dive To HTML', mimeType: 'text/html' }],
+      ['/bravo/alert.js', { content: 'alert("evil content")', mimeType: 'text/html' }],
       ['/bravo.text/index.html', { content: 'About Page', mimeType: 'text/html' }],
       ['/bravo.text/', { content: 'Bravo Page', mimeType: 'text/html' }],
     ])
@@ -306,10 +311,27 @@ describe('saveContentToFiles function', () => {
     await saveContentToFiles(htmlMap, fsMock, './static')
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', 'Home Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', 'Home Page2')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', 'About Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/index.html', 'About Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo/index.html', 'About Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo/index.tar.gz', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/release-4.0.0.html',
+      'Release 4.0.0'
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/deep.dive.to.html',
+      'Deep Dive To HTML'
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/2024.02.18-sweet-memories.html',
+      'Sweet Memories'
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/alert.js.html',
+      'alert("evil content")'
+    )
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'About Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'Bravo Page')
   })
