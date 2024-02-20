@@ -428,3 +428,62 @@ describe('disableSSG/onlySSG middlewares', () => {
     expect(res.status).toBe(404)
   })
 })
+
+describe('toSSG function with defaultContentType option', () => {
+  let app: Hono
+
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/text', (c) => c.text('Text Response'))
+    app.get('/html', (c) => c.html('<p>HTML Response</p>'))
+    app.get('/json', (c) => c.json({ message: 'JSON Response' }))
+    app.get('/no-content-type', (c) => {
+      return c.redirect('no content')
+    })
+  })
+
+  it('Should use defaultContentType when Content-Type is missing', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const defaultContentType = 'text/plain'
+    const result = await toSSG(app, fsMock, { dir: './static', defaultContentType })
+
+    expect(result.success).toBe(true)
+    expect(fsMock.writeFile).toHaveBeenCalled()
+  })
+
+  it('Should throw an error when Content-Type is missing and no defaultContentType is provided', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: './static' }).catch((e) => e)
+
+    expect(result).toMatchObject({
+      error: expect.any(Error),
+      files: [],
+      success: false,
+    })
+
+    expect(result.error.message).toBe(
+      'Content-Type header is missing for the response of /no-content-type'
+    )
+  })
+
+  it('Should correctly handle file system errors in saveContentToFiles', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.reject(new Error('Write error'))),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: './static', defaultContentType: 'text/plain' })
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBeDefined()
+    expect(result.files).toStrictEqual([])
+  })
+})

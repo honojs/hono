@@ -107,6 +107,7 @@ export interface ToSSGOptions {
   beforeRequestHook?: BeforeRequestHook
   afterResponseHook?: AfterResponseHook
   afterGenerateHook?: AfterGenerateHook
+  defaultContentType?: string
 }
 
 /**
@@ -121,7 +122,8 @@ export const fetchRoutesContent = async <
 >(
   app: Hono<E, S, BasePath>,
   beforeRequestHook?: BeforeRequestHook,
-  afterResponseHook?: AfterResponseHook
+  afterResponseHook?: AfterResponseHook,
+  defaultContentType?: string
 ): Promise<Map<string, { content: string | ArrayBuffer; mimeType: string }>> => {
   const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
   const baseURL = 'http://localhost'
@@ -166,7 +168,10 @@ export const fetchRoutesContent = async <
         }
         response = maybeResponse
       }
-      const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
+      const mimeType = response.headers.get('Content-Type')?.split(';')[0] || defaultContentType
+      if (!mimeType) {
+        throw new Error(`Content-Type header is missing for the response of ${replacedUrlParam}`)
+      }
       const content = await parseResponseContent(response)
       htmlMap.set(replacedUrlParam, {
         mimeType,
@@ -252,7 +257,8 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
     const maps = await fetchRoutesContent(
       app,
       options?.beforeRequestHook,
-      options?.afterResponseHook
+      options?.afterResponseHook,
+      options?.defaultContentType
     )
     const files = await saveContentToFiles(maps, fs, outputDir)
     result = { success: true, files }
