@@ -1,5 +1,3 @@
-import type { FC } from './jsx/index.ts'
-import type { PropsForRenderer } from './middleware/jsx-renderer/index.ts'
 import type { HonoRequest } from './request.ts'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types.ts'
 import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html.ts'
@@ -22,6 +20,12 @@ interface DefaultRenderer {
 }
 
 export type Renderer = ContextRenderer extends Function ? ContextRenderer : DefaultRenderer
+export type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unknown, infer Props]
+  ? Props
+  : unknown
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Layout<T = Record<string, any>> = (props: T) => any
 
 interface Get<E extends Env> {
   <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
@@ -134,7 +138,7 @@ export class Context<
   #preparedHeaders: Record<string, string> | undefined = undefined
   #res: Response | undefined
   #isFresh = true
-  private layout: FC<PropsForRenderer & { Layout: FC }> | undefined = undefined
+  private layout: Layout<PropsForRenderer & { Layout: Layout }> | undefined = undefined
   private renderer: Renderer = (content: string | Promise<string>) => this.html(content)
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
@@ -211,7 +215,7 @@ export class Context<
    */
   render: Renderer = (...args) => this.renderer(...args)
 
-  setLayout = (layout: FC<PropsForRenderer & { Layout: FC }>) => (this.layout = layout)
+  setLayout = (layout: Layout<PropsForRenderer & { Layout: Layout }>) => (this.layout = layout)
   getLayout = () => this.layout
 
   /**

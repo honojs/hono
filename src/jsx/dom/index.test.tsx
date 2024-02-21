@@ -1064,4 +1064,65 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<div><p>1</p></div>')
     })
   })
+
+  describe('SVG', () => {
+    it('simple', () => {
+      const createElementSpy = vi.spyOn(dom.window.document, 'createElement')
+      const createElementNSSpy = vi.spyOn(dom.window.document, 'createElementNS')
+
+      const App = () => {
+        return (
+          <svg>
+            <circle cx='50' cy='50' r='40' stroke='black' stroke-width='3' fill='red' />
+          </svg>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<svg><circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red"></circle></svg>'
+      )
+    })
+
+    it('title element', () => {
+      const App = () => {
+        return (
+          <>
+            <title>Document Title</title>
+            <svg>
+              <title>SVG Title</title>
+            </svg>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<title>Document Title</title><svg><title>SVG Title</title></svg>'
+      )
+      expect(document.querySelector('title')).toBeInstanceOf(dom.window.HTMLTitleElement)
+      expect(document.querySelector('svg title')).toBeInstanceOf(dom.window.SVGTitleElement)
+    })
+  })
+
+  describe('MathML', () => {
+    it('simple', () => {
+      const createElementSpy = vi.spyOn(dom.window.document, 'createElement')
+      const createElementNSSpy = vi.spyOn(dom.window.document, 'createElementNS')
+
+      const App = () => {
+        return (
+          <math>
+            <mrow>
+              <mn>1</mn>
+            </mrow>
+          </math>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<math><mrow><mn>1</mn></mrow></math>')
+
+      expect(createElementSpy).not.toHaveBeenCalled()
+      expect(createElementNSSpy).toHaveBeenCalledWith('http://www.w3.org/1998/Math/MathML', 'math')
+      expect(createElementNSSpy).toHaveBeenCalledWith('http://www.w3.org/1998/Math/MathML', 'mrow')
+    })
+  })
 })
