@@ -242,7 +242,7 @@ describe('toSSG function', () => {
 
   it('Should correctly generate static HTML files for Hono routes', async () => {
     const result = await toSSG(app, { dir: './static' })
-    expect(result.success).toBeTruly
+    expect(result.success).toBeTruthy
     expect(result.error).toBeUndefined()
     expect(result.files).toBeDefined()
     afterAll(async () => {
