@@ -448,7 +448,7 @@ describe('toSSG function with content-Type', () => {
       mkdir: vi.fn(() => Promise.resolve()),
     }
 
-    const result = await toSSG(app, fsMock, { dir: './static'})
+    const result = await toSSG(app, fsMock, { dir: './static' })
 
     expect(result.success).toBe(false)
   })
