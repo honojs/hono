@@ -678,3 +678,13 @@ describe('Capture Group', () => {
     })
   })
 })
+
+describe('Unknown method', () => {
+  const router = new RegExpRouter<string>()
+  router.add('GET', '/', 'index')
+
+  it('HONO /', () => {
+    const [res] = router.match('HONO', '/')
+    expect(res.length).toBe(0)
+  })
+})

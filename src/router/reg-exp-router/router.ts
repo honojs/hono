@@ -212,7 +212,7 @@ export class RegExpRouter<T> implements Router<T> {
     const matchers = this.buildAllMatchers()
 
     this.match = (method, path) => {
-      const matcher = matchers[method]
+      const matcher = (matchers[method] || matchers[METHOD_NAME_ALL]) as Matcher<T>
 
       const staticMatch = matcher[2][path]
       if (staticMatch) {
