@@ -682,9 +682,15 @@ describe('Capture Group', () => {
 describe('Unknown method', () => {
   const router = new RegExpRouter<string>()
   router.add('GET', '/', 'index')
+  router.add('ALL', '/all', 'all')
 
-  it('HONO /', () => {
-    const [res] = router.match('HONO', '/')
+  it('UNKNOWN_METHOD /', () => {
+    const [res] = router.match('UNKNOWN_METHOD', '/')
     expect(res.length).toBe(0)
+  })
+
+  it('UNKNOWN_METHOD /all', () => {
+    const [res] = router.match('UNKNOWN_METHOD', '/all')
+    expect(res.length).toBe(1)
   })
 })
