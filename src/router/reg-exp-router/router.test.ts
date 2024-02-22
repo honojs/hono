@@ -692,5 +692,6 @@ describe('Unknown method', () => {
   it('UNKNOWN_METHOD /all', () => {
     const [res] = router.match('UNKNOWN_METHOD', '/all')
     expect(res.length).toBe(1)
+    expect(res[0][0]).toBe('all')
   })
 })
