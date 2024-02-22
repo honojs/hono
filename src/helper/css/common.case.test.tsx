@@ -9,8 +9,6 @@ import type {
   Style as StyleComponent,
 } from './index'
 
-it.skip('this file only exports test runners.', () => {})
-
 interface Support {
   nest: boolean
 }
