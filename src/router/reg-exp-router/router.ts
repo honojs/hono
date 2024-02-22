@@ -2,15 +2,12 @@
 import type { Router, Result, ParamIndexMap } from '../../router'
 import {
   METHOD_NAME_ALL,
-  METHODS,
   UnsupportedPathError,
   MESSAGE_MATCHER_IS_ALREADY_BUILT,
 } from '../../router'
 import { checkOptionalParameter } from '../../utils/url'
 import { PATH_ERROR, type ParamAssocArray } from './node'
 import { Trie } from './trie'
-
-const methodNames = [METHOD_NAME_ALL, ...METHODS].map((method) => method.toUpperCase())
 
 type HandlerData<T> = [T, ParamIndexMap][]
 type StaticMap<T> = Record<string, Result<T>>
@@ -137,9 +134,6 @@ export class RegExpRouter<T> implements Router<T> {
       throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT)
     }
 
-    if (methodNames.indexOf(method) === -1) {
-      methodNames.push(method)
-    }
     if (!middleware[method]) {
       ;[middleware, routes].forEach((handlerMap) => {
         handlerMap[method] = {}
@@ -231,11 +225,11 @@ export class RegExpRouter<T> implements Router<T> {
     return this.match(method, path)
   }
 
-  private buildAllMatchers(): Record<string, Matcher<T>> {
-    const matchers: Record<string, Matcher<T>> = {}
+  private buildAllMatchers(): Record<string, Matcher<T> | null> {
+    const matchers: Record<string, Matcher<T> | null> = {}
 
-    methodNames.forEach((method) => {
-      matchers[method] = this.buildMatcher(method) || matchers[METHOD_NAME_ALL]
+    ;[...Object.keys(this.routes!), ...Object.keys(this.middleware!)].forEach((method) => {
+      matchers[method] ||= this.buildMatcher(method)
     })
 
     // Release cache
