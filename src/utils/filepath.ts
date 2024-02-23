@@ -1,7 +1,7 @@
 type FilePathOptions = {
   filename: string
   root?: string
-  defaultDocument?: string
+  defaultDocument?: string | null
 }
 
 export const getFilePath = (options: FilePathOptions): string | undefined => {
@@ -13,12 +13,14 @@ export const getFilePath = (options: FilePathOptions): string | undefined => {
   let root = options.root || ''
   const defaultDocument = options.defaultDocument || 'index.html'
 
-  if (filename.endsWith('/')) {
-    // /top/ => /top/index.html
-    filename = filename.concat(defaultDocument)
-  } else if (!filename.match(/\.[a-zA-Z0-9]+$/)) {
-    // /top => /top/index.html
-    filename = filename.concat('/' + defaultDocument)
+  if (defaultDocument !== null) {
+    if (filename.endsWith('/')) {
+      // /top/ => /top/index.html
+      filename = filename.concat(defaultDocument)
+    } else if (!filename.match(/\.[a-zA-Z0-9]+$/)) {
+      // /top => /top/index.html
+      filename = filename.concat('/' + defaultDocument)
+    }
   }
 
   // /foo.html => foo.html

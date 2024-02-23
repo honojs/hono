@@ -11,6 +11,7 @@ export type ServeStaticOptions<E extends Env = Env> = {
   mimes?: Record<string, string>
   rewriteRequestPath?: (path: string) => string
   onNotFound?: (path: string, c: Context<E>) => void | Promise<void>
+  disableDefaultDocument?: boolean
 }
 
 const DEFAULT_DOCUMENT = 'index.html'
@@ -30,7 +31,7 @@ export const serveStatic = <E extends Env = Env>(
     let path = getFilePath({
       filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
       root: options.root,
-      defaultDocument: DEFAULT_DOCUMENT,
+      defaultDocument: options.disableDefaultDocument ? null : DEFAULT_DOCUMENT
     })
 
     if (!path) {
