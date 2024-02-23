@@ -244,6 +244,38 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<form><div><label>label</label><input></div><p>1</p></form>')
       expect(insertBeforeSpy).not.toHaveBeenCalled()
     })
+
+    it('should not call textContent for unchanged text', async () => {
+      const textContentMock = vi.fn()
+      class MockText extends dom.window.Text {
+        set textContent(value: string | null) {
+          textContentMock(value)
+        }
+      }
+      vi.spyOn(dom.window.document, 'createTextNode').mockImplementation((text: string) => {
+        const textNode = new MockText(text)
+        return textNode
+      })
+
+      let setCount: (count: number) => void = () => {}
+      const App = () => {
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        return (
+          <>
+            <span>hono</span>
+            <input value={count} />
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<span>hono</span><input value="0">')
+      setCount(1)
+
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<span>hono</span><input value="1">')
+      expect(textContentMock).not.toHaveBeenCalled()
+    })
   })
 
   describe('Event', () => {
