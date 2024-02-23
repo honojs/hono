@@ -5,7 +5,6 @@ import { SmartRouter } from './router'
 
 describe('SmartRouter', () => {
   runTest({
-    skip: [],
     newRouter: () =>
       new SmartRouter({
         routers: [new RegExpRouter(), new TrieRouter()],

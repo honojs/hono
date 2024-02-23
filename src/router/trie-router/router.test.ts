@@ -3,7 +3,6 @@ import { TrieRouter } from './router'
 
 describe('TrieRouter', () => {
   runTest({
-    skip: [],
     newRouter: () => new TrieRouter(),
   })
 })
