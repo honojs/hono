@@ -102,6 +102,14 @@ describe('Serve Static Middleware', () => {
       rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
     })
   )
+  app.get(
+    '/dot-static-not-ext/*',
+    serveStatic({
+      root: './runtime_tests/bun/',
+      rewriteRequestPath: (path) => path.replace(/^\/dot-static-not-ext/, './.static_no_ext'),
+      disableDefaultDocument: true
+    })
+  )
 
   beforeEach(() => onNotFound.mockClear())
 
@@ -131,6 +139,12 @@ describe('Serve Static Middleware', () => {
 
   it('Should return 200 response - /dot-static/plain.txt', async () => {
     const res = await app.request(new Request('http://localhost/dot-static/plain.txt'))
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Bun!!')
+  })
+
+  it('Should return 200 response - /static_no_ext/plain', async () => {
+    const res = await app.request(new Request('http://localhost/static_no_ext/plain'))
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Bun!!')
   })
