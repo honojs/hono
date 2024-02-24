@@ -55,6 +55,8 @@ export const streamSSE = (
     } catch (e) {
       if (e instanceof Error && onError) {
         await onError(e, stream)
+      } else {
+        console.error(e)
       }
     } finally {
       stream.close()
