@@ -246,6 +246,221 @@ describe('DOM', () => {
     })
   })
 
+  describe('update properties', () => {
+    describe('input', () => {
+      it('value', async () => {
+        let setValue: (value: string) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState('a')
+          setValue = _setValue
+          return <input value={value} />
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<input value="a">')
+        const valueSpy = vi.fn()
+        Object.defineProperty(dom.window.HTMLInputElement.prototype, 'value', {
+          set: valueSpy,
+        })
+        setValue('b')
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<input value="b">')
+        expect(valueSpy).toHaveBeenCalledWith('b')
+      })
+
+      it('assign undefined', async () => {
+        let setValue: (value: string | undefined) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState<string | undefined>('a')
+          setValue = _setValue
+          return <input value={value} />
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<input value="a">')
+        const valueSpy = vi.fn()
+        Object.defineProperty(dom.window.HTMLInputElement.prototype, 'value', {
+          set: valueSpy,
+        })
+        setValue(undefined)
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<input>')
+        expect(valueSpy).toHaveBeenCalledWith(null) // assign null means empty string
+      })
+
+      it('checked', async () => {
+        let setValue: (value: string) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState('a')
+          setValue = _setValue
+          return <input type='checkbox' checked={value === 'b'} />
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<input type="checkbox">')
+        const checkedSpy = vi.fn()
+        Object.defineProperty(dom.window.HTMLInputElement.prototype, 'checked', {
+          set: checkedSpy,
+        })
+        setValue('b')
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<input type="checkbox" checked="">')
+        expect(checkedSpy).toHaveBeenCalledWith(true)
+        setValue('a')
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<input type="checkbox">')
+        expect(checkedSpy).toHaveBeenCalledWith(false)
+      })
+    })
+
+    describe('textarea', () => {
+      it('value', async () => {
+        let setValue: (value: string) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState('a')
+          setValue = _setValue
+          return <textarea value={value} />
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<textarea>a</textarea>')
+        const valueSpy = vi.fn()
+        Object.defineProperty(dom.window.HTMLTextAreaElement.prototype, 'value', {
+          set: valueSpy,
+        })
+        setValue('b')
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<textarea>b</textarea>')
+        expect(valueSpy).toHaveBeenCalledWith('b')
+      })
+
+      it('assign undefined', async () => {
+        let setValue: (value: string | undefined) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState<string | undefined>('a')
+          setValue = _setValue
+          return <textarea value={value} />
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<textarea>a</textarea>')
+        const valueSpy = vi.fn()
+        Object.defineProperty(dom.window.HTMLTextAreaElement.prototype, 'value', {
+          set: valueSpy,
+        })
+        setValue(undefined)
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<textarea></textarea>')
+        expect(valueSpy).toHaveBeenCalledWith(null) // assign null means empty string
+      })
+    })
+
+    describe('select', () => {
+      it('value', async () => {
+        let setValue: (value: string) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState('a')
+          setValue = _setValue
+          return (
+            <select value={value}>
+              <option value='a'>A</option>
+              <option value='b'>B</option>
+              <option value='c'>C</option>
+            </select>
+          )
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe(
+          '<select><option value="a">A</option><option value="b">B</option><option value="c">C</option></select>'
+        )
+        const valueSpy = vi.fn()
+        Object.defineProperty(dom.window.HTMLSelectElement.prototype, 'value', {
+          set: valueSpy,
+        })
+        setValue('b')
+        await Promise.resolve()
+        expect(valueSpy).toHaveBeenCalledWith('b')
+      })
+
+      it('invalid value', async () => {
+        let setValue: (value: string) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState('a')
+          setValue = _setValue
+          return (
+            <select value={value}>
+              <option value='a'>A</option>
+              <option value='b'>B</option>
+              <option value='c'>C</option>
+            </select>
+          )
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe(
+          '<select><option value="a">A</option><option value="b">B</option><option value="c">C</option></select>'
+        )
+        setValue('z')
+        await Promise.resolve()
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('a') // invalid value is ignored
+      })
+
+      it('assign undefined', async () => {
+        let setValue: (value: string | undefined) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState<string | undefined>('a')
+          setValue = _setValue
+          return (
+            <select value={value}>
+              <option value='a'>A</option>
+              <option value='b'>B</option>
+              <option value='c'>C</option>
+            </select>
+          )
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe(
+          '<select><option value="a">A</option><option value="b">B</option><option value="c">C</option></select>'
+        )
+        setValue(undefined)
+        await Promise.resolve()
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('a') // select the first option
+      })
+    })
+
+    describe('option', () => {
+      it('selected', async () => {
+        let setValue: (value: string) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState('a')
+          setValue = _setValue
+          return (
+            <select>
+              <option value='a'>A</option>
+              <option value='b' selected={value === 'b'}>
+                B
+              </option>
+              <option value='c'>C</option>
+            </select>
+          )
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe(
+          '<select><option value="a">A</option><option value="b">B</option><option value="c">C</option></select>'
+        )
+        setValue('b')
+        await Promise.resolve()
+        expect(root.innerHTML).toBe(
+          '<select><option value="a">A</option><option value="b" selected="">B</option><option value="c">C</option></select>'
+        )
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('b')
+        setValue('a')
+        await Promise.resolve()
+        expect(root.innerHTML).toBe(
+          '<select><option value="a">A</option><option value="b">B</option><option value="c">C</option></select>'
+        )
+        expect(select.value).toBe('a')
+      })
+    })
+  })
+
   describe('Event', () => {
     it('bubbling phase', async () => {
       const clicked: string[] = []
