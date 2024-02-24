@@ -30,6 +30,12 @@ export type ClientRequest<S extends Schema> = {
         : {}
       : {}
   ) => URL
+} & {
+  $ws: S['$get'] extends { input: { json: '_websocket' | undefined } }
+    ? S['$get'] extends { input: infer I }
+      ? (args?: Omit<I, 'json'>) => WebSocket
+      : never
+    : never
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
