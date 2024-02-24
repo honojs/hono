@@ -1067,9 +1067,6 @@ describe('DOM', () => {
 
   describe('SVG', () => {
     it('simple', () => {
-      const createElementSpy = vi.spyOn(dom.window.document, 'createElement')
-      const createElementNSSpy = vi.spyOn(dom.window.document, 'createElementNS')
-
       const App = () => {
         return (
           <svg>

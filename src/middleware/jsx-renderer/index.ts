@@ -72,6 +72,7 @@ export const jsxRenderer = (
         return component({ ...props, Layout })
       })
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     c.setRenderer(createRenderer(c, Layout, component, options) as any)
     return next()
   }
