@@ -21,27 +21,39 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
   const wsContext: WSContext = {
     binaryType: 'arraybuffer',
     close: (code, reason) => server.close(code, reason),
-    get protocol () {
+    get protocol() {
       return server.protocol
     },
     raw: server,
-    get readyState () {
+    get readyState() {
       return server.readyState as WSReadyState
     },
-    url: server.url ? new URL(server.url): null,
-    send: (source) => server.send(source)
+    url: server.url ? new URL(server.url) : null,
+    send: (source) => server.send(source),
   }
   if (events.onOpen) {
-    server.addEventListener('open', evt => events.onOpen && events.onOpen(evt as Event, wsContext))
+    server.addEventListener(
+      'open',
+      (evt) => events.onOpen && events.onOpen(evt as Event, wsContext)
+    )
   }
   if (events.onClose) {
-    server.addEventListener('close', evt => events.onClose && events.onClose(evt as CloseEvent, wsContext))
+    server.addEventListener(
+      'close',
+      (evt) => events.onClose && events.onClose(evt as CloseEvent, wsContext)
+    )
   }
   if (events.onMessage) {
-    server.addEventListener('message', evt => events.onMessage && events.onMessage(evt as MessageEvent, wsContext))
+    server.addEventListener(
+      'message',
+      (evt) => events.onMessage && events.onMessage(evt as MessageEvent, wsContext)
+    )
   }
   if (events.onError) {
-    server.addEventListener('error', evt => events.onError && events.onError(evt as ErrorEvent as Event, wsContext))
+    server.addEventListener(
+      'error',
+      (evt) => events.onError && events.onError(evt as ErrorEvent as Event, wsContext)
+    )
   }
   return new Response(null, {
     status: 101,

@@ -143,7 +143,8 @@ export const hc = <T extends Hono<any, any, any>>(
       return new URL(url)
     }
     if (method === 'ws') {
-      const targetUrl = (opts.args[0] && opts.args[0].param) ? replaceUrlParam(url, opts.args[0].param) : url
+      const targetUrl =
+        opts.args[0] && opts.args[0].param ? replaceUrlParam(url, opts.args[0].param) : url
       return new WebSocket(targetUrl)
     }
 

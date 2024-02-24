@@ -69,10 +69,13 @@ export const createBunWebSocket: CreateBunWebSocket = () => {
     close(ws, code, reason) {
       const websocketListeners = websocketConns[ws.data.connId]
       if (websocketListeners.onClose) {
-        websocketListeners.onClose(new CloseEvent('close', {
-          code,
-          reason
-        }), createWSContext(ws))
+        websocketListeners.onClose(
+          new CloseEvent('close', {
+            code,
+            reason,
+          }),
+          createWSContext(ws)
+        )
       }
     },
     message(ws, message) {

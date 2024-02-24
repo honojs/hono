@@ -8,12 +8,16 @@ export interface WSEvents {
   onError?: (evt: Event, ws: WSContext) => void
 }
 export type UpgradeWebSocket = (
-  createEvents: (c: Context) => WSEvents | Promise<WSEvents>,
-) => MiddlewareHandler<any, string, {
-  in: {
-    json: '_websocket' | undefined
+  createEvents: (c: Context) => WSEvents | Promise<WSEvents>
+) => MiddlewareHandler<
+  any,
+  string,
+  {
+    in: {
+      json: '_websocket' | undefined
+    }
   }
-}>
+>
 
 export type WSReadyState = 0 | 1 | 2 | 3
 export type WSContext = {
