@@ -45,7 +45,7 @@ const setSSEHeaders = (context: Context) => {
 export const streamSSE = (
   c: Context,
   cb: (stream: SSEStreamingApi) => Promise<void>,
-  onError?: (e: Error, stream: StreamingApi) => Promise<void>
+  onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>
 ) => {
   const { readable, writable } = new TransformStream()
   const stream = new SSEStreamingApi(writable, readable)
@@ -55,6 +55,8 @@ export const streamSSE = (
     } catch (e) {
       if (e instanceof Error && onError) {
         await onError(e, stream)
+      } else {
+        console.error(e)
       }
     } finally {
       stream.close()
