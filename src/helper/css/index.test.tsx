@@ -7,7 +7,7 @@ import type { JSXNode } from '../../jsx'
 import { Suspense, renderToReadableStream } from '../../jsx/streaming'
 import type { HtmlEscapedString } from '../../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
-import { renderTest } from './common.test'
+import { renderTest } from './common.case.test'
 import { css, cx, keyframes, viewTransition, rawCssString, Style, createCssContext } from './index'
 
 async function toString(
