@@ -313,6 +313,21 @@
       "types": "./dist/types/helper/dev/index.d.ts",
       "import": "./dist/helper/dev/index.js",
       "require": "./dist/cjs/helper/dev/index.js"
+    },
+    "./ws": {
+      "types": "./dist/types/helper/websocket/index.d.ts",
+      "import": "./dist/helper/websocket/index.js",
+      "require": "./dist/cjs/helper/websocket/index.js"
+    },
+    "./ws/bun": {
+      "types": "./dist/types/adapter/bun/websocket.d.ts",
+      "import": "./dist/adapter/bun/websocket.js",
+      "require": "./dist/cjs/adapter/bun/websocket.js"
+    },
+    "./ws/cloudflare-workers": {
+      "types": "./dist/types/adapter/cloudflare-workers/websocket.d.ts",
+      "import": "./dist/adapter/cloudflare-workers/websocket.js",
+      "require": "./dist/cjs/adapter/cloudflare-workers/websocket.js"
     }
   },
   "typesVersions": {
@@ -475,6 +490,15 @@
       ],
       "dev": [
         "./dist/types/helper/dev"
+      ],
+      "ws": [
+        "./dist/types/helper/websocket"
+      ],
+      "ws/bun": [
+        "./dist/types/adapter/bun/websocket"
+      ],
+      "ws/cloudflare-workers": [
+        "./dist/types/adapter/cloudflare-workers/websocket"
       ]
     }
   },
@@ -516,6 +540,7 @@
     "@types/supertest": "^2.0.12",
     "@vitest/coverage-v8": "^1.1.0",
     "arg": "^5.0.2",
+    "bun-types": "^1.0.29",
     "crypto-js": "^4.1.1",
     "denoify": "^1.6.6",
     "esbuild": "^0.15.12",
