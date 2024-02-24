@@ -125,6 +125,30 @@ const applyProps = (container: SupportedElement, attributes: Props, oldAttribute
           Object.assign(container.style, value)
         }
       } else {
+        const nodeName = container.nodeName
+        if (key === 'value') {
+          if (nodeName === 'INPUT' || nodeName === 'TEXTAREA' || nodeName === 'SELECT') {
+            ;(container as HTMLInputElement).value =
+              value === null || value === undefined || value === false ? null : value
+
+            if (nodeName === 'TEXTAREA') {
+              container.textContent = value
+              continue
+            } else if (nodeName === 'SELECT') {
+              if ((container as HTMLSelectElement).selectedIndex === -1) {
+                ;(container as HTMLSelectElement).selectedIndex = 0
+              }
+              continue
+            }
+          }
+        } else if (
+          (key === 'checked' && nodeName === 'INPUT') ||
+          (key === 'selected' && nodeName === 'OPTION')
+        ) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(container as any)[key] = value
+        }
+
         if (value === null || value === undefined || value === false) {
           container.removeAttribute(key)
         } else if (value === true) {
