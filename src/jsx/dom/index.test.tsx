@@ -244,6 +244,31 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<form><div><label>label</label><input></div><p>1</p></form>')
       expect(insertBeforeSpy).not.toHaveBeenCalled()
     })
+
+    it('should not call textContent for unchanged text', async () => {
+      let setCount: (count: number) => void = () => {}
+      const App = () => {
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        return (
+          <>
+            <span>hono</span>
+            <input value={count} />
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<span>hono</span><input value="0">')
+      setCount(1)
+
+      const textContentSpy = vi.fn()
+      Object.defineProperty(dom.window.Text.prototype, 'textContent', {
+        set: textContentSpy,
+      })
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<span>hono</span><input value="1">')
+      expect(textContentSpy).not.toHaveBeenCalled()
+    })
   })
 
   describe('update properties', () => {
