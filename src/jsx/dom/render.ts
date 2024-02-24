@@ -48,7 +48,10 @@ export type NodeObject = {
         any[][]
       ]
 } & JSXNode
-type NodeString = [string] & {
+type NodeString = [
+  string, // text content
+  boolean // is dirty
+] & {
   e?: Text
   // like a NodeObject
   vC: undefined
@@ -185,7 +188,7 @@ const invokeTag = (context: Context, node: NodeObject): Child[] => {
   if (node.s) {
     const res = node.s
     node.s = undefined
-    return res
+    return res as Child[]
   }
 
   node[DOM_STASH][0] = 0
@@ -308,9 +311,10 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
 
     let el: SupportedElement | Text
     if (isNodeString(child)) {
-      if (child.e) {
+      if (child.e && child[1]) {
         child.e.textContent = child[0]
       }
+      child[1] = false
       el = child.e ||= document.createTextNode(child[0])
     } else {
       el = child.e ||= child.n
@@ -376,7 +380,10 @@ export const build = (
             if (!isNodeString(oldChild)) {
               vChildrenToRemove.push(oldChild)
             } else {
-              oldChild[0] = child[0] // update text content
+              if (oldChild[0] !== child[0]) {
+                oldChild[0] = child[0] // update text content
+                oldChild[1] = true
+              }
               child = oldChild
             }
           } else if (oldChild.tag !== child.tag) {
@@ -425,7 +432,7 @@ const buildNode = (node: Child): Node | undefined => {
   if (node === undefined || node === null || typeof node === 'boolean') {
     return undefined
   } else if (typeof node === 'string' || typeof node === 'number') {
-    return [node.toString()] as NodeString
+    return [node.toString(), true] as NodeString
   } else {
     if (typeof (node as JSXNode).tag === 'function') {
       ;(node as NodeObject)[DOM_STASH] = [0, []]
