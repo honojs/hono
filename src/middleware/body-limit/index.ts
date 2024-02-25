@@ -63,8 +63,10 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
             }
             size += value.length
             if (size > maxSize) {
-              throw new BodyLimitError('413 Request Entity Too Large')
+              controller.error(new BodyLimitError('413 Request Entity Too Large'))
+              break
             }
+
             controller.enqueue(value)
           }
         } finally {
