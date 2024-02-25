@@ -1,6 +1,4 @@
 // @denoify-ignore
-/// <reference types="bun-types/bun" />
-import type { Server, ServerWebSocket, WebSocketHandler } from 'bun'
 import {
   createWSMessageEvent,
   type UpgradeWebSocket,
@@ -9,10 +7,26 @@ import {
   type WSMessageReceive,
 } from '../../helper/websocket'
 
+interface BunServerWebSocket<T> {
+  send (data: string | ArrayBufferLike, compress?: boolean): void
+  close (code?: number, reason?: string): void
+  data: T
+  readyState: 0 | 1 | 2 | 3
+}
+interface BunServer {
+  upgrade <T> (req: Request, options?: {
+    data: T
+  }): boolean
+}
+interface BunWebSocketHandler<T> {
+  open (ws: BunServerWebSocket<T>): void
+  close (ws: BunServerWebSocket<T>, code?: number, reason?: string): void
+  message (ws: BunServerWebSocket<T>, message: string | Buffer): void
+}
 interface CreateBunWebSocket {
   (): {
     upgradeWebSocket: UpgradeWebSocket
-    websocket: WebSocketHandler<BunWebSocketData>
+    websocket: BunWebSocketHandler<BunWebSocketData>
   }
 }
 interface BunWebSocketData {
@@ -21,7 +35,7 @@ interface BunWebSocketData {
   protocol: string
 }
 
-const createWSContext = (ws: ServerWebSocket<BunWebSocketData>): WSContext => {
+const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSContext => {
   return {
     send: (source, options) => {
       const sendingData =
@@ -44,7 +58,7 @@ export const createBunWebSocket: CreateBunWebSocket = () => {
 
   const upgradeWebSocket: UpgradeWebSocket = (createEvents) => {
     return async (c, next) => {
-      const server = c.env as Server
+      const server = c.env as BunServer
       const connId = websocketConns.push(await createEvents(c)) - 1
       const upgradeResult = server.upgrade<BunWebSocketData>(c.req.raw, {
         data: {
@@ -59,7 +73,7 @@ export const createBunWebSocket: CreateBunWebSocket = () => {
       await next() // Failed
     }
   }
-  const websocket: WebSocketHandler<BunWebSocketData> = {
+  const websocket: BunWebSocketHandler<BunWebSocketData> = {
     open(ws) {
       const websocketListeners = websocketConns[ws.data.connId]
       if (websocketListeners.onOpen) {
