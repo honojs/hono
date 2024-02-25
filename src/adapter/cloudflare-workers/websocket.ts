@@ -1,7 +1,11 @@
 // @denoify-ignore
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { WebSocketPair } from '@cloudflare/workers-types'
+import type { WebSocketPair } from '@cloudflare/workers-types'
 import type { UpgradeWebSocket, WSContext, WSReadyState } from '../../helper/websocket'
+
+const CFWebSocketPair = (globalThis as unknown as {
+  WebSocketPair: typeof WebSocketPair
+}).WebSocketPair
 
 // Based on https://github.com/honojs/hono/issues/1153#issuecomment-1767321332
 export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, next) => {
@@ -12,11 +16,9 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
     return await next()
   }
 
-  const webSocketPair = new WebSocketPair()
+  const webSocketPair = new CFWebSocketPair()
   const client = webSocketPair[0]
   const server = webSocketPair[1]
-
-  server.accept()
 
   const wsContext: WSContext = {
     binaryType: 'arraybuffer',
@@ -55,6 +57,7 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
       (evt) => events.onError && events.onError(evt as ErrorEvent as Event, wsContext)
     )
   }
+  server.accept()
   return new Response(null, {
     status: 101,
     // @ts-expect-error Cloudflare Workers API
