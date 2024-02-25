@@ -8,6 +8,8 @@ import { jsx } from '../../src/jsx'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 import { HonoRequest } from '../../src/request'
+import { createBunWebSocket, type BunWebSocketData } from '../../src/adapter/bun/websocket'
+import type { WSMessageReceive } from '../../src/helper/websocket'
 
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.
@@ -251,6 +253,42 @@ describe('toSSG function', () => {
   })
 })
 
+describe('WebSockets Helper', () => {
+  const app = new Hono()
+  const { websocket, upgradeWebSocket } = createBunWebSocket()
+
+  it('Should websockets is working', async () => {
+    const receivedMessagePromise = new Promise<WSMessageReceive>((resolve) =>
+      app.get(
+        '/ws',
+        upgradeWebSocket(() => ({
+          onMessage(evt) {
+            resolve(evt.data)
+          },
+        }))
+      )
+    )
+    const upgradedData = await new Promise<BunWebSocketData>((resolve) =>
+      app.fetch(new Request('http://localhost/ws'), {
+        upgrade: (_req: Request, data: { data: BunWebSocketData }) => {
+          resolve(data.data)
+        },
+      })
+    )
+    const message = Math.random().toString()
+    websocket.message(
+      {
+        close: () => undefined,
+        readyState: 3,
+        data: upgradedData,
+        send: () => undefined,
+      },
+      message
+    )
+    const receivedMessage = await receivedMessagePromise
+    expect(receivedMessage).toBe(message)
+  })
+})
 const fs = require('fs').promises
 const path = require('path')
 

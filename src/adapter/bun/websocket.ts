@@ -29,7 +29,7 @@ interface CreateBunWebSocket {
     websocket: BunWebSocketHandler<BunWebSocketData>
   }
 }
-interface BunWebSocketData {
+export interface BunWebSocketData {
   connId: number
   url: URL
   protocol: string
