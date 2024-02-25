@@ -215,13 +215,10 @@ export const saveContentToFiles = async (
  * `ToSSGInterface` is an experimental feature.
  * The API might be changed.
  */
-export interface ToSSGInterface<
-  E extends Env = Env,
-  S extends Schema = {},
-  BasePath extends string = '/'
-> {
+export interface ToSSGInterface {
   (
-    app: Hono<E, S, BasePath>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    app: Hono<any, any, any>,
     fsModule: FileSystemModule,
     options?: ToSSGOptions
   ): Promise<ToSSGResult>
