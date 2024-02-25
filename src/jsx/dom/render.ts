@@ -2,10 +2,10 @@ import type { JSXNode } from '../base'
 import type { FC, Child, Props } from '../base'
 import { DOM_RENDERER, DOM_ERROR_HANDLER, DOM_STASH } from '../constants'
 import type { Context as JSXContext } from '../context'
-import { globalContexts as globalJSXContexts } from '../context'
+import { globalContexts as globalJSXContexts, useContext } from '../context'
 import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
-import { useContext, createContext } from '.'
+import { createContext } from './context' // import dom-specific versions
 
 const eventAliasMap: Record<string, string> = {
   Change: 'Input',
