@@ -1615,10 +1615,26 @@ export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> =
           input: Input extends { param: infer _ }
             ? ExtractParams<SubPath> extends never
               ? Input
-              : FlattenIfIntersect<Input & { param: ExtractParams<SubPath> }>
+              : FlattenIfIntersect<
+                  Input & {
+                    param: {
+                      // Maps extracted keys, stripping braces, to a string-typed record.
+                      [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
+                        ? Prefix
+                        : K]: string
+                    }
+                  }
+                >
             : RemoveBlankRecord<ExtractParams<SubPath>> extends never
             ? Input
-            : Input & { param: ExtractParams<SubPath> }
+            : Input & {
+                // Maps extracted keys, stripping braces, to a string-typed record.
+                param: {
+                  [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
+                    ? Prefix
+                    : K]: string
+                }
+              }
           output: Output
         }
       : never
