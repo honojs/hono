@@ -328,6 +328,11 @@
       "types": "./dist/types/adapter/cloudflare-workers/websocket.d.ts",
       "import": "./dist/adapter/cloudflare-workers/websocket.js",
       "require": "./dist/cjs/adapter/cloudflare-workers/websocket.js"
+    },
+    "./ws/deno": {
+      "types": "./dist/types/adapter/deno/websocket.d.ts",
+      "import": "./dist/adapter/deno/websocket.js",
+      "require": "./dist/cjs/adapter/deno/websocket.js"
     }
   },
   "typesVersions": {
@@ -499,6 +504,9 @@
       ],
       "ws/cloudflare-workers": [
         "./dist/types/adapter/cloudflare-workers/websocket"
+      ],
+      "ws/deno": [
+        "./dist/types/adapter/deno/websocket"
       ]
     }
   },
