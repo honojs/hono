@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
 import { serveStatic, toSSG } from '../../src/adapter/bun'
+import { createBunWebSocket, type BunWebSocketData } from '../../src/adapter/bun/websocket'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
+import type { WSMessageReceive } from '../../src/helper/websocket'
 import { Hono } from '../../src/index'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from '../../src/jsx'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 import { HonoRequest } from '../../src/request'
-import { createBunWebSocket, type BunWebSocketData } from '../../src/adapter/bun/websocket'
-import type { WSMessageReceive } from '../../src/helper/websocket'
 
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.
