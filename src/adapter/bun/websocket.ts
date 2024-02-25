@@ -8,20 +8,23 @@ import {
 } from '../../helper/websocket'
 
 interface BunServerWebSocket<T> {
-  send (data: string | ArrayBufferLike, compress?: boolean): void
-  close (code?: number, reason?: string): void
+  send(data: string | ArrayBufferLike, compress?: boolean): void
+  close(code?: number, reason?: string): void
   data: T
   readyState: 0 | 1 | 2 | 3
 }
 interface BunServer {
-  upgrade <T> (req: Request, options?: {
-    data: T
-  }): boolean
+  upgrade<T>(
+    req: Request,
+    options?: {
+      data: T
+    }
+  ): boolean
 }
 interface BunWebSocketHandler<T> {
-  open (ws: BunServerWebSocket<T>): void
-  close (ws: BunServerWebSocket<T>, code?: number, reason?: string): void
-  message (ws: BunServerWebSocket<T>, message: string | Buffer): void
+  open(ws: BunServerWebSocket<T>): void
+  close(ws: BunServerWebSocket<T>, code?: number, reason?: string): void
+  message(ws: BunServerWebSocket<T>, message: string | Buffer): void
 }
 interface CreateBunWebSocket {
   (): {
