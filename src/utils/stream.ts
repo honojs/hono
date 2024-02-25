@@ -12,6 +12,13 @@ export class StreamingApi {
 
     const reader = _readable.getReader()
 
+    // in case the user disconnects, let the reader know to cancel
+    // this in-turn results in responseReadable being closed
+    // and writeSSE method no longer blocks indefinitely
+    this.abortSubscribers.push(async () => {
+      await reader.cancel()
+    })
+
     this.responseReadable = new ReadableStream({
       async pull(controller) {
         const { done, value } = await reader.read()
