@@ -12,7 +12,9 @@ export type CookieOptions = {
   signingSecret?: string
   sameSite?: 'Strict' | 'Lax' | 'None'
   partitioned?: boolean
+  prefix?: CookiePrefixOptions
 }
+export type CookiePrefixOptions = 'host' | 'secure'
 
 const algorithm = { name: 'HMAC', hash: 'SHA-256' }
 
@@ -116,7 +118,7 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
     cookie += `; Max-Age=${Math.floor(opt.maxAge)}`
   }
 
-  if (opt.domain) {
+  if (opt.domain && opt.prefix !== 'host') {
     cookie += `; Domain=${opt.domain}`
   }
 
