@@ -1655,7 +1655,7 @@ export type MergePath<A extends string, B extends string> = A extends ''
 
 export type TypedResponse<T = unknown> = {
   data: T
-  format: 'json' // Currently, support only `json` with `c.jsonT()`
+  format: 'json' // Currently, support only `json` with `c.json()`
 }
 
 type ExtractResponseData<T> = T extends Promise<infer T2>
