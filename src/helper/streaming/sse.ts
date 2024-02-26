@@ -5,6 +5,7 @@ export interface SSEMessage {
   data: string
   event?: string
   id?: string
+  retry?: number
 }
 
 export class SSEStreamingApi extends StreamingApi {
@@ -21,7 +22,12 @@ export class SSEStreamingApi extends StreamingApi {
       .join('\n')
 
     const sseData =
-      [message.event && `event: ${message.event}`, data, message.id && `id: ${message.id}`]
+      [
+        message.event && `event: ${message.event}`,
+        data,
+        message.id && `id: ${message.id}`,
+        message.retry && `retry: ${message.retry}`,
+      ]
         .filter(Boolean)
         .join('\n') + '\n\n'
 
@@ -36,10 +42,26 @@ const setSSEHeaders = (context: Context) => {
   context.header('Connection', 'keep-alive')
 }
 
-export const streamSSE = (c: Context, cb: (stream: SSEStreamingApi) => Promise<void>) => {
+export const streamSSE = (
+  c: Context,
+  cb: (stream: SSEStreamingApi) => Promise<void>,
+  onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>
+) => {
   const { readable, writable } = new TransformStream()
   const stream = new SSEStreamingApi(writable, readable)
-  cb(stream).finally(() => stream.close())
+  ;(async () => {
+    try {
+      await cb(stream)
+    } catch (e) {
+      if (e instanceof Error && onError) {
+        await onError(e, stream)
+      } else {
+        console.error(e)
+      }
+    } finally {
+      stream.close()
+    }
+  })()
   setSSEHeaders(c)
   return c.newResponse(stream.responseReadable)
 }

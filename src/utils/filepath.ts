@@ -6,11 +6,6 @@ type FilePathOptions = {
 
 export const getFilePath = (options: FilePathOptions): string | undefined => {
   let filename = options.filename
-  if (/(?:^|[\/\\])\.\.(?:$|[\/\\])/.test(filename)) {
-    return
-  }
-
-  let root = options.root || ''
   const defaultDocument = options.defaultDocument || 'index.html'
 
   if (filename.endsWith('/')) {
@@ -19,6 +14,24 @@ export const getFilePath = (options: FilePathOptions): string | undefined => {
   } else if (!filename.match(/\.[a-zA-Z0-9]+$/)) {
     // /top => /top/index.html
     filename = filename.concat('/' + defaultDocument)
+  }
+
+  const path = getFilePathWithoutDefaultDocument({
+    root: options.root,
+    filename,
+  })
+
+  return path
+}
+
+export const getFilePathWithoutDefaultDocument = (
+  options: Omit<FilePathOptions, 'defaultDocument'>
+) => {
+  let root = options.root || ''
+  let filename = options.filename
+
+  if (/(?:^|[\/\\])\.\.(?:$|[\/\\])/.test(filename)) {
+    return
   }
 
   // /foo.html => foo.html

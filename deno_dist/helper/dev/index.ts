@@ -1,6 +1,7 @@
 import type { Hono } from '../../hono.ts'
-import { COMPOSED_HANDLER } from '../../hono-base.ts'
 import type { Env, RouterRoute } from '../../types.ts'
+import { getColorEnabled } from '../../utils/color.ts'
+import { findTargetHandler, isMiddleware } from '../../utils/handler.ts'
 
 interface ShowRoutesOptions {
   verbose?: boolean
@@ -14,16 +15,8 @@ interface RouteData {
   isMiddleware: boolean
 }
 
-const isMiddleware = (handler: Function) => handler.length > 1
 const handlerName = (handler: Function) => {
   return handler.name || (isMiddleware(handler) ? '[middleware]' : '[handler]')
-}
-const findTargetHandler = (handler: Function): Function => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (handler as any)[COMPOSED_HANDLER]
-    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      findTargetHandler((handler as any)[COMPOSED_HANDLER])
-    : handler
 }
 
 export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
@@ -39,16 +32,7 @@ export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
 }
 
 export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { process, Deno } = globalThis as any
-  const isNoColor =
-    typeof process !== 'undefined'
-      ? // eslint-disable-next-line no-unsafe-optional-chaining
-        'NO_COLOR' in process?.env
-      : typeof Deno?.noColor === 'boolean'
-      ? (Deno.noColor as boolean)
-      : false
-  const colorEnabled = opts?.colorize ?? !isNoColor
+  const colorEnabled = opts?.colorize ?? getColorEnabled()
   const routeData: Record<string, RouteData[]> = {}
   let maxMethodLength = 0
   let maxPathLength = 0

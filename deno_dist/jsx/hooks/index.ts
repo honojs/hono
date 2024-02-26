@@ -288,9 +288,10 @@ export const use = <T>(promise: Promise<T>): T => {
     }
     return cachedRes[0] as T
   }
-  promise
-    .then((res) => resolvedPromiseValueMap.set(promise, [res]))
-    .catch((e) => resolvedPromiseValueMap.set(promise, [undefined, e]))
+  promise.then(
+    (res) => resolvedPromiseValueMap.set(promise, [res]),
+    (e) => resolvedPromiseValueMap.set(promise, [undefined, e])
+  )
 
   const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
   if (!buildData) {
@@ -301,13 +302,14 @@ export const use = <T>(promise: Promise<T>): T => {
   const promiseArray = (node[DOM_STASH][1][STASH_USE] ||= [])
   const hookIndex = node[DOM_STASH][0]++
 
-  promise
-    .then((res) => {
+  promise.then(
+    (res) => {
       promiseArray[hookIndex] = [res]
-    })
-    .catch((e) => {
+    },
+    (e) => {
       promiseArray[hookIndex] = [undefined, e]
-    })
+    }
+  )
 
   const res = promiseArray[hookIndex]
   if (res) {

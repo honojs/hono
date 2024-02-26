@@ -4,10 +4,12 @@ import { Hono } from '../../hono'
 import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
 import {
+  SSG_DISABLED_RESPONSE,
   fetchRoutesContent,
   saveContentToFiles,
   ssgParams,
   toSSG,
+  isSSGContext,
   disableSSG,
   onlySSG,
 } from './index'
@@ -151,7 +153,10 @@ describe('toSSG function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/some.txt', expect.any(String))
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/some/thing.txt', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith(
+      'static/about/some/thing.txt',
+      expect.any(String)
+    )
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/Charlie.html', expect.any(String))
@@ -169,7 +174,7 @@ describe('toSSG function', () => {
       return false
     }
     const result = await toSSG(app, fsMock, { beforeRequestHook })
-    expect(result.files).toHaveLength(11)
+    expect(result.files).toHaveLength(10)
   })
 
   it('should skip the route if the request hook returns false', async () => {
@@ -214,6 +219,27 @@ describe('toSSG function', () => {
 
     expect(afterGenerateHookMock).toHaveBeenCalled()
     expect(afterGenerateHookMock).toHaveBeenCalledWith(expect.anything())
+  })
+
+  it('should avoid memory leak from `req.signal.addEventListener()`', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const signalAddEventListener = vi.fn(() => {})
+    const app = new Hono()
+    app.get('/post/:post', ssgParams([{ post: '1' }, { post: '2' }]), (c) =>
+      c.html(<h1>{c.req.param('post')}</h1>)
+    )
+    await toSSG(app, fsMock, {
+      beforeRequestHook: (req) => {
+        req.signal.addEventListener = signalAddEventListener
+        return req
+      },
+    })
+
+    expect(signalAddEventListener).not.toHaveBeenCalled()
   })
 })
 
@@ -267,8 +293,17 @@ describe('saveContentToFiles function', () => {
     }
     htmlMap = new Map([
       ['/', { content: 'Home Page', mimeType: 'text/html' }],
+      ['/index.html', { content: 'Home Page2', mimeType: 'text/html' }],
       ['/about', { content: 'About Page', mimeType: 'text/html' }],
       ['/about/', { content: 'About Page', mimeType: 'text/html' }],
+      ['/bravo/index.html', { content: 'About Page', mimeType: 'text/html' }],
+      ['/bravo/index.tar.gz', { content: 'About Page', mimeType: 'application/gzip' }],
+      ['/bravo/release-4.0.0', { content: 'Release 4.0.0', mimeType: 'text/html' }],
+      ['/bravo/2024.02.18-sweet-memories', { content: 'Sweet Memories', mimeType: 'text/html' }],
+      ['/bravo/deep.dive.to.html', { content: 'Deep Dive To HTML', mimeType: 'text/html' }],
+      ['/bravo/alert.js', { content: 'alert("evil content")', mimeType: 'text/html' }],
+      ['/bravo.text/index.html', { content: 'About Page', mimeType: 'text/html' }],
+      ['/bravo.text/', { content: 'Bravo Page', mimeType: 'text/html' }],
     ])
   })
 
@@ -276,8 +311,29 @@ describe('saveContentToFiles function', () => {
     await saveContentToFiles(htmlMap, fsMock, './static')
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', 'Home Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', 'Home Page2')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', 'About Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/index.html', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo/index.html', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo/index.tar.gz', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/release-4.0.0.html',
+      'Release 4.0.0'
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/deep.dive.to.html',
+      'Deep Dive To HTML'
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/2024.02.18-sweet-memories.html',
+      'Sweet Memories'
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/alert.js.html',
+      'alert("evil content")'
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'Bravo Page')
   })
 
   it('should correctly create directories if they do not exist', async () => {
@@ -295,6 +351,11 @@ describe('saveContentToFiles function', () => {
     await expect(saveContentToFiles(htmlMap, fsMock, './static')).rejects.toThrow(
       'File write error'
     )
+  })
+  it('check extensions', async () => {
+    await saveContentToFiles(htmlMap, fsMock, './static')
+
+    expect(fsMock.mkdir).toHaveBeenCalledWith('static', { recursive: true })
   })
 })
 
@@ -329,10 +390,29 @@ describe('Dynamic route handling', () => {
   })
 })
 
+describe('isSSGContext()', () => {
+  const app = new Hono()
+  app.get('/', (c) => c.html(<h1>{isSSGContext(c) ? 'SSG' : 'noSSG'}</h1>))
+
+  it('Should not generate the page if disableSSG is set', async () => {
+    const htmlMap = await fetchRoutesContent(app)
+    expect(await htmlMap.get('/')).toEqual({
+      content: '<h1>SSG</h1>',
+      mimeType: 'text/html',
+    })
+  })
+
+  it('Should return 404 response if onlySSG() is set', async () => {
+    const res = await app.request('/')
+    expect(await res.text()).toBe('<h1>noSSG</h1>')
+  })
+})
+
 describe('disableSSG/onlySSG middlewares', () => {
   const app = new Hono()
   app.get('/', (c) => c.html(<h1>Hello</h1>))
   app.get('/api', disableSSG(), (c) => c.text('an-api'))
+  app.get('/disable-by-response', () => SSG_DISABLED_RESPONSE)
   app.get('/static-page', onlySSG(), (c) => c.html(<h1>Welcome to my site</h1>))
 
   it('Should not generate the page if disableSSG is set', async () => {
@@ -340,6 +420,7 @@ describe('disableSSG/onlySSG middlewares', () => {
     expect(htmlMap.has('/')).toBe(true)
     expect(htmlMap.has('/static-page')).toBe(true)
     expect(htmlMap.has('/api')).toBe(false)
+    expect(htmlMap.has('/disable-by-response')).toBe(false)
   })
 
   it('Should return 404 response if onlySSG() is set', async () => {

@@ -1,25 +1,38 @@
 import type { Context } from '../../context.ts'
 import { parse, parseSigned, serialize, serializeSigned } from '../../utils/cookie.ts'
-import type { CookieOptions, Cookie, SignedCookie } from '../../utils/cookie.ts'
+import type { CookieOptions, Cookie, SignedCookie, CookiePrefixOptions } from '../../utils/cookie.ts'
 
 interface GetCookie {
   (c: Context, key: string): string | undefined
   (c: Context): Cookie
+  (c: Context, key: string, prefixOptions: CookiePrefixOptions): string | undefined
 }
 
 interface GetSignedCookie {
   (c: Context, secret: string | BufferSource, key: string): Promise<string | undefined | false>
   (c: Context, secret: string): Promise<SignedCookie>
+  (
+    c: Context,
+    secret: string | BufferSource,
+    key: string,
+    prefixOptions: CookiePrefixOptions
+  ): Promise<string | undefined | false>
 }
 
-export const getCookie: GetCookie = (c, key?) => {
+export const getCookie: GetCookie = (c, key?, prefix?: CookiePrefixOptions) => {
   const cookie = c.req.raw.headers.get('Cookie')
   if (typeof key === 'string') {
     if (!cookie) {
       return undefined
     }
-    const obj = parse(cookie, key)
-    return obj[key]
+    let finalKey = key
+    if (prefix === 'secure') {
+      finalKey = '__Secure-' + key
+    } else if (prefix === 'host') {
+      finalKey = '__Host-' + key
+    }
+    const obj = parse(cookie, finalKey)
+    return obj[finalKey]
   }
   if (!cookie) {
     return {}
@@ -29,14 +42,25 @@ export const getCookie: GetCookie = (c, key?) => {
   return obj as any
 }
 
-export const getSignedCookie: GetSignedCookie = async (c, secret, key?) => {
+export const getSignedCookie: GetSignedCookie = async (
+  c,
+  secret,
+  key?,
+  prefix?: CookiePrefixOptions
+) => {
   const cookie = c.req.raw.headers.get('Cookie')
   if (typeof key === 'string') {
     if (!cookie) {
       return undefined
     }
-    const obj = await parseSigned(cookie, secret, key)
-    return obj[key]
+    let finalKey = key
+    if (prefix === 'secure') {
+      finalKey = '__Secure-' + key
+    } else if (prefix === 'host') {
+      finalKey = '__Host-' + key
+    }
+    const obj = await parseSigned(cookie, secret, finalKey)
+    return obj[finalKey]
   }
   if (!cookie) {
     return {}
@@ -47,7 +71,23 @@ export const getSignedCookie: GetSignedCookie = async (c, secret, key?) => {
 }
 
 export const setCookie = (c: Context, name: string, value: string, opt?: CookieOptions): void => {
-  const cookie = serialize(name, value, { path: '/', ...opt })
+  // Cookie names prefixed with __Secure- can be used only if they are set with the secure attribute.
+  // Cookie names prefixed with __Host- can be used only if they are set with the secure attribute, must have a path of / (meaning any path at the host)
+  // and must not have a Domain attribute.
+  // Read more at https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#cookie_prefixes'
+  let cookie
+  if (opt?.prefix === 'secure') {
+    cookie = serialize('__Secure-' + name, value, { path: '/', ...opt, secure: true })
+  } else if (opt?.prefix === 'host') {
+    cookie = serialize('__Host-' + name, value, {
+      ...opt,
+      path: '/',
+      secure: true,
+      domain: undefined,
+    })
+  } else {
+    cookie = serialize(name, value, { path: '/', ...opt })
+  }
   c.header('set-cookie', cookie, { append: true })
 }
 
@@ -58,7 +98,23 @@ export const setSignedCookie = async (
   secret: string | BufferSource,
   opt?: CookieOptions
 ): Promise<void> => {
-  const cookie = await serializeSigned(name, value, secret, { path: '/', ...opt })
+  let cookie
+  if (opt?.prefix === 'secure') {
+    cookie = await serializeSigned('__Secure-' + name, value, secret, {
+      path: '/',
+      ...opt,
+      secure: true,
+    })
+  } else if (opt?.prefix === 'host') {
+    cookie = await serializeSigned('__Host-' + name, value, secret, {
+      ...opt,
+      path: '/',
+      secure: true,
+      domain: undefined,
+    })
+  } else {
+    cookie = await serializeSigned(name, value, secret, { path: '/', ...opt })
+  }
   c.header('set-cookie', cookie, { append: true })
 }
 

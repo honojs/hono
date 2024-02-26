@@ -129,6 +129,13 @@ describe('Serve Static Middleware', () => {
     expect(onNotFound).not.toHaveBeenCalled()
   })
 
+  it('Should return 200 response - /static/download', async () => {
+    const res = await app.request(new Request('http://localhost/static/download'))
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('download')
+    expect(onNotFound).not.toHaveBeenCalled()
+  })
+
   it('Should return 200 response - /dot-static/plain.txt', async () => {
     const res = await app.request(new Request('http://localhost/dot-static/plain.txt'))
     expect(res.status).toBe(200)

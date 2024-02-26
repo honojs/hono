@@ -109,6 +109,10 @@ Deno.test('Serve Static middleware', async () => {
   assertEquals(res.status, 200)
   assertEquals(await res.text(), 'Deno!')
 
+  res = await app.request('http://localhost/static/download')
+  assertEquals(res.status, 200)
+  assertEquals(await res.text(), 'download')
+
   res = await app.request('http://localhost/dot-static/plain.txt')
   assertEquals(res.status, 200)
   assertEquals(await res.text(), 'Deno!!')
