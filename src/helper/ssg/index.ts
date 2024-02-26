@@ -2,7 +2,6 @@ import { replaceUrlParam } from '../../client/utils'
 import type { Context } from '../../context'
 import type { Hono } from '../../hono'
 import type { Env, MiddlewareHandler, Schema } from '../../types'
-import { bufferToString } from '../../utils/buffer'
 import { getExtension } from '../../utils/mime'
 import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils'
 
@@ -202,7 +201,7 @@ export const saveContentToFiles = async (
     if (typeof content === 'string') {
       await fsModule.writeFile(filePath, content)
     } else if (content instanceof ArrayBuffer) {
-      await fsModule.writeFile(filePath, bufferToString(content))
+      await fsModule.writeFile(filePath, new Uint8Array(content))
     }
     files.push(filePath)
   }
