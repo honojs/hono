@@ -338,7 +338,7 @@ describe('saveContentToFiles function', () => {
     ])
   })
 
-  it('should correctly create text files with the right content and paths', async () => {
+  it('should correctly create files with the right content and paths', async () => {
     await saveContentToFiles(htmlMap, fsMock, './static')
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', 'Home Page')
@@ -364,26 +364,16 @@ describe('saveContentToFiles function', () => {
     )
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'About Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'Bravo Page')
-  })
 
-  describe('should correctly create binary files with the right content', () => {
-    it('for application/gzip', async () => {
-      await saveContentToFiles(htmlMap, fsMock, './static')
-
-      expect(fsMock.writeFile).toHaveBeenCalledWith(
-        'static/bravo/index.tar.gz',
-        new Uint8Array(gzFileArrayBuffer)
-      )
-    })
-
-    it('for image/png', async () => {
-      await saveContentToFiles(htmlMap, fsMock, './static')
-
-      expect(fsMock.writeFile).toHaveBeenCalledWith(
-        'static/bravo/dot.png',
-        new Uint8Array(pngFileArrayBuffer)
-      )
-    })
+    // binary files
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/index.tar.gz',
+      new Uint8Array(gzFileArrayBuffer)
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/dot.png',
+      new Uint8Array(pngFileArrayBuffer)
+    )
   })
 
   it('should correctly create directories if they do not exist', async () => {
