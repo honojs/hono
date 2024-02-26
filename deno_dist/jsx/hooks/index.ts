@@ -204,6 +204,20 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
   ])
 }
 
+export const useReducer = <T, A>(
+  reducer: (state: T, action: A) => T,
+  initialArg: T,
+  init?: (initialState: T) => T
+): [T, (action: A) => void] => {
+  const [state, setState] = useState(() => (init ? init(initialArg) : initialArg))
+  return [
+    state,
+    (action: A) => {
+      setState((state) => reducer(state, action))
+    },
+  ]
+}
+
 const useEffectCommon = (
   index: number,
   effect: () => void | (() => void),
@@ -324,3 +338,7 @@ export const useMemo = <T>(factory: () => T, deps: readonly unknown[]): T => {
   }
   return memoArray[hookIndex][0] as T
 }
+
+// Define to avoid errors. This hook currently does nothing.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const useDebugValue = (value: unknown, formatter?: (value: unknown) => string): void => {}
