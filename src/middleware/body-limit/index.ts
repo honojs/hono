@@ -1,5 +1,8 @@
 import type { Context } from '../../context'
+import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
+
+const ERROR_MESSAGE = 'Payload Too Large'
 
 type OnError = (c: Context) => Response | Promise<Response>
 type BodyLimitOptions = {
@@ -34,7 +37,14 @@ class BodyLimitError extends Error {
  * ```
  */
 export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
-  const onError: OnError = options.onError || ((c) => c.text('413 Request Entity Too Large', 413))
+  const onError: OnError =
+    options.onError ||
+    (() => {
+      const res = new Response(ERROR_MESSAGE, {
+        status: 413,
+      })
+      throw new HTTPException(413, { res })
+    })
   const maxSize = options.maxSize
 
   return async function bodyLimit(c, next) {
@@ -63,7 +73,7 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
             }
             size += value.length
             if (size > maxSize) {
-              controller.error(new BodyLimitError('413 Request Entity Too Large'))
+              controller.error(new BodyLimitError(ERROR_MESSAGE))
               break
             }
 

@@ -1,4 +1,3 @@
-import { as } from 'vitest/dist/reporters-O4LBziQ_.js'
 import { Hono } from '../../hono'
 import { Unit, bodyLimit } from '.'
 
@@ -70,7 +69,7 @@ describe('Body Limit Middleware', () => {
 
         expect(res).not.toBeNull()
         expect(res.status).toBe(413)
-        expect(await res.text()).toBe('413 Request Entity Too Large')
+        expect(await res.text()).toBe('Payload Too Large')
       })
     })
 
@@ -108,7 +107,7 @@ describe('Body Limit Middleware', () => {
         expect(res).not.toBeNull()
         expect(res.status).toBe(413)
         expect(readSpy).toHaveBeenCalledTimes(2)
-        expect(await res.text()).toBe('413 Request Entity Too Large')
+        expect(await res.text()).toBe('Payload Too Large')
       })
     })
   })
