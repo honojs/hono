@@ -1,3 +1,4 @@
+import { resolveCallback, HtmlEscapedCallbackPhase } from '../../utils/html'
 import { html, raw } from '.'
 
 describe('Tagged Template Literals', () => {
@@ -43,6 +44,27 @@ describe('Tagged Template Literals', () => {
       const res = html`<p>I'm ${name}.</p>`
       expect(res).toBeInstanceOf(Promise)
       expect((await res).toString()).toBe('<p>I\'m John "Johnny" Smith.</p>')
+    })
+  })
+
+  describe('HtmlEscapedString', () => {
+    it('Should preserve callbacks', async () => {
+      const name = raw('Hono', [
+        ({ buffer }) => {
+          if (buffer) {
+            buffer[0] = buffer[0].replace('Hono', 'Hono!')
+          }
+          return undefined
+        },
+      ])
+      const res = html`<p>I'm ${name}.</p>`
+      expect(res).toBeInstanceOf(Promise)
+      // eslint-disable-next-line quotes
+      expect((await res).toString()).toBe("<p>I'm Hono.</p>")
+      expect(await resolveCallback(await res, HtmlEscapedCallbackPhase.Stringify, false, {})).toBe(
+        // eslint-disable-next-line quotes
+        "<p>I'm Hono!.</p>"
+      )
     })
   })
 })

@@ -2,14 +2,20 @@ import type { JSXNode } from '../base'
 import type { FC, Child, Props } from '../base'
 import { DOM_RENDERER, DOM_ERROR_HANDLER, DOM_STASH } from '../constants'
 import type { Context as JSXContext } from '../context'
-import { globalContexts as globalJSXContexts } from '../context'
+import { globalContexts as globalJSXContexts, useContext } from '../context'
 import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
+import { createContext } from './context' // import dom-specific versions
 
 const eventAliasMap: Record<string, string> = {
   Change: 'Input',
   DoubleClick: 'DblClick',
-}
+} as const
+
+const nameSpaceMap: Record<string, string> = {
+  svg: 'http://www.w3.org/2000/svg',
+  math: 'http://www.w3.org/1998/Math/MathML',
+} as const
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type HasRenderToDom = FC<any> & { [DOM_RENDERER]: FC<any> }
@@ -18,6 +24,7 @@ export type ErrorHandler = (error: any, retry: () => void) => Child | undefined
 
 type Container = HTMLElement | DocumentFragment
 type LocalJSXContexts = [JSXContext<unknown>, unknown][] | undefined
+type SupportedElement = HTMLElement | SVGElement | MathMLElement
 
 export type NodeObject = {
   pP: Props | undefined // previous props
@@ -25,8 +32,9 @@ export type NodeObject = {
   vC: Node[] // virtual dom children
   vR: Node[] // virtual dom children to remove
   s?: Node[] // shadow virtual dom children
+  n?: string // namespace
   c: Container | undefined // container
-  e: HTMLElement | Text | undefined // rendered element
+  e: SupportedElement | Text | undefined // rendered element
   [DOM_STASH]:
     | [
         number, // current hook index
@@ -40,7 +48,10 @@ export type NodeObject = {
         any[][]
       ]
 } & JSXNode
-type NodeString = [string] & {
+type NodeString = [
+  string, // text content
+  boolean // is dirty
+] & {
   e?: Text
   // like a NodeObject
   vC: undefined
@@ -74,6 +85,8 @@ export type Context =
 
 export const buildDataStack: [Context, Node][] = []
 
+let nameSpaceContext: JSXContext<string> | undefined = undefined
+
 const isNodeString = (node: Node): node is NodeString => Array.isArray(node)
 
 const getEventSpec = (key: string): [string, boolean] | undefined => {
@@ -85,7 +98,7 @@ const getEventSpec = (key: string): [string, boolean] | undefined => {
   return undefined
 }
 
-const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: Props) => {
+const applyProps = (container: SupportedElement, attributes: Props, oldAttributes?: Props) => {
   attributes ||= {}
   for (const [key, value] of Object.entries(attributes)) {
     if (!oldAttributes || oldAttributes[key] !== value) {
@@ -115,6 +128,30 @@ const applyProps = (container: HTMLElement, attributes: Props, oldAttributes?: P
           Object.assign(container.style, value)
         }
       } else {
+        const nodeName = container.nodeName
+        if (key === 'value') {
+          if (nodeName === 'INPUT' || nodeName === 'TEXTAREA' || nodeName === 'SELECT') {
+            ;(container as HTMLInputElement).value =
+              value === null || value === undefined || value === false ? null : value
+
+            if (nodeName === 'TEXTAREA') {
+              container.textContent = value
+              continue
+            } else if (nodeName === 'SELECT') {
+              if ((container as HTMLSelectElement).selectedIndex === -1) {
+                ;(container as HTMLSelectElement).selectedIndex = 0
+              }
+              continue
+            }
+          }
+        } else if (
+          (key === 'checked' && nodeName === 'INPUT') ||
+          (key === 'selected' && nodeName === 'OPTION')
+        ) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(container as any)[key] = value
+        }
+
         if (value === null || value === undefined || value === false) {
           container.removeAttribute(key)
         } else if (value === true) {
@@ -151,7 +188,7 @@ const invokeTag = (context: Context, node: NodeObject): Child[] => {
   if (node.s) {
     const res = node.s
     node.s = undefined
-    return res
+    return res as Child[]
   }
 
   node[DOM_STASH][0] = 0
@@ -240,38 +277,54 @@ const applyNode = (node: Node, container: Container) => {
   }
 }
 
+const findChildNodeIndex = (
+  childNodes: NodeListOf<ChildNode>,
+  child: ChildNode | null | undefined
+): number | undefined => {
+  if (!child) {
+    return
+  }
+
+  for (let i = 0, len = childNodes.length; i < len; i++) {
+    if (childNodes[i] === child) {
+      return i
+    }
+  }
+
+  return
+}
+
 const applyNodeObject = (node: NodeObject, container: Container) => {
   const next: Node[] = []
   const remove: Node[] = []
   const callbacks: EffectData[] = []
   getNextChildren(node, container, next, remove, callbacks)
-  let offset = container.childNodes.length
-  const insertBefore = findInsertBefore(node.nN) || next.find((n) => n.e)?.e
-  if (insertBefore) {
-    for (let i = 0; i < offset; i++) {
-      if (container.childNodes[i] === insertBefore) {
-        offset = i
-        break
-      }
-    }
-  }
+
+  const childNodes = container.childNodes
+  let offset =
+    findChildNodeIndex(childNodes, findInsertBefore(node.nN)) ??
+    findChildNodeIndex(childNodes, next.find((n) => n.e)?.e) ??
+    childNodes.length
 
   for (let i = 0, len = next.length; i < len; i++, offset++) {
     const child = next[i]
 
-    let el: HTMLElement | Text
+    let el: SupportedElement | Text
     if (isNodeString(child)) {
-      if (child.e) {
+      if (child.e && child[1]) {
         child.e.textContent = child[0]
       }
+      child[1] = false
       el = child.e ||= document.createTextNode(child[0])
     } else {
-      el = child.e ||= document.createElement(child.tag as string)
+      el = child.e ||= child.n
+        ? (document.createElementNS(child.n, child.tag as string) as SVGElement | MathMLElement)
+        : document.createElement(child.tag as string)
       applyProps(el as HTMLElement, child.props, child.pP)
       applyNode(child, el as HTMLElement)
     }
-    if (container.childNodes[offset] !== el) {
-      container.insertBefore(el, container.childNodes[offset] || null)
+    if (childNodes[offset] !== el && childNodes[offset - 1] !== child.e) {
+      container.insertBefore(el, childNodes[offset] || null)
     }
   }
   remove.forEach(removeNode)
@@ -327,7 +380,10 @@ export const build = (
             if (!isNodeString(oldChild)) {
               vChildrenToRemove.push(oldChild)
             } else {
-              oldChild[0] = child[0] // update text content
+              if (oldChild[0] !== child[0]) {
+                oldChild[0] = child[0] // update text content
+                oldChild[1] = true
+              }
               child = oldChild
             }
           } else if (oldChild.tag !== child.tag) {
@@ -337,6 +393,11 @@ export const build = (
             oldChild.props = child.props
             oldChild.children = child.children
             child = oldChild
+          }
+        } else if (!isNodeString(child) && nameSpaceContext) {
+          const ns = useContext(nameSpaceContext)
+          if (ns) {
+            child.n = ns
           }
         }
 
@@ -371,10 +432,26 @@ const buildNode = (node: Child): Node | undefined => {
   if (node === undefined || node === null || typeof node === 'boolean') {
     return undefined
   } else if (typeof node === 'string' || typeof node === 'number') {
-    return [node.toString()] as NodeString
+    return [node.toString(), true] as NodeString
   } else {
     if (typeof (node as JSXNode).tag === 'function') {
       ;(node as NodeObject)[DOM_STASH] = [0, []]
+    } else {
+      const ns = nameSpaceMap[(node as JSXNode).tag as string]
+      if (ns) {
+        ;(node as NodeObject).n = ns
+        nameSpaceContext ||= createContext('')
+        ;(node as JSXNode).children = [
+          {
+            tag: nameSpaceContext.Provider,
+            props: {
+              value: ns,
+            },
+            children: (node as JSXNode).children,
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ] as any
+      }
     }
     return node as NodeObject
   }

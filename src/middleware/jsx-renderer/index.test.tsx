@@ -233,7 +233,7 @@ describe('JSX renderer', () => {
     }
     expect(chunk).toEqual([
       '<!DOCTYPE html><html><body><template id="H:0"></template><p>Loading...</p><!--/$--></body></html>',
-      `<template><p>Hello Hono!</p></template><script>
+      `<template data-hono-target="H:0"><p>Hello Hono!</p></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:0')
@@ -302,7 +302,7 @@ d.replaceWith(c.content)
     }
     expect(chunk).toEqual([
       '<!DOCTYPE html><html><body><template id="H:1"></template><p>Loading...</p><!--/$--></body></html>',
-      `<template><p>Hello Hono again!</p></template><script>
+      `<template data-hono-target="H:1"><p>Hello Hono again!</p></template><script>
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:1')
@@ -356,5 +356,63 @@ d.replaceWith(c.content)
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<!DOCTYPE html><h1>fooValue</h1><p>barValue</p>')
+  })
+
+  it('Should return a resolved content', async () => {
+    const app = new Hono()
+    app.use(jsxRenderer(async ({ children }) => <div>{children}</div>))
+    app.get('/', (c) => c.render('Hi', { title: 'Hi' }))
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('<!DOCTYPE html><div>Hi</div>')
+  })
+
+  describe('keep context status', async () => {
+    it('Should keep context status', async () => {
+      const app = new Hono()
+      app.use(
+        '*',
+        jsxRenderer(({ children }) => {
+          return (
+            <html>
+              <body>{children}</body>
+            </html>
+          )
+        })
+      )
+      app.get('/', (c) => {
+        c.status(201)
+        return c.render(<h1>Hello</h1>, { title: 'Title' })
+      })
+      const res = await app.request('/')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(201)
+      expect(await res.text()).toBe('<!DOCTYPE html><html><body><h1>Hello</h1></body></html>')
+    })
+
+    it('Should keep context status with stream option', async () => {
+      const app = new Hono()
+      app.use(
+        '*',
+        jsxRenderer(
+          ({ children }) => {
+            return (
+              <html>
+                <body>{children}</body>
+              </html>
+            )
+          },
+          { stream: true }
+        )
+      )
+      app.get('/', (c) => {
+        c.status(201)
+        return c.render(<h1>Hello</h1>, { title: 'Title' })
+      })
+      const res = await app.request('/')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(201)
+      expect(await res.text()).toBe('<!DOCTYPE html><html><body><h1>Hello</h1></body></html>')
+    })
   })
 })

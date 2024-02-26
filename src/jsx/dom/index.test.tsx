@@ -6,13 +6,8 @@ import type { FC } from '..'
 import { jsx, Fragment } from '..'
 import type { RefObject } from '../hooks'
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from '../hooks'
-import type { NodeObject } from './render'
 import { memo, isValidElement, cloneElement } from '.'
 import { render, cloneElement as cloneElementForDom } from '.'
-
-const getContainer = (element: JSX.Element): DocumentFragment | HTMLElement | undefined => {
-  return (element as unknown as NodeObject).c
-}
 
 describe('DOM', () => {
   beforeAll(() => {
@@ -154,10 +149,9 @@ describe('DOM', () => {
       }
       const app = <App />
       render(app, root)
-      const container = getContainer(app) as HTMLElement
       expect(root.innerHTML).toBe('<div>0</div>')
 
-      const insertBeforeSpy = vi.spyOn(container, 'insertBefore')
+      const insertBeforeSpy = vi.spyOn(dom.window.Node.prototype, 'insertBefore')
       setCount(1)
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div>1</div>')
@@ -199,6 +193,296 @@ describe('DOM', () => {
       setCount(2)
       await Promise.resolve()
       expect(root.innerHTML).toBe('2')
+    })
+
+    it('one child is updated', async () => {
+      let setCount: (count: number) => void = () => {}
+      const App = () => {
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        return <div>{count}</div>
+      }
+      const app = (
+        <>
+          <App />
+          <div>Footer</div>
+        </>
+      )
+      render(app, root)
+      expect(root.innerHTML).toBe('<div>0</div><div>Footer</div>')
+
+      const insertBeforeSpy = vi.spyOn(dom.window.Node.prototype, 'insertBefore')
+      setCount(1)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div>1</div><div>Footer</div>')
+      expect(insertBeforeSpy).not.toHaveBeenCalled()
+    })
+
+    it('should not call insertBefore for unchanged complex dom tree', async () => {
+      let setCount: (count: number) => void = () => {}
+      const App = () => {
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        return (
+          <form>
+            <div>
+              <label>label</label>
+              <input />
+            </div>
+            <p>{count}</p>
+          </form>
+        )
+      }
+      const app = <App />
+
+      render(app, root)
+      expect(root.innerHTML).toBe('<form><div><label>label</label><input></div><p>0</p></form>')
+
+      const insertBeforeSpy = vi.spyOn(dom.window.Node.prototype, 'insertBefore')
+      setCount(1)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<form><div><label>label</label><input></div><p>1</p></form>')
+      expect(insertBeforeSpy).not.toHaveBeenCalled()
+    })
+
+    it('should not call textContent for unchanged text', async () => {
+      let setCount: (count: number) => void = () => {}
+      const App = () => {
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        return (
+          <>
+            <span>hono</span>
+            <input value={count} />
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<span>hono</span><input value="0">')
+      setCount(1)
+
+      const textContentSpy = vi.fn()
+      Object.defineProperty(dom.window.Text.prototype, 'textContent', {
+        set: textContentSpy,
+      })
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<span>hono</span><input value="1">')
+      expect(textContentSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('update properties', () => {
+    describe('input', () => {
+      it('value', async () => {
+        let setValue: (value: string) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState('a')
+          setValue = _setValue
+          return <input value={value} />
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<input value="a">')
+        const valueSpy = vi.fn()
+        Object.defineProperty(dom.window.HTMLInputElement.prototype, 'value', {
+          set: valueSpy,
+        })
+        setValue('b')
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<input value="b">')
+        expect(valueSpy).toHaveBeenCalledWith('b')
+      })
+
+      it('assign undefined', async () => {
+        let setValue: (value: string | undefined) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState<string | undefined>('a')
+          setValue = _setValue
+          return <input value={value} />
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<input value="a">')
+        const valueSpy = vi.fn()
+        Object.defineProperty(dom.window.HTMLInputElement.prototype, 'value', {
+          set: valueSpy,
+        })
+        setValue(undefined)
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<input>')
+        expect(valueSpy).toHaveBeenCalledWith(null) // assign null means empty string
+      })
+
+      it('checked', async () => {
+        let setValue: (value: string) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState('a')
+          setValue = _setValue
+          return <input type='checkbox' checked={value === 'b'} />
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<input type="checkbox">')
+        const checkedSpy = vi.fn()
+        Object.defineProperty(dom.window.HTMLInputElement.prototype, 'checked', {
+          set: checkedSpy,
+        })
+        setValue('b')
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<input type="checkbox" checked="">')
+        expect(checkedSpy).toHaveBeenCalledWith(true)
+        setValue('a')
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<input type="checkbox">')
+        expect(checkedSpy).toHaveBeenCalledWith(false)
+      })
+    })
+
+    describe('textarea', () => {
+      it('value', async () => {
+        let setValue: (value: string) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState('a')
+          setValue = _setValue
+          return <textarea value={value} />
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<textarea>a</textarea>')
+        const valueSpy = vi.fn()
+        Object.defineProperty(dom.window.HTMLTextAreaElement.prototype, 'value', {
+          set: valueSpy,
+        })
+        setValue('b')
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<textarea>b</textarea>')
+        expect(valueSpy).toHaveBeenCalledWith('b')
+      })
+
+      it('assign undefined', async () => {
+        let setValue: (value: string | undefined) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState<string | undefined>('a')
+          setValue = _setValue
+          return <textarea value={value} />
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<textarea>a</textarea>')
+        const valueSpy = vi.fn()
+        Object.defineProperty(dom.window.HTMLTextAreaElement.prototype, 'value', {
+          set: valueSpy,
+        })
+        setValue(undefined)
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<textarea></textarea>')
+        expect(valueSpy).toHaveBeenCalledWith(null) // assign null means empty string
+      })
+    })
+
+    describe('select', () => {
+      it('value', async () => {
+        let setValue: (value: string) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState('a')
+          setValue = _setValue
+          return (
+            <select value={value}>
+              <option value='a'>A</option>
+              <option value='b'>B</option>
+              <option value='c'>C</option>
+            </select>
+          )
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe(
+          '<select><option value="a">A</option><option value="b">B</option><option value="c">C</option></select>'
+        )
+        const valueSpy = vi.fn()
+        Object.defineProperty(dom.window.HTMLSelectElement.prototype, 'value', {
+          set: valueSpy,
+        })
+        setValue('b')
+        await Promise.resolve()
+        expect(valueSpy).toHaveBeenCalledWith('b')
+      })
+
+      it('invalid value', async () => {
+        let setValue: (value: string) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState('a')
+          setValue = _setValue
+          return (
+            <select value={value}>
+              <option value='a'>A</option>
+              <option value='b'>B</option>
+              <option value='c'>C</option>
+            </select>
+          )
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe(
+          '<select><option value="a">A</option><option value="b">B</option><option value="c">C</option></select>'
+        )
+        setValue('z')
+        await Promise.resolve()
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('a') // invalid value is ignored
+      })
+
+      it('assign undefined', async () => {
+        let setValue: (value: string | undefined) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState<string | undefined>('a')
+          setValue = _setValue
+          return (
+            <select value={value}>
+              <option value='a'>A</option>
+              <option value='b'>B</option>
+              <option value='c'>C</option>
+            </select>
+          )
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe(
+          '<select><option value="a">A</option><option value="b">B</option><option value="c">C</option></select>'
+        )
+        setValue(undefined)
+        await Promise.resolve()
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('a') // select the first option
+      })
+    })
+
+    describe('option', () => {
+      it('selected', async () => {
+        let setValue: (value: string) => void = () => {}
+        const App = () => {
+          const [value, _setValue] = useState('a')
+          setValue = _setValue
+          return (
+            <select>
+              <option value='a'>A</option>
+              <option value='b' selected={value === 'b'}>
+                B
+              </option>
+              <option value='c'>C</option>
+            </select>
+          )
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe(
+          '<select><option value="a">A</option><option value="b">B</option><option value="c">C</option></select>'
+        )
+        setValue('b')
+        await Promise.resolve()
+        expect(root.innerHTML).toBe(
+          '<select><option value="a">A</option><option value="b" selected="">B</option><option value="c">C</option></select>'
+        )
+        const select = root.querySelector('select') as HTMLSelectElement
+        expect(select.value).toBe('b')
+        setValue('a')
+        await Promise.resolve()
+        expect(root.innerHTML).toBe(
+          '<select><option value="a">A</option><option value="b">B</option><option value="c">C</option></select>'
+        )
+        expect(select.value).toBe('a')
+      })
     })
   })
 
@@ -1018,6 +1302,64 @@ describe('DOM', () => {
       root.querySelector('p')?.click()
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div><p>1</p></div>')
+    })
+  })
+
+  describe('SVG', () => {
+    it('simple', () => {
+      const App = () => {
+        return (
+          <svg>
+            <circle cx='50' cy='50' r='40' stroke='black' stroke-width='3' fill='red' />
+          </svg>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<svg><circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red"></circle></svg>'
+      )
+    })
+
+    it('title element', () => {
+      const App = () => {
+        return (
+          <>
+            <title>Document Title</title>
+            <svg>
+              <title>SVG Title</title>
+            </svg>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<title>Document Title</title><svg><title>SVG Title</title></svg>'
+      )
+      expect(document.querySelector('title')).toBeInstanceOf(dom.window.HTMLTitleElement)
+      expect(document.querySelector('svg title')).toBeInstanceOf(dom.window.SVGTitleElement)
+    })
+  })
+
+  describe('MathML', () => {
+    it('simple', () => {
+      const createElementSpy = vi.spyOn(dom.window.document, 'createElement')
+      const createElementNSSpy = vi.spyOn(dom.window.document, 'createElementNS')
+
+      const App = () => {
+        return (
+          <math>
+            <mrow>
+              <mn>1</mn>
+            </mrow>
+          </math>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<math><mrow><mn>1</mn></mrow></math>')
+
+      expect(createElementSpy).not.toHaveBeenCalled()
+      expect(createElementNSSpy).toHaveBeenCalledWith('http://www.w3.org/1998/Math/MathML', 'math')
+      expect(createElementNSSpy).toHaveBeenCalledWith('http://www.w3.org/1998/Math/MathML', 'mrow')
     })
   })
 })

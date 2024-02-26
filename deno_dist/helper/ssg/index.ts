@@ -1,15 +1,14 @@
 import { replaceUrlParam } from '../../client/utils.ts'
 import type { Context } from '../../context.ts'
-import { inspectRoutes } from '../../helper/dev/index.ts'
 import type { Hono } from '../../hono.ts'
 import type { Env, MiddlewareHandler, Schema } from '../../types.ts'
 import { bufferToString } from '../../utils/buffer.ts'
 import { createPool } from '../../utils/concurrent.ts'
 import { getExtension } from '../../utils/mime.ts'
-import { joinPaths, dirname } from './utils.ts'
+import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils.ts'
 
-export const X_HONO_SSG_HEADER_KEY = 'x-hono-ssg'
-export const X_HONO_DISABLE_SSG_HEADER_KEY = 'x-hono-disable-ssg'
+const SSG_CONTEXT = 'HONO_SSG_CONTEXT'
+export const SSG_DISABLED_RESPONSE = new Response('SSG is disabled', { status: 404 })
 
 const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
 
@@ -36,6 +35,11 @@ export interface ToSSGResult {
 
 const generateFilePath = (routePath: string, outDir: string, mimeType: string) => {
   const extension = determineExtension(mimeType)
+
+  if (routePath.endsWith(`.${extension}`)) {
+    return joinPaths(outDir, routePath)
+  }
+
   if (routePath === '/') {
     return joinPaths(outDir, `index.${extension}`)
   }
@@ -134,16 +138,11 @@ export const fetchRoutesContent = function* <
   const baseURL = 'http://localhost'
   const pool = createPool({ concurrency })
 
-  for (const route of inspectRoutes(app)) {
-    if (route.isMiddleware) {
-      continue
-    }
-
+  for (const route of filterStaticGenerateRoutes(app)) {
     // GET Route Info
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
 
     let forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
-    forGetInfoURLRequest.headers.set(X_HONO_SSG_HEADER_KEY, 'true')
     if (beforeRequestHook) {
       const maybeRequest = beforeRequestHook(forGetInfoURLRequest)
       if (!maybeRequest) {
@@ -165,6 +164,11 @@ export const fetchRoutesContent = function* <
           forGetInfoURLRequest.ssgParams = [{}]
         }
 
+        const requestInit = {
+          method: forGetInfoURLRequest.method,
+          headers: forGetInfoURLRequest.headers,
+        }
+
         resolveGetInfo(
           (function* () {
             for (const param of forGetInfoURLRequest.ssgParams as SSGParams) {
@@ -173,9 +177,11 @@ export const fetchRoutesContent = function* <
                 try {
                   const replacedUrlParam = replaceUrlParam(route.path, param)
                   let response = await pool.run(() =>
-                    app.request(replacedUrlParam, forGetInfoURLRequest)
+                    app.request(replacedUrlParam, requestInit, {
+                      [SSG_CONTEXT]: true,
+                    })
                   )
-                  if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) {
+                  if (response === SSG_DISABLED_RESPONSE) {
                     resolveReq(undefined)
                     return
                   }
@@ -326,14 +332,22 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
 
 /**
  * @experimental
+ * `isSSGContext` is an experimental feature.
+ * The API might be changed.
+ */
+export const isSSGContext = (c: Context): boolean => !!c.env?.[SSG_CONTEXT]
+
+/**
+ * @experimental
  * `disableSSG` is an experimental feature.
  * The API might be changed.
  */
-
 export const disableSSG = (): MiddlewareHandler =>
   async function disableSSG(c, next) {
+    if (isSSGContext(c)) {
+      return SSG_DISABLED_RESPONSE
+    }
     await next()
-    c.header(X_HONO_DISABLE_SSG_HEADER_KEY, 'true')
   }
 
 /**
@@ -343,9 +357,8 @@ export const disableSSG = (): MiddlewareHandler =>
  */
 export const onlySSG = (): MiddlewareHandler =>
   async function onlySSG(c, next) {
-    const headerValue = c.req.raw.headers.get(X_HONO_SSG_HEADER_KEY)
-    if (headerValue) {
-      await next()
+    if (!isSSGContext(c)) {
+      return c.notFound()
     }
-    return c.notFound()
+    await next()
   }

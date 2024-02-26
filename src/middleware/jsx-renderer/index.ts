@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Context, Renderer } from '../../context'
+import type { Context, PropsForRenderer } from '../../context'
 import { html, raw } from '../../helper/html'
 import { jsx, createContext, useContext, Fragment } from '../../jsx'
 import type { FC, PropsWithChildren, JSXNode } from '../../jsx'
@@ -7,10 +7,6 @@ import { renderToReadableStream } from '../../jsx/streaming'
 import type { Env, Input, MiddlewareHandler } from '../../types'
 
 export const RequestContext = createContext<Context | null>(null)
-
-export type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unknown, infer Props]
-  ? Props
-  : unknown
 
 type RendererOptions = {
   docType?: boolean | string
@@ -32,20 +28,23 @@ const createRenderer =
         ? ''
         : '<!DOCTYPE html>'
 
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     const currentLayout = component
-      ? component({
-          children,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ...{ Layout, ...(props as any) },
-        })
+      ? jsx(
+          component,
+          {
+            ...{ Layout, ...(props as any) },
+          },
+          children as any
+        )
       : children
 
     const body = html`${raw(docType)}${jsx(
       RequestContext.Provider,
       { value: c },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       currentLayout as any
     )}`
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     if (options?.stream) {
       return c.body(renderToReadableStream(body), {
@@ -73,12 +72,15 @@ export const jsxRenderer = (
         return component({ ...props, Layout })
       })
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     c.setRenderer(createRenderer(c, Layout, component, options) as any)
     return next()
   }
 
 export const useRequestContext = <
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   P extends string = any,
   I extends Input = {}
 >(): Context<E, P, I> => {

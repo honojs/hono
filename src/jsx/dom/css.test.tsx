@@ -6,7 +6,7 @@ import { jsx } from '..'
 import type { JSXNode } from '..'
 import { Style, css, rawCssString, createCssContext } from '../../helper/css'
 import { minify } from '../../helper/css/common'
-import { renderTest } from '../../helper/css/common.test'
+import { renderTest } from '../../helper/css/common.case.test'
 import { render } from '.'
 
 describe('Style and css for jsx/dom', () => {

@@ -1,5 +1,3 @@
-import type { FC } from './jsx'
-import type { PropsForRenderer } from './middleware/jsx-renderer'
 import type { HonoRequest } from './request'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types'
 import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html'
@@ -22,6 +20,12 @@ interface DefaultRenderer {
 }
 
 export type Renderer = ContextRenderer extends Function ? ContextRenderer : DefaultRenderer
+export type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unknown, infer Props]
+  ? Props
+  : unknown
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Layout<T = Record<string, any>> = (props: T) => any
 
 interface Get<E extends Env> {
   <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
@@ -134,7 +138,7 @@ export class Context<
   #preparedHeaders: Record<string, string> | undefined = undefined
   #res: Response | undefined
   #isFresh = true
-  private layout: FC<PropsForRenderer & { Layout: FC }> | undefined = undefined
+  private layout: Layout<PropsForRenderer & { Layout: Layout }> | undefined = undefined
   private renderer: Renderer = (content: string | Promise<string>) => this.html(content)
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
@@ -209,10 +213,10 @@ export class Context<
    * ```
    * @see https://hono.dev/api/context#render-setrenderer
    */
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  render: Renderer = (...args: any[]) => this.renderer(...args)
+  render: Renderer = (...args) => this.renderer(...args)
+
+  setLayout = (layout: Layout<PropsForRenderer & { Layout: Layout }>) => (this.layout = layout)
+  getLayout = () => this.layout
 
   /**
    * `.setRenderer()` can set the layout in the custom middleware.
@@ -233,13 +237,6 @@ export class Context<
    * ```
    * @see https://hono.dev/api/context#render-setrenderer
    */
-  // @ts-expect-error It is unknown how many arguments the renderer will receive.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  render: Renderer = (...args: any[]) => this.renderer(...args)
-
-  setLayout = (layout: FC<PropsForRenderer & { Layout: FC }>) => (this.layout = layout)
-  getLayout = () => this.layout
-
   setRenderer = (renderer: Renderer) => {
     this.renderer = renderer
   }
@@ -366,7 +363,7 @@ export class Context<
       const headers = setHeaders(new Headers(arg.headers), this.#preparedHeaders)
       return new Response(data, {
         headers,
-        status: arg.status,
+        status: arg.status ?? this.#status,
       })
     }
 
