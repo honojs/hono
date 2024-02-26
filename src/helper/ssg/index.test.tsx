@@ -1,4 +1,4 @@
-import { Mocked, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { Hono } from '../../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from '../../jsx'
@@ -370,23 +370,19 @@ describe('saveContentToFiles function', () => {
     it('for application/gzip', async () => {
       await saveContentToFiles(htmlMap, fsMock, './static')
 
-      expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo/index.tar.gz', expect.anything())
-      const given = (fsMock as Mocked<typeof fsMock>).writeFile.mock.calls.find(
-        (call) => call[0] === 'static/bravo/index.tar.gz'
-      )![1] as Uint8Array
-      const header = [0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00]
-      expect(given.slice(0, 8)).toEqual(new Uint8Array(header))
+      expect(fsMock.writeFile).toHaveBeenCalledWith(
+        'static/bravo/index.tar.gz',
+        new Uint8Array(gzFileArrayBuffer)
+      )
     })
 
     it('for image/png', async () => {
       await saveContentToFiles(htmlMap, fsMock, './static')
 
-      expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo/dot.png', expect.anything())
-      const given = (fsMock as Mocked<typeof fsMock>).writeFile.mock.calls.find(
-        (call) => call[0] === 'static/bravo/dot.png'
-      )![1] as Uint8Array
-      const header = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
-      expect(given.slice(0, 8)).toEqual(new Uint8Array(header))
+      expect(fsMock.writeFile).toHaveBeenCalledWith(
+        'static/bravo/dot.png',
+        new Uint8Array(pngFileArrayBuffer)
+      )
     })
   })
 
