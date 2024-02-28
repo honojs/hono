@@ -1,6 +1,8 @@
 /** @jsxImportSource ../../deno_dist/jsx */
+import { Style, css } from '../../deno_dist/helper/css/index.ts'
 import { Suspense, renderToReadableStream } from '../../deno_dist/jsx/streaming.ts'
 import type { HtmlEscapedString } from '../../deno_dist/utils/html.ts'
+import { resolveCallback, HtmlEscapedCallbackPhase } from '../../deno_dist/utils/html.ts'
 import { assertEquals } from '../deno/deps.ts'
 
 Deno.test('JSX', () => {
@@ -78,4 +80,27 @@ d.replaceWith(c.content)
 })(document)
 </script>`,
   ])
+})
+
+Deno.test('JSX: css', async () => {
+  const className = css`
+    color: red;
+  `
+  const html = (
+    <html>
+      <head>
+        <Style />
+      </head>
+      <body>
+        <div class={className}></div>
+      </body>
+    </html>
+  )
+
+  const awaitedHtml = await html
+  const htmlEscapedString = 'callbacks' in awaitedHtml ? awaitedHtml : await awaitedHtml.toString()
+  assertEquals(
+    await resolveCallback(htmlEscapedString, HtmlEscapedCallbackPhase.Stringify, false, {}),
+    '<html><head><style id="hono-css">.css-3142110215{color:red}</style></head><body><div class="css-3142110215"></div></body></html>'
+  )
 })
