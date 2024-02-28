@@ -93,4 +93,23 @@ describe('SSE Streaming helper', () => {
     const expectedRetryValue = `retry: ${retryTime}\n\n`
     expect(decodedValue).toContain(expectedRetryValue)
   })
+
+  it('Check stream Response if error occurred', async () => {
+    const onError = vi.fn()
+    const res = streamSSE(
+      c,
+      async () => {
+        throw new Error('error')
+      },
+      onError
+    )
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toBeUndefined()
+    expect(onError).toBeCalledTimes(1)
+    expect(onError).toBeCalledWith(new Error('error'), expect.anything()) // 2nd argument is StreamingApi instance
+  })
 })

@@ -1615,10 +1615,26 @@ export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> =
           input: Input extends { param: infer _ }
             ? ExtractParams<SubPath> extends never
               ? Input
-              : FlattenIfIntersect<Input & { param: ExtractParams<SubPath> }>
+              : FlattenIfIntersect<
+                  Input & {
+                    param: {
+                      // Maps extracted keys, stripping braces, to a string-typed record.
+                      [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
+                        ? Prefix
+                        : K]: string
+                    }
+                  }
+                >
             : RemoveBlankRecord<ExtractParams<SubPath>> extends never
             ? Input
-            : Input & { param: ExtractParams<SubPath> }
+            : Input & {
+                // Maps extracted keys, stripping braces, to a string-typed record.
+                param: {
+                  [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
+                    ? Prefix
+                    : K]: string
+                }
+              }
           output: Output
         }
       : never
@@ -1655,7 +1671,7 @@ export type MergePath<A extends string, B extends string> = A extends ''
 
 export type TypedResponse<T = unknown> = {
   data: T
-  format: 'json' // Currently, support only `json` with `c.jsonT()`
+  format: 'json' // Currently, support only `json` with `c.json()`
 }
 
 type ExtractResponseData<T> = T extends Promise<infer T2>

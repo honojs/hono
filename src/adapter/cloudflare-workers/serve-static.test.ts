@@ -14,6 +14,7 @@ const store: Record<string, string> = {
   'assets/static/video/morning-routine.abcdef.m3u8': 'Good morning',
   'assets/static/video/morning-routine1.abcdef.ts': 'Good',
   'assets/static/video/introduction.abcdef.mp4': 'Let me introduce myself',
+  'assets/static/download': 'download',
 }
 const manifest = JSON.stringify({
   'assets/static/plain.txt': 'assets/static/plain.abcdef.txt',
@@ -21,6 +22,7 @@ const manifest = JSON.stringify({
   'assets/static/top/index.html': 'assets/static/top/index.abcdef.html',
   'static-no-root/plain.txt': 'static-no-root/plain.abcdef.txt',
   'assets/.static/plain.txt': 'assets/.static/plain.abcdef.txt',
+  'assets/static/download': 'assets/static/download',
 })
 
 Object.assign(global, { __STATIC_CONTENT_MANIFEST: manifest })
@@ -188,6 +190,11 @@ describe('With middleware', () => {
     const res = await app.request('http://localhost/static/foo')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('bar')
+  })
+
+  it('Should handle a file without an extension', async () => {
+    const res = await app.request('http://localhost/static/download')
+    expect(res.status).toBe(200)
   })
 })
 

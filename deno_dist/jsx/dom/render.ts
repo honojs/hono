@@ -2,10 +2,10 @@ import type { JSXNode } from '../base.ts'
 import type { FC, Child, Props } from '../base.ts'
 import { DOM_RENDERER, DOM_ERROR_HANDLER, DOM_STASH } from '../constants.ts'
 import type { Context as JSXContext } from '../context.ts'
-import { globalContexts as globalJSXContexts } from '../context.ts'
+import { globalContexts as globalJSXContexts, useContext } from '../context.ts'
 import type { EffectData } from '../hooks/index.ts'
 import { STASH_EFFECT } from '../hooks/index.ts'
-import { useContext, createContext } from './index.ts'
+import { createContext } from './context.ts' // import dom-specific versions
 
 const eventAliasMap: Record<string, string> = {
   Change: 'Input',
@@ -48,7 +48,10 @@ export type NodeObject = {
         any[][]
       ]
 } & JSXNode
-type NodeString = [string] & {
+type NodeString = [
+  string, // text content
+  boolean // is dirty
+] & {
   e?: Text
   // like a NodeObject
   vC: undefined
@@ -125,6 +128,30 @@ const applyProps = (container: SupportedElement, attributes: Props, oldAttribute
           Object.assign(container.style, value)
         }
       } else {
+        const nodeName = container.nodeName
+        if (key === 'value') {
+          if (nodeName === 'INPUT' || nodeName === 'TEXTAREA' || nodeName === 'SELECT') {
+            ;(container as HTMLInputElement).value =
+              value === null || value === undefined || value === false ? null : value
+
+            if (nodeName === 'TEXTAREA') {
+              container.textContent = value
+              continue
+            } else if (nodeName === 'SELECT') {
+              if ((container as HTMLSelectElement).selectedIndex === -1) {
+                ;(container as HTMLSelectElement).selectedIndex = 0
+              }
+              continue
+            }
+          }
+        } else if (
+          (key === 'checked' && nodeName === 'INPUT') ||
+          (key === 'selected' && nodeName === 'OPTION')
+        ) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(container as any)[key] = value
+        }
+
         if (value === null || value === undefined || value === false) {
           container.removeAttribute(key)
         } else if (value === true) {
@@ -161,7 +188,7 @@ const invokeTag = (context: Context, node: NodeObject): Child[] => {
   if (node.s) {
     const res = node.s
     node.s = undefined
-    return res
+    return res as Child[]
   }
 
   node[DOM_STASH][0] = 0
@@ -284,9 +311,10 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
 
     let el: SupportedElement | Text
     if (isNodeString(child)) {
-      if (child.e) {
+      if (child.e && child[1]) {
         child.e.textContent = child[0]
       }
+      child[1] = false
       el = child.e ||= document.createTextNode(child[0])
     } else {
       el = child.e ||= child.n
@@ -352,7 +380,10 @@ export const build = (
             if (!isNodeString(oldChild)) {
               vChildrenToRemove.push(oldChild)
             } else {
-              oldChild[0] = child[0] // update text content
+              if (oldChild[0] !== child[0]) {
+                oldChild[0] = child[0] // update text content
+                oldChild[1] = true
+              }
               child = oldChild
             }
           } else if (oldChild.tag !== child.tag) {
@@ -401,7 +432,7 @@ const buildNode = (node: Child): Node | undefined => {
   if (node === undefined || node === null || typeof node === 'boolean') {
     return undefined
   } else if (typeof node === 'string' || typeof node === 'number') {
-    return [node.toString()] as NodeString
+    return [node.toString(), true] as NodeString
   } else {
     if (typeof (node as JSXNode).tag === 'function') {
       ;(node as NodeObject)[DOM_STASH] = [0, []]
