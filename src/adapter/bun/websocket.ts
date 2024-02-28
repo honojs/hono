@@ -26,7 +26,7 @@ interface BunWebSocketHandler<T> {
   close(ws: BunServerWebSocket<T>, code?: number, reason?: string): void
   message(ws: BunServerWebSocket<T>, message: string | Buffer): void
 }
-interface CreateBunWebSocket {
+interface CreateWebSocket {
   (): {
     upgradeWebSocket: UpgradeWebSocket
     websocket: BunWebSocketHandler<BunWebSocketData>
@@ -56,7 +56,7 @@ const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSContext =>
   }
 }
 
-export const createBunWebSocket: CreateBunWebSocket = () => {
+export const createWebSocket: CreateWebSocket = () => {
   const websocketConns: WSEvents[] = []
 
   const upgradeWebSocket: UpgradeWebSocket = (createEvents) => {
