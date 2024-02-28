@@ -104,17 +104,12 @@ function findMiddleware<T>(
   middleware: Record<string, T[]> | undefined,
   path: string
 ): T[] | undefined {
-  if (!middleware) {
-    return undefined
-  }
-
-  for (const k of Object.keys(middleware).sort((a, b) => b.length - a.length)) {
-    if (buildWildcardRegExp(k).test(path)) {
-      return [...middleware[k]]
+  if (typeof middleware !== 'undefined')
+    for (const k of Object.keys(middleware).sort((a, b) => b.length - a.length)) {
+      if (buildWildcardRegExp(k).test(path)) {
+        return [...middleware[k]]
+      }
     }
-  }
-
-  return undefined
 }
 
 export class RegExpRouter<T> implements Router<T> {
@@ -209,12 +204,12 @@ export class RegExpRouter<T> implements Router<T> {
       const matcher = (matchers[method] || matchers[METHOD_NAME_ALL]) as Matcher<T>
 
       const staticMatch = matcher[2][path]
-      if (staticMatch) {
+      if (typeof staticMatch !== 'undefined') {
         return staticMatch
       }
 
       const match = path.match(matcher[0])
-      if (!match) {
+      if (match === null) {
         return [[], emptyParam]
       }
 
@@ -222,7 +217,7 @@ export class RegExpRouter<T> implements Router<T> {
       return [matcher[1][index], match]
     }
 
-    return this.match(method, path)
+    return this.match(method, path);
   }
 
   private buildAllMatchers(): Record<string, Matcher<T> | null> {
