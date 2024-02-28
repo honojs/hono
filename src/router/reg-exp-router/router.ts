@@ -47,7 +47,7 @@ function buildMatcherFromPreprocessedRoutes<T>(
     )
 
   const staticMap: StaticMap<T> = {}
-  for (let i = 0, j = -1, len = routesWithStaticPathFlag.length; i < len; i++) {
+  for (let i = 0, j = -1, { length } = routesWithStaticPathFlag; i < length; ++i) {
     const [pathErrorCheckOnly, path, handlers] = routesWithStaticPathFlag[i]
     if (pathErrorCheckOnly) {
       staticMap[path] = [handlers.map(([h]) => [h, {}]), emptyParam]
@@ -78,14 +78,15 @@ function buildMatcherFromPreprocessedRoutes<T>(
   }
 
   const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp()
-  for (let i = 0, len = handlerData.length; i < len; i++) {
-    for (let j = 0, len = handlerData[i].length; j < len; j++) {
+  for (let i = 0, { length } = handlerData; i < length; ++i) {
+    for (let j = 0, { length } = handlerData[i]; j < length; ++j) {
       const map = handlerData[i][j]?.[1]
       if (!map) {
         continue
       }
-      const keys = Object.keys(map)
-      for (let k = 0, len = keys.length; k < len; k++) {
+      
+      const keys = Object.keys(map);
+      for (let k = 0, { length } = keys; k < length; ++k) {
         map[keys[k]] = paramReplacementMap[map[keys[k]]]
       }
     }
@@ -104,12 +105,13 @@ function findMiddleware<T>(
   middleware: Record<string, T[]> | undefined,
   path: string
 ): T[] | undefined {
-  if (typeof middleware !== 'undefined')
+  if (typeof middleware !== 'undefined') {
     for (const k of Object.keys(middleware).sort((a, b) => b.length - a.length)) {
       if (buildWildcardRegExp(k).test(path)) {
         return [...middleware[k]]
       }
     }
+  }
 }
 
 export class RegExpRouter<T> implements Router<T> {
@@ -201,7 +203,7 @@ export class RegExpRouter<T> implements Router<T> {
     const matchers = this.buildAllMatchers()
 
     this.match = (method, path) => {
-      const matcher = (matchers[method] || matchers[METHOD_NAME_ALL]) as Matcher<T>
+      const matcher = (matchers[method] ?? matchers[METHOD_NAME_ALL]) as Matcher<T>
 
       const staticMatch = matcher[2][path]
       if (typeof staticMatch !== 'undefined') {
@@ -212,9 +214,8 @@ export class RegExpRouter<T> implements Router<T> {
       if (match === null) {
         return [[], emptyParam]
       }
-
-      const index = match.indexOf('', 1)
-      return [matcher[1][index], match]
+      
+      return [matcher[1][match.indexOf('', 1)], match]
     }
 
     return this.match(method, path);
