@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { MiddlewareHandler, Context } from '../..'
+import type { Context } from '../../context'
+import type { MiddlewareHandler } from '../../types'
 
 export interface WSEvents {
   onOpen?: (evt: Event, ws: WSContext) => void
