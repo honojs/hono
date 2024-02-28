@@ -98,11 +98,11 @@ export const createWebSocket: CreateWebSocket = () => {
     message(ws, message) {
       const websocketListeners = websocketConns[ws.data.connId]
       if (websocketListeners.onMessage) {
-        const nomalizedReceiveData =
+        const normalizedReceiveData =
           typeof message === 'string' ? message : (message.buffer satisfies WSMessageReceive)
 
         websocketListeners.onMessage(
-          createWSMessageEvent(nomalizedReceiveData),
+          createWSMessageEvent(normalizedReceiveData),
           createWSContext(ws)
         )
       }
