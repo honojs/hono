@@ -3,14 +3,15 @@
 import type { WebSocketPair } from '@cloudflare/workers-types'
 import type { UpgradeWebSocket, WSContext, WSReadyState } from '../../helper/websocket'
 
-const CFWebSocketPair = (
-  globalThis as unknown as {
-    WebSocketPair: typeof WebSocketPair
-  }
-).WebSocketPair
 
 // Based on https://github.com/honojs/hono/issues/1153#issuecomment-1767321332
 export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, next) => {
+  const CFWebSocketPair = (
+    globalThis as unknown as {
+      WebSocketPair: typeof WebSocketPair
+    }
+    ).WebSocketPair
+
   const events = await createEvents(c)
 
   const upgradeHeader = c.req.header('Upgrade')
@@ -47,6 +48,7 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
       (evt) => events.onClose && events.onClose(evt as CloseEvent, wsContext)
     )
   }
+  console.log(events.onMessage)
   if (events.onMessage) {
     server.addEventListener(
       'message',
