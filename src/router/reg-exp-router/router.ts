@@ -81,7 +81,7 @@ function buildMatcherFromPreprocessedRoutes<T>(
   for (let i = 0, { length } = handlerData; i < length; ++i) {
     for (let j = 0, { length } = handlerData[i]; j < length; ++j) {
       const map = handlerData[i][j]?.[1]
-      if (!map) {
+      if (typeof map === 'undefined') {
         continue
       }
       
@@ -127,11 +127,11 @@ export class RegExpRouter<T> implements Router<T> {
   add(method: string, path: string, handler: T) {
     const { middleware, routes } = this
 
-    if (!middleware || !routes) {
+    if (typeof middleware === 'undefined' || typeof routes === 'undefined') {
       throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT)
     }
 
-    if (!middleware[method]) {
+    if (typeof middleware[method] === 'undefined') {
       ;[middleware, routes].forEach((handlerMap) => {
         handlerMap[method] = {}
         Object.keys(handlerMap[METHOD_NAME_ALL]).forEach((p) => {
@@ -144,23 +144,24 @@ export class RegExpRouter<T> implements Router<T> {
       path = '*'
     }
 
-    const paramCount = (path.match(/\/:/g) || []).length
+    const paramCount = (path.match(/\/:/g) ?? []).length
 
     if (/\*$/.test(path)) {
       const re = buildWildcardRegExp(path)
       if (method === METHOD_NAME_ALL) {
         Object.keys(middleware).forEach((m) => {
-          middleware[m][path] ||=
-            findMiddleware(middleware[m], path) ||
-            findMiddleware(middleware[METHOD_NAME_ALL], path) ||
+          middleware[m][path] ??=
+            findMiddleware(middleware[m], path) ??
+            findMiddleware(middleware[METHOD_NAME_ALL], path) ??
             []
         })
       } else {
-        middleware[method][path] ||=
-          findMiddleware(middleware[method], path) ||
-          findMiddleware(middleware[METHOD_NAME_ALL], path) ||
+        middleware[method][path] ??=
+          findMiddleware(middleware[method], path) ??
+          findMiddleware(middleware[METHOD_NAME_ALL], path) ??
           []
       }
+      
       Object.keys(middleware).forEach((m) => {
         if (method === METHOD_NAME_ALL || method === m) {
           Object.keys(middleware[m]).forEach((p) => {
@@ -180,27 +181,27 @@ export class RegExpRouter<T> implements Router<T> {
       return
     }
 
-    const paths = checkOptionalParameter(path) || [path]
-    for (let i = 0, len = paths.length; i < len; i++) {
+    const paths = checkOptionalParameter(path) ?? [path]
+    for (let i = 0, { length } = paths; i < length; i++) {
       const path = paths[i]
 
-      Object.keys(routes).forEach((m) => {
-        if (method === METHOD_NAME_ALL || method === m) {
-          routes[m][path] ||= [
-            ...(findMiddleware(middleware[m], path) ||
-              findMiddleware(middleware[METHOD_NAME_ALL], path) ||
+      for (const currentMethod in routes) {
+        if (method === METHOD_NAME_ALL || method === currentMethod) {
+          routes[currentMethod][path] ??= [
+            ...(findMiddleware(middleware[currentMethod], path) ??
+              findMiddleware(middleware[METHOD_NAME_ALL], path) ??
               []),
           ]
-          routes[m][path].push([handler, paramCount - len + i + 1])
+          routes[currentMethod][path].push([handler, paramCount - len + i + 1])
         }
-      })
+      }
     }
   }
 
   match(method: string, path: string): Result<T> {
     clearWildcardRegExpCache() // no longer used.
 
-    const matchers = this.buildAllMatchers()
+    const matchers = this.buildAllMatchers();
 
     this.match = (method, path) => {
       const matcher = (matchers[method] ?? matchers[METHOD_NAME_ALL]) as Matcher<T>
@@ -224,9 +225,12 @@ export class RegExpRouter<T> implements Router<T> {
   private buildAllMatchers(): Record<string, Matcher<T> | null> {
     const matchers: Record<string, Matcher<T> | null> = {}
 
-    ;[...Object.keys(this.routes!), ...Object.keys(this.middleware!)].forEach((method) => {
-      matchers[method] ||= this.buildMatcher(method)
-    })
+    for (const method in this.routes!) {
+      matchers[method] ??= this.buildMatcher(method)
+    }
+    for (const method in this.middleware!) {
+      matchers[method] ??= this.buildMatcher(method)
+    }
 
     // Release cache
     this.middleware = this.routes = undefined
