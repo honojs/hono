@@ -65,7 +65,7 @@ export class StreamingApi {
     this.writer = this.writable.getWriter()
   }
 
-  async onAbort(listener: () => void | Promise<void>) {
+  onAbort(listener: () => void | Promise<void>) {
     this.abortSubscribers.push(listener)
   }
 }
