@@ -149,34 +149,42 @@ export class RegExpRouter<T> implements Router<T> {
     if (/\*$/.test(path)) {
       const re = buildWildcardRegExp(path)
       if (method === METHOD_NAME_ALL) {
-        Object.keys(middleware).forEach((m) => {
+        for (const m in middleware) {
           middleware[m][path] ??=
             findMiddleware(middleware[m], path) ??
             findMiddleware(middleware[METHOD_NAME_ALL], path) ??
             []
-        })
+        }
       } else {
         middleware[method][path] ??=
           findMiddleware(middleware[method], path) ??
           findMiddleware(middleware[METHOD_NAME_ALL], path) ??
           []
       }
-      
-      Object.keys(middleware).forEach((m) => {
-        if (method === METHOD_NAME_ALL || method === m) {
-          Object.keys(middleware[m]).forEach((p) => {
-            re.test(p) && middleware[m][p].push([handler, paramCount])
-          })
-        }
-      })
 
-      Object.keys(routes).forEach((m) => {
+      for (const m in middleware) {
         if (method === METHOD_NAME_ALL || method === m) {
-          Object.keys(routes[m]).forEach(
-            (p) => re.test(p) && routes[m][p].push([handler, paramCount])
-          )
+          const currentMiddleware = middleware[m];
+
+          for (const p in currentMiddleware) {
+            if (re.test(p)) {
+              currentMiddleware[p].push([handler, paramCount]);
+            }
+          }
         }
-      })
+      }
+
+      for (const m in routes) {
+        if (method === METHOD_NAME_ALL || method === m) {
+          const currentRoutes = routes[m];
+
+          for (const p in currentRoutes) {
+            if (re.test(p)) {
+              currentRoutes[p].push([handler, paramCount]);
+            }
+          }
+        }
+      }
 
       return
     }
