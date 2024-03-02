@@ -53,7 +53,7 @@ export class Node {
     pathErrorCheckOnly: boolean
   ): void {
     if (tokens.length === 0) {
-      if (this.index !== undefined) {
+      if (typeof this.index !== 'undefined') {
         throw PATH_ERROR
       }
       if (pathErrorCheckOnly) {
@@ -87,17 +87,17 @@ export class Node {
       }
 
       node = this.children[regexpStr]
-      if (!node) {
-        if (
-          Object.keys(this.children).some(
-            (k) => k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR
-          )
-        ) {
-          throw PATH_ERROR
+      if (typeof node === 'undefined') {
+        for (const k in this.children) {
+          if (k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR) {
+            throw PATH_ERROR
+          }
         }
+        
         if (pathErrorCheckOnly) {
           return
         }
+        
         node = this.children[regexpStr] = new Node()
         if (name !== '') {
           node.varIndex = context.varIndex++
@@ -108,15 +108,13 @@ export class Node {
       }
     } else {
       node = this.children[token]
-      if (!node) {
-        if (
-          Object.keys(this.children).some(
-            (k) =>
-              k.length > 1 && k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR
-          )
-        ) {
-          throw PATH_ERROR
+      if (typeof node === 'undefined') {
+        for (const k in this.children) {
+          if (k.length > 1 && k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR) {
+            throw PATH_ERROR
+          }
         }
+        
         if (pathErrorCheckOnly) {
           return
         }
@@ -146,6 +144,6 @@ export class Node {
       return strList[0]
     }
 
-    return '(?:' + strList.join('|') + ')'
+    return `(?:${strList.join('|')})`
   }
 }
