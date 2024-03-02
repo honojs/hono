@@ -56,7 +56,7 @@ const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSContext =>
   }
 }
 
-export const createWebSocket: CreateWebSocket = () => {
+export const createBunWebSocket: CreateWebSocket = () => {
   const websocketConns: WSEvents[] = []
 
   const upgradeWebSocket: UpgradeWebSocket = (createEvents) => {
