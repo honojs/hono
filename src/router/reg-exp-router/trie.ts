@@ -30,7 +30,7 @@ export class Trie {
      *  - /* wildcard
      *  - character
      */
-    const tokens = path.match(/(?::[^\/]+)|(?:\/\*$)|./g) || []
+    const tokens = path.match(/(?::[^\/]+)|(?:\/\*$)|./g) ?? []
     for (let i = groups.length - 1; i >= 0; i--) {
       const [mark] = groups[i]
       for (let j = tokens.length - 1; j >= 0; j--) {
@@ -58,11 +58,11 @@ export class Trie {
 
     regexp = regexp.replace(/#(\d+)|@(\d+)|\.\*\$/g, (_, handlerIndex, paramIndex) => {
       if (typeof handlerIndex !== 'undefined') {
-        indexReplacementMap[++captureIndex] = Number(handlerIndex)
+        indexReplacementMap[++captureIndex] = +handlerIndex
         return '$()'
       }
       if (typeof paramIndex !== 'undefined') {
-        paramReplacementMap[Number(paramIndex)] = ++captureIndex
+        paramReplacementMap[+paramIndex] = ++captureIndex
         return ''
       }
 
