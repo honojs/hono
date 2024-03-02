@@ -1,3 +1,4 @@
+import type { UpgradedWebSocketResponseInputJSONType } from '../helper/websocket/index.ts'
 import type { Hono } from '../hono.ts'
 import type { Schema } from '../types.ts'
 import type { HasRequiredKeys } from '../utils/types.ts'
@@ -31,7 +32,8 @@ export type ClientRequest<S extends Schema> = {
       : {}
   ) => URL
 } & {
-  $ws: S['$get'] extends { input: { json: '_websocket' | undefined } }
+  // WebSocket
+  $ws: S['$get'] extends { input: { json: UpgradedWebSocketResponseInputJSONType } }
     ? S['$get'] extends { input: infer I }
       ? (args?: Omit<I, 'json'>) => WebSocket
       : never

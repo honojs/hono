@@ -22,7 +22,7 @@ describe('WebSockets', () => {
     Deno.upgradeWebSocket = () => {
       return {
         response: new Response(),
-        socket
+        socket,
       }
     }
     await app.request('/ws', {
@@ -31,9 +31,12 @@ describe('WebSockets', () => {
       },
     })
     const data = Math.random().toString()
-    socket.onmessage && socket.onmessage(new MessageEvent('message', {
-      data
-    }))
+    socket.onmessage &&
+      socket.onmessage(
+        new MessageEvent('message', {
+          data,
+        })
+      )
     expect(await messagePromise).toBe(data)
   })
 })

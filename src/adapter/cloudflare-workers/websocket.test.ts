@@ -9,7 +9,7 @@ describe('upgradeWebSocket middleware', () => {
     0: WebSocket // client
     1: WebSocket // server
     constructor() {
-      this[0] = {} as WebSocket  
+      this[0] = {} as WebSocket
       this[1] = server as WebSocket
     }
   }
@@ -31,12 +31,14 @@ describe('upgradeWebSocket middleware', () => {
     const sendingData = Math.random().toString()
     await app.request('/ws', {
       headers: {
-        Upgrade: 'websocket'
-      }
+        Upgrade: 'websocket',
+      },
     })
-    server.dispatchEvent(new MessageEvent('message', {
-      data: sendingData
-    }))
+    server.dispatchEvent(
+      new MessageEvent('message', {
+        data: sendingData,
+      })
+    )
 
     expect(sendingData).toBe(await wsPromise)
   })

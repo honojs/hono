@@ -3,14 +3,13 @@
 import type { WebSocketPair } from '@cloudflare/workers-types'
 import type { UpgradeWebSocket, WSContext, WSReadyState } from '../../helper/websocket'
 
-
 // Based on https://github.com/honojs/hono/issues/1153#issuecomment-1767321332
 export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, next) => {
   const CFWebSocketPair = (
     globalThis as unknown as {
       WebSocketPair: typeof WebSocketPair
     }
-    ).WebSocketPair
+  ).WebSocketPair
 
   const events = await createEvents(c)
 

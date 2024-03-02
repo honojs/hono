@@ -2,12 +2,21 @@
 import type { Context } from '../../context.ts'
 import type { MiddlewareHandler } from '../../types.ts'
 
+/**
+ * WebSocket Event Listeners type
+ */
 export interface WSEvents {
   onOpen?: (evt: Event, ws: WSContext) => void
   onMessage?: (evt: MessageEvent<WSMessageReceive>, ws: WSContext) => void
   onClose?: (evt: CloseEvent, ws: WSContext) => void
   onError?: (evt: Event, ws: WSContext) => void
 }
+
+export type UpgradedWebSocketResponseInputJSONType = '__websocket' | undefined
+
+/**
+ * Upgrade WebSocket Type
+ */
 export type UpgradeWebSocket = (
   createEvents: (c: Context) => WSEvents | Promise<WSEvents>
 ) => MiddlewareHandler<
@@ -15,12 +24,13 @@ export type UpgradeWebSocket = (
   string,
   {
     in: {
-      json: '_websocket' | undefined
+      json: UpgradedWebSocketResponseInputJSONType
     }
   }
 >
 
 export type WSReadyState = 0 | 1 | 2 | 3
+
 export type WSContext = {
   send(
     source: string | ArrayBuffer | Uint8Array,
