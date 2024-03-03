@@ -25,7 +25,7 @@ class BodyLimitError extends Error {
  * app.post(
  *  '/hello',
  *  bodyLimit({
- *    maxSize: 15 * Unit.b,
+ *    maxSize: 100 * 1024, // 100kb
  *    onError: (c) => {
  *      return c.text('overflow :(', 413)
  *    }
