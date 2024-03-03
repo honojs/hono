@@ -94,13 +94,3 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
     }
   }
 }
-
-/**
- * Unit any
- * @example
- * ```ts
- * const limit = 100 * Unit.kb // 100kb
- * const limit2 = 1 * Unit.gb // 1gb
- * ```
- */
-export const Unit = { b: 1, kb: 1024, mb: 1024 ** 2, gb: 1024 ** 3, tb: 1024 ** 4, pb: 1024 ** 5 }
