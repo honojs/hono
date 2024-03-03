@@ -39,8 +39,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    */
   raw: Request
 
-  #validatedData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
-  #matchResult: Result<[unknown, RouterRoute]>
+  _validatedData: { [K in keyof ValidationTargets]?: {} } // Short name of validatedData
+  _matchResult: Result<[unknown, RouterRoute]>
   routeIndex: number = 0
   /**
    * `.path` can get the pathname of the request.
@@ -62,8 +62,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   ) {
     this.raw = request
     this.path = path
-    this.#matchResult = matchResult
-    this.#validatedData = {}
+    this._matchResult = matchResult
+    this._validatedData = {}
   }
 
   /**
@@ -85,7 +85,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   private getDecodedParam(key: string): string | undefined {
-    const paramKey = this.#matchResult[0][this.routeIndex][1][key]
+    const paramKey = this._matchResult[0][this.routeIndex][1][key]
     const param = this.getParamValue(paramKey)
 
     return param ? (/\%/.test(param) ? decodeURIComponent_(param) : param) : undefined
@@ -94,9 +94,9 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   private getAllDecodedParams(): Record<string, string> {
     const decoded: Record<string, string> = {}
 
-    const keys = Object.keys(this.#matchResult[0][this.routeIndex][1])
+    const keys = Object.keys(this._matchResult[0][this.routeIndex][1])
     for (const key of keys) {
-      const value = this.getParamValue(this.#matchResult[0][this.routeIndex][1][key])
+      const value = this.getParamValue(this._matchResult[0][this.routeIndex][1][key])
       if (value && typeof value === 'string') {
         decoded[key] = /\%/.test(value) ? decodeURIComponent_(value) : value
       }
@@ -106,7 +106,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   private getParamValue(paramKey: any): string | undefined {
-    return this.#matchResult[1] ? this.#matchResult[1][paramKey as any] : paramKey
+    return this._matchResult[1] ? this._matchResult[1][paramKey as any] : paramKey
   }
 
   /**
@@ -260,12 +260,12 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   addValidatedData(target: keyof ValidationTargets, data: {}) {
-    this.#validatedData[target] = data
+    this._validatedData[target] = data
   }
 
   valid<T extends keyof I & keyof ValidationTargets>(target: T): InputToDataByTarget<I, T>
   valid(target: keyof ValidationTargets) {
-    return this.#validatedData[target] as unknown
+    return this._validatedData[target] as unknown
   }
 
   /**
@@ -319,7 +319,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * @see https://hono.dev/api/request#matchedroutes
    */
   get matchedRoutes(): RouterRoute[] {
-    return this.#matchResult[0].map(([[, route]]) => route)
+    return this._matchResult[0].map(([[, route]]) => route)
   }
 
   /**
@@ -333,6 +333,6 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * @see https://hono.dev/api/request#routepath
    */
   get routePath(): string {
-    return this.#matchResult[0].map(([[, route]]) => route)[this.routeIndex].path
+    return this._matchResult[0].map(([[, route]]) => route)[this.routeIndex].path
   }
 }
