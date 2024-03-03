@@ -102,7 +102,7 @@ class Hono<
   readonly getPath: GetPath<E>
   // Cannot use `#` because it requires visibility at JavaScript runtime.
   private _basePath: string = '/'
-  #path: string = '/'
+  _path: string = '/'
 
   routes: RouterRoute[] = []
 
@@ -114,13 +114,13 @@ class Hono<
     allMethods.map((method) => {
       this[method] = (args1: string | H, ...args: H[]) => {
         if (typeof args1 === 'string') {
-          this.#path = args1
+          this._path = args1
         } else {
-          this.addRoute(method, this.#path, args1)
+          this.addRoute(method, this._path, args1)
         }
         args.map((handler) => {
           if (typeof handler !== 'string') {
-            this.addRoute(method, this.#path, handler)
+            this.addRoute(method, this._path, handler)
           }
         })
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -134,10 +134,10 @@ class Hono<
         return this
       }
       for (const p of [path].flat()) {
-        this.#path = p
+        this._path = p
         for (const m of [method].flat()) {
           handlers.map((handler) => {
-            this.addRoute(m.toUpperCase(), this.#path, handler)
+            this.addRoute(m.toUpperCase(), this._path, handler)
           })
         }
       }
@@ -149,13 +149,13 @@ class Hono<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.use = (arg1: string | MiddlewareHandler<any>, ...handlers: MiddlewareHandler<any>[]) => {
       if (typeof arg1 === 'string') {
-        this.#path = arg1
+        this._path = arg1
       } else {
-        this.#path = '*'
+        this._path = '*'
         handlers.unshift(arg1)
       }
       handlers.map((handler) => {
-        this.addRoute(METHOD_NAME_ALL, this.#path, handler)
+        this.addRoute(METHOD_NAME_ALL, this._path, handler)
       })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return this as any

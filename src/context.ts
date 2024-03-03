@@ -132,12 +132,12 @@ export class Context<
    */
   error: Error | undefined = undefined
 
-  #status: StatusCode = 200
-  #executionCtx: FetchEventLike | ExecutionContext | undefined
-  #headers: Headers | undefined = undefined
-  #preparedHeaders: Record<string, string> | undefined = undefined
-  #res: Response | undefined
-  #isFresh = true
+  _status: StatusCode = 200
+  _executionCtx: FetchEventLike | ExecutionContext | undefined
+  _headers: Headers | undefined = undefined
+  _preparedHeaders: Record<string, string> | undefined = undefined
+  _res: Response | undefined
+  _isFresh = true
   private layout: Layout<PropsForRenderer & { Layout: Layout }> | undefined = undefined
   private renderer: Renderer = (content: string | Promise<string>) => this.html(content)
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
@@ -145,7 +145,7 @@ export class Context<
   constructor(req: HonoRequest<P, I['out']>, options?: ContextOptions<E>) {
     this.req = req
     if (options) {
-      this.#executionCtx = options.executionCtx
+      this._executionCtx = options.executionCtx
       this.env = options.env
       if (options.notFoundHandler) {
         this.notFoundHandler = options.notFoundHandler
@@ -157,8 +157,8 @@ export class Context<
    * @see https://hono.dev/api/context#event
    */
   get event(): FetchEventLike {
-    if (this.#executionCtx && 'respondWith' in this.#executionCtx) {
-      return this.#executionCtx
+    if (this._executionCtx && 'respondWith' in this._executionCtx) {
+      return this._executionCtx
     } else {
       throw Error('This context has no FetchEvent')
     }
@@ -168,28 +168,28 @@ export class Context<
    * @see https://hono.dev/api/context#executionctx
    */
   get executionCtx(): ExecutionContext {
-    if (this.#executionCtx) {
-      return this.#executionCtx as ExecutionContext
+    if (this._executionCtx) {
+      return this._executionCtx as ExecutionContext
     } else {
       throw Error('This context has no ExecutionContext')
     }
   }
 
   /**
-   * @see https://hono.dev/api/context#res
+   * @see https://hono.dev/api/context_res
    */
   get res(): Response {
-    this.#isFresh = false
-    return (this.#res ||= new Response('404 Not Found', { status: 404 }))
+    this._isFresh = false
+    return (this._res ||= new Response('404 Not Found', { status: 404 }))
   }
 
   set res(_res: Response | undefined) {
-    this.#isFresh = false
-    if (this.#res && _res) {
-      this.#res.headers.delete('content-type')
-      for (const [k, v] of this.#res.headers.entries()) {
+    this._isFresh = false
+    if (this._res && _res) {
+      this._res.headers.delete('content-type')
+      for (const [k, v] of this._res.headers.entries()) {
         if (k === 'set-cookie') {
-          const cookies = this.#res.headers.getSetCookie()
+          const cookies = this._res.headers.getSetCookie()
           _res.headers.delete('set-cookie')
           for (const cookie of cookies) {
             _res.headers.append('set-cookie', cookie)
@@ -199,7 +199,7 @@ export class Context<
         }
       }
     }
-    this.#res = _res
+    this._res = _res
     this.finalized = true
   }
 
@@ -258,10 +258,10 @@ export class Context<
   header = (name: string, value: string | undefined, options?: { append?: boolean }): void => {
     // Clear the header
     if (value === undefined) {
-      if (this.#headers) {
-        this.#headers.delete(name)
-      } else if (this.#preparedHeaders) {
-        delete this.#preparedHeaders[name.toLocaleLowerCase()]
+      if (this._headers) {
+        this._headers.delete(name)
+      } else if (this._preparedHeaders) {
+        delete this._preparedHeaders[name.toLocaleLowerCase()]
       }
       if (this.finalized) {
         this.res.headers.delete(name)
@@ -270,18 +270,18 @@ export class Context<
     }
 
     if (options?.append) {
-      if (!this.#headers) {
-        this.#isFresh = false
-        this.#headers = new Headers(this.#preparedHeaders)
-        this.#preparedHeaders = {}
+      if (!this._headers) {
+        this._isFresh = false
+        this._headers = new Headers(this._preparedHeaders)
+        this._preparedHeaders = {}
       }
-      this.#headers.append(name, value)
+      this._headers.append(name, value)
     } else {
-      if (this.#headers) {
-        this.#headers.set(name, value)
+      if (this._headers) {
+        this._headers.set(name, value)
       } else {
-        this.#preparedHeaders ??= {}
-        this.#preparedHeaders[name.toLowerCase()] = value
+        this._preparedHeaders ??= {}
+        this._preparedHeaders[name.toLowerCase()] = value
       }
     }
 
@@ -295,8 +295,8 @@ export class Context<
   }
 
   status = (status: StatusCode): void => {
-    this.#isFresh = false
-    this.#status = status
+    this._isFresh = false
+    this._status = status
   }
 
   /**
@@ -353,48 +353,48 @@ export class Context<
     headers?: HeaderRecord
   ): Response => {
     // Optimized
-    if (this.#isFresh && !headers && !arg && this.#status === 200) {
+    if (this._isFresh && !headers && !arg && this._status === 200) {
       return new Response(data, {
-        headers: this.#preparedHeaders,
+        headers: this._preparedHeaders,
       })
     }
 
     if (arg && typeof arg !== 'number') {
-      const headers = setHeaders(new Headers(arg.headers), this.#preparedHeaders)
+      const headers = setHeaders(new Headers(arg.headers), this._preparedHeaders)
       return new Response(data, {
         headers,
-        status: arg.status ?? this.#status,
+        status: arg.status ?? this._status,
       })
     }
 
-    const status = typeof arg === 'number' ? arg : this.#status
-    this.#preparedHeaders ??= {}
+    const status = typeof arg === 'number' ? arg : this._status
+    this._preparedHeaders ??= {}
 
-    this.#headers ??= new Headers()
-    setHeaders(this.#headers, this.#preparedHeaders)
+    this._headers ??= new Headers()
+    setHeaders(this._headers, this._preparedHeaders)
 
-    if (this.#res) {
-      this.#res.headers.forEach((v, k) => {
-        this.#headers?.set(k, v)
+    if (this._res) {
+      this._res.headers.forEach((v, k) => {
+        this._headers?.set(k, v)
       })
-      setHeaders(this.#headers, this.#preparedHeaders)
+      setHeaders(this._headers, this._preparedHeaders)
     }
 
     headers ??= {}
     for (const [k, v] of Object.entries(headers)) {
       if (typeof v === 'string') {
-        this.#headers.set(k, v)
+        this._headers.set(k, v)
       } else {
-        this.#headers.delete(k)
+        this._headers.delete(k)
         for (const v2 of v) {
-          this.#headers.append(k, v2)
+          this._headers.append(k, v2)
         }
       }
     }
 
     return new Response(data, {
       status,
-      headers: this.#headers,
+      headers: this._headers,
     })
   }
 
@@ -444,13 +444,13 @@ export class Context<
   ): Response => {
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
-    if (!this.#preparedHeaders) {
-      if (this.#isFresh && !headers && !arg) {
+    if (!this._preparedHeaders) {
+      if (this._isFresh && !headers && !arg) {
         return new Response(text)
       }
-      this.#preparedHeaders = {}
+      this._preparedHeaders = {}
     }
-    this.#preparedHeaders['content-type'] = TEXT_PLAIN
+    this._preparedHeaders['content-type'] = TEXT_PLAIN
     return typeof arg === 'number'
       ? this.newResponse(text, arg, headers)
       : this.newResponse(text, arg)
@@ -479,8 +479,8 @@ export class Context<
         : never
     > => {
     const body = JSON.stringify(object)
-    this.#preparedHeaders ??= {}
-    this.#preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
+    this._preparedHeaders ??= {}
+    this._preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
     /* eslint-disable @typescript-eslint/no-explicit-any */
     return (
       typeof arg === 'number' ? this.newResponse(body, arg, headers) : this.newResponse(body, arg)
@@ -492,8 +492,8 @@ export class Context<
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
   ): Response | Promise<Response> => {
-    this.#preparedHeaders ??= {}
-    this.#preparedHeaders['content-type'] = 'text/html; charset=UTF-8'
+    this._preparedHeaders ??= {}
+    this._preparedHeaders['content-type'] = 'text/html; charset=UTF-8'
 
     if (typeof html === 'object') {
       if (!(html instanceof Promise)) {
@@ -529,8 +529,8 @@ export class Context<
    * @see https://hono.dev/api/context#redirect
    */
   redirect = (location: string, status: RedirectStatusCode = 302): Response => {
-    this.#headers ??= new Headers()
-    this.#headers.set('Location', location)
+    this._headers ??= new Headers()
+    this._headers.set('Location', location)
     return this.newResponse(null, status)
   }
 
