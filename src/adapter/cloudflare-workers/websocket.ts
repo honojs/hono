@@ -47,7 +47,6 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
       (evt) => events.onClose && events.onClose(evt as CloseEvent, wsContext)
     )
   }
-  console.log(events.onMessage)
   if (events.onMessage) {
     server.addEventListener(
       'message',
