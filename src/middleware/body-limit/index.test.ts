@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { Unit, bodyLimit } from '.'
+import { bodyLimit } from '.'
 
 const GlobalRequest = globalThis.Request
 globalThis.Request = class Request extends GlobalRequest {
@@ -35,7 +35,7 @@ describe('Body Limit Middleware', () => {
 
   beforeEach(() => {
     app = new Hono()
-    app.use('*', bodyLimit({ maxSize: 15 * Unit.b }))
+    app.use('*', bodyLimit({ maxSize: 15 }))
     app.get('/', (c) => c.text('index'))
     app.post('/body-limit-15byte', async (c) => {
       return c.text(await c.req.raw.text())
@@ -118,7 +118,7 @@ describe('Body Limit Middleware', () => {
       app.post(
         '/text-limit-15byte-custom',
         bodyLimit({
-          maxSize: 15 * Unit.b,
+          maxSize: 15,
           onError: (c) => {
             return c.text('no', 413)
           },
@@ -139,18 +139,5 @@ describe('Body Limit Middleware', () => {
       expect(res.status).toBe(413)
       expect(await res.text()).toBe('no')
     })
-  })
-})
-
-describe('Unit', () => {
-  it('should return the correct size', () => {
-    let beforeSize = 1 / 1024
-
-    for (let i = 0, keys = Object.keys(Unit), len = keys.length; i < len; i++) {
-      // @ts-expect-error: <safe access>
-      const size = Unit[keys[i]]
-      expect(size === beforeSize * 1024).toBeTruthy()
-      beforeSize = size
-    }
   })
 })
