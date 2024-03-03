@@ -22,8 +22,8 @@ export type Env = {
 export type Next = () => Promise<void>
 
 export type Input = {
-  in?: Partial<ValidationTargets>
-  out?: Partial<{ [K in keyof ValidationTargets]: unknown }>
+  in?: {}
+  out?: {}
 }
 
 export type BlankSchema = {}
