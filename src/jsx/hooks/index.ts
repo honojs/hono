@@ -9,6 +9,7 @@ export const STASH_EFFECT = 1
 const STASH_CALLBACK = 2
 const STASH_USE = 3
 const STASH_MEMO = 4
+const STASH_REF = 5
 
 export type EffectData = [
   readonly unknown[] | undefined, // deps
@@ -263,7 +264,16 @@ export const useCallback = <T extends (...args: unknown[]) => unknown>(
 
 export type RefObject<T> = { current: T | null }
 export const useRef = <T>(initialValue: T | null): RefObject<T> => {
-  return { current: initialValue }
+  const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
+  if (!buildData) {
+    return { current: initialValue }
+  }
+  const [, node] = buildData
+
+  const refArray = (node[DOM_STASH][1][STASH_REF] ||= [])
+  const hookIndex = node[DOM_STASH][0]++
+
+  return (refArray[hookIndex] ||= { current: initialValue })
 }
 
 export const use = <T>(promise: Promise<T>): T => {
