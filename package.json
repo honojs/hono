@@ -74,11 +74,6 @@
       "import": "./dist/middleware/bearer-auth/index.js",
       "require": "./dist/cjs/middleware/bearer-auth/index.js"
     },
-    "./body-limit": {
-      "types": "./dist/types/middleware/body-limit/index.d.ts",
-      "import": "./dist/middleware/body-limit/index.js",
-      "require": "./dist/cjs/middleware/body-limit/index.js"
-    },
     "./cache": {
       "types": "./dist/types/middleware/cache/index.d.ts",
       "import": "./dist/middleware/cache/index.js",
@@ -342,9 +337,6 @@
       ],
       "bearer-auth": [
         "./dist/types/middleware/bearer-auth"
-      ],
-      "body-limit": [
-        "./dist/types/middleware/body-limit"
       ],
       "cache": [
         "./dist/types/middleware/cache"
