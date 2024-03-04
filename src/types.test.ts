@@ -681,6 +681,25 @@ describe('MergeSchemaPath', () => {
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
+
+  test('MergeSchemaPath - Path and SubPath have regexp path params', () => {
+    type Actual = MergeSchemaPath<ToSchema<'get', '/c/:d{.+}', {}, {}>, '/a/:b{.+}'>
+    type Expected = {
+      '/a/:b{.+}/c/:d{.+}': {
+        $get: {
+          input: {
+            param: {
+              d: string
+            } & {
+              b: string
+            }
+          }
+          output: {}
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
 })
 
 describe('Different types using json()', () => {
