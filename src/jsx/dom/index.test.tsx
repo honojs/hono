@@ -920,52 +920,80 @@ describe('DOM', () => {
     expect(renderCount).toBe(2)
   })
 
-  it('useRef', async () => {
-    const Input = ({ label, ref }: { label: string; ref: RefObject<HTMLInputElement> }) => {
-      return (
-        <div>
-          <label>{label}</label>
-          <input ref={ref} />
-        </div>
+  describe('useRef', async () => {
+    it('simple', async () => {
+      const Input = ({ label, ref }: { label: string; ref: RefObject<HTMLInputElement> }) => {
+        return (
+          <div>
+            <label>{label}</label>
+            <input ref={ref} />
+          </div>
+        )
+      }
+      const Form = () => {
+        const [values, setValues] = useState<{ [key: string]: string }>({})
+        const nameRef = useRef<HTMLInputElement>(null)
+        const emailRef = useRef<HTMLInputElement>(null)
+        return (
+          <form>
+            <Input label='Name' ref={nameRef} />
+            <Input label='Email' ref={emailRef} />
+            <button
+              onClick={(ev: Event) => {
+                ev.preventDefault()
+                setValues({
+                  name: nameRef.current?.value || '',
+                  email: emailRef.current?.value || '',
+                })
+              }}
+            >
+              serialize
+            </button>
+            <span>{JSON.stringify(values)}</span>
+          </form>
+        )
+      }
+      const app = <Form />
+      render(app, root)
+      expect(root.innerHTML).toBe(
+        '<form><div><label>Name</label><input></div><div><label>Email</label><input></div><button>serialize</button><span>{}</span></form>'
       )
-    }
-    const Form = () => {
-      const [values, setValues] = useState<{ [key: string]: string }>({})
-      const nameRef = useRef<HTMLInputElement>(null)
-      const emailRef = useRef<HTMLInputElement>(null)
-      return (
-        <form>
-          <Input label='Name' ref={nameRef} />
-          <Input label='Email' ref={emailRef} />
-          <button
-            onClick={(ev: Event) => {
-              ev.preventDefault()
-              setValues({
-                name: nameRef.current?.value || '',
-                email: emailRef.current?.value || '',
-              })
-            }}
-          >
-            serialize
-          </button>
-          <span>{JSON.stringify(values)}</span>
-        </form>
+      const [nameInput, emailInput] = root.querySelectorAll('input')
+      nameInput.value = 'John'
+      emailInput.value = 'john@example.com'
+      const [button] = root.querySelectorAll('button')
+      button.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<form><div><label>Name</label><input></div><div><label>Email</label><input></div><button>serialize</button><span>{"name":"John","email":"john@example.com"}</span></form>'
       )
-    }
-    const app = <Form />
-    render(app, root)
-    expect(root.innerHTML).toBe(
-      '<form><div><label>Name</label><input></div><div><label>Email</label><input></div><button>serialize</button><span>{}</span></form>'
-    )
-    const [nameInput, emailInput] = root.querySelectorAll('input')
-    nameInput.value = 'John'
-    emailInput.value = 'john@example.com'
-    const [button] = root.querySelectorAll('button')
-    button.click()
-    await Promise.resolve()
-    expect(root.innerHTML).toBe(
-      '<form><div><label>Name</label><input></div><div><label>Email</label><input></div><button>serialize</button><span>{"name":"John","email":"john@example.com"}</span></form>'
-    )
+    })
+
+    it('update current', async () => {
+      const App = () => {
+        const [, setState] = useState(0)
+        const ref = useRef<boolean>(false)
+        return (
+          <>
+            <button
+              onClick={() => {
+                setState((c) => c + 1)
+                ref.current = true
+              }}
+            >
+              update
+            </button>
+            <span>{String(ref.current)}</span>
+          </>
+        )
+      }
+      const app = <App />
+      render(app, root)
+      expect(root.innerHTML).toBe('<button>update</button><span>false</span>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<button>update</button><span>true</span>')
+    })
   })
 
   describe('useEffect', () => {

@@ -293,13 +293,31 @@ describe('fetchRoutesContent function', () => {
 })
 
 describe('saveContentToFile function', () => {
+  // tar.gz, testdir/test.txt
+  const gzFileBuffer = Buffer.from(
+    'H4sIAAAAAAAAA+3SQQrCMBSE4aw9RU6gSc3LO0/FLgqukgj29qZgsQgqCEHE/9vMIoEMTMqQy3FMO9OQq1RkTq/i1rkwPkiMUXWvnXG+U/XGSstSi3MufbLWHIZ0mvLYP7v37vxHldv+c27LpbR4Yx44hvBi/3DfX3zdP0j9Eta1KPPoz/ef+mnz7Q4AAAAAAAAAAAAAAAAAPnMFqt1/BQAoAAA=',
+    'base64'
+  )
+  const gzFileArrayBuffer = gzFileBuffer.buffer.slice(
+    gzFileBuffer.byteOffset,
+    gzFileBuffer.byteLength + gzFileBuffer.byteOffset
+  )
+  // PNG, red dot (1x1)
+  const pngFileBuffer = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCCAAAALw',
+    'base64'
+  )
+  const pngFileArrayBuffer = pngFileBuffer.buffer.slice(
+    pngFileBuffer.byteOffset,
+    pngFileBuffer.byteLength + pngFileBuffer.byteOffset
+  )
+
   const fileData = [
     { routePath: '/', content: 'Home Page', mimeType: 'text/html' },
     { routePath: '/index.html', content: 'Home Page2', mimeType: 'text/html' },
     { routePath: '/about', content: 'About Page', mimeType: 'text/html' },
     { routePath: '/about/', content: 'About Page', mimeType: 'text/html' },
     { routePath: '/bravo/index.html', content: 'About Page', mimeType: 'text/html' },
-    { routePath: '/bravo/index.tar.gz', content: 'About Page', mimeType: 'application/gzip' },
     { routePath: '/bravo/release-4.0.0', content: 'Release 4.0.0', mimeType: 'text/html' },
     {
       routePath: '/bravo/2024.02.18-sweet-memories',
@@ -310,6 +328,16 @@ describe('saveContentToFile function', () => {
     { routePath: '/bravo/alert.js', content: 'alert("evil content")', mimeType: 'text/html' },
     { routePath: '/bravo.text/index.html', content: 'About Page', mimeType: 'text/html' },
     { routePath: '/bravo.text/', content: 'Bravo Page', mimeType: 'text/html' },
+    {
+      routePath: '/bravo/index.tar.gz',
+      content: gzFileArrayBuffer,
+      mimeType: 'application/gzip',
+    },
+    {
+      routePath: '/bravo/dot.png',
+      content: pngFileArrayBuffer,
+      mimeType: 'image/png',
+    },
   ]
 
   let fsMock: FileSystemModule
@@ -331,7 +359,6 @@ describe('saveContentToFile function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', 'About Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/index.html', 'About Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo/index.html', 'About Page')
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo/index.tar.gz', 'About Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith(
       'static/bravo/release-4.0.0.html',
       'Release 4.0.0'
@@ -350,6 +377,15 @@ describe('saveContentToFile function', () => {
     )
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'About Page')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'Bravo Page')
+    // binary files
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/index.tar.gz',
+      new Uint8Array(gzFileArrayBuffer)
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/dot.png',
+      new Uint8Array(pngFileArrayBuffer)
+    )
   })
 
   it('should correctly create directories if they do not exist', async () => {

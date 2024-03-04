@@ -2,7 +2,6 @@ import { replaceUrlParam } from '../../client/utils.ts'
 import type { Context } from '../../context.ts'
 import type { Hono } from '../../hono.ts'
 import type { Env, MiddlewareHandler, Schema } from '../../types.ts'
-import { bufferToString } from '../../utils/buffer.ts'
 import { createPool } from '../../utils/concurrent.ts'
 import { getExtension } from '../../utils/mime.ts'
 import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils.ts'
@@ -245,7 +244,7 @@ export const saveContentToFile = async (
   if (typeof content === 'string') {
     await fsModule.writeFile(filePath, content)
   } else if (content instanceof ArrayBuffer) {
-    await fsModule.writeFile(filePath, bufferToString(content))
+    await fsModule.writeFile(filePath, new Uint8Array(content))
   }
   return filePath
 }
@@ -255,13 +254,10 @@ export const saveContentToFile = async (
  * `ToSSGInterface` is an experimental feature.
  * The API might be changed.
  */
-export interface ToSSGInterface<
-  E extends Env = Env,
-  S extends Schema = {},
-  BasePath extends string = '/'
-> {
+export interface ToSSGInterface {
   (
-    app: Hono<E, S, BasePath>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    app: Hono<any, any, any>,
     fsModule: FileSystemModule,
     options?: ToSSGOptions
   ): Promise<ToSSGResult>
