@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
 import { serveStatic, toSSG } from '../../src/adapter/bun'
+import { createBunWebSocket, type BunWebSocketData } from '../../src/adapter/bun/websocket'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
+import type { WSMessageReceive } from '../../src/helper/websocket'
 import { Hono } from '../../src/index'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from '../../src/jsx'
@@ -258,6 +260,42 @@ describe('toSSG function', () => {
   })
 })
 
+describe('WebSockets Helper', () => {
+  const app = new Hono()
+  const { websocket, upgradeWebSocket } = createBunWebSocket()
+
+  it('Should websockets is working', async () => {
+    const receivedMessagePromise = new Promise<WSMessageReceive>((resolve) =>
+      app.get(
+        '/ws',
+        upgradeWebSocket(() => ({
+          onMessage(evt) {
+            resolve(evt.data)
+          },
+        }))
+      )
+    )
+    const upgradedData = await new Promise<BunWebSocketData>((resolve) =>
+      app.fetch(new Request('http://localhost/ws'), {
+        upgrade: (_req: Request, data: { data: BunWebSocketData }) => {
+          resolve(data.data)
+        },
+      })
+    )
+    const message = Math.random().toString()
+    websocket.message(
+      {
+        close: () => undefined,
+        readyState: 3,
+        data: upgradedData,
+        send: () => undefined,
+      },
+      message
+    )
+    const receivedMessage = await receivedMessagePromise
+    expect(receivedMessage).toBe(message)
+  })
+})
 const fs = require('fs').promises
 const path = require('path')
 

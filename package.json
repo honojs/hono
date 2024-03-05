@@ -318,6 +318,11 @@
       "types": "./dist/types/helper/dev/index.d.ts",
       "import": "./dist/helper/dev/index.js",
       "require": "./dist/cjs/helper/dev/index.js"
+    },
+    "./ws": {
+      "types": "./dist/types/helper/websocket/index.d.ts",
+      "import": "./dist/helper/websocket/index.js",
+      "require": "./dist/cjs/helper/websocket/index.js"
     }
   },
   "typesVersions": {
@@ -483,6 +488,9 @@
       ],
       "dev": [
         "./dist/types/helper/dev"
+      ],
+      "ws": [
+        "./dist/types/helper/websocket"
       ]
     }
   },
