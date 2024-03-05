@@ -215,4 +215,14 @@ describe('Set cookie', () => {
       })
     }).toThrowError('Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.')
   })
+
+  it('Should throw Error cookie with expires grater than 400days', () => {
+    const now = Date.now()
+    const day401 = new Date(now + 1000*3600*24*401)
+    expect(() => {
+      serialize('great_cookie', 'banana', {
+        expires: day401
+      })
+    }).toThrowError('Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.')
+  })
 })
