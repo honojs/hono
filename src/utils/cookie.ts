@@ -113,7 +113,25 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   let cookie = `${name}=${value}`
 
   if (name.startsWith('__Secure-') && !opt.secure) {
+    // FIXME: replace link to RFC
+    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.3.1
     throw new Error('__Secure- Cookie must have Secure attributes')
+  }
+
+  if (name.startsWith('__Host-')) {
+    // FIXME: replace link to RFC
+    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.3.2
+    if (!opt.secure) {
+      throw new Error('__Host- Cookie must have Secure attributes')
+    }
+
+    if (opt.path !== '/') {
+      throw new Error('__Host- Cookie must have Path attributes with "/"')
+    }
+
+    if (opt.domain) {
+      throw new Error('__Host- Cookie must not have Domain attributes')
+    }
   }
 
   if (opt && typeof opt.maxAge === 'number' && opt.maxAge >= 0) {
