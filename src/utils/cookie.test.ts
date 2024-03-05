@@ -207,4 +207,12 @@ describe('Set cookie', () => {
     })
     expect(serialized).toBe('great_cookie=banana')
   })
+
+  it('Should throw Error cookie with maxAge grater than 400days', () => {
+    expect(() => {
+      serialize('great_cookie', 'banana', {
+        maxAge: 3600*24*401,
+      })
+    }).toThrowError('Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.')
+  })
 })
