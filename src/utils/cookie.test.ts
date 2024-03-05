@@ -274,4 +274,12 @@ describe('Set cookie', () => {
       })
     }).toThrowError('__Host- Cookie must not have Domain attributes')
   })
+
+  it('Should throw Error Partitioned cookie without Secure attributes', () => {
+    expect(() => {
+      serialize('great_cookie', 'banana', {
+        partitioned: true
+      })
+    }).toThrowError('Partitioned Cookie must have Secure attributes')
+  })
 })

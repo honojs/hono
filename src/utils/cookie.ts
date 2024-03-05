@@ -173,6 +173,11 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   }
 
   if (opt.partitioned) {
+    // FIXME: replace link to RFC
+    // https://www.ietf.org/archive/id/draft-cutler-httpbis-partitioned-cookies-01.html#section-2.3
+    if (!opt.secure) {
+      throw new Error('Partitioned Cookie must have Secure attributes')
+    }
     cookie += '; Partitioned'
   }
 
