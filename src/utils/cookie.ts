@@ -112,6 +112,10 @@ export const parseSigned = async (
 const _serialize = (name: string, value: string, opt: CookieOptions = {}): string => {
   let cookie = `${name}=${value}`
 
+  if (name.startsWith('__Secure-') && !opt.secure) {
+    throw new Error('__Secure- Cookie must have Secure attributes')
+  }
+
   if (opt && typeof opt.maxAge === 'number' && opt.maxAge >= 0) {
     if (opt.maxAge > 34560000) {
       // FIXME: replace link to RFC

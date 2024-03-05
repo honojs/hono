@@ -225,4 +225,10 @@ describe('Set cookie', () => {
       })
     }).toThrowError('Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.')
   })
+
+  it('Should throw Error __Secure- cookie without Secure attributes', () => {
+    expect(() => {
+      serialize('__Secure-great_cookie', 'banana', {})
+    }).toThrowError('__Secure- Cookie must have Secure attributes')
+  })
 })
