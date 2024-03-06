@@ -226,19 +226,23 @@ describe('Set cookie', () => {
   it('Should throw Error cookie with maxAge grater than 400days', () => {
     expect(() => {
       serialize('great_cookie', 'banana', {
-        maxAge: 3600*24*401,
+        maxAge: 3600 * 24 * 401,
       })
-    }).toThrowError('Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.')
+    }).toThrowError(
+      'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
+    )
   })
 
   it('Should throw Error cookie with expires grater than 400days', () => {
     const now = Date.now()
-    const day401 = new Date(now + 1000*3600*24*401)
+    const day401 = new Date(now + 1000 * 3600 * 24 * 401)
     expect(() => {
       serialize('great_cookie', 'banana', {
-        expires: day401
+        expires: day401,
       })
-    }).toThrowError('Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.')
+    }).toThrowError(
+      'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
+    )
   })
 
   it('Should throw Error __Secure- cookie without Secure attributes', () => {
@@ -251,7 +255,7 @@ describe('Set cookie', () => {
     expect(() => {
       serialize('__Host-great_cookie', 'banana', {
         secure: false,
-        path: '/'
+        path: '/',
       })
     }).toThrowError('__Host- Cookie must have Secure attributes')
   })
@@ -260,7 +264,7 @@ describe('Set cookie', () => {
     expect(() => {
       serialize('__Host-great_cookie', 'banana', {
         secure: true,
-        path: '/admin'
+        path: '/admin',
       })
     }).toThrowError('__Host- Cookie must have Path attributes with "/"')
   })
@@ -270,7 +274,7 @@ describe('Set cookie', () => {
       serialize('__Host-great_cookie', 'banana', {
         secure: true,
         path: '/',
-        domain: 'site.example'
+        domain: 'site.example',
       })
     }).toThrowError('__Host- Cookie must not have Domain attributes')
   })
@@ -278,7 +282,7 @@ describe('Set cookie', () => {
   it('Should throw Error Partitioned cookie without Secure attributes', () => {
     expect(() => {
       serialize('great_cookie', 'banana', {
-        partitioned: true
+        partitioned: true,
       })
     }).toThrowError('Partitioned Cookie must have Secure attributes')
   })
