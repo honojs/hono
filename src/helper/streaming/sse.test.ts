@@ -99,7 +99,7 @@ describe('SSE Streaming helper', () => {
     const res = streamSSE(
       c,
       async () => {
-        throw new Error('error')
+        throw new Error('Test error')
       },
       onError
     )
@@ -107,9 +107,11 @@ describe('SSE Streaming helper', () => {
       throw new Error('Body is null')
     }
     const reader = res.body.getReader()
+    const decoder = new TextDecoder()
     const { value } = await reader.read()
-    expect(value).toBeUndefined()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('event: error\ndata: Test error\n\n')
     expect(onError).toBeCalledTimes(1)
-    expect(onError).toBeCalledWith(new Error('error'), expect.anything()) // 2nd argument is StreamingApi instance
+    expect(onError).toBeCalledWith(new Error('Test error'), expect.anything()) // 2nd argument is StreamingApi instance
   })
 })
