@@ -138,7 +138,9 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
     if (opt.maxAge > 34560000) {
       // FIXME: replace link to RFC
       // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.2.2
-      throw new Error('Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.')
+      throw new Error(
+        'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
+      )
     }
     cookie += `; Max-Age=${Math.floor(opt.maxAge)}`
   }
@@ -155,7 +157,9 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
     if (opt.expires.getTime() - Date.now() > 34560000_000) {
       // FIXME: replace link to RFC
       // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.2.1
-      throw new Error('Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.')
+      throw new Error(
+        'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
+      )
     }
     cookie += `; Expires=${opt.expires.toUTCString()}`
   }
