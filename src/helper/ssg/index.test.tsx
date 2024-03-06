@@ -3,16 +3,8 @@ import { Hono } from '../../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
-import {
-  SSG_DISABLED_RESPONSE,
-  fetchRoutesContent,
-  saveContentToFile,
-  ssgParams,
-  toSSG,
-  isSSGContext,
-  disableSSG,
-  onlySSG,
-} from './index'
+import { SSG_DISABLED_RESPONSE, ssgParams, isSSGContext, disableSSG, onlySSG } from './middleware'
+import { fetchRoutesContent, saveContentToFile, toSSG } from './index'
 import type {
   BeforeRequestHook,
   AfterResponseHook,

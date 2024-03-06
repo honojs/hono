@@ -1,13 +1,11 @@
 import { replaceUrlParam } from '../../client/utils'
-import type { Context } from '../../context'
 import type { Hono } from '../../hono'
-import type { Env, MiddlewareHandler, Schema } from '../../types'
+import type { Env, Schema } from '../../types'
 import { createPool } from '../../utils/concurrent'
 import { getExtension } from '../../utils/mime'
+import type { AddedSSGDataRequest, SSGParams } from './middleware'
+import { SSG_DISABLED_RESPONSE, SSG_CONTEXT } from './middleware'
 import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils'
-
-const SSG_CONTEXT = 'HONO_SSG_CONTEXT'
-export const SSG_DISABLED_RESPONSE = new Response('SSG is disabled', { status: 404 })
 
 const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
 
@@ -75,29 +73,6 @@ const determineExtension = (mimeType: string): string => {
       return getExtension(mimeType) || 'html'
     }
   }
-}
-
-interface SSGParam {
-  [key: string]: string
-}
-type SSGParams = SSGParam[]
-
-interface SSGParamsMiddleware {
-  <E extends Env = Env>(
-    generateParams: (c: Context<E>) => SSGParams | Promise<SSGParams>
-  ): MiddlewareHandler<E>
-  <E extends Env = Env>(params: SSGParams): MiddlewareHandler<E>
-}
-
-type AddedSSGDataRequest = Request & {
-  ssgParams?: SSGParams
-}
-/**
- * Define SSG Route
- */
-export const ssgParams: SSGParamsMiddleware = (params) => async (c, next) => {
-  ;(c.req.raw as AddedSSGDataRequest).ssgParams = Array.isArray(params) ? params : await params(c)
-  await next()
 }
 
 export type BeforeRequestHook = (req: Request) => Request | false
@@ -325,36 +300,3 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
   await options?.afterGenerateHook?.(result)
   return result
 }
-
-/**
- * @experimental
- * `isSSGContext` is an experimental feature.
- * The API might be changed.
- */
-export const isSSGContext = (c: Context): boolean => !!c.env?.[SSG_CONTEXT]
-
-/**
- * @experimental
- * `disableSSG` is an experimental feature.
- * The API might be changed.
- */
-export const disableSSG = (): MiddlewareHandler =>
-  async function disableSSG(c, next) {
-    if (isSSGContext(c)) {
-      return SSG_DISABLED_RESPONSE
-    }
-    await next()
-  }
-
-/**
- * @experimental
- * `onlySSG` is an experimental feature.
- * The API might be changed.
- */
-export const onlySSG = (): MiddlewareHandler =>
-  async function onlySSG(c, next) {
-    if (!isSSGContext(c)) {
-      return c.notFound()
-    }
-    await next()
-  }
