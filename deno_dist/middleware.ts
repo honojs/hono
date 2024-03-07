@@ -1,6 +1,7 @@
 // This file is for Deno to import middleware from `hono/middleware.ts`.
 export * from './middleware/basic-auth/index.ts'
 export * from './middleware/bearer-auth/index.ts'
+export * from './middleware/body-limit/index.ts'
 export * from './middleware/cache/index.ts'
 export * from './middleware/compress/index.ts'
 export * from './middleware/cors/index.ts'
