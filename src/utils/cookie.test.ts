@@ -154,7 +154,7 @@ describe('Set cookie', () => {
   })
 
   it('Should serialize cookie with all options', () => {
-    const serialized = serialize('great_cookie', 'banana', {
+    const serialized = serialize('__Secure-great_cookie', 'banana', {
       path: '/',
       secure: true,
       domain: 'example.com',
@@ -165,7 +165,22 @@ describe('Set cookie', () => {
       partitioned: true,
     })
     expect(serialized).toBe(
-      'great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Partitioned'
+      '__Secure-great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Partitioned'
+    )
+  })
+
+  it('Should serialize __Host- cookie with all valid options', () => {
+    const serialized = serialize('__Host-great_cookie', 'banana', {
+      path: '/',
+      secure: true,
+      httpOnly: true,
+      maxAge: 1000,
+      expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
+      sameSite: 'Strict',
+      partitioned: true,
+    })
+    expect(serialized).toBe(
+      '__Host-great_cookie=banana; Max-Age=1000; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Partitioned'
     )
   })
 
@@ -206,5 +221,69 @@ describe('Set cookie', () => {
       maxAge: -1,
     })
     expect(serialized).toBe('great_cookie=banana')
+  })
+
+  it('Should throw Error cookie with maxAge grater than 400days', () => {
+    expect(() => {
+      serialize('great_cookie', 'banana', {
+        maxAge: 3600 * 24 * 401,
+      })
+    }).toThrowError(
+      'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
+    )
+  })
+
+  it('Should throw Error cookie with expires grater than 400days', () => {
+    const now = Date.now()
+    const day401 = new Date(now + 1000 * 3600 * 24 * 401)
+    expect(() => {
+      serialize('great_cookie', 'banana', {
+        expires: day401,
+      })
+    }).toThrowError(
+      'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
+    )
+  })
+
+  it('Should throw Error __Secure- cookie without Secure attributes', () => {
+    expect(() => {
+      serialize('__Secure-great_cookie', 'banana', {})
+    }).toThrowError('__Secure- Cookie must have Secure attributes')
+  })
+
+  it('Should throw Error __Host- cookie without Secure attributes', () => {
+    expect(() => {
+      serialize('__Host-great_cookie', 'banana', {
+        secure: false,
+        path: '/',
+      })
+    }).toThrowError('__Host- Cookie must have Secure attributes')
+  })
+
+  it('Should throw Error __Host- cookie without Path attributes with "/"', () => {
+    expect(() => {
+      serialize('__Host-great_cookie', 'banana', {
+        secure: true,
+        path: '/admin',
+      })
+    }).toThrowError('__Host- Cookie must have Path attributes with "/"')
+  })
+
+  it('Should throw Error __Host- cookie with Domain attributes', () => {
+    expect(() => {
+      serialize('__Host-great_cookie', 'banana', {
+        secure: true,
+        path: '/',
+        domain: 'site.example',
+      })
+    }).toThrowError('__Host- Cookie must not have Domain attributes')
+  })
+
+  it('Should throw Error Partitioned cookie without Secure attributes', () => {
+    expect(() => {
+      serialize('great_cookie', 'banana', {
+        partitioned: true,
+      })
+    }).toThrowError('Partitioned Cookie must have Secure attributes')
   })
 })
