@@ -195,6 +195,123 @@ describe('Cookie Middleware', () => {
       )
     })
 
+    app.get('/get-secure-prefix-cookie', async (c) => {
+      const cookie = getCookie(c, 'delicious_cookie', 'secure')
+      if (cookie) {
+        return c.text(cookie)
+      } else {
+        return c.notFound()
+      }
+    })
+
+    app.get('/get-host-prefix-cookie', async (c) => {
+      const cookie = getCookie(c, 'delicious_cookie', 'host')
+      if (cookie) {
+        return c.text(cookie)
+      } else {
+        return c.notFound()
+      }
+    })
+
+    app.get('/set-secure-prefix-cookie', (c) => {
+      setCookie(c, 'delicious_cookie', 'macha', {
+        prefix: 'secure',
+        secure: false, // this will be ignore
+      })
+      return c.text('Set secure prefix cookie')
+    })
+
+    it('Set cookie with secure prefix', async () => {
+      const res = await app.request('http://localhost/set-secure-prefix-cookie')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe('__Secure-delicious_cookie=macha; Path=/; Secure')
+    })
+
+    it('Get cookie with secure prefix', async () => {
+      const setCookie = await app.request('http://localhost/set-secure-prefix-cookie')
+      const header = setCookie.headers.get('Set-Cookie')
+      if (!header) {
+        assert.fail('invalid header')
+      }
+      const res = await app.request('http://localhost/get-secure-prefix-cookie', {
+        headers: {
+          Cookie: header,
+        },
+      })
+      const response = await res.text()
+      expect(res.status).toBe(200)
+      expect(response).toBe('macha')
+    })
+
+    app.get('/set-host-prefix-cookie', (c) => {
+      setCookie(c, 'delicious_cookie', 'macha', {
+        prefix: 'host',
+        path: '/foo', // this will be ignored
+        domain: 'example.com', // this will be ignored
+        secure: false, // this will be ignored
+      })
+      return c.text('Set host prefix cookie')
+    })
+
+    it('Set cookie with host prefix', async () => {
+      const res = await app.request('http://localhost/set-host-prefix-cookie')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe('__Host-delicious_cookie=macha; Path=/; Secure')
+    })
+
+    it('Get cookie with host prefix', async () => {
+      const setCookie = await app.request('http://localhost/set-host-prefix-cookie')
+      const header = setCookie.headers.get('Set-Cookie')
+      if (!header) {
+        assert.fail('invalid header')
+      }
+      const res = await app.request('http://localhost/get-host-prefix-cookie', {
+        headers: {
+          Cookie: header,
+        },
+      })
+      const response = await res.text()
+      expect(res.status).toBe(200)
+      expect(response).toBe('macha')
+    })
+
+    app.get('/set-signed-secure-prefix-cookie', async (c) => {
+      await setSignedCookie(c, 'delicious_cookie', 'macha', 'secret choco chips', {
+        prefix: 'secure',
+      })
+      return c.text('Set secure prefix cookie')
+    })
+
+    it('Set signed cookie with secure prefix', async () => {
+      const res = await app.request('http://localhost/set-signed-secure-prefix-cookie')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe(
+        '__Secure-delicious_cookie=macha.i225faTyCrJUY8TvpTuJHI20HBWbQ89B4GV7lT4E%2FB0%3D; Path=/; Secure'
+      )
+    })
+
+    app.get('/set-signed-host-prefix-cookie', async (c) => {
+      await setSignedCookie(c, 'delicious_cookie', 'macha', 'secret choco chips', {
+        prefix: 'host',
+        domain: 'example.com', // this will be ignored
+        path: 'example.com', // thi will be ignored
+        secure: false, // this will be ignored
+      })
+      return c.text('Set host prefix cookie')
+    })
+
+    it('Set signed cookie with host prefix', async () => {
+      const res = await app.request('http://localhost/set-signed-host-prefix-cookie')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe(
+        '__Host-delicious_cookie=macha.i225faTyCrJUY8TvpTuJHI20HBWbQ89B4GV7lT4E%2FB0%3D; Path=/; Secure'
+      )
+    })
+
     app.get('/set-cookie-complex', (c) => {
       setCookie(c, 'great_cookie', 'banana', {
         path: '/',

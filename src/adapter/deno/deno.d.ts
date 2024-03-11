@@ -16,4 +16,9 @@ declare namespace Deno {
    * @returns A promise that resolves when the file is written.
    */
   export function writeFile(path: string, data: Uint8Array): Promise<void>
+
+  export function upgradeWebSocket(req: Request): {
+    response: Response
+    socket: WebSocket
+  }
 }

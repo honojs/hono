@@ -1,5 +1,6 @@
 import type { Hono } from '../../hono'
 import type { Env, RouterRoute } from '../../types'
+import { getColorEnabled } from '../../utils/color'
 import { findTargetHandler, isMiddleware } from '../../utils/handler'
 
 interface ShowRoutesOptions {
@@ -31,16 +32,7 @@ export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
 }
 
 export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { process, Deno } = globalThis as any
-  const isNoColor =
-    typeof process !== 'undefined'
-      ? // eslint-disable-next-line no-unsafe-optional-chaining
-        'NO_COLOR' in process?.env
-      : typeof Deno?.noColor === 'boolean'
-      ? (Deno.noColor as boolean)
-      : false
-  const colorEnabled = opts?.colorize ?? !isNoColor
+  const colorEnabled = opts?.colorize ?? getColorEnabled()
   const routeData: Record<string, RouteData[]> = {}
   let maxMethodLength = 0
   let maxPathLength = 0

@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.0.10",
+  "version": "4.1.0-rc.1",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -73,6 +73,11 @@
       "types": "./dist/types/middleware/bearer-auth/index.d.ts",
       "import": "./dist/middleware/bearer-auth/index.js",
       "require": "./dist/cjs/middleware/bearer-auth/index.js"
+    },
+    "./body-limit": {
+      "types": "./dist/types/middleware/body-limit/index.d.ts",
+      "import": "./dist/middleware/body-limit/index.js",
+      "require": "./dist/cjs/middleware/body-limit/index.js"
     },
     "./cache": {
       "types": "./dist/types/middleware/cache/index.d.ts",
@@ -313,6 +318,11 @@
       "types": "./dist/types/helper/dev/index.d.ts",
       "import": "./dist/helper/dev/index.js",
       "require": "./dist/cjs/helper/dev/index.js"
+    },
+    "./ws": {
+      "types": "./dist/types/helper/websocket/index.d.ts",
+      "import": "./dist/helper/websocket/index.js",
+      "require": "./dist/cjs/helper/websocket/index.js"
     }
   },
   "typesVersions": {
@@ -337,6 +347,9 @@
       ],
       "bearer-auth": [
         "./dist/types/middleware/bearer-auth"
+      ],
+      "body-limit": [
+        "./dist/types/middleware/body-limit"
       ],
       "cache": [
         "./dist/types/middleware/cache"
@@ -475,6 +488,9 @@
       ],
       "dev": [
         "./dist/types/helper/dev"
+      ],
+      "ws": [
+        "./dist/types/helper/websocket"
       ]
     }
   },
@@ -508,7 +524,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231121.0",
     "@hono/eslint-config": "^0.0.4",
-    "@hono/node-server": "^1.3.3",
+    "@hono/node-server": "^1.8.2",
     "@types/crypto-js": "^4.1.1",
     "@types/glob": "^8.0.0",
     "@types/jsdom": "^21.1.4",
