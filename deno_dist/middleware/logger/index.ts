@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from '../../types.ts'
+import { getColorEnabled } from '../../utils/color.ts'
 import { getPath } from '../../utils/url.ts'
 
 enum LogPrefix {
@@ -21,14 +22,15 @@ const time = (start: number) => {
 }
 
 const colorStatus = (status: number) => {
+  const colorEnabled = getColorEnabled()
   const out: { [key: string]: string } = {
-    7: `\x1b[35m${status}\x1b[0m`,
-    5: `\x1b[31m${status}\x1b[0m`,
-    4: `\x1b[33m${status}\x1b[0m`,
-    3: `\x1b[36m${status}\x1b[0m`,
-    2: `\x1b[32m${status}\x1b[0m`,
-    1: `\x1b[32m${status}\x1b[0m`,
-    0: `\x1b[33m${status}\x1b[0m`,
+    7: colorEnabled ? `\x1b[35m${status}\x1b[0m` : `${status}`,
+    5: colorEnabled ? `\x1b[31m${status}\x1b[0m` : `${status}`,
+    4: colorEnabled ? `\x1b[33m${status}\x1b[0m` : `${status}`,
+    3: colorEnabled ? `\x1b[36m${status}\x1b[0m` : `${status}`,
+    2: colorEnabled ? `\x1b[32m${status}\x1b[0m` : `${status}`,
+    1: colorEnabled ? `\x1b[32m${status}\x1b[0m` : `${status}`,
+    0: colorEnabled ? `\x1b[33m${status}\x1b[0m` : `${status}`,
   }
 
   const calculateStatus = (status / 100) | 0

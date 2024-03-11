@@ -3,11 +3,12 @@ import type { FC } from '..'
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, Fragment } from '..'
+import { jsx, Fragment, createElement } from '..'
+import DefaultExport from '..'
 import type { RefObject } from '../hooks'
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from '../hooks'
 import { memo, isValidElement, cloneElement } from '.'
-import { render, cloneElement as cloneElementForDom } from '.'
+import { render, createElement as createElementForDom, cloneElement as cloneElementForDom } from '.'
 
 describe('DOM', () => {
   beforeAll(() => {
@@ -1301,6 +1302,38 @@ describe('DOM', () => {
     })
   })
 
+  describe('createElement', () => {
+    it('simple', async () => {
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <div>{createElement('p', { onClick: () => setCount(count + 1) }, String(count))}</div>
+        )
+      }
+      const app = <App />
+      render(app, root)
+      expect(root.innerHTML).toBe('<div><p>0</p></div>')
+      root.querySelector('p')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><p>1</p></div>')
+    })
+  })
+
+  describe('dom-specific createElement', () => {
+    it('simple', async () => {
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return <div>{createElementForDom('p', { onClick: () => setCount(count + 1) }, count)}</div>
+      }
+      const app = <App />
+      render(app, root)
+      expect(root.innerHTML).toBe('<div><p>0</p></div>')
+      root.querySelector('p')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><p>1</p></div>')
+    })
+  })
+
   describe('cloneElement', () => {
     it('simple', async () => {
       const App = () => {
@@ -1388,6 +1421,46 @@ describe('DOM', () => {
       expect(createElementSpy).not.toHaveBeenCalled()
       expect(createElementNSSpy).toHaveBeenCalledWith('http://www.w3.org/1998/Math/MathML', 'math')
       expect(createElementNSSpy).toHaveBeenCalledWith('http://www.w3.org/1998/Math/MathML', 'mrow')
+    })
+  })
+})
+
+describe('jsx', () => {
+  it('exported as an alias of createElement', () => {
+    expect(jsx).toBeDefined()
+    expect(jsx('div', {}, 'Hello')).toBeInstanceOf(Object)
+  })
+})
+
+describe('default export', () => {
+  ;[
+    'memo',
+    'Fragment',
+    'isValidElement',
+    'createElement',
+    'cloneElement',
+    'ErrorBoundary',
+    'createContext',
+    'useContext',
+    'useState',
+    'useEffect',
+    'useRef',
+    'useCallback',
+    'useReducer',
+    'useDebugValue',
+    'use',
+    'startTransition',
+    'useTransition',
+    'useDeferredValue',
+    'startViewTransition',
+    'useViewTransition',
+    'useMemo',
+    'useLayoutEffect',
+    'Suspense',
+  ].forEach((key) => {
+    it(key, () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((DefaultExport as any)[key]).toBeDefined()
     })
   })
 })
