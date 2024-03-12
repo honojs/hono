@@ -1,44 +1,16 @@
 import { encodeBase64Url, decodeBase64Url } from '../../utils/encode.ts'
-import type { AlgorithmTypes } from './types.ts'
-import { JwtTokenIssuedAt } from './types.ts'
+import { importPrivateKey, importPublicKey } from './key.ts'
+import type { AlgorithmParams, TokenHeader, AlgorithmTypeName } from './types.ts'
+import { JwtHeaderInvalid, JwtTokenIssuedAt, isTokenHeader } from './types.ts'
 import {
   JwtTokenInvalid,
   JwtTokenNotBefore,
   JwtTokenExpired,
   JwtTokenSignatureMismatched,
   JwtAlgorithmNotImplemented,
+  CryptoKeyUsage,
 } from './types.ts'
-
-interface AlgorithmParams {
-  name: string
-  namedCurve?: string
-  hash?: {
-    name: string
-  }
-}
-
-enum CryptoKeyFormat {
-  RAW = 'raw',
-  PKCS8 = 'pkcs8',
-  SPKI = 'spki',
-  JWK = 'jwk',
-}
-
-enum CryptoKeyUsage {
-  Ecrypt = 'encrypt',
-  Decrypt = 'decrypt',
-  Sign = 'sign',
-  Verify = 'verify',
-  Deriverkey = 'deriveKey',
-  DeriveBits = 'deriveBits',
-  WrapKey = 'wrapKey',
-  UnwrapKey = 'unwrapKey',
-}
-
-type AlgorithmTypeName = keyof typeof AlgorithmTypes
-
-const utf8Encoder = new TextEncoder()
-const utf8Decoder = new TextDecoder()
+import { utf8Decoder, utf8Encoder } from './utf8.ts'
 
 const encodeJwtPart = (part: unknown): string =>
   encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
@@ -70,6 +42,27 @@ const param = (name: AlgorithmTypeName): AlgorithmParams => {
           name: 'SHA-512',
         },
       }
+    case 'RS256':
+      return {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: {
+          name: 'SHA-256',
+        },
+      }
+    case 'RS384':
+      return {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: {
+          name: 'SHA-384',
+        },
+      }
+    case 'RS512':
+      return {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: {
+          name: 'SHA-512',
+        },
+      }
     default:
       throw new JwtAlgorithmNotImplemented(name)
   }
@@ -77,43 +70,44 @@ const param = (name: AlgorithmTypeName): AlgorithmParams => {
 
 const signing = async (
   data: string,
-  secret: string,
+  privateKey: string | JsonWebKey,
   alg: AlgorithmTypeName = 'HS256'
 ): Promise<ArrayBuffer> => {
-  if (!crypto.subtle || !crypto.subtle.importKey) {
-    throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
-  }
-
-  const utf8Encoder = new TextEncoder()
-  const cryptoKey = await crypto.subtle.importKey(
-    CryptoKeyFormat.RAW,
-    utf8Encoder.encode(secret),
-    param(alg),
-    false,
-    [CryptoKeyUsage.Sign]
-  )
-  return await crypto.subtle.sign(param(alg), cryptoKey, utf8Encoder.encode(data))
+  const algorithm = param(alg)
+  const cryptoKey = await importPrivateKey(privateKey, algorithm, [CryptoKeyUsage.Sign])
+  return await crypto.subtle.sign(algorithm, cryptoKey, utf8Encoder.encode(data))
 }
 
 export const sign = async (
   payload: unknown,
-  secret: string,
+  privateKey: string | JsonWebKey,
   alg: AlgorithmTypeName = 'HS256'
 ): Promise<string> => {
   const encodedPayload = encodeJwtPart(payload)
-  const encodedHeader = encodeJwtPart({ alg, typ: 'JWT' })
+  const encodedHeader = encodeJwtPart({ alg, typ: 'JWT' } satisfies TokenHeader)
 
   const partialToken = `${encodedHeader}.${encodedPayload}`
 
-  const signaturePart = await signing(partialToken, secret, alg)
+  const signaturePart = await signing(partialToken, privateKey, alg)
   const signature = encodeSignaturePart(signaturePart)
 
   return `${partialToken}.${signature}`
 }
 
+const verifying = async (
+  publicKey: string | JsonWebKey,
+  alg: AlgorithmTypeName = 'HS256',
+  signature: BufferSource,
+  data: BufferSource
+): Promise<boolean> => {
+  const algorithm = param(alg)
+  const cryptoKey = await importPublicKey(publicKey, algorithm, [CryptoKeyUsage.Verify])
+  return await crypto.subtle.verify(algorithm, cryptoKey, signature, data)
+}
+
 export const verify = async (
   token: string,
-  secret: string,
+  publicKey: string | JsonWebKey,
   alg: AlgorithmTypeName = 'HS256'
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> => {
@@ -122,7 +116,10 @@ export const verify = async (
     throw new JwtTokenInvalid(token)
   }
 
-  const { payload } = decode(token)
+  const { header, payload } = decode(token)
+  if (!isTokenHeader(header)) {
+    throw new JwtHeaderInvalid(header)
+  }
   const now = Math.floor(Date.now() / 1000)
   if (payload.nbf && payload.nbf > now) {
     throw new JwtTokenNotBefore(token)
@@ -134,10 +131,14 @@ export const verify = async (
     throw new JwtTokenIssuedAt(now, payload.iat)
   }
 
-  const signaturePart = tokenParts.slice(0, 2).join('.')
-  const signature = await signing(signaturePart, secret, alg)
-  const encodedSignature = encodeSignaturePart(signature)
-  if (encodedSignature !== tokenParts[2]) {
+  const headerPayload = token.substring(0, token.lastIndexOf('.'))
+  const verified = await verifying(
+    publicKey,
+    alg,
+    decodeBase64Url(tokenParts[2]),
+    utf8Encoder.encode(headerPayload)
+  )
+  if (!verified) {
     throw new JwtTokenSignatureMismatched(token)
   }
 
