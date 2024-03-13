@@ -16,7 +16,7 @@ export const replaceUrlParam = (urlString: string, params: Record<string, string
 }
 
 export const removeIndexString = (urlSting: string) => {
-  return urlSting.replace(/\/index$/, '/')
+  return urlSting.replace(/\/index$/, '')
 }
 
 function isObject(item: unknown): item is ObjectType {
