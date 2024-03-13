@@ -43,18 +43,18 @@ describe('replaceUrlParams', () => {
 })
 
 describe('removeIndexString', () => {
-  it('Should remove last `index` string', () => {
+  it('Should remove last `/index` string', () => {
     let url = 'http://localhost/index'
     let newUrl = removeIndexString(url)
-    expect(newUrl).toBe('http://localhost/')
+    expect(newUrl).toBe('http://localhost')
 
     url = '/index'
     newUrl = removeIndexString(url)
-    expect(newUrl).toBe('/')
+    expect(newUrl).toBe('')
 
     url = '/sub/index'
     newUrl = removeIndexString(url)
-    expect(newUrl).toBe('/sub/')
+    expect(newUrl).toBe('/sub')
 
     url = '/subindex'
     newUrl = removeIndexString(url)
