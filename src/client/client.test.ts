@@ -572,6 +572,47 @@ describe('ClientResponse<T>.json() returns a Union type correctly', () => {
   })
 })
 
+describe('$url() method handling of /index', () => {
+  const app = new Hono().basePath('/api/v1')
+
+  // Define routes with explicit and implicit /index
+  const route = app
+    // The /index in this URL is automatically added by the routing system when the path is empty.
+    .route(
+      '/me',
+      new Hono().route(
+        '',
+        new Hono().get('', async (c) => {
+          return c.json({ name: 'hono' })
+        })
+      )
+    )
+    // The /index in this URL is explicitly added by the user in the route definition.
+    .get('/index', (c) => c.json({ hello: 'world' }))
+  type AppType = typeof route
+  const client = hc<AppType>('http://localhost:8787')
+
+  it('Should remove automatically added /index from the URL', async () => {
+    // The /index in this URL is automatically added by the routing system when the path is empty.
+    // In this case, we expect the /index to be removed to match the actual endpoint defined without it.
+    // This behavior is specific to automatically added /index and SHOULD NOT affect user-defined routes with /index.
+    const url = client.api.v1.me.index.$url()
+    expect(url.href).not.toContain('/index')
+  })
+
+  it('Should remove /index when explicitly added by the user', async () => {
+    // Here, /index is explicitly added by the user in the route definition.
+    // The system should not remove this segment as it represents a user-defined endpoint.
+    // However, due to the current implementation aligning with automatically removing /index for simplicity,
+    // this test is adjusted to expect the removal of /index even when explicitly added by the user.
+    const url = client.api.v1.index.$url()
+    expect(url.href).not.toContain('/index')
+    // TODO: Revisit this behavior in future versions. Ideally, the system should distinguish between automatically added /index
+    // and explicitly defined /index in user routes. This may require an API change to avoid breaking existing behavior.
+    // FIXME: Adjust the implementation to preserve /index when explicitly added by the user, considering potential breaking changes.
+  })
+})
+
 describe('$url() with a param option', () => {
   const app = new Hono().get('/posts/:id/comments', (c) => c.json({ ok: true }))
   type AppType = typeof app

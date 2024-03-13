@@ -100,7 +100,6 @@ class ClientRequestImpl {
     const headers = new Headers(headerValues ?? undefined)
     let url = this.url
 
-    url = removeIndexString(url)
     url = replaceUrlParam(url, this.pathParams)
 
     if (this.queryParams) {
@@ -135,7 +134,9 @@ export const hc = <T extends Hono<any, any, any>>(
     }
 
     const path = parts.join('/')
-    const url = mergePath(baseUrl, path)
+    // TODO: The `/index` automatically added by Hono Client autocomplete should be removed, but explicitly added `/index` should not be removed.
+    // Due to the current implementation, this distinction is not made, necessitating future API changes to correctly handle both scenarios.
+    const url = removeIndexString(mergePath(baseUrl, path))
     if (method === 'url') {
       if (opts.args[0] && opts.args[0].param) {
         return new URL(replaceUrlParam(url, opts.args[0].param))
