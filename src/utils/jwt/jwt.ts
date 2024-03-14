@@ -63,6 +63,30 @@ const param = (name: AlgorithmTypeName): AlgorithmParams => {
           name: 'SHA-512',
         },
       }
+    case 'PS256':
+      return {
+        name: 'RSA-PSS',
+        hash: {
+          name: 'SHA-256',
+        },
+        saltLength: 32, // 256 >> 3
+      } satisfies RsaPssParams & RsaHashedImportParams
+    case 'PS384':
+      return {
+        name: 'RSA-PSS',
+        hash: {
+          name: 'SHA-384',
+        },
+        saltLength: 48, // 384 >> 3
+      } satisfies RsaPssParams & RsaHashedImportParams
+    case 'PS512':
+      return {
+        name: 'RSA-PSS',
+        hash: {
+          name: 'SHA-512',
+        },
+        saltLength: 64, // 512 >> 3,
+      } satisfies RsaPssParams & RsaHashedImportParams
     default:
       throw new JwtAlgorithmNotImplemented(name)
   }

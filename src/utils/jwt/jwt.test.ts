@@ -198,7 +198,7 @@ describe('JWT', () => {
     expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
   })
 
-  const testCases = [
+  const rsTestCases = [
     {
       alg: AlgorithmTypes.RS256,
       hash: 'SHA-256',
@@ -212,7 +212,7 @@ describe('JWT', () => {
       hash: 'SHA-512',
     },
   ]
-  for (const tc of testCases) {
+  for (const tc of rsTestCases) {
     it(`${tc.alg} sign & verify`, async () => {
       const alg = tc.alg
       const payload = { message: 'hello world' }
@@ -226,6 +226,48 @@ describe('JWT', () => {
       expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
 
       const keyPair2 = await generateRSAKey(tc.hash)
+      const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
+
+      let err = null
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, unexpectedPemPublicKey, alg)
+      } catch (e) {
+        err = e
+      }
+      expect(authorized).toBeUndefined()
+      expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+    })
+  }
+
+  const psTestCases = [
+    {
+      alg: AlgorithmTypes.PS256,
+      hash: 'SHA-256',
+    },
+    {
+      alg: AlgorithmTypes.PS384,
+      hash: 'SHA-384',
+    },
+    {
+      alg: AlgorithmTypes.PS512,
+      hash: 'SHA-512',
+    },
+  ]
+  for (const tc of psTestCases) {
+    it(`${tc.alg} sign & verify`, async () => {
+      const alg = tc.alg
+      const payload = { message: 'hello world' }
+      const keyPair = await generateRSAPSSKey(tc.hash)
+      const pemPrivateKey = await exportPEMPrivateKey(keyPair.privateKey)
+      const pemPublicKey = await exportPEMPublicKey(keyPair.publicKey)
+      const jwkPublicKey = await exportJWK(keyPair.publicKey)
+
+      const tok = await JWT.sign(payload, pemPrivateKey, alg)
+      expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
+
+      const keyPair2 = await generateRSAPSSKey(tc.hash)
       const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
 
       let err = null
@@ -264,6 +306,19 @@ async function generateRSAKey(hash: string): Promise<CryptoKeyPair> {
       modulusLength: 2048,
       publicExponent: new Uint8Array([1, 0, 1]),
       name: 'RSASSA-PKCS1-v1_5',
+    },
+    true,
+    ['sign', 'verify']
+  )
+}
+
+async function generateRSAPSSKey(hash: string): Promise<CryptoKeyPair> {
+  return await crypto.subtle.generateKey(
+    {
+      hash,
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      name: 'RSA-PSS',
     },
     true,
     ['sign', 'verify']
