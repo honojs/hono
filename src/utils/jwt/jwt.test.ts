@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { vi } from 'vitest'
+import { encodeBase64 } from '../encode'
 import * as JWT from './jwt'
 import {
   AlgorithmTypes,
@@ -61,7 +62,7 @@ describe('JWT', () => {
 
   it('JwtTokenExpired', async () => {
     const tok =
-      'eyJraWQiOiJFemF6bVZWbnd0TUpUNEFveFVtT0dILWJ0Y2VUVFM3djBYcEJuMm5ZZ2VjIiwiYWxnIjoiSFMyNTYifQ.eyJyb2xlIjoiYXBpX3JvbGUiLCJleHAiOjE2MzMwNDY0MDB9.Gmq_dozOnwzqkMUMEm7uny7cMZuF1d0QkCnmRXAbTEk'
+      'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MzMwNDYxMDAsImV4cCI6MTYzMzA0NjQwMH0.H-OI1TWAbmK8RonvcpPaQcNvOKS9sxinEOsgKwjoiVo'
     const secret = 'a-secret'
     let err
     let authorized
@@ -196,4 +197,75 @@ describe('JWT', () => {
     expect(authorized).toBeUndefined()
     expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
   })
+
+  const testCases = [
+    {
+      alg: AlgorithmTypes.RS256,
+      hash: 'SHA-256',
+    },
+    {
+      alg: AlgorithmTypes.RS384,
+      hash: 'SHA-384',
+    },
+    {
+      alg: AlgorithmTypes.RS512,
+      hash: 'SHA-512',
+    },
+  ]
+  for (const tc of testCases) {
+    it(`${tc.alg} sign & verify`, async () => {
+      const alg = tc.alg
+      const payload = { message: 'hello world' }
+      const keyPair = await generateRSAKey(tc.hash)
+      const pemPrivateKey = await exportPEMPrivateKey(keyPair.privateKey)
+      const pemPublicKey = await exportPEMPublicKey(keyPair.publicKey)
+      const jwkPublicKey = await exportJWK(keyPair.publicKey)
+
+      const tok = await JWT.sign(payload, pemPrivateKey, alg)
+      expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
+
+      const keyPair2 = await generateRSAKey(tc.hash)
+      const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
+
+      let err = null
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, unexpectedPemPublicKey, alg)
+      } catch (e) {
+        err = e
+      }
+      expect(authorized).toBeUndefined()
+      expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+    })
+  }
 })
+
+async function exportPEMPrivateKey(key: CryptoKey): Promise<string> {
+  const exported = await crypto.subtle.exportKey('pkcs8', key)
+  const pem = `-----BEGIN PRIVATE KEY-----\n${encodeBase64(exported)}\n-----END PRIVATE KEY-----`
+  return pem
+}
+
+async function exportPEMPublicKey(key: CryptoKey): Promise<string> {
+  const exported = await crypto.subtle.exportKey('spki', key)
+  const pem = `-----BEGIN PUBLIC KEY-----\n${encodeBase64(exported)}\n-----END PUBLIC KEY-----`
+  return pem
+}
+
+async function exportJWK(key: CryptoKey): Promise<JsonWebKey> {
+  return await crypto.subtle.exportKey('jwk', key)
+}
+
+async function generateRSAKey(hash: string): Promise<CryptoKeyPair> {
+  return await crypto.subtle.generateKey(
+    {
+      hash,
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      name: 'RSASSA-PKCS1-v1_5',
+    },
+    true,
+    ['sign', 'verify']
+  )
+}
