@@ -87,6 +87,30 @@ const param = (name: AlgorithmTypeName): AlgorithmParams => {
         },
         saltLength: 64, // 512 >> 3,
       } satisfies RsaPssParams & RsaHashedImportParams
+    case 'ES256':
+      return {
+        name: 'ECDSA',
+        hash: {
+          name: 'SHA-256',
+        },
+        namedCurve: 'P-256',
+      } satisfies EcdsaParams & EcKeyImportParams
+    case 'ES384':
+      return {
+        name: 'ECDSA',
+        hash: {
+          name: 'SHA-384',
+        },
+        namedCurve: 'P-384',
+      } satisfies EcdsaParams & EcKeyImportParams
+    case 'ES512':
+      return {
+        name: 'ECDSA',
+        hash: {
+          name: 'SHA-512',
+        },
+        namedCurve: 'P-521',
+      } satisfies EcdsaParams & EcKeyImportParams
     default:
       throw new JwtAlgorithmNotImplemented(name)
   }

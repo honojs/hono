@@ -280,6 +280,48 @@ describe('JWT', () => {
       expect(authorized).toBeUndefined()
       expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
     })
+
+    const esTestCases = [
+      {
+        alg: AlgorithmTypes.ES256,
+        namedCurve: 'P-256',
+      },
+      {
+        alg: AlgorithmTypes.ES384,
+        namedCurve: 'P-384',
+      },
+      {
+        alg: AlgorithmTypes.ES512,
+        namedCurve: 'P-521',
+      },
+    ]
+    for (const tc of esTestCases) {
+      it(`${tc.alg} sign & verify`, async () => {
+        const alg = tc.alg
+        const payload = { message: 'hello world' }
+        const keyPair = await generateECDSAKey(tc.namedCurve)
+        const pemPrivateKey = await exportPEMPrivateKey(keyPair.privateKey)
+        const pemPublicKey = await exportPEMPublicKey(keyPair.publicKey)
+        const jwkPublicKey = await exportJWK(keyPair.publicKey)
+
+        const tok = await JWT.sign(payload, pemPrivateKey, alg)
+        expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+        expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
+
+        const keyPair2 = await generateECDSAKey(tc.namedCurve)
+        const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
+
+        let err = null
+        let authorized
+        try {
+          authorized = await JWT.verify(tok, unexpectedPemPublicKey, alg)
+        } catch (e) {
+          err = e
+        }
+        expect(authorized).toBeUndefined()
+        expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+      })
+    }
   }
 })
 
@@ -319,6 +361,17 @@ async function generateRSAPSSKey(hash: string): Promise<CryptoKeyPair> {
       modulusLength: 2048,
       publicExponent: new Uint8Array([1, 0, 1]),
       name: 'RSA-PSS',
+    },
+    true,
+    ['sign', 'verify']
+  )
+}
+
+async function generateECDSAKey(namedCurve: string): Promise<CryptoKeyPair> {
+  return await crypto.subtle.generateKey(
+    {
+      name: 'ECDSA',
+      namedCurve,
     },
     true,
     ['sign', 'verify']

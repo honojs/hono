@@ -57,6 +57,9 @@ export enum AlgorithmTypes {
   PS256 = 'PS256',
   PS384 = 'PS384',
   PS512 = 'PS512',
+  ES256 = 'ES256',
+  ES384 = 'ES384',
+  ES512 = 'ES512',
 }
 
 export enum CryptoKeyUsage {
