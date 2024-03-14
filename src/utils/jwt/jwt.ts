@@ -20,7 +20,7 @@ const decodeJwtPart = (part: string): unknown =>
   JSON.parse(utf8Decoder.decode(decodeBase64Url(part)))
 
 const param = (name: AlgorithmTypeName): AlgorithmParams => {
-  switch (name.toUpperCase()) {
+  switch (name) {
     case 'HS256':
       return {
         name: 'HMAC',
@@ -111,6 +111,13 @@ const param = (name: AlgorithmTypeName): AlgorithmParams => {
         },
         namedCurve: 'P-521',
       } satisfies EcdsaParams & EcKeyImportParams
+    case 'EdDSA':
+      // Currently, supported only Safari and Deno, Node.js.
+      // See: https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/verify
+      return {
+        name: 'Ed25519',
+        namedCurve: 'Ed25519',
+      }
     default:
       throw new JwtAlgorithmNotImplemented(name)
   }

@@ -60,6 +60,7 @@ export enum AlgorithmTypes {
   ES256 = 'ES256',
   ES384 = 'ES384',
   ES512 = 'ES512',
+  EdDSA = 'EdDSA',
 }
 
 export enum CryptoKeyUsage {

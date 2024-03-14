@@ -323,6 +323,32 @@ describe('JWT', () => {
       })
     }
   }
+
+  it('EdDSA sign & verify', async () => {
+    const alg = 'EdDSA'
+    const payload = { message: 'hello world' }
+    const keyPair = await generateEd25519Key()
+    const pemPrivateKey = await exportPEMPrivateKey(keyPair.privateKey)
+    const pemPublicKey = await exportPEMPublicKey(keyPair.publicKey)
+    const jwkPublicKey = await exportJWK(keyPair.publicKey)
+
+    const tok = await JWT.sign(payload, pemPrivateKey, alg)
+    expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+    expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
+
+    const keyPair2 = await generateEd25519Key()
+    const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
+
+    let err = null
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, unexpectedPemPublicKey, alg)
+    } catch (e) {
+      err = e
+    }
+    expect(authorized).toBeUndefined()
+    expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+  })
 })
 
 async function exportPEMPrivateKey(key: CryptoKey): Promise<string> {
@@ -372,6 +398,17 @@ async function generateECDSAKey(namedCurve: string): Promise<CryptoKeyPair> {
     {
       name: 'ECDSA',
       namedCurve,
+    },
+    true,
+    ['sign', 'verify']
+  )
+}
+
+async function generateEd25519Key(): Promise<CryptoKeyPair> {
+  return await crypto.subtle.generateKey(
+    {
+      name: 'Ed25519',
+      namedCurve: 'Ed25519',
     },
     true,
     ['sign', 'verify']
