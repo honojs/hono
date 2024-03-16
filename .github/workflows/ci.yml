@@ -32,6 +32,9 @@ jobs:
           node-version: '18.x'
       - uses: oven-sh/setup-bun@v1
       - run: bun install
+      - name: Debug
+        if: ${{ always() }}
+        uses: mxschmitt/action-tmate@v3
       - run: |
           bun run denoify
           if [[ `git status --porcelain` ]]; then
