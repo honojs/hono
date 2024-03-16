@@ -20,7 +20,7 @@ const decodeJwtPart = (part: string): unknown =>
   JSON.parse(utf8Decoder.decode(decodeBase64Url(part)))
 
 const param = (name: AlgorithmTypeName): AlgorithmParams => {
-  switch (name.toUpperCase()) {
+  switch (name) {
     case 'HS256':
       return {
         name: 'HMAC',
@@ -62,6 +62,61 @@ const param = (name: AlgorithmTypeName): AlgorithmParams => {
         hash: {
           name: 'SHA-512',
         },
+      }
+    case 'PS256':
+      return {
+        name: 'RSA-PSS',
+        hash: {
+          name: 'SHA-256',
+        },
+        saltLength: 32, // 256 >> 3
+      } satisfies RsaPssParams & RsaHashedImportParams
+    case 'PS384':
+      return {
+        name: 'RSA-PSS',
+        hash: {
+          name: 'SHA-384',
+        },
+        saltLength: 48, // 384 >> 3
+      } satisfies RsaPssParams & RsaHashedImportParams
+    case 'PS512':
+      return {
+        name: 'RSA-PSS',
+        hash: {
+          name: 'SHA-512',
+        },
+        saltLength: 64, // 512 >> 3,
+      } satisfies RsaPssParams & RsaHashedImportParams
+    case 'ES256':
+      return {
+        name: 'ECDSA',
+        hash: {
+          name: 'SHA-256',
+        },
+        namedCurve: 'P-256',
+      } satisfies EcdsaParams & EcKeyImportParams
+    case 'ES384':
+      return {
+        name: 'ECDSA',
+        hash: {
+          name: 'SHA-384',
+        },
+        namedCurve: 'P-384',
+      } satisfies EcdsaParams & EcKeyImportParams
+    case 'ES512':
+      return {
+        name: 'ECDSA',
+        hash: {
+          name: 'SHA-512',
+        },
+        namedCurve: 'P-521',
+      } satisfies EcdsaParams & EcKeyImportParams
+    case 'EdDSA':
+      // Currently, supported only Safari and Deno, Node.js.
+      // See: https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/verify
+      return {
+        name: 'Ed25519',
+        namedCurve: 'Ed25519',
       }
     default:
       throw new JwtAlgorithmNotImplemented(name)
