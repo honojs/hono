@@ -155,16 +155,27 @@ const createRequest = (event: CloudFrontEdgeEvent) => {
   })
 
   const requestBody = event.Records[0].cf.request.body
-  const body =
-    requestBody?.encoding === 'base64' && requestBody?.data
-      ? Buffer.from(requestBody.data, 'base64')
-      : requestBody?.data
+  const method = event.Records[0].cf.request.method
+  const body = createBody(method, requestBody)
 
   return new Request(url, {
     headers,
-    method: event.Records[0].cf.request.method,
+    method,
     body,
   })
+}
+
+export const createBody = (method: string, requestBody: CloudFrontRequest['body']) => {
+  if (!requestBody || !requestBody.data) {
+    return undefined
+  }
+  if (method === 'GET' || method === 'HEAD') {
+    return undefined
+  }
+  if (requestBody.encoding === 'base64') {
+    return Buffer.from(requestBody.data, 'base64')
+  }
+  return requestBody.data
 }
 
 export const isContentTypeBinary = (contentType: string) => {
