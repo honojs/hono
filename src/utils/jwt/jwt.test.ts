@@ -198,7 +198,7 @@ describe('JWT', () => {
     expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
   })
 
-  const testCases = [
+  const rsTestCases = [
     {
       alg: AlgorithmTypes.RS256,
       hash: 'SHA-256',
@@ -212,7 +212,7 @@ describe('JWT', () => {
       hash: 'SHA-512',
     },
   ]
-  for (const tc of testCases) {
+  for (const tc of rsTestCases) {
     it(`${tc.alg} sign & verify`, async () => {
       const alg = tc.alg
       const payload = { message: 'hello world' }
@@ -239,6 +239,116 @@ describe('JWT', () => {
       expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
     })
   }
+
+  const psTestCases = [
+    {
+      alg: AlgorithmTypes.PS256,
+      hash: 'SHA-256',
+    },
+    {
+      alg: AlgorithmTypes.PS384,
+      hash: 'SHA-384',
+    },
+    {
+      alg: AlgorithmTypes.PS512,
+      hash: 'SHA-512',
+    },
+  ]
+  for (const tc of psTestCases) {
+    it(`${tc.alg} sign & verify`, async () => {
+      const alg = tc.alg
+      const payload = { message: 'hello world' }
+      const keyPair = await generateRSAPSSKey(tc.hash)
+      const pemPrivateKey = await exportPEMPrivateKey(keyPair.privateKey)
+      const pemPublicKey = await exportPEMPublicKey(keyPair.publicKey)
+      const jwkPublicKey = await exportJWK(keyPair.publicKey)
+
+      const tok = await JWT.sign(payload, pemPrivateKey, alg)
+      expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
+
+      const keyPair2 = await generateRSAPSSKey(tc.hash)
+      const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
+
+      let err = null
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, unexpectedPemPublicKey, alg)
+      } catch (e) {
+        err = e
+      }
+      expect(authorized).toBeUndefined()
+      expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+    })
+
+    const esTestCases = [
+      {
+        alg: AlgorithmTypes.ES256,
+        namedCurve: 'P-256',
+      },
+      {
+        alg: AlgorithmTypes.ES384,
+        namedCurve: 'P-384',
+      },
+      {
+        alg: AlgorithmTypes.ES512,
+        namedCurve: 'P-521',
+      },
+    ]
+    for (const tc of esTestCases) {
+      it(`${tc.alg} sign & verify`, async () => {
+        const alg = tc.alg
+        const payload = { message: 'hello world' }
+        const keyPair = await generateECDSAKey(tc.namedCurve)
+        const pemPrivateKey = await exportPEMPrivateKey(keyPair.privateKey)
+        const pemPublicKey = await exportPEMPublicKey(keyPair.publicKey)
+        const jwkPublicKey = await exportJWK(keyPair.publicKey)
+
+        const tok = await JWT.sign(payload, pemPrivateKey, alg)
+        expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+        expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
+
+        const keyPair2 = await generateECDSAKey(tc.namedCurve)
+        const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
+
+        let err = null
+        let authorized
+        try {
+          authorized = await JWT.verify(tok, unexpectedPemPublicKey, alg)
+        } catch (e) {
+          err = e
+        }
+        expect(authorized).toBeUndefined()
+        expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+      })
+    }
+  }
+
+  it('EdDSA sign & verify', async () => {
+    const alg = 'EdDSA'
+    const payload = { message: 'hello world' }
+    const keyPair = await generateEd25519Key()
+    const pemPrivateKey = await exportPEMPrivateKey(keyPair.privateKey)
+    const pemPublicKey = await exportPEMPublicKey(keyPair.publicKey)
+    const jwkPublicKey = await exportJWK(keyPair.publicKey)
+
+    const tok = await JWT.sign(payload, pemPrivateKey, alg)
+    expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+    expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
+
+    const keyPair2 = await generateEd25519Key()
+    const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
+
+    let err = null
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, unexpectedPemPublicKey, alg)
+    } catch (e) {
+      err = e
+    }
+    expect(authorized).toBeUndefined()
+    expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+  })
 })
 
 async function exportPEMPrivateKey(key: CryptoKey): Promise<string> {
@@ -264,6 +374,41 @@ async function generateRSAKey(hash: string): Promise<CryptoKeyPair> {
       modulusLength: 2048,
       publicExponent: new Uint8Array([1, 0, 1]),
       name: 'RSASSA-PKCS1-v1_5',
+    },
+    true,
+    ['sign', 'verify']
+  )
+}
+
+async function generateRSAPSSKey(hash: string): Promise<CryptoKeyPair> {
+  return await crypto.subtle.generateKey(
+    {
+      hash,
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      name: 'RSA-PSS',
+    },
+    true,
+    ['sign', 'verify']
+  )
+}
+
+async function generateECDSAKey(namedCurve: string): Promise<CryptoKeyPair> {
+  return await crypto.subtle.generateKey(
+    {
+      name: 'ECDSA',
+      namedCurve,
+    },
+    true,
+    ['sign', 'verify']
+  )
+}
+
+async function generateEd25519Key(): Promise<CryptoKeyPair> {
+  return await crypto.subtle.generateKey(
+    {
+      name: 'Ed25519',
+      namedCurve: 'Ed25519',
     },
     true,
     ['sign', 'verify']

@@ -54,6 +54,13 @@ export enum AlgorithmTypes {
   RS256 = 'RS256',
   RS384 = 'RS384',
   RS512 = 'RS512',
+  PS256 = 'PS256',
+  PS384 = 'PS384',
+  PS512 = 'PS512',
+  ES256 = 'ES256',
+  ES384 = 'ES384',
+  ES512 = 'ES512',
+  EdDSA = 'EdDSA',
 }
 
 export enum CryptoKeyUsage {
@@ -73,6 +80,7 @@ export interface AlgorithmParams {
   hash?: {
     name: string
   }
+  saltLength?: number
 }
 
 export type AlgorithmTypeName = keyof typeof AlgorithmTypes
