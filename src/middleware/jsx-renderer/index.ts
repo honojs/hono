@@ -45,15 +45,15 @@ const createRenderer =
     )}`
 
     if (options?.stream) {
-      return c.body(renderToReadableStream(body), {
-        headers:
-          options.stream === true
-            ? {
-                'Transfer-Encoding': 'chunked',
-                'Content-Type': 'text/html; charset=UTF-8',
-              }
-            : options.stream,
-      })
+      if (options.stream === true) {
+        c.header('Transfer-Encoding', 'chunked')
+        c.header('Content-Type', 'text/html; charset=UTF-8')
+      } else {
+        for (const [key, value] of Object.entries(options.stream)) {
+          c.header(key, value)
+        }
+      }
+      return c.body(renderToReadableStream(body))
     } else {
       return c.html(body)
     }

@@ -314,6 +314,23 @@ d.replaceWith(c.content)
     ])
   })
 
+  it('Should return as streaming content with headers added in a handler', async () => {
+    const app = new Hono()
+    app.use(jsxRenderer(async ({ children }) => <div>{children}</div>, { stream: true }))
+    app.get('/', (c) => {
+      c.header('X-Message-Set', 'Hello')
+      c.header('X-Message-Append', 'Hello', { append: true })
+      return c.render('Hi', { title: 'Hi' })
+    })
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Transfer-Encoding')).toBe('chunked')
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(res.headers.get('X-Message-Set')).toBe('Hello')
+    expect(res.headers.get('X-Message-Append')).toBe('Hello')
+    expect(await res.text()).toBe('<!DOCTYPE html><div>Hi</div>')
+  })
+
   it('Env', async () => {
     type JSXRendererEnv = {
       Variables: {
