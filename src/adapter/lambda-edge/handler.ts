@@ -165,7 +165,7 @@ const createRequest = (event: CloudFrontEdgeEvent) => {
   })
 }
 
-export function createBody(method: string, requestBody: CloudFrontRequest['body']) {
+export const createBody = (method: string, requestBody: CloudFrontRequest['body']) => {
   if (!requestBody || !requestBody.data) {
     return undefined
   }
