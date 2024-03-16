@@ -172,7 +172,7 @@ export const createBody = (method: string, requestBody: CloudFrontRequest['body'
   if (method === 'GET' || method === 'HEAD') {
     return undefined
   }
-  if (requestBody.encoding === 'base64' && requestBody.data) {
+  if (requestBody.encoding === 'base64') {
     return Buffer.from(requestBody.data, 'base64')
   }
   return requestBody.data
