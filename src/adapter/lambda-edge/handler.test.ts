@@ -1,4 +1,4 @@
-import { isContentTypeBinary } from './handler'
+import { createBody, isContentTypeBinary } from './handler'
 
 describe('isContentTypeBinary', () => {
   it('Should determine whether it is binary', () => {
@@ -13,5 +13,24 @@ describe('isContentTypeBinary', () => {
     expect(isContentTypeBinary('application/json')).toBe(false)
     expect(isContentTypeBinary('application/ld+json')).toBe(false)
     expect(isContentTypeBinary('application/json; charset=UTF-8')).toBe(false)
+  })
+})
+
+describe('createBody', () => {
+  it('Should the request be a GET or HEAD, the Request must not include a Body', () => {
+    const data = Buffer.from('test')
+    const body = {
+      action: 'read-only',
+      data: data.toString('base64'),
+      encoding: 'base64',
+      inputTruncated: false,
+    }
+
+    expect(createBody('GET', body)).toEqual(undefined)
+    expect(createBody('GET', body)).not.toEqual(data)
+    expect(createBody('HEAD', body)).toEqual(undefined)
+    expect(createBody('HEAD', body)).not.toEqual(data)
+    expect(createBody('POST', body)).toEqual(data)
+    expect(createBody('POST', body)).not.toEqual(undefined)
   })
 })
