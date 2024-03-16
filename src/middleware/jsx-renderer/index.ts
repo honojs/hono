@@ -28,7 +28,6 @@ const createRenderer =
         ? ''
         : '<!DOCTYPE html>'
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     const currentLayout = component
       ? jsx(
           component,
@@ -44,7 +43,6 @@ const createRenderer =
       { value: c },
       currentLayout as any
     )}`
-    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     if (options?.stream) {
       return c.body(renderToReadableStream(body), {
@@ -72,15 +70,12 @@ export const jsxRenderer = (
         return component({ ...props, Layout })
       })
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     c.setRenderer(createRenderer(c, Layout, component, options) as any)
     return next()
   }
 
 export const useRequestContext = <
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   P extends string = any,
   I extends Input = {}
 >(): Context<E, P, I> => {
