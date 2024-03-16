@@ -31,6 +31,8 @@ jobs:
         with:
           node-version: '18.x'
       - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: '1.0.25'
       - run: bun install
       - run: |
           bun run denoify
