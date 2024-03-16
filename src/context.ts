@@ -360,7 +360,14 @@ export class Context<
     }
 
     if (arg && typeof arg !== 'number') {
-      const headers = setHeaders(new Headers(arg.headers), this.#preparedHeaders)
+      const header = new Headers(arg.headers)
+      if (this.#headers) {
+        // If the header is set by c.header() and arg.headers, c.header() will be prioritized.
+        this.#headers.forEach((v, k) => {
+          header.set(k, v)
+        })
+      }
+      const headers = setHeaders(header, this.#preparedHeaders)
       return new Response(data, {
         headers,
         status: arg.status ?? this.#status,

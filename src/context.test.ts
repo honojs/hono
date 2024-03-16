@@ -66,6 +66,18 @@ describe('Context', () => {
     expect(foo).toBe('Bar, Buzz')
   })
 
+  it('Should set headers if already this.#headers is created by `c.header()`', async () => {
+    c.header('X-Foo', 'Bar')
+    c.header('X-Foo', 'Buzz', { append: true })
+    const res = c.body('Hi', {
+      headers: {
+        'X-Message': 'Hi',
+      },
+    })
+    expect(res.headers.get('X-Foo')).toBe('Bar, Buzz')
+    expect(res.headers.get('X-Message')).toBe('Hi')
+  })
+
   it('c.header() - append, c.html()', async () => {
     c.header('X-Foo', 'Bar', { append: true })
     const res = await c.html('<h1>This rendered fine</h1>')
