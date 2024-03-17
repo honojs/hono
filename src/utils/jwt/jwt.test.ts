@@ -223,6 +223,7 @@ describe('JWT', () => {
 
       const tok = await JWT.sign(payload, pemPrivateKey, alg)
       expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, pemPrivateKey, alg)).toEqual(payload)
       expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
 
       const keyPair2 = await generateRSAKey(tc.hash)
@@ -265,6 +266,7 @@ describe('JWT', () => {
 
       const tok = await JWT.sign(payload, pemPrivateKey, alg)
       expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, pemPrivateKey, alg)).toEqual(payload)
       expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
 
       const keyPair2 = await generateRSAPSSKey(tc.hash)
@@ -306,6 +308,7 @@ describe('JWT', () => {
 
         const tok = await JWT.sign(payload, pemPrivateKey, alg)
         expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+        expect(await JWT.verify(tok, pemPrivateKey, alg)).toEqual(payload)
         expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
 
         const keyPair2 = await generateECDSAKey(tc.namedCurve)
@@ -334,6 +337,7 @@ describe('JWT', () => {
 
     const tok = await JWT.sign(payload, pemPrivateKey, alg)
     expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+    expect(await JWT.verify(tok, pemPrivateKey, alg)).toEqual(payload)
     expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
 
     const keyPair2 = await generateEd25519Key()
