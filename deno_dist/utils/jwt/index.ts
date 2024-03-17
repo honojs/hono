@@ -1,1 +1,1 @@
-export * as Jwt from './jwt.ts'
+export { sign, verify, decode } from './jwt.ts'
