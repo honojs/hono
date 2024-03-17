@@ -233,7 +233,7 @@ class Hono<
    * })
    * ```
    */
-  onError: (handler: ErrorHandler<E>) => Hono<E, S, BasePath> = (handler) =>  {
+  onError: (handler: ErrorHandler<E>) => Hono<E, S, BasePath> = (handler) => {
     this.errorHandler = handler
     return this
   }
@@ -371,7 +371,11 @@ class Hono<
    * `.fetch()` will be entry point of your app.
    * @see https://hono.dev/api/hono#fetch
    */
-  fetch: (request: Request, Env?: E['Bindings'] | {}, executionCtx?: ExecutionContext) => Response | Promise<Response> = (request, Env, executionCtx) => {
+  fetch: (
+    request: Request,
+    Env?: E['Bindings'] | {},
+    executionCtx?: ExecutionContext
+  ) => Response | Promise<Response> = (request, Env, executionCtx) => {
     return this.dispatch(request, executionCtx, Env, request.method)
   }
 
@@ -392,9 +396,7 @@ class Hono<
     requestInit?: RequestInit,
     Env?: E['Bindings'] | {},
     executionCtx?: ExecutionContext
-  ) => Response | Promise<Response> = (
-    input, requestInit, Env, executionCtx
-  ) => {
+  ) => Response | Promise<Response> = (input, requestInit, Env, executionCtx) => {
     if (input instanceof Request) {
       if (requestInit !== undefined) {
         input = new Request(input, requestInit)

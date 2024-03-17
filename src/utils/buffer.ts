@@ -48,7 +48,10 @@ export const bufferToString = (buffer: ArrayBuffer): string => {
   return buffer
 }
 
-export const bufferToFormData = (arrayBuffer: ArrayBuffer, contentType: string): Promise<FormData> => {
+export const bufferToFormData = (
+  arrayBuffer: ArrayBuffer,
+  contentType: string
+): Promise<FormData> => {
   const response = new Response(arrayBuffer, {
     headers: {
       'Content-Type': contentType,
