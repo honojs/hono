@@ -472,6 +472,27 @@ export const runTest = ({
       })
     })
 
+    describe('non ascii characters', () => {
+      beforeEach(() => {
+        router.add('GET', '/$/:name', 'get $ name')
+        router.add('GET', '/()/:name', 'get () name')
+      })
+
+      it('GET /$/hono', () => {
+        const res = match('GET', '/$/hono')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('get $ name')
+        expect(res[0].params['name']).toEqual('hono')
+      })
+
+      it('GET /()/hono', () => {
+        const res = match('GET', '/()/hono')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('get () name')
+        expect(res[0].params['name']).toEqual('hono')
+      })
+    })
+
     describe('REST API', () => {
       beforeEach(() => {
         router.add('GET', '/users/:username{[a-z]+}', 'profile')
