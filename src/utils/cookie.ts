@@ -2,6 +2,13 @@ import { decodeURIComponent_ } from './url'
 
 export type Cookie = Record<string, string>
 export type SignedCookie = Record<string, string | false>
+
+type PartitionCookieConstraint =
+  | { partition: true; secure: true }
+  | { partition?: boolean; secure?: boolean } // reset to default
+type SecureCookieConstraint = { secure: true }
+type HostCookieConstraint = { secure: true; path: '/'; domain?: undefined }
+
 export type CookieOptions = {
   domain?: string
   expires?: Date
@@ -13,8 +20,14 @@ export type CookieOptions = {
   sameSite?: 'Strict' | 'Lax' | 'None'
   partitioned?: boolean
   prefix?: CookiePrefixOptions
-}
+} & PartitionCookieConstraint
 export type CookiePrefixOptions = 'host' | 'secure'
+
+export type CookieConstraint<Name> = Name extends `__Secure-${string}`
+  ? CookieOptions & SecureCookieConstraint
+  : Name extends `__Host-${string}`
+  ? CookieOptions & HostCookieConstraint
+  : CookieOptions
 
 const algorithm = { name: 'HMAC', hash: 'SHA-256' }
 
@@ -190,7 +203,11 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   return cookie
 }
 
-export const serialize = (name: string, value: string, opt: CookieOptions = {}): string => {
+export const serialize = <Name extends string>(
+  name: Name,
+  value: string,
+  opt?: CookieConstraint<Name>
+): string => {
   value = encodeURIComponent(value)
   return _serialize(name, value, opt)
 }
