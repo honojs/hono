@@ -1,6 +1,7 @@
 import { encodeBase64Url, decodeBase64Url } from '../../utils/encode'
 import type { SignatureAlgorithm } from './jwa'
 import { AlgorithmTypes } from './jwa'
+import type { SignatureKey } from './jws'
 import { signing, verifying } from './jws'
 import { JwtHeaderInvalid, JwtTokenIssuedAt } from './types'
 import {
@@ -37,7 +38,7 @@ export function isTokenHeader(obj: any): obj is TokenHeader {
 
 export const sign = async (
   payload: unknown,
-  privateKey: string | JsonWebKey,
+  privateKey: SignatureKey,
   alg: SignatureAlgorithm = 'HS256'
 ): Promise<string> => {
   const encodedPayload = encodeJwtPart(payload)
@@ -53,7 +54,7 @@ export const sign = async (
 
 export const verify = async (
   token: string,
-  publicKey: string | JsonWebKey,
+  publicKey: SignatureKey,
   alg: SignatureAlgorithm = 'HS256'
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> => {
