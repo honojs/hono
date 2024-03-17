@@ -57,12 +57,3 @@ export enum CryptoKeyUsage {
   WrapKey = 'wrapKey',
   UnwrapKey = 'unwrapKey',
 }
-
-export interface AlgorithmParams {
-  name: string
-  namedCurve?: string
-  hash?: {
-    name: string
-  }
-  saltLength?: number
-}
