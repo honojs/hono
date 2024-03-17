@@ -15,8 +15,10 @@ type KeyAlgorithm =
   | (EcdsaParams & EcKeyImportParams)
   | HmacImportParams
 
+export type SignatureKey = string | JsonWebKey | CryptoKey
+
 export async function signing(
-  privateKey: string | JsonWebKey,
+  privateKey: SignatureKey,
   alg: SignatureAlgorithm,
   data: BufferSource
 ): Promise<ArrayBuffer> {
@@ -26,7 +28,7 @@ export async function signing(
 }
 
 export async function verifying(
-  publicKey: string | JsonWebKey,
+  publicKey: SignatureKey,
   alg: SignatureAlgorithm,
   signature: BufferSource,
   data: BufferSource
@@ -40,12 +42,15 @@ function pemToBinary(pem: string): Uint8Array {
   return decodeBase64(pem.replace(/-+(BEGIN|END).*/g, '').replace(/\s/g, ''))
 }
 
-async function importPrivateKey(
-  key: string | JsonWebKey,
-  alg: KeyImporterAlgorithm
-): Promise<CryptoKey> {
+async function importPrivateKey(key: SignatureKey, alg: KeyImporterAlgorithm): Promise<CryptoKey> {
   if (!crypto.subtle || !crypto.subtle.importKey) {
     throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
+  }
+  if (key instanceof CryptoKey) {
+    if (key.type !== 'private') {
+      throw new Error(`unexpected non private key: CryptoKey.type is ${key.type}`)
+    }
+    return key
   }
   const usages = [CryptoKeyUsage.Sign]
   if (typeof key === 'object') {
@@ -59,12 +64,15 @@ async function importPrivateKey(
   return await crypto.subtle.importKey('raw', utf8Encoder.encode(key), alg, false, usages)
 }
 
-async function importPublicKey(
-  key: string | JsonWebKey,
-  alg: KeyImporterAlgorithm
-): Promise<CryptoKey> {
+async function importPublicKey(key: SignatureKey, alg: KeyImporterAlgorithm): Promise<CryptoKey> {
   if (!crypto.subtle || !crypto.subtle.importKey) {
     throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
+  }
+  if (key instanceof CryptoKey) {
+    if (key.type === 'public' || key.type === 'secret') {
+      return key
+    }
+    key = await exportPublicJwkFrom(key)
   }
   if (typeof key === 'string' && key.includes('PRIVATE')) {
     // https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/importKey#pkcs_8_import
