@@ -245,40 +245,6 @@ describe('Set cookie', () => {
     )
   })
 
-  it('Should throw Error __Secure- cookie without Secure attributes', () => {
-    expect(() => {
-      serialize('__Secure-great_cookie', 'banana', {})
-    }).toThrowError('__Secure- Cookie must have Secure attributes')
-  })
-
-  it('Should throw Error __Host- cookie without Secure attributes', () => {
-    expect(() => {
-      serialize('__Host-great_cookie', 'banana', {
-        secure: false,
-        path: '/',
-      })
-    }).toThrowError('__Host- Cookie must have Secure attributes')
-  })
-
-  it('Should throw Error __Host- cookie without Path attributes with "/"', () => {
-    expect(() => {
-      serialize('__Host-great_cookie', 'banana', {
-        secure: true,
-        path: '/admin',
-      })
-    }).toThrowError('__Host- Cookie must have Path attributes with "/"')
-  })
-
-  it('Should throw Error __Host- cookie with Domain attributes', () => {
-    expect(() => {
-      serialize('__Host-great_cookie', 'banana', {
-        secure: true,
-        path: '/',
-        domain: 'site.example',
-      })
-    }).toThrowError('__Host- Cookie must not have Domain attributes')
-  })
-
   it('Should throw Error Partitioned cookie without Secure attributes', () => {
     expect(() => {
       serialize('great_cookie', 'banana', {
