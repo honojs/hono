@@ -47,22 +47,6 @@ export class JwtTokenSignatureMismatched extends Error {
   }
 }
 
-export enum AlgorithmTypes {
-  HS256 = 'HS256',
-  HS384 = 'HS384',
-  HS512 = 'HS512',
-  RS256 = 'RS256',
-  RS384 = 'RS384',
-  RS512 = 'RS512',
-  PS256 = 'PS256',
-  PS384 = 'PS384',
-  PS512 = 'PS512',
-  ES256 = 'ES256',
-  ES384 = 'ES384',
-  ES512 = 'ES512',
-  EdDSA = 'EdDSA',
-}
-
 export enum CryptoKeyUsage {
   Encrypt = 'encrypt',
   Decrypt = 'decrypt',
@@ -81,23 +65,4 @@ export interface AlgorithmParams {
     name: string
   }
   saltLength?: number
-}
-
-export type AlgorithmTypeName = keyof typeof AlgorithmTypes
-
-export interface TokenHeader {
-  alg: AlgorithmTypeName
-  typ: 'JWT'
-}
-
-// eslint-disable-next-line
-export function isTokenHeader(obj: any): obj is TokenHeader {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'alg' in obj &&
-    Object.values(AlgorithmTypes).includes(obj.alg) &&
-    'typ' in obj &&
-    obj.typ === 'JWT'
-  )
 }
