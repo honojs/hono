@@ -1,3 +1,4 @@
+import { getRuntimeKey } from '../../helper'
 import { decodeBase64 } from '../encode'
 import type { SignatureAlgorithm } from './jwa'
 import { JwtAlgorithmNotImplemented } from './types'
@@ -46,7 +47,7 @@ async function importPrivateKey(key: SignatureKey, alg: KeyImporterAlgorithm): P
   if (!crypto.subtle || !crypto.subtle.importKey) {
     throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
   }
-  if (key instanceof CryptoKey) {
+  if (isCryptoKey(key)) {
     if (key.type !== 'private') {
       throw new Error(`unexpected non private key: CryptoKey.type is ${key.type}`)
     }
@@ -68,7 +69,7 @@ async function importPublicKey(key: SignatureKey, alg: KeyImporterAlgorithm): Pr
   if (!crypto.subtle || !crypto.subtle.importKey) {
     throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
   }
-  if (key instanceof CryptoKey) {
+  if (isCryptoKey(key)) {
     if (key.type === 'public' || key.type === 'secret') {
       return key
     }
@@ -210,4 +211,14 @@ function getKeyAlgorithm(name: SignatureAlgorithm): KeyAlgorithm {
     default:
       throw new JwtAlgorithmNotImplemented(name)
   }
+}
+
+function isCryptoKey(key: SignatureKey): key is CryptoKey {
+  const runtime = getRuntimeKey()
+  // @ts-expect-error CryptoKey hasn't exported to global in node v18
+  if (runtime === 'node' && !!crypto.webcrypto) {
+    // @ts-expect-error CryptoKey hasn't exported to global in node v18
+    return key instanceof crypto.webcrypto.CryptoKey
+  }
+  return key instanceof CryptoKey
 }
