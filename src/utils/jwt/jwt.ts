@@ -1,8 +1,8 @@
 import { encodeBase64Url, decodeBase64Url } from '../../utils/encode'
-import { param } from './jwa'
+import type { SignatureAlgorithm } from './jwa'
+import { AlgorithmTypes, param } from './jwa'
 import { importPrivateKey, importPublicKey } from './key'
-import type { TokenHeader, AlgorithmTypeName } from './types'
-import { JwtHeaderInvalid, JwtTokenIssuedAt, isTokenHeader } from './types'
+import { JwtHeaderInvalid, JwtTokenIssuedAt } from './types'
 import {
   JwtTokenInvalid,
   JwtTokenNotBefore,
@@ -18,10 +18,27 @@ const encodeSignaturePart = (buf: ArrayBufferLike): string => encodeBase64Url(bu
 const decodeJwtPart = (part: string): unknown =>
   JSON.parse(utf8Decoder.decode(decodeBase64Url(part)))
 
+export interface TokenHeader {
+  alg: SignatureAlgorithm
+  typ: 'JWT'
+}
+
+// eslint-disable-next-line
+export function isTokenHeader(obj: any): obj is TokenHeader {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'alg' in obj &&
+    Object.values(AlgorithmTypes).includes(obj.alg) &&
+    'typ' in obj &&
+    obj.typ === 'JWT'
+  )
+}
+
 const signing = async (
   data: string,
   privateKey: string | JsonWebKey,
-  alg: AlgorithmTypeName = 'HS256'
+  alg: SignatureAlgorithm = 'HS256'
 ): Promise<ArrayBuffer> => {
   const algorithm = param(alg)
   const cryptoKey = await importPrivateKey(privateKey, algorithm)
@@ -31,7 +48,7 @@ const signing = async (
 export const sign = async (
   payload: unknown,
   privateKey: string | JsonWebKey,
-  alg: AlgorithmTypeName = 'HS256'
+  alg: SignatureAlgorithm = 'HS256'
 ): Promise<string> => {
   const encodedPayload = encodeJwtPart(payload)
   const encodedHeader = encodeJwtPart({ alg, typ: 'JWT' } satisfies TokenHeader)
@@ -46,7 +63,7 @@ export const sign = async (
 
 const verifying = async (
   publicKey: string | JsonWebKey,
-  alg: AlgorithmTypeName = 'HS256',
+  alg: SignatureAlgorithm = 'HS256',
   signature: BufferSource,
   data: BufferSource
 ): Promise<boolean> => {
@@ -58,7 +75,7 @@ const verifying = async (
 export const verify = async (
   token: string,
   publicKey: string | JsonWebKey,
-  alg: AlgorithmTypeName = 'HS256'
+  alg: SignatureAlgorithm = 'HS256'
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> => {
   const tokenParts = token.split('.')

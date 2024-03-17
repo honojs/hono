@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { vi } from 'vitest'
 import { encodeBase64 } from '../encode'
+import { AlgorithmTypes } from './jwa'
 import * as JWT from './jwt'
 import {
-  AlgorithmTypes,
   JwtAlgorithmNotImplemented,
   JwtTokenExpired,
   JwtTokenInvalid,
@@ -11,6 +11,26 @@ import {
   JwtTokenNotBefore,
   JwtTokenSignatureMismatched,
 } from './types'
+
+describe('isTokenHeader', () => {
+  it('should return true for valid TokenHeader', () => {
+    const validTokenHeader: JWT.TokenHeader = {
+      alg: AlgorithmTypes.HS256,
+      typ: 'JWT',
+    }
+
+    expect(JWT.isTokenHeader(validTokenHeader)).toBe(true)
+  })
+
+  it('should return false for invalid TokenHeader', () => {
+    const invalidTokenHeader = {
+      alg: 'invalid',
+      typ: 'JWT',
+    }
+
+    expect(JWT.isTokenHeader(invalidTokenHeader)).toBe(false)
+  })
+})
 
 describe('JWT', () => {
   it('JwtAlgorithmNotImplemented', async () => {
