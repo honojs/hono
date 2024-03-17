@@ -1,7 +1,7 @@
 import { encodeBase64Url, decodeBase64Url } from '../../utils/encode'
 import type { SignatureAlgorithm } from './jwa'
-import { AlgorithmTypes, param } from './jwa'
-import { importPrivateKey, importPublicKey } from './key'
+import { AlgorithmTypes } from './jwa'
+import { signing, verifying } from './jws'
 import { JwtHeaderInvalid, JwtTokenIssuedAt } from './types'
 import {
   JwtTokenInvalid,
@@ -35,16 +35,6 @@ export function isTokenHeader(obj: any): obj is TokenHeader {
   )
 }
 
-const signing = async (
-  data: string,
-  privateKey: string | JsonWebKey,
-  alg: SignatureAlgorithm = 'HS256'
-): Promise<ArrayBuffer> => {
-  const algorithm = param(alg)
-  const cryptoKey = await importPrivateKey(privateKey, algorithm)
-  return await crypto.subtle.sign(algorithm, cryptoKey, utf8Encoder.encode(data))
-}
-
 export const sign = async (
   payload: unknown,
   privateKey: string | JsonWebKey,
@@ -55,21 +45,10 @@ export const sign = async (
 
   const partialToken = `${encodedHeader}.${encodedPayload}`
 
-  const signaturePart = await signing(partialToken, privateKey, alg)
+  const signaturePart = await signing(privateKey, alg, utf8Encoder.encode(partialToken))
   const signature = encodeSignaturePart(signaturePart)
 
   return `${partialToken}.${signature}`
-}
-
-const verifying = async (
-  publicKey: string | JsonWebKey,
-  alg: SignatureAlgorithm = 'HS256',
-  signature: BufferSource,
-  data: BufferSource
-): Promise<boolean> => {
-  const algorithm = param(alg)
-  const cryptoKey = await importPublicKey(publicKey, algorithm)
-  return await crypto.subtle.verify(algorithm, cryptoKey, signature, data)
 }
 
 export const verify = async (
