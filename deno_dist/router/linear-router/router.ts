@@ -4,7 +4,7 @@ import { checkOptionalParameter } from '../../utils/url.ts'
 
 type RegExpMatchArrayWithIndices = RegExpMatchArray & { indices: [number, number][] }
 
-const emptyParams = {}
+const emptyParams = Object.create(null)
 
 const splitPathRe = /\/(:\w+(?:{(?:(?:{[\d,]+})|[^}])+})?)|\/[^\/\?]+|(\?)/g
 const splitByStarRe = /\*/
@@ -66,7 +66,7 @@ export class LinearRouter<T> implements Router<T> {
         }
         handlers.push([handler, emptyParams])
       } else if (hasLabel && !hasStar) {
-        const params: Record<string, string> = {}
+        const params: Record<string, string> = Object.create(null)
         const parts = routePath.match(splitPathRe) as string[]
 
         const lastIndex = parts.length - 1

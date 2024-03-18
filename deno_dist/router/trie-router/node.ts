@@ -139,7 +139,9 @@ export class Node<T> {
           if (isLast === true) {
             // '/hello/*' => match '/hello'
             if (nextNode.children['*']) {
-              handlerSets.push(...this.gHSets(nextNode.children['*'], method, node.params, Object.create(null)))
+              handlerSets.push(
+                ...this.gHSets(nextNode.children['*'], method, node.params, Object.create(null))
+              )
             }
             handlerSets.push(...this.gHSets(nextNode, method, node.params, Object.create(null)))
           } else {
