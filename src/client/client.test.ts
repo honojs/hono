@@ -500,6 +500,27 @@ describe('Merge path with `app.route()`', () => {
       expect(url.href).toBe('http://localhost/api/bar')
     })
   })
+
+  describe('With a blank path', () => {
+    const app = new Hono().basePath('/api/v1')
+    const routes = app.route(
+      '/me',
+      new Hono().route(
+        '',
+        new Hono().get('', async (c) => {
+          return c.json({ name: 'hono' })
+        })
+      )
+    )
+    const client = hc<typeof routes>('http://localhost')
+
+    it('Should infer paths correctly', async () => {
+      // Should not a throw type error
+      const url = client.api.v1.me.$url()
+      expectTypeOf<URL>(url)
+      expect(url.href).toBe('http://localhost/api/v1/me')
+    })
+  })
 })
 
 describe('Use custom fetch method', () => {
