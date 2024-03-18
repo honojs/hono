@@ -12,21 +12,21 @@ export class PatternRouter<T> implements Router<T> {
     if (endsWithWildcard) {
       path = path.slice(0, -2)
     }
-
-    const parts = path.match(/\/?(:\w+(?:{(?:(?:{[\d,]+})|[^}])+})?)|\/?[^\/\?]+|(\?)/g) || []
-    if (parts[parts.length - 1] === '?') {
-      this.add(method, parts.slice(0, parts.length - 2).join(''), handler)
-      parts.pop()
+    if (path.at(-1) === '?') {
+      path = path.slice(0, -1)
+      this.add(method, path.replace(/\/[^/]+$/, ''), handler)
     }
 
-    for (let i = 0, len = parts.length; i < len; i++) {
-      const match = parts[i].match(/^\/:([^{]+)(?:{(.*)})?/)
-      if (match) {
-        parts[i] = `/(?<${match[1]}>${match[2] || '[^/]+'})`
-      } else if (parts[i] === '/*') {
-        parts[i] = '/[^/]+'
+    const parts = (path.match(/\/?(:\w+(?:{(?:(?:{[\d,]+})|[^}])+})?)|\/?[^\/\?]+/g) || []).map(
+      (part) => {
+        const match = part.match(/^\/:([^{]+)(?:{(.*)})?/)
+        return match
+          ? `/(?<${match[1]}>${match[2] || '[^/]+'})`
+          : part === '/*'
+          ? '/[^/]+'
+          : part.replace(/[.\\+*[^\]$()]/g, '\\$&')
       }
-    }
+    )
 
     let re
     try {
