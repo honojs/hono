@@ -45,7 +45,7 @@ function compareKey(a: string, b: string): number {
 export class Node {
   index?: number
   varIndex?: number
-  children: Record<string, Node> = {}
+  children: Record<string, Node> = Object.create(null)
 
   insert(
     tokens: readonly string[],
