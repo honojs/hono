@@ -28,6 +28,15 @@ describe('Get with *', () => {
   })
 })
 
+describe('Get with * inclusing JS reserved words', () => {
+  const node = new Node()
+  node.insert('get', '*', 'get all')
+  it('get /', () => {
+    expect(node.search('get', '/hello/constructor')[0].length).toBe(1)
+    expect(node.search('get', '/hello/__proto__')[0].length).toBe(1)
+  })
+})
+
 describe('Basic Usage', () => {
   const node = new Node()
   node.insert('get', '/hello', 'get hello')

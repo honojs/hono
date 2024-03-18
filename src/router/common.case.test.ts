@@ -46,7 +46,7 @@ export const runTest = ({
                 params: Object.keys(r[1]).reduce((acc, key) => {
                   acc[key] = stash[(r[1] as ParamIndexMap)[key]]
                   return acc
-                }, {} as Params),
+                }, Object.create(null) as Params),
               }
             : { handler: r[0], params: r[1] as Params }
         )
@@ -75,6 +75,31 @@ export const runTest = ({
         expect(res.length).toBe(0)
         res = match('GET', '/')
         expect(res.length).toBe(0)
+      })
+    })
+
+    describe('Reserved words', () => {
+      it('Reserved words and named parameter', async () => {
+        router.add('GET', '/entry/:constructor', 'get entry')
+        const res = match('GET', '/entry/123')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('get entry')
+        expect(res[0].params['constructor']).toBe('123')
+      })
+
+      it('Reserved words and wildcard', async () => {
+        router.add('GET', '/wild/*/card', 'get wildcard')
+        const res = match('GET', '/wild/constructor/card')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('get wildcard')
+      })
+
+      it('Reserved words and optional named parameter', async () => {
+        router.add('GET', '/api/animals/:constructor?', 'animals')
+        const res = match('GET', '/api/animals')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('animals')
+        expect(res[0].params['constructor']).toBeUndefined()
       })
     })
 
