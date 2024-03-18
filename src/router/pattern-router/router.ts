@@ -44,7 +44,7 @@ export class PatternRouter<T> implements Router<T> {
       if (routeMethod === METHOD_NAME_ALL || routeMethod === method) {
         const match = pattern.exec(path)
         if (match) {
-          handlers.push([handler, match.groups || {}])
+          handlers.push([handler, match.groups || Object.create(null)])
         }
       }
     }
