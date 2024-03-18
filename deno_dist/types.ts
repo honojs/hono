@@ -1649,7 +1649,9 @@ export type AddParam<I, P extends string> = ParamKeys<P> extends never
 
 type AddDollar<T extends string> = `$${Lowercase<T>}`
 
-export type MergePath<A extends string, B extends string> = A extends ''
+export type MergePath<A extends string, B extends string> = B extends ''
+  ? MergePath<A, '/'>
+  : A extends ''
   ? B
   : A extends '/'
   ? B
