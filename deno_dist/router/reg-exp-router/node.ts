@@ -8,6 +8,8 @@ export interface Context {
   varIndex: number
 }
 
+const regExpMetaChars = new Set('.\\+*[^]$()')
+
 /**
  * Sort order:
  * 1. literal
@@ -132,7 +134,13 @@ export class Node {
 
     const strList = childKeys.map((k) => {
       const c = this.children[k]
-      return (typeof c.varIndex === 'number' ? `(${k})@${c.varIndex}` : k) + c.buildRegExpStr()
+      return (
+        (typeof c.varIndex === 'number'
+          ? `(${k})@${c.varIndex}`
+          : regExpMetaChars.has(k)
+          ? `\\${k}`
+          : k) + c.buildRegExpStr()
+      )
     })
 
     if (typeof this.index === 'number') {
