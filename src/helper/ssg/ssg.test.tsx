@@ -224,13 +224,13 @@ describe('toSSG function', () => {
 
   it('should handle asynchronous beforeRequestHook correctly', async () => {
     const beforeRequestHook: BeforeRequestHook = async (req) => {
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
       if (req.url.includes('/skip')) {
         return false
       }
       return req
     }
-  
+
     const result = await toSSG(app, fsMock, { beforeRequestHook })
     expect(result.files).not.toContain(expect.stringContaining('/skip'))
     expect(result.success).toBe(true)
@@ -239,30 +239,30 @@ describe('toSSG function', () => {
 
   it('should handle asynchronous afterResponseHook correctly', async () => {
     const afterResponseHook: AfterResponseHook = async (res) => {
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
       if (res.headers.get('X-Skip') === 'true') {
         return false
       }
       return res
     }
-  
+
     const result = await toSSG(app, fsMock, { afterResponseHook })
     expect(result.files).not.toContain(expect.stringContaining('/skip'))
     expect(result.success).toBe(true)
     expect(result.files.length).toBeGreaterThan(0)
   })
-  
+
   it('should handle asynchronous afterGenerateHook correctly', async () => {
     const afterGenerateHook: AfterGenerateHook = async (result) => {
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
       console.log(`Generated ${result.files.length} files.`)
     }
-  
+
     const result = await toSSG(app, fsMock, { afterGenerateHook })
     expect(result.success).toBe(true)
     expect(result.files.length).toBeGreaterThan(0)
   })
-  
+
   it('should avoid memory leak from `req.signal.addEventListener()`', async () => {
     const fsMock: FileSystemModule = {
       writeFile: vi.fn(() => Promise.resolve()),

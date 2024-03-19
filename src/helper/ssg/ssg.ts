@@ -115,7 +115,7 @@ export const fetchRoutesContent = function* <
   for (const route of filterStaticGenerateRoutes(app)) {
     // GET Route Info
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
-    
+
     let forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
 
     // eslint-disable-next-line no-async-promise-executor
