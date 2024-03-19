@@ -175,7 +175,7 @@ export class JSXNode implements HtmlEscaped {
       }
     }
 
-    if (emptyTags.includes(tag as string)) {
+    if (emptyTags.includes(tag as string) && children.length === 0) {
       buffer[0] += '/>'
       return
     }
