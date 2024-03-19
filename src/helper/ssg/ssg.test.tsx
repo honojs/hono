@@ -417,6 +417,30 @@ describe('saveContentToFile function', () => {
     }
     expect(fsMock.mkdir).toHaveBeenCalledWith('static-check-extensions', { recursive: true })
   })
+
+  it('should correctly create .yaml files for YAML content', async () => {
+    const yamlContent = 'title: YAML Example\nvalue: This is a YAML file.'
+    const mimeType = 'application/yaml'
+    const routePath = '/example'
+
+    const yamlData = {
+      routePath: routePath,
+      content: yamlContent,
+      mimeType: mimeType,
+    }
+
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    await saveContentToFile(Promise.resolve(yamlData), fsMock, './static')
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/example.yaml',
+      yamlContent,
+    )
+  })
 })
 
 describe('Dynamic route handling', () => {
