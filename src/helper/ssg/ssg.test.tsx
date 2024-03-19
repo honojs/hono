@@ -436,10 +436,7 @@ describe('saveContentToFile function', () => {
 
     await saveContentToFile(Promise.resolve(yamlData), fsMock, './static')
 
-    expect(fsMock.writeFile).toHaveBeenCalledWith(
-      'static/example.yaml',
-      yamlContent,
-    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/example.yaml', yamlContent)
   })
 })
 
