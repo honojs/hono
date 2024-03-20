@@ -77,8 +77,8 @@ const determineExtension = (mimeType: string): string => {
   }
 }
 
-export type BeforeRequestHook = (req: Request) => Request | false
-export type AfterResponseHook = (res: Response) => Response | false
+export type BeforeRequestHook = (req: Request) => Request | false | Promise<Request | false>
+export type AfterResponseHook = (res: Response) => Response | false | Promise<Response | false>
 export type AfterGenerateHook = (result: ToSSGResult) => void | Promise<void>
 
 export interface ToSSGOptions {
@@ -119,17 +119,19 @@ export const fetchRoutesContent = function* <
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
 
     let forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
-    if (beforeRequestHook) {
-      const maybeRequest = beforeRequestHook(forGetInfoURLRequest)
-      if (!maybeRequest) {
-        continue
-      }
-      forGetInfoURLRequest = maybeRequest as unknown as AddedSSGDataRequest
-    }
 
     // eslint-disable-next-line no-async-promise-executor
     yield new Promise(async (resolveGetInfo, rejectGetInfo) => {
       try {
+        if (beforeRequestHook) {
+          const maybeRequest = await beforeRequestHook(forGetInfoURLRequest)
+          if (!maybeRequest) {
+            resolveGetInfo(undefined)
+            return
+          }
+          forGetInfoURLRequest = maybeRequest as unknown as AddedSSGDataRequest
+        }
+
         await pool.run(() => app.fetch(forGetInfoURLRequest))
 
         if (!forGetInfoURLRequest.ssgParams) {
@@ -162,7 +164,7 @@ export const fetchRoutesContent = function* <
                     return
                   }
                   if (afterResponseHook) {
-                    const maybeResponse = afterResponseHook(response)
+                    const maybeResponse = await afterResponseHook(response)
                     if (!maybeResponse) {
                       resolveReq(undefined)
                       return
