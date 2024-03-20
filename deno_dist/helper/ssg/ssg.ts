@@ -69,8 +69,6 @@ const determineExtension = (mimeType: string): string => {
     case 'text/xml':
     case 'application/xml':
       return 'xml'
-    case 'application/yaml':
-      return 'yaml'
     default: {
       return getExtension(mimeType) || 'html'
     }

@@ -70,6 +70,7 @@ const baseMimes: Record<string, string> = {
   woff2: 'font/woff2',
   xhtml: 'application/xhtml+xml',
   xml: 'application/xml',
+  yaml: 'application/yaml',
   zip: 'application/zip',
   '3gp': 'video/3gpp',
   '3g2': 'video/3gpp2',
