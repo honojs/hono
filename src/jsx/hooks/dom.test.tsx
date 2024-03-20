@@ -18,7 +18,7 @@ import {
   useDebugValue,
 } from '.'
 
-describe('useReducer()', () => {
+describe('Hooks', () => {
   beforeAll(() => {
     global.requestAnimationFrame = (cb) => setTimeout(cb)
   })
@@ -35,512 +35,439 @@ describe('useReducer()', () => {
     root = document.getElementById('root') as HTMLElement
   })
 
-  it('simple', async () => {
-    const App = () => {
-      const [state, dispatch] = useReducer((state: number, action: number) => state + action, 0)
-      return (
-        <div>
-          <button onClick={() => dispatch(1)}>{state}</button>
-        </div>
-      )
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div><button>0</button></div>')
-    root.querySelector('button')?.click()
-    await Promise.resolve()
-    expect(root.innerHTML).toBe('<div><button>1</button></div>')
-  })
-})
-
-describe('startTransition()', () => {
-  beforeAll(() => {
-    global.requestAnimationFrame = (cb) => setTimeout(cb)
-  })
-
-  let dom: JSDOM
-  let root: HTMLElement
-  beforeEach(() => {
-    dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
-      runScripts: 'dangerously',
-    })
-    global.document = dom.window.document
-    global.HTMLElement = dom.window.HTMLElement
-    global.Text = dom.window.Text
-    root = document.getElementById('root') as HTMLElement
-  })
-
-  it('no error', async () => {
-    const App = () => {
-      const [count, setCount] = useState(0)
-      return (
-        <Suspense fallback={<div>Loading...</div>}>
+  describe('useReducer()', () => {
+    it('simple', async () => {
+      const App = () => {
+        const [state, dispatch] = useReducer((state: number, action: number) => state + action, 0)
+        return (
           <div>
-            <button
-              onClick={() => {
-                startTransition(() => {
-                  setCount((c) => c + 1)
-                })
-              }}
-            >
-              {count}
-            </button>
+            <button onClick={() => dispatch(1)}>{state}</button>
           </div>
-        </Suspense>
-      )
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div><button>0</button></div>')
-    root.querySelector('button')?.click()
-    await Promise.resolve()
-    expect(root.innerHTML).toBe('<div><button>1</button></div>')
-  })
-
-  it('got an error', async () => {
-    let resolve: () => void
-    const promise = new Promise<void>((r) => (resolve = r))
-
-    const Counter = ({ count }: { count: number }) => {
-      use(promise)
-      return <div>{count}</div>
-    }
-
-    const App = () => {
-      const [count, setCount] = useState(0)
-      return (
-        <Suspense fallback={<div>Loading...</div>}>
-          <div>
-            <button
-              onClick={() => {
-                startTransition(() => {
-                  setCount((c) => c + 1)
-                })
-              }}
-            >
-              {count ? <Counter count={count} /> : count}
-            </button>
-          </div>
-        </Suspense>
-      )
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div><button>0</button></div>')
-    root.querySelector('button')?.click()
-    expect(root.innerHTML).toBe('<div><button>0</button></div>')
-    resolve!()
-    await new Promise((r) => setTimeout(r))
-    expect(root.innerHTML).toBe('<div><button><div>1</div></button></div>')
-  })
-})
-
-describe('useTransition()', () => {
-  let dom: JSDOM
-  let root: HTMLElement
-  beforeEach(() => {
-    dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
-      runScripts: 'dangerously',
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>0</button></div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>1</button></div>')
     })
-    global.document = dom.window.document
-    global.HTMLElement = dom.window.HTMLElement
-    global.requestAnimationFrame = (cb: Function) => setTimeout(cb)
-    global.Text = dom.window.Text
-    root = document.getElementById('root') as HTMLElement
   })
 
-  it('pending', async () => {
-    let called = 0
-    const App = () => {
-      const [count, setCount] = useState(0)
-      const [isPending, startTransition] = useTransition()
-      called++
-
-      return (
-        <div>
-          <button
-            onClick={() => {
-              startTransition(() => {
-                setCount((c) => c + 1)
-              })
-            }}
-          >
-            {isPending ? 'Pending...' : count}
-          </button>
-        </div>
-      )
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div><button>0</button></div>')
-    root.querySelector('button')?.click()
-    await Promise.resolve()
-    expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
-    expect(called).toBe(2)
-    await new Promise((r) => setTimeout(r))
-    await new Promise((r) => setTimeout(r))
-    expect(root.innerHTML).toBe('<div><button>1</button></div>')
-    expect(called).toBe(3)
-  })
-
-  it('multiple setState at once', async () => {
-    let called = 0
-    const App = () => {
-      const [count1, setCount1] = useState(0)
-      const [count2, setCount2] = useState(0)
-      const [isPending, startTransition] = useTransition()
-      called++
-
-      return (
-        <div>
-          <button
-            onClick={() => {
-              startTransition(() => {
-                setCount1((c) => c + 1)
-                setCount2((c) => c + 2)
-              })
-            }}
-          >
-            {isPending ? 'Pending...' : count1 + count2}
-          </button>
-        </div>
-      )
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div><button>0</button></div>')
-    root.querySelector('button')?.click()
-    await Promise.resolve()
-    expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
-    expect(called).toBe(2)
-    await new Promise((r) => setTimeout(r))
-    await new Promise((r) => setTimeout(r))
-    expect(root.innerHTML).toBe('<div><button>3</button></div>')
-    expect(called).toBe(3)
-  })
-
-  it('multiple startTransaction at once', async () => {
-    let called = 0
-    const App = () => {
-      const [count1, setCount1] = useState(0)
-      const [count2, setCount2] = useState(0)
-      const [isPending, startTransition] = useTransition()
-      called++
-
-      return (
-        <div>
-          <button
-            onClick={() => {
-              startTransition(() => {
-                setCount1((c) => c + 1)
-              })
-              startTransition(() => {
-                setCount2((c) => c + 2)
-              })
-            }}
-          >
-            {isPending ? 'Pending...' : count1 + count2}
-          </button>
-        </div>
-      )
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div><button>0</button></div>')
-    expect(called).toBe(1)
-    root.querySelector('button')?.click()
-    await Promise.resolve()
-    expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
-    expect(called).toBe(2)
-    await new Promise((r) => setTimeout(r))
-    await new Promise((r) => setTimeout(r))
-    expect(root.innerHTML).toBe('<div><button>3</button></div>')
-    expect(called).toBe(3) // + isPending=true + isPending=false
-  })
-})
-
-describe('useDeferredValue()', () => {
-  let dom: JSDOM
-  let root: HTMLElement
-  beforeEach(() => {
-    dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
-      runScripts: 'dangerously',
+  describe('startTransition()', () => {
+    it('no error', async () => {
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <div>
+              <button
+                onClick={() => {
+                  startTransition(() => {
+                    setCount((c) => c + 1)
+                  })
+                }}
+              >
+                {count}
+              </button>
+            </div>
+          </Suspense>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>0</button></div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>1</button></div>')
     })
-    global.document = dom.window.document
-    global.HTMLElement = dom.window.HTMLElement
-    global.Text = dom.window.Text
-    root = document.getElementById('root') as HTMLElement
-  })
 
-  it('deferred', async () => {
-    const promiseMap = {} as Record<number, Promise<number>>
-    const getPromise = (count: number) => {
-      return (promiseMap[count] ||= new Promise((r) => setTimeout(() => r(count + 1))))
-    }
-    const ShowCount = ({ count }: { count: number }) => {
-      if (count === 0) {
-        return <div>0</div>
+    it('got an error', async () => {
+      let resolve: () => void
+      const promise = new Promise<void>((r) => (resolve = r))
+
+      const Counter = ({ count }: { count: number }) => {
+        use(promise)
+        return <div>{count}</div>
       }
 
-      const c = use(getPromise(count))
-      return <div>{c}</div>
-    }
-
-    const App = () => {
-      const [count, setCount] = useState(0)
-      const c = useDeferredValue(count)
-      return (
-        <>
-          <div>
-            <button onClick={() => setCount((c) => c + 1)}>+1</button>
-          </div>
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
           <Suspense fallback={<div>Loading...</div>}>
-            <ShowCount count={c} />
+            <div>
+              <button
+                onClick={() => {
+                  startTransition(() => {
+                    setCount((c) => c + 1)
+                  })
+                }}
+              >
+                {count ? <Counter count={count} /> : count}
+              </button>
+            </div>
           </Suspense>
-        </>
-      )
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div><button>+1</button></div><div>0</div>')
-    root.querySelector('button')?.click()
-    await Promise.resolve()
-    expect(root.innerHTML).toBe('<div><button>+1</button></div><div>0</div>')
-    await new Promise((r) => setTimeout(r))
-    expect(root.innerHTML).toBe('<div><button>+1</button></div><div>2</div>')
-  })
-})
-
-describe('startViewTransition()', () => {
-  let dom: JSDOM
-  let root: HTMLElement
-  beforeEach(() => {
-    dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
-      runScripts: 'dangerously',
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>0</button></div>')
+      root.querySelector('button')?.click()
+      expect(root.innerHTML).toBe('<div><button>0</button></div>')
+      resolve!()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button><div>1</div></button></div>')
     })
-    global.document = dom.window.document
-    global.HTMLElement = dom.window.HTMLElement
-    global.Text = dom.window.Text
-    root = document.getElementById('root') as HTMLElement
-  })
-  afterEach(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (dom.window.document as any).startViewTransition
   })
 
-  it('supported browser', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(dom.window.document as any).startViewTransition = vi.fn((cb: Function) => {
-      Promise.resolve().then(() => cb())
-      return { finished: Promise.resolve() }
-    })
+  describe('useTransition()', () => {
+    it('pending', async () => {
+      let called = 0
+      const App = () => {
+        const [count, setCount] = useState(0)
+        const [isPending, startTransition] = useTransition()
+        called++
 
-    const App = () => {
-      const [count, setCount] = useState(0)
-      return (
-        <Suspense fallback={<div>Loading...</div>}>
+        return (
           <div>
             <button
               onClick={() => {
-                startViewTransition(() => {
-                  setCount((c) => c + 1)
-                })
-              }}
-            >
-              {count}
-            </button>
-          </div>
-        </Suspense>
-      )
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div><button>0</button></div>')
-    root.querySelector('button')?.click()
-    await Promise.resolve()
-    expect(root.innerHTML).toBe('<div><button>0</button></div>')
-    await Promise.resolve() // updated in microtask
-    expect(root.innerHTML).toBe('<div><button>1</button></div>')
-  })
-
-  it('unsupported browser', async () => {
-    const App = () => {
-      const [count, setCount] = useState(0)
-      return (
-        <Suspense fallback={<div>Loading...</div>}>
-          <div>
-            <button
-              onClick={() => {
-                startViewTransition(() => {
-                  setCount((c) => c + 1)
-                })
-              }}
-            >
-              {count}
-            </button>
-          </div>
-        </Suspense>
-      )
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div><button>0</button></div>')
-    root.querySelector('button')?.click()
-    await Promise.resolve()
-    expect(root.innerHTML).toBe('<div><button>1</button></div>')
-  })
-
-  it('with useTransition()', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(dom.window.document as any).startViewTransition = vi.fn((cb: Function) => {
-      Promise.resolve().then(() => cb())
-      return { finished: Promise.resolve() }
-    })
-
-    let called = 0
-    const App = () => {
-      const [count, setCount] = useState(0)
-      const [isPending, startTransition] = useTransition()
-      called++
-
-      return (
-        <div>
-          <button
-            onClick={() => {
-              startViewTransition(() => {
                 startTransition(() => {
                   setCount((c) => c + 1)
                 })
-              })
-            }}
-          >
-            {isPending ? 'Pending...' : count}
-          </button>
-        </div>
-      )
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div><button>0</button></div>')
-    root.querySelector('button')?.click()
-    await new Promise((r) => setTimeout(r))
-    expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
-    expect(called).toBe(2)
-    await new Promise((r) => setTimeout(r))
-    await new Promise((r) => setTimeout(r))
-    expect(root.innerHTML).toBe('<div><button>1</button></div>')
-    expect(called).toBe(3)
-  })
-})
-
-describe('useViewTransition()', () => {
-  let dom: JSDOM
-  let root: HTMLElement
-  beforeEach(() => {
-    dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
-      runScripts: 'dangerously',
-    })
-    global.document = dom.window.document
-    global.HTMLElement = dom.window.HTMLElement
-    global.Text = dom.window.Text
-    root = document.getElementById('root') as HTMLElement
-  })
-  afterEach(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (dom.window.document as any).startViewTransition
-  })
-
-  it('supported browser', async () => {
-    let resolved: (() => void) | undefined
-    const promise = new Promise<void>((r) => (resolved = r))
-    let called = 0
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(global.document as any).startViewTransition = vi.fn((cb: Function) => {
-      Promise.resolve().then(() => cb())
-      return { finished: promise }
+              }}
+            >
+              {isPending ? 'Pending...' : count}
+            </button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>0</button></div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
+      expect(called).toBe(2)
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>1</button></div>')
+      expect(called).toBe(3)
     })
 
-    const App = () => {
-      const [count, setCount] = useState(0)
-      const [isUpdating, startViewTransition] = useViewTransition()
-      called++
+    it('multiple setState at once', async () => {
+      let called = 0
+      const App = () => {
+        const [count1, setCount1] = useState(0)
+        const [count2, setCount2] = useState(0)
+        const [isPending, startTransition] = useTransition()
+        called++
 
-      return (
-        <div>
-          <button
-            onClick={() => {
-              startViewTransition(() => {
-                setCount((c) => c + 1)
-              })
-            }}
-          >
-            {isUpdating ? 'Pending...' : count}
-          </button>
-        </div>
-      )
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div><button>0</button></div>')
-    root.querySelector('button')?.click()
-    await new Promise((r) => setTimeout(r))
-    expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
-    expect(called).toBe(2)
-    resolved?.()
-    await new Promise((r) => setTimeout(r))
-    expect(root.innerHTML).toBe('<div><button>1</button></div>')
-    expect(called).toBe(3)
-  })
-})
-
-describe('useId()', () => {
-  let dom: JSDOM
-  let root: HTMLElement
-  beforeEach(() => {
-    dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
-      runScripts: 'dangerously',
+        return (
+          <div>
+            <button
+              onClick={() => {
+                startTransition(() => {
+                  setCount1((c) => c + 1)
+                  setCount2((c) => c + 2)
+                })
+              }}
+            >
+              {isPending ? 'Pending...' : count1 + count2}
+            </button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>0</button></div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
+      expect(called).toBe(2)
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>3</button></div>')
+      expect(called).toBe(3)
     })
-    global.document = dom.window.document
-    global.HTMLElement = dom.window.HTMLElement
-    global.Text = dom.window.Text
-    root = document.getElementById('root') as HTMLElement
-  })
 
-  it('simple', () => {
-    const App = () => {
-      const id = useId()
-      return <div id={id} />
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div id=":r0:"></div>')
-  })
+    it('multiple startTransaction at once', async () => {
+      let called = 0
+      const App = () => {
+        const [count1, setCount1] = useState(0)
+        const [count2, setCount2] = useState(0)
+        const [isPending, startTransition] = useTransition()
+        called++
 
-  it('memoized', async () => {
-    let setCount: (c: number) => void = () => {}
-    const App = () => {
-      const id = useId()
-      const [count, _setCount] = useState(0)
-      setCount = _setCount
-      return <div id={id}>{count}</div>
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div id=":r1:">0</div>')
-    setCount(1)
-    await Promise.resolve()
-    expect(root.innerHTML).toBe('<div id=":r1:">1</div>')
-  })
-})
-
-describe('useDebugValue()', () => {
-  let dom: JSDOM
-  let root: HTMLElement
-  beforeEach(() => {
-    dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
-      runScripts: 'dangerously',
+        return (
+          <div>
+            <button
+              onClick={() => {
+                startTransition(() => {
+                  setCount1((c) => c + 1)
+                })
+                startTransition(() => {
+                  setCount2((c) => c + 2)
+                })
+              }}
+            >
+              {isPending ? 'Pending...' : count1 + count2}
+            </button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>0</button></div>')
+      expect(called).toBe(1)
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
+      expect(called).toBe(2)
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>3</button></div>')
+      expect(called).toBe(3) // + isPending=true + isPending=false
     })
-    global.document = dom.window.document
-    global.HTMLElement = dom.window.HTMLElement
-    global.Text = dom.window.Text
-    root = document.getElementById('root') as HTMLElement
   })
 
-  it('simple', () => {
-    const spy = vi.fn()
-    const App = () => {
-      useDebugValue('hello', spy)
-      return <div />
-    }
-    render(<App />, root)
-    expect(root.innerHTML).toBe('<div></div>')
-    expect(spy).not.toBeCalled()
+  describe('useDeferredValue()', () => {
+    it('deferred', async () => {
+      const promiseMap = {} as Record<number, Promise<number>>
+      const getPromise = (count: number) => {
+        return (promiseMap[count] ||= new Promise((r) => setTimeout(() => r(count + 1))))
+      }
+      const ShowCount = ({ count }: { count: number }) => {
+        if (count === 0) {
+          return <div>0</div>
+        }
+
+        const c = use(getPromise(count))
+        return <div>{c}</div>
+      }
+
+      const App = () => {
+        const [count, setCount] = useState(0)
+        const c = useDeferredValue(count)
+        return (
+          <>
+            <div>
+              <button onClick={() => setCount((c) => c + 1)}>+1</button>
+            </div>
+            <Suspense fallback={<div>Loading...</div>}>
+              <ShowCount count={c} />
+            </Suspense>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>+1</button></div><div>0</div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>+1</button></div><div>0</div>')
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>+1</button></div><div>2</div>')
+    })
+  })
+
+  describe('startViewTransition()', () => {
+    afterEach(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (dom.window.document as any).startViewTransition
+    })
+
+    it('supported browser', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(dom.window.document as any).startViewTransition = vi.fn((cb: Function) => {
+        Promise.resolve().then(() => cb())
+        return { finished: Promise.resolve() }
+      })
+
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <div>
+              <button
+                onClick={() => {
+                  startViewTransition(() => {
+                    setCount((c) => c + 1)
+                  })
+                }}
+              >
+                {count}
+              </button>
+            </div>
+          </Suspense>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>0</button></div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>0</button></div>')
+      await Promise.resolve() // updated in microtask
+      expect(root.innerHTML).toBe('<div><button>1</button></div>')
+    })
+
+    it('unsupported browser', async () => {
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <div>
+              <button
+                onClick={() => {
+                  startViewTransition(() => {
+                    setCount((c) => c + 1)
+                  })
+                }}
+              >
+                {count}
+              </button>
+            </div>
+          </Suspense>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>0</button></div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>1</button></div>')
+    })
+
+    it('with useTransition()', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(dom.window.document as any).startViewTransition = vi.fn((cb: Function) => {
+        Promise.resolve().then(() => cb())
+        return { finished: Promise.resolve() }
+      })
+
+      let called = 0
+      const App = () => {
+        const [count, setCount] = useState(0)
+        const [isPending, startTransition] = useTransition()
+        called++
+
+        return (
+          <div>
+            <button
+              onClick={() => {
+                startViewTransition(() => {
+                  startTransition(() => {
+                    setCount((c) => c + 1)
+                  })
+                })
+              }}
+            >
+              {isPending ? 'Pending...' : count}
+            </button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>0</button></div>')
+      root.querySelector('button')?.click()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
+      expect(called).toBe(2)
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>1</button></div>')
+      expect(called).toBe(3)
+    })
+  })
+
+  describe('useViewTransition()', () => {
+    afterEach(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (dom.window.document as any).startViewTransition
+    })
+
+    it('supported browser', async () => {
+      let resolved: (() => void) | undefined
+      const promise = new Promise<void>((r) => (resolved = r))
+      let called = 0
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(global.document as any).startViewTransition = vi.fn((cb: Function) => {
+        Promise.resolve().then(() => cb())
+        return { finished: promise }
+      })
+
+      const App = () => {
+        const [count, setCount] = useState(0)
+        const [isUpdating, startViewTransition] = useViewTransition()
+        called++
+
+        return (
+          <div>
+            <button
+              onClick={() => {
+                startViewTransition(() => {
+                  setCount((c) => c + 1)
+                })
+              }}
+            >
+              {isUpdating ? 'Pending...' : count}
+            </button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>0</button></div>')
+      root.querySelector('button')?.click()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
+      expect(called).toBe(2)
+      resolved?.()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>1</button></div>')
+      expect(called).toBe(3)
+    })
+  })
+
+  describe('useId()', () => {
+    let dom: JSDOM
+    let root: HTMLElement
+    beforeEach(() => {
+      dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
+        runScripts: 'dangerously',
+      })
+      global.document = dom.window.document
+      global.HTMLElement = dom.window.HTMLElement
+      global.Text = dom.window.Text
+      root = document.getElementById('root') as HTMLElement
+    })
+
+    it('simple', () => {
+      const App = () => {
+        const id = useId()
+        return <div id={id} />
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div id=":r0:"></div>')
+    })
+
+    it('memoized', async () => {
+      let setCount: (c: number) => void = () => {}
+      const App = () => {
+        const id = useId()
+        const [count, _setCount] = useState(0)
+        setCount = _setCount
+        return <div id={id}>{count}</div>
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div id=":r1:">0</div>')
+      setCount(1)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div id=":r1:">1</div>')
+    })
+  })
+
+  describe('useDebugValue()', () => {
+    it('simple', () => {
+      const spy = vi.fn()
+      const App = () => {
+        useDebugValue('hello', spy)
+        return <div />
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div></div>')
+      expect(spy).not.toBeCalled()
+    })
   })
 })
