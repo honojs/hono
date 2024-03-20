@@ -10,7 +10,9 @@ let errorBoundaryCounter = 0
 
 export const childrenToString = async (children: Child[]): Promise<HtmlEscapedString[]> => {
   try {
-    return children.map((c) => c.toString()) as HtmlEscapedString[]
+    return children
+      .flat()
+      .map((c) => (c == null || typeof c === 'boolean' ? '' : c.toString())) as HtmlEscapedString[]
   } catch (e) {
     if (e instanceof Promise) {
       await e
@@ -51,7 +53,9 @@ export const ErrorBoundary: FC<
   }
   let resArray: HtmlEscapedString[] | Promise<HtmlEscapedString[]>[] = []
   try {
-    resArray = children.map((c) => c.toString()) as HtmlEscapedString[]
+    resArray = children.map((c) =>
+      c == null || typeof c === 'boolean' ? '' : c.toString()
+    ) as HtmlEscapedString[]
   } catch (e) {
     fallbackStr = await fallback?.toString()
     if (e instanceof Promise) {
