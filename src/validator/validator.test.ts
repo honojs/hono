@@ -213,7 +213,6 @@ describe('Cached contents', () => {
 
   describe('form', () => {
     const app = new Hono()
-
     const bodyTypes = ['formData', 'text', 'arrayBuffer', 'blob']
 
     for (const type of bodyTypes) {
