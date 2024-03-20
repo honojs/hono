@@ -14,6 +14,7 @@ import {
   useDeferredValue,
   startViewTransition,
   useViewTransition,
+  useId,
   useDebugValue,
 } from '.'
 
@@ -478,6 +479,44 @@ describe('useViewTransition()', () => {
     await new Promise((r) => setTimeout(r))
     expect(root.innerHTML).toBe('<div><button>1</button></div>')
     expect(called).toBe(3)
+  })
+})
+
+describe('useId()', () => {
+  let dom: JSDOM
+  let root: HTMLElement
+  beforeEach(() => {
+    dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
+      runScripts: 'dangerously',
+    })
+    global.document = dom.window.document
+    global.HTMLElement = dom.window.HTMLElement
+    global.Text = dom.window.Text
+    root = document.getElementById('root') as HTMLElement
+  })
+
+  it('simple', () => {
+    const App = () => {
+      const id = useId()
+      return <div id={id} />
+    }
+    render(<App />, root)
+    expect(root.innerHTML).toBe('<div id=":r0:"></div>')
+  })
+
+  it('memoized', async () => {
+    let setCount: (c: number) => void = () => {}
+    const App = () => {
+      const id = useId()
+      const [count, _setCount] = useState(0)
+      setCount = _setCount
+      return <div id={id}>{count}</div>
+    }
+    render(<App />, root)
+    expect(root.innerHTML).toBe('<div id=":r1:">0</div>')
+    setCount(1)
+    await Promise.resolve()
+    expect(root.innerHTML).toBe('<div id=":r1:">1</div>')
   })
 })
 

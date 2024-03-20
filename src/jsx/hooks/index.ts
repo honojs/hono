@@ -349,6 +349,9 @@ export const useMemo = <T>(factory: () => T, deps: readonly unknown[]): T => {
   return memoArray[hookIndex][0] as T
 }
 
+let idCounter = 0
+export const useId = (): string => useMemo(() => `:r${(idCounter++).toString(32)}:`, [])
+
 // Define to avoid errors. This hook currently does nothing.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const useDebugValue = (value: unknown, formatter?: (value: unknown) => string): void => {}
