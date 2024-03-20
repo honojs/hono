@@ -371,14 +371,14 @@ describe('render to string', () => {
           style={{
             color: 'red',
             fontSize: 'small',
-            fontFamily: 'Menlo, Consolas, DejaVu Sans Mono, monospace',
+            fontFamily: 'Menlo, Consolas, "DejaVu Sans Mono", monospace',
           }}
         >
           Hello
         </h1>
       )
       expect(template.toString()).toBe(
-        '<h1 style="color:red;font-size:small;font-family:Menlo, Consolas, DejaVu Sans Mono, monospace">Hello</h1>'
+        '<h1 style="color:red;font-size:small;font-family:Menlo, Consolas, &quot;DejaVu Sans Mono&quot;, monospace">Hello</h1>'
       )
     })
     it('should not convert the strings', () => {
