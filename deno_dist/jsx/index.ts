@@ -15,6 +15,7 @@ import {
   useMemo,
   useLayoutEffect,
   useReducer,
+  useId,
   useDebugValue,
 } from './hooks/index.ts'
 import { Suspense } from './streaming.ts'
@@ -34,6 +35,7 @@ export {
   useRef,
   useCallback,
   useReducer,
+  useId,
   useDebugValue,
   use,
   startTransition,
@@ -60,6 +62,7 @@ export default {
   useRef,
   useCallback,
   useReducer,
+  useId,
   useDebugValue,
   use,
   startTransition,
