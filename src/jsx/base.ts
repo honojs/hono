@@ -92,7 +92,15 @@ const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void
 }
 
 type LocalContexts = [Context<unknown>, unknown][]
-export type Child = string | Promise<string> | number | JSXNode | Child[]
+export type Child =
+  | string
+  | Promise<string>
+  | number
+  | JSXNode
+  | null
+  | undefined
+  | boolean
+  | Child[]
 export class JSXNode implements HtmlEscaped {
   tag: string | Function
   props: Props
