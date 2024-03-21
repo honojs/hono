@@ -141,7 +141,9 @@ export class JSXNode implements HtmlEscaped {
             return `${property}:${v[k]}`
           })
           .join(';')
-        buffer[0] += ` style="${styles}"`
+        buffer[0] += ' style="'
+        escapeToBuffer(styles, buffer)
+        buffer[0] += '"'
       } else if (typeof v === 'string') {
         buffer[0] += ` ${key}="`
         escapeToBuffer(v, buffer)

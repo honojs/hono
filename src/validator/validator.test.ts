@@ -173,58 +173,78 @@ describe('Malformed FormData request', () => {
 })
 
 describe('Cached contents', () => {
-  const app = new Hono()
+  describe('json', () => {
+    const app = new Hono()
+    const bodyTypes = ['json', 'text', 'arrayBuffer', 'blob']
 
-  app.post(
-    '/json',
-    async (c, next) => {
-      await c.req.json()
-      await next()
-    },
-    validator('json', (value) => {
-      return value
-    }),
-    async (c) => {
-      const data = await c.req.json()
-      return c.json(data, 200)
+    for (const type of bodyTypes) {
+      app.post(
+        `/${type}`,
+        async (c, next) => {
+          // @ts-expect-error not type safe
+          await c.req[type]()
+          await next()
+        },
+        validator('json', (value) => {
+          return value
+        }),
+        async (c) => {
+          const data = await c.req.json()
+          return c.json(data, 200)
+        }
+      )
     }
-  )
 
-  app.post(
-    '/form',
-    async (c, next) => {
-      await c.req.formData()
-      await next()
-    },
-    validator('form', (value) => {
-      return value
-    }),
-    async (c) => {
-      return c.json({ message: 'OK' }, 200)
+    for (const type of bodyTypes) {
+      const endpoint = `/${type}`
+      it(`Should return the cached JSON content - ${endpoint}`, async () => {
+        const res = await app.request(endpoint, {
+          method: 'POST',
+          body: JSON.stringify({ message: 'Hello' }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        expect(res.status).toBe(200)
+        expect(await res.json()).toEqual({ message: 'Hello' })
+      })
     }
-  )
-
-  it('Should return the cached JSON content', async () => {
-    const res = await app.request('/json', {
-      method: 'POST',
-      body: JSON.stringify({ message: 'Hello' }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ message: 'Hello' })
   })
 
-  it('Should return the cached form content', async () => {
-    const form = new FormData()
-    form.append('message', 'Hello')
-    const res = await app.request('/form', {
-      method: 'POST',
-      body: form,
-    })
-    expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ message: 'OK' })
+  describe('form', () => {
+    const app = new Hono()
+    const bodyTypes = ['formData', 'text', 'arrayBuffer', 'blob']
+
+    for (const type of bodyTypes) {
+      app.post(
+        `/${type}`,
+        async (c, next) => {
+          // @ts-expect-error not type safe
+          await c.req[type]()
+          await next()
+        },
+        validator('form', (value) => {
+          return value
+        }),
+        async (c) => {
+          return c.json({ message: 'OK' }, 200)
+        }
+      )
+    }
+
+    for (const type of bodyTypes) {
+      const endpoint = `/${type}`
+      it(`Should return the cached FormData content - ${endpoint}`, async () => {
+        const form = new FormData()
+        form.append('message', 'Hello')
+        const res = await app.request(endpoint, {
+          method: 'POST',
+          body: form,
+        })
+        expect(res.status).toBe(200)
+        expect(await res.json()).toEqual({ message: 'OK' })
+      })
+    }
   })
 })
 
