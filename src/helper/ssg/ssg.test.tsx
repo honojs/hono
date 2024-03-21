@@ -479,6 +479,52 @@ describe('saveContentToFile function', () => {
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/example.yaml', yamlContent)
   })
+
+  it('should correctly create .yml files for YAML content', async () => {
+    const yamlContent = 'title: YAML Example\nvalue: This is a YAML file.'
+    const yamlMimeType = 'application/yaml'
+    const yamlRoutePath = '/yaml'
+
+    const yamlData = {
+      routePath: yamlRoutePath,
+      content: yamlContent,
+      mimeType: yamlMimeType,
+    }
+
+    const yamlMimeType2 = 'x-yaml'
+    const yamlRoutePath2 = '/yaml2'
+    const yamlData2 = {
+      routePath: yamlRoutePath2,
+      content: yamlContent,
+      mimeType: yamlMimeType2,
+    }
+
+    const htmlMimeType = 'text/html'
+    const htmlRoutePath = '/html'
+
+    const htmlData = {
+      routePath: htmlRoutePath,
+      content: yamlContent,
+      mimeType: htmlMimeType,
+    }
+
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const extensionMap = {
+      'application/yaml': 'yml', //update
+      'x-yaml': 'xyml', //adding
+    }
+    await saveContentToFile(Promise.resolve(yamlData), fsMock, './static', extensionMap)
+    await saveContentToFile(Promise.resolve(yamlData2), fsMock, './static', extensionMap)
+    await saveContentToFile(Promise.resolve(htmlData), fsMock, './static', extensionMap)
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml.yml', yamlContent)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml2.xyml', yamlContent)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.html', yamlContent)
+  })
 })
 
 describe('Dynamic route handling', () => {
