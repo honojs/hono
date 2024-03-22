@@ -520,7 +520,10 @@ describe('saveContentToFile function', () => {
     await saveContentToFile(Promise.resolve(yamlData), fsMock, './static', extensionMap)
     await saveContentToFile(Promise.resolve(yamlData2), fsMock, './static', extensionMap)
     await saveContentToFile(Promise.resolve(htmlData), fsMock, './static', extensionMap)
-    await saveContentToFile(Promise.resolve(htmlData), fsMock, './static', {...defaultExtensionMap, ...extensionMap})
+    await saveContentToFile(Promise.resolve(htmlData), fsMock, './static', {
+      ...defaultExtensionMap,
+      ...extensionMap,
+    })
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml.yml', yamlContent)
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml2.xyml', yamlContent)
