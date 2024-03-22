@@ -1,5 +1,6 @@
 import type { Context } from '../../context'
-import { getCookie } from '../../helper/cookie'
+import { getCookie, getSignedCookie } from '../../helper/cookie'
+import type { CookiePrefixOptions } from '../../utils/cookie'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 import { Jwt } from '../../utils/jwt'
@@ -15,7 +16,7 @@ declare module '../../context' {
 
 export const jwt = (options: {
   secret: string
-  cookie?: string
+  cookie?: string | { key: string, secret?: string | BufferSource, prefixOptions?: CookiePrefixOptions }
   alg?: string
 }): MiddlewareHandler => {
   if (!options) {
@@ -43,7 +44,13 @@ export const jwt = (options: {
         token = parts[1]
       }
     } else if (options.cookie) {
-      token = getCookie(ctx)[options.cookie]
+      if (typeof options.cookie == 'string') {
+        token = getCookie(ctx, options.cookie)
+      } else if (options.cookie.secret) {
+        token = getSignedCookie(ctx, options.cookie.secret, options.cookie.key, options.cookie.prefixOptions)
+      } else {
+        token = getCookie(ctx, options.cookie.key, options.cookie.prefixOptions)
+      }
     }
 
     if (!token) {
