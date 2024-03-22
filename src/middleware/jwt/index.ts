@@ -47,7 +47,7 @@ export const jwt = (options: {
       if (typeof options.cookie == 'string') {
         token = getCookie(ctx, options.cookie)
       } else if (options.cookie.secret) {
-        token = getSignedCookie(ctx, options.cookie.secret, options.cookie.key, options.cookie.prefixOptions)
+        token = await getSignedCookie(ctx, options.cookie.secret, options.cookie.key, options.cookie.prefixOptions)
       } else {
         token = getCookie(ctx, options.cookie.key, options.cookie.prefixOptions)
       }
