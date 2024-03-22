@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { vi } from 'vitest'
 import { encodeBase64 } from '../encode'
+import { AlgorithmTypes } from './jwa'
 import * as JWT from './jwt'
 import {
-  AlgorithmTypes,
   JwtAlgorithmNotImplemented,
   JwtTokenExpired,
   JwtTokenInvalid,
@@ -11,6 +11,26 @@ import {
   JwtTokenNotBefore,
   JwtTokenSignatureMismatched,
 } from './types'
+
+describe('isTokenHeader', () => {
+  it('should return true for valid TokenHeader', () => {
+    const validTokenHeader: JWT.TokenHeader = {
+      alg: AlgorithmTypes.HS256,
+      typ: 'JWT',
+    }
+
+    expect(JWT.isTokenHeader(validTokenHeader)).toBe(true)
+  })
+
+  it('should return false for invalid TokenHeader', () => {
+    const invalidTokenHeader = {
+      alg: 'invalid',
+      typ: 'JWT',
+    }
+
+    expect(JWT.isTokenHeader(invalidTokenHeader)).toBe(false)
+  })
+})
 
 describe('JWT', () => {
   it('JwtAlgorithmNotImplemented', async () => {
@@ -223,6 +243,7 @@ describe('JWT', () => {
 
       const tok = await JWT.sign(payload, pemPrivateKey, alg)
       expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, pemPrivateKey, alg)).toEqual(payload)
       expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
 
       const keyPair2 = await generateRSAKey(tc.hash)
@@ -237,6 +258,16 @@ describe('JWT', () => {
       }
       expect(authorized).toBeUndefined()
       expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+    })
+
+    it(`${tc.alg} sign & verify w/ CryptoKey`, async () => {
+      const alg = tc.alg
+      const payload = { message: 'hello world' }
+      const keyPair = await generateRSAKey(tc.hash)
+
+      const tok = await JWT.sign(payload, keyPair.privateKey, alg)
+      expect(await JWT.verify(tok, keyPair.privateKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, keyPair.publicKey, alg)).toEqual(payload)
     })
   }
 
@@ -265,6 +296,7 @@ describe('JWT', () => {
 
       const tok = await JWT.sign(payload, pemPrivateKey, alg)
       expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, pemPrivateKey, alg)).toEqual(payload)
       expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
 
       const keyPair2 = await generateRSAPSSKey(tc.hash)
@@ -281,47 +313,68 @@ describe('JWT', () => {
       expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
     })
 
-    const esTestCases = [
-      {
-        alg: AlgorithmTypes.ES256,
-        namedCurve: 'P-256',
-      },
-      {
-        alg: AlgorithmTypes.ES384,
-        namedCurve: 'P-384',
-      },
-      {
-        alg: AlgorithmTypes.ES512,
-        namedCurve: 'P-521',
-      },
-    ]
-    for (const tc of esTestCases) {
-      it(`${tc.alg} sign & verify`, async () => {
-        const alg = tc.alg
-        const payload = { message: 'hello world' }
-        const keyPair = await generateECDSAKey(tc.namedCurve)
-        const pemPrivateKey = await exportPEMPrivateKey(keyPair.privateKey)
-        const pemPublicKey = await exportPEMPublicKey(keyPair.publicKey)
-        const jwkPublicKey = await exportJWK(keyPair.publicKey)
+    it(`${tc.alg} sign & verify w/ CryptoKey`, async () => {
+      const alg = tc.alg
+      const payload = { message: 'hello world' }
+      const keyPair = await generateRSAPSSKey(tc.hash)
 
-        const tok = await JWT.sign(payload, pemPrivateKey, alg)
-        expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
-        expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
+      const tok = await JWT.sign(payload, keyPair.privateKey, alg)
+      expect(await JWT.verify(tok, keyPair.privateKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, keyPair.publicKey, alg)).toEqual(payload)
+    })
+  }
 
-        const keyPair2 = await generateECDSAKey(tc.namedCurve)
-        const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
+  const esTestCases = [
+    {
+      alg: AlgorithmTypes.ES256,
+      namedCurve: 'P-256',
+    },
+    {
+      alg: AlgorithmTypes.ES384,
+      namedCurve: 'P-384',
+    },
+    {
+      alg: AlgorithmTypes.ES512,
+      namedCurve: 'P-521',
+    },
+  ]
+  for (const tc of esTestCases) {
+    it(`${tc.alg} sign & verify`, async () => {
+      const alg = tc.alg
+      const payload = { message: 'hello world' }
+      const keyPair = await generateECDSAKey(tc.namedCurve)
+      const pemPrivateKey = await exportPEMPrivateKey(keyPair.privateKey)
+      const pemPublicKey = await exportPEMPublicKey(keyPair.publicKey)
+      const jwkPublicKey = await exportJWK(keyPair.publicKey)
 
-        let err = null
-        let authorized
-        try {
-          authorized = await JWT.verify(tok, unexpectedPemPublicKey, alg)
-        } catch (e) {
-          err = e
-        }
-        expect(authorized).toBeUndefined()
-        expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
-      })
-    }
+      const tok = await JWT.sign(payload, pemPrivateKey, alg)
+      expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, pemPrivateKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
+
+      const keyPair2 = await generateECDSAKey(tc.namedCurve)
+      const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
+
+      let err = null
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, unexpectedPemPublicKey, alg)
+      } catch (e) {
+        err = e
+      }
+      expect(authorized).toBeUndefined()
+      expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+    })
+
+    it(`${tc.alg} sign & verify w/ CryptoKey`, async () => {
+      const alg = tc.alg
+      const payload = { message: 'hello world' }
+      const keyPair = await generateECDSAKey(tc.namedCurve)
+
+      const tok = await JWT.sign(payload, keyPair.privateKey, alg)
+      expect(await JWT.verify(tok, keyPair.privateKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, keyPair.publicKey, alg)).toEqual(payload)
+    })
   }
 
   it('EdDSA sign & verify', async () => {
@@ -334,6 +387,7 @@ describe('JWT', () => {
 
     const tok = await JWT.sign(payload, pemPrivateKey, alg)
     expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+    expect(await JWT.verify(tok, pemPrivateKey, alg)).toEqual(payload)
     expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
 
     const keyPair2 = await generateEd25519Key()
@@ -348,6 +402,16 @@ describe('JWT', () => {
     }
     expect(authorized).toBeUndefined()
     expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+  })
+
+  it('EdDSA sign & verify w/ CryptoKey', async () => {
+    const alg = 'EdDSA'
+    const payload = { message: 'hello world' }
+    const keyPair = await generateEd25519Key()
+
+    const tok = await JWT.sign(payload, keyPair.privateKey, alg)
+    expect(await JWT.verify(tok, keyPair.privateKey, alg)).toEqual(payload)
+    expect(await JWT.verify(tok, keyPair.publicKey, alg)).toEqual(payload)
   })
 })
 

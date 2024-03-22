@@ -1,5 +1,4 @@
-import type { TokenHeader } from './types'
-import { AlgorithmTypes, isTokenHeader } from './types'
+import { AlgorithmTypes } from './jwa'
 
 describe('Types', () => {
   it('AlgorithmTypes', () => {
@@ -14,25 +13,5 @@ describe('Types', () => {
     // @ts-ignore
     expect(undefined as AlgorithmTypes).toBe(undefined)
     expect('' as AlgorithmTypes).toBe('')
-  })
-})
-
-describe('isTokenHeader', () => {
-  it('should return true for valid TokenHeader', () => {
-    const validTokenHeader: TokenHeader = {
-      alg: AlgorithmTypes.HS256,
-      typ: 'JWT',
-    }
-
-    expect(isTokenHeader(validTokenHeader)).toBe(true)
-  })
-
-  it('should return false for invalid TokenHeader', () => {
-    const invalidTokenHeader = {
-      alg: 'invalid',
-      typ: 'JWT',
-    }
-
-    expect(isTokenHeader(invalidTokenHeader)).toBe(false)
   })
 })

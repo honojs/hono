@@ -3,8 +3,8 @@ import { getCookie } from '../../helper/cookie'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 import { Jwt } from '../../utils/jwt'
-import type { AlgorithmTypes } from '../../utils/jwt/types'
 import '../../context'
+import type { SignatureAlgorithm } from '../../utils/jwt/jwa'
 
 declare module '../../context' {
   interface ContextVariableMap {
@@ -59,7 +59,7 @@ export const jwt = (options: {
     let payload
     let msg = ''
     try {
-      payload = await Jwt.verify(token, options.secret, options.alg as AlgorithmTypes)
+      payload = await Jwt.verify(token, options.secret, options.alg as SignatureAlgorithm)
     } catch (e) {
       msg = `${e}`
     }
