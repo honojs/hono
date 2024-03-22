@@ -4,7 +4,7 @@ import { Hono } from '../../hono'
 import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
 import { SSG_DISABLED_RESPONSE, ssgParams, isSSGContext, disableSSG, onlySSG } from './middleware'
-import { fetchRoutesContent, saveContentToFile, toSSG } from './ssg'
+import { fetchRoutesContent, saveContentToFile, toSSG, defaultExtensionMap } from './ssg'
 import type {
   BeforeRequestHook,
   AfterResponseHook,
@@ -514,16 +514,18 @@ describe('saveContentToFile function', () => {
     }
 
     const extensionMap = {
-      'application/yaml': 'yml', //update
-      'x-yaml': 'xyml', //adding
+      'application/yaml': 'yml',
+      'x-yaml': 'xyml',
     }
     await saveContentToFile(Promise.resolve(yamlData), fsMock, './static', extensionMap)
     await saveContentToFile(Promise.resolve(yamlData2), fsMock, './static', extensionMap)
     await saveContentToFile(Promise.resolve(htmlData), fsMock, './static', extensionMap)
+    await saveContentToFile(Promise.resolve(htmlData), fsMock, './static', {...defaultExtensionMap, ...extensionMap})
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml.yml', yamlContent)
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml2.xyml', yamlContent)
-    expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.html', yamlContent)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.htm', yamlContent) // extensionMap
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.html', yamlContent) // default + extensionMap
   })
 })
 

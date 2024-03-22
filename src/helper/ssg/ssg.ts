@@ -67,7 +67,7 @@ const parseResponseContent = async (response: Response): Promise<string | ArrayB
   }
 }
 
-const defaultExtensionMap: Record<string, string> = {
+export const defaultExtensionMap: Record<string, string> = {
   'text/html': 'html',
   'text/xml': 'xml',
   'application/xml': 'xml',
@@ -78,7 +78,7 @@ const determineExtension = (
   mimeType: string,
   userExtensionMap?: Record<string, string>
 ): string => {
-  const extensionMap = { ...defaultExtensionMap, ...userExtensionMap }
+  const extensionMap = userExtensionMap || defaultExtensionMap
   if (mimeType in extensionMap) {
     return extensionMap[mimeType]
   }
