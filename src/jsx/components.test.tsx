@@ -61,6 +61,32 @@ describe('ErrorBoundary', () => {
 
       suspenseCounter--
     })
+
+    it('nullish', async () => {
+      const html = (
+        <div>
+          <ErrorBoundary fallback={<Fallback />}>{[null, undefined]}</ErrorBoundary>
+        </div>
+      )
+
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('<div></div>')
+
+      errorBoundaryCounter--
+      suspenseCounter--
+    })
+
+    it('boolean', async () => {
+      const html = (
+        <div>
+          <ErrorBoundary fallback={<Fallback />}>{[true, false]}</ErrorBoundary>
+        </div>
+      )
+
+      expect((await resolveCallback(await html.toString())).toString()).toEqual('<div></div>')
+
+      errorBoundaryCounter--
+      suspenseCounter--
+    })
   })
 
   describe('async', async () => {

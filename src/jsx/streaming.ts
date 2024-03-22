@@ -39,7 +39,9 @@ export const Suspense: FC<PropsWithChildren<{ fallback: any }>> = async ({
   try {
     stackNode[DOM_STASH][0] = 0
     buildDataStack.push([[], stackNode])
-    resArray = children.map((c) => c.toString()) as HtmlEscapedString[]
+    resArray = children.map((c) =>
+      c == null || typeof c === 'boolean' ? '' : c.toString()
+    ) as HtmlEscapedString[]
   } catch (e) {
     if (e instanceof Promise) {
       resArray = [
