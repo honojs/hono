@@ -24,6 +24,8 @@ export const appendTrailingSlash = (): MiddlewareHandler => {
   return async function appendTrailingSlash(c, next) {
     const { path, url } = c.req
 
-    return path[path.length - 1] !== '/' ? c.redirect(`${url}/`, 301) : await next()
+    return path[path.length - 1] !== '/' && path.indexOf('.') === -1
+      ? c.redirect(`${url}/`, 301)
+      : await next()
   }
 }

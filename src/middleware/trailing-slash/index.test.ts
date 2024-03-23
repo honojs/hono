@@ -10,12 +10,12 @@ describe('Resolve trailing slash', () => {
     app.use('*', trimTrailingSlash())
 
     app.get('/the/example/endpoint/without/trailing/slash', async (c) => {
-        return c.text('OK')
+      return c.text('301 moved permanently')
     })
 
     const resp = await app.request('/the/example/endpoint/without/trailing/slash/')
     expect(resp).not.toBeNull()
-    expect(resp.status).toBe(301) // 301 Moved Permanently is the expected behavior
+    expect(resp.status).toBe(301)
   })
 
   it('Append', async () => {
@@ -24,11 +24,20 @@ describe('Resolve trailing slash', () => {
     app.use('*', appendTrailingSlash())
 
     app.get('/the/example/endpoint/with/trailing/slash/', async (c) => {
-        return c.text('OK')
+        return c.text('301 moved permanently')
+    })
+    app.get('/the/example/simulate/a.file', async (c) => {
+      return c.text('200 ok')
     })
 
-    const resp = await app.request('/the/example/endpoint/with/trailing/slash')
+    let resp: Response
+    
+    resp = await app.request('/the/example/endpoint/with/trailing/slash')
     expect(resp).not.toBeNull()
-    expect(resp.status).toBe(301) // 301 Moved Permanently is the expected behavior
+    expect(resp.status).toBe(301)
+
+    resp = await app.request('/the/example/simulate/a.file')
+    expect(resp).not.toBeNull()
+    expect(resp.status).toBe(200)
   })
 })
