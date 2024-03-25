@@ -21,7 +21,11 @@ const nullMatcher: Matcher<any> = [/^$/, [], Object.create(null)]
 let wildcardRegExpCache: Record<string, RegExp> = Object.create(null)
 function buildWildcardRegExp(path: string): RegExp {
   return (wildcardRegExpCache[path] ??= new RegExp(
-    path === '*' ? '' : `^${path.replace(/\/\*/, '(?:|/.*)')}$`
+    path === '*'
+      ? ''
+      : `^${path.replace(/\/\*$|([.\\+*[^\]$()])/g, (_, metaChar) =>
+          metaChar ? `\\${metaChar}` : '(?:|/.*)'
+        )}$`
   ))
 }
 
