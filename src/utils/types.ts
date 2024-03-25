@@ -50,3 +50,7 @@ export type HasRequiredKeys<BaseType extends object> = RequiredKeysOf<BaseType> 
   : true
 
 export type IsAny<T> = boolean extends (T extends never ? true : false) ? true : false
+
+export type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}

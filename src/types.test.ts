@@ -1020,9 +1020,7 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
         return c.json(0)
       })
@@ -1040,13 +1038,9 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
         return c.json(0)
       })
@@ -1066,17 +1060,11 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
         return c.json(0)
       })
@@ -1098,21 +1086,13 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
-        // @ts-expect-error foo4 is not typed
         c.get('foo4')
-        // @ts-expect-error foo4 is not typed
         c.var.foo4
         return c.json(0)
       })
@@ -1136,25 +1116,15 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
-        // @ts-expect-error foo4 is not typed
         c.get('foo4')
-        // @ts-expect-error foo4 is not typed
         c.var.foo4
-        // @ts-expect-error foo5 is not typed
         c.get('foo5')
-        // @ts-expect-error foo5 is not typed
         c.var.foo5
         return c.json(0)
       })
@@ -1180,29 +1150,18 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
-        // @ts-expect-error foo4 is not typed
         c.get('foo4')
-        // @ts-expect-error foo4 is not typed
         c.var.foo4
-        // @ts-expect-error foo5 is not typed
         c.get('foo5')
-        // @ts-expect-error foo5 is not typed
         c.var.foo5
-        // @ts-expect-error foo6 is not typed
         c.get('foo6')
-        // @ts-expect-error foo6 is not typed
+
         c.var.foo6
         return c.json(0)
       })
@@ -1230,33 +1189,19 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
-        // @ts-expect-error foo4 is not typed
         c.get('foo4')
-        // @ts-expect-error foo4 is not typed
         c.var.foo4
-        // @ts-expect-error foo5 is not typed
         c.get('foo5')
-        // @ts-expect-error foo5 is not typed
         c.var.foo5
-        // @ts-expect-error foo6 is not typed
         c.get('foo6')
-        // @ts-expect-error foo6 is not typed
         c.var.foo6
-        // @ts-expect-error foo7 is not typed
         c.get('foo7')
-        // @ts-expect-error foo7 is not typed
         c.var.foo7
         return c.json(0)
       })
@@ -1286,37 +1231,21 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
-        // @ts-expect-error foo4 is not typed
         c.get('foo4')
-        // @ts-expect-error foo4 is not typed
         c.var.foo4
-        // @ts-expect-error foo5 is not typed
         c.get('foo5')
-        // @ts-expect-error foo5 is not typed
         c.var.foo5
-        // @ts-expect-error foo6 is not typed
         c.get('foo6')
-        // @ts-expect-error foo6 is not typed
         c.var.foo6
-        // @ts-expect-error foo7 is not typed
         c.get('foo7')
-        // @ts-expect-error foo7 is not typed
         c.var.foo7
-        // @ts-expect-error foo8 is not typed
         c.get('foo8')
-        // @ts-expect-error foo8 is not typed
         c.var.foo8
         return c.json(0)
       })
@@ -1348,41 +1277,23 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
-        // @ts-expect-error foo4 is not typed
         c.get('foo4')
-        // @ts-expect-error foo4 is not typed
         c.var.foo4
-        // @ts-expect-error foo5 is not typed
         c.get('foo5')
-        // @ts-expect-error foo5 is not typed
         c.var.foo5
-        // @ts-expect-error foo6 is not typed
         c.get('foo6')
-        // @ts-expect-error foo6 is not typed
         c.var.foo6
-        // @ts-expect-error foo7 is not typed
         c.get('foo7')
-        // @ts-expect-error foo7 is not typed
         c.var.foo7
-        // @ts-expect-error foo8 is not typed
         c.get('foo8')
-        // @ts-expect-error foo8 is not typed
         c.var.foo8
-        // @ts-expect-error foo9 is not typed
         c.get('foo9')
-        // @ts-expect-error foo9 is not typed
         c.var.foo9
         return c.json(0)
       })
