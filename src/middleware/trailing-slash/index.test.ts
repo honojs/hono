@@ -6,7 +6,7 @@ describe('Resolve trailing slash', () => {
 
   it('Trim', async () => {
     app = new Hono({ strict: true })
-    
+
     app.use('*', trimTrailingSlash())
 
     app.get('/the/example/endpoint/without/trailing/slash', async (c) => {
@@ -20,18 +20,18 @@ describe('Resolve trailing slash', () => {
 
   it('Append', async () => {
     app = new Hono({ strict: true })
-    
+
     app.use('*', appendTrailingSlash())
 
     app.get('/the/example/endpoint/with/trailing/slash/', async (c) => {
-        return c.text('301 moved permanently')
+      return c.text('301 moved permanently')
     })
     app.get('/the/example/simulate/a.file', async (c) => {
       return c.text('200 ok')
     })
 
     let resp: Response
-    
+
     resp = await app.request('/the/example/endpoint/with/trailing/slash')
     expect(resp).not.toBeNull()
     expect(resp.status).toBe(301)
