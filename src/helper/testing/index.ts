@@ -1,4 +1,5 @@
 import { hc } from '../../client'
+import type { ExecutionContext } from '../../context'
 import type { Hono } from '../../hono'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
