@@ -2839,7 +2839,7 @@ describe('c.var - with testing types', () => {
   })
 
   app.use('/no-path/10').get(
-    // @ts-expect-error
+    // @ts-expect-error The handlers are more than 10
     mw(),
     mw2(),
     mw3(),
@@ -2854,23 +2854,14 @@ describe('c.var - with testing types', () => {
       return c.text(
         // @ts-expect-error
         c.var.echo('hello') +
-          // @ts-expect-error
           c.var.echo2('hello2') +
-          // @ts-expect-error
           c.var.echo3('hello3') +
-          // @ts-expect-error
           c.var.echo4('hello4') +
-          // @ts-expect-error
           c.var.echo5('hello5') +
-          // @ts-expect-error
           c.var.echo6('hello6') +
-          // @ts-expect-error
           c.var.echo7('hello7') +
-          // @ts-expect-error
           c.var.echo8('hello8') +
-          // @ts-expect-error
           c.var.echo9('hello9') +
-          // @ts-expect-error
           c.var.echo10('hello10')
       )
     }
