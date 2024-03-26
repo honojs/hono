@@ -184,6 +184,11 @@
       "import": "./dist/middleware/logger/index.js",
       "require": "./dist/cjs/middleware/logger/index.js"
     },
+    "./method-override": {
+      "types": "./dist/types/middleware/method-override/index.d.ts",
+      "import": "./dist/middleware/method-override/index.js",
+      "require": "./dist/cjs/middleware/method-override/index.js"
+    },
     "./powered-by": {
       "types": "./dist/types/middleware/powered-by/index.d.ts",
       "import": "./dist/middleware/powered-by/index.js",
@@ -407,6 +412,9 @@
       ],
       "logger": [
         "./dist/types/middleware/logger"
+      ],
+      "method-override": [
+        "./dist/types/middleware/method-override"
       ],
       "powered-by": [
         "./dist/types/middleware/powered-by"
