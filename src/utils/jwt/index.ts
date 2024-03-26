@@ -1,1 +1,2 @@
-export * as Jwt from './jwt'
+import { sign, verify, decode } from './jwt'
+export const Jwt = { sign, verify, decode }
