@@ -19,9 +19,18 @@ const DEFAULT_METHOD_FORM_NAME = '_method'
  * Method Override Middleware
  *
  * @example
- * ```ts
- * app.use('/posts/*', methodOverride({ app }))
- * ```
+ * // with form input method
+ * const app = new Hono()
+ * app.use('/books/*', methodOverride({ app })) // the default `form` value is `_method`
+ * app.use('/authors/*', methodOverride({ app, form: 'method' }))
+ *
+ * @example
+ * // with custom header
+ * app.use('/books/*', methodOverride({ app, header: 'X-HTTP-METHOD-OVERRIDE' }))
+ *
+ * @example
+ * // with query parameter
+ * app.use('/books/*', methodOverride({ app, query: '_method' }))
  */
 export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandler =>
   async function methodOverride(c, next) {
