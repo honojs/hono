@@ -25,6 +25,10 @@ const DEFAULT_METHOD_FORM_NAME = '_method'
  */
 export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandler =>
   async function methodOverride(c, next) {
+    if (c.req.method === 'GET') {
+      return await next()
+    }
+
     const app = options.app
     // Method override by form
     if (!options || options.form || !(options.form || options.header || options.query)) {
@@ -77,7 +81,7 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
           headers: newHeaders,
           method,
         })
-        return app.fetch(request, c.env, c.executionCtx)
+        return app.fetch(request, c.env, getExecutionCtx(c))
       }
     }
     // Method override by query
@@ -93,7 +97,7 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
           headers: c.req.raw.headers,
           method,
         })
-        return app.fetch(request, c.env, c.executionCtx)
+        return app.fetch(request, c.env, getExecutionCtx(c))
       }
     }
     await next()

@@ -6,16 +6,14 @@ describe('Method Override Middleware', () => {
     const app = new Hono()
     app.use('/posts/*', methodOverride({ app }))
     app.use('/posts-custom/*', methodOverride({ app, form: 'custom-input-name' }))
-    for (const path of ['/posts', '/posts-custom']) {
-      app.on(['post', 'delete'], path, async (c) => {
-        const form = await c.req.formData()
-        return c.json({
-          method: c.req.method,
-          message: form.get('message'),
-          contentType: c.req.header('content-type') ?? '',
-        })
+    app.on(['post', 'delete'], ['/posts', '/posts-custom'], async (c) => {
+      const form = await c.req.formData()
+      return c.json({
+        method: c.req.method,
+        message: form.get('message'),
+        contentType: c.req.header('content-type') ?? '',
       })
-    }
+    })
 
     describe('multipart/form-data', () => {
       it('Should override POST to DELETE', async () => {
@@ -60,7 +58,7 @@ describe('Method Override Middleware', () => {
       })
     })
 
-    describe.only('application/x-www-form-urlencoded', () => {
+    describe('application/x-www-form-urlencoded', () => {
       it('Should override POST to DELETE', async () => {
         const params = new URLSearchParams()
         params.append('message', 'Hello')
@@ -109,8 +107,76 @@ describe('Method Override Middleware', () => {
       })
     })
   })
-  // WIP
-  describe('Header', () => {})
-  // WIP
-  describe('Query', () => {})
+
+  describe('Header', () => {
+    const app = new Hono()
+    app.use('/posts/*', methodOverride({ app, header: 'X-METHOD-OVERRIDE' }))
+    app.on(['get', 'post', 'delete'], '/posts', async (c) => {
+      return c.json({
+        method: c.req.method,
+        headerValue: c.req.header('X-METHOD-OVERRIDE') ?? null,
+      })
+    })
+
+    it('Should override POST to DELETE', async () => {
+      const res = await app.request('/posts', {
+        method: 'POST',
+        headers: {
+          'X-METHOD-OVERRIDE': 'DELETE',
+        },
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        method: 'DELETE',
+        headerValue: null,
+      })
+    })
+
+    it('Should not override GET request', async () => {
+      const res = await app.request('/posts', {
+        method: 'GET',
+        headers: {
+          'X-METHOD-OVERRIDE': 'DELETE',
+        },
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        method: 'GET',
+        headerValue: 'DELETE', // It does not modify the headers.
+      })
+    })
+  })
+
+  describe('Query', () => {
+    const app = new Hono()
+    app.use('/posts/*', methodOverride({ app, query: '_method' }))
+    app.on(['get', 'post', 'delete'], '/posts', async (c) => {
+      return c.json({
+        method: c.req.method,
+        queryValue: c.req.query('_method') ?? null,
+      })
+    })
+
+    it('Should override POST to DELETE', async () => {
+      const res = await app.request('/posts?_method=delete', {
+        method: 'POST',
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        method: 'DELETE',
+        queryValue: null,
+      })
+    })
+
+    it('Should not override GET request', async () => {
+      const res = await app.request('/posts?_method=delete', {
+        method: 'GET',
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        method: 'GET',
+        queryValue: 'delete', // It does not modify the queries.
+      })
+    })
+  })
 })
