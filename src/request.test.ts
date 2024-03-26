@@ -159,16 +159,27 @@ describe('headers', () => {
   })
 })
 
-describe('Body methods', () => {
+const text = '{"foo":"bar"}'
+const json = { foo: 'bar' }
+const buffer = new TextEncoder().encode('{"foo":"bar"}').buffer
+
+describe('Body methods with caching', () => {
   test('req.text()', async () => {
     const req = new HonoRequest(
       new Request('http://localhost', {
         method: 'POST',
-        body: 'foo',
+        body: text,
       })
     )
-    expect(await req.text()).toBe('foo')
-    expect(await req.text()).toBe('foo') // Should be cached
+    expect(await req.text()).toEqual(text)
+    expect(await req.text()).toEqual(text)
+    expect(await req.json()).toEqual(json)
+    expect(await req.arrayBuffer()).toEqual(buffer)
+    expect(await req.blob()).toEqual(
+      new Blob([text], {
+        type: 'text/plain;charset=utf-8',
+      })
+    )
   })
 
   test('req.json()', async () => {
@@ -178,12 +189,19 @@ describe('Body methods', () => {
         body: '{"foo":"bar"}',
       })
     )
-    expect(await req.json()).toEqual({ foo: 'bar' })
-    expect(await req.json()).toEqual({ foo: 'bar' }) // Should be cached
+    expect(await req.json()).toEqual(json)
+    expect(await req.json()).toEqual(json)
+    expect(await req.text()).toEqual(text)
+    expect(await req.arrayBuffer()).toEqual(buffer)
+    expect(await req.blob()).toEqual(
+      new Blob([text], {
+        type: 'text/plain;charset=utf-8',
+      })
+    )
   })
 
   test('req.arrayBuffer()', async () => {
-    const buffer = new ArrayBuffer(8)
+    const buffer = new TextEncoder().encode('{"foo":"bar"}').buffer
     const req = new HonoRequest(
       new Request('http://localhost', {
         method: 'POST',
@@ -191,12 +209,19 @@ describe('Body methods', () => {
       })
     )
     expect(await req.arrayBuffer()).toEqual(buffer)
-    expect(await req.arrayBuffer()).toEqual(buffer) // Should be cached
+    expect(await req.arrayBuffer()).toEqual(buffer)
+    expect(await req.text()).toEqual(text)
+    expect(await req.json()).toEqual(json)
+    expect(await req.blob()).toEqual(
+      new Blob([text], {
+        type: '',
+      })
+    )
   })
 
   test('req.blob()', async () => {
-    const blob = new Blob(['foo'], {
-      type: 'text/plain',
+    const blob = new Blob(['{"foo":"bar"}'], {
+      type: 'application/json',
     })
     const req = new HonoRequest(
       new Request('http://localhost', {
@@ -205,7 +230,10 @@ describe('Body methods', () => {
       })
     )
     expect(await req.blob()).toEqual(blob)
-    expect(await req.blob()).toEqual(blob) // Should be cached
+    expect(await req.blob()).toEqual(blob)
+    expect(await req.text()).toEqual(text)
+    expect(await req.json()).toEqual(json)
+    expect(await req.arrayBuffer()).toEqual(buffer)
   })
 
   test('req.formData()', async () => {
@@ -218,6 +246,9 @@ describe('Body methods', () => {
       })
     )
     expect((await req.formData()).get('foo')).toBe('bar')
-    expect((await req.formData()).get('foo')).toBe('bar') // Should be cached
+    expect((await req.formData()).get('foo')).toBe('bar')
+    expect(async () => await req.text()).not.toThrow()
+    expect(async () => await req.arrayBuffer()).not.toThrow()
+    expect(async () => await req.blob()).not.toThrow()
   })
 })
