@@ -51,6 +51,41 @@ describe('Cache Middleware', () => {
     return c.text('cached')
   })
 
+  app.use('/vary1/*', cache({ cacheName: 'my-app-v1', wait: true, vary: 'Accept' }))
+  app.get('/vary1/', (c) => {
+    return c.text('cached')
+  })
+
+  app.use('/vary2/*', cache({ cacheName: 'my-app-v1', wait: true, vary: 'Accept' }))
+  app.get('/vary2/', (c) => {
+    c.header('Vary', 'Accept-Encoding')
+    return c.text('cached')
+  })
+
+  app.use(
+    '/vary3/*',
+    cache({ cacheName: 'my-app-v1', wait: true, vary: 'Accept, Accept-Encoding' })
+  )
+  app.get('/vary3/', (c) => {
+    c.header('Vary', 'Accept-Language')
+    return c.text('cached')
+  })
+
+  app.use(
+    '/vary4/*',
+    cache({ cacheName: 'my-app-v1', wait: true, vary: 'Accept, Accept-Encoding' })
+  )
+  app.get('/vary4/', (c) => {
+    c.header('Vary', 'Accept, Accept-Language')
+    return c.text('cached')
+  })
+
+  app.use('/vary5/*', cache({ cacheName: 'my-app-v1', wait: true, vary: 'Accept' }))
+  app.get('/vary5/', (c) => {
+    c.header('Vary', '*')
+    return c.text('cached')
+  })
+
   app.use('/not-found/*', cache({ cacheName: 'my-app-v1', wait: true, cacheControl: 'max-age=10' }))
 
   const ctx = new Context()
@@ -91,6 +126,41 @@ describe('Cache Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('cache-control')).toBe('private, max-age=10')
+  })
+
+  it('Should set correct vary headers for route vary1', async () => {
+    const res = await app.request('http://localhost/vary1/')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('vary')).toBe('accept')
+  })
+
+  it('Should append Accept-Language to vary headers for route vary2', async () => {
+    const res = await app.request('http://localhost/vary2/')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('vary')).toBe('accept, accept-encoding')
+  })
+
+  it('Should merge and deduplicate vary headers without duplication', async () => {
+    const res = await app.request('http://localhost/vary3/')
+    expect(res.headers.get('vary')).toBe('accept, accept-encoding, accept-language')
+  })
+
+  it('Should not duplicate vary headers when set both in middleware and handler', async () => {
+    const res = await app.request('http://localhost/vary4/')
+    expect(res.headers.get('vary')).toBe('accept, accept-encoding, accept-language')
+  })
+
+  it('Should override vary headers with * when * is set by handler in route vary3', async () => {
+    const res = await app.request('http://localhost/vary5/')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('vary')).toBe('*')
+  })
+
+  it('Should throw an error when * is set as vary header in middleware configuration', async () => {
+    expect(() => cache({ cacheName: 'my-app-v1', wait: true, vary: '*' })).toThrow()
   })
 
   it('Should not cache if it is not found', async () => {
