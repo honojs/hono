@@ -70,7 +70,7 @@ export const validator = <
         }
 
         if (c.req.bodyCache.json) {
-          value = c.req.bodyCache.json
+          value = await c.req.bodyCache.json
           break
         }
 
@@ -99,7 +99,7 @@ export const validator = <
         }
 
         if (c.req.bodyCache.formData) {
-          value = c.req.bodyCache.formData
+          value = await c.req.bodyCache.formData
           break
         }
 

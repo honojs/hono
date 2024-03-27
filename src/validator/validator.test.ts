@@ -186,6 +186,9 @@ describe('Cached contents', () => {
           await next()
         },
         validator('json', (value) => {
+          if (value instanceof Promise) {
+            throw new Error('Value is Promise')
+          }
           return value
         }),
         async (c) => {
@@ -224,6 +227,9 @@ describe('Cached contents', () => {
           await next()
         },
         validator('form', (value) => {
+          if (value instanceof Promise) {
+            throw new Error('Value is Promise')
+          }
           return value
         }),
         async (c) => {
