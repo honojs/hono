@@ -53,9 +53,9 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
 
     const app = options.app
     // Method override by form
-    if (!options || options.form || !(options.form || options.header || options.query)) {
+    if (!(options.header || options.query)) {
       const contentType = c.req.header('content-type')
-      const methodFormName = options?.form || DEFAULT_METHOD_FORM_NAME
+      const methodFormName = options.form || DEFAULT_METHOD_FORM_NAME
       const clonedRequest = c.req.raw.clone()
       const newRequest = clonedRequest.clone()
       // Content-Type is `multipart/form-data`
