@@ -86,7 +86,10 @@ describe('Cache Middleware', () => {
     return c.text('cached')
   })
 
-  app.use('/not-found/*', cache({ cacheName: 'my-app-v1', wait: true, cacheControl: 'max-age=10' }))
+  app.use(
+    '/not-found/*',
+    cache({ cacheName: 'my-app-v1', wait: true, cacheControl: 'max-age=10', vary: 'Accept' })
+  )
 
   const ctx = new Context()
 
@@ -168,5 +171,6 @@ describe('Cache Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
     expect(res.headers.get('cache-control')).toBeFalsy()
+    expect(res.headers.get('vary')).toBeFalsy()
   })
 })
