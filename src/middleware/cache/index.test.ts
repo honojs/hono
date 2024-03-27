@@ -131,38 +131,38 @@ describe('Cache Middleware', () => {
     expect(res.headers.get('cache-control')).toBe('private, max-age=10')
   })
 
-  it('Should set correct vary headers for route vary1', async () => {
+  it('Should correctly apply a single Vary header from middleware', async () => {
     const res = await app.request('http://localhost/vary1/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('vary')).toBe('accept')
   })
 
-  it('Should append Accept-Language to vary headers for route vary2', async () => {
+  it('Should merge Vary headers from middleware and handler without duplicating', async () => {
     const res = await app.request('http://localhost/vary2/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('vary')).toBe('accept, accept-encoding')
   })
 
-  it('Should merge and deduplicate vary headers without duplication', async () => {
+  it('Should deduplicate while merging multiple Vary headers from middleware and handler', async () => {
     const res = await app.request('http://localhost/vary3/')
     expect(res.headers.get('vary')).toBe('accept, accept-encoding, accept-language')
   })
 
-  it('Should not duplicate vary headers when set both in middleware and handler', async () => {
+  it('Should prevent duplication of Vary headers when identical ones are set by both middleware and handler', async () => {
     const res = await app.request('http://localhost/vary4/')
     expect(res.headers.get('vary')).toBe('accept, accept-encoding, accept-language')
   })
 
-  it('Should override vary headers with * when * is set by handler in route vary3', async () => {
+  it('Should prioritize the "*" Vary header from handler over any set by middleware', async () => {
     const res = await app.request('http://localhost/vary5/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('vary')).toBe('*')
   })
 
-  it('Should throw an error when * is set as vary header in middleware configuration', async () => {
+  it('Should not allow "*" as a Vary header in middleware configuration due to its impact on caching effectiveness', async () => {
     expect(() => cache({ cacheName: 'my-app-v1', wait: true, vary: '*' })).toThrow()
   })
 
