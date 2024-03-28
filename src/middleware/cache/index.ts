@@ -46,7 +46,7 @@ export const cache = (options: {
           .map((d) => d.trim()) ?? []
       const vary = Array.from(
         new Set(
-          [...existingDirectives, ...options.vary].map((directive) => directive.toLocaleLowerCase())
+          [...existingDirectives, ...options.vary].map((directive) => directive.toLowerCase())
         )
       ).sort((a, b) => a.localeCompare(b))
 
