@@ -44,11 +44,12 @@ export const cache = (options: {
           .get('Vary')
           ?.split(',')
           .map((d) => d.trim()) ?? []
+
       const vary = Array.from(
         new Set(
           [...existingDirectives, ...options.vary].map((directive) => directive.toLowerCase())
         )
-      ).sort((a, b) => a.localeCompare(b))
+      ).sort()
 
       if (vary.includes('*')) {
         c.header('Vary', '*')
