@@ -1,0 +1,1 @@
+export { FilePatternRouter } from './router'
