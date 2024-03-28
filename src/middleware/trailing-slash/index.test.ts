@@ -26,6 +26,10 @@ describe('Resolve trailing slash', () => {
     expect(resp).not.toBeNull()
     expect(resp.status).toBe(301)
 
+    resp = await app.request('/the/example/endpoint/without/trailing/slash/?exampleParam=1')
+    expect(resp).not.toBeNull()
+    expect(resp.status).toBe(301)
+
     resp = await app.request('/the/example/endpoint/without/trailing/slash')
     expect(resp).not.toBeNull()
     expect(resp.status).toBe(200)
@@ -49,12 +53,16 @@ describe('Resolve trailing slash', () => {
     expect(resp).not.toBeNull()
     expect(resp.status).toBe(301)
 
+    resp = await app.request('/the/example/endpoint/with/trailing/slash?exampleParam=1')
+    expect(resp).not.toBeNull()
+    expect(resp.status).toBe(301)
+
     resp = await app.request('/the/example/endpoint/with/trailing/slash/')
     expect(resp).not.toBeNull()
     expect(resp.status).toBe(200)
 
     resp = await app.request('/the/example/simulate/a.file')
     expect(resp).not.toBeNull()
-    expect(resp.status).toBe(200)
+    expect(resp.status).toBe(301) // the misleading status code
   })
 })
