@@ -92,7 +92,6 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
       }
     }
     // Method override by header
-    // There is no test now.
     else if (options.header) {
       const headerName = options.header
       const method = c.req.header(headerName)
@@ -107,7 +106,6 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
       }
     }
     // Method override by query
-    // There is no test now.
     else if (options.query) {
       const queryName = options.query
       const method = c.req.query(queryName)
