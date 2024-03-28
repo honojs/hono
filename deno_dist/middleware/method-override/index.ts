@@ -7,11 +7,24 @@ import { parseBody } from '../../utils/body.ts'
 type MethodOverrideOptions = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app: Hono<any, any, any>
-  // Default is 'form' and the value is `_method`
-  form?: string
-  header?: string
-  query?: string
-}
+} & (
+  | {
+      // Default is 'form' and the value is `_method`
+      form?: string
+      header?: never
+      query?: never
+    }
+  | {
+      form?: never
+      header: string
+      query?: never
+    }
+  | {
+      form?: never
+      header?: never
+      query: string
+    }
+)
 
 const DEFAULT_METHOD_FORM_NAME = '_method'
 
@@ -40,9 +53,9 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
 
     const app = options.app
     // Method override by form
-    if (!options || options.form || !(options.form || options.header || options.query)) {
+    if (!(options.header || options.query)) {
       const contentType = c.req.header('content-type')
-      const methodFormName = options?.form || DEFAULT_METHOD_FORM_NAME
+      const methodFormName = options.form || DEFAULT_METHOD_FORM_NAME
       const clonedRequest = c.req.raw.clone()
       const newRequest = clonedRequest.clone()
       // Content-Type is `multipart/form-data`
@@ -79,7 +92,6 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
       }
     }
     // Method override by header
-    // There is no test now.
     else if (options.header) {
       const headerName = options.header
       const method = c.req.header(headerName)
@@ -94,7 +106,6 @@ export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandle
       }
     }
     // Method override by query
-    // There is no test now.
     else if (options.query) {
       const queryName = options.query
       const method = c.req.query(queryName)
