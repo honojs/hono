@@ -51,12 +51,12 @@ describe('Cache Middleware', () => {
     return c.text('cached')
   })
 
-  app.use('/vary1/*', cache({ cacheName: 'my-app-v1', wait: true, vary: 'Accept' }))
+  app.use('/vary1/*', cache({ cacheName: 'my-app-v1', wait: true, vary: ['Accept'] }))
   app.get('/vary1/', (c) => {
     return c.text('cached')
   })
 
-  app.use('/vary2/*', cache({ cacheName: 'my-app-v1', wait: true, vary: 'Accept' }))
+  app.use('/vary2/*', cache({ cacheName: 'my-app-v1', wait: true, vary: ['Accept'] }))
   app.get('/vary2/', (c) => {
     c.header('Vary', 'Accept-Encoding')
     return c.text('cached')
@@ -64,7 +64,7 @@ describe('Cache Middleware', () => {
 
   app.use(
     '/vary3/*',
-    cache({ cacheName: 'my-app-v1', wait: true, vary: 'Accept, Accept-Encoding' })
+    cache({ cacheName: 'my-app-v1', wait: true, vary: ['Accept', 'Accept-Encoding'] })
   )
   app.get('/vary3/', (c) => {
     c.header('Vary', 'Accept-Language')
@@ -73,14 +73,14 @@ describe('Cache Middleware', () => {
 
   app.use(
     '/vary4/*',
-    cache({ cacheName: 'my-app-v1', wait: true, vary: 'Accept, Accept-Encoding' })
+    cache({ cacheName: 'my-app-v1', wait: true, vary: ['Accept', 'Accept-Encoding'] })
   )
   app.get('/vary4/', (c) => {
     c.header('Vary', 'Accept, Accept-Language')
     return c.text('cached')
   })
 
-  app.use('/vary5/*', cache({ cacheName: 'my-app-v1', wait: true, vary: 'Accept' }))
+  app.use('/vary5/*', cache({ cacheName: 'my-app-v1', wait: true, vary: ['Accept'] }))
   app.get('/vary5/', (c) => {
     c.header('Vary', '*')
     return c.text('cached')
@@ -88,7 +88,7 @@ describe('Cache Middleware', () => {
 
   app.use(
     '/not-found/*',
-    cache({ cacheName: 'my-app-v1', wait: true, cacheControl: 'max-age=10', vary: 'Accept' })
+    cache({ cacheName: 'my-app-v1', wait: true, cacheControl: 'max-age=10', vary: ['Accept'] })
   )
 
   const ctx = new Context()
