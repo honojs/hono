@@ -760,6 +760,11 @@ describe('param and query', () => {
       return c.text(`q is ${queries[0]} and ${queries[1]}, limit is ${limit[0]}`)
     })
 
+    app.get('/optional-values', (c) => {
+      const { q } = c.req.queries()
+      return c.text(`q is ${typeof q === 'undefined' ? 'not ' : ''}present`)
+    })
+
     app.get('/add-header', (c) => {
       const bar = c.req.header('X-Foo')
       return c.text(`foo is ${bar}`)
@@ -788,7 +793,12 @@ describe('param and query', () => {
 
     app.get('/multiple-values', (c) => {
       const { q, limit } = c.req.queries()
-      return c.text(`q is ${q[0]} and ${q[1]}, limit is ${limit[0]}`)
+      return c.text(`q is ${q?.[0]} and ${q?.[1]}, limit is ${limit?.[0]}`)
+    })
+
+    app.get('/optional-values', (c) => {
+      const { q } = c.req.queries()
+      return c.text(`q is ${typeof q === 'undefined' ? 'not ' : ''}present`)
     })
 
     app.get('/add-header', (c) => {
@@ -842,6 +852,18 @@ describe('param and query', () => {
       const res = await app.request('http://localhost/multiple-values?q=foo&q=bar&limit=10')
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('q is foo and bar, limit is 10')
+    })
+
+    it('query of /optional-values?q=foo is found', async () => {
+      const res = await app.request('http://localhost/optional-values?q=foo')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('q is present')
+    })
+
+    it('query of /optional-values is not found', async () => {
+      const res = await app.request('http://localhost/optional-values')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('q is not present')
     })
 
     it('/add-header header - X-Foo is Bar', async () => {
