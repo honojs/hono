@@ -1,5 +1,5 @@
 import { encodeBase64Url, decodeBase64Url } from '../../utils/encode'
-import type { AlgorithmTypes } from './types'
+import type { AlgorithmTypes, JWTPayload } from './types'
 import { JwtTokenIssuedAt } from './types'
 import {
   JwtTokenInvalid,
@@ -96,7 +96,7 @@ const signing = async (
 }
 
 export const sign = async (
-  payload: unknown,
+  payload: JWTPayload,
   secret: string,
   alg: AlgorithmTypeName = 'HS256'
 ): Promise<string> => {

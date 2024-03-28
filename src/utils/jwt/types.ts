@@ -45,3 +45,24 @@ export enum AlgorithmTypes {
   HS384 = 'HS384',
   HS512 = 'HS512',
 }
+
+/**
+ * JWT Payload
+ */
+export type JWTPayload =
+  | (unknown & {})
+  | {
+      [key: string]: unknown
+      /**
+       * The token is checked to ensure it has not expired.
+       */
+      exp?: number
+      /**
+       * The token is checked to ensure it is not being used before a specified time.
+       */
+      nbf?: number
+      /**
+       * The token is checked to ensure it is not issued in the future.
+       */
+      iat?: number
+    }
