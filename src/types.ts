@@ -24,7 +24,7 @@ export type Env = {
   Variables?: Variables
 }
 
-export type Next = () => Promise<void>
+export type Next = () => void | Promise<void>
 
 export type Input = {
   in?: {}
@@ -65,7 +65,7 @@ export type MiddlewareHandler<
   E extends Env = any,
   P extends string = string,
   I extends Input = {}
-> = (c: Context<E, P, I>, next: Next) => Promise<Response | void>
+> = (c: Context<E, P, I>, next: Next) => Response | void | Promise<Response | void>
 
 export type H<
   E extends Env = any,
