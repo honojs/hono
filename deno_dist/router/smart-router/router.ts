@@ -59,7 +59,7 @@ export class SmartRouter<T> implements Router<T> {
     return res as Result<T>
   }
 
-  get activeRouter() {
+  get activeRouter(): Router<T> {
     if (this.routes || this.routers.length !== 1) {
       throw new Error('No active router has been determined yet.')
     }
