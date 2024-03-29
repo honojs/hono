@@ -3,12 +3,13 @@ import type { SignatureAlgorithm } from './jwa'
 import { AlgorithmTypes } from './jwa'
 import type { SignatureKey } from './jws'
 import { signing, verifying } from './jws'
-import { JwtHeaderInvalid, JwtTokenIssuedAt } from './types'
+import { JwtHeaderInvalid, type JWTPayload } from './types'
 import {
   JwtTokenInvalid,
   JwtTokenNotBefore,
   JwtTokenExpired,
   JwtTokenSignatureMismatched,
+  JwtTokenIssuedAt,
 } from './types'
 import { utf8Decoder, utf8Encoder } from './utf8'
 
@@ -37,7 +38,7 @@ export function isTokenHeader(obj: any): obj is TokenHeader {
 }
 
 export const sign = async (
-  payload: unknown,
+  payload: JWTPayload,
   privateKey: SignatureKey,
   alg: SignatureAlgorithm = 'HS256'
 ): Promise<string> => {
