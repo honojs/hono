@@ -194,18 +194,27 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   private cachedBody = (key: keyof Body) => {
     const { bodyCache, raw } = this
     const cachedBody = bodyCache[key]
+
     if (cachedBody) {
       return cachedBody
     }
-    /**
-     * If an arrayBuffer cache is exist,
-     * use it for creating a text, json, and others.
-     */
-    if (bodyCache.arrayBuffer) {
-      return (async () => {
-        return await new Response(bodyCache.arrayBuffer)[key]()
-      })()
+
+    if (!bodyCache[key]) {
+      for (const keyOfBodyCache of Object.keys(bodyCache)) {
+        if (keyOfBodyCache === 'parsedBody') {
+          continue
+        }
+        return (async () => {
+          // @ts-expect-error bodyCache[keyOfBodyCache] can be passed as a body
+          let body = await bodyCache[keyOfBodyCache]
+          if (keyOfBodyCache === 'json') {
+            body = JSON.stringify(body)
+          }
+          return await new Response(body)[key]()
+        })()
+      }
     }
+
     return (bodyCache[key] = raw[key]())
   }
 

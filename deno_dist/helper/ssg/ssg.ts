@@ -30,8 +30,13 @@ export interface ToSSGResult {
   error?: Error
 }
 
-const generateFilePath = (routePath: string, outDir: string, mimeType: string) => {
-  const extension = determineExtension(mimeType)
+const generateFilePath = (
+  routePath: string,
+  outDir: string,
+  mimeType: string,
+  extensionMap?: Record<string, string>
+) => {
+  const extension = determineExtension(mimeType, extensionMap)
 
   if (routePath.endsWith(`.${extension}`)) {
     return joinPaths(outDir, routePath)
@@ -62,17 +67,22 @@ const parseResponseContent = async (response: Response): Promise<string | ArrayB
   }
 }
 
-const determineExtension = (mimeType: string): string => {
-  switch (mimeType) {
-    case 'text/html':
-      return 'html'
-    case 'text/xml':
-    case 'application/xml':
-      return 'xml'
-    default: {
-      return getExtension(mimeType) || 'html'
-    }
+export const defaultExtensionMap: Record<string, string> = {
+  'text/html': 'html',
+  'text/xml': 'xml',
+  'application/xml': 'xml',
+  'application/yaml': 'yaml',
+}
+
+const determineExtension = (
+  mimeType: string,
+  userExtensionMap?: Record<string, string>
+): string => {
+  const extensionMap = userExtensionMap || defaultExtensionMap
+  if (mimeType in extensionMap) {
+    return extensionMap[mimeType]
   }
+  return getExtension(mimeType) || 'html'
 }
 
 export type BeforeRequestHook = (req: Request) => Request | false | Promise<Request | false>
@@ -85,6 +95,7 @@ export interface ToSSGOptions {
   afterResponseHook?: AfterResponseHook
   afterGenerateHook?: AfterGenerateHook
   concurrency?: number
+  extensionMap?: Record<string, string>
 }
 
 /**
@@ -204,14 +215,15 @@ const createdDirs: Set<string> = new Set()
 export const saveContentToFile = async (
   data: Promise<{ routePath: string; content: string | ArrayBuffer; mimeType: string } | undefined>,
   fsModule: FileSystemModule,
-  outDir: string
+  outDir: string,
+  extensionMap?: Record<string, string>
 ): Promise<string | undefined> => {
   const awaitedData = await data
   if (!awaitedData) {
     return
   }
   const { routePath, content, mimeType } = awaitedData
-  const filePath = generateFilePath(routePath, outDir, mimeType)
+  const filePath = generateFilePath(routePath, outDir, mimeType, extensionMap)
   const dirPath = dirname(filePath)
 
   if (!createdDirs.has(dirPath)) {

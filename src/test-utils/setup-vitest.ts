@@ -6,6 +6,7 @@ import { vi } from 'vitest'
  * crypto
  */
 vi.stubGlobal('crypto', crypto)
+vi.stubGlobal('CryptoKey', crypto.webcrypto.CryptoKey)
 
 /**
  * Cache API
