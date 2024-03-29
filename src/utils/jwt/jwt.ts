@@ -3,7 +3,7 @@ import type { SignatureAlgorithm } from './jwa'
 import { AlgorithmTypes } from './jwa'
 import type { SignatureKey } from './jws'
 import { signing, verifying } from './jws'
-import { JwtHeaderInvalid, JWTPayload } from './types'
+import { JwtHeaderInvalid, type JWTPayload } from './types'
 import {
   JwtTokenInvalid,
   JwtTokenNotBefore,
