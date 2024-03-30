@@ -169,14 +169,14 @@ describe('Cache Middleware', () => {
     expect(res.headers.get('vary')).toBe('accept, accept-encoding, accept-language')
   })
 
-  it('Should handle Vary header with Accept and Accept-Encoding specified as a string', async () => {
+  it('Should correctly apply and return a single Vary header with Accept specified by middleware', async () => {
     const res = await app.request('http://localhost/vary5/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('vary')).toBe('accept')
   })
 
-  it('Should handle Vary header with Accept and Accept-Encoding specified as an array', async () => {
+  it('Should merge Vary headers specified by middleware as a string with additional headers added by handler', async () => {
     const res = await app.request('http://localhost/vary6/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
