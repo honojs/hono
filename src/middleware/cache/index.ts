@@ -5,7 +5,7 @@ export const cache = (options: {
   cacheName: string
   wait?: boolean
   cacheControl?: string
-  vary?: string[]
+  vary?: string | string[]
 }): MiddlewareHandler => {
   if (options.wait === undefined) {
     options.wait = false
@@ -14,6 +14,9 @@ export const cache = (options: {
   const cacheControlDirectives = options.cacheControl
     ?.split(',')
     .map((directive) => directive.toLowerCase())
+  const varyDirectives = Array.isArray(options.vary)
+    ? options.vary
+    : options.vary?.split(',').map((directive) => directive.trim())
   // RFC 7231 Section 7.1.4 specifies that "*" is not allowed in Vary header.
   // See: https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.4
   if (options.vary?.includes('*')) {
@@ -38,7 +41,7 @@ export const cache = (options: {
       }
     }
 
-    if (options.vary) {
+    if (varyDirectives) {
       const existingDirectives =
         c.res.headers
           .get('Vary')
@@ -47,7 +50,7 @@ export const cache = (options: {
 
       const vary = Array.from(
         new Set(
-          [...existingDirectives, ...options.vary].map((directive) => directive.toLowerCase())
+          [...existingDirectives, ...varyDirectives].map((directive) => directive.toLowerCase())
         )
       ).sort()
 

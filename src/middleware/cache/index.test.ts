@@ -80,8 +80,22 @@ describe('Cache Middleware', () => {
     return c.text('cached')
   })
 
-  app.use('/vary5/*', cache({ cacheName: 'my-app-v1', wait: true, vary: ['Accept'] }))
+  app.use('/vary5/*', cache({ cacheName: 'my-app-v1', wait: true, vary: 'Accept' }))
   app.get('/vary5/', (c) => {
+    return c.text('cached with Accept and Accept-Encoding headers')
+  })
+
+  app.use(
+    '/vary6/*',
+    cache({ cacheName: 'my-app-v1', wait: true, vary: 'Accept, Accept-Encoding' })
+  )
+  app.get('/vary6/', (c) => {
+    c.header('Vary', 'Accept, Accept-Language')
+    return c.text('cached with Accept and Accept-Encoding headers as array')
+  })
+
+  app.use('/vary7/*', cache({ cacheName: 'my-app-v1', wait: true, vary: ['Accept'] }))
+  app.get('/vary7/', (c) => {
     c.header('Vary', '*')
     return c.text('cached')
   })
@@ -155,8 +169,22 @@ describe('Cache Middleware', () => {
     expect(res.headers.get('vary')).toBe('accept, accept-encoding, accept-language')
   })
 
-  it('Should prioritize the "*" Vary header from handler over any set by middleware', async () => {
+  it('Should handle Vary header with Accept and Accept-Encoding specified as a string', async () => {
     const res = await app.request('http://localhost/vary5/')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('vary')).toBe('accept')
+  })
+
+  it('Should handle Vary header with Accept and Accept-Encoding specified as an array', async () => {
+    const res = await app.request('http://localhost/vary6/')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('vary')).toBe('accept, accept-encoding, accept-language')
+  })
+
+  it('Should prioritize the "*" Vary header from handler over any set by middleware', async () => {
+    const res = await app.request('http://localhost/vary7/')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('vary')).toBe('*')
