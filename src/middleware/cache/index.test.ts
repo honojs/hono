@@ -192,6 +192,7 @@ describe('Cache Middleware', () => {
 
   it('Should not allow "*" as a Vary header in middleware configuration due to its impact on caching effectiveness', async () => {
     expect(() => cache({ cacheName: 'my-app-v1', wait: true, vary: ['*'] })).toThrow()
+    expect(() => cache({ cacheName: 'my-app-v1', wait: true, vary: '*' })).toThrow()
   })
 
   it('Should not cache if it is not found', async () => {
