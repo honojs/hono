@@ -60,7 +60,6 @@ export const validator = <
   return async (c, next) => {
     let value = {}
     const contentType = c.req.header('Content-Type')
-    const bodyTypes = ['text', 'arrayBuffer', 'blob']
 
     switch (target) {
       case 'json':
@@ -81,7 +80,7 @@ export const validator = <
         }
 
         if (c.req.bodyCache.formData) {
-          value = c.req.bodyCache.formData
+          value = await c.req.bodyCache.formData
           break
         }
 
