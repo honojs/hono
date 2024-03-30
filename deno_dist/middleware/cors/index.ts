@@ -1,7 +1,8 @@
+import type { Context } from '../../context.ts'
 import type { MiddlewareHandler } from '../../types.ts'
 
 type CORSOptions = {
-  origin: string | string[] | ((origin: string) => string | undefined | null)
+  origin: string | string[] | ((origin: string, c: Context) => string | undefined | null)
   allowMethods?: string[]
   allowHeaders?: string[]
   maxAge?: number
@@ -36,7 +37,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       c.res.headers.set(key, value)
     }
 
-    const allowOrigin = findAllowOrigin(c.req.header('origin') || '')
+    const allowOrigin = findAllowOrigin(c.req.header('origin') || '', c)
     if (allowOrigin) {
       set('Access-Control-Allow-Origin', allowOrigin)
     }
