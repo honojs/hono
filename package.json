@@ -114,6 +114,11 @@
       "import": "./dist/middleware/etag/index.js",
       "require": "./dist/cjs/middleware/etag/index.js"
     },
+    "./trailing-slash": {
+      "types": "./dist/types/middleware/trailing-slash/index.d.ts",
+      "import": "./dist/middleware/trailing-slash/index.js",
+      "require": "./dist/cjs/middleware/trailing-slash/index.js"
+    },
     "./html": {
       "types": "./dist/types/helper/html/index.d.ts",
       "import": "./dist/helper/html/index.js",
