@@ -70,6 +70,19 @@ describe('Basic Auth by Middleware', () => {
     return auth(c, next)
   })
 
+  app.use('/verify-user/*', async (c, next) => {
+    const auth = basicAuth({
+      verifyUser: (username, password, c) => {
+        return (
+          c.req.path === '/verify-user' &&
+          username === 'dynamic-user' &&
+          password === 'hono-password'
+        )
+      },
+    })
+    return auth(c, next)
+  })
+
   app.get('/auth/*', (c) => {
     handlerExecuted = true
     return c.text('auth')
@@ -90,6 +103,11 @@ describe('Basic Auth by Middleware', () => {
   app.get('/nested/*', (c) => {
     handlerExecuted = true
     return c.text('nested')
+  })
+
+  app.get('/verify-user', (c) => {
+    handlerExecuted = true
+    return c.text('verify-user')
   })
 
   it('Should not authorize', async () => {
@@ -177,6 +195,30 @@ describe('Basic Auth by Middleware', () => {
     const credential = Buffer.from('foo' + ':' + 'bar').toString('base64')
 
     const req = new Request('http://localhost/nested')
+    req.headers.set('Authorization', `Basic ${credential}`)
+    const res = await app.request(req)
+    expect(handlerExecuted).toBeFalsy()
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(await res.text()).toBe('Unauthorized')
+  })
+
+  it('Should authorize - verifyUser', async () => {
+    const credential = Buffer.from('dynamic-user' + ':' + 'hono-password').toString('base64')
+
+    const req = new Request('http://localhost/verify-user')
+    req.headers.set('Authorization', `Basic ${credential}`)
+    const res = await app.request(req)
+    expect(handlerExecuted).toBeTruthy()
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('verify-user')
+  })
+
+  it('Should not authorize - verifyUser', async () => {
+    const credential = Buffer.from('foo' + ':' + 'bar').toString('base64')
+
+    const req = new Request('http://localhost/verify-user')
     req.headers.set('Authorization', `Basic ${credential}`)
     const res = await app.request(req)
     expect(handlerExecuted).toBeFalsy()
