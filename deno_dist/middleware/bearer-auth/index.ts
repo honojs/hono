@@ -16,7 +16,7 @@ type BearerAuthOptions =
   | {
       realm?: string
       prefix?: string
-      verifyToken: (token: string, c: Context) => Promise<boolean>
+      verifyToken: (token: string, c: Context) => boolean | Promise<boolean>
       hashFunction?: Function
     }
 
