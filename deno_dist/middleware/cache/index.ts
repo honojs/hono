@@ -7,6 +7,11 @@ export const cache = (options: {
   cacheControl?: string
   vary?: string | string[]
 }): MiddlewareHandler => {
+  if (!globalThis.caches) {
+    console.log('Cache Middleware is not enabled because caches is not defined.')
+    return async (_c, next) => await next()
+  }
+
   if (options.wait === undefined) {
     options.wait = false
   }
