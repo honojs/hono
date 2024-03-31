@@ -291,6 +291,9 @@ describe('fetchRoutesContent function', () => {
   beforeEach(() => {
     app = new Hono()
     app.get('/text', (c) => c.text('Text Response'))
+    app.get('/text-utf8', (c) => {
+      return c.text('Text Response', 200, { 'Content-Type': 'text/plain;charset=UTF-8' })
+    })
     app.get('/html', (c) => c.html('<p>HTML Response</p>'))
     app.get('/json', (c) => c.json({ message: 'JSON Response' }))
     app.use('*', poweredBy())
@@ -300,6 +303,10 @@ describe('fetchRoutesContent function', () => {
     const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
 
     expect(htmlMap.get('/text')).toEqual({
+      content: 'Text Response',
+      mimeType: 'text/plain',
+    })
+    expect(htmlMap.get('/text-utf8')).toEqual({
       content: 'Text Response',
       mimeType: 'text/plain',
     })
