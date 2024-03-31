@@ -7,11 +7,19 @@ import type { MiddlewareHandler } from '../../types.ts'
  */
 export const trimTrailingSlash = (): MiddlewareHandler => {
   return async function trimTrailingSlash(c, next) {
-    const { path, url } = c.req
+    await next()
 
-    return path[path.length - 1] === '/' && path !== '/'
-      ? c.redirect(url.substring(0, url.length - 1), 301)
-      : await next()
+    if (
+      c.res.status === 404 &&
+      c.req.method === 'GET' &&
+      c.req.path !== '/' &&
+      c.req.path[c.req.path.length - 1] === '/'
+    ) {
+      const url = new URL(c.req.url)
+      url.pathname = url.pathname.substring(0, url.pathname.length - 1)
+
+      c.res = c.redirect(url.toString(), 301)
+    }
   }
 }
 
@@ -22,10 +30,17 @@ export const trimTrailingSlash = (): MiddlewareHandler => {
  */
 export const appendTrailingSlash = (): MiddlewareHandler => {
   return async function appendTrailingSlash(c, next) {
-    const { path, url } = c.req
+    await next()
 
-    return path[path.length - 1] !== '/' && path.indexOf('.') === -1
-      ? c.redirect(`${url}/`, 301)
-      : await next()
+    if (
+      c.res.status === 404 &&
+      c.req.method === 'GET' &&
+      c.req.path[c.req.path.length - 1] !== '/'
+    ) {
+      const url = new URL(c.req.url)
+      url.pathname += '/'
+
+      c.res = c.redirect(url.toString(), 301)
+    }
   }
 }
