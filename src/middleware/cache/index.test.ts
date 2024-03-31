@@ -99,4 +99,18 @@ describe('Cache Middleware', () => {
     expect(res.status).toBe(404)
     expect(res.headers.get('cache-control')).toBeFalsy()
   })
+
+  it('Should not be enabled if caches is not defined', async () => {
+    vi.stubGlobal('caches', undefined)
+    const app = new Hono()
+    app.use(cache({ cacheName: 'my-app-v1', cacheControl: 'max-age=10' }))
+    app.get('/', (c) => {
+      return c.text('cached')
+    })
+    expect(caches).toBeUndefined()
+    const res = await app.request('/')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('cache-control')).toBe(null)
+  })
 })
