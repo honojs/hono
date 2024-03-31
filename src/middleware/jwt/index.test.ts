@@ -1,4 +1,5 @@
 import { Hono } from '../../hono'
+import { HTTPException } from '../../http-exception'
 import { jwt } from '.'
 
 describe('JWT', () => {
@@ -212,6 +213,32 @@ describe('JWT', () => {
         `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
       )
       expect(handlerExecuted).toBeFalsy()
+    })
+  })
+
+  describe('Error handling with `cause`', () => {
+    const app = new Hono()
+
+    app.use('/auth/*', jwt({ secret: 'a-secret' }))
+    app.get('/auth/*', (c) => c.text('Authorized'))
+
+    app.onError((e, c) => {
+      if (e instanceof HTTPException && e.cause instanceof Error) {
+        return c.json({ name: e.cause.name, message: e.cause.message }, 401)
+      }
+      return c.text(e.message, 401)
+    })
+
+    it('Should not authorize', async () => {
+      const credential = 'abc.def.ghi'
+      const req = new Request('http://localhost/auth')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res.status).toBe(401)
+      expect(await res.json()).toEqual({
+        name: 'JwtTokenInvalid',
+        message: `invalid JWT token: ${credential}`,
+      })
     })
   })
 })
