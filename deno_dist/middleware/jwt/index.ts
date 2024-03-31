@@ -16,7 +16,7 @@ declare module '../../context.ts' {
 export const jwt = (options: {
   secret: string
   cookie?: string
-  alg?: string
+  alg?: SignatureAlgorithm
 }): MiddlewareHandler => {
   if (!options) {
     throw new Error('JWT auth middleware requires options for "secret')
@@ -63,7 +63,7 @@ export const jwt = (options: {
     let payload
     let msg = ''
     try {
-      payload = await Jwt.verify(token, options.secret, options.alg as SignatureAlgorithm)
+      payload = await Jwt.verify(token, options.secret, options.alg)
     } catch (e) {
       msg = `${e}`
     }
