@@ -1,3 +1,4 @@
+import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 import { timingSafeEqual } from '../../utils/buffer'
@@ -5,13 +6,22 @@ import { timingSafeEqual } from '../../utils/buffer'
 const TOKEN_STRINGS = '[A-Za-z0-9._~+/-]+=*'
 const PREFIX = 'Bearer'
 
-export const bearerAuth = (options: {
-  token: string | string[]
-  realm?: string
-  prefix?: string
-  hashFunction?: Function
-}): MiddlewareHandler => {
-  if (!options.token) {
+type BearerAuthOptions =
+  | {
+      token: string | string[]
+      realm?: string
+      prefix?: string
+      hashFunction?: Function
+    }
+  | {
+      realm?: string
+      prefix?: string
+      verifyToken: (token: string, c: Context) => Promise<boolean>
+      hashFunction?: Function
+    }
+
+export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
+  if (!('token' in options || 'verifyToken' in options)) {
     throw new Error('bearer auth middleware requires options for "token"')
   }
   if (!options.realm) {
@@ -49,7 +59,9 @@ export const bearerAuth = (options: {
         throw new HTTPException(400, { res })
       } else {
         let equal = false
-        if (typeof options.token === 'string') {
+        if ('verifyToken' in options) {
+          equal = await options.verifyToken(match[1], c)
+        } else if (typeof options.token === 'string') {
           equal = await timingSafeEqual(options.token, match[1], options.hashFunction)
         } else if (Array.isArray(options.token) && options.token.length > 0) {
           for (const token of options.token) {
