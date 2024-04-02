@@ -4,7 +4,7 @@ import { Hono } from '../../hono'
 import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
 import { SSG_DISABLED_RESPONSE, ssgParams, isSSGContext, disableSSG, onlySSG } from './middleware'
-import { fetchRoutesContent, saveContentToFile, toSSG } from './ssg'
+import { fetchRoutesContent, saveContentToFile, toSSG, defaultExtensionMap } from './ssg'
 import type {
   BeforeRequestHook,
   AfterResponseHook,
@@ -291,6 +291,9 @@ describe('fetchRoutesContent function', () => {
   beforeEach(() => {
     app = new Hono()
     app.get('/text', (c) => c.text('Text Response'))
+    app.get('/text-utf8', (c) => {
+      return c.text('Text Response', 200, { 'Content-Type': 'text/plain;charset=UTF-8' })
+    })
     app.get('/html', (c) => c.html('<p>HTML Response</p>'))
     app.get('/json', (c) => c.json({ message: 'JSON Response' }))
     app.use('*', poweredBy())
@@ -300,6 +303,10 @@ describe('fetchRoutesContent function', () => {
     const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
 
     expect(htmlMap.get('/text')).toEqual({
+      content: 'Text Response',
+      mimeType: 'text/plain',
+    })
+    expect(htmlMap.get('/text-utf8')).toEqual({
       content: 'Text Response',
       mimeType: 'text/plain',
     })
@@ -457,6 +464,78 @@ describe('saveContentToFile function', () => {
       await saveContentToFile(Promise.resolve(data), fsMock, './static-check-extensions')
     }
     expect(fsMock.mkdir).toHaveBeenCalledWith('static-check-extensions', { recursive: true })
+  })
+
+  it('should correctly create .yaml files for YAML content', async () => {
+    const yamlContent = 'title: YAML Example\nvalue: This is a YAML file.'
+    const mimeType = 'application/yaml'
+    const routePath = '/example'
+
+    const yamlData = {
+      routePath: routePath,
+      content: yamlContent,
+      mimeType: mimeType,
+    }
+
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    await saveContentToFile(Promise.resolve(yamlData), fsMock, './static')
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/example.yaml', yamlContent)
+  })
+
+  it('should correctly create .yml files for YAML content', async () => {
+    const yamlContent = 'title: YAML Example\nvalue: This is a YAML file.'
+    const yamlMimeType = 'application/yaml'
+    const yamlRoutePath = '/yaml'
+
+    const yamlData = {
+      routePath: yamlRoutePath,
+      content: yamlContent,
+      mimeType: yamlMimeType,
+    }
+
+    const yamlMimeType2 = 'x-yaml'
+    const yamlRoutePath2 = '/yaml2'
+    const yamlData2 = {
+      routePath: yamlRoutePath2,
+      content: yamlContent,
+      mimeType: yamlMimeType2,
+    }
+
+    const htmlMimeType = 'text/html'
+    const htmlRoutePath = '/html'
+
+    const htmlData = {
+      routePath: htmlRoutePath,
+      content: yamlContent,
+      mimeType: htmlMimeType,
+    }
+
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const extensionMap = {
+      'application/yaml': 'yml',
+      'x-yaml': 'xyml',
+    }
+    await saveContentToFile(Promise.resolve(yamlData), fsMock, './static', extensionMap)
+    await saveContentToFile(Promise.resolve(yamlData2), fsMock, './static', extensionMap)
+    await saveContentToFile(Promise.resolve(htmlData), fsMock, './static', extensionMap)
+    await saveContentToFile(Promise.resolve(htmlData), fsMock, './static', {
+      ...defaultExtensionMap,
+      ...extensionMap,
+    })
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml.yml', yamlContent)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml2.xyml', yamlContent)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.htm', yamlContent) // extensionMap
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.html', yamlContent) // default + extensionMap
   })
 })
 

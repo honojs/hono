@@ -43,6 +43,19 @@ describe('Bearer Auth by Middleware', () => {
       handlerExecuted = true
       return c.text('auths')
     })
+
+    app.use(
+      '/auth-verify-token/*',
+      bearerAuth({
+        verifyToken: async (token, c) => {
+          return c.req.path === '/auth-verify-token' && token === 'dynamic-token'
+        },
+      })
+    )
+    app.get('/auth-verify-token/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth-verify-token')
+    })
   })
 
   it('Should authorize', async () => {
@@ -143,5 +156,24 @@ describe('Bearer Auth by Middleware', () => {
     expect(res2.status).toBe(200)
     expect(handlerExecuted).toBeTruthy()
     expect(await res2.text()).toBe('auths')
+  })
+
+  it('Should authorize - verifyToken option', async () => {
+    const res = await app.request('/auth-verify-token', {
+      headers: { Authorization: 'Bearer dynamic-token' },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(handlerExecuted).toBeTruthy()
+    expect(await res.text()).toBe('auth-verify-token')
+  })
+
+  it('Should not authorize - verifyToken option', async () => {
+    const res = await app.request('/auth-verify-token', {
+      headers: { Authorization: 'Bearer invalid-token' },
+    })
+    expect(res).not.toBeNull()
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.status).toBe(401)
   })
 })

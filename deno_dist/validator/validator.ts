@@ -60,7 +60,6 @@ export const validator = <
   return async (c, next) => {
     let value = {}
     const contentType = c.req.header('Content-Type')
-    const bodyTypes = ['text', 'arrayBuffer', 'blob']
 
     switch (target) {
       case 'json':
@@ -68,26 +67,8 @@ export const validator = <
           const message = `Invalid HTTP header: Content-Type=${contentType}`
           throw new HTTPException(400, { message })
         }
-
-        if (c.req.bodyCache.json) {
-          value = await c.req.bodyCache.json
-          break
-        }
-
         try {
-          let arrayBuffer: ArrayBuffer | undefined = undefined
-          for (const type of bodyTypes) {
-            // @ts-expect-error bodyCache[type] is not typed
-            const body = c.req.bodyCache[type]
-            if (body) {
-              arrayBuffer = await new Response(await body).arrayBuffer()
-              break
-            }
-          }
-          arrayBuffer ??= await c.req.raw.arrayBuffer()
-          value = await new Response(arrayBuffer).json()
-          c.req.bodyCache.json = value
-          c.req.bodyCache.arrayBuffer = arrayBuffer
+          value = await c.req.json()
         } catch {
           const message = 'Malformed JSON in request body'
           throw new HTTPException(400, { message })
@@ -104,16 +85,7 @@ export const validator = <
         }
 
         try {
-          let arrayBuffer: ArrayBuffer | undefined = undefined
-          for (const type of bodyTypes) {
-            // @ts-expect-error bodyCache[type] is not typed
-            const body = c.req.bodyCache[type]
-            if (body) {
-              arrayBuffer = await new Response(await body).arrayBuffer()
-              break
-            }
-          }
-          arrayBuffer ??= await c.req.arrayBuffer()
+          const arrayBuffer = await c.req.arrayBuffer()
           const formData = await bufferToFormData(arrayBuffer, contentType)
           const form: BodyData = {}
           formData.forEach((value, key) => {
@@ -121,7 +93,6 @@ export const validator = <
           })
           value = form
           c.req.bodyCache.formData = formData
-          c.req.bodyCache.arrayBuffer = arrayBuffer
         } catch (e) {
           let message = 'Malformed FormData request.'
           message += e instanceof Error ? ` ${e.message}` : ` ${String(e)}`

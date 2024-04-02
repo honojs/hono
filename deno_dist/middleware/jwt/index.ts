@@ -3,8 +3,8 @@ import { getCookie } from '../../helper/cookie/index.ts'
 import { HTTPException } from '../../http-exception.ts'
 import type { MiddlewareHandler } from '../../types.ts'
 import { Jwt } from '../../utils/jwt/index.ts'
-import type { AlgorithmTypes } from '../../utils/jwt/types.ts'
 import '../../context.ts'
+import type { SignatureAlgorithm } from '../../utils/jwt/jwa.ts'
 
 declare module '../../context.ts' {
   interface ContextVariableMap {
@@ -16,7 +16,7 @@ declare module '../../context.ts' {
 export const jwt = (options: {
   secret: string
   cookie?: string
-  alg?: string
+  alg?: SignatureAlgorithm
 }): MiddlewareHandler => {
   if (!options) {
     throw new Error('JWT auth middleware requires options for "secret')
@@ -32,11 +32,13 @@ export const jwt = (options: {
     if (credentials) {
       const parts = credentials.split(/\s+/)
       if (parts.length !== 2) {
+        const errDescription = 'invalid credentials structure'
         throw new HTTPException(401, {
+          message: errDescription,
           res: unauthorizedResponse({
             ctx,
             error: 'invalid_request',
-            errDescription: 'invalid credentials structure',
+            errDescription,
           }),
         })
       } else {
@@ -47,30 +49,34 @@ export const jwt = (options: {
     }
 
     if (!token) {
+      const errDescription = 'no authorization included in request'
       throw new HTTPException(401, {
+        message: errDescription,
         res: unauthorizedResponse({
           ctx,
           error: 'invalid_request',
-          errDescription: 'no authorization included in request',
+          errDescription,
         }),
       })
     }
 
     let payload
-    let msg = ''
+    let cause
     try {
-      payload = await Jwt.verify(token, options.secret, options.alg as AlgorithmTypes)
+      payload = await Jwt.verify(token, options.secret, options.alg)
     } catch (e) {
-      msg = `${e}`
+      cause = e
     }
     if (!payload) {
       throw new HTTPException(401, {
+        message: 'Unauthorized',
         res: unauthorizedResponse({
           ctx,
           error: 'invalid_token',
-          statusText: msg,
+          statusText: 'Unauthorized',
           errDescription: 'token verification failure',
         }),
+        cause,
       })
     }
 
