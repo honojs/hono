@@ -33,6 +33,13 @@ export class JwtTokenIssuedAt extends Error {
   }
 }
 
+export class JwtHeaderInvalid extends Error {
+  constructor(header: object) {
+    super(`jwt header is invalid: ${JSON.stringify(header)}`)
+    this.name = 'JwtHeaderInvalid'
+  }
+}
+
 export class JwtTokenSignatureMismatched extends Error {
   constructor(token: string) {
     super(`token(${token}) signature mismatched`)
@@ -40,8 +47,34 @@ export class JwtTokenSignatureMismatched extends Error {
   }
 }
 
-export enum AlgorithmTypes {
-  HS256 = 'HS256',
-  HS384 = 'HS384',
-  HS512 = 'HS512',
+export enum CryptoKeyUsage {
+  Encrypt = 'encrypt',
+  Decrypt = 'decrypt',
+  Sign = 'sign',
+  Verify = 'verify',
+  DeriveKey = 'deriveKey',
+  DeriveBits = 'deriveBits',
+  WrapKey = 'wrapKey',
+  UnwrapKey = 'unwrapKey',
 }
+
+/**
+ * JWT Payload
+ */
+export type JWTPayload =
+  | (unknown & {})
+  | {
+      [key: string]: unknown
+      /**
+       * The token is checked to ensure it has not expired.
+       */
+      exp?: number
+      /**
+       * The token is checked to ensure it is not being used before a specified time.
+       */
+      nbf?: number
+      /**
+       * The token is checked to ensure it is not issued in the future.
+       */
+      iat?: number
+    }

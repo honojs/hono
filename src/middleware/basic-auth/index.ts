@@ -1,3 +1,4 @@
+import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import type { HonoRequest } from '../../request'
 import type { MiddlewareHandler } from '../../types'
@@ -26,30 +27,58 @@ const auth = (req: HonoRequest) => {
   return { username: userPass[1], password: userPass[2] }
 }
 
+type BasicAuthOptions =
+  | {
+      username: string
+      password: string
+      realm?: string
+      hashFunction?: Function
+    }
+  | {
+      verifyUser: (username: string, password: string, c: Context) => boolean | Promise<boolean>
+      realm?: string
+      hashFunction?: Function
+    }
+
 export const basicAuth = (
-  options: { username: string; password: string; realm?: string; hashFunction?: Function },
+  options: BasicAuthOptions,
   ...users: { username: string; password: string }[]
 ): MiddlewareHandler => {
-  if (!options) {
-    throw new Error('basic auth middleware requires options for "username and password"')
+  const usernamePasswordInOptions = 'username' in options && 'password' in options
+  const verifyUserInOptions = 'verifyUser' in options
+
+  if (!(usernamePasswordInOptions || verifyUserInOptions)) {
+    throw new Error(
+      'basic auth middleware requires options for "username and password" or "verifyUser"'
+    )
   }
 
   if (!options.realm) {
     options.realm = 'Secure Area'
   }
-  users.unshift({ username: options.username, password: options.password })
+
+  if (usernamePasswordInOptions) {
+    users.unshift({ username: options.username, password: options.password })
+  }
 
   return async function basicAuth(ctx, next) {
     const requestUser = auth(ctx.req)
     if (requestUser) {
-      for (const user of users) {
-        const [usernameEqual, passwordEqual] = await Promise.all([
-          timingSafeEqual(user.username, requestUser.username, options.hashFunction),
-          timingSafeEqual(user.password, requestUser.password, options.hashFunction),
-        ])
-        if (usernameEqual && passwordEqual) {
+      if (verifyUserInOptions) {
+        if (await options.verifyUser(requestUser.username, requestUser.password, ctx)) {
           await next()
           return
+        }
+      } else {
+        for (const user of users) {
+          const [usernameEqual, passwordEqual] = await Promise.all([
+            timingSafeEqual(user.username, requestUser.username, options.hashFunction),
+            timingSafeEqual(user.password, requestUser.password, options.hashFunction),
+          ])
+          if (usernameEqual && passwordEqual) {
+            await next()
+            return
+          }
         }
       }
     }

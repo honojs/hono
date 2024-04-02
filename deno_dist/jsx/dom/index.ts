@@ -15,6 +15,7 @@ import {
   useMemo,
   useLayoutEffect,
   useReducer,
+  useId,
   useDebugValue,
 } from '../hooks/index.ts'
 import { Suspense, ErrorBoundary } from './components.ts'
@@ -69,6 +70,7 @@ export {
   useMemo,
   useLayoutEffect,
   useReducer,
+  useId,
   useDebugValue,
   Suspense,
   ErrorBoundary,
@@ -94,6 +96,7 @@ export default {
   useMemo,
   useLayoutEffect,
   useReducer,
+  useId,
   useDebugValue,
   Suspense,
   ErrorBoundary,

@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.1.7",
+  "version": "4.2.0-rc.1",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -114,6 +114,11 @@
       "import": "./dist/middleware/etag/index.js",
       "require": "./dist/cjs/middleware/etag/index.js"
     },
+    "./trailing-slash": {
+      "types": "./dist/types/middleware/trailing-slash/index.d.ts",
+      "import": "./dist/middleware/trailing-slash/index.js",
+      "require": "./dist/cjs/middleware/trailing-slash/index.js"
+    },
     "./html": {
       "types": "./dist/types/helper/html/index.d.ts",
       "import": "./dist/helper/html/index.js",
@@ -183,6 +188,11 @@
       "types": "./dist/types/middleware/logger/index.d.ts",
       "import": "./dist/middleware/logger/index.js",
       "require": "./dist/cjs/middleware/logger/index.js"
+    },
+    "./method-override": {
+      "types": "./dist/types/middleware/method-override/index.d.ts",
+      "import": "./dist/middleware/method-override/index.js",
+      "require": "./dist/cjs/middleware/method-override/index.js"
     },
     "./powered-by": {
       "types": "./dist/types/middleware/powered-by/index.d.ts",
@@ -407,6 +417,9 @@
       ],
       "logger": [
         "./dist/types/middleware/logger"
+      ],
+      "method-override": [
+        "./dist/types/middleware/method-override"
       ],
       "powered-by": [
         "./dist/types/middleware/powered-by"
