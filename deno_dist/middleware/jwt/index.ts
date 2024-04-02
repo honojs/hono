@@ -61,21 +61,22 @@ export const jwt = (options: {
     }
 
     let payload
-    let msg = ''
+    let cause
     try {
       payload = await Jwt.verify(token, options.secret, options.alg)
     } catch (e) {
-      msg = `${e}`
+      cause = e
     }
     if (!payload) {
       throw new HTTPException(401, {
-        message: msg,
+        message: 'Unauthorized',
         res: unauthorizedResponse({
           ctx,
           error: 'invalid_token',
-          statusText: msg,
+          statusText: 'Unauthorized',
           errDescription: 'token verification failure',
         }),
+        cause,
       })
     }
 
