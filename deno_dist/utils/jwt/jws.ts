@@ -1,4 +1,4 @@
-import { getRuntimeKey } from '../../helper.ts'
+import { getRuntimeKey } from '../../helper/adapter/index.ts'
 import { decodeBase64 } from '../encode.ts'
 import type { SignatureAlgorithm } from './jwa.ts'
 import { JwtAlgorithmNotImplemented } from './types.ts'

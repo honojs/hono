@@ -1,4 +1,4 @@
-import { getRuntimeKey } from '../../helper'
+import { getRuntimeKey } from '../../helper/adapter'
 import { decodeBase64 } from '../encode'
 import type { SignatureAlgorithm } from './jwa'
 import { JwtAlgorithmNotImplemented } from './types'
