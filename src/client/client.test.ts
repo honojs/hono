@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import { vi, expectTypeOf } from 'vitest'
+import { expectTypeOf, vi } from 'vitest'
 import { Hono } from '../hono'
 import { parse } from '../utils/cookie'
 import type { Equal, Expect } from '../utils/types'
@@ -620,5 +620,57 @@ describe('Client can be awaited', () => {
     const awaited = await client
 
     expect(awaited).toEqual(client)
+  })
+})
+
+describe('Dynamic headers', () => {
+  const app = new Hono()
+
+  const route = app.post('/posts', (c) => {
+    return c.json({
+      requestDynamic: 'dummy',
+    })
+  })
+
+  type AppType = typeof route
+
+  const server = setupServer(
+    rest.post('http://localhost/posts', async (req, res, ctx) => {
+      const requestDynamic = req.headers.get('x-dynamic')
+      const payload = {
+        requestDynamic,
+      }
+      return res(ctx.status(200), ctx.json(payload))
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  let dynamic = ''
+
+  const client = hc<AppType>('http://localhost', {
+    headers: () => ({ 'x-hono': 'hono', 'x-dynamic': dynamic }),
+  })
+
+  it('Should have "x-dynamic": "one"', async () => {
+    dynamic = 'one'
+
+    const res = await client.posts.$post()
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestDynamic).toEqual('one')
+  })
+
+  it('Should have "x-dynamic": "two"', async () => {
+    dynamic = 'two'
+
+    const res = await client.posts.$post()
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestDynamic).toEqual('two')
   })
 })
