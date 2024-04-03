@@ -56,6 +56,29 @@ describe('JSX renderer', () => {
     )
   })
 
+  it('Should get the context object as a 2nd arg', async () => {
+    const app = new Hono()
+    app.use(
+      jsxRenderer(
+        ({ children }, c) => {
+          return (
+            <div>
+              {children} at {c.req.path}
+            </div>
+          )
+        },
+        { docType: false }
+      )
+    )
+    app.get('/hi', (c) => {
+      return c.render('hi', { title: 'hi' })
+    })
+
+    const res = await app.request('/hi')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('<div>hi at /hi</div>')
+  })
+
   it('nested layout with Layout', async () => {
     const app = new Hono()
     app.use(
