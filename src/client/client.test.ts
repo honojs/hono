@@ -48,6 +48,7 @@ describe('Basic - JSON', () => {
       }
     )
     .get('/hello-not-found', (c) => c.notFound())
+    .get('/null', (c) => c.json(null))
 
   type AppType = typeof route
 
@@ -69,6 +70,9 @@ describe('Basic - JSON', () => {
     }),
     rest.get('http://localhost/hello-not-found', (_req, res, ctx) => {
       return res(ctx.status(404))
+    }),
+    rest.get('http://localhost/null', (_req, res, ctx) => {
+      return res(ctx.status(200), ctx.json(null))
     })
   )
 
@@ -110,6 +114,14 @@ describe('Basic - JSON', () => {
   it('Should get 404 response', async () => {
     const res = await client['hello-not-found'].$get()
     expect(res.status).toBe(404)
+  })
+
+  it('Should get a `null` content', async () => {
+    const client = hc<AppType>('http://localhost')
+    const res = await client.null.$get()
+    const data = await res.json()
+    expectTypeOf(data).toMatchTypeOf<null>()
+    expect(data).toBe(null)
   })
 })
 
