@@ -43,7 +43,13 @@ export type ClientRequest<S extends Schema> = {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type BlankRecordToNever<T> = T extends any ? (keyof T extends never ? never : T) : never
+type BlankRecordToNever<T> = T extends any
+  ? T extends null
+    ? null
+    : keyof T extends never
+    ? never
+    : T
+  : never
 
 export interface ClientResponse<T> {
   readonly body: ReadableStream | null
