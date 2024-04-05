@@ -35,7 +35,7 @@ class ClientRequestImpl {
     this.url = url
     this.method = method
   }
-  fetch = (
+  fetch = async (
     args?: ValidationTargets & {
       param?: Record<string, string>
     },
@@ -82,7 +82,11 @@ class ClientRequestImpl {
 
     const headerValues: Record<string, string> = {
       ...(args?.header ?? {}),
-      ...(opt?.headers ? opt.headers : {}),
+      ...(typeof opt?.headers === 'function'
+        ? await opt.headers()
+        : opt?.headers
+        ? opt.headers
+        : {}),
     }
 
     if (args?.cookie) {

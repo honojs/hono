@@ -7,11 +7,13 @@ type HonoRequest = (typeof Hono.prototype)['request']
 
 export type ClientRequestOptions<T = unknown> = keyof T extends never
   ? {
-      headers?: Record<string, string>
+      headers?:
+        | Record<string, string>
+        | (() => Record<string, string> | Promise<Record<string, string>>)
       fetch?: typeof fetch | HonoRequest
     }
   : {
-      headers: T
+      headers: T | (() => T | Promise<T>)
       fetch?: typeof fetch | HonoRequest
     }
 
