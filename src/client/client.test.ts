@@ -688,7 +688,7 @@ describe('Dynamic headers', () => {
   })
 })
 
-describe('WebSocket Client Initialization and Connection Tests', () => {
+describe('WebSocket URL Protocol Translation', () => {
   const app = new Hono()
   const route = app.get(
     '/',
@@ -718,31 +718,27 @@ describe('WebSocket Client Initialization and Connection Tests', () => {
   })
   afterAll(() => server.close())
 
-  it('Establishes WebSocket connection over HTTP', async () => {
+  it('Translates HTTP to ws', async () => {
     const client = hc<AppType>('http://localhost')
     client.index.$ws()
-
     expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
   })
 
-  it('Establishes WebSocket connection over HTTPS', async () => {
+  it('Translates HTTPS to wss', async () => {
     const client = hc<AppType>('https://localhost')
     client.index.$ws()
-
     expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
   })
 
-  it('Establishes WebSocket connection over ws', async () => {
+  it('Keeps ws unchanged', async () => {
     const client = hc<AppType>('ws://localhost')
     client.index.$ws()
-
     expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
   })
 
-  it('Establishes WebSocket connection over wss', async () => {
+  it('Keeps wss unchanged', async () => {
     const client = hc<AppType>('wss://localhost')
     client.index.$ws()
-
     expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
   })
 })
