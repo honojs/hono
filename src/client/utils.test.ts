@@ -42,6 +42,32 @@ describe('replaceUrlParams', () => {
   })
 })
 
+describe('replaceUrlProtocol', () => {
+  it('Should replace http to ws', () => {
+    const url = 'http://localhost'
+    const newUrl = replaceUrlProtocol(url, 'ws')
+    expect(newUrl).toBe('ws://localhost')
+  })
+
+  it('Should replace ws to http', () => {
+    const url = 'ws://localhost'
+    const newUrl = replaceUrlProtocol(url, 'http')
+    expect(newUrl).toBe('http://localhost')
+  })
+
+  it('Should replace https to wss', () => {
+    const url = 'https://localhost'
+    const newUrl = replaceUrlProtocol(url, 'wss')
+    expect(newUrl).toBe('wss://localhost')
+  })
+
+  it('Should replace wss to https', () => {
+    const url = 'wss://localhost'
+    const newUrl = replaceUrlProtocol(url, 'https')
+    expect(newUrl).toBe('https://localhost')
+  })
+})
+
 describe('removeIndexString', () => {
   it('Should remove last `/index` string', () => {
     let url = 'http://localhost/index'
