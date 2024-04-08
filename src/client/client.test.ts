@@ -731,4 +731,18 @@ describe('WebSocket Client Initialization and Connection Tests', () => {
 
     expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
   })
+
+  it('Establishes WebSocket connection over ws', async () => {
+    const client = hc<AppType>('ws://localhost')
+    client.index.$ws()
+
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
+  })
+
+  it('Establishes WebSocket connection over wss', async () => {
+    const client = hc<AppType>('wss://localhost')
+    client.index.$ws()
+
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
+  })
 })
