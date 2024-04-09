@@ -55,10 +55,22 @@ describe('replaceUrlProtocol', () => {
     expect(newUrl).toBe('ws://localhost')
   })
 
+  it('Should replace https to wss', () => {
+    const url = 'https://localhost'
+    const newUrl = replaceUrlProtocol(url, 'ws')
+    expect(newUrl).toBe('wss://localhost')
+  })
+
   it('Should replace ws to http', () => {
     const url = 'ws://localhost'
     const newUrl = replaceUrlProtocol(url, 'http')
     expect(newUrl).toBe('http://localhost')
+  })
+
+  it('Should replace wss to https', () => {
+    const url = 'wss://localhost'
+    const newUrl = replaceUrlProtocol(url, 'http')
+    expect(newUrl).toBe('https://localhost')
   })
 })
 
