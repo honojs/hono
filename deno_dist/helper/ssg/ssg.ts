@@ -4,7 +4,7 @@ import type { Env, Schema } from '../../types.ts'
 import { createPool } from '../../utils/concurrent.ts'
 import { getExtension } from '../../utils/mime.ts'
 import type { AddedSSGDataRequest, SSGParams } from './middleware.ts'
-import { SSG_DISABLED_RESPONSE, SSG_CONTEXT } from './middleware.ts'
+import { X_HONO_DISABLE_SSG_HEADER_KEY, SSG_CONTEXT } from './middleware.ts'
 import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils.ts'
 
 const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
@@ -168,7 +168,7 @@ export const fetchRoutesContent = function* <
                       [SSG_CONTEXT]: true,
                     })
                   )
-                  if (response === SSG_DISABLED_RESPONSE) {
+                  if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) {
                     resolveReq(undefined)
                     return
                   }

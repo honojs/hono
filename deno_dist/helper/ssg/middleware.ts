@@ -2,7 +2,23 @@ import type { Context } from '../../context.ts'
 import type { Env, MiddlewareHandler } from '../../types.ts'
 
 export const SSG_CONTEXT = 'HONO_SSG_CONTEXT'
-export const SSG_DISABLED_RESPONSE = new Response('SSG is disabled', { status: 404 })
+export const X_HONO_DISABLE_SSG_HEADER_KEY = 'x-hono-disable-ssg'
+
+/**
+ * @deprecated
+ * Use `X_HONO_DISABLE_SSG_HEADER_KEY` instead.
+ * This constant will be removed in the next minor version.
+ */
+export const SSG_DISABLED_RESPONSE = (() => {
+  try {
+    return new Response('SSG is disabled', {
+      status: 404,
+      headers: { [X_HONO_DISABLE_SSG_HEADER_KEY]: 'true' },
+    })
+  } catch (e) {
+    return null
+  }
+})() as Response
 
 interface SSGParam {
   [key: string]: string
@@ -43,7 +59,8 @@ export const isSSGContext = (c: Context): boolean => !!c.env?.[SSG_CONTEXT]
 export const disableSSG = (): MiddlewareHandler =>
   async function disableSSG(c, next) {
     if (isSSGContext(c)) {
-      return SSG_DISABLED_RESPONSE
+      c.header(X_HONO_DISABLE_SSG_HEADER_KEY, 'true')
+      return c.notFound()
     }
     await next()
   }

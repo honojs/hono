@@ -3,7 +3,13 @@ import { Hono } from '../../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
-import { SSG_DISABLED_RESPONSE, ssgParams, isSSGContext, disableSSG, onlySSG } from './middleware'
+import {
+  X_HONO_DISABLE_SSG_HEADER_KEY,
+  ssgParams,
+  isSSGContext,
+  disableSSG,
+  onlySSG,
+} from './middleware'
 import { fetchRoutesContent, saveContentToFile, toSSG, defaultExtensionMap } from './ssg'
 import type {
   BeforeRequestHook,
@@ -594,7 +600,9 @@ describe('disableSSG/onlySSG middlewares', () => {
   const app = new Hono()
   app.get('/', (c) => c.html(<h1>Hello</h1>))
   app.get('/api', disableSSG(), (c) => c.text('an-api'))
-  app.get('/disable-by-response', () => SSG_DISABLED_RESPONSE)
+  app.get('/disable-by-response', (c) =>
+    c.text('', 404, { [X_HONO_DISABLE_SSG_HEADER_KEY]: 'true' })
+  )
   app.get('/static-page', onlySSG(), (c) => c.html(<h1>Welcome to my site</h1>))
 
   const fsMock: FileSystemModule = {
