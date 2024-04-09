@@ -1,2 +1,8 @@
 export * from './ssg.ts'
-export { SSG_DISABLED_RESPONSE, ssgParams, isSSGContext, disableSSG, onlySSG } from './middleware.ts'
+export {
+  X_HONO_DISABLE_SSG_HEADER_KEY,
+  ssgParams,
+  isSSGContext,
+  disableSSG,
+  onlySSG,
+} from './middleware.ts'
