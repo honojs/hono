@@ -30,6 +30,14 @@ describe('isTokenHeader', () => {
 
     expect(JWT.isTokenHeader(invalidTokenHeader)).toBe(false)
   })
+
+  it('should return true for valid TokenHeader without typ', () => {
+    const validTokenHeader: JWT.TokenHeader = {
+      alg: AlgorithmTypes.HS256,
+    }
+
+    expect(JWT.isTokenHeader(validTokenHeader)).toBe(true)
+  })
 })
 
 describe('JWT', () => {
