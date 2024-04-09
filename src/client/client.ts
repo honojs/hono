@@ -3,7 +3,13 @@ import type { ValidationTargets } from '../types'
 import { serialize } from '../utils/cookie'
 import type { UnionToIntersection } from '../utils/types'
 import type { Callback, Client, ClientRequestOptions } from './types'
-import { deepMerge, mergePath, removeIndexString, replaceUrlParam } from './utils'
+import {
+  deepMerge,
+  mergePath,
+  removeIndexString,
+  replaceUrlParam,
+  replaceUrlProtocol,
+} from './utils'
 
 const createProxy = (callback: Callback, path: string[]) => {
   const proxy: unknown = new Proxy(() => {}, {
@@ -147,8 +153,11 @@ export const hc = <T extends Hono<any, any, any>>(
       return new URL(url)
     }
     if (method === 'ws') {
-      const targetUrl =
-        opts.args[0] && opts.args[0].param ? replaceUrlParam(url, opts.args[0].param) : url
+      const targetUrl = replaceUrlProtocol(
+        opts.args[0] && opts.args[0].param ? replaceUrlParam(url, opts.args[0].param) : url,
+        'ws'
+      )
+
       return new WebSocket(targetUrl)
     }
 
