@@ -382,6 +382,9 @@
       "etag": [
         "./dist/types/middleware/etag"
       ],
+      "trailing-slash": [
+        "./dist/types/middleware/trailing-slash"
+      ],
       "html": [
         "./dist/types/helper/html"
       ],
