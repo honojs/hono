@@ -4,6 +4,7 @@
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import { expectTypeOf, vi } from 'vitest'
+import { upgradeWebSocket } from '../helper'
 import { Hono } from '../hono'
 import { parse } from '../utils/cookie'
 import type { Equal, Expect } from '../utils/types'
@@ -684,5 +685,60 @@ describe('Dynamic headers', () => {
     expect(res.ok).toBe(true)
     const data = await res.json()
     expect(data.requestDynamic).toEqual('two')
+  })
+})
+
+describe('WebSocket URL Protocol Translation', () => {
+  const app = new Hono()
+  const route = app.get(
+    '/',
+    upgradeWebSocket((c) => ({
+      onMessage(event, ws) {
+        console.log(`Message from client: ${event.data}`)
+        ws.send('Hello from server!')
+      },
+      onClose: () => {
+        console.log('Connection closed')
+      },
+    }))
+  )
+
+  type AppType = typeof route
+
+  const server = setupServer()
+  const webSocketMock = vi.fn()
+
+  beforeAll(() => server.listen())
+  beforeEach(() => {
+    vi.stubGlobal('WebSocket', webSocketMock)
+  })
+  afterEach(() => {
+    vi.clearAllMocks()
+    server.resetHandlers()
+  })
+  afterAll(() => server.close())
+
+  it('Translates HTTP to ws', async () => {
+    const client = hc<AppType>('http://localhost')
+    client.index.$ws()
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
+  })
+
+  it('Translates HTTPS to wss', async () => {
+    const client = hc<AppType>('https://localhost')
+    client.index.$ws()
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
+  })
+
+  it('Keeps ws unchanged', async () => {
+    const client = hc<AppType>('ws://localhost')
+    client.index.$ws()
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
+  })
+
+  it('Keeps wss unchanged', async () => {
+    const client = hc<AppType>('wss://localhost')
+    client.index.$ws()
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
   })
 })

@@ -1,4 +1,10 @@
-import { deepMerge, mergePath, removeIndexString, replaceUrlParam } from './utils'
+import {
+  deepMerge,
+  mergePath,
+  removeIndexString,
+  replaceUrlParam,
+  replaceUrlProtocol,
+} from './utils'
 
 describe('mergePath', () => {
   it('Should merge paths correctly', () => {
@@ -39,6 +45,32 @@ describe('replaceUrlParams', () => {
     }
     const replacedUrl = replaceUrlParam(url, params)
     expect(replacedUrl).toBe('http://localhost/year/2024/month/2')
+  })
+})
+
+describe('replaceUrlProtocol', () => {
+  it('Should replace http to ws', () => {
+    const url = 'http://localhost'
+    const newUrl = replaceUrlProtocol(url, 'ws')
+    expect(newUrl).toBe('ws://localhost')
+  })
+
+  it('Should replace https to wss', () => {
+    const url = 'https://localhost'
+    const newUrl = replaceUrlProtocol(url, 'ws')
+    expect(newUrl).toBe('wss://localhost')
+  })
+
+  it('Should replace ws to http', () => {
+    const url = 'ws://localhost'
+    const newUrl = replaceUrlProtocol(url, 'http')
+    expect(newUrl).toBe('http://localhost')
+  })
+
+  it('Should replace wss to https', () => {
+    const url = 'wss://localhost'
+    const newUrl = replaceUrlProtocol(url, 'http')
+    expect(newUrl).toBe('https://localhost')
   })
 })
 
