@@ -30,6 +30,23 @@ describe('isTokenHeader', () => {
 
     expect(JWT.isTokenHeader(invalidTokenHeader)).toBe(false)
   })
+
+  it('returns true even if the typ field is absent in a TokenHeader', () => {
+    const validTokenHeader: JWT.TokenHeader = {
+      alg: AlgorithmTypes.HS256,
+    }
+
+    expect(JWT.isTokenHeader(validTokenHeader)).toBe(true)
+  })
+
+  it('returns false when the typ field is present but empty', () => {
+    const invalidTokenHeader = {
+      alg: AlgorithmTypes.HS256,
+      typ: '',
+    }
+
+    expect(JWT.isTokenHeader(invalidTokenHeader)).toBe(false)
+  })
 })
 
 describe('JWT', () => {
