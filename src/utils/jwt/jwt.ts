@@ -22,7 +22,7 @@ const decodeJwtPart = (part: string): unknown =>
 
 export interface TokenHeader {
   alg: SignatureAlgorithm
-  typ: 'JWT'
+  typ?: 'JWT'
 }
 
 // eslint-disable-next-line
@@ -32,8 +32,7 @@ export function isTokenHeader(obj: any): obj is TokenHeader {
     obj !== null &&
     'alg' in obj &&
     Object.values(AlgorithmTypes).includes(obj.alg) &&
-    'typ' in obj &&
-    obj.typ === 'JWT'
+    (!('typ' in obj) || obj.typ === 'JWT')
   )
 }
 
