@@ -207,14 +207,17 @@ const createRequest = (event: LambdaEvent) => {
 
   const headers = new Headers()
   getCookies(event, headers)
-  for (const [k, v] of Object.entries(event.headers || {})) {
-    if (v) {
-      headers.set(k, v)
+  if (event.headers) {
+    for (const [k, v] of Object.entries(event.headers)) {
+      if (v) {
+        headers.set(k, v)
+      }
     }
-  }
-  for (const [k, values] of Object.entries(event.multiValueHeaders || {})) {
-    if (values) {
-      values.forEach((v) => headers.append(k, v))
+  } else if (event.multiValueHeaders) {
+    for (const [k, values] of Object.entries(event.multiValueHeaders)) {
+      if (values) {
+        values.forEach((v) => headers.append(k, v))
+      }
     }
   }
 
