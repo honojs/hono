@@ -47,7 +47,10 @@ describe('handle', () => {
 
   describe('ALB', () => {
     const app = new Hono().post('/', (c) => {
-      return c.json({ message: 'ok' })
+      if (c.req.header('foo')?.includes('bar')) {
+        return c.json({ message: 'ok' })
+      }
+      return c.json({ message: 'fail' }, 400)
     })
     const handler = handle(app)
 
@@ -59,6 +62,7 @@ describe('handle', () => {
         path: '/',
         headers: {
           host: 'localhost',
+          foo: 'bar',
         },
         requestContext: {
           elb: {
@@ -78,6 +82,7 @@ describe('handle', () => {
         path: '/',
         multiValueHeaders: {
           host: ['localhost'],
+          foo: ['bar', 'buz'],
         },
         requestContext: {
           elb: {
