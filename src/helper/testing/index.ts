@@ -15,5 +15,5 @@ export const testClient = <T extends Hono<any, any, any>>(
     return app.request(input, init, Env, executionCtx)
   }
 
-  return hc<typeof app>('', { fetch: customFetch })
+  return hc<typeof app>('http://localhost', { fetch: customFetch })
 }
