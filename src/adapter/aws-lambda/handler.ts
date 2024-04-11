@@ -213,6 +213,11 @@ const createRequest = (event: LambdaEvent) => {
       headers.set(k, v)
     }
   }
+  for (const [k, values] of Object.entries(event.multiValueHeaders || {})) {
+    if (values) {
+      values.forEach((v) => headers.append(k, v))
+    }
+  }
 
   const method = isProxyEventV2(event) ? event.requestContext.http.method : event.httpMethod
   const requestInit: RequestInit = {
