@@ -2113,10 +2113,10 @@ describe('Parse Body', () => {
   const app = new Hono()
 
   app.post('/json', async (c) => {
-    return c.json<{}>(await c.req.parseBody(), 200)
+    return c.json<{}, 200>(await c.req.parseBody(), 200)
   })
   app.post('/form', async (c) => {
-    return c.json<{}>(await c.req.parseBody(), 200)
+    return c.json<{}, 200>(await c.req.parseBody(), 200)
   })
 
   it('POST with JSON', async () => {
