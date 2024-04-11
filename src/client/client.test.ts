@@ -606,6 +606,85 @@ describe('ClientResponse<T>.json() returns a Union type correctly', () => {
   })
 })
 
+describe('Response with different status codes', () => {
+  const condition = () => true
+  const app = new Hono().get('/', async (c) => {
+    const ok = condition()
+    if (ok) {
+      return c.json({ data: 'foo' }, 200)
+    }
+    if (!ok) {
+      return c.json({ message: 'error' }, 400)
+    }
+    return c.json(null)
+  })
+
+  const client = hc<typeof app>('', { fetch: app.request })
+
+  it('Should be filtered by status code', async () => {
+    const res = await client.index.$get()
+    if (res.status === 200) {
+      const json = await res.json()
+      expectTypeOf(json).toEqualTypeOf<{ data: string } | null>()
+    }
+    if (res.status === 400) {
+      const json = await res.json()
+      expectTypeOf(json).toEqualTypeOf<{ message: string } | null>()
+    }
+    if (res.ok) {
+      const json = await res.json()
+      expectTypeOf(json).toEqualTypeOf<{ data: string } | null>()
+    }
+    if (!res.ok) {
+      const json = await res.json()
+      expectTypeOf(json).toEqualTypeOf<{ message: string } | null>()
+    }
+    const json = await res.json()
+    expectTypeOf(json).toEqualTypeOf<{ data: string } | { message: string } | null>()
+  })
+})
+
+describe('Infer the response type with different status codes', () => {
+  const condition = () => true
+  const app = new Hono().get('/', async (c) => {
+    const ok = condition()
+    if (ok) {
+      return c.json({ data: 'foo' }, 200)
+    }
+    if (!ok) {
+      return c.json({ message: 'error' }, 400)
+    }
+    return c.json(null)
+  })
+
+  const client = hc<typeof app>('', { fetch: app.request })
+
+  it('Should infer response type correctly', () => {
+    const req = client.index.$get
+
+    type Actual = InferResponseType<typeof req>
+    type Expected =
+      | {
+          data: string
+        }
+      | {
+          message: string
+        }
+      | null
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer response type of status 200 correctly', () => {
+    const req = client.index.$get
+
+    type Actual = InferResponseType<typeof req, 200>
+    type Expected = {
+      data: string
+    } | null
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
 describe('$url() with a param option', () => {
   const app = new Hono().get('/posts/:id/comments', (c) => c.json({ ok: true }))
   type AppType = typeof app
