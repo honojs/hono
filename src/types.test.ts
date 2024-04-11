@@ -393,22 +393,19 @@ describe('Test types of Handler', () => {
 
 describe('`json()`', () => {
   const app = new Hono<{ Variables: { foo: string } }>()
-
   app.get('/post/:id', (c) => {
     c.req.param('id')
     const id = c.req.param('id')
     return c.text('foo')
   })
 
-  const route = app.get('/hello', (c) => {
-    return c.json({
-      message: 'Hello!',
-    })
-  })
-
   test('json', () => {
+    const route = app.get('/hello', (c) => {
+      return c.json({
+        message: 'Hello!',
+      })
+    })
     type Actual = ExtractSchema<typeof route>
-
     type Expected = {
       '/hello': {
         $get: {
@@ -420,7 +417,30 @@ describe('`json()`', () => {
         }
       }
     }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
 
+  test('json with specific status code', () => {
+    const route = app.get('/hello', (c) => {
+      return c.json(
+        {
+          message: 'Hello!',
+        },
+        200
+      )
+    })
+    type Actual = ExtractSchema<typeof route>
+    type Expected = {
+      '/hello': {
+        $get: {
+          input: {}
+          output: {
+            message: string
+          }
+          status: 200
+        }
+      }
+    }
     type verify = Expect<Equal<Expected, Actual>>
   })
 })
@@ -738,6 +758,7 @@ describe('MergeSchemaPath', () => {
 describe('Different types using json()', () => {
   describe('no path pattern', () => {
     const app = new Hono()
+
     test('Three different types', () => {
       const route = app.get((c) => {
         const flag = false
@@ -784,10 +805,64 @@ describe('Different types using json()', () => {
       }
       type verify = Expect<Equal<Expected, Actual>>
     })
+
+    test('Three different types and status codes', () => {
+      const route = app.get((c) => {
+        const flag = false
+        if (flag) {
+          return c.json(
+            {
+              ng: true,
+            },
+            400
+          )
+        }
+        if (!flag) {
+          return c.json(
+            {
+              ok: true,
+            },
+            200
+          )
+        }
+        return c.json({
+          default: true,
+        })
+      })
+      type Actual = ExtractSchema<typeof route>
+      type Expected = {
+        '/': {
+          $get:
+            | {
+                input: {}
+                output: {
+                  ng: boolean
+                }
+                status: 400
+              }
+            | {
+                input: {}
+                output: {
+                  ok: boolean
+                }
+                status: 200
+              }
+            | {
+                input: {}
+                output: {
+                  default: boolean
+                }
+                status: StatusCode
+              }
+        }
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
   })
 
   describe('path pattern', () => {
     const app = new Hono()
+
     test('Three different types', () => {
       const route = app.get('/foo', (c) => {
         const flag = false
@@ -834,12 +909,66 @@ describe('Different types using json()', () => {
       }
       type verify = Expect<Equal<Expected, Actual>>
     })
+
+    test('Three different types and status codes', () => {
+      const route = app.get('/foo', (c) => {
+        const flag = false
+        if (flag) {
+          return c.json(
+            {
+              ng: true,
+            },
+            400
+          )
+        }
+        if (!flag) {
+          return c.json(
+            {
+              ok: true,
+            },
+            200
+          )
+        }
+        return c.json({
+          default: true,
+        })
+      })
+      type Actual = ExtractSchema<typeof route>
+      type Expected = {
+        '/foo': {
+          $get:
+            | {
+                input: {}
+                output: {
+                  ng: boolean
+                }
+                status: 400
+              }
+            | {
+                input: {}
+                output: {
+                  ok: boolean
+                }
+                status: 200
+              }
+            | {
+                input: {}
+                output: {
+                  default: boolean
+                }
+                status: StatusCode
+              }
+        }
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
   })
 })
 
 describe('json() in an async handler', () => {
   const app = new Hono()
-  test('Three different types', () => {
+
+  test('json', () => {
     const route = app.get(async (c) => {
       return c.json({
         ok: true,
@@ -854,6 +983,30 @@ describe('json() in an async handler', () => {
             ok: boolean
           }
           status: StatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('json with specific status code', () => {
+    const route = app.get(async (c) => {
+      return c.json(
+        {
+          ok: true,
+        },
+        200
+      )
+    })
+    type Actual = ExtractSchema<typeof route>
+    type Expected = {
+      '/': {
+        $get: {
+          input: {}
+          output: {
+            ok: boolean
+          }
+          status: 200
         }
       }
     }
