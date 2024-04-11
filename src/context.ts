@@ -1,12 +1,5 @@
 import type { HonoRequest } from './request'
-import type {
-  Env,
-  FetchEventLike,
-  NotFoundHandler,
-  Input,
-  TypedResponse,
-  TypedResponseInit,
-} from './types'
+import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types'
 import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
 import type { JSONValue, InterfaceToType, JSONParsed, IsAny } from './utils/types'
@@ -72,7 +65,7 @@ interface JSONRespond {
     >
   <T, U extends StatusCode>(
     object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
-    init?: ResponseInit & TypedResponseInit<U>
+    init?: ResponseInit
   ): Response &
     TypedResponse<
       InterfaceToType<T> extends JSONValue
@@ -487,7 +480,7 @@ export class Context<
    */
   json: JSONRespond = <T, U extends StatusCode>(
     object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
-    arg?: U | (ResponseInit & TypedResponseInit<U>),
+    arg?: U | ResponseInit,
     headers?: HeaderRecord
   ): Response &
     TypedResponse<

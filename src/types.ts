@@ -1715,10 +1715,6 @@ export type MergePath<A extends string, B extends string> = B extends ''
 //////                            //////
 ////////////////////////////////////////
 
-export type TypedResponseInit<T extends StatusCode> = {
-  status?: T
-}
-
 export type TypedResponse<T = unknown, U extends StatusCode = StatusCode> = {
   data: T
   status: U
