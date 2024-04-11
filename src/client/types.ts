@@ -99,15 +99,12 @@ type InferEndpointType<T> = T extends (
     : never
   : never
 
-export type InferResponseType<T, U extends StatusCode> = InferResponseTypeFromEndpoint<
+export type InferResponseType<T, U extends StatusCode = StatusCode> = InferResponseTypeFromEndpoint<
   InferEndpointType<T>,
   U
 >
 
-type InferResponseTypeFromEndpoint<
-  T extends Endpoint,
-  U extends StatusCode = StatusCode
-> = T extends {
+type InferResponseTypeFromEndpoint<T extends Endpoint, U extends StatusCode> = T extends {
   output: infer O
   status: infer S
 }

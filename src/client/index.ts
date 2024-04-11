@@ -5,5 +5,5 @@ export type {
   Fetch,
   ClientRequestOptions,
   ClientRequest,
-  EndpointResponse as ClientResponse,
+  ClientResponse,
 } from './types'
