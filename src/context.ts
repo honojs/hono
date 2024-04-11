@@ -1,5 +1,12 @@
 import type { HonoRequest } from './request'
-import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types'
+import type {
+  Env,
+  FetchEventLike,
+  NotFoundHandler,
+  Input,
+  TypedResponse,
+  TypedResponseInit,
+} from './types'
 import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
 import type { JSONValue, InterfaceToType, JSONParsed, IsAny } from './utils/types'
@@ -50,9 +57,9 @@ interface TextRespond {
 }
 
 interface JSONRespond {
-  <T>(
+  <T, U extends StatusCode>(
     object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
-    status?: StatusCode,
+    status?: U,
     headers?: HeaderRecord
   ): Response &
     TypedResponse<
@@ -60,15 +67,20 @@ interface JSONRespond {
         ? JSONValue extends InterfaceToType<T>
           ? never
           : JSONParsed<T>
-        : never
+        : never,
+      U
     >
-  <T>(object: InterfaceToType<T> extends JSONValue ? T : JSONValue, init?: ResponseInit): Response &
+  <T, U extends StatusCode>(
+    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
+    init?: ResponseInit & TypedResponseInit<U>
+  ): Response &
     TypedResponse<
       InterfaceToType<T> extends JSONValue
         ? JSONValue extends InterfaceToType<T>
           ? never
           : JSONParsed<T>
-        : never
+        : never,
+      U
     >
 }
 
@@ -473,9 +485,9 @@ export class Context<
    * ```
    * @see https://hono.dev/api/context#json
    */
-  json: JSONRespond = <T>(
+  json: JSONRespond = <T, U extends StatusCode>(
     object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
-    arg?: StatusCode | ResponseInit,
+    arg?: U | (ResponseInit & TypedResponseInit<U>),
     headers?: HeaderRecord
   ): Response &
     TypedResponse<
@@ -483,7 +495,8 @@ export class Context<
         ? JSONValue extends InterfaceToType<T>
           ? never
           : JSONParsed<T>
-        : never
+        : never,
+      U
     > => {
     const body = JSON.stringify(object)
     this.#preparedHeaders ??= {}

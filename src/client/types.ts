@@ -1,6 +1,7 @@
 import type { UpgradedWebSocketResponseInputJSONType } from '../helper/websocket'
 import type { Hono } from '../hono'
-import type { Schema } from '../types'
+import type { Endpoint, Schema } from '../types'
+import type { StatusCode, SuccessStatusCode } from '../utils/http-status'
 import type { HasRequiredKeys } from '../utils/types'
 
 type HonoRequest = (typeof Hono.prototype)['request']
@@ -18,11 +19,11 @@ export type ClientRequestOptions<T = unknown> = keyof T extends never
     }
 
 export type ClientRequest<S extends Schema> = {
-  [M in keyof S]: S[M] extends { input: infer R; output: infer O }
+  [M in keyof S]: S[M] extends Endpoint & { input: infer R }
     ? R extends object
       ? HasRequiredKeys<R> extends true
-        ? (args: R, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
-        : (args?: R, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
+        ? (args: R, options?: ClientRequestOptions) => Promise<ClientResponseOfEndpoint<S[M]>>
+        : (args?: R, options?: ClientRequestOptions) => Promise<ClientResponseOfEndpoint<S[M]>>
       : never
     : never
 } & {
@@ -51,11 +52,22 @@ type BlankRecordToNever<T> = T extends any
     : T
   : never
 
-export interface ClientResponse<T> {
+type ClientResponseOfEndpoint<T extends Endpoint = Endpoint> = T extends {
+  output: infer O
+  status: infer S
+}
+  ? ClientResponse<O, S>
+  : never
+
+export interface ClientResponse<T, U = StatusCode> {
   readonly body: ReadableStream | null
   readonly bodyUsed: boolean
-  ok: boolean
-  status: number
+  ok: U extends SuccessStatusCode
+    ? true
+    : U extends Exclude<StatusCode, SuccessStatusCode>
+    ? false
+    : boolean
+  status: U
   statusText: string
   headers: Headers
   url: string
@@ -73,15 +85,35 @@ export interface Response extends ClientResponse<unknown> {}
 export type Fetch<T> = (
   args?: InferRequestType<T>,
   opt?: ClientRequestOptions
-) => Promise<ClientResponse<InferResponseType<T>>>
+) => Promise<ClientResponseOfEndpoint<InferEndpointType<T>>>
 
-export type InferResponseType<T> = T extends (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  args: any | undefined,
+type InferEndpointType<T> = T extends (
+  args: infer R,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options: any | undefined
-) => Promise<ClientResponse<infer O>>
-  ? O
+) => Promise<infer U>
+  ? U extends ClientResponse<infer O, infer S>
+    ? { input: NonNullable<R>; output: O; status: S } extends Endpoint
+      ? { input: NonNullable<R>; output: O; status: S }
+      : never
+    : never
+  : never
+
+export type InferResponseType<T, U extends StatusCode> = InferResponseTypeFromEndpoint<
+  InferEndpointType<T>,
+  U
+>
+
+type InferResponseTypeFromEndpoint<
+  T extends Endpoint,
+  U extends StatusCode = StatusCode
+> = T extends {
+  output: infer O
+  status: infer S
+}
+  ? S extends U
+    ? O
+    : never
   : never
 
 export type InferRequestType<T> = T extends (
