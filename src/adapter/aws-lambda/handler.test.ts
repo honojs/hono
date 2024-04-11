@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { isContentTypeBinary, isContentEncodingBinary,  handle } from './handler'
+import { isContentTypeBinary, isContentEncodingBinary, handle } from './handler'
 import type { ALBProxyEvent } from './handler'
 
 describe('isContentTypeBinary', () => {
@@ -42,7 +42,7 @@ describe('handle', () => {
     memoryLimitInMB: '',
     getRemainingTimeInMillis(): number {
       return 0
-    }
+    },
   }
 
   describe('ALB', () => {
@@ -67,8 +67,8 @@ describe('handle', () => {
         requestContext: {
           elb: {
             targetGroupArn: '',
-          }
-        }
+          },
+        },
       }
       const response = await handler(event, dummyLambdaContext)
       expect(response?.['statusCode']).toEqual(200)
@@ -87,8 +87,8 @@ describe('handle', () => {
         requestContext: {
           elb: {
             targetGroupArn: '',
-          }
-        }
+          },
+        },
       }
       const response = await handler(event, dummyLambdaContext)
       expect(response?.['statusCode']).toEqual(200)

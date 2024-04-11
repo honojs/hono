@@ -200,8 +200,7 @@ const createRequest = (event: LambdaEvent) => {
   const domainName =
     event.requestContext && 'domainName' in event.requestContext
       ? event.requestContext.domainName
-      : event.headers?.['host']
-      ?? event.multiValueHeaders?.['host']?.[0]
+      : event.headers?.['host'] ?? event.multiValueHeaders?.['host']?.[0]
   const path = isProxyEventV2(event) ? event.rawPath : event.path
   const urlPath = `https://${domainName}${path}`
   const url = queryString ? `${urlPath}?${queryString}` : urlPath
