@@ -1652,6 +1652,7 @@ export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> =
     [M in keyof OrigSchema[P]]: OrigSchema[P][M] extends {
       input: infer Input
       output: infer Output
+      status: infer Status
     }
       ? {
           input: Input extends { param: infer _ }
@@ -1678,6 +1679,7 @@ export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> =
                 }
               }
           output: Output
+          status: Status
         }
       : never
   }
