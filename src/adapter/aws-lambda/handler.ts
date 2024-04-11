@@ -22,7 +22,7 @@ export interface APIGatewayProxyEventV2 {
   version: string
   routeKey: string
   headers: Record<string, string | undefined>
-  multiValueHeaders: undefined
+  multiValueHeaders?: undefined
   cookies?: string[]
   rawPath: string
   rawQueryString: string
