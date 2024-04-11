@@ -213,7 +213,8 @@ const createRequest = (event: LambdaEvent) => {
         headers.set(k, v)
       }
     }
-  } else if (event.multiValueHeaders) {
+  }
+  if (event.multiValueHeaders) {
     for (const [k, values] of Object.entries(event.multiValueHeaders)) {
       if (values) {
         values.forEach((v) => headers.append(k, v))
