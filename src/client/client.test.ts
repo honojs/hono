@@ -621,26 +621,42 @@ describe('Response with different status codes', () => {
 
   const client = hc<typeof app>('', { fetch: app.request })
 
-  it('Should be filtered by status code', async () => {
+  it('all', async () => {
+    const res = await client.index.$get()
+    const json = await res.json()
+    expectTypeOf(json).toEqualTypeOf<{ data: string } | { message: string } | null>()
+  })
+
+  it('status 200', async () => {
     const res = await client.index.$get()
     if (res.status === 200) {
       const json = await res.json()
       expectTypeOf(json).toEqualTypeOf<{ data: string } | null>()
     }
+  })
+
+  it('status 400', async () => {
+    const res = await client.index.$get()
     if (res.status === 400) {
       const json = await res.json()
       expectTypeOf(json).toEqualTypeOf<{ message: string } | null>()
     }
+  })
+
+  it('response is ok', async () => {
+    const res = await client.index.$get()
     if (res.ok) {
       const json = await res.json()
       expectTypeOf(json).toEqualTypeOf<{ data: string } | null>()
     }
+  })
+
+  it('response is not ok', async () => {
+    const res = await client.index.$get()
     if (!res.ok) {
       const json = await res.json()
       expectTypeOf(json).toEqualTypeOf<{ message: string } | null>()
     }
-    const json = await res.json()
-    expectTypeOf(json).toEqualTypeOf<{ data: string } | { message: string } | null>()
   })
 })
 
