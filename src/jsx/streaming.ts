@@ -148,10 +148,7 @@ export const renderToReadableStream = (
                 .forEach(then)
               resolvedCount++
               controller.enqueue(textEncoder.encode(res))
-            }).catch((err) => {
-            console.trace(err);
-            return "";
-          })
+            })
         )
       }
       ;(resolved as HtmlEscapedString).callbacks
