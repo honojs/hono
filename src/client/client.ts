@@ -84,7 +84,6 @@ class ClientRequestImpl {
     }
 
     let methodUpperCase = this.method.toUpperCase()
-    let setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
 
     const headerValues: Record<string, string> = {
       ...(args?.header ?? {}),
@@ -117,7 +116,7 @@ class ClientRequestImpl {
       url = url + '?' + this.queryParams.toString()
     }
     methodUpperCase = this.method.toUpperCase()
-    setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
+    const setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
 
     // Pass URL string to 1st arg for testing with MSW and node-fetch
     return (opt?.fetch || fetch)(url, {

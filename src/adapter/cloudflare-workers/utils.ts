@@ -12,7 +12,7 @@ export const getContentFromKVAsset = async (
   path: string,
   options?: KVAssetOptions
 ): Promise<ArrayBuffer | null> => {
-  let ASSET_MANIFEST: Record<string, string> = {}
+  let ASSET_MANIFEST: Record<string, string>
 
   if (options && options.manifest) {
     if (typeof options.manifest === 'string') {
