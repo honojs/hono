@@ -390,10 +390,12 @@ d.replaceWith(c.content)
       return <p>{content}</p>
     }
 
+    const onError = vi.fn()
     const stream = renderToReadableStream(
       <Suspense fallback={<p>Loading...</p>}>
         <Content />
-      </Suspense>
+      </Suspense>,
+      onError
     )
 
     const chunks = []
@@ -401,6 +403,8 @@ d.replaceWith(c.content)
     for await (const chunk of stream as any) {
       chunks.push(textDecoder.decode(chunk))
     }
+
+    expect(onError).toBeCalledTimes(1)
 
     expect(chunks).toEqual([
       `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$-->`,
@@ -410,6 +414,55 @@ d.replaceWith(c.content)
     expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
       '<p>Loading...</p><!--/$-->'
     )
+  })
+
+  it('closed()', async () => {
+    const Content = async () => {
+      await new Promise<void>((resolve) =>
+        setTimeout(() => {
+          vi.spyOn(ReadableStreamDefaultController.prototype, 'enqueue').mockImplementation(() => {
+            throw new Error('closed')
+          })
+          resolve()
+        }, 10)
+      )
+      return <p>content</p>
+    }
+
+    const onError = vi.fn()
+    const stream = renderToReadableStream(
+      <>
+        <Suspense fallback={<p>Loading...</p>}>
+          <Content />
+        </Suspense>
+        <Suspense fallback={<p>Loading...</p>}>
+          <Content />
+        </Suspense>
+      </>,
+      onError
+    )
+
+    const chunks = []
+    const textDecoder = new TextDecoder()
+    for await (const chunk of stream as any) {
+      chunks.push(textDecoder.decode(chunk))
+    }
+
+    expect(onError).toBeCalledTimes(1)
+
+    expect(chunks).toEqual([
+      `<template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$--><template id="H:${
+        suspenseCounter + 1
+      }"></template><p>Loading...</p><!--/$-->`,
+    ])
+
+    expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+      '<p>Loading...</p><!--/$--><p>Loading...</p><!--/$-->'
+    )
+
+    suspenseCounter++
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    vi.restoreAllMocks()
   })
 
   it('Multiple "await" call', async () => {
