@@ -116,48 +116,60 @@ const textEncoder = new TextEncoder()
  * The API might be changed.
  */
 export const renderToReadableStream = (
-  str: HtmlEscapedString | Promise<HtmlEscapedString>
+  str: HtmlEscapedString | Promise<HtmlEscapedString>,
+  onError: (e: unknown) => void = console.trace
 ): ReadableStream<Uint8Array> => {
   const reader = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const tmp = str instanceof Promise ? await str : await str.toString()
-      const context = typeof tmp === 'object' ? tmp : {}
-      const resolved = await resolveCallback(
-        tmp,
-        HtmlEscapedCallbackPhase.BeforeStream,
-        true,
-        context
-      )
-      controller.enqueue(textEncoder.encode(resolved))
-
-      let resolvedCount = 0
-      const callbacks: Promise<void>[] = []
-      const then = (promise: Promise<string>) => {
-        callbacks.push(
-          promise
-            .catch((err) => {
-              console.trace(err)
-              return ''
-            })
-            .then(async (res) => {
-              res = await resolveCallback(res, HtmlEscapedCallbackPhase.BeforeStream, true, context)
-              ;(res as HtmlEscapedString).callbacks
-                ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .filter<Promise<string>>(Boolean as any)
-                .forEach(then)
-              resolvedCount++
-              controller.enqueue(textEncoder.encode(res))
-            })
+      try {
+        const tmp = str instanceof Promise ? await str : await str.toString()
+        const context = typeof tmp === 'object' ? tmp : {}
+        const resolved = await resolveCallback(
+          tmp,
+          HtmlEscapedCallbackPhase.BeforeStream,
+          true,
+          context
         )
-      }
-      ;(resolved as HtmlEscapedString).callbacks
-        ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .filter<Promise<string>>(Boolean as any)
-        .forEach(then)
-      while (resolvedCount !== callbacks.length) {
-        await Promise.all(callbacks)
+        controller.enqueue(textEncoder.encode(resolved))
+
+        let resolvedCount = 0
+        const callbacks: Promise<void>[] = []
+        const then = (promise: Promise<string>) => {
+          callbacks.push(
+            promise
+              .catch((err) => {
+                console.log(err)
+                onError(err)
+                return ''
+              })
+              .then(async (res) => {
+                res = await resolveCallback(
+                  res,
+                  HtmlEscapedCallbackPhase.BeforeStream,
+                  true,
+                  context
+                )
+                ;(res as HtmlEscapedString).callbacks
+                  ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  .filter<Promise<string>>(Boolean as any)
+                  .forEach(then)
+                resolvedCount++
+                controller.enqueue(textEncoder.encode(res))
+              })
+          )
+        }
+        ;(resolved as HtmlEscapedString).callbacks
+          ?.map((c) => c({ phase: HtmlEscapedCallbackPhase.Stream, context }))
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .filter<Promise<string>>(Boolean as any)
+          .forEach(then)
+        while (resolvedCount !== callbacks.length) {
+          await Promise.all(callbacks)
+        }
+      } catch (e) {
+        // maybe the connection was closed
+        onError(e)
       }
 
       controller.close()
