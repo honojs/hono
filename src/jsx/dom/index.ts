@@ -1,4 +1,4 @@
-import type { Props, Child, JSXNode } from '../base'
+import type { Props, Child, DOMAttributes, JSXNode } from '../base'
 import { memo, isValidElement } from '../base'
 import { Children } from '../children'
 import { useContext } from '../context'
@@ -83,6 +83,7 @@ export {
   cloneElement,
   Children,
   Fragment,
+  DOMAttributes,
 }
 
 export default {

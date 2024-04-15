@@ -9,6 +9,7 @@ import { normalizeIntrinsicElementProps } from './utils'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
 export type FC<T = Props> = (props: T) => HtmlEscapedString | Promise<HtmlEscapedString>
+export type DOMAttributes = Hono.HTMLAttributes
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace

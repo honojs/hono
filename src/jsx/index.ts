@@ -1,4 +1,5 @@
 import { jsx, memo, Fragment, isValidElement, cloneElement } from './base'
+import type { DOMAttributes } from './base'
 import { Children } from './children'
 import { ErrorBoundary } from './components'
 import { createContext, useContext } from './context'
@@ -48,6 +49,7 @@ export {
   useLayoutEffect,
   Suspense,
   Children,
+  DOMAttributes,
 }
 
 export default {
