@@ -17,6 +17,8 @@ const nameSpaceMap: Record<string, string> = {
   math: 'http://www.w3.org/1998/Math/MathML',
 } as const
 
+const skipProps = new Set(['children'])
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type HasRenderToDom = FC<any> & { [DOM_RENDERER]: FC<any> }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -101,7 +103,7 @@ const getEventSpec = (key: string): [string, boolean] | undefined => {
 const applyProps = (container: SupportedElement, attributes: Props, oldAttributes?: Props) => {
   attributes ||= {}
   for (const [key, value] of Object.entries(attributes)) {
-    if (!oldAttributes || oldAttributes[key] !== value) {
+    if (!skipProps.has(key) && (!oldAttributes || oldAttributes[key] !== value)) {
       const eventSpec = getEventSpec(key)
       if (eventSpec) {
         if (typeof value !== 'function') {
@@ -166,7 +168,7 @@ const applyProps = (container: SupportedElement, attributes: Props, oldAttribute
   }
   if (oldAttributes) {
     for (const [key, value] of Object.entries(oldAttributes)) {
-      if (!(key in attributes)) {
+      if (!skipProps.has(key) && !(key in attributes)) {
         const eventSpec = getEventSpec(key)
         if (eventSpec) {
           container.removeEventListener(eventSpec[0], value, eventSpec[1])

@@ -20,7 +20,7 @@ import {
 } from '../hooks'
 import { Suspense, ErrorBoundary } from './components'
 import { createContext } from './context'
-import { jsx } from './jsx-runtime'
+import { jsx, Fragment } from './jsx-runtime'
 
 export { render } from './render'
 

@@ -114,6 +114,16 @@ export class JSXNode implements HtmlEscaped {
     this.children = children
   }
 
+  get type(): string | Function {
+    return this.tag as string
+  }
+
+  // Added for compatibility with libraries that rely on React's internal structure
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get ref(): any {
+    return this.props.ref || null
+  }
+
   toString(): string | Promise<string> {
     const buffer: StringBuffer = ['']
     this.localContexts?.forEach(([context, value]) => {
