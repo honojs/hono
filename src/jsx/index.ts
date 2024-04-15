@@ -1,4 +1,5 @@
 import { jsx, memo, Fragment, isValidElement, cloneElement } from './base'
+import { Children } from './children'
 import { ErrorBoundary } from './components'
 import { createContext, useContext } from './context'
 import {
@@ -46,6 +47,7 @@ export {
   useMemo,
   useLayoutEffect,
   Suspense,
+  Children,
 }
 
 export default {
@@ -73,6 +75,7 @@ export default {
   useMemo,
   useLayoutEffect,
   Suspense,
+  Children,
 }
 
 // TODO: change to `export type *` after denoify bug is fixed

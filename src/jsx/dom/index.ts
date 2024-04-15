@@ -1,5 +1,6 @@
 import type { Props, Child, JSXNode } from '../base'
 import { memo, isValidElement } from '../base'
+import { Children } from '../children'
 import { useContext } from '../context'
 import {
   useState,
@@ -80,6 +81,7 @@ export {
   isValidElement,
   createElement,
   cloneElement,
+  Children,
 }
 
 export default {
@@ -106,6 +108,7 @@ export default {
   isValidElement,
   createElement,
   cloneElement,
+  Children,
 }
 
 export type { Context } from '../context'
