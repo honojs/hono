@@ -82,6 +82,7 @@ export {
   createElement,
   cloneElement,
   Children,
+  Fragment,
 }
 
 export default {
@@ -109,6 +110,7 @@ export default {
   createElement,
   cloneElement,
   Children,
+  Fragment,
 }
 
 export type { Context } from '../context'
