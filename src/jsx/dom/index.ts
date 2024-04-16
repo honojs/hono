@@ -18,6 +18,10 @@ import {
   useReducer,
   useId,
   useDebugValue,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
 } from '../hooks'
 import { Suspense, ErrorBoundary } from './components'
 import { createContext } from './context'
@@ -73,6 +77,10 @@ export {
   useReducer,
   useId,
   useDebugValue,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
   Suspense,
   ErrorBoundary,
   createContext,
@@ -102,6 +110,10 @@ export default {
   useReducer,
   useId,
   useDebugValue,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
   Suspense,
   ErrorBoundary,
   createContext,

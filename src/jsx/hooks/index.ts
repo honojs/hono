@@ -361,3 +361,52 @@ export const useId = (): string => useMemo(() => `:r${(idCounter++).toString(32)
 // Define to avoid errors. This hook currently does nothing.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const useDebugValue = (_value: unknown, _formatter?: (value: unknown) => string): void => {}
+
+export const createRef = <T>(): RefObject<T> => {
+  return { current: null }
+}
+
+export const forwardRef = <T, P = {}>(
+  Component: (props: P, ref: RefObject<T>) => JSX.Element
+): ((props: P & { ref: RefObject<T> }) => JSX.Element) => {
+  return (props) => {
+    const { ref, ...rest } = props
+    return Component(rest as P, ref)
+  }
+}
+
+export const useImperativeHandle = <T>(
+  ref: RefObject<T>,
+  createHandle: () => T,
+  deps: readonly unknown[]
+): void => {
+  useEffect(() => {
+    ref.current = createHandle()
+    return () => {
+      ref.current = null
+    }
+  }, deps)
+}
+
+let useSyncExternalStoreGetServerSnapshotNotified = false
+export const useSyncExternalStore = <T>(
+  subscribe: (callback: (value: T) => void) => () => void,
+  getSnapshot: () => T,
+  getServerSnapshot?: () => T
+): T => {
+  const [state, setState] = useState(getSnapshot())
+  useEffect(
+    () =>
+      subscribe(() => {
+        setState(getSnapshot())
+      }),
+    []
+  )
+
+  if (getServerSnapshot && !useSyncExternalStoreGetServerSnapshotNotified) {
+    useSyncExternalStoreGetServerSnapshotNotified = true
+    console.info('`getServerSnapshot` is not supported yet.')
+  }
+
+  return state
+}

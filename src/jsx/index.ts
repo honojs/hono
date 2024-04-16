@@ -19,6 +19,10 @@ import {
   useReducer,
   useId,
   useDebugValue,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
 } from './hooks'
 import { Suspense } from './streaming'
 
@@ -47,6 +51,10 @@ export {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
   Suspense,
   Children,
   DOMAttributes,
@@ -76,6 +84,10 @@ export default {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
   Suspense,
   Children,
 }
