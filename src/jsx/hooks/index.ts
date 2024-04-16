@@ -166,7 +166,7 @@ export const useState: UseStateType = <T>(
         newState = (newState as (currentState: T) => T)(stateData[0])
       }
 
-      if (newState !== stateData[0]) {
+      if (!Object.is(newState, stateData[0])) {
         stateData[0] = newState
         if (pendingStack.length) {
           const pendingType = pendingStack.at(-1) as PendingType
