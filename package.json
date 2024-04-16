@@ -280,9 +280,9 @@
       "require": "./dist/cjs/helper/factory/index.js"
     },
     "./base-serve-static": {
-      "types": "./dist/types/middlware/serve-static/index.d.ts",
-      "import": "./dist/middlware/serve-static/index.js",
-      "require": "./dist/cjs/middlware/serve-static/index.js"
+      "types": "./dist/types/middleware/serve-static/index.d.ts",
+      "import": "./dist/middleware/serve-static/index.js",
+      "require": "./dist/cjs/middleware/serve-static/index.js"
     },
     "./cloudflare-workers": {
       "types": "./dist/types/adapter/cloudflare-workers/index.d.ts",
@@ -481,7 +481,7 @@
         "./dist/types/helper/factory/index.d.ts"
       ],
       "base-serve-static": [
-        "./dist/types/middlware/serve-static"
+        "./dist/types/middleware/serve-static"
       ],
       "cloudflare-workers": [
         "./dist/types/adapter/cloudflare-workers"
