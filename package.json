@@ -279,6 +279,11 @@
       "import": "./dist/helper/factory/index.js",
       "require": "./dist/cjs/helper/factory/index.js"
     },
+    "./base-serve-static": {
+      "types": "./dist/types/middlware/serve-static/index.d.ts",
+      "import": "./dist/middlware/serve-static/index.js",
+      "require": "./dist/cjs/middlware/serve-static/index.js"
+    },
     "./cloudflare-workers": {
       "types": "./dist/types/adapter/cloudflare-workers/index.d.ts",
       "import": "./dist/adapter/cloudflare-workers/index.js",
@@ -474,6 +479,9 @@
       ],
       "factory": [
         "./dist/types/helper/factory/index.d.ts"
+      ],
+      "base-serve-static": [
+        "./dist/types/middlware/serve-static"
       ],
       "cloudflare-workers": [
         "./dist/types/adapter/cloudflare-workers"
