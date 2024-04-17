@@ -742,3 +742,27 @@ describe('WebSocket URL Protocol Translation', () => {
     expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
   })
 })
+
+describe('Client can be console.log in react native', () => {
+  it('Returns a function name with function.name.toString', async () => {
+    const client = hc('http://localhost')
+    // @ts-ignore
+    expect(client.posts.name.toString()).toEqual('posts')
+  })
+
+  it('Returns a function name with function.name.valueOf', async () => {
+    const client = hc('http://localhost')
+    // @ts-ignore
+    expect(client.posts.name.valueOf()).toEqual('posts')
+  })
+
+  it('Returns a function with function.valueOf', async () => {
+    const client = hc('http://localhost')
+    expect(typeof client.posts.valueOf()).toEqual('function')
+  })
+
+  it('Returns a function source with function.toString', async () => {
+    const client = hc('http://localhost')
+    expect(client.posts.toString()).toMatch('function proxyCallback')
+  })
+})
