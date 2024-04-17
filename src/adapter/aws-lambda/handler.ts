@@ -22,6 +22,7 @@ export interface APIGatewayProxyEventV2 {
   version: string
   routeKey: string
   headers: Record<string, string | undefined>
+  multiValueHeaders?: undefined
   cookies?: string[]
   rawPath: string
   rawQueryString: string
@@ -63,7 +64,8 @@ export interface APIGatewayProxyEvent {
 // When calling Lambda through an Application Load Balancer
 export interface ALBProxyEvent {
   httpMethod: string
-  headers: Record<string, string | undefined>
+  headers?: Record<string, string | undefined>
+  multiValueHeaders?: Record<string, string[] | undefined>
   path: string
   body: string | null
   isBase64Encoded: boolean
@@ -198,16 +200,25 @@ const createRequest = (event: LambdaEvent) => {
   const domainName =
     event.requestContext && 'domainName' in event.requestContext
       ? event.requestContext.domainName
-      : event.headers['host']
+      : event.headers?.['host'] ?? event.multiValueHeaders?.['host']?.[0]
   const path = isProxyEventV2(event) ? event.rawPath : event.path
   const urlPath = `https://${domainName}${path}`
   const url = queryString ? `${urlPath}?${queryString}` : urlPath
 
   const headers = new Headers()
   getCookies(event, headers)
-  for (const [k, v] of Object.entries(event.headers)) {
-    if (v) {
-      headers.set(k, v)
+  if (event.headers) {
+    for (const [k, v] of Object.entries(event.headers)) {
+      if (v) {
+        headers.set(k, v)
+      }
+    }
+  }
+  if (event.multiValueHeaders) {
+    for (const [k, values] of Object.entries(event.multiValueHeaders)) {
+      if (values) {
+        values.forEach((v) => headers.append(k, v))
+      }
     }
   }
 

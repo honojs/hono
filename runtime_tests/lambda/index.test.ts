@@ -139,6 +139,13 @@ describe('AWS Lambda Adapter for Hono', () => {
     return c.text('Valid Cookies')
   })
 
+  app.post('/headers', (c) => {
+    if (c.req.header('foo')?.includes('bar')) {
+      return c.json({ message: 'ok' })
+    }
+    return c.json({ message: 'fail' }, 400)
+  })
+
   const handler = handle(app)
 
   const testApiGatewayRequestContext = {
@@ -489,6 +496,100 @@ describe('AWS Lambda Adapter for Hono', () => {
       testCookie1.serialized,
       testCookie2.serialized,
     ])
+  })
+
+  describe('headers', () => {
+    describe('single-value headers', () => {
+      it('Should extract single-value headers and return 200 (ALBProxyEvent)', async () => {
+        const event = {
+          body: '{}',
+          httpMethod: 'POST',
+          isBase64Encoded: false,
+          path: '/headers',
+          headers: {
+            host: 'localhost',
+            foo: 'bar',
+          },
+          requestContext: testALBRequestContext,
+        }
+        const apiGatewayResponseV2 = await handler(event)
+        expect(apiGatewayResponseV2.statusCode).toBe(200)
+      })
+
+      it('Should extract single-value headers and return 200 (APIGatewayProxyEvent)', async () => {
+        const apigatewayProxyEvent = {
+          version: '1.0',
+          resource: '/headers',
+          httpMethod: 'POST',
+          headers: {
+            host: 'localhost',
+            foo: 'bar',
+          },
+          path: '/headers',
+          body: null,
+          isBase64Encoded: false,
+          requestContext: testApiGatewayRequestContext,
+        }
+        const apiGatewayResponseV2 = await handler(apigatewayProxyEvent)
+        expect(apiGatewayResponseV2.statusCode).toBe(200)
+      })
+
+      it('Should extract single-value headers and return 200 (APIGatewayProxyEventV2)', async () => {
+        const apigatewayProxyV2Event = {
+          version: '2.0',
+          routeKey: '$default',
+          headers: {
+            host: 'localhost',
+            foo: 'bar',
+          },
+          rawPath: '/headers',
+          rawQueryString: '',
+          requestContext: testApiGatewayRequestContextV2,
+          resource: '/headers',
+          body: null,
+          isBase64Encoded: false,
+        }
+        const apiGatewayResponseV2 = await handler(apigatewayProxyV2Event)
+        expect(apiGatewayResponseV2.statusCode).toBe(200)
+      })
+    })
+
+    describe('multi-value headers', () => {
+      it('Should extract multi-value headers and return 200 (ALBProxyEvent)', async () => {
+        const event = {
+          body: '{}',
+          httpMethod: 'POST',
+          isBase64Encoded: false,
+          path: '/headers',
+          multiValueHeaders: {
+            host: ['localhost'],
+            foo: ['bar'],
+          },
+          requestContext: testALBRequestContext,
+        }
+        const apiGatewayResponseV2 = await handler(event)
+        expect(apiGatewayResponseV2.statusCode).toBe(200)
+      })
+
+      it('Should extract multi-value headers and return 200 (APIGatewayProxyEvent)', async () => {
+        const apigatewayProxyEvent = {
+          version: '1.0',
+          resource: '/headers',
+          httpMethod: 'POST',
+          headers: {},
+          multiValueHeaders: {
+            host: ['localhost'],
+            foo: ['bar'],
+          },
+          path: '/headers',
+          body: null,
+          isBase64Encoded: false,
+          requestContext: testApiGatewayRequestContext,
+        }
+        const apiGatewayResponseV2 = await handler(apigatewayProxyEvent)
+        expect(apiGatewayResponseV2.statusCode).toBe(200)
+      })
+    })
   })
 
   it('Should handle a POST request and return a 200 response if cookies match (APIGatewayProxyEvent V1 and V2)', async () => {
