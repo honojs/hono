@@ -598,6 +598,33 @@ describe('DOM', () => {
       root.querySelector('button')?.click()
       expect(clicked).toEqual(['div', 'button', 'button'])
     })
+
+    it('onGotPointerCapture', async () => {
+      const App = () => {
+        return <div onGotPointerCapture={() => {}}></div>
+      }
+      const addEventListenerSpy = vi.spyOn(dom.window.Node.prototype, 'addEventListener')
+      render(<App />, root)
+      expect(addEventListenerSpy).toHaveBeenCalledOnce()
+      expect(addEventListenerSpy).toHaveBeenCalledWith(
+        'gotpointercapture',
+        expect.any(Function),
+        false
+      )
+    })
+    it('onGotPointerCaptureCapture', async () => {
+      const App = () => {
+        return <div onGotPointerCaptureCapture={() => {}}></div>
+      }
+      const addEventListenerSpy = vi.spyOn(dom.window.Node.prototype, 'addEventListener')
+      render(<App />, root)
+      expect(addEventListenerSpy).toHaveBeenCalledOnce()
+      expect(addEventListenerSpy).toHaveBeenCalledWith(
+        'gotpointercapture',
+        expect.any(Function),
+        true
+      )
+    })
   })
 
   it('simple Counter', async () => {
