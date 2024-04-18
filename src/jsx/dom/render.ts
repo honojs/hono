@@ -90,7 +90,7 @@ let nameSpaceContext: JSXContext<string> | undefined = undefined
 const isNodeString = (node: Node): node is NodeString => Array.isArray(node)
 
 const getEventSpec = (key: string): [string, boolean] | undefined => {
-  const match = key.match(/^on([A-Z][a-zA-Z]+?)((?<!Pointer)Capture)?$/)
+  const match = key.match(/^on([A-Z][a-zA-Z]+?(?:PointerCapture)?)(Capture)?$/)
   if (match) {
     const [, eventName, capture] = match
     return [(eventAliasMap[eventName] || eventName).toLowerCase(), !!capture]
