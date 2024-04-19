@@ -33,14 +33,13 @@ export type ClientRequest<S extends Schema> = {
         : {}
       : {}
   ) => URL
-} & {
-  // WebSocket
-  $ws: S['$get'] extends { input: { json: UpgradedWebSocketResponseInputJSONType } }
+} & (S['$get'] extends { input: { json: UpgradedWebSocketResponseInputJSONType } }
     ? S['$get'] extends { input: infer I }
-      ? (args?: Omit<I, 'json'>) => WebSocket
-      : never
-    : never
-}
+      ? {
+          $ws: (args?: Omit<I, 'json'>) => WebSocket
+        }
+      : {}
+    : {})
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type BlankRecordToNever<T> = T extends any
