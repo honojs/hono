@@ -271,7 +271,7 @@ export interface ToSSGAdaptorInterface<
  * The API might be changed.
  */
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
-  let result: ToSSGResult | undefined = undefined
+  let result: ToSSGResult | undefined
   const getInfoPromises: Promise<unknown>[] = []
   const savePromises: Promise<string | undefined>[] = []
   try {

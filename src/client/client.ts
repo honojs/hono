@@ -84,7 +84,6 @@ class ClientRequestImpl {
     }
 
     let methodUpperCase = this.method.toUpperCase()
-    let setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
 
     const headerValues: Record<string, string> = {
       ...(args?.header ?? {}),
@@ -117,7 +116,7 @@ class ClientRequestImpl {
       url = url + '?' + this.queryParams.toString()
     }
     methodUpperCase = this.method.toUpperCase()
-    setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
+    const setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
 
     // Pass URL string to 1st arg for testing with MSW and node-fetch
     return (opt?.fetch || fetch)(url, {
@@ -133,8 +132,27 @@ export const hc = <T extends Hono<any, any, any>>(
   baseUrl: string,
   options?: ClientRequestOptions
 ) =>
-  createProxy((opts) => {
+  createProxy(function proxyCallback(opts) {
     const parts = [...opts.path]
+
+    // allow calling .toString() and .valueOf() on the proxy
+    if (parts[parts.length - 1] === 'toString') {
+      if (parts[parts.length - 2] === 'name') {
+        // e.g. hc().somePath.name.toString() -> "somePath"
+        return parts[parts.length - 3] || ''
+      }
+      // e.g. hc().somePath.toString()
+      return proxyCallback.toString()
+    }
+
+    if (parts[parts.length - 1] === 'valueOf') {
+      if (parts[parts.length - 2] === 'name') {
+        // e.g. hc().somePath.name.valueOf() -> "somePath"
+        return parts[parts.length - 3] || ''
+      }
+      // e.g. hc().somePath.valueOf()
+      return proxyCallback
+    }
 
     let method = ''
     if (/^\$/.test(parts[parts.length - 1])) {

@@ -901,7 +901,7 @@ describe('Validator with using Zod directly', () => {
     })
     const app = new Hono()
 
-    app.post(
+    const route = app.post(
       '/posts',
       validator('json', (value, c) => {
         const parsed = testSchema.safeParse(value)
@@ -921,6 +921,23 @@ describe('Validator with using Zod directly', () => {
         )
       }
     )
+
+    expectTypeOf<ExtractSchema<typeof route>>().toEqualTypeOf<{
+      '/posts': {
+        $post: {
+          input: {
+            json: {
+              type: 'a'
+              name: string
+              age: number
+            }
+          }
+          output: {
+            message: string
+          }
+        }
+      }
+    }>()
   })
 })
 

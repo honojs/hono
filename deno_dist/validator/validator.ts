@@ -34,14 +34,18 @@ export const validator = <
   V extends {
     in: {
       [K in U]: K extends 'json'
-        ? InputType
+        ? unknown extends InputType
+          ? OutputTypeExcludeResponseType
+          : InputType
         : { [K2 in keyof OutputTypeExcludeResponseType]: ValidationTargets[K][K2] }
     }
     out: { [K in U]: OutputTypeExcludeResponseType }
   } = {
     in: {
       [K in U]: K extends 'json'
-        ? InputType
+        ? unknown extends InputType
+          ? OutputTypeExcludeResponseType
+          : InputType
         : { [K2 in keyof OutputTypeExcludeResponseType]: ValidationTargets[K][K2] }
     }
     out: { [K in U]: OutputTypeExcludeResponseType }
