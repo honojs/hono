@@ -935,6 +935,7 @@ describe('Validator with using Zod directly', () => {
           output: {
             message: string
           }
+          status: 201
         }
       }
     }>()
