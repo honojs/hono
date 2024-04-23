@@ -1,4 +1,4 @@
-import type { Context } from '../../context.ts'
+import type { Context, Data } from '../../context.ts'
 import type { Env, MiddlewareHandler } from '../../types.ts'
 import { getFilePath, getFilePathWithoutDefaultDocument } from '../../utils/filepath.ts'
 import { getMimeType } from '../../utils/mime.ts'
@@ -20,7 +20,7 @@ const defaultPathResolve = (path: string) => path
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E> & {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getContent: (path: string, c: Context<E>) => any
+    getContent: (path: string, c: Context<E>) => Promise<Data | Response | null>
     pathResolve?: (path: string) => string
   }
 ): MiddlewareHandler => {
@@ -76,7 +76,11 @@ export const serveStatic = <E extends Env = Env>(
       if (mimeType) {
         c.header('Content-Type', mimeType)
       }
-      return c.body(content)
+      if (content instanceof Response) {
+        return c.newResponse(content.body, content)
+      } else {
+        return c.body(content)
+      }
     }
 
     await options.onNotFound?.(path, c)
