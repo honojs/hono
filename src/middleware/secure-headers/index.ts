@@ -75,7 +75,7 @@ const HEADERS_MAP: HeadersMap = {
   xContentTypeOptions: ['X-Content-Type-Options', 'nosniff'],
   xDnsPrefetchControl: ['X-DNS-Prefetch-Control', 'off'],
   xDownloadOptions: ['X-Download-Options', 'noopen'],
-  xFrameOptions: ['X-Frame-Options', 'SAMEORIGIN'],
+  contentSecurityPolicy: ['Content-Security-Policy', "frame-ancestors 'none'"],
   xPermittedCrossDomainPolicies: ['X-Permitted-Cross-Domain-Policies', 'none'],
 }
 
