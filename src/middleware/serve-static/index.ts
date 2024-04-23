@@ -30,9 +30,8 @@ export const serveStatic = <E extends Env = Env>(
       await next()
       return
     }
-    const url = new URL(c.req.url)
 
-    let filename = options.path ?? decodeURI(url.pathname)
+    let filename = options.path ?? decodeURI(c.req.path)
     filename = options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename
     const root = options.root
 
