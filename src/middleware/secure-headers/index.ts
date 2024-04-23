@@ -77,7 +77,6 @@ const HEADERS_MAP: HeadersMap = {
   xDownloadOptions: ['X-Download-Options', 'noopen'],
   xFrameOptions: ['X-Frame-Options', 'SAMEORIGIN'],
   xPermittedCrossDomainPolicies: ['X-Permitted-Cross-Domain-Policies', 'none'],
-  xXssProtection: ['X-XSS-Protection', '0'],
 }
 
 const DEFAULT_OPTIONS: SecureHeadersOptions = {
