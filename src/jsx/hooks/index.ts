@@ -138,9 +138,15 @@ const setShadow = (node: Node) => {
   ;(node as any).s?.forEach(setShadow)
 }
 
-export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunction<T>] => {
+type UseStateType = {
+  <T>(initialState: T | (() => T)): [T, UpdateStateFunction<T>]
+  <T = undefined>(): [T | undefined, UpdateStateFunction<T | undefined>]
+}
+export const useState: UseStateType = <T>(
+  initialState?: T | (() => T)
+): [T, UpdateStateFunction<T>] => {
   const resolveInitialState = () =>
-    typeof initialState === 'function' ? (initialState as () => T)() : initialState
+    typeof initialState === 'function' ? (initialState as () => T)() : (initialState as T)
 
   const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
   if (!buildData) {
