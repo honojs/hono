@@ -52,10 +52,10 @@ export type NodeObject = {
         any[][]
       ]
 } & JSXNode
-type NodeString = [
-  string, // text content
-  boolean // is dirty
-] & {
+type NodeString = {
+  t: string // text content
+  d: boolean // is dirty
+} & {
   e?: Text
   // like a NodeObject
   vC: undefined
@@ -91,7 +91,7 @@ export const buildDataStack: [Context, Node][] = []
 
 let nameSpaceContext: JSXContext<string> | undefined = undefined
 
-const isNodeString = (node: Node): node is NodeString => Array.isArray(node)
+const isNodeString = (node: Node): node is NodeString => 't' in (node as NodeString)
 
 const getEventSpec = (key: string): [string, boolean] | undefined => {
   const match = key.match(/^on([A-Z][a-zA-Z]+?(?:PointerCapture)?)(Capture)?$/)
@@ -275,7 +275,7 @@ const apply = (node: NodeObject, container: Container) => {
 
 const applyNode = (node: Node, container: Container) => {
   if (isNodeString(node)) {
-    container.textContent = node[0]
+    container.textContent = node.t
   } else {
     applyNodeObject(node, container)
   }
@@ -315,11 +315,11 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
 
     let el: SupportedElement | Text
     if (isNodeString(child)) {
-      if (child.e && child[1]) {
-        child.e.textContent = child[0]
+      if (child.e && child.d) {
+        child.e.textContent = child.t
       }
-      child[1] = false
-      el = child.e ||= document.createTextNode(child[0])
+      child.d = false
+      el = child.e ||= document.createTextNode(child.t)
     } else {
       el = child.e ||= child.n
         ? (document.createElementNS(child.n, child.tag as string) as SVGElement | MathMLElement)
@@ -393,9 +393,9 @@ export const build = (
             if (!isNodeString(oldChild)) {
               vChildrenToRemove.push(oldChild)
             } else {
-              if (oldChild[0] !== child[0]) {
-                oldChild[0] = child[0] // update text content
-                oldChild[1] = true
+              if (oldChild.t !== child.t) {
+                oldChild.t = child.t // update text content
+                oldChild.d = true
               }
               child = oldChild
             }
@@ -445,7 +445,7 @@ const buildNode = (node: Child): Node | undefined => {
   if (node === undefined || node === null || typeof node === 'boolean') {
     return undefined
   } else if (typeof node === 'string' || typeof node === 'number') {
-    return [node.toString(), true] as NodeString
+    return { t: node.toString(), d: true } as NodeString
   } else {
     if (typeof (node as JSXNode).tag === 'function') {
       ;(node as NodeObject)[DOM_STASH] = [0, []]
