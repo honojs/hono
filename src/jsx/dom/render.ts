@@ -5,6 +5,7 @@ import type { Context as JSXContext } from '../context'
 import { globalContexts as globalJSXContexts, useContext } from '../context'
 import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
+import { styleObjectForEach } from '../utils'
 import { createContext } from './context' // import dom-specific versions
 
 const HONO_PORTAL_ELEMENT = '_hp'
@@ -126,20 +127,13 @@ const applyProps = (container: SupportedElement, attributes: Props, oldAttribute
           value.current = container
         }
       } else if (key === 'style') {
+        const style = container.style
         if (typeof value === 'string') {
-          container.style.cssText = value
+          style.cssText = value
         } else {
-          const style = container.style
           style.cssText = ''
           if (value != null) {
-            for (const [k, v] of Object.entries(value)) {
-              style.setProperty(
-                k[0] === '-'
-                  ? k // CSS variable
-                  : k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`), // style property. convert to kebab-case
-                v == null ? null : typeof v === 'number' ? v + 'px' : (v as string)
-              )
-            }
+            styleObjectForEach(value, style.setProperty.bind(style))
           }
         }
       } else {

@@ -4,7 +4,7 @@ import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html
 import type { Context } from './context'
 import { globalContexts } from './context'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
-import { normalizeIntrinsicElementProps } from './utils'
+import { normalizeIntrinsicElementProps, styleObjectForEach } from './utils'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
@@ -158,17 +158,16 @@ export class JSXNode implements HtmlEscaped {
       const v = props[key]
       if (key === 'children') {
         // skip children
-      }
-      else if (key === 'style' && typeof v === 'object') {
+      } else if (key === 'style' && typeof v === 'object') {
         // object to style strings
-        const styles = Object.keys(v)
-          .map((k) => {
-            const property = k.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)
-            return `${property}:${v[k]}`
-          })
-          .join(';')
+        let styleStr = ''
+        styleObjectForEach(v, (property, value) => {
+          if (value != null) {
+            styleStr += `${styleStr ? ';' : ''}${property}:${value}`
+          }
+        })
         buffer[0] += ' style="'
-        escapeToBuffer(styles, buffer)
+        escapeToBuffer(styleStr, buffer)
         buffer[0] += '"'
       } else if (typeof v === 'string') {
         buffer[0] += ` ${key}="`
