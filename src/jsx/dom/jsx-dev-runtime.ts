@@ -29,7 +29,7 @@ export const jsxDEV = (tag: string | Function, props: Props, key?: string): JSXN
       tag,
       props,
       key,
-      children: Array.isArray(children) ? children : [children],
+      children,
     },
     JSXNodeCompatPrototype
   ) as JSXNode

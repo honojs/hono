@@ -35,7 +35,11 @@ const createElement = (
   props: Props,
   ...children: Child[]
 ): JSXNode => {
-  const jsxProps: Props = { ...props, children }
+  const jsxProps: Props = { ...props }
+  if (children.length) {
+    jsxProps.children = children.length === 1 ? children[0] : children
+  }
+
   let key = undefined
   if ('key' in jsxProps) {
     key = jsxProps.key

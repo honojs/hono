@@ -353,7 +353,12 @@ export const build = (
   }
 
   let errorHandler: ErrorHandler | undefined
-  children ||= typeof node.tag == 'function' ? invokeTag(context, node) : node.children
+  children ||=
+    typeof node.tag == 'function'
+      ? invokeTag(context, node)
+      : Array.isArray(node.children)
+      ? node.children
+      : [node.children]
   if ((children[0] as JSXNode)?.tag === '') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     errorHandler = (children[0] as any)[DOM_ERROR_HANDLER] as ErrorHandler
