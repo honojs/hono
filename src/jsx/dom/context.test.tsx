@@ -6,7 +6,7 @@ import { use, Suspense } from '..'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, Fragment } from '..'
 import { createContext as createContextDom, useContext as useContextDom } from '.' // for dom
-import { render } from '.'
+import { render, useState } from '.'
 
 runner('Common', createContextCommon, useContextCommon)
 runner('DOM', createContextDom, useContextDom)
@@ -50,6 +50,35 @@ function runner(
         const App = <Component />
         render(App, root)
         expect(root.innerHTML).toBe('<p>1</p>')
+      })
+
+      it('simple context with state', async () => {
+        const Context = createContext(0)
+        const Content = () => {
+          const [count, setCount] = useState(0)
+          const num = useContext(Context)
+          return (
+            <>
+              <p>
+                {num} - {count}
+              </p>
+              <button onClick={() => setCount(count + 1)}>+</button>
+            </>
+          )
+        }
+        const Component = () => {
+          return (
+            <Context.Provider value={1}>
+              <Content />
+            </Context.Provider>
+          )
+        }
+        const App = <Component />
+        render(App, root)
+        expect(root.innerHTML).toBe('<p>1 - 0</p><button>+</button>')
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<p>1 - 1</p><button>+</button>')
       })
 
       it('multiple provider', async () => {
