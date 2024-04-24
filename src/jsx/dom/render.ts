@@ -212,6 +212,8 @@ const invokeTag = (context: Context, node: NodeObject): Child[] => {
   try {
     return [
       func.call(null, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...((func as any).defaultProps || {}),
         ...node.props,
         children: node.children,
       }),
