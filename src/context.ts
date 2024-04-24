@@ -354,7 +354,6 @@ export class Context<
   ): Response => {
     // Optimized
     if (this.#isFresh && !headers && !arg && this.#status === 200) {
-      console.debug('[Hono] fresh: newResponse: return new Response(data, { headers: this.#preparedHeaders })')
       return new Response(data, {
         headers: this.#preparedHeaders,
       })
