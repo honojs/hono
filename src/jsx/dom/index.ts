@@ -32,10 +32,10 @@ export { render } from './render'
 
 const createElement = (
   tag: string | ((props: Props) => JSXNode),
-  props: Props,
+  props: Props | null,
   ...children: Child[]
 ): JSXNode => {
-  const jsxProps: Props = { ...props }
+  const jsxProps: Props = props ? { ...props } : {}
   if (children.length) {
     jsxProps.children = children.length === 1 ? children[0] : children
   }

@@ -257,7 +257,7 @@ export const jsx = (
 export const jsxFn = (
   tag: string | Function,
   props: Props,
-  children: (string | HtmlEscapedString)[]
+  children: (string | number | HtmlEscapedString)[]
 ): JSXNode => {
   if (typeof tag === 'function') {
     return new JSXFunctionNode(tag, props, children)
