@@ -271,17 +271,26 @@ const findInsertBefore = (node: Node | undefined): ChildNode | null => {
 const removeNode = (node: Node) => {
   if (!isNodeString(node)) {
     node[DOM_STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => data[2]?.())
+
+    if (node.e && node.props?.ref) {
+      if (typeof node.props.ref === 'function') {
+        node.props.ref(null)
+      } else {
+        node.props.ref.current = null
+      }
+    }
     node.vC?.forEach(removeNode)
   }
-  node.e?.remove()
-  node.tag = undefined
+  if (node.tag !== HONO_PORTAL_ELEMENT) {
+    node.e?.remove()
+  }
+  if (typeof node.tag === 'function') {
+    updateMap.delete(node)
+    fallbackUpdateFnArrayMap.delete(node)
+  }
 }
 
 const apply = (node: NodeObject, container: Container) => {
-  if (node.tag === undefined) {
-    return
-  }
-
   node.c = container
   applyNodeObject(node, container)
 }
@@ -355,16 +364,16 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
   })
 }
 
+const fallbackUpdateFnArrayMap = new WeakMap<
+  NodeObject,
+  Array<() => Promise<NodeObject | undefined>>
+>()
 export const build = (
   context: Context,
   node: NodeObject,
   topLevelErrorHandlerNode: NodeObject | undefined,
   children?: Child[]
 ): void => {
-  if (node.tag === undefined) {
-    return
-  }
-
   let errorHandler: ErrorHandler | undefined
   children ||=
     typeof node.tag == 'function'
@@ -438,9 +447,22 @@ export const build = (
     node.vR = vChildrenToRemove
   } catch (e) {
     if (errorHandler) {
-      const fallback = errorHandler(e, () =>
+      const fallbackUpdateFn = () =>
         update([0, false, context[2] as UpdateHook], topLevelErrorHandlerNode as NodeObject)
-      )
+      const fallbackUpdateFnArray =
+        fallbackUpdateFnArrayMap.get(topLevelErrorHandlerNode as NodeObject) || []
+      fallbackUpdateFnArray.push(fallbackUpdateFn)
+      fallbackUpdateFnArrayMap.set(topLevelErrorHandlerNode as NodeObject, fallbackUpdateFnArray)
+      const fallback = errorHandler(e, () => {
+        const fnArray = fallbackUpdateFnArrayMap.get(topLevelErrorHandlerNode as NodeObject)
+        if (fnArray) {
+          const i = fnArray.indexOf(fallbackUpdateFn)
+          if (i !== -1) {
+            fnArray.splice(i, 1)
+            return fallbackUpdateFn()
+          }
+        }
+      })
       if (fallback) {
         if (context[0] === 1) {
           context[1] = true
