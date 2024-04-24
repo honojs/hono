@@ -1,6 +1,6 @@
 import type { JSXNode } from '../base'
 import type { FC, Child, Props } from '../base'
-import { DOM_RENDERER, DOM_ERROR_HANDLER, DOM_STASH } from '../constants'
+import { DOM_RENDERER, DOM_ERROR_HANDLER, DOM_STASH, DOM_INTERNAL_TAG } from '../constants'
 import type { Context as JSXContext } from '../context'
 import { globalContexts as globalJSXContexts, useContext } from '../context'
 import type { EffectData } from '../hooks'
@@ -399,7 +399,12 @@ export const build = (
         }
         prevNode = child
 
-        if (typeof child.tag === 'function' && globalJSXContexts.length > 0) {
+        if (
+          typeof child.tag === 'function' &&
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          !(child.tag as any)[DOM_INTERNAL_TAG] &&
+          globalJSXContexts.length > 0
+        ) {
           child[DOM_STASH][2] = globalJSXContexts.map((c) => [c, c.values.at(-1)])
         }
 
