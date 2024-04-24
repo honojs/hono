@@ -156,8 +156,11 @@ export class JSXNode implements HtmlEscaped {
     for (let i = 0, len = propsKeys.length; i < len; i++) {
       const key = propsKeys[i]
       const v = props[key]
-      // object to style strings
-      if (key === 'style' && typeof v === 'object') {
+      if (key === 'children') {
+        // skip children
+      }
+      else if (key === 'style' && typeof v === 'object') {
+        // object to style strings
         const styles = Object.keys(v)
           .map((k) => {
             const property = k.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)
@@ -259,6 +262,11 @@ export const jsx = (
   props: Props,
   ...children: (string | HtmlEscapedString)[]
 ): JSXNode => {
+  if (children.length) {
+    props ??= {}
+    props.children = children.length === 1 ? children[0] : children
+  }
+
   let key
   if (props) {
     key = props?.key
