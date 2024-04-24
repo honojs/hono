@@ -129,8 +129,18 @@ const applyProps = (container: SupportedElement, attributes: Props, oldAttribute
         if (typeof value === 'string') {
           container.style.cssText = value
         } else {
-          container.style.cssText = ''
-          Object.assign(container.style, value)
+          const style = container.style
+          style.cssText = ''
+          if (value != null) {
+            for (const [k, v] of Object.entries(value)) {
+              style.setProperty(
+                k[0] === '-'
+                  ? k // CSS variable
+                  : k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`), // style property. convert to kebab-case
+                v == null ? null : typeof v === 'number' ? v + 'px' : (v as string)
+              )
+            }
+          }
         }
       } else {
         const nodeName = container.nodeName
