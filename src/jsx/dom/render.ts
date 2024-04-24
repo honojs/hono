@@ -7,6 +7,8 @@ import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
 import { createContext } from './context' // import dom-specific versions
 
+const HONO_PORTAL_ELEMENT = '_hp'
+
 const eventAliasMap: Record<string, string> = {
   Change: 'Input',
   DoubleClick: 'DblClick',
@@ -325,7 +327,11 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
       applyProps(el as HTMLElement, child.props, child.pP)
       applyNode(child, el as HTMLElement)
     }
-    if (childNodes[offset] !== el && childNodes[offset - 1] !== child.e) {
+    if (
+      childNodes[offset] !== el &&
+      childNodes[offset - 1] !== child.e &&
+      child.tag !== HONO_PORTAL_ELEMENT
+    ) {
       container.insertBefore(el, childNodes[offset] || null)
     }
   }
@@ -481,6 +487,7 @@ const updateSync = (context: Context, node: NodeObject) => {
 
 type UpdateMapResolve = (node: NodeObject | undefined) => void
 const updateMap = new WeakMap<NodeObject, [UpdateMapResolve, Function]>()
+const currentUpdateSets: Set<NodeObject>[] = []
 export const update = async (
   context: Context,
   node: NodeObject
@@ -507,12 +514,16 @@ export const update = async (
     },
   ])
 
-  await Promise.resolve()
+  if (currentUpdateSets.length) {
+    ;(currentUpdateSets.at(-1) as Set<NodeObject>).add(node)
+  } else {
+    await Promise.resolve()
 
-  const latest = updateMap.get(node)
-  if (latest) {
-    updateMap.delete(node)
-    latest[1]()
+    const latest = updateMap.get(node)
+    if (latest) {
+      updateMap.delete(node)
+      latest[1]()
+    }
   }
 
   return promise
@@ -526,4 +537,28 @@ export const render = (jsxNode: unknown, container: Container) => {
   apply(node, fragment)
   replaceContainer(node, fragment, container)
   container.replaceChildren(fragment)
+}
+
+export const flushSync = (callback: () => void) => {
+  const set = new Set<NodeObject>()
+  currentUpdateSets.push(set)
+  callback()
+  set.forEach((node) => {
+    const latest = updateMap.get(node)
+    if (latest) {
+      updateMap.delete(node)
+      latest[1]()
+    }
+  })
+  currentUpdateSets.pop()
+}
+
+export const createPortal = (children: Child, container: HTMLElement, key?: string): Child => {
+  const node = buildNode({
+    tag: HONO_PORTAL_ELEMENT,
+    children: [children],
+    key,
+  } as JSXNode) as NodeObject
+  node.e = container
+  return node as Child
 }

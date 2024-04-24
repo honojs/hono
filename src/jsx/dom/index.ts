@@ -26,6 +26,7 @@ import {
 import { Suspense, ErrorBoundary } from './components'
 import { createContext } from './context'
 import { jsx, Fragment } from './jsx-runtime'
+import { flushSync, createPortal } from './render'
 
 export { render } from './render'
 
@@ -92,6 +93,8 @@ export {
   Children,
   Fragment,
   DOMAttributes,
+  flushSync,
+  createPortal,
 }
 
 export default {
@@ -124,6 +127,8 @@ export default {
   cloneElement,
   Children,
   Fragment,
+  flushSync,
+  createPortal,
 }
 
 export type { Context } from '../context'
