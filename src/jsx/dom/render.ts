@@ -427,6 +427,9 @@ export const build = (
             oldChild.pP = oldChild.props
             oldChild.props = child.props
             oldChild.children = child.children
+            if (typeof child.tag === 'function') {
+              oldChild[DOM_STASH][2] = child[DOM_STASH][2] || []
+            }
             child = oldChild
           }
         } else if (!isNodeString(child) && nameSpaceContext) {
