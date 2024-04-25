@@ -66,6 +66,10 @@ export const serveStatic = <E extends Env = Env>(
       }
     }
 
+    if (content instanceof Response) {
+      return c.newResponse(content.body, content)
+    }
+
     if (content) {
       let mimeType: string | undefined
       if (options.mimes) {
@@ -76,11 +80,7 @@ export const serveStatic = <E extends Env = Env>(
       if (mimeType) {
         c.header('Content-Type', mimeType)
       }
-      if (content instanceof Response) {
-        return c.newResponse(content.body, content)
-      } else {
-        return c.body(content)
-      }
+      return c.body(content)
     }
 
     await options.onNotFound?.(path, c)
