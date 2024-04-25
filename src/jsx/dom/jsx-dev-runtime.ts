@@ -18,18 +18,11 @@ export const jsxDEV = (tag: string | Function, props: Props, key?: string): JSXN
   if (typeof tag === 'string') {
     normalizeIntrinsicElementProps(props)
   }
-  let children
-  if (props && 'children' in props) {
-    children = props.children
-  } else {
-    children = []
-  }
   return Object.defineProperties(
     {
       tag,
       props,
       key,
-      children,
     },
     JSXNodeCompatPrototype
   ) as JSXNode

@@ -18,6 +18,7 @@ export const createContextProviderFunction = <T>(values: T[]) =>
           tag: setInternalTagFlag(() => {
             values.push(value)
           }),
+          props: {},
         },
       ],
     }
@@ -30,6 +31,7 @@ export const createContextProviderFunction = <T>(values: T[]) =>
       tag: setInternalTagFlag(() => {
         values.pop()
       }),
+      props: {},
     })
     const res = Fragment(props)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

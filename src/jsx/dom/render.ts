@@ -209,7 +209,6 @@ const invokeTag = (context: Context, node: NodeObject): Child[] => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...((func as any).defaultProps || {}),
         ...node.props,
-        children: node.children,
       }),
     ]
   } finally {
@@ -369,12 +368,13 @@ export const build = (
   children?: Child[]
 ): void => {
   let errorHandler: ErrorHandler | undefined
+  const nodeChildren = node.props.children
   children ||=
     typeof node.tag == 'function'
       ? invokeTag(context, node)
-      : Array.isArray(node.children)
-      ? node.children
-      : [node.children]
+      : Array.isArray(nodeChildren)
+      ? nodeChildren
+      : [nodeChildren]
   if ((children[0] as JSXNode)?.tag === '') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     errorHandler = (children[0] as any)[DOM_ERROR_HANDLER] as ErrorHandler
@@ -425,7 +425,6 @@ export const build = (
           } else {
             oldChild.pP = oldChild.props
             oldChild.props = child.props
-            oldChild.children = child.children
             if (typeof child.tag === 'function') {
               oldChild[DOM_STASH][2] = child[DOM_STASH][2] || []
             }
@@ -491,13 +490,13 @@ const buildNode = (node: Child): Node | undefined => {
       if (ns) {
         ;(node as NodeObject).n = ns
         nameSpaceContext ||= createContext('')
-        ;(node as JSXNode).children = [
+        ;(node as JSXNode).props.children = [
           {
             tag: nameSpaceContext.Provider,
             props: {
               value: ns,
+              children: (node as JSXNode).props.children,
             },
-            children: (node as JSXNode).children,
           },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ] as any
@@ -572,7 +571,8 @@ export const update = async (
 }
 
 export const render = (jsxNode: unknown, container: Container) => {
-  const node = buildNode({ tag: '', children: [jsxNode] } as JSXNode) as NodeObject
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const node = buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject
   build([], node, undefined)
 
   const fragment = document.createDocumentFragment()
@@ -595,12 +595,13 @@ export const flushSync = (callback: () => void) => {
   currentUpdateSets.pop()
 }
 
-export const createPortal = (children: Child, container: HTMLElement, key?: string): Child => {
-  const node = buildNode({
+export const createPortal = (children: Child, container: HTMLElement, key?: string): Child =>
+  ({
     tag: HONO_PORTAL_ELEMENT,
-    children: [children],
+    props: {
+      children,
+    },
     key,
-  } as JSXNode) as NodeObject
-  node.e = container
-  return node as Child
-}
+    e: container,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any)

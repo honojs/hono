@@ -59,7 +59,7 @@ const cloneElement = <T extends JSXNode | JSX.Element>(
     {
       ...(element as JSXNode).props,
       ...props,
-      children: children.length ? children : (element as JSXNode).children,
+      children: children.length ? children : (element as JSXNode).props.children,
     },
     (element as JSXNode).key
   ) as T
