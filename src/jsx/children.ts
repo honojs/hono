@@ -1,6 +1,7 @@
 import type { Child } from './base'
 
-const toArray = (children: Child): Child[] => (Array.isArray(children) ? children : [children])
+export const toArray = (children: Child): Child[] =>
+  Array.isArray(children) ? children : [children]
 export const Children = {
   map: (children: Child[], fn: (child: Child, index: number) => Child): Child[] =>
     toArray(children).map(fn),

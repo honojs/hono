@@ -1,5 +1,6 @@
 import type { JSXNode } from '../base'
 import type { FC, Child, Props } from '../base'
+import { toArray } from '../children'
 import { DOM_RENDERER, DOM_ERROR_HANDLER, DOM_STASH, DOM_INTERNAL_TAG } from '../constants'
 import type { Context as JSXContext } from '../context'
 import { globalContexts as globalJSXContexts, useContext } from '../context'
@@ -368,13 +369,8 @@ export const build = (
   children?: Child[]
 ): void => {
   let errorHandler: ErrorHandler | undefined
-  const nodeChildren = node.props.children
   children ||=
-    typeof node.tag == 'function'
-      ? invokeTag(context, node)
-      : Array.isArray(nodeChildren)
-      ? nodeChildren
-      : [nodeChildren]
+    typeof node.tag == 'function' ? invokeTag(context, node) : toArray(node.props.children)
   if ((children[0] as JSXNode)?.tag === '') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     errorHandler = (children[0] as any)[DOM_ERROR_HANDLER] as ErrorHandler
