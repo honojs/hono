@@ -19,7 +19,6 @@ const defaultPathResolve = (path: string) => path
  */
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E> & {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getContent: (path: string, c: Context<E>) => Promise<Data | Response | null>
     pathResolve?: (path: string) => string
   }

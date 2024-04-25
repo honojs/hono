@@ -7,9 +7,9 @@ describe('Serve Static Middleware', () => {
 
   const serveStatic = createMiddleware(async (c, next) => {
     const mw = baseServeStatic({
-      getContent: (path) => {
+      getContent: async (path) => {
         if (path.endsWith('not-found.txt')) {
-          return undefined
+          return null
         }
         return `Hello in ${path}`
       },
