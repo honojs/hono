@@ -1,4 +1,3 @@
-import type { UpgradedWebSocketResponseInputJSONType } from '../helper/websocket'
 import type { Hono } from '../hono'
 import type { Schema } from '../types'
 import type { HasRequiredKeys } from '../utils/types'
@@ -33,10 +32,10 @@ export type ClientRequest<S extends Schema> = {
         : {}
       : {}
   ) => URL
-} & (S['$get'] extends { input: { json: UpgradedWebSocketResponseInputJSONType } }
+} & (S['$get'] extends { forMiddleware: { websocket: unknown } }
     ? S['$get'] extends { input: infer I }
       ? {
-          $ws: (args?: Omit<I, 'json'>) => WebSocket
+          $ws: (args?: I) => WebSocket
         }
       : {}
     : {})

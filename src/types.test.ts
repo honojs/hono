@@ -94,6 +94,7 @@ describe('HandlerInterface', () => {
             output: {
               message: string
             }
+            forMiddleware: {}
           }
         }
       }
@@ -131,6 +132,7 @@ describe('HandlerInterface', () => {
             output: {
               message: string
             }
+            forMiddleware: {}
           }
         }
       }
@@ -157,6 +159,7 @@ describe('HandlerInterface', () => {
               }
             }
             output: {}
+            forMiddleware: {}
           }
         }
       }
@@ -184,6 +187,7 @@ describe('HandlerInterface', () => {
               }
             }
             output: {}
+            forMiddleware: {}
           }
         }
       }
@@ -206,7 +210,8 @@ describe('HandlerInterface', () => {
                 foo: string
               }
             }
-            output: {}
+            output: {},
+            forMiddleware: {}
           }
         }
       } & {
@@ -220,6 +225,7 @@ describe('HandlerInterface', () => {
               }
             }
             output: {}
+            forMiddleware: {}
           }
         }
       }
@@ -257,6 +263,7 @@ describe('OnHandlerInterface', () => {
           output: {
             success: boolean
           }
+          forMiddleware: {}
         }
       }
     }
@@ -272,9 +279,11 @@ describe('Schema', () => {
         'post',
         '/api/posts/:id',
         {
-          json: {
-            id: number
-            title: string
+          in: {
+            json: {
+              id: number
+              title: string
+            }
           }
         },
         {
@@ -301,7 +310,8 @@ describe('Schema', () => {
           output: {
             message: string
             success: boolean
-          }
+          },
+          forMiddleware: {}
         }
       }
     }
@@ -319,7 +329,8 @@ describe('Support c.json(undefined)', () => {
       '/this/is/a/test': {
         $get: {
           input: {}
-          output: undefined
+          output: undefined,
+          forMiddleware: {}
         }
       }
     }
@@ -404,7 +415,8 @@ describe('`json()`', () => {
           input: {}
           output: {
             message: string
-          }
+          },
+          forMiddleware: {}
         }
       }
     }
@@ -499,13 +511,19 @@ describe('AddParam', () => {
         id: string
       }
     }
+    const a = ({} as Actual)
     type verify = Expect<Equal<Expected, Actual>>
   })
 })
 
 describe('ToSchema', () => {
   it('Should convert parameters to schema correctly', () => {
-    type Actual = ToSchema<'get', '/:id', { param: { id: string }; query: { page: string } }, {}>
+    type Actual = ToSchema<
+      'get',
+      '/:id',
+      { in: { param: { id: string }; query: { page: string } } },
+      {}
+    >
     type Expected = {
       '/:id': {
         $get: {
@@ -518,6 +536,7 @@ describe('ToSchema', () => {
             }
           }
           output: {}
+          forMiddleware: {}
         }
       }
     }
@@ -552,10 +571,13 @@ describe('MergeSchemaPath', () => {
       'post',
       '/posts',
       {
-        json: {
-          id: number
-          title: string
-        }
+        in: {
+          json: {
+            id: number
+            title: string
+          }
+        },
+        forMiddleware: {}
       },
       {
         message: string
@@ -745,6 +767,7 @@ describe('Different types using json()', () => {
               | {
                   default: boolean
                 }
+            forMiddleware: {}
           }
         }
       }
@@ -786,6 +809,7 @@ describe('Different types using json()', () => {
               | {
                   default: boolean
                 }
+            forMiddleware: {}
           }
         }
       }
@@ -810,6 +834,7 @@ describe('json() in an async handler', () => {
           output: {
             ok: boolean
           }
+          forMiddleware: {}
         }
       }
     }

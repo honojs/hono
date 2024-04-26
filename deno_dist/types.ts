@@ -118,7 +118,7 @@ export interface HandlerInterface<
     handler: H<E2, MergedPath, I, R>
   ): Hono<
     IntersectNonAnyTypes<[E, E2]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -134,7 +134,7 @@ export interface HandlerInterface<
     ...handlers: [H<E2, P, I>, H<E3, P, I2, R>]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3]>,
-    S & ToSchema<M, P, I2['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, P, I2, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -152,7 +152,7 @@ export interface HandlerInterface<
     ...handlers: [H<E2, MergedPath, I>, H<E3, MergedPath, I2, R>]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I2['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I2, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -170,7 +170,7 @@ export interface HandlerInterface<
     ...handlers: [H<E2, P, I>, H<E3, P, I2>, H<E4, P, I3, R>]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4]>,
-    S & ToSchema<M, P, I3['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, P, I3, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -190,7 +190,7 @@ export interface HandlerInterface<
     ...handlers: [H<E2, MergedPath, I>, H<E3, MergedPath, I2>, H<E4, MergedPath, I3, R>]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I3['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I3, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -210,7 +210,7 @@ export interface HandlerInterface<
     ...handlers: [H<E2, P, I>, H<E3, P, I2>, H<E4, P, I3>, H<E5, P, I4, R>]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
-    S & ToSchema<M, P, I4['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, P, I4, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -237,7 +237,7 @@ export interface HandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I4['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I4, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -259,7 +259,7 @@ export interface HandlerInterface<
     ...handlers: [H<E2, P, I>, H<E3, P, I2>, H<E4, P, I3>, H<E5, P, I4>, H<E6, P, I5, R>]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
-    S & ToSchema<M, P, I5['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, P, I5, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -289,7 +289,7 @@ export interface HandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I5['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I5, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -320,7 +320,7 @@ export interface HandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
-    S & ToSchema<M, P, I6['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, P, I6, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -353,7 +353,7 @@ export interface HandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I6['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I6, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -387,7 +387,7 @@ export interface HandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
-    S & ToSchema<M, P, I7['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, P, I7, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -423,7 +423,7 @@ export interface HandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I7['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I7, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -460,7 +460,7 @@ export interface HandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
-    S & ToSchema<M, P, I8['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, P, I8, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -499,7 +499,7 @@ export interface HandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I8['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I8, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -539,7 +539,7 @@ export interface HandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>,
-    S & ToSchema<M, P, I9['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, P, I9, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -581,7 +581,7 @@ export interface HandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I9['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I9, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -686,12 +686,12 @@ export interface HandlerInterface<
   <P extends string, I extends Input = BlankInput, R extends HandlerResponse<any> = any>(
     path: P,
     ...handlers: H<E, MergePath<BasePath, P>, I, R>[]
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>, BasePath>
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponseData<R>>, BasePath>
 
   // app.get(path)
   <P extends string, R extends HandlerResponse<any> = any, I extends Input = {}>(path: P): Hono<
     E,
-    S & ToSchema<M, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponseData<R>>,
     BasePath
   >
 }
@@ -924,7 +924,7 @@ export interface OnHandlerInterface<
     handler: H<E2, MergedPath, I, R>
   ): Hono<
     IntersectNonAnyTypes<[E, E2]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -944,7 +944,7 @@ export interface OnHandlerInterface<
     ...handlers: [H<E2, MergedPath, I>, H<E3, MergedPath, I2, R>]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I2['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I2, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -966,7 +966,7 @@ export interface OnHandlerInterface<
     ...handlers: [H<E2, MergedPath, I>, H<E3, MergedPath, I2>, H<E4, MergedPath, I3, R>]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I3['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I3, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -995,7 +995,7 @@ export interface OnHandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I4['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I4, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -1027,7 +1027,7 @@ export interface OnHandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I5['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I5, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -1062,7 +1062,7 @@ export interface OnHandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I6['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I6, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -1100,7 +1100,7 @@ export interface OnHandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I7['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I7, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -1141,7 +1141,7 @@ export interface OnHandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I8['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I8, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -1185,7 +1185,7 @@ export interface OnHandlerInterface<
     ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I9['in'], MergeTypedResponseData<R>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I9, MergeTypedResponseData<R>>,
     BasePath
   >
 
@@ -1241,7 +1241,7 @@ export interface OnHandlerInterface<
     method: M,
     path: P,
     ...handlers: H<E, MergePath<BasePath, P>, I, R>[]
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I['in'], MergeTypedResponseData<R>>, BasePath>
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponseData<R>>, BasePath>
 
   // app.get(method[], path, handler)
   <
