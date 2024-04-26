@@ -249,14 +249,10 @@ describe('Context header', () => {
   it('Should keep previous cookies in response headers', () => {
     c.res.headers.append('set-cookie', 'foo=bar; Path=/')
     setCookie(c, 'foo2', 'bar2', { path: '/' })
-
     const res = c.json({ message: 'Hello' })
-
     const cookies = res.headers.getSetCookie()
-
-    console.debug('test cookies', cookies)
-
-    expect(cookies.length).toBe(2)
+    expect(cookies.includes('foo=bar; Path=/')).toBe(true)
+    expect(cookies.includes('foo2=bar2; Path=/')).toBe(true)
   })
 })
 
