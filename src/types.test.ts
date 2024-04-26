@@ -511,7 +511,7 @@ describe('AddParam', () => {
         id: string
       }
     }
-    const a = {} as Actual
+
     type verify = Expect<Equal<Expected, Actual>>
   })
 })
@@ -541,6 +541,27 @@ describe('ToSchema', () => {
       }
     }
     type verify = Expect<Equal<Expected, Actual>>
+  })
+  it('Should work forMiddleware', () => {
+    type Actual = ToSchema<
+      'get',
+      '/',
+      {
+        forMiddleware: {
+          x: boolean
+        }
+      },
+      {}
+    >
+    expectTypeOf<Actual>().toEqualTypeOf<{
+      '/': {
+        $get: {
+          forMiddleware: { x: boolean }
+          input: {}
+          output: {}
+        }
+      }
+    }>()
   })
 })
 

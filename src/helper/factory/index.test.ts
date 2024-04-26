@@ -168,19 +168,21 @@ describe('createHandler', () => {
       ToSchema<
         'get',
         '/posts',
-        { in: {
-          header: {
-            auth: string
+        {
+          in: {
+            header: {
+              auth: string
+            }
+          } & {
+            query: {
+              page: string
+            }
+          } & {
+            json: {
+              id: number
+            }
           }
-        } & {
-          query: {
-            page: string
-          }
-        } & {
-          json: {
-            id: number
-          }
-        }},
+        },
         {
           auth: string
           page: string
