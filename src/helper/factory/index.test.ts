@@ -109,8 +109,10 @@ describe('createHandler', () => {
         'get',
         '/posts',
         {
-          query: {
-            page: string
+          in: {
+            query: {
+              page: string
+            }
           }
         },
         {
@@ -166,7 +168,7 @@ describe('createHandler', () => {
       ToSchema<
         'get',
         '/posts',
-        {
+        { in: {
           header: {
             auth: string
           }
@@ -178,7 +180,7 @@ describe('createHandler', () => {
           json: {
             id: number
           }
-        },
+        }},
         {
           auth: string
           page: string

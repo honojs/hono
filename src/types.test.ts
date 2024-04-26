@@ -210,7 +210,7 @@ describe('HandlerInterface', () => {
                 foo: string
               }
             }
-            output: {},
+            output: {}
             forMiddleware: {}
           }
         }
@@ -310,7 +310,7 @@ describe('Schema', () => {
           output: {
             message: string
             success: boolean
-          },
+          }
           forMiddleware: {}
         }
       }
@@ -329,7 +329,7 @@ describe('Support c.json(undefined)', () => {
       '/this/is/a/test': {
         $get: {
           input: {}
-          output: undefined,
+          output: undefined
           forMiddleware: {}
         }
       }
@@ -415,7 +415,7 @@ describe('`json()`', () => {
           input: {}
           output: {
             message: string
-          },
+          }
           forMiddleware: {}
         }
       }
@@ -511,7 +511,7 @@ describe('AddParam', () => {
         id: string
       }
     }
-    const a = ({} as Actual)
+    const a = {} as Actual
     type verify = Expect<Equal<Expected, Actual>>
   })
 })
@@ -576,7 +576,7 @@ describe('MergeSchemaPath', () => {
             id: number
             title: string
           }
-        },
+        }
         forMiddleware: {}
       },
       {
