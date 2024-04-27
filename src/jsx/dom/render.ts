@@ -435,6 +435,9 @@ const buildNode = (node: Child): Node | undefined => {
     return [node.toString(), true] as NodeString
   } else {
     if (typeof (node as JSXNode).tag === 'function') {
+      if ((node as NodeObject)[DOM_STASH]) {
+        node = { ...node } as NodeObject
+      }
       ;(node as NodeObject)[DOM_STASH] = [0, []]
     } else {
       const ns = nameSpaceMap[(node as JSXNode).tag as string]
