@@ -254,6 +254,18 @@ describe('Context header', () => {
     expect(cookies.includes('foo=bar; Path=/')).toBe(true)
     expect(cookies.includes('foo2=bar2; Path=/')).toBe(true)
   })
+
+  it('Should set set-cookie header values if c.res is already defined', () => {
+    c.res = new Response(null, {
+      headers: [
+        ['set-cookie', 'a'],
+        ['set-cookie', 'b'],
+        ['set-cookie', 'c'],
+      ],
+    })
+    const res = c.text('Hi')
+    expect(res.headers.get('set-cookie')).toBe('a, b, c')
+  })
 })
 
 describe('Pass a ResponseInit to respond methods', () => {
