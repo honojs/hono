@@ -18,7 +18,7 @@ export const serveStatic = <E extends Env = Env>(
       } catch (e) {
         console.warn(`${e}`)
       }
-      return file ? file.readable : undefined
+      return file ? file.readable : null
     }
     const pathResolve = (path: string) => {
       return `./${path}`
