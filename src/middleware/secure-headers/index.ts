@@ -204,12 +204,9 @@ function getCSPDirectives(
           headersToSet.map((values) => {
             if (values[0] === 'Content-Security-Policy') {
               const clone = values[1].slice() as unknown as string[]
-              console.log(clone)
               callbacks.forEach((cb) => {
                 cb(ctx, clone)
               })
-              console.log(clone)
-
               return [values[0], clone.join('')]
             } else {
               return values as [string, string]
