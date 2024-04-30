@@ -60,8 +60,8 @@ export interface ClientResponse<T> {
   url: string
   redirect(url: string, status: number): Response
   clone(): Response
-  json(): Promise<BlankRecordToNever<T>>
-  text(): Promise<string>
+  json(): T extends string ? Promise<never> : Promise<BlankRecordToNever<T>>
+  text(): T extends string ? Promise<T> : Promise<never>
   blob(): Promise<Blob>
   formData(): Promise<FormData>
   arrayBuffer(): Promise<ArrayBuffer>

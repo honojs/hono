@@ -766,3 +766,47 @@ describe('Client can be console.log in react native', () => {
     expect(client.posts.toString()).toMatch('function proxyCallback')
   })
 })
+
+describe('Text response', () => {
+  const text = 'My name is Hono'
+  const obj = { ok: true }
+  const server = setupServer(
+    rest.get('http://localhost/about/me', async (_req, res, ctx) => {
+      return res(ctx.text(text))
+    }),
+    rest.get('http://localhost/api', async (_req, res, ctx) => {
+      return res(ctx.json(obj))
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  const app = new Hono().get('/about/me', (c) => c.text(text)).get('/api', (c) => c.json(obj))
+  const client = hc<typeof app>('http://localhost/')
+
+  it('Should be never with res.json() - /about/me', async () => {
+    const res = await client.about.me.$get()
+    type Actual = ReturnType<typeof res.json>
+    type Expected = Promise<never>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should be "Hello, World!" with res.text() - /about/me', async () => {
+    const res = await client.about.me.$get()
+    const data = await res.text()
+    expectTypeOf(data).toEqualTypeOf<'My name is Hono'>()
+    expect(data).toBe(text)
+  })
+
+  /**
+   * Also check the type of JSON response with res.text().
+   */
+  it('Should be never with res.text() - /api', async () => {
+    const res = await client.api.$get()
+    type Actual = ReturnType<typeof res.text>
+    type Expected = Promise<never>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
