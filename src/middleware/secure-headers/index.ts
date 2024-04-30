@@ -169,12 +169,12 @@ function getFilteredHeaders(options: SecureHeadersOptions): [string, string][] {
 }
 
 function getCSPDirectives(
-  contentSecurityPolicy: SecureHeadersOptions['contentSecurityPolicy']
+  contentSecurityPolicy: ContentSecurityPolicyOptions
 ): [SecureHeadersCallback | undefined, string | string[]] {
   const callbacks: ((ctx: Context, values: string[]) => void)[] = []
   const resultValues: string[] = []
 
-  for (const [directive, value] of Object.entries(contentSecurityPolicy as any)) {
+  for (const [directive, value] of Object.entries(contentSecurityPolicy)) {
     const valueArray = Array.isArray(value) ? value : [value]
 
     valueArray.forEach((value, i) => {
