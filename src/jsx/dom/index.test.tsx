@@ -4,11 +4,77 @@ import type { FC } from '..'
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx, Fragment, createElement } from '..'
-import DefaultExport from '..'
 import type { RefObject } from '../hooks'
-import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from '../hooks'
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useRef,
+  useMemo,
+  createRef,
+} from '../hooks'
+import DefaultExport from '.'
 import { memo, isValidElement, cloneElement } from '.'
-import { render, createElement as createElementForDom, cloneElement as cloneElementForDom } from '.'
+import {
+  render,
+  flushSync,
+  createPortal,
+  createElement as createElementForDom,
+  cloneElement as cloneElementForDom,
+} from '.'
+
+describe('Common', () => {
+  ;[createElement, createElementForDom].forEach((createElement) => {
+    describe('createElement', () => {
+      it('simple', () => {
+        const element = createElement('div', { id: 'app' })
+        expect(element).toEqual(expect.objectContaining({ tag: 'div', props: { id: 'app' } }))
+      })
+
+      it('children', () => {
+        const element = createElement('div', { id: 'app' }, 'Hello')
+        expect(element).toEqual(
+          expect.objectContaining({ tag: 'div', props: { id: 'app', children: 'Hello' } })
+        )
+      })
+
+      it('multiple children', () => {
+        const element = createElement('div', { id: 'app' }, 'Hello', 'World')
+        expect(element).toEqual(
+          expect.objectContaining({
+            tag: 'div',
+            props: { id: 'app', children: ['Hello', 'World'] },
+          })
+        )
+      })
+
+      it('key', () => {
+        const element = createElement('div', { id: 'app', key: 'key' })
+        expect(element).toEqual(
+          expect.objectContaining({ tag: 'div', props: { id: 'app' }, key: 'key' })
+        )
+      })
+
+      it('ref', () => {
+        const ref = { current: null }
+        const element = createElement('div', { id: 'app', ref })
+        expect(element).toEqual(expect.objectContaining({ tag: 'div', props: { id: 'app', ref } }))
+        expect(element.ref).toBe(ref)
+      })
+
+      it('type', () => {
+        const element = createElement('div', { id: 'app' })
+        expect(element.type).toBe('div')
+      })
+
+      it('null props', () => {
+        const element = createElement('div', null)
+        expect(element).toEqual(expect.objectContaining({ tag: 'div', props: {} }))
+      })
+    })
+  })
+})
 
 describe('DOM', () => {
   beforeAll(() => {
@@ -72,6 +138,18 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<div style="font-size: 10px;"></div>')
     })
 
+    it('style with CSS variables - 1', () => {
+      const App = () => <div style={{ '--my-var-1': '15px' }} />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div style="--my-var-1: 15px;"></div>')
+    })
+
+    it('style with CSS variables - 2', () => {
+      const App = () => <div style={{ '--myVar-2': '20px' }} />
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div style="--myVar-2: 20px;"></div>')
+    })
+
     it('style with string', async () => {
       const App = () => {
         const [style, setStyle] = useState<{ fontSize?: string; color?: string }>({
@@ -109,6 +187,70 @@ describe('DOM', () => {
       render(<App />, root)
       expect(root.innerHTML).toBe('<div></div>')
       expect(ref.current).toBeInstanceOf(HTMLElement)
+    })
+
+    it('ref with null', () => {
+      const App = () => {
+        return <div ref={null} />
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div></div>')
+    })
+
+    it('remove node with ref object', async () => {
+      const ref = createRef<HTMLDivElement>()
+      const App = () => {
+        const [show, setShow] = useState(true)
+        return (
+          <>
+            {show && <div ref={ref} />}
+            <button onClick={() => setShow(false)}>remove</button>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div></div><button>remove</button>')
+      expect(ref.current).toBeInstanceOf(dom.window.HTMLDivElement)
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<button>remove</button>')
+      expect(ref.current).toBe(null)
+    })
+
+    it('remove node with ref function', async () => {
+      const ref = vi.fn()
+      const App = () => {
+        const [show, setShow] = useState(true)
+        return (
+          <>
+            {show && <div ref={ref} />}
+            <button onClick={() => setShow(false)}>remove</button>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div></div><button>remove</button>')
+      expect(ref).toHaveBeenLastCalledWith(expect.any(dom.window.HTMLDivElement))
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<button>remove</button>')
+      expect(ref).toHaveBeenLastCalledWith(null)
+    })
+  })
+
+  describe('defaultProps', () => {
+    it('simple', () => {
+      const App: FC<{ name?: string }> = ({ name }) => <div>{name}</div>
+      App.defaultProps = { name: 'default' }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div>default</div>')
+    })
+
+    it('override', () => {
+      const App: FC<{ name: string }> = ({ name }) => <div>{name}</div>
+      App.defaultProps = { name: 'default' }
+      render(<App name='override' />, root)
+      expect(root.innerHTML).toBe('<div>override</div>')
     })
   })
 
@@ -612,6 +754,7 @@ describe('DOM', () => {
         false
       )
     })
+
     it('onGotPointerCaptureCapture', async () => {
       const App = () => {
         return <div onGotPointerCaptureCapture={() => {}}></div>
@@ -624,6 +767,15 @@ describe('DOM', () => {
         expect.any(Function),
         true
       )
+    })
+
+    it('undefined', async () => {
+      const App = () => {
+        return <div onClick={undefined}></div>
+      }
+      const addEventListenerSpy = vi.spyOn(dom.window.Node.prototype, 'addEventListener')
+      render(<App />, root)
+      expect(addEventListenerSpy).not.toHaveBeenCalled()
     })
   })
 
@@ -1393,6 +1545,73 @@ describe('DOM', () => {
     })
   })
 
+  describe('flushSync', () => {
+    it('simple', async () => {
+      const SubApp = ({ id }: { id: string }) => {
+        const [count, setCount] = useState(0)
+        return (
+          <div id={id}>
+            <p>{count}</p>
+            <button onClick={() => setCount(count + 1)}>+</button>
+          </div>
+        )
+      }
+      const App = () => {
+        return (
+          <div>
+            <SubApp id='a' />
+            <SubApp id='b' />
+          </div>
+        )
+      }
+      const app = <App />
+      render(app, root)
+      expect(root.innerHTML).toBe(
+        '<div><div id="a"><p>0</p><button>+</button></div><div id="b"><p>0</p><button>+</button></div></div>'
+      )
+      root.querySelector<HTMLButtonElement>('#b button')?.click()
+      flushSync(() => {
+        root.querySelector<HTMLButtonElement>('#a button')?.click()
+      })
+      expect(root.innerHTML).toBe(
+        '<div><div id="a"><p>1</p><button>+</button></div><div id="b"><p>0</p><button>+</button></div></div>'
+      )
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><div id="a"><p>1</p><button>+</button></div><div id="b"><p>1</p><button>+</button></div></div>'
+      )
+    })
+  })
+
+  describe('createPortal', () => {
+    it('simple', async () => {
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <div>
+            <button onClick={() => setCount(count + 1)}>+</button>
+            {count <= 1 && createPortal(<p>{count}</p>, document.body)}
+          </div>
+        )
+      }
+      const app = <App />
+      render(app, root)
+      expect(root.innerHTML).toBe('<div><button>+</button></div>')
+      expect(document.body.innerHTML).toBe(
+        '<div id="root"><div><button>+</button></div></div><p>0</p>'
+      )
+      document.body.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>+</button></div>')
+      expect(document.body.innerHTML).toBe(
+        '<div id="root"><div><button>+</button></div></div><p>1</p>'
+      )
+      document.body.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(document.body.innerHTML).toBe('<div id="root"><div><button>+</button></div></div>')
+    })
+  })
+
   describe('SVG', () => {
     it('simple', () => {
       const App = () => {
@@ -1475,6 +1694,10 @@ describe('default export', () => {
     'useCallback',
     'useReducer',
     'useDebugValue',
+    'createRef',
+    'forwardRef',
+    'useImperativeHandle',
+    'useSyncExternalStore',
     'use',
     'startTransition',
     'useTransition',
@@ -1484,6 +1707,9 @@ describe('default export', () => {
     'useMemo',
     'useLayoutEffect',
     'Suspense',
+    'Fragment',
+    'flushSync',
+    'createPortal',
   ].forEach((key) => {
     it(key, () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
