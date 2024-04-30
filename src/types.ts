@@ -1622,9 +1622,7 @@ export type ToSchema<M extends string, P extends string, I extends Input['in'], 
 export type Schema = {
   [Path: string]: {
     [Method: `$${Lowercase<string>}`]: {
-      input: Partial<ValidationTargets> & {
-        param?: Record<string, string>
-      }
+      input: Partial<ValidationTargets>
       output: any
     }
   }
@@ -1729,7 +1727,7 @@ export type ValidationTargets = {
   json: any
   form: Record<string, string | File>
   query: Record<string, string | string[]>
-  param: Record<string, string>
+  param: Record<string, string> | Record<string, string | undefined>
   header: Record<string, string>
   cookie: Record<string, string>
 }
@@ -1774,8 +1772,6 @@ export type InputToDataByTarget<
   : never
 
 export type RemoveQuestion<T> = T extends `${infer R}?` ? R : T
-
-export type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | undefined : string
 
 ////////////////////////////////////////
 //////                            //////
