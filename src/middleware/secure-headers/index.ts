@@ -3,7 +3,6 @@ import type { MiddlewareHandler } from '../../types'
 
 declare module '../../context' {
   interface ContextVariableMap {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     secureHeadersNonce?: string
   }
 }
