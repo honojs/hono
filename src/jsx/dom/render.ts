@@ -1,11 +1,15 @@
 import type { JSXNode } from '../base'
 import type { FC, Child, Props } from '../base'
-import { DOM_RENDERER, DOM_ERROR_HANDLER, DOM_STASH } from '../constants'
+import { toArray } from '../children'
+import { DOM_RENDERER, DOM_ERROR_HANDLER, DOM_STASH, DOM_INTERNAL_TAG } from '../constants'
 import type { Context as JSXContext } from '../context'
 import { globalContexts as globalJSXContexts, useContext } from '../context'
 import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
+import { styleObjectForEach } from '../utils'
 import { createContext } from './context' // import dom-specific versions
+
+const HONO_PORTAL_ELEMENT = '_hp'
 
 const eventAliasMap: Record<string, string> = {
   Change: 'Input',
@@ -16,6 +20,8 @@ const nameSpaceMap: Record<string, string> = {
   svg: 'http://www.w3.org/2000/svg',
   math: 'http://www.w3.org/1998/Math/MathML',
 } as const
+
+const skipProps = new Set(['children'])
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type HasRenderToDom = FC<any> & { [DOM_RENDERER]: FC<any> }
@@ -48,10 +54,10 @@ export type NodeObject = {
         any[][]
       ]
 } & JSXNode
-type NodeString = [
-  string, // text content
-  boolean // is dirty
-] & {
+type NodeString = {
+  t: string // text content
+  d: boolean // is dirty
+} & {
   e?: Text
   // like a NodeObject
   vC: undefined
@@ -87,7 +93,7 @@ export const buildDataStack: [Context, Node][] = []
 
 let nameSpaceContext: JSXContext<string> | undefined = undefined
 
-const isNodeString = (node: Node): node is NodeString => Array.isArray(node)
+const isNodeString = (node: Node): node is NodeString => 't' in (node as NodeString)
 
 const getEventSpec = (key: string): [string, boolean] | undefined => {
   const match = key.match(/^on([A-Z][a-zA-Z]+?(?:PointerCapture)?)(Capture)?$/)
@@ -101,31 +107,35 @@ const getEventSpec = (key: string): [string, boolean] | undefined => {
 const applyProps = (container: SupportedElement, attributes: Props, oldAttributes?: Props) => {
   attributes ||= {}
   for (const [key, value] of Object.entries(attributes)) {
-    if (!oldAttributes || oldAttributes[key] !== value) {
+    if (!skipProps.has(key) && (!oldAttributes || oldAttributes[key] !== value)) {
       const eventSpec = getEventSpec(key)
       if (eventSpec) {
-        if (typeof value !== 'function') {
-          throw new Error(`Event handler for "${key}" is not a function`)
-        }
-
         if (oldAttributes) {
           container.removeEventListener(eventSpec[0], oldAttributes[key], eventSpec[1])
         }
-        container.addEventListener(eventSpec[0], value, eventSpec[1])
+        if (value != null) {
+          if (typeof value !== 'function') {
+            throw new Error(`Event handler for "${key}" is not a function`)
+          }
+          container.addEventListener(eventSpec[0], value, eventSpec[1])
+        }
       } else if (key === 'dangerouslySetInnerHTML' && value) {
         container.innerHTML = value.__html
       } else if (key === 'ref') {
         if (typeof value === 'function') {
           value(container)
-        } else if ('current' in value) {
+        } else if (value && 'current' in value) {
           value.current = container
         }
       } else if (key === 'style') {
+        const style = container.style
         if (typeof value === 'string') {
-          container.style.cssText = value
+          style.cssText = value
         } else {
-          container.style.cssText = ''
-          Object.assign(container.style, value)
+          style.cssText = ''
+          if (value != null) {
+            styleObjectForEach(value, style.setProperty.bind(style))
+          }
         }
       } else {
         const nodeName = container.nodeName
@@ -166,7 +176,7 @@ const applyProps = (container: SupportedElement, attributes: Props, oldAttribute
   }
   if (oldAttributes) {
     for (const [key, value] of Object.entries(oldAttributes)) {
-      if (!(key in attributes)) {
+      if (!skipProps.has(key) && !(key in attributes)) {
         const eventSpec = getEventSpec(key)
         if (eventSpec) {
           container.removeEventListener(eventSpec[0], value, eventSpec[1])
@@ -197,8 +207,9 @@ const invokeTag = (context: Context, node: NodeObject): Child[] => {
   try {
     return [
       func.call(null, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...((func as any).defaultProps || {}),
         ...node.props,
-        children: node.children,
       }),
     ]
   } finally {
@@ -254,24 +265,33 @@ const findInsertBefore = (node: Node | undefined): ChildNode | null => {
 const removeNode = (node: Node) => {
   if (!isNodeString(node)) {
     node[DOM_STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => data[2]?.())
+
+    if (node.e && node.props?.ref) {
+      if (typeof node.props.ref === 'function') {
+        node.props.ref(null)
+      } else {
+        node.props.ref.current = null
+      }
+    }
     node.vC?.forEach(removeNode)
   }
-  node.e?.remove()
-  node.tag = undefined
+  if (node.tag !== HONO_PORTAL_ELEMENT) {
+    node.e?.remove()
+  }
+  if (typeof node.tag === 'function') {
+    updateMap.delete(node)
+    fallbackUpdateFnArrayMap.delete(node)
+  }
 }
 
 const apply = (node: NodeObject, container: Container) => {
-  if (node.tag === undefined) {
-    return
-  }
-
   node.c = container
   applyNodeObject(node, container)
 }
 
 const applyNode = (node: Node, container: Container) => {
   if (isNodeString(node)) {
-    container.textContent = node[0]
+    container.textContent = node.t
   } else {
     applyNodeObject(node, container)
   }
@@ -311,11 +331,11 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
 
     let el: SupportedElement | Text
     if (isNodeString(child)) {
-      if (child.e && child[1]) {
-        child.e.textContent = child[0]
+      if (child.e && child.d) {
+        child.e.textContent = child.t
       }
-      child[1] = false
-      el = child.e ||= document.createTextNode(child[0])
+      child.d = false
+      el = child.e ||= document.createTextNode(child.t)
     } else {
       el = child.e ||= child.n
         ? (document.createElementNS(child.n, child.tag as string) as SVGElement | MathMLElement)
@@ -323,7 +343,11 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
       applyProps(el as HTMLElement, child.props, child.pP)
       applyNode(child, el as HTMLElement)
     }
-    if (childNodes[offset] !== el && childNodes[offset - 1] !== child.e) {
+    if (
+      childNodes[offset] !== el &&
+      childNodes[offset - 1] !== child.e &&
+      child.tag !== HONO_PORTAL_ELEMENT
+    ) {
       container.insertBefore(el, childNodes[offset] || null)
     }
   }
@@ -334,18 +358,19 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
   })
 }
 
+const fallbackUpdateFnArrayMap = new WeakMap<
+  NodeObject,
+  Array<() => Promise<NodeObject | undefined>>
+>()
 export const build = (
   context: Context,
   node: NodeObject,
   topLevelErrorHandlerNode: NodeObject | undefined,
   children?: Child[]
 ): void => {
-  if (node.tag === undefined) {
-    return
-  }
-
   let errorHandler: ErrorHandler | undefined
-  children ||= typeof node.tag == 'function' ? invokeTag(context, node) : node.children
+  children ||=
+    typeof node.tag == 'function' ? invokeTag(context, node) : toArray(node.props.children)
   if ((children[0] as JSXNode)?.tag === '') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     errorHandler = (children[0] as any)[DOM_ERROR_HANDLER] as ErrorHandler
@@ -364,7 +389,12 @@ export const build = (
         }
         prevNode = child
 
-        if (typeof child.tag === 'function' && globalJSXContexts.length > 0) {
+        if (
+          typeof child.tag === 'function' &&
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          !(child.tag as any)[DOM_INTERNAL_TAG] &&
+          globalJSXContexts.length > 0
+        ) {
           child[DOM_STASH][2] = globalJSXContexts.map((c) => [c, c.values.at(-1)])
         }
 
@@ -380,9 +410,9 @@ export const build = (
             if (!isNodeString(oldChild)) {
               vChildrenToRemove.push(oldChild)
             } else {
-              if (oldChild[0] !== child[0]) {
-                oldChild[0] = child[0] // update text content
-                oldChild[1] = true
+              if (oldChild.t !== child.t) {
+                oldChild.t = child.t // update text content
+                oldChild.d = true
               }
               child = oldChild
             }
@@ -391,7 +421,9 @@ export const build = (
           } else {
             oldChild.pP = oldChild.props
             oldChild.props = child.props
-            oldChild.children = child.children
+            if (typeof child.tag === 'function') {
+              oldChild[DOM_STASH][2] = child[DOM_STASH][2] || []
+            }
             child = oldChild
           }
         } else if (!isNodeString(child) && nameSpaceContext) {
@@ -412,9 +444,22 @@ export const build = (
     node.vR = vChildrenToRemove
   } catch (e) {
     if (errorHandler) {
-      const fallback = errorHandler(e, () =>
+      const fallbackUpdateFn = () =>
         update([0, false, context[2] as UpdateHook], topLevelErrorHandlerNode as NodeObject)
-      )
+      const fallbackUpdateFnArray =
+        fallbackUpdateFnArrayMap.get(topLevelErrorHandlerNode as NodeObject) || []
+      fallbackUpdateFnArray.push(fallbackUpdateFn)
+      fallbackUpdateFnArrayMap.set(topLevelErrorHandlerNode as NodeObject, fallbackUpdateFnArray)
+      const fallback = errorHandler(e, () => {
+        const fnArray = fallbackUpdateFnArrayMap.get(topLevelErrorHandlerNode as NodeObject)
+        if (fnArray) {
+          const i = fnArray.indexOf(fallbackUpdateFn)
+          if (i !== -1) {
+            fnArray.splice(i, 1)
+            return fallbackUpdateFn()
+          }
+        }
+      })
       if (fallback) {
         if (context[0] === 1) {
           context[1] = true
@@ -432,7 +477,7 @@ const buildNode = (node: Child): Node | undefined => {
   if (node === undefined || node === null || typeof node === 'boolean') {
     return undefined
   } else if (typeof node === 'string' || typeof node === 'number') {
-    return [node.toString(), true] as NodeString
+    return { t: node.toString(), d: true } as NodeString
   } else {
     if (typeof (node as JSXNode).tag === 'function') {
       ;(node as NodeObject)[DOM_STASH] = [0, []]
@@ -441,13 +486,13 @@ const buildNode = (node: Child): Node | undefined => {
       if (ns) {
         ;(node as NodeObject).n = ns
         nameSpaceContext ||= createContext('')
-        ;(node as JSXNode).children = [
+        ;(node as JSXNode).props.children = [
           {
             tag: nameSpaceContext.Provider,
             props: {
               value: ns,
+              children: (node as JSXNode).props.children,
             },
-            children: (node as JSXNode).children,
           },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ] as any
@@ -479,6 +524,7 @@ const updateSync = (context: Context, node: NodeObject) => {
 
 type UpdateMapResolve = (node: NodeObject | undefined) => void
 const updateMap = new WeakMap<NodeObject, [UpdateMapResolve, Function]>()
+const currentUpdateSets: Set<NodeObject>[] = []
 export const update = async (
   context: Context,
   node: NodeObject
@@ -505,19 +551,24 @@ export const update = async (
     },
   ])
 
-  await Promise.resolve()
+  if (currentUpdateSets.length) {
+    ;(currentUpdateSets.at(-1) as Set<NodeObject>).add(node)
+  } else {
+    await Promise.resolve()
 
-  const latest = updateMap.get(node)
-  if (latest) {
-    updateMap.delete(node)
-    latest[1]()
+    const latest = updateMap.get(node)
+    if (latest) {
+      updateMap.delete(node)
+      latest[1]()
+    }
   }
 
   return promise
 }
 
 export const render = (jsxNode: unknown, container: Container) => {
-  const node = buildNode({ tag: '', children: [jsxNode] } as JSXNode) as NodeObject
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const node = buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject
   build([], node, undefined)
 
   const fragment = document.createDocumentFragment()
@@ -525,3 +576,28 @@ export const render = (jsxNode: unknown, container: Container) => {
   replaceContainer(node, fragment, container)
   container.replaceChildren(fragment)
 }
+
+export const flushSync = (callback: () => void) => {
+  const set = new Set<NodeObject>()
+  currentUpdateSets.push(set)
+  callback()
+  set.forEach((node) => {
+    const latest = updateMap.get(node)
+    if (latest) {
+      updateMap.delete(node)
+      latest[1]()
+    }
+  })
+  currentUpdateSets.pop()
+}
+
+export const createPortal = (children: Child, container: HTMLElement, key?: string): Child =>
+  ({
+    tag: HONO_PORTAL_ELEMENT,
+    props: {
+      children,
+    },
+    key,
+    e: container,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any)
