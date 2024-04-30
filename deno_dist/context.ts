@@ -5,7 +5,7 @@ import type { RedirectStatusCode, StatusCode } from './utils/http-status.ts'
 import type { JSONValue, InterfaceToType, JSONParsed, IsAny } from './utils/types.ts'
 
 type HeaderRecord = Record<string, string | string[]>
-type Data = string | ArrayBuffer | ReadableStream
+export type Data = string | ArrayBuffer | ReadableStream
 
 export interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void
