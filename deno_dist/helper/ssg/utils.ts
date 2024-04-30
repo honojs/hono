@@ -9,8 +9,8 @@ import { findTargetHandler, isMiddleware } from '../../utils/handler.ts'
  * @returns Parent dir path
  */
 export const dirname = (path: string) => {
-  const splitedPath = path.split(/[\/\\]/)
-  return splitedPath.slice(0, -1).join('/') // Windows supports slash path
+  const splittedPath = path.split(/[\/\\]/)
+  return splittedPath.slice(0, -1).join('/') // Windows supports slash path
 }
 
 const normalizePath = (path: string) => {

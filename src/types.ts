@@ -1630,9 +1630,7 @@ export type Schema = {
 }
 
 export type Endpoint = {
-  input: Partial<ValidationTargets> & {
-    param?: Record<string, string>
-  }
+  input: Partial<ValidationTargets>
   output: any
   status: StatusCode
 }
@@ -1739,7 +1737,7 @@ export type ValidationTargets = {
   json: any
   form: Record<string, string | File>
   query: Record<string, string | string[]>
-  param: Record<string, string>
+  param: Record<string, string> | Record<string, string | undefined>
   header: Record<string, string>
   cookie: Record<string, string>
 }
@@ -1784,8 +1782,6 @@ export type InputToDataByTarget<
   : never
 
 export type RemoveQuestion<T> = T extends `${infer R}?` ? R : T
-
-export type UndefinedIfHavingQuestion<T> = T extends `${infer _}?` ? string | undefined : string
 
 ////////////////////////////////////////
 //////                            //////

@@ -387,7 +387,11 @@ export class Context<
 
     if (this.#res) {
       this.#res.headers.forEach((v, k) => {
-        this.#headers?.set(k, v)
+        if (k === 'set-cookie') {
+          this.#headers?.append(k, v)
+        } else {
+          this.#headers?.set(k, v)
+        }
       })
       setHeaders(this.#headers, this.#preparedHeaders)
     }

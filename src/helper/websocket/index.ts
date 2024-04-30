@@ -12,7 +12,7 @@ export interface WSEvents {
   onError?: (evt: Event, ws: WSContext) => void
 }
 
-export type UpgradedWebSocketResponseInputJSONType = '__websocket' | undefined
+export type UpgradedWebSocketResponseInputJSONType = '__websocket'
 
 /**
  * Upgrade WebSocket Type

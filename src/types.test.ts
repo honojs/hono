@@ -19,7 +19,6 @@ import type {
   RemoveQuestion,
   ToSchema,
   TypedResponse,
-  UndefinedIfHavingQuestion,
 } from './types'
 import type { StatusCode } from './utils/http-status'
 import type { Expect, Equal } from './utils/types'
@@ -464,6 +463,26 @@ describe('Path parameters', () => {
       type verify = Expect<Equal<Expected, Actual>>
     })
   })
+
+  describe('Path parameters in app', () => {
+    test('Optional parameters - /api/:a/:b?', () => {
+      const app = new Hono()
+      const routes = app.get('/api/:a/:b?', (c) => {
+        const a = c.req.param('a')
+        const b = c.req.param('b')
+        expectTypeOf(a).toEqualTypeOf<string>()
+        expectTypeOf(b).toEqualTypeOf<string | undefined>()
+        return c.json({ a, b })
+      })
+      type T = ExtractSchema<typeof routes>
+      type Output = T['/api/:a/:b?']['$get']['output']
+      type Expected = {
+        a: string
+        b: string | undefined
+      }
+      type verify = Expect<Equal<Expected, Output>>
+    })
+  })
 })
 
 describe('For HonoRequest', () => {
@@ -494,17 +513,6 @@ describe('For HonoRequest', () => {
   test('RemoveQuestion', () => {
     type Actual = RemoveQuestion<'/animal/type?'>
     type verify = Expect<Equal<'/animal/type', Actual>>
-  })
-
-  describe('UndefinedIfHavingQuestion', () => {
-    test('With ?', () => {
-      type Actual = UndefinedIfHavingQuestion<'/animal/type?'>
-      type verify = Expect<Equal<string | undefined, Actual>>
-    })
-    test('Without ?', () => {
-      type Actual = UndefinedIfHavingQuestion<'/animal/type'>
-      type verify = Expect<Equal<string, Actual>>
-    })
   })
 })
 
