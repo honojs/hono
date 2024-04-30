@@ -7,7 +7,7 @@ declare module '../../context' {
   }
 }
 
-type ContentSecurityPolicyOptionHandler = (ctx: Context, directive: string) => string
+export type ContentSecurityPolicyOptionHandler = (ctx: Context, directive: string) => string
 type ContentSecurityPolicyOptionValue = (string | ContentSecurityPolicyOptionHandler)[]
 
 interface ContentSecurityPolicyOptions {
