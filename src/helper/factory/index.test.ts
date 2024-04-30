@@ -76,7 +76,7 @@ describe('createHandler', () => {
         a: ClientRequest<{
           $get: {
             input: {}
-            output: {}
+            output: 'A'
           }
         }>
       }>()

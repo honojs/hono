@@ -452,16 +452,18 @@ export class Context<
     text: string,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
-  ): Response => {
+  ): Response & TypedResponse<string> => {
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
     if (!this.#preparedHeaders) {
       if (this.#isFresh && !headers && !arg) {
+        // @ts-expect-error `Response` not assignable to Response & TypedResponse<string>
         return new Response(text)
       }
       this.#preparedHeaders = {}
     }
     this.#preparedHeaders['content-type'] = TEXT_PLAIN
+    // @ts-expect-error `Response` not assignable to Response & TypedResponse<string>
     return typeof arg === 'number'
       ? this.newResponse(text, arg, headers)
       : this.newResponse(text, arg)

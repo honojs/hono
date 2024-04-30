@@ -56,7 +56,7 @@ describe('Validator middleware', () => {
         input: {
           query: undefined
         }
-        output: {}
+        output: 'Valid!'
       }
     }
   }
@@ -691,7 +691,7 @@ it('With path parameters', () => {
             id: string
           }
         }
-        output: {}
+        output: 'Valid!'
       }
     }
   }

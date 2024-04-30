@@ -155,7 +155,7 @@ describe('HandlerInterface', () => {
                 id: string
               }
             }
-            output: {}
+            output: 'foo'
           }
         }
       }
@@ -182,7 +182,7 @@ describe('HandlerInterface', () => {
                 foo: string
               }
             }
-            output: {}
+            output: string
           }
         }
       }
@@ -205,7 +205,7 @@ describe('HandlerInterface', () => {
                 foo: string
               }
             }
-            output: {}
+            output: string
           }
         }
       } & {

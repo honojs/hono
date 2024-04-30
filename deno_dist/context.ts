@@ -45,8 +45,8 @@ interface NewResponse {
 interface BodyRespond extends NewResponse {}
 
 interface TextRespond {
-  (text: string, status?: StatusCode, headers?: HeaderRecord): Response
-  (text: string, init?: ResponseInit): Response
+    <T extends string>(text: T, status?: StatusCode, headers?: HeaderRecord): Response & TypedResponse<T>
+    <T extends string>(text: T, init?: ResponseInit): Response & TypedResponse<T>
 }
 
 interface JSONRespond {
@@ -452,16 +452,18 @@ export class Context<
     text: string,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
-  ): Response => {
+  ): Response & TypedResponse<string> => {
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
     if (!this.#preparedHeaders) {
       if (this.#isFresh && !headers && !arg) {
+        // @ts-expect-error `Response` not assignable to Response & TypedResponse<string>
         return new Response(text)
       }
       this.#preparedHeaders = {}
     }
     this.#preparedHeaders['content-type'] = TEXT_PLAIN
+    // @ts-expect-error `Response` not assignable to Response & TypedResponse<string>
     return typeof arg === 'number'
       ? this.newResponse(text, arg, headers)
       : this.newResponse(text, arg)
