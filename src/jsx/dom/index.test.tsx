@@ -1,5 +1,5 @@
 import { JSDOM } from 'jsdom'
-import type { FC } from '..'
+import type { FC, Child } from '..'
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -923,12 +923,71 @@ describe('DOM', () => {
       '<div><p>Count: 0</p><button>+</button><div><p>Child Count: 0</p><button>+</button></div></div>'
     )
     const [button, childButton] = root.querySelectorAll('button')
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 3; i++) {
+      childButton.click()
+      await Promise.resolve()
+    }
+    for (let i = 0; i < 2; i++) {
       button.click()
       await Promise.resolve()
     }
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 3; i++) {
       childButton.click()
+      await Promise.resolve()
+    }
+    for (let i = 0; i < 3; i++) {
+      button.click()
+      await Promise.resolve()
+    }
+    expect(root.innerHTML).toBe(
+      '<div><p>Count: 5</p><button>+</button><div><p>Child Count: 6</p><button>+</button></div></div>'
+    )
+  })
+
+  it('nested useState() with children', async () => {
+    const ChildCounter = () => {
+      const [count, setCount] = useState(0)
+      return (
+        <div>
+          <p>Child Count: {count}</p>
+          <button onClick={() => setCount(count + 1)}>+</button>
+        </div>
+      )
+    }
+    const Counter = ({ children }: { children: Child }) => {
+      const [count, setCount] = useState(0)
+      return (
+        <div>
+          <p>Count: {count}</p>
+          <button onClick={() => setCount(count + 1)}>+</button>
+          {children}
+        </div>
+      )
+    }
+    const app = (
+      <Counter>
+        <ChildCounter />
+      </Counter>
+    )
+    render(app, root)
+    expect(root.innerHTML).toBe(
+      '<div><p>Count: 0</p><button>+</button><div><p>Child Count: 0</p><button>+</button></div></div>'
+    )
+    const [button, childButton] = root.querySelectorAll('button')
+    for (let i = 0; i < 3; i++) {
+      childButton.click()
+      await Promise.resolve()
+    }
+    for (let i = 0; i < 2; i++) {
+      button.click()
+      await Promise.resolve()
+    }
+    for (let i = 0; i < 3; i++) {
+      childButton.click()
+      await Promise.resolve()
+    }
+    for (let i = 0; i < 3; i++) {
+      button.click()
       await Promise.resolve()
     }
     expect(root.innerHTML).toBe(
