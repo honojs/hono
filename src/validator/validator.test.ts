@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Hono } from '../hono'
 import { HTTPException } from '../http-exception'
 import type { ErrorHandler, ExtractSchema, MiddlewareHandler, ValidationTargets } from '../types'
+import type { StatusCode } from '../utils/http-status'
 import type { Equal, Expect } from '../utils/types'
 import type { ValidationFunction } from './validator'
 import { validator } from './validator'
@@ -57,6 +58,7 @@ describe('Validator middleware', () => {
           query: undefined
         }
         output: {}
+        status: StatusCode
       }
     }
   }
@@ -287,6 +289,7 @@ describe('Validator middleware with a custom validation function', () => {
             id: number
           }
         }
+        status: StatusCode
       }
     }
   }
@@ -348,6 +351,7 @@ describe('Validator middleware with Zod validates JSON', () => {
             title: string
           }
         }
+        status: StatusCode
       }
     }
   }
@@ -635,6 +639,7 @@ describe('Validator middleware with Zod multiple validators', () => {
           page: number
           title: string
         }
+        status: StatusCode
       }
     }
   }
@@ -692,6 +697,7 @@ it('With path parameters', () => {
           }
         }
         output: {}
+        status: StatusCode
       }
     }
   }
@@ -738,6 +744,7 @@ it('`on`', () => {
         output: {
           success: boolean
         }
+        status: StatusCode
       }
     }
   }
@@ -928,6 +935,7 @@ describe('Validator with using Zod directly', () => {
           output: {
             message: string
           }
+          status: 201
         }
       }
     }>()
@@ -961,6 +969,7 @@ describe('Transform', () => {
           output: {
             page: number
           }
+          status: StatusCode
         }
       }
     }
