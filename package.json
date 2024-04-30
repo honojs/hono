@@ -279,7 +279,7 @@
       "import": "./dist/helper/factory/index.js",
       "require": "./dist/cjs/helper/factory/index.js"
     },
-    "./base-serve-static": {
+    "./serve-static": {
       "types": "./dist/types/middleware/serve-static/index.d.ts",
       "import": "./dist/middleware/serve-static/index.js",
       "require": "./dist/cjs/middleware/serve-static/index.js"
@@ -480,7 +480,7 @@
       "factory": [
         "./dist/types/helper/factory/index.d.ts"
       ],
-      "base-serve-static": [
+      "serve-static": [
         "./dist/types/middleware/serve-static"
       ],
       "cloudflare-workers": [
