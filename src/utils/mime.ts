@@ -19,7 +19,8 @@ export const getExtension = (mimeType: string): string | undefined => {
   }
 }
 
-export const baseMimes: Record<string, string> = {
+export { baseMimes as mimes }
+const baseMimes: Record<string, string> = {
   aac: 'audio/aac',
   avi: 'video/x-msvideo',
   avif: 'image/avif',
