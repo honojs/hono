@@ -194,3 +194,25 @@ describe('createHandler', () => {
     })
   })
 })
+
+describe('createApp', () => {
+  type Env = { Variables: { foo: string } }
+  const factory = createFactory<Env>({
+    initApp: (app) => {
+      app.use((c, next) => {
+        c.set('foo', 'bar')
+        return next()
+      })
+    },
+  })
+  const app = factory.createApp()
+  it('Should set the correct type and initialize the app', async () => {
+    app.get('/', (c) => {
+      expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+      return c.text(c.var.foo)
+    })
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('bar')
+  })
+})
