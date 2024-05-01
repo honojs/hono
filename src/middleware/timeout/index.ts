@@ -1,33 +1,29 @@
-import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
+import type { StatusCode } from '../../utils/http-status'
 
-const setTimer = (c: Context) => {
-  c.set('startTime', Date.now())
+interface TimeoutOptions {
+  errorMessage?: string
+  errorCode?: StatusCode
 }
 
-export const timeout = (ms: number): MiddlewareHandler => {
+export const timeout = (ms: number, options: TimeoutOptions = {}): MiddlewareHandler => {
   return async (c, next) => {
-    setTimer(c)
-    let timeoutReached = false
+    let timer: NodeJS.Timeout | null = null
 
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        timeoutReached = true
-        reject(new Error('Request timed out'))
+      timer = setTimeout(() => {
+        const message = options.errorMessage || 'Gateway Timeout'
+        const statusCode = options.errorCode || 408
+        reject(new HTTPException(statusCode, { message }))
       }, ms)
     })
 
     try {
       await Promise.race([next(), timeoutPromise])
-    } catch (err) {
-      if (timeoutReached) {
-        throw new HTTPException(504, { message: 'Gateway Timeout' })
-      }
-      throw err  
     } finally {
-      if (!timeoutReached) {
-        clearTimeout(timeoutPromise as unknown as NodeJS.Timeout)
+      if (timer) {
+        clearTimeout(timer)
       }
     }
   }
