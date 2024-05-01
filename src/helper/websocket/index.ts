@@ -21,7 +21,7 @@ export type UpgradeWebSocket = (
   any,
   string,
   {
-    forMiddleware: {
+    stash: {
       websocket: unknown
     }
   }

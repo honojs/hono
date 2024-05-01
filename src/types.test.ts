@@ -94,7 +94,7 @@ describe('HandlerInterface', () => {
             output: {
               message: string
             }
-            forMiddleware: {}
+            stash: {}
           }
         }
       }
@@ -132,7 +132,7 @@ describe('HandlerInterface', () => {
             output: {
               message: string
             }
-            forMiddleware: {}
+            stash: {}
           }
         }
       }
@@ -159,7 +159,7 @@ describe('HandlerInterface', () => {
               }
             }
             output: {}
-            forMiddleware: {}
+            stash: {}
           }
         }
       }
@@ -187,7 +187,7 @@ describe('HandlerInterface', () => {
               }
             }
             output: {}
-            forMiddleware: {}
+            stash: {}
           }
         }
       }
@@ -211,7 +211,7 @@ describe('HandlerInterface', () => {
               }
             }
             output: {}
-            forMiddleware: {}
+            stash: {}
           }
         }
       } & {
@@ -225,7 +225,7 @@ describe('HandlerInterface', () => {
               }
             }
             output: {}
-            forMiddleware: {}
+            stash: {}
           }
         }
       }
@@ -263,7 +263,7 @@ describe('OnHandlerInterface', () => {
           output: {
             success: boolean
           }
-          forMiddleware: {}
+          stash: {}
         }
       }
     }
@@ -311,7 +311,7 @@ describe('Schema', () => {
             message: string
             success: boolean
           }
-          forMiddleware: {}
+          stash: {}
         }
       }
     }
@@ -330,7 +330,7 @@ describe('Support c.json(undefined)', () => {
         $get: {
           input: {}
           output: undefined
-          forMiddleware: {}
+          stash: {}
         }
       }
     }
@@ -416,7 +416,7 @@ describe('`json()`', () => {
           output: {
             message: string
           }
-          forMiddleware: {}
+          stash: {}
         }
       }
     }
@@ -536,18 +536,18 @@ describe('ToSchema', () => {
             }
           }
           output: {}
-          forMiddleware: {}
+          stash: {}
         }
       }
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
-  it('Should work forMiddleware', () => {
+  it('Should work stash', () => {
     type Actual = ToSchema<
       'get',
       '/',
       {
-        forMiddleware: {
+        stash: {
           x: boolean
         }
       },
@@ -556,7 +556,7 @@ describe('ToSchema', () => {
     expectTypeOf<Actual>().toEqualTypeOf<{
       '/': {
         $get: {
-          forMiddleware: { x: boolean }
+          stash: { x: boolean }
           input: {}
           output: {}
         }
@@ -598,7 +598,7 @@ describe('MergeSchemaPath', () => {
             title: string
           }
         }
-        forMiddleware: {}
+        stash: {}
       },
       {
         message: string
@@ -788,7 +788,7 @@ describe('Different types using json()', () => {
               | {
                   default: boolean
                 }
-            forMiddleware: {}
+            stash: {}
           }
         }
       }
@@ -830,7 +830,7 @@ describe('Different types using json()', () => {
               | {
                   default: boolean
                 }
-            forMiddleware: {}
+            stash: {}
           }
         }
       }
@@ -855,7 +855,7 @@ describe('json() in an async handler', () => {
           output: {
             ok: boolean
           }
-          forMiddleware: {}
+          stash: {}
         }
       }
     }

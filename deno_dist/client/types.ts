@@ -32,7 +32,7 @@ export type ClientRequest<S extends Schema> = {
         : {}
       : {}
   ) => URL
-} & (S['$get'] extends { forMiddleware: { websocket: unknown } }
+} & (S['$get'] extends { stash: { websocket: unknown } }
     ? S['$get'] extends { input: infer I }
       ? {
           $ws: (args?: I) => WebSocket

@@ -57,7 +57,7 @@ describe('Validator middleware', () => {
           query: undefined
         }
         output: {}
-        forMiddleware: {}
+        stash: {}
       }
     }
   }
@@ -288,7 +288,7 @@ describe('Validator middleware with a custom validation function', () => {
             id: number
           }
         }
-        forMiddleware: {}
+        stash: {}
       }
     }
   }
@@ -350,7 +350,7 @@ describe('Validator middleware with Zod validates JSON', () => {
             title: string
           }
         }
-        forMiddleware: {}
+        stash: {}
       }
     }
   }
@@ -638,7 +638,7 @@ describe('Validator middleware with Zod multiple validators', () => {
           page: number
           title: string
         }
-        forMiddleware: {}
+        stash: {}
       }
     }
   }
@@ -696,7 +696,7 @@ it('With path parameters', () => {
           }
         }
         output: {}
-        forMiddleware: {}
+        stash: {}
       }
     }
   }
@@ -743,7 +743,7 @@ it('`on`', () => {
         output: {
           success: boolean
         }
-        forMiddleware: {}
+        stash: {}
       }
     }
   }
@@ -934,7 +934,7 @@ describe('Validator with using Zod directly', () => {
           output: {
             message: string
           }
-          forMiddleware: {}
+          stash: {}
         }
       }
     }>()
@@ -968,7 +968,7 @@ describe('Transform', () => {
           output: {
             page: number
           }
-          forMiddleware: {}
+          stash: {}
         }
       }
     }

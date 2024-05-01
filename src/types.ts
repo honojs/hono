@@ -29,7 +29,7 @@ export type Next = () => Promise<void>
 export type Input = {
   in?: {}
   out?: {}
-  forMiddleware?: {}
+  stash?: {}
 }
 
 export type BlankSchema = {}
@@ -1607,7 +1607,7 @@ export type ToSchema<M extends string, P extends string, I extends Input, O> = P
     [K2 in M as AddDollar<K2>]: {
       input: unknown extends I['in'] ? AddParam<{}, P> : AddParam<I['in'], P>
       output: unknown extends O ? {} : O
-      forMiddleware: unknown extends I['forMiddleware'] ? {} : I['forMiddleware']
+      stash: unknown extends I['stash'] ? {} : I['stash']
     }
   }
 }>
