@@ -2,4 +2,4 @@
 
 - [ ] Add tests
 - [ ] Run tests
-- [ ] `yarn denoify` to generate files for Deno
+- [ ] `bun denoify` to generate files for Deno
