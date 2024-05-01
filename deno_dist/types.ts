@@ -1619,6 +1619,7 @@ export type Schema = {
         param?: Record<string, string>
       }
       output: any
+      stash?: Record<string, unknown>
     }
   }
 }
