@@ -8,9 +8,10 @@ describe('Timeout API', () => {
     '/slow-endpoint/custom',
     timeout(1000, {
       errorMessage: 'Request timeout. Please try again later.',
-      errorCode: 504,
+      errorCode: 408,
     })
   )
+  app.use('/normal-endpoint', timeout(1000))
 
   app.get('/slow-endpoint', async (c) => {
     await new Promise((resolve) => setTimeout(resolve, 1100))
@@ -22,17 +23,29 @@ describe('Timeout API', () => {
     return c.text('This should not show up')
   })
 
+  app.get('/normal-endpoint', async (c) => {
+    await new Promise((resolve) => setTimeout(resolve, 900))
+    return c.text('This should not show up')
+  })
+
   it('Should contain total duration', async () => {
     const res = await app.request('http://localhost/slow-endpoint')
     expect(res).not.toBeNull()
-    expect(res.status).toBe(408)
+    expect(res.status).toBe(504)
     expect(await res.text()).toContain('Gateway Timeout')
   })
 
   it('Should apply custom error message and status code', async () => {
     const res = await app.request('http://localhost/slow-endpoint/custom')
     expect(res).not.toBeNull()
-    expect(res.status).toBe(504)
+    expect(res.status).toBe(408)
     expect(await res.text()).toContain('Request timeout. Please try again later.')
+  })
+
+  it('No Timeout', async () => {
+    const res = await app.request('http://localhost/normal-endpoint')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(await res.text()).toContain('This should not show up')
   })
 })

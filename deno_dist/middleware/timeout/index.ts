@@ -1,6 +1,6 @@
-import { HTTPException } from '../../http-exception'
-import type { MiddlewareHandler } from '../../types'
-import type { StatusCode } from '../../utils/http-status'
+import { HTTPException } from '../../http-exception.ts'
+import type { MiddlewareHandler } from '../../types.ts'
+import type { StatusCode } from '../../utils/http-status.ts'
 
 interface TimeoutOptions {
   errorMessage?: string
