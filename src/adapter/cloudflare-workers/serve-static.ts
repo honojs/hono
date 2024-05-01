@@ -10,7 +10,12 @@ export type ServeStaticOptions<E extends Env = Env> = BaseServeStaticOptions<E> 
   manifest: object | string
 }
 
-// This middleware is available only on Cloudflare Workers.
+/**
+ * @deprecated
+ * `serveStatic` in the Cloudflare Workers adapter is deprecated.
+ * If you want to create an application serving static assets, please consider using Cloudflare Pages.
+ * You can start to create the Cloudflare Pages application with the `npm create hono@latest` command.
+ */
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E>
 ): MiddlewareHandler => {
