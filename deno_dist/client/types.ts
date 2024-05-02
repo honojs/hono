@@ -1,6 +1,6 @@
 import type { UpgradedWebSocketResponseInputJSONType } from '../helper/websocket/index.ts'
 import type { Hono } from '../hono.ts'
-import type { Endpoint, Schema } from '../types.ts'
+import type { Endpoint, ResponseFormat, Schema } from '../types.ts'
 import type { StatusCode, SuccessStatusCode } from '../utils/http-status.ts'
 import type { HasRequiredKeys } from '../utils/types.ts'
 
@@ -53,12 +53,17 @@ type BlankRecordToNever<T> = T extends any
 
 type ClientResponseOfEndpoint<T extends Endpoint = Endpoint> = T extends {
   output: infer O
+  outputFormat: infer F
   status: infer S
 }
-  ? ClientResponse<O, S>
+  ? ClientResponse<O, S extends number ? S : never, F extends ResponseFormat ? F : never>
   : never
 
-export interface ClientResponse<T, U = StatusCode> {
+export interface ClientResponse<
+  T,
+  U extends number = StatusCode,
+  F extends ResponseFormat = ResponseFormat
+> extends globalThis.Response {
   readonly body: ReadableStream | null
   readonly bodyUsed: boolean
   ok: U extends SuccessStatusCode
@@ -72,8 +77,12 @@ export interface ClientResponse<T, U = StatusCode> {
   url: string
   redirect(url: string, status: number): Response
   clone(): Response
-  json(): Promise<BlankRecordToNever<T>>
-  text(): Promise<string>
+  json(): F extends 'text'
+    ? Promise<never>
+    : F extends 'json'
+    ? Promise<BlankRecordToNever<T>>
+    : Promise<unknown>
+  text(): F extends 'text' ? (T extends string ? Promise<T> : Promise<never>) : Promise<string>
   blob(): Promise<Blob>
   formData(): Promise<FormData>
   arrayBuffer(): Promise<ArrayBuffer>
@@ -91,9 +100,9 @@ type InferEndpointType<T> = T extends (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options: any | undefined
 ) => Promise<infer U>
-  ? U extends ClientResponse<infer O, infer S>
-    ? { input: NonNullable<R>; output: O; status: S } extends Endpoint
-      ? { input: NonNullable<R>; output: O; status: S }
+  ? U extends ClientResponse<infer O, infer S, infer F>
+    ? { input: NonNullable<R>; output: O; outputFormat: F; status: S } extends Endpoint
+      ? { input: NonNullable<R>; output: O; outputFormat: F; status: S }
       : never
     : never
   : never
