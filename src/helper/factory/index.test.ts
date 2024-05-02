@@ -2,7 +2,8 @@ import { expectTypeOf } from 'vitest'
 import { hc } from '../../client'
 import type { ClientRequest } from '../../client/types'
 import { Hono } from '../../index'
-import type { ToSchema } from '../../types'
+import type { ToSchema, TypedResponse } from '../../types'
+import type { StatusCode } from '../../utils/http-status'
 import { validator } from '../../validator'
 import { createMiddleware, createFactory } from './index'
 
@@ -76,7 +77,9 @@ describe('createHandler', () => {
         a: ClientRequest<{
           $get: {
             input: {}
-            output: {}
+            output: 'A'
+            outputFormat: 'text'
+            status: StatusCode
           }
         }>
       }>()
@@ -109,14 +112,16 @@ describe('createHandler', () => {
         'get',
         '/posts',
         {
-          query: {
-            page: string
+          in: {
+            query: {
+              page: string
+            }
           }
         },
-        {
+        TypedResponse<{
           page: string
           foo: string
-        }
+        }>
       >,
       '/'
     >
@@ -167,24 +172,26 @@ describe('createHandler', () => {
         'get',
         '/posts',
         {
-          header: {
-            auth: string
-          }
-        } & {
-          query: {
-            page: string
-          }
-        } & {
-          json: {
-            id: number
+          in: {
+            header: {
+              auth: string
+            }
+          } & {
+            query: {
+              page: string
+            }
+          } & {
+            json: {
+              id: number
+            }
           }
         },
-        {
+        TypedResponse<{
           auth: string
           page: string
           foo: string
           id: number
-        }
+        }>
       >,
       '/'
     >

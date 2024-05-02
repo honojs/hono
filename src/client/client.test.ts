@@ -74,6 +74,18 @@ describe('Basic - JSON', () => {
     }),
     rest.get('http://localhost/null', (_req, res, ctx) => {
       return res(ctx.status(200), ctx.json(null))
+    }),
+    rest.get('http://localhost/api/string', async (req, res, ctx) => {
+      return res(ctx.json('a-string'))
+    }),
+    rest.get('http://localhost/api/number', async (req, res, ctx) => {
+      return res(ctx.json(37))
+    }),
+    rest.get('http://localhost/api/boolean', async (req, res, ctx) => {
+      return res(ctx.json(true))
+    }),
+    rest.get('http://localhost/api/generic', async (req, res, ctx) => {
+      return res(ctx.json(Math.random() > 0.5 ? Boolean(Math.random()) : Math.random()))
     })
   )
 
@@ -123,6 +135,38 @@ describe('Basic - JSON', () => {
     const data = await res.json()
     expectTypeOf(data).toMatchTypeOf<null>()
     expect(data).toBe(null)
+  })
+
+  it('Should have correct types - primitives', async () => {
+    const app = new Hono()
+    const route = app
+      .get('/api/string', (c) => c.json('a-string'))
+      .get('/api/number', (c) => c.json(37))
+      .get('/api/boolean', (c) => c.json(true))
+      .get('/api/generic', (c) =>
+        c.json(Math.random() > 0.5 ? Boolean(Math.random()) : Math.random())
+      )
+    type AppType = typeof route
+    const client = hc<AppType>('http://localhost')
+    const stringFetch = await client.api.string.$get()
+    const stringRes = await stringFetch.json()
+    const numberFetch = await client.api.number.$get()
+    const numberRes = await numberFetch.json()
+    const booleanFetch = await client.api.boolean.$get()
+    const booleanRes = await booleanFetch.json()
+    const genericFetch = await client.api.generic.$get()
+    const genericRes = await genericFetch.json()
+    type stringVerify = Expect<Equal<'a-string', typeof stringRes>>
+    expect(stringRes).toBe('a-string')
+    type numberVerify = Expect<Equal<37, typeof numberRes>>
+    expect(numberRes).toBe(37)
+    type booleanVerify = Expect<Equal<true, typeof booleanRes>>
+    expect(booleanRes).toBe(true)
+    type genericVerify = Expect<Equal<number | boolean, typeof genericRes>>
+    expect(typeof genericRes === 'number' || typeof genericRes === 'boolean').toBe(true)
+
+    // using .text() on json endpoint should return string
+    type textTest = Expect<Equal<Promise<string>, ReturnType<typeof genericFetch.text>>>
   })
 })
 
@@ -467,6 +511,7 @@ describe('Merge path with `app.route()`', () => {
   it('Should have correct types - with interface', async () => {
     interface Result {
       ok: boolean
+      okUndefined?: boolean
     }
     const result: Result = { ok: true }
     const base = new Hono<Env>().basePath('/api')
@@ -603,6 +648,101 @@ describe('ClientResponse<T>.json() returns a Union type correctly', () => {
     const res = await client.index.$get()
     const json = await res.json()
     expectTypeOf(json).toEqualTypeOf<{ data: string } | { message: string }>()
+  })
+})
+
+describe('Response with different status codes', () => {
+  const condition = () => true
+  const app = new Hono().get('/', async (c) => {
+    const ok = condition()
+    if (ok) {
+      return c.json({ data: 'foo' }, 200)
+    }
+    if (!ok) {
+      return c.json({ message: 'error' }, 400)
+    }
+    return c.json(null)
+  })
+
+  const client = hc<typeof app>('', { fetch: app.request })
+
+  it('all', async () => {
+    const res = await client.index.$get()
+    const json = await res.json()
+    expectTypeOf(json).toEqualTypeOf<{ data: string } | { message: string } | null>()
+  })
+
+  it('status 200', async () => {
+    const res = await client.index.$get()
+    if (res.status === 200) {
+      const json = await res.json()
+      expectTypeOf(json).toEqualTypeOf<{ data: string } | null>()
+    }
+  })
+
+  it('status 400', async () => {
+    const res = await client.index.$get()
+    if (res.status === 400) {
+      const json = await res.json()
+      expectTypeOf(json).toEqualTypeOf<{ message: string } | null>()
+    }
+  })
+
+  it('response is ok', async () => {
+    const res = await client.index.$get()
+    if (res.ok) {
+      const json = await res.json()
+      expectTypeOf(json).toEqualTypeOf<{ data: string } | null>()
+    }
+  })
+
+  it('response is not ok', async () => {
+    const res = await client.index.$get()
+    if (!res.ok) {
+      const json = await res.json()
+      expectTypeOf(json).toEqualTypeOf<{ message: string } | null>()
+    }
+  })
+})
+
+describe('Infer the response type with different status codes', () => {
+  const condition = () => true
+  const app = new Hono().get('/', async (c) => {
+    const ok = condition()
+    if (ok) {
+      return c.json({ data: 'foo' }, 200)
+    }
+    if (!ok) {
+      return c.json({ message: 'error' }, 400)
+    }
+    return c.json(null)
+  })
+
+  const client = hc<typeof app>('', { fetch: app.request })
+
+  it('Should infer response type correctly', () => {
+    const req = client.index.$get
+
+    type Actual = InferResponseType<typeof req>
+    type Expected =
+      | {
+          data: string
+        }
+      | {
+          message: string
+        }
+      | null
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer response type of status 200 correctly', () => {
+    const req = client.index.$get
+
+    type Actual = InferResponseType<typeof req, 200>
+    type Expected = {
+      data: string
+    } | null
+    type verify = Expect<Equal<Expected, Actual>>
   })
 })
 
@@ -764,5 +904,49 @@ describe('Client can be console.log in react native', () => {
   it('Returns a function source with function.toString', async () => {
     const client = hc('http://localhost')
     expect(client.posts.toString()).toMatch('function proxyCallback')
+  })
+})
+
+describe('Text response', () => {
+  const text = 'My name is Hono'
+  const obj = { ok: true }
+  const server = setupServer(
+    rest.get('http://localhost/about/me', async (_req, res, ctx) => {
+      return res(ctx.text(text))
+    }),
+    rest.get('http://localhost/api', async (_req, res, ctx) => {
+      return res(ctx.json(obj))
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  const app = new Hono().get('/about/me', (c) => c.text(text)).get('/api', (c) => c.json(obj))
+  const client = hc<typeof app>('http://localhost/')
+
+  it('Should be never with res.json() - /about/me', async () => {
+    const res = await client.about.me.$get()
+    type Actual = ReturnType<typeof res.json>
+    type Expected = Promise<never>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should be "Hello, World!" with res.text() - /about/me', async () => {
+    const res = await client.about.me.$get()
+    const data = await res.text()
+    expectTypeOf(data).toEqualTypeOf<'My name is Hono'>()
+    expect(data).toBe(text)
+  })
+
+  /**
+   * Also check the type of JSON response with res.text().
+   */
+  it('Should be string with res.text() - /api', async () => {
+    const res = await client.api.$get()
+    type Actual = ReturnType<typeof res.text>
+    type Expected = Promise<string>
+    type verify = Expect<Equal<Expected, Actual>>
   })
 })

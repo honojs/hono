@@ -1,29 +1,38 @@
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
+declare module '../../context' {
+  interface ContextVariableMap {
+    secureHeadersNonce?: string
+  }
+}
+
+export type ContentSecurityPolicyOptionHandler = (ctx: Context, directive: string) => string
+type ContentSecurityPolicyOptionValue = (string | ContentSecurityPolicyOptionHandler)[]
+
 interface ContentSecurityPolicyOptions {
-  defaultSrc?: string[]
-  baseUri?: string[]
-  childSrc?: string[]
-  connectSrc?: string[]
-  fontSrc?: string[]
-  formAction?: string[]
-  frameAncestors?: string[]
-  frameSrc?: string[]
-  imgSrc?: string[]
-  manifestSrc?: string[]
-  mediaSrc?: string[]
-  objectSrc?: string[]
+  defaultSrc?: ContentSecurityPolicyOptionValue
+  baseUri?: ContentSecurityPolicyOptionValue
+  childSrc?: ContentSecurityPolicyOptionValue
+  connectSrc?: ContentSecurityPolicyOptionValue
+  fontSrc?: ContentSecurityPolicyOptionValue
+  formAction?: ContentSecurityPolicyOptionValue
+  frameAncestors?: ContentSecurityPolicyOptionValue
+  frameSrc?: ContentSecurityPolicyOptionValue
+  imgSrc?: ContentSecurityPolicyOptionValue
+  manifestSrc?: ContentSecurityPolicyOptionValue
+  mediaSrc?: ContentSecurityPolicyOptionValue
+  objectSrc?: ContentSecurityPolicyOptionValue
   reportTo?: string
-  sandbox?: string[]
-  scriptSrc?: string[]
-  scriptSrcAttr?: string[]
-  scriptSrcElem?: string[]
-  styleSrc?: string[]
-  styleSrcAttr?: string[]
-  styleSrcElem?: string[]
-  upgradeInsecureRequests?: string[]
-  workerSrc?: string[]
+  sandbox?: ContentSecurityPolicyOptionValue
+  scriptSrc?: ContentSecurityPolicyOptionValue
+  scriptSrcAttr?: ContentSecurityPolicyOptionValue
+  scriptSrcElem?: ContentSecurityPolicyOptionValue
+  styleSrc?: ContentSecurityPolicyOptionValue
+  styleSrcAttr?: ContentSecurityPolicyOptionValue
+  styleSrcElem?: ContentSecurityPolicyOptionValue
+  upgradeInsecureRequests?: ContentSecurityPolicyOptionValue
+  workerSrc?: ContentSecurityPolicyOptionValue
 }
 
 interface ReportToOptions {
@@ -95,12 +104,38 @@ const DEFAULT_OPTIONS: SecureHeadersOptions = {
   xXssProtection: true,
 }
 
+type SecureHeadersCallback = (
+  ctx: Context,
+  headersToSet: [string, string | string[]][]
+) => [string, string][]
+
+const generateNonce = () => {
+  const buffer = new Uint8Array(16)
+  crypto.getRandomValues(buffer)
+  return Buffer.from(buffer).toString('base64')
+}
+export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
+  const nonce =
+    ctx.get('secureHeadersNonce') ||
+    (() => {
+      const newNonce = generateNonce()
+      ctx.set('secureHeadersNonce', newNonce)
+      return newNonce
+    })()
+  return `'nonce-${nonce}'`
+}
+
 export const secureHeaders = (customOptions?: Partial<SecureHeadersOptions>): MiddlewareHandler => {
   const options = { ...DEFAULT_OPTIONS, ...customOptions }
   const headersToSet = getFilteredHeaders(options)
+  const callbacks: SecureHeadersCallback[] = []
 
   if (options.contentSecurityPolicy) {
-    headersToSet.push(['Content-Security-Policy', getCSPDirectives(options.contentSecurityPolicy)])
+    const [callback, value] = getCSPDirectives(options.contentSecurityPolicy)
+    if (callback) {
+      callbacks.push(callback)
+    }
+    headersToSet.push(['Content-Security-Policy', value as string])
   }
 
   if (options.reportingEndpoints) {
@@ -112,8 +147,14 @@ export const secureHeaders = (customOptions?: Partial<SecureHeadersOptions>): Mi
   }
 
   return async function secureHeaders(ctx, next) {
+    // should evaluate callbacks before next()
+    // some callback calls ctx.set() for embedding nonce to the page
+    const headersToSetForReq =
+      callbacks.length === 0
+        ? headersToSet
+        : callbacks.reduce((acc, cb) => cb(ctx, acc), headersToSet)
     await next()
-    setHeaders(ctx, headersToSet)
+    setHeaders(ctx, headersToSetForReq)
     ctx.res.headers.delete('X-Powered-By')
   }
 }
@@ -128,16 +169,50 @@ function getFilteredHeaders(options: SecureHeadersOptions): [string, string][] {
 }
 
 function getCSPDirectives(
-  contentSecurityPolicy: SecureHeadersOptions['contentSecurityPolicy']
-): string {
-  return Object.entries(contentSecurityPolicy || [])
-    .map(([directive, value]) => {
-      const kebabCaseDirective = directive.replace(/[A-Z]+(?![a-z])|[A-Z]/g, (match, offset) =>
-        offset ? '-' + match.toLowerCase() : match.toLowerCase()
-      )
-      return `${kebabCaseDirective} ${Array.isArray(value) ? value.join(' ') : value}`
+  contentSecurityPolicy: ContentSecurityPolicyOptions
+): [SecureHeadersCallback | undefined, string | string[]] {
+  const callbacks: ((ctx: Context, values: string[]) => void)[] = []
+  const resultValues: string[] = []
+
+  for (const [directive, value] of Object.entries(contentSecurityPolicy)) {
+    const valueArray = Array.isArray(value) ? value : [value]
+
+    valueArray.forEach((value, i) => {
+      if (typeof value === 'function') {
+        const index = i * 2 + 2 + resultValues.length
+        callbacks.push((ctx, values) => {
+          values[index] = value(ctx, directive)
+        })
+      }
     })
-    .join('; ')
+
+    resultValues.push(
+      directive.replace(/[A-Z]+(?![a-z])|[A-Z]/g, (match, offset) =>
+        offset ? '-' + match.toLowerCase() : match.toLowerCase()
+      ),
+      ...valueArray.flatMap((value) => [' ', value]),
+      '; '
+    )
+  }
+  resultValues.pop()
+
+  return callbacks.length === 0
+    ? [undefined, resultValues.join('')]
+    : [
+        (ctx, headersToSet) =>
+          headersToSet.map((values) => {
+            if (values[0] === 'Content-Security-Policy') {
+              const clone = values[1].slice() as unknown as string[]
+              callbacks.forEach((cb) => {
+                cb(ctx, clone)
+              })
+              return [values[0], clone.join('')]
+            } else {
+              return values as [string, string]
+            }
+          }),
+        resultValues,
+      ]
 }
 
 function getReportingEndpoints(
