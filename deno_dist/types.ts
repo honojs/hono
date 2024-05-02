@@ -31,6 +31,7 @@ export type Next = () => Promise<void>
 export type Input = {
   in?: {}
   out?: {}
+  outputFormat?: ResponseFormat
 }
 
 export type BlankSchema = {}
