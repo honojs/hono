@@ -2,7 +2,7 @@ import type { HonoRequest } from './request'
 import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types'
 import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
-import type { JSONValue, InterfaceToType, JSONParsed, IsAny } from './utils/types'
+import type { JSONValue, JSONParsed, IsAny, Simplify } from './utils/types'
 
 type HeaderRecord = Record<string, string | string[]>
 export type Data = string | ArrayBuffer | ReadableStream
@@ -45,35 +45,39 @@ interface NewResponse {
 interface BodyRespond extends NewResponse {}
 
 interface TextRespond {
-  (text: string, status?: StatusCode, headers?: HeaderRecord): Response
-  (text: string, init?: ResponseInit): Response
+  <T extends string, U extends StatusCode>(text: T, status?: U, headers?: HeaderRecord): Response &
+    TypedResponse<T, U, 'text'>
+  <T extends string, U extends StatusCode>(text: T, init?: ResponseInit): Response &
+    TypedResponse<T, U, 'text'>
 }
 
 interface JSONRespond {
-  <T, U extends StatusCode>(
-    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
+  <T extends JSONValue | Simplify<any>, U extends StatusCode>(
+    object: T,
     status?: U,
     headers?: HeaderRecord
   ): Response &
     TypedResponse<
-      InterfaceToType<T> extends JSONValue
-        ? JSONValue extends InterfaceToType<T>
+      Simplify<T> extends JSONValue
+        ? JSONValue extends Simplify<T>
           ? never
           : JSONParsed<T>
         : never,
-      U
+      U,
+      'json'
     >
-  <T, U extends StatusCode>(
-    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
+  <T extends JSONValue | Simplify<any>, U extends StatusCode>(
+    object: Simplify<T> extends JSONValue ? T : Simplify<T>,
     init?: ResponseInit
   ): Response &
     TypedResponse<
-      InterfaceToType<T> extends JSONValue
-        ? JSONValue extends InterfaceToType<T>
+      Simplify<T> extends JSONValue
+        ? JSONValue extends Simplify<T>
           ? never
           : JSONParsed<T>
         : never,
-      U
+      U,
+      'json'
     >
 }
 
@@ -457,16 +461,18 @@ export class Context<
     text: string,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
-  ): Response => {
+  ): ReturnType<TextRespond> => {
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
     if (!this.#preparedHeaders) {
       if (this.#isFresh && !headers && !arg) {
+        // @ts-expect-error `Response` due to missing some types-only keys
         return new Response(text)
       }
       this.#preparedHeaders = {}
     }
     this.#preparedHeaders['content-type'] = TEXT_PLAIN
+    // @ts-expect-error `Response` due to missing some types-only keys
     return typeof arg === 'number'
       ? this.newResponse(text, arg, headers)
       : this.newResponse(text, arg)
@@ -482,19 +488,11 @@ export class Context<
    * ```
    * @see https://hono.dev/api/context#json
    */
-  json: JSONRespond = <T, U extends StatusCode>(
-    object: InterfaceToType<T> extends JSONValue ? T : JSONValue,
+  json: JSONRespond = <T extends JSONValue | Simplify<any>, U extends StatusCode>(
+    object: T,
     arg?: U | ResponseInit,
     headers?: HeaderRecord
-  ): Response &
-    TypedResponse<
-      InterfaceToType<T> extends JSONValue
-        ? JSONValue extends InterfaceToType<T>
-          ? never
-          : JSONParsed<T>
-        : never,
-      U
-    > => {
+  ): ReturnType<JSONRespond> => {
     const body = JSON.stringify(object)
     this.#preparedHeaders ??= {}
     this.#preparedHeaders['content-type'] = 'application/json; charset=UTF-8'

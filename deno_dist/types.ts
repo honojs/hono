@@ -6,6 +6,7 @@ import type { Hono } from './hono.ts'
 import type { StatusCode } from './utils/http-status.ts'
 import type {
   IfAnyThenEmptyObject,
+  JSONValue,
   Prettify,
   RemoveBlankRecord,
   UnionToIntersection,
@@ -1613,10 +1614,11 @@ export type ToSchema<
   R extends TypedResponse
 > = Prettify<{
   [K in P]: {
-    [K2 in M as AddDollar<K2>]: R extends TypedResponse<infer T, infer U>
+    [K2 in M as AddDollar<K2>]: R extends TypedResponse<infer T, infer U, infer F>
       ? {
           input: unknown extends I ? AddParam<{}, P> : AddParam<I, P>
           output: unknown extends T ? {} : T
+          outputFormat: unknown extends F ? never : F
           status: U
         }
       : never
@@ -1632,6 +1634,7 @@ export type Schema = {
 export type Endpoint = {
   input: Partial<ValidationTargets>
   output: any
+  outputFormat: ResponseFormat
   status: StatusCode
 }
 
@@ -1650,6 +1653,7 @@ export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> =
     [M in keyof OrigSchema[P]]: OrigSchema[P][M] extends {
       input: infer Input
       output: infer Output
+      outputFormat: infer OutputFormat
       status: infer Status
     }
       ? {
@@ -1677,6 +1681,7 @@ export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> =
                 }
               }
           output: Output
+          outputFormat: OutputFormat
           status: Status
         }
       : never
@@ -1713,10 +1718,21 @@ export type MergePath<A extends string, B extends string> = B extends ''
 //////                            //////
 ////////////////////////////////////////
 
-export type TypedResponse<T = unknown, U extends StatusCode = StatusCode> = {
+export type KnownResponseFormat = 'json' | 'text'
+export type ResponseFormat = KnownResponseFormat | string
+
+export type TypedResponse<
+  T = unknown,
+  U extends StatusCode = StatusCode,
+  F extends ResponseFormat = T extends string
+    ? 'text'
+    : T extends JSONValue
+    ? 'json'
+    : ResponseFormat
+> = {
   data: T
   status: U
-  format: 'json' // Currently, support only `json` with `c.json()`
+  format: F
 }
 
 type MergeTypedResponse<T> = T extends Promise<infer T2>
