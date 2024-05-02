@@ -57,7 +57,8 @@ describe('Validator middleware', () => {
         input: {
           query: undefined
         }
-        output: {}
+        output: 'Valid!'
+        outputFormat: 'text'
         status: StatusCode
       }
     }
@@ -289,6 +290,7 @@ describe('Validator middleware with a custom validation function', () => {
             id: number
           }
         }
+        outputFormat: 'json'
         status: StatusCode
       }
     }
@@ -351,6 +353,7 @@ describe('Validator middleware with Zod validates JSON', () => {
             title: string
           }
         }
+        outputFormat: 'json'
         status: StatusCode
       }
     }
@@ -639,6 +642,7 @@ describe('Validator middleware with Zod multiple validators', () => {
           page: number
           title: string
         }
+        outputFormat: 'json'
         status: StatusCode
       }
     }
@@ -696,7 +700,8 @@ it('With path parameters', () => {
             id: string
           }
         }
-        output: {}
+        output: 'Valid!'
+        outputFormat: 'text'
         status: StatusCode
       }
     }
@@ -744,6 +749,7 @@ it('`on`', () => {
         output: {
           success: boolean
         }
+        outputFormat: 'json'
         status: StatusCode
       }
     }
@@ -935,6 +941,7 @@ describe('Validator with using Zod directly', () => {
           output: {
             message: string
           }
+          outputFormat: 'json'
           status: 201
         }
       }
@@ -969,6 +976,7 @@ describe('Transform', () => {
           output: {
             page: number
           }
+          outputFormat: 'json'
           status: StatusCode
         }
       }
