@@ -17,6 +17,7 @@ import type {
   ParamKeys,
   ParamKeyToRecord,
   RemoveQuestion,
+  ResponseFormat,
   ToSchema,
   TypedResponse,
 } from './types'
@@ -95,6 +96,7 @@ describe('HandlerInterface', () => {
             output: {
               message: string
             }
+            outputFormat: 'json'
             status: StatusCode
           }
         }
@@ -133,6 +135,7 @@ describe('HandlerInterface', () => {
             output: {
               message: string
             }
+            outputFormat: 'json'
             status: StatusCode
           }
         }
@@ -159,7 +162,8 @@ describe('HandlerInterface', () => {
                 id: string
               }
             }
-            output: {}
+            output: 'foo'
+            outputFormat: 'text'
             status: StatusCode
           }
         }
@@ -187,7 +191,8 @@ describe('HandlerInterface', () => {
                 foo: string
               }
             }
-            output: {}
+            output: string
+            outputFormat: 'text'
             status: StatusCode
           }
         }
@@ -211,7 +216,8 @@ describe('HandlerInterface', () => {
                 foo: string
               }
             }
-            output: {}
+            output: string
+            outputFormat: 'text'
             status: StatusCode
           }
         }
@@ -226,6 +232,7 @@ describe('HandlerInterface', () => {
               }
             }
             output: {}
+            outputFormat: ResponseFormat
             status: StatusCode
           }
         }
@@ -264,9 +271,42 @@ describe('OnHandlerInterface', () => {
           output: {
             success: boolean
           }
+          outputFormat: 'json'
           status: StatusCode
         }
       }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+describe('TypedResponse', () => {
+  test('unknown', () => {
+    type Actual = TypedResponse
+    type Expected = {
+      data: unknown
+      status: StatusCode
+      format: ResponseFormat
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('text auto infer', () => {
+    type Actual = TypedResponse<string>
+    type Expected = {
+      data: string
+      status: StatusCode
+      format: 'text'
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('json auto infer', () => {
+    type Actual = TypedResponse<{ ok: true }>
+    type Expected = {
+      data: { ok: true }
+      status: StatusCode
+      format: 'json'
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
@@ -285,10 +325,14 @@ describe('Schema', () => {
             title: string
           }
         },
-        TypedResponse<{
-          message: string
-          success: boolean
-        }>
+        TypedResponse<
+          {
+            message: string
+            success: boolean
+          },
+          StatusCode,
+          'json'
+        >
       >
     >
 
@@ -310,6 +354,7 @@ describe('Schema', () => {
             message: string
             success: boolean
           }
+          outputFormat: 'json'
           status: StatusCode
         }
       }
@@ -329,6 +374,7 @@ describe('Support c.json(undefined)', () => {
         $get: {
           input: {}
           output: undefined
+          outputFormat: 'json'
           status: StatusCode
         }
       }
@@ -412,6 +458,7 @@ describe('`json()`', () => {
           output: {
             message: string
           }
+          outputFormat: 'json'
           status: StatusCode
         }
       }
@@ -436,6 +483,7 @@ describe('`json()`', () => {
           output: {
             message: string
           }
+          outputFormat: 'json'
           status: 200
         }
       }
@@ -563,6 +611,7 @@ describe('ToSchema', () => {
             }
           }
           output: {}
+          outputFormat: 'json'
           status: StatusCode
         }
       }
@@ -630,6 +679,7 @@ describe('MergeSchemaPath', () => {
           output: {
             message: string
           }
+          outputFormat: 'json'
           status: StatusCode
         }
         $get: {
@@ -637,6 +687,7 @@ describe('MergeSchemaPath', () => {
           output: {
             ok: boolean
           }
+          outputFormat: 'json'
           status: StatusCode
         }
       }
@@ -659,6 +710,7 @@ describe('MergeSchemaPath', () => {
               }
             }
             output: {}
+            outputFormat: 'json'
             status: StatusCode
           }
         }
@@ -677,6 +729,7 @@ describe('MergeSchemaPath', () => {
             }
           }
           output: {}
+          outputFormat: 'json'
           status: StatusCode
         }
       }
@@ -705,7 +758,7 @@ describe('MergeSchemaPath', () => {
   })
 
   test('MergeSchemaPath - SubPath has path params', () => {
-    type Actual = MergeSchemaPath<ToSchema<'get', '/', {}, TypedResponse<{}>>, '/a/:b'>
+    type Actual = MergeSchemaPath<ToSchema<'get', '/', {}, TypedResponse>, '/a/:b'>
     type Expected = {
       '/a/:b': {
         $get: {
@@ -715,6 +768,7 @@ describe('MergeSchemaPath', () => {
             }
           }
           output: {}
+          outputFormat: ResponseFormat
           status: StatusCode
         }
       }
@@ -735,6 +789,7 @@ describe('MergeSchemaPath', () => {
             }
           }
           output: {}
+          outputFormat: 'json'
           status: StatusCode
         }
       }
@@ -755,6 +810,7 @@ describe('MergeSchemaPath', () => {
             }
           }
           output: {}
+          outputFormat: 'json'
           status: StatusCode
         }
       }
@@ -793,6 +849,7 @@ describe('Different types using json()', () => {
                 output: {
                   ng: boolean
                 }
+                outputFormat: 'json'
                 status: StatusCode
               }
             | {
@@ -800,6 +857,7 @@ describe('Different types using json()', () => {
                 output: {
                   ok: boolean
                 }
+                outputFormat: 'json'
                 status: StatusCode
               }
             | {
@@ -807,6 +865,7 @@ describe('Different types using json()', () => {
                 output: {
                   default: boolean
                 }
+                outputFormat: 'json'
                 status: StatusCode
               }
         }
@@ -846,6 +905,7 @@ describe('Different types using json()', () => {
                 output: {
                   ng: boolean
                 }
+                outputFormat: 'json'
                 status: 400
               }
             | {
@@ -853,6 +913,7 @@ describe('Different types using json()', () => {
                 output: {
                   ok: boolean
                 }
+                outputFormat: 'json'
                 status: 200
               }
             | {
@@ -860,6 +921,7 @@ describe('Different types using json()', () => {
                 output: {
                   default: boolean
                 }
+                outputFormat: 'json'
                 status: StatusCode
               }
         }
@@ -897,6 +959,7 @@ describe('Different types using json()', () => {
                 output: {
                   ng: boolean
                 }
+                outputFormat: 'json'
                 status: StatusCode
               }
             | {
@@ -904,6 +967,7 @@ describe('Different types using json()', () => {
                 output: {
                   ok: boolean
                 }
+                outputFormat: 'json'
                 status: StatusCode
               }
             | {
@@ -911,6 +975,7 @@ describe('Different types using json()', () => {
                 output: {
                   default: boolean
                 }
+                outputFormat: 'json'
                 status: StatusCode
               }
         }
@@ -950,6 +1015,7 @@ describe('Different types using json()', () => {
                 output: {
                   ng: boolean
                 }
+                outputFormat: 'json'
                 status: 400
               }
             | {
@@ -957,6 +1023,7 @@ describe('Different types using json()', () => {
                 output: {
                   ok: boolean
                 }
+                outputFormat: 'json'
                 status: 200
               }
             | {
@@ -964,6 +1031,7 @@ describe('Different types using json()', () => {
                 output: {
                   default: boolean
                 }
+                outputFormat: 'json'
                 status: StatusCode
               }
         }
@@ -990,6 +1058,7 @@ describe('json() in an async handler', () => {
           output: {
             ok: boolean
           }
+          outputFormat: 'json'
           status: StatusCode
         }
       }
@@ -1014,6 +1083,7 @@ describe('json() in an async handler', () => {
           output: {
             ok: boolean
           }
+          outputFormat: 'json'
           status: 200
         }
       }

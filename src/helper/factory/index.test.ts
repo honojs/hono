@@ -77,7 +77,8 @@ describe('createHandler', () => {
         a: ClientRequest<{
           $get: {
             input: {}
-            output: {}
+            output: 'A'
+            outputFormat: 'text'
             status: StatusCode
           }
         }>
