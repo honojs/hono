@@ -53,19 +53,6 @@ npm create hono@latest
 - **Batteries Included** 🔋 - Hono has built-in middleware, custom middleware, and third-party middleware. Batteries included.
 - **Delightful DX** 😃 - Super clean APIs. First-class TypeScript support. Now, we've got "Types".
 
-## Benchmarks
-
-**Hono is the fastest**, compared to other routers for Cloudflare Workers.
-
-```
-Hono x 510,171 ops/sec ±4.61% (82 runs sampled)
-itty-router x 285,810 ops/sec ±4.13% (85 runs sampled)
-sunder x 345,272 ops/sec ±4.46% (87 runs sampled)
-worktop x 203,468 ops/sec ±3.03% (91 runs sampled)
-Fastest is Hono
-✨  Done in 28.68s.
-```
-
 ## Documentation
 
 The documentation is available on [hono.dev](https://hono.dev).
