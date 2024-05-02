@@ -511,6 +511,7 @@ describe('Merge path with `app.route()`', () => {
   it('Should have correct types - with interface', async () => {
     interface Result {
       ok: boolean
+      okUndefined?: boolean
     }
     const result: Result = { ok: true }
     const base = new Hono<Env>().basePath('/api')
