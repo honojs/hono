@@ -112,8 +112,10 @@ describe('createHandler', () => {
         'get',
         '/posts',
         {
-          query: {
-            page: string
+          in: {
+            query: {
+              page: string
+            }
           }
         },
         TypedResponse<{
@@ -170,16 +172,18 @@ describe('createHandler', () => {
         'get',
         '/posts',
         {
-          header: {
-            auth: string
-          }
-        } & {
-          query: {
-            page: string
-          }
-        } & {
-          json: {
-            id: number
+          in: {
+            header: {
+              auth: string
+            }
+          } & {
+            query: {
+              page: string
+            }
+          } & {
+            json: {
+              id: number
+            }
           }
         },
         TypedResponse<{

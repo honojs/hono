@@ -1,4 +1,3 @@
-import type { UpgradedWebSocketResponseInputJSONType } from '../helper/websocket/index.ts'
 import type { Hono } from '../hono.ts'
 import type { Endpoint, ResponseFormat, Schema } from '../types.ts'
 import type { StatusCode, SuccessStatusCode } from '../utils/http-status.ts'
@@ -34,10 +33,10 @@ export type ClientRequest<S extends Schema> = {
         : {}
       : {}
   ) => URL
-} & (S['$get'] extends { input: { json: UpgradedWebSocketResponseInputJSONType } }
+} & (S['$get'] extends { outputFormat: 'ws' }
     ? S['$get'] extends { input: infer I }
       ? {
-          $ws: (args?: Omit<I, 'json'>) => WebSocket
+          $ws: (args?: I) => WebSocket
         }
       : {}
     : {})
