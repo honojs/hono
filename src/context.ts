@@ -45,8 +45,8 @@ interface NewResponse {
 interface BodyRespond extends NewResponse {}
 
 interface TextRespond {
-  (text: string, status?: StatusCode, headers?: HeaderRecord): Response
-  (text: string, init?: ResponseInit): Response
+  <T extends string>(text: T, status?: StatusCode, headers?: HeaderRecord): Response & TypedResponse<T>
+  <T extends string>(text: T, init?: ResponseInit): Response & TypedResponse<T>
 }
 
 interface JSONRespond {
