@@ -45,8 +45,10 @@ interface NewResponse {
 interface BodyRespond extends NewResponse {}
 
 interface TextRespond {
-  <T extends string>(text: T, status?: StatusCode, headers?: HeaderRecord): Response & TypedResponse<T>
-  <T extends string>(text: T, init?: ResponseInit): Response & TypedResponse<T>
+  <T extends string, U extends StatusCode>(text: T, status?: U, headers?: HeaderRecord): Response &
+    TypedResponse<T, U, 'text'>
+  <T extends string, U extends StatusCode>(text: T, init?: ResponseInit): Response &
+    TypedResponse<T, U, 'text'>
 }
 
 interface JSONRespond {
@@ -61,7 +63,8 @@ interface JSONRespond {
           ? never
           : JSONParsed<T>
         : never,
-      U
+      U,
+      'json'
     >
   <T extends JSONValue | Simplify<any>, U extends StatusCode>(
     object: Simplify<T> extends JSONValue ? T : Simplify<T>,
@@ -73,7 +76,8 @@ interface JSONRespond {
           ? never
           : JSONParsed<T>
         : never,
-      U
+      U,
+      'json'
     >
 }
 
@@ -462,11 +466,13 @@ export class Context<
     // Content-Type will be added automatically as `text/plain`.
     if (!this.#preparedHeaders) {
       if (this.#isFresh && !headers && !arg) {
+        // @ts-expect-error `Response` due to missing some types-only keys
         return new Response(text)
       }
       this.#preparedHeaders = {}
     }
     this.#preparedHeaders['content-type'] = TEXT_PLAIN
+    // @ts-expect-error `Response` due to missing some types-only keys
     return typeof arg === 'number'
       ? this.newResponse(text, arg, headers)
       : this.newResponse(text, arg)
