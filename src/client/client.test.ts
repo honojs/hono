@@ -828,6 +828,97 @@ describe('Dynamic headers', () => {
   })
 })
 
+describe('RequestInit work as expected', () => {
+  const app = new Hono()
+
+  const route = app
+    .get('/credentials', (c) => {
+      return c.text('' as RequestCredentials)
+    })
+    .get('/headers', (c) => {
+      return c.json({} as Record<string, string>)
+    })
+    .post('/headers', (c) => c.text('Not found', 404))
+
+  type AppType = typeof route
+
+  const server = setupServer(
+    rest.get('http://localhost/credentials', async (req, res, ctx) => {
+      return res(ctx.status(200), ctx.text(req.credentials))
+    }),
+    rest.get('http://localhost/headers', async (req, res, ctx) => {
+      const allHeaders: Record<string, string> = {}
+      for (const [k, v] of req.headers.entries()) {
+        allHeaders[k] = v
+      }
+
+      return res(ctx.status(200), ctx.json(allHeaders))
+    }),
+    rest.post('http://localhost/headers', async (req, res, ctx) => {
+      return res(ctx.status(400), ctx.text('Should not be here'))
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  const client = hc<AppType>('http://localhost', {
+    headers: { 'x-hono': 'fire' },
+    init: {
+      credentials: 'include',
+    },
+  })
+
+  it('Should overwrite method and fail', async () => {
+    const res = await client.headers.$get(undefined, { init: { method: 'POST' } })
+
+    expect(res.ok).toBe(false)
+  })
+
+  it('Should clear headers', async () => {
+    const res = await client.headers.$get(undefined, { init: { headers: undefined } })
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data).toEqual({})
+  })
+
+  it('Should overwrite headers', async () => {
+    const res = await client.headers.$get(undefined, {
+      init: { headers: new Headers({ 'x-hono': 'awesome' }) },
+    })
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data).toEqual({ 'x-hono': 'awesome' })
+  })
+
+  it('credentials is include', async () => {
+    const res = await client.credentials.$get()
+
+    expect(res.ok).toBe(true)
+    const data = await res.text()
+    expect(data).toEqual('include')
+  })
+
+  it('deepMerge should works and not unset credentials', async () => {
+    const res = await client.credentials.$get(undefined, { init: { headers: { hi: 'hello' } } })
+
+    expect(res.ok).toBe(true)
+    const data = await res.text()
+    expect(data).toEqual('include')
+  })
+
+  it('Should unset credentials', async () => {
+    const res = await client.credentials.$get(undefined, { init: { credentials: undefined } })
+
+    expect(res.ok).toBe(true)
+    const data = await res.text()
+    expect(data).toEqual('same-origin')
+  })
+})
+
 describe('WebSocket URL Protocol Translation', () => {
   const app = new Hono()
   const route = app.get(
