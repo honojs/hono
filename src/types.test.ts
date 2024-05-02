@@ -320,9 +320,11 @@ describe('Schema', () => {
         'post',
         '/api/posts/:id',
         {
-          json: {
-            id: number
-            title: string
+          in: {
+            json: {
+              id: number
+              title: string
+            }
           }
         },
         TypedResponse<
@@ -596,7 +598,7 @@ describe('ToSchema', () => {
     type Actual = ToSchema<
       'get',
       '/:id',
-      { param: { id: string }; query: { page: string } },
+      { in: { param: { id: string }; query: { page: string } } },
       TypedResponse<{}>
     >
     type Expected = {
@@ -647,9 +649,11 @@ describe('MergeSchemaPath', () => {
       'post',
       '/posts',
       {
-        json: {
-          id: number
-          title: string
+        in: {
+          json: {
+            id: number
+            title: string
+          }
         }
       },
       TypedResponse<{
