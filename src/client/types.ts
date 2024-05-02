@@ -55,10 +55,10 @@ type ClientResponseOfEndpoint<T extends Endpoint = Endpoint> = T extends {
   output: infer O
   status: infer S
 }
-  ? ClientResponse<O, S>
+  ? ClientResponse<O, S extends number ? S : never>
   : never
 
-export interface ClientResponse<T, U = StatusCode> {
+export interface ClientResponse<T, U extends number = StatusCode, > extends globalThis.Response {
   readonly body: ReadableStream | null
   readonly bodyUsed: boolean
   ok: U extends SuccessStatusCode
