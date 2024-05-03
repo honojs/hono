@@ -1,4 +1,4 @@
-import type { Context } from '../../context.ts'
+import type { Context, Data } from '../../context.ts'
 import type { Env, MiddlewareHandler } from '../../types.ts'
 import { getFilePath, getFilePathWithoutDefaultDocument } from '../../utils/filepath.ts'
 import { getMimeType } from '../../utils/mime.ts'
@@ -19,8 +19,7 @@ const defaultPathResolve = (path: string) => path
  */
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E> & {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getContent: (path: string) => any
+    getContent: (path: string, c: Context<E>) => Promise<Data | Response | null>
     pathResolve?: (path: string) => string
   }
 ): MiddlewareHandler => {
@@ -49,7 +48,7 @@ export const serveStatic = <E extends Env = Env>(
     const pathResolve = options.pathResolve ?? defaultPathResolve
 
     path = pathResolve(path)
-    let content = await getContent(path)
+    let content = await getContent(path, c)
 
     if (!content) {
       let pathWithOutDefaultDocument = getFilePathWithoutDefaultDocument({
@@ -60,10 +59,14 @@ export const serveStatic = <E extends Env = Env>(
         return await next()
       }
       pathWithOutDefaultDocument = pathResolve(pathWithOutDefaultDocument)
-      content = await getContent(pathWithOutDefaultDocument)
+      content = await getContent(pathWithOutDefaultDocument, c)
       if (content) {
         path = pathWithOutDefaultDocument
       }
+    }
+
+    if (content instanceof Response) {
+      return c.newResponse(content.body, content)
     }
 
     if (content) {

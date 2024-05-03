@@ -123,6 +123,7 @@ class ClientRequestImpl {
       body: setBody ? this.rBody : undefined,
       method: methodUpperCase,
       headers: headers,
+      ...opt?.init,
     })
   }
 }

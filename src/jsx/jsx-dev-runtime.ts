@@ -13,7 +13,6 @@ export function jsxDEV(
     node = jsxFn(tag, props, [])
   } else {
     const children = props.children as string | HtmlEscapedString
-    delete props['children']
     node = Array.isArray(children) ? jsxFn(tag, props, children) : jsxFn(tag, props, [children])
   }
   node.key = key
