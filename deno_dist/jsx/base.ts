@@ -4,11 +4,16 @@ import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html
 import type { Context } from './context.ts'
 import { globalContexts } from './context.ts'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements.ts'
-import { normalizeIntrinsicElementProps } from './utils.ts'
+import { normalizeIntrinsicElementProps, styleObjectForEach } from './utils.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
-export type FC<T = Props> = (props: T) => HtmlEscapedString | Promise<HtmlEscapedString>
+export type FC<P = Props> = {
+  (props: P): HtmlEscapedString | Promise<HtmlEscapedString>
+  defaultProps?: Partial<P> | undefined
+  displayName?: string | undefined
+}
+export type DOMAttributes = Hono.HTMLAttributes
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -114,6 +119,16 @@ export class JSXNode implements HtmlEscaped {
     this.children = children
   }
 
+  get type(): string | Function {
+    return this.tag as string
+  }
+
+  // Added for compatibility with libraries that rely on React's internal structure
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get ref(): any {
+    return this.props.ref || null
+  }
+
   toString(): string | Promise<string> {
     const buffer: StringBuffer = ['']
     this.localContexts?.forEach(([context, value]) => {
@@ -141,16 +156,18 @@ export class JSXNode implements HtmlEscaped {
     for (let i = 0, len = propsKeys.length; i < len; i++) {
       const key = propsKeys[i]
       const v = props[key]
-      // object to style strings
-      if (key === 'style' && typeof v === 'object') {
-        const styles = Object.keys(v)
-          .map((k) => {
-            const property = k.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)
-            return `${property}:${v[k]}`
-          })
-          .join(';')
+      if (key === 'children') {
+        // skip children
+      } else if (key === 'style' && typeof v === 'object') {
+        // object to style strings
+        let styleStr = ''
+        styleObjectForEach(v, (property, value) => {
+          if (value != null) {
+            styleStr += `${styleStr ? ';' : ''}${property}:${value}`
+          }
+        })
         buffer[0] += ' style="'
-        escapeToBuffer(styles, buffer)
+        escapeToBuffer(styleStr, buffer)
         buffer[0] += '"'
       } else if (typeof v === 'string') {
         buffer[0] += ` ${key}="`
@@ -241,14 +258,17 @@ export class JSXFragmentNode extends JSXNode {
 
 export const jsx = (
   tag: string | Function,
-  props: Props,
-  ...children: (string | HtmlEscapedString)[]
+  props: Props | null,
+  ...children: (string | number | HtmlEscapedString)[]
 ): JSXNode => {
-  let key
-  if (props) {
-    key = props?.key
-    delete props['key']
+  props ??= {}
+  if (children.length) {
+    props.children = children.length === 1 ? children[0] : children
   }
+
+  const key = props.key
+  delete props['key']
+
   const node = jsxFn(tag, props, children)
   node.key = key
   return node
@@ -257,7 +277,7 @@ export const jsx = (
 export const jsxFn = (
   tag: string | Function,
   props: Props,
-  children: (string | HtmlEscapedString)[]
+  children: (string | number | HtmlEscapedString)[]
 ): JSXNode => {
   if (typeof tag === 'function') {
     return new JSXFunctionNode(tag, props, children)
@@ -317,19 +337,15 @@ export const Fragment = ({
 }): HtmlEscapedString => {
   return new JSXFragmentNode(
     '',
-    {},
+    {
+      children,
+    },
     Array.isArray(children) ? children : children ? [children] : []
   ) as never
 }
 
 export const isValidElement = (element: unknown): element is JSXNode => {
-  return !!(
-    element &&
-    typeof element === 'object' &&
-    'tag' in element &&
-    'props' in element &&
-    'children' in element
-  )
+  return !!(element && typeof element === 'object' && 'tag' in element && 'props' in element)
 }
 
 export const cloneElement = <T extends JSXNode | JSX.Element>(
@@ -337,10 +353,9 @@ export const cloneElement = <T extends JSXNode | JSX.Element>(
   props: Partial<Props>,
   ...children: Child[]
 ): T => {
-  return jsxFn(
+  return jsx(
     (element as JSXNode).tag,
     { ...(element as JSXNode).props, ...props },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    children.length ? children : ((element as JSXNode).children as any) || []
+    ...(children as (string | number | HtmlEscapedString)[])
   ) as T
 }

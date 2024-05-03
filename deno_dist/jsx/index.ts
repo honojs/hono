@@ -1,4 +1,6 @@
 import { jsx, memo, Fragment, isValidElement, cloneElement } from './base.ts'
+import type { DOMAttributes } from './base.ts'
+import { Children } from './children.ts'
 import { ErrorBoundary } from './components.ts'
 import { createContext, useContext } from './context.ts'
 import {
@@ -17,6 +19,10 @@ import {
   useReducer,
   useId,
   useDebugValue,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
 } from './hooks/index.ts'
 import { Suspense } from './streaming.ts'
 
@@ -45,7 +51,13 @@ export {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
   Suspense,
+  Children,
+  DOMAttributes,
 }
 
 export default {
@@ -72,7 +84,12 @@ export default {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
   Suspense,
+  Children,
 }
 
 // TODO: change to `export type *` after denoify bug is fixed
