@@ -5,17 +5,24 @@ import type { HasRequiredKeys } from '../utils/types'
 
 type HonoRequest = (typeof Hono.prototype)['request']
 
-export type ClientRequestOptions<T = unknown> = keyof T extends never
+export type ClientRequestOptions<T = unknown> = {
+  fetch?: typeof fetch | HonoRequest
+  /**
+   * Standard `RequestInit`, caution that this take highest priority
+   * and could be used to overwrite things that Hono sets for you, like `body | method | headers`.
+   *
+   * If you want to add some headers, use in `headers` instead of `init`
+   */
+  init?: RequestInit
+} & (keyof T extends never
   ? {
       headers?:
         | Record<string, string>
         | (() => Record<string, string> | Promise<Record<string, string>>)
-      fetch?: typeof fetch | HonoRequest
     }
   : {
       headers: T | (() => T | Promise<T>)
-      fetch?: typeof fetch | HonoRequest
-    }
+    })
 
 export type ClientRequest<S extends Schema> = {
   [M in keyof S]: S[M] extends Endpoint & { input: infer R }
