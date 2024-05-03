@@ -5,7 +5,7 @@ import { getConnInfo } from './conninfo'
 describe('getConnInfo', () => {
   it('Should getConnInfo works', () => {
     const address = Math.random().toString()
-    const req = new Request('/', {
+    const req = new Request('http://localhost/', {
       headers: {
         'cf-connecting-ip': address,
       },

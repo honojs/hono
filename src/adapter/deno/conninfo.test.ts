@@ -7,7 +7,7 @@ describe('getConnInfo', () => {
     const transport = 'tcp'
     const address = Math.random().toString()
     const port = Math.floor(Math.random() * (65535 + 1))
-    const c = new Context(new HonoRequest(new Request('/')), {
+    const c = new Context(new HonoRequest(new Request('http://localhost/')), {
       env: {
         remoteAddr: {
           transport,
