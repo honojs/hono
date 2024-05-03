@@ -333,6 +333,11 @@
       "types": "./dist/types/helper/websocket/index.d.ts",
       "import": "./dist/helper/websocket/index.js",
       "require": "./dist/cjs/helper/websocket/index.js"
+    },
+    "./conninfo": {
+      "types": "./dist/types/helper/conninfo/index.d.ts",
+      "import": "./dist/helper/conninfo/index.js",
+      "require": "./dist/cjs/helper/conninfo/index.js"
     }
   },
   "typesVersions": {
@@ -507,6 +512,9 @@
       ],
       "ws": [
         "./dist/types/helper/websocket"
+      ],
+      "conninfo": [
+        "./dist/types/helper/conninfo"
       ]
     }
   },
