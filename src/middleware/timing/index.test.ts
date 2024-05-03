@@ -55,4 +55,89 @@ describe('Server-Timing API', () => {
     expect(res.headers.get('server-timing')?.includes(region)).toBeTruthy()
     expect(res.headers.get('server-timing')?.includes(regionDesc)).toBeTruthy()
   })
+
+  describe('Should handle crossOrigin setting', async () => {
+    it('Should do nothing when crossOrigin is falsy', async () => {
+      const crossOriginApp = new Hono()
+
+      crossOriginApp.use(
+        '*',
+        timing({
+          crossOrigin: false,
+        })
+      )
+
+      crossOriginApp.get('/', (c) => c.text('/'))
+
+      const res = await crossOriginApp.request('http://localhost/')
+
+      expect(res).not.toBeNull()
+      expect(res.headers.has('server-timing')).toBeTruthy()
+      expect(res.headers.has('timing-allow-origin')).toBeFalsy()
+    })
+
+    it('Should set Timing-Allow-Origin to * when crossOrigin is true', async () => {
+      const crossOriginApp = new Hono()
+
+      crossOriginApp.use(
+        '*',
+        timing({
+          crossOrigin: true,
+        })
+      )
+
+      crossOriginApp.get('/', (c) => c.text('/'))
+
+      const res = await crossOriginApp.request('http://localhost/')
+
+      expect(res).not.toBeNull()
+      expect(res.headers.has('server-timing')).toBeTruthy()
+      expect(res.headers.has('timing-allow-origin')).toBeTruthy()
+      expect(res.headers.get('timing-allow-origin')).toBe('*')
+    })
+
+    it('Should set Timing-Allow-Origin to the value of crossOrigin when it is a string', async () => {
+      const crossOriginApp = new Hono()
+
+      crossOriginApp.use(
+        '*',
+        timing({
+          crossOrigin: 'https://example.com',
+        })
+      )
+
+      crossOriginApp.get('/', (c) => c.text('/'))
+
+      const res = await crossOriginApp.request('http://localhost/')
+
+      expect(res).not.toBeNull()
+      expect(res.headers.has('server-timing')).toBeTruthy()
+      expect(res.headers.has('timing-allow-origin')).toBeTruthy()
+      expect(res.headers.get('timing-allow-origin')).toBe('https://example.com')
+    })
+
+    it('Should set Timing-Allow-Origin to the return value of crossOrigin when it is a function', async () => {
+      const crossOriginApp = new Hono()
+
+      crossOriginApp.use(
+        '*',
+        timing({
+          crossOrigin: (c) => c.req.header('origin') ?? '*',
+        })
+      )
+
+      crossOriginApp.get('/', (c) => c.text('/'))
+
+      const res = await crossOriginApp.request('http://localhost/', {
+        headers: {
+          origin: 'https://example.com',
+        },
+      })
+
+      expect(res).not.toBeNull()
+      expect(res.headers.has('server-timing')).toBeTruthy()
+      expect(res.headers.has('timing-allow-origin')).toBeTruthy()
+      expect(res.headers.get('timing-allow-origin')).toBe('https://example.com')
+    })
+  })
 })
