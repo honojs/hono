@@ -1,23 +1,19 @@
-import { createMiddleware } from '../../helper'
 import { Hono } from '../../hono'
 import { serveStatic as baseServeStatic } from '.'
 
 describe('Serve Static Middleware', () => {
   const app = new Hono()
 
-  const serveStatic = createMiddleware(async (c, next) => {
-    const mw = baseServeStatic({
-      getContent: (path) => {
-        if (path.endsWith('not-found.txt')) {
-          return undefined
-        }
-        return `Hello in ${path}`
-      },
-      pathResolve: (path) => {
-        return `./${path}`
-      },
-    })
-    return await mw(c, next)
+  const serveStatic = baseServeStatic({
+    getContent: async (path) => {
+      if (path.endsWith('not-found.txt')) {
+        return null
+      }
+      return `Hello in ${path}`
+    },
+    pathResolve: (path) => {
+      return `./${path}`
+    },
   })
 
   app.get('/static/*', serveStatic)
@@ -55,5 +51,25 @@ describe('Serve Static Middleware', () => {
     } as Request)
     expect(res.status).toBe(404)
     expect(await res.text()).toBe('404 Not Found')
+  })
+
+  it('Should return response object content as-is', async () => {
+    const body = new ReadableStream()
+    const response = new Response(body)
+    const app = new Hono().use(
+      '*',
+      baseServeStatic({
+        getContent: async () => {
+          return response
+        },
+      })
+    )
+
+    const res = await app.fetch({
+      method: 'GET',
+      url: 'http://localhost',
+    } as Request)
+    expect(res.status).toBe(200)
+    expect(res.body).toBe(body)
   })
 })

@@ -16,6 +16,10 @@ import {
   useViewTransition,
   useId,
   useDebugValue,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
 } from '.'
 
 describe('Hooks', () => {
@@ -468,6 +472,96 @@ describe('Hooks', () => {
       render(<App />, root)
       expect(root.innerHTML).toBe('<div></div>')
       expect(spy).not.toBeCalled()
+    })
+  })
+
+  describe('createRef()', () => {
+    it('simple', () => {
+      const ref: { current: HTMLElement | null } = createRef<HTMLDivElement>()
+      const App = () => {
+        return <div ref={ref} />
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div></div>')
+      expect(ref.current).toBeInstanceOf(HTMLElement)
+    })
+  })
+
+  describe('forwardRef()', () => {
+    it('simple', () => {
+      const ref: { current: HTMLElement | null } = createRef<HTMLDivElement>()
+      const App = forwardRef((props, ref) => {
+        return <div {...props} ref={ref} />
+      })
+      render(<App ref={ref} />, root)
+      expect(root.innerHTML).toBe('<div></div>')
+      expect(ref.current).toBeInstanceOf(HTMLElement)
+    })
+  })
+
+  describe('useImperativeHandle()', () => {
+    it('simple', async () => {
+      const ref: { current: { focus: () => void } | null } = createRef()
+      const SubApp = () => {
+        useImperativeHandle(
+          ref,
+          () => ({
+            focus: () => {
+              console.log('focus')
+            },
+          }),
+          []
+        )
+        return <div />
+      }
+      const App = () => {
+        const [show, setShow] = useState(true)
+        return (
+          <>
+            {show && <SubApp />}
+            <button onClick={() => setShow((s) => !s)}>toggle</button>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(ref.current).toBe(null)
+      await new Promise((r) => setTimeout(r))
+      expect(ref.current).toEqual({ focus: expect.any(Function) })
+      root.querySelector('button')?.click()
+      await new Promise((r) => setTimeout(r))
+      expect(ref.current).toBe(null)
+    })
+  })
+
+  describe('useSyncExternalStore()', () => {
+    it('simple', async () => {
+      let count = 0
+      const unsubscribe = vi.fn()
+      const subscribe = vi.fn(() => unsubscribe)
+      const getSnapshot = vi.fn(() => count++)
+      const SubApp = () => {
+        const count = useSyncExternalStore(subscribe, getSnapshot)
+        return <div>{count}</div>
+      }
+      const App = () => {
+        const [show, setShow] = useState(true)
+        return (
+          <>
+            {show && <SubApp />}
+            <button onClick={() => setShow((s) => !s)}>toggle</button>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div>0</div><button>toggle</button>')
+      await new Promise((r) => setTimeout(r))
+      root.querySelector('button')?.click()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>toggle</button>')
+      expect(unsubscribe).toBeCalled()
+      root.querySelector('button')?.click()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div>1</div><button>toggle</button>')
     })
   })
 })
