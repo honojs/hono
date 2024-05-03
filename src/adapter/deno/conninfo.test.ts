@@ -12,12 +12,12 @@ describe('getConnInfo', () => {
         remoteAddr: {
           transport,
           hostname: address,
-          port
-        }
-      }
+          port,
+        },
+      },
     })
     const info = getConnInfo(c)
-    
+
     expect(info.remote.port).toBe(port)
     expect(info.remote.address).toBe(address)
     expect(info.remote.transport).toBe(transport)

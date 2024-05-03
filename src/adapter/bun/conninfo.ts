@@ -7,19 +7,21 @@ import type { GetConnInfo } from '../../helper/conninfo'
  * @returns ConnInfo
  */
 export const getConnInfo: GetConnInfo = (c: Context) => {
-  const info = (c.env as {
-    requestIP(req: Request): {
-      address: string
-      family: string
-      port: number
+  const info = (
+    c.env as {
+      requestIP(req: Request): {
+        address: string
+        family: string
+        port: number
+      }
     }
-  }).requestIP(c.req.raw)
+  ).requestIP(c.req.raw)
 
   return {
     remote: {
       address: info.address,
-      addressType: (info.family === 'IPv6' || info.family === 'IPv4') ? info.family : 'unknown',
-      port: info.port
-    }
+      addressType: info.family === 'IPv6' || info.family === 'IPv4' ? info.family : 'unknown',
+      port: info.port,
+    },
   }
 }

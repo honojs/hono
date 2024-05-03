@@ -14,17 +14,20 @@ export type NetAddrInfo = {
 
   address?: string
   addressType?: AddressType
-} & ({
-  /**
-   * Host name such as IP Addr
-   */
-  address: string
+} & (
+  | {
+      /**
+       * Host name such as IP Addr
+       */
+      address: string
 
-  /**
-   * Host name type
-   */
-  addressType: AddressType
-} | {})
+      /**
+       * Host name type
+       */
+      addressType: AddressType
+    }
+  | {}
+)
 
 /**
  * HTTP Connection infomation

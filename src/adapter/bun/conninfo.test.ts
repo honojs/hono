@@ -12,13 +12,13 @@ describe('getConnInfo', () => {
           return {
             address,
             family: 'IPv6',
-            port
+            port,
           }
-        }
-      }
+        },
+      },
     })
     const info = getConnInfo(c)
-    
+
     expect(info.remote.port).toBe(port)
     expect(info.remote.address).toBe(address)
     expect(info.remote.addressType).toBe('IPv6')

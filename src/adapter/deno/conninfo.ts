@@ -12,7 +12,7 @@ export const getConnInfo: GetConnInfo = (c) => {
       address: remoteAddr.hostname,
       port: remoteAddr.port,
       transport: remoteAddr.transport,
-      addressType: 'unknown'
-    }
+      addressType: 'unknown',
+    },
   }
 }
