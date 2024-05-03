@@ -1,5 +1,5 @@
-import { HonoRequest } from '../../request'
 import { Context } from '../../context'
+import { HonoRequest } from '../../request'
 import { getConnInfo } from './conninfo'
 
 describe('getConnInfo', () => {

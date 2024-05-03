@@ -1,6 +1,6 @@
 import { Context } from '../../context'
-import { getConnInfo } from './conninfo'
 import { HonoRequest } from '../../request'
+import { getConnInfo } from './conninfo'
 
 describe('getConnInfo', () => {
   it('Should info is valid', () => {

@@ -1,4 +1,5 @@
-import { GetConnInfo } from '../../helper/conninfo'
+// @denoify-ignore
+import type { GetConnInfo } from '../../helper/conninfo'
 
 export const getConnInfo: GetConnInfo = (c) => ({
   remote: {
