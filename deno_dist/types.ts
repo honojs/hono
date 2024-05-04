@@ -6,9 +6,11 @@ import type { Hono } from './hono.ts'
 import type { StatusCode } from './utils/http-status.ts'
 import type {
   IfAnyThenEmptyObject,
+  IsAny,
   JSONValue,
   Prettify,
   RemoveBlankRecord,
+  Simplify,
   UnionToIntersection,
 } from './utils/types.ts'
 
@@ -28,6 +30,11 @@ export type Env = {
 
 export type Next = () => Promise<void>
 
+export type ExtractInput<I extends Input | Input['in']> = I extends Input
+  ? unknown extends I['in']
+    ? {}
+    : I['in']
+  : I
 export type Input = {
   in?: {}
   out?: {}
@@ -1595,22 +1602,35 @@ type ExtractKey<S> = S extends Record<infer Key, unknown>
 export type ToSchema<
   M extends string,
   P extends string,
-  I extends Input,
-  R extends TypedResponse
+  I extends Input | Input['in'],
+  RorO // Response or Output
 > = Prettify<{
   [K in P]: {
-    [K2 in M as AddDollar<K2>]: R extends TypedResponse<infer T, infer U, infer F>
-      ? {
-          input: unknown extends I['in'] ? AddParam<{}, P> : AddParam<I['in'], P>
-          output: unknown extends T ? {} : T
-          outputFormat: I extends { outputFormat: string }
-            ? I['outputFormat']
-            : unknown extends F
-            ? never
-            : F
-          status: U
-        }
-      : never
+    [K2 in M as AddDollar<K2>]: Simplify<
+      {
+        input: AddParam<ExtractInput<I>, P>
+      } & (IsAny<RorO> extends true
+        ? {
+            output: {}
+            outputFormat: ResponseFormat
+            status: StatusCode
+          }
+        : RorO extends TypedResponse<infer T, infer U, infer F>
+        ? {
+            output: unknown extends T ? {} : T
+            outputFormat: I extends { outputFormat: string } ? I['outputFormat'] : F
+            status: U
+          }
+        : {
+            output: unknown extends RorO ? {} : RorO
+            outputFormat: unknown extends RorO
+              ? 'json'
+              : I extends { outputFormat: string }
+              ? I['outputFormat']
+              : 'json'
+            status: StatusCode
+          })
+    >
   }
 }>
 
