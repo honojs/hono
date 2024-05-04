@@ -1657,43 +1657,47 @@ type ExtractParams<Path extends string> = string extends Path
 
 type FlattenIfIntersect<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
+type UpdateInputFromOrigSchema<T, SubPath extends string> = T extends {
+  input: infer Input
+  output: infer Output
+  outputFormat: infer OutputFormat
+  status: infer Status
+}
+  ? Prettify<
+      Omit<T, 'input'> & {
+        input: Input extends { param: infer _ }
+          ? ExtractParams<SubPath> extends never
+            ? Input
+            : FlattenIfIntersect<
+                Input & {
+                  param: {
+                    // Maps extracted keys, stripping braces, to a string-typed record.
+                    [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
+                      ? Prefix
+                      : K]: string
+                  }
+                }
+              >
+          : RemoveBlankRecord<ExtractParams<SubPath>> extends never
+          ? Input
+          : Input & {
+              // Maps extracted keys, stripping braces, to a string-typed record.
+              param: {
+                [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
+                  ? Prefix
+                  : K]: string
+              }
+            }
+        output: Output
+        outputFormat: OutputFormat
+        status: Status
+      }
+    >
+  : never
+
 export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = Prettify<{
   [P in keyof OrigSchema as MergePath<SubPath, P & string>]: {
-    [M in keyof OrigSchema[P]]: OrigSchema[P][M] extends {
-      input: infer Input
-      output: infer Output
-      outputFormat: infer OutputFormat
-      status: infer Status
-    }
-      ? {
-          input: Input extends { param: infer _ }
-            ? ExtractParams<SubPath> extends never
-              ? Input
-              : FlattenIfIntersect<
-                  Input & {
-                    param: {
-                      // Maps extracted keys, stripping braces, to a string-typed record.
-                      [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
-                        ? Prefix
-                        : K]: string
-                    }
-                  }
-                >
-            : RemoveBlankRecord<ExtractParams<SubPath>> extends never
-            ? Input
-            : Input & {
-                // Maps extracted keys, stripping braces, to a string-typed record.
-                param: {
-                  [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
-                    ? Prefix
-                    : K]: string
-                }
-              }
-          output: Output
-          outputFormat: OutputFormat
-          status: Status
-        }
-      : never
+    [M in keyof OrigSchema[P]]: Prettify<UpdateInputFromOrigSchema<OrigSchema[P][M], SubPath>>
   }
 }>
 

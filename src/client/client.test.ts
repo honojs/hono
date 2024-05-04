@@ -758,12 +758,12 @@ describe('Infer the response type with different status codes when using .route(
     }
     return c.json(null)
   })
-  const app = new Hono().route('/', router)
+  const app = new Hono().route('/hello', router)
 
   const client = hc<typeof app>('', { fetch: app.request })
 
   it('Should infer response type correctly', () => {
-    const req = client.index.$get
+    const req = client.hello.$get
 
     type Actual = InferResponseType<typeof req>
     type Expected =
@@ -778,7 +778,7 @@ describe('Infer the response type with different status codes when using .route(
   })
 
   it('Should infer response type of status 200 correctly', () => {
-    const req = client.index.$get
+    const req = client.hello.$get
 
     type Actual = InferResponseType<typeof req, 200>
     type Expected = {
