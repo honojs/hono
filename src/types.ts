@@ -1605,8 +1605,6 @@ export type ToSchema<
           output: unknown extends T ? {} : T
           outputFormat: I extends { outputFormat: string }
             ? I['outputFormat']
-            : unknown extends F
-            ? never
             : F
           status: U
         }
