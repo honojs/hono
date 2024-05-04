@@ -1658,13 +1658,9 @@ type ExtractParams<Path extends string> = string extends Path
 type FlattenIfIntersect<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
 export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = Prettify<{
-  [P in keyof OrigSchema as MergePath<SubPath, P & string>]: OrigSchema[P] extends {
-    [M in keyof OrigSchema[P]]: OrigSchema[P][M]
+  [P in keyof OrigSchema as MergePath<SubPath, P & string>]: {
+    [M in keyof OrigSchema[P]]: MergeEndpointParamsWithPath<OrigSchema[P][M], SubPath>
   }
-    ? {
-        [M in keyof OrigSchema[P]]: MergeEndpointParamsWithPath<OrigSchema[P][M], SubPath>
-      }
-    : never
 }>
 
 type MergeEndpointParamsWithPath<T, SubPath extends string> = T extends {
