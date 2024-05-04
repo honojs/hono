@@ -1662,12 +1662,12 @@ export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> =
     [M in keyof OrigSchema[P]]: OrigSchema[P][M]
   }
     ? {
-        [M in keyof OrigSchema[P]]: MergeEndpointPath<OrigSchema[P][M], SubPath>
+        [M in keyof OrigSchema[P]]: MergeEndpointParamsWithPath<OrigSchema[P][M], SubPath>
       }
     : never
 }>
 
-type MergeEndpointPath<T, SubPath extends string> = T extends {
+type MergeEndpointParamsWithPath<T, SubPath extends string> = T extends {
   input: infer Input
   output: infer Output
   outputFormat: infer OutputFormat
