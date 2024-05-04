@@ -28,6 +28,7 @@ export type Env = {
 
 export type Next = () => Promise<void>
 
+export type ExtractInput<I extends Input | Input['in']> = I extends Input ? (unknown extends I['in'] ? {} : I['in']) : I
 export type Input = {
   in?: {}
   out?: {}
@@ -1595,17 +1596,15 @@ type ExtractKey<S> = S extends Record<infer Key, unknown>
 export type ToSchema<
   M extends string,
   P extends string,
-  I extends Input,
+  I extends Input | Input['in'],
   R extends TypedResponse
 > = Prettify<{
   [K in P]: {
     [K2 in M as AddDollar<K2>]: R extends TypedResponse<infer T, infer U, infer F>
       ? {
-          input: unknown extends I['in'] ? AddParam<{}, P> : AddParam<I['in'], P>
+          input: AddParam<ExtractInput<I>, P>
           output: unknown extends T ? {} : T
-          outputFormat: I extends { outputFormat: string }
-            ? I['outputFormat']
-            : F
+          outputFormat: I extends { outputFormat: string } ? I['outputFormat'] : F
           status: U
         }
       : never
