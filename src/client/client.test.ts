@@ -746,6 +746,48 @@ describe('Infer the response type with different status codes', () => {
   })
 })
 
+describe('Infer the response type with different status codes when using .route()', () => {
+  const condition = () => true
+  const router = new Hono().get('/', async (c) => {
+    const ok = condition()
+    if (ok) {
+      return c.json({ data: 'foo' }, 200)
+    }
+    if (!ok) {
+      return c.json({ message: 'error' }, 400)
+    }
+    return c.json(null)
+  })
+  const app = new Hono().route('/hello', router)
+
+  const client = hc<typeof app>('', { fetch: app.request })
+
+  it('Should infer response type correctly', () => {
+    const req = client.hello.$get
+
+    type Actual = InferResponseType<typeof req>
+    type Expected =
+      | {
+          data: string
+        }
+      | {
+          message: string
+        }
+      | null
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer response type of status 200 correctly', () => {
+    const req = client.hello.$get
+
+    type Actual = InferResponseType<typeof req, 200>
+    type Expected = {
+      data: string
+    } | null
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
 describe('$url() with a param option', () => {
   const app = new Hono().get('/posts/:id/comments', (c) => c.json({ ok: true }))
   type AppType = typeof app
