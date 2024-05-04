@@ -821,6 +821,55 @@ describe('MergeSchemaPath', () => {
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
+
+  test('MergeSchemaPath - Method has Endpoints as Union', () => {
+    type Actual = MergeSchemaPath<
+      {
+        '/': {
+          $get:
+            | {
+                input: {}
+                output: {
+                  error: string
+                }
+                outputFormat: 'json'
+                status: 404
+              }
+            | {
+                input: {}
+                output: {
+                  success: boolean
+                }
+                outputFormat: 'json'
+                status: 200
+              }
+        }
+      },
+      '/api/hello'
+    >
+    type Expected = {
+      '/api/hello': {
+        $get:
+          | {
+              input: {}
+              output: {
+                error: string
+              }
+              outputFormat: 'json'
+              status: 404
+            }
+          | {
+              input: {}
+              output: {
+                success: boolean
+              }
+              outputFormat: 'json'
+              status: 200
+            }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
 })
 
 describe('Different types using json()', () => {
