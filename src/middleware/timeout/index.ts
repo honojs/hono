@@ -3,8 +3,8 @@ import type { MiddlewareHandler } from '../../types'
 import type { StatusCode } from '../../utils/http-status'
 
 interface TimeoutOptions {
-  errorMessage?: string
-  errorCode?: StatusCode
+  message?: string
+  code?: StatusCode
 }
 
 const DEFAULT_ERROR_MESSAGE = 'Gateway Timeout'
@@ -37,8 +37,8 @@ export const timeout = (
   duration: number | string,
   options: TimeoutOptions = {}
 ): MiddlewareHandler => {
-  const errorMessage = options.errorMessage ?? DEFAULT_ERROR_MESSAGE
-  const errorCode = options.errorCode ?? DEFAULT_ERROR_CODE
+  const errorMessage = options.message ?? DEFAULT_ERROR_MESSAGE
+  const errorCode = options.code ?? DEFAULT_ERROR_CODE
   const ms = typeof duration === 'string' ? parseDuration(duration) : duration
 
   return async (context, next) => {
