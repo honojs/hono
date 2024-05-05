@@ -6,7 +6,7 @@ describe('Timeout API', () => {
   app.use('/slow-endpoint', timeout(1000))
   app.use(
     '/slow-endpoint/custom',
-    timeout(1000, {
+    timeout('1s', {
       errorMessage: 'Request timeout. Please try again later.',
       errorCode: 408,
     })
