@@ -56,8 +56,6 @@ export type StatusCode =
   | ServerErrorStatusCode
   | UnOfficalStatusCode
 
-import type {StatusCode, UnOfficalStatusCode} from 'hono/utils/http-status'
-
 export const HttpStatus: Record<string, Exclude<StatusCode, UnOfficalStatusCode>> = {
   'CONTINUE': 100,
   'SWITCHING_PROTOCOLS': 101,
