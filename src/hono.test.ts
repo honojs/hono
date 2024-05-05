@@ -856,8 +856,6 @@ describe('param and query', () => {
   describe('param with undefined', () => {
     const app = new Hono()
     app.get('/foo/:foo', (c) => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      /* @ts-ignore */
       const bar = c.req.param('bar')
       return c.json({ foo: bar })
     })
