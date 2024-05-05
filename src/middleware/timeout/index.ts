@@ -16,29 +16,29 @@ interface DurationUnits {
 
 const parseDuration = (duration: string): number => {
   const units: DurationUnits = { ms: 1, s: 1000, m: 60000, h: 3600000 }
-  const pattern = /^(\d+)(ms|s|m|h)$/
+  const pattern = /(\d+)(ms|s|m|h)/g
+  let totalMilliseconds = 0
 
-  const match = duration.match(pattern)
-  if (!match) {
-    throw new Error('Invalid duration format')
+  let match: RegExpExecArray | null
+  while ((match = pattern.exec(duration)) !== null) {
+    const value = parseInt(match[1], 10)
+    const unit = match[2]
+
+    if (!units[unit]) {
+      throw new Error(`Unsupported time unit: ${unit}`)
+    }
+    totalMilliseconds += value * units[unit]
   }
 
-  const value = parseInt(match[1], 10)
-  const unit = match[2]
-
-  if (!units[unit]) {
-    throw new Error(`Unsupported time unit: ${unit}`)
-  }
-
-  return value * units[unit]
+  return totalMilliseconds
 }
 
 export const timeout = (
   duration: number | string,
   options: TimeoutOptions = {}
 ): MiddlewareHandler => {
-  const { errorMessage = DEFAULT_ERROR_MESSAGE, errorCode = DEFAULT_ERROR_CODE } = options
-
+  const errorMessage = options.errorMessage ?? DEFAULT_ERROR_MESSAGE
+  const errorCode = options.errorCode ?? DEFAULT_ERROR_CODE
   const ms = typeof duration === 'string' ? parseDuration(duration) : duration
 
   return async (context, next) => {
