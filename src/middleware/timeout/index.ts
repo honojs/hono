@@ -7,22 +7,26 @@ interface TimeoutOptions {
   errorCode?: StatusCode
 }
 
+const DEFAULT_ERROR_MESSAGE = 'Gateway Timeout'
+const DEFAULT_ERROR_CODE = 504
+
 export const timeout = (ms: number, options: TimeoutOptions = {}): MiddlewareHandler => {
-  return async (c, next) => {
-    let timer: NodeJS.Timeout | null = null
+  const errorMessage = options.errorMessage || DEFAULT_ERROR_MESSAGE
+  const errorCode = options.errorCode || DEFAULT_ERROR_CODE
+
+  return async (context, next) => {
+    let timer: number | undefined
 
     const timeoutPromise = new Promise((_, reject) => {
       timer = setTimeout(() => {
-        const message = options.errorMessage || 'Gateway Timeout'
-        const statusCode = options.errorCode || 504
-        reject(new HTTPException(statusCode, { message }))
-      }, ms)
+        reject(new HTTPException(errorCode, { message: errorMessage }))
+      }, ms) as unknown as number
     })
 
     try {
       await Promise.race([next(), timeoutPromise])
     } finally {
-      if (timer) {
+      if (timer !== undefined) {
         clearTimeout(timer)
       }
     }
