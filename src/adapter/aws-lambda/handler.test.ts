@@ -37,6 +37,7 @@ describe('EventProcessor.createRequest', () => {
       path: '/my/path',
       httpMethod: 'GET',
       headers: {
+        'content-type': 'application/json',
         header1: 'value1',
         header2: 'value1',
       },
@@ -86,7 +87,7 @@ describe('EventProcessor.createRequest', () => {
       },
       pathParameters: {},
       stageVariables: {},
-      body: 'Hello from Lambda!',
+      body: null,
       isBase64Encoded: false,
     }
 
@@ -98,6 +99,7 @@ describe('EventProcessor.createRequest', () => {
       'https://id.execute-api.us-east-1.amazonaws.com/my/path?parameter2=value'
     )
     expect(Object.fromEntries(request.headers)).toEqual({
+      'content-type': 'application/json',
       header1: 'value1',
       header2: 'value1, value2, value3',
     })
@@ -111,6 +113,7 @@ describe('EventProcessor.createRequest', () => {
       rawQueryString: 'parameter1=value1&parameter1=value2&parameter2=value',
       cookies: ['cookie1', 'cookie2'],
       headers: {
+        'content-type': 'application/json',
         header1: 'value1',
         header2: 'value1,value2',
       },
@@ -157,6 +160,7 @@ describe('EventProcessor.createRequest', () => {
       'https://id.execute-api.us-east-1.amazonaws.com/my/path?parameter1=value1&parameter1=value2&parameter2=value'
     )
     expect(Object.fromEntries(request.headers)).toEqual({
+      'content-type': 'application/json',
       cookie: 'cookie1; cookie2',
       header1: 'value1',
       header2: 'value1,value2',
