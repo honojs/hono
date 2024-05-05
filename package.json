@@ -179,6 +179,11 @@
       "import": "./dist/middleware/jwt/index.js",
       "require": "./dist/cjs/middleware/jwt/index.js"
     },
+    "./timeout": {
+      "types": "./dist/types/middleware/timeout/index.d.ts",
+      "import": "./dist/middleware/timeout/index.js",
+      "require": "./dist/cjs/middleware/timeout/index.js"
+    },
     "./timing": {
       "types": "./dist/types/middleware/timing/index.d.ts",
       "import": "./dist/middleware/timing/index.js",

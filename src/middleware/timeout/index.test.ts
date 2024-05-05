@@ -7,15 +7,15 @@ describe('Timeout API', () => {
   app.use(
     '/slow-endpoint/custom',
     timeout('1s100ms', {
-      errorMessage: 'Request timeout. Please try again later.',
-      errorCode: 408,
+      message: 'Request timeout. Please try again later.',
+      code: 408,
     })
   )
   app.use(
     '/slow-endpoint/error',
     timeout('1s2000ms', {
-      errorMessage: 'Request timeout. Please try again later.',
-      errorCode: 408,
+      message: 'Request timeout. Please try again later.',
+      code: 408,
     })
   )
   app.use('/normal-endpoint', timeout(1000))
