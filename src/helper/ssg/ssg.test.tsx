@@ -618,3 +618,69 @@ describe('disableSSG/onlySSG middlewares', () => {
     expect(res.status).toBe(404)
   })
 })
+
+describe('Request hooks - filterPathsBeforeRequestHook and denyPathsBeforeRequestHook', () => {
+  let app: Hono
+  let fsMock: FileSystemModule
+
+  const filterPathsBeforeRequestHook = (allowedPaths: string | string[]): BeforeRequestHook => {
+    const baseURL = 'http://localhost'
+    return async (req: Request): Promise<Request | false> => {
+      const paths = Array.isArray(allowedPaths) ? allowedPaths : [allowedPaths]
+      const pathname = new URL(req.url, baseURL).pathname
+  
+      if (paths.some(path => pathname === path || pathname.startsWith(`${path}/`))) {
+        return req
+      }
+  
+      return false
+    }
+  }
+  
+
+  const denyPathsBeforeRequestHook = (deniedPaths: string | string[]): BeforeRequestHook  => {
+    const baseURL = 'http://localhost'
+    return async (req: Request): Promise<Request | false> => {
+      const paths = Array.isArray(deniedPaths) ? deniedPaths : [deniedPaths]
+      const pathname = new URL(req.url, baseURL).pathname
+  
+      if (!paths.some(path => pathname === path || pathname.startsWith(`${path}/`))) {
+        return req
+      }
+      return false
+    }
+  }
+
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/allowed-path', (c) => c.html('Allowed Path Page'))
+    app.get('/denied-path', (c) => c.html('Denied Path Page'))
+    app.get('/other-path', (c) => c.html('Other Path Page'))
+
+    fsMock = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+  })
+
+  it('should only process requests for allowed paths with filterPathsBeforeRequestHook', async () => {
+    const allowedPathsHook = filterPathsBeforeRequestHook(['/allowed-path'])
+
+    const result = await toSSG(app, fsMock, { dir: './static', beforeRequestHook: allowedPathsHook })
+
+    expect(result.files.some(file => file.includes('allowed-path.html'))).toBe(true)    
+    expect(result.files.some(file => file.includes('other-path.html'))).toBe(false)
+  })
+
+  it('should deny requests for specified paths with denyPathsBeforeRequestHook', async () => {
+    const deniedPathsHook = denyPathsBeforeRequestHook(['/denied-path'])
+
+    const result = await toSSG(app, fsMock, { dir: './static', beforeRequestHook: deniedPathsHook })
+
+    expect(result.files.some(file => file.includes('denied-path.html'))).toBe(false)    
+
+    expect(result.files.some(file => file.includes('allowed-path.html'))).toBe(true)    
+    expect(result.files.some(file => file.includes('other-path.html'))).toBe(true)
+
+  })
+})
