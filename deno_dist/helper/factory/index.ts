@@ -1,7 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Hono } from '../../hono.ts'
 import type { Env, H, HandlerResponse, Input, MiddlewareHandler } from '../../types.ts'
 
+type InitApp<E extends Env = Env> = (app: Hono<E>) => void
+
 export class Factory<E extends Env = any, P extends string = any> {
+  private initApp?: InitApp<E>
+
+  constructor(init?: { initApp?: InitApp<E> }) {
+    this.initApp = init?.initApp
+  }
+
+  /**
+   * @experimental
+   * `createApp` is an experimental feature.
+   */
+  createApp = () => {
+    const app = new Hono<E>()
+    if (this.initApp) {
+      this.initApp(app)
+    }
+    return app
+  }
+
   createMiddleware = <I extends Input = {}>(middleware: MiddlewareHandler<E, P, I>) => middleware
 
   createHandlers<I extends Input = {}, R extends HandlerResponse<any> = any>(
@@ -209,7 +230,9 @@ export class Factory<E extends Env = any, P extends string = any> {
   }
 }
 
-export const createFactory = <E extends Env = any, P extends string = any>() => new Factory<E, P>()
+export const createFactory = <E extends Env = any, P extends string = any>(init?: {
+  initApp?: InitApp<E>
+}) => new Factory<E, P>(init)
 
 export const createMiddleware = <E extends Env = any, P extends string = any, I extends Input = {}>(
   middleware: MiddlewareHandler<E, P, I>

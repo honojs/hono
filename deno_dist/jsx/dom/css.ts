@@ -110,10 +110,14 @@ export const createCssJsxDomObjects = ({ id }: { id: Readonly<string> }) => {
   const Style: FC<PropsWithChildren<void>> = ({ children }) =>
     ({
       tag: 'style',
-      children: (Array.isArray(children) ? children : [children]).map(
-        (c) => (c as unknown as CssClassName)[STYLE_STRING]
-      ),
-      props: { id },
+      props: {
+        id,
+        children:
+          children &&
+          (Array.isArray(children) ? children : [children]).map(
+            (c) => (c as unknown as CssClassName)[STYLE_STRING]
+          ),
+      },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any)
 

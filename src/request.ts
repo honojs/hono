@@ -79,6 +79,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   param<P2 extends RemoveQuestion<ParamKeys<P>> = RemoveQuestion<ParamKeys<P>>>(
     key: P2
   ): string | undefined
+  param(key: string): string | undefined
   param<P2 extends string = P>(): UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>
   param(key?: string): unknown {
     return key ? this.getDecodedParam(key) : this.getAllDecodedParams()

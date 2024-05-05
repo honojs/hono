@@ -856,8 +856,6 @@ describe('param and query', () => {
   describe('param with undefined', () => {
     const app = new Hono()
     app.get('/foo/:foo', (c) => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      /* @ts-ignore */
       const bar = c.req.param('bar')
       return c.json({ foo: bar })
     })
@@ -2113,10 +2111,10 @@ describe('Parse Body', () => {
   const app = new Hono()
 
   app.post('/json', async (c) => {
-    return c.json<{}>(await c.req.parseBody(), 200)
+    return c.json<{}, 200>(await c.req.parseBody(), 200)
   })
   app.post('/form', async (c) => {
-    return c.json<{}>(await c.req.parseBody(), 200)
+    return c.json<{}, 200>(await c.req.parseBody(), 200)
   })
 
   it('POST with JSON', async () => {

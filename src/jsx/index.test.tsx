@@ -385,6 +385,10 @@ describe('render to string', () => {
       const template = <h1 style='color:red;font-size:small'>Hello</h1>
       expect(template.toString()).toBe('<h1 style="color:red;font-size:small">Hello</h1>')
     })
+    it('should render variable without any name conversion', () => {
+      const template = <h1 style={{ '--myVar': 1 }}>Hello</h1>
+      expect(template.toString()).toBe('<h1 style="--myVar:1px">Hello</h1>')
+    })
   })
 
   describe('HtmlEscaped in props', () => {
@@ -742,6 +746,10 @@ describe('default export', () => {
     'useCallback',
     'useReducer',
     'useDebugValue',
+    'createRef',
+    'forwardRef',
+    'useImperativeHandle',
+    'useSyncExternalStore',
     'use',
     'startTransition',
     'useTransition',

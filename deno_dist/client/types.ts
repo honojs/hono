@@ -1,28 +1,35 @@
-import type { UpgradedWebSocketResponseInputJSONType } from '../helper/websocket/index.ts'
 import type { Hono } from '../hono.ts'
-import type { Schema } from '../types.ts'
+import type { Endpoint, ResponseFormat, Schema } from '../types.ts'
+import type { StatusCode, SuccessStatusCode } from '../utils/http-status.ts'
 import type { HasRequiredKeys } from '../utils/types.ts'
 
 type HonoRequest = (typeof Hono.prototype)['request']
 
-export type ClientRequestOptions<T = unknown> = keyof T extends never
+export type ClientRequestOptions<T = unknown> = {
+  fetch?: typeof fetch | HonoRequest
+  /**
+   * Standard `RequestInit`, caution that this take highest priority
+   * and could be used to overwrite things that Hono sets for you, like `body | method | headers`.
+   *
+   * If you want to add some headers, use in `headers` instead of `init`
+   */
+  init?: RequestInit
+} & (keyof T extends never
   ? {
       headers?:
         | Record<string, string>
         | (() => Record<string, string> | Promise<Record<string, string>>)
-      fetch?: typeof fetch | HonoRequest
     }
   : {
       headers: T | (() => T | Promise<T>)
-      fetch?: typeof fetch | HonoRequest
-    }
+    })
 
 export type ClientRequest<S extends Schema> = {
-  [M in keyof S]: S[M] extends { input: infer R; output: infer O }
+  [M in keyof S]: S[M] extends Endpoint & { input: infer R }
     ? R extends object
       ? HasRequiredKeys<R> extends true
-        ? (args: R, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
-        : (args?: R, options?: ClientRequestOptions) => Promise<ClientResponse<O>>
+        ? (args: R, options?: ClientRequestOptions) => Promise<ClientResponseOfEndpoint<S[M]>>
+        : (args?: R, options?: ClientRequestOptions) => Promise<ClientResponseOfEndpoint<S[M]>>
       : never
     : never
 } & {
@@ -33,10 +40,10 @@ export type ClientRequest<S extends Schema> = {
         : {}
       : {}
   ) => URL
-} & (S['$get'] extends { input: { json: UpgradedWebSocketResponseInputJSONType } }
+} & (S['$get'] extends { outputFormat: 'ws' }
     ? S['$get'] extends { input: infer I }
       ? {
-          $ws: (args?: Omit<I, 'json'>) => WebSocket
+          $ws: (args?: I) => WebSocket
         }
       : {}
     : {})
@@ -50,18 +57,38 @@ type BlankRecordToNever<T> = T extends any
     : T
   : never
 
-export interface ClientResponse<T> {
+type ClientResponseOfEndpoint<T extends Endpoint = Endpoint> = T extends {
+  output: infer O
+  outputFormat: infer F
+  status: infer S
+}
+  ? ClientResponse<O, S extends number ? S : never, F extends ResponseFormat ? F : never>
+  : never
+
+export interface ClientResponse<
+  T,
+  U extends number = StatusCode,
+  F extends ResponseFormat = ResponseFormat
+> extends globalThis.Response {
   readonly body: ReadableStream | null
   readonly bodyUsed: boolean
-  ok: boolean
-  status: number
+  ok: U extends SuccessStatusCode
+    ? true
+    : U extends Exclude<StatusCode, SuccessStatusCode>
+    ? false
+    : boolean
+  status: U
   statusText: string
   headers: Headers
   url: string
   redirect(url: string, status: number): Response
   clone(): Response
-  json(): Promise<BlankRecordToNever<T>>
-  text(): Promise<string>
+  json(): F extends 'text'
+    ? Promise<never>
+    : F extends 'json'
+    ? Promise<BlankRecordToNever<T>>
+    : Promise<unknown>
+  text(): F extends 'text' ? (T extends string ? Promise<T> : Promise<never>) : Promise<string>
   blob(): Promise<Blob>
   formData(): Promise<FormData>
   arrayBuffer(): Promise<ArrayBuffer>
@@ -72,15 +99,32 @@ export interface Response extends ClientResponse<unknown> {}
 export type Fetch<T> = (
   args?: InferRequestType<T>,
   opt?: ClientRequestOptions
-) => Promise<ClientResponse<InferResponseType<T>>>
+) => Promise<ClientResponseOfEndpoint<InferEndpointType<T>>>
 
-export type InferResponseType<T> = T extends (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  args: any | undefined,
+type InferEndpointType<T> = T extends (
+  args: infer R,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options: any | undefined
-) => Promise<ClientResponse<infer O>>
-  ? O
+) => Promise<infer U>
+  ? U extends ClientResponse<infer O, infer S, infer F>
+    ? { input: NonNullable<R>; output: O; outputFormat: F; status: S } extends Endpoint
+      ? { input: NonNullable<R>; output: O; outputFormat: F; status: S }
+      : never
+    : never
+  : never
+
+export type InferResponseType<T, U extends StatusCode = StatusCode> = InferResponseTypeFromEndpoint<
+  InferEndpointType<T>,
+  U
+>
+
+type InferResponseTypeFromEndpoint<T extends Endpoint, U extends StatusCode> = T extends {
+  output: infer O
+  status: infer S
+}
+  ? S extends U
+    ? O
+    : never
   : never
 
 export type InferRequestType<T> = T extends (

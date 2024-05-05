@@ -118,6 +118,8 @@ export const setSignedCookie = async (
   c.header('set-cookie', cookie, { append: true })
 }
 
-export const deleteCookie = (c: Context, name: string, opt?: CookieOptions): void => {
+export const deleteCookie = (c: Context, name: string, opt?: CookieOptions) => {
+  const deletedCookie = getCookie(c, name)
   setCookie(c, name, '', { ...opt, maxAge: 0 })
+  return deletedCookie
 }

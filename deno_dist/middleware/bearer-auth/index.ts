@@ -5,17 +5,20 @@ import { timingSafeEqual } from '../../utils/buffer.ts'
 
 const TOKEN_STRINGS = '[A-Za-z0-9._~+/-]+=*'
 const PREFIX = 'Bearer'
+const HEADER = 'Authorization'
 
 type BearerAuthOptions =
   | {
       token: string | string[]
       realm?: string
       prefix?: string
+      headerName?: string
       hashFunction?: Function
     }
   | {
       realm?: string
       prefix?: string
+      headerName?: string
       verifyToken: (token: string, c: Context) => boolean | Promise<boolean>
       hashFunction?: Function
     }
@@ -34,7 +37,7 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
   const realm = options.realm?.replace(/"/g, '\\"')
 
   return async function bearerAuth(c, next) {
-    const headerToken = c.req.header('Authorization')
+    const headerToken = c.req.header(options.headerName || HEADER)
 
     if (!headerToken) {
       // No Authorization header
