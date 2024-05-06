@@ -223,3 +223,12 @@ describe('createApp', () => {
     expect(await res.text()).toBe('bar')
   })
 })
+
+describe('Lint rules', () => {
+  it('Should not throw a eslint `unbound-method` error if destructed', () => {
+    const { createApp, createHandlers, createMiddleware } = createFactory()
+    expect(createApp).toBeDefined()
+    expect(createHandlers).toBeDefined()
+    expect(createMiddleware).toBeDefined()
+  })
+})
