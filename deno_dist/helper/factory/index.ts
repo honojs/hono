@@ -4,39 +4,18 @@ import type { Env, H, HandlerResponse, Input, MiddlewareHandler } from '../../ty
 
 type InitApp<E extends Env = Env> = (app: Hono<E>) => void
 
-export class Factory<E extends Env = any, P extends string = any> {
-  private initApp?: InitApp<E>
-
-  constructor(init?: { initApp?: InitApp<E> }) {
-    this.initApp = init?.initApp
-  }
-
-  /**
-   * @experimental
-   * `createApp` is an experimental feature.
-   */
-  createApp = () => {
-    const app = new Hono<E>()
-    if (this.initApp) {
-      this.initApp(app)
-    }
-    return app
-  }
-
-  createMiddleware = <I extends Input = {}>(middleware: MiddlewareHandler<E, P, I>) => middleware
-
-  createHandlers<I extends Input = {}, R extends HandlerResponse<any> = any>(
-    handler1: H<E, P, I, R>
-  ): [H<E, P, I, R>]
-
+interface CreateHandlersInterface<E extends Env, P extends string> {
+  <I extends Input = {}, R extends HandlerResponse<any> = any>(handler1: H<E, P, I, R>): [
+    H<E, P, I, R>
+  ]
   // handler x2
-  createHandlers<I extends Input = {}, I2 extends Input = I, R extends HandlerResponse<any> = any>(
+  <I extends Input = {}, I2 extends Input = I, R extends HandlerResponse<any> = any>(
     handler1: H<E, P, I, R>,
     handler2: H<E, P, I2, R>
   ): [H<E, P, I, R>, H<E, P, I2, R>]
 
   // handler x3
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -48,7 +27,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ): [H<E, P, I, R>, H<E, P, I2, R>, H<E, P, I3, R>]
 
   // handler x4
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -62,7 +41,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ): [H<E, P, I, R>, H<E, P, I2, R>, H<E, P, I3, R>, H<E, P, I4, R>]
 
   // handler x5
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -78,7 +57,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ): [H<E, P, I, R>, H<E, P, I2, R>, H<E, P, I3, R>, H<E, P, I4, R>, H<E, P, I5, R>]
 
   // handler x6
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -96,7 +75,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ): [H<E, P, I, R>, H<E, P, I2, R>, H<E, P, I3, R>, H<E, P, I4, R>, H<E, P, I5, R>, H<E, P, I6, R>]
 
   // handler x7
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -124,7 +103,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ]
 
   // handler x8
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -155,7 +134,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ]
 
   // handler x9
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -189,7 +168,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ]
 
   // handler x10
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -224,8 +203,31 @@ export class Factory<E extends Env = any, P extends string = any> {
     H<E, P, I9, R>,
     H<E, P, I10, R>
   ]
+}
 
-  createHandlers(...handlers: H[]) {
+export class Factory<E extends Env = any, P extends string = any> {
+  private initApp?: InitApp<E>
+
+  constructor(init?: { initApp?: InitApp<E> }) {
+    this.initApp = init?.initApp
+  }
+
+  /**
+   * @experimental
+   * `createApp` is an experimental feature.
+   */
+  createApp = () => {
+    const app = new Hono<E>()
+    if (this.initApp) {
+      this.initApp(app)
+    }
+    return app
+  }
+
+  createMiddleware = <I extends Input = {}>(middleware: MiddlewareHandler<E, P, I>) => middleware
+
+  createHandlers: CreateHandlersInterface<E, P> = (handlers: any) => {
+    // @ts-expect-error this should not be typed
     return handlers.filter((handler) => handler !== undefined)
   }
 }
