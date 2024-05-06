@@ -205,7 +205,9 @@ abstract class EventProcessor<E extends LambdaEvent> {
     if (event.multiValueHeaders) {
       for (const [k, values] of Object.entries(event.multiValueHeaders)) {
         if (values) {
-          values.forEach((v) => headers.append(k, v))
+          // avoid duplicating already set headers
+          const foundK = headers.get(k)
+          values.forEach((v) => (!foundK || !foundK.includes(v)) && headers.append(k, v))
         }
       }
     }
@@ -318,7 +320,7 @@ const v1Processor = new (class EventV1Processor extends EventProcessor<
   }
 })()
 
-const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> => {
+export const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> => {
   if (isProxyEventV2(event)) {
     return v2Processor
   } else {
