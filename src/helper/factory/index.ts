@@ -226,7 +226,7 @@ export class Factory<E extends Env = any, P extends string = any> {
 
   createMiddleware = <I extends Input = {}>(middleware: MiddlewareHandler<E, P, I>) => middleware
 
-  createHandlers: CreateHandlersInterface<E, P> = (handlers: any) => {
+  createHandlers: CreateHandlersInterface<E, P> = (...handlers: any) => {
     // @ts-expect-error this should not be typed
     return handlers.filter((handler) => handler !== undefined)
   }
