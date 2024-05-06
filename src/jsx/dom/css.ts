@@ -133,6 +133,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
   const [cssObject, Style] = createCssJsxDomObjects({ id })
 
   const newCssClassNameObject = (cssClassName: CssClassName): string => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     cssClassName.toString = cssObject.toString
     return cssClassName as unknown as string
   }
