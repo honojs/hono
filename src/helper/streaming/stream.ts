@@ -4,7 +4,8 @@ import { StreamingApi } from '../../utils/stream'
 export const stream = (
   c: Context,
   cb: (stream: StreamingApi) => Promise<void>,
-  onError?: (e: Error, stream: StreamingApi) => Promise<void>
+  onError?: (e: Error, stream: StreamingApi) => Promise<void>,
+  responseFactory?: (c: Context, stream: StreamingApi) => Response
 ): Response => {
   const { readable, writable } = new TransformStream()
   const stream = new StreamingApi(writable, readable)
@@ -21,5 +22,6 @@ export const stream = (
       stream.close()
     }
   })()
-  return c.newResponse(stream.responseReadable)
+  if (!responseFactory) return c.newResponse(stream.responseReadable)
+  return responseFactory(c, stream)
 }

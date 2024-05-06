@@ -65,4 +65,22 @@ describe('Basic Streaming Helper', () => {
     expect(onError).toBeCalledTimes(1)
     expect(onError).toBeCalledWith(new Error('error'), expect.anything()) // 2nd argument is StreamingApi instance
   })
+
+  it('Check custom response', async () => {
+    const res = stream(
+      c,
+      async () => {
+        // do nothing
+      },
+      undefined,
+      (c, stream) =>
+        c.body(stream.responseReadable, {
+          headers: { 'content-type': 'application/octet-stream' },
+          status: 206,
+        }) // responseFactory
+    )
+
+    expect(res.headers.get('content-type')).toBe('application/octet-stream')
+    expect(res.status).toBe(206)
+  })
 })
