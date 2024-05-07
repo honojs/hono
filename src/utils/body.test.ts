@@ -1,39 +1,49 @@
 import { parseBody } from './body'
 
 describe('Parse Body Util', () => {
+  const FORM_URL = 'https://localhost/form'
+  const SEARCH_URL = 'https://localhost/search'
+
+  const createRequest = (
+    url: string,
+    method: 'POST',
+    body: BodyInit,
+    headers?: { [key: string]: string }
+  ) => {
+    return new Request(url, {
+      method,
+      body,
+      headers,
+    })
+  }
+
   it('should parse `multipart/form-data`', async () => {
     const data = new FormData()
     data.append('message', 'hello')
-    const req = new Request('https://localhost/form', {
-      method: 'POST',
-      body: data,
-      // `Content-Type` header must not be set.
-    })
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
     expect(await parseBody(req)).toEqual({ message: 'hello' })
   })
 
   it('should parse `x-www-form-urlencoded`', async () => {
     const searchParams = new URLSearchParams()
     searchParams.append('message', 'hello')
-    const req = new Request('https://localhost/search', {
-      method: 'POST',
-      body: searchParams,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+
+    const req = createRequest(SEARCH_URL, 'POST', searchParams, {
+      'Content-Type': 'application/x-www-form-urlencoded',
     })
+
     expect(await parseBody(req)).toEqual({ message: 'hello' })
   })
 
   it('should not parse multiple values in default', async () => {
     const data = new FormData()
-    data.append('file', 'aaa')
     data.append('file', 'bbb')
     data.append('message', 'hello')
-    const req = new Request('https://localhost/form', {
-      method: 'POST',
-      body: data,
-    })
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
     expect(await parseBody(req)).toEqual({
       file: 'bbb',
       message: 'hello',
@@ -45,10 +55,9 @@ describe('Parse Body Util', () => {
     data.append('file', 'aaa')
     data.append('file', 'bbb')
     data.append('message', 'hello')
-    const req = new Request('https://localhost/form', {
-      method: 'POST',
-      body: data,
-    })
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
     expect(await parseBody(req, { all: true })).toEqual({
       file: ['aaa', 'bbb'],
       message: 'hello',
@@ -60,10 +69,9 @@ describe('Parse Body Util', () => {
     data.append('file[]', 'aaa')
     data.append('file[]', 'bbb')
     data.append('message', 'hello')
-    const req = new Request('https://localhost/form', {
-      method: 'POST',
-      body: data,
-    })
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
     expect(await parseBody(req, { all: true })).toEqual({
       'file[]': ['aaa', 'bbb'],
       message: 'hello',
@@ -72,11 +80,11 @@ describe('Parse Body Util', () => {
 
   it('should return blank object if body is JSON', async () => {
     const payload = { message: 'hello hono' }
-    const req = new Request('http://localhost/json', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: new Headers({ 'Content-Type': 'application/json' }),
+
+    const req = createRequest('http://localhost/json', 'POST', JSON.stringify(payload), {
+      'Content-Type': 'application/json',
     })
+
     expect(await parseBody(req)).toEqual({})
   })
 })
