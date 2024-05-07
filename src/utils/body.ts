@@ -25,11 +25,11 @@ export const parseBody = async <T extends BodyData = BodyData>(
   options: ParseBodyOptions = { all: false }
 ): Promise<T> => {
   const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
-  const contentType = headers.get('Content-Type')!
+  const contentType = headers.get('Content-Type')
 
   if (
     (contentType !== null && contentType.startsWith('multipart/form-data')) ||
-    contentType.startsWith('application/x-www-form-urlencoded')
+    (contentType !== null && contentType.startsWith('application/x-www-form-urlencoded'))
   ) {
     return parseFormData<T>(request, options)
   }
