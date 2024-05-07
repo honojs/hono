@@ -19,10 +19,10 @@ export const getConnInfo: GetConnInfo = (c: Context) => {
     | undefined
 
   if (!server) {
-    throw new TypeError('env has to include 2nd argument of fetch.')
+    throw new TypeError('env has to include the 2nd argument of fetch.')
   }
   if (typeof server.requestIP !== 'function') {
-    throw new TypeError('server.requestIP is not function.')
+    throw new TypeError('server.requestIP is not a function.')
   }
   const info = server.requestIP(c.req.raw)
 
