@@ -1,13 +1,8 @@
 import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
-import type { StatusCode } from '../../utils/http-status'
 
 export type ExceptionFactory = (context: Context) => HTTPException
-
-export const simpleTimeoutException = (code: StatusCode, message: string): ExceptionFactory => {
-  return () => new HTTPException(code, { message })
-}
 
 const defaultTimeoutException = new HTTPException(504, {
   message: 'Gateway Timeout',

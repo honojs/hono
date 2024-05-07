@@ -2,7 +2,7 @@ import type { Context } from '../../context'
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
 import type { ExceptionFactory } from '.'
-import { timeout, simpleTimeoutException } from '.'
+import { timeout } from '.'
 
 describe('Timeout API', () => {
   const app = new Hono()
@@ -10,7 +10,10 @@ describe('Timeout API', () => {
   app.use('/slow-endpoint', timeout(1000))
   app.use(
     '/slow-endpoint/custom',
-    timeout(1100, simpleTimeoutException(408, 'Request timeout. Please try again later.'))
+    timeout(
+      1100,
+      () => new HTTPException(408, { message: 'Request timeout. Please try again later.' })
+    )
   )
   const exception500: ExceptionFactory = (context: Context) =>
     new HTTPException(500, { message: `Internal Server Error at ${context.req.path}` })
