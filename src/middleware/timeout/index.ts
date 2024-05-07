@@ -17,7 +17,7 @@ export const timeout = (
   const errorMessage = options.message ?? DEFAULT_ERROR_MESSAGE
   const errorCode = options.code ?? DEFAULT_ERROR_CODE
 
-  return async (context, next) => {
+  return async function timeout(context, next) {
     let timer: number | undefined
 
     const timeoutPromise = new Promise<void>((_, reject) => {
