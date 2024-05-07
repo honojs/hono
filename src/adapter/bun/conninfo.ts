@@ -8,15 +8,23 @@ import type { GetConnInfo } from '../../helper/conninfo'
  * @returns ConnInfo
  */
 export const getConnInfo: GetConnInfo = (c: Context) => {
-  const info = (
-    c.env as {
-      requestIP(req: Request): {
-        address: string
-        family: string
-        port: number
+  const server = ('server' in c.env ? c.env.server : c.env) as
+    | {
+        requestIP?: (req: Request) => {
+          address: string
+          family: string
+          port: number
+        }
       }
-    }
-  ).requestIP(c.req.raw)
+    | undefined
+
+  if (!server) {
+    throw new TypeError('env has to include 2nd argument of fetch.')
+  }
+  if (typeof server.requestIP !== 'function') {
+    throw new TypeError('server.requestIP is not function.')
+  }
+  const info = server.requestIP(c.req.raw)
 
   return {
     remote: {
