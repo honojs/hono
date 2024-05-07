@@ -41,12 +41,12 @@ describe('getConnInfo', () => {
     expect(info.remote.addressType).toBe('IPv6')
     expect(info.remote.transport).toBeUndefined()
   })
-  it("Should throw error when user didn't give server", () => {
+  it(`Should throw error when user didn't give server`, () => {
     const c = new Context(new HonoRequest(new Request('http://localhost/')), { env: {} })
 
     expect(() => getConnInfo(c)).toThrowError(TypeError)
   })
-  it("Should throw error when requestIP isn't function", () => {
+  it(`Should throw error when requestIP isn't function`, () => {
     const c = new Context(new HonoRequest(new Request('http://localhost/')), {
       env: {
         requestIP: 0,
