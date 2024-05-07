@@ -1,7 +1,7 @@
 import { getFilePath, getFilePathWithoutDefaultDocument } from './filepath'
 
 describe('getFilePathWithoutDefaultDocument', () => {
-  it('Should return file path correctly', async () => {
+  it('should return file path correctly without default document', () => {
     expect(getFilePathWithoutDefaultDocument({ filename: 'foo.txt' })).toBe('foo.txt')
     expect(getFilePathWithoutDefaultDocument({ filename: 'foo.txt', root: 'bar' })).toBe(
       'bar/foo.txt'
@@ -10,6 +10,7 @@ describe('getFilePathWithoutDefaultDocument', () => {
     expect(getFilePathWithoutDefaultDocument({ filename: '../foo' })).toBeUndefined()
     expect(getFilePathWithoutDefaultDocument({ filename: '/../foo' })).toBeUndefined()
     expect(getFilePathWithoutDefaultDocument({ filename: './../foo' })).toBeUndefined()
+
     expect(getFilePathWithoutDefaultDocument({ filename: 'foo..bar.txt' })).toBe('foo..bar.txt')
     expect(getFilePathWithoutDefaultDocument({ filename: '/foo..bar.txt' })).toBe('foo..bar.txt')
     expect(getFilePathWithoutDefaultDocument({ filename: './foo..bar.txt' })).toBe('foo..bar.txt')
@@ -47,9 +48,8 @@ describe('getFilePathWithoutDefaultDocument', () => {
 })
 
 describe('getFilePath', () => {
-  it('Should return file path correctly', async () => {
+  it('should return file path correctly with default document', () => {
     expect(getFilePath({ filename: 'foo' })).toBe('foo/index.html')
-
     expect(getFilePath({ filename: 'foo', root: 'bar' })).toBe('bar/foo/index.html')
 
     expect(getFilePath({ filename: 'foo', defaultDocument: 'index.txt' })).toBe('foo/index.txt')
