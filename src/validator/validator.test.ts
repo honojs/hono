@@ -257,6 +257,33 @@ describe('Cached contents', () => {
   })
 })
 
+describe('Form with multiple values', () => {
+  const app = new Hono()
+
+  app.post(
+    '/',
+    validator('form', (value) => value),
+    async (c) => {
+      const data = c.req.valid('form')
+      return c.json(data)
+    }
+  )
+
+  it('Should return `foo[]` as an array', async () => {
+    const form = new FormData()
+    form.append('foo[]', 'bar1')
+    form.append('foo[]', 'bar2')
+    const res = await app.request('/', {
+      method: 'POST',
+      body: form,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      'foo[]': ['bar1', 'bar2'],
+    })
+  })
+})
+
 describe('Validator middleware with a custom validation function', () => {
   const app = new Hono()
 
