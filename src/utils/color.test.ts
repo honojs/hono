@@ -1,18 +1,21 @@
 import { getColorEnabled } from './color'
 
-describe('getColorEnabled()', () => {
-  it('getColorEnabled() is true', async () => {
+describe('getColorEnabled() - With colors enabled', () => {
+  it('should return true', async () => {
     expect(getColorEnabled()).toBe(true)
   })
 })
-describe('getColorEnabled() in NO_COLOR', () => {
+
+describe('getColorEnabled() - With NO_COLOR environment variable set', () => {
   beforeAll(() => {
     vi.stubEnv('NO_COLOR', '1')
   })
+
   afterAll(() => {
     vi.unstubAllEnvs()
   })
-  it('getColorEnabled() is false', async () => {
+
+  it('should return false', async () => {
     expect(getColorEnabled()).toBe(false)
   })
 })
