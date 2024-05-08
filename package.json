@@ -425,6 +425,9 @@
       "jwt": [
         "./dist/types/middleware/jwt"
       ],
+      "timeout": [
+        "./dist/types/middleware/timeout"
+      ],
       "timing": [
         "./dist/types/middleware/timing"
       ],
