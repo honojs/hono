@@ -93,7 +93,15 @@ export const validator = <
           const formData = await bufferToFormData(arrayBuffer, contentType)
           const form: BodyData = {}
           formData.forEach((value, key) => {
-            form[key] = value
+            if (key.endsWith('[]')) {
+              if (form[key] === undefined) {
+                form[key] = [value]
+              } else if (Array.isArray(form[key])) {
+                ;(form[key] as unknown[]).push(value)
+              }
+            } else {
+              form[key] = value
+            }
           })
           value = form
           c.req.bodyCache.formData = formData
