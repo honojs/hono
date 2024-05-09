@@ -575,8 +575,9 @@ export const render = (jsxNode: unknown, container: Container) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const node = buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject
   const context: Context = []
-  ;(context as Context)[4] = true // is in top level render
+  ;(context as Context)[4] = true // start top level render
   build(context, node, undefined)
+  ;(context as Context)[4] = false // finish top level render
 
   const fragment = document.createDocumentFragment()
   apply(node, fragment)
