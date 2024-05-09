@@ -388,25 +388,32 @@ export const useImperativeHandle = <T>(
   }, deps)
 }
 
-let useSyncExternalStoreGetServerSnapshotNotified = false
 export const useSyncExternalStore = <T>(
   subscribe: (callback: (value: T) => void) => () => void,
   getSnapshot: () => T,
   getServerSnapshot?: () => T
 ): T => {
-  const [state, setState] = useState(getSnapshot())
-  useEffect(
-    () =>
-      subscribe(() => {
-        setState(getSnapshot())
-      }),
-    []
-  )
-
-  if (getServerSnapshot && !useSyncExternalStoreGetServerSnapshotNotified) {
-    useSyncExternalStoreGetServerSnapshotNotified = true
-    console.info('`getServerSnapshot` is not supported yet.')
+  const buildData = buildDataStack.at(-1) as [Context, unknown]
+  if (!buildData) {
+    // now a stringify process, maybe in server side
+    if (!getServerSnapshot) {
+      throw new Error('getServerSnapshot is required for server side rendering')
+    }
+    return getServerSnapshot()
   }
+
+  const [serverSnapshotIsUsed] = useState<boolean>(!!(buildData[0][4] && getServerSnapshot))
+  const [state, setState] = useState(() =>
+    serverSnapshotIsUsed ? (getServerSnapshot as () => T)() : getSnapshot()
+  )
+  useEffect(() => {
+    if (serverSnapshotIsUsed) {
+      setState(getSnapshot())
+    }
+    return subscribe(() => {
+      setState(getSnapshot())
+    })
+  }, [])
 
   return state
 }

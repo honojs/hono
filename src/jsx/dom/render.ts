@@ -82,8 +82,10 @@ export type Context =
       PendingType, // PendingType
       boolean, // got an error
       UpdateHook, // update hook
-      boolean // is in view transition
+      boolean, // is in view transition
+      boolean // is in top level render
     ]
+  | [PendingType, boolean, UpdateHook, boolean]
   | [PendingType, boolean, UpdateHook]
   | [PendingType, boolean]
   | [PendingType]
@@ -572,7 +574,9 @@ export const update = async (
 export const render = (jsxNode: unknown, container: Container) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const node = buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject
-  build([], node, undefined)
+  const context: Context = []
+  ;(context as Context)[4] = true // is in top level render
+  build(context, node, undefined)
 
   const fragment = document.createDocumentFragment()
   apply(node, fragment)
