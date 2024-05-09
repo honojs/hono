@@ -29,7 +29,7 @@ describe('useSyncExternalStore', () => {
     expect(getSnapshot).not.toBeCalled()
   })
 
-  it('should raise an error if getServerShaot() is not provided', () => {
+  it('should raise an error if getServerShot() is not provided', () => {
     const App = () => {
       const count = useSyncExternalStore(vi.fn(), vi.fn())
       return <div>{count}</div>
