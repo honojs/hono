@@ -116,7 +116,7 @@ describe('Malformed JSON', () => {
     })
     expect(res.status).toBe(400)
   })
-	
+
   it('Should return 200 response, for request with Content-Type which is a subtype like application/merge-patch+json', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
