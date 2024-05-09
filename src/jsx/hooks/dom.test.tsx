@@ -563,5 +563,37 @@ describe('Hooks', () => {
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<div>1</div><button>toggle</button>')
     })
+
+    it('with getServerSnapshot', async () => {
+      let count = 0
+      const unsubscribe = vi.fn()
+      const subscribe = vi.fn(() => unsubscribe)
+      const getSnapshot = vi.fn(() => count++)
+      const getServerSnapshot = vi.fn(() => 100)
+      const SubApp = () => {
+        const count = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+        return <div>{count}</div>
+      }
+      const App = () => {
+        const [show, setShow] = useState(true)
+        return (
+          <>
+            {show && <SubApp />}
+            <button onClick={() => setShow((s) => !s)}>toggle</button>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div>100</div><button>toggle</button>')
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div>0</div><button>toggle</button>')
+      root.querySelector('button')?.click()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<button>toggle</button>')
+      expect(unsubscribe).toBeCalled()
+      root.querySelector('button')?.click()
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div>1</div><button>toggle</button>')
+    })
   })
 })
