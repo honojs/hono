@@ -6,6 +6,7 @@ export const cache = (options: {
   wait?: boolean
   cacheControl?: string
   vary?: string | string[]
+  keyGenerator?: (c: Context) => Promise<string> | string;
 }): MiddlewareHandler => {
   if (!globalThis.caches) {
     console.log('Cache Middleware is not enabled because caches is not defined.')
@@ -68,7 +69,9 @@ export const cache = (options: {
   }
 
   return async function cache(c, next) {
-    const key = c.req.url
+    let key = c.req.url;
+    if (options.keyGenerator) key = await options.keyGenerator(c)
+
     const cacheName = typeof options.cacheName === "function" ? await options.cacheName(c) : options.cacheName;
     const cache = await caches.open(cacheName)
     const response = await cache.match(key)
