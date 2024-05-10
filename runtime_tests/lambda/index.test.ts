@@ -512,8 +512,13 @@ describe('AWS Lambda Adapter for Hono', () => {
           },
           requestContext: testALBRequestContext,
         }
-        const apiGatewayResponseV2 = await handler(event)
-        expect(apiGatewayResponseV2.statusCode).toBe(200)
+        const albResponse = await handler(event)
+        expect(albResponse.statusCode).toBe(200)
+        expect(albResponse.headers).toEqual(
+          expect.objectContaining({
+            'content-type': 'application/json; charset=UTF-8',
+          })
+        )
       })
 
       it('Should extract single-value headers and return 200 (APIGatewayProxyEvent)', async () => {
@@ -567,8 +572,14 @@ describe('AWS Lambda Adapter for Hono', () => {
           },
           requestContext: testALBRequestContext,
         }
-        const apiGatewayResponseV2 = await handler(event)
-        expect(apiGatewayResponseV2.statusCode).toBe(200)
+        const albResponse = await handler(event)
+        expect(albResponse.statusCode).toBe(200)
+        expect(albResponse.multiValueHeaders).toBeDefined()
+        expect(albResponse.multiValueHeaders).toEqual(
+          expect.objectContaining({
+            'content-type': ['application/json; charset=UTF-8'],
+          })
+        )
       })
 
       it('Should extract multi-value headers and return 200 (APIGatewayProxyEvent)', async () => {
@@ -633,6 +644,108 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(apiGatewayResponseV2.body).toBe('Valid Cookies')
     expect(apiGatewayResponseV2.headers['content-type']).toMatch(/^text\/plain/)
     expect(apiGatewayResponseV2.isBase64Encoded).toBe(false)
+  })
+
+  it('Should handle a GET request and return a 200 response if cookies match (ALBProxyEvent) with default headers', async () => {
+    const albEventDefaultHeaders = {
+      version: '1.0',
+      resource: '/cookie',
+      httpMethod: 'GET',
+      headers: {
+        'content-type': 'text/plain',
+        cookie: [testCookie1.serialized, testCookie2.serialized].join('; '),
+      },
+      path: '/cookie',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testALBRequestContext,
+    }
+
+    const albResponse = await handler(albEventDefaultHeaders)
+
+    expect(albResponse.statusCode).toBe(200)
+    expect(albResponse.body).toBe('Valid Cookies')
+    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(albResponse.isBase64Encoded).toBe(false)
+  })
+
+  it('Should handle a GET request and return a 200 response if cookies match (ALBProxyEvent) with multi value headers', async () => {
+    const albEventMultiValueHeaders = {
+      version: '1.0',
+      resource: '/cookie',
+      httpMethod: 'GET',
+      multiValueHeaders: {
+        'content-type': ['text/plain'],
+        cookie: [testCookie1.serialized, testCookie2.serialized],
+      },
+      path: '/cookie',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testALBRequestContext,
+    }
+
+    const albResponse = await handler(albEventMultiValueHeaders)
+
+    expect(albResponse.statusCode).toBe(200)
+    expect(albResponse.body).toBe('Valid Cookies')
+    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(albResponse.isBase64Encoded).toBe(false)
+  })
+
+  it('Should handle a POST request and return a 200 response with cookies (ALBProxyEvent) with default headers', async () => {
+    const albEventDefaultHeaders = {
+      version: '1.0',
+      resource: '/cookie',
+      httpMethod: 'POST',
+      headers: {
+        'content-type': 'text/plain',
+        cookie: [testCookie1.serialized, testCookie2.serialized].join(', '),
+      },
+      path: '/cookie',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testALBRequestContext,
+    }
+
+    const albResponse = await handler(albEventDefaultHeaders)
+
+    expect(albResponse.statusCode).toBe(200)
+    expect(albResponse.body).toBe('Cookies Set')
+    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(albResponse.multiValueHeaders).toBeUndefined()
+    expect(albResponse.headers['set-cookie']).toEqual(
+      [testCookie1.serialized, testCookie2.serialized].join(', ')
+    )
+    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(albResponse.isBase64Encoded).toBe(false)
+  })
+
+  it('Should handle a POST request and return a 200 response with cookies (ALBProxyEvent) with multi value headers', async () => {
+    const albEventDefaultHeaders = {
+      version: '1.0',
+      resource: '/cookie',
+      httpMethod: 'POST',
+      multiValueHeaders: {
+        'content-type': ['text/plain'],
+        cookie: [testCookie1.serialized, testCookie2.serialized],
+      },
+      path: '/cookie',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testALBRequestContext,
+    }
+
+    const albResponse = await handler(albEventDefaultHeaders)
+
+    expect(albResponse.statusCode).toBe(200)
+    expect(albResponse.body).toBe('Cookies Set')
+    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(albResponse.multiValueHeaders).toBeDefined()
+    expect(albResponse.multiValueHeaders && albResponse.multiValueHeaders['set-cookie']).toEqual(
+      expect.arrayContaining([testCookie1.serialized, testCookie2.serialized])
+    )
+    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(albResponse.isBase64Encoded).toBe(false)
   })
 })
 
