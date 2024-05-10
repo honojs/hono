@@ -2,7 +2,7 @@ import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
 export const cache = (options: {
-  cacheName: string
+  cacheName: string | ((c: Context) => Promise<string> | string)
   wait?: boolean
   cacheControl?: string
   vary?: string | string[]
@@ -69,7 +69,8 @@ export const cache = (options: {
 
   return async function cache(c, next) {
     const key = c.req.url
-    const cache = await caches.open(options.cacheName)
+    const cacheName = typeof options.cacheName === "function" ? await options.cacheName(c) : options.cacheName;
+    const cache = await caches.open(cacheName)
     const response = await cache.match(key)
     if (response) {
       return new Response(response.body, response)
