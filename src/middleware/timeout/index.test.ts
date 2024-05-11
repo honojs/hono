@@ -1,7 +1,7 @@
 import type { Context } from '../../context'
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
-import type { HTTPExecptionFunction } from '.'
+import type { HTTPExceptionFunction } from '.'
 import { timeout } from '.'
 
 describe('Timeout API', () => {
@@ -15,7 +15,7 @@ describe('Timeout API', () => {
       () => new HTTPException(408, { message: 'Request timeout. Please try again later.' })
     )
   )
-  const exception500: HTTPExecptionFunction = (context: Context) =>
+  const exception500: HTTPExceptionFunction = (context: Context) =>
     new HTTPException(500, { message: `Internal Server Error at ${context.req.path}` })
   app.use('/slow-endpoint/error', timeout(1200, exception500))
   app.use('/normal-endpoint', timeout(1000))

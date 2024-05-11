@@ -2,7 +2,7 @@ import type { Context } from '../../context.ts'
 import { HTTPException } from '../../http-exception.ts'
 import type { MiddlewareHandler } from '../../types.ts'
 
-export type HTTPExecptionFunction = (context: Context) => HTTPException
+export type HTTPExceptionFunction = (context: Context) => HTTPException
 
 const defaultTimeoutException = new HTTPException(504, {
   message: 'Gateway Timeout',
@@ -10,7 +10,7 @@ const defaultTimeoutException = new HTTPException(504, {
 
 export const timeout = (
   duration: number,
-  exception: HTTPExecptionFunction | HTTPException = defaultTimeoutException
+  exception: HTTPExceptionFunction | HTTPException = defaultTimeoutException
 ): MiddlewareHandler => {
   return async function timeout(context, next) {
     let timer: number | undefined
