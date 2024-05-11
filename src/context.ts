@@ -52,7 +52,7 @@ interface TextRespond {
 }
 
 interface JSONRespond {
-  <T extends JSONValue | Simplify<any>, U extends StatusCode>(
+  <T extends JSONValue | Simplify<unknown>, U extends StatusCode>(
     object: T,
     status?: U,
     headers?: HeaderRecord
@@ -66,7 +66,7 @@ interface JSONRespond {
       U,
       'json'
     >
-  <T extends JSONValue | Simplify<any>, U extends StatusCode>(
+  <T extends JSONValue | Simplify<unknown>, U extends StatusCode>(
     object: Simplify<T> extends JSONValue ? T : Simplify<T>,
     init?: ResponseInit
   ): Response &
@@ -488,7 +488,7 @@ export class Context<
    * ```
    * @see https://hono.dev/api/context#json
    */
-  json: JSONRespond = <T extends JSONValue | Simplify<any>, U extends StatusCode>(
+  json: JSONRespond = <T extends JSONValue | Simplify<unknown>, U extends StatusCode>(
     object: T,
     arg?: U | ResponseInit,
     headers?: HeaderRecord
