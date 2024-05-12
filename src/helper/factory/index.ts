@@ -216,7 +216,7 @@ export class Factory<E extends Env = any, P extends string = any> {
    * @experimental
    * `createApp` is an experimental feature.
    */
-  createApp = () => {
+  createApp = (): Hono<E> => {
     const app = new Hono<E>()
     if (this.initApp) {
       this.initApp(app)
@@ -234,8 +234,8 @@ export class Factory<E extends Env = any, P extends string = any> {
 
 export const createFactory = <E extends Env = any, P extends string = any>(init?: {
   initApp?: InitApp<E>
-}) => new Factory<E, P>(init)
+}): Factory<E, P> => new Factory<E, P>(init)
 
 export const createMiddleware = <E extends Env = any, P extends string = any, I extends Input = {}>(
   middleware: MiddlewareHandler<E, P, I>
-) => createFactory<E, P>().createMiddleware<I>(middleware)
+): MiddlewareHandler<E, P, I> => createFactory<E, P>().createMiddleware<I>(middleware)

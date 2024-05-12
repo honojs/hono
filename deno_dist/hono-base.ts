@@ -233,7 +233,7 @@ class Hono<
    * })
    * ```
    */
-  onError = (handler: ErrorHandler<E>) => {
+  onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath> => {
     this.errorHandler = handler
     return this
   }
@@ -247,7 +247,7 @@ class Hono<
    * ```
    * @see https://hono.dev/api/hono#not-found
    */
-  notFound = (handler: NotFoundHandler<E>) => {
+  notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath> => {
     this.notFoundHandler = handler
     return this
   }
@@ -396,7 +396,7 @@ class Hono<
     requestInit?: RequestInit,
     Env?: E['Bindings'] | {},
     executionCtx?: ExecutionContext
-  ) => {
+  ): Response | Promise<Response> => {
     if (input instanceof Request) {
       if (requestInit !== undefined) {
         input = new Request(input, requestInit)
