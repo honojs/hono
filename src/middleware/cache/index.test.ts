@@ -1,3 +1,4 @@
+import type { ExecutionContext } from '../../context'
 import { Hono } from '../../hono'
 import { cache } from '.'
 

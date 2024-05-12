@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { expectTypeOf } from 'vitest'
 import { hc } from './client'
-import type { Context } from './context'
+import type { Context, ExecutionContext } from './context'
 import { Hono } from './hono'
 import { HTTPException } from './http-exception'
 import { logger } from './middleware/logger'

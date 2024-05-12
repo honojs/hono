@@ -1,12 +1,5 @@
 import { Hono } from './hono.ts'
 
-declare global {
-  interface ExecutionContext {
-    waitUntil(promise: Promise<void>): void
-    passThroughOnException(): void
-  }
-}
-
 export type {
   Env,
   ErrorHandler,
