@@ -8,6 +8,8 @@ export interface Context {
   varIndex: number
 }
 
+const regExpMetaChars = new Set('.\\+*[^]$()')
+
 /**
  * Sort order:
  * 1. literal
@@ -43,7 +45,7 @@ function compareKey(a: string, b: string): number {
 export class Node {
   index?: number
   varIndex?: number
-  children: Record<string, Node> = {}
+  children: Record<string, Node> = Object.create(null)
 
   insert(
     tokens: readonly string[],
@@ -132,7 +134,13 @@ export class Node {
 
     const strList = childKeys.map((k) => {
       const c = this.children[k]
-      return (typeof c.varIndex === 'number' ? `(${k})@${c.varIndex}` : k) + c.buildRegExpStr()
+      return (
+        (typeof c.varIndex === 'number'
+          ? `(${k})@${c.varIndex}`
+          : regExpMetaChars.has(k)
+          ? `\\${k}`
+          : k) + c.buildRegExpStr()
+      )
     })
 
     if (typeof this.index === 'number') {

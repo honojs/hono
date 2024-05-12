@@ -1,4 +1,5 @@
 import { Context } from './context'
+import { setCookie } from './helper'
 import { HonoRequest } from './request'
 
 describe('Context', () => {
@@ -243,6 +244,27 @@ describe('Context header', () => {
     res.headers.append('set-cookie', 'foo2=bar2; Path=/')
     c.res = res
     expect(c.res.headers.getSetCookie().length).toBe(2)
+  })
+
+  it('Should keep previous cookies in response headers', () => {
+    c.res.headers.append('set-cookie', 'foo=bar; Path=/')
+    setCookie(c, 'foo2', 'bar2', { path: '/' })
+    const res = c.json({ message: 'Hello' })
+    const cookies = res.headers.getSetCookie()
+    expect(cookies.includes('foo=bar; Path=/')).toBe(true)
+    expect(cookies.includes('foo2=bar2; Path=/')).toBe(true)
+  })
+
+  it('Should set set-cookie header values if c.res is already defined', () => {
+    c.res = new Response(null, {
+      headers: [
+        ['set-cookie', 'a'],
+        ['set-cookie', 'b'],
+        ['set-cookie', 'c'],
+      ],
+    })
+    const res = c.text('Hi')
+    expect(res.headers.get('set-cookie')).toBe('a, b, c')
   })
 })
 

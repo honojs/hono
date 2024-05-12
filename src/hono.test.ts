@@ -856,8 +856,6 @@ describe('param and query', () => {
   describe('param with undefined', () => {
     const app = new Hono()
     app.get('/foo/:foo', (c) => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      /* @ts-ignore */
       const bar = c.req.param('bar')
       return c.json({ foo: bar })
     })
@@ -2113,10 +2111,10 @@ describe('Parse Body', () => {
   const app = new Hono()
 
   app.post('/json', async (c) => {
-    return c.json<{}>(await c.req.parseBody(), 200)
+    return c.json<{}, 200>(await c.req.parseBody(), 200)
   })
   app.post('/form', async (c) => {
-    return c.json<{}>(await c.req.parseBody(), 200)
+    return c.json<{}, 200>(await c.req.parseBody(), 200)
   })
 
   it('POST with JSON', async () => {
@@ -2839,7 +2837,7 @@ describe('c.var - with testing types', () => {
   })
 
   app.use('/no-path/10').get(
-    // @ts-expect-error
+    // @ts-expect-error The handlers are more than 10
     mw(),
     mw2(),
     mw3(),
@@ -2854,23 +2852,14 @@ describe('c.var - with testing types', () => {
       return c.text(
         // @ts-expect-error
         c.var.echo('hello') +
-          // @ts-expect-error
           c.var.echo2('hello2') +
-          // @ts-expect-error
           c.var.echo3('hello3') +
-          // @ts-expect-error
           c.var.echo4('hello4') +
-          // @ts-expect-error
           c.var.echo5('hello5') +
-          // @ts-expect-error
           c.var.echo6('hello6') +
-          // @ts-expect-error
           c.var.echo7('hello7') +
-          // @ts-expect-error
           c.var.echo8('hello8') +
-          // @ts-expect-error
           c.var.echo9('hello9') +
-          // @ts-expect-error
           c.var.echo10('hello10')
       )
     }

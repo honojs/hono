@@ -1,0 +1,6 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "mitata": "^0.1.11"
+  }
+}

@@ -111,14 +111,14 @@ class Hono<
 
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
-    allMethods.map((method) => {
+    allMethods.forEach((method) => {
       this[method] = (args1: string | H, ...args: H[]) => {
         if (typeof args1 === 'string') {
           this.#path = args1
         } else {
           this.addRoute(method, this.#path, args1)
         }
-        args.map((handler) => {
+        args.forEach((handler) => {
           if (typeof handler !== 'string') {
             this.addRoute(method, this.#path, handler)
           }
@@ -154,7 +154,7 @@ class Hono<
         this.#path = '*'
         handlers.unshift(arg1)
       }
-      handlers.map((handler) => {
+      handlers.forEach((handler) => {
         this.addRoute(METHOD_NAME_ALL, this.#path, handler)
       })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -375,8 +375,8 @@ class Hono<
     request: Request,
     Env?: E['Bindings'] | {},
     executionCtx?: ExecutionContext
-  ) => Response | Promise<Response> = (request, Env, executionCtx) => {
-    return this.dispatch(request, executionCtx, Env, request.method)
+  ) => Response | Promise<Response> = (request, ...rest) => {
+    return this.dispatch(request, rest[1], rest[0], request.method)
   }
 
   /**

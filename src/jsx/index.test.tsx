@@ -132,6 +132,11 @@ describe('render to string', () => {
     expect(template.toString()).toBe('<input/>')
   })
 
+  it('Empty elements with children are rended with children and closing tag', () => {
+    const template = <link>https://example.com</link>
+    expect(template.toString()).toBe('<link>https://example.com</link>')
+  })
+
   it('Props value is null', () => {
     const template = <span data-hello={null}>Hello</span>
     expect(template.toString()).toBe('<span>Hello</span>')
@@ -366,19 +371,23 @@ describe('render to string', () => {
           style={{
             color: 'red',
             fontSize: 'small',
-            fontFamily: 'Menlo, Consolas, DejaVu Sans Mono, monospace',
+            fontFamily: 'Menlo, Consolas, "DejaVu Sans Mono", monospace',
           }}
         >
           Hello
         </h1>
       )
       expect(template.toString()).toBe(
-        '<h1 style="color:red;font-size:small;font-family:Menlo, Consolas, DejaVu Sans Mono, monospace">Hello</h1>'
+        '<h1 style="color:red;font-size:small;font-family:Menlo, Consolas, &quot;DejaVu Sans Mono&quot;, monospace">Hello</h1>'
       )
     })
     it('should not convert the strings', () => {
       const template = <h1 style='color:red;font-size:small'>Hello</h1>
       expect(template.toString()).toBe('<h1 style="color:red;font-size:small">Hello</h1>')
+    })
+    it('should render variable without any name conversion', () => {
+      const template = <h1 style={{ '--myVar': 1 }}>Hello</h1>
+      expect(template.toString()).toBe('<h1 style="--myVar:1px">Hello</h1>')
     })
   })
 
@@ -737,6 +746,10 @@ describe('default export', () => {
     'useCallback',
     'useReducer',
     'useDebugValue',
+    'createRef',
+    'forwardRef',
+    'useImperativeHandle',
+    'useSyncExternalStore',
     'use',
     'startTransition',
     'useTransition',

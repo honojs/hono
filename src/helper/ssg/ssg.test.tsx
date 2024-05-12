@@ -1,10 +1,17 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Hono } from '../../hono'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
-import { SSG_DISABLED_RESPONSE, ssgParams, isSSGContext, disableSSG, onlySSG } from './middleware'
-import { fetchRoutesContent, saveContentToFile, toSSG } from './ssg'
+import {
+  X_HONO_DISABLE_SSG_HEADER_KEY,
+  ssgParams,
+  isSSGContext,
+  disableSSG,
+  onlySSG,
+} from './middleware'
+import { fetchRoutesContent, saveContentToFile, toSSG, defaultExtensionMap } from './ssg'
 import type {
   BeforeRequestHook,
   AfterResponseHook,
@@ -222,6 +229,47 @@ describe('toSSG function', () => {
     expect(afterGenerateHookMock).toHaveBeenCalledWith(expect.anything())
   })
 
+  it('should handle asynchronous beforeRequestHook correctly', async () => {
+    const beforeRequestHook: BeforeRequestHook = async (req) => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      if (req.url.includes('/skip')) {
+        return false
+      }
+      return req
+    }
+
+    const result = await toSSG(app, fsMock, { beforeRequestHook })
+    expect(result.files).not.toContain(expect.stringContaining('/skip'))
+    expect(result.success).toBe(true)
+    expect(result.files.length).toBeGreaterThan(0)
+  })
+
+  it('should handle asynchronous afterResponseHook correctly', async () => {
+    const afterResponseHook: AfterResponseHook = async (res) => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      if (res.headers.get('X-Skip') === 'true') {
+        return false
+      }
+      return res
+    }
+
+    const result = await toSSG(app, fsMock, { afterResponseHook })
+    expect(result.files).not.toContain(expect.stringContaining('/skip'))
+    expect(result.success).toBe(true)
+    expect(result.files.length).toBeGreaterThan(0)
+  })
+
+  it('should handle asynchronous afterGenerateHook correctly', async () => {
+    const afterGenerateHook: AfterGenerateHook = async (result) => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      console.log(`Generated ${result.files.length} files.`)
+    }
+
+    const result = await toSSG(app, fsMock, { afterGenerateHook })
+    expect(result.success).toBe(true)
+    expect(result.files.length).toBeGreaterThan(0)
+  })
+
   it('should avoid memory leak from `req.signal.addEventListener()`', async () => {
     const fsMock: FileSystemModule = {
       writeFile: vi.fn(() => Promise.resolve()),
@@ -250,6 +298,9 @@ describe('fetchRoutesContent function', () => {
   beforeEach(() => {
     app = new Hono()
     app.get('/text', (c) => c.text('Text Response'))
+    app.get('/text-utf8', (c) => {
+      return c.text('Text Response', 200, { 'Content-Type': 'text/plain;charset=UTF-8' })
+    })
     app.get('/html', (c) => c.html('<p>HTML Response</p>'))
     app.get('/json', (c) => c.json({ message: 'JSON Response' }))
     app.use('*', poweredBy())
@@ -259,6 +310,10 @@ describe('fetchRoutesContent function', () => {
     const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
 
     expect(htmlMap.get('/text')).toEqual({
+      content: 'Text Response',
+      mimeType: 'text/plain',
+    })
+    expect(htmlMap.get('/text-utf8')).toEqual({
       content: 'Text Response',
       mimeType: 'text/plain',
     })
@@ -417,6 +472,78 @@ describe('saveContentToFile function', () => {
     }
     expect(fsMock.mkdir).toHaveBeenCalledWith('static-check-extensions', { recursive: true })
   })
+
+  it('should correctly create .yaml files for YAML content', async () => {
+    const yamlContent = 'title: YAML Example\nvalue: This is a YAML file.'
+    const mimeType = 'application/yaml'
+    const routePath = '/example'
+
+    const yamlData = {
+      routePath: routePath,
+      content: yamlContent,
+      mimeType: mimeType,
+    }
+
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    await saveContentToFile(Promise.resolve(yamlData), fsMock, './static')
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/example.yaml', yamlContent)
+  })
+
+  it('should correctly create .yml files for YAML content', async () => {
+    const yamlContent = 'title: YAML Example\nvalue: This is a YAML file.'
+    const yamlMimeType = 'application/yaml'
+    const yamlRoutePath = '/yaml'
+
+    const yamlData = {
+      routePath: yamlRoutePath,
+      content: yamlContent,
+      mimeType: yamlMimeType,
+    }
+
+    const yamlMimeType2 = 'x-yaml'
+    const yamlRoutePath2 = '/yaml2'
+    const yamlData2 = {
+      routePath: yamlRoutePath2,
+      content: yamlContent,
+      mimeType: yamlMimeType2,
+    }
+
+    const htmlMimeType = 'text/html'
+    const htmlRoutePath = '/html'
+
+    const htmlData = {
+      routePath: htmlRoutePath,
+      content: yamlContent,
+      mimeType: htmlMimeType,
+    }
+
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const extensionMap = {
+      'application/yaml': 'yml',
+      'x-yaml': 'xyml',
+    }
+    await saveContentToFile(Promise.resolve(yamlData), fsMock, './static', extensionMap)
+    await saveContentToFile(Promise.resolve(yamlData2), fsMock, './static', extensionMap)
+    await saveContentToFile(Promise.resolve(htmlData), fsMock, './static', extensionMap)
+    await saveContentToFile(Promise.resolve(htmlData), fsMock, './static', {
+      ...defaultExtensionMap,
+      ...extensionMap,
+    })
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml.yml', yamlContent)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml2.xyml', yamlContent)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.htm', yamlContent) // extensionMap
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.html', yamlContent) // default + extensionMap
+  })
 })
 
 describe('Dynamic route handling', () => {
@@ -474,7 +601,9 @@ describe('disableSSG/onlySSG middlewares', () => {
   const app = new Hono()
   app.get('/', (c) => c.html(<h1>Hello</h1>))
   app.get('/api', disableSSG(), (c) => c.text('an-api'))
-  app.get('/disable-by-response', () => SSG_DISABLED_RESPONSE)
+  app.get('/disable-by-response', (c) =>
+    c.text('', 404, { [X_HONO_DISABLE_SSG_HEADER_KEY]: 'true' })
+  )
   app.get('/static-page', onlySSG(), (c) => c.html(<h1>Welcome to my site</h1>))
 
   const fsMock: FileSystemModule = {

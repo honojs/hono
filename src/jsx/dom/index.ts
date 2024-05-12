@@ -1,5 +1,6 @@
-import type { Props, Child, JSXNode } from '../base'
+import type { Props, Child, DOMAttributes, JSXNode } from '../base'
 import { memo, isValidElement } from '../base'
+import { Children } from '../children'
 import { useContext } from '../context'
 import {
   useState,
@@ -15,20 +16,30 @@ import {
   useMemo,
   useLayoutEffect,
   useReducer,
+  useId,
   useDebugValue,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
 } from '../hooks'
 import { Suspense, ErrorBoundary } from './components'
 import { createContext } from './context'
-import { jsx } from './jsx-runtime'
+import { jsx, Fragment } from './jsx-runtime'
+import { flushSync, createPortal } from './render'
 
 export { render } from './render'
 
 const createElement = (
   tag: string | ((props: Props) => JSXNode),
-  props: Props,
+  props: Props | null,
   ...children: Child[]
 ): JSXNode => {
-  const jsxProps: Props = { ...props, children }
+  const jsxProps: Props = props ? { ...props } : {}
+  if (children.length) {
+    jsxProps.children = children.length === 1 ? children[0] : children
+  }
+
   let key = undefined
   if ('key' in jsxProps) {
     key = jsxProps.key
@@ -48,7 +59,7 @@ const cloneElement = <T extends JSXNode | JSX.Element>(
     {
       ...(element as JSXNode).props,
       ...props,
-      children: children.length ? children : (element as JSXNode).children,
+      children: children.length ? children : (element as JSXNode).props.children,
     },
     (element as JSXNode).key
   ) as T
@@ -69,7 +80,12 @@ export {
   useMemo,
   useLayoutEffect,
   useReducer,
+  useId,
   useDebugValue,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
   Suspense,
   ErrorBoundary,
   createContext,
@@ -78,6 +94,11 @@ export {
   isValidElement,
   createElement,
   cloneElement,
+  Children,
+  Fragment,
+  DOMAttributes,
+  flushSync,
+  createPortal,
 }
 
 export default {
@@ -94,7 +115,12 @@ export default {
   useMemo,
   useLayoutEffect,
   useReducer,
+  useId,
   useDebugValue,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
   Suspense,
   ErrorBoundary,
   createContext,
@@ -103,6 +129,14 @@ export default {
   isValidElement,
   createElement,
   cloneElement,
+  Children,
+  Fragment,
+  flushSync,
+  createPortal,
 }
 
 export type { Context } from '../context'
+
+// TODO: change to `export type *` after denoify bug is fixed
+// https://github.com/garronej/denoify/issues/124
+export * from '../types'

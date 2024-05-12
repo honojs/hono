@@ -4,7 +4,7 @@ import type { Env, Schema } from '../../types.ts'
 import { createPool } from '../../utils/concurrent.ts'
 import { getExtension } from '../../utils/mime.ts'
 import type { AddedSSGDataRequest, SSGParams } from './middleware.ts'
-import { SSG_DISABLED_RESPONSE, SSG_CONTEXT } from './middleware.ts'
+import { X_HONO_DISABLE_SSG_HEADER_KEY, SSG_CONTEXT } from './middleware.ts'
 import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils.ts'
 
 const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
@@ -30,8 +30,13 @@ export interface ToSSGResult {
   error?: Error
 }
 
-const generateFilePath = (routePath: string, outDir: string, mimeType: string) => {
-  const extension = determineExtension(mimeType)
+const generateFilePath = (
+  routePath: string,
+  outDir: string,
+  mimeType: string,
+  extensionMap?: Record<string, string>
+) => {
+  const extension = determineExtension(mimeType, extensionMap)
 
   if (routePath.endsWith(`.${extension}`)) {
     return joinPaths(outDir, routePath)
@@ -62,21 +67,26 @@ const parseResponseContent = async (response: Response): Promise<string | ArrayB
   }
 }
 
-const determineExtension = (mimeType: string): string => {
-  switch (mimeType) {
-    case 'text/html':
-      return 'html'
-    case 'text/xml':
-    case 'application/xml':
-      return 'xml'
-    default: {
-      return getExtension(mimeType) || 'html'
-    }
-  }
+export const defaultExtensionMap: Record<string, string> = {
+  'text/html': 'html',
+  'text/xml': 'xml',
+  'application/xml': 'xml',
+  'application/yaml': 'yaml',
 }
 
-export type BeforeRequestHook = (req: Request) => Request | false
-export type AfterResponseHook = (res: Response) => Response | false
+const determineExtension = (
+  mimeType: string,
+  userExtensionMap?: Record<string, string>
+): string => {
+  const extensionMap = userExtensionMap || defaultExtensionMap
+  if (mimeType in extensionMap) {
+    return extensionMap[mimeType]
+  }
+  return getExtension(mimeType) || 'html'
+}
+
+export type BeforeRequestHook = (req: Request) => Request | false | Promise<Request | false>
+export type AfterResponseHook = (res: Response) => Response | false | Promise<Response | false>
 export type AfterGenerateHook = (result: ToSSGResult) => void | Promise<void>
 
 export interface ToSSGOptions {
@@ -85,6 +95,7 @@ export interface ToSSGOptions {
   afterResponseHook?: AfterResponseHook
   afterGenerateHook?: AfterGenerateHook
   concurrency?: number
+  extensionMap?: Record<string, string>
 }
 
 /**
@@ -117,17 +128,19 @@ export const fetchRoutesContent = function* <
     const thisRouteBaseURL = new URL(route.path, baseURL).toString()
 
     let forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
-    if (beforeRequestHook) {
-      const maybeRequest = beforeRequestHook(forGetInfoURLRequest)
-      if (!maybeRequest) {
-        continue
-      }
-      forGetInfoURLRequest = maybeRequest as unknown as AddedSSGDataRequest
-    }
 
     // eslint-disable-next-line no-async-promise-executor
     yield new Promise(async (resolveGetInfo, rejectGetInfo) => {
       try {
+        if (beforeRequestHook) {
+          const maybeRequest = await beforeRequestHook(forGetInfoURLRequest)
+          if (!maybeRequest) {
+            resolveGetInfo(undefined)
+            return
+          }
+          forGetInfoURLRequest = maybeRequest as unknown as AddedSSGDataRequest
+        }
+
         await pool.run(() => app.fetch(forGetInfoURLRequest))
 
         if (!forGetInfoURLRequest.ssgParams) {
@@ -155,12 +168,12 @@ export const fetchRoutesContent = function* <
                       [SSG_CONTEXT]: true,
                     })
                   )
-                  if (response === SSG_DISABLED_RESPONSE) {
+                  if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) {
                     resolveReq(undefined)
                     return
                   }
                   if (afterResponseHook) {
-                    const maybeResponse = afterResponseHook(response)
+                    const maybeResponse = await afterResponseHook(response)
                     if (!maybeResponse) {
                       resolveReq(undefined)
                       return
@@ -202,14 +215,15 @@ const createdDirs: Set<string> = new Set()
 export const saveContentToFile = async (
   data: Promise<{ routePath: string; content: string | ArrayBuffer; mimeType: string } | undefined>,
   fsModule: FileSystemModule,
-  outDir: string
+  outDir: string,
+  extensionMap?: Record<string, string>
 ): Promise<string | undefined> => {
   const awaitedData = await data
   if (!awaitedData) {
     return
   }
   const { routePath, content, mimeType } = awaitedData
-  const filePath = generateFilePath(routePath, outDir, mimeType)
+  const filePath = generateFilePath(routePath, outDir, mimeType, extensionMap)
   const dirPath = dirname(filePath)
 
   if (!createdDirs.has(dirPath)) {
@@ -257,7 +271,7 @@ export interface ToSSGAdaptorInterface<
  * The API might be changed.
  */
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
-  let result: ToSSGResult | undefined = undefined
+  let result: ToSSGResult | undefined
   const getInfoPromises: Promise<unknown>[] = []
   const savePromises: Promise<string | undefined>[] = []
   try {

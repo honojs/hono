@@ -1,4 +1,5 @@
 import { hc } from '../../client/index.ts'
+import type { ExecutionContext } from '../../context.ts'
 import type { Hono } from '../../hono.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -14,5 +15,5 @@ export const testClient = <T extends Hono<any, any, any>>(
     return app.request(input, init, Env, executionCtx)
   }
 
-  return hc<typeof app>('', { fetch: customFetch })
+  return hc<typeof app>('http://localhost', { fetch: customFetch })
 }

@@ -34,14 +34,18 @@ export const validator = <
   V extends {
     in: {
       [K in U]: K extends 'json'
-        ? InputType
+        ? unknown extends InputType
+          ? OutputTypeExcludeResponseType
+          : InputType
         : { [K2 in keyof OutputTypeExcludeResponseType]: ValidationTargets[K][K2] }
     }
     out: { [K in U]: OutputTypeExcludeResponseType }
   } = {
     in: {
       [K in U]: K extends 'json'
-        ? InputType
+        ? unknown extends InputType
+          ? OutputTypeExcludeResponseType
+          : InputType
         : { [K2 in keyof OutputTypeExcludeResponseType]: ValidationTargets[K][K2] }
     }
     out: { [K in U]: OutputTypeExcludeResponseType }
@@ -63,45 +67,44 @@ export const validator = <
 
     switch (target) {
       case 'json':
-        if (!contentType || !contentType.startsWith('application/json')) {
+        if (!contentType || !/^application\/([a-z-]+\+)?json/.test(contentType)) {
           const message = `Invalid HTTP header: Content-Type=${contentType}`
           throw new HTTPException(400, { message })
         }
-        if (c.req.bodyCache.json) {
-          value = await c.req.bodyCache.json
-          break
-        }
-        /**
-         * Get the arrayBuffer, create JSON object via Response, and cache the arrayBuffer in the c.req.bodyCache if there is no cached content in c.req.bodyCache.json.
-         */
         try {
-          const arrayBuffer = c.req.bodyCache.arrayBuffer ?? (await c.req.raw.arrayBuffer())
-          value = await new Response(arrayBuffer).json()
-          c.req.bodyCache.json = value
-          c.req.bodyCache.arrayBuffer = arrayBuffer
+          value = await c.req.json()
         } catch {
           const message = 'Malformed JSON in request body'
           throw new HTTPException(400, { message })
         }
         break
       case 'form': {
-        if (c.req.bodyCache.formData) {
-          value = c.req.bodyCache.formData
+        if (!contentType) {
           break
         }
+
+        if (c.req.bodyCache.formData) {
+          value = await c.req.bodyCache.formData
+          break
+        }
+
         try {
-          const contentType = c.req.header('Content-Type')
-          if (contentType) {
-            const arrayBuffer = c.req.bodyCache.arrayBuffer ?? (await c.req.raw.arrayBuffer())
-            const formData = await bufferToFormData(arrayBuffer, contentType)
-            const form: BodyData = {}
-            formData.forEach((value, key) => {
+          const arrayBuffer = await c.req.arrayBuffer()
+          const formData = await bufferToFormData(arrayBuffer, contentType)
+          const form: BodyData = {}
+          formData.forEach((value, key) => {
+            if (key.endsWith('[]')) {
+              if (form[key] === undefined) {
+                form[key] = [value]
+              } else if (Array.isArray(form[key])) {
+                ;(form[key] as unknown[]).push(value)
+              }
+            } else {
               form[key] = value
-            })
-            value = form
-            c.req.bodyCache.formData = formData
-            c.req.bodyCache.arrayBuffer = arrayBuffer
-          }
+            }
+          })
+          value = form
+          c.req.bodyCache.formData = formData
         } catch (e) {
           let message = 'Malformed FormData request.'
           message += e instanceof Error ? ` ${e.message}` : ` ${String(e)}`

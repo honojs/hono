@@ -36,6 +36,9 @@ export type JSONParsed<T> = T extends { toJSON(): infer J }
   ? { [K in keyof T]: JSONParsed<T[K]> }
   : never
 
+// from sindresorhus/type-fest
+export type Simplify<T> = { [KeyType in keyof T]: T[KeyType] } & {}
+
 export type InterfaceToType<T> = T extends Function ? T : { [K in keyof T]: InterfaceToType<T[K]> }
 
 export type RequiredKeysOf<BaseType extends object> = Exclude<
@@ -50,3 +53,7 @@ export type HasRequiredKeys<BaseType extends object> = RequiredKeysOf<BaseType> 
   : true
 
 export type IsAny<T> = boolean extends (T extends never ? true : false) ? true : false
+
+export type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}

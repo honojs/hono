@@ -11,8 +11,8 @@ export type KVAssetOptions = {
 export const getContentFromKVAsset = async (
   path: string,
   options?: KVAssetOptions
-): Promise<ArrayBuffer | null> => {
-  let ASSET_MANIFEST: Record<string, string> = {}
+): Promise<ReadableStream | null> => {
+  let ASSET_MANIFEST: Record<string, string>
 
   if (options && options.manifest) {
     if (typeof options.manifest === 'string') {
@@ -40,9 +40,9 @@ export const getContentFromKVAsset = async (
     return null
   }
 
-  const content = await ASSET_NAMESPACE.get(key, { type: 'arrayBuffer' })
+  const content = await ASSET_NAMESPACE.get(key, { type: 'stream' })
   if (!content) {
     return null
   }
-  return content as unknown as ArrayBuffer
+  return content as unknown as ReadableStream
 }

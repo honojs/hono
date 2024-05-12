@@ -6,7 +6,6 @@ import type {
   ParamKeys,
   ParamKeyToRecord,
   RemoveQuestion,
-  UndefinedIfHavingQuestion,
   ValidationTargets,
   RouterRoute,
 } from './types'
@@ -76,9 +75,11 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    * @see https://hono.dev/api/routing#path-parameter
    */
-  param<P2 extends string = P>(
-    key: RemoveQuestion<ParamKeys<P2>>
-  ): UndefinedIfHavingQuestion<ParamKeys<P2>>
+  param<P2 extends ParamKeys<P> = ParamKeys<P>>(key: P2 extends `${infer _}?` ? never : P2): string
+  param<P2 extends RemoveQuestion<ParamKeys<P>> = RemoveQuestion<ParamKeys<P>>>(
+    key: P2
+  ): string | undefined
+  param(key: string): string | undefined
   param<P2 extends string = P>(): UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>
   param(key?: string): unknown {
     return key ? this.getDecodedParam(key) : this.getAllDecodedParams()
@@ -194,18 +195,27 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   private cachedBody = (key: keyof Body) => {
     const { bodyCache, raw } = this
     const cachedBody = bodyCache[key]
+
     if (cachedBody) {
       return cachedBody
     }
-    /**
-     * If an arrayBuffer cache is exist,
-     * use it for creating a text, json, and others.
-     */
-    if (bodyCache.arrayBuffer) {
-      return (async () => {
-        return await new Response(bodyCache.arrayBuffer)[key]()
-      })()
+
+    if (!bodyCache[key]) {
+      for (const keyOfBodyCache of Object.keys(bodyCache)) {
+        if (keyOfBodyCache === 'parsedBody') {
+          continue
+        }
+        return (async () => {
+          // @ts-expect-error bodyCache[keyOfBodyCache] can be passed as a body
+          let body = await bodyCache[keyOfBodyCache]
+          if (keyOfBodyCache === 'json') {
+            body = JSON.stringify(body)
+          }
+          return await new Response(body)[key]()
+        })()
+      }
     }
+
     return (bodyCache[key] = raw[key]())
   }
 

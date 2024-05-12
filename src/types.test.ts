@@ -17,9 +17,11 @@ import type {
   ParamKeys,
   ParamKeyToRecord,
   RemoveQuestion,
+  ResponseFormat,
   ToSchema,
-  UndefinedIfHavingQuestion,
+  TypedResponse,
 } from './types'
+import type { StatusCode } from './utils/http-status'
 import type { Expect, Equal } from './utils/types'
 import { validator } from './validator'
 
@@ -94,6 +96,8 @@ describe('HandlerInterface', () => {
             output: {
               message: string
             }
+            outputFormat: 'json'
+            status: StatusCode
           }
         }
       }
@@ -131,6 +135,8 @@ describe('HandlerInterface', () => {
             output: {
               message: string
             }
+            outputFormat: 'json'
+            status: StatusCode
           }
         }
       }
@@ -156,7 +162,9 @@ describe('HandlerInterface', () => {
                 id: string
               }
             }
-            output: {}
+            output: 'foo'
+            outputFormat: 'text'
+            status: StatusCode
           }
         }
       }
@@ -183,7 +191,9 @@ describe('HandlerInterface', () => {
                 foo: string
               }
             }
-            output: {}
+            output: string
+            outputFormat: 'text'
+            status: StatusCode
           }
         }
       }
@@ -206,7 +216,9 @@ describe('HandlerInterface', () => {
                 foo: string
               }
             }
-            output: {}
+            output: string
+            outputFormat: 'text'
+            status: StatusCode
           }
         }
       } & {
@@ -220,6 +232,8 @@ describe('HandlerInterface', () => {
               }
             }
             output: {}
+            outputFormat: ResponseFormat
+            status: StatusCode
           }
         }
       }
@@ -257,8 +271,42 @@ describe('OnHandlerInterface', () => {
           output: {
             success: boolean
           }
+          outputFormat: 'json'
+          status: StatusCode
         }
       }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+describe('TypedResponse', () => {
+  test('unknown', () => {
+    type Actual = TypedResponse
+    type Expected = {
+      data: unknown
+      status: StatusCode
+      format: ResponseFormat
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('text auto infer', () => {
+    type Actual = TypedResponse<string>
+    type Expected = {
+      data: string
+      status: StatusCode
+      format: 'text'
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('json auto infer', () => {
+    type Actual = TypedResponse<{ ok: true }>
+    type Expected = {
+      data: { ok: true }
+      status: StatusCode
+      format: 'json'
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
@@ -272,15 +320,21 @@ describe('Schema', () => {
         'post',
         '/api/posts/:id',
         {
-          json: {
-            id: number
-            title: string
+          in: {
+            json: {
+              id: number
+              title: string
+            }
           }
         },
-        {
-          message: string
-          success: boolean
-        }
+        TypedResponse<
+          {
+            message: string
+            success: boolean
+          },
+          StatusCode,
+          'json'
+        >
       >
     >
 
@@ -302,6 +356,8 @@ describe('Schema', () => {
             message: string
             success: boolean
           }
+          outputFormat: 'json'
+          status: StatusCode
         }
       }
     }
@@ -320,6 +376,8 @@ describe('Support c.json(undefined)', () => {
         $get: {
           input: {}
           output: undefined
+          outputFormat: 'json'
+          status: StatusCode
         }
       }
     }
@@ -382,22 +440,19 @@ describe('Test types of Handler', () => {
 
 describe('`json()`', () => {
   const app = new Hono<{ Variables: { foo: string } }>()
-
   app.get('/post/:id', (c) => {
     c.req.param('id')
     const id = c.req.param('id')
     return c.text('foo')
   })
 
-  const route = app.get('/hello', (c) => {
-    return c.json({
-      message: 'Hello!',
-    })
-  })
-
   test('json', () => {
+    const route = app.get('/hello', (c) => {
+      return c.json({
+        message: 'Hello!',
+      })
+    })
     type Actual = ExtractSchema<typeof route>
-
     type Expected = {
       '/hello': {
         $get: {
@@ -405,10 +460,36 @@ describe('`json()`', () => {
           output: {
             message: string
           }
+          outputFormat: 'json'
+          status: StatusCode
         }
       }
     }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
 
+  test('json with specific status code', () => {
+    const route = app.get('/hello', (c) => {
+      return c.json(
+        {
+          message: 'Hello!',
+        },
+        200
+      )
+    })
+    type Actual = ExtractSchema<typeof route>
+    type Expected = {
+      '/hello': {
+        $get: {
+          input: {}
+          output: {
+            message: string
+          }
+          outputFormat: 'json'
+          status: 200
+        }
+      }
+    }
     type verify = Expect<Equal<Expected, Actual>>
   })
 })
@@ -430,6 +511,26 @@ describe('Path parameters', () => {
       type Actual = ParamKeyToRecord<'/animal/type'>
       type Expected = { [K in '/animal/type']: string }
       type verify = Expect<Equal<Expected, Actual>>
+    })
+  })
+
+  describe('Path parameters in app', () => {
+    test('Optional parameters - /api/:a/:b?', () => {
+      const app = new Hono()
+      const routes = app.get('/api/:a/:b?', (c) => {
+        const a = c.req.param('a')
+        const b = c.req.param('b')
+        expectTypeOf(a).toEqualTypeOf<string>()
+        expectTypeOf(b).toEqualTypeOf<string | undefined>()
+        return c.json({ a, b })
+      })
+      type T = ExtractSchema<typeof routes>
+      type Output = T['/api/:a/:b?']['$get']['output']
+      type Expected = {
+        a: string
+        b: string | undefined
+      }
+      type verify = Expect<Equal<Expected, Output>>
     })
   })
 })
@@ -463,17 +564,6 @@ describe('For HonoRequest', () => {
     type Actual = RemoveQuestion<'/animal/type?'>
     type verify = Expect<Equal<'/animal/type', Actual>>
   })
-
-  describe('UndefinedIfHavingQuestion', () => {
-    test('With ?', () => {
-      type Actual = UndefinedIfHavingQuestion<'/animal/type?'>
-      type verify = Expect<Equal<string | undefined, Actual>>
-    })
-    test('Without ?', () => {
-      type Actual = UndefinedIfHavingQuestion<'/animal/type'>
-      type verify = Expect<Equal<string, Actual>>
-    })
-  })
 })
 
 describe('AddParam', () => {
@@ -505,7 +595,12 @@ describe('AddParam', () => {
 
 describe('ToSchema', () => {
   it('Should convert parameters to schema correctly', () => {
-    type Actual = ToSchema<'get', '/:id', { param: { id: string }; query: { page: string } }, {}>
+    type Actual = ToSchema<
+      'get',
+      '/:id',
+      { in: { param: { id: string }; query: { page: string } } },
+      TypedResponse<{}>
+    >
     type Expected = {
       '/:id': {
         $get: {
@@ -518,6 +613,8 @@ describe('ToSchema', () => {
             }
           }
           output: {}
+          outputFormat: 'json'
+          status: StatusCode
         }
       }
     }
@@ -535,6 +632,14 @@ describe('MergePath', () => {
     type verify3 = Expect<Equal<'/api/', path3>>
     type path4 = MergePath<'/api', '/'>
     type verify4 = Expect<Equal<'/api', path4>>
+    type path5 = MergePath<'/', ''>
+    type verify5 = Expect<Equal<'/', path5>>
+    type path6 = MergePath<'', '/'>
+    type verify6 = Expect<Equal<'/', path6>>
+    type path7 = MergePath<'/', '/'>
+    type verify7 = Expect<Equal<'/', path7>>
+    type path8 = MergePath<'', ''>
+    type verify8 = Expect<Equal<'/', path8>>
   })
 })
 
@@ -544,22 +649,24 @@ describe('MergeSchemaPath', () => {
       'post',
       '/posts',
       {
-        json: {
-          id: number
-          title: string
+        in: {
+          json: {
+            id: number
+            title: string
+          }
         }
       },
-      {
+      TypedResponse<{
         message: string
-      }
+      }>
     > &
       ToSchema<
         'get',
         '/posts',
         {},
-        {
+        TypedResponse<{
           ok: boolean
-        }
+        }>
       >
 
     type Actual = MergeSchemaPath<Sub, '/api'>
@@ -576,12 +683,16 @@ describe('MergeSchemaPath', () => {
           output: {
             message: string
           }
+          outputFormat: 'json'
+          status: StatusCode
         }
         $get: {
           input: {}
           output: {
             ok: boolean
           }
+          outputFormat: 'json'
+          status: StatusCode
         }
       }
     }
@@ -603,6 +714,8 @@ describe('MergeSchemaPath', () => {
               }
             }
             output: {}
+            outputFormat: 'json'
+            status: StatusCode
           }
         }
       },
@@ -620,6 +733,8 @@ describe('MergeSchemaPath', () => {
             }
           }
           output: {}
+          outputFormat: 'json'
+          status: StatusCode
         }
       }
     }
@@ -629,25 +744,25 @@ describe('MergeSchemaPath', () => {
   type GetKey<T> = T extends Record<infer K, unknown> ? K : never
 
   it('Should remove a slash - `/` + `/`', () => {
-    type Sub = ToSchema<'get', '/', {}, {}>
+    type Sub = ToSchema<'get', '/', {}, TypedResponse<{}>>
     type Actual = MergeSchemaPath<Sub, '/'>
     type verify = Expect<Equal<'/', GetKey<Actual>>>
   })
 
   it('Should remove a slash - `/tags` + `/`', () => {
-    type Sub = ToSchema<'get', '/tags', {}, {}>
+    type Sub = ToSchema<'get', '/tags', {}, TypedResponse<{}>>
     type Actual = MergeSchemaPath<Sub, '/'>
     type verify = Expect<Equal<'/tags', GetKey<Actual>>>
   })
 
   it('Should remove a slash - `/` + `/tags`', () => {
-    type Sub = ToSchema<'get', '/', {}, {}>
+    type Sub = ToSchema<'get', '/', {}, TypedResponse<{}>>
     type Actual = MergeSchemaPath<Sub, '/tags'>
     type verify = Expect<Equal<'/tags', GetKey<Actual>>>
   })
 
   test('MergeSchemaPath - SubPath has path params', () => {
-    type Actual = MergeSchemaPath<ToSchema<'get', '/', {}, {}>, '/a/:b'>
+    type Actual = MergeSchemaPath<ToSchema<'get', '/', {}, TypedResponse>, '/a/:b'>
     type Expected = {
       '/a/:b': {
         $get: {
@@ -657,6 +772,8 @@ describe('MergeSchemaPath', () => {
             }
           }
           output: {}
+          outputFormat: ResponseFormat
+          status: StatusCode
         }
       }
     }
@@ -664,7 +781,7 @@ describe('MergeSchemaPath', () => {
   })
 
   test('MergeSchemaPath - Path and SubPath have path params', () => {
-    type Actual = MergeSchemaPath<ToSchema<'get', '/c/:d', {}, {}>, '/a/:b'>
+    type Actual = MergeSchemaPath<ToSchema<'get', '/c/:d', {}, TypedResponse<{}>>, '/a/:b'>
     type Expected = {
       '/a/:b/c/:d': {
         $get: {
@@ -676,6 +793,8 @@ describe('MergeSchemaPath', () => {
             }
           }
           output: {}
+          outputFormat: 'json'
+          status: StatusCode
         }
       }
     }
@@ -683,7 +802,7 @@ describe('MergeSchemaPath', () => {
   })
 
   test('MergeSchemaPath - Path and SubPath have regexp path params', () => {
-    type Actual = MergeSchemaPath<ToSchema<'get', '/c/:d{.+}', {}, {}>, '/a/:b{.+}'>
+    type Actual = MergeSchemaPath<ToSchema<'get', '/c/:d{.+}', {}, TypedResponse<{}>>, '/a/:b{.+}'>
     type Expected = {
       '/a/:b{.+}/c/:d{.+}': {
         $get: {
@@ -695,7 +814,58 @@ describe('MergeSchemaPath', () => {
             }
           }
           output: {}
+          outputFormat: 'json'
+          status: StatusCode
         }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('MergeSchemaPath - Method has Endpoints as Union', () => {
+    type Actual = MergeSchemaPath<
+      {
+        '/': {
+          $get:
+            | {
+                input: {}
+                output: {
+                  error: string
+                }
+                outputFormat: 'json'
+                status: 404
+              }
+            | {
+                input: {}
+                output: {
+                  success: boolean
+                }
+                outputFormat: 'json'
+                status: 200
+              }
+        }
+      },
+      '/api/hello'
+    >
+    type Expected = {
+      '/api/hello': {
+        $get:
+          | {
+              input: {}
+              output: {
+                error: string
+              }
+              outputFormat: 'json'
+              status: 404
+            }
+          | {
+              input: {}
+              output: {
+                success: boolean
+              }
+              outputFormat: 'json'
+              status: 200
+            }
       }
     }
     type verify = Expect<Equal<Expected, Actual>>
@@ -705,6 +875,7 @@ describe('MergeSchemaPath', () => {
 describe('Different types using json()', () => {
   describe('no path pattern', () => {
     const app = new Hono()
+
     test('Three different types', () => {
       const route = app.get((c) => {
         const flag = false
@@ -725,19 +896,87 @@ describe('Different types using json()', () => {
       type Actual = ExtractSchema<typeof route>
       type Expected = {
         '/': {
-          $get: {
-            input: {}
-            output:
-              | {
+          $get:
+            | {
+                input: {}
+                output: {
                   ng: boolean
                 }
-              | {
+                outputFormat: 'json'
+                status: StatusCode
+              }
+            | {
+                input: {}
+                output: {
                   ok: boolean
                 }
-              | {
+                outputFormat: 'json'
+                status: StatusCode
+              }
+            | {
+                input: {}
+                output: {
                   default: boolean
                 }
-          }
+                outputFormat: 'json'
+                status: StatusCode
+              }
+        }
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+
+    test('Three different types and status codes', () => {
+      const route = app.get((c) => {
+        const flag = false
+        if (flag) {
+          return c.json(
+            {
+              ng: true,
+            },
+            400
+          )
+        }
+        if (!flag) {
+          return c.json(
+            {
+              ok: true,
+            },
+            200
+          )
+        }
+        return c.json({
+          default: true,
+        })
+      })
+      type Actual = ExtractSchema<typeof route>
+      type Expected = {
+        '/': {
+          $get:
+            | {
+                input: {}
+                output: {
+                  ng: boolean
+                }
+                outputFormat: 'json'
+                status: 400
+              }
+            | {
+                input: {}
+                output: {
+                  ok: boolean
+                }
+                outputFormat: 'json'
+                status: 200
+              }
+            | {
+                input: {}
+                output: {
+                  default: boolean
+                }
+                outputFormat: 'json'
+                status: StatusCode
+              }
         }
       }
       type verify = Expect<Equal<Expected, Actual>>
@@ -746,6 +985,7 @@ describe('Different types using json()', () => {
 
   describe('path pattern', () => {
     const app = new Hono()
+
     test('Three different types', () => {
       const route = app.get('/foo', (c) => {
         const flag = false
@@ -766,19 +1006,87 @@ describe('Different types using json()', () => {
       type Actual = ExtractSchema<typeof route>
       type Expected = {
         '/foo': {
-          $get: {
-            input: {}
-            output:
-              | {
+          $get:
+            | {
+                input: {}
+                output: {
                   ng: boolean
                 }
-              | {
+                outputFormat: 'json'
+                status: StatusCode
+              }
+            | {
+                input: {}
+                output: {
                   ok: boolean
                 }
-              | {
+                outputFormat: 'json'
+                status: StatusCode
+              }
+            | {
+                input: {}
+                output: {
                   default: boolean
                 }
-          }
+                outputFormat: 'json'
+                status: StatusCode
+              }
+        }
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+
+    test('Three different types and status codes', () => {
+      const route = app.get('/foo', (c) => {
+        const flag = false
+        if (flag) {
+          return c.json(
+            {
+              ng: true,
+            },
+            400
+          )
+        }
+        if (!flag) {
+          return c.json(
+            {
+              ok: true,
+            },
+            200
+          )
+        }
+        return c.json({
+          default: true,
+        })
+      })
+      type Actual = ExtractSchema<typeof route>
+      type Expected = {
+        '/foo': {
+          $get:
+            | {
+                input: {}
+                output: {
+                  ng: boolean
+                }
+                outputFormat: 'json'
+                status: 400
+              }
+            | {
+                input: {}
+                output: {
+                  ok: boolean
+                }
+                outputFormat: 'json'
+                status: 200
+              }
+            | {
+                input: {}
+                output: {
+                  default: boolean
+                }
+                outputFormat: 'json'
+                status: StatusCode
+              }
         }
       }
       type verify = Expect<Equal<Expected, Actual>>
@@ -788,7 +1096,8 @@ describe('Different types using json()', () => {
 
 describe('json() in an async handler', () => {
   const app = new Hono()
-  test('Three different types', () => {
+
+  test('json', () => {
     const route = app.get(async (c) => {
       return c.json({
         ok: true,
@@ -802,6 +1111,33 @@ describe('json() in an async handler', () => {
           output: {
             ok: boolean
           }
+          outputFormat: 'json'
+          status: StatusCode
+        }
+      }
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('json with specific status code', () => {
+    const route = app.get(async (c) => {
+      return c.json(
+        {
+          ok: true,
+        },
+        200
+      )
+    })
+    type Actual = ExtractSchema<typeof route>
+    type Expected = {
+      '/': {
+        $get: {
+          input: {}
+          output: {
+            ok: boolean
+          }
+          outputFormat: 'json'
+          status: 200
         }
       }
     }
@@ -1012,9 +1348,7 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
         return c.json(0)
       })
@@ -1032,13 +1366,9 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
         return c.json(0)
       })
@@ -1058,17 +1388,11 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
         return c.json(0)
       })
@@ -1090,21 +1414,13 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
-        // @ts-expect-error foo4 is not typed
         c.get('foo4')
-        // @ts-expect-error foo4 is not typed
         c.var.foo4
         return c.json(0)
       })
@@ -1128,25 +1444,15 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
-        // @ts-expect-error foo4 is not typed
         c.get('foo4')
-        // @ts-expect-error foo4 is not typed
         c.var.foo4
-        // @ts-expect-error foo5 is not typed
         c.get('foo5')
-        // @ts-expect-error foo5 is not typed
         c.var.foo5
         return c.json(0)
       })
@@ -1172,29 +1478,18 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
-        // @ts-expect-error foo4 is not typed
         c.get('foo4')
-        // @ts-expect-error foo4 is not typed
         c.var.foo4
-        // @ts-expect-error foo5 is not typed
         c.get('foo5')
-        // @ts-expect-error foo5 is not typed
         c.var.foo5
-        // @ts-expect-error foo6 is not typed
         c.get('foo6')
-        // @ts-expect-error foo6 is not typed
+
         c.var.foo6
         return c.json(0)
       })
@@ -1222,33 +1517,19 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
-        // @ts-expect-error foo4 is not typed
         c.get('foo4')
-        // @ts-expect-error foo4 is not typed
         c.var.foo4
-        // @ts-expect-error foo5 is not typed
         c.get('foo5')
-        // @ts-expect-error foo5 is not typed
         c.var.foo5
-        // @ts-expect-error foo6 is not typed
         c.get('foo6')
-        // @ts-expect-error foo6 is not typed
         c.var.foo6
-        // @ts-expect-error foo7 is not typed
         c.get('foo7')
-        // @ts-expect-error foo7 is not typed
         c.var.foo7
         return c.json(0)
       })
@@ -1278,37 +1559,21 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
-        // @ts-expect-error foo4 is not typed
         c.get('foo4')
-        // @ts-expect-error foo4 is not typed
         c.var.foo4
-        // @ts-expect-error foo5 is not typed
         c.get('foo5')
-        // @ts-expect-error foo5 is not typed
         c.var.foo5
-        // @ts-expect-error foo6 is not typed
         c.get('foo6')
-        // @ts-expect-error foo6 is not typed
         c.var.foo6
-        // @ts-expect-error foo7 is not typed
         c.get('foo7')
-        // @ts-expect-error foo7 is not typed
         c.var.foo7
-        // @ts-expect-error foo8 is not typed
         c.get('foo8')
-        // @ts-expect-error foo8 is not typed
         c.var.foo8
         return c.json(0)
       })
@@ -1340,41 +1605,23 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
-        // @ts-expect-error foo1 is not typed
         c.get('foo1')
-        // @ts-expect-error foo1 is not typed
         c.var.foo1
-        // @ts-expect-error foo2 is not typed
         c.get('foo2')
-        // @ts-expect-error foo2 is not typed
         c.var.foo2
-        // @ts-expect-error foo3 is not typed
         c.get('foo3')
-        // @ts-expect-error foo3 is not typed
         c.var.foo3
-        // @ts-expect-error foo4 is not typed
         c.get('foo4')
-        // @ts-expect-error foo4 is not typed
         c.var.foo4
-        // @ts-expect-error foo5 is not typed
         c.get('foo5')
-        // @ts-expect-error foo5 is not typed
         c.var.foo5
-        // @ts-expect-error foo6 is not typed
         c.get('foo6')
-        // @ts-expect-error foo6 is not typed
         c.var.foo6
-        // @ts-expect-error foo7 is not typed
         c.get('foo7')
-        // @ts-expect-error foo7 is not typed
         c.var.foo7
-        // @ts-expect-error foo8 is not typed
         c.get('foo8')
-        // @ts-expect-error foo8 is not typed
         c.var.foo8
-        // @ts-expect-error foo9 is not typed
         c.get('foo9')
-        // @ts-expect-error foo9 is not typed
         c.var.foo9
         return c.json(0)
       })
