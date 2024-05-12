@@ -24,7 +24,7 @@ interface TimingOptions {
   crossOrigin: boolean | string | ((c: Context) => boolean | string)
 }
 
-const getTime = () => {
+const getTime = (): number => {
   try {
     return performance.now()
   } catch {}
