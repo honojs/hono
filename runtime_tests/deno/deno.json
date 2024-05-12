@@ -1,5 +1,14 @@
 {
   "compilerOptions": {
-    "lib": ["deno.ns", "dom", "dom.iterable"]
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "lib": [
+      "deno.ns",
+      "dom",
+      "dom.iterable"
+    ]
+  },
+  "imports": {
+    "hono/jsx/jsx-runtime": "../../deno_dist/jsx/jsx-runtime.ts"
   }
 }
