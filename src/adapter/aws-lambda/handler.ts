@@ -2,7 +2,6 @@ import crypto from 'node:crypto'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 import { decodeBase64, encodeBase64 } from '../../utils/encode'
-import { awslambda } from './awslambda'
 import type {
   ApiGatewayRequestContext,
   ApiGatewayRequestContextV2,
@@ -109,6 +108,7 @@ export const streamHandle = <
 >(
   app: Hono<E, S, BasePath>
 ): Handler => {
+  // @ts-expect-error awslambda is not a standard API
   return awslambda.streamifyResponse(
     async (event: LambdaEvent, responseStream: NodeJS.WritableStream, context: LambdaContext) => {
       const processor = getProcessor(event)
@@ -129,6 +129,7 @@ export const streamHandle = <
         }
 
         // Update response stream
+        // @ts-expect-error awslambda is not a standard API
         responseStream = awslambda.HttpResponseStream.from(responseStream, httpResponseMetadata)
 
         if (res.body) {
