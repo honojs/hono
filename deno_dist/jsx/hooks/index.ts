@@ -18,7 +18,10 @@ export type EffectData = [
   (() => void) | undefined // effect
 ]
 
-const resolvedPromiseValueMap = new WeakMap<Promise<unknown>, unknown>()
+const resolvedPromiseValueMap: WeakMap<Promise<unknown>, unknown> = new WeakMap<
+  Promise<unknown>,
+  unknown
+>()
 
 const isDepsChanged = (
   prevDeps: readonly unknown[] | undefined,

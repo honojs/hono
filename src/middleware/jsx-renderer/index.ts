@@ -3,11 +3,13 @@ import type { Context, PropsForRenderer } from '../../context'
 import { html, raw } from '../../helper/html'
 import { jsx, createContext, useContext, Fragment } from '../../jsx'
 import type { FC, PropsWithChildren, JSXNode } from '../../jsx'
+import type { Context as JSXContext } from '../../jsx'
 import { renderToReadableStream } from '../../jsx/streaming'
 import type { Env, Input, MiddlewareHandler } from '../../types'
 import type { HtmlEscapedString } from '../../utils/html'
 
-export const RequestContext = createContext<Context | null>(null)
+export const RequestContext: JSXContext<Context<any, any, {}> | null> =
+  createContext<Context | null>(null)
 
 type RendererOptions = {
   docType?: boolean | string

@@ -224,17 +224,13 @@ export class Context<
    */
   render: Renderer = (...args) => this.renderer(...args)
 
-  setLayout: (
-    layout: Layout<
-      PropsForRenderer & {
-        Layout: Layout
-      }
-    >
-  ) => Layout<
+  setLayout = (
+    layout: Layout<PropsForRenderer & { Layout: Layout }>
+  ): Layout<
     PropsForRenderer & {
       Layout: Layout
     }
-  > = (layout) => (this.layout = layout)
+  > => (this.layout = layout)
 
   getLayout = () => this.layout
 

@@ -5,7 +5,7 @@ import { globalContexts } from '../context'
 import { Fragment } from './jsx-runtime'
 import { setInternalTagFlag } from './utils'
 
-export const createContextProviderFunction = <T>(values: T[]) =>
+export const createContextProviderFunction = <T>(values: T[]): Function =>
   setInternalTagFlag(({ value, children }: { value: T; children: Child[] }) => {
     if (!children) {
       return undefined

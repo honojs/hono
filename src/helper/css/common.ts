@@ -3,12 +3,12 @@ export const PSEUDO_GLOBAL_SELECTOR = ':-hono-global'
 export const isPseudoGlobalSelectorRe = new RegExp(`^${PSEUDO_GLOBAL_SELECTOR}{(.*)}$`)
 export const DEFAULT_STYLE_ID = 'hono-css'
 
-export const SELECTOR = Symbol()
-export const CLASS_NAME = Symbol()
-export const STYLE_STRING = Symbol()
-export const SELECTORS = Symbol()
-export const EXTERNAL_CLASS_NAMES = Symbol()
-const CSS_ESCAPED = Symbol()
+export const SELECTOR: unique symbol = Symbol()
+export const CLASS_NAME: unique symbol = Symbol()
+export const STYLE_STRING: unique symbol = Symbol()
+export const SELECTORS: unique symbol = Symbol()
+export const EXTERNAL_CLASS_NAMES: unique symbol = Symbol()
+const CSS_ESCAPED: unique symbol = Symbol()
 
 export interface CssClassName {
   [SELECTOR]: string
@@ -49,12 +49,12 @@ const toHash = (str: string): string => {
   return 'css-' + out
 }
 
-const cssStringReStr = [
+const cssStringReStr: string = [
   '"(?:(?:\\\\[\\s\\S]|[^"\\\\])*)"', // double quoted string
   // eslint-disable-next-line quotes
   "'(?:(?:\\\\[\\s\\S]|[^'\\\\])*)'", // single quoted string
 ].join('|')
-const minifyCssRe = new RegExp(
+const minifyCssRe: RegExp = new RegExp(
   [
     '(' + cssStringReStr + ')', // $1: quoted string
 

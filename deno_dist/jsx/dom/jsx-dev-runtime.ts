@@ -28,4 +28,4 @@ export const jsxDEV = (tag: string | Function, props: Props, key?: string): JSXN
   ) as JSXNode
 }
 
-export const Fragment = (props: Record<string, unknown>) => jsxDEV('', props, undefined)
+export const Fragment = (props: Record<string, unknown>): JSXNode => jsxDEV('', props, undefined)
