@@ -364,7 +364,7 @@ const albProcessor = new (class ALBProcessor extends EventProcessor<ALBProxyEven
     if (event.multiValueHeaders) {
       for (const [key, values] of Object.entries(event.multiValueHeaders)) {
         if (values && Array.isArray(values)) {
-          // https://www.rfc-editor.org/rfc/rfc9110.html#name-common-rules-for-defining-f          
+          // https://www.rfc-editor.org/rfc/rfc9110.html#name-common-rules-for-defining-f
           headers.set(key, values.join('; '))
         }
       }
@@ -374,7 +374,7 @@ const albProcessor = new (class ALBProcessor extends EventProcessor<ALBProxyEven
           headers.set(key, value)
         }
       }
-    }    
+    }
     return headers
   }
   protected setHeadersToResult(
@@ -434,13 +434,13 @@ const albProcessor = new (class ALBProcessor extends EventProcessor<ALBProxyEven
       result.multiValueHeaders['set-cookie'] = cookies
     } else {
       // otherwise serialize the set-cookie
-      result.headers['set-cookie'] = cookies.join(", ")
+      result.headers['set-cookie'] = cookies.join(', ')
     }
   }
 })()
 
 export const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> => {
-  if (isProxyEventALB(event)) {    
+  if (isProxyEventALB(event)) {
     return albProcessor
   }
   if (isProxyEventV2(event)) {
