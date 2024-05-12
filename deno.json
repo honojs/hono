@@ -13,6 +13,7 @@
   ],
   "exports": {
     ".": "./src/mod.ts",
+    "./middleware": "./src/middleware.ts",
     "./jsx/jsx-runtime": "./src/jsx/jsx-runtime.ts"
   },
   "publish": {
