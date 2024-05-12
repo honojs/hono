@@ -14,6 +14,7 @@
   "exports": {
     ".": "./src/mod.ts",
     "./middleware": "./src/middleware.ts",
+    "./helper": "./src/helper.ts",
     "./jsx/jsx-runtime": "./src/jsx/jsx-runtime.ts"
   },
   "publish": {
