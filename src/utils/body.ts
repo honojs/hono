@@ -70,14 +70,12 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
 }
 
 const handleParsingAllValues = (form: BodyData, key: string, value: FormDataEntryValue): void => {
-  const formKey = form[key] as (string | File)[]
+  const formKey = form[key]
 
-  if (form[key] && Array.isArray(form[key])) {
-    formKey.push(value)
-  } else if (form[key]) {
-    const parsedKey = [...formKey].join('').replace(',', '')
-
-    form[key] = [parsedKey, value]
+  if (formKey && Array.isArray(formKey)) {
+    ;(form[key] as (string | File)[]).push(value)
+  } else if (formKey) {
+    form[key] = [formKey, value]
   } else {
     form[key] = value
   }
