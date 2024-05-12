@@ -35,7 +35,7 @@ const generateFilePath = (
   outDir: string,
   mimeType: string,
   extensionMap?: Record<string, string>
-) => {
+): string => {
   const extension = determineExtension(mimeType, extensionMap)
 
   if (routePath.endsWith(`.${extension}`)) {

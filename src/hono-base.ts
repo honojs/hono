@@ -415,7 +415,8 @@ class Hono<
    * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/
    */
   fire = () => {
-    // @ts-expect-error `event` is not the type expected by addEventListener
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     addEventListener('fetch', (event: FetchEventLike): void => {
       event.respondWith(this.dispatch(event.request, event, undefined, event.request.method))
     })

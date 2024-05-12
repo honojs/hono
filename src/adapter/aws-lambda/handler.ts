@@ -1,14 +1,14 @@
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
-
-import { encodeBase64 } from '../../utils/encode'
+import { decodeBase64, encodeBase64 } from '../../utils/encode'
+import { awslambda } from './awslambda'
 import type {
   ApiGatewayRequestContext,
   ApiGatewayRequestContextV2,
   ALBRequestContext,
 } from './custom-context'
-import type { LambdaContext } from './types'
+import type { Handler, LambdaContext } from './types'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -108,7 +108,7 @@ export const streamHandle = <
   BasePath extends string = '/'
 >(
   app: Hono<E, S, BasePath>
-) => {
+): Handler => {
   return awslambda.streamifyResponse(
     async (event: LambdaEvent, responseStream: NodeJS.WritableStream, context: LambdaContext) => {
       const processor = getProcessor(event)
@@ -151,11 +151,8 @@ export const streamHandle = <
  */
 export const handle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
   app: Hono<E, S, BasePath>
-) => {
-  return async (
-    event: LambdaEvent,
-    lambdaContext?: LambdaContext
-  ): Promise<APIGatewayProxyResult> => {
+): ((event: LambdaEvent, lambdaContext?: LambdaContext) => Promise<APIGatewayProxyResult>) => {
+  return async (event, lambdaContext?) => {
     const processor = getProcessor(event)
 
     const req = processor.createRequest(event)
@@ -218,7 +215,7 @@ abstract class EventProcessor<E extends LambdaEvent> {
     }
 
     if (event.body) {
-      requestInit.body = event.isBase64Encoded ? Buffer.from(event.body, 'base64') : event.body
+      requestInit.body = event.isBase64Encoded ? decodeBase64(event.body) : event.body
     }
 
     return new Request(url, requestInit)
@@ -261,7 +258,7 @@ abstract class EventProcessor<E extends LambdaEvent> {
   }
 }
 
-const v2Processor = new (class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
+class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
   protected getPath(event: APIGatewayProxyEventV2): string {
     return event.rawPath
   }
@@ -283,11 +280,11 @@ const v2Processor = new (class EventV2Processor extends EventProcessor<APIGatewa
   protected setCookiesToResult(result: APIGatewayProxyResult, cookies: string[]): void {
     result.cookies = cookies
   }
-})()
+}
 
-const v1Processor = new (class EventV1Processor extends EventProcessor<
-  Exclude<LambdaEvent, APIGatewayProxyEventV2>
-> {
+const v2Processor: EventV2Processor = new EventV2Processor()
+
+class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGatewayProxyEventV2>> {
   protected getPath(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
     return event.path
   }
@@ -317,7 +314,9 @@ const v1Processor = new (class EventV1Processor extends EventProcessor<
       'set-cookie': cookies,
     }
   }
-})()
+}
+
+const v1Processor: EventV1Processor = new EventV1Processor()
 
 export const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> => {
   if (isProxyEventV2(event)) {

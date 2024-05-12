@@ -37,31 +37,31 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
   if (events.onOpen) {
     server.addEventListener(
       'open',
-      (evt) => events.onOpen && events.onOpen(evt as Event, wsContext)
+      (evt: unknown) => events.onOpen && events.onOpen(evt as Event, wsContext)
     )
   }
   if (events.onClose) {
     server.addEventListener(
       'close',
-      (evt) => events.onClose && events.onClose(evt as CloseEvent, wsContext)
+      (evt: unknown) => events.onClose && events.onClose(evt as CloseEvent, wsContext)
     )
   }
   if (events.onMessage) {
     server.addEventListener(
       'message',
-      (evt) => events.onMessage && events.onMessage(evt as MessageEvent, wsContext)
+      (evt: unknown) => events.onMessage && events.onMessage(evt as MessageEvent, wsContext)
     )
   }
   if (events.onError) {
     server.addEventListener(
       'error',
-      (evt) => events.onError && events.onError(evt as ErrorEvent as Event, wsContext)
+      (evt: unknown) => events.onError && events.onError(evt as ErrorEvent as Event, wsContext)
     )
   }
   server.accept()
   return new Response(null, {
     status: 101,
-    // @ts-expect-error Cloudflare Workers API
+    // @ts-ignore
     webSocket: client,
   })
 }
