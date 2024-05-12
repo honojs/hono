@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { compose } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
@@ -24,20 +25,6 @@ import type {
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
 
 export const COMPOSED_HANDLER = Symbol('composedHandler')
-
-type Methods = (typeof METHODS)[number] | typeof METHOD_NAME_ALL_LOWERCASE
-
-function defineDynamicClass(): {
-  new <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(): {
-    [M in Methods]: HandlerInterface<E, M, S, BasePath>
-  } & {
-    on: OnHandlerInterface<E, S, BasePath>
-  } & {
-    use: MiddlewareHandlerInterface<E, S, BasePath>
-  }
-} {
-  return class {} as never
-}
 
 const notFoundHandler = (c: Context) => {
   return c.text('404 Not Found', 404)
@@ -89,11 +76,28 @@ export type HonoOptions<E extends Env> = {
   getPath?: GetPath<E>
 }
 
+abstract class SuperClass<
+  E extends Env = Env,
+  S extends Schema = {},
+  BasePath extends string = '/'
+> {
+  // The implementations of these methods are fake.
+  get: HandlerInterface<E, 'get', S, BasePath> = () => new Hono<any>()
+  post: HandlerInterface<E, 'post', S, BasePath> = () => new Hono<any>()
+  put: HandlerInterface<E, 'put', S, BasePath> = () => new Hono<any>()
+  delete: HandlerInterface<E, 'delete', S, BasePath> = () => new Hono<any>()
+  options: HandlerInterface<E, 'options', S, BasePath> = () => new Hono<any>()
+  patch: HandlerInterface<E, 'patch', S, BasePath> = () => new Hono<any>()
+  all: HandlerInterface<E, 'all', S, BasePath> = () => new Hono<any>()
+  on: OnHandlerInterface<E, S, BasePath> = () => new Hono<any>()
+  use: MiddlewareHandlerInterface<E, S, BasePath> = () => new Hono<any>()
+}
+
 class Hono<
   E extends Env = Env,
   S extends Schema = {},
   BasePath extends string = '/'
-> extends defineDynamicClass()<E, S, BasePath> {
+> extends SuperClass<E, S, BasePath> {
   /*
     This class is like an abstract class and does not have a router.
     To use it, inherit the class and implement router in the constructor.
@@ -123,7 +127,6 @@ class Hono<
             this.addRoute(method, this.#path, handler)
           }
         })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return this as any
       }
     })
@@ -141,12 +144,10 @@ class Hono<
           })
         }
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return this as any
     }
 
     // Implementation of app.use(...handlers[]) or app.use(path, ...handlers[])
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.use = (arg1: string | MiddlewareHandler<any>, ...handlers: MiddlewareHandler<any>[]) => {
       if (typeof arg1 === 'string') {
         this.#path = arg1
@@ -157,7 +158,6 @@ class Hono<
       handlers.forEach((handler) => {
         this.addRoute(METHOD_NAME_ALL, this.#path, handler)
       })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return this as any
     }
 
@@ -201,7 +201,6 @@ class Hono<
       } else {
         handler = async (c: Context, next: Next) =>
           (await compose<Context>([], app.errorHandler)(c, () => r.handler(c, next))).res
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ;(handler as any)[COMPOSED_HANDLER] = r.handler
       }
 
@@ -254,7 +253,6 @@ class Hono<
 
   mount(
     path: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     optionHandler?: (c: Context) => unknown
   ): Hono<E, S, BasePath> {
