@@ -1,3 +1,4 @@
+import type { JSX } from '../base'
 import { DOM_STASH } from '../constants'
 import { buildDataStack, update, build } from '../dom/render'
 import type { Node, NodeObject, Context, PendingType, UpdateHook } from '../dom/render'

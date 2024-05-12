@@ -4,6 +4,7 @@ import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html
 import type { Context } from './context.ts'
 import { globalContexts } from './context.ts'
 import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements.ts'
+import type { Hono } from './intrinsic-elements.ts'
 import { normalizeIntrinsicElementProps, styleObjectForEach } from './utils.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,16 +16,14 @@ export type FC<P = Props> = {
 }
 export type DOMAttributes = Hono.HTMLAttributes
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace JSX {
-    type Element = HtmlEscapedString | Promise<HtmlEscapedString>
-    interface ElementChildrenAttribute {
-      children: Child
-    }
-    interface IntrinsicElements extends IntrinsicElementsDefined {
-      [tagName: string]: Props
-    }
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace JSX {
+  export type Element = HtmlEscapedString | Promise<HtmlEscapedString>
+  export interface ElementChildrenAttribute {
+    children: Child
+  }
+  export interface IntrinsicElements extends IntrinsicElementsDefined {
+    [tagName: string]: Props
   }
 }
 

@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
+/** @jsxImportSource ../../jsx */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Hono } from '../../hono'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx } from '../../jsx'
 import { poweredBy } from '../../middleware/powered-by'
 import {
   X_HONO_DISABLE_SSG_HEADER_KEY,

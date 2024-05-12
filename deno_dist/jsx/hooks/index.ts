@@ -1,3 +1,4 @@
+import type { JSX } from '../base.ts'
 import { DOM_STASH } from '../constants.ts'
 import { buildDataStack, update, build } from '../dom/render.ts'
 import type { Node, NodeObject, Context, PendingType, UpdateHook } from '../dom/render.ts'

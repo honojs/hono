@@ -1,5 +1,6 @@
-import type { Props, Child, DOMAttributes, JSXNode } from '../base'
 import { memo, isValidElement } from '../base'
+import type { Props, Child, DOMAttributes, JSXNode } from '../base'
+import type { JSX } from '../base'
 import { Children } from '../children'
 import { useContext } from '../context'
 import {
