@@ -1,0 +1,27 @@
+{
+  "name": "@hono/do-not-use-this",
+  "version": "0.0.1-1",
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "deno.ns"
+    ]
+  },
+  "exports": {
+    ".": "./deno_dist/mod.ts",
+    "./jsx/jsx-runtime": "./deno_dist/jsx/jsx-runtime.ts"
+  },
+  "publish": {
+    "include": [
+      "deno.json",
+      "LICENSE",
+      "README.md",
+      "deno_dist/**/*.ts"
+    ],
+    "exclude": [
+      "deno_dist/**/*.test.ts",
+      "deno_dist/**/*.test.tsx"
+    ]
+  }
+}
