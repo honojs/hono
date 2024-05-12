@@ -1,4 +1,4 @@
-import type { FC, PropsWithChildren, Child } from '..'
+import type { FC, PropsWithChildren, Child } from '../'
 import type { FallbackRender, ErrorHandler } from '../components'
 import { DOM_ERROR_HANDLER } from '../constants'
 import { Fragment } from './jsx-runtime'

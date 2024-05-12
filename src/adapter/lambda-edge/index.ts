@@ -1,4 +1,3 @@
-// @denoify-ignore
 export { handle } from './handler'
 export type {
   Callback,

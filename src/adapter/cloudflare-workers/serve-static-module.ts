@@ -1,4 +1,3 @@
-// @denoify-ignore
 // For ES module mode
 import type { Env } from '../../types'
 import type { ServeStaticOptions } from './serve-static'

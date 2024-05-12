@@ -1,4 +1,3 @@
-// @denoify-ignore
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { LambdaContext, Handler } from './types'

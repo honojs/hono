@@ -8,7 +8,10 @@
       "dom.iterable"
     ]
   },
+  "unstable": [
+    "sloppy-imports"
+  ],
   "imports": {
-    "hono/jsx/jsx-runtime": "../../deno_dist/jsx/jsx-runtime.ts"
+    "hono/jsx/jsx-runtime": "../../src/jsx/jsx-runtime.ts"
   }
 }

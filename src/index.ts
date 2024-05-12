@@ -1,5 +1,3 @@
-// @denoify-ignore
-
 import { Hono } from './hono'
 export type {
   Env,

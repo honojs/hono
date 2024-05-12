@@ -1,4 +1,4 @@
-import type { FC, PropsWithChildren } from '..'
+import type { FC, PropsWithChildren } from '../'
 import type { CssClassName, CssVariableType } from '../../helper/css/common'
 import {
   SELECTOR,

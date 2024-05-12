@@ -1,4 +1,3 @@
-// @denoify-ignore
 import crypto from 'crypto'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'

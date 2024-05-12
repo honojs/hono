@@ -1,7 +1,7 @@
-import { Context } from '../../deno_dist/context.ts'
-import { env, getRuntimeKey } from '../../deno_dist/helper.ts'
-import { Hono } from '../../deno_dist/mod.ts'
-import { HonoRequest } from '../../deno_dist/request.ts'
+import { Context } from '../../src/context.ts'
+import { env, getRuntimeKey } from '../../src/helper.ts'
+import { Hono } from '../../src/mod.ts'
+import { HonoRequest } from '../../src/request.ts'
 import { assertEquals } from './deps.ts'
 
 // Test just only minimal patterns.

@@ -1,4 +1,3 @@
-// @denoify-ignore
 import type { KVNamespace } from '@cloudflare/workers-types'
 import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
 import type { ServeStaticOptions as BaseServeStaticOptions } from '../../middleware/serve-static'

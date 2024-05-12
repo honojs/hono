@@ -1,6 +1,5 @@
 /** @jsxRuntime automatic **/
 /** @jsxImportSource . **/
-// @denoify-ignore
 import { Hono } from '../hono'
 
 describe('jsx-runtime', () => {

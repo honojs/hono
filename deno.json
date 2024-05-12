@@ -1,6 +1,6 @@
 {
   "name": "@hono/do-not-use-this",
-  "version": "0.0.1-1",
+  "version": "0.0.3",
   "compilerOptions": {
     "lib": [
       "dom",
@@ -8,20 +8,32 @@
       "deno.ns"
     ]
   },
+  "unstable": [
+    "sloppy-imports"
+  ],
   "exports": {
-    ".": "./deno_dist/mod.ts",
-    "./jsx/jsx-runtime": "./deno_dist/jsx/jsx-runtime.ts"
+    ".": "./src/mod.ts",
+    "./jsx/jsx-runtime": "./src/jsx/jsx-runtime.ts"
   },
   "publish": {
     "include": [
       "deno.json",
       "LICENSE",
       "README.md",
-      "deno_dist/**/*.ts"
+      "src/**/*.ts"
     ],
     "exclude": [
-      "deno_dist/**/*.test.ts",
-      "deno_dist/**/*.test.tsx"
+      "src/index.ts",
+      "src/adapter/aws-lambda/**/*.ts",
+      "src/adapter/bun/**/*.ts",
+      "src/adapter/cloudflare-pages/**/*.ts",
+      "src/adapter/cloudflare-workers/**/*.ts",
+      "src/adapter/lambda-edge/**/*.ts",
+      "src/adapter/netlify/**/*.ts",
+      "src/adapter/vercel/**/*.ts",
+      "src/test-utils/**/*.ts",
+      "src/**/*.test.ts",
+      "src/**/*.test.tsx"
     ]
   }
 }

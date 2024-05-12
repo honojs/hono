@@ -1,5 +1,5 @@
-import { toSSG } from '../../deno_dist/helper.ts'
-import { Hono } from '../../deno_dist/mod.ts'
+import { toSSG } from '../../src/helper.ts'
+import { Hono } from '../../src/mod.ts'
 import { assertEquals } from '../deno/deps.ts'
 
 Deno.test('toSSG function', async () => {

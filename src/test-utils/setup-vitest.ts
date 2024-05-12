@@ -1,4 +1,3 @@
-// @denoify-ignore
 import * as nodeCrypto from 'node:crypto'
 import { vi } from 'vitest'
 

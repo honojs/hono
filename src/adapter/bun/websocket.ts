@@ -1,4 +1,3 @@
-// @denoify-ignore
 import {
   createWSMessageEvent,
   type UpgradeWebSocket,

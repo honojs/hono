@@ -138,6 +138,4 @@ export default {
 
 export type { Context } from '../context'
 
-// TODO: change to `export type *` after denoify bug is fixed
-// https://github.com/garronej/denoify/issues/124
-export * from '../types'
+export type * from '../types'

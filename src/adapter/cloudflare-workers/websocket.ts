@@ -1,4 +1,3 @@
-// @denoify-ignore
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { WebSocketPair } from '@cloudflare/workers-types'
 import type { UpgradeWebSocket, WSContext, WSReadyState } from '../../helper/websocket'
