@@ -64,6 +64,24 @@ describe('Parse Body Util', () => {
     })
   })
 
+  it('should parse multiple values if values are `File`', async () => {
+    const file1 = new File(['foo'], 'file1', {
+      type: 'application/octet-stream',
+    })
+    const file2 = new File(['bar'], 'file2', {
+      type: 'application/octet-stream',
+    })
+    const data = new FormData()
+    data.append('file', file1)
+    data.append('file', file2)
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { all: true })).toEqual({
+      file: [file1, file2],
+    })
+  })
+
   it('should parse multiple values if key ends with `[]`', async () => {
     const data = new FormData()
     data.append('file[]', 'aaa')
