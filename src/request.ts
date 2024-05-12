@@ -289,7 +289,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    * @see https://hono.dev/api/request#url
    */
-  get url() {
+  get url(): string {
     return this.raw.url
   }
 
@@ -303,7 +303,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    * @see https://hono.dev/api/request#method
    */
-  get method() {
+  get method(): string {
     return this.raw.method
   }
 

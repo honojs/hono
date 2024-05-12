@@ -25,7 +25,7 @@ export interface acceptsOptions extends acceptsConfig {
   match?: (accepts: Accept[], config: acceptsConfig) => string
 }
 
-export const parseAccept = (acceptHeader: string) => {
+export const parseAccept = (acceptHeader: string): Accept[] => {
   // Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
   const accepts = acceptHeader.split(',') // ['text/html', 'application/xhtml+xml', 'application/xml;q=0.9', 'image/webp', '*/*;q=0.8']
   return accepts.map((accept) => {
@@ -42,7 +42,7 @@ export const parseAccept = (acceptHeader: string) => {
   })
 }
 
-export const defaultMatch = (accepts: Accept[], config: acceptsConfig) => {
+export const defaultMatch = (accepts: Accept[], config: acceptsConfig): string => {
   const { supports, default: defaultSupport } = config
   const accept = accepts.sort((a, b) => b.q - a.q).find((accept) => supports.includes(accept.type))
   return accept ? accept.type : defaultSupport
@@ -61,7 +61,7 @@ export const defaultMatch = (accepts: Accept[], config: acceptsConfig) => {
  * })
  * ```
  */
-export const accepts = (c: Context, options: acceptsOptions) => {
+export const accepts = (c: Context, options: acceptsOptions): string => {
   const acceptHeader = c.req.header(options.header)
   if (!acceptHeader) {
     return options.default

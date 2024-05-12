@@ -15,7 +15,7 @@ interface RouteData {
   isMiddleware: boolean
 }
 
-const handlerName = (handler: Function) => {
+const handlerName = (handler: Function): string => {
   return handler.name || (isMiddleware(handler) ? '[middleware]' : '[handler]')
 }
 
@@ -68,7 +68,7 @@ export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOption
     })
 }
 
-export const getRouterName = <E extends Env>(app: Hono<E>) => {
+export const getRouterName = <E extends Env>(app: Hono<E>): string => {
   app.router.match('GET', '/')
   return app.router.name
 }
