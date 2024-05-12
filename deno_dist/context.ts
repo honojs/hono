@@ -1,6 +1,6 @@
 import type { HonoRequest } from './request.ts'
-import type { Env, FetchEventLike, NotFoundHandler, Input, TypedResponse } from './types.ts'
-import { resolveCallback, HtmlEscapedCallbackPhase } from './utils/html.ts'
+import type { Env, FetchEventLike, Input, NotFoundHandler, TypedResponse } from './types.ts'
+import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html.ts'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status.ts'
 import type { JSONValue, JSONParsed, IsAny, Simplify } from './utils/types.ts'
 
@@ -224,7 +224,18 @@ export class Context<
    */
   render: Renderer = (...args) => this.renderer(...args)
 
-  setLayout = (layout: Layout<PropsForRenderer & { Layout: Layout }>) => (this.layout = layout)
+  setLayout: (
+    layout: Layout<
+      PropsForRenderer & {
+        Layout: Layout
+      }
+    >
+  ) => Layout<
+    PropsForRenderer & {
+      Layout: Layout
+    }
+  > = (layout) => (this.layout = layout)
+
   getLayout = () => this.layout
 
   /**
