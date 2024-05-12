@@ -62,7 +62,7 @@ export const streamSSE = (
   c: Context,
   cb: (stream: SSEStreamingApi) => Promise<void>,
   onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>
-) => {
+): Response => {
   const { readable, writable } = new TransformStream()
   const stream = new SSEStreamingApi(writable, readable)
 

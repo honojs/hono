@@ -56,7 +56,16 @@ const splitRule = (rule: string): string[] => {
   return result
 }
 
-export const createCssJsxDomObjects = ({ id }: { id: Readonly<string> }) => {
+interface CreateCssJsxDomObjectsType {
+  (args: { id: Readonly<string> }): readonly [
+    {
+      toString(this: CssClassName): string
+    },
+    FC<PropsWithChildren<void>>
+  ]
+}
+
+export const createCssJsxDomObjects: CreateCssJsxDomObjectsType = ({ id }) => {
   let styleSheet: CSSStyleSheet | null | undefined = undefined
   const findStyleSheet = (): [CSSStyleSheet, Set<string>] | [] => {
     if (!styleSheet) {
