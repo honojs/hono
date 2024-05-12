@@ -53,7 +53,7 @@ interface StyleType {
  * `createCssContext` is an experimental feature.
  * The API might be changed.
  */
-export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultContext => {
+export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultContextType => {
   const [cssJsxDomObject, StyleRenderToDom] = createCssJsxDomObjects({ id })
 
   const contextMap: WeakMap<object, usedClassNameData> = new WeakMap()
@@ -167,7 +167,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
   }
 }
 
-interface DefaultContext {
+interface DefaultContextType {
   css: CssType
   cx: CxType
   keyframes: KeyframesType
@@ -175,7 +175,7 @@ interface DefaultContext {
   Style: StyleType
 }
 
-const defaultContext: DefaultContext = createCssContext({
+const defaultContext: DefaultContextType = createCssContext({
   id: DEFAULT_STYLE_ID,
 })
 
