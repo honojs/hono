@@ -9,6 +9,14 @@ import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils.ts'
 
 const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
 
+// 'default_content_type' is designed according to Bun's performance optimization,
+//  which omits Content-Type by default for text responses.
+//  This is based on benchmarks showing performance gains without Content-Type.
+//  In Hono, using `c.text()` without a Content-Type implicitly assumes 'text/plain; charset=UTF-8'.
+//  This approach maintains performance consistency across different environments.
+//  For details, see GitHub issues: oven-sh/bun#8530 and https://github.com/honojs/hono/issues/2284.
+const DEFAULT_CONTENT_TYPE = 'text/plain'
+
 /**
  * @experimental
  * `FileSystemModule` is an experimental feature.
@@ -181,7 +189,7 @@ export const fetchRoutesContent = function* <
                     response = maybeResponse
                   }
                   const mimeType =
-                    response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
+                    response.headers.get('Content-Type')?.split(';')[0] || DEFAULT_CONTENT_TYPE
                   const content = await parseResponseContent(response)
                   resolveReq({
                     routePath: replacedUrlParam,
