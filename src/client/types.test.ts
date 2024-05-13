@@ -1,6 +1,6 @@
 import { expectTypeOf } from 'vitest'
 import { Hono } from '..'
-import { upgradeWebSocket } from '../helper'
+import { upgradeWebSocket } from '../adapter/deno/websocket'
 import { hc } from '.'
 
 describe('WebSockets', () => {

@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { expectTypeOf } from 'vitest'
 import type { Context } from './context'
-import { createMiddleware } from './helper'
+import { createMiddleware } from './helper/factory'
 import { Hono } from './hono'
 import { poweredBy } from './middleware/powered-by'
 import type {
