@@ -1,5 +1,5 @@
 import { Context } from './context'
-import { setCookie } from './helper'
+import { setCookie } from './helper/cookie'
 import { HonoRequest } from './request'
 
 describe('Context', () => {
