@@ -76,28 +76,18 @@ export type HonoOptions<E extends Env> = {
   getPath?: GetPath<E>
 }
 
-abstract class SuperClass<
-  E extends Env = Env,
-  S extends Schema = {},
-  BasePath extends string = '/'
-> {
-  // The implementations of these methods are fake.
-  get: HandlerInterface<E, 'get', S, BasePath> = () => new Hono<any>()
-  post: HandlerInterface<E, 'post', S, BasePath> = () => new Hono<any>()
-  put: HandlerInterface<E, 'put', S, BasePath> = () => new Hono<any>()
-  delete: HandlerInterface<E, 'delete', S, BasePath> = () => new Hono<any>()
-  options: HandlerInterface<E, 'options', S, BasePath> = () => new Hono<any>()
-  patch: HandlerInterface<E, 'patch', S, BasePath> = () => new Hono<any>()
-  all: HandlerInterface<E, 'all', S, BasePath> = () => new Hono<any>()
-  on: OnHandlerInterface<E, S, BasePath> = () => new Hono<any>()
-  use: MiddlewareHandlerInterface<E, S, BasePath> = () => new Hono<any>()
-}
+class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
+  // Theses methods are dynamically initialized in the constructor.
+  get!: HandlerInterface<E, 'get', S, BasePath>
+  post!: HandlerInterface<E, 'post', S, BasePath>
+  put!: HandlerInterface<E, 'put', S, BasePath>
+  delete!: HandlerInterface<E, 'delete', S, BasePath>
+  options!: HandlerInterface<E, 'options', S, BasePath>
+  patch!: HandlerInterface<E, 'patch', S, BasePath>
+  all!: HandlerInterface<E, 'all', S, BasePath>
+  on: OnHandlerInterface<E, S, BasePath>
+  use: MiddlewareHandlerInterface<E, S, BasePath>
 
-class Hono<
-  E extends Env = Env,
-  S extends Schema = {},
-  BasePath extends string = '/'
-> extends SuperClass<E, S, BasePath> {
   /*
     This class is like an abstract class and does not have a router.
     To use it, inherit the class and implement router in the constructor.
@@ -111,8 +101,6 @@ class Hono<
   routes: RouterRoute[] = []
 
   constructor(options: HonoOptions<E> = {}) {
-    super()
-
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.forEach((method) => {
