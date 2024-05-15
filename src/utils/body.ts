@@ -38,7 +38,7 @@ export type ParseBodyOptions = {
 
 export const parseBody = async <T extends BodyData = BodyData>(
   request: HonoRequest | Request,
-  options: ParseBodyOptions = {}
+  options: ParseBodyOptions = Object.create(null)
 ): Promise<T> => {
   const { all = false, dot = false } = options
 
@@ -72,7 +72,7 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
   formData: FormData,
   options: ParseBodyOptions
 ): T {
-  const form: BodyData = {}
+  const form: BodyData = Object.create(null)
 
   formData.forEach((value, key) => {
     const shouldParseAllValues = options.all || key.endsWith('[]')
@@ -140,17 +140,21 @@ const handleNestedValues = (
           typeof nestedForm[key] !== 'object' ||
           Array.isArray(nestedForm[key])
         ) {
-          nestedForm[key] = {}
+          nestedForm[key] = Object.create(null)
         }
         nestedForm = nestedForm[key] as BodyData
       }
     })
   } else {
-    if (form[key] !== undefined) {
-      if (Array.isArray(form[key])) {
-        ;(form[key] as (string | File)[]).push(value)
+    if (parseAllValues) {
+      if (form[key] !== undefined) {
+        if (Array.isArray(form[key])) {
+          ;(form[key] as (string | File)[]).push(value)
+        } else {
+          form[key] = [form[key] as string | File, value]
+        }
       } else {
-        form[key] = [form[key] as string | File, value]
+        form[key] = value
       }
     } else {
       form[key] = value

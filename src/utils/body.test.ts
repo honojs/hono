@@ -50,6 +50,20 @@ describe('Parse Body Util', () => {
     })
   })
 
+  it('should override value if `all` option is false', async () => {
+    const data = new FormData()
+    data.append('file', 'aaa')
+    data.append('file', 'bbb')
+    data.append('message', 'hello')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req)).toEqual({
+      file: 'bbb',
+      message: 'hello',
+    })
+  })
+
   it('should parse multiple values if `all` option is true', async () => {
     const data = new FormData()
     data.append('file', 'aaa')
