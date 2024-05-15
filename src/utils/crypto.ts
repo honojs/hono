@@ -5,19 +5,19 @@ type Algorithm = {
 
 type Data = string | boolean | number | object | ArrayBufferView | ArrayBuffer | ReadableStream
 
-export const sha256 = async (data: Data) => {
+export const sha256 = async (data: Data): Promise<string | null> => {
   const algorithm: Algorithm = { name: 'SHA-256', alias: 'sha256' }
   const hash = await createHash(data, algorithm)
   return hash
 }
 
-export const sha1 = async (data: Data) => {
+export const sha1 = async (data: Data): Promise<string | null> => {
   const algorithm: Algorithm = { name: 'SHA-1', alias: 'sha1' }
   const hash = await createHash(data, algorithm)
   return hash
 }
 
-export const md5 = async (data: Data) => {
+export const md5 = async (data: Data): Promise<string | null> => {
   const algorithm: Algorithm = { name: 'MD5', alias: 'md5' }
   const hash = await createHash(data, algorithm)
   return hash
