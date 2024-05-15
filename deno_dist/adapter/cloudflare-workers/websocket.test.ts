@@ -1,0 +1,46 @@
+import { Hono } from '../../index.ts'
+import { upgradeWebSocket } from './index.ts'
+
+describe('upgradeWebSocket middleware', () => {
+  const server = new EventTarget()
+
+  // @ts-expect-error Cloudflare API
+  globalThis.WebSocketPair = class {
+    0: WebSocket // client
+    1: WebSocket // server
+    constructor() {
+      this[0] = {} as WebSocket
+      this[1] = server as WebSocket
+    }
+  }
+
+  const app = new Hono()
+
+  const wsPromise = new Promise((resolve) =>
+    app.get(
+      '/ws',
+      upgradeWebSocket(() => ({
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        onMessage(evt, ws) {
+          console.log('evt')
+          resolve(evt.data)
+        },
+      }))
+    )
+  )
+  it('Should receive message is valid', async () => {
+    const sendingData = Math.random().toString()
+    await app.request('/ws', {
+      headers: {
+        Upgrade: 'websocket',
+      },
+    })
+    server.dispatchEvent(
+      new MessageEvent('message', {
+        data: sendingData,
+      })
+    )
+
+    expect(sendingData).toBe(await wsPromise)
+  })
+})
