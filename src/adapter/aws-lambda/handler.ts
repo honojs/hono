@@ -355,7 +355,7 @@ class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGatewayPro
 
 const v1Processor: EventV1Processor = new EventV1Processor()
 
-const albProcessor = new (class ALBProcessor extends EventProcessor<ALBProxyEvent> {
+class ALBProcessor extends EventProcessor<ALBProxyEvent> {
   protected getHeaders(event: ALBProxyEvent): Headers {
     const headers = new Headers()
     // if multiValueHeaders is present the ALB will use it instead of the headers field
@@ -436,7 +436,9 @@ const albProcessor = new (class ALBProcessor extends EventProcessor<ALBProxyEven
       result.headers['set-cookie'] = cookies.join(', ')
     }
   }
-})()
+}
+
+const albProcessor: ALBProcessor = new ALBProcessor()
 
 export const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> => {
   if (isProxyEventALB(event)) {
