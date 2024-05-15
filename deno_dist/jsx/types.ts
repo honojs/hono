@@ -1,0 +1,40 @@
+/**
+ * All types exported from "hono/jsx" are in this file.
+ */
+import type { Child, JSXNode } from './base.ts'
+
+export type { Child, JSXNode, FC } from './base.ts'
+export type { RefObject } from './hooks/index.ts'
+export type { Context } from './context.ts'
+
+export type PropsWithChildren<P = unknown> = P & { children?: Child | undefined }
+export type CSSProperties = Hono.CSSProperties
+
+/**
+ * React types
+ */
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ReactElement<P = any, T = string | Function> = JSXNode & {
+  type: T
+  props: P
+  key: string | null
+}
+type ReactNode = ReactElement | string | number | boolean | null | undefined
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type ComponentClass<P = {}, S = {}> = unknown
+
+export type { ReactElement, ReactNode, ComponentClass }
+
+export type Event = globalThis.Event
+export type MouseEvent = globalThis.MouseEvent
+export type KeyboardEvent = globalThis.KeyboardEvent
+export type FocusEvent = globalThis.FocusEvent
+export type ClipboardEvent = globalThis.ClipboardEvent
+export type InputEvent = globalThis.InputEvent
+export type PointerEvent = globalThis.PointerEvent
+export type TouchEvent = globalThis.TouchEvent
+export type WheelEvent = globalThis.WheelEvent
+export type AnimationEvent = globalThis.AnimationEvent
+export type TransitionEvent = globalThis.TransitionEvent
+export type DragEvent = globalThis.DragEvent
