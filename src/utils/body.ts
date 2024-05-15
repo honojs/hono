@@ -1,3 +1,4 @@
+import { e } from 'vitest/dist/reporters-1evA5lom.js'
 import { HonoRequest } from '../request'
 
 type BodyDataValue = string | {} | File | (string | File)[] | { [key: string]: BodyDataValue }
@@ -78,11 +79,7 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
     const shouldParseAllValues = options.all || key.endsWith('[]')
 
     if (!shouldParseAllValues) {
-      if (options.dot && key.includes('.')) {
-        setNestedValue(form, key.split('.'), value)
-      } else {
-        form[key] = value
-      }
+      handleNestedValues(form, key, value, options.dot)
     } else {
       handleParsingAllValues(form, key, value, options.dot)
     }
@@ -104,31 +101,36 @@ const handleParsingAllValues = (
   } else if (formKey) {
     form[key] = [formKey, value]
   } else {
-    if (dot) {
-      setNestedValue(form, key.split('.'), value)
-    } else {
-      form[key] = value
-    }
+    handleNestedValues(form, key, value, dot)
   }
 }
 
-const setNestedValue = (form: BodyData, keys: string[], value: FormDataEntryValue): BodyData => {
-  let nestedForm = form
+const handleNestedValues = (
+  form: BodyData,
+  key: string,
+  value: FormDataEntryValue,
+  dot?: boolean
+): void => {
+  if (dot && key.includes('.')) {
+    let nestedForm = form
 
-  keys.forEach((key, index) => {
-    if (index === keys.length - 1) {
-      nestedForm[key] = value
-    } else {
-      if (
-        !nestedForm[key] ||
-        typeof nestedForm[key] !== 'object' ||
-        Array.isArray(nestedForm[key])
-      ) {
-        nestedForm[key] = nestedForm[key] || {}
+    const keys = key.split('.')
+
+    keys.forEach((key, index) => {
+      if (index === keys.length - 1) {
+        nestedForm[key] = value
+      } else {
+        if (
+          !nestedForm[key] ||
+          typeof nestedForm[key] !== 'object' ||
+          Array.isArray(nestedForm[key])
+        ) {
+          nestedForm[key] = nestedForm[key] || {}
+        }
+        nestedForm = nestedForm[key] as BodyData
       }
-      nestedForm = nestedForm[key] as BodyData
-    }
-  })
-
-  return nestedForm
+    })
+  } else {
+    form[key] = value
+  }
 }
