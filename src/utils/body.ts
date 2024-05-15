@@ -1,4 +1,3 @@
-import { e } from 'vitest/dist/reporters-1evA5lom.js'
 import { HonoRequest } from '../request'
 
 type BodyDataValue = string | {} | File | (string | File)[] | { [key: string]: BodyDataValue }
