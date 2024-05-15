@@ -252,6 +252,22 @@ class Hono<
     return this
   }
 
+  /**
+   * Mounts an external application handler to the specified path.
+   *
+   * @param path - The path where the external application handler should be mounted.
+   * @param applicationHandler - The external application handler function that processes requests.
+   * @param optionHandler - Optional function to handle additional options, such as environment variables and execution context.
+   *
+   * @returns The current instance of Hono for chaining.
+   *
+   * @example
+   * ```ts
+   * const app = new Hono()
+   * const externalAppHandler = (req: Request) => new Response('External App')
+   * app.mount('/external', externalAppHandler)
+   * ```
+   */
   mount(
     path: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
