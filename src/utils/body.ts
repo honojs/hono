@@ -1,6 +1,6 @@
 import { HonoRequest } from '../request'
 
-type BodyDataValue = string | {} | File | (string | File)[] | { [key: string]: BodyDataValue }
+type BodyDataValue = string | File | (string | File)[] | { [key: string]: BodyDataValue }
 export type BodyData = Record<string, BodyDataValue>
 export type ParseBodyOptions = {
   /**
@@ -126,7 +126,7 @@ const handleNestedValues = (
             if (Array.isArray(nestedForm[key])) {
               ;(nestedForm[key] as (string | File)[]).push(value)
             } else {
-              nestedForm[key] = [nestedForm[key], value]
+              nestedForm[key] = [nestedForm[key] as string | File, value as string | File]
             }
           } else {
             nestedForm[key] = value
