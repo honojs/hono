@@ -5,21 +5,54 @@ import type { RedirectStatusCode, StatusCode } from './utils/http-status'
 import type { JSONValue, JSONParsed, IsAny, Simplify } from './utils/types'
 
 type HeaderRecord = Record<string, string | string[]>
+
+/**
+ * Data type can be a string, ArrayBuffer, or ReadableStream.
+ */
 export type Data = string | ArrayBuffer | ReadableStream
 
+/**
+ * Interface for the execution context in a web worker or similar environment.
+ */
 export interface ExecutionContext {
+  /**
+   * Extends the lifetime of the event callback until the promise is settled.
+   *
+   * @param promise - A promise to wait for.
+   */
   waitUntil(promise: Promise<unknown>): void
+
+  /**
+   * Allows the event to be passed through to subsequent event listeners.
+   */
   passThroughOnException(): void
 }
 
+/**
+ * Interface for context variable mapping.
+ */
 export interface ContextVariableMap {}
 
+/**
+ * Interface for context renderer.
+ */
 export interface ContextRenderer {}
+
+/**
+ * Type for the default renderer function.
+ */
 interface DefaultRenderer {
   (content: string | Promise<string>): Response | Promise<Response>
 }
 
+/**
+ * Renderer type which can either be a ContextRenderer or DefaultRenderer.
+ */
 export type Renderer = ContextRenderer extends Function ? ContextRenderer : DefaultRenderer
+
+/**
+ * Extracts the props for the renderer.
+ */
 export type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unknown, infer Props]
   ? Props
   : unknown
@@ -27,23 +60,42 @@ export type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unkn
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Layout<T = Record<string, any>> = (props: T) => any
 
+/**
+ * Interface for getting context variables.
+ *
+ * @template E - Environment type.
+ */
 interface Get<E extends Env> {
   <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
   <Key extends keyof E['Variables']>(key: Key): E['Variables'][Key]
 }
 
+/**
+ * Interface for setting context variables.
+ *
+ * @template E - Environment type.
+ */
 interface Set<E extends Env> {
   <Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
   <Key extends keyof E['Variables']>(key: Key, value: E['Variables'][Key]): void
 }
 
+/**
+ * Interface for creating a new response.
+ */
 interface NewResponse {
   (data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response
   (data: Data | null, init?: ResponseInit): Response
 }
 
+/**
+ * Interface for responding with a body.
+ */
 interface BodyRespond extends NewResponse {}
 
+/**
+ * Interface for responding with text.
+ */
 interface TextRespond {
   <T extends string, U extends StatusCode>(text: T, status?: U, headers?: HeaderRecord): Response &
     TypedResponse<T, U, 'text'>
@@ -51,6 +103,9 @@ interface TextRespond {
     TypedResponse<T, U, 'text'>
 }
 
+/**
+ * Interface for responding with JSON.
+ */
 interface JSONRespond {
   <T extends JSONValue | Simplify<unknown>, U extends StatusCode>(
     object: T,
@@ -81,6 +136,9 @@ interface JSONRespond {
     >
 }
 
+/**
+ * Interface for responding with HTML.
+ */
 interface HTMLRespond {
   (html: string | Promise<string>, status?: StatusCode, headers?: HeaderRecord):
     | Response
@@ -88,14 +146,35 @@ interface HTMLRespond {
   (html: string | Promise<string>, init?: ResponseInit): Response | Promise<Response>
 }
 
+/**
+ * Options for configuring the context.
+ *
+ * @template E - Environment type.
+ */
 type ContextOptions<E extends Env> = {
+  /**
+   * Bindings for the environment.
+   */
   env: E['Bindings']
+  /**
+   * Execution context for the request.
+   */
   executionCtx?: FetchEventLike | ExecutionContext | undefined
+  /**
+   * Handler for not found responses.
+   */
   notFoundHandler?: NotFoundHandler<E>
 }
 
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
+/**
+ * Sets the headers of a response.
+ *
+ * @param headers - The Headers object to set the headers on.
+ * @param map - A record of header key-value pairs to set.
+ * @returns The updated Headers object.
+ */
 const setHeaders = (headers: Headers, map: Record<string, string> = {}) => {
   Object.entries(map).forEach(([key, value]) => headers.set(key, value))
   return headers
@@ -151,6 +230,12 @@ export class Context<
   private renderer: Renderer = (content: string | Promise<string>) => this.html(content)
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
+  /**
+   * Creates an instance of the Context class.
+   *
+   * @param req - The HonoRequest object.
+   * @param options - Optional configuration options for the context.
+   */
   constructor(req: HonoRequest<P, I['out']>, options?: ContextOptions<E>) {
     this.req = req
     if (options) {
@@ -163,6 +248,10 @@ export class Context<
   }
 
   /**
+   * The FetchEvent associated with the current request.
+   *
+   * @throws Will throw an error if the context does not have a FetchEvent.
+   *
    * @see https://hono.dev/api/context#event
    */
   get event(): FetchEventLike {
@@ -174,6 +263,10 @@ export class Context<
   }
 
   /**
+   * The ExecutionContext associated with the current request.
+   *
+   * @throws Will throw an error if the context does not have an ExecutionContext.
+   *
    * @see https://hono.dev/api/context#executionctx
    */
   get executionCtx(): ExecutionContext {
@@ -185,6 +278,8 @@ export class Context<
   }
 
   /**
+   * The Response object for the current request.
+   *
    * @see https://hono.dev/api/context#res
    */
   get res(): Response {
@@ -192,6 +287,11 @@ export class Context<
     return (this.#res ||= new Response('404 Not Found', { status: 404 }))
   }
 
+  /**
+   * Sets the Response object for the current request.
+   *
+   * @param _res - The Response object to set.
+   */
   set res(_res: Response | undefined) {
     this.#isFresh = false
     if (this.#res && _res) {
@@ -213,7 +313,8 @@ export class Context<
   }
 
   /**
-   * `.render()` can create a response within a layout.
+   * Renders a response within a layout.
+   *
    * @example
    * ```ts
    * app.get('/', (c) => {
@@ -224,6 +325,12 @@ export class Context<
    */
   render: Renderer = (...args) => this.renderer(...args)
 
+  /**
+   * Sets the layout for the response.
+   *
+   * @param layout - The layout to set.
+   * @returns The layout function.
+   */
   setLayout = (
     layout: Layout<PropsForRenderer & { Layout: Layout }>
   ): Layout<
@@ -232,6 +339,11 @@ export class Context<
     }
   > => (this.layout = layout)
 
+  /**
+   * Gets the current layout for the response.
+   *
+   * @returns The current layout function.
+   */
   getLayout = () => this.layout
 
   /**
