@@ -93,14 +93,18 @@ const handleParsingAllValues = (
   value: FormDataEntryValue,
   dot?: boolean
 ): void => {
-  const formKey = form[key]
-
-  if (formKey && Array.isArray(formKey)) {
-    ;(form[key] as (string | File)[]).push(value)
-  } else if (formKey) {
-    form[key] = [formKey, value]
+  if (dot && key.includes('.')) {
+    handleNestedValues(form, key, value, dot, true)
   } else {
-    handleNestedValues(form, key, value, dot)
+    if (form[key] !== undefined) {
+      if (Array.isArray(form[key])) {
+        form[key].push(value)
+      } else {
+        form[key] = [form[key] as string | File, value]
+      }
+    } else {
+      form[key] = value
+    }
   }
 }
 
@@ -108,28 +112,48 @@ const handleNestedValues = (
   form: BodyData,
   key: string,
   value: FormDataEntryValue,
-  dot?: boolean
+  dot?: boolean,
+  parseAllValues?: boolean
 ): void => {
   if (dot && key.includes('.')) {
     let nestedForm = form
-
     const keys = key.split('.')
 
     keys.forEach((key, index) => {
       if (index === keys.length - 1) {
-        nestedForm[key] = value
+        if (parseAllValues) {
+          if (nestedForm[key] !== undefined) {
+            if (Array.isArray(nestedForm[key])) {
+              ;(nestedForm[key] as (string | File)[]).push(value)
+            } else {
+              nestedForm[key] = [nestedForm[key], value]
+            }
+          } else {
+            nestedForm[key] = value
+          }
+        } else {
+          nestedForm[key] = value
+        }
       } else {
         if (
           !nestedForm[key] ||
           typeof nestedForm[key] !== 'object' ||
           Array.isArray(nestedForm[key])
         ) {
-          nestedForm[key] = nestedForm[key] || {}
+          nestedForm[key] = {}
         }
         nestedForm = nestedForm[key] as BodyData
       }
     })
   } else {
-    form[key] = value
+    if (form[key] !== undefined) {
+      if (Array.isArray(form[key])) {
+        form[key].push(value)
+      } else {
+        form[key] = [form[key] as string | File, value]
+      }
+    } else {
+      form[key] = value
+    }
   }
 }

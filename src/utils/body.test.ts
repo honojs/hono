@@ -127,6 +127,20 @@ describe('Parse Body Util', () => {
     })
   })
 
+  it('should parse data if both `all` and `dot` are set', async () => {
+    const data = new FormData()
+    data.append('obj.sub.foo', 'value1')
+    data.append('obj.sub.foo', 'value2')
+    data.append('key', 'value3')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: true, all: true })).toEqual({
+      obj: { sub: { foo: ['value1', 'value2'] } }, // Is tis expected??
+      key: 'value3',
+    })
+  })
+
   it('should parse nested values if values are `File`', async () => {
     const file1 = new File(['foo'], 'file1', {
       type: 'application/octet-stream',
