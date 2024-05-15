@@ -1,6 +1,6 @@
 import { Context } from '../../src/context.ts'
-import { env, getRuntimeKey } from '../../src/helper.ts'
-import { Hono } from '../../src/mod.ts'
+import { env, getRuntimeKey } from '../../src/helper/adapter/index.ts'
+import { Hono } from '../../src/hono.ts'
 import { HonoRequest } from '../../src/request.ts'
 import { assertEquals } from './deps.ts'
 
