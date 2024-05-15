@@ -26,10 +26,10 @@ export type ParseBodyOptions = {
    * data.append('obj.key1', 'value1')
    * data.append('obj.key2', 'value2')
    *
-   * If all is false:
+   * If dot is false:
    * parseBody should return { 'obj.key1': 'value1', 'obj.key2': 'value2' }
    *
-   * If all is true:
+   * If dot is true:
    * parseBody should return { obj: { key1: 'value1', key2: 'value2' } }
    */
   dot?: boolean
@@ -37,7 +37,7 @@ export type ParseBodyOptions = {
 
 export const parseBody = async <T extends BodyData = BodyData>(
   request: HonoRequest | Request,
-  options: ParseBodyOptions = { all: false }
+  options: ParseBodyOptions = { all: false, dot: false }
 ): Promise<T> => {
   const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
   const contentType = headers.get('Content-Type')
