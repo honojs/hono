@@ -98,7 +98,7 @@ const handleParsingAllValues = (
   } else {
     if (form[key] !== undefined) {
       if (Array.isArray(form[key])) {
-        form[key].push(value)
+        ;(form[key] as (string | File)[]).push(value)
       } else {
         form[key] = [form[key] as string | File, value]
       }
@@ -148,7 +148,7 @@ const handleNestedValues = (
   } else {
     if (form[key] !== undefined) {
       if (Array.isArray(form[key])) {
-        form[key].push(value)
+        ;(form[key] as (string | File)[]).push(value)
       } else {
         form[key] = [form[key] as string | File, value]
       }
