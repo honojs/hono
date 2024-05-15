@@ -1,6 +1,6 @@
 import { HonoRequest } from '../request.ts'
 
-export type BodyData = Record<string, string | File | (string | File)[]>
+export type BodyData = Record<string, string | object | File | (string | File)[]>
 export type ParseBodyOptions = {
   /**
    * Determines whether all fields with multiple values should be parsed as arrays.
@@ -18,6 +18,21 @@ export type ParseBodyOptions = {
    * parseBody should return { file: ['aaa', 'bbb'], message: 'hello' }
    */
   all?: boolean
+  /**
+   * Determines whether all fields with dot notation should be parsed as nested objects.
+   * @default false
+   * @example
+   * const data = new FormData()
+   * data.append('obj.key1', 'value1')
+   * data.append('obj.key2', 'value2')
+   *
+   * If all is false:
+   * parseBody should return { 'obj.key1': 'value1', 'obj.key2': 'value2' }
+   *
+   * If all is true:
+   * parseBody should return { obj: { key1: 'value1', key2: 'value2' } }
+   */
+  dot?: boolean
 }
 
 export const parseBody = async <T extends BodyData = BodyData>(
@@ -60,16 +75,25 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
     const shouldParseAllValues = options.all || key.endsWith('[]')
 
     if (!shouldParseAllValues) {
-      form[key] = value
+      if (options.dot && key.includes('.')) {
+        setNestedValue(form, key.split('.'), value)
+      } else {
+        form[key] = value
+      }
     } else {
-      handleParsingAllValues(form, key, value)
+      handleParsingAllValues(form, key, value, options.dot)
     }
   })
 
   return form as T
 }
 
-const handleParsingAllValues = (form: BodyData, key: string, value: FormDataEntryValue): void => {
+const handleParsingAllValues = (
+  form: BodyData,
+  key: string,
+  value: FormDataEntryValue,
+  dot?: boolean
+): void => {
   const formKey = form[key]
 
   if (formKey && Array.isArray(formKey)) {
@@ -77,6 +101,31 @@ const handleParsingAllValues = (form: BodyData, key: string, value: FormDataEntr
   } else if (formKey) {
     form[key] = [formKey, value]
   } else {
-    form[key] = value
+    if (dot) {
+      setNestedValue(form, key.split('.'), value)
+    } else {
+      form[key] = value
+    }
   }
+}
+
+const setNestedValue = (form: BodyData, keys: string[], value: FormDataEntryValue): BodyData => {
+  let nestedForm = form
+
+  keys.forEach((key, index) => {
+    if (index === keys.length - 1) {
+      nestedForm[key] = value
+    } else {
+      if (
+        !nestedForm[key] ||
+        typeof nestedForm[key] !== 'object' ||
+        Array.isArray(nestedForm[key])
+      ) {
+        nestedForm[key] = nestedForm[key] || {}
+      }
+      nestedForm = nestedForm[key] as BodyData
+    }
+  })
+
+  return nestedForm
 }
