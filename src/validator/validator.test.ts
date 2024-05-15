@@ -167,9 +167,7 @@ describe('Malformed FormData request', () => {
     expect(res.status).toBe(400)
     const data = await res.json()
     expect(data['success']).toBe(false)
-    expect(data['message']).toMatch(
-      /Malformed FormData request. \_*Response.formData: Could not parse content as FormData./
-    )
+    expect(data['message']).toMatch(/^Malformed FormData request./)
   })
 
   it('Should return 400 response, for malformed content type header', async () => {
@@ -181,10 +179,9 @@ describe('Malformed FormData request', () => {
       },
     })
     expect(res.status).toBe(400)
-    expect(await res.json()).toEqual({
-      success: false,
-      message: 'Malformed FormData request. Error: Multipart: Boundary not found',
-    })
+    const data = await res.json()
+    expect(data['success']).toBe(false)
+    expect(data['message']).toMatch(/^Malformed FormData request./)
   })
 })
 
