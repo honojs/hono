@@ -77,6 +77,44 @@ describe('Parse Body Util', () => {
     })
   })
 
+  it('should not parse nested values in default for non-nested keys', async () => {
+    const data = new FormData()
+    data.append('key1', 'value1')
+    data.append('key2', 'value2')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: false })).toEqual({
+      key1: 'value1',
+      key2: 'value2',
+    })
+  })
+
+  it('should handle nested values and non-nested values together with dot option true', async () => {
+    const data = new FormData()
+    data.append('obj.key1', 'value1')
+    data.append('obj.key2', 'value2')
+    data.append('key3', 'value3')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: true })).toEqual({
+      obj: { key1: 'value1', key2: 'value2' },
+      key3: 'value3',
+    })
+  })
+
+  it('should handle deeply nested objects with dot option true', async () => {
+    const data = new FormData()
+    data.append('a.b.c.d', 'value')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: true })).toEqual({
+      a: { b: { c: { d: 'value' } } },
+    })
+  })
+
   it('should parse nested values if `dot` option is true', async () => {
     const data = new FormData()
     data.append('obj.key1', 'value1')
