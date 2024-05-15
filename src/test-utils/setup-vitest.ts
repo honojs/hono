@@ -27,6 +27,10 @@ class MockCache {
     return this.store.get(key) || null
   }
 
+  async keys() {
+    return this.store.keys()
+  }
+
   async put(key: Request | string, response: Response): Promise<void> {
     this.store.set(key, response)
   }

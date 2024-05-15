@@ -12,6 +12,73 @@ class Context implements ExecutionContext {
   }
 }
 
+describe('Customizing Caching Keys', () => {
+  const app = new Hono()
+
+  const dynamicCacheName = 'dynamic-cache-name'
+  app.use(
+    '/dynamic-cache-name/*',
+    cache({
+      cacheName: async () => dynamicCacheName,
+      wait: true,
+      cacheControl: 'max-age=10',
+    })
+  )
+  app.get('/dynamic-cache-name/', (c) => {
+    return c.text('cached')
+  })
+
+  const dynamicCacheKey = 'dynamic-cache-key'
+  app.use(
+    '/dynamic-cache-key/*',
+    cache({
+      cacheName: 'my-app-v1',
+      wait: true,
+      cacheControl: 'max-age=10',
+      keyGenerator: async () => dynamicCacheKey,
+    })
+  )
+  app.get('/dynamic-cache-key/', (c) => {
+    return c.text('cached')
+  })
+
+  app.use(
+    '/dynamic-cache/*',
+    cache({
+      cacheName: async () => dynamicCacheName,
+      cacheControl: 'max-age=10',
+      keyGenerator: async () => dynamicCacheKey,
+    })
+  )
+  app.get('/dynamic-cache/', (c) => {
+    return c.text('cached')
+  })
+
+  const ctx = new Context()
+
+  it('Should use dynamically generated cache name', async () => {
+    await app.request('http://localhost/dynamic-cache-name/', undefined, ctx)
+    const cache = await caches.open(dynamicCacheName)
+    const keys = Array.from(await cache.keys())
+    expect(keys.length).toBe(1)
+  })
+
+  it('Should use dynamically generated cache key', async () => {
+    await app.request('http://localhost/dynamic-cache-key/')
+    const cache = await caches.open('my-app-v1')
+    const response = await cache.match(dynamicCacheKey)
+    expect(response).not.toBeNull()
+  })
+
+  it('Should retrieve cached response with dynamic cache name and key', async () => {
+    await app.request('http://localhost/dynamic-cache/', undefined, undefined, ctx)
+    const res = await app.request('http://localhost/dynamic-cache/', undefined, undefined, ctx)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('cache-control')).toBe('max-age=10')
+  })
+})
+
 describe('Cache Middleware', () => {
   const app = new Hono()
 
