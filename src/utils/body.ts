@@ -1,6 +1,7 @@
 import { HonoRequest } from '../request'
 
-export type BodyData = Record<string, string | object | File | (string | File)[]>
+type BodyDataValue = string | {} | File | (string | File)[] | { [key: string]: BodyDataValue }
+export type BodyData = Record<string, BodyDataValue>
 export type ParseBodyOptions = {
   /**
    * Determines whether all fields with multiple values should be parsed as arrays.
