@@ -23,10 +23,18 @@ import type {
 } from './types'
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
 
+/**
+ * Symbol used to mark a composed handler.
+ */
 export const COMPOSED_HANDLER = Symbol('composedHandler')
 
 type Methods = (typeof METHODS)[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
+/**
+ * Defines a dynamic class with handlers for different HTTP methods and middlewares.
+ *
+ * @returns A dynamic class with method handlers and middleware handlers.
+ */
 function defineDynamicClass(): {
   new <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(): {
     [M in Methods]: HandlerInterface<E, M, S, BasePath>
@@ -39,10 +47,23 @@ function defineDynamicClass(): {
   return class {} as never
 }
 
+/**
+ * Default handler for not found routes.
+ *
+ * @param c - The context object.
+ * @returns A response with a 404 status code and "404 Not Found" text.
+ */
 const notFoundHandler = (c: Context) => {
   return c.text('404 Not Found', 404)
 }
 
+/**
+ * Default error handler.
+ *
+ * @param err - The error object.
+ * @param c - The context object.
+ * @returns A response with a 500 status code and "Internal Server Error" text, or a custom error response if the error is an instance of HTTPException.
+ */
 const errorHandler = (err: Error, c: Context) => {
   if (err instanceof HTTPException) {
     return err.getResponse()
