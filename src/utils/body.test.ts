@@ -64,6 +64,49 @@ describe('Parse Body Util', () => {
     })
   })
 
+  it('should not parse nested values in default', async () => {
+    const data = new FormData()
+    data.append('obj.key1', 'value1')
+    data.append('obj.key2', 'value2')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: false })).toEqual({
+      'obj.key1': 'value1',
+      'obj.key2': 'value2',
+    })
+  })
+
+  it('should parse nested values if `dot` option is true', async () => {
+    const data = new FormData()
+    data.append('obj.key1', 'value1')
+    data.append('obj.key2', 'value2')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: true })).toEqual({
+      obj: { key1: 'value1', key2: 'value2' },
+    })
+  })
+
+  it('should parse nested values if values are `File`', async () => {
+    const file1 = new File(['foo'], 'file1', {
+      type: 'application/octet-stream',
+    })
+    const file2 = new File(['bar'], 'file2', {
+      type: 'application/octet-stream',
+    })
+    const data = new FormData()
+    data.append('file.file1', file1)
+    data.append('file.file2', file2)
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { all: true, dot: true })).toEqual({
+      file: { file1, file2 },
+    })
+  })
+
   it('should parse multiple values if values are `File`', async () => {
     const file1 = new File(['foo'], 'file1', {
       type: 'application/octet-stream',
