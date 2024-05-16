@@ -18,7 +18,7 @@ export type ParseBodyOptions = {
    * If all is true:
    * parseBody should return { file: ['aaa', 'bbb'], message: 'hello' }
    */
-  all?: boolean
+  all: boolean
   /**
    * Determines whether all fields with dot notation should be parsed as nested objects.
    * @default false
@@ -33,12 +33,12 @@ export type ParseBodyOptions = {
    * If dot is true:
    * parseBody should return { obj: { key1: 'value1', key2: 'value2' } }
    */
-  dot?: boolean
+  dot: boolean
 }
 
 export const parseBody = async <T extends BodyData = BodyData>(
   request: HonoRequest | Request,
-  options: ParseBodyOptions = Object.create(null)
+  options: Partial<ParseBodyOptions> = Object.create(null)
 ): Promise<T> => {
   const { all = false, dot = false } = options
 
@@ -138,7 +138,8 @@ const handleNestedValues = (
         if (
           !nestedForm[key] ||
           typeof nestedForm[key] !== 'object' ||
-          Array.isArray(nestedForm[key])
+          Array.isArray(nestedForm[key]) ||
+          nestedForm[key] instanceof File
         ) {
           nestedForm[key] = Object.create(null)
         }

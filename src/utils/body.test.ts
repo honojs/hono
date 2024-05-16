@@ -50,6 +50,32 @@ describe('Parse Body Util', () => {
     })
   })
 
+  it('should not update file object properties', async () => {
+    const file = new File(['foo'], 'file1', {
+      type: 'application/octet-stream',
+    })
+    const data = new FormData()
+
+    const req = createRequest(FORM_URL, 'POST', data)
+    vi.spyOn(req, 'formData').mockImplementation(
+      async () =>
+        ({
+          forEach: (cb) => {
+            cb(file, 'file', data)
+            cb('hoo', 'file.hoo', data)
+          },
+        } as FormData)
+    )
+
+    const parsedData = await parseBody(req, { dot: true })
+    expect(parsedData.file).not.instanceOf(File)
+    expect(parsedData).toEqual({
+      file: {
+        hoo: 'hoo',
+      },
+    })
+  })
+
   it('should override value if `all` option is false', async () => {
     const data = new FormData()
     data.append('file', 'aaa')
