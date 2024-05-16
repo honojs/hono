@@ -176,7 +176,7 @@ describe('Parse Body Util', () => {
     const req = createRequest(FORM_URL, 'POST', data)
 
     expect(await parseBody(req, { dot: true, all: true })).toEqual({
-      obj: { sub: { foo: ['value1', 'value2'] } }, // Is tis expected??
+      obj: { sub: { foo: ['value1', 'value2'] } },
       key: 'value3',
     })
   })
