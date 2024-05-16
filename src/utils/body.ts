@@ -151,8 +151,7 @@ const handleParsingAllValues = (form: BodyData, key: string, value: FormDataEntr
  *
  * @param {BodyData} form - The form data object.
  * @param {string} key - The dot notation key.
- * @param {FormDataEntryValue} value - The value to assign.
- * @param {boolean} parseAllValues - Whether to parse all values as arrays.
+ * @param {BodyDataValue} value - The value to assign.
  */
 const handleParsingNestedValues = (form: BodyData, key: string, value: BodyDataValue): void => {
   let nestedForm = form
