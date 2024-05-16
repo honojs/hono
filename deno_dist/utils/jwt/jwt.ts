@@ -23,7 +23,6 @@ export interface TokenHeader {
   typ?: 'JWT'
 }
 
-// eslint-disable-next-line
 export function isTokenHeader(obj: unknown): obj is TokenHeader {
   if (typeof obj === 'object' && obj !== null) {
     const objWithAlg = obj as { [key: string]: unknown }
@@ -91,7 +90,6 @@ export const verify = async (
   return payload
 }
 
-// eslint-disable-next-line
 export const decode = (token: string): { header: TokenHeader; payload: JWTPayload } => {
   try {
     const [h, p] = token.split('.')
