@@ -152,11 +152,10 @@ export const combineAfterGenerateHooks = (
   }
 }
 
-
 export interface ToSSGOptions {
   dir?: string
-  beforeRequestHook?: BeforeRequestHook | BeforeRequestHook[] 
-  afterResponseHook?: AfterResponseHook | AfterResponseHook[] 
+  beforeRequestHook?: BeforeRequestHook | BeforeRequestHook[]
+  afterResponseHook?: AfterResponseHook | AfterResponseHook[]
   afterGenerateHook?: AfterGenerateHook | AfterGenerateHook[]
   concurrency?: number
   extensionMap?: Record<string, string>
@@ -342,8 +341,12 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
     const outputDir = options?.dir ?? './static'
     const concurrency = options?.concurrency ?? DEFAULT_CONCURRENCY
 
-    const combinedBeforeRequestHook = combineBeforeRequestHooks(options?.beforeRequestHook || ((req) => req))
-    const combinedAfterResponseHook = combineAfterResponseHooks(options?.afterResponseHook || ((req) => req))
+    const combinedBeforeRequestHook = combineBeforeRequestHooks(
+      options?.beforeRequestHook || ((req) => req)
+    )
+    const combinedAfterResponseHook = combineAfterResponseHooks(
+      options?.afterResponseHook || ((req) => req)
+    )
     const getInfoGen = fetchRoutesContent(
       app,
       combinedBeforeRequestHook,
