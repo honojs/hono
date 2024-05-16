@@ -12,7 +12,7 @@ import type {
 import { parseBody } from './utils/body'
 import type { BodyData, ParseBodyOptions } from './utils/body'
 import type { UnionToIntersection } from './utils/types'
-import { getQueryParam, getQueryParams, decodeURIComponent_ } from './utils/url'
+import { getQueryParam, getQueryParams } from './utils/url'
 
 type Body = {
   json: any
@@ -82,28 +82,26 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   param(key: string): string | undefined
   param<P2 extends string = P>(): UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>
   param(key?: string): unknown {
-    return key ? this.getDecodedParam(key) : this.getAllDecodedParams()
+    return key ? this.getParam(key) : this.getAllDecodedParams()
   }
 
-  private getDecodedParam(key: string): string | undefined {
+  private getParam(key: string): string | undefined {
     const paramKey = this.#matchResult[0][this.routeIndex][1][key]
-    const param = this.getParamValue(paramKey)
-
-    return param ? (/\%/.test(param) ? decodeURIComponent_(param) : param) : undefined
+    return this.getParamValue(paramKey)
   }
 
   private getAllDecodedParams(): Record<string, string> {
-    const decoded: Record<string, string> = {}
+    const params: Record<string, string> = {}
 
     const keys = Object.keys(this.#matchResult[0][this.routeIndex][1])
     for (const key of keys) {
       const value = this.getParamValue(this.#matchResult[0][this.routeIndex][1][key])
       if (value && typeof value === 'string') {
-        decoded[key] = /\%/.test(value) ? decodeURIComponent_(value) : value
+        params[key] = value
       }
     }
 
-    return decoded
+    return params
   }
 
   private getParamValue(paramKey: any): string | undefined {
