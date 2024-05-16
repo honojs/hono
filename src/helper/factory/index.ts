@@ -1,21 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Hono } from '../../hono'
 import type { Env, H, HandlerResponse, Input, MiddlewareHandler } from '../../types'
 
-export class Factory<E extends Env = any, P extends string = any> {
-  createMiddleware = <I extends Input = {}>(middleware: MiddlewareHandler<E, P, I>) => middleware
+type InitApp<E extends Env = Env> = (app: Hono<E>) => void
 
-  createHandlers<I extends Input = {}, R extends HandlerResponse<any> = any>(
-    handler1: H<E, P, I, R>
-  ): [H<E, P, I, R>]
-
+interface CreateHandlersInterface<E extends Env, P extends string> {
+  <I extends Input = {}, R extends HandlerResponse<any> = any>(handler1: H<E, P, I, R>): [
+    H<E, P, I, R>
+  ]
   // handler x2
-  createHandlers<I extends Input = {}, I2 extends Input = I, R extends HandlerResponse<any> = any>(
+  <I extends Input = {}, I2 extends Input = I, R extends HandlerResponse<any> = any>(
     handler1: H<E, P, I, R>,
     handler2: H<E, P, I2, R>
   ): [H<E, P, I, R>, H<E, P, I2, R>]
 
   // handler x3
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -27,7 +27,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ): [H<E, P, I, R>, H<E, P, I2, R>, H<E, P, I3, R>]
 
   // handler x4
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -41,7 +41,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ): [H<E, P, I, R>, H<E, P, I2, R>, H<E, P, I3, R>, H<E, P, I4, R>]
 
   // handler x5
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -57,7 +57,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ): [H<E, P, I, R>, H<E, P, I2, R>, H<E, P, I3, R>, H<E, P, I4, R>, H<E, P, I5, R>]
 
   // handler x6
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -75,7 +75,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ): [H<E, P, I, R>, H<E, P, I2, R>, H<E, P, I3, R>, H<E, P, I4, R>, H<E, P, I5, R>, H<E, P, I6, R>]
 
   // handler x7
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -103,7 +103,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ]
 
   // handler x8
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -134,7 +134,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ]
 
   // handler x9
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -168,7 +168,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   ]
 
   // handler x10
-  createHandlers<
+  <
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -203,14 +203,39 @@ export class Factory<E extends Env = any, P extends string = any> {
     H<E, P, I9, R>,
     H<E, P, I10, R>
   ]
+}
 
-  createHandlers(...handlers: H[]) {
+export class Factory<E extends Env = any, P extends string = any> {
+  private initApp?: InitApp<E>
+
+  constructor(init?: { initApp?: InitApp<E> }) {
+    this.initApp = init?.initApp
+  }
+
+  /**
+   * @experimental
+   * `createApp` is an experimental feature.
+   */
+  createApp = (): Hono<E> => {
+    const app = new Hono<E>()
+    if (this.initApp) {
+      this.initApp(app)
+    }
+    return app
+  }
+
+  createMiddleware = <I extends Input = {}>(middleware: MiddlewareHandler<E, P, I>) => middleware
+
+  createHandlers: CreateHandlersInterface<E, P> = (...handlers: any) => {
+    // @ts-expect-error this should not be typed
     return handlers.filter((handler) => handler !== undefined)
   }
 }
 
-export const createFactory = <E extends Env = any, P extends string = any>() => new Factory<E, P>()
+export const createFactory = <E extends Env = any, P extends string = any>(init?: {
+  initApp?: InitApp<E>
+}): Factory<E, P> => new Factory<E, P>(init)
 
 export const createMiddleware = <E extends Env = any, P extends string = any, I extends Input = {}>(
   middleware: MiddlewareHandler<E, P, I>
-) => createFactory<E, P>().createMiddleware<I>(middleware)
+): MiddlewareHandler<E, P, I> => createFactory<E, P>().createMiddleware<I>(middleware)

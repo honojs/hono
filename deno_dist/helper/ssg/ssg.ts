@@ -4,10 +4,18 @@ import type { Env, Schema } from '../../types.ts'
 import { createPool } from '../../utils/concurrent.ts'
 import { getExtension } from '../../utils/mime.ts'
 import type { AddedSSGDataRequest, SSGParams } from './middleware.ts'
-import { SSG_DISABLED_RESPONSE, SSG_CONTEXT } from './middleware.ts'
+import { X_HONO_DISABLE_SSG_HEADER_KEY, SSG_CONTEXT } from './middleware.ts'
 import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils.ts'
 
 const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
+
+// 'default_content_type' is designed according to Bun's performance optimization,
+//  which omits Content-Type by default for text responses.
+//  This is based on benchmarks showing performance gains without Content-Type.
+//  In Hono, using `c.text()` without a Content-Type implicitly assumes 'text/plain; charset=UTF-8'.
+//  This approach maintains performance consistency across different environments.
+//  For details, see GitHub issues: oven-sh/bun#8530 and https://github.com/honojs/hono/issues/2284.
+const DEFAULT_CONTENT_TYPE = 'text/plain'
 
 /**
  * @experimental
@@ -168,7 +176,7 @@ export const fetchRoutesContent = function* <
                       [SSG_CONTEXT]: true,
                     })
                   )
-                  if (response === SSG_DISABLED_RESPONSE) {
+                  if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) {
                     resolveReq(undefined)
                     return
                   }
@@ -181,7 +189,7 @@ export const fetchRoutesContent = function* <
                     response = maybeResponse
                   }
                   const mimeType =
-                    response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
+                    response.headers.get('Content-Type')?.split(';')[0] || DEFAULT_CONTENT_TYPE
                   const content = await parseResponseContent(response)
                   resolveReq({
                     routePath: replacedUrlParam,
@@ -271,7 +279,7 @@ export interface ToSSGAdaptorInterface<
  * The API might be changed.
  */
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
-  let result: ToSSGResult | undefined = undefined
+  let result: ToSSGResult | undefined
   const getInfoPromises: Promise<unknown>[] = []
   const savePromises: Promise<string | undefined>[] = []
   try {

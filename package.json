@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.2.1",
+  "version": "4.3.7",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -22,8 +22,8 @@
     "test:all": "bun run test && bun test:deno && bun test:bun && bun test:fastly && bun test:node && bun test:wrangler && bun test:lambda && bun test:lambda-edge",
     "lint": "eslint --ext js,ts,tsx src runtime_tests",
     "lint:fix": "eslint --ext js,ts,tsx src runtime_tests --fix",
-    "format": "prettier --check \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
-    "format:fix": "prettier --write \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
+    "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
+    "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
     "denoify": "rimraf deno_dist && denoify && rimraf \"deno_dist/**/*.test.{ts,tsx}\"",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
     "build": "rimraf dist && tsx ./build.ts && bun run copy:package.cjs.json",
@@ -279,6 +279,11 @@
       "import": "./dist/helper/factory/index.js",
       "require": "./dist/cjs/helper/factory/index.js"
     },
+    "./serve-static": {
+      "types": "./dist/types/middleware/serve-static/index.d.ts",
+      "import": "./dist/middleware/serve-static/index.js",
+      "require": "./dist/cjs/middleware/serve-static/index.js"
+    },
     "./cloudflare-workers": {
       "types": "./dist/types/adapter/cloudflare-workers/index.d.ts",
       "import": "./dist/adapter/cloudflare-workers/index.js",
@@ -382,6 +387,9 @@
       "etag": [
         "./dist/types/middleware/etag"
       ],
+      "trailing-slash": [
+        "./dist/types/middleware/trailing-slash"
+      ],
       "html": [
         "./dist/types/helper/html"
       ],
@@ -471,6 +479,9 @@
       ],
       "factory": [
         "./dist/types/helper/factory/index.d.ts"
+      ],
+      "serve-static": [
+        "./dist/types/middleware/serve-static"
       ],
       "cloudflare-workers": [
         "./dist/types/adapter/cloudflare-workers"

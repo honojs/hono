@@ -34,14 +34,18 @@ export const validator = <
   V extends {
     in: {
       [K in U]: K extends 'json'
-        ? InputType
+        ? unknown extends InputType
+          ? OutputTypeExcludeResponseType
+          : InputType
         : { [K2 in keyof OutputTypeExcludeResponseType]: ValidationTargets[K][K2] }
     }
     out: { [K in U]: OutputTypeExcludeResponseType }
   } = {
     in: {
       [K in U]: K extends 'json'
-        ? InputType
+        ? unknown extends InputType
+          ? OutputTypeExcludeResponseType
+          : InputType
         : { [K2 in keyof OutputTypeExcludeResponseType]: ValidationTargets[K][K2] }
     }
     out: { [K in U]: OutputTypeExcludeResponseType }
@@ -63,7 +67,7 @@ export const validator = <
 
     switch (target) {
       case 'json':
-        if (!contentType || !contentType.startsWith('application/json')) {
+        if (!contentType || !/^application\/([a-z-]+\+)?json/.test(contentType)) {
           const message = `Invalid HTTP header: Content-Type=${contentType}`
           throw new HTTPException(400, { message })
         }
@@ -89,7 +93,15 @@ export const validator = <
           const formData = await bufferToFormData(arrayBuffer, contentType)
           const form: BodyData = {}
           formData.forEach((value, key) => {
-            form[key] = value
+            if (key.endsWith('[]')) {
+              if (form[key] === undefined) {
+                form[key] = [value]
+              } else if (Array.isArray(form[key])) {
+                ;(form[key] as unknown[]).push(value)
+              }
+            } else {
+              form[key] = value
+            }
           })
           value = form
           c.req.bodyCache.formData = formData

@@ -3,7 +3,8 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import { vi, expectTypeOf } from 'vitest'
+import { expectTypeOf, vi } from 'vitest'
+import { upgradeWebSocket } from '../helper'
 import { Hono } from '../hono'
 import { parse } from '../utils/cookie'
 import type { Equal, Expect } from '../utils/types'
@@ -48,6 +49,7 @@ describe('Basic - JSON', () => {
       }
     )
     .get('/hello-not-found', (c) => c.notFound())
+    .get('/null', (c) => c.json(null))
 
   type AppType = typeof route
 
@@ -69,6 +71,21 @@ describe('Basic - JSON', () => {
     }),
     rest.get('http://localhost/hello-not-found', (_req, res, ctx) => {
       return res(ctx.status(404))
+    }),
+    rest.get('http://localhost/null', (_req, res, ctx) => {
+      return res(ctx.status(200), ctx.json(null))
+    }),
+    rest.get('http://localhost/api/string', async (req, res, ctx) => {
+      return res(ctx.json('a-string'))
+    }),
+    rest.get('http://localhost/api/number', async (req, res, ctx) => {
+      return res(ctx.json(37))
+    }),
+    rest.get('http://localhost/api/boolean', async (req, res, ctx) => {
+      return res(ctx.json(true))
+    }),
+    rest.get('http://localhost/api/generic', async (req, res, ctx) => {
+      return res(ctx.json(Math.random() > 0.5 ? Boolean(Math.random()) : Math.random()))
     })
   )
 
@@ -110,6 +127,46 @@ describe('Basic - JSON', () => {
   it('Should get 404 response', async () => {
     const res = await client['hello-not-found'].$get()
     expect(res.status).toBe(404)
+  })
+
+  it('Should get a `null` content', async () => {
+    const client = hc<AppType>('http://localhost')
+    const res = await client.null.$get()
+    const data = await res.json()
+    expectTypeOf(data).toMatchTypeOf<null>()
+    expect(data).toBe(null)
+  })
+
+  it('Should have correct types - primitives', async () => {
+    const app = new Hono()
+    const route = app
+      .get('/api/string', (c) => c.json('a-string'))
+      .get('/api/number', (c) => c.json(37))
+      .get('/api/boolean', (c) => c.json(true))
+      .get('/api/generic', (c) =>
+        c.json(Math.random() > 0.5 ? Boolean(Math.random()) : Math.random())
+      )
+    type AppType = typeof route
+    const client = hc<AppType>('http://localhost')
+    const stringFetch = await client.api.string.$get()
+    const stringRes = await stringFetch.json()
+    const numberFetch = await client.api.number.$get()
+    const numberRes = await numberFetch.json()
+    const booleanFetch = await client.api.boolean.$get()
+    const booleanRes = await booleanFetch.json()
+    const genericFetch = await client.api.generic.$get()
+    const genericRes = await genericFetch.json()
+    type stringVerify = Expect<Equal<'a-string', typeof stringRes>>
+    expect(stringRes).toBe('a-string')
+    type numberVerify = Expect<Equal<37, typeof numberRes>>
+    expect(numberRes).toBe(37)
+    type booleanVerify = Expect<Equal<true, typeof booleanRes>>
+    expect(booleanRes).toBe(true)
+    type genericVerify = Expect<Equal<number | boolean, typeof genericRes>>
+    expect(typeof genericRes === 'number' || typeof genericRes === 'boolean').toBe(true)
+
+    // using .text() on json endpoint should return string
+    type textTest = Expect<Equal<Promise<string>, ReturnType<typeof genericFetch.text>>>
   })
 })
 
@@ -454,6 +511,7 @@ describe('Merge path with `app.route()`', () => {
   it('Should have correct types - with interface', async () => {
     interface Result {
       ok: boolean
+      okUndefined?: boolean
     }
     const result: Result = { ok: true }
     const base = new Hono<Env>().basePath('/api')
@@ -593,6 +651,101 @@ describe('ClientResponse<T>.json() returns a Union type correctly', () => {
   })
 })
 
+describe('Response with different status codes', () => {
+  const condition = () => true
+  const app = new Hono().get('/', async (c) => {
+    const ok = condition()
+    if (ok) {
+      return c.json({ data: 'foo' }, 200)
+    }
+    if (!ok) {
+      return c.json({ message: 'error' }, 400)
+    }
+    return c.json(null)
+  })
+
+  const client = hc<typeof app>('', { fetch: app.request })
+
+  it('all', async () => {
+    const res = await client.index.$get()
+    const json = await res.json()
+    expectTypeOf(json).toEqualTypeOf<{ data: string } | { message: string } | null>()
+  })
+
+  it('status 200', async () => {
+    const res = await client.index.$get()
+    if (res.status === 200) {
+      const json = await res.json()
+      expectTypeOf(json).toEqualTypeOf<{ data: string } | null>()
+    }
+  })
+
+  it('status 400', async () => {
+    const res = await client.index.$get()
+    if (res.status === 400) {
+      const json = await res.json()
+      expectTypeOf(json).toEqualTypeOf<{ message: string } | null>()
+    }
+  })
+
+  it('response is ok', async () => {
+    const res = await client.index.$get()
+    if (res.ok) {
+      const json = await res.json()
+      expectTypeOf(json).toEqualTypeOf<{ data: string } | null>()
+    }
+  })
+
+  it('response is not ok', async () => {
+    const res = await client.index.$get()
+    if (!res.ok) {
+      const json = await res.json()
+      expectTypeOf(json).toEqualTypeOf<{ message: string } | null>()
+    }
+  })
+})
+
+describe('Infer the response type with different status codes', () => {
+  const condition = () => true
+  const app = new Hono().get('/', async (c) => {
+    const ok = condition()
+    if (ok) {
+      return c.json({ data: 'foo' }, 200)
+    }
+    if (!ok) {
+      return c.json({ message: 'error' }, 400)
+    }
+    return c.json(null)
+  })
+
+  const client = hc<typeof app>('', { fetch: app.request })
+
+  it('Should infer response type correctly', () => {
+    const req = client.index.$get
+
+    type Actual = InferResponseType<typeof req>
+    type Expected =
+      | {
+          data: string
+        }
+      | {
+          message: string
+        }
+      | null
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer response type of status 200 correctly', () => {
+    const req = client.index.$get
+
+    type Actual = InferResponseType<typeof req, 200>
+    type Expected = {
+      data: string
+    } | null
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
 describe('$url() with a param option', () => {
   const app = new Hono().get('/posts/:id/comments', (c) => c.json({ ok: true }))
   type AppType = typeof app
@@ -620,5 +773,271 @@ describe('Client can be awaited', () => {
     const awaited = await client
 
     expect(awaited).toEqual(client)
+  })
+})
+
+describe('Dynamic headers', () => {
+  const app = new Hono()
+
+  const route = app.post('/posts', (c) => {
+    return c.json({
+      requestDynamic: 'dummy',
+    })
+  })
+
+  type AppType = typeof route
+
+  const server = setupServer(
+    rest.post('http://localhost/posts', async (req, res, ctx) => {
+      const requestDynamic = req.headers.get('x-dynamic')
+      const payload = {
+        requestDynamic,
+      }
+      return res(ctx.status(200), ctx.json(payload))
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  let dynamic = ''
+
+  const client = hc<AppType>('http://localhost', {
+    headers: () => ({ 'x-hono': 'hono', 'x-dynamic': dynamic }),
+  })
+
+  it('Should have "x-dynamic": "one"', async () => {
+    dynamic = 'one'
+
+    const res = await client.posts.$post()
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestDynamic).toEqual('one')
+  })
+
+  it('Should have "x-dynamic": "two"', async () => {
+    dynamic = 'two'
+
+    const res = await client.posts.$post()
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data.requestDynamic).toEqual('two')
+  })
+})
+
+describe('RequestInit work as expected', () => {
+  const app = new Hono()
+
+  const route = app
+    .get('/credentials', (c) => {
+      return c.text('' as RequestCredentials)
+    })
+    .get('/headers', (c) => {
+      return c.json({} as Record<string, string>)
+    })
+    .post('/headers', (c) => c.text('Not found', 404))
+
+  type AppType = typeof route
+
+  const server = setupServer(
+    rest.get('http://localhost/credentials', async (req, res, ctx) => {
+      return res(ctx.status(200), ctx.text(req.credentials))
+    }),
+    rest.get('http://localhost/headers', async (req, res, ctx) => {
+      const allHeaders: Record<string, string> = {}
+      for (const [k, v] of req.headers.entries()) {
+        allHeaders[k] = v
+      }
+
+      return res(ctx.status(200), ctx.json(allHeaders))
+    }),
+    rest.post('http://localhost/headers', async (req, res, ctx) => {
+      return res(ctx.status(400), ctx.text('Should not be here'))
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  const client = hc<AppType>('http://localhost', {
+    headers: { 'x-hono': 'fire' },
+    init: {
+      credentials: 'include',
+    },
+  })
+
+  it('Should overwrite method and fail', async () => {
+    const res = await client.headers.$get(undefined, { init: { method: 'POST' } })
+
+    expect(res.ok).toBe(false)
+  })
+
+  it('Should clear headers', async () => {
+    const res = await client.headers.$get(undefined, { init: { headers: undefined } })
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data).toEqual({})
+  })
+
+  it('Should overwrite headers', async () => {
+    const res = await client.headers.$get(undefined, {
+      init: { headers: new Headers({ 'x-hono': 'awesome' }) },
+    })
+
+    expect(res.ok).toBe(true)
+    const data = await res.json()
+    expect(data).toEqual({ 'x-hono': 'awesome' })
+  })
+
+  it('credentials is include', async () => {
+    const res = await client.credentials.$get()
+
+    expect(res.ok).toBe(true)
+    const data = await res.text()
+    expect(data).toEqual('include')
+  })
+
+  it('deepMerge should works and not unset credentials', async () => {
+    const res = await client.credentials.$get(undefined, { init: { headers: { hi: 'hello' } } })
+
+    expect(res.ok).toBe(true)
+    const data = await res.text()
+    expect(data).toEqual('include')
+  })
+
+  it('Should unset credentials', async () => {
+    const res = await client.credentials.$get(undefined, { init: { credentials: undefined } })
+
+    expect(res.ok).toBe(true)
+    const data = await res.text()
+    expect(data).toEqual('same-origin')
+  })
+})
+
+describe('WebSocket URL Protocol Translation', () => {
+  const app = new Hono()
+  const route = app.get(
+    '/',
+    upgradeWebSocket((c) => ({
+      onMessage(event, ws) {
+        console.log(`Message from client: ${event.data}`)
+        ws.send('Hello from server!')
+      },
+      onClose: () => {
+        console.log('Connection closed')
+      },
+    }))
+  )
+
+  type AppType = typeof route
+
+  const server = setupServer()
+  const webSocketMock = vi.fn()
+
+  beforeAll(() => server.listen())
+  beforeEach(() => {
+    vi.stubGlobal('WebSocket', webSocketMock)
+  })
+  afterEach(() => {
+    vi.clearAllMocks()
+    server.resetHandlers()
+  })
+  afterAll(() => server.close())
+
+  it('Translates HTTP to ws', async () => {
+    const client = hc<AppType>('http://localhost')
+    client.index.$ws()
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
+  })
+
+  it('Translates HTTPS to wss', async () => {
+    const client = hc<AppType>('https://localhost')
+    client.index.$ws()
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
+  })
+
+  it('Keeps ws unchanged', async () => {
+    const client = hc<AppType>('ws://localhost')
+    client.index.$ws()
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index')
+  })
+
+  it('Keeps wss unchanged', async () => {
+    const client = hc<AppType>('wss://localhost')
+    client.index.$ws()
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index')
+  })
+})
+
+describe('Client can be console.log in react native', () => {
+  it('Returns a function name with function.name.toString', async () => {
+    const client = hc('http://localhost')
+    // @ts-ignore
+    expect(client.posts.name.toString()).toEqual('posts')
+  })
+
+  it('Returns a function name with function.name.valueOf', async () => {
+    const client = hc('http://localhost')
+    // @ts-ignore
+    expect(client.posts.name.valueOf()).toEqual('posts')
+  })
+
+  it('Returns a function with function.valueOf', async () => {
+    const client = hc('http://localhost')
+    expect(typeof client.posts.valueOf()).toEqual('function')
+  })
+
+  it('Returns a function source with function.toString', async () => {
+    const client = hc('http://localhost')
+    expect(client.posts.toString()).toMatch('function proxyCallback')
+  })
+})
+
+describe('Text response', () => {
+  const text = 'My name is Hono'
+  const obj = { ok: true }
+  const server = setupServer(
+    rest.get('http://localhost/about/me', async (_req, res, ctx) => {
+      return res(ctx.text(text))
+    }),
+    rest.get('http://localhost/api', async (_req, res, ctx) => {
+      return res(ctx.json(obj))
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  const app = new Hono().get('/about/me', (c) => c.text(text)).get('/api', (c) => c.json(obj))
+  const client = hc<typeof app>('http://localhost/')
+
+  it('Should be never with res.json() - /about/me', async () => {
+    const res = await client.about.me.$get()
+    type Actual = ReturnType<typeof res.json>
+    type Expected = Promise<never>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should be "Hello, World!" with res.text() - /about/me', async () => {
+    const res = await client.about.me.$get()
+    const data = await res.text()
+    expectTypeOf(data).toEqualTypeOf<'My name is Hono'>()
+    expect(data).toBe(text)
+  })
+
+  /**
+   * Also check the type of JSON response with res.text().
+   */
+  it('Should be string with res.text() - /api', async () => {
+    const res = await client.api.$get()
+    type Actual = ReturnType<typeof res.text>
+    type Expected = Promise<string>
+    type verify = Expect<Equal<Expected, Actual>>
   })
 })

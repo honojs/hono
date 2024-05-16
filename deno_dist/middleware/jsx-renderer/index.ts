@@ -3,23 +3,31 @@ import type { Context, PropsForRenderer } from '../../context.ts'
 import { html, raw } from '../../helper/html/index.ts'
 import { jsx, createContext, useContext, Fragment } from '../../jsx/index.ts'
 import type { FC, PropsWithChildren, JSXNode } from '../../jsx/index.ts'
+import type { Context as JSXContext } from '../../jsx/index.ts'
 import { renderToReadableStream } from '../../jsx/streaming.ts'
 import type { Env, Input, MiddlewareHandler } from '../../types.ts'
+import type { HtmlEscapedString } from '../../utils/html.ts'
 
-export const RequestContext = createContext<Context | null>(null)
+export const RequestContext: JSXContext<Context<any, any, {}> | null> =
+  createContext<Context | null>(null)
 
 type RendererOptions = {
   docType?: boolean | string
   stream?: boolean | Record<string, string>
 }
 
+type Component = (
+  props: PropsForRenderer & { Layout: FC },
+  c: Context
+) => HtmlEscapedString | Promise<HtmlEscapedString>
+
+type ComponentWithChildren = (
+  props: PropsWithChildren<PropsForRenderer & { Layout: FC }>,
+  c: Context
+) => HtmlEscapedString | Promise<HtmlEscapedString>
+
 const createRenderer =
-  (
-    c: Context,
-    Layout: FC,
-    component?: FC<PropsForRenderer & { Layout: FC }>,
-    options?: RendererOptions
-  ) =>
+  (c: Context, Layout: FC, component?: Component, options?: RendererOptions) =>
   (children: JSXNode, props: PropsForRenderer) => {
     const docType =
       typeof options?.docType === 'string'
@@ -30,7 +38,7 @@ const createRenderer =
 
     const currentLayout = component
       ? jsx(
-          component,
+          (props: any) => component(props, c),
           {
             ...{ Layout, ...(props as any) },
           },
@@ -60,14 +68,14 @@ const createRenderer =
   }
 
 export const jsxRenderer = (
-  component?: FC<PropsWithChildren<PropsForRenderer & { Layout: FC }>>,
+  component?: ComponentWithChildren,
   options?: RendererOptions
 ): MiddlewareHandler =>
   function jsxRenderer(c, next) {
     const Layout = (c.getLayout() ?? Fragment) as FC
     if (component) {
       c.setLayout((props) => {
-        return component({ ...props, Layout })
+        return component({ ...props, Layout }, c)
       })
     }
     c.setRenderer(createRenderer(c, Layout, component, options) as any)

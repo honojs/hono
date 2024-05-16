@@ -2,7 +2,8 @@ import { expectTypeOf } from 'vitest'
 import { hc } from '../../client'
 import type { ClientRequest } from '../../client/types'
 import { Hono } from '../../index'
-import type { ToSchema } from '../../types'
+import type { ToSchema, TypedResponse } from '../../types'
+import type { StatusCode } from '../../utils/http-status'
 import { validator } from '../../validator'
 import { createMiddleware, createFactory } from './index'
 
@@ -76,7 +77,9 @@ describe('createHandler', () => {
         a: ClientRequest<{
           $get: {
             input: {}
-            output: {}
+            output: 'A'
+            outputFormat: 'text'
+            status: StatusCode
           }
         }>
       }>()
@@ -109,14 +112,16 @@ describe('createHandler', () => {
         'get',
         '/posts',
         {
-          query: {
-            page: string
+          in: {
+            query: {
+              page: string
+            }
           }
         },
-        {
+        TypedResponse<{
           page: string
           foo: string
-        }
+        }>
       >,
       '/'
     >
@@ -167,24 +172,26 @@ describe('createHandler', () => {
         'get',
         '/posts',
         {
-          header: {
-            auth: string
-          }
-        } & {
-          query: {
-            page: string
-          }
-        } & {
-          json: {
-            id: number
+          in: {
+            header: {
+              auth: string
+            }
+          } & {
+            query: {
+              page: string
+            }
+          } & {
+            json: {
+              id: number
+            }
           }
         },
-        {
+        TypedResponse<{
           auth: string
           page: string
           foo: string
           id: number
-        }
+        }>
       >,
       '/'
     >
@@ -192,5 +199,36 @@ describe('createHandler', () => {
     it('Should return correct types', () => {
       expectTypeOf(routes).toEqualTypeOf<Expected>()
     })
+  })
+})
+
+describe('createApp', () => {
+  type Env = { Variables: { foo: string } }
+  const factory = createFactory<Env>({
+    initApp: (app) => {
+      app.use((c, next) => {
+        c.set('foo', 'bar')
+        return next()
+      })
+    },
+  })
+  const app = factory.createApp()
+  it('Should set the correct type and initialize the app', async () => {
+    app.get('/', (c) => {
+      expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+      return c.text(c.var.foo)
+    })
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('bar')
+  })
+})
+
+describe('Lint rules', () => {
+  it('Should not throw a eslint `unbound-method` error if destructed', () => {
+    const { createApp, createHandlers, createMiddleware } = createFactory()
+    expect(createApp).toBeDefined()
+    expect(createHandlers).toBeDefined()
+    expect(createMiddleware).toBeDefined()
   })
 })

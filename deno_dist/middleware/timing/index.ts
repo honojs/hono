@@ -21,10 +21,10 @@ interface TimingOptions {
   enabled: boolean | ((c: Context) => boolean)
   totalDescription: string
   autoEnd: boolean
-  crossOrigin: boolean | string
+  crossOrigin: boolean | string | ((c: Context) => boolean | string)
 }
 
-const getTime = () => {
+const getTime = (): number => {
   try {
     return performance.now()
   } catch {}
@@ -64,10 +64,14 @@ export const timing = (config?: Partial<TimingOptions>): MiddlewareHandler => {
 
     if (enabled) {
       c.res.headers.append('Server-Timing', headers.join(','))
-      if (options.crossOrigin) {
+
+      const crossOrigin =
+        typeof options.crossOrigin === 'function' ? options.crossOrigin(c) : options.crossOrigin
+
+      if (crossOrigin) {
         c.res.headers.append(
           'Timing-Allow-Origin',
-          typeof options.crossOrigin === 'string' ? options.crossOrigin : '*'
+          typeof crossOrigin === 'string' ? crossOrigin : '*'
         )
       }
     }

@@ -22,6 +22,7 @@ export interface APIGatewayProxyEventV2 {
   version: string
   routeKey: string
   headers: Record<string, string | undefined>
+  multiValueHeaders?: undefined
   cookies?: string[]
   rawPath: string
   rawQueryString: string
@@ -63,7 +64,8 @@ export interface APIGatewayProxyEvent {
 // When calling Lambda through an Application Load Balancer
 export interface ALBProxyEvent {
   httpMethod: string
-  headers: Record<string, string | undefined>
+  headers?: Record<string, string | undefined>
+  multiValueHeaders?: Record<string, string[] | undefined>
   path: string
   body: string | null
   isBase64Encoded: boolean
@@ -110,8 +112,9 @@ export const streamHandle = <
 ) => {
   return awslambda.streamifyResponse(
     async (event: LambdaEvent, responseStream: NodeJS.WritableStream, context: LambdaContext) => {
+      const processor = getProcessor(event)
       try {
-        const req = createRequest(event)
+        const req = processor.createRequest(event)
         const requestContext = getRequestContext(event)
 
         const res = await app.fetch(req, {
@@ -154,7 +157,9 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
     event: LambdaEvent,
     lambdaContext?: LambdaContext
   ): Promise<APIGatewayProxyResult> => {
-    const req = createRequest(event)
+    const processor = getProcessor(event)
+
+    const req = processor.createRequest(event)
     const requestContext = getRequestContext(event)
 
     const res = await app.fetch(req, {
@@ -163,96 +168,289 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
       lambdaContext,
     })
 
-    return createResult(event, res)
+    return processor.createResult(event, res)
   }
 }
 
-const createResult = async (event: LambdaEvent, res: Response): Promise<APIGatewayProxyResult> => {
-  const contentType = res.headers.get('content-type')
-  let isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
+abstract class EventProcessor<E extends LambdaEvent> {
+  protected abstract getPath(event: E): string
 
-  if (!isBase64Encoded) {
-    const contentEncoding = res.headers.get('content-encoding')
-    isBase64Encoded = isContentEncodingBinary(contentEncoding)
+  protected abstract getMethod(event: E): string
+
+  protected abstract getQueryString(event: E): string
+
+  protected abstract getHeaders(event: E): Headers
+
+  protected abstract getCookies(event: E, headers: Headers): void
+
+  protected abstract setCookiesToResult(
+    event: E,
+    result: APIGatewayProxyResult,
+    cookies: string[]
+  ): void
+
+  createRequest(event: E): Request {
+    const queryString = this.getQueryString(event)
+    const domainName =
+      event.requestContext && 'domainName' in event.requestContext
+        ? event.requestContext.domainName
+        : event.headers?.['host'] ?? event.multiValueHeaders?.['host']?.[0]
+    const path = this.getPath(event)
+    const urlPath = `https://${domainName}${path}`
+    const url = queryString ? `${urlPath}?${queryString}` : urlPath
+
+    const headers = this.getHeaders(event)
+
+    const method = this.getMethod(event)
+    const requestInit: RequestInit = {
+      headers,
+      method,
+    }
+
+    if (event.body) {
+      requestInit.body = event.isBase64Encoded ? Buffer.from(event.body, 'base64') : event.body
+    }
+
+    return new Request(url, requestInit)
   }
 
-  const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
+  async createResult(event: E, res: Response): Promise<APIGatewayProxyResult> {
+    const contentType = res.headers.get('content-type')
+    let isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
 
-  const result: APIGatewayProxyResult = {
-    body: body,
-    headers: {},
-    statusCode: res.status,
-    isBase64Encoded,
+    if (!isBase64Encoded) {
+      const contentEncoding = res.headers.get('content-encoding')
+      isBase64Encoded = isContentEncodingBinary(contentEncoding)
+    }
+
+    const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
+
+    const result: APIGatewayProxyResult = {
+      body: body,
+      headers: {},
+      multiValueHeaders: event.multiValueHeaders ? {} : undefined,
+      statusCode: res.status,
+      isBase64Encoded,
+    }
+
+    this.setCookies(event, res, result)
+    res.headers.forEach((value, key) => {
+      result.headers[key] = value
+      if (event.multiValueHeaders && result.multiValueHeaders) {
+        result.multiValueHeaders[key] = [value]
+      }
+    })
+
+    return result
   }
 
-  setCookies(event, res, result)
-  res.headers.forEach((value, key) => {
-    result.headers[key] = value
-  })
-
-  return result
+  setCookies(event: E, res: Response, result: APIGatewayProxyResult) {
+    if (res.headers.has('set-cookie')) {
+      const cookies = res.headers.get('set-cookie')?.split(', ')
+      if (Array.isArray(cookies)) {
+        this.setCookiesToResult(event, result, cookies)
+        res.headers.delete('set-cookie')
+      }
+    }
+  }
 }
 
-const createRequest = (event: LambdaEvent) => {
-  const queryString = extractQueryString(event)
-  const domainName =
-    event.requestContext && 'domainName' in event.requestContext
-      ? event.requestContext.domainName
-      : event.headers['host']
-  const path = isProxyEventV2(event) ? event.rawPath : event.path
-  const urlPath = `https://${domainName}${path}`
-  const url = queryString ? `${urlPath}?${queryString}` : urlPath
+const v2Processor = new (class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
+  protected getPath(event: APIGatewayProxyEventV2): string {
+    return event.rawPath
+  }
 
-  const headers = new Headers()
-  getCookies(event, headers)
-  for (const [k, v] of Object.entries(event.headers)) {
-    if (v) {
-      headers.set(k, v)
+  protected getMethod(event: APIGatewayProxyEventV2): string {
+    return event.requestContext.http.method
+  }
+
+  protected getQueryString(event: APIGatewayProxyEventV2): string {
+    return event.rawQueryString
+  }
+
+  protected getCookies(event: APIGatewayProxyEventV2, headers: Headers): void {
+    if (Array.isArray(event.cookies)) {
+      headers.set('Cookie', event.cookies.join('; '))
     }
   }
 
-  const method = isProxyEventV2(event) ? event.requestContext.http.method : event.httpMethod
-  const requestInit: RequestInit = {
-    headers,
-    method,
+  protected setCookiesToResult(
+    _: APIGatewayProxyEventV2,
+    result: APIGatewayProxyResult,
+    cookies: string[]
+  ): void {
+    result.cookies = cookies
   }
 
-  if (event.body) {
-    requestInit.body = event.isBase64Encoded ? Buffer.from(event.body, 'base64') : event.body
-  }
-
-  return new Request(url, requestInit)
-}
-
-const extractQueryString = (event: LambdaEvent) => {
-  return isProxyEventV2(event)
-    ? event.rawQueryString
-    : Object.entries(event.queryStringParameters || {})
-        .filter(([, value]) => value)
-        .map(([key, value]) => `${key}=${value}`)
-        .join('&')
-}
-
-const getCookies = (event: LambdaEvent, headers: Headers) => {
-  if (isProxyEventV2(event) && Array.isArray(event.cookies)) {
-    headers.set('Cookie', event.cookies.join('; '))
-  }
-}
-
-const setCookies = (event: LambdaEvent, res: Response, result: APIGatewayProxyResult) => {
-  if (res.headers.has('set-cookie')) {
-    const cookies = res.headers.get('set-cookie')?.split(', ')
-    if (Array.isArray(cookies)) {
-      if (isProxyEventV2(event)) {
-        result.cookies = cookies
-      } else {
-        result.multiValueHeaders = {
-          'set-cookie': cookies,
+  protected getHeaders(event: APIGatewayProxyEventV2): Headers {
+    const headers = new Headers()
+    this.getCookies(event, headers)
+    if (event.headers) {
+      for (const [k, v] of Object.entries(event.headers)) {
+        if (v) {
+          headers.set(k, v)
         }
       }
-      res.headers.delete('set-cookie')
+    }
+    return headers
+  }
+})()
+
+const v1Processor = new (class EventV1Processor extends EventProcessor<
+  Exclude<LambdaEvent, APIGatewayProxyEventV2>
+> {
+  protected getPath(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
+    return event.path
+  }
+
+  protected getMethod(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
+    return event.httpMethod
+  }
+
+  protected getQueryString(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
+    return Object.entries(event.queryStringParameters || {})
+      .filter(([, value]) => value)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('&')
+  }
+
+  protected getCookies(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    event: Exclude<LambdaEvent, APIGatewayProxyEventV2>,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    headers: Headers
+  ): void {
+    // nop
+  }
+
+  protected getHeaders(event: APIGatewayProxyEvent): Headers {
+    const headers = new Headers()
+    this.getCookies(event, headers)
+    if (event.headers) {
+      for (const [k, v] of Object.entries(event.headers)) {
+        if (v) {
+          headers.set(k, v)
+        }
+      }
+    }
+    if (event.multiValueHeaders) {
+      for (const [k, values] of Object.entries(event.multiValueHeaders)) {
+        if (values) {
+          // avoid duplicating already set headers
+          const foundK = headers.get(k)
+          values.forEach((v) => (!foundK || !foundK.includes(v)) && headers.append(k, v))
+        }
+      }
+    }
+    return headers
+  }
+
+  protected setCookiesToResult(
+    _: APIGatewayProxyEvent,
+    result: APIGatewayProxyResult,
+    cookies: string[]
+  ): void {
+    result.multiValueHeaders = {
+      'set-cookie': cookies,
     }
   }
+})()
+
+const albProcessor = new (class ALBProcessor extends EventProcessor<ALBProxyEvent> {
+  protected getHeaders(event: ALBProxyEvent): Headers {
+    const headers = new Headers()
+    // if multiValueHeaders is present the ALB will use it instead of the headers field
+    // https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html#multi-value-headers
+    if (event.multiValueHeaders) {
+      for (const [key, values] of Object.entries(event.multiValueHeaders)) {
+        if (values && Array.isArray(values)) {
+          // https://www.rfc-editor.org/rfc/rfc9110.html#name-common-rules-for-defining-f
+          headers.set(key, values.join('; '))
+        }
+      }
+    } else {
+      for (const [key, value] of Object.entries(event.headers ?? {})) {
+        if (value) {
+          headers.set(key, value)
+        }
+      }
+    }
+    return headers
+  }
+  protected setHeadersToResult(
+    event: ALBProxyEvent,
+    result: APIGatewayProxyResult,
+    headers: Headers
+  ): void {
+    // When multiValueHeaders is present in event set multiValueHeaders in result
+    if (event.multiValueHeaders) {
+      const multiValueHeaders: { [key: string]: string[] } = {}
+      for (const [key, value] of headers.entries()) {
+        multiValueHeaders[key] = [value]
+      }
+      result.multiValueHeaders = multiValueHeaders
+    } else {
+      const singleValueHeaders: Record<string, string> = {}
+      for (const [key, value] of headers.entries()) {
+        singleValueHeaders[key] = value
+      }
+      result.headers = singleValueHeaders
+    }
+  }
+  protected getPath(event: ALBProxyEvent): string {
+    return event.path
+  }
+
+  protected getMethod(event: ALBProxyEvent): string {
+    return event.httpMethod
+  }
+
+  protected getQueryString(event: ALBProxyEvent): string {
+    return Object.entries(event.queryStringParameters || {})
+      .filter(([, value]) => value)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('&')
+  }
+
+  protected getCookies(event: ALBProxyEvent, headers: Headers): void {
+    let cookie
+    if (event.multiValueHeaders) {
+      cookie = event.multiValueHeaders['cookie']?.join('; ')
+    } else {
+      cookie = event.headers ? event.headers['cookie'] : undefined
+    }
+    if (cookie) {
+      headers.append('Cookie', cookie)
+    }
+  }
+
+  protected setCookiesToResult(
+    event: ALBProxyEvent,
+    result: APIGatewayProxyResult,
+    cookies: string[]
+  ): void {
+    // when multi value headers is enabled
+    if (event.multiValueHeaders && result.multiValueHeaders) {
+      result.multiValueHeaders['set-cookie'] = cookies
+    } else {
+      // otherwise serialize the set-cookie
+      result.headers['set-cookie'] = cookies.join(', ')
+    }
+  }
+})()
+
+export const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> => {
+  if (isProxyEventALB(event)) {
+    return albProcessor
+  }
+  if (isProxyEventV2(event)) {
+    return v2Processor
+  }
+  return v1Processor
+}
+
+const isProxyEventALB = (event: LambdaEvent): event is ALBProxyEvent => {
+  return Object.prototype.hasOwnProperty.call(event.requestContext, 'elb')
 }
 
 const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => {

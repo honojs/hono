@@ -18,7 +18,10 @@ export type EffectData = [
   (() => void) | undefined // effect
 ]
 
-const resolvedPromiseValueMap = new WeakMap<Promise<unknown>, unknown>()
+const resolvedPromiseValueMap: WeakMap<Promise<unknown>, unknown> = new WeakMap<
+  Promise<unknown>,
+  unknown
+>()
 
 const isDepsChanged = (
   prevDeps: readonly unknown[] | undefined,
@@ -138,9 +141,15 @@ const setShadow = (node: Node) => {
   ;(node as any).s?.forEach(setShadow)
 }
 
-export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunction<T>] => {
+type UseStateType = {
+  <T>(initialState: T | (() => T)): [T, UpdateStateFunction<T>]
+  <T = undefined>(): [T | undefined, UpdateStateFunction<T | undefined>]
+}
+export const useState: UseStateType = <T>(
+  initialState?: T | (() => T)
+): [T, UpdateStateFunction<T>] => {
   const resolveInitialState = () =>
-    typeof initialState === 'function' ? (initialState as () => T)() : initialState
+    typeof initialState === 'function' ? (initialState as () => T)() : (initialState as T)
 
   const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
   if (!buildData) {
@@ -160,7 +169,7 @@ export const useState = <T>(initialState: T | (() => T)): [T, UpdateStateFunctio
         newState = (newState as (currentState: T) => T)(stateData[0])
       }
 
-      if (newState !== stateData[0]) {
+      if (!Object.is(newState, stateData[0])) {
         stateData[0] = newState
         if (pendingStack.length) {
           const pendingType = pendingStack.at(-1) as PendingType
@@ -355,3 +364,59 @@ export const useId = (): string => useMemo(() => `:r${(idCounter++).toString(32)
 // Define to avoid errors. This hook currently does nothing.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const useDebugValue = (_value: unknown, _formatter?: (value: unknown) => string): void => {}
+
+export const createRef = <T>(): RefObject<T> => {
+  return { current: null }
+}
+
+export const forwardRef = <T, P = {}>(
+  Component: (props: P, ref: RefObject<T>) => JSX.Element
+): ((props: P & { ref: RefObject<T> }) => JSX.Element) => {
+  return (props) => {
+    const { ref, ...rest } = props
+    return Component(rest as P, ref)
+  }
+}
+
+export const useImperativeHandle = <T>(
+  ref: RefObject<T>,
+  createHandle: () => T,
+  deps: readonly unknown[]
+): void => {
+  useEffect(() => {
+    ref.current = createHandle()
+    return () => {
+      ref.current = null
+    }
+  }, deps)
+}
+
+export const useSyncExternalStore = <T>(
+  subscribe: (callback: (value: T) => void) => () => void,
+  getSnapshot: () => T,
+  getServerSnapshot?: () => T
+): T => {
+  const buildData = buildDataStack.at(-1) as [Context, unknown]
+  if (!buildData) {
+    // now a stringify process, maybe in server side
+    if (!getServerSnapshot) {
+      throw new Error('getServerSnapshot is required for server side rendering')
+    }
+    return getServerSnapshot()
+  }
+
+  const [serverSnapshotIsUsed] = useState<boolean>(!!(buildData[0][4] && getServerSnapshot))
+  const [state, setState] = useState(() =>
+    serverSnapshotIsUsed ? (getServerSnapshot as () => T)() : getSnapshot()
+  )
+  useEffect(() => {
+    if (serverSnapshotIsUsed) {
+      setState(getSnapshot())
+    }
+    return subscribe(() => {
+      setState(getSnapshot())
+    })
+  }, [])
+
+  return state
+}

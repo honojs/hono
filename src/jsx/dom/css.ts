@@ -56,7 +56,16 @@ const splitRule = (rule: string): string[] => {
   return result
 }
 
-export const createCssJsxDomObjects = ({ id }: { id: Readonly<string> }) => {
+interface CreateCssJsxDomObjectsType {
+  (args: { id: Readonly<string> }): readonly [
+    {
+      toString(this: CssClassName): string
+    },
+    FC<PropsWithChildren<void>>
+  ]
+}
+
+export const createCssJsxDomObjects: CreateCssJsxDomObjectsType = ({ id }) => {
   let styleSheet: CSSStyleSheet | null | undefined = undefined
   const findStyleSheet = (): [CSSStyleSheet, Set<string>] | [] => {
     if (!styleSheet) {
@@ -110,10 +119,14 @@ export const createCssJsxDomObjects = ({ id }: { id: Readonly<string> }) => {
   const Style: FC<PropsWithChildren<void>> = ({ children }) =>
     ({
       tag: 'style',
-      children: (Array.isArray(children) ? children : [children]).map(
-        (c) => (c as unknown as CssClassName)[STYLE_STRING]
-      ),
-      props: { id },
+      props: {
+        id,
+        children:
+          children &&
+          (Array.isArray(children) ? children : [children]).map(
+            (c) => (c as unknown as CssClassName)[STYLE_STRING]
+          ),
+      },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any)
 
@@ -129,6 +142,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
   const [cssObject, Style] = createCssJsxDomObjects({ id })
 
   const newCssClassNameObject = (cssClassName: CssClassName): string => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     cssClassName.toString = cssObject.toString
     return cssClassName as unknown as string
   }

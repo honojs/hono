@@ -30,7 +30,7 @@ export const env = <T extends Record<string, unknown>, C extends Context = Conte
   return runtimeEnvHandlers[runtime]()
 }
 
-export const getRuntimeKey = () => {
+export const getRuntimeKey = (): Runtime => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const global = globalThis as any
 

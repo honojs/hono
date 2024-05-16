@@ -6,7 +6,6 @@ import type {
   ParamKeys,
   ParamKeyToRecord,
   RemoveQuestion,
-  UndefinedIfHavingQuestion,
   ValidationTargets,
   RouterRoute,
 } from './types.ts'
@@ -76,9 +75,11 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    * @see https://hono.dev/api/routing#path-parameter
    */
-  param<P2 extends string = P>(
-    key: RemoveQuestion<ParamKeys<P2>>
-  ): UndefinedIfHavingQuestion<ParamKeys<P2>>
+  param<P2 extends ParamKeys<P> = ParamKeys<P>>(key: P2 extends `${infer _}?` ? never : P2): string
+  param<P2 extends RemoveQuestion<ParamKeys<P>> = RemoveQuestion<ParamKeys<P>>>(
+    key: P2
+  ): string | undefined
+  param(key: string): string | undefined
   param<P2 extends string = P>(): UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>
   param(key?: string): unknown {
     return key ? this.getDecodedParam(key) : this.getAllDecodedParams()
@@ -288,7 +289,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    * @see https://hono.dev/api/request#url
    */
-  get url() {
+  get url(): string {
     return this.raw.url
   }
 
@@ -302,7 +303,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    * @see https://hono.dev/api/request#method
    */
-  get method() {
+  get method(): string {
     return this.raw.method
   }
 

@@ -117,6 +117,13 @@ Deno.test('Serve Static middleware', async () => {
   assertEquals(res.status, 200)
   assertEquals(await res.text(), 'Deno!!')
   assertSpyCalls(onNotFound, 1)
+
+  res = await app.fetch({
+    method: 'GET',
+    url: 'http://localhost/static/%2e%2e/static/plain.txt',
+  } as Request)
+  assertEquals(res.status, 404)
+  assertEquals(await res.text(), '404 Not Found')
 })
 
 Deno.test('JWT Authentication middleware', async () => {

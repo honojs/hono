@@ -3,7 +3,13 @@ import type { ValidationTargets } from '../types'
 import { serialize } from '../utils/cookie'
 import type { UnionToIntersection } from '../utils/types'
 import type { Callback, Client, ClientRequestOptions } from './types'
-import { deepMerge, mergePath, removeIndexString, replaceUrlParam } from './utils'
+import {
+  deepMerge,
+  mergePath,
+  removeIndexString,
+  replaceUrlParam,
+  replaceUrlProtocol,
+} from './utils'
 
 const createProxy = (callback: Callback, path: string[]) => {
   const proxy: unknown = new Proxy(() => {}, {
@@ -35,7 +41,7 @@ class ClientRequestImpl {
     this.url = url
     this.method = method
   }
-  fetch = (
+  fetch = async (
     args?: ValidationTargets & {
       param?: Record<string, string>
     },
@@ -78,11 +84,14 @@ class ClientRequestImpl {
     }
 
     let methodUpperCase = this.method.toUpperCase()
-    let setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
 
     const headerValues: Record<string, string> = {
       ...(args?.header ?? {}),
-      ...(opt?.headers ? opt.headers : {}),
+      ...(typeof opt?.headers === 'function'
+        ? await opt.headers()
+        : opt?.headers
+        ? opt.headers
+        : {}),
     }
 
     if (args?.cookie) {
@@ -107,13 +116,14 @@ class ClientRequestImpl {
       url = url + '?' + this.queryParams.toString()
     }
     methodUpperCase = this.method.toUpperCase()
-    setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
+    const setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
 
     // Pass URL string to 1st arg for testing with MSW and node-fetch
     return (opt?.fetch || fetch)(url, {
       body: setBody ? this.rBody : undefined,
       method: methodUpperCase,
       headers: headers,
+      ...opt?.init,
     })
   }
 }
@@ -123,8 +133,27 @@ export const hc = <T extends Hono<any, any, any>>(
   baseUrl: string,
   options?: ClientRequestOptions
 ) =>
-  createProxy((opts) => {
+  createProxy(function proxyCallback(opts) {
     const parts = [...opts.path]
+
+    // allow calling .toString() and .valueOf() on the proxy
+    if (parts[parts.length - 1] === 'toString') {
+      if (parts[parts.length - 2] === 'name') {
+        // e.g. hc().somePath.name.toString() -> "somePath"
+        return parts[parts.length - 3] || ''
+      }
+      // e.g. hc().somePath.toString()
+      return proxyCallback.toString()
+    }
+
+    if (parts[parts.length - 1] === 'valueOf') {
+      if (parts[parts.length - 2] === 'name') {
+        // e.g. hc().somePath.name.valueOf() -> "somePath"
+        return parts[parts.length - 3] || ''
+      }
+      // e.g. hc().somePath.valueOf()
+      return proxyCallback
+    }
 
     let method = ''
     if (/^\$/.test(parts[parts.length - 1])) {
@@ -143,8 +172,11 @@ export const hc = <T extends Hono<any, any, any>>(
       return new URL(url)
     }
     if (method === 'ws') {
-      const targetUrl =
-        opts.args[0] && opts.args[0].param ? replaceUrlParam(url, opts.args[0].param) : url
+      const targetUrl = replaceUrlProtocol(
+        opts.args[0] && opts.args[0].param ? replaceUrlParam(url, opts.args[0].param) : url,
+        'ws'
+      )
+
       return new WebSocket(targetUrl)
     }
 
