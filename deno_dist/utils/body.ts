@@ -18,7 +18,7 @@ export type ParseBodyOptions = {
    * If all is true:
    * parseBody should return { file: ['aaa', 'bbb'], message: 'hello' }
    */
-  all?: boolean
+  all: boolean
   /**
    * Determines whether all fields with dot notation should be parsed as nested objects.
    * @default false
@@ -33,12 +33,20 @@ export type ParseBodyOptions = {
    * If dot is true:
    * parseBody should return { obj: { key1: 'value1', key2: 'value2' } }
    */
-  dot?: boolean
+  dot: boolean
 }
 
+/**
+ * Parses the body of a request based on the provided options.
+ *
+ * @template T - The type of the parsed body data.
+ * @param {HonoRequest | Request} request - The request object to parse.
+ * @param {Partial<ParseBodyOptions>} [options] - Options for parsing the body.
+ * @returns {Promise<T>} The parsed body data.
+ */
 export const parseBody = async <T extends BodyData = BodyData>(
   request: HonoRequest | Request,
-  options: ParseBodyOptions = Object.create(null)
+  options: Partial<ParseBodyOptions> = Object.create(null)
 ): Promise<T> => {
   const { all = false, dot = false } = options
 
@@ -55,6 +63,14 @@ export const parseBody = async <T extends BodyData = BodyData>(
   return {} as T
 }
 
+/**
+ * Parses form data from a request.
+ *
+ * @template T - The type of the parsed body data.
+ * @param {HonoRequest | Request} request - The request object containing form data.
+ * @param {ParseBodyOptions} options - Options for parsing the form data.
+ * @returns {Promise<T>} The parsed body data.
+ */
 async function parseFormData<T extends BodyData = BodyData>(
   request: HonoRequest | Request,
   options: ParseBodyOptions
@@ -68,6 +84,14 @@ async function parseFormData<T extends BodyData = BodyData>(
   return {} as T
 }
 
+/**
+ * Converts form data to body data based on the provided options.
+ *
+ * @template T - The type of the parsed body data.
+ * @param {FormData} formData - The form data to convert.
+ * @param {ParseBodyOptions} options - Options for parsing the form data.
+ * @returns {T} The converted body data.
+ */
 function convertFormDataToBodyData<T extends BodyData = BodyData>(
   formData: FormData,
   options: ParseBodyOptions
@@ -77,87 +101,76 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
   formData.forEach((value, key) => {
     const shouldParseAllValues = options.all || key.endsWith('[]')
 
-    if (!shouldParseAllValues) {
-      handleNestedValues(form, key, value, options.dot)
+    if (shouldParseAllValues) {
+      handleParsingAllValues(form, key, value)
     } else {
-      handleParsingAllValues(form, key, value, options.dot)
+      form[key] = value
     }
   })
+
+  if (options.dot) {
+    const nestedForm: BodyData = Object.create(null)
+
+    Object.entries(form).forEach(([key, value]) => {
+      const shouldParseDotValues = key.includes('.')
+
+      if (shouldParseDotValues) {
+        handleParsingNestedValues(nestedForm, key, value)
+      } else {
+        nestedForm[key] = value
+      }
+    })
+
+    return nestedForm as T
+  }
 
   return form as T
 }
 
-const handleParsingAllValues = (
-  form: BodyData,
-  key: string,
-  value: FormDataEntryValue,
-  dot?: boolean
-): void => {
-  if (dot && key.includes('.')) {
-    handleNestedValues(form, key, value, dot, true)
-  } else {
-    if (form[key] !== undefined) {
-      if (Array.isArray(form[key])) {
-        ;(form[key] as (string | File)[]).push(value)
-      } else {
-        form[key] = [form[key] as string | File, value]
-      }
+/**
+ * Handles parsing all values for a given key, supporting multiple values as arrays.
+ *
+ * @param {BodyData} form - The form data object.
+ * @param {string} key - The key to parse.
+ * @param {FormDataEntryValue} value - The value to assign.
+ */
+const handleParsingAllValues = (form: BodyData, key: string, value: FormDataEntryValue): void => {
+  if (form[key] !== undefined) {
+    if (Array.isArray(form[key])) {
+      ;(form[key] as (string | File)[]).push(value)
     } else {
-      form[key] = value
+      form[key] = [form[key] as string | File, value]
     }
+  } else {
+    form[key] = value
   }
 }
 
-const handleNestedValues = (
-  form: BodyData,
-  key: string,
-  value: FormDataEntryValue,
-  dot?: boolean,
-  parseAllValues?: boolean
-): void => {
-  if (dot && key.includes('.')) {
-    let nestedForm = form
-    const keys = key.split('.')
+/**
+ * Handles parsing nested values using dot notation keys.
+ *
+ * @param {BodyData} form - The form data object.
+ * @param {string} key - The dot notation key.
+ * @param {FormDataEntryValue} value - The value to assign.
+ * @param {boolean} parseAllValues - Whether to parse all values as arrays.
+ */
+const handleParsingNestedValues = (form: BodyData, key: string, value: BodyDataValue): void => {
+  let nestedForm = form
+  const keys = key.split('.')
 
-    keys.forEach((key, index) => {
-      if (index === keys.length - 1) {
-        if (parseAllValues) {
-          if (nestedForm[key] !== undefined) {
-            if (Array.isArray(nestedForm[key])) {
-              ;(nestedForm[key] as (string | File)[]).push(value)
-            } else {
-              nestedForm[key] = [nestedForm[key] as string | File, value as string | File]
-            }
-          } else {
-            nestedForm[key] = value
-          }
-        } else {
-          nestedForm[key] = value
-        }
-      } else {
-        if (
-          !nestedForm[key] ||
-          typeof nestedForm[key] !== 'object' ||
-          Array.isArray(nestedForm[key])
-        ) {
-          nestedForm[key] = Object.create(null)
-        }
-        nestedForm = nestedForm[key] as BodyData
-      }
-    })
-  } else {
-    if (parseAllValues) {
-      if (form[key] !== undefined) {
-        if (Array.isArray(form[key])) {
-          ;(form[key] as (string | File)[]).push(value)
-        } else {
-          form[key] = [form[key] as string | File, value]
-        }
-      } else {
-        form[key] = value
-      }
+  keys.forEach((key, index) => {
+    if (index === keys.length - 1) {
+      nestedForm[key] = value
     } else {
-      form[key] = value
+      if (
+        !nestedForm[key] ||
+        typeof nestedForm[key] !== 'object' ||
+        Array.isArray(nestedForm[key]) ||
+        nestedForm[key] instanceof File
+      ) {
+        nestedForm[key] = Object.create(null)
+      }
+      nestedForm = nestedForm[key] as BodyData
     }
-  }
+  })
 }

@@ -100,16 +100,29 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
 
   formData.forEach((value, key) => {
     const shouldParseAllValues = options.all || key.endsWith('[]')
-    const shouldParseDotValues = options.dot && key.includes('.')
 
-    if (shouldParseDotValues) {
-      handleParsingNestedValues(form, key, value, shouldParseAllValues)
-    } else if (shouldParseAllValues) {
+    if (shouldParseAllValues) {
       handleParsingAllValues(form, key, value)
     } else {
       form[key] = value
     }
   })
+
+  if (options.dot) {
+    const nestedForm: BodyData = Object.create(null)
+
+    Object.entries(form).forEach(([key, value]) => {
+      const shouldParseDotValues = key.includes('.')
+
+      if (shouldParseDotValues) {
+        handleParsingNestedValues(nestedForm, key, value)
+      } else {
+        nestedForm[key] = value
+      }
+    })
+
+    return nestedForm as T
+  }
 
   return form as T
 }
@@ -141,22 +154,13 @@ const handleParsingAllValues = (form: BodyData, key: string, value: FormDataEntr
  * @param {FormDataEntryValue} value - The value to assign.
  * @param {boolean} parseAllValues - Whether to parse all values as arrays.
  */
-const handleParsingNestedValues = (
-  form: BodyData,
-  key: string,
-  value: FormDataEntryValue,
-  parseAllValues: boolean
-): void => {
+const handleParsingNestedValues = (form: BodyData, key: string, value: BodyDataValue): void => {
   let nestedForm = form
   const keys = key.split('.')
 
   keys.forEach((key, index) => {
     if (index === keys.length - 1) {
-      if (parseAllValues) {
-        handleParsingAllValues(nestedForm, key, value)
-      } else {
-        nestedForm[key] = value
-      }
+      nestedForm[key] = value
     } else {
       if (
         !nestedForm[key] ||
