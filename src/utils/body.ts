@@ -36,6 +36,14 @@ export type ParseBodyOptions = {
   dot: boolean
 }
 
+/**
+ * Parses the body of a request based on the provided options.
+ *
+ * @template T - The type of the parsed body data.
+ * @param {HonoRequest | Request} request - The request object to parse.
+ * @param {Partial<ParseBodyOptions>} [options] - Options for parsing the body.
+ * @returns {Promise<T>} The parsed body data.
+ */
 export const parseBody = async <T extends BodyData = BodyData>(
   request: HonoRequest | Request,
   options: Partial<ParseBodyOptions> = Object.create(null)
@@ -55,6 +63,14 @@ export const parseBody = async <T extends BodyData = BodyData>(
   return {} as T
 }
 
+/**
+ * Parses form data from a request.
+ *
+ * @template T - The type of the parsed body data.
+ * @param {HonoRequest | Request} request - The request object containing form data.
+ * @param {ParseBodyOptions} options - Options for parsing the form data.
+ * @returns {Promise<T>} The parsed body data.
+ */
 async function parseFormData<T extends BodyData = BodyData>(
   request: HonoRequest | Request,
   options: ParseBodyOptions
@@ -68,6 +84,14 @@ async function parseFormData<T extends BodyData = BodyData>(
   return {} as T
 }
 
+/**
+ * Converts form data to body data based on the provided options.
+ *
+ * @template T - The type of the parsed body data.
+ * @param {FormData} formData - The form data to convert.
+ * @param {ParseBodyOptions} options - Options for parsing the form data.
+ * @returns {T} The converted body data.
+ */
 function convertFormDataToBodyData<T extends BodyData = BodyData>(
   formData: FormData,
   options: ParseBodyOptions
@@ -90,6 +114,13 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
   return form as T
 }
 
+/**
+ * Handles parsing all values for a given key, supporting multiple values as arrays.
+ *
+ * @param {BodyData} form - The form data object.
+ * @param {string} key - The key to parse.
+ * @param {FormDataEntryValue} value - The value to assign.
+ */
 const handleParsingAllValues = (form: BodyData, key: string, value: FormDataEntryValue): void => {
   if (form[key] !== undefined) {
     if (Array.isArray(form[key])) {
@@ -102,6 +133,14 @@ const handleParsingAllValues = (form: BodyData, key: string, value: FormDataEntr
   }
 }
 
+/**
+ * Handles parsing nested values using dot notation keys.
+ *
+ * @param {BodyData} form - The form data object.
+ * @param {string} key - The dot notation key.
+ * @param {FormDataEntryValue} value - The value to assign.
+ * @param {boolean} parseAllValues - Whether to parse all values as arrays.
+ */
 const handleParsingNestedValues = (
   form: BodyData,
   key: string,
