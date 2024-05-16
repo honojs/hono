@@ -17,6 +17,7 @@ import type {
   AfterResponseHook,
   AfterGenerateHook,
   FileSystemModule,
+  ToSSGResult
 } from './ssg'
 
 const resolveRoutesContent = async (res: ReturnType<typeof fetchRoutesContent>) => {
@@ -693,3 +694,95 @@ describe('Request hooks - filterPathsBeforeRequestHook and denyPathsBeforeReques
 
   })
 })
+
+describe('Combined Response hooks - modify response content', () => {
+  let app: Hono;
+  let fsMock: FileSystemModule;
+
+  const prependContentAfterResponseHook = (prefix: string): AfterResponseHook => {
+    return async (res: Response): Promise<Response> => {
+      const originalText = await res.text();
+      return new Response(`${prefix}${originalText}`, { ...res });
+    };
+  };
+
+  const appendContentAfterResponseHook = (suffix: string): AfterResponseHook => {
+    return async (res: Response): Promise<Response> => {
+      const originalText = await res.text();
+      return new Response(`${originalText}${suffix}`, { ...res });
+    };
+  };
+
+  beforeEach(() => {
+    app = new Hono();
+    app.get('/content-path', (c) => c.text('Original Content'));
+
+    fsMock = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    };
+  });
+
+  it('should modify response content with combined AfterResponseHooks', async () => {
+    const prefixHook = prependContentAfterResponseHook('Prefix-');
+    const suffixHook = appendContentAfterResponseHook('-Suffix');
+
+    const combinedHook = [prefixHook, suffixHook];
+
+    await toSSG(app, fsMock, {
+      dir: './static',
+      afterResponseHook: combinedHook
+    });
+
+    // Assert that the response content is modified by both hooks
+    // This assumes you have a way to inspect the content of saved files or you need to mock/stub the Response text method correctly.
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/content-path.txt', 'Prefix-Original Content-Suffix')
+  });
+});
+
+describe('Combined Generate hooks - AfterGenerateHook', () => {
+  let app: Hono;
+  let fsMock: FileSystemModule;
+
+  const logResultAfterGenerateHook = (): AfterGenerateHook => {
+    return async (result: ToSSGResult): Promise<void> => {
+      console.log('Generation completed with status:', result.success); // Log the generation success
+    };
+  };
+
+  const appendFilesAfterGenerateHook = (additionalFiles: string[]): AfterGenerateHook => {
+    return async (result: ToSSGResult): Promise<void> => {
+      result.files = result.files.concat(additionalFiles); // Append additional files to the result
+    };
+  };
+
+  beforeEach(() => {
+    app = new Hono();
+    app.get('/path', (c) => c.text('Page Content'));
+
+    fsMock = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    };
+  });
+
+  it('should execute combined AfterGenerateHooks affecting the result', async () => {
+    const logHook = logResultAfterGenerateHook();
+    const appendHook = appendFilesAfterGenerateHook(['/extra/file1.html', '/extra/file2.html']);
+
+    const combinedHook = [logHook, appendHook];
+
+    const consoleSpy = vi.spyOn(console, 'log');
+    const result = await toSSG(app, fsMock, {
+      dir: './static',
+      afterGenerateHook: combinedHook
+    });
+
+    // Check that the log function was called correctly
+    expect(consoleSpy).toHaveBeenCalledWith('Generation completed with status:', true);
+
+    // Check that additional files were appended to the result
+    expect(result.files).toContain('/extra/file1.html');
+    expect(result.files).toContain('/extra/file2.html');
+  });
+});
