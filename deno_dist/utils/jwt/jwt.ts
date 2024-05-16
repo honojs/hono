@@ -1,8 +1,6 @@
 import { encodeBase64Url, decodeBase64Url } from '../../utils/encode.ts'
-import type { SignatureAlgorithm } from './jwa.ts'
-import { AlgorithmTypes } from './jwa.ts'
-import type { SignatureKey } from './jws.ts'
-import { signing, verifying } from './jws.ts'
+import { AlgorithmTypes, type SignatureAlgorithm } from './jwa.ts'
+import { signing, verifying, type SignatureKey } from './jws.ts'
 import { JwtHeaderInvalid, type JWTPayload } from './types.ts'
 import {
   JwtTokenInvalid,
@@ -17,7 +15,7 @@ const encodeJwtPart = (part: unknown): string =>
   encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
 const encodeSignaturePart = (buf: ArrayBufferLike): string => encodeBase64Url(buf).replace(/=/g, '')
 
-const decodeJwtPart = (part: string): unknown =>
+const decodeJwtPart = (part: string): TokenHeader | JWTPayload | undefined =>
   JSON.parse(utf8Decoder.decode(decodeBase64Url(part)))
 
 export interface TokenHeader {
@@ -26,14 +24,16 @@ export interface TokenHeader {
 }
 
 // eslint-disable-next-line
-export function isTokenHeader(obj: any): obj is TokenHeader {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'alg' in obj &&
-    Object.values(AlgorithmTypes).includes(obj.alg) &&
-    (!('typ' in obj) || obj.typ === 'JWT')
-  )
+export function isTokenHeader(obj: unknown): obj is TokenHeader {
+  if (typeof obj === 'object' && obj !== null) {
+    const objWithAlg = obj as { [key: string]: unknown }
+    return (
+      'alg' in objWithAlg &&
+      Object.values(AlgorithmTypes).includes(objWithAlg.alg as AlgorithmTypes) &&
+      (!('typ' in objWithAlg) || objWithAlg.typ === 'JWT')
+    )
+  }
+  return false
 }
 
 export const sign = async (
@@ -56,8 +56,7 @@ export const verify = async (
   token: string,
   publicKey: SignatureKey,
   alg: SignatureAlgorithm = 'HS256'
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<any> => {
+): Promise<JWTPayload> => {
   const tokenParts = token.split('.')
   if (tokenParts.length !== 3) {
     throw new JwtTokenInvalid(token)
@@ -93,11 +92,11 @@ export const verify = async (
 }
 
 // eslint-disable-next-line
-export const decode = (token: string): { header: any; payload: any } => {
+export const decode = (token: string): { header: TokenHeader; payload: JWTPayload } => {
   try {
     const [h, p] = token.split('.')
-    const header = decodeJwtPart(h)
-    const payload = decodeJwtPart(p)
+    const header = decodeJwtPart(h) as TokenHeader
+    const payload = decodeJwtPart(p) as JWTPayload
     return {
       header,
       payload,
