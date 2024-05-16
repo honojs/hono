@@ -732,6 +732,47 @@ describe('Routing', () => {
       expect(res.status).toBe(404)
     })
   })
+
+  describe('Encoded path', () => {
+    let app: Hono
+    beforeEach(() => {
+      app = new Hono()
+    })
+
+    it('should decode path parameter', async () => {
+      app.get('/users/:id', (c) => c.text(`id is ${c.req.param('id')}`))
+
+      const res = await app.request('http://localhost/users/%C3%A7awa%20y%C3%AE%3F')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('id is çawa yî?')
+    })
+
+    it('should decode "/"', async () => {
+      app.get('/users/:id', (c) => c.text(`id is ${c.req.param('id')}`))
+      app.get('/users/:id/posts', (c) => c.text(`posts of ${c.req.param('id')}`))
+
+      const res = await app.request('http://localhost/users/hono%2Fposts') // %2F is '/'
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('posts of hono')
+    })
+
+    it('should decode alphabets', async () => {
+      app.get('/users/static', (c) => c.text('static'))
+      app.get('/users/:id', (c) => c.text(`id is ${c.req.param('id')}`))
+
+      const res = await app.request('http://localhost/users/%73tatic') // %73 is 's'
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('static')
+    })
+
+    it('should not double decode', async () => {
+      app.get('/users/:id', (c) => c.text(`posts of ${c.req.param('id')}`))
+
+      const res = await app.request('http://localhost/users/%2525') // %25 is '%'
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('posts of %25')
+    })
+  })
 })
 
 describe('param and query', () => {
