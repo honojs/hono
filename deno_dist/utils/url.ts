@@ -70,10 +70,23 @@ export const getPattern = (label: string): Pattern | null => {
 }
 
 export const getPath = (request: Request): string => {
-  // Optimized: indexOf() + slice() is faster than RegExp
   const url = request.url
-  const queryIndex = url.indexOf('?', 8)
-  return url.slice(url.indexOf('/', 8), queryIndex === -1 ? undefined : queryIndex)
+  const start = url.indexOf('/', 8)
+  let i = start
+  for (; i < url.length; i++) {
+    const charCode = url.charCodeAt(i)
+    if (charCode === 37) {
+      // '%'
+      // If the path contains percent encoding, use `indexOf()` to find '?' and return the result immediately.
+      // Although this is a performance disadvantage, it is acceptable since we prefer cases that do not include percent encoding.
+      const queryIndex = url.indexOf('?', i)
+      return decodeURIComponent(url.slice(start, queryIndex === -1 ? undefined : queryIndex))
+    } else if (charCode === 63) {
+      // '?'
+      break
+    }
+  }
+  return url.slice(start, i)
 }
 
 export const getQueryStrings = (url: string): string => {
