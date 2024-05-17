@@ -1,8 +1,7 @@
 import type { Context } from '../../context.ts'
 import type { MiddlewareHandler } from '../../types.ts'
-import '../../context.ts'
 
-declare module '../../context.ts' {
+declare module 'node:hono' {
   interface ContextVariableMap {
     metric?: {
       headers: string[]

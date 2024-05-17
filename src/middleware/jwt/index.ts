@@ -3,10 +3,9 @@ import { getCookie } from '../../helper/cookie'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 import { Jwt } from '../../utils/jwt'
-import '../../context'
 import type { SignatureAlgorithm } from '../../utils/jwt/jwa'
 
-declare module '../../context' {
+declare module 'hono' {
   interface ContextVariableMap {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     jwtPayload: any

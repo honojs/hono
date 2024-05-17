@@ -3,10 +3,9 @@ import { getCookie } from '../../helper/cookie/index.ts'
 import { HTTPException } from '../../http-exception.ts'
 import type { MiddlewareHandler } from '../../types.ts'
 import { Jwt } from '../../utils/jwt/index.ts'
-import '../../context.ts'
 import type { SignatureAlgorithm } from '../../utils/jwt/jwa.ts'
 
-declare module '../../context.ts' {
+declare module 'node:hono' {
   interface ContextVariableMap {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     jwtPayload: any

@@ -1,8 +1,9 @@
 import { Buffer } from "node:buffer";
 import type { Context } from '../../context.ts'
 import type { MiddlewareHandler } from '../../types.ts'
+import {} from 'node:hono'
 
-declare module '../../context.ts' {
+declare module 'node:hono' {
   interface ContextVariableMap {
     secureHeadersNonce?: string
   }

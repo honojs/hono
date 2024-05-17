@@ -1,8 +1,7 @@
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
-import '../../context'
 
-declare module '../../context' {
+declare module 'hono' {
   interface ContextVariableMap {
     metric?: {
       headers: string[]
