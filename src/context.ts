@@ -2,7 +2,7 @@ import type { HonoRequest } from './request'
 import type { Env, FetchEventLike, Input, NotFoundHandler, TypedResponse } from './types'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
-import type { JSONValue, JSONParsed, IsAny, Simplify } from './utils/types'
+import type { IsAny, JSONParsed, JSONValue, Simplify } from './utils/types'
 
 type HeaderRecord = Record<string, string | string[]>
 export type Data = string | ArrayBuffer | ReadableStream
@@ -380,7 +380,11 @@ export class Context<
       if (this.#headers) {
         // If the header is set by c.header() and arg.headers, c.header() will be prioritized.
         this.#headers.forEach((v, k) => {
-          header.set(k, v)
+          if (k === 'set-cookie') {
+            header.append(k, v)
+          } else {
+            header.set(k, v)
+          }
         })
       }
       const headers = setHeaders(header, this.#preparedHeaders)
