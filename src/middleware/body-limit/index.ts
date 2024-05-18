@@ -18,21 +18,34 @@ class BodyLimitError extends Error {
 }
 
 /**
- * Body Limit Middleware
+ * Body limit middleware for Hono.
+ *
+ * @see {@link https://hono.dev/middleware/builtin/body-limit}
+ *
+ * @param {BodyLimitOptions} options - The options for the body limit middleware.
+ * @param {number} options.maxSize - The maximum body size allowed.
+ * @param {OnError} [options.onError] - The error handler to be invoked if the specified body size is exceeded.
+ * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
  * ```ts
+ * const app = new Hono()
+ *
  * app.post(
- *  '/hello',
- *  bodyLimit({
- *    maxSize: 100 * 1024, // 100kb
- *    onError: (c) => {
- *      return c.text('overflow :(', 413)
- *    }
- *  }),
- *  (c) => {
- *    return c.text('pass :)')
- *  }
+ *   '/upload',
+ *   bodyLimit({
+ *     maxSize: 50 * 1024, // 50kb
+ *     onError: (c) => {
+ *       return c.text('overflow :(', 413)
+ *     },
+ *   }),
+ *   async (c) => {
+ *     const body = await c.req.parseBody()
+ *     if (body['file'] instanceof File) {
+ *       console.log(`Got file sized: ${body['file'].size}`)
+ *     }
+ *     return c.text('pass :)')
+ *   }
  * )
  * ```
  */
