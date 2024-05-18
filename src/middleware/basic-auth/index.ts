@@ -46,11 +46,11 @@ type BasicAuthOptions =
  * @see {@link https://hono.dev/middleware/builtin/basic-auth}
  *
  * @param {BasicAuthOptions} options - The options for the basic authentication middleware.
- * @param {string} [options.username] - The username for authentication.
- * @param {string} [options.password] - The password for authentication.
+ * @param {string} options.username - The username for authentication.
+ * @param {string} options.password - The password for authentication.
  * @param {string} [options.realm="Secure Area"] - The realm attribute for the WWW-Authenticate header.
- * @param {Function} [options.hashFunction=] - The hash function used for secure comparison.
- * @param {Function} [options.verifyUser=] - The function to verify user credentials.
+ * @param {Function} [options.hashFunction] - The hash function used for secure comparison.
+ * @param {Function} [options.verifyUser] - The function to verify user credentials.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {HTTPException} If neither "username and password" nor "verifyUser" options are provided.
  *
