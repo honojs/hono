@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+import type { MockInstance } from 'vitest'
 import { expectTypeOf } from 'vitest'
 import { hc } from './client'
 import type { Context } from './context'
@@ -730,6 +731,36 @@ describe('Routing', () => {
     it('Should return 404 response from PUT request', async () => {
       const res = await app.request('http://localhost/chained/abc', { method: 'PUT' })
       expect(res.status).toBe(404)
+    })
+  })
+
+  describe('Paths containing characters to be encoded in encodeURI', () => {
+    let app: Hono
+    let addSpy: MockInstance
+    beforeEach(() => {
+      app = new Hono()
+      addSpy = vi.spyOn(app.router, 'add')
+    })
+
+    test.each`
+      path                           | routerPath                               | okPath                         | notOkPath
+      ${'/path'}                     | ${'/path'}                               | ${'/path'}                     | ${undefined}
+      ${'/path/{id}'}                | ${'/path/%7Bid%7D'}                      | ${'/path/%7Bid%7D'}            | ${'/path/{id}'}
+      ${'/path/|'}                   | ${'/path/%7C'}                           | ${'/path/%7C'}                 | ${'/path/|'}
+      ${'/path/:id'}                 | ${'/path/:id'}                           | ${'/path/123'}                 | ${undefined}
+      ${'/path/:id{\\d+}'}           | ${'/path/:id{\\d+}'}                     | ${'/path/123'}                 | ${undefined}
+      ${'/path/:id{[0-9]{5,10}}'}    | ${'/path/:id{[0-9]{5,10}}'}              | ${'/path/123456'}              | ${undefined}
+      ${'/path/:id{[0-9]{5,10}}/🔥'} | ${'/path/:id{[0-9]{5,10}}/%F0%9F%94%A5'} | ${'/path/123456/%F0%9F%94%A5'} | ${'/path/123456/🔥'}
+    `('Should register $path as $routerPath', async ({ path, routerPath, okPath, notOkPath }) => {
+      app.get(path, (c) => new Response())
+      expect(addSpy.mock.calls[0][1]).toBe(routerPath)
+      expect((await app.request(okPath)).status).toBe(200)
+      if (notOkPath) {
+        const url = `http://localhost${notOkPath}`
+        const req = new Request(url)
+        vi.spyOn(req, 'url', 'get').mockReturnValue(url)
+        expect((await app.request(req)).status).toBe(404)
+      }
     })
   })
 })

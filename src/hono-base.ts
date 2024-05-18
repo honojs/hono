@@ -27,6 +27,13 @@ export const COMPOSED_HANDLER = Symbol('composedHandler')
 
 type Methods = (typeof METHODS)[number] | typeof METHOD_NAME_ALL_LOWERCASE
 
+const encodeRoutePath = (path: string): string =>
+  path.replace(/(?::\w+(?:{(?:(?:{[\d,]+})|[^}])+})?)|[^:]+/g, (m) =>
+    m.charCodeAt(0) === 58
+      ? m // /:label
+      : encodeURI(m)
+  )
+
 function defineDynamicClass(): {
   new <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(): {
     [M in Methods]: HandlerInterface<E, M, S, BasePath>
@@ -292,6 +299,11 @@ class Hono<
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
     const r: RouterRoute = { path: path, method: method, handler: handler }
+    if (
+      !/^(?:(?:\/:\w+(?:{(?:(?:{[\d,]+})|[^}])+})?)|[a-zA-Z0-9\-_.!~*'();/?@&=+$,])+$/.test(path)
+    ) {
+      path = encodeRoutePath(path)
+    }
     this.router.add(method, path, [handler, r])
     this.routes.push(r)
   }
