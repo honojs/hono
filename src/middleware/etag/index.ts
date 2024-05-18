@@ -25,6 +25,25 @@ function etagMatches(etag: string, ifNoneMatch: string | null) {
   return ifNoneMatch != null && ifNoneMatch.split(/,\s*/).indexOf(etag) > -1
 }
 
+/**
+ * ETag middleware for Hono.
+ *
+ * @see {@link https://hono.dev/middleware/builtin/etag}
+ *
+ * @param {ETagOptions} [options] - The options for the ETag middleware.
+ * @param {boolean} [options.weak=false] - Define using or not using a weak validation. If true is set, then `W/` is added to the prefix of the value.
+ * @returns {MiddlewareHandler} The middleware handler function.
+ *
+ * @example
+ * ```ts
+ * const app = new Hono()
+ *
+ * app.use('/etag/*', etag())
+ * app.get('/etag/abc', (c) => {
+ *   return c.text('Hono is cool')
+ * })
+ * ```
+ */
 export const etag = (options?: ETagOptions): MiddlewareHandler => {
   const retainedHeaders = options?.retainedHeaders ?? RETAINED_304_HEADERS
   const weak = options?.weak ?? false
