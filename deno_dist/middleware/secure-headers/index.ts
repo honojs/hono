@@ -58,7 +58,7 @@ interface SecureHeadersOptions {
   crossOriginEmbedderPolicy?: overridableHeader
   crossOriginResourcePolicy?: overridableHeader
   crossOriginOpenerPolicy?: overridableHeader
-  originAgentCluster: overridableHeader
+  originAgentCluster?: overridableHeader
   referrerPolicy?: overridableHeader
   reportingEndpoints?: ReportingEndpointOptions[]
   reportTo?: ReportToOptions[]
@@ -126,7 +126,7 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
   return `'nonce-${nonce}'`
 }
 
-export const secureHeaders = (customOptions?: Partial<SecureHeadersOptions>): MiddlewareHandler => {
+export const secureHeaders = (customOptions?: SecureHeadersOptions): MiddlewareHandler => {
   const options = { ...DEFAULT_OPTIONS, ...customOptions }
   const headersToSet = getFilteredHeaders(options)
   const callbacks: SecureHeadersCallback[] = []
