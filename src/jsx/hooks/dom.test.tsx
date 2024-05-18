@@ -499,7 +499,7 @@ describe('Hooks', () => {
     })
 
     it('can run without ref', () => {
-      const App = forwardRef((props,) => {
+      const App = forwardRef((props) => {
         return <div {...props} />
       })
       render(<App />, root)
