@@ -753,7 +753,7 @@ describe('Routing', () => {
 
       const res = await app.request('http://localhost/users/hono%2Fposts') // %2F is '/'
       expect(res.status).toBe(200)
-      expect(await res.text()).toBe('posts of hono')
+      expect(await res.text()).toBe('id is hono/posts')
     })
 
     it('should decode alphabets', async () => {
