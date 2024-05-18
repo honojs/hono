@@ -80,7 +80,9 @@ export const getPath = (request: Request): string => {
       // If the path contains percent encoding, use `indexOf()` to find '?' and return the result immediately.
       // Although this is a performance disadvantage, it is acceptable since we prefer cases that do not include percent encoding.
       const queryIndex = url.indexOf('?', i)
-      return decodeURIComponent(url.slice(start, queryIndex === -1 ? undefined : queryIndex))
+      return decodeURI(
+        url.slice(start, queryIndex === -1 ? undefined : queryIndex).replace(/%25/g, '%2525')
+      )
     } else if (charCode === 63) {
       // '?'
       break
