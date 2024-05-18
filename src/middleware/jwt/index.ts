@@ -5,7 +5,7 @@ import type { MiddlewareHandler } from '../../types'
 import { Jwt } from '../../utils/jwt'
 import type { SignatureAlgorithm } from '../../utils/jwt/jwa'
 
-declare module 'hono' {
+declare module '../..' {
   interface ContextVariableMap {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     jwtPayload: any

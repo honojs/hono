@@ -1,8 +1,7 @@
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
-import {} from 'hono'
 
-declare module 'hono' {
+declare module '../..' {
   interface ContextVariableMap {
     secureHeadersNonce?: string
   }
