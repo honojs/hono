@@ -69,6 +69,29 @@ export const getPattern = (label: string): Pattern | null => {
   return null
 }
 
+/**
+ * Try to apply decodeURI() to given string.
+ * If it fails, skip invalid percent encoding or invalid UTF-8 sequences, and apply decodeURI() to the rest as much as possible.
+ * @param str The string to decode.
+ * @returns The decoded string that sometimes contains undecodable percent encoding.
+ * @example
+ * tryDecodeURI('Hello%20World') // 'Hello World'
+ * tryDecodeURI('Hello%20World/%A4%A2') // 'Hello World/%A4%A2'
+ */
+const tryDecodeURI = (str: string): string => {
+  try {
+    return decodeURI(str)
+  } catch {
+    return str.replace(/(?:%[0-9A-Fa-f]{2})+/g, (match) => {
+      try {
+        return decodeURI(match)
+      } catch {
+        return match
+      }
+    })
+  }
+}
+
 export const getPath = (request: Request): string => {
   const url = request.url
   const start = url.indexOf('/', 8)
@@ -81,7 +104,7 @@ export const getPath = (request: Request): string => {
       // Although this is a performance disadvantage, it is acceptable since we prefer cases that do not include percent encoding.
       const queryIndex = url.indexOf('?', i)
       const path = url.slice(start, queryIndex === -1 ? undefined : queryIndex)
-      return decodeURI(path.includes('%25') ? path.replace(/%25/g, '%2525') : path)
+      return tryDecodeURI(path.includes('%25') ? path.replace(/%25/g, '%2525') : path)
     } else if (charCode === 63) {
       // '?'
       break

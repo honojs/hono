@@ -749,7 +749,6 @@ describe('Routing', () => {
 
     it('should decode "/"', async () => {
       app.get('/users/:id', (c) => c.text(`id is ${c.req.param('id')}`))
-      app.get('/users/:id/posts', (c) => c.text(`posts of ${c.req.param('id')}`))
 
       const res = await app.request('http://localhost/users/hono%2Fposts') // %2F is '/'
       expect(res.status).toBe(200)
@@ -758,11 +757,54 @@ describe('Routing', () => {
 
     it('should decode alphabets', async () => {
       app.get('/users/static', (c) => c.text('static'))
-      app.get('/users/:id', (c) => c.text(`id is ${c.req.param('id')}`))
 
       const res = await app.request('http://localhost/users/%73tatic') // %73 is 's'
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('static')
+    })
+
+    it('should decode alphabets with invalid UTF-8 sequence', async () => {
+      app.get('/static/:path', (c) => {
+        try {
+          return c.text(`by c.req.param: ${c.req.param('path')}`) // this should throw an error
+        } catch (e) {
+          return c.text(`by c.req.url: ${c.req.url.replace(/.*\//, '')}`)
+        }
+      })
+
+      const res = await app.request('http://localhost/%73tatic/%A4%A2') // %73 is 's', %A4%A2 is invalid UTF-8 sequence
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('by c.req.url: %A4%A2')
+    })
+
+    it('should decode alphabets with invalid percent encoding', async () => {
+      app.get('/static/:path', (c) => {
+        try {
+          return c.text(`by c.req.param: ${c.req.param('path')}`) // this should throw an error
+        } catch (e) {
+          return c.text(`by c.req.url: ${c.req.url.replace(/.*\//, '')}`)
+        }
+      })
+
+      const res = await app.request('http://localhost/%73tatic/%a') // %73 is 's', %a is invalid percent encoding
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('by c.req.url: %a')
+    })
+
+    it('should be able to catch URIError', async () => {
+      app.onError((err, c) => {
+        if (err instanceof URIError) {
+          return c.text(err.message, 400)
+        }
+        throw err
+      })
+      app.get('/static/:path', (c) => {
+        return c.text(`by c.req.param: ${c.req.param('path')}`) // this should throw an error
+      })
+
+      const res = await app.request('http://localhost/%73tatic/%a') // %73 is 's', %a is invalid percent encoding
+      expect(res.status).toBe(400)
+      expect(await res.text()).toBe('URI malformed')
     })
 
     it('should not double decode', async () => {
