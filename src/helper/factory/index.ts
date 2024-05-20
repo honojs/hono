@@ -4,7 +4,7 @@ import type { Env, H, HandlerResponse, Input, MiddlewareHandler } from '../../ty
 
 type InitApp<E extends Env = Env> = (app: Hono<E>) => void
 
-interface CreateHandlersInterface<E extends Env, P extends string> {
+export interface CreateHandlersInterface<E extends Env, P extends string> {
   <I extends Input = {}, R extends HandlerResponse<any> = any>(handler1: H<E, P, I, R>): [
     H<E, P, I, R>
   ]
