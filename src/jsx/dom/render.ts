@@ -248,6 +248,8 @@ const getNextChildren = (
 const findInsertBefore = (node: Node | undefined): ChildNode | null => {
   if (!node) {
     return null
+  } else if (node.tag === HONO_PORTAL_ELEMENT) {
+    return findInsertBefore(node.nN)
   } else if (node.e) {
     return node.e
   }
@@ -325,7 +327,7 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
   const childNodes = container.childNodes
   let offset =
     findChildNodeIndex(childNodes, findInsertBefore(node.nN)) ??
-    findChildNodeIndex(childNodes, next.find((n) => n.e)?.e) ??
+    findChildNodeIndex(childNodes, next.find((n) => n.tag !== HONO_PORTAL_ELEMENT && n.e)?.e) ??
     childNodes.length
 
   for (let i = 0, len = next.length; i < len; i++, offset++) {
@@ -345,11 +347,9 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
       applyProps(el as HTMLElement, child.props, child.pP)
       applyNode(child, el as HTMLElement)
     }
-    if (
-      childNodes[offset] !== el &&
-      childNodes[offset - 1] !== child.e &&
-      child.tag !== HONO_PORTAL_ELEMENT
-    ) {
+    if (child.tag === HONO_PORTAL_ELEMENT) {
+      offset--
+    } else if (childNodes[offset] !== el && childNodes[offset - 1] !== child.e) {
       container.insertBefore(el, childNodes[offset] || null)
     }
   }
