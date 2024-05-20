@@ -11,6 +11,8 @@ import type {
 import { getProcessor } from './processor'
 import type { LambdaContext } from './types'
 
+export { getProcessor }
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 globalThis.crypto ??= crypto
