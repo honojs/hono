@@ -89,6 +89,7 @@ describe('DOM', () => {
     })
     global.document = dom.window.document
     global.HTMLElement = dom.window.HTMLElement
+    global.SVGElement = dom.window.SVGElement
     global.Text = dom.window.Text
     root = document.getElementById('root') as HTMLElement
   })

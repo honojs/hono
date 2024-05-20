@@ -106,6 +106,14 @@ const getEventSpec = (key: string): [string, boolean] | undefined => {
   return undefined
 }
 
+const toAttributeName = (element: SupportedElement, key: string): string =>
+  element instanceof SVGElement &&
+  /[A-Z]/.test(key) &&
+  (key in element.style || // Presentation attributes are findable in style object. "clip-path", "font-size", "stroke-width", etc.
+    key.match(/^(?:o|pai|str|u|ve)/)) // Other un-deprecated kebab-case attributes. "overline-position", "paint-order", "strikethrough-position", etc.
+    ? key.replace(/([A-Z])/g, '-$1').toLowerCase()
+    : key
+
 const applyProps = (container: SupportedElement, attributes: Props, oldAttributes?: Props) => {
   attributes ||= {}
   for (const [key, value] of Object.entries(attributes)) {
@@ -164,14 +172,16 @@ const applyProps = (container: SupportedElement, attributes: Props, oldAttribute
           ;(container as any)[key] = value
         }
 
+        const k = toAttributeName(container, key)
+
         if (value === null || value === undefined || value === false) {
-          container.removeAttribute(key)
+          container.removeAttribute(k)
         } else if (value === true) {
-          container.setAttribute(key, '')
+          container.setAttribute(k, '')
         } else if (typeof value === 'string' || typeof value === 'number') {
-          container.setAttribute(key, value as string)
+          container.setAttribute(k, value as string)
         } else {
-          container.setAttribute(key, value.toString())
+          container.setAttribute(k, value.toString())
         }
       }
     }
@@ -189,7 +199,7 @@ const applyProps = (container: SupportedElement, attributes: Props, oldAttribute
             value.current = null
           }
         } else {
-          container.removeAttribute(key)
+          container.removeAttribute(toAttributeName(container, key))
         }
       }
     }
