@@ -1,3 +1,4 @@
+// @denoify-ignore
 import { encodeBase64 } from '../../utils/encode'
 import type { LambdaEvent, LambdaRequestEvent, APIGatewayProxyResult, APIGatewayProxyEventV2, APIGatewayProxyEvent, ALBProxyEvent } from './handler'
 import { isContentTypeBinary, isContentEncodingBinary } from './handler'
