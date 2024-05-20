@@ -70,6 +70,9 @@ export interface ALBProxyEvent {
   body: string | null
   isBase64Encoded: boolean
   queryStringParameters?: Record<string, string | undefined>
+  multiValueQueryStringParameters?: {
+    [parameterKey: string]: string[]
+  }
   requestContext: ALBRequestContext
 }
 
@@ -406,10 +409,18 @@ const albProcessor = new (class ALBProcessor extends EventProcessor<ALBProxyEven
   }
 
   protected getQueryString(event: ALBProxyEvent): string {
-    return Object.entries(event.queryStringParameters || {})
-      .filter(([, value]) => value)
-      .map(([key, value]) => `${key}=${value}`)
-      .join('&')
+    // In the case of ALB Integration either queryStringParameters or multiValueQueryStringParameters can be present not both
+    if (event.queryStringParameters) {
+      return Object.entries(event.queryStringParameters || {})
+        .filter(([, value]) => value)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('&')
+    } else {
+      return Object.entries(event.multiValueQueryStringParameters || {})
+        .filter(([, value]) => value)
+        .map(([key, value]) => `${key}=${value.join(`&${key}=`)}`)
+        .join('&')
+    }
   }
 
   protected getCookies(event: ALBProxyEvent, headers: Headers): void {
