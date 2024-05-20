@@ -354,9 +354,10 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
     }
   }
   remove.forEach(removeNode)
-  callbacks.forEach(([, cb]) => cb?.())
+  callbacks.forEach(([, , , , cb]) => cb?.()) // invoke useInsertionEffect callbacks
+  callbacks.forEach(([, cb]) => cb?.()) // invoke useLayoutEffect callbacks
   requestAnimationFrame(() => {
-    callbacks.forEach(([, , , cb]) => cb?.())
+    callbacks.forEach(([, , , cb]) => cb?.()) // invoke useEffect callbacks
   })
 }
 
