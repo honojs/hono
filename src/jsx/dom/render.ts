@@ -401,7 +401,13 @@ export const build = (
         }
 
         let oldChild: Node | undefined
-        const i = oldVChildren.findIndex((c) => c.key === (child as Node).key)
+        const i = oldVChildren.findIndex(
+          isNodeString(child)
+            ? (c) => isNodeString(c)
+            : child.key !== undefined
+            ? (c) => c.key === (child as Node).key
+            : (c) => c.tag === (child as Node).tag
+        )
         if (i !== -1) {
           oldChild = oldVChildren[i]
           oldVChildren.splice(i, 1)
@@ -409,15 +415,11 @@ export const build = (
 
         if (oldChild) {
           if (isNodeString(child)) {
-            if (!isNodeString(oldChild)) {
-              vChildrenToRemove.push(oldChild)
-            } else {
-              if (oldChild.t !== child.t) {
-                oldChild.t = child.t // update text content
-                oldChild.d = true
-              }
-              child = oldChild
+            if ((oldChild as NodeString).t !== child.t) {
+              ;(oldChild as NodeString).t = child.t // update text content
+              ;(oldChild as NodeString).d = true
             }
+            child = oldChild
           } else if (oldChild.tag !== child.tag) {
             vChildrenToRemove.push(oldChild)
           } else {
