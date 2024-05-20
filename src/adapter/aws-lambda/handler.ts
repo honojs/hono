@@ -15,7 +15,8 @@ import type { LambdaContext } from './types'
 // @ts-ignore
 globalThis.crypto ??= crypto
 
-export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2 | ALBProxyEvent
+export type LambdaEvent = unknown | LambdaRequestEvent
+export type LambdaRequestEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2 | ALBProxyEvent
 
 // When calling HTTP API or Lambda directly through function urls
 export interface APIGatewayProxyEventV2 {
@@ -86,7 +87,7 @@ export interface APIGatewayProxyResult {
 }
 
 const getRequestContext = (
-  event: LambdaEvent
+  event: LambdaRequestEvent
 ): ApiGatewayRequestContext | ApiGatewayRequestContextV2 | ALBRequestContext => {
   return event.requestContext
 }
@@ -115,7 +116,9 @@ export const streamHandle = <
       const processor = getProcessor(event)
       try {
         const req = processor.createRequest(event)
-        const requestContext = getRequestContext(event)
+        const requestContext = Object.prototype.hasOwnProperty.call(event, 'requestContext')
+          ? getRequestContext(event as LambdaRequestEvent)
+          : undefined
 
         const res = await app.fetch(req, {
           event,
@@ -160,7 +163,9 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
     const processor = getProcessor(event)
 
     const req = processor.createRequest(event)
-    const requestContext = getRequestContext(event)
+    const requestContext = Object.prototype.hasOwnProperty.call(event, 'requestContext')
+      ? getRequestContext(event as LambdaRequestEvent)
+      : undefined
 
     const res = await app.fetch(req, {
       event,
@@ -173,6 +178,12 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
 }
 
 abstract class EventProcessor<E extends LambdaEvent> {
+  abstract createRequest(event: E): Request
+
+  abstract createResult(event: E, res: Response): Promise<any>
+}
+
+abstract class RequestEventProcessor<E extends LambdaRequestEvent> extends EventProcessor<E> {
   protected abstract getPath(event: E): string
 
   protected abstract getMethod(event: E): string
@@ -194,7 +205,7 @@ abstract class EventProcessor<E extends LambdaEvent> {
     const domainName =
       event.requestContext && 'domainName' in event.requestContext
         ? event.requestContext.domainName
-        : event.headers?.['host'] ?? event.multiValueHeaders?.['host']?.[0]
+        : event.headers?.host ?? event.multiValueHeaders?.host?.[0]
     const path = this.getPath(event)
     const urlPath = `https://${domainName}${path}`
     const url = queryString ? `${urlPath}?${queryString}` : urlPath
@@ -216,7 +227,7 @@ abstract class EventProcessor<E extends LambdaEvent> {
 
   async createResult(event: E, res: Response): Promise<APIGatewayProxyResult> {
     const contentType = res.headers.get('content-type')
-    let isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
+    let isBase64Encoded = !!(contentType && isContentTypeBinary(contentType))
 
     if (!isBase64Encoded) {
       const contentEncoding = res.headers.get('content-encoding')
@@ -226,7 +237,7 @@ abstract class EventProcessor<E extends LambdaEvent> {
     const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
 
     const result: APIGatewayProxyResult = {
-      body: body,
+      body,
       headers: {},
       multiValueHeaders: event.multiValueHeaders ? {} : undefined,
       statusCode: res.status,
@@ -255,59 +266,60 @@ abstract class EventProcessor<E extends LambdaEvent> {
   }
 }
 
-const v2Processor = new (class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
-  protected getPath(event: APIGatewayProxyEventV2): string {
-    return event.rawPath
-  }
-
-  protected getMethod(event: APIGatewayProxyEventV2): string {
-    return event.requestContext.http.method
-  }
-
-  protected getQueryString(event: APIGatewayProxyEventV2): string {
-    return event.rawQueryString
-  }
-
-  protected getCookies(event: APIGatewayProxyEventV2, headers: Headers): void {
-    if (Array.isArray(event.cookies)) {
-      headers.set('Cookie', event.cookies.join('; '))
+const v2Processor =
+  new (class EventV2Processor extends RequestEventProcessor<APIGatewayProxyEventV2> {
+    protected getPath(event: APIGatewayProxyEventV2): string {
+      return event.rawPath
     }
-  }
 
-  protected setCookiesToResult(
-    _: APIGatewayProxyEventV2,
-    result: APIGatewayProxyResult,
-    cookies: string[]
-  ): void {
-    result.cookies = cookies
-  }
+    protected getMethod(event: APIGatewayProxyEventV2): string {
+      return event.requestContext.http.method
+    }
 
-  protected getHeaders(event: APIGatewayProxyEventV2): Headers {
-    const headers = new Headers()
-    this.getCookies(event, headers)
-    if (event.headers) {
-      for (const [k, v] of Object.entries(event.headers)) {
-        if (v) {
-          headers.set(k, v)
-        }
+    protected getQueryString(event: APIGatewayProxyEventV2): string {
+      return event.rawQueryString
+    }
+
+    protected getCookies(event: APIGatewayProxyEventV2, headers: Headers): void {
+      if (Array.isArray(event.cookies)) {
+        headers.set('Cookie', event.cookies.join('; '))
       }
     }
-    return headers
-  }
-})()
 
-const v1Processor = new (class EventV1Processor extends EventProcessor<
-  Exclude<LambdaEvent, APIGatewayProxyEventV2>
+    protected setCookiesToResult(
+      _: APIGatewayProxyEventV2,
+      result: APIGatewayProxyResult,
+      cookies: string[]
+    ): void {
+      result.cookies = cookies
+    }
+
+    protected getHeaders(event: APIGatewayProxyEventV2): Headers {
+      const headers = new Headers()
+      this.getCookies(event, headers)
+      if (event.headers) {
+        for (const [k, v] of Object.entries(event.headers)) {
+          if (v) {
+            headers.set(k, v)
+          }
+        }
+      }
+      return headers
+    }
+  })()
+
+const v1Processor = new (class EventV1Processor extends RequestEventProcessor<
+  Exclude<LambdaRequestEvent, APIGatewayProxyEventV2>
 > {
-  protected getPath(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
+  protected getPath(event: Exclude<LambdaRequestEvent, APIGatewayProxyEventV2>): string {
     return event.path
   }
 
-  protected getMethod(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
+  protected getMethod(event: Exclude<LambdaRequestEvent, APIGatewayProxyEventV2>): string {
     return event.httpMethod
   }
 
-  protected getQueryString(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
+  protected getQueryString(event: Exclude<LambdaRequestEvent, APIGatewayProxyEventV2>): string {
     return Object.entries(event.queryStringParameters || {})
       .filter(([, value]) => value)
       .map(([key, value]) => `${key}=${value}`)
@@ -316,7 +328,7 @@ const v1Processor = new (class EventV1Processor extends EventProcessor<
 
   protected getCookies(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    event: Exclude<LambdaEvent, APIGatewayProxyEventV2>,
+    event: Exclude<LambdaRequestEvent, APIGatewayProxyEventV2>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     headers: Headers
   ): void {
@@ -356,7 +368,7 @@ const v1Processor = new (class EventV1Processor extends EventProcessor<
   }
 })()
 
-const albProcessor = new (class ALBProcessor extends EventProcessor<ALBProxyEvent> {
+const albProcessor = new (class ALBProcessor extends RequestEventProcessor<ALBProxyEvent> {
   protected getHeaders(event: ALBProxyEvent): Headers {
     const headers = new Headers()
     // if multiValueHeaders is present the ALB will use it instead of the headers field
@@ -450,7 +462,10 @@ export const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> =>
 }
 
 const isProxyEventALB = (event: LambdaEvent): event is ALBProxyEvent => {
-  return Object.prototype.hasOwnProperty.call(event.requestContext, 'elb')
+  return (
+    Object.prototype.hasOwnProperty.call(event, 'requestContext') &&
+    Object.prototype.hasOwnProperty.call((event as LambdaRequestEvent).requestContext, 'elb')
+  )
 }
 
 const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => {
