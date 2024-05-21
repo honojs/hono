@@ -8,6 +8,7 @@ import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
 import { styleObjectForEach } from '../utils'
 import { createContext } from './context' // import dom-specific versions
+import { newJSXNode } from './utils'
 
 const HONO_PORTAL_ELEMENT = '_hp'
 
@@ -391,7 +392,7 @@ export const build = (
   }
   const oldVChildren: Node[] = node.vC ? [...node.vC] : []
   const vChildren: Node[] = []
-  const vChildrenToRemove: Node[] = []
+  node.vR = []
   let prevNode: Node | undefined
   try {
     children.flat().forEach((c: Child) => {
@@ -432,7 +433,7 @@ export const build = (
             }
             child = oldChild
           } else if (oldChild.tag !== child.tag) {
-            vChildrenToRemove.push(oldChild)
+            node.vR.push(oldChild)
           } else {
             oldChild.pP = oldChild.props
             oldChild.props = child.props
@@ -455,8 +456,7 @@ export const build = (
       }
     })
     node.vC = vChildren
-    vChildrenToRemove.push(...oldVChildren)
-    node.vR = vChildrenToRemove
+    node.vR.push(...oldVChildren)
   } catch (e) {
     if (errorHandler) {
       const fallbackUpdateFn = () =>
@@ -494,10 +494,14 @@ const buildNode = (node: Child): Node | undefined => {
   } else if (typeof node === 'string' || typeof node === 'number') {
     return { t: node.toString(), d: true } as NodeString
   } else {
+    if ('vR' in node) {
+      node = newJSXNode({
+        tag: (node as NodeObject).tag,
+        props: (node as NodeObject).props,
+        key: (node as NodeObject).key,
+      })
+    }
     if (typeof (node as JSXNode).tag === 'function') {
-      if ((node as NodeObject)[DOM_STASH]) {
-        node = { ...node } as NodeObject
-      }
       ;(node as NodeObject)[DOM_STASH] = [0, []]
     } else {
       const ns = nameSpaceMap[(node as JSXNode).tag as string]
