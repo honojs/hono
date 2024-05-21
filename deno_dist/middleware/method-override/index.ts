@@ -1,4 +1,3 @@
-import { URLSearchParams } from 'node:url'
 import type { Context } from '../../context.ts'
 import type { Hono } from '../../hono.ts'
 import type { MiddlewareHandler } from '../../types.ts'
