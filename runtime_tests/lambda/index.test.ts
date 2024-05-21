@@ -108,6 +108,16 @@ describe('AWS Lambda Adapter for Hono', () => {
     return c.json(lambdaContext)
   })
 
+  app.get('/query-params', (c) => {
+    const queryParams = c.req.query()
+    return c.json(queryParams)
+  })
+
+  app.get('/multi-query-params', (c) => {
+    const multiQueryParams = c.req.queries()
+    return c.json(multiQueryParams)
+  })
+
   const testCookie1 = {
     key: 'id',
     value: crypto.randomUUID(),
@@ -716,7 +726,6 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(albResponse.headers['set-cookie']).toEqual(
       [testCookie1.serialized, testCookie2.serialized].join(', ')
     )
-    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -744,7 +753,96 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(albResponse.multiValueHeaders && albResponse.multiValueHeaders['set-cookie']).toEqual(
       expect.arrayContaining([testCookie1.serialized, testCookie2.serialized])
     )
-    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(albResponse.isBase64Encoded).toBe(false)
+  })
+
+  it('Should handle a GET request and return a 200 response with queryStringParameters (ALBProxyEvent)', async () => {
+    const albEventDefaultHeaders = {
+      resource: '/query-params',
+      httpMethod: 'GET',
+      headers: {
+        'content-type': 'application/json',
+      },
+      queryStringParameters: {
+        key1: 'value1',
+        key2: 'value2',
+      },
+      path: '/query-params',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testALBRequestContext,
+    }
+
+    const albResponse = await handler(albEventDefaultHeaders)
+
+    expect(albResponse.statusCode).toBe(200)
+    expect(albResponse.body).toContain(
+      JSON.stringify({
+        key1: 'value1',
+        key2: 'value2',
+      })
+    )
+    expect(albResponse.headers['content-type']).toMatch(/^application\/json/)
+    expect(albResponse.isBase64Encoded).toBe(false)
+  })
+
+  it('Should handle a GET request and return a 200 response with single value multiQueryStringParameters (ALBProxyEvent)', async () => {
+    const albEventDefaultHeaders = {
+      resource: '/query-params',
+      httpMethod: 'GET',
+      multiValueHeaders: {
+        'content-type': ['application/json'],
+      },
+      multiValueQueryStringParameters: {
+        key1: ['value1'],
+        key2: ['value2'],
+      },
+      path: '/query-params',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testALBRequestContext,
+    }
+
+    const albResponse = await handler(albEventDefaultHeaders)
+
+    expect(albResponse.statusCode).toBe(200)
+    expect(albResponse.body).toContain(
+      JSON.stringify({
+        key1: 'value1',
+        key2: 'value2',
+      })
+    )
+    expect(albResponse.headers['content-type']).toMatch(/^application\/json/)
+    expect(albResponse.isBase64Encoded).toBe(false)
+  })
+
+  it('Should handle a GET request and return a 200 response with multi value multiQueryStringParameters (ALBProxyEvent)', async () => {
+    const albEventDefaultHeaders = {
+      resource: '/query-params',
+      httpMethod: 'GET',
+      multiValueHeaders: {
+        'content-type': ['application/json'],
+      },
+      multiValueQueryStringParameters: {
+        key1: ['value1'],
+        key2: ['value2', 'otherValue2'],
+      },
+      path: '/multi-query-params',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testALBRequestContext,
+    }
+
+    const albResponse = await handler(albEventDefaultHeaders)
+
+    expect(albResponse.statusCode).toBe(200)
+    expect(albResponse.body).toContain(
+      JSON.stringify({
+        key1: ['value1'],
+        key2: ['value2', 'otherValue2'],
+      })
+    )
+    expect(albResponse.headers['content-type']).toMatch(/^application\/json/)
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 })

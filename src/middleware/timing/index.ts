@@ -17,11 +17,11 @@ interface Timer {
 }
 
 interface TimingOptions {
-  total: boolean
-  enabled: boolean | ((c: Context) => boolean)
-  totalDescription: string
-  autoEnd: boolean
-  crossOrigin: boolean | string | ((c: Context) => boolean | string)
+  total?: boolean
+  enabled?: boolean | ((c: Context) => boolean)
+  totalDescription?: string
+  autoEnd?: boolean
+  crossOrigin?: boolean | string | ((c: Context) => boolean | string)
 }
 
 const getTime = (): number => {
@@ -70,7 +70,7 @@ const getTime = (): number => {
  * });
  * ```
  */
-export const timing = (config?: Partial<TimingOptions>): MiddlewareHandler => {
+export const timing = (config?: TimingOptions): MiddlewareHandler => {
   const options: TimingOptions = {
     ...{
       total: true,
