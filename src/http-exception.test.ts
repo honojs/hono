@@ -31,4 +31,15 @@ describe('HTTPException', () => {
     expect(exception.message).toBe('Internal Server Error')
     expect(exception.cause).toBe(error)
   })
+
+  it('Should prioritize the status code over the code in the response', async () => {
+    const exception = new HTTPException(400, {
+      res: new Response('An exception', {
+        status: 200,
+      }),
+    })
+    const res = exception.getResponse()
+    expect(res.status).toBe(400)
+    expect(await res.text()).toBe('An exception')
+  })
 })
