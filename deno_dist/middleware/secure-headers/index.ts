@@ -58,7 +58,7 @@ interface SecureHeadersOptions {
   crossOriginEmbedderPolicy?: overridableHeader
   crossOriginResourcePolicy?: overridableHeader
   crossOriginOpenerPolicy?: overridableHeader
-  originAgentCluster: overridableHeader
+  originAgentCluster?: overridableHeader
   referrerPolicy?: overridableHeader
   reportingEndpoints?: ReportingEndpointOptions[]
   reportTo?: ReportToOptions[]
@@ -115,6 +115,7 @@ const generateNonce = () => {
   crypto.getRandomValues(buffer)
   return Buffer.from(buffer).toString('base64')
 }
+
 export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
   const nonce =
     ctx.get('secureHeadersNonce') ||
@@ -155,7 +156,7 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
  * app.use(secureHeaders())
  * ```
  */
-export const secureHeaders = (customOptions?: Partial<SecureHeadersOptions>): MiddlewareHandler => {
+export const secureHeaders = (customOptions?: SecureHeadersOptions): MiddlewareHandler => {
   const options = { ...DEFAULT_OPTIONS, ...customOptions }
   const headersToSet = getFilteredHeaders(options)
   const callbacks: SecureHeadersCallback[] = []
