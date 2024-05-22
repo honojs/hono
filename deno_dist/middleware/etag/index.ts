@@ -12,7 +12,7 @@ type ETagOptions = {
  * > would have been sent in an equivalent 200 OK response: Cache-Control,
  * > Content-Location, Date, ETag, Expires, and Vary.
  */
-const RETAINED_304_HEADERS = [
+export const RETAINED_304_HEADERS = [
   'cache-control',
   'content-location',
   'date',
