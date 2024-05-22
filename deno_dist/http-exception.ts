@@ -36,7 +36,11 @@ export class HTTPException extends Error {
 
   getResponse(): Response {
     if (this.res) {
-      return this.res
+      const newResponse = new Response(this.res.body, {
+        status: this.status,
+        headers: this.res.headers,
+      })
+      return newResponse
     }
     return new Response(this.message, {
       status: this.status,
