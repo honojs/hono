@@ -371,8 +371,8 @@ export const createRef = <T>(): RefObject<T> => {
 }
 
 export const forwardRef = <T, P = {}>(
-  Component: (props: P, ref: RefObject<T>) => JSX.Element
-): ((props: P & { ref: RefObject<T> }) => JSX.Element) => {
+  Component: (props: P, ref?: RefObject<T>) => JSX.Element
+): ((props: P & { ref?: RefObject<T> }) => JSX.Element) => {
   return (props) => {
     const { ref, ...rest } = props
     return Component(rest as P, ref)

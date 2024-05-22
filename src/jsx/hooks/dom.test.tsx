@@ -496,6 +496,14 @@ describe('Hooks', () => {
       expect(root.innerHTML).toBe('<div></div>')
       expect(ref.current).toBeInstanceOf(HTMLElement)
     })
+
+    it('can run without ref', () => {
+      const App = forwardRef((props) => {
+        return <div {...props} />
+      })
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div></div>')
+    })
   })
 
   describe('useImperativeHandle()', () => {

@@ -308,6 +308,22 @@ describe('Pass a ResponseInit to respond methods', () => {
     expect(await res.text()).toBe('<h2>Hello</h2>')
   })
 
+  it('c.body() should retain context cookies from context and original response', async () => {
+    setCookie(c, 'context', '1')
+    setCookie(c, 'context', '2')
+
+    const originalResponse = new Response('', {
+      headers: {
+        'set-cookie': 'response=1; Path=/',
+      },
+    })
+    const res = c.body('', originalResponse)
+    const cookies = res.headers.getSetCookie()
+    expect(cookies.includes('context=1; Path=/')).toBe(true)
+    expect(cookies.includes('context=2; Path=/')).toBe(true)
+    expect(cookies.includes('response=1; Path=/')).toBe(true)
+  })
+
   it('c.text()', async () => {
     const originalResponse = new Response(JSON.stringify({ foo: 'bar' }))
     const res = c.text('foo', originalResponse)
