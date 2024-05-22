@@ -1,6 +1,6 @@
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
-import { bufferToBase64 } from '../../utils/buffer'
+import { encodeBase64 } from '../../utils/encode'
 
 declare module '../../context' {
   interface ContextVariableMap {
@@ -113,7 +113,7 @@ type SecureHeadersCallback = (
 const generateNonce = () => {
   const buffer = new Uint8Array(16)
   crypto.getRandomValues(buffer)
-  return bufferToBase64(buffer)
+  return encodeBase64(buffer)
 }
 export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
   const nonce =
