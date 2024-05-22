@@ -48,6 +48,12 @@ export const bufferToString = (buffer: ArrayBuffer): string => {
   return buffer
 }
 
+export const bufferToBase64 = (buffer: ArrayBuffer): string => {
+  const uint8Array = new Uint8Array(buffer)
+  const binary = uint8Array.reduce((data, byte) => data + String.fromCharCode(byte), '')
+  return btoa(binary)
+}
+
 export const bufferToFormData = (
   arrayBuffer: ArrayBuffer,
   contentType: string
