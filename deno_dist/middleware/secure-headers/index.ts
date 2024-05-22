@@ -115,6 +115,7 @@ const generateNonce = () => {
   crypto.getRandomValues(buffer)
   return encodeBase64(buffer)
 }
+
 export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
   const nonce =
     ctx.get('secureHeadersNonce') ||
@@ -126,6 +127,35 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
   return `'nonce-${nonce}'`
 }
 
+/**
+ * Secure Headers Middleware for Hono.
+ *
+ * @see {@link https://hono.dev/middleware/builtin/secure-headers}
+ *
+ * @param {Partial<SecureHeadersOptions>} [customOptions] - The options for the secure headers middleware.
+ * @param {ContentSecurityPolicyOptions} [customOptions.contentSecurityPolicy] - Settings for the Content-Security-Policy header.
+ * @param {overridableHeader} [customOptions.crossOriginEmbedderPolicy=false] - Settings for the Cross-Origin-Embedder-Policy header.
+ * @param {overridableHeader} [customOptions.crossOriginResourcePolicy=true] - Settings for the Cross-Origin-Resource-Policy header.
+ * @param {overridableHeader} [customOptions.crossOriginOpenerPolicy=true] - Settings for the Cross-Origin-Opener-Policy header.
+ * @param {overridableHeader} [customOptions.originAgentCluster=true] - Settings for the Origin-Agent-Cluster header.
+ * @param {overridableHeader} [customOptions.referrerPolicy=true] - Settings for the Referrer-Policy header.
+ * @param {ReportingEndpointOptions[]} [customOptions.reportingEndpoints] - Settings for the Reporting-Endpoints header.
+ * @param {ReportToOptions[]} [customOptions.reportTo] - Settings for the Report-To header.
+ * @param {overridableHeader} [customOptions.strictTransportSecurity=true] - Settings for the Strict-Transport-Security header.
+ * @param {overridableHeader} [customOptions.xContentTypeOptions=true] - Settings for the X-Content-Type-Options header.
+ * @param {overridableHeader} [customOptions.xDnsPrefetchControl=true] - Settings for the X-DNS-Prefetch-Control header.
+ * @param {overridableHeader} [customOptions.xDownloadOptions=true] - Settings for the X-Download-Options header.
+ * @param {overridableHeader} [customOptions.xFrameOptions=true] - Settings for the X-Frame-Options header.
+ * @param {overridableHeader} [customOptions.xPermittedCrossDomainPolicies=true] - Settings for the X-Permitted-Cross-Domain-Policies header.
+ * @param {overridableHeader} [customOptions.xXssProtection=true] - Settings for the X-XSS-Protection header.
+ * @returns {MiddlewareHandler} The middleware handler function.
+ *
+ * @example
+ * ```ts
+ * const app = new Hono()
+ * app.use(secureHeaders())
+ * ```
+ */
 export const secureHeaders = (customOptions?: SecureHeadersOptions): MiddlewareHandler => {
   const options = { ...DEFAULT_OPTIONS, ...customOptions }
   const headersToSet = getFilteredHeaders(options)
