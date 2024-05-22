@@ -90,7 +90,7 @@
   },
   "publish": {
     "include": [
-      "deno.json",
+      "jsr.json",
       "LICENSE",
       "README.md",
       "src/**/*.ts"
