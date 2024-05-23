@@ -18,7 +18,7 @@ export const jwt = (options: {
   cookie?: string
   alg?: SignatureAlgorithm
 }): MiddlewareHandler => {
-  if (!options) {
+  if (!options || !options.secret) {
     throw new Error('JWT auth middleware requires options for "secret')
   }
 
