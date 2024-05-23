@@ -1,7 +1,23 @@
 import { HonoRequest } from '../request.ts'
 
-type BodyDataValue = string | File | (string | File)[] | { [key: string]: BodyDataValue }
-export type BodyData = Record<string, BodyDataValue>
+type BodyDataValueComponent<T> =
+  | string
+  | File
+  | (T extends { all: false }
+      ? never // explicitly set to false
+      : T extends { all: true } | { all: boolean }
+      ? (string | File)[] // use all option
+      : never) // without options
+type BodyDataValueObject<T> = { [key: string]: BodyDataValueComponent<T> | BodyDataValueObject<T> }
+type BodyDataValue<T> =
+  | BodyDataValueComponent<T>
+  | (T extends { dot: false }
+      ? never // explicitly set to false
+      : T extends { dot: true } | { dot: boolean }
+      ? BodyDataValueObject<T> // use dot option
+      : never) // without options
+export type BodyData<T extends Partial<ParseBodyOptions> = {}> = Record<string, BodyDataValue<T>>
+
 export type ParseBodyOptions = {
   /**
    * Determines whether all fields with multiple values should be parsed as arrays.
@@ -44,9 +60,12 @@ export type ParseBodyOptions = {
  * @param {Partial<ParseBodyOptions>} [options] - Options for parsing the body.
  * @returns {Promise<T>} The parsed body data.
  */
-export const parseBody = async <T extends BodyData = BodyData>(
+export const parseBody = async <
+  Options extends Partial<ParseBodyOptions>,
+  T extends BodyData<Options> = BodyData<Options>
+>(
   request: HonoRequest | Request,
-  options: Partial<ParseBodyOptions> = Object.create(null)
+  options: Options = Object.create(null)
 ): Promise<T> => {
   const { all = false, dot = false } = options
 
@@ -71,7 +90,7 @@ export const parseBody = async <T extends BodyData = BodyData>(
  * @param {ParseBodyOptions} options - Options for parsing the form data.
  * @returns {Promise<T>} The parsed body data.
  */
-async function parseFormData<T extends BodyData = BodyData>(
+async function parseFormData<T extends BodyData>(
   request: HonoRequest | Request,
   options: ParseBodyOptions
 ): Promise<T> {
@@ -92,7 +111,7 @@ async function parseFormData<T extends BodyData = BodyData>(
  * @param {ParseBodyOptions} options - Options for parsing the form data.
  * @returns {T} The converted body data.
  */
-function convertFormDataToBodyData<T extends BodyData = BodyData>(
+function convertFormDataToBodyData<T extends BodyData>(
   formData: FormData,
   options: ParseBodyOptions
 ): T {
@@ -134,7 +153,11 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
  * @param {string} key - The key to parse.
  * @param {FormDataEntryValue} value - The value to assign.
  */
-const handleParsingAllValues = (form: BodyData, key: string, value: FormDataEntryValue): void => {
+const handleParsingAllValues = (
+  form: BodyData<{ all: true }>,
+  key: string,
+  value: FormDataEntryValue
+): void => {
   if (form[key] !== undefined) {
     if (Array.isArray(form[key])) {
       ;(form[key] as (string | File)[]).push(value)
@@ -153,7 +176,11 @@ const handleParsingAllValues = (form: BodyData, key: string, value: FormDataEntr
  * @param {string} key - The dot notation key.
  * @param {BodyDataValue} value - The value to assign.
  */
-const handleParsingNestedValues = (form: BodyData, key: string, value: BodyDataValue): void => {
+const handleParsingNestedValues = (
+  form: BodyData,
+  key: string,
+  value: BodyDataValue<Partial<ParseBodyOptions>>
+): void => {
   let nestedForm = form
   const keys = key.split('.')
 
@@ -169,7 +196,7 @@ const handleParsingNestedValues = (form: BodyData, key: string, value: BodyDataV
       ) {
         nestedForm[key] = Object.create(null)
       }
-      nestedForm = nestedForm[key] as BodyData
+      nestedForm = nestedForm[key] as unknown as BodyData
     }
   })
 }
