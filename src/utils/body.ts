@@ -60,13 +60,20 @@ export type ParseBodyOptions = {
  * @param {Partial<ParseBodyOptions>} [options] - Options for parsing the body.
  * @returns {Promise<T>} The parsed body data.
  */
-export const parseBody = async <
-  Options extends Partial<ParseBodyOptions>,
-  T extends BodyData<Options> = BodyData<Options>
->(
+interface ParseBody {
+  <Options extends Partial<ParseBodyOptions>, T extends BodyData<Options>>(
+    request: HonoRequest | Request,
+    options?: Options
+  ): Promise<T>
+  <T extends BodyData>(
+    request: HonoRequest | Request,
+    options?: Partial<ParseBodyOptions>
+  ): Promise<T>
+}
+export const parseBody: ParseBody = async (
   request: HonoRequest | Request,
-  options: Options = Object.create(null)
-): Promise<T> => {
+  options = Object.create(null)
+) => {
   const { all = false, dot = false } = options
 
   const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
@@ -76,10 +83,10 @@ export const parseBody = async <
     (contentType !== null && contentType.startsWith('multipart/form-data')) ||
     (contentType !== null && contentType.startsWith('application/x-www-form-urlencoded'))
   ) {
-    return parseFormData<T>(request, { all, dot })
+    return parseFormData(request, { all, dot })
   }
 
-  return {} as T
+  return {}
 }
 
 /**
