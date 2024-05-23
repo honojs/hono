@@ -310,6 +310,12 @@ describe('Body methods with caching', () => {
           | RecursiveRecord<string, string | File | (string | File)[]>
         >()
       })
+
+      it('specify return type explicitly', async () => {
+        expectTypeOf(
+          await req.parseBody<{ key1: string; key2: string }>({ all: true, dot: true })
+        ).toEqualTypeOf<{ key1: string; key2: string }>()
+      })
     })
   })
 })

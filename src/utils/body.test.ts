@@ -298,6 +298,15 @@ describe('Parse Body Util', () => {
         | RecursiveRecord<string, string | File | (string | File)[]>
       >()
     })
+
+    it('specify return type explicitly', async () => {
+      expectTypeOf(
+        await parseBody<{ key1: string; key2: string }>(req, {
+          all: !!Math.random(),
+          dot: !!Math.random(),
+        })
+      ).toEqualTypeOf<{ key1: string; key2: string }>()
+    })
   })
 })
 
