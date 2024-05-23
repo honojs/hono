@@ -4,7 +4,7 @@ type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot } & {}
 type BodyDataValueDotAll = {
   [x: string]: string | File | (string | File)[] | BodyDataValueDotAll
 } & {}
-type Simplify<T> = {
+type SimplifyBodyData<T> = {
   [K in keyof T]: string | File | (string | File)[] | BodyDataValueDotAll extends T[K]
     ? string | File | (string | File)[] | BodyDataValueDotAll
     : string | File | BodyDataValueDot extends T[K]
@@ -30,7 +30,7 @@ type BodyDataValue<T> =
       : T extends { dot: true } | { dot: boolean }
       ? BodyDataValueObject<T> // use dot option
       : never) // without options
-export type BodyData<T extends Partial<ParseBodyOptions> = {}> = Simplify<
+export type BodyData<T extends Partial<ParseBodyOptions> = {}> = SimplifyBodyData<
   Record<string, BodyDataValue<T>>
 >
 
