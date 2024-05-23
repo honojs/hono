@@ -187,11 +187,11 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     options?: Options
   ): Promise<T>
   async parseBody<T extends BodyData>(options?: Partial<ParseBodyOptions>): Promise<T>
-  async parseBody<T extends BodyData = BodyData>(options?: Partial<ParseBodyOptions>): Promise<T> {
+  async parseBody(options?: Partial<ParseBodyOptions>) {
     if (this.bodyCache.parsedBody) {
-      return this.bodyCache.parsedBody as T
+      return this.bodyCache.parsedBody
     }
-    const parsedBody = await parseBody<T>(this, options)
+    const parsedBody = await parseBody(this, options)
     this.bodyCache.parsedBody = parsedBody
     return parsedBody
   }
