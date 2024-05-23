@@ -1,3 +1,4 @@
+// @denoify-ignore
 import type { UpgradeWebSocket, WSContext, WSReadyState } from '../../helper/websocket'
 
 // Based on https://github.com/honojs/hono/issues/1153#issuecomment-1767321332

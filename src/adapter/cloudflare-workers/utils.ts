@@ -1,3 +1,4 @@
+// @denoify-ignore
 declare const __STATIC_CONTENT: unknown
 declare const __STATIC_CONTENT_MANIFEST: string
 
