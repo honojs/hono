@@ -562,7 +562,6 @@
     "nodejs"
   ],
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20231121.0",
     "@hono/eslint-config": "^0.0.4",
     "@hono/node-server": "^1.8.2",
     "@types/crypto-js": "^4.1.1",
