@@ -183,7 +183,11 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    * @see https://hono.dev/api/request#parsebody
    */
-  async parseBody<T extends BodyData = BodyData>(options?: ParseBodyOptions): Promise<T> {
+  async parseBody<Options extends Partial<ParseBodyOptions>, T extends BodyData<Options>>(
+    options?: Options
+  ): Promise<T>
+  async parseBody<T extends BodyData>(options?: Partial<ParseBodyOptions>): Promise<T>
+  async parseBody<T extends BodyData = BodyData>(options?: Partial<ParseBodyOptions>): Promise<T> {
     if (this.bodyCache.parsedBody) {
       return this.bodyCache.parsedBody as T
     }

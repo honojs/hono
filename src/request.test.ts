@@ -1,6 +1,10 @@
 import { HonoRequest } from './request'
 import type { RouterRoute } from './types'
 
+type RecursiveRecord<K extends string, T> = {
+  [key in K]: T | RecursiveRecord<K, T>
+}
+
 describe('Query', () => {
   test('req.query() and req.queries()', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
@@ -250,5 +254,62 @@ describe('Body methods with caching', () => {
     expect(async () => await req.text()).not.toThrow()
     expect(async () => await req.arrayBuffer()).not.toThrow()
     expect(async () => await req.blob()).not.toThrow()
+  })
+
+  describe('req.parseBody()', async () => {
+    it('should parse form data', async () => {
+      const data = new FormData()
+      data.append('foo', 'bar')
+      const req = new HonoRequest(
+        new Request('http://localhost', {
+          method: 'POST',
+          body: data,
+        })
+      )
+      expect((await req.parseBody())['foo']).toBe('bar')
+      expect((await req.parseBody())['foo']).toBe('bar')
+      expect(async () => await req.text()).not.toThrow()
+      expect(async () => await req.arrayBuffer()).not.toThrow()
+      expect(async () => await req.blob()).not.toThrow()
+    })
+
+    describe('Return type', () => {
+      let req: HonoRequest
+      beforeEach(() => {
+        const data = new FormData()
+        data.append('foo', 'bar')
+        req = new HonoRequest(
+          new Request('http://localhost', {
+            method: 'POST',
+            body: data,
+          })
+        )
+      })
+
+      it('without options', async () => {
+        expectTypeOf((await req.parseBody())['key']).toEqualTypeOf<string | File>()
+      })
+
+      it('{all: true}', async () => {
+        expectTypeOf((await req.parseBody({ all: true }))['key']).toEqualTypeOf<
+          string | File | (string | File)[]
+        >()
+      })
+
+      it('{dot: true}', async () => {
+        expectTypeOf((await req.parseBody({ dot: true }))['key']).toEqualTypeOf<
+          string | File | RecursiveRecord<string, string | File>
+        >()
+      })
+
+      it('{all: true, dot: true}', async () => {
+        expectTypeOf((await req.parseBody({ all: true, dot: true }))['key']).toEqualTypeOf<
+          | string
+          | File
+          | (string | File)[]
+          | RecursiveRecord<string, string | File | (string | File)[]>
+        >()
+      })
+    })
   })
 })
