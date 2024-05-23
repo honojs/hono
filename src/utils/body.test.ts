@@ -1,4 +1,9 @@
 import { parseBody } from './body'
+import type { BodyData } from './body'
+
+type RecursiveRecord<K extends string, T> = {
+  [key in K]: T | RecursiveRecord<K, T>
+}
 
 describe('Parse Body Util', () => {
   const FORM_URL = 'https://localhost/form'
@@ -239,5 +244,102 @@ describe('Parse Body Util', () => {
     })
 
     expect(await parseBody(req)).toEqual({})
+  })
+
+  describe('Return type', () => {
+    let req: Request
+    beforeEach(() => {
+      req = createRequest(FORM_URL, 'POST', new FormData())
+    })
+
+    it('without options', async () => {
+      expectTypeOf((await parseBody(req))['key']).toEqualTypeOf<string | File>()
+    })
+
+    it('{all: true}', async () => {
+      expectTypeOf((await parseBody(req, { all: true }))['key']).toEqualTypeOf<
+        string | File | (string | File)[]
+      >()
+    })
+
+    it('{all: boolean}', async () => {
+      expectTypeOf((await parseBody(req, { all: !!Math.random() }))['key']).toEqualTypeOf<
+        string | File | (string | File)[]
+      >()
+    })
+
+    it('{dot: true}', async () => {
+      expectTypeOf((await parseBody(req, { dot: true }))['key']).toEqualTypeOf<
+        string | File | RecursiveRecord<string, string | File>
+      >()
+    })
+
+    it('{dot: boolean}', async () => {
+      expectTypeOf((await parseBody(req, { dot: !!Math.random() }))['key']).toEqualTypeOf<
+        string | File | RecursiveRecord<string, string | File>
+      >()
+    })
+
+    it('{all: true, dot: true}', async () => {
+      expectTypeOf((await parseBody(req, { all: true, dot: true }))['key']).toEqualTypeOf<
+        | string
+        | File
+        | (string | File)[]
+        | RecursiveRecord<string, string | File | (string | File)[]>
+      >()
+    })
+
+    it('{all: boolean, dot: boolean}', async () => {
+      expectTypeOf(
+        (await parseBody(req, { all: !!Math.random(), dot: !!Math.random() }))['key']
+      ).toEqualTypeOf<
+        | string
+        | File
+        | (string | File)[]
+        | RecursiveRecord<string, string | File | (string | File)[]>
+      >()
+    })
+  })
+})
+
+describe('BodyData', () => {
+  it('without options', async () => {
+    expectTypeOf(({} as BodyData)['key']).toEqualTypeOf<string | File>()
+  })
+
+  it('{all: true}', async () => {
+    expectTypeOf(({} as BodyData<{ all: true }>)['key']).toEqualTypeOf<
+      string | File | (string | File)[]
+    >()
+  })
+
+  it('{all: boolean}', async () => {
+    expectTypeOf(({} as BodyData<{ all: boolean }>)['key']).toEqualTypeOf<
+      string | File | (string | File)[]
+    >()
+  })
+
+  it('{dot: true}', async () => {
+    expectTypeOf(({} as BodyData<{ dot: true }>)['key']).toEqualTypeOf<
+      string | File | RecursiveRecord<string, string | File>
+    >()
+  })
+
+  it('{dot: boolean}', async () => {
+    expectTypeOf(({} as BodyData<{ dot: boolean }>)['key']).toEqualTypeOf<
+      string | File | RecursiveRecord<string, string | File>
+    >()
+  })
+
+  it('{all: true, dot: true}', async () => {
+    expectTypeOf(({} as BodyData<{ all: true; dot: true }>)['key']).toEqualTypeOf<
+      string | File | (string | File)[] | RecursiveRecord<string, string | File | (string | File)[]>
+    >()
+  })
+
+  it('{all: boolean, dot: boolean}', async () => {
+    expectTypeOf(({} as BodyData<{ all: boolean; dot: boolean }>)['key']).toEqualTypeOf<
+      string | File | (string | File)[] | RecursiveRecord<string, string | File | (string | File)[]>
+    >()
   })
 })
