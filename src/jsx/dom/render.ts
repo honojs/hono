@@ -22,7 +22,7 @@ const nameSpaceMap: Record<string, string> = {
   math: 'http://www.w3.org/1998/Math/MathML',
 } as const
 
-const skipProps = new Set(['children'])
+const skipProps: Set<string> = new Set(['children'])
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type HasRenderToDom = FC<any> & { [DOM_RENDERER]: FC<any> }
@@ -152,15 +152,15 @@ const applyProps = (container: SupportedElement, attributes: Props, oldAttribute
         const nodeName = container.nodeName
         if (key === 'value') {
           if (nodeName === 'INPUT' || nodeName === 'TEXTAREA' || nodeName === 'SELECT') {
-            ;(container as HTMLInputElement).value =
+            ;(container as unknown as HTMLInputElement).value =
               value === null || value === undefined || value === false ? null : value
 
             if (nodeName === 'TEXTAREA') {
               container.textContent = value
               continue
             } else if (nodeName === 'SELECT') {
-              if ((container as HTMLSelectElement).selectedIndex === -1) {
-                ;(container as HTMLSelectElement).selectedIndex = 0
+              if ((container as unknown as HTMLSelectElement).selectedIndex === -1) {
+                ;(container as unknown as HTMLSelectElement).selectedIndex = 0
               }
               continue
             }
@@ -256,7 +256,7 @@ const getNextChildren = (
   })
 }
 
-const findInsertBefore = (node: Node | undefined): ChildNode | null => {
+const findInsertBefore = (node: Node | undefined): SupportedElement | Text | null => {
   if (!node) {
     return null
   } else if (node.tag === HONO_PORTAL_ELEMENT) {
@@ -372,10 +372,10 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
   })
 }
 
-const fallbackUpdateFnArrayMap = new WeakMap<
+const fallbackUpdateFnArrayMap: WeakMap<
   NodeObject,
   Array<() => Promise<NodeObject | undefined>>
->()
+> = new WeakMap<NodeObject, Array<() => Promise<NodeObject | undefined>>>()
 export const build = (
   context: Context,
   node: NodeObject,
@@ -545,7 +545,10 @@ const updateSync = (context: Context, node: NodeObject) => {
 }
 
 type UpdateMapResolve = (node: NodeObject | undefined) => void
-const updateMap = new WeakMap<NodeObject, [UpdateMapResolve, Function]>()
+const updateMap: WeakMap<NodeObject, [UpdateMapResolve, Function]> = new WeakMap<
+  NodeObject,
+  [UpdateMapResolve, Function]
+>()
 const currentUpdateSets: Set<NodeObject>[] = []
 export const update = async (
   context: Context,

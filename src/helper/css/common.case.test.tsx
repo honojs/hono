@@ -1,6 +1,5 @@
 /* eslint-disable quotes */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, Fragment } from '../../jsx'
+/** @jsxImportSource ../../jsx */
 import type {
   css as cssHelper,
   keyframes as keyframesHelper,

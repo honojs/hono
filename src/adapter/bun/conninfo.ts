@@ -1,4 +1,3 @@
-// @denoify-ignore
 import type { Context } from '../..'
 import type { GetConnInfo } from '../../helper/conninfo'
 

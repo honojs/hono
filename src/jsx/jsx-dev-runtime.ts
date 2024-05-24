@@ -2,6 +2,7 @@ import type { HtmlEscapedString } from '../utils/html'
 import { jsxFn } from './base'
 import type { JSXNode } from './base'
 export { Fragment } from './base'
+export type { JSX } from './base'
 
 export function jsxDEV(
   tag: string | Function,

@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/** @jsxImportSource ./ */
 import { JSDOM } from 'jsdom'
 import type { HtmlEscapedString } from '../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback as rawResolveCallback } from '../utils/html'
 import { ErrorBoundary } from './components'
 import { Suspense, renderToReadableStream } from './streaming'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx } from '.'
 
 function resolveCallback(template: string | HtmlEscapedString) {
   return rawResolveCallback(template, HtmlEscapedCallbackPhase.Stream, false, {})

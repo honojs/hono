@@ -1,4 +1,3 @@
-// @denoify-ignore
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
 import type { ServeStaticOptions } from '../../middleware/serve-static'

@@ -8,16 +8,16 @@ import { findTargetHandler, isMiddleware } from '../../utils/handler'
  * @param path File Path
  * @returns Parent dir path
  */
-export const dirname = (path: string) => {
+export const dirname = (path: string): string => {
   const splittedPath = path.split(/[\/\\]/)
   return splittedPath.slice(0, -1).join('/') // Windows supports slash path
 }
 
-const normalizePath = (path: string) => {
+const normalizePath = (path: string): string => {
   return path.replace(/(\\)/g, '/').replace(/\/$/g, '')
 }
 
-const handleDotDot = (resultPaths: string[]) => {
+const handleDotDot = (resultPaths: string[]): void => {
   if (resultPaths.length === 0) {
     resultPaths.push('..')
   } else {
@@ -25,14 +25,14 @@ const handleDotDot = (resultPaths: string[]) => {
   }
 }
 
-const handleNonDot = (path: string, resultPaths: string[]) => {
+const handleNonDot = (path: string, resultPaths: string[]): void => {
   path = path.replace(/^\.(?!.)/, '')
   if (path !== '') {
     resultPaths.push(path)
   }
 }
 
-const handleSegments = (paths: string[], resultPaths: string[]) => {
+const handleSegments = (paths: string[], resultPaths: string[]): void => {
   for (const path of paths) {
     // Handle `..` or `../`
     if (path === '..') {
@@ -44,7 +44,7 @@ const handleSegments = (paths: string[], resultPaths: string[]) => {
   }
 }
 
-export const joinPaths = (...paths: string[]) => {
+export const joinPaths = (...paths: string[]): string => {
   paths = paths.map(normalizePath)
   const resultPaths: string[] = []
   handleSegments(paths.join('/').split('/'), resultPaths)

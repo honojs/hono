@@ -1,4 +1,4 @@
-import type { Context } from '../../context'
+import type { Context, ExecutionContext } from '../../context'
 import type { Hono } from '../../hono'
 import type { MiddlewareHandler } from '../../types'
 import { parseBody } from '../../utils/body'

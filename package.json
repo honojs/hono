@@ -24,13 +24,12 @@
     "lint:fix": "eslint --ext js,ts,tsx src runtime_tests --fix",
     "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
     "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
-    "denoify": "rimraf deno_dist && denoify && rimraf \"deno_dist/**/*.test.{ts,tsx}\"",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
     "build": "rimraf dist && tsx ./build.ts && bun run copy:package.cjs.json",
     "postbuild": "publint",
     "watch": "rimraf dist && tsx ./build.ts --watch && bun run copy:package.cjs.json",
     "coverage": "vitest --run --coverage",
-    "prerelease": "bun denoify && bun test:deno && bun run build",
+    "prerelease": "bun test:deno && bun run build",
     "release": "np"
   },
   "exports": {
@@ -572,7 +571,6 @@
     "@vitest/coverage-v8": "^1.1.0",
     "arg": "^5.0.2",
     "crypto-js": "^4.1.1",
-    "denoify": "^1.6.6",
     "esbuild": "^0.15.12",
     "eslint": "^8.55.0",
     "glob": "7.2.3",

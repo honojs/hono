@@ -36,7 +36,7 @@ yarn install --frozen-lockfile
 
 ## PRs
 
-Please ensure your PR passes tests with `bun run test` or `yarn test`. Also please ensure the Deno code is generated with `yarn denoify`.
+Please ensure your PR passes tests with `bun run test` or `yarn test`.
 
 ## Third-party middleware
 
