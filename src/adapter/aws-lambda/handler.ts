@@ -410,15 +410,26 @@ const albProcessor = new (class ALBProcessor extends EventProcessor<ALBProxyEven
 
   protected getQueryString(event: ALBProxyEvent): string {
     // In the case of ALB Integration either queryStringParameters or multiValueQueryStringParameters can be present not both
-    if (event.queryStringParameters) {
-      return Object.entries(event.queryStringParameters || {})
-        .filter(([, value]) => value)
-        .map(([key, value]) => `${key}=${value}`)
-        .join('&')
-    } else {
+    /* 
+      In other cases like when using the serverless framework, the event object does contain both queryStringParameters and multiValueQueryStringParameters:
+      Below is an example event object for this URL: /payment/b8c55e69?select=amount&select=currency
+      {
+        ...
+        queryStringParameters: { select: 'currency' },
+        multiValueQueryStringParameters: { select: [ 'amount', 'currency' ] },
+      }
+      The expected results is for select to be an array with two items. However the pre-fix code is only returning one item ('currency') in the array.
+      A simple fix would be to invert the if statement and check the multiValueQueryStringParameters first.
+    */
+    if (event.multiValueQueryStringParameters) {
       return Object.entries(event.multiValueQueryStringParameters || {})
         .filter(([, value]) => value)
         .map(([key, value]) => `${key}=${value.join(`&${key}=`)}`)
+        .join('&')
+    } else {
+      return Object.entries(event.queryStringParameters || {})
+        .filter(([, value]) => value)
+        .map(([key, value]) => `${key}=${value}`)
         .join('&')
     }
   }
