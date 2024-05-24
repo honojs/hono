@@ -28,21 +28,29 @@ type MethodOverrideOptions = {
 const DEFAULT_METHOD_FORM_NAME = '_method'
 
 /**
- * Method Override Middleware
+ * Method Override Middleware for Hono.
+ *
+ * @see {@link https://hono.dev/middleware/builtin/method-override}
+ *
+ * @param {MethodOverrideOptions} options - The options for the method override middleware.
+ * @param {Hono} options.app - The instance of Hono is used in your application.
+ * @param {string} [options.form=_method] - Form key with a value containing the method name.
+ * @param {string} [options.header] - Header name with a value containing the method name.
+ * @param {string} [options.query] - Query parameter key with a value containing the method name.
+ * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
- * // with form input method
+ * ```ts
  * const app = new Hono()
- * app.use('/books/*', methodOverride({ app })) // the default `form` value is `_method`
- * app.use('/authors/*', methodOverride({ app, form: 'method' }))
  *
- * @example
- * // with custom header
- * app.use('/books/*', methodOverride({ app, header: 'X-HTTP-METHOD-OVERRIDE' }))
+ * // If no options are specified, the value of `_method` in the form,
+ * // e.g. DELETE, is used as the method.
+ * app.use('/posts', methodOverride({ app }))
  *
- * @example
- * // with query parameter
- * app.use('/books/*', methodOverride({ app, query: '_method' }))
+ * app.delete('/posts', (c) => {
+ *   // ....
+ * })
+ * ```
  */
 export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandler =>
   async function methodOverride(c, next) {

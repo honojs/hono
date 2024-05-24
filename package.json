@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.3.9",
+  "version": "4.3.11",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -178,6 +178,11 @@
       "import": "./dist/middleware/jwt/index.js",
       "require": "./dist/cjs/middleware/jwt/index.js"
     },
+    "./timeout": {
+      "types": "./dist/types/middleware/timeout/index.d.ts",
+      "import": "./dist/middleware/timeout/index.js",
+      "require": "./dist/cjs/middleware/timeout/index.js"
+    },
     "./timing": {
       "types": "./dist/types/middleware/timing/index.d.ts",
       "import": "./dist/middleware/timing/index.js",
@@ -337,6 +342,11 @@
       "types": "./dist/types/helper/websocket/index.d.ts",
       "import": "./dist/helper/websocket/index.js",
       "require": "./dist/cjs/helper/websocket/index.js"
+    },
+    "./conninfo": {
+      "types": "./dist/types/helper/conninfo/index.d.ts",
+      "import": "./dist/helper/conninfo/index.js",
+      "require": "./dist/cjs/helper/conninfo/index.js"
     }
   },
   "typesVersions": {
@@ -418,6 +428,9 @@
       ],
       "jwt": [
         "./dist/types/middleware/jwt"
+      ],
+      "timeout": [
+        "./dist/types/middleware/timeout"
       ],
       "timing": [
         "./dist/types/middleware/timing"
@@ -514,6 +527,9 @@
       ],
       "ws": [
         "./dist/types/helper/websocket"
+      ],
+      "conninfo": [
+        "./dist/types/helper/conninfo"
       ]
     }
   },
@@ -545,7 +561,6 @@
     "nodejs"
   ],
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20231121.0",
     "@hono/eslint-config": "^0.0.4",
     "@hono/node-server": "^1.8.2",
     "@types/crypto-js": "^4.1.1",

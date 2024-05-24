@@ -757,6 +757,7 @@ describe('default export', () => {
     'useViewTransition',
     'useMemo',
     'useLayoutEffect',
+    'useInsertionEffect',
     'Suspense',
   ].forEach((key) => {
     it(key, () => {

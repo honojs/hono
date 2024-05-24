@@ -91,7 +91,7 @@ export const validator = <
         try {
           const arrayBuffer = await c.req.arrayBuffer()
           const formData = await bufferToFormData(arrayBuffer, contentType)
-          const form: BodyData = {}
+          const form: BodyData<{ all: true }> = {}
           formData.forEach((value, key) => {
             if (key.endsWith('[]')) {
               if (form[key] === undefined) {

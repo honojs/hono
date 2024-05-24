@@ -8,6 +8,7 @@ import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
 import { styleObjectForEach } from '../utils'
 import { createContext } from './context' // import dom-specific versions
+import { newJSXNode } from './utils'
 
 const HONO_PORTAL_ELEMENT = '_hp'
 
@@ -106,6 +107,14 @@ const getEventSpec = (key: string): [string, boolean] | undefined => {
   return undefined
 }
 
+const toAttributeName = (element: SupportedElement, key: string): string =>
+  element instanceof SVGElement &&
+  /[A-Z]/.test(key) &&
+  (key in element.style || // Presentation attributes are findable in style object. "clip-path", "font-size", "stroke-width", etc.
+    key.match(/^(?:o|pai|str|u|ve)/)) // Other un-deprecated kebab-case attributes. "overline-position", "paint-order", "strikethrough-position", etc.
+    ? key.replace(/([A-Z])/g, '-$1').toLowerCase()
+    : key
+
 const applyProps = (container: SupportedElement, attributes: Props, oldAttributes?: Props) => {
   attributes ||= {}
   for (const [key, value] of Object.entries(attributes)) {
@@ -164,14 +173,16 @@ const applyProps = (container: SupportedElement, attributes: Props, oldAttribute
           ;(container as any)[key] = value
         }
 
+        const k = toAttributeName(container, key)
+
         if (value === null || value === undefined || value === false) {
-          container.removeAttribute(key)
+          container.removeAttribute(k)
         } else if (value === true) {
-          container.setAttribute(key, '')
+          container.setAttribute(k, '')
         } else if (typeof value === 'string' || typeof value === 'number') {
-          container.setAttribute(key, value as string)
+          container.setAttribute(k, value as string)
         } else {
-          container.setAttribute(key, value.toString())
+          container.setAttribute(k, value.toString())
         }
       }
     }
@@ -189,7 +200,7 @@ const applyProps = (container: SupportedElement, attributes: Props, oldAttribute
             value.current = null
           }
         } else {
-          container.removeAttribute(key)
+          container.removeAttribute(toAttributeName(container, key))
         }
       }
     }
@@ -248,6 +259,8 @@ const getNextChildren = (
 const findInsertBefore = (node: Node | undefined): SupportedElement | Text | null => {
   if (!node) {
     return null
+  } else if (node.tag === HONO_PORTAL_ELEMENT) {
+    return findInsertBefore(node.nN)
   } else if (node.e) {
     return node.e
   }
@@ -324,10 +337,8 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
 
   const childNodes = container.childNodes
   let offset =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    findChildNodeIndex(childNodes, findInsertBefore(node.nN) as any) ??
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    findChildNodeIndex(childNodes, next.find((n) => n.e)?.e as any) ??
+    findChildNodeIndex(childNodes, findInsertBefore(node.nN)) ??
+    findChildNodeIndex(childNodes, next.find((n) => n.tag !== HONO_PORTAL_ELEMENT && n.e)?.e) ??
     childNodes.length
 
   for (let i = 0, len = next.length; i < len; i++, offset++) {
@@ -347,18 +358,17 @@ const applyNodeObject = (node: NodeObject, container: Container) => {
       applyProps(el as HTMLElement, child.props, child.pP)
       applyNode(child, el as HTMLElement)
     }
-    if (
-      childNodes[offset] !== el &&
-      childNodes[offset - 1] !== child.e &&
-      child.tag !== HONO_PORTAL_ELEMENT
-    ) {
+    if (child.tag === HONO_PORTAL_ELEMENT) {
+      offset--
+    } else if (childNodes[offset] !== el && childNodes[offset - 1] !== child.e) {
       container.insertBefore(el, childNodes[offset] || null)
     }
   }
   remove.forEach(removeNode)
-  callbacks.forEach(([, cb]) => cb?.())
+  callbacks.forEach(([, , , , cb]) => cb?.()) // invoke useInsertionEffect callbacks
+  callbacks.forEach(([, cb]) => cb?.()) // invoke useLayoutEffect callbacks
   requestAnimationFrame(() => {
-    callbacks.forEach(([, , , cb]) => cb?.())
+    callbacks.forEach(([, , , cb]) => cb?.()) // invoke useEffect callbacks
   })
 }
 
@@ -382,7 +392,7 @@ export const build = (
   }
   const oldVChildren: Node[] = node.vC ? [...node.vC] : []
   const vChildren: Node[] = []
-  const vChildrenToRemove: Node[] = []
+  node.vR = []
   let prevNode: Node | undefined
   try {
     children.flat().forEach((c: Child) => {
@@ -403,7 +413,13 @@ export const build = (
         }
 
         let oldChild: Node | undefined
-        const i = oldVChildren.findIndex((c) => c.key === (child as Node).key)
+        const i = oldVChildren.findIndex(
+          isNodeString(child)
+            ? (c) => isNodeString(c)
+            : child.key !== undefined
+            ? (c) => c.key === (child as Node).key
+            : (c) => c.tag === (child as Node).tag
+        )
         if (i !== -1) {
           oldChild = oldVChildren[i]
           oldVChildren.splice(i, 1)
@@ -411,17 +427,13 @@ export const build = (
 
         if (oldChild) {
           if (isNodeString(child)) {
-            if (!isNodeString(oldChild)) {
-              vChildrenToRemove.push(oldChild)
-            } else {
-              if (oldChild.t !== child.t) {
-                oldChild.t = child.t // update text content
-                oldChild.d = true
-              }
-              child = oldChild
+            if ((oldChild as NodeString).t !== child.t) {
+              ;(oldChild as NodeString).t = child.t // update text content
+              ;(oldChild as NodeString).d = true
             }
+            child = oldChild
           } else if (oldChild.tag !== child.tag) {
-            vChildrenToRemove.push(oldChild)
+            node.vR.push(oldChild)
           } else {
             oldChild.pP = oldChild.props
             oldChild.props = child.props
@@ -444,8 +456,7 @@ export const build = (
       }
     })
     node.vC = vChildren
-    vChildrenToRemove.push(...oldVChildren)
-    node.vR = vChildrenToRemove
+    node.vR.push(...oldVChildren)
   } catch (e) {
     if (errorHandler) {
       const fallbackUpdateFn = () =>
@@ -483,10 +494,14 @@ const buildNode = (node: Child): Node | undefined => {
   } else if (typeof node === 'string' || typeof node === 'number') {
     return { t: node.toString(), d: true } as NodeString
   } else {
+    if ('vR' in node) {
+      node = newJSXNode({
+        tag: (node as NodeObject).tag,
+        props: (node as NodeObject).props,
+        key: (node as NodeObject).key,
+      })
+    }
     if (typeof (node as JSXNode).tag === 'function') {
-      if ((node as NodeObject)[DOM_STASH]) {
-        node = { ...node } as NodeObject
-      }
       ;(node as NodeObject)[DOM_STASH] = [0, []]
     } else {
       const ns = nameSpaceMap[(node as JSXNode).tag as string]
