@@ -4,7 +4,7 @@ import { poweredBy } from '../powered-by'
 import { secureHeaders, NONCE } from '.'
 import type { ContentSecurityPolicyOptionHandler } from '.'
 
-declare module '../../context' {
+declare module '../..' {
   interface ContextVariableMap {
     ['test-scriptSrc-nonce']?: string
     ['test-styleSrc-nonce']?: string

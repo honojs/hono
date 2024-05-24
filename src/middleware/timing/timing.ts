@@ -1,13 +1,11 @@
-import type { Context } from '../../context.ts'
-import type { MiddlewareHandler } from '../../types.ts'
-import '../../context.ts'
+import type { Context } from '../../context'
+import type { MiddlewareHandler } from '../../types'
+import '../../context'
 
-declare module '../../context.ts' {
-  interface ContextVariableMap {
-    metric?: {
-      headers: string[]
-      timers: Map<string, Timer>
-    }
+export type TimingVariables = {
+  metric?: {
+    headers: string[]
+    timers: Map<string, Timer>
   }
 }
 

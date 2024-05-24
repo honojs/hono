@@ -1,11 +1,9 @@
-import type { Context } from '../../context.ts'
-import type { MiddlewareHandler } from '../../types.ts'
-import { encodeBase64 } from '../../utils/encode.ts'
+import type { Context } from '../../context'
+import type { MiddlewareHandler } from '../../types'
+import { encodeBase64 } from '../../utils/encode'
 
-declare module '../../context.ts' {
-  interface ContextVariableMap {
-    secureHeadersNonce?: string
-  }
+export type SecureHeadersVariables = {
+  secureHeadersNonce?: string
 }
 
 export type ContentSecurityPolicyOptionHandler = (ctx: Context, directive: string) => string

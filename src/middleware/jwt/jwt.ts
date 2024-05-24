@@ -1,16 +1,14 @@
-import type { Context } from '../../context.ts'
-import { getCookie } from '../../helper/cookie/index.ts'
-import { HTTPException } from '../../http-exception.ts'
-import type { MiddlewareHandler } from '../../types.ts'
-import { Jwt } from '../../utils/jwt/index.ts'
-import '../../context.ts'
-import type { SignatureAlgorithm } from '../../utils/jwt/jwa.ts'
+import type { Context } from '../../context'
+import { getCookie } from '../../helper/cookie'
+import { HTTPException } from '../../http-exception'
+import type { MiddlewareHandler } from '../../types'
+import { Jwt } from '../../utils/jwt'
+import '../../context'
+import type { SignatureAlgorithm } from '../../utils/jwt/jwa'
 
-declare module '../../context.ts' {
-  interface ContextVariableMap {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    jwtPayload: any
-  }
+export type JwtVariables = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  jwtPayload: any
 }
 
 /**

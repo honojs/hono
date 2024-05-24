@@ -1,8 +1,8 @@
-/** @jsxImportSource ../../deno_dist/jsx */
-import { Style, css } from '../../deno_dist/helper/css/index.ts'
-import { Suspense, renderToReadableStream } from '../../deno_dist/jsx/streaming.ts'
-import type { HtmlEscapedString } from '../../deno_dist/utils/html.ts'
-import { resolveCallback, HtmlEscapedCallbackPhase } from '../../deno_dist/utils/html.ts'
+/** @jsxImportSource ../../src/jsx */
+import { Style, css } from '../../src/helper/css/index.ts'
+import { Suspense, renderToReadableStream } from '../../src/jsx/streaming.ts'
+import type { HtmlEscapedString } from '../../src/utils/html.ts'
+import { resolveCallback, HtmlEscapedCallbackPhase } from '../../src/utils/html.ts'
 import { assertEquals } from '../deno/deps.ts'
 
 Deno.test('JSX', () => {

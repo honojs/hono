@@ -2,6 +2,7 @@
  * All types exported from "hono/jsx" are in this file.
  */
 import type { Child, JSXNode } from './base'
+import type { Hono } from './intrinsic-elements'
 
 export type { Child, JSXNode, FC } from './base'
 export type { RefObject } from './hooks'

@@ -1,4 +1,3 @@
-// @denoify-ignore
 import {
   createWSMessageEvent,
   type UpgradeWebSocket,
@@ -24,7 +23,7 @@ interface BunServer {
 interface BunWebSocketHandler<T> {
   open(ws: BunServerWebSocket<T>): void
   close(ws: BunServerWebSocket<T>, code?: number, reason?: string): void
-  message(ws: BunServerWebSocket<T>, message: string | Buffer): void
+  message(ws: BunServerWebSocket<T>, message: string | Uint8Array): void
 }
 interface CreateWebSocket {
   (): {

@@ -1,4 +1,3 @@
-// @denoify-ignore
 import type { UpgradeWebSocket, WSContext, WSReadyState } from '../../helper/websocket'
 
 // Based on https://github.com/honojs/hono/issues/1153#issuecomment-1767321332
@@ -53,7 +52,7 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
   server.accept()
   return new Response(null, {
     status: 101,
-    // @ts-expect-error Cloudflare Workers API
+    // @ts-expect-error type not typed
     webSocket: client,
   })
 }

@@ -1,4 +1,3 @@
-// @denoify-ignore
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { toSSG as baseToSSG } from '../../helper/ssg'
 import type { FileSystemModule, ToSSGAdaptorInterface } from '../../helper/ssg'

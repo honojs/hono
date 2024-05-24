@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { jsx, useState, useSyncExternalStore } from '..'
+/** @jsxImportSource ../ */
+import { useState, useSyncExternalStore } from '..'
 
 describe('useState', () => {
   it('should be rendered with initial state', () => {

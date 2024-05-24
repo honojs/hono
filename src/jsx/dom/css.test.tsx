@@ -1,8 +1,8 @@
+/** @jsxImportSource ../ */
 import { JSDOM } from 'jsdom'
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx } from '..'
 import type { JSXNode } from '..'
 import { Style, css, rawCssString, createCssContext } from '../../helper/css'
 import { minify } from '../../helper/css/common'
