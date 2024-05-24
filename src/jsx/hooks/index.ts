@@ -15,7 +15,8 @@ export type EffectData = [
   readonly unknown[] | undefined, // deps
   (() => void | (() => void)) | undefined, // layout effect
   (() => void) | undefined, // cleanup
-  (() => void) | undefined // effect
+  (() => void) | undefined, // effect
+  (() => void) | undefined // insertion effect
 ]
 
 const resolvedPromiseValueMap: WeakMap<Promise<unknown>, unknown> = new WeakMap<
@@ -251,7 +252,7 @@ const useEffectCommon = (
       data[index] = undefined // clear this effect in order to avoid calling effect twice
       data[2] = effect() as (() => void) | undefined
     }
-    const data: EffectData = [deps, undefined, undefined, undefined]
+    const data: EffectData = [deps, undefined, undefined, undefined, undefined]
     data[index] = runner
     effectDepsArray[hookIndex] = data
   }
@@ -262,6 +263,10 @@ export const useLayoutEffect = (
   effect: () => void | (() => void),
   deps?: readonly unknown[]
 ): void => useEffectCommon(1, effect, deps)
+export const useInsertionEffect = (
+  effect: () => void | (() => void),
+  deps?: readonly unknown[]
+): void => useEffectCommon(4, effect, deps)
 
 export const useCallback = <T extends (...args: unknown[]) => unknown>(
   callback: T,
