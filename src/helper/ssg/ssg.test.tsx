@@ -17,6 +17,7 @@ import type {
   AfterResponseHook,
   AfterGenerateHook,
   FileSystemModule,
+  ToSSGResult,
 } from './ssg'
 
 const resolveRoutesContent = async (res: ReturnType<typeof fetchRoutesContent>) => {
@@ -625,5 +626,167 @@ describe('disableSSG/onlySSG middlewares', () => {
   it('Should return 404 response if onlySSG() is set', async () => {
     const res = await app.request('/static-page')
     expect(res.status).toBe(404)
+  })
+})
+
+describe('Request hooks - filterPathsBeforeRequestHook and denyPathsBeforeRequestHook', () => {
+  let app: Hono
+  let fsMock: FileSystemModule
+
+  const filterPathsBeforeRequestHook = (allowedPaths: string | string[]): BeforeRequestHook => {
+    const baseURL = 'http://localhost'
+    return async (req: Request): Promise<Request | false> => {
+      const paths = Array.isArray(allowedPaths) ? allowedPaths : [allowedPaths]
+      const pathname = new URL(req.url, baseURL).pathname
+
+      if (paths.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+        return req
+      }
+
+      return false
+    }
+  }
+
+  const denyPathsBeforeRequestHook = (deniedPaths: string | string[]): BeforeRequestHook => {
+    const baseURL = 'http://localhost'
+    return async (req: Request): Promise<Request | false> => {
+      const paths = Array.isArray(deniedPaths) ? deniedPaths : [deniedPaths]
+      const pathname = new URL(req.url, baseURL).pathname
+
+      if (!paths.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+        return req
+      }
+      return false
+    }
+  }
+
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/allowed-path', (c) => c.html('Allowed Path Page'))
+    app.get('/denied-path', (c) => c.html('Denied Path Page'))
+    app.get('/other-path', (c) => c.html('Other Path Page'))
+
+    fsMock = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+  })
+
+  it('should only process requests for allowed paths with filterPathsBeforeRequestHook', async () => {
+    const allowedPathsHook = filterPathsBeforeRequestHook(['/allowed-path'])
+
+    const result = await toSSG(app, fsMock, {
+      dir: './static',
+      beforeRequestHook: allowedPathsHook,
+    })
+
+    expect(result.files.some((file) => file.includes('allowed-path.html'))).toBe(true)
+    expect(result.files.some((file) => file.includes('other-path.html'))).toBe(false)
+  })
+
+  it('should deny requests for specified paths with denyPathsBeforeRequestHook', async () => {
+    const deniedPathsHook = denyPathsBeforeRequestHook(['/denied-path'])
+
+    const result = await toSSG(app, fsMock, { dir: './static', beforeRequestHook: deniedPathsHook })
+
+    expect(result.files.some((file) => file.includes('denied-path.html'))).toBe(false)
+
+    expect(result.files.some((file) => file.includes('allowed-path.html'))).toBe(true)
+    expect(result.files.some((file) => file.includes('other-path.html'))).toBe(true)
+  })
+})
+
+describe('Combined Response hooks - modify response content', () => {
+  let app: Hono
+  let fsMock: FileSystemModule
+
+  const prependContentAfterResponseHook = (prefix: string): AfterResponseHook => {
+    return async (res: Response): Promise<Response> => {
+      const originalText = await res.text()
+      return new Response(`${prefix}${originalText}`, { ...res })
+    }
+  }
+
+  const appendContentAfterResponseHook = (suffix: string): AfterResponseHook => {
+    return async (res: Response): Promise<Response> => {
+      const originalText = await res.text()
+      return new Response(`${originalText}${suffix}`, { ...res })
+    }
+  }
+
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/content-path', (c) => c.text('Original Content'))
+
+    fsMock = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+  })
+
+  it('should modify response content with combined AfterResponseHooks', async () => {
+    const prefixHook = prependContentAfterResponseHook('Prefix-')
+    const suffixHook = appendContentAfterResponseHook('-Suffix')
+
+    const combinedHook = [prefixHook, suffixHook]
+
+    await toSSG(app, fsMock, {
+      dir: './static',
+      afterResponseHook: combinedHook,
+    })
+
+    // Assert that the response content is modified by both hooks
+    // This assumes you have a way to inspect the content of saved files or you need to mock/stub the Response text method correctly.
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/content-path.txt',
+      'Prefix-Original Content-Suffix'
+    )
+  })
+})
+
+describe('Combined Generate hooks - AfterGenerateHook', () => {
+  let app: Hono
+  let fsMock: FileSystemModule
+
+  const logResultAfterGenerateHook = (): AfterGenerateHook => {
+    return async (result: ToSSGResult): Promise<void> => {
+      console.log('Generation completed with status:', result.success) // Log the generation success
+    }
+  }
+
+  const appendFilesAfterGenerateHook = (additionalFiles: string[]): AfterGenerateHook => {
+    return async (result: ToSSGResult): Promise<void> => {
+      result.files = result.files.concat(additionalFiles) // Append additional files to the result
+    }
+  }
+
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/path', (c) => c.text('Page Content'))
+
+    fsMock = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+  })
+
+  it('should execute combined AfterGenerateHooks affecting the result', async () => {
+    const logHook = logResultAfterGenerateHook()
+    const appendHook = appendFilesAfterGenerateHook(['/extra/file1.html', '/extra/file2.html'])
+
+    const combinedHook = [logHook, appendHook]
+
+    const consoleSpy = vi.spyOn(console, 'log')
+    const result = await toSSG(app, fsMock, {
+      dir: './static',
+      afterGenerateHook: combinedHook,
+    })
+
+    // Check that the log function was called correctly
+    expect(consoleSpy).toHaveBeenCalledWith('Generation completed with status:', true)
+
+    // Check that additional files were appended to the result
+    expect(result.files).toContain('/extra/file1.html')
+    expect(result.files).toContain('/extra/file2.html')
   })
 })
