@@ -1,6 +1,6 @@
 {
-  "name": "@hono/do-not-use-this",
-  "version": "0.0.6",
+  "name": "@hono/hono",
+  "version": "0.0.0",
   "compilerOptions": {
     "lib": [
       "dom",
