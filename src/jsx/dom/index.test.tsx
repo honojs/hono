@@ -1,14 +1,15 @@
+/** @jsxImportSource ../ */
 import { JSDOM } from 'jsdom'
 import type { FC, Child } from '..'
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, Fragment, createElement } from '..'
+import { createElement, jsx } from '..'
 import type { RefObject } from '../hooks'
 import {
   useState,
   useEffect,
   useLayoutEffect,
+  useInsertionEffect,
   useCallback,
   useRef,
   useMemo,
@@ -89,6 +90,7 @@ describe('DOM', () => {
     })
     global.document = dom.window.document
     global.HTMLElement = dom.window.HTMLElement
+    global.SVGElement = dom.window.SVGElement
     global.Text = dom.window.Text
     root = document.getElementById('root') as HTMLElement
   })
@@ -411,6 +413,42 @@ describe('DOM', () => {
       await Promise.resolve()
       expect(root.innerHTML).toBe('<span>hono</span><input value="1">')
       expect(textContentSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('children', () => {
+    it('element', async () => {
+      const Container = ({ children }: { children: Child }) => <div>{children}</div>
+      const App = () => (
+        <Container>
+          <span>Content</span>
+        </Container>
+      )
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><span>Content</span></div>')
+    })
+
+    it('array', async () => {
+      const Container = ({ children }: { children: Child }) => <div>{children}</div>
+      const App = () => <Container>{[<span>1</span>, <span>2</span>]}</Container>
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><span>1</span><span>2</span></div>')
+    })
+
+    it('use the same children multiple times', async () => {
+      const MultiChildren = ({ children }: { children: Child }) => (
+        <>
+          {children}
+          <div>{children}</div>
+        </>
+      )
+      const App = () => (
+        <MultiChildren>
+          <span>Content</span>
+        </MultiChildren>
+      )
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<span>Content</span><div><span>Content</span></div>')
     })
   })
 
@@ -1060,6 +1098,45 @@ describe('DOM', () => {
     )
   })
 
+  it('swap deferent type of child component', async () => {
+    const Even = () => <p>Even</p>
+    const Odd = () => <div>Odd</div>
+    const Counter = () => {
+      const [count, setCount] = useState(0)
+      return (
+        <div>
+          {count % 2 === 0 ? (
+            <>
+              <Even />
+              <Odd />
+            </>
+          ) : (
+            <>
+              <Odd />
+              <Even />
+            </>
+          )}
+          <button onClick={() => setCount(count + 1)}>+</button>
+        </div>
+      )
+    }
+    const app = <Counter />
+    render(app, root)
+    expect(root.innerHTML).toBe('<div><p>Even</p><div>Odd</div><button>+</button></div>')
+    const button = root.querySelector('button') as HTMLButtonElement
+
+    const createElementSpy = vi.spyOn(dom.window.document, 'createElement')
+
+    button.click()
+    await Promise.resolve()
+    expect(root.innerHTML).toBe('<div><div>Odd</div><p>Even</p><button>+</button></div>')
+    button.click()
+    await Promise.resolve()
+    expect(root.innerHTML).toBe('<div><p>Even</p><div>Odd</div><button>+</button></div>')
+
+    expect(createElementSpy).not.toHaveBeenCalled()
+  })
+
   it('setState for unnamed function', async () => {
     const Input = ({ label, onInput }: { label: string; onInput: (value: string) => void }) => {
       return (
@@ -1433,6 +1510,120 @@ describe('DOM', () => {
     })
   })
 
+  describe('useInsertionEffect', () => {
+    it('simple', async () => {
+      const Counter = () => {
+        const [count, setCount] = useState(0)
+        useInsertionEffect(() => {
+          setCount(count + 1)
+        }, [])
+        return <div>{count}</div>
+      }
+      const app = <Counter />
+      render(app, root)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div>1</div>')
+    })
+
+    it('multiple', async () => {
+      const Counter = () => {
+        const [count, setCount] = useState(0)
+        useInsertionEffect(() => {
+          setCount((c) => c + 1)
+        }, [])
+        useInsertionEffect(() => {
+          setCount((c) => c + 1)
+        }, [])
+        return <div>{count}</div>
+      }
+      const app = <Counter />
+      render(app, root)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div>2</div>')
+    })
+
+    it('with useLayoutEffect', async () => {
+      const Counter = () => {
+        const [data, setData] = useState<string[]>([])
+        useLayoutEffect(() => {
+          setData((d) => [...d, 'useLayoutEffect'])
+        }, [])
+        useInsertionEffect(() => {
+          setData((d) => [...d, 'useInsertionEffect'])
+        }, [])
+        return <div>{data.join(',')}</div>
+      }
+      const app = <Counter />
+      render(app, root)
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div>useInsertionEffect,useLayoutEffect</div>')
+    })
+
+    it('cleanup', async () => {
+      const Child = ({ parent }: { parent: RefObject<HTMLElement> }) => {
+        useInsertionEffect(() => {
+          return () => {
+            parent.current?.setAttribute('data-cleanup', 'true')
+          }
+        }, [])
+        return <div>Child</div>
+      }
+      const Parent = () => {
+        const [show, setShow] = useState(true)
+        const ref = useRef<HTMLElement>(null)
+        return (
+          <div ref={ref}>
+            {show && <Child parent={ref} />}
+            <button onClick={() => setShow(false)}>hide</button>
+          </div>
+        )
+      }
+      const app = <Parent />
+      render(app, root)
+      expect(root.innerHTML).toBe('<div><div>Child</div><button>hide</button></div>')
+      const [button] = root.querySelectorAll('button')
+      button.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div data-cleanup="true"><button>hide</button></div>')
+    })
+
+    it('cleanup for deps', async () => {
+      let effectCount = 0
+      let cleanupCount = 0
+
+      const App = () => {
+        const [count, setCount] = useState(0)
+        const [count2, setCount2] = useState(0)
+        useInsertionEffect(() => {
+          effectCount++
+          return () => {
+            cleanupCount++
+          }
+        }, [count])
+        return (
+          <div>
+            <p>{count}</p>
+            <p>{count2}</p>
+            <button onClick={() => setCount(count + 1)}>+</button>
+            <button onClick={() => setCount2(count2 + 1)}>+</button>
+          </div>
+        )
+      }
+      const app = <App />
+      render(app, root)
+      expect(effectCount).toBe(1)
+      expect(cleanupCount).toBe(0)
+      root.querySelectorAll('button')[0].click() // count++
+      await Promise.resolve()
+      expect(effectCount).toBe(2)
+      expect(cleanupCount).toBe(1)
+      root.querySelectorAll('button')[1].click() // count2++
+      await Promise.resolve()
+      expect(effectCount).toBe(2)
+      expect(cleanupCount).toBe(1)
+    })
+  })
+
   describe('useCallback', () => {
     it('deferent callbacks', async () => {
       const callbackSet = new Set<Function>()
@@ -1669,6 +1860,43 @@ describe('DOM', () => {
       await Promise.resolve()
       expect(document.body.innerHTML).toBe('<div id="root"><div><button>+</button></div></div>')
     })
+
+    it('update', async () => {
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <div>
+            {createPortal(<p>{count}</p>, document.body)}
+            <button onClick={() => setCount(count + 1)}>+</button>
+            <div>
+              <p>{count}</p>
+            </div>
+          </div>
+        )
+      }
+      const app = <App />
+      render(app, root)
+      expect(root.innerHTML).toBe('<div><button>+</button><div><p>0</p></div></div>')
+      expect(document.body.innerHTML).toBe(
+        '<div id="root"><div><button>+</button><div><p>0</p></div></div></div><p>0</p>'
+      )
+
+      const createElementSpy = vi.spyOn(dom.window.document, 'createElement')
+
+      document.body.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>+</button><div><p>1</p></div></div>')
+      expect(document.body.innerHTML).toBe(
+        '<div id="root"><div><button>+</button><div><p>1</p></div></div></div><p>1</p>'
+      )
+      document.body.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(document.body.innerHTML).toBe(
+        '<div id="root"><div><button>+</button><div><p>2</p></div></div></div><p>2</p>'
+      )
+
+      expect(createElementSpy).not.toHaveBeenCalled()
+    })
   })
 
   describe('SVG', () => {
@@ -1703,6 +1931,163 @@ describe('DOM', () => {
       )
       expect(document.querySelector('title')).toBeInstanceOf(dom.window.HTMLTitleElement)
       expect(document.querySelector('svg title')).toBeInstanceOf(dom.window.SVGTitleElement)
+    })
+
+    describe('attribute', () => {
+      describe('camelCase', () => {
+        test.each`
+          key
+          ${'attributeName'}
+          ${'baseFrequency'}
+          ${'calcMode'}
+          ${'clipPathUnits'}
+          ${'diffuseConstant'}
+          ${'edgeMode'}
+          ${'filterUnits'}
+          ${'gradientTransform'}
+          ${'gradientUnits'}
+          ${'kernelMatrix'}
+          ${'kernelUnitLength'}
+          ${'keyPoints'}
+          ${'keySplines'}
+          ${'keyTimes'}
+          ${'lengthAdjust'}
+          ${'limitingConeAngle'}
+          ${'markerHeight'}
+          ${'markerUnits'}
+          ${'markerWidth'}
+          ${'maskContentUnits'}
+          ${'maskUnits'}
+          ${'numOctaves'}
+          ${'pathLength'}
+          ${'patternContentUnits'}
+          ${'patternTransform'}
+          ${'patternUnits'}
+          ${'pointsAtX'}
+          ${'pointsAtY'}
+          ${'pointsAtZ'}
+          ${'preserveAlpha'}
+          ${'preserveAspectRatio'}
+          ${'primitiveUnits'}
+          ${'refX'}
+          ${'refY'}
+          ${'repeatCount'}
+          ${'repeatDur'}
+          ${'specularConstant'}
+          ${'specularExponent'}
+          ${'spreadMethod'}
+          ${'startOffset'}
+          ${'stdDeviation'}
+          ${'stitchTiles'}
+          ${'surfaceScale'}
+          ${'crossorigin'}
+          ${'systemLanguage'}
+          ${'tableValues'}
+          ${'targetX'}
+          ${'targetY'}
+          ${'textLength'}
+          ${'viewBox'}
+          ${'xChannelSelector'}
+          ${'yChannelSelector'}
+        `('$key', ({ key }) => {
+          const App = () => {
+            return (
+              <svg>
+                <g {...{ [key]: 'test' }} />
+              </svg>
+            )
+          }
+          render(<App />, root)
+          expect(root.innerHTML).toBe(`<svg><g ${key}="test"></g></svg>`)
+        })
+      })
+
+      describe('kebab-case', () => {
+        test.each`
+          key
+          ${'alignmentBaseline'}
+          ${'baselineShift'}
+          ${'clipPath'}
+          ${'clipRule'}
+          ${'colorInterpolation'}
+          ${'colorInterpolationFilters'}
+          ${'dominantBaseline'}
+          ${'fillOpacity'}
+          ${'fillRule'}
+          ${'floodColor'}
+          ${'floodOpacity'}
+          ${'fontFamily'}
+          ${'fontSize'}
+          ${'fontSizeAdjust'}
+          ${'fontStretch'}
+          ${'fontStyle'}
+          ${'fontVariant'}
+          ${'fontWeight'}
+          ${'imageRendering'}
+          ${'letterSpacing'}
+          ${'lightingColor'}
+          ${'markerEnd'}
+          ${'markerMid'}
+          ${'markerStart'}
+          ${'overlinePosition'}
+          ${'overlineThickness'}
+          ${'paintOrder'}
+          ${'pointerEvents'}
+          ${'shapeRendering'}
+          ${'stopColor'}
+          ${'stopOpacity'}
+          ${'strikethroughPosition'}
+          ${'strikethroughThickness'}
+          ${'strokeDasharray'}
+          ${'strokeDashoffset'}
+          ${'strokeLinecap'}
+          ${'strokeLinejoin'}
+          ${'strokeMiterlimit'}
+          ${'strokeOpacity'}
+          ${'strokeWidth'}
+          ${'textAnchor'}
+          ${'textDecoration'}
+          ${'textRendering'}
+          ${'transformOrigin'}
+          ${'underlinePosition'}
+          ${'underlineThickness'}
+          ${'unicodeBidi'}
+          ${'vectorEffect'}
+          ${'wordSpacing'}
+          ${'writingMode'}
+        `('$key', ({ key }) => {
+          const App = () => {
+            return (
+              <svg>
+                <g {...{ [key]: 'test' }} />
+              </svg>
+            )
+          }
+          render(<App />, root)
+          expect(root.innerHTML).toBe(
+            `<svg><g ${key.replace(/([A-Z])/g, '-$1').toLowerCase()}="test"></g></svg>`
+          )
+        })
+      })
+
+      describe('data-*', () => {
+        test.each`
+          key
+          ${'data-foo'}
+          ${'data-foo-bar'}
+          ${'data-fooBar'}
+        `('$key', ({ key }) => {
+          const App = () => {
+            return (
+              <svg>
+                <g {...{ [key]: 'test' }} />
+              </svg>
+            )
+          }
+          render(<App />, root)
+          expect(root.innerHTML).toBe(`<svg><g ${key}="test"></g></svg>`)
+        })
+      })
     })
   })
 

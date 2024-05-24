@@ -1,10 +1,9 @@
-// @denoify-ignore
+/** @jsxImportSource ./ */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from '../helper/html'
 import { Hono } from '../hono'
 import { Suspense, renderToReadableStream } from './streaming'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import DefaultExport, { jsx, memo, Fragment, createContext, useContext } from '.'
+import DefaultExport, { memo, Fragment, createContext, useContext } from '.'
 import type { Context, FC, PropsWithChildren } from '.'
 
 interface SiteData {
@@ -758,6 +757,7 @@ describe('default export', () => {
     'useViewTransition',
     'useMemo',
     'useLayoutEffect',
+    'useInsertionEffect',
     'Suspense',
   ].forEach((key) => {
     it(key, () => {

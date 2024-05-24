@@ -16,6 +16,7 @@ import {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  useInsertionEffect,
   useReducer,
   useId,
   useDebugValue,
@@ -51,6 +52,7 @@ export {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  useInsertionEffect,
   createRef,
   forwardRef,
   useImperativeHandle,
@@ -84,6 +86,7 @@ export default {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  useInsertionEffect,
   createRef,
   forwardRef,
   useImperativeHandle,
@@ -92,6 +95,4 @@ export default {
   Children,
 }
 
-// TODO: change to `export type *` after denoify bug is fixed
-// https://github.com/garronej/denoify/issues/124
-export * from './types'
+export type * from './types'

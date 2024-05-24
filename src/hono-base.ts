@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { compose } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
@@ -24,20 +25,6 @@ import type {
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
 
 export const COMPOSED_HANDLER = Symbol('composedHandler')
-
-type Methods = (typeof METHODS)[number] | typeof METHOD_NAME_ALL_LOWERCASE
-
-function defineDynamicClass(): {
-  new <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(): {
-    [M in Methods]: HandlerInterface<E, M, S, BasePath>
-  } & {
-    on: OnHandlerInterface<E, S, BasePath>
-  } & {
-    use: MiddlewareHandlerInterface<E, S, BasePath>
-  }
-} {
-  return class {} as never
-}
 
 const notFoundHandler = (c: Context) => {
   return c.text('404 Not Found', 404)
@@ -89,11 +76,18 @@ export type HonoOptions<E extends Env> = {
   getPath?: GetPath<E>
 }
 
-class Hono<
-  E extends Env = Env,
-  S extends Schema = {},
-  BasePath extends string = '/'
-> extends defineDynamicClass()<E, S, BasePath> {
+class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
+  // Theses methods are dynamically initialized in the constructor.
+  get!: HandlerInterface<E, 'get', S, BasePath>
+  post!: HandlerInterface<E, 'post', S, BasePath>
+  put!: HandlerInterface<E, 'put', S, BasePath>
+  delete!: HandlerInterface<E, 'delete', S, BasePath>
+  options!: HandlerInterface<E, 'options', S, BasePath>
+  patch!: HandlerInterface<E, 'patch', S, BasePath>
+  all!: HandlerInterface<E, 'all', S, BasePath>
+  on: OnHandlerInterface<E, S, BasePath>
+  use: MiddlewareHandlerInterface<E, S, BasePath>
+
   /*
     This class is like an abstract class and does not have a router.
     To use it, inherit the class and implement router in the constructor.
@@ -107,8 +101,6 @@ class Hono<
   routes: RouterRoute[] = []
 
   constructor(options: HonoOptions<E> = {}) {
-    super()
-
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.forEach((method) => {
@@ -123,7 +115,6 @@ class Hono<
             this.addRoute(method, this.#path, handler)
           }
         })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return this as any
       }
     })
@@ -141,12 +132,10 @@ class Hono<
           })
         }
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return this as any
     }
 
     // Implementation of app.use(...handlers[]) or app.use(path, ...handlers[])
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.use = (arg1: string | MiddlewareHandler<any>, ...handlers: MiddlewareHandler<any>[]) => {
       if (typeof arg1 === 'string') {
         this.#path = arg1
@@ -157,7 +146,6 @@ class Hono<
       handlers.forEach((handler) => {
         this.addRoute(METHOD_NAME_ALL, this.#path, handler)
       })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return this as any
     }
 
@@ -201,7 +189,6 @@ class Hono<
       } else {
         handler = async (c: Context, next: Next) =>
           (await compose<Context>([], app.errorHandler)(c, () => r.handler(c, next))).res
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ;(handler as any)[COMPOSED_HANDLER] = r.handler
       }
 
@@ -254,7 +241,6 @@ class Hono<
 
   mount(
     path: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     optionHandler?: (c: Context) => unknown
   ): Hono<E, S, BasePath> {
@@ -417,7 +403,8 @@ class Hono<
    * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/
    */
   fire = () => {
-    // @ts-expect-error `event` is not the type expected by addEventListener
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     addEventListener('fetch', (event: FetchEventLike): void => {
       event.respondWith(this.dispatch(event.request, event, undefined, event.request.method))
     })

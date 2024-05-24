@@ -1,9 +1,8 @@
+/** @jsxImportSource ../ */
 import { JSDOM } from 'jsdom'
 import { Suspense as SuspenseCommon, ErrorBoundary as ErrorBoundaryCommon } from '..' // for common
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx } from '..'
 import { use, useState } from '../hooks'
 import { Suspense as SuspenseDom, ErrorBoundary as ErrorBoundaryDom } from '.' // for dom
 import { render } from '.'

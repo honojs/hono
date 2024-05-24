@@ -1,11 +1,11 @@
-// @denoify-ignore
-import type { KVNamespace } from '@cloudflare/workers-types'
-declare const __STATIC_CONTENT: KVNamespace
+// __STATIC_CONTENT is KVNamespace
+declare const __STATIC_CONTENT: unknown
 declare const __STATIC_CONTENT_MANIFEST: string
 
 export type KVAssetOptions = {
   manifest?: object | string
-  namespace?: KVNamespace
+  // namespace is KVNamespace
+  namespace?: unknown
 }
 
 export const getContentFromKVAsset = async (
@@ -28,7 +28,8 @@ export const getContentFromKVAsset = async (
     }
   }
 
-  let ASSET_NAMESPACE: KVNamespace
+  // ASSET_NAMESPACE is KVNamespace
+  let ASSET_NAMESPACE: unknown
   if (options && options.namespace) {
     ASSET_NAMESPACE = options.namespace
   } else {
@@ -40,6 +41,7 @@ export const getContentFromKVAsset = async (
     return null
   }
 
+  // @ts-expect-error ASSET_NAMESPACE is not typed
   const content = await ASSET_NAMESPACE.get(key, { type: 'stream' })
   if (!content) {
     return null

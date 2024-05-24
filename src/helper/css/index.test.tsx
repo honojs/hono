@@ -1,8 +1,8 @@
 /* eslint-disable quotes */
+/** @jsxImportSource ../../jsx */
 import { Hono } from '../../'
 import { html } from '../../helper/html'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, Fragment, isValidElement } from '../../jsx'
+import { isValidElement } from '../../jsx'
 import type { JSXNode } from '../../jsx'
 import { Suspense, renderToReadableStream } from '../../jsx/streaming'
 import type { HtmlEscapedString } from '../../utils/html'

@@ -2,10 +2,16 @@
   "compilerOptions": {
     "jsx": "precompile",
     "jsxImportSource": "hono/jsx",
-    "lib": ["deno.ns", "dom"]
+    "lib": [
+      "deno.ns",
+      "dom"
+    ]
   },
+  "unstable": [
+    "sloppy-imports"
+  ],
   "imports": {
-    "hono/jsx/jsx-runtime": "../../deno_dist/jsx/jsx-runtime.ts",
-    "../../deno_dist/jsx/jsx-runtime": "../../deno_dist/jsx/jsx-runtime.ts"
+    "hono/jsx/jsx-runtime": "../../src/jsx/jsx-runtime.ts",
+    "../../deno_dist/jsx/jsx-runtime": "../../src/jsx/jsx-runtime.ts"
   }
 }

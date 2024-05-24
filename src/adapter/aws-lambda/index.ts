@@ -1,4 +1,3 @@
-// @denoify-ignore
 export { handle, streamHandle } from './handler'
 export type { APIGatewayProxyResult, LambdaEvent } from './handler'
 export type {

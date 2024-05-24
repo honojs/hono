@@ -1,5 +1,3 @@
-// @denoify-ignore
-
 interface ClientCert {
   clientCertPem: string
   subjectDN: string

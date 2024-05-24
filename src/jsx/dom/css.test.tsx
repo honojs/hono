@@ -1,8 +1,8 @@
+/** @jsxImportSource ../ */
 import { JSDOM } from 'jsdom'
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx } from '..'
 import type { JSXNode } from '..'
 import { Style, css, rawCssString, createCssContext } from '../../helper/css'
 import { minify } from '../../helper/css/common'
@@ -22,6 +22,7 @@ describe('Style and css for jsx/dom', () => {
     })
     global.document = dom.window.document
     global.HTMLElement = dom.window.HTMLElement
+    global.SVGElement = dom.window.SVGElement
     global.Text = dom.window.Text
     root = document.getElementById('root') as HTMLElement
   })
