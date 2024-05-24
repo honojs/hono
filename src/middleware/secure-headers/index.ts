@@ -76,18 +76,17 @@ type HeadersMap = {
 }
 
 const HEADERS_MAP: HeadersMap = {
+  contentSecurityPolicy: ['Content-Security-Policy', "frame-ancestors 'none'"],
   crossOriginEmbedderPolicy: ['Cross-Origin-Embedder-Policy', 'require-corp'],
-  crossOriginResourcePolicy: ['Cross-Origin-Resource-Policy', 'same-origin'],
   crossOriginOpenerPolicy: ['Cross-Origin-Opener-Policy', 'same-origin'],
+  crossOriginResourcePolicy: ['Cross-Origin-Resource-Policy', 'same-origin'],
   originAgentCluster: ['Origin-Agent-Cluster', '?1'],
-  referrerPolicy: ['Referrer-Policy', 'no-referrer'],
-  strictTransportSecurity: ['Strict-Transport-Security', 'max-age=15552000; includeSubDomains'],
+  referrerPolicy: ['Referrer-Policy', 'strict-origin-when-cross-origin'],
+  strictTransportSecurity: ['Strict-Transport-Security', 'max-age=31536000; includesubdomains'],
   xContentTypeOptions: ['X-Content-Type-Options', 'nosniff'],
   xDnsPrefetchControl: ['X-DNS-Prefetch-Control', 'off'],
   xDownloadOptions: ['X-Download-Options', 'noopen'],
-  xFrameOptions: ['X-Frame-Options', 'SAMEORIGIN'],
   xPermittedCrossDomainPolicies: ['X-Permitted-Cross-Domain-Policies', 'none'],
-  xXssProtection: ['X-XSS-Protection', '0'],
 }
 
 const DEFAULT_OPTIONS: SecureHeadersOptions = {
