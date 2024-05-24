@@ -32,6 +32,7 @@ function etagMatches(etag: string, ifNoneMatch: string | null) {
  *
  * @param {ETagOptions} [options] - The options for the ETag middleware.
  * @param {boolean} [options.weak=false] - Define using or not using a weak validation. If true is set, then `W/` is added to the prefix of the value.
+ * @param {string[]} [options.retainedHeaders=RETAINED_304_HEADERS] - The headers that you want to retain in the 304 Response.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
