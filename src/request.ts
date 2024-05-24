@@ -11,7 +11,7 @@ import type {
 } from './types'
 import { parseBody } from './utils/body'
 import type { BodyData, ParseBodyOptions } from './utils/body'
-import type { UnionToIntersection } from './utils/types'
+import type { Simplify, UnionToIntersection } from './utils/types'
 import { getQueryParam, getQueryParams, decodeURIComponent_ } from './utils/url'
 
 type Body = {
@@ -80,7 +80,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     key: P2
   ): string | undefined
   param(key: string): string | undefined
-  param<P2 extends string = P>(): UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>
+  param<P2 extends string = P>(): Simplify<UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>>
   param(key?: string): unknown {
     return key ? this.getDecodedParam(key) : this.getAllDecodedParams()
   }
