@@ -68,7 +68,13 @@ class ClientRequestImpl {
       if (args.form) {
         const form = new FormData()
         for (const [k, v] of Object.entries(args.form)) {
-          form.append(k, v)
+          if (Array.isArray(v)) {
+            for (const v2 of v) {
+              form.append(k, v2)
+            }
+          } else {
+            form.append(k, v)
+          }
         }
         this.rBody = form
       }
