@@ -1,6 +1,9 @@
 name: ci
 
-on: [push]
+on:
+  push:
+    tags:
+      - '*'
 
 jobs:
   deno:
