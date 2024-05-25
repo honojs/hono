@@ -15,7 +15,10 @@ import {
   useRef,
   useState,
 } from '../hooks'
-import DefaultExport, { cloneElement, cloneElement as cloneElementForDom, createElement as createElementForDom ,
+import DefaultExport, {
+  cloneElement,
+  cloneElement as cloneElementForDom,
+  createElement as createElementForDom,
   createPortal,
   flushSync,
   isValidElement,

@@ -6,8 +6,8 @@ import {
   UnsupportedPathError,
 } from '../../router'
 import { checkOptionalParameter } from '../../utils/url'
-import { PATH_ERROR  } from './node'
-import type {ParamAssocArray} from './node'
+import { PATH_ERROR } from './node'
+import type { ParamAssocArray } from './node'
 import { Trie } from './trie'
 
 type HandlerData<T> = [T, ParamIndexMap][]

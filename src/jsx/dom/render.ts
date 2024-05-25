@@ -1,4 +1,4 @@
-import type { Child , FC, JSXNode, Props } from '../base'
+import type { Child, FC, JSXNode, Props } from '../base'
 import { toArray } from '../children'
 import { DOM_ERROR_HANDLER, DOM_INTERNAL_TAG, DOM_RENDERER, DOM_STASH } from '../constants'
 import type { Context as JSXContext } from '../context'

@@ -2,7 +2,7 @@
 import type { Context, PropsForRenderer } from '../../context'
 import { html, raw } from '../../helper/html'
 import { Fragment, createContext, jsx, useContext } from '../../jsx'
-import type { FC, Context as JSXContext, JSXNode , PropsWithChildren } from '../../jsx'
+import type { FC, Context as JSXContext, JSXNode, PropsWithChildren } from '../../jsx'
 import { renderToReadableStream } from '../../jsx/streaming'
 import type { Env, Input, MiddlewareHandler } from '../../types'
 import type { HtmlEscapedString } from '../../utils/html'
