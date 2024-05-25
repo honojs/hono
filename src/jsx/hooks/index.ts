@@ -1,7 +1,7 @@
 import type { JSX } from '../base'
 import { DOM_STASH } from '../constants'
-import { buildDataStack, update, build } from '../dom/render'
-import type { Node, NodeObject, Context, PendingType, UpdateHook } from '../dom/render'
+import { build, buildDataStack, update } from '../dom/render'
+import type { Context, Node, NodeObject, PendingType, UpdateHook } from '../dom/render'
 
 type UpdateStateFunction<T> = (newState: T | ((currentState: T) => T)) => void
 

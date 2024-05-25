@@ -1,4 +1,4 @@
-import type { Result, Router, Params } from '../../router'
+import type { Params, Result, Router } from '../../router'
 import { METHOD_NAME_ALL, UnsupportedPathError } from '../../router'
 
 type Route<T> = [RegExp, string, T] // [pattern, method, handler, path]

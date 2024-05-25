@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { etag, RETAINED_304_HEADERS } from '.'
+import { RETAINED_304_HEADERS, etag } from '.'
 
 describe('Etag Middleware', () => {
   it('Should return etag header', async () => {

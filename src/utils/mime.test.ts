@@ -1,4 +1,4 @@
-import { getMimeType, getExtension } from './mime'
+import { getExtension, getMimeType } from './mime'
 
 const mime = {
   m3u8: 'application/vnd.apple.mpegurl',

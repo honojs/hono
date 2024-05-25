@@ -4,7 +4,7 @@ import { JSDOM } from 'jsdom'
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { JSXNode } from '..'
-import { Style, css, rawCssString, createCssContext } from '../../helper/css'
+import { Style, createCssContext, css, rawCssString } from '../../helper/css'
 import { minify } from '../../helper/css/common'
 import { renderTest } from '../../helper/css/common.case.test'
 import { render } from '.'

@@ -1,4 +1,4 @@
-import type { Router, Result, Params } from '../../router'
+import type { Params, Result, Router } from '../../router'
 import { METHOD_NAME_ALL, UnsupportedPathError } from '../../router'
 import { checkOptionalParameter } from '../../utils/url'
 

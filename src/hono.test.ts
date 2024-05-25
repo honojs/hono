@@ -11,7 +11,7 @@ import { RegExpRouter } from './router/reg-exp-router'
 import { SmartRouter } from './router/smart-router'
 import { TrieRouter } from './router/trie-router'
 import type { Handler, MiddlewareHandler, Next } from './types'
-import type { Expect, Equal } from './utils/types'
+import type { Equal, Expect } from './utils/types'
 import { getPath } from './utils/url'
 
 // https://stackoverflow.com/a/65666402

@@ -1,5 +1,5 @@
-import { escapeToBuffer, stringBufferToString, raw } from '../../utils/html'
-import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../../utils/html'
+import { escapeToBuffer, raw, stringBufferToString } from '../../utils/html'
+import type { HtmlEscaped, HtmlEscapedString, StringBuffer } from '../../utils/html'
 
 export { raw }
 

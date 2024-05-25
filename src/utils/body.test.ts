@@ -1,4 +1,5 @@
-import { parseBody, type BodyData } from './body'
+import { parseBody } from './body'
+import type { BodyData } from './body'
 
 type RecursiveRecord<K extends string, T> = {
   [key in K]: T | RecursiveRecord<K, T>

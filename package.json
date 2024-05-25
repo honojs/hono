@@ -561,7 +561,7 @@
     "nodejs"
   ],
   "devDependencies": {
-    "@hono/eslint-config": "^0.0.4",
+    "@hono/eslint-config": "^0.0.6",
     "@hono/node-server": "^1.8.2",
     "@types/crypto-js": "^4.1.1",
     "@types/glob": "^8.0.0",

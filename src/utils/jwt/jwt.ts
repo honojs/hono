@@ -1,14 +1,17 @@
-import { encodeBase64Url, decodeBase64Url } from '../../utils/encode'
-import { AlgorithmTypes, type SignatureAlgorithm } from './jwa'
-import { signing, verifying, type SignatureKey } from './jws'
-import { JwtHeaderInvalid, type JWTPayload } from './types'
+import { decodeBase64Url, encodeBase64Url } from '../../utils/encode'
+import { AlgorithmTypes } from './jwa'
+import type { SignatureAlgorithm } from './jwa'
+import { signing, verifying } from './jws'
+import type { SignatureKey } from './jws'
 import {
-  JwtTokenInvalid,
-  JwtTokenNotBefore,
+  JwtHeaderInvalid,
   JwtTokenExpired,
-  JwtTokenSignatureMismatched,
+  JwtTokenInvalid,
   JwtTokenIssuedAt,
+  JwtTokenNotBefore,
+  JwtTokenSignatureMismatched,
 } from './types'
+import type { JWTPayload } from './types'
 import { utf8Decoder, utf8Encoder } from './utf8'
 
 const encodeJwtPart = (part: unknown): string =>
