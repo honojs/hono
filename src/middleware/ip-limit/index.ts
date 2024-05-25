@@ -103,7 +103,10 @@ export interface IPLimitRules {
  *
  * @param getConnInfo getConnInfo helper
  */
-export const ipLimit = (getConnInfo: GetConnInfo, { deny = [], allow = [] }: IPLimitRules): MiddlewareHandler => {
+export const ipLimit = (
+  getConnInfo: GetConnInfo,
+  { deny = [], allow = [] }: IPLimitRules
+): MiddlewareHandler => {
   const denyLength = deny.length
   const allowLength = allow.length
 
