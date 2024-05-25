@@ -8,8 +8,9 @@ import type { AddressType } from '../helper/conninfo'
 /**
  * Expand IPv6 Address
  * @param ipV6 Shorten IPv6 Address
+ * @return expanded IPv6 Address
  */
-export const expandIPv6 = (ipV6: string) => {
+export const expandIPv6 = (ipV6: string): string => {
   const sections = ipV6.split(':')
   for (let i = 0; i < sections.length; i++) {
     const node = sections[i]

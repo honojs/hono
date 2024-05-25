@@ -3,6 +3,7 @@
  * @module
  */
 
+import type { MiddlewareHandler } from '../..'
 import type { AddressType, GetConnInfo } from '../../helper/conninfo'
 import { createMiddleware } from '../../helper/factory'
 import { HTTPException } from '../../http-exception'
@@ -102,7 +103,7 @@ export interface IPLimitRules {
  *
  * @param getConnInfo getConnInfo helper
  */
-export const ipLimit = (getConnInfo: GetConnInfo, { deny = [], allow = [] }: IPLimitRules) => {
+export const ipLimit = (getConnInfo: GetConnInfo, { deny = [], allow = [] }: IPLimitRules): MiddlewareHandler => {
   const denyLength = deny.length
   const allowLength = allow.length
 
