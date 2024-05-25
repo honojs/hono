@@ -5,22 +5,22 @@ import type { ExecutionContext } from './context'
 import { HTTPException } from './http-exception'
 import { HonoRequest } from './request'
 import type { Router } from './router'
-import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router'
+import { METHODS, METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import type {
   Env,
   ErrorHandler,
+  FetchEventLike,
   H,
   HandlerInterface,
+  MergePath,
+  MergeSchemaPath,
   MiddlewareHandler,
   MiddlewareHandlerInterface,
   Next,
   NotFoundHandler,
   OnHandlerInterface,
-  MergePath,
-  MergeSchemaPath,
-  FetchEventLike,
-  Schema,
   RouterRoute,
+  Schema,
 } from './types'
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
 

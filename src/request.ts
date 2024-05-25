@@ -3,16 +3,16 @@ import type { Result } from './router'
 import type {
   Input,
   InputToDataByTarget,
-  ParamKeys,
   ParamKeyToRecord,
+  ParamKeys,
   RemoveQuestion,
-  ValidationTargets,
   RouterRoute,
+  ValidationTargets,
 } from './types'
 import { parseBody } from './utils/body'
 import type { BodyData, ParseBodyOptions } from './utils/body'
 import type { Simplify, UnionToIntersection } from './utils/types'
-import { getQueryParam, getQueryParams, decodeURIComponent_ } from './utils/url'
+import { decodeURIComponent_, getQueryParam, getQueryParams } from './utils/url'
 
 type Body = {
   json: any

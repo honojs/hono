@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import type { Router, Result } from '../../router'
-import { UnsupportedPathError, MESSAGE_MATCHER_IS_ALREADY_BUILT } from '../../router'
+import type { Result, Router } from '../../router'
+import { MESSAGE_MATCHER_IS_ALREADY_BUILT, UnsupportedPathError } from '../../router'
 
 export class SmartRouter<T> implements Router<T> {
   name: string = 'SmartRouter'

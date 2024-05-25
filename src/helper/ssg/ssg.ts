@@ -4,8 +4,8 @@ import type { Env, Schema } from '../../types'
 import { createPool } from '../../utils/concurrent'
 import { getExtension } from '../../utils/mime'
 import type { AddedSSGDataRequest, SSGParams } from './middleware'
-import { X_HONO_DISABLE_SSG_HEADER_KEY, SSG_CONTEXT } from './middleware'
-import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils'
+import { SSG_CONTEXT, X_HONO_DISABLE_SSG_HEADER_KEY } from './middleware'
+import { dirname, filterStaticGenerateRoutes, joinPaths } from './utils'
 
 const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
 

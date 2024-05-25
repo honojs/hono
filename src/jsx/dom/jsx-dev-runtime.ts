@@ -1,4 +1,4 @@
-import type { Props, JSXNode } from '../base'
+import type { JSXNode, Props } from '../base'
 import { normalizeIntrinsicElementProps } from '../utils'
 import { newJSXNode } from './utils'
 
