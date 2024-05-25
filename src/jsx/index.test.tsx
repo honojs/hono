@@ -3,7 +3,7 @@
 import { html } from '../helper/html'
 import { Hono } from '../hono'
 import { Suspense, renderToReadableStream } from './streaming'
-import DefaultExport, { memo, Fragment, createContext, useContext } from '.'
+import DefaultExport, { Fragment, createContext, memo, useContext } from '.'
 import type { Context, FC, PropsWithChildren } from '.'
 
 interface SiteData {

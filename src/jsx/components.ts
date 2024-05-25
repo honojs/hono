@@ -1,10 +1,10 @@
 import { raw } from '../helper/html'
-import type { HtmlEscapedString, HtmlEscapedCallback } from '../utils/html'
+import type { HtmlEscapedCallback, HtmlEscapedString } from '../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import { DOM_RENDERER } from './constants'
 import { ErrorBoundary as ErrorBoundaryDomRenderer } from './dom/components'
 import type { HasRenderToDom } from './dom/render'
-import type { FC, PropsWithChildren, Child } from './'
+import type { Child, FC, PropsWithChildren } from './'
 
 let errorBoundaryCounter = 0
 

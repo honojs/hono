@@ -1,4 +1,4 @@
-import type { Props, JSXNode } from '../base'
+import type { JSXNode, Props } from '../base'
 import { DOM_INTERNAL_TAG } from '../constants'
 
 export const setInternalTagFlag = (fn: Function): Function => {

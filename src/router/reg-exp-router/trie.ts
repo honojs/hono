@@ -1,4 +1,4 @@
-import type { ParamAssocArray, Context } from './node'
+import type { Context, ParamAssocArray } from './node'
 import { Node } from './node'
 
 export type ReplacementMap = number[]

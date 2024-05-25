@@ -1,6 +1,6 @@
 import { Context } from './context'
 import type { ParamIndexMap, Params } from './router'
-import type { Env, NotFoundHandler, ErrorHandler } from './types'
+import type { Env, ErrorHandler, NotFoundHandler } from './types'
 
 interface ComposeContext {
   finalized: boolean

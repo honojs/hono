@@ -1,5 +1,5 @@
 import { SHA256 as sha256CryptoJS } from 'crypto-js'
-import { timingSafeEqual, bufferToString, bufferToFormData } from './buffer'
+import { bufferToFormData, bufferToString, timingSafeEqual } from './buffer'
 
 describe('buffer', () => {
   it('positive', async () => {

@@ -1,2 +1,2 @@
-import { sign, verify, decode } from './jwt'
+import { decode, sign, verify } from './jwt'
 export const Jwt = { sign, verify, decode }

@@ -1,7 +1,7 @@
 import type { Context } from '../context'
 import { getCookie } from '../helper/cookie'
 import { HTTPException } from '../http-exception'
-import type { Env, ValidationTargets, MiddlewareHandler, TypedResponse } from '../types'
+import type { Env, MiddlewareHandler, TypedResponse, ValidationTargets } from '../types'
 import type { BodyData } from '../utils/body'
 import { bufferToFormData } from '../utils/buffer'
 

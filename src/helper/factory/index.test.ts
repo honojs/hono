@@ -5,7 +5,7 @@ import { Hono } from '../../index'
 import type { ToSchema, TypedResponse } from '../../types'
 import type { StatusCode } from '../../utils/http-status'
 import { validator } from '../../validator'
-import { createMiddleware, createFactory } from './index'
+import { createFactory, createMiddleware } from './index'
 
 describe('createMiddleware', () => {
   type Env = { Variables: { foo: string } }

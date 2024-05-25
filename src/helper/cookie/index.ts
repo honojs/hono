@@ -1,6 +1,6 @@
 import type { Context } from '../../context'
 import { parse, parseSigned, serialize, serializeSigned } from '../../utils/cookie'
-import type { CookieOptions, Cookie, SignedCookie, CookiePrefixOptions } from '../../utils/cookie'
+import type { Cookie, CookieOptions, CookiePrefixOptions, SignedCookie } from '../../utils/cookie'
 
 interface GetCookie {
   (c: Context, key: string): string | undefined

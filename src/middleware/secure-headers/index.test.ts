@@ -1,7 +1,7 @@
 /* eslint-disable quotes */
 import { Hono } from '../../hono'
 import { poweredBy } from '../powered-by'
-import { secureHeaders, NONCE } from '.'
+import { NONCE, secureHeaders } from '.'
 import type { ContentSecurityPolicyOptionHandler } from '.'
 
 declare module '../..' {

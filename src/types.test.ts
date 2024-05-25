@@ -14,15 +14,15 @@ import type {
   MergePath,
   MergeSchemaPath,
   MiddlewareHandler,
-  ParamKeys,
   ParamKeyToRecord,
+  ParamKeys,
   RemoveQuestion,
   ResponseFormat,
   ToSchema,
   TypedResponse,
 } from './types'
 import type { StatusCode } from './utils/http-status'
-import type { Expect, Equal } from './utils/types'
+import type { Equal, Expect } from './utils/types'
 import { validator } from './validator'
 
 describe('Env', () => {
