@@ -357,3 +357,5 @@ export const cloneElement = <T extends JSXNode | JSX.Element>(
     ...(children as (string | number | HtmlEscapedString)[])
   ) as T
 }
+
+export const reactAPICompatVersion = '18.0.0-hono-jsx'
