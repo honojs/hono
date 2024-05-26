@@ -141,7 +141,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     }
 
     // Implementation of app.use(...handlers[]) or app.use(path, ...handlers[])
-    this.use = (arg1: string | MiddlewareHandler<any>, ...handlers: MiddlewareHandler<any>[]) => {
+    this.use = (arg1: string | MiddlewareHandler<E>, ...handlers: MiddlewareHandler<E>[]) => {
       if (typeof arg1 === 'string') {
         this.#path = arg1
       } else {
