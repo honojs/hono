@@ -24,6 +24,7 @@ import DefaultExport, {
   isValidElement,
   memo,
   render,
+  version,
 } from '.'
 
 describe('Common', () => {
@@ -2123,8 +2124,15 @@ describe('jsx', () => {
   })
 })
 
+describe('version', () => {
+  it('should be defined with semantic versioning format', () => {
+    expect(version).toMatch(/^\d+\.\d+\.\d+-hono-jsx$/)
+  })
+})
+
 describe('default export', () => {
   ;[
+    'version',
     'memo',
     'Fragment',
     'isValidElement',

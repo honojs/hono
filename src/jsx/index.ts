@@ -1,4 +1,4 @@
-import { Fragment, cloneElement, isValidElement, jsx, memo } from './base'
+import { Fragment, cloneElement, isValidElement, jsx, memo, reactAPICompatVersion } from './base'
 import type { DOMAttributes } from './base'
 import { Children } from './children'
 import { ErrorBoundary } from './components'
@@ -28,6 +28,7 @@ import {
 import { Suspense } from './streaming'
 
 export {
+  reactAPICompatVersion as version,
   jsx,
   memo,
   Fragment,
@@ -63,6 +64,7 @@ export {
 }
 
 export default {
+  version: reactAPICompatVersion,
   memo,
   Fragment,
   isValidElement,
