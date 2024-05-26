@@ -1,3 +1,8 @@
+/**
+ * @module
+ * JSR Renderer Middleware for Hono.
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Context, PropsForRenderer } from '../../context'
 import { html, raw } from '../../helper/html'
@@ -67,7 +72,7 @@ const createRenderer =
   }
 
 /**
- * JSX renderer middleware for hono.
+ * JSX Renderer Middleware for hono.
  *
  * @see {@link{https://hono.dev/middleware/builtin/jsx-renderer}}
  *

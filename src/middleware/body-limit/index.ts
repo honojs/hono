@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Body Limit Middleware for Hono.
+ */
+
 import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
@@ -18,7 +23,7 @@ class BodyLimitError extends Error {
 }
 
 /**
- * Body limit middleware for Hono.
+ * Body Limit Middleware for Hono.
  *
  * @see {@link https://hono.dev/middleware/builtin/body-limit}
  *

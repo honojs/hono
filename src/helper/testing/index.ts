@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Testing Helper for Hono.
+ */
+
 import { hc } from '../../client'
 import type { Client } from '../../client/types'
 import type { ExecutionContext } from '../../context'

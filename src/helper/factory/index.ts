@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Factory Helper for Hono.
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from '../../hono'
 import type { Env, H, HandlerResponse, Input, MiddlewareHandler } from '../../types'

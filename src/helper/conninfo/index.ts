@@ -1,3 +1,8 @@
+/**
+ * @module
+ * ConnInfo Helper for Hono.
+ */
+
 import type { Context } from '../../context'
 
 export type AddressType = 'IPv6' | 'IPv4' | 'unknown'
