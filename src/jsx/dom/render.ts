@@ -487,7 +487,7 @@ export const build = (
   }
 }
 
-const buildNode = (node: Child): Node | undefined => {
+export const buildNode = (node: Child): Node | undefined => {
   if (node === undefined || node === null || typeof node === 'boolean') {
     return undefined
   } else if (typeof node === 'string' || typeof node === 'number') {
@@ -590,9 +590,7 @@ export const update = async (
   return promise
 }
 
-export const render = (jsxNode: unknown, container: Container) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const node = buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject
+export const renderNode = (node: NodeObject, container: Container) => {
   const context: Context = []
   ;(context as Context)[4] = true // start top level render
   build(context, node, undefined)
@@ -602,6 +600,11 @@ export const render = (jsxNode: unknown, container: Container) => {
   apply(node, fragment)
   replaceContainer(node, fragment, container)
   container.replaceChildren(fragment)
+}
+
+export const render = (jsxNode: unknown, container: Container) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  renderNode(buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject, container)
 }
 
 export const flushSync = (callback: () => void) => {

@@ -168,6 +168,11 @@
       "import": "./dist/jsx/dom/jsx-runtime.js",
       "require": "./dist/cjs/jsx/dom/jsx-runtime.js"
     },
+    "./jsx/dom/client": {
+      "types": "./dist/types/jsx/dom/client.d.ts",
+      "import": "./dist/jsx/dom/client.js",
+      "require": "./dist/cjs/jsx/dom/client.js"
+    },
     "./jsx/dom/css": {
       "types": "./dist/types/jsx/dom/css.d.ts",
       "import": "./dist/jsx/dom/css.js",
@@ -422,6 +427,9 @@
       ],
       "jsx/dom": [
         "./dist/types/jsx/dom"
+      ],
+      "jsx/dom/client": [
+        "./dist/types/jsx/dom/client.d.ts"
       ],
       "jsx/dom/css": [
         "./dist/types/jsx/dom/css.d.ts"
