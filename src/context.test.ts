@@ -53,13 +53,13 @@ describe('Context', () => {
   })
 
   it('c.redirect() - URL', async () => {
-    let res = c.redirect(new URL("https://hono.dev/"))
+    let res = c.redirect(new URL('https://hono.dev/'))
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe('https://hono.dev/')
   })
 
   it('c.redirect() - Punycode', async () => {
-    let res = c.redirect(new URL("https://🔥.hono.dev"))
+    let res = c.redirect(new URL('https://🔥.hono.dev'))
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe('https://xn--4v8h.hono.dev/')
   })
