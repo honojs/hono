@@ -1,3 +1,8 @@
+/**
+ * @module
+ * This module enables JSX to supports streaming Response.
+ */
+
 import { raw } from '../helper/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'

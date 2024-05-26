@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Crypto utility.
+ */
+
 type Algorithm = {
   name: string
   alias: string

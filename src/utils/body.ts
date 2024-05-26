@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Body utility.
+ */
+
 import { HonoRequest } from '../request'
 
 type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot } & {}

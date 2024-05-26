@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Buffer utility.
+ */
+
 import { sha256 } from './crypto'
 
 export const equal = (a: ArrayBuffer, b: ArrayBuffer): boolean => {

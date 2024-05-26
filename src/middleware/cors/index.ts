@@ -1,3 +1,8 @@
+/**
+ * @module
+ * CORS Middleware for Hono.
+ */
+
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
@@ -11,7 +16,7 @@ type CORSOptions = {
 }
 
 /**
- * CORS middleware for Hono.
+ * CORS Middleware for Hono.
  *
  * @see {@link https://hono.dev/middleware/builtin/cors}
  *

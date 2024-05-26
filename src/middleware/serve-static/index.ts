@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Serve Static Middleware for Hono.
+ */
+
 import type { Context, Data } from '../../context'
 import type { Env, MiddlewareHandler } from '../../types'
 import { getFilePath, getFilePathWithoutDefaultDocument } from '../../utils/filepath'

@@ -1,3 +1,8 @@
+/**
+ * @module
+ * SSG Helper for Hono.
+ */
+
 export * from './ssg'
 export {
   X_HONO_DISABLE_SSG_HEADER_KEY,
