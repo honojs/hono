@@ -17,8 +17,8 @@ const normalizePath = (path: string): string => {
   return path.replace(/(\\)/g, '/').replace(/\/$/g, '')
 }
 
-const handleDotDot = (resultPaths: string[]): void => {
-  if (resultPaths.length === 0) {
+const handleParent = (resultPaths: string[], beforeParentFlag: boolean): void => {
+  if (resultPaths.length === 0 || beforeParentFlag) {
     resultPaths.push('..')
   } else {
     resultPaths.pop()
@@ -33,13 +33,16 @@ const handleNonDot = (path: string, resultPaths: string[]): void => {
 }
 
 const handleSegments = (paths: string[], resultPaths: string[]): void => {
+  let beforeParentFlag = false;
   for (const path of paths) {
-    // Handle `..` or `../`
+    // Handle `..`
     if (path === '..') {
-      handleDotDot(resultPaths)
+      handleParent(resultPaths, beforeParentFlag)
+      beforeParentFlag = true;
     } else {
-      // Handle `.` or `./`
+      // Handle `.` or `abc`
       handleNonDot(path, resultPaths)
+      beforeParentFlag = false;
     }
   }
 }
