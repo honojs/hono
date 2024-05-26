@@ -602,7 +602,7 @@ export const renderNode = (node: NodeObject, container: Container) => {
   container.replaceChildren(fragment)
 }
 
-export const render = (jsxNode: unknown, container: Container) => {
+export const render = (jsxNode: Child, container: Container) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   renderNode(buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject, container)
 }

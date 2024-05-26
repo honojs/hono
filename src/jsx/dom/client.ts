@@ -3,11 +3,17 @@
  * This module provides APIs for `hono/jsx/dom/client`, which is compatible with `react-dom/client`.
  */
 
+import type { Child } from '../base'
 import { useState } from '../hooks'
 import { buildNode, renderNode } from './render'
 import type { NodeObject } from './render'
 
-type CreateRootOptions = Record<string, unknown>
+export interface Root {
+  render(children: Child): void
+  unmount(): void
+}
+export type RootOptions = Record<string, unknown>
+
 /**
  * Create a root object for rendering
  * @param element Render target
@@ -16,8 +22,8 @@ type CreateRootOptions = Record<string, unknown>
  */
 export const createRoot = (
   element: HTMLElement | DocumentFragment,
-  options: CreateRootOptions = {}
-) => {
+  options: RootOptions = {}
+): Root => {
   let setJsxNode:
     | undefined // initial state
     | ((jsxNode: unknown) => void) // rendered
@@ -69,9 +75,9 @@ export const createRoot = (
  */
 export const hydrateRoot = (
   element: HTMLElement | DocumentFragment,
-  reactNode: unknown,
-  options: CreateRootOptions = {}
-) => {
+  reactNode: Child,
+  options: RootOptions = {}
+): Root => {
   const root = createRoot(element, options)
   root.render(reactNode)
   return root
