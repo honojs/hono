@@ -1,3 +1,4 @@
+import { cache } from './middleware/cache'
 import type { HonoRequest } from './request'
 import type { Env, FetchEventLike, Input, NotFoundHandler, TypedResponse } from './types'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
@@ -549,12 +550,20 @@ export class Context<
    *   return c.redirect('/')
    * })
    * app.get('/redirect-permanently', (c) => {
-   *   return c.redirect('/', 301)
+   *   return c.redirect("https://hono.dev", 301)
    * })
    * ```
    * @see https://hono.dev/api/context#redirect
    */
-  redirect = (location: string, status: RedirectStatusCode = 302): Response => {
+  redirect = (location: string | URL, status: RedirectStatusCode = 302): Response => {
+    if (location instanceof URL) {
+      location = location.href
+    } else {
+      try {
+        const cachedURL = new URL(location)
+        location = cachedURL.href
+      } catch (_e) {}
+    }
     this.#headers ??= new Headers()
     this.#headers.set('Location', location)
     return this.newResponse(null, status)
