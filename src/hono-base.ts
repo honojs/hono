@@ -183,9 +183,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
     const subApp = this.basePath(path)
 
-    if (!app) {
-      return subApp
-    }
+    if (!app) return subApp
 
     app.routes.map((r) => {
       let handler
@@ -269,9 +267,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         ...optionsArray
       )
 
-      if (res) {
-        return res
-      }
+      if (res) return res
 
       await next()
     }
@@ -305,10 +301,8 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     method: string
   ): Response | Promise<Response> {
     // Handle HEAD method
-    if (method === 'HEAD') {
-      return (async () =>
+    if (method === 'HEAD') return (async () =>
         new Response(null, await this.dispatch(request, executionCtx, env, 'GET')))()
-    }
 
     const path = this.getPath(request, { env })
     const matchResult = this.matchRoute(method, path)
@@ -345,11 +339,9 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     return (async () => {
       try {
         const context = await composed(c)
-        if (!context.finalized) {
-          throw new Error(
+        if (!context.finalized) throw new Error(
             'Context is not finalized. You may forget returning Response object or `await next()`'
           )
-        }
 
         return context.res
       } catch (err) {
