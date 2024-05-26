@@ -33,16 +33,16 @@ const handleNonDot = (path: string, resultPaths: string[]): void => {
 }
 
 const handleSegments = (paths: string[], resultPaths: string[]): void => {
-  let beforeParentFlag = false;
+  let beforeParentFlag = false
   for (const path of paths) {
     // Handle `..`
     if (path === '..') {
       handleParent(resultPaths, beforeParentFlag)
-      beforeParentFlag = true;
+      beforeParentFlag = true
     } else {
       // Handle `.` or `abc`
       handleNonDot(path, resultPaths)
-      beforeParentFlag = false;
+      beforeParentFlag = false
     }
   }
 }
