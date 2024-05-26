@@ -1,3 +1,8 @@
+/**
+ * @module
+ * This module provides APIs for `hono/jsx/dom/client`, which is compatible with `react-dom/client`.
+ */
+
 import { useState } from '../hooks'
 import { buildNode, renderNode } from './render'
 import type { NodeObject } from './render'
