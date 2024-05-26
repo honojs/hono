@@ -1,3 +1,8 @@
+/**
+ * @module
+ * This module provides APIs for `hono/jsx/dom`.
+ */
+
 import { isValidElement, memo, reactAPICompatVersion } from '../base'
 import type { Child, DOMAttributes, JSX, JSXNode, Props } from '../base'
 import { Children } from '../children'

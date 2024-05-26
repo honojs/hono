@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Basic Auth Middleware for Hono.
+ */
+
 import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import type { HonoRequest } from '../../request'
@@ -41,7 +46,7 @@ type BasicAuthOptions =
     }
 
 /**
- * Basic authentication middleware for Hono.
+ * Basic Auth Middleware for Hono.
  *
  * @see {@link https://hono.dev/middleware/builtin/basic-auth}
  *

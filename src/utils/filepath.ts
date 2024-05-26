@@ -1,3 +1,8 @@
+/**
+ * @module
+ * FilePath utility.
+ */
+
 type FilePathOptions = {
   filename: string
   root?: string

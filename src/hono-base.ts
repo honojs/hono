@@ -1,3 +1,8 @@
+/**
+ * @module
+ * This module is the base module for the Hono object.
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { compose } from './compose'
 import { Context } from './context'

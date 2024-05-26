@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Pretty JSON Middleware for Hono.
+ */
+
 import type { MiddlewareHandler } from '../../types'
 
 type prettyOptions = {
@@ -5,7 +10,7 @@ type prettyOptions = {
 }
 
 /**
- * Pretty JSON middleware for Hono.
+ * Pretty JSON Middleware for Hono.
  *
  * @see {@link https://hono.dev/middleware/builtin/pretty-json}
  *

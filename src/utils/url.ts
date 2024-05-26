@@ -1,3 +1,8 @@
+/**
+ * @module
+ * URL utility.
+ */
+
 export type Pattern = readonly [string, string, RegExp | true] | '*'
 
 export const splitPath = (path: string): string[] => {

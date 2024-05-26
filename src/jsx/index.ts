@@ -1,3 +1,8 @@
+/**
+ * @module
+ * JSX for Hono.
+ */
+
 import { Fragment, cloneElement, isValidElement, jsx, memo, reactAPICompatVersion } from './base'
 import type { DOMAttributes } from './base'
 import { Children } from './children'

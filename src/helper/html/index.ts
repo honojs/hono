@@ -1,3 +1,8 @@
+/**
+ * @module
+ * html Helper for Hono.
+ */
+
 import { escapeToBuffer, raw, stringBufferToString } from '../../utils/html'
 import type { HtmlEscaped, HtmlEscapedString, StringBuffer } from '../../utils/html'
 
