@@ -301,7 +301,8 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     method: string
   ): Response | Promise<Response> {
     // Handle HEAD method
-    if (method === 'HEAD') return (async () =>
+    if (method === 'HEAD')
+      return (async () =>
         new Response(null, await this.dispatch(request, executionCtx, env, 'GET')))()
 
     const path = this.getPath(request, { env })
@@ -339,7 +340,8 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     return (async () => {
       try {
         const context = await composed(c)
-        if (!context.finalized) throw new Error(
+        if (!context.finalized)
+          throw new Error(
             'Context is not finalized. You may forget returning Response object or `await next()`'
           )
 

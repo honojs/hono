@@ -457,7 +457,7 @@
     magic-string "^0.30.0"
     regexpu-core "^5.3.2"
 
-"@hono/eslint-config@latest":
+"@hono/eslint-config@^0.0.6":
   version "0.0.6"
   resolved "https://registry.npmjs.org/@hono/eslint-config/-/eslint-config-0.0.6.tgz"
   integrity sha512-svFH026Vp5UHREJZzG6wx0SVHpX3O6yxeHjSYLXB4tXEzDEM2zK17tZ1XRFZRtx9NQH2yUGBEciwxdbx0LF7Jg==
