@@ -1,3 +1,8 @@
+/**
+ * @module
+ * This module provides APIs that enable `hono/jsx/dom` to support.
+ */
+
 import type { FC, PropsWithChildren } from '../'
 import type { CssClassName, CssVariableType } from '../../helper/css/common'
 import {

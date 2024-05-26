@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Bearer Auth Middleware for Hono.
+ */
+
 import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
@@ -24,7 +29,7 @@ type BearerAuthOptions =
     }
 
 /**
- * Bearer authentication middleware for Hono.
+ * Bearer Auth Middleware for Hono.
  *
  * @see {@link https://hono.dev/middleware/builtin/bearer-auth}
  *

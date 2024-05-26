@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Cookie Helper for Hono.
+ */
+
 import type { Context } from '../../context'
 import { parse, parseSigned, serialize, serializeSigned } from '../../utils/cookie'
 import type { Cookie, CookieOptions, CookiePrefixOptions, SignedCookie } from '../../utils/cookie'

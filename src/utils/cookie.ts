@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Cookie utility.
+ */
+
 import { decodeURIComponent_ } from './url'
 
 export type Cookie = Record<string, string>

@@ -1,7 +1,12 @@
+/**
+ * @module
+ * Trailing Slash Middleware for Hono.
+ */
+
 import type { MiddlewareHandler } from '../../types'
 
 /**
- * Trailing slash middleware for Hono.
+ * Trailing Slash Middleware for Hono.
  *
  * @see {@link https://hono.dev/middleware/builtin/trailing-slash}
  *

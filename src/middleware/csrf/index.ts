@@ -1,3 +1,8 @@
+/**
+ * @module
+ * CSRF Protection Middleware for Hono.
+ */
+
 import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
@@ -12,7 +17,7 @@ const isRequestedByFormElementRe =
   /^\b(application\/x-www-form-urlencoded|multipart\/form-data|text\/plain)\b/
 
 /**
- * CSRF protection middleware for Hono.
+ * CSRF Protection Middleware for Hono.
  *
  * @see {@link https://hono.dev/middleware/builtin/csrf}
  *

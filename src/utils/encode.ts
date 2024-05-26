@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Encode utility.
+ */
+
 export const decodeBase64Url = (str: string): Uint8Array => {
   return decodeBase64(str.replace(/_|-/g, (m) => ({ _: '/', '-': '+' }[m] ?? m)))
 }

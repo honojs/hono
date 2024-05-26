@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Compress Middleware for Hono.
+ */
+
 import type { MiddlewareHandler } from '../../types'
 
 const ENCODING_TYPES = ['gzip', 'deflate'] as const
@@ -7,7 +12,7 @@ interface CompressionOptions {
 }
 
 /**
- * Compress middleware for Hono.
+ * Compress Middleware for Hono.
  *
  * @see {@link https://hono.dev/middleware/builtin/compress}
  *

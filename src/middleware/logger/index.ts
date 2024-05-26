@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Logger Middleware for Hono.
+ */
+
 import type { MiddlewareHandler } from '../../types'
 import { getColorEnabled } from '../../utils/color'
 import { getPath } from '../../utils/url'
@@ -56,7 +61,7 @@ function log(
 }
 
 /**
- * Logger middleware for Hono.
+ * Logger Middleware for Hono.
  *
  * @see {@link https://hono.dev/middleware/builtin/logger}
  *

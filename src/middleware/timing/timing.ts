@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Server-Timing Middleware for Hono.
+ */
+
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 import '../../context'
@@ -30,7 +35,7 @@ const getTime = (): number => {
 }
 
 /**
- * Server-Timing Middleware middleware for Hono.
+ * Server-Timing Middleware for Hono.
  *
  * @see {@link https://hono.dev/middleware/builtin/timing}
  *
