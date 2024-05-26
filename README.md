@@ -7,7 +7,7 @@
 <hr />
 
 <p align="center">
-<a href="https://hono.dev"><b>Documentation :point_right: hono.dev</b></a><br />
+<a href="https://hono.dev"><b>Documentation 👉 hono.dev</b></a><br />
 <i>v4 has been released!</i> <a href="docs/MIGRATION.md">Migration guide</b>
 </p>
 
