@@ -172,6 +172,23 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   private notFoundHandler: NotFoundHandler = notFoundHandler
   private errorHandler: ErrorHandler = errorHandler
 
+  /**
+   * `.route()` allows grouping other Hono instance in routes.
+   * @see {@link https://hono.dev/api/routing#grouping}
+   *
+   * @param {string} path - base Path
+   * @param {Hono} app - other Hono instance
+   * @returns {Hono} routed Hono instnace
+   *
+   * @example
+   * ```ts
+   * const app = new Hono()
+   * const app2 = new Hono()
+   *
+   * app2.get("/user", (c) => c.text("user"))
+   * app.route("/api", app2) // GET /api/user
+   * ```
+   */
   route<
     SubPath extends string,
     SubEnv extends Env,
@@ -218,6 +235,13 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   /**
    * `.onError()` handles an error and returns a customized Response.
+   *
+   * @see {@link https://hono.dev/api/hono#error-handling}
+   *
+   * @param {ErrorHandler} handler - request Handler for error
+   * @returns {Hono} changed Hono instance
+   *
+   * @example
    * ```ts
    * app.onError((err, c) => {
    *   console.error(`${err}`)
