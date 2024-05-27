@@ -1,5 +1,6 @@
 import type { Context } from '../..'
 import type { GetConnInfo } from '../../helper/conninfo'
+import { getBunServer } from './server'
 
 /**
  * Get ConnInfo with Bun
@@ -7,15 +8,7 @@ import type { GetConnInfo } from '../../helper/conninfo'
  * @returns ConnInfo
  */
 export const getConnInfo: GetConnInfo = (c: Context) => {
-  const server = ('server' in c.env ? c.env.server : c.env) as
-    | {
-        requestIP?: (req: Request) => {
-          address: string
-          family: string
-          port: number
-        }
-      }
-    | undefined
+  const server = getBunServer(c)
 
   if (!server) {
     throw new TypeError('env has to include the 2nd argument of fetch.')
