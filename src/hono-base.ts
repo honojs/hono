@@ -174,6 +174,12 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   /**
    * `.route()` allows grouping other Hono instance in routes.
+   * @see {@link https://hono.dev/api/routing#grouping}
+   *
+   * @param {string} path - base Path
+   * @param {Hono} app - other Hono instance
+   * @returns {Hono} routed Hono instnace
+   *
    * @example
    * ```ts
    * const app = new Hono()
@@ -182,7 +188,6 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * app2.get("/user", (c) => c.text("user"))
    * app.route("/api", app2) // GET /api/user
    * ```
-   * @see https://hono.dev/api/routing#grouping
    */
   route<
     SubPath extends string,
