@@ -246,6 +246,13 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   /**
    * `.mount()` allows mount other request handlers.
+   * @see {@link https://hono.dev/api/hono#mount}
+   * 
+   * @param {string} path - base Path
+   * @param {Function} applicationHandler - other Request Handler
+   * @param {Function | undefined} optionHandler - other Request Handler with Hono Context
+   * @returns {Hono} mounted Hono instance
+   * 
    * @example
    * ```ts
    * import { Router as IttyRouter } from 'itty-router'
@@ -258,7 +265,6 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * const app = new Hono()
    * app.mount('/itty-router', ittyRouter.handle)
    * ```
-   * @see https://hono.dev/api/hono#mount
    */
   mount(
     path: string,
