@@ -244,6 +244,22 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     return this
   }
 
+  /**
+   * `.mount()` allows mount other request handlers.
+   * @example
+   * ```ts
+   * import { Router as IttyRouter } from 'itty-router'
+   * import { Hono } from 'hono'
+   * // Create itty-router application
+   * const ittyRouter = IttyRouter()
+   * // GET /itty-router/hello
+   * ittyRouter.get('/hello', () => new Response('Hello from itty-router'))
+   *
+   * const app = new Hono()
+   * app.mount('/itty-router', ittyRouter.handle)
+   * ```
+   * @see https://hono.dev/api/hono#mount
+   */
   mount(
     path: string,
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
