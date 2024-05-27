@@ -174,6 +174,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   /**
    * `.route()` allows grouping other Hono instance in routes.
+   *
    * @see {@link https://hono.dev/api/routing#grouping}
    *
    * @param {string} path - base Path
