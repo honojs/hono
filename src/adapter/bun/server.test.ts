@@ -1,6 +1,7 @@
 import { Context } from '../../context'
 import { HonoRequest } from '../../request'
-import { type BunServer, getBunServer } from './server'
+import {  getBunServer } from './server'
+import type {BunServer} from './server'
 
 describe('getBunServer', () => {
   it('Should success to pick Server', () => {
