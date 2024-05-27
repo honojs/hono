@@ -246,6 +246,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   /**
    * `.mount()` allows mount other request handler.
+   *
    * @see {@link https://hono.dev/api/hono#mount}
    *
    * @param {string} path - base Path
