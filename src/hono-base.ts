@@ -172,6 +172,18 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   private notFoundHandler: NotFoundHandler = notFoundHandler
   private errorHandler: ErrorHandler = errorHandler
 
+  /**
+   * `.route()` allows grouping other Hono instance in routes.
+   * @example
+   * ```ts
+   * const app = new Hono()
+   * const app2 = new Hono()
+   * 
+   * app2.get("/user", (c) => c.text("user"))
+   * app.route("/api", app2) // GET /api/user
+   * ```
+   * @see https://hono.dev/api/routing#grouping
+   */
   route<
     SubPath extends string,
     SubEnv extends Env,
