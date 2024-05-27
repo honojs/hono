@@ -178,7 +178,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * ```ts
    * const app = new Hono()
    * const app2 = new Hono()
-   * 
+   *
    * app2.get("/user", (c) => c.text("user"))
    * app.route("/api", app2) // GET /api/user
    * ```
