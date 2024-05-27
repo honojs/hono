@@ -2,7 +2,7 @@
 import { Style, css } from '../../src/helper/css/index.ts'
 import { Suspense, renderToReadableStream } from '../../src/jsx/streaming.ts'
 import type { HtmlEscapedString } from '../../src/utils/html.ts'
-import { resolveCallback, HtmlEscapedCallbackPhase } from '../../src/utils/html.ts'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../../src/utils/html.ts'
 import { assertEquals } from '../deno/deps.ts'
 
 Deno.test('JSX', () => {

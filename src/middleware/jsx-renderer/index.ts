@@ -1,9 +1,13 @@
+/**
+ * @module
+ * JSR Renderer Middleware for Hono.
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Context, PropsForRenderer } from '../../context'
 import { html, raw } from '../../helper/html'
-import { jsx, createContext, useContext, Fragment } from '../../jsx'
-import type { FC, PropsWithChildren, JSXNode } from '../../jsx'
-import type { Context as JSXContext } from '../../jsx'
+import { Fragment, createContext, jsx, useContext } from '../../jsx'
+import type { FC, Context as JSXContext, JSXNode, PropsWithChildren } from '../../jsx'
 import { renderToReadableStream } from '../../jsx/streaming'
 import type { Env, Input, MiddlewareHandler } from '../../types'
 import type { HtmlEscapedString } from '../../utils/html'
@@ -68,7 +72,7 @@ const createRenderer =
   }
 
 /**
- * JSX renderer middleware for hono.
+ * JSX Renderer Middleware for hono.
  *
  * @see {@link{https://hono.dev/middleware/builtin/jsx-renderer}}
  *

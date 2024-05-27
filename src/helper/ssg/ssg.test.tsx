@@ -5,16 +5,16 @@ import { Hono } from '../../hono'
 import { poweredBy } from '../../middleware/powered-by'
 import {
   X_HONO_DISABLE_SSG_HEADER_KEY,
-  ssgParams,
-  isSSGContext,
   disableSSG,
+  isSSGContext,
   onlySSG,
+  ssgParams,
 } from './middleware'
-import { fetchRoutesContent, saveContentToFile, toSSG, defaultExtensionMap } from './ssg'
+import { defaultExtensionMap, fetchRoutesContent, saveContentToFile, toSSG } from './ssg'
 import type {
-  BeforeRequestHook,
-  AfterResponseHook,
   AfterGenerateHook,
+  AfterResponseHook,
+  BeforeRequestHook,
   FileSystemModule,
   ToSSGResult,
 } from './ssg'

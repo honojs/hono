@@ -1,4 +1,4 @@
-import { resolveCallback, HtmlEscapedCallbackPhase } from '../../utils/html'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
 import { html, raw } from '.'
 
 describe('Tagged Template Literals', () => {

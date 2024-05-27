@@ -40,6 +40,7 @@
     "./jsx/dom": "./src/jsx/dom/index.ts",
     "./jsx/dom/jsx-dev-runtime": "./src/jsx/dom/jsx-dev-runtime.ts",
     "./jsx/dom/jsx-runtime": "./src/jsx/dom/jsx-runtime.ts",
+    "./jsx/dom/client": "./src/jsx/dom/client.ts",
     "./jsx/dom/css": "./src/jsx/dom/css.ts",
     "./jwt": "./src/middleware/jwt/jwt.ts",
     "./timing": "./src/middleware/timing/timing.ts",
@@ -95,6 +96,9 @@
       "jsr.json",
       "LICENSE",
       "README.md",
+      "docs/CODE_OF_CONDUCT.md",
+      "docs/CONTRIBUTING.md",
+      "docs/MIGRATION.md",
       "src/**/*.ts"
     ],
     "exclude": [

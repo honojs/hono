@@ -1,12 +1,17 @@
+/**
+ * @module
+ * This module provides APIs that enable `hono/jsx/dom` to support.
+ */
+
 import type { FC, PropsWithChildren } from '../'
 import type { CssClassName, CssVariableType } from '../../helper/css/common'
 import {
-  SELECTOR,
   CLASS_NAME,
-  STYLE_STRING,
-  SELECTORS,
-  PSEUDO_GLOBAL_SELECTOR,
   DEFAULT_STYLE_ID,
+  PSEUDO_GLOBAL_SELECTOR,
+  SELECTOR,
+  SELECTORS,
+  STYLE_STRING,
   cssCommon,
   cxCommon,
   keyframesCommon,

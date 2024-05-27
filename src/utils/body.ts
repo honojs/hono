@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Body utility.
+ */
+
 import { HonoRequest } from '../request'
 
 type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot } & {}
@@ -134,7 +139,7 @@ async function parseFormData<T extends BodyData>(
  * @param {ParseBodyOptions} options - Options for parsing the form data.
  * @returns {T} The converted body data.
  */
-function convertFormDataToBodyData<T extends BodyData>(
+function convertFormDataToBodyData<T extends BodyData = BodyData>(
   formData: FormData,
   options: ParseBodyOptions
 ): T {
@@ -143,27 +148,22 @@ function convertFormDataToBodyData<T extends BodyData>(
   formData.forEach((value, key) => {
     const shouldParseAllValues = options.all || key.endsWith('[]')
 
-    if (shouldParseAllValues) {
-      handleParsingAllValues(form, key, value)
-    } else {
+    if (!shouldParseAllValues) {
       form[key] = value
+    } else {
+      handleParsingAllValues(form, key, value)
     }
   })
 
   if (options.dot) {
-    const nestedForm: BodyData = Object.create(null)
-
     Object.entries(form).forEach(([key, value]) => {
       const shouldParseDotValues = key.includes('.')
 
       if (shouldParseDotValues) {
-        handleParsingNestedValues(nestedForm, key, value)
-      } else {
-        nestedForm[key] = value
+        handleParsingNestedValues(form, key, value)
+        delete form[key]
       }
     })
-
-    return nestedForm as T
   }
 
   return form as T

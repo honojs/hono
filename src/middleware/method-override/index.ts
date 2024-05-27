@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Method Override Middleware for Hono.
+ */
+
 import type { Context, ExecutionContext } from '../../context'
 import type { Hono } from '../../hono'
 import type { MiddlewareHandler } from '../../types'

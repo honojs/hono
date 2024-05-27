@@ -1,3 +1,8 @@
+/**
+ * @module
+ * This module provides the `HTTPException` class.
+ */
+
 import type { StatusCode } from './utils/http-status'
 
 type HTTPExceptionOptions = {

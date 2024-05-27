@@ -1,3 +1,8 @@
+/**
+ * @module
+ * WebSocket Helper for Hono.
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'

@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Secure Headers Middleware for Hono.
+ */
+
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 import { encodeBase64 } from '../../utils/encode'

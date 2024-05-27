@@ -1,4 +1,9 @@
-import type { Props, JSXNode } from '../base'
+/**
+ * @module
+ * This module provides the `hono/jsx/dom` dev runtime.
+ */
+
+import type { JSXNode, Props } from '../base'
 import { normalizeIntrinsicElementProps } from '../utils'
 import { newJSXNode } from './utils'
 

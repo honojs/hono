@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import type { Router, Result, ParamIndexMap } from '../../router'
+import type { ParamIndexMap, Result, Router } from '../../router'
 import {
+  MESSAGE_MATCHER_IS_ALREADY_BUILT,
   METHOD_NAME_ALL,
   UnsupportedPathError,
-  MESSAGE_MATCHER_IS_ALREADY_BUILT,
 } from '../../router'
 import { checkOptionalParameter } from '../../utils/url'
-import { PATH_ERROR, type ParamAssocArray } from './node'
+import { PATH_ERROR } from './node'
+import type { ParamAssocArray } from './node'
 import { Trie } from './trie'
 
 type HandlerData<T> = [T, ParamIndexMap][]

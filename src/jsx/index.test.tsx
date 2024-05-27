@@ -3,7 +3,7 @@
 import { html } from '../helper/html'
 import { Hono } from '../hono'
 import { Suspense, renderToReadableStream } from './streaming'
-import DefaultExport, { memo, Fragment, createContext, useContext } from '.'
+import DefaultExport, { Fragment, createContext, memo, useContext, version } from '.'
 import type { Context, FC, PropsWithChildren } from '.'
 
 interface SiteData {
@@ -729,8 +729,15 @@ d.replaceWith(c.content)
   })
 })
 
+describe('version', () => {
+  it('should be defined with semantic versioning format', () => {
+    expect(version).toMatch(/^\d+\.\d+\.\d+-hono-jsx$/)
+  })
+})
+
 describe('default export', () => {
   ;[
+    'version',
     'memo',
     'Fragment',
     'isValidElement',

@@ -1,28 +1,30 @@
 /** @jsxImportSource ../ */
 import { JSDOM } from 'jsdom'
-import type { FC, Child } from '..'
+import type { Child, FC } from '..'
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
 import { createElement, jsx } from '..'
 import type { RefObject } from '../hooks'
 import {
-  useState,
-  useEffect,
-  useLayoutEffect,
-  useInsertionEffect,
-  useCallback,
-  useRef,
-  useMemo,
   createRef,
+  useCallback,
+  useEffect,
+  useInsertionEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
 } from '../hooks'
-import DefaultExport from '.'
-import { memo, isValidElement, cloneElement } from '.'
-import {
-  render,
-  flushSync,
-  createPortal,
-  createElement as createElementForDom,
+import DefaultExport, {
+  cloneElement,
   cloneElement as cloneElementForDom,
+  createElement as createElementForDom,
+  createPortal,
+  flushSync,
+  isValidElement,
+  memo,
+  render,
+  version,
 } from '.'
 
 describe('Common', () => {
@@ -2122,8 +2124,15 @@ describe('jsx', () => {
   })
 })
 
+describe('version', () => {
+  it('should be defined with semantic versioning format', () => {
+    expect(version).toMatch(/^\d+\.\d+\.\d+-hono-jsx$/)
+  })
+})
+
 describe('default export', () => {
   ;[
+    'version',
     'memo',
     'Fragment',
     'isValidElement',

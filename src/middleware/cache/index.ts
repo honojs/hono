@@ -1,8 +1,13 @@
+/**
+ * @module
+ * Cache Middleware for Hono.
+ */
+
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
 /**
- * cache middleware for Hono.
+ * Cache Middleware for Hono.
  *
  * @see {@link https://hono.dev/middleware/builtin/cache}
  *

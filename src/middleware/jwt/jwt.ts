@@ -1,3 +1,8 @@
+/**
+ * @module
+ * JWT Auth Middleware for Hono.
+ */
+
 import type { Context } from '../../context'
 import { getCookie } from '../../helper/cookie'
 import { HTTPException } from '../../http-exception'
@@ -12,7 +17,7 @@ export type JwtVariables = {
 }
 
 /**
- * JWT Auth middleware for Hono.
+ * JWT Auth Middleware for Hono.
  *
  * @see {@link https://hono.dev/middleware/builtin/jwt}
  *
@@ -44,7 +49,7 @@ export const jwt = (options: {
   alg?: SignatureAlgorithm
 }): MiddlewareHandler => {
   if (!options || !options.secret) {
-    throw new Error('JWT auth middleware requires options for "secret')
+    throw new Error('JWT auth middleware requires options for "secret"')
   }
 
   if (!crypto.subtle || !crypto.subtle.importKey) {

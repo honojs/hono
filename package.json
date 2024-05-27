@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.3.11",
+  "version": "4.4.0",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -172,6 +172,11 @@
       "types": "./dist/types/jsx/dom/jsx-runtime.d.ts",
       "import": "./dist/jsx/dom/jsx-runtime.js",
       "require": "./dist/cjs/jsx/dom/jsx-runtime.js"
+    },
+    "./jsx/dom/client": {
+      "types": "./dist/types/jsx/dom/client.d.ts",
+      "import": "./dist/jsx/dom/client.js",
+      "require": "./dist/cjs/jsx/dom/client.js"
     },
     "./jsx/dom/css": {
       "types": "./dist/types/jsx/dom/css.d.ts",
@@ -431,6 +436,9 @@
       "jsx/dom": [
         "./dist/types/jsx/dom"
       ],
+      "jsx/dom/client": [
+        "./dist/types/jsx/dom/client.d.ts"
+      ],
       "jsx/dom/css": [
         "./dist/types/jsx/dom/css.d.ts"
       ],
@@ -569,7 +577,7 @@
     "nodejs"
   ],
   "devDependencies": {
-    "@hono/eslint-config": "^0.0.4",
+    "@hono/eslint-config": "^0.0.6",
     "@hono/node-server": "^1.8.2",
     "@types/crypto-js": "^4.1.1",
     "@types/glob": "^8.0.0",

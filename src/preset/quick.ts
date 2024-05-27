@@ -1,3 +1,8 @@
+/**
+ * @module
+ * The preset that uses `LinearRouter`.
+ */
+
 import { HonoBase } from '../hono-base'
 import type { HonoOptions } from '../hono-base'
 import { LinearRouter } from '../router/linear-router'

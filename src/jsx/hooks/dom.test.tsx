@@ -2,23 +2,22 @@
 import { JSDOM } from 'jsdom'
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
-import { Suspense } from '../dom'
-import { render } from '../dom'
+import { Suspense, render } from '../dom'
 import {
-  useState,
-  useReducer,
-  use,
-  startTransition,
-  useTransition,
-  useDeferredValue,
-  startViewTransition,
-  useViewTransition,
-  useId,
-  useDebugValue,
   createRef,
   forwardRef,
+  startTransition,
+  startViewTransition,
+  use,
+  useDebugValue,
+  useDeferredValue,
+  useId,
   useImperativeHandle,
+  useReducer,
+  useState,
   useSyncExternalStore,
+  useTransition,
+  useViewTransition,
 } from '.'
 
 describe('Hooks', () => {

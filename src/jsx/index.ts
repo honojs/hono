@@ -1,33 +1,39 @@
-import { jsx, memo, Fragment, isValidElement, cloneElement } from './base'
+/**
+ * @module
+ * JSX for Hono.
+ */
+
+import { Fragment, cloneElement, isValidElement, jsx, memo, reactAPICompatVersion } from './base'
 import type { DOMAttributes } from './base'
 import { Children } from './children'
 import { ErrorBoundary } from './components'
 import { createContext, useContext } from './context'
 import {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  use,
-  startTransition,
-  useTransition,
-  useDeferredValue,
-  startViewTransition,
-  useViewTransition,
-  useMemo,
-  useLayoutEffect,
-  useInsertionEffect,
-  useReducer,
-  useId,
-  useDebugValue,
   createRef,
   forwardRef,
+  startTransition,
+  startViewTransition,
+  use,
+  useCallback,
+  useDebugValue,
+  useDeferredValue,
+  useEffect,
+  useId,
   useImperativeHandle,
+  useInsertionEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
   useSyncExternalStore,
+  useTransition,
+  useViewTransition,
 } from './hooks'
 import { Suspense } from './streaming'
 
 export {
+  reactAPICompatVersion as version,
   jsx,
   memo,
   Fragment,
@@ -63,6 +69,7 @@ export {
 }
 
 export default {
+  version: reactAPICompatVersion,
   memo,
   Fragment,
   isValidElement,

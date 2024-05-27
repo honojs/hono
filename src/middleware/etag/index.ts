@@ -1,3 +1,8 @@
+/**
+ * @module
+ * ETag Middleware for Hono.
+ */
+
 import type { MiddlewareHandler } from '../../types'
 import { sha1 } from '../../utils/crypto'
 
@@ -26,7 +31,7 @@ function etagMatches(etag: string, ifNoneMatch: string | null) {
 }
 
 /**
- * ETag middleware for Hono.
+ * ETag Middleware for Hono.
  *
  * @see {@link https://hono.dev/middleware/builtin/etag}
  *

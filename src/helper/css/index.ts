@@ -1,15 +1,20 @@
+/**
+ * @module
+ * css Helper for Hono.
+ */
+
 import { raw } from '../../helper/html'
 import { DOM_RENDERER } from '../../jsx/constants'
 import { createCssJsxDomObjects } from '../../jsx/dom/css'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
 import type { CssClassName as CssClassNameCommon, CssVariableType } from './common'
 import {
-  SELECTOR,
   CLASS_NAME,
-  STYLE_STRING,
-  SELECTORS,
-  PSEUDO_GLOBAL_SELECTOR,
   DEFAULT_STYLE_ID,
+  PSEUDO_GLOBAL_SELECTOR,
+  SELECTOR,
+  SELECTORS,
+  STYLE_STRING,
   cssCommon,
   cxCommon,
   keyframesCommon,

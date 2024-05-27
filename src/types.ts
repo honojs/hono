@@ -1,3 +1,8 @@
+/**
+ * @module
+ * This module contains some type definitions for the Hono modules.
+ */
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
