@@ -1,8 +1,7 @@
+/** @jsxImportSource ../../jsx */
 import { expectTypeOf } from 'vitest'
 import { html } from '../../helper/html'
 import { Hono } from '../../hono'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, Fragment } from '../../jsx'
 import type { FC } from '../../jsx'
 import { Suspense } from '../../jsx/streaming'
 import { jsxRenderer, useRequestContext } from '.'

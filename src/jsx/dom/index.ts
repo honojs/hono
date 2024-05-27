@@ -1,32 +1,38 @@
-import type { Props, Child, DOMAttributes, JSXNode } from '../base'
-import { memo, isValidElement } from '../base'
+/**
+ * @module
+ * This module provides APIs for `hono/jsx/dom`.
+ */
+
+import { isValidElement, memo, reactAPICompatVersion } from '../base'
+import type { Child, DOMAttributes, JSX, JSXNode, Props } from '../base'
 import { Children } from '../children'
 import { useContext } from '../context'
 import {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  use,
-  startTransition,
-  useTransition,
-  useDeferredValue,
-  startViewTransition,
-  useViewTransition,
-  useMemo,
-  useLayoutEffect,
-  useReducer,
-  useId,
-  useDebugValue,
   createRef,
   forwardRef,
+  startTransition,
+  startViewTransition,
+  use,
+  useCallback,
+  useDebugValue,
+  useDeferredValue,
+  useEffect,
+  useId,
   useImperativeHandle,
+  useInsertionEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
   useSyncExternalStore,
+  useTransition,
+  useViewTransition,
 } from '../hooks'
-import { Suspense, ErrorBoundary } from './components'
+import { ErrorBoundary, Suspense } from './components'
 import { createContext } from './context'
-import { jsx, Fragment } from './jsx-runtime'
-import { flushSync, createPortal } from './render'
+import { Fragment, jsx } from './jsx-runtime'
+import { createPortal, flushSync } from './render'
 
 export { render } from './render'
 
@@ -66,6 +72,7 @@ const cloneElement = <T extends JSXNode | JSX.Element>(
 }
 
 export {
+  reactAPICompatVersion as version,
   createElement as jsx,
   useState,
   useEffect,
@@ -79,6 +86,7 @@ export {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  useInsertionEffect,
   useReducer,
   useId,
   useDebugValue,
@@ -102,6 +110,7 @@ export {
 }
 
 export default {
+  version: reactAPICompatVersion,
   useState,
   useEffect,
   useRef,
@@ -114,6 +123,7 @@ export default {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  useInsertionEffect,
   useReducer,
   useId,
   useDebugValue,
@@ -137,6 +147,4 @@ export default {
 
 export type { Context } from '../context'
 
-// TODO: change to `export type *` after denoify bug is fixed
-// https://github.com/garronej/denoify/issues/124
-export * from '../types'
+export type * from '../types'

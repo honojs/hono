@@ -1,3 +1,8 @@
+/**
+ * @module
+ * FilePath utility.
+ */
+
 type FilePathOptions = {
   filename: string
   root?: string
@@ -26,7 +31,7 @@ export const getFilePath = (options: FilePathOptions): string | undefined => {
 
 export const getFilePathWithoutDefaultDocument = (
   options: Omit<FilePathOptions, 'defaultDocument'>
-) => {
+): string | undefined => {
   let root = options.root || ''
   let filename = options.filename
 

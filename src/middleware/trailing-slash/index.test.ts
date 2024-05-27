@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { trimTrailingSlash, appendTrailingSlash } from '.'
+import { appendTrailingSlash, trimTrailingSlash } from '.'
 
 describe('Resolve trailing slash', () => {
   let app: Hono

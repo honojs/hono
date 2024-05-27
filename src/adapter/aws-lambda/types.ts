@@ -1,4 +1,3 @@
-// @denoify-ignore
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export interface CognitoIdentity {

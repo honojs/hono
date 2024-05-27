@@ -1,9 +1,24 @@
+/**
+ * @module
+ * Trailing Slash Middleware for Hono.
+ */
+
 import type { MiddlewareHandler } from '../../types'
 
 /**
- * Trim the trailing slash from the URL if it does have one. For example, `/path/to/page/` will be redirected to `/path/to/page`.
- * @access public
- * @example app.use(trimTrailingSlash())
+ * Trailing Slash Middleware for Hono.
+ *
+ * @see {@link https://hono.dev/middleware/builtin/trailing-slash}
+ *
+ * @returns {MiddlewareHandler} The middleware handler function.
+ *
+ * @example
+ * ```ts
+ * const app = new Hono()
+ *
+ * app.use(trimTrailingSlash())
+ * app.get('/about/me/', (c) => c.text('With Trailing Slash'))
+ * ```
  */
 export const trimTrailingSlash = (): MiddlewareHandler => {
   return async function trimTrailingSlash(c, next) {
@@ -24,9 +39,19 @@ export const trimTrailingSlash = (): MiddlewareHandler => {
 }
 
 /**
+ * Append trailing slash middleware for Hono.
  * Append a trailing slash to the URL if it doesn't have one. For example, `/path/to/page` will be redirected to `/path/to/page/`.
- * @access public
- * @example app.use(appendTrailingSlash())
+ *
+ * @see {@link https://hono.dev/middleware/builtin/trailing-slash}
+ *
+ * @returns {MiddlewareHandler} The middleware handler function.
+ *
+ * @example
+ * ```ts
+ * const app = new Hono()
+ *
+ * app.use(appendTrailingSlash())
+ * ```
  */
 export const appendTrailingSlash = (): MiddlewareHandler => {
   return async function appendTrailingSlash(c, next) {

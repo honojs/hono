@@ -23,25 +23,15 @@ jobs:
       - run: bun run build
       - run: bun run test
 
-  denoify:
-    name: "Checking if you've done denoify"
+  jsr-dry-run:
+    name: "Checking if it's valid for JSR"
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: denoland/setup-deno@v1
         with:
-          node-version: '18.x'
-      - uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: '1.0.25'
-      - run: bun install
-      - run: |
-          bun run denoify
-          if [[ `git status --porcelain` ]]; then
-            exit 1
-          fi
+          deno-version: v1.x
+      - run: deno publish --dry-run
 
   deno:
     name: 'Deno'

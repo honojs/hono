@@ -1,4 +1,3 @@
-// @denoify-ignore
 import type { Hono } from '../../hono'
 import type { MiddlewareHandler } from '../../types'
 

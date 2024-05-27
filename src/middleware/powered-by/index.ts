@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Powered By Middleware for Hono.
+ */
+
 import type { MiddlewareHandler } from '../../types'
 
 export const poweredBy = (): MiddlewareHandler => {

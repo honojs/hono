@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Dev Helper for Hono.
+ */
+
 import type { Hono } from '../../hono'
 import type { Env, RouterRoute } from '../../types'
 import { getColorEnabled } from '../../utils/color'

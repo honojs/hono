@@ -1,14 +1,14 @@
 /* eslint-disable quotes */
+/** @jsxImportSource ../../jsx */
 import { Hono } from '../../'
 import { html } from '../../helper/html'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, Fragment, isValidElement } from '../../jsx'
+import { isValidElement } from '../../jsx'
 import type { JSXNode } from '../../jsx'
 import { Suspense, renderToReadableStream } from '../../jsx/streaming'
 import type { HtmlEscapedString } from '../../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
 import { renderTest } from './common.case.test'
-import { css, cx, keyframes, viewTransition, rawCssString, Style, createCssContext } from './index'
+import { Style, createCssContext, css, cx, keyframes, rawCssString, viewTransition } from './index'
 
 async function toString(
   template: JSXNode | Promise<HtmlEscapedString> | Promise<string> | HtmlEscapedString

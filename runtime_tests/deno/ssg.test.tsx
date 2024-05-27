@@ -1,10 +1,5 @@
-/** @jsx jsx */
-/** @jsxFrag Fragment */
-
-import { toSSG } from '../../deno_dist/helper.ts'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx } from '../../deno_dist/middleware.ts'
-import { Hono } from '../../deno_dist/mod.ts'
+import { toSSG } from '../../src/adapter/deno/ssg.ts'
+import { Hono } from '../../src/hono.ts'
 import { assertEquals } from '../deno/deps.ts'
 
 Deno.test('toSSG function', async () => {

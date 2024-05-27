@@ -1,7 +1,13 @@
+/**
+ * @module
+ * This module provides Hono's JSX runtime.
+ */
+
 export { jsxDEV as jsx, Fragment } from './jsx-dev-runtime'
 export { jsxDEV as jsxs } from './jsx-dev-runtime'
+export type { JSX } from './jsx-dev-runtime'
 
-import { raw, html } from '../helper/html'
+import { html, raw } from '../helper/html'
 import type { HtmlEscapedString } from '../utils/html'
 export { html as jsxTemplate }
 export const jsxAttr = (

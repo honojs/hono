@@ -4,8 +4,8 @@ import type { Env, Schema } from '../../types'
 import { createPool } from '../../utils/concurrent'
 import { getExtension } from '../../utils/mime'
 import type { AddedSSGDataRequest, SSGParams } from './middleware'
-import { X_HONO_DISABLE_SSG_HEADER_KEY, SSG_CONTEXT } from './middleware'
-import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils'
+import { SSG_CONTEXT, X_HONO_DISABLE_SSG_HEADER_KEY } from './middleware'
+import { dirname, filterStaticGenerateRoutes, joinPaths } from './utils'
 
 const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
 
@@ -43,7 +43,7 @@ const generateFilePath = (
   outDir: string,
   mimeType: string,
   extensionMap?: Record<string, string>
-) => {
+): string => {
   const extension = determineExtension(mimeType, extensionMap)
 
   if (routePath.endsWith(`.${extension}`)) {
@@ -97,11 +97,66 @@ export type BeforeRequestHook = (req: Request) => Request | false | Promise<Requ
 export type AfterResponseHook = (res: Response) => Response | false | Promise<Response | false>
 export type AfterGenerateHook = (result: ToSSGResult) => void | Promise<void>
 
+export const combineBeforeRequestHooks = (
+  hooks: BeforeRequestHook | BeforeRequestHook[]
+): BeforeRequestHook => {
+  if (!Array.isArray(hooks)) {
+    return hooks
+  }
+  return async (req: Request): Promise<Request | false> => {
+    let currentReq = req
+    for (const hook of hooks) {
+      const result = await hook(currentReq)
+      if (result === false) {
+        return false
+      }
+      if (result instanceof Request) {
+        currentReq = result
+      }
+    }
+    return currentReq
+  }
+}
+
+export const combineAfterResponseHooks = (
+  hooks: AfterResponseHook | AfterResponseHook[]
+): AfterResponseHook => {
+  if (!Array.isArray(hooks)) {
+    return hooks
+  }
+  return async (res: Response): Promise<Response | false> => {
+    let currentRes = res
+    for (const hook of hooks) {
+      const result = await hook(currentRes)
+      if (result === false) {
+        return false
+      }
+      if (result instanceof Response) {
+        currentRes = result
+      }
+    }
+    return currentRes
+  }
+}
+
+export const combineAfterGenerateHooks = (
+  hooks: AfterGenerateHook | AfterGenerateHook[]
+): AfterGenerateHook => {
+  if (!Array.isArray(hooks)) {
+    return hooks
+  }
+  return async (result: ToSSGResult): Promise<void> => {
+    for (const hook of hooks) {
+      await hook(result)
+    }
+  }
+}
+
 export interface ToSSGOptions {
   dir?: string
-  beforeRequestHook?: BeforeRequestHook
-  afterResponseHook?: AfterResponseHook
-  afterGenerateHook?: AfterGenerateHook
+  beforeRequestHook?: BeforeRequestHook | BeforeRequestHook[]
+  afterResponseHook?: AfterResponseHook | AfterResponseHook[]
+  afterGenerateHook?: AfterGenerateHook | AfterGenerateHook[]
   concurrency?: number
   extensionMap?: Record<string, string>
 }
@@ -286,10 +341,16 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
     const outputDir = options?.dir ?? './static'
     const concurrency = options?.concurrency ?? DEFAULT_CONCURRENCY
 
+    const combinedBeforeRequestHook = combineBeforeRequestHooks(
+      options?.beforeRequestHook || ((req) => req)
+    )
+    const combinedAfterResponseHook = combineAfterResponseHooks(
+      options?.afterResponseHook || ((req) => req)
+    )
     const getInfoGen = fetchRoutesContent(
       app,
-      options?.beforeRequestHook,
-      options?.afterResponseHook,
+      combinedBeforeRequestHook,
+      combinedAfterResponseHook,
       concurrency
     )
     for (const getInfo of getInfoGen) {
@@ -319,6 +380,9 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
     const errorObj = error instanceof Error ? error : new Error(String(error))
     result = { success: false, files: [], error: errorObj }
   }
-  await options?.afterGenerateHook?.(result)
+  if (options?.afterGenerateHook) {
+    const conbinedAfterGenerateHooks = combineAfterGenerateHooks(options?.afterGenerateHook)
+    await conbinedAfterGenerateHooks(result)
+  }
   return result
 }
