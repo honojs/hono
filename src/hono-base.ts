@@ -245,7 +245,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   }
 
   /**
-   * `.mount()` allows mount other request handler.
+   * `.mount()` allows you to mount applications built with other frameworks into your Hono application.
    *
    * @see {@link https://hono.dev/api/hono#mount}
    *
