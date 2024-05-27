@@ -3,16 +3,16 @@ import type { Result } from './router'
 import type {
   Input,
   InputToDataByTarget,
-  ParamKeys,
   ParamKeyToRecord,
+  ParamKeys,
   RemoveQuestion,
-  ValidationTargets,
   RouterRoute,
+  ValidationTargets,
 } from './types'
 import { parseBody } from './utils/body'
 import type { BodyData, ParseBodyOptions } from './utils/body'
-import type { UnionToIntersection } from './utils/types'
-import { getQueryParam, getQueryParams, decodeURIComponent_ } from './utils/url'
+import type { Simplify, UnionToIntersection } from './utils/types'
+import { decodeURIComponent_, getQueryParam, getQueryParams } from './utils/url'
 
 type Body = {
   json: any
@@ -80,7 +80,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     key: P2
   ): string | undefined
   param(key: string): string | undefined
-  param<P2 extends string = P>(): UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>
+  param<P2 extends string = P>(): Simplify<UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>>
   param(key?: string): unknown {
     return key ? this.getDecodedParam(key) : this.getAllDecodedParams()
   }
@@ -183,11 +183,15 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    * @see https://hono.dev/api/request#parsebody
    */
-  async parseBody<T extends BodyData = BodyData>(options?: ParseBodyOptions): Promise<T> {
+  async parseBody<Options extends Partial<ParseBodyOptions>, T extends BodyData<Options>>(
+    options?: Options
+  ): Promise<T>
+  async parseBody<T extends BodyData>(options?: Partial<ParseBodyOptions>): Promise<T>
+  async parseBody(options?: Partial<ParseBodyOptions>) {
     if (this.bodyCache.parsedBody) {
-      return this.bodyCache.parsedBody as T
+      return this.bodyCache.parsedBody
     }
-    const parsedBody = await parseBody<T>(this, options)
+    const parsedBody = await parseBody(this, options)
     this.bodyCache.parsedBody = parsedBody
     return parsedBody
   }

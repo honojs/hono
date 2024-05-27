@@ -1,5 +1,5 @@
 import { createHash } from 'crypto'
-import { sha256, sha1, md5 } from './crypto'
+import { md5, sha1, sha256 } from './crypto'
 
 describe('crypto', () => {
   it('sha256', async () => {

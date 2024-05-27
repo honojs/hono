@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Stream utility.
+ */
+
 export class StreamingApi {
   private writer: WritableStreamDefaultWriter<Uint8Array>
   private encoder: TextEncoder

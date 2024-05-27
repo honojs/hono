@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Color utility.
+ */
+
 export function getColorEnabled(): boolean {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { process, Deno } = globalThis as any

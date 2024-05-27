@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Handler utility.
+ */
+
 import { COMPOSED_HANDLER } from '../hono-base'
 
 export const isMiddleware = (handler: Function) => handler.length > 1

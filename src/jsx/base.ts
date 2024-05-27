@@ -1,9 +1,9 @@
 import { raw } from '../helper/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
-import type { StringBuffer, HtmlEscaped, HtmlEscapedString } from '../utils/html'
+import type { HtmlEscaped, HtmlEscapedString, StringBuffer } from '../utils/html'
 import type { Context } from './context'
 import { globalContexts } from './context'
-import type { IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
+import type { Hono, IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
 import { normalizeIntrinsicElementProps, styleObjectForEach } from './utils'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,16 +15,14 @@ export type FC<P = Props> = {
 }
 export type DOMAttributes = Hono.HTMLAttributes
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace JSX {
-    type Element = HtmlEscapedString | Promise<HtmlEscapedString>
-    interface ElementChildrenAttribute {
-      children: Child
-    }
-    interface IntrinsicElements extends IntrinsicElementsDefined {
-      [tagName: string]: Props
-    }
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace JSX {
+  export type Element = HtmlEscapedString | Promise<HtmlEscapedString>
+  export interface ElementChildrenAttribute {
+    children: Child
+  }
+  export interface IntrinsicElements extends IntrinsicElementsDefined {
+    [tagName: string]: Props
   }
 }
 
@@ -359,3 +357,5 @@ export const cloneElement = <T extends JSXNode | JSX.Element>(
     ...(children as (string | number | HtmlEscapedString)[])
   ) as T
 }
+
+export const reactAPICompatVersion = '18.0.0-hono-jsx'

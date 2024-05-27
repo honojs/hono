@@ -1,14 +1,14 @@
 import {
-  splitPath,
-  splitRoutingPath,
-  getPattern,
+  checkOptionalParameter,
   getPath,
   getPathNoStrict,
-  mergePath,
-  checkOptionalParameter,
+  getPattern,
   getQueryParam,
   getQueryParams,
   getQueryStrings,
+  mergePath,
+  splitPath,
+  splitRoutingPath,
 } from './url'
 
 describe('url', () => {

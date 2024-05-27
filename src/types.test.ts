@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { expectTypeOf } from 'vitest'
 import type { Context } from './context'
-import { createMiddleware } from './helper'
+import { createMiddleware } from './helper/factory'
 import { Hono } from './hono'
 import { poweredBy } from './middleware/powered-by'
 import type {
@@ -14,15 +14,15 @@ import type {
   MergePath,
   MergeSchemaPath,
   MiddlewareHandler,
-  ParamKeys,
   ParamKeyToRecord,
+  ParamKeys,
   RemoveQuestion,
   ResponseFormat,
   ToSchema,
   TypedResponse,
 } from './types'
 import type { StatusCode } from './utils/http-status'
-import type { Expect, Equal } from './utils/types'
+import type { Equal, Expect } from './utils/types'
 import { validator } from './validator'
 
 describe('Env', () => {

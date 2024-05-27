@@ -2,16 +2,16 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { expectTypeOf } from 'vitest'
 import { hc } from './client'
-import type { Context } from './context'
+import type { Context, ExecutionContext } from './context'
 import { Hono } from './hono'
 import { HTTPException } from './http-exception'
 import { logger } from './middleware/logger'
 import { poweredBy } from './middleware/powered-by'
-import { SmartRouter } from './mod'
 import { RegExpRouter } from './router/reg-exp-router'
+import { SmartRouter } from './router/smart-router'
 import { TrieRouter } from './router/trie-router'
 import type { Handler, MiddlewareHandler, Next } from './types'
-import type { Expect, Equal } from './utils/types'
+import type { Equal, Expect } from './utils/types'
 import { getPath } from './utils/url'
 
 // https://stackoverflow.com/a/65666402
@@ -730,6 +730,89 @@ describe('Routing', () => {
     it('Should return 404 response from PUT request', async () => {
       const res = await app.request('http://localhost/chained/abc', { method: 'PUT' })
       expect(res.status).toBe(404)
+    })
+  })
+
+  describe('Encoded path', () => {
+    let app: Hono
+    beforeEach(() => {
+      app = new Hono()
+    })
+
+    it('should decode path parameter', async () => {
+      app.get('/users/:id', (c) => c.text(`id is ${c.req.param('id')}`))
+
+      const res = await app.request('http://localhost/users/%C3%A7awa%20y%C3%AE%3F')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('id is çawa yî?')
+    })
+
+    it('should decode "/"', async () => {
+      app.get('/users/:id', (c) => c.text(`id is ${c.req.param('id')}`))
+
+      const res = await app.request('http://localhost/users/hono%2Fposts') // %2F is '/'
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('id is hono/posts')
+    })
+
+    it('should decode alphabets', async () => {
+      app.get('/users/static', (c) => c.text('static'))
+
+      const res = await app.request('http://localhost/users/%73tatic') // %73 is 's'
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('static')
+    })
+
+    it('should decode alphabets with invalid UTF-8 sequence', async () => {
+      app.get('/static/:path', (c) => {
+        try {
+          return c.text(`by c.req.param: ${c.req.param('path')}`) // this should throw an error
+        } catch (e) {
+          return c.text(`by c.req.url: ${c.req.url.replace(/.*\//, '')}`)
+        }
+      })
+
+      const res = await app.request('http://localhost/%73tatic/%A4%A2') // %73 is 's', %A4%A2 is invalid UTF-8 sequence
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('by c.req.url: %A4%A2')
+    })
+
+    it('should decode alphabets with invalid percent encoding', async () => {
+      app.get('/static/:path', (c) => {
+        try {
+          return c.text(`by c.req.param: ${c.req.param('path')}`) // this should throw an error
+        } catch (e) {
+          return c.text(`by c.req.url: ${c.req.url.replace(/.*\//, '')}`)
+        }
+      })
+
+      const res = await app.request('http://localhost/%73tatic/%a') // %73 is 's', %a is invalid percent encoding
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('by c.req.url: %a')
+    })
+
+    it('should be able to catch URIError', async () => {
+      app.onError((err, c) => {
+        if (err instanceof URIError) {
+          return c.text(err.message, 400)
+        }
+        throw err
+      })
+      app.get('/static/:path', (c) => {
+        return c.text(`by c.req.param: ${c.req.param('path')}`) // this should throw an error
+      })
+
+      const res = await app.request('http://localhost/%73tatic/%a') // %73 is 's', %a is invalid percent encoding
+      expect(res.status).toBe(400)
+      expect(await res.text()).toBe('URI malformed')
+    })
+
+    it('should not double decode', async () => {
+      app.get('/users/:id', (c) => c.text(`posts of ${c.req.param('id')}`))
+
+      const res = await app.request('http://localhost/users/%2525') // %25 is '%'
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('posts of %25')
     })
   })
 })
