@@ -562,7 +562,7 @@ export class Context<
       try {
         const cachedURL = new URL(location)
         location = cachedURL.href
-      } catch (_e) {}
+      } catch (_e) {} // Do nothing
     }
     this.#headers ??= new Headers()
     this.#headers.set('Location', location)
