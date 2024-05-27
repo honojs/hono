@@ -49,7 +49,7 @@ export const jwt = (options: {
   alg?: SignatureAlgorithm
 }): MiddlewareHandler => {
   if (!options || !options.secret) {
-    throw new Error('JWT auth middleware requires options for "secret')
+    throw new Error('JWT auth middleware requires options for "secret"')
   }
 
   if (!crypto.subtle || !crypto.subtle.importKey) {
