@@ -360,7 +360,14 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   /**
    * `.fetch()` will be entry point of your app.
-   * @see https://hono.dev/api/hono#fetch
+   * 
+   * @see {@link https://hono.dev/api/hono#fetch}
+   * 
+   * @param {Request} request - reuqest Object of request
+   * @param {Env} Env - env Object
+   * @param {ExecutionContext} - context of execution
+   * @returns {Response | Promise<Response>} response of request
+   * 
    */
   fetch: (
     request: Request,
