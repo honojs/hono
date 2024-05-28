@@ -473,11 +473,11 @@ export const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> =>
 }
 
 const isProxyEventALB = (event: LambdaEvent): event is ALBProxyEvent => {
-  return Object.prototype.hasOwnProperty.call(event.requestContext, 'elb')
+  return Object.hasOwn(event.requestContext, 'elb')
 }
 
 const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => {
-  return Object.prototype.hasOwnProperty.call(event, 'rawPath')
+  return Object.hasOwn(event, 'rawPath')
 }
 
 export const isContentTypeBinary = (contentType: string) => {
