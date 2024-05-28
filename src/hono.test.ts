@@ -11,7 +11,7 @@ import { RegExpRouter } from './router/reg-exp-router'
 import { SmartRouter } from './router/smart-router'
 import { TrieRouter } from './router/trie-router'
 import type { Handler, MiddlewareHandler, Next } from './types'
-import type { Equal, Expect } from './utils/types'
+import type { Equal, Expect, JSONValue } from './utils/types'
 import { getPath } from './utils/url'
 
 // https://stackoverflow.com/a/65666402
@@ -19,11 +19,17 @@ function throwExpression(errorMessage: string): never {
   throw new Error(errorMessage)
 }
 
+type Env = {
+  Bindings: {
+    _: string
+  }
+}
+
 describe('GET Request', () => {
   describe('without middleware', () => {
     // In other words, this is a test for cases that do not use `compose()`
 
-    const app = new Hono()
+    const app = new Hono<Env>()
 
     app.get('/hello', async () => {
       return new Response('hello', {
@@ -130,7 +136,7 @@ describe('GET Request', () => {
   describe('with middleware', () => {
     // when using `compose()`
 
-    const app = new Hono()
+    const app = new Hono<Env>()
 
     app.use('*', async (ctx, next) => {
       await next()
