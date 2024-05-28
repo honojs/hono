@@ -374,13 +374,22 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * `.request()` is a useful method for testing.
    * You can pass a URL or pathname to send a GET request.
    * app will return a Response object.
+   *
+   * @see {@link https://hono.dev/api/hono#request}
+   * 
+   * @param {RequestInfo | URL} input - url of request or request object
+   * @param {RequestInit} requestInit - request Object
+   * @param {Env} Env - env Object
+   * @param {ExecutionContext} executionCtx - context of execution
+   * @returns {Response | Promise<Response>} response of reuqest
+   * 
+   * @example
    * ```ts
    * test('GET /hello is ok', async () => {
    *   const res = await app.request('/hello')
    *   expect(res.status).toBe(200)
    * })
    * ```
-   * @see https://hono.dev/api/hono#request
    */
   request = (
     input: RequestInfo | URL,
