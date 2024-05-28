@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Adapter Helper for Hono.
+ */
+
 import type { Context } from '../../context'
 
 export type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'other'

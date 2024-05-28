@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { joinPaths, dirname } from './utils'
+import { describe, expect, it } from 'vitest'
+import { dirname, joinPaths } from './utils'
 
 describe('joinPath', () => {
   it('Should joined path is valid.', () => {

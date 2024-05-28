@@ -1,3 +1,8 @@
+/**
+ * @module
+ * The preset that uses `PatternRouter`.
+ */
+
 import { HonoBase } from '../hono-base'
 import type { HonoOptions } from '../hono-base'
 import { PatternRouter } from '../router/pattern-router'

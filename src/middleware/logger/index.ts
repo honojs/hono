@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Logger Middleware for Hono.
+ */
+
 import type { MiddlewareHandler } from '../../types'
 import { getColorEnabled } from '../../utils/color'
 import { getPath } from '../../utils/url'
@@ -55,6 +60,22 @@ function log(
   fn(out)
 }
 
+/**
+ * Logger Middleware for Hono.
+ *
+ * @see {@link https://hono.dev/middleware/builtin/logger}
+ *
+ * @param {PrintFunc} [fn=console.log] - Optional function for customized logging behavior.
+ * @returns {MiddlewareHandler} The middleware handler function.
+ *
+ * @example
+ * ```ts
+ * const app = new Hono()
+ *
+ * app.use(logger())
+ * app.get('/', (c) => c.text('Hello Hono!'))
+ * ```
+ */
 export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
   return async function logger(c, next) {
     const { method } = c.req

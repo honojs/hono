@@ -1,10 +1,9 @@
-// @denoify-ignore
-import {
-  createWSMessageEvent,
-  type UpgradeWebSocket,
-  type WSContext,
-  type WSEvents,
-  type WSMessageReceive,
+import { createWSMessageEvent } from '../../helper/websocket'
+import type {
+  UpgradeWebSocket,
+  WSContext,
+  WSEvents,
+  WSMessageReceive,
 } from '../../helper/websocket'
 
 interface BunServerWebSocket<T> {
@@ -24,7 +23,7 @@ interface BunServer {
 interface BunWebSocketHandler<T> {
   open(ws: BunServerWebSocket<T>): void
   close(ws: BunServerWebSocket<T>, code?: number, reason?: string): void
-  message(ws: BunServerWebSocket<T>, message: string | Buffer): void
+  message(ws: BunServerWebSocket<T>, message: string | Uint8Array): void
 }
 interface CreateWebSocket {
   (): {

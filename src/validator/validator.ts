@@ -1,7 +1,7 @@
 import type { Context } from '../context'
 import { getCookie } from '../helper/cookie'
 import { HTTPException } from '../http-exception'
-import type { Env, ValidationTargets, MiddlewareHandler, TypedResponse } from '../types'
+import type { Env, MiddlewareHandler, TypedResponse, ValidationTargets } from '../types'
 import type { BodyData } from '../utils/body'
 import { bufferToFormData } from '../utils/buffer'
 
@@ -91,7 +91,7 @@ export const validator = <
         try {
           const arrayBuffer = await c.req.arrayBuffer()
           const formData = await bufferToFormData(arrayBuffer, contentType)
-          const form: BodyData = {}
+          const form: BodyData<{ all: true }> = {}
           formData.forEach((value, key) => {
             if (key.endsWith('[]')) {
               if (form[key] === undefined) {

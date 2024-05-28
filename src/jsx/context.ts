@@ -3,7 +3,7 @@ import type { HtmlEscapedString } from '../utils/html'
 import { JSXFragmentNode } from './base'
 import { DOM_RENDERER } from './constants'
 import { createContextProviderFunction } from './dom/context'
-import type { FC, PropsWithChildren } from '.'
+import type { FC, PropsWithChildren } from './'
 
 export interface Context<T> {
   values: T[]

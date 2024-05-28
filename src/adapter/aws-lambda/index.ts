@@ -1,4 +1,8 @@
-// @denoify-ignore
+/**
+ * @module
+ * AWS Lambda Adapter for Hono.
+ */
+
 export { handle, streamHandle } from './handler'
 export type { APIGatewayProxyResult, LambdaEvent } from './handler'
 export type {

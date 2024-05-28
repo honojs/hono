@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Concurrent utility.
+ */
+
 const DEFAULT_CONCURRENCY = 1024
 
 export interface Pool {

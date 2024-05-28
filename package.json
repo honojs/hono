@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.3.11",
+  "version": "4.4.0",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -24,13 +24,12 @@
     "lint:fix": "eslint --ext js,ts,tsx src runtime_tests --fix",
     "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
     "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
-    "denoify": "rimraf deno_dist && denoify && rimraf \"deno_dist/**/*.test.{ts,tsx}\"",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
     "build": "rimraf dist && tsx ./build.ts && bun run copy:package.cjs.json",
     "postbuild": "publint",
     "watch": "rimraf dist && tsx ./build.ts --watch && bun run copy:package.cjs.json",
     "coverage": "vitest --run --coverage",
-    "prerelease": "bun denoify && bun test:deno && bun run build",
+    "prerelease": "bun test:deno && bun run build",
     "release": "np"
   },
   "exports": {
@@ -169,6 +168,11 @@
       "import": "./dist/jsx/dom/jsx-runtime.js",
       "require": "./dist/cjs/jsx/dom/jsx-runtime.js"
     },
+    "./jsx/dom/client": {
+      "types": "./dist/types/jsx/dom/client.d.ts",
+      "import": "./dist/jsx/dom/client.js",
+      "require": "./dist/cjs/jsx/dom/client.js"
+    },
     "./jsx/dom/css": {
       "types": "./dist/types/jsx/dom/css.d.ts",
       "import": "./dist/jsx/dom/css.js",
@@ -178,6 +182,11 @@
       "types": "./dist/types/middleware/jwt/index.d.ts",
       "import": "./dist/middleware/jwt/index.js",
       "require": "./dist/cjs/middleware/jwt/index.js"
+    },
+    "./timeout": {
+      "types": "./dist/types/middleware/timeout/index.d.ts",
+      "import": "./dist/middleware/timeout/index.js",
+      "require": "./dist/cjs/middleware/timeout/index.js"
     },
     "./timing": {
       "types": "./dist/types/middleware/timing/index.d.ts",
@@ -338,6 +347,11 @@
       "types": "./dist/types/helper/websocket/index.d.ts",
       "import": "./dist/helper/websocket/index.js",
       "require": "./dist/cjs/helper/websocket/index.js"
+    },
+    "./conninfo": {
+      "types": "./dist/types/helper/conninfo/index.d.ts",
+      "import": "./dist/helper/conninfo/index.js",
+      "require": "./dist/cjs/helper/conninfo/index.js"
     }
   },
   "typesVersions": {
@@ -414,11 +428,17 @@
       "jsx/dom": [
         "./dist/types/jsx/dom"
       ],
+      "jsx/dom/client": [
+        "./dist/types/jsx/dom/client.d.ts"
+      ],
       "jsx/dom/css": [
         "./dist/types/jsx/dom/css.d.ts"
       ],
       "jwt": [
         "./dist/types/middleware/jwt"
+      ],
+      "timeout": [
+        "./dist/types/middleware/timeout"
       ],
       "timing": [
         "./dist/types/middleware/timing"
@@ -515,6 +535,9 @@
       ],
       "ws": [
         "./dist/types/helper/websocket"
+      ],
+      "conninfo": [
+        "./dist/types/helper/conninfo"
       ]
     }
   },
@@ -546,8 +569,7 @@
     "nodejs"
   ],
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20231121.0",
-    "@hono/eslint-config": "^0.0.4",
+    "@hono/eslint-config": "^0.0.6",
     "@hono/node-server": "^1.8.2",
     "@types/crypto-js": "^4.1.1",
     "@types/glob": "^8.0.0",
@@ -557,7 +579,6 @@
     "@vitest/coverage-v8": "^1.1.0",
     "arg": "^5.0.2",
     "crypto-js": "^4.1.1",
-    "denoify": "^1.6.6",
     "esbuild": "^0.15.12",
     "eslint": "^8.55.0",
     "glob": "7.2.3",

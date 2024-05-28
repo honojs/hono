@@ -1,5 +1,5 @@
 import type { Suite } from 'vitest'
-import type { Router, Params, ParamIndexMap } from '../router'
+import type { ParamIndexMap, Params, Router } from '../router'
 
 const getSuiteHierarchy = (suite: Suite) => {
   const res: Suite[] = []

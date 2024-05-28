@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Bearer Auth Middleware for Hono.
+ */
+
 import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
@@ -23,6 +28,35 @@ type BearerAuthOptions =
       hashFunction?: Function
     }
 
+/**
+ * Bearer Auth Middleware for Hono.
+ *
+ * @see {@link https://hono.dev/middleware/builtin/bearer-auth}
+ *
+ * @param {BearerAuthOptions} options - The options for the bearer authentication middleware.
+ * @param {string | string[]} [options.token] - The string or array of strings to validate the incoming bearer token against.
+ * @param {Function} [options.verifyToken] - The function to verify the token.
+ * @param {string} [options.realm=""] - The domain name of the realm, as part of the returned WWW-Authenticate challenge header.
+ * @param {string} [options.prefix="Bearer"] - The prefix (or known as `schema`) for the Authorization header value.
+ * @param {string} [options.headerName=Authorization] - The header name.
+ * @param {Function} [options.hashFunction] - A function to handle hashing for safe comparison of authentication tokens.
+ * @returns {MiddlewareHandler} The middleware handler function.
+ * @throws {Error} If neither "token" nor "verifyToken" options are provided.
+ * @throws {HTTPException} If authentication fails, with 401 status code for missing or invalid token, or 400 status code for invalid request.
+ *
+ * @example
+ * ```ts
+ * const app = new Hono()
+ *
+ * const token = 'honoiscool'
+ *
+ * app.use('/api/*', bearerAuth({ token }))
+ *
+ * app.get('/api/page', (c) => {
+ *   return c.json({ message: 'You are authorized' })
+ * })
+ * ```
+ */
 export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
   if (!('token' in options || 'verifyToken' in options)) {
     throw new Error('bearer auth middleware requires options for "token"')

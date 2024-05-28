@@ -1,3 +1,8 @@
+/**
+ * @module
+ * HTML utility.
+ */
+
 export const HtmlEscapedCallbackPhase = {
   Stringify: 1,
   BeforeStream: 2,

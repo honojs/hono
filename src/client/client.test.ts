@@ -4,7 +4,7 @@
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { expectTypeOf, vi } from 'vitest'
-import { upgradeWebSocket } from '../helper'
+import { upgradeWebSocket } from '../adapter/deno/websocket'
 import { Hono } from '../hono'
 import { parse } from '../utils/cookie'
 import type { Equal, Expect } from '../utils/types'
