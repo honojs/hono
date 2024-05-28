@@ -379,7 +379,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    *
    * @param {RequestInfo | URL} input - url of request or request object
    * @param {RequestInit} requestInit - request Object
-   * @param {Env} Env - env Object 
+   * @param {Env} Env - env Object
    * @param {ExecutionContext} executionCtx - context of execution
    * @returns {Response | Promise<Response>} response of reuqest
    *
