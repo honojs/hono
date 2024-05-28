@@ -308,6 +308,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    *
    * @param target - The target of the validation.
    * @returns The validated data.
+   *
+   * @see https://hono.dev/api/request#valid
    */
   valid<T extends keyof I & keyof ValidationTargets>(target: T): InputToDataByTarget<I, T>
   valid(target: keyof ValidationTargets) {
