@@ -48,20 +48,28 @@ type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings']
 export type HonoOptions<E extends Env> = {
   /**
    * `strict` option specifies whether to distinguish whether the last path is a directory or not.
+   *
+   * @see {@link https://hono.dev/api/hono#strict-mode}
+   *
    * @default true
-   * @see https://hono.dev/api/hono#strict-mode
    */
   strict?: boolean
   /**
    * `router` option specifices which router to use.
+   *
+   * @see {@link https://hono.dev/api/hono#router-option}
+   *
+   * @example
    * ```ts
    * const app = new Hono({ router: new RegExpRouter() })
    * ```
-   * @see https://hono.dev/api/hono#router-option
    */
   router?: Router<[H, RouterRoute]>
   /**
    * `getPath` can handle the host header value.
+   *
+   * @see {@link https://hono.dev/api/routing#routing-with-host-header-value}
+   *
    * @example
    * ```ts
    * const app = new Hono({
@@ -76,7 +84,6 @@ export type HonoOptions<E extends Env> = {
    * //  headers: { host: 'www1.example.com' },
    * // })
    * ```
-   * @see https://hono.dev/api/routing#routing-with-host-header-value
    */
   getPath?: GetPath<E>
 }
@@ -403,10 +410,9 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   /**
    * `.fire()` automatically adds a global fetch event listener.
    * This can be useful for environments that adhere to the Service Worker API, such as non-ES module Cloudflare Workers.
-   *
-   * @see {@link https://hono.dev/api/hono#fire}
-   * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API}
-   * @see {@link https://developers.cloudflare.com/workers/reference/migrate-to-module-workers}
+   * @see https://hono.dev/api/hono#fire
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
+   * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/
    */
   fire = () => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
