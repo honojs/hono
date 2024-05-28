@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { expectTypeOf, vi } from 'vitest'
 import { upgradeWebSocket } from '../helper'
@@ -54,11 +54,11 @@ describe('Basic - JSON', () => {
   type AppType = typeof route
 
   const server = setupServer(
-    rest.post('http://localhost/posts', async (req, res, ctx) => {
-      const requestContentType = req.headers.get('content-type')
-      const requestHono = req.headers.get('x-hono')
-      const requestMessage = req.headers.get('x-message')
-      const requestBody = await req.json()
+    http.post('http://localhost/posts', async ({ request }) => {
+      const requestContentType = request.headers.get('content-type')
+      const requestHono = request.headers.get('x-hono')
+      const requestMessage = request.headers.get('x-message')
+      const requestBody = await request.json()
       const payload = {
         message: 'Hello!',
         success: true,
@@ -67,25 +67,27 @@ describe('Basic - JSON', () => {
         requestMessage,
         requestBody,
       }
-      return res(ctx.status(200), ctx.json(payload))
+      return HttpResponse.json(payload)
     }),
-    rest.get('http://localhost/hello-not-found', (_req, res, ctx) => {
-      return res(ctx.status(404))
+    http.get('http://localhost/hello-not-found', () => {
+      return HttpResponse.text(null, {
+        status: 404,
+      })
     }),
-    rest.get('http://localhost/null', (_req, res, ctx) => {
-      return res(ctx.status(200), ctx.json(null))
+    http.get('http://localhost/null', () => {
+      return HttpResponse.json(null)
     }),
-    rest.get('http://localhost/api/string', async (req, res, ctx) => {
-      return res(ctx.json('a-string'))
+    http.get('http://localhost/api/string', () => {
+      return HttpResponse.json('a-string')
     }),
-    rest.get('http://localhost/api/number', async (req, res, ctx) => {
-      return res(ctx.json(37))
+    http.get('http://localhost/api/number', async () => {
+      return HttpResponse.json(37)
     }),
-    rest.get('http://localhost/api/boolean', async (req, res, ctx) => {
-      return res(ctx.json(true))
+    http.get('http://localhost/api/boolean', async () => {
+      return HttpResponse.json(true)
     }),
-    rest.get('http://localhost/api/generic', async (req, res, ctx) => {
-      return res(ctx.json(Math.random() > 0.5 ? Boolean(Math.random()) : Math.random()))
+    http.get('http://localhost/api/generic', async () => {
+      return HttpResponse.json(Math.random() > 0.5 ? Boolean(Math.random()) : Math.random())
     })
   )
 
@@ -225,45 +227,38 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
     )
 
   const server = setupServer(
-    rest.get('http://localhost/api/search', (req, res, ctx) => {
-      const url = new URL(req.url)
+    http.get('http://localhost/api/search', ({ request }) => {
+      const url = new URL(request.url)
       const query = url.searchParams.get('q')
       const tag = url.searchParams.getAll('tag')
       const filter = url.searchParams.get('filter')
-      return res(
-        ctx.status(200),
-        ctx.json({
-          q: query,
-          tag,
-          filter,
-        })
-      )
+      return HttpResponse.json({
+        q: query,
+        tag,
+        filter,
+      })
     }),
-    rest.get('http://localhost/api/posts', (req, res, ctx) => {
-      const url = new URL(req.url)
+    http.get('http://localhost/api/posts', ({ request }) => {
+      const url = new URL(request.url)
       const tags = url.searchParams.getAll('tags')
-      return res(
-        ctx.status(200),
-        ctx.json({
-          tags: tags,
-        })
-      )
+      return HttpResponse.json({
+        tags: tags,
+      })
     }),
-    rest.put('http://localhost/api/posts/123', async (req, res, ctx) => {
-      const buffer = await req.arrayBuffer()
+    http.put('http://localhost/api/posts/123', async ({ request }) => {
+      const buffer = await request.arrayBuffer()
       // @ts-ignore
       const string = String.fromCharCode.apply('', new Uint8Array(buffer))
-      return res(ctx.status(200), ctx.text(string))
+      return HttpResponse.text(string)
     }),
-    rest.get('http://localhost/api/header', async (req, res, ctx) => {
-      const message = await req.headers.get('x-message-id')
-      return res(ctx.status(200), ctx.json({ 'x-message-id': message }))
+    http.get('http://localhost/api/header', async ({ request }) => {
+      const message = await request.headers.get('x-message-id')
+      return HttpResponse.json({ 'x-message-id': message })
     }),
-
-    rest.get('http://localhost/api/cookie', async (req, res, ctx) => {
-      const obj = parse(req.headers.get('cookie') || '')
+    http.get('http://localhost/api/cookie', async ({ request }) => {
+      const obj = parse(request.headers.get('cookie') || '')
       const value = obj['hello']
-      return res(ctx.status(200), ctx.json({ hello: value }))
+      return HttpResponse.json({ hello: value })
     })
   )
 
@@ -329,6 +324,32 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual(cookie)
+  })
+})
+
+describe('Form - Multiple Values', () => {
+  const server = setupServer(
+    http.post('http://localhost/multiple-values', async ({ request }) => {
+      const data = await request.formData()
+      return HttpResponse.json(data.getAll('key'))
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  const client = hc('http://localhost/')
+
+  it('Should get 200 response - query', async () => {
+    // @ts-expect-error `client['multiple-values'].$post` is not typed
+    const res = await client['multiple-values'].$post({
+      form: {
+        key: ['foo', 'bar'],
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual(['foo', 'bar'])
   })
 })
 
@@ -435,33 +456,25 @@ describe('Infer the response/request type', () => {
 
 describe('Merge path with `app.route()`', () => {
   const server = setupServer(
-    rest.get('http://localhost/api/search', async (req, res, ctx) => {
-      return res(
-        ctx.json({
-          ok: true,
-        })
-      )
+    http.get('http://localhost/api/search', async () => {
+      return HttpResponse.json({
+        ok: true,
+      })
     }),
-    rest.get('http://localhost/api/foo', async (req, res, ctx) => {
-      return res(
-        ctx.json({
-          ok: true,
-        })
-      )
+    http.get('http://localhost/api/foo', async () => {
+      return HttpResponse.json({
+        ok: true,
+      })
     }),
-    rest.post('http://localhost/api/bar', async (req, res, ctx) => {
-      return res(
-        ctx.json({
-          ok: true,
-        })
-      )
+    http.post('http://localhost/api/bar', async () => {
+      return HttpResponse.json({
+        ok: true,
+      })
     }),
-    rest.get('http://localhost/v1/book', async (req, res, ctx) => {
-      return res(
-        ctx.json({
-          ok: true,
-        })
-      )
+    http.get('http://localhost/v1/book', async () => {
+      return HttpResponse.json({
+        ok: true,
+      })
     })
   )
 
@@ -788,12 +801,12 @@ describe('Dynamic headers', () => {
   type AppType = typeof route
 
   const server = setupServer(
-    rest.post('http://localhost/posts', async (req, res, ctx) => {
-      const requestDynamic = req.headers.get('x-dynamic')
+    http.post('http://localhost/posts', async ({ request }) => {
+      const requestDynamic = request.headers.get('x-dynamic')
       const payload = {
         requestDynamic,
       }
-      return res(ctx.status(200), ctx.json(payload))
+      return HttpResponse.json(payload)
     })
   )
 
@@ -843,19 +856,21 @@ describe('RequestInit work as expected', () => {
   type AppType = typeof route
 
   const server = setupServer(
-    rest.get('http://localhost/credentials', async (req, res, ctx) => {
-      return res(ctx.status(200), ctx.text(req.credentials))
+    http.get('http://localhost/credentials', ({ request }) => {
+      return HttpResponse.text(request.credentials)
     }),
-    rest.get('http://localhost/headers', async (req, res, ctx) => {
+    http.get('http://localhost/headers', ({ request }) => {
       const allHeaders: Record<string, string> = {}
-      for (const [k, v] of req.headers.entries()) {
+      for (const [k, v] of request.headers.entries()) {
         allHeaders[k] = v
       }
 
-      return res(ctx.status(200), ctx.json(allHeaders))
+      return HttpResponse.json(allHeaders)
     }),
-    rest.post('http://localhost/headers', async (req, res, ctx) => {
-      return res(ctx.status(400), ctx.text('Should not be here'))
+    http.post('http://localhost/headers', () => {
+      return HttpResponse.text('Should not be here', {
+        status: 400,
+      })
     })
   )
 
@@ -1002,11 +1017,11 @@ describe('Text response', () => {
   const text = 'My name is Hono'
   const obj = { ok: true }
   const server = setupServer(
-    rest.get('http://localhost/about/me', async (_req, res, ctx) => {
-      return res(ctx.text(text))
+    http.get('http://localhost/about/me', async () => {
+      return HttpResponse.text(text)
     }),
-    rest.get('http://localhost/api', async (_req, res, ctx) => {
-      return res(ctx.json(obj))
+    http.get('http://localhost/api', async ({ request }) => {
+      return HttpResponse.json(obj)
     })
   )
 
