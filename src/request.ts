@@ -26,9 +26,6 @@ type BodyCache = Partial<Body & { parsedBody: BodyData }>
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.raw` can get the raw Request object.
-   *
-   * @see {@link https://hono.dev/api/request#raw}
-   *
    * @example
    * ```ts
    * // For Cloudflare Workers
@@ -37,6 +34,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    *   ...
    * })
    * ```
+   * @see https://hono.dev/api/request#raw
    */
   raw: Request
 
@@ -45,15 +43,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   routeIndex: number = 0
   /**
    * `.path` can get the pathname of the request.
-   *
-   * @see {@link https://hono.dev/api/request#path}
-   *
    * @example
    * ```ts
    * app.get('/about/me', (c) => {
    *   const pathname = c.req.path // `/about/me`
    * })
    * ```
+   * @see https://hono.dev/api/request#path
    */
   path: string
   bodyCache: BodyCache = {}
@@ -71,15 +67,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.req.param()` gets the path parameters.
-   *
-   * @see {@link https://hono.dev/api/routing#path-parameter}
-   *
    * @example
    * ```ts
    * const name = c.req.param('name')
    * // or all parameters at once
    * const { id, comment_id } = c.req.param()
    * ```
+   * @see https://hono.dev/api/routing#path-parameter
    */
   param<P2 extends ParamKeys<P> = ParamKeys<P>>(key: P2 extends `${infer _}?` ? never : P2): string
   param<P2 extends RemoveQuestion<ParamKeys<P>> = RemoveQuestion<ParamKeys<P>>>(
@@ -118,9 +112,6 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.query()` can get querystring parameters.
-   *
-   * @see {@link https://hono.dev/api/request#query}
-   *
    * @example
    * ```ts
    * // Query params
@@ -133,6 +124,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    *   const { q, limit, offset } = c.req.query()
    * })
    * ```
+   * @see https://hono.dev/api/request#query
    */
   query(key: string): string | undefined
   query(): Record<string, string>
@@ -142,9 +134,6 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.queries()` can get multiple querystring parameter values, e.g. /search?tags=A&tags=B
-   *
-   * @see {@link https://hono.dev/api/request#queries}
-   *
    * @example
    * ```ts
    * app.get('/search', (c) => {
@@ -152,6 +141,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    *   const tags = c.req.queries('tags')
    * })
    * ```
+   * @see https://hono.dev/api/request#queries
    */
   queries(key: string): string[] | undefined
   queries(): Record<string, string[]>
@@ -161,15 +151,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.header()` can get the request header value.
-   *
-   * @see {@link https://hono.dev/api/request#header}
-   *
    * @example
    * ```ts
    * app.get('/', (c) => {
    *   const userAgent = c.req.header('User-Agent')
    * })
    * ```
+   * @see https://hono.dev/api/request#header
    */
   header(name: string): string | undefined
   header(): Record<string, string>
@@ -187,15 +175,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.parseBody()` can parse Request body of type `multipart/form-data` or `application/x-www-form-urlencoded`
-   *
-   * @see {@link https://hono.dev/api/request#parsebody}
-   *
    * @example
    * ```ts
    * app.post('/entry', async (c) => {
    *   const body = await c.req.parseBody()
    * })
    * ```
+   * @see https://hono.dev/api/request#parsebody
    */
   async parseBody<Options extends Partial<ParseBodyOptions>, T extends BodyData<Options>>(
     options?: Options
@@ -239,15 +225,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.json()` can parse Request body of type `application/json`
-   *
-   * @see {@link https://hono.dev/api/request#json}
-   *
    * @example
    * ```ts
    * app.post('/entry', async (c) => {
    *   const body = await c.req.json()
    * })
    * ```
+   * @see https://hono.dev/api/request#json
    */
   json<T = any>(): Promise<T> {
     return this.cachedBody('json')
@@ -255,15 +239,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.text()` can parse Request body of type `text/plain`
-   *
-   * @see {@link https://hono.dev/api/request#text}
-   *
    * @example
    * ```ts
    * app.post('/entry', async (c) => {
    *   const body = await c.req.text()
    * })
    * ```
+   * @see https://hono.dev/api/request#text
    */
   text(): Promise<string> {
     return this.cachedBody('text')
@@ -271,15 +253,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.arrayBuffer()` parse Request body as an `ArrayBuffer`
-   *
-   * @see {@link https://hono.dev/api/request#arraybuffer}
-   *
    * @example
    * ```ts
    * app.post('/entry', async (c) => {
    *   const body = await c.req.arrayBuffer()
    * })
    * ```
+   * @see https://hono.dev/api/request#arraybuffer
    */
   arrayBuffer(): Promise<ArrayBuffer> {
     return this.cachedBody('arrayBuffer')
@@ -304,9 +284,6 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.url()` can get the request url strings.
-   *
-   * @see {@link https://hono.dev/api/request#url}
-   *
    * @example
    * ```ts
    * app.get('/about/me', (c) => {
@@ -314,6 +291,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    *   ...
    * })
    * ```
+   * @see https://hono.dev/api/request#url
    */
   get url(): string {
     return this.raw.url
@@ -321,15 +299,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.method()` can get the method name of the request.
-   *
-   * @see {@link https://hono.dev/api/request#method}
-   *
    * @example
    * ```ts
    * app.get('/about/me', (c) => {
    *   const method = c.req.method // `GET`
    * })
    * ```
+   * @see https://hono.dev/api/request#method
    */
   get method(): string {
     return this.raw.method
@@ -337,9 +313,6 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.matchedRoutes()` can return a matched route in the handler
-   *
-   * @see {@link https://hono.dev/api/request#matchedroutes}
-   *
    * @example
    * ```ts
    * app.use('*', async function logger(c, next) {
@@ -357,6 +330,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    *   })
    * })
    * ```
+   * @see https://hono.dev/api/request#matchedroutes
    */
   get matchedRoutes(): RouterRoute[] {
     return this.#matchResult[0].map(([[, route]]) => route)
@@ -364,15 +338,13 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `routePath()` can retrieve the path registered within the handler
-   *
-   * @see {@link https://hono.dev/api/request#routepath}
-   *
    * @example
    * ```ts
    * app.get('/posts/:id', (c) => {
    *   return c.json({ path: c.req.routePath })
    * })
    * ```
+   * @see https://hono.dev/api/request#routepath
    */
   get routePath(): string {
     return this.#matchResult[0].map(([[, route]]) => route)[this.routeIndex].path
