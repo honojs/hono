@@ -592,7 +592,7 @@
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
-    "vitest": "^1.6.0",
+    "vitest": "^1.2.2",
     "wrangler": "3.17.1",
     "zod": "^3.20.2"
   },

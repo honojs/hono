@@ -6057,7 +6057,7 @@ vitest@^1.0.0:
     "@vitest/utils" "1.2.2"
     vite-node "1.2.2"
 
-vitest@^1.6.0:
+vitest@^1.2.2:
   version "1.6.0"
   resolved "https://registry.npmjs.org/vitest/-/vitest-1.6.0.tgz"
   integrity sha512-H5r/dN06swuFnzNFhq/dnz37bPXnq8xB2xB5JOVk8K09rUtoeNN+LHWkoQ0A/i3hvbUKKcCei9KpbxqHMLhLLA==

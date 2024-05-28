@@ -29,12 +29,10 @@ export type Bindings = Record<string, unknown>
 export type Variables = Record<string, unknown>
 
 export type BlankEnv = {}
-export type Env =
-  | {
-      Bindings?: Bindings
-      Variables?: Variables
-    }
-  | BlankEnv
+export type Env = {
+  Bindings?: Bindings
+  Variables?: Variables
+}
 
 export type Next = () => Promise<void>
 
