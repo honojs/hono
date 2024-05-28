@@ -114,6 +114,9 @@ export class Context<
   req: HonoRequest<P, I['out']>
   /**
    * `.env` can get bindings (environment variables, secrets, KV namespaces, D1 database, R2 bucket etc.) in Cloudflare Workers.
+   *
+   * @see {@link https://hono.dev/api/context#env}
+   *
    * @example
    * ```ts
    * // Environment object for Cloudflare Workers
@@ -121,13 +124,15 @@ export class Context<
    *   const counter = c.env.COUNTER
    * })
    * ```
-   * @see https://hono.dev/api/context#env
    */
   env: E['Bindings'] = {}
   private _var: E['Variables'] = {}
   finalized: boolean = false
   /**
    * `.error` can get the error object from the middleware if the Handler throws an error.
+   *
+   * @see {@link https://hono.dev/api/context#error}
+   *
    * @example
    * ```ts
    * app.use('*', async (c, next) => {
@@ -137,7 +142,6 @@ export class Context<
    *   }
    * })
    * ```
-   * @see https://hono.dev/api/context#error
    */
   error: Error | undefined = undefined
 
@@ -163,7 +167,7 @@ export class Context<
   }
 
   /**
-   * @see https://hono.dev/api/context#event
+   * @see {@link https://hono.dev/api/context#event}
    */
   get event(): FetchEventLike {
     if (this.#executionCtx && 'respondWith' in this.#executionCtx) {
@@ -174,7 +178,7 @@ export class Context<
   }
 
   /**
-   * @see https://hono.dev/api/context#executionctx
+   * @see {@link https://hono.dev/api/context#executionctx}
    */
   get executionCtx(): ExecutionContext {
     if (this.#executionCtx) {
@@ -185,7 +189,7 @@ export class Context<
   }
 
   /**
-   * @see https://hono.dev/api/context#res
+   * @see {@link https://hono.dev/api/context#res}
    */
   get res(): Response {
     this.#isFresh = false
@@ -214,13 +218,15 @@ export class Context<
 
   /**
    * `.render()` can create a response within a layout.
+   *
+   * @see {@link https://hono.dev/api/context#render-setrenderer}
+   *
    * @example
    * ```ts
    * app.get('/', (c) => {
    *   return c.render('Hello!')
    * })
    * ```
-   * @see https://hono.dev/api/context#render-setrenderer
    */
   render: Renderer = (...args) => this.renderer(...args)
 
@@ -236,6 +242,9 @@ export class Context<
 
   /**
    * `.setRenderer()` can set the layout in the custom middleware.
+   *
+   * @see {@link https://hono.dev/api/context#render-setrenderer}
+   *
    * @example
    * ```tsx
    * app.use('*', async (c, next) => {
@@ -251,7 +260,6 @@ export class Context<
    *   await next()
    * })
    * ```
-   * @see https://hono.dev/api/context#render-setrenderer
    */
   setRenderer = (renderer: Renderer) => {
     this.renderer = renderer
@@ -259,6 +267,9 @@ export class Context<
 
   /**
    * `.header()` can set headers.
+   *
+   * @see {@link https://hono.dev/api/context#body}
+   *
    * @example
    * ```ts
    * app.get('/welcome', (c) => {
@@ -269,7 +280,6 @@ export class Context<
    *   return c.body('Thank you for coming')
    * })
    * ```
-   * @see https://hono.dev/api/context#body
    */
   header = (name: string, value: string | undefined, options?: { append?: boolean }): void => {
     // Clear the header
@@ -317,6 +327,9 @@ export class Context<
 
   /**
    * `.set()` can set the value specified by the key.
+   * 
+   * @see {@link https://hono.dev/api/context#set-get}
+   * 
    * @example
    * ```ts
    * app.use('*', async (c, next) => {
@@ -324,7 +337,6 @@ export class Context<
    *   await next()
    * })
    * ```
-   * @see https://hono.dev/api/context#set-get
 ```
    */
   set: Set<E> = (key: string, value: unknown) => {
@@ -334,6 +346,9 @@ export class Context<
 
   /**
    * `.get()` can use the value specified by the key.
+   *
+   * @see {@link https://hono.dev/api/context#set-get}
+   *
    * @example
    * ```ts
    * app.get('/', (c) => {
@@ -341,7 +356,6 @@ export class Context<
    *   return c.text(`The message is "${message}"`)
    * })
    * ```
-   * @see https://hono.dev/api/context#set-get
    */
   get: Get<E> = (key: string) => {
     return this._var ? this._var[key] : undefined
@@ -349,11 +363,13 @@ export class Context<
 
   /**
    * `.var` can access the value of a variable.
+   *
+   * @see {@link https://hono.dev/api/context#var}
+   *
    * @example
    * ```ts
    * const result = c.var.client.oneMethod()
    * ```
-   * @see https://hono.dev/api/context#var
    */
   // c.var.propName is a read-only
   get var(): Readonly<
@@ -433,6 +449,9 @@ export class Context<
    * `.body()` can return the HTTP response.
    * You can set headers with `.header()` and set HTTP status code with `.status`.
    * This can also be set in `.text()`, `.json()` and so on.
+   *
+   * @see {@link https://hono.dev/api/context#body}
+   *
    * @example
    * ```ts
    * app.get('/welcome', (c) => {
@@ -446,7 +465,6 @@ export class Context<
    *   return c.body('Thank you for coming')
    * })
    * ```
-   * @see https://hono.dev/api/context#body
    */
   body: BodyRespond = (
     data: Data | null,
@@ -460,13 +478,15 @@ export class Context<
 
   /**
    * `.text()` can render text as `Content-Type:text/plain`.
+   *
+   * @see {@link https://hono.dev/api/context#text}
+   *
    * @example
    * ```ts
    * app.get('/say', (c) => {
    *   return c.text('Hello!')
    * })
    * ```
-   * @see https://hono.dev/api/context#text
    */
   text: TextRespond = (
     text: string,
@@ -491,13 +511,15 @@ export class Context<
 
   /**
    * `.json()` can render JSON as `Content-Type:application/json`.
+   *
+   * @see {@link https://hono.dev/api/context#json}
+   *
    * @example
    * ```ts
    * app.get('/api', (c) => {
    *   return c.json({ message: 'Hello!' })
    * })
    * ```
-   * @see https://hono.dev/api/context#json
    */
   json: JSONRespond = <T extends JSONValue | Simplify<unknown>, U extends StatusCode>(
     object: T,
@@ -543,6 +565,9 @@ export class Context<
 
   /**
    * `.redirect()` can Redirect, default status code is 302.
+   *
+   * @see {@link https://hono.dev/api/context#redirect}
+   *
    * @example
    * ```ts
    * app.get('/redirect', (c) => {
@@ -552,7 +577,6 @@ export class Context<
    *   return c.redirect('/', 301)
    * })
    * ```
-   * @see https://hono.dev/api/context#redirect
    */
   redirect = (location: string, status: RedirectStatusCode = 302): Response => {
     this.#headers ??= new Headers()
@@ -562,13 +586,15 @@ export class Context<
 
   /**
    * `.notFound()` can return the Not Found Response.
+   *
+   * @see {@link https://hono.dev/api/context#notfound}
+   *
    * @example
    * ```ts
    * app.get('/notfound', (c) => {
    *   return c.notFound()
    * })
    * ```
-   * @see https://hono.dev/api/context#notfound
    */
   notFound = (): Response | Promise<Response> => {
     return this.notFoundHandler(this)
