@@ -82,6 +82,30 @@ describe('Body Limit Middleware', () => {
         expect(await res.text()).toBe('abc')
       })
 
+      it('should return 200 response without user-defined duplex option', async () => {
+        const contents = ['a', 'b', 'c']
+
+        app.post('/hello', async (c) => {
+          return c.text(await c.req.raw.text())
+        })
+
+        const res = await app.request('/hello', {
+          method: 'POST',
+          body: new ReadableStream({
+            start(controller) {
+              while (contents.length) {
+                controller.enqueue(new TextEncoder().encode(contents.shift() as string))
+              }
+              controller.close()
+            },
+          }),
+        })
+
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('abc')
+      })
+
       it('should return 413 response', async () => {
         const readSpy = vi.fn().mockImplementation(() => {
           return {
