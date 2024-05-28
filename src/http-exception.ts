@@ -13,6 +13,15 @@ type HTTPExceptionOptions = {
 
 /**
  * `HTTPException` must be used when a fatal error such as authentication failure occurs.
+ *
+ * @see {@link https://hono.dev/api/exception}
+ *
+ * @param {StatusCode} status - status code of HTTPException
+ * @param {HTTPExceptionOptions} options - options of HTTPException
+ * @param {HTTPExceptionOptions["res"]} options.res - response of options of HTTPException
+ * @param {HTTPExceptionOptions["message"]} options.message - message of options of HTTPException
+ * @param {HTTPExceptionOptions["cause"]} options.cause - cause of options of HTTPException
+ *
  * @example
  * ```ts
  * import { HTTPException } from 'hono/http-exception'
@@ -27,7 +36,6 @@ type HTTPExceptionOptions = {
  *   await next()
  * })
  * ```
- * @see https://hono.dev/api/exception
  */
 export class HTTPException extends Error {
   readonly res?: Response
