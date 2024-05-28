@@ -28,10 +28,13 @@ import type {
 export type Bindings = Record<string, unknown>
 export type Variables = Record<string, unknown>
 
-export type Env = {
-  Bindings?: Bindings
-  Variables?: Variables
-}
+export type BlankEnv = {}
+export type Env =
+  | {
+      Bindings?: Bindings
+      Variables?: Variables
+    }
+  | BlankEnv
 
 export type Next = () => Promise<void>
 
@@ -104,7 +107,7 @@ export type ErrorHandler<E extends Env = any> = (
 export interface HandlerInterface<
   E extends Env = Env,
   M extends string = string,
-  S extends Schema = {},
+  S extends Schema = BlankSchema,
   BasePath extends string = '/'
 > {
   // app.get(handler)
@@ -700,11 +703,9 @@ export interface HandlerInterface<
   ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>, BasePath>
 
   // app.get(path)
-  <P extends string, R extends HandlerResponse<any> = any, I extends Input = {}>(path: P): Hono<
-    E,
-    S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>,
-    BasePath
-  >
+  <P extends string, R extends HandlerResponse<any> = any, I extends Input = BlankInput>(
+    path: P
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>, BasePath>
 }
 
 ////////////////////////////////////////
@@ -715,7 +716,7 @@ export interface HandlerInterface<
 
 export interface MiddlewareHandlerInterface<
   E extends Env = Env,
-  S extends Schema = {},
+  S extends Schema = BlankSchema,
   BasePath extends string = '/'
 > {
   //// app.use(...handlers[])
@@ -918,7 +919,7 @@ export interface MiddlewareHandlerInterface<
 
 export interface OnHandlerInterface<
   E extends Env = Env,
-  S extends Schema = {},
+  S extends Schema = BlankSchema,
   BasePath extends string = '/'
 > {
   // app.on(method, path, handler)
@@ -1247,7 +1248,12 @@ export interface OnHandlerInterface<
   >
 
   // app.get(method, path, ...handler)
-  <M extends string, P extends string, R extends HandlerResponse<any> = any, I extends Input = {}>(
+  <
+    M extends string,
+    P extends string,
+    R extends HandlerResponse<any> = any,
+    I extends Input = BlankInput
+  >(
     method: M,
     path: P,
     ...handlers: H<E, MergePath<BasePath, P>, I, R>[]
@@ -1578,7 +1584,7 @@ export interface OnHandlerInterface<
   >
 
   // app.on(method[], path, ...handler)
-  <P extends string, R extends HandlerResponse<any> = any, I extends Input = {}>(
+  <P extends string, R extends HandlerResponse<any> = any, I extends Input = BlankInput>(
     methods: string[],
     path: P,
     ...handlers: H<E, MergePath<BasePath, P>, I, R>[]
