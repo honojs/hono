@@ -35,7 +35,7 @@ export const env = <T extends Record<string, unknown>, C extends Context = Conte
   return runtimeEnvHandlers[runtime]()
 }
 
-const knownUserAgents: Record<string, string> = {
+const knownUserAgents: Partial<Record<Runtime, string>> = {
   deno: 'Deno',
   bun: 'Bun',
   workerd: 'Cloudflare-Workers',
@@ -54,7 +54,7 @@ export const getRuntimeKey = (): Runtime => {
   if (userAgentSupported) {
     for (const [runtimeKey, userAgent] of Object.entries(knownUserAgents)) {
       if (checkUserAgentEquals(userAgent)) {
-        return runtimeKey
+        return runtimeKey as Runtime
       }
     }
   }
