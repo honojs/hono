@@ -204,11 +204,16 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   /**
    * `.basePath()` allows base paths to be specified.
+   *
+   * @see {@link https://hono.dev/api/routing#base-path}
+   *
+   * @param {string} path - base Path
+   * @returns {Hono} changed Hono instance
+   *
    * @example
    * ```ts
    * const api = new Hono().basePath('/api')
    * ```
-   * @see https://hono.dev/api/routing#base-path
    */
   basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
     const subApp = this.clone()
