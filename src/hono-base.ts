@@ -223,6 +223,13 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   /**
    * `.onError()` handles an error and returns a customized Response.
+   *
+   * @see {@link https://hono.dev/api/hono#error-handling}
+   *
+   * @param {ErrorHandler} handler - request Handler for error
+   * @returns {Hono} changed Hono instance
+   *
+   * @example
    * ```ts
    * app.onError((err, c) => {
    *   console.error(`${err}`)
