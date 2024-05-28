@@ -376,13 +376,13 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * app will return a Response object.
    *
    * @see {@link https://hono.dev/api/hono#request}
-   * 
+   *
    * @param {RequestInfo | URL} input - url of request or request object
    * @param {RequestInit} requestInit - request Object
    * @param {Env} Env - env Object
    * @param {ExecutionContext} executionCtx - context of execution
    * @returns {Response | Promise<Response>} response of reuqest
-   * 
+   *
    * @example
    * ```ts
    * test('GET /hello is ok', async () => {
