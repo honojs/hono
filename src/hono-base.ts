@@ -403,9 +403,10 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   /**
    * `.fire()` automatically adds a global fetch event listener.
    * This can be useful for environments that adhere to the Service Worker API, such as non-ES module Cloudflare Workers.
-   * @see https://hono.dev/api/hono#fire
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
-   * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/
+   *
+   * @see {@link https://hono.dev/api/hono#fire}
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API}
+   * @see {@link https://developers.cloudflare.com/workers/reference/migrate-to-module-workers}
    */
   fire = () => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
