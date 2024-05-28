@@ -35,7 +35,7 @@ export const env = <T extends Record<string, unknown>, C extends Context = Conte
   return runtimeEnvHandlers[runtime]()
 }
 
-const knownUserAgents: Partial<Record<Runtime, string>> = {
+export const knownUserAgents: Partial<Record<Runtime, string>> = {
   deno: 'Deno',
   bun: 'Bun',
   workerd: 'Cloudflare-Workers',
