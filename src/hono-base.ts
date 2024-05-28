@@ -238,6 +238,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * @param {NotFoundHandler} handler - request handler for not-found
    * @returns {Hono} changed Hono instance
    *
+   * @example
    * ```ts
    * app.notFound((c) => {
    *   return c.text('Custom 404 Message', 404)
