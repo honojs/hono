@@ -103,7 +103,8 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
       },
     })
 
-    c.req.raw = new Request(c.req.raw, { body: reader })
+    // @ts-expect-error - duplex do not have any type yet
+    c.req.raw = new Request(c.req.raw, { body: reader, duplex: 'half' })
 
     await next()
 
