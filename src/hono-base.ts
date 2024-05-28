@@ -232,12 +232,17 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   /**
    * `.notFound()` allows you to customize a Not Found Response.
+   *
+   * @see {@link https://hono.dev/api/hono#not-found}
+   *
+   * @param {NotFoundHandler} handler - request handler for not-found
+   * @returns {Hono} changed Hono instance
+   *
    * ```ts
    * app.notFound((c) => {
    *   return c.text('Custom 404 Message', 404)
    * })
    * ```
-   * @see https://hono.dev/api/hono#not-found
    */
   notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath> => {
     this.notFoundHandler = handler
