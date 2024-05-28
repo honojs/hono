@@ -78,7 +78,7 @@ export const getRuntimeKey = (): Runtime => {
   return 'other'
 }
 
-export const checkUserAgentEquals = (platform: string) => {
+export const checkUserAgentEquals = (platform: string): boolean => {
   const userAgent = navigator.userAgent
 
   return userAgent.startsWith(platform)
