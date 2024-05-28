@@ -396,13 +396,6 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     }
     input = input.toString()
     const path = /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`
-
-    // Always adds default duplex option on Hono.request
-    if (requestInit) {
-      // @ts-expect-error - duplex do not have any type yet
-      requestInit.duplex = 'half'
-    }
-
     const req = new Request(path, requestInit)
     return this.fetch(req, Env, executionCtx)
   }

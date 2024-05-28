@@ -1,7 +1,7 @@
 import { Hono } from '../../hono'
 import { bodyLimit } from '.'
 
-const buildRequestInit = (init: RequestInit = {}): RequestInit => {
+const buildRequestInit = (init: RequestInit = {}): RequestInit & { duplex: 'half' } => {
   const headers: Record<string, string> = {
     'Content-Type': 'text/plain',
   }
@@ -13,7 +13,6 @@ const buildRequestInit = (init: RequestInit = {}): RequestInit => {
     headers,
     body: null,
     ...init,
-    // @ts-expect-error - duplex do not have any type yet
     duplex: 'half',
   }
 }
@@ -76,30 +75,6 @@ describe('Body Limit Middleware', () => {
           },
         })
         const res = await app.request('/body-limit-15byte', buildRequestInit({ body: stream }))
-
-        expect(res).not.toBeNull()
-        expect(res.status).toBe(200)
-        expect(await res.text()).toBe('abc')
-      })
-
-      it('should return 200 response without user-defined duplex option', async () => {
-        const contents = ['a', 'b', 'c']
-
-        app.post('/hello', async (c) => {
-          return c.text(await c.req.raw.text())
-        })
-
-        const res = await app.request('/hello', {
-          method: 'POST',
-          body: new ReadableStream({
-            start(controller) {
-              while (contents.length) {
-                controller.enqueue(new TextEncoder().encode(contents.shift() as string))
-              }
-              controller.close()
-            },
-          }),
-        })
 
         expect(res).not.toBeNull()
         expect(res.status).toBe(200)
