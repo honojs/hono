@@ -1,7 +1,7 @@
 name: ci
 on:
   push:
-    branches: [main, next, v4]
+    branches: [main, next]
   pull_request:
     branches: ['*']
     paths-ignore:
