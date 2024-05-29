@@ -265,18 +265,52 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return this.cachedBody('arrayBuffer')
   }
 
+  /**
+   * Parses the request body as a `Blob`.
+   * @example
+   * ```ts
+   * app.post('/entry', async (c) => {
+   *   const body = await c.req.blob();
+   * });
+   * ```
+   * @see https://hono.dev/api/request#blob
+   */
   blob(): Promise<Blob> {
     return this.cachedBody('blob')
   }
 
+  /**
+   * Parses the request body as `FormData`.
+   * @example
+   * ```ts
+   * app.post('/entry', async (c) => {
+   *   const body = await c.req.formData();
+   * });
+   * ```
+   * @see https://hono.dev/api/request#formdata
+   */
   formData(): Promise<FormData> {
     return this.cachedBody('formData')
   }
 
+  /**
+   * Adds validated data to the request.
+   *
+   * @param target - The target of the validation.
+   * @param data - The validated data to add.
+   */
   addValidatedData(target: keyof ValidationTargets, data: {}) {
     this.#validatedData[target] = data
   }
 
+  /**
+   * Gets validated data from the request.
+   *
+   * @param target - The target of the validation.
+   * @returns The validated data.
+   *
+   * @see https://hono.dev/api/request#valid
+   */
   valid<T extends keyof I & keyof ValidationTargets>(target: T): InputToDataByTarget<I, T>
   valid(target: keyof ValidationTargets) {
     return this.#validatedData[target] as unknown
