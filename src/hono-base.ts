@@ -29,6 +29,9 @@ import type {
 } from './types'
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
 
+/**
+ * Symbol used to mark a composed handler.
+ */
 export const COMPOSED_HANDLER = Symbol('composedHandler')
 
 const notFoundHandler = (c: Context) => {
@@ -82,7 +85,6 @@ export type HonoOptions<E extends Env> = {
 }
 
 class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
-  // Theses methods are dynamically initialized in the constructor.
   get!: HandlerInterface<E, 'get', S, BasePath>
   post!: HandlerInterface<E, 'post', S, BasePath>
   put!: HandlerInterface<E, 'put', S, BasePath>
@@ -244,6 +246,23 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     return this
   }
 
+  /**
+   * Mounts an external application handler to the specified path.
+   *
+   * @param path - The path where the external application handler should be mounted.
+   * @param applicationHandler - The external application handler function that processes requests.
+   * @param optionHandler - Optional function to handle additional options, such as environment variables and execution context.
+   *
+   * @returns The current instance of Hono for chaining.
+   *
+   * @example
+   * ```ts
+   * const app = new Hono()
+   * const externalAppHandler = () => new Response('External App')
+   * app.mount('/external', externalAppHandler)
+   * ```
+   * @see https://hono.dev/api/hono#mount
+   */
   mount(
     path: string,
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
