@@ -24,13 +24,13 @@ The `honojs/hono` project uses [Bun](https://bun.sh/) as its package manager. De
 
 After that, please install the dependency environment.
 
-```txt
+```shell
 bun install
 ```
 
 If you can't do that, there is also a `yarn.lock` file, so you can do the same with the `yarn` command.
 
-```txt
+```shell
 yarn install --frozen-lockfile
 ```
 
@@ -55,7 +55,7 @@ If you want to do it, create the issue about your middleware.
 
 ## Local Development
 
-```
+```shell
 git clone git@github.com:honojs/hono.git && cd hono/.devcontainer && yarn install --frozen-lockfile
 docker compose up -d --build
 docker compose exec hono bash
