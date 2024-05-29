@@ -130,6 +130,19 @@ describe('Malformed JSON', () => {
     expect(res.status).toBe(200)
   })
 
+  it('Should return 200 response, for request with JSON:API Content-Type application/vnd.api+json', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/vnd.api+json',
+      },
+      body: JSON.stringify({
+        any: 'thing',
+      }),
+    })
+    expect(res.status).toBe(200)
+  })
+
   it('Should return 400 response, if Content-Type header does not start with application/json', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
