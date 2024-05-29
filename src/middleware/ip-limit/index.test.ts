@@ -17,20 +17,35 @@ describe('ipLimit middleware', () => {
       }
     }>()
     app.use(
-      '*',
+      '/basic',
       ipLimit(getConnInfo, {
         allow: ['192.168.1.0', '192.168.2.0/24'],
         deny: ['192.168.2.10'],
       })
     )
-    app.get('/', (c) => c.text('Hello World!'))
+    app.get('/basic', (c) => c.text('Hello World!'))
 
-    expect((await app.request('/', {}, { ip: '0.0.0.0' })).status).toBe(403)
+    app.use(
+      '/allow-empty',
+      ipLimit(getConnInfo, {
+        deny: ['192.168.1.0'],
+      })
+    )
+    app.get('/allow-empty', (c) => c.text('Hello World!'))
 
-    expect((await app.request('/', {}, { ip: '192.168.1.0' })).status).toBe(200)
+    expect((await app.request('/basic', {}, { ip: '0.0.0.0' })).status).toBe(403)
 
-    expect((await app.request('/', {}, { ip: '192.168.2.5' })).status).toBe(200)
-    expect((await app.request('/', {}, { ip: '192.168.2.10' })).status).toBe(403)
+    expect((await app.request('/basic', {}, { ip: '192.168.1.0' })).status).toBe(200)
+
+    expect((await app.request('/basic', {}, { ip: '192.168.2.5' })).status).toBe(200)
+    expect((await app.request('/basic', {}, { ip: '192.168.2.10' })).status).toBe(403)
+
+    expect((await app.request('/allow-empty', {}, { ip: '0.0.0.0' })).status).toBe(200)
+
+    expect((await app.request('/allow-empty', {}, { ip: '192.168.1.0' })).status).toBe(403)
+
+    expect((await app.request('/allow-empty', {}, { ip: '192.168.2.5' })).status).toBe(200)
+    expect((await app.request('/allow-empty', {}, { ip: '192.168.2.10' })).status).toBe(200)
   })
 })
 

@@ -137,6 +137,11 @@ export const ipLimit = (
         return await next()
       }
     }
-    throw blockError()
+
+    if (allowLength === 0) {
+      return await next()
+    } else {
+      throw blockError()
+    }
   })
 }
