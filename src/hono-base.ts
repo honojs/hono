@@ -81,6 +81,15 @@ export type HonoOptions<E extends Env> = {
   getPath?: GetPath<E>
 }
 
+type MountOptionHandler = (c: Context) => unknown
+type MountRewritePath = (path: string) => string
+type MountOptions =
+  | MountOptionHandler
+  | {
+      optionHandler?: MountOptionHandler
+      rewritePath?: MountRewritePath
+    }
+
 class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
   // Theses methods are dynamically initialized in the constructor.
   get!: HandlerInterface<E, 'get', S, BasePath>
@@ -247,26 +256,44 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   mount(
     path: string,
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
-    optionHandler?: (c: Context) => unknown
+    options?: MountOptions
   ): Hono<E, S, BasePath> {
-    const mergedPath = mergePath(this._basePath, path)
-    const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
-
     const handler: MiddlewareHandler = async (c, next) => {
       let executionContext: ExecutionContext | undefined = undefined
       try {
         executionContext = c.executionCtx
       } catch {} // Do nothing
-      const options = optionHandler ? optionHandler(c) : [c.env, executionContext]
-      const optionsArray = Array.isArray(options) ? options : [options]
 
+      let rewritePath: MountRewritePath | undefined
+      let optionHandler: MountOptionHandler | undefined
+
+      if (options) {
+        if (typeof options === 'function') {
+          optionHandler = options
+        } else {
+          rewritePath = options.rewritePath
+          optionHandler = options.optionHandler
+        }
+      }
+
+      const applicationOptions = optionHandler ? [optionHandler(c)] : [c.env, executionContext]
       const queryStrings = getQueryStrings(c.req.url)
+
+      const defaultRewritePath = () => {
+        const mergedPath = mergePath(this._basePath, path)
+        const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
+        return c.req.path.slice(pathPrefixLength) || '/'
+      }
+
       const res = await applicationHandler(
         new Request(
-          new URL((c.req.path.slice(pathPrefixLength) || '/') + queryStrings, c.req.url),
+          new URL(
+            rewritePath ? rewritePath(c.req.path) : defaultRewritePath() + queryStrings,
+            c.req.url
+          ),
           c.req.raw
         ),
-        ...optionsArray
+        ...applicationOptions
       )
 
       if (res) {
