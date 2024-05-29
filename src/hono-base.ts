@@ -3,6 +3,7 @@
  * This module is the base module for the Hono object.
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { compose } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
@@ -84,66 +85,14 @@ export type HonoOptions<E extends Env> = {
 }
 
 class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
-  // Theses methods are dynamically initialized in the constructor.
-  /**
-   * Handler for GET requests.
-   */
   get!: HandlerInterface<E, 'get', S, BasePath>
-
-  /**
-   * Handler for POST requests.
-   *
-   * @see https://hono.dev/api/routing#routing
-   */
   post!: HandlerInterface<E, 'post', S, BasePath>
-
-  /**
-   * Handler for PUT requests.
-   *
-   * @see https://hono.dev/api/routing#routing
-   */
   put!: HandlerInterface<E, 'put', S, BasePath>
-
-  /**
-   * Handler for DELETE requests.
-   *
-   * @see https://hono.dev/api/routing#routing
-   */
   delete!: HandlerInterface<E, 'delete', S, BasePath>
-
-  /**
-   * Handler for OPTIONS requests.
-   *
-   * @see https://hono.dev/api/routing#routing
-   */
   options!: HandlerInterface<E, 'options', S, BasePath>
-
-  /**
-   * Handler for PATCH requests.
-   *
-   * @see https://hono.dev/api/routing#routing
-   */
   patch!: HandlerInterface<E, 'patch', S, BasePath>
-
-  /**
-   * Handler for handling all request methods.
-   *
-   * @see https://hono.dev/api/routing#routing
-   */
   all!: HandlerInterface<E, 'all', S, BasePath>
-
-  /**
-   * Handler for custom HTTP methods.
-   *
-   * @see https://hono.dev/api/routing#routing
-   */
   on: OnHandlerInterface<E, S, BasePath>
-
-  /**
-   * Middleware handler.
-   *
-   * @see https://hono.dev/api/routing#routing
-   */
   use: MiddlewareHandlerInterface<E, S, BasePath>
 
   /*
