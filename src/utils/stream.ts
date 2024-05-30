@@ -10,12 +10,21 @@ export class StreamingApi {
   private abortSubscribers: (() => void | Promise<void>)[] = []
   responseReadable: ReadableStream
 
-  constructor(writable: WritableStream, _readable: ReadableStream) {
+  constructor(
+    writable: WritableStream,
+    _readable: ReadableStream,
+    options?: { compress?: boolean; decompress?: boolean; format?: CompressionFormat }
+  ) {
     this.writable = writable
     this.writer = writable.getWriter()
     this.encoder = new TextEncoder()
 
-    const reader = _readable.getReader()
+    let reader = _readable.getReader()
+
+    if (options?.decompress && options.format) {
+      const decompressionStream = new DecompressionStream(options.format)
+      reader = _readable.pipeThrough(decompressionStream).getReader()
+    }
 
     // in case the user disconnects, let the reader know to cancel
     // this in-turn results in responseReadable being closed
@@ -24,7 +33,7 @@ export class StreamingApi {
       await reader.cancel()
     })
 
-    this.responseReadable = new ReadableStream({
+    let responseStream: ReadableStream = new ReadableStream({
       async pull(controller) {
         const { done, value } = await reader.read()
         done ? controller.close() : controller.enqueue(value)
@@ -33,6 +42,13 @@ export class StreamingApi {
         this.abortSubscribers.forEach((subscriber) => subscriber())
       },
     })
+
+    if (options?.compress && options.format) {
+      const compressionStream = new CompressionStream(options.format)
+      responseStream = responseStream.pipeThrough(compressionStream)
+    }
+
+    this.responseReadable = responseStream
   }
 
   async write(input: Uint8Array | string): Promise<StreamingApi> {

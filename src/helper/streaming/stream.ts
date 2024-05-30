@@ -1,13 +1,20 @@
 import type { Context } from '../../context'
 import { StreamingApi } from '../../utils/stream'
 
+export interface CompressionOptions {
+  compress?: boolean
+  decompress?: boolean
+  format?: CompressionFormat
+}
+
 export const stream = (
   c: Context,
   cb: (stream: StreamingApi) => Promise<void>,
-  onError?: (e: Error, stream: StreamingApi) => Promise<void>
+  onError?: (e: Error, stream: StreamingApi) => Promise<void>,
+  options?: CompressionOptions
 ): Response => {
   const { readable, writable } = new TransformStream()
-  const stream = new StreamingApi(writable, readable)
+  const stream = new StreamingApi(writable, readable, options)
   ;(async () => {
     try {
       await cb(stream)
