@@ -12,6 +12,31 @@ on:
       - 'LICENSE'
 
 jobs:
+  coverage:
+    name: 'Coverage'
+    runs-on: ubuntu-latest
+    needs:
+      # deno excluded because it does not contain Deno-specific coverage
+      # bun excluded because it does use vitest for testing
+      - main
+      - fastly
+      - node
+      - wrangler
+      - lambda
+      - lambda-edge
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          merge-multiple: true
+          path: ./coverage
+      - uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          directory: ./coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
+
   main:
     name: 'Main'
     runs-on: ubuntu-latest
@@ -28,6 +53,10 @@ jobs:
       - run: bun run lint
       - run: bun run build
       - run: bun run test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-main
+          path: coverage/
 
   jsr-dry-run:
     name: "Checking if it's valid for JSR"
@@ -70,6 +99,10 @@ jobs:
       - run: bun install
       - run: bun run build
       - run: bun run test:fastly
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-fastly
+          path: coverage/
 
   node:
     name: 'Node.js v${{ matrix.node }}'
@@ -86,6 +119,11 @@ jobs:
       - run: bun install
       - run: bun run build
       - run: bun run test:node
+      - uses: actions/upload-artifact@v4
+        if: matrix.node == '22.x'
+        with:
+          name: coverage-node
+          path: coverage/
 
   wrangler:
     name: 'Cloudflare Workers'
@@ -96,6 +134,10 @@ jobs:
       - run: bun install
       - run: bun run build
       - run: bun run test:wrangler
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-wrangler
+          path: coverage/
 
   lambda:
     name: 'AWS Lambda'
@@ -106,6 +148,10 @@ jobs:
       - run: bun install
       - run: bun run build
       - run: bun run test:lambda
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lambda
+          path: coverage/
 
   lambda-edge:
     name: 'Lambda@Edge'
@@ -116,3 +162,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:lambda-edge
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lambda-edge
+          path: coverage/
