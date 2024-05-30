@@ -17,10 +17,6 @@ interface ComposeContext {
    */
   res: unknown
 }
-interface ComposeContext {
-  finalized: boolean
-  res: unknown
-}
 
 /**
  * Compose middleware functions into a single function based on `koa-compose` package.
