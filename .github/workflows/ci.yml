@@ -1,9 +1,15 @@
 name: ci
 on:
   push:
-    branches: [main, next, v4]
+    branches: [main, next]
   pull_request:
     branches: ['*']
+    paths-ignore:
+      - 'docs/**'
+      - '.vscode/**'
+      - 'README.md'
+      - '.gitignore'
+      - 'LICENSE'
 
 jobs:
   main:
@@ -70,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: ['18.18.2', '20.x']
+        node: ['18.18.2', '20.x', '22.x']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

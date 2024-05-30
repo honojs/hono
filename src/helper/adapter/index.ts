@@ -35,28 +35,51 @@ export const env = <T extends Record<string, unknown>, C extends Context = Conte
   return runtimeEnvHandlers[runtime]()
 }
 
+export const knownUserAgents: Partial<Record<Runtime, string>> = {
+  deno: 'Deno',
+  bun: 'Bun',
+  workerd: 'Cloudflare-Workers',
+  node: 'Node.js',
+}
+
 export const getRuntimeKey = (): Runtime => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const global = globalThis as any
 
-  if (global?.Deno !== undefined) {
-    return 'deno'
+  // check if the current runtime supports navigator.userAgent
+  const userAgentSupported =
+    typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string'
+
+  // if supported, check the user agent
+  if (userAgentSupported) {
+    for (const [runtimeKey, userAgent] of Object.entries(knownUserAgents)) {
+      if (checkUserAgentEquals(userAgent)) {
+        return runtimeKey as Runtime
+      }
+    }
   }
-  if (global?.Bun !== undefined) {
-    return 'bun'
-  }
-  if (typeof global?.WebSocketPair === 'function') {
-    return 'workerd'
-  }
+
+  // check if running on Edge Runtime
   if (typeof global?.EdgeRuntime === 'string') {
     return 'edge-light'
   }
+
+  // check if running on Fastly
   if (global?.fastly !== undefined) {
     return 'fastly'
   }
+
+  // userAgent isn't supported before Node v21.1.0; so fallback to the old way
   if (global?.process?.release?.name === 'node') {
     return 'node'
   }
 
+  // couldn't detect the runtime
   return 'other'
+}
+
+export const checkUserAgentEquals = (platform: string): boolean => {
+  const userAgent = navigator.userAgent
+
+  return userAgent.startsWith(platform)
 }

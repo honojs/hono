@@ -1,18 +1,7 @@
 import { Hono } from '../../hono'
 import { bodyLimit } from '.'
 
-const GlobalRequest = globalThis.Request
-globalThis.Request = class Request extends GlobalRequest {
-  constructor(input: Request | string, init: RequestInit) {
-    if (init) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ;(init as any).duplex ??= 'half'
-    }
-    super(input, init)
-  }
-} as typeof GlobalRequest
-
-const buildRequestInit = (init: RequestInit = {}): RequestInit => {
+const buildRequestInit = (init: RequestInit = {}): RequestInit & { duplex: 'half' } => {
   const headers: Record<string, string> = {
     'Content-Type': 'text/plain',
   }
@@ -24,6 +13,7 @@ const buildRequestInit = (init: RequestInit = {}): RequestInit => {
     headers,
     body: null,
     ...init,
+    duplex: 'half',
   }
 }
 

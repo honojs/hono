@@ -29,6 +29,9 @@ import type {
 } from './types'
 import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
 
+/**
+ * Symbol used to mark a composed handler.
+ */
 export const COMPOSED_HANDLER = Symbol('composedHandler')
 
 const notFoundHandler = (c: Context) => {
@@ -89,7 +92,6 @@ export type HonoOptions<E extends Env> = {
 }
 
 class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
-  // Theses methods are dynamically initialized in the constructor.
   get!: HandlerInterface<E, 'get', S, BasePath>
   post!: HandlerInterface<E, 'post', S, BasePath>
   put!: HandlerInterface<E, 'put', S, BasePath>

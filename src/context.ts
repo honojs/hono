@@ -5,21 +5,57 @@ import type { RedirectStatusCode, StatusCode } from './utils/http-status'
 import type { IsAny, JSONParsed, JSONValue, Simplify } from './utils/types'
 
 type HeaderRecord = Record<string, string | string[]>
+
+/**
+ * Data type can be a string, ArrayBuffer, or ReadableStream.
+ */
 export type Data = string | ArrayBuffer | ReadableStream
 
+/**
+ * Interface for the execution context in a web worker or similar environment.
+ */
 export interface ExecutionContext {
+  /**
+   * Extends the lifetime of the event callback until the promise is settled.
+   *
+   * @param promise - A promise to wait for.
+   */
   waitUntil(promise: Promise<unknown>): void
+  /**
+   * Allows the event to be passed through to subsequent event listeners.
+   */
   passThroughOnException(): void
 }
 
+/**
+ * Interface for context variable mapping.
+ */
 export interface ContextVariableMap {}
 
+/**
+ * Interface for context renderer.
+ */
 export interface ContextRenderer {}
+
+/**
+ * Interface representing a renderer for content.
+ *
+ * @interface DefaultRenderer
+ * @param {string | Promise<string>} content - The content to be rendered, which can be either a string or a Promise resolving to a string.
+ * @returns {Response | Promise<Response>} - The response after rendering the content, which can be either a Response or a Promise resolving to a Response.
+ */
 interface DefaultRenderer {
   (content: string | Promise<string>): Response | Promise<Response>
 }
 
+/**
+ * Renderer type which can either be a ContextRenderer or DefaultRenderer.
+ */
 export type Renderer = ContextRenderer extends Function ? ContextRenderer : DefaultRenderer
+
+/**
+ * Extracts the props for the renderer.
+ */
 export type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unknown, infer Props]
   ? Props
   : unknown
@@ -27,23 +63,52 @@ export type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unkn
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Layout<T = Record<string, any>> = (props: T) => any
 
+/**
+ * Interface for getting context variables.
+ *
+ * @template E - Environment type.
+ */
 interface Get<E extends Env> {
   <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
   <Key extends keyof E['Variables']>(key: Key): E['Variables'][Key]
 }
 
+/**
+ * Interface for setting context variables.
+ *
+ * @template E - Environment type.
+ */
 interface Set<E extends Env> {
   <Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
   <Key extends keyof E['Variables']>(key: Key, value: E['Variables'][Key]): void
 }
 
+/**
+ * Interface for creating a new response.
+ */
 interface NewResponse {
   (data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response
   (data: Data | null, init?: ResponseInit): Response
 }
 
+/**
+ * Interface for responding with a body.
+ */
 interface BodyRespond extends NewResponse {}
 
+/**
+ * Interface for responding with text.
+ *
+ * @interface TextRespond
+ * @template T - The type of the text content.
+ * @template U - The type of the status code.
+ *
+ * @param {T} text - The text content to be included in the response.
+ * @param {U} [status] - An optional status code for the response.
+ * @param {HeaderRecord} [headers] - An optional record of headers to include in the response.
+ *
+ * @returns {Response & TypedResponse<T, U, 'text'>} - The response after rendering the text content, typed with the provided text and status code types.
+ */
 interface TextRespond {
   <T extends string, U extends StatusCode>(text: T, status?: U, headers?: HeaderRecord): Response &
     TypedResponse<T, U, 'text'>
@@ -51,6 +116,19 @@ interface TextRespond {
     TypedResponse<T, U, 'text'>
 }
 
+/**
+ * Interface for responding with JSON.
+ *
+ * @interface JSONRespond
+ * @template T - The type of the JSON value or simplified unknown type.
+ * @template U - The type of the status code.
+ *
+ * @param {T} object - The JSON object to be included in the response.
+ * @param {U} [status] - An optional status code for the response.
+ * @param {HeaderRecord} [headers] - An optional record of headers to include in the response.
+ *
+ * @returns {Response & TypedResponse<Simplify<T> extends JSONValue ? (JSONValue extends Simplify<T> ? never : JSONParsed<T>) : never, U, 'json'>} - The response after rendering the JSON object, typed with the provided object and status code types.
+ */
 interface JSONRespond {
   <T extends JSONValue | Simplify<unknown>, U extends StatusCode>(
     object: T,
@@ -81,6 +159,16 @@ interface JSONRespond {
     >
 }
 
+/**
+ * Interface representing a function that responds with HTML content.
+ *
+ * @param html - The HTML content to respond with, which can be a string or a Promise that resolves to a string.
+ * @param status - (Optional) The HTTP status code for the response.
+ * @param headers - (Optional) A record of headers to include in the response.
+ * @param init - (Optional) The response initialization object.
+ *
+ * @returns A Response object or a Promise that resolves to a Response object.
+ */
 interface HTMLRespond {
   (html: string | Promise<string>, status?: StatusCode, headers?: HeaderRecord):
     | Response
@@ -88,14 +176,35 @@ interface HTMLRespond {
   (html: string | Promise<string>, init?: ResponseInit): Response | Promise<Response>
 }
 
+/**
+ * Options for configuring the context.
+ *
+ * @template E - Environment type.
+ */
 type ContextOptions<E extends Env> = {
+  /**
+   * Bindings for the environment.
+   */
   env: E['Bindings']
+  /**
+   * Execution context for the request.
+   */
   executionCtx?: FetchEventLike | ExecutionContext | undefined
+  /**
+   * Handler for not found responses.
+   */
   notFoundHandler?: NotFoundHandler<E>
 }
 
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
+/**
+ * Sets the headers of a response.
+ *
+ * @param headers - The Headers object to set the headers on.
+ * @param map - A record of header key-value pairs to set.
+ * @returns The updated Headers object.
+ */
 const setHeaders = (headers: Headers, map: Record<string, string> = {}) => {
   Object.entries(map).forEach(([key, value]) => headers.set(key, value))
   return headers
@@ -155,6 +264,12 @@ export class Context<
   private renderer: Renderer = (content: string | Promise<string>) => this.html(content)
   private notFoundHandler: NotFoundHandler<E> = () => new Response()
 
+  /**
+   * Creates an instance of the Context class.
+   *
+   * @param req - The HonoRequest object.
+   * @param options - Optional configuration options for the context.
+   */
   constructor(req: HonoRequest<P, I['out']>, options?: ContextOptions<E>) {
     this.req = req
     if (options) {
@@ -168,6 +283,9 @@ export class Context<
 
   /**
    * @see {@link https://hono.dev/api/context#event}
+   * The FetchEvent associated with the current request.
+   *
+   * @throws Will throw an error if the context does not have a FetchEvent.
    */
   get event(): FetchEventLike {
     if (this.#executionCtx && 'respondWith' in this.#executionCtx) {
@@ -179,6 +297,9 @@ export class Context<
 
   /**
    * @see {@link https://hono.dev/api/context#executionctx}
+   * The ExecutionContext associated with the current request.
+   *
+   * @throws Will throw an error if the context does not have an ExecutionContext.
    */
   get executionCtx(): ExecutionContext {
     if (this.#executionCtx) {
@@ -190,12 +311,18 @@ export class Context<
 
   /**
    * @see {@link https://hono.dev/api/context#res}
+   * The Response object for the current request.
    */
   get res(): Response {
     this.#isFresh = false
     return (this.#res ||= new Response('404 Not Found', { status: 404 }))
   }
 
+  /**
+   * Sets the Response object for the current request.
+   *
+   * @param _res - The Response object to set.
+   */
   set res(_res: Response | undefined) {
     this.#isFresh = false
     if (this.#res && _res) {
@@ -230,6 +357,12 @@ export class Context<
    */
   render: Renderer = (...args) => this.renderer(...args)
 
+  /**
+   * Sets the layout for the response.
+   *
+   * @param layout - The layout to set.
+   * @returns The layout function.
+   */
   setLayout = (
     layout: Layout<PropsForRenderer & { Layout: Layout }>
   ): Layout<
@@ -238,6 +371,11 @@ export class Context<
     }
   > => (this.layout = layout)
 
+  /**
+   * Gets the current layout for the response.
+   *
+   * @returns The current layout function.
+   */
   getLayout = () => this.layout
 
   /**
