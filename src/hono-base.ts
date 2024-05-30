@@ -426,7 +426,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
    * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/
    */
-  fire = () => {
+  fire = (): void => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     addEventListener('fetch', (event: FetchEventLike): void => {
