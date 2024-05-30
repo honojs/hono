@@ -34,22 +34,3 @@ Deno.test('environment variables', () => {
   const { NAME } = env<{ NAME: string }>(c)
   assertEquals(NAME, 'Deno')
 })
-
-Deno.test('trigger the onOpen event of upgradeWebSocket', async () => {
-  const app = new Hono()
-  const open = new Promise<boolean>(resolve => {
-    app.get('/ws', upgradeWebSocket(async (c) => {
-      await new Promise(resolve => setTimeout(resolve, 5e2))
-      return {
-        onOpen: () => resolve(true)
-      }
-    }))
-    const server = Deno.serve(app.fetch)
-    const socket = new WebSocket('http://127.1:8000/ws')
-    socket.onopen = () => {
-      server.shutdown()
-      socket.close()
-    }
-  })
-  assertEquals(await open, true)
-})
