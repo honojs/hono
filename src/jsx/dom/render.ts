@@ -114,7 +114,11 @@ const toAttributeName = (element: SupportedElement, key: string): string =>
     ? key.replace(/([A-Z])/g, '-$1').toLowerCase()
     : key
 
-const applyProps = (container: SupportedElement, attributes: Props, oldAttributes?: Props): void => {
+const applyProps = (
+  container: SupportedElement,
+  attributes: Props,
+  oldAttributes?: Props
+): void => {
   attributes ||= {}
   for (const [key, value] of Object.entries(attributes)) {
     if (!skipProps.has(key) && (!oldAttributes || oldAttributes[key] !== value)) {
