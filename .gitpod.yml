@@ -1,11 +1,8 @@
 tasks:
   - name:  Setup
     init: yarn instal --pure-lockfile
-
-
 image:
   file: ./.devcontainer/Dockerfile
-
 vscode:
   extensions:
     - oven.bun-vscode
