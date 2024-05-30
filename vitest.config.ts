@@ -16,6 +16,13 @@ export default defineConfig({
       provider: 'v8',
       reportsDirectory: './coverage/raw/default',
       reporter: ['json'],
+      exclude: [
+        ...(configDefaults.coverage.exclude ?? []),
+        'benchmarks',
+        'runtime_tests',
+        'build.ts',
+        'src/test-utils',
+      ]
     },
     pool: 'forks',
   },
