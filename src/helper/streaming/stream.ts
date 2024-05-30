@@ -5,8 +5,7 @@ import { StreamingApi } from '../../utils/stream'
 export const stream = (
   c: Context,
   cb: (stream: StreamingApi) => Promise<void>,
-  onError: (e: Error, stream: StreamingApi) => Promise<void> = async (e, stream) =>
-    console.error(e),
+  onError?: (e: Error, stream: StreamingApi) => Promise<void>,
   options?: CompressionOptions
 ): Response => {
   const { readable, writable } = new TransformStream()
