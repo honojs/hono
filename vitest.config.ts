@@ -22,6 +22,7 @@ export default defineConfig({
         'runtime_tests',
         'build.ts',
         'src/test-utils',
+        'src/**/types.ts', // types are compile-time only, so their coverage cannot be measured
       ]
     },
     pool: 'forks',
