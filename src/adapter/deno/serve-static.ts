@@ -11,14 +11,13 @@ export const serveStatic = <E extends Env = Env>(
 ): MiddlewareHandler => {
   return async function serveStatic(c, next) {
     const getContent = async (path: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let file: any
       try {
-        file = await open(path)
+        const file = await open(path)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return file ? (file.readable as any) : null
       } catch (e) {
         console.warn(`${e}`)
       }
-      return file ? file.readable : null
     }
     const pathResolve = (path: string) => {
       return `./${path}`
