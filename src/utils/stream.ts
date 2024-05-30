@@ -2,6 +2,11 @@
  * @module
  * Stream utility.
  */
+export interface CompressionOptions {
+  compress?: boolean
+  decompress?: boolean
+  format?: CompressionFormat
+}
 
 export class StreamingApi {
   private writer: WritableStreamDefaultWriter<Uint8Array>
@@ -10,21 +15,23 @@ export class StreamingApi {
   private abortSubscribers: (() => void | Promise<void>)[] = []
   responseReadable: ReadableStream
 
-  constructor(
-    writable: WritableStream,
-    _readable: ReadableStream,
-    options?: { compress?: boolean; decompress?: boolean; format?: CompressionFormat }
-  ) {
+  constructor(writable: WritableStream, _readable: ReadableStream, options?: CompressionOptions) {
     this.writable = writable
     this.writer = writable.getWriter()
     this.encoder = new TextEncoder()
 
-    let reader = _readable.getReader()
+    if (options?.compress && options.decompress) {
+      throw new Error('Compression and decompression cannot be enabled simultaneously.')
+    }
+
+    let stream: ReadableStream = _readable
 
     if (options?.decompress && options.format) {
       const decompressionStream = new DecompressionStream(options.format)
-      reader = _readable.pipeThrough(decompressionStream).getReader()
+      stream = stream.pipeThrough(decompressionStream)
     }
+
+    const reader = stream.getReader()
 
     // in case the user disconnects, let the reader know to cancel
     // this in-turn results in responseReadable being closed
