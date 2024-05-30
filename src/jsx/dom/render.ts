@@ -114,7 +114,7 @@ const toAttributeName = (element: SupportedElement, key: string): string =>
     ? key.replace(/([A-Z])/g, '-$1').toLowerCase()
     : key
 
-const applyProps = (container: SupportedElement, attributes: Props, oldAttributes?: Props) => {
+const applyProps = (container: SupportedElement, attributes: Props, oldAttributes?: Props): void => {
   attributes ||= {}
   for (const [key, value] of Object.entries(attributes)) {
     if (!skipProps.has(key) && (!oldAttributes || oldAttributes[key] !== value)) {
@@ -235,7 +235,7 @@ const getNextChildren = (
   nextChildren: Node[],
   childrenToRemove: Node[],
   callbacks: EffectData[]
-) => {
+): void => {
   childrenToRemove.push(...node.vR)
   if (typeof node.tag === 'function') {
     node[DOM_STASH][1][STASH_EFFECT]?.forEach((data: EffectData) => callbacks.push(data))
@@ -276,7 +276,7 @@ const findInsertBefore = (node: Node | undefined): SupportedElement | Text | nul
   return findInsertBefore(node.nN)
 }
 
-const removeNode = (node: Node) => {
+const removeNode = (node: Node): void => {
   if (!isNodeString(node)) {
     node[DOM_STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => data[2]?.())
 
@@ -298,12 +298,12 @@ const removeNode = (node: Node) => {
   }
 }
 
-const apply = (node: NodeObject, container: Container) => {
+const apply = (node: NodeObject, container: Container): void => {
   node.c = container
   applyNodeObject(node, container)
 }
 
-const applyNode = (node: Node, container: Container) => {
+const applyNode = (node: Node, container: Container): void => {
   if (isNodeString(node)) {
     container.textContent = node.t
   } else {
@@ -328,7 +328,7 @@ const findChildNodeIndex = (
   return
 }
 
-const applyNodeObject = (node: NodeObject, container: Container) => {
+const applyNodeObject = (node: NodeObject, container: Container): void => {
   const next: Node[] = []
   const remove: Node[] = []
   const callbacks: EffectData[] = []
@@ -523,14 +523,14 @@ export const buildNode = (node: Child): Node | undefined => {
   }
 }
 
-const replaceContainer = (node: NodeObject, from: DocumentFragment, to: Container) => {
+const replaceContainer = (node: NodeObject, from: DocumentFragment, to: Container): void => {
   if (node.c === from) {
     node.c = to
     node.vC.forEach((child) => replaceContainer(child as NodeObject, from, to))
   }
 }
 
-const updateSync = (context: Context, node: NodeObject) => {
+const updateSync = (context: Context, node: NodeObject): void => {
   node[DOM_STASH][2]?.forEach(([c, v]) => {
     c.values.push(v)
   })
@@ -590,7 +590,7 @@ export const update = async (
   return promise
 }
 
-export const renderNode = (node: NodeObject, container: Container) => {
+export const renderNode = (node: NodeObject, container: Container): void => {
   const context: Context = []
   ;(context as Context)[4] = true // start top level render
   build(context, node, undefined)
@@ -602,12 +602,12 @@ export const renderNode = (node: NodeObject, container: Container) => {
   container.replaceChildren(fragment)
 }
 
-export const render = (jsxNode: Child, container: Container) => {
+export const render = (jsxNode: Child, container: Container): void => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   renderNode(buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject, container)
 }
 
-export const flushSync = (callback: () => void) => {
+export const flushSync = (callback: () => void): void => {
   const set = new Set<NodeObject>()
   currentUpdateSets.push(set)
   callback()

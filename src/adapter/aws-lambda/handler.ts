@@ -95,7 +95,7 @@ const getRequestContext = (
 const streamToNodeStream = async (
   reader: ReadableStreamDefaultReader<Uint8Array>,
   writer: NodeJS.WritableStream
-) => {
+): Promise<void> => {
   let readResult = await reader.read()
   while (!readResult.done) {
     writer.write(readResult.value)

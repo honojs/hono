@@ -395,7 +395,7 @@ export class Context<
    * ```
    * @see https://hono.dev/api/context#render-setrenderer
    */
-  setRenderer = (renderer: Renderer) => {
+  setRenderer = (renderer: Renderer): void => {
     this.renderer = renderer
   }
 
