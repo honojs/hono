@@ -12,8 +12,10 @@ export default defineConfig({
     exclude: [...configDefaults.exclude, '**/sandbox/**', '**/*.case.test.+(ts|tsx|js)'],
     setupFiles: ['./src/test-utils/setup-vitest.ts'],
     coverage: {
+      enabled: true,
       provider: 'v8',
-      reporter: ['text'],
+      reportsDirectory: './coverage/raw/default',
+      reporter: ['json'],
     },
     pool: 'forks',
   },
