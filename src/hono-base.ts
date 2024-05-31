@@ -273,7 +273,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     // prepare handlers for request
     const getOptions: (c: Context) => unknown[] = optionHandler
       ? (c) => {
-          const options = optionHandler(c)
+          const options = optionHandler!(c)
           return Array.isArray(options) ? options : [options]
         }
       : (c) => {
@@ -294,7 +294,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     })()
 
     const handler: MiddlewareHandler = async (c, next) => {
-      const res = await applicationHandler(replaceRequest(c.req.raw), ...getOptions(c))
+      const res = await applicationHandler(replaceRequest!(c.req.raw), ...getOptions(c))
 
       if (res) {
         return res
