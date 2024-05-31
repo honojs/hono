@@ -2656,7 +2656,7 @@ describe('app.mount()', () => {
     })
   })
 
-  describe('With rewritePath option', () => {
+  describe('With replaceRequest option', () => {
     const anotherApp = (req: Request) => {
       const path = getPath(req)
       if (path === '/app') {
