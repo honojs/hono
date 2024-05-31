@@ -27,7 +27,7 @@ import type {
   RouterRoute,
   Schema,
 } from './types'
-import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
+import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
 export const COMPOSED_HANDLER = Symbol('composedHandler')
 
@@ -82,12 +82,12 @@ export type HonoOptions<E extends Env> = {
 }
 
 type MountOptionHandler = (c: Context) => unknown
-type MountRewritePath = (path: string) => string
+type MountReplaceRequest = (originalRequest: Request) => Request
 type MountOptions =
   | MountOptionHandler
   | {
       optionHandler?: MountOptionHandler
-      rewritePath?: MountRewritePath
+      replaceRequest?: MountReplaceRequest
     }
 
 class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
@@ -258,43 +258,43 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
     options?: MountOptions
   ): Hono<E, S, BasePath> {
-    const handler: MiddlewareHandler = async (c, next) => {
-      let executionContext: ExecutionContext | undefined = undefined
-      try {
-        executionContext = c.executionCtx
-      } catch {} // Do nothing
+    // handle options
+    let replaceRequest: MountReplaceRequest | undefined
+    let optionHandler: MountOptionHandler | undefined
+    if (options) {
+      if (typeof options === 'function') {
+        optionHandler = options
+      } else {
+        optionHandler = options.optionHandler
+        replaceRequest = options.replaceRequest
+      }
+    }
 
-      let rewritePath: MountRewritePath | undefined
-      let optionHandler: MountOptionHandler | undefined
-
-      if (options) {
-        if (typeof options === 'function') {
-          optionHandler = options
-        } else {
-          rewritePath = options.rewritePath
-          optionHandler = options.optionHandler
+    // prepare handlers for request
+    const getOptions: (c: Context) => unknown[] = optionHandler
+      ? (c) => {
+          const options = optionHandler(c)
+          return Array.isArray(options) ? options : [options]
         }
+      : (c) => {
+          let executionContext: ExecutionContext | undefined = undefined
+          try {
+            executionContext = c.executionCtx
+          } catch {} // Do nothing
+          return [c.env, executionContext]
+        }
+    replaceRequest ||= (() => {
+      const mergedPath = mergePath(this._basePath, path)
+      const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
+      return (request) => {
+        const url = new URL(request.url)
+        url.pathname = url.pathname.slice(pathPrefixLength) || '/'
+        return new Request(url, request)
       }
+    })()
 
-      const applicationOptions = optionHandler ? [optionHandler(c)] : [c.env, executionContext]
-      const queryStrings = getQueryStrings(c.req.url)
-
-      const defaultRewritePath = () => {
-        const mergedPath = mergePath(this._basePath, path)
-        const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
-        return c.req.path.slice(pathPrefixLength) || '/'
-      }
-
-      const res = await applicationHandler(
-        new Request(
-          new URL(
-            rewritePath ? rewritePath(c.req.path) : defaultRewritePath() + queryStrings,
-            c.req.url
-          ),
-          c.req.raw
-        ),
-        ...applicationOptions
-      )
+    const handler: MiddlewareHandler = async (c, next) => {
+      const res = await applicationHandler(replaceRequest(c.req.raw), ...getOptions(c))
 
       if (res) {
         return res

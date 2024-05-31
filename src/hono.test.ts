@@ -2667,7 +2667,7 @@ describe('app.mount()', () => {
 
     const app = new Hono()
     app.mount('/app', anotherApp, {
-      rewritePath: (path) => path,
+      replaceRequest: (req) => req,
     })
 
     it('Should return 200 response with the correct path', async () => {
