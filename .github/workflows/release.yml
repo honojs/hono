@@ -6,7 +6,7 @@ on:
       - '*'
 
 jobs:
-  publish:
+  jsr:
     name: publish-to-jsr
     runs-on: ubuntu-latest
 
