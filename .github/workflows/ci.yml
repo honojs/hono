@@ -18,6 +18,7 @@ jobs:
     needs:
       # deno excluded because it does not contain Deno-specific coverage
       # bun excluded because it uses built-in test tool which does not support coverage in v8/istanbul format.
+      # refer https://github.com/oven-sh/bun/issues/4015
       - main
       - fastly
       - node
