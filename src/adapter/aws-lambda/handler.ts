@@ -95,7 +95,7 @@ const getRequestContext = (
 const streamToNodeStream = async (
   reader: ReadableStreamDefaultReader<Uint8Array>,
   writer: NodeJS.WritableStream
-) => {
+): Promise<void> => {
   let readResult = await reader.read()
   while (!readResult.done) {
     writer.write(readResult.value)
@@ -379,26 +379,7 @@ class ALBProcessor extends EventProcessor<ALBProxyEvent> {
     }
     return headers
   }
-  protected setHeadersToResult(
-    event: ALBProxyEvent,
-    result: APIGatewayProxyResult,
-    headers: Headers
-  ): void {
-    // When multiValueHeaders is present in event set multiValueHeaders in result
-    if (event.multiValueHeaders) {
-      const multiValueHeaders: { [key: string]: string[] } = {}
-      for (const [key, value] of headers.entries()) {
-        multiValueHeaders[key] = [value]
-      }
-      result.multiValueHeaders = multiValueHeaders
-    } else {
-      const singleValueHeaders: Record<string, string> = {}
-      for (const [key, value] of headers.entries()) {
-        singleValueHeaders[key] = value
-      }
-      result.headers = singleValueHeaders
-    }
-  }
+
   protected getPath(event: ALBProxyEvent): string {
     return event.path
   }
