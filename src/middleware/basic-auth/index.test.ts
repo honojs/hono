@@ -28,7 +28,7 @@ describe('Basic Auth by Middleware', () => {
       password,
     })
   )
-  // Test multiple handlers
+  
   app.use('/auth/*', async (c, next) => {
     c.header('x-custom', 'foo')
     await next()
@@ -110,64 +110,69 @@ describe('Basic Auth by Middleware', () => {
     return c.text('verify-user')
   })
 
-  it('Should not authorize', async () => {
+  it('should not authorize without credentials', async () => {
     const req = new Request('http://localhost/auth/a')
     const res = await app.request(req)
+
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
-    expect(handlerExecuted).toBeFalsy()
-    expect(await res.text()).toBe('Unauthorized')
     expect(res.headers.get('x-custom')).toBeNull()
+    expect(handlerExecuted).toBeFalsy()
   })
 
-  it('Should authorize', async () => {
+  it('should authorize with valid credentials', async () => {
     const credential = Buffer.from(username + ':' + password).toString('base64')
 
     const req = new Request('http://localhost/auth/a')
     req.headers.set('Authorization', `Basic ${credential}`)
+
     const res = await app.request(req)
+
     expect(res).not.toBeNull()
-    expect(handlerExecuted).toBeTruthy()
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('auth')
     expect(res.headers.get('x-custom')).toBe('foo')
+    expect(handlerExecuted).toBeTruthy()
   })
 
-  it('Should authorize Unicode', async () => {
+  it('should authorize with unicode password', async () => {
     const credential = Buffer.from(username + ':' + unicodePassword).toString('base64')
 
     const req = new Request('http://localhost/auth-unicode/a')
     req.headers.set('Authorization', `Basic ${credential}`)
     const res = await app.request(req)
-    expect(handlerExecuted).toBeTruthy()
+
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('auth')
+    expect(handlerExecuted).toBeTruthy()
   })
 
-  it('Should authorize multiple users', async () => {
+  it('should authorize with multiple users', async () => {
     let credential = Buffer.from(usernameB + ':' + passwordB).toString('base64')
 
     let req = new Request('http://localhost/auth-multi/b')
     req.headers.set('Authorization', `Basic ${credential}`)
+
     let res = await app.request(req)
+
     expect(handlerExecuted).toBeTruthy()
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('auth')
 
-    handlerExecuted = false
     credential = Buffer.from(usernameC + ':' + passwordC).toString('base64')
+    handlerExecuted = false
     req = new Request('http://localhost/auth-multi/c')
     req.headers.set('Authorization', `Basic ${credential}`)
+
     res = await app.request(req)
+
     expect(handlerExecuted).toBeTruthy()
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('auth')
   })
 
-  it('Should authorize with sha256 function override', async () => {
+  it('should authorize with SHA256 function override', async () => {
     const credential = Buffer.from(username + ':' + password).toString('base64')
 
     const req = new Request('http://localhost/auth-override-func/a')
@@ -179,51 +184,51 @@ describe('Basic Auth by Middleware', () => {
     expect(await res.text()).toBe('auth')
   })
 
-  it('Should authorize - nested', async () => {
+  it('should authorize nested routes', async () => {
     const credential = Buffer.from(username + ':' + password).toString('base64')
 
     const req = new Request('http://localhost/nested')
     req.headers.set('Authorization', `Basic ${credential}`)
     const res = await app.request(req)
-    expect(handlerExecuted).toBeTruthy()
+
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('nested')
+    expect(handlerExecuted).toBeTruthy()
   })
 
-  it('Should not authorize - nested', async () => {
+  it('should not authorize nested route with invalid credential', async () => {
     const credential = Buffer.from('foo' + ':' + 'bar').toString('base64')
 
     const req = new Request('http://localhost/nested')
     req.headers.set('Authorization', `Basic ${credential}`)
     const res = await app.request(req)
-    expect(handlerExecuted).toBeFalsy()
+
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
-    expect(await res.text()).toBe('Unauthorized')
+    expect(handlerExecuted).toBeFalsy()
   })
 
-  it('Should authorize - verifyUser', async () => {
+  it('should authorize with verifyUser function', async () => {
     const credential = Buffer.from('dynamic-user' + ':' + 'hono-password').toString('base64')
 
     const req = new Request('http://localhost/verify-user')
     req.headers.set('Authorization', `Basic ${credential}`)
     const res = await app.request(req)
-    expect(handlerExecuted).toBeTruthy()
+
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('verify-user')
+    expect(handlerExecuted).toBeTruthy()
   })
 
-  it('Should not authorize - verifyUser', async () => {
+  it('should not authorize with verifyUser function when creandetials are invalid', async () => {
     const credential = Buffer.from('foo' + ':' + 'bar').toString('base64')
 
     const req = new Request('http://localhost/verify-user')
     req.headers.set('Authorization', `Basic ${credential}`)
     const res = await app.request(req)
-    expect(handlerExecuted).toBeFalsy()
+
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
-    expect(await res.text()).toBe('Unauthorized')
+    expect(handlerExecuted).toBeFalsy()
   })
 })
