@@ -51,20 +51,28 @@ type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings']
 export type HonoOptions<E extends Env> = {
   /**
    * `strict` option specifies whether to distinguish whether the last path is a directory or not.
+   *
+   * @see {@link https://hono.dev/api/hono#strict-mode}
+   *
    * @default true
-   * @see https://hono.dev/api/hono#strict-mode
    */
   strict?: boolean
   /**
    * `router` option specifices which router to use.
+   *
+   * @see {@link https://hono.dev/api/hono#router-option}
+   *
+   * @example
    * ```ts
    * const app = new Hono({ router: new RegExpRouter() })
    * ```
-   * @see https://hono.dev/api/hono#router-option
    */
   router?: Router<[H, RouterRoute]>
   /**
    * `getPath` can handle the host header value.
+   *
+   * @see {@link https://hono.dev/api/routing#routing-with-host-header-value}
+   *
    * @example
    * ```ts
    * const app = new Hono({
@@ -79,7 +87,6 @@ export type HonoOptions<E extends Env> = {
    * //  headers: { host: 'www1.example.com' },
    * // })
    * ```
-   * @see https://hono.dev/api/routing#routing-with-host-header-value
    */
   getPath?: GetPath<E>
 }
@@ -174,6 +181,24 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   private notFoundHandler: NotFoundHandler = notFoundHandler
   private errorHandler: ErrorHandler = errorHandler
 
+  /**
+   * `.route()` allows grouping other Hono instance in routes.
+   *
+   * @see {@link https://hono.dev/api/routing#grouping}
+   *
+   * @param {string} path - base Path
+   * @param {Hono} app - other Hono instance
+   * @returns {Hono} routed Hono instnace
+   *
+   * @example
+   * ```ts
+   * const app = new Hono()
+   * const app2 = new Hono()
+   *
+   * app2.get("/user", (c) => c.text("user"))
+   * app.route("/api", app2) // GET /api/user
+   * ```
+   */
   route<
     SubPath extends string,
     SubEnv extends Env,
@@ -206,11 +231,16 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   /**
    * `.basePath()` allows base paths to be specified.
+   *
+   * @see {@link https://hono.dev/api/routing#base-path}
+   *
+   * @param {string} path - base Path
+   * @returns {Hono} changed Hono instance
+   *
    * @example
    * ```ts
    * const api = new Hono().basePath('/api')
    * ```
-   * @see https://hono.dev/api/routing#base-path
    */
   basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
     const subApp = this.clone()
@@ -220,6 +250,13 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   /**
    * `.onError()` handles an error and returns a customized Response.
+   *
+   * @see {@link https://hono.dev/api/hono#error-handling}
+   *
+   * @param {ErrorHandler} handler - request Handler for error
+   * @returns {Hono} changed Hono instance
+   *
+   * @example
    * ```ts
    * app.onError((err, c) => {
    *   console.error(`${err}`)
@@ -234,12 +271,18 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   /**
    * `.notFound()` allows you to customize a Not Found Response.
+   *
+   * @see {@link https://hono.dev/api/hono#not-found}
+   *
+   * @param {NotFoundHandler} handler - request handler for not-found
+   * @returns {Hono} changed Hono instance
+   *
+   * @example
    * ```ts
    * app.notFound((c) => {
    *   return c.text('Custom 404 Message', 404)
    * })
    * ```
-   * @see https://hono.dev/api/hono#not-found
    */
   notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath> => {
     this.notFoundHandler = handler
@@ -247,21 +290,27 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   }
 
   /**
-   * Mounts an external application handler to the specified path.
+   * `.mount()` allows you to mount applications built with other frameworks into your Hono application.
    *
-   * @param path - The path where the external application handler should be mounted.
-   * @param applicationHandler - The external application handler function that processes requests.
-   * @param optionHandler - Optional function to handle additional options, such as environment variables and execution context.
+   * @see {@link https://hono.dev/api/hono#mount}
    *
-   * @returns The current instance of Hono for chaining.
+   * @param {string} path - base Path
+   * @param {Function} applicationHandler - other Request Handler
+   * @param {Function | undefined} optionHandler - other Request Handler with Hono Context
+   * @returns {Hono} mounted Hono instance
    *
    * @example
    * ```ts
+   * import { Router as IttyRouter } from 'itty-router'
+   * import { Hono } from 'hono'
+   * // Create itty-router application
+   * const ittyRouter = IttyRouter()
+   * // GET /itty-router/hello
+   * ittyRouter.get('/hello', () => new Response('Hello from itty-router'))
+   *
    * const app = new Hono()
-   * const externalAppHandler = () => new Response('External App')
-   * app.mount('/external', externalAppHandler)
+   * app.mount('/itty-router', ittyRouter.handle)
    * ```
-   * @see https://hono.dev/api/hono#mount
    */
   mount(
     path: string,
@@ -379,7 +428,14 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   /**
    * `.fetch()` will be entry point of your app.
-   * @see https://hono.dev/api/hono#fetch
+   *
+   * @see {@link https://hono.dev/api/hono#fetch}
+   *
+   * @param {Request} request - reuqest Object of request
+   * @param {Env} Env - env Object
+   * @param {ExecutionContext} - context of execution
+   * @returns {Response | Promise<Response>} response of request
+   *
    */
   fetch: (
     request: Request,
