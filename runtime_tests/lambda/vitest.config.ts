@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
+import config from '../../vitest.config'
 
 export default defineConfig({
   test: {
@@ -9,5 +10,9 @@ export default defineConfig({
     globals: true,
     include: ['**/runtime_tests/lambda/**/*.+(ts|tsx|js)'],
     exclude: ['**/runtime_tests/lambda/vitest.config.ts', '**/runtime_tests/lambda/mock.ts'],
+    coverage: {
+      ...config.test?.coverage,
+      reportsDirectory: './coverage/raw/runtime-lambda',
+    },
   },
 })
