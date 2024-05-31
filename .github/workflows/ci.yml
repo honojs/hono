@@ -16,7 +16,6 @@ jobs:
     name: 'Coverage'
     runs-on: ubuntu-latest
     needs:
-      # deno excluded because it does not contain Deno-specific coverage
       # bun excluded because it uses built-in test tool which does not support coverage in v8/istanbul format.
       # refer https://github.com/oven-sh/bun/issues/4015
       - main
@@ -77,9 +76,13 @@ jobs:
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
-      - run: env NAME=Deno deno test --allow-read --allow-env --allow-write -c runtime_tests/deno/deno.json runtime_tests/deno
-      - run: deno test -c runtime_tests/deno-jsx/deno.precompile.json runtime_tests/deno-jsx
-      - run: deno test -c runtime_tests/deno-jsx/deno.react-jsx.json runtime_tests/deno-jsx
+      - run: env NAME=Deno deno test --coverage=coverage/raw/deno-runtime --allow-read --allow-env --allow-write -c runtime_tests/deno/deno.json runtime_tests/deno
+      - run: deno test -c runtime_tests/deno-jsx/deno.precompile.json --coverage=coverage/raw/deno-precompile-jsx runtime_tests/deno-jsx
+      - run: deno test -c runtime_tests/deno-jsx/deno.react-jsx.json --coverage=coverage/raw/deno-react-jsx runtime_tests/deno-jsx
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-deno
+          path: coverage/
 
   bun:
     name: 'Bun'
