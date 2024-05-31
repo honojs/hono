@@ -1,5 +1,23 @@
 # Migration Guide
 
+## v4.3.11 to v4.4.0
+
+### `deno.land/x` to JSR
+
+There is no braking change, but we no longer publish the module from `deno.land/x`. If you want to use Hono on Deno, use JSR instead of it.
+
+If you migrate, replace the path `deno.land/x` with JSR's.
+
+```ts
+// From
+import { Hono } from 'https://deno.land/x/hono/mod.ts'
+
+// To
+import { Hono } from 'jsr:@hono/hono'
+```
+
+You can see more details on our website: https://hono.dev/getting-started/deno
+
 ## v3.12.x to v4.0.0
 
 There are some breaking changes.
