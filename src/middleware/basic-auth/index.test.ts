@@ -28,7 +28,7 @@ describe('Basic Auth by Middleware', () => {
       password,
     })
   )
-  
+
   app.use('/auth/*', async (c, next) => {
     c.header('x-custom', 'foo')
     await next()
