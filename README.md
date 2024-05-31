@@ -8,7 +8,7 @@
 
 <p align="center">
 <a href="https://hono.dev"><b>Documentation 👉 hono.dev</b></a><br />
-<i>v4 has been released!</i> <a href="docs/MIGRATION.md">Migration guide</b>
+<i>Now supports <a href="https://jsr.io/@hono/hono">JSR</a> and <code>deno.land/x</code> is deprecated! See <a href="docs/MIGRATION.md">Migration guide</a>.</i>
 </p>
 
 <hr />
