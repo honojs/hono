@@ -137,7 +137,7 @@ jobs:
       - uses: oven-sh/setup-bun@v1
       - run: bun install
       - run: bun run build
-      - run: bun run test:wokerd
+      - run: bun run test:workerd
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-workerd
