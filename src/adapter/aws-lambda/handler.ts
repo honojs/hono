@@ -6,8 +6,9 @@ import type {
   ALBRequestContext,
   ApiGatewayRequestContext,
   ApiGatewayRequestContextV2,
-} from './custom-context'
-import type { Handler, LambdaContext } from './types'
+  Handler,
+  LambdaContext,
+} from './types'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
