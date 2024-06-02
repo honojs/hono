@@ -40,7 +40,7 @@ export type ClientErrorStatusCode =
 export type ServerErrorStatusCode = 500 | 501 | 502 | 503 | 504 | 505 | 506 | 507 | 508 | 510 | 511
 
 /**
- * `UnofficialStatusCode` can be used to specify an informal status code.
+ * `UnofficialStatusCode` can be used to specify an unofficial status code.
  * @example
  *
  * ```ts
