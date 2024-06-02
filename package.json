@@ -594,6 +594,7 @@
     "vite-plugin-fastly-js-compute": "^0.4.2",
     "vitest": "^1.2.2",
     "wrangler": "^3.58.0",
+    "ws": "^8.17.0",
     "zod": "^3.20.2"
   },
   "engines": {
