@@ -44,7 +44,7 @@ export type ServerErrorStatusCode = 500 | 501 | 502 | 503 | 504 | 505 | 506 | 50
  * @example
  *
  * ```ts
- * app.get('/', (c) => {
+ * app.get('/unknown', (c) => {
  *   return c.text("Unknown Error", 520 as UnofficialStatusCode)
  * })
  * ```
