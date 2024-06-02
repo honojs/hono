@@ -43,6 +43,7 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
   // @ts-expect-error - server.accept is not typed
   server.accept?.()
   return new Response(null, {
+    status: 101,
     // @ts-expect-error - webSocket is not typed
     webSocket: client,
   })
