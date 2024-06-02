@@ -3,6 +3,7 @@
  * This module provides the `HTTPException` class.
  */
 
+import { IS_HTTP_EXCEPTION } from './hono-base'
 import type { StatusCode } from './utils/http-status'
 
 /**
@@ -46,6 +47,7 @@ type HTTPExceptionOptions = {
 export class HTTPException extends Error {
   readonly res?: Response
   readonly status: StatusCode
+  private [IS_HTTP_EXCEPTION]: boolean = true
 
   /**
    * Creates an instance of `HTTPException`.

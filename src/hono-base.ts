@@ -7,7 +7,6 @@
 import { compose } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
-import { HTTPException } from './http-exception'
 import { HonoRequest } from './request'
 import type { Router } from './router'
 import { METHODS, METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
@@ -34,12 +33,18 @@ import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/ur
  */
 export const COMPOSED_HANDLER = Symbol('composedHandler')
 
+/**
+ * Symbol for the property name to mark whether it is HTTPException.
+ */
+export const IS_HTTP_EXCEPTION = Symbol('isHTTPException')
+
 const notFoundHandler = (c: Context) => {
   return c.text('404 Not Found', 404)
 }
 
 const errorHandler = (err: Error, c: Context) => {
-  if (err instanceof HTTPException) {
+  if ((err as any)[IS_HTTP_EXCEPTION]) {
+    //@ts-expect-error `getResponse()` is not typed.
     return err.getResponse()
   }
   console.error(err)
