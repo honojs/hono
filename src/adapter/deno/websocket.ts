@@ -4,9 +4,9 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
   if (c.req.header('upgrade') !== 'websocket') {
     return await next()
   }
-  const { response, socket } = Deno.upgradeWebSocket(c.req.raw)
 
   const events = await createEvents(c)
+  const { response, socket } = Deno.upgradeWebSocket(c.req.raw)
 
   const wsContext: WSContext = {
     binaryType: 'arraybuffer',
