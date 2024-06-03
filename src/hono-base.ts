@@ -27,7 +27,7 @@ import type {
   RouterRoute,
   Schema,
 } from './types'
-import { getPath, getPathNoStrict, getQueryStrings, mergePath } from './utils/url'
+import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
 /**
  * Symbol used to mark a composed handler.
@@ -90,6 +90,15 @@ export type HonoOptions<E extends Env> = {
    */
   getPath?: GetPath<E>
 }
+
+type MountOptionHandler = (c: Context) => unknown
+type MountReplaceRequest = (originalRequest: Request) => Request
+type MountOptions =
+  | MountOptionHandler
+  | {
+      optionHandler?: MountOptionHandler
+      replaceRequest?: MountReplaceRequest
+    }
 
 class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
   get!: HandlerInterface<E, 'get', S, BasePath>
@@ -296,7 +305,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    *
    * @param {string} path - base Path
    * @param {Function} applicationHandler - other Request Handler
-   * @param {Function | undefined} optionHandler - other Request Handler with Hono Context
+   * @param {MountOptions} [options] - options of `.mount()`
    * @returns {Hono} mounted Hono instance
    *
    * @example
@@ -311,31 +320,58 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * const app = new Hono()
    * app.mount('/itty-router', ittyRouter.handle)
    * ```
+   *
+   * @example
+   * ```ts
+   * const app = new Hono()
+   * // Send the request to another application without modification.
+   * app.mount('/app', anotherApp, {
+   *   replaceRequest: (req) => req,
+   * })
+   * ```
    */
   mount(
     path: string,
     applicationHandler: (request: Request, ...args: any) => Response | Promise<Response>,
-    optionHandler?: (c: Context) => unknown
+    options?: MountOptions
   ): Hono<E, S, BasePath> {
-    const mergedPath = mergePath(this._basePath, path)
-    const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
+    // handle options
+    let replaceRequest: MountReplaceRequest | undefined
+    let optionHandler: MountOptionHandler | undefined
+    if (options) {
+      if (typeof options === 'function') {
+        optionHandler = options
+      } else {
+        optionHandler = options.optionHandler
+        replaceRequest = options.replaceRequest
+      }
+    }
+
+    // prepare handlers for request
+    const getOptions: (c: Context) => unknown[] = optionHandler
+      ? (c) => {
+          const options = optionHandler!(c)
+          return Array.isArray(options) ? options : [options]
+        }
+      : (c) => {
+          let executionContext: ExecutionContext | undefined = undefined
+          try {
+            executionContext = c.executionCtx
+          } catch {} // Do nothing
+          return [c.env, executionContext]
+        }
+    replaceRequest ||= (() => {
+      const mergedPath = mergePath(this._basePath, path)
+      const pathPrefixLength = mergedPath === '/' ? 0 : mergedPath.length
+      return (request) => {
+        const url = new URL(request.url)
+        url.pathname = url.pathname.slice(pathPrefixLength) || '/'
+        return new Request(url, request)
+      }
+    })()
 
     const handler: MiddlewareHandler = async (c, next) => {
-      let executionContext: ExecutionContext | undefined = undefined
-      try {
-        executionContext = c.executionCtx
-      } catch {} // Do nothing
-      const options = optionHandler ? optionHandler(c) : [c.env, executionContext]
-      const optionsArray = Array.isArray(options) ? options : [options]
-
-      const queryStrings = getQueryStrings(c.req.url)
-      const res = await applicationHandler(
-        new Request(
-          new URL((c.req.path.slice(pathPrefixLength) || '/') + queryStrings, c.req.url),
-          c.req.raw
-        ),
-        ...optionsArray
-      )
+      const res = await applicationHandler(replaceRequest!(c.req.raw), ...getOptions(c))
 
       if (res) {
         return res
