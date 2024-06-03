@@ -1479,6 +1479,26 @@ describe('Error handle', () => {
       expect(await res.text()).toBe('Custom Error Message')
     })
   })
+
+  describe('Handle HTTPException like object', () => {
+    const app = new Hono()
+
+    class CustomError extends Error {
+      getResponse() {
+        return new Response('Custom Error', { status: 400 })
+      }
+    }
+
+    app.get('/exception', () => {
+      throw new CustomError()
+    })
+
+    it('Should return 401 response', async () => {
+      const res = await app.request('http://localhost/exception')
+      expect(res.status).toBe(400)
+      expect(await res.text()).toBe('Custom Error')
+    })
+  })
 })
 
 describe('Error handling in middleware', () => {
