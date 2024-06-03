@@ -1,6 +1,6 @@
 tasks:
   - name:  Setup
-    init: yarn instal --pure-lockfile
+    init: bun install --no-save
 image:
   file: ./.devcontainer/Dockerfile
 vscode:
