@@ -38,7 +38,7 @@ describe('Query', () => {
 })
 
 describe('Param', () => {
-  test('req.param() withth ParamStash', () => {
+  test('req.param() with ParamStash', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
     const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
       [
