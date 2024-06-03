@@ -7,7 +7,6 @@
 import { compose } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
-import { HTTPException } from './http-exception'
 import { HonoRequest } from './request'
 import type { Router } from './router'
 import { METHODS, METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
@@ -16,6 +15,7 @@ import type {
   ErrorHandler,
   FetchEventLike,
   H,
+  HTTPResponseError,
   HandlerInterface,
   MergePath,
   MergeSchemaPath,
@@ -38,8 +38,8 @@ const notFoundHandler = (c: Context) => {
   return c.text('404 Not Found', 404)
 }
 
-const errorHandler = (err: Error, c: Context) => {
-  if (err instanceof HTTPException) {
+const errorHandler = (err: Error | HTTPResponseError, c: Context) => {
+  if ('getResponse' in err) {
     return err.getResponse()
   }
   console.error(err)
