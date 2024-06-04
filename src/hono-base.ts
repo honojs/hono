@@ -451,7 +451,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         const context = await composed(c)
         if (!context.finalized) {
           throw new Error(
-            'Context is not finalized. You may forget returning Response object or `await next()`'
+            'Context is not finalized. Did you forget to return a Response object or `await next()`?'
           )
         }
 
