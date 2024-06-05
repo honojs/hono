@@ -716,10 +716,13 @@ export class Context<
    * })
    * ```
    */
-  redirect = (location: string, status: RedirectStatusCode = 302): Response => {
+  redirect = <T extends RedirectStatusCode = 302>(
+    location: string,
+    status?: T
+  ): Response & TypedResponse<undefined, T, 'redirect'> => {
     this.#headers ??= new Headers()
     this.#headers.set('Location', location)
-    return this.newResponse(null, status)
+    return this.newResponse(null, status ?? 302) as any
   }
 
   /**
