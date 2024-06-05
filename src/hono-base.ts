@@ -441,7 +441,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
                 resolved || (c.finalized ? c.res : this.notFoundHandler(c))
             )
             .catch((err: Error) => this.handleError(err, c))
-        : res
+        : res ?? this.notFoundHandler(c)
     }
 
     const composed = compose<Context>(matchResult[0], this.errorHandler, this.notFoundHandler)

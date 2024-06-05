@@ -2182,6 +2182,23 @@ describe('Multiple handler - async', () => {
   })
 })
 
+describe('Lack returning response with a single handler', () => {
+  const app = new Hono()
+  // @ts-expect-error it should return Response to type it
+  app.get('/sync', () => {})
+  app.get('/async', async () => {})
+
+  it('Should return 404 response if lacking returning response', async () => {
+    const res = await app.request('/sync')
+    expect(res.status).toBe(404)
+  })
+
+  it('Should return 404 response if lacking returning response in an async handler', async () => {
+    const res = await app.request('/async')
+    expect(res.status).toBe(404)
+  })
+})
+
 describe('Context is not finalized', () => {
   it('should throw error - lack `await next()`', async () => {
     const app = new Hono()
