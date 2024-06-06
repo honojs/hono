@@ -48,7 +48,7 @@ export type JSONParsed<T> = T extends { toJSON(): infer J }
 export type Simplify<T> = { [KeyType in keyof T]: T[KeyType] } & {}
 
 /**
- * A simple extension of Simplify that works for array of interfaces.
+ * A simple extension of Simplify that will deeply traverse array elements.
  */
 export type SimplifyDeepArray<T> = T extends any[]
   ? { [E in keyof T]: SimplifyDeepArray<T[E]> }
