@@ -13,7 +13,6 @@ import type {
   IfAnyThenEmptyObject,
   IsAny,
   JSONValue,
-  Prettify,
   RemoveBlankRecord,
   Simplify,
   UnionToIntersection,
@@ -1617,7 +1616,7 @@ export type ToSchema<
   P extends string,
   I extends Input | Input['in'],
   RorO // Response or Output
-> = Prettify<{
+> = Simplify<{
   [K in P]: {
     [K2 in M as AddDollar<K2>]: Simplify<
       {
@@ -1670,7 +1669,7 @@ type ExtractParams<Path extends string> = string extends Path
 
 type FlattenIfIntersect<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
-export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = Prettify<{
+export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = Simplify<{
   [P in keyof OrigSchema as MergePath<SubPath, P & string>]: {
     [M in keyof OrigSchema[P]]: MergeEndpointParamsWithPath<OrigSchema[P][M], SubPath>
   }
