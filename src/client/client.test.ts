@@ -461,6 +461,13 @@ describe('Merge path with `app.route()`', () => {
         ok: true,
       })
     }),
+    http.get('http://localhost/api/searchArray', async () => {
+      return HttpResponse.json([
+        {
+          ok: true,
+        },
+      ])
+    }),
     http.get('http://localhost/api/foo', async () => {
       return HttpResponse.json({
         ok: true,
@@ -535,6 +542,24 @@ describe('Merge path with `app.route()`', () => {
     const data = await res.json()
     type verify = Expect<Equal<Result, typeof data>>
     expect(data.ok).toBe(true)
+  })
+
+  it('Should have correct types - with array of interfaces', async () => {
+    interface Result {
+      ok: boolean
+      okUndefined?: boolean
+    }
+    type Results = Result[]
+
+    const results: Results = [{ ok: true }]
+    const base = new Hono<Env>().basePath('/api')
+    const app = base.get('/searchArray', (c) => c.json(results))
+    type AppType = typeof app
+    const client = hc<AppType>('http://localhost')
+    const res = await client.api.searchArray.$get()
+    const data = await res.json()
+    type verify = Expect<Equal<Results, typeof data>>
+    expect(data[0].ok).toBe(true)
   })
 
   it('Should allow a Date object and return it as a string', async () => {
