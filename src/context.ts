@@ -145,7 +145,7 @@ interface JSONRespond {
       'json'
     >
   <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode>(
-    object: SimplifyDeepArray<T> extends JSONValue ? T : SimplifyDeepArray<T>,
+    object: T,
     init?: ResponseInit
   ): Response &
     TypedResponse<
