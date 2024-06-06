@@ -16,7 +16,7 @@ export const getFilePath = (options: FilePathOptions): string | undefined => {
   if (filename.endsWith('/')) {
     // /top/ => /top/index.html
     filename = filename.concat(defaultDocument)
-  } else if (!filename.match(/\.[a-zA-Z0-9]+$/)) {
+  } else if (!filename.match(/\.[a-zA-Z0-9_-]+$/)) {
     // /top => /top/index.html
     filename = filename.concat('/' + defaultDocument)
   }

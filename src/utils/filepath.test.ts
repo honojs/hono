@@ -56,6 +56,9 @@ describe('getFilePath', () => {
     expect(getFilePath({ filename: 'foo', root: 'bar', defaultDocument: 'index.txt' })).toBe(
       'bar/foo/index.txt'
     )
+
+    expect(getFilePath({ filename: 'filename.suffix_index' })).toBe('filename.suffix_index')
+    expect(getFilePath({ filename: 'filename.suffix-index' })).toBe('filename.suffix-index')
   })
 })
 
