@@ -7,7 +7,7 @@ import type { MiddlewareHandler } from '../..'
 import type { AddressType, GetConnInfo } from '../../helper/conninfo'
 import { createMiddleware } from '../../helper/factory'
 import { HTTPException } from '../../http-exception'
-import { distinctionRemoteAddr, expandIPv6, ipV4ToBinary, ipV6ToBinary } from '../../utils/ipaddr'
+import { distinctRemoteAddr, expandIPv6, convertIPv4ToBinary, convertIPv6ToBinary } from '../../utils/ipaddr'
 
 /**
  * ### IPv4 and IPv6
@@ -41,12 +41,12 @@ export const isMatchForRule = (
     const splitedRule = rule.split('/')
     // CIDR
     const baseRuleAddr = splitedRule[0]
-    if (distinctionRemoteAddr(baseRuleAddr) !== remote.type) {
+    if (distinctRemoteAddr(baseRuleAddr) !== remote.type) {
       return false
     }
     const prefix = parseInt(splitedRule[1])
 
-    const addrToBinary = isIPv4 ? ipV4ToBinary : ipV6ToBinary
+    const addrToBinary = isIPv4 ? convertIPv4ToBinary : convertIPv6ToBinary
 
     const baseRuleMask = addrToBinary(baseRuleAddr)
     const remoteMask = addrToBinary(remote.addr)
@@ -55,7 +55,7 @@ export const isMatchForRule = (
     return (remoteMask & mask) === (baseRuleMask & mask)
   }
 
-  const ruleAddrConnType = distinctionRemoteAddr(rule)
+  const ruleAddrConnType = distinctRemoteAddr(rule)
   if (ruleAddrConnType === 'IPv4' || ruleAddrConnType === 'IPv6') {
     // Static
     if (ruleAddrConnType !== remote.type) {
@@ -102,7 +102,7 @@ export const ipLimit = (
     if (!addr) {
       throw blockError()
     }
-    const type = connInfo.remote.addressType ?? distinctionRemoteAddr(addr)
+    const type = connInfo.remote.addressType ?? distinctRemoteAddr(addr)
 
     for (let i = 0; i < denyLength; i++) {
       const isValid = isMatchForRule({ type, addr }, deny[i])

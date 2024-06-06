@@ -27,10 +27,10 @@ export const expandIPv6 = (ipV6: string): string => {
 const IPV4_REGEX = /^[0-9]{0,3}\.[0-9]{0,3}\.[0-9]{0,3}\.[0-9]{0,3}$/
 
 /**
- * Distinction Remote Addr
+ * Distinct Remote Addr
  * @param remoteAddr Remote Addr
  */
-export const distinctionRemoteAddr = (remoteAddr: string): AddressType => {
+export const distinctRemoteAddr = (remoteAddr: string): AddressType => {
   if (IPV4_REGEX.test(remoteAddr)) {
     return 'IPv4'
   }
@@ -46,7 +46,7 @@ export const distinctionRemoteAddr = (remoteAddr: string): AddressType => {
  * @param ipV4 IPv4 Address
  * @returns BigInt
  */
-export const ipV4ToBinary = (ipV4: string): bigint => {
+export const convertIPv4ToBinary = (ipV4: string): bigint => {
   const parts = ipV4.split('.')
   let result = 0n
   for (let i = 0; i < 4; i++) {
@@ -61,7 +61,7 @@ export const ipV4ToBinary = (ipV4: string): bigint => {
  * @param ipV6 IPv6 Address
  * @returns BigInt
  */
-export const ipV6ToBinary = (ipV6: string): bigint => {
+export const convertIPv6ToBinary = (ipV6: string): bigint => {
   const sections = expandIPv6(ipV6).split(':')
   let result = 0n
   for (let i = 0; i < 8; i++) {
