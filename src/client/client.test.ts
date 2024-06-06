@@ -552,8 +552,12 @@ describe('Merge path with `app.route()`', () => {
     interface ExtraDeepInterface {
       l4: DeepInterface
     }
-    type verifyDeepInterface = Expect<Equal<SimplifyDeepArray<DeepInterface> extends JSONValue ? true : false, true>>
-    type verifyExtraDeepInterface = Expect<Equal<SimplifyDeepArray<ExtraDeepInterface> extends JSONValue ? true : false, true>>
+    type verifyDeepInterface = Expect<
+      Equal<SimplifyDeepArray<DeepInterface> extends JSONValue ? true : false, true>
+    >
+    type verifyExtraDeepInterface = Expect<
+      Equal<SimplifyDeepArray<ExtraDeepInterface> extends JSONValue ? true : false, true>
+    >
   })
 
   it('Should have correct types - with array of interfaces', async () => {
@@ -574,10 +578,18 @@ describe('Merge path with `app.route()`', () => {
     expect(data[0].ok).toBe(true)
 
     // A few more types only tests
-    type verifyNestedArrayTyped = Expect<Equal<SimplifyDeepArray<[string, Results]> extends JSONValue ? true : false, true>>
-    type verifyNestedArrayInterfaceArray = Expect<Equal<SimplifyDeepArray<[string, Result[]]> extends JSONValue ? true : false, true>>
-    type verifyExtraNestedArrayTyped = Expect<Equal<SimplifyDeepArray<[string, Results[]]> extends JSONValue ? true : false, true>>
-    type verifyExtraNestedArrayInterfaceArray = Expect<Equal<SimplifyDeepArray<[string, Result[][]]> extends JSONValue ? true : false, true>>
+    type verifyNestedArrayTyped = Expect<
+      Equal<SimplifyDeepArray<[string, Results]> extends JSONValue ? true : false, true>
+    >
+    type verifyNestedArrayInterfaceArray = Expect<
+      Equal<SimplifyDeepArray<[string, Result[]]> extends JSONValue ? true : false, true>
+    >
+    type verifyExtraNestedArrayTyped = Expect<
+      Equal<SimplifyDeepArray<[string, Results[]]> extends JSONValue ? true : false, true>
+    >
+    type verifyExtraNestedArrayInterfaceArray = Expect<
+      Equal<SimplifyDeepArray<[string, Result[][]]> extends JSONValue ? true : false, true>
+    >
   })
 
   it('Should allow a Date object and return it as a string', async () => {
