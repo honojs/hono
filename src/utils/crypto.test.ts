@@ -40,4 +40,21 @@ describe('crypto', () => {
     expect(await sha256(new Uint8Array(1))).toBe(hash)
     expect(await sha256(new Uint8Array(1))).not.toEqual(await sha256(new Uint8Array(2)))
   })
+
+  it('Should be the same values if deferent chunk size for ReadableStream', async () => {
+    const stream1 = new ReadableStream({
+      start(controller) {
+        controller.enqueue('a')
+        controller.enqueue('b')
+        controller.close()
+      },
+    })
+    const stream2 = new ReadableStream({
+      start(controller) {
+        controller.enqueue('ab')
+        controller.close()
+      },
+    })
+    expect(await sha256(stream1)).toEqual(await sha256(stream2))
+  })
 })

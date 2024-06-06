@@ -34,13 +34,15 @@ export const createHash = async (data: Data, algorithm: Algorithm): Promise<stri
   if (data instanceof ReadableStream) {
     let body = ''
     const reader = data.getReader()
-    await reader?.read().then(async (chuck) => {
-      const value = await createHash(chuck.value || '', algorithm)
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (done) {
+        break
+      }
       body += value
-    })
-    return body
-  }
-  if (ArrayBuffer.isView(data) || data instanceof ArrayBuffer) {
+    }
+    sourceBuffer = new TextEncoder().encode(body)
+  } else if (ArrayBuffer.isView(data) || data instanceof ArrayBuffer) {
     sourceBuffer = data
   } else {
     if (typeof data === 'object') {
