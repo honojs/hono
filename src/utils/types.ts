@@ -44,6 +44,11 @@ export type JSONParsed<T> = T extends { toJSON(): infer J }
 // from sindresorhus/type-fest
 export type Simplify<T> = { [KeyType in keyof T]: T[KeyType] } & {}
 
+// Similar to Simplify but will also deeply simplify the type inside array
+export type DeepSimplify<T> = T extends any[]
+  ? { [E in keyof T]: Simplify<T[E]> }
+  : { [KeyType in keyof T]: T[KeyType] } & {}
+
 export type InterfaceToType<T> = T extends Function ? T : { [K in keyof T]: InterfaceToType<T[K]> }
 
 export type RequiredKeysOf<BaseType extends object> = Exclude<
