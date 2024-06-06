@@ -8,10 +8,10 @@ import type { AddressType, GetConnInfo } from '../../helper/conninfo'
 import { createMiddleware } from '../../helper/factory'
 import { HTTPException } from '../../http-exception'
 import {
-  distinctRemoteAddr,
-  expandIPv6,
   convertIPv4ToBinary,
   convertIPv6ToBinary,
+  distinctRemoteAddr,
+  expandIPv6,
 } from '../../utils/ipaddr'
 
 /**
