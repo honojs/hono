@@ -15,7 +15,7 @@ export default defineConfig({
       enabled: true,
       provider: 'v8',
       reportsDirectory: './coverage/raw/default',
-      reporter: ['json'],
+      reporter: ['json', 'text', 'html'],
       exclude: [
         ...(configDefaults.coverage.exclude ?? []),
         'benchmarks',
@@ -27,7 +27,7 @@ export default defineConfig({
         'src/**/types.ts',
         'src/jsx/intrinsic-elements.ts',
         'src/utils/http-status.ts',
-      ]
+      ],
     },
     pool: 'forks',
   },
