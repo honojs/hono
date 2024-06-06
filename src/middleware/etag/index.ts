@@ -30,6 +30,32 @@ function etagMatches(etag: string, ifNoneMatch: string | null) {
   return ifNoneMatch != null && ifNoneMatch.split(/,\s*/).indexOf(etag) > -1
 }
 
+const emptyHashValue = sha1('')
+async function etagHashValue(stream: ReadableStream<Uint8Array> | null): Promise<string | null> {
+  if (!stream) {
+    return emptyHashValue
+  }
+
+  const hashForChunk: string[] = []
+
+  const reader = stream.getReader()
+  for (;;) {
+    const { value, done } = await reader.read()
+    if (done) {
+      break
+    }
+    hashForChunk.push((await sha1(value)) || '')
+  }
+
+  if (hashForChunk.length === 0) {
+    return emptyHashValue
+  } else if (hashForChunk.length === 1) {
+    return hashForChunk[0]
+  } else {
+    return sha1(hashForChunk.join('')) + '-' + hashForChunk.length
+  }
+}
+
 /**
  * ETag Middleware for Hono.
  *
@@ -63,7 +89,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     let etag = res.headers.get('ETag')
 
     if (!etag) {
-      const hash = await sha1(res.clone().body || '')
+      const hash = await etagHashValue(res.clone().body)
       etag = weak ? `W/"${hash}"` : `"${hash}"`
     }
 
