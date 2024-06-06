@@ -10,7 +10,7 @@ import { parse } from '../utils/cookie'
 import type { Equal, Expect } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
-import type { InferRequestType, InferResponseType } from './types'
+import type { ClientResponse, InferRequestType, InferResponseType } from './types'
 
 describe('Basic - JSON', () => {
   const app = new Hono()
@@ -1079,5 +1079,59 @@ describe('Text response', () => {
     type Actual = ReturnType<typeof res.text>
     type Expected = Promise<string>
     type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+describe('Redirect response - only types', () => {
+  const server = setupServer(
+    http.get('http://localhost/', async () => {
+      return HttpResponse.redirect('/')
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  const condition = () => true
+  const app = new Hono().get('/', async (c) => {
+    const ok = condition()
+    const temporary = condition()
+    if (ok) {
+      return c.json({ ok: true }, 200)
+    }
+    if (temporary) {
+      return c.redirect('/302')
+    }
+    return c.redirect('/301', 301)
+  })
+
+  const client = hc<typeof app>('http://localhost/')
+  const req = client.index.$get
+
+  it('Should infer request type the type correctly', () => {
+    type Actual = InferResponseType<typeof req>
+    type Expected =
+      | {
+          ok: boolean
+        }
+      | undefined
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer response type correctly', async () => {
+    const res = await req()
+    if (res.ok) {
+      const data = await res.json()
+      expectTypeOf(data).toMatchTypeOf({ ok: true })
+    }
+    if (res.status === 301) {
+      type Expected = ClientResponse<undefined, 301, 'redirect'>
+      type verify = Expect<Equal<Expected, typeof res>>
+    }
+    if (res.status === 302) {
+      type Expected = ClientResponse<undefined, 302, 'redirect'>
+      type verify = Expect<Equal<Expected, typeof res>>
+    }
   })
 })

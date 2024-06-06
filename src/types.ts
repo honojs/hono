@@ -1741,7 +1741,7 @@ export type MergePath<A extends string, B extends string> = B extends ''
 //////                            //////
 ////////////////////////////////////////
 
-export type KnownResponseFormat = 'json' | 'text'
+export type KnownResponseFormat = 'json' | 'text' | 'redirect'
 export type ResponseFormat = KnownResponseFormat | string
 
 export type TypedResponse<
