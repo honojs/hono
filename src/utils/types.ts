@@ -41,10 +41,15 @@ export type JSONParsed<T> = T extends { toJSON(): infer J }
   ? { [K in keyof T]: JSONParsed<T[K]> }
   : never
 
-// from sindresorhus/type-fest
+/**
+ * Useful to flatten the type output to improve type hints shown in editors. And also to transform an interface into a type to aide with assignability.
+ * @copyright from sindresorhus/type-fest
+ */
 export type Simplify<T> = { [KeyType in keyof T]: T[KeyType] } & {}
 
-// Similar to Simplify but will also deeply simplify the type inside array
+/**
+ * A simple extension of Simplify that works for array of interfaces.
+ */
 export type SimplifyDeepArray<T> = T extends any[]
   ? { [E in keyof T]: Simplify<T[E]> }
   : { [KeyType in keyof T]: T[KeyType] } & {}
