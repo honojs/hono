@@ -7,7 +7,7 @@ import { expectTypeOf, vi } from 'vitest'
 import { upgradeWebSocket } from '../adapter/deno/websocket'
 import { Hono } from '../hono'
 import { parse } from '../utils/cookie'
-import type { Equal, Expect } from '../utils/types'
+import type { Equal, Expect, JSONValue, SimplifyDeepArray } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
 import type { ClientResponse, InferRequestType, InferResponseType } from './types'
@@ -542,6 +542,22 @@ describe('Merge path with `app.route()`', () => {
     const data = await res.json()
     type verify = Expect<Equal<Result, typeof data>>
     expect(data.ok).toBe(true)
+
+    // A few more types only tests
+    interface DeepInterface {
+      l2: {
+        l3: Result
+      }
+    }
+    interface ExtraDeepInterface {
+      l4: DeepInterface
+    }
+    type verifyDeepInterface = Expect<
+      Equal<SimplifyDeepArray<DeepInterface> extends JSONValue ? true : false, true>
+    >
+    type verifyExtraDeepInterface = Expect<
+      Equal<SimplifyDeepArray<ExtraDeepInterface> extends JSONValue ? true : false, true>
+    >
   })
 
   it('Should have correct types - with array of interfaces', async () => {
@@ -560,6 +576,20 @@ describe('Merge path with `app.route()`', () => {
     const data = await res.json()
     type verify = Expect<Equal<Results, typeof data>>
     expect(data[0].ok).toBe(true)
+
+    // A few more types only tests
+    type verifyNestedArrayTyped = Expect<
+      Equal<SimplifyDeepArray<[string, Results]> extends JSONValue ? true : false, true>
+    >
+    type verifyNestedArrayInterfaceArray = Expect<
+      Equal<SimplifyDeepArray<[string, Result[]]> extends JSONValue ? true : false, true>
+    >
+    type verifyExtraNestedArrayTyped = Expect<
+      Equal<SimplifyDeepArray<[string, Results[]]> extends JSONValue ? true : false, true>
+    >
+    type verifyExtraNestedArrayInterfaceArray = Expect<
+      Equal<SimplifyDeepArray<[string, Result[][]]> extends JSONValue ? true : false, true>
+    >
   })
 
   it('Should allow a Date object and return it as a string', async () => {
