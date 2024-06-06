@@ -1,3 +1,9 @@
+/**
+ * Normalizes intrinsic element properties by converting JSX element properties
+ * to their corresponding HTML attributes.
+ *
+ * @param props - JSX element properties.
+ */
 export const normalizeIntrinsicElementProps = (props: Record<string, unknown>): void => {
   if (props && 'className' in props) {
     props['class'] = props['className']
@@ -23,12 +29,12 @@ export const styleObjectForEach = (
       v == null
         ? null
         : typeof v === 'number'
-          ? !key.match(
+        ? !key.match(
             /^(?:a|border-im|column(?:-c|s)|flex(?:$|-[^b])|grid-(?:ar|[^a])|font-w|li|or|sca|st|ta|wido|z)|ty$/
           )
-            ? `${v}px`
-            : `${v}`
-          : v
+          ? `${v}px`
+          : `${v}`
+        : v
     )
   }
 }
