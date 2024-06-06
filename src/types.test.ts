@@ -284,9 +284,9 @@ describe('TypedResponse', () => {
   test('unknown', () => {
     type Actual = TypedResponse
     type Expected = {
-      data: unknown
-      status: StatusCode
-      format: ResponseFormat
+      _data: unknown
+      _status: StatusCode
+      _format: ResponseFormat
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
@@ -294,9 +294,9 @@ describe('TypedResponse', () => {
   test('text auto infer', () => {
     type Actual = TypedResponse<string>
     type Expected = {
-      data: string
-      status: StatusCode
-      format: 'text'
+      _data: string
+      _status: StatusCode
+      _format: 'text'
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
@@ -304,9 +304,9 @@ describe('TypedResponse', () => {
   test('json auto infer', () => {
     type Actual = TypedResponse<{ ok: true }>
     type Expected = {
-      data: { ok: true }
-      status: StatusCode
-      format: 'json'
+      _data: { ok: true }
+      _status: StatusCode
+      _format: 'json'
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
