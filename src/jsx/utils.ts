@@ -3,6 +3,10 @@ export const normalizeIntrinsicElementProps = (props: Record<string, unknown>): 
     props['class'] = props['className']
     delete props['className']
   }
+  if (props && 'htmlFor' in props) {
+    props['for'] = props['htmlFor']
+    delete props['htmlFor']
+  }
 }
 
 export const styleObjectForEach = (
@@ -19,12 +23,12 @@ export const styleObjectForEach = (
       v == null
         ? null
         : typeof v === 'number'
-        ? !key.match(
+          ? !key.match(
             /^(?:a|border-im|column(?:-c|s)|flex(?:$|-[^b])|grid-(?:ar|[^a])|font-w|li|or|sca|st|ta|wido|z)|ty$/
           )
-          ? `${v}px`
-          : `${v}`
-        : v
+            ? `${v}px`
+            : `${v}`
+          : v
     )
   }
 }
