@@ -15,7 +15,6 @@ import { distinctionRemoteAddr, expandIPv6, ipV4ToBinary, ipV6ToBinary } from '.
  *
  * ### IPv4
  * - `192.168.2.0` static
- * - `192.168.2.*` wildcard for IPv4
  * - `192.168.2.0/24` CIDR Notation
  *
  * ### IPv6
@@ -36,26 +35,6 @@ export const isMatchForRule = (
     // Match all
     return true
   }
-  if (remote.type === 'IPv4' && rule.includes('*')) {
-    // Wildcard
-    const ruleSections = rule.split('.')
-    const addrSections = remote.addr.split('.')
-
-    let result = true
-    for (let i = 0; i < 4; i++) {
-      const ruleSection = ruleSections[i]
-      if (ruleSection === '*') {
-        continue
-      }
-      const addrSection = addrSections[i]
-      if (addrSection !== ruleSection) {
-        result = false
-        break
-      }
-    }
-    return result
-  }
-
   if (IS_CIDR_NOTATION_REGEX.test(rule) && (remote.type === 'IPv4' || remote.type === 'IPv6')) {
     const isIPv4 = remote.type === 'IPv4'
 

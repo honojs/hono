@@ -50,10 +50,6 @@ describe('ipLimit middleware', () => {
 })
 
 describe('isMatchForRule', () => {
-  it('IPv4 Wildcard', () => {
-    expect(isMatchForRule({ addr: '192.168.2.1', type: 'IPv4' }, '192.168.2.*')).toBeTruthy()
-    expect(isMatchForRule({ addr: '192.168.3.1', type: 'IPv4' }, '192.168.2.*')).toBeFalsy()
-  })
   it('CIDR Notation', () => {
     expect(isMatchForRule({ addr: '192.168.2.0', type: 'IPv4' }, '192.168.2.0/24')).toBeTruthy()
     expect(isMatchForRule({ addr: '192.168.2.1', type: 'IPv4' }, '192.168.2.0/24')).toBeTruthy()
