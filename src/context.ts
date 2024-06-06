@@ -2,7 +2,7 @@ import type { HonoRequest } from './request'
 import type { Env, FetchEventLike, Input, NotFoundHandler, TypedResponse } from './types'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
-import type { DeepSimplify, IsAny, JSONParsed, JSONValue, Simplify } from './utils/types'
+import type { IsAny, JSONParsed, JSONValue, Simplify, SimplifyDeepArray } from './utils/types'
 
 type HeaderRecord = Record<string, string | string[]>
 
@@ -127,30 +127,30 @@ interface TextRespond {
  * @param {U} [status] - An optional status code for the response.
  * @param {HeaderRecord} [headers] - An optional record of headers to include in the response.
  *
- * @returns {Response & TypedResponse<DeepSimplify<T> extends JSONValue ? (JSONValue extends DeepSimplify<T> ? never : JSONParsed<T>) : never, U, 'json'>} - The response after rendering the JSON object, typed with the provided object and status code types.
+ * @returns {Response & TypedResponse<SimplifyDeepArray<T> extends JSONValue ? (JSONValue extends SimplifyDeepArray<T> ? never : JSONParsed<T>) : never, U, 'json'>} - The response after rendering the JSON object, typed with the provided object and status code types.
  */
 interface JSONRespond {
-  <T extends JSONValue | DeepSimplify<unknown>, U extends StatusCode>(
+  <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode>(
     object: T,
     status?: U,
     headers?: HeaderRecord
   ): Response &
     TypedResponse<
-      DeepSimplify<T> extends JSONValue
-        ? JSONValue extends DeepSimplify<T>
+      SimplifyDeepArray<T> extends JSONValue
+        ? JSONValue extends SimplifyDeepArray<T>
           ? never
           : JSONParsed<T>
         : never,
       U,
       'json'
     >
-  <T extends JSONValue | DeepSimplify<unknown>, U extends StatusCode>(
-    object: DeepSimplify<T> extends JSONValue ? T : DeepSimplify<T>,
+  <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode>(
+    object: SimplifyDeepArray<T> extends JSONValue ? T : SimplifyDeepArray<T>,
     init?: ResponseInit
   ): Response &
     TypedResponse<
-      DeepSimplify<T> extends JSONValue
-        ? JSONValue extends DeepSimplify<T>
+      SimplifyDeepArray<T> extends JSONValue
+        ? JSONValue extends SimplifyDeepArray<T>
           ? never
           : JSONParsed<T>
         : never,
