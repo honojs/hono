@@ -127,37 +127,39 @@ interface TextRespond {
  * @param {U} [status] - An optional status code for the response.
  * @param {HeaderRecord} [headers] - An optional record of headers to include in the response.
  *
- * @returns {Response & TypedResponse<SimplifyDeepArray<T> extends JSONValue ? (JSONValue extends SimplifyDeepArray<T> ? never : JSONParsed<T>) : never, U, 'json'>} - The response after rendering the JSON object, typed with the provided object and status code types.
+ * @returns {JSONRespondReturn<T, U>} - The response after rendering the JSON object, typed with the provided object and status code types.
  */
 interface JSONRespond {
   <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode>(
     object: T,
     status?: U,
     headers?: HeaderRecord
-  ): Response &
-    TypedResponse<
-      SimplifyDeepArray<T> extends JSONValue
-        ? JSONValue extends SimplifyDeepArray<T>
-          ? never
-          : JSONParsed<T>
-        : never,
-      U,
-      'json'
-    >
+  ): JSONRespondReturn<T, U>
   <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode>(
     object: T,
     init?: ResponseInit
-  ): Response &
-    TypedResponse<
-      SimplifyDeepArray<T> extends JSONValue
-        ? JSONValue extends SimplifyDeepArray<T>
-          ? never
-          : JSONParsed<T>
-        : never,
-      U,
-      'json'
-    >
+  ): JSONRespondReturn<T, U>
 }
+
+/**
+ * @template T - The type of the JSON value or simplified unknown type.
+ * @template U - The type of the status code.
+ *
+ * @returns {Response & TypedResponse<SimplifyDeepArray<T> extends JSONValue ? (JSONValue extends SimplifyDeepArray<T> ? never : JSONParsed<T>) : never, U, 'json'>} - The response after rendering the JSON object, typed with the provided object and status code types.
+ */
+type JSONRespondReturn<
+  T extends JSONValue | SimplifyDeepArray<unknown>,
+  U extends StatusCode
+> = Response &
+  TypedResponse<
+    SimplifyDeepArray<T> extends JSONValue
+      ? JSONValue extends SimplifyDeepArray<T>
+        ? never
+        : JSONParsed<T>
+      : never,
+    U,
+    'json'
+  >
 
 /**
  * Interface representing a function that responds with HTML content.
@@ -663,7 +665,7 @@ export class Context<
     object: T,
     arg?: U | ResponseInit,
     headers?: HeaderRecord
-  ): ReturnType<JSONRespond> => {
+  ): JSONRespondReturn<T, U> => {
     const body = JSON.stringify(object)
     this.#preparedHeaders ??= {}
     this.#preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
