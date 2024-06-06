@@ -1753,9 +1753,9 @@ export type TypedResponse<
     ? 'json'
     : ResponseFormat
 > = {
-  data: T
-  status: U
-  format: F
+  _data: T
+  _status: U
+  _format: F
 }
 
 type MergeTypedResponse<T> = T extends Promise<infer T2>
