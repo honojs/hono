@@ -1,4 +1,72 @@
-import { styleObjectForEach } from './utils'
+import { normalizeIntrinsicElementProps, styleObjectForEach } from './utils'
+
+describe('normalizeIntrinsicElementProps', () => {
+  it('should convert className to class', () => {
+    const props: Record<string, unknown> = {
+      className: 'test-class',
+      id: 'test-id',
+    }
+
+    normalizeIntrinsicElementProps(props)
+
+    expect(props).toEqual({
+      class: 'test-class',
+      id: 'test-id',
+    })
+  })
+
+  it('should convert htmlFor to for', () => {
+    const props: Record<string, unknown> = {
+      htmlFor: 'test-for',
+      name: 'test-name',
+    }
+
+    normalizeIntrinsicElementProps(props)
+
+    expect(props).toEqual({
+      for: 'test-for',
+      name: 'test-name',
+    })
+  })
+
+  it('should convert multiple attribute aliases', () => {
+    const props: Record<string, unknown> = {
+      className: 'test-class',
+      htmlFor: 'test-for',
+      type: 'text',
+    }
+
+    normalizeIntrinsicElementProps(props)
+
+    expect(props).toEqual({
+      class: 'test-class',
+      for: 'test-for',
+      type: 'text',
+    })
+  })
+
+  it('should not modify props without className or htmlFor', () => {
+    const props: Record<string, unknown> = {
+      id: 'test-id',
+      name: 'test-name',
+    }
+
+    normalizeIntrinsicElementProps(props)
+
+    expect(props).toEqual({
+      id: 'test-id',
+      name: 'test-name',
+    })
+  })
+
+  it('should handle empty props', () => {
+    const props: Record<string, unknown> = {}
+
+    normalizeIntrinsicElementProps(props)
+
+    expect(props).toEqual({})
+  })
+})
 
 describe('styleObjectForEach', () => {
   describe('Should output the number as it is, when a number type is passed', () => {

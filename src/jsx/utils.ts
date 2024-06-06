@@ -1,7 +1,17 @@
+/**
+ * Normalizes intrinsic element properties by converting JSX element properties
+ * to their corresponding HTML attributes.
+ *
+ * @param props - JSX element properties.
+ */
 export const normalizeIntrinsicElementProps = (props: Record<string, unknown>): void => {
   if (props && 'className' in props) {
     props['class'] = props['className']
     delete props['className']
+  }
+  if (props && 'htmlFor' in props) {
+    props['for'] = props['htmlFor']
+    delete props['htmlFor']
   }
 }
 
