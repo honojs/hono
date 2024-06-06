@@ -3,20 +3,25 @@ import { serveStatic as baseServeStatic } from '.'
 
 describe('Serve Static Middleware', () => {
   const app = new Hono()
+  const getContent = vi.fn(async (path) => {
+    if (path.endsWith('not-found.txt')) {
+      return null
+    }
+    return `Hello in ${path}`
+  })
 
   const serveStatic = baseServeStatic({
-    getContent: async (path) => {
-      if (path.endsWith('not-found.txt')) {
-        return null
-      }
-      return `Hello in ${path}`
-    },
+    getContent,
     pathResolve: (path) => {
       return `./${path}`
     },
   })
 
   app.get('/static/*', serveStatic)
+
+  beforeEach(() => {
+    getContent.mockClear()
+  })
 
   it('Should return 200 response - /static/hello.html', async () => {
     const res = await app.request('/static/hello.html')
@@ -42,6 +47,7 @@ describe('Serve Static Middleware', () => {
     const res = await app.request('/static/not-found.txt')
     expect(res.status).toBe(404)
     expect(await res.text()).toBe('404 Not Found')
+    expect(getContent).toBeCalledTimes(1)
   })
 
   it('Should not allow a directory traversal - /static/%2e%2e/static/hello.html', async () => {

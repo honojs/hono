@@ -64,9 +64,12 @@ export const serveStatic = <E extends Env = Env>(
         return await next()
       }
       pathWithOutDefaultDocument = pathResolve(pathWithOutDefaultDocument)
-      content = await getContent(pathWithOutDefaultDocument, c)
-      if (content) {
-        path = pathWithOutDefaultDocument
+
+      if (pathWithOutDefaultDocument !== path) {
+        content = await getContent(pathWithOutDefaultDocument, c)
+        if (content) {
+          path = pathWithOutDefaultDocument
+        }
       }
     }
 
