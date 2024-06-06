@@ -2,7 +2,7 @@ import type { HonoRequest } from './request'
 import type { Env, FetchEventLike, Input, NotFoundHandler, TypedResponse } from './types'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
-import type { IsAny, JSONParsed, JSONValue, Simplify, SimplifyDeepArray } from './utils/types'
+import type { IsAny, JSONParsed, JSONValue, SimplifyDeepArray } from './utils/types'
 
 type HeaderRecord = Record<string, string | string[]>
 
@@ -659,7 +659,7 @@ export class Context<
    * })
    * ```
    */
-  json: JSONRespond = <T extends JSONValue | Simplify<unknown>, U extends StatusCode>(
+  json: JSONRespond = <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode>(
     object: T,
     arg?: U | ResponseInit,
     headers?: HeaderRecord
