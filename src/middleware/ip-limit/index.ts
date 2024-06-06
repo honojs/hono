@@ -7,7 +7,12 @@ import type { MiddlewareHandler } from '../..'
 import type { AddressType, GetConnInfo } from '../../helper/conninfo'
 import { createMiddleware } from '../../helper/factory'
 import { HTTPException } from '../../http-exception'
-import { distinctRemoteAddr, expandIPv6, convertIPv4ToBinary, convertIPv6ToBinary } from '../../utils/ipaddr'
+import {
+  distinctRemoteAddr,
+  expandIPv6,
+  convertIPv4ToBinary,
+  convertIPv6ToBinary,
+} from '../../utils/ipaddr'
 
 /**
  * ### IPv4 and IPv6
