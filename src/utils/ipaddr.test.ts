@@ -1,4 +1,4 @@
-import { distinctRemoteAddr, expandIPv6, convertIPv4ToBinary, convertIPv6ToBinary } from './ipaddr'
+import { convertIPv4ToBinary, convertIPv6ToBinary, distinctRemoteAddr, expandIPv6 } from './ipaddr'
 
 describe('expandIPv6', () => {
   it('Should result be valid', () => {
