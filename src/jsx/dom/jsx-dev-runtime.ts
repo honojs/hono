@@ -6,8 +6,9 @@
 import type { JSXNode, Props } from '../base'
 import { normalizeIntrinsicElementProps } from '../utils'
 import { newJSXNode } from './utils'
+import type { Component } from '../component'
 
-export const jsxDEV = (tag: string | Function, props: Props, key?: string): JSXNode => {
+export const jsxDEV = (tag: string | Function | Component, props: Props, key?: string): JSXNode => {
   if (typeof tag === 'string') {
     normalizeIntrinsicElementProps(props)
   }

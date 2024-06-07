@@ -7,6 +7,7 @@ import { isValidElement, memo, reactAPICompatVersion } from '../base'
 import type { Child, DOMAttributes, JSX, JSXNode, Props } from '../base'
 import { Children } from '../children'
 import { useContext } from '../context'
+import { Component } from '../component'
 import {
   createRef,
   forwardRef,
@@ -72,6 +73,7 @@ const cloneElement = <T extends JSXNode | JSX.Element>(
 }
 
 export {
+  Component,
   reactAPICompatVersion as version,
   createElement as jsx,
   useState,
@@ -110,6 +112,7 @@ export {
 }
 
 export default {
+  Component,
   version: reactAPICompatVersion,
   useState,
   useEffect,

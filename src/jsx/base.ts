@@ -3,6 +3,7 @@ import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import type { HtmlEscaped, HtmlEscapedString, StringBuffer } from '../utils/html'
 import type { Context } from './context'
 import { globalContexts } from './context'
+import type { Component } from './component'
 import type { Hono, IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
 import { normalizeIntrinsicElementProps, styleObjectForEach } from './utils'
 
@@ -25,6 +26,8 @@ export namespace JSX {
     [tagName: string]: Props
   }
 }
+
+export const toFunctionComponent = Symbol()
 
 const emptyTags = [
   'area',
@@ -273,15 +276,19 @@ export const jsx = (
 }
 
 export const jsxFn = (
-  tag: string | Function,
+  tag: string | Function | Component,
   props: Props,
   children: (string | number | HtmlEscapedString)[]
 ): JSXNode => {
   if (typeof tag === 'function') {
+    if (toFunctionComponent in tag) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tag = (tag as any)[toFunctionComponent]() as Function
+    }
     return new JSXFunctionNode(tag, props, children)
   } else {
     normalizeIntrinsicElementProps(props)
-    return new JSXNode(tag, props, children)
+    return new JSXNode(tag as string, props, children)
   }
 }
 
