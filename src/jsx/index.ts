@@ -103,3 +103,4 @@ export default {
 }
 
 export type * from './types'
+export type * from './intrinsic-elements'
