@@ -104,4 +104,4 @@ export default {
 
 export type * from './types'
 
-export { JSX } from './intrinsic-elements'
+export type { JSX } from './intrinsic-elements'
