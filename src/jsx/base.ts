@@ -3,7 +3,10 @@ import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import type { HtmlEscaped, HtmlEscapedString, StringBuffer } from '../utils/html'
 import type { Context } from './context'
 import { globalContexts } from './context'
-import type { Hono, IntrinsicElements as IntrinsicElementsDefined } from './intrinsic-elements'
+import type {
+  JSX as HonoJSX,
+  IntrinsicElements as IntrinsicElementsDefined,
+} from './intrinsic-elements'
 import { normalizeIntrinsicElementProps, styleObjectForEach } from './utils'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -13,7 +16,7 @@ export type FC<P = Props> = {
   defaultProps?: Partial<P> | undefined
   displayName?: string | undefined
 }
-export type DOMAttributes = Hono.HTMLAttributes
+export type DOMAttributes = HonoJSX.HTMLAttributes
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JSX {
