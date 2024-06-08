@@ -5,6 +5,7 @@ describe('CORS by Middleware', () => {
   const app = new Hono()
 
   app.use('/api/*', cors())
+
   app.use(
     '/api2/*',
     cors({
@@ -39,25 +40,23 @@ describe('CORS by Middleware', () => {
       origin: 'http://example.com',
     })
   )
-  app.use(
-    '/api6/*',
-    cors({
-      origin: 'http://example.com',
-    })
-  )
 
   app.get('/api/abc', (c) => {
     return c.json({ success: true })
   })
+
   app.get('/api2/abc', (c) => {
     return c.json({ success: true })
   })
+
   app.get('/api3/abc', (c) => {
     return c.json({ success: true })
   })
+
   app.get('/api4/abc', (c) => {
     return c.json({ success: true })
   })
+
   app.get('/api5/abc', () => {
     return new Response(JSON.stringify({ success: true }))
   })
@@ -126,6 +125,18 @@ describe('CORS by Middleware', () => {
     })
     res = await app.request(req)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+  })
+
+  it('Allow different Vary header value', async () => {
+    const res = await app.request('http://localhost/api3/abc', {
+      headers: {
+        Vary: 'accept-encoding',
+      },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res.headers.get('Vary')).toBe('accept-encoding')
   })
 
   it('Allow origins by function', async () => {
