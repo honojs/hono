@@ -1,3 +1,4 @@
+import { toFunctionComponent } from '../base'
 import type { Child, FC, JSXNode, Props } from '../base'
 import { toArray } from '../children'
 import { DOM_ERROR_HANDLER, DOM_INTERNAL_TAG, DOM_RENDERER, DOM_STASH } from '../constants'
@@ -505,6 +506,11 @@ export const buildNode = (node: Child): Node | undefined => {
       })
     }
     if (typeof (node as JSXNode).tag === 'function') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (toFunctionComponent in (node as any).tag) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(node as JSXNode).tag = ((node as JSXNode).tag as any)[toFunctionComponent]()
+      }
       ;(node as NodeObject)[DOM_STASH] = [0, []]
     } else {
       const ns = nameSpaceMap[(node as JSXNode).tag as string]

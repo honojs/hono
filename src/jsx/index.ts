@@ -8,6 +8,7 @@ import type { DOMAttributes } from './base'
 import { Children } from './children'
 import { ErrorBoundary } from './components'
 import { createContext, useContext } from './context'
+import { Component } from './component'
 import {
   createRef,
   forwardRef,
@@ -33,6 +34,7 @@ import {
 import { Suspense } from './streaming'
 
 export {
+  Component,
   reactAPICompatVersion as version,
   jsx,
   memo,
@@ -69,6 +71,7 @@ export {
 }
 
 export default {
+  Component,
   version: reactAPICompatVersion,
   memo,
   Fragment,

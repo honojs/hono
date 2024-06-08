@@ -8,9 +8,10 @@ import { jsxFn } from './base'
 import type { JSXNode } from './base'
 export { Fragment } from './base'
 export type { JSX } from './base'
+import type { Component } from './component'
 
 export function jsxDEV(
-  tag: string | Function,
+  tag: string | Function | Component,
   props: Record<string, unknown>,
   key?: string
 ): JSXNode {

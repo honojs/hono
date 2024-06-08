@@ -1,5 +1,6 @@
 import type { JSXNode, Props } from '../base'
 import { DOM_INTERNAL_TAG } from '../constants'
+import type { Component } from '../component'
 
 export const setInternalTagFlag = (fn: Function): Function => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,5 +21,8 @@ const JSXNodeCompatPrototype = {
   },
 }
 
-export const newJSXNode = (obj: { tag: string | Function; props?: Props; key?: string }): JSXNode =>
-  Object.defineProperties(obj, JSXNodeCompatPrototype) as JSXNode
+export const newJSXNode = (obj: {
+  tag: string | Function | Component
+  props?: Props
+  key?: string
+}): JSXNode => Object.defineProperties(obj, JSXNodeCompatPrototype) as JSXNode
