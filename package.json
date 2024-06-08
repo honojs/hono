@@ -218,6 +218,11 @@
       "import": "./dist/middleware/secure-headers/index.js",
       "require": "./dist/cjs/middleware/secure-headers/index.js"
     },
+    "./predicate": {
+      "types": "./dist/types/middleware/predicate/index.d.ts",
+      "import": "./dist/middleware/predicate/index.js",
+      "require": "./dist/cjs/middleware/predicate/index.js"
+    },
     "./ssg": {
       "types": "./dist/types/helper/ssg/index.d.ts",
       "import": "./dist/helper/ssg/index.js",
@@ -463,6 +468,9 @@
       ],
       "secure-headers": [
         "./dist/types/middleware/secure-headers"
+      ],
+      "predicate": [
+        "./dist/types/middleware/predicate"
       ],
       "validator": [
         "./dist/types/validator/index.d.ts"
