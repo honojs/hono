@@ -8,7 +8,7 @@
  */
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace Hono {
+export namespace JSX {
   export type CrossOrigin = 'anonymous' | 'use-credentials' | '' | undefined
   export type CSSProperties = {}
   type AnyAttributes = { [attributeName: string]: any }
@@ -726,4 +726,4 @@ export namespace Hono {
   }
 }
 
-export interface IntrinsicElements extends Hono.IntrinsicElements {}
+export interface IntrinsicElements extends JSX.IntrinsicElements {}
