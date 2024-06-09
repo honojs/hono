@@ -2188,6 +2188,7 @@ describe('default export', () => {
     'Fragment',
     'flushSync',
     'createPortal',
+    'StrictMode',
   ].forEach((key) => {
     it(key, () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -269,10 +269,7 @@ export const useInsertionEffect = (
   deps?: readonly unknown[]
 ): void => useEffectCommon(4, effect, deps)
 
-export const useCallback = <T extends Function>(
-  callback: T,
-  deps: readonly unknown[]
-): T => {
+export const useCallback = <T extends Function>(callback: T, deps: readonly unknown[]): T => {
   const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
   if (!buildData) {
     return callback
