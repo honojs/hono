@@ -5,7 +5,7 @@
 
 import type { Child } from '../base'
 import { renderToReadableStream as renderToReadableStreamHono } from '../streaming'
-import version from '.'
+import version from './'
 import type { HtmlEscapedString } from '../../utils/html'
 
 export interface RenderToStringOptions {
