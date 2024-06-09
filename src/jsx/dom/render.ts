@@ -17,8 +17,8 @@ const eventAliasMap: Record<string, string> = {
 } as const
 
 const nameSpaceMap: Record<string, string> = {
-  svg: 'http://www.w3.org/2000/svg',
-  math: 'http://www.w3.org/1998/Math/MathML',
+  svg: '2000/svg',
+  math: '1998/Math/MathML',
 } as const
 
 const skipProps: Set<string> = new Set(['children'])
@@ -511,7 +511,7 @@ export const buildNode = (node: Child): Node | undefined => {
     } else {
       const ns = nameSpaceMap[(node as JSXNode).tag as string]
       if (ns) {
-        ;(node as NodeObject).n = ns
+        ;(node as NodeObject).n = `http://www.w3.org/${ns}`
         nameSpaceContext ||= createContext('')
         ;(node as JSXNode).props.children = [
           {
