@@ -269,7 +269,7 @@ export const useInsertionEffect = (
   deps?: readonly unknown[]
 ): void => useEffectCommon(4, effect, deps)
 
-export const useCallback = <T extends (...args: unknown[]) => unknown>(
+export const useCallback = <T extends Function>(
   callback: T,
   deps: readonly unknown[]
 ): T => {
