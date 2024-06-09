@@ -237,7 +237,7 @@ export class Context<
    * ```
    */
   env: E['Bindings'] = {}
-  private _var: E['Variables'] = {}
+  private _var: E['Variables'] | undefined
   finalized: boolean = false
   /**
    * `.error` can get the error object from the middleware if the Handler throws an error.
@@ -480,8 +480,8 @@ export class Context<
 ```
    */
   set: Set<E> = (key: string, value: unknown) => {
-    // @ts-expect-error this._var is initialized as {}
-    this._var[key] = value
+    this._var ??= {}
+    this._var[key as string] = value
   }
 
   /**
@@ -498,8 +498,7 @@ export class Context<
    * ```
    */
   get: Get<E> = (key: string) => {
-    // @ts-expect-error this._var is initialized as {}
-    return this._var[key]
+    return this._var ? this._var[key] : undefined
   }
 
   /**
