@@ -467,9 +467,9 @@ export class Context<
 
   /**
    * `.set()` can set the value specified by the key.
-   * 
+   *
    * @see {@link https://hono.dev/api/context#set-get}
-   * 
+   *
    * @example
    * ```ts
    * app.use('*', async (c, next) => {
@@ -480,8 +480,8 @@ export class Context<
 ```
    */
   set: Set<E> = (key: string, value: unknown) => {
-    this._var ??= {}
-    this._var[key as string] = value
+    // @ts-expect-error this._var is initialized as {}
+    this._var[key] = value
   }
 
   /**
@@ -498,7 +498,8 @@ export class Context<
    * ```
    */
   get: Get<E> = (key: string) => {
-    return this._var ? this._var[key] : undefined
+    // @ts-expect-error this._var is initialized as {}
+    return this._var[key]
   }
 
   /**
