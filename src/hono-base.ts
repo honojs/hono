@@ -144,9 +144,6 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
     // Implementation of app.on(method, path, ...handlers[])
     this.on = (method: string | string[], path: string | string[], ...handlers: H[]) => {
-      if (!method) {
-        return this
-      }
       for (const p of [path].flat()) {
         this.#path = p
         for (const m of [method].flat()) {
