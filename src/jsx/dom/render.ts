@@ -5,7 +5,7 @@ import type { Context as JSXContext } from '../context'
 import { globalContexts as globalJSXContexts, useContext } from '../context'
 import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
-import { styleObjectForEach } from '../utils'
+import { normalizeIntrinsicElementKey, styleObjectForEach } from '../utils'
 import { createContext } from './context' // import dom-specific versions
 import { newJSXNode } from './utils'
 
@@ -120,8 +120,9 @@ const applyProps = (
   oldAttributes?: Props
 ): void => {
   attributes ||= {}
-  for (const [key, value] of Object.entries(attributes)) {
+  for (let [key, value] of Object.entries(attributes)) {
     if (!skipProps.has(key) && (!oldAttributes || oldAttributes[key] !== value)) {
+      key = normalizeIntrinsicElementKey(key)
       const eventSpec = getEventSpec(key)
       if (eventSpec) {
         if (oldAttributes) {
@@ -191,8 +192,9 @@ const applyProps = (
     }
   }
   if (oldAttributes) {
-    for (const [key, value] of Object.entries(oldAttributes)) {
+    for (let [key, value] of Object.entries(oldAttributes)) {
       if (!skipProps.has(key) && !(key in attributes)) {
+        key = normalizeIntrinsicElementKey(key)
         const eventSpec = getEventSpec(key)
         if (eventSpec) {
           container.removeEventListener(eventSpec[0], value, eventSpec[1])

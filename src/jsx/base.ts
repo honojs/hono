@@ -7,7 +7,7 @@ import type {
   JSX as HonoJSX,
   IntrinsicElements as IntrinsicElementsDefined,
 } from './intrinsic-elements'
-import { normalizeIntrinsicElementProps, styleObjectForEach } from './utils'
+import { normalizeIntrinsicElementKey, styleObjectForEach } from './utils'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
@@ -152,11 +152,8 @@ export class JSXNode implements HtmlEscaped {
 
     buffer[0] += `<${tag}`
 
-    const propsKeys = Object.keys(props || {})
-
-    for (let i = 0, len = propsKeys.length; i < len; i++) {
-      const key = propsKeys[i]
-      const v = props[key]
+    for (let [key, v] of Object.entries(props)) {
+      key = normalizeIntrinsicElementKey(key)
       if (key === 'children') {
         // skip children
       } else if (key === 'style' && typeof v === 'object') {
@@ -283,7 +280,6 @@ export const jsxFn = (
   if (typeof tag === 'function') {
     return new JSXFunctionNode(tag, props, children)
   } else {
-    normalizeIntrinsicElementProps(props)
     return new JSXNode(tag, props, children)
   }
 }
