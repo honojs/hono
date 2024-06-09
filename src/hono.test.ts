@@ -3503,6 +3503,7 @@ describe('Compatible with extended Hono classes, such Zod OpenAPI Hono.', () => 
   class ExtendedHono extends Hono {
     // @ts-ignore
     route(path: string, app?: Hono) {
+      // @ts-ignore
       super.route(path, app)
       return this
     }
