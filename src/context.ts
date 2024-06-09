@@ -237,7 +237,7 @@ export class Context<
    * ```
    */
   env: E['Bindings'] = {}
-  private _var: E['Variables'] = {}
+  private _var: E['Variables'] | undefined
   finalized: boolean = false
   /**
    * `.error` can get the error object from the middleware if the Handler throws an error.
@@ -467,9 +467,9 @@ export class Context<
 
   /**
    * `.set()` can set the value specified by the key.
-   * 
+   *
    * @see {@link https://hono.dev/api/context#set-get}
-   * 
+   *
    * @example
    * ```ts
    * app.use('*', async (c, next) => {
