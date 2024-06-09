@@ -202,12 +202,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   ): Promise<T>
   async parseBody<T extends BodyData>(options?: Partial<ParseBodyOptions>): Promise<T>
   async parseBody(options?: Partial<ParseBodyOptions>) {
-    if (this.bodyCache.parsedBody) {
-      return this.bodyCache.parsedBody
-    }
-    const parsedBody = await parseBody(this, options)
-    this.bodyCache.parsedBody = parsedBody
-    return parsedBody
+    return (this.bodyCache.parsedBody ??= await parseBody(this, options))
   }
 
   private cachedBody = (key: keyof Body) => {
@@ -220,9 +215,6 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
     if (!bodyCache[key]) {
       for (const keyOfBodyCache of Object.keys(bodyCache)) {
-        if (keyOfBodyCache === 'parsedBody') {
-          continue
-        }
         return (async () => {
           // @ts-expect-error bodyCache[keyOfBodyCache] can be passed as a body
           let body = await bodyCache[keyOfBodyCache]
