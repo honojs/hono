@@ -215,14 +215,9 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     SubBasePath extends string
   >(
     path: SubPath,
-    app?: Hono<SubEnv, SubSchema, SubBasePath>
+    app: Hono<SubEnv, SubSchema, SubBasePath>
   ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
     const subApp = this.basePath(path)
-
-    if (!app) {
-      return subApp
-    }
-
     app.routes.map((r) => {
       let handler
       if (app.errorHandler === errorHandler) {
