@@ -1388,6 +1388,10 @@ describe('Error handle', () => {
       throw new Error('This is Error')
     })
 
+    app.get('/error-string', () => {
+      throw 'This is Error'
+    })
+
     app.use('/error-middleware', async () => {
       throw new Error('This is Middleware Error')
     })
@@ -1395,6 +1399,10 @@ describe('Error handle', () => {
     app.onError((err, c) => {
       c.header('x-debug', err.message)
       return c.text('Custom Error Message', 500)
+    })
+
+    it('Should throw Error if a non-Error object is thrown in a handler', async () => {
+      expect(() => app.request('/error-string')).toThrowError()
     })
 
     it('Custom Error Message', async () => {
@@ -2505,7 +2513,7 @@ describe('Optional parameters', () => {
 
 describe('app.mount()', () => {
   describe('Basic', () => {
-    const anotherApp = (req: Request, params: unknown) => {
+    const anotherApp = (req: Request, ...params: unknown[]) => {
       const path = getPath(req)
       if (path === '/') {
         return new Response('AnotherApp')
@@ -2533,6 +2541,9 @@ describe('app.mount()', () => {
           }
         )
       }
+      if (path === '/undefined') {
+        return undefined as unknown as Response
+      }
       return new Response('Not Found from AnotherApp', {
         status: 404,
       })
@@ -2544,8 +2555,15 @@ describe('app.mount()', () => {
       c.header('x-message', 'Foo')
     })
     app.get('/', (c) => c.text('Hono'))
+    app.notFound((c) => {
+      return c.text('Not Found from App', 404)
+    })
+
     app.mount('/another-app', anotherApp, () => {
       return 'params'
+    })
+    app.mount('/another-app-with-array-option', anotherApp, () => {
+      return ['param1', 'param2']
     })
     app.mount('/another-app2/sub-slash/', anotherApp)
 
@@ -2592,7 +2610,19 @@ describe('app.mount()', () => {
       res = await app.request('/another-app/with-params')
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({
-        params: 'params',
+        params: ['params'],
+      })
+
+      res = await app.request('/another-app/undefined')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Not Found from App')
+    })
+
+    it('Should return response from Another app with an array option', async () => {
+      const res = await app.request('/another-app-with-array-option/with-params')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        params: ['param1', 'param2'],
       })
     })
 
@@ -2755,6 +2785,39 @@ declare module './context' {
     (content: string | Promise<string>, head: { title: string }): Response | Promise<Response>
   }
 }
+
+describe('app.request()', () => {
+  it('Should return response with Request and RequestInit as args', async () => {
+    const app = new Hono()
+    app.get('/foo', (c) => {
+      return c.json(c.req.header('x-message'))
+    })
+    const req = new Request('http://localhost/foo')
+    const headers = new Headers()
+    headers.append('x-message', 'hello')
+    const res = await app.request(req, {
+      headers,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('"hello"')
+  })
+})
+
+describe('app.fire()', () => {
+  it('Should call global.addEventListener', () => {
+    const app = new Hono()
+    const addEventListener = vi.fn()
+    global.addEventListener = addEventListener
+    app.fire()
+    expect(addEventListener).toHaveBeenCalledWith('fetch', expect.any(Function))
+
+    const fetchEventListener = addEventListener.mock.calls[0][1]
+    const respondWith = vi.fn()
+    const request = new Request('http://localhost')
+    fetchEventListener({ respondWith, request })
+    expect(respondWith).toHaveBeenCalledWith(expect.any(Promise))
+  })
+})
 
 describe('Context render and setRenderer', () => {
   const app = new Hono()
