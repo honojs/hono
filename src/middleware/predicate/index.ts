@@ -15,13 +15,13 @@ type Condition = (c: Context) => boolean
  * You can also pass a condition function that returns a boolean value. If returns true
  * the evaluation will be halted, and rest of the middleware will not be executed.
  * @returns A composed middleware.
- * 
+ *
  * @example
  * ```ts
  * import { some } from 'predicate'
  * import { bearerAuth } from 'bearer-auth'
  * import { myRateLimit } from '@/rate-limit'
- * 
+ *
  * // If client has a valid token, then skip rate limiting.
  * // Otherwise, apply rate limiting.
  * app.use('/api/*', some(
@@ -64,14 +64,14 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
  * You can also pass a condition function that returns a boolean value. If returns false
  * the evaluation will be halted, and rest of the middleware will not be executed.
  * @returns A composed middleware.
- * 
+ *
  * @example
  * ```ts
  * import { some, every } from 'predicate'
  * import { bearerAuth } from 'bearer-auth'
  * import { myCheckLocalNetwork } from '@/check-local-network'
  * import { myRateLimit } from '@/rate-limit'
- * 
+ *
  * // If client is in local network, then skip authentication and rate limiting.
  * // Otherwise, apply authentication and rate limiting.
  * app.use('/api/*', some(
@@ -107,12 +107,12 @@ export const every = (...middleware: (MiddlewareHandler | Condition)[]): Middlew
  * If a string is passed, it will be treated as a path pattern to match.
  * If a Condition function is passed, it will be evaluated against the request context.
  * @param middleware - A composed middleware
- * 
+ *
  * @example
  * ```ts
  * import { except } from 'predicate'
  * import { bearerAuth } from 'bearer-auth
- * 
+ *
  * // If client is accessing public API, then skip authentication.
  * // Otherwise, require a valid token.
  * app.use('/api/*', except(
