@@ -110,9 +110,12 @@ interface BodyRespond extends NewResponse {}
  * @returns {Response & TypedResponse<T, U, 'text'>} - The response after rendering the text content, typed with the provided text and status code types.
  */
 interface TextRespond {
-  <T extends string, U extends StatusCode>(text: T, status?: U, headers?: HeaderRecord): Response &
-    TypedResponse<T, U, 'text'>
-  <T extends string, U extends StatusCode>(text: T, init?: ResponseInit): Response &
+  <T extends string, U extends StatusCode = StatusCode>(
+    text: T,
+    status?: U,
+    headers?: HeaderRecord
+  ): Response & TypedResponse<T, U, 'text'>
+  <T extends string, U extends StatusCode = StatusCode>(text: T, init?: ResponseInit): Response &
     TypedResponse<T, U, 'text'>
 }
 
@@ -130,12 +133,12 @@ interface TextRespond {
  * @returns {JSONRespondReturn<T, U>} - The response after rendering the JSON object, typed with the provided object and status code types.
  */
 interface JSONRespond {
-  <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode>(
+  <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode = StatusCode>(
     object: T,
     status?: U,
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U>
-  <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode>(
+  <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode = StatusCode>(
     object: T,
     init?: ResponseInit
   ): JSONRespondReturn<T, U>
@@ -661,7 +664,10 @@ export class Context<
    * })
    * ```
    */
-  json: JSONRespond = <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode>(
+  json: JSONRespond = <
+    T extends JSONValue | SimplifyDeepArray<unknown>,
+    U extends StatusCode = StatusCode
+  >(
     object: T,
     arg?: U | ResponseInit,
     headers?: HeaderRecord
