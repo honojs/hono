@@ -1,15 +1,26 @@
-import type { HonoRequest } from './request'
-import type { Env, FetchEventLike, Input, NotFoundHandler, TypedResponse } from './types'
-import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
-import type { RedirectStatusCode, StatusCode } from './utils/http-status'
-import type { IsAny, JSONParsed, JSONValue, SimplifyDeepArray } from './utils/types'
+import type { HonoRequest } from "./request";
+import type {
+  Env,
+  FetchEventLike,
+  Input,
+  NotFoundHandler,
+  TypedResponse,
+} from "./types";
+import { HtmlEscapedCallbackPhase, resolveCallback } from "./utils/html";
+import type { RedirectStatusCode, StatusCode } from "./utils/http-status";
+import type {
+  IsAny,
+  JSONParsed,
+  JSONValue,
+  SimplifyDeepArray,
+} from "./utils/types";
 
-type HeaderRecord = Record<string, string | string[]>
+type HeaderRecord = Record<string, string | string[]>;
 
 /**
  * Data type can be a string, ArrayBuffer, or ReadableStream.
  */
-export type Data = string | ArrayBuffer | ReadableStream
+export type Data = string | ArrayBuffer | ReadableStream;
 
 /**
  * Interface for the execution context in a web worker or similar environment.
@@ -20,11 +31,11 @@ export interface ExecutionContext {
    *
    * @param promise - A promise to wait for.
    */
-  waitUntil(promise: Promise<unknown>): void
+  waitUntil(promise: Promise<unknown>): void;
   /**
    * Allows the event to be passed through to subsequent event listeners.
    */
-  passThroughOnException(): void
+  passThroughOnException(): void;
 }
 
 /**
@@ -45,23 +56,24 @@ export interface ContextRenderer {}
  * @returns {Response | Promise<Response>} - The response after rendering the content, which can be either a Response or a Promise resolving to a Response.
  */
 interface DefaultRenderer {
-  (content: string | Promise<string>): Response | Promise<Response>
+  (content: string | Promise<string>): Response | Promise<Response>;
 }
 
 /**
  * Renderer type which can either be a ContextRenderer or DefaultRenderer.
  */
-export type Renderer = ContextRenderer extends Function ? ContextRenderer : DefaultRenderer
+export type Renderer = ContextRenderer extends Function ? ContextRenderer
+  : DefaultRenderer;
 
 /**
  * Extracts the props for the renderer.
  */
-export type PropsForRenderer = [...Required<Parameters<Renderer>>] extends [unknown, infer Props]
-  ? Props
-  : unknown
+export type PropsForRenderer = [...Required<Parameters<Renderer>>] extends
+  [unknown, infer Props] ? Props
+  : unknown;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Layout<T = Record<string, any>> = (props: T) => any
+export type Layout<T = Record<string, any>> = (props: T) => any;
 
 /**
  * Interface for getting context variables.
@@ -69,8 +81,8 @@ export type Layout<T = Record<string, any>> = (props: T) => any
  * @template E - Environment type.
  */
 interface Get<E extends Env> {
-  <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
-  <Key extends keyof E['Variables']>(key: Key): E['Variables'][Key]
+  <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key];
+  <Key extends keyof E["Variables"]>(key: Key): E["Variables"][Key];
 }
 
 /**
@@ -79,16 +91,22 @@ interface Get<E extends Env> {
  * @template E - Environment type.
  */
 interface Set<E extends Env> {
-  <Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
-  <Key extends keyof E['Variables']>(key: Key, value: E['Variables'][Key]): void
+  <Key extends keyof ContextVariableMap>(
+    key: Key,
+    value: ContextVariableMap[Key],
+  ): void;
+  <Key extends keyof E["Variables"]>(
+    key: Key,
+    value: E["Variables"][Key],
+  ): void;
 }
 
 /**
  * Interface for creating a new response.
  */
 interface NewResponse {
-  (data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response
-  (data: Data | null, init?: ResponseInit): Response
+  (data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response;
+  (data: Data | null, init?: ResponseInit): Response;
 }
 
 /**
@@ -110,10 +128,19 @@ interface BodyRespond extends NewResponse {}
  * @returns {Response & TypedResponse<T, U, 'text'>} - The response after rendering the text content, typed with the provided text and status code types.
  */
 interface TextRespond {
-  <T extends string, U extends StatusCode>(text: T, status?: U, headers?: HeaderRecord): Response &
-    TypedResponse<T, U, 'text'>
-  <T extends string, U extends StatusCode>(text: T, init?: ResponseInit): Response &
-    TypedResponse<T, U, 'text'>
+  <T extends string, U extends StatusCode = StatusCode>(
+    text: T,
+    status?: U,
+    headers?: HeaderRecord,
+  ):
+    & Response
+    & TypedResponse<T, U, "text">;
+  <T extends string, U extends StatusCode = StatusCode>(
+    text: T,
+    init?: ResponseInit,
+  ):
+    & Response
+    & TypedResponse<T, U, "text">;
 }
 
 /**
@@ -130,15 +157,21 @@ interface TextRespond {
  * @returns {JSONRespondReturn<T, U>} - The response after rendering the JSON object, typed with the provided object and status code types.
  */
 interface JSONRespond {
-  <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode>(
+  <
+    T extends JSONValue | SimplifyDeepArray<unknown>,
+    U extends StatusCode = StatusCode,
+  >(
     object: T,
     status?: U,
-    headers?: HeaderRecord
-  ): JSONRespondReturn<T, U>
-  <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode>(
+    headers?: HeaderRecord,
+  ): JSONRespondReturn<T, U>;
+  <
+    T extends JSONValue | SimplifyDeepArray<unknown>,
+    U extends StatusCode = StatusCode,
+  >(
     object: T,
-    init?: ResponseInit
-  ): JSONRespondReturn<T, U>
+    init?: ResponseInit,
+  ): JSONRespondReturn<T, U>;
 }
 
 /**
@@ -149,17 +182,17 @@ interface JSONRespond {
  */
 type JSONRespondReturn<
   T extends JSONValue | SimplifyDeepArray<unknown>,
-  U extends StatusCode
-> = Response &
-  TypedResponse<
+  U extends StatusCode,
+> =
+  & Response
+  & TypedResponse<
     SimplifyDeepArray<T> extends JSONValue
-      ? JSONValue extends SimplifyDeepArray<T>
-        ? never
-        : JSONParsed<T>
+      ? JSONValue extends SimplifyDeepArray<T> ? never
+      : JSONParsed<T>
       : never,
     U,
-    'json'
-  >
+    "json"
+  >;
 
 /**
  * Interface representing a function that responds with HTML content.
@@ -174,8 +207,11 @@ type JSONRespondReturn<
 interface HTMLRespond {
   (html: string | Promise<string>, status?: StatusCode, headers?: HeaderRecord):
     | Response
-    | Promise<Response>
-  (html: string | Promise<string>, init?: ResponseInit): Response | Promise<Response>
+    | Promise<Response>;
+  (
+    html: string | Promise<string>,
+    init?: ResponseInit,
+  ): Response | Promise<Response>;
 }
 
 /**
@@ -187,18 +223,18 @@ type ContextOptions<E extends Env> = {
   /**
    * Bindings for the environment.
    */
-  env: E['Bindings']
+  env: E["Bindings"];
   /**
    * Execution context for the request.
    */
-  executionCtx?: FetchEventLike | ExecutionContext | undefined
+  executionCtx?: FetchEventLike | ExecutionContext | undefined;
   /**
    * Handler for not found responses.
    */
-  notFoundHandler?: NotFoundHandler<E>
-}
+  notFoundHandler?: NotFoundHandler<E>;
+};
 
-export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
+export const TEXT_PLAIN = "text/plain; charset=UTF-8";
 
 /**
  * Sets the headers of a response.
@@ -208,21 +244,21 @@ export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
  * @returns The updated Headers object.
  */
 const setHeaders = (headers: Headers, map: Record<string, string> = {}) => {
-  Object.entries(map).forEach(([key, value]) => headers.set(key, value))
-  return headers
-}
+  Object.entries(map).forEach(([key, value]) => headers.set(key, value));
+  return headers;
+};
 
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   P extends string = any,
-  I extends Input = {}
+  I extends Input = {},
 > {
   /**
    * `.req` is the instance of {@link HonoRequest}.
    */
-  req: HonoRequest<P, I['out']>
+  req: HonoRequest<P, I["out"]>;
   /**
    * `.env` can get bindings (environment variables, secrets, KV namespaces, D1 database, R2 bucket etc.) in Cloudflare Workers.
    *
@@ -236,9 +272,9 @@ export class Context<
    * })
    * ```
    */
-  env: E['Bindings'] = {}
-  private _var: E['Variables'] | undefined
-  finalized: boolean = false
+  env: E["Bindings"] = {};
+  private _var: E["Variables"] | undefined;
+  finalized: boolean = false;
   /**
    * `.error` can get the error object from the middleware if the Handler throws an error.
    *
@@ -254,17 +290,19 @@ export class Context<
    * })
    * ```
    */
-  error: Error | undefined = undefined
+  error: Error | undefined = undefined;
 
-  #status: StatusCode = 200
-  #executionCtx: FetchEventLike | ExecutionContext | undefined
-  #headers: Headers | undefined = undefined
-  #preparedHeaders: Record<string, string> | undefined = undefined
-  #res: Response | undefined
-  #isFresh = true
-  private layout: Layout<PropsForRenderer & { Layout: Layout }> | undefined = undefined
-  private renderer: Renderer = (content: string | Promise<string>) => this.html(content)
-  private notFoundHandler: NotFoundHandler<E> = () => new Response()
+  #status: StatusCode = 200;
+  #executionCtx: FetchEventLike | ExecutionContext | undefined;
+  #headers: Headers | undefined = undefined;
+  #preparedHeaders: Record<string, string> | undefined = undefined;
+  #res: Response | undefined;
+  #isFresh = true;
+  private layout: Layout<PropsForRenderer & { Layout: Layout }> | undefined =
+    undefined;
+  private renderer: Renderer = (content: string | Promise<string>) =>
+    this.html(content);
+  private notFoundHandler: NotFoundHandler<E> = () => new Response();
 
   /**
    * Creates an instance of the Context class.
@@ -272,13 +310,13 @@ export class Context<
    * @param req - The HonoRequest object.
    * @param options - Optional configuration options for the context.
    */
-  constructor(req: HonoRequest<P, I['out']>, options?: ContextOptions<E>) {
-    this.req = req
+  constructor(req: HonoRequest<P, I["out"]>, options?: ContextOptions<E>) {
+    this.req = req;
     if (options) {
-      this.#executionCtx = options.executionCtx
-      this.env = options.env
+      this.#executionCtx = options.executionCtx;
+      this.env = options.env;
       if (options.notFoundHandler) {
-        this.notFoundHandler = options.notFoundHandler
+        this.notFoundHandler = options.notFoundHandler;
       }
     }
   }
@@ -290,10 +328,10 @@ export class Context<
    * @throws Will throw an error if the context does not have a FetchEvent.
    */
   get event(): FetchEventLike {
-    if (this.#executionCtx && 'respondWith' in this.#executionCtx) {
-      return this.#executionCtx
+    if (this.#executionCtx && "respondWith" in this.#executionCtx) {
+      return this.#executionCtx;
     } else {
-      throw Error('This context has no FetchEvent')
+      throw Error("This context has no FetchEvent");
     }
   }
 
@@ -305,9 +343,9 @@ export class Context<
    */
   get executionCtx(): ExecutionContext {
     if (this.#executionCtx) {
-      return this.#executionCtx as ExecutionContext
+      return this.#executionCtx as ExecutionContext;
     } else {
-      throw Error('This context has no ExecutionContext')
+      throw Error("This context has no ExecutionContext");
     }
   }
 
@@ -316,8 +354,8 @@ export class Context<
    * The Response object for the current request.
    */
   get res(): Response {
-    this.#isFresh = false
-    return (this.#res ||= new Response('404 Not Found', { status: 404 }))
+    this.#isFresh = false;
+    return (this.#res ||= new Response("404 Not Found", { status: 404 }));
   }
 
   /**
@@ -326,23 +364,23 @@ export class Context<
    * @param _res - The Response object to set.
    */
   set res(_res: Response | undefined) {
-    this.#isFresh = false
+    this.#isFresh = false;
     if (this.#res && _res) {
-      this.#res.headers.delete('content-type')
+      this.#res.headers.delete("content-type");
       for (const [k, v] of this.#res.headers.entries()) {
-        if (k === 'set-cookie') {
-          const cookies = this.#res.headers.getSetCookie()
-          _res.headers.delete('set-cookie')
+        if (k === "set-cookie") {
+          const cookies = this.#res.headers.getSetCookie();
+          _res.headers.delete("set-cookie");
           for (const cookie of cookies) {
-            _res.headers.append('set-cookie', cookie)
+            _res.headers.append("set-cookie", cookie);
           }
         } else {
-          _res.headers.set(k, v)
+          _res.headers.set(k, v);
         }
       }
     }
-    this.#res = _res
-    this.finalized = true
+    this.#res = _res;
+    this.finalized = true;
   }
 
   /**
@@ -357,7 +395,7 @@ export class Context<
    * })
    * ```
    */
-  render: Renderer = (...args) => this.renderer(...args)
+  render: Renderer = (...args) => this.renderer(...args);
 
   /**
    * Sets the layout for the response.
@@ -366,19 +404,19 @@ export class Context<
    * @returns The layout function.
    */
   setLayout = (
-    layout: Layout<PropsForRenderer & { Layout: Layout }>
+    layout: Layout<PropsForRenderer & { Layout: Layout }>,
   ): Layout<
     PropsForRenderer & {
-      Layout: Layout
+      Layout: Layout;
     }
-  > => (this.layout = layout)
+  > => (this.layout = layout);
 
   /**
    * Gets the current layout for the response.
    *
    * @returns The current layout function.
    */
-  getLayout = () => this.layout
+  getLayout = () => this.layout;
 
   /**
    * `.setRenderer()` can set the layout in the custom middleware.
@@ -402,8 +440,8 @@ export class Context<
    * ```
    */
   setRenderer = (renderer: Renderer): void => {
-    this.renderer = renderer
-  }
+    this.renderer = renderer;
+  };
 
   /**
    * `.header()` can set headers.
@@ -421,49 +459,53 @@ export class Context<
    * })
    * ```
    */
-  header = (name: string, value: string | undefined, options?: { append?: boolean }): void => {
+  header = (
+    name: string,
+    value: string | undefined,
+    options?: { append?: boolean },
+  ): void => {
     // Clear the header
     if (value === undefined) {
       if (this.#headers) {
-        this.#headers.delete(name)
+        this.#headers.delete(name);
       } else if (this.#preparedHeaders) {
-        delete this.#preparedHeaders[name.toLocaleLowerCase()]
+        delete this.#preparedHeaders[name.toLocaleLowerCase()];
       }
       if (this.finalized) {
-        this.res.headers.delete(name)
+        this.res.headers.delete(name);
       }
-      return
+      return;
     }
 
     if (options?.append) {
       if (!this.#headers) {
-        this.#isFresh = false
-        this.#headers = new Headers(this.#preparedHeaders)
-        this.#preparedHeaders = {}
+        this.#isFresh = false;
+        this.#headers = new Headers(this.#preparedHeaders);
+        this.#preparedHeaders = {};
       }
-      this.#headers.append(name, value)
+      this.#headers.append(name, value);
     } else {
       if (this.#headers) {
-        this.#headers.set(name, value)
+        this.#headers.set(name, value);
       } else {
-        this.#preparedHeaders ??= {}
-        this.#preparedHeaders[name.toLowerCase()] = value
+        this.#preparedHeaders ??= {};
+        this.#preparedHeaders[name.toLowerCase()] = value;
       }
     }
 
     if (this.finalized) {
       if (options?.append) {
-        this.res.headers.append(name, value)
+        this.res.headers.append(name, value);
       } else {
-        this.res.headers.set(name, value)
+        this.res.headers.set(name, value);
       }
     }
-  }
+  };
 
   status = (status: StatusCode): void => {
-    this.#isFresh = false
-    this.#status = status
-  }
+    this.#isFresh = false;
+    this.#status = status;
+  };
 
   /**
    * `.set()` can set the value specified by the key.
@@ -480,9 +522,9 @@ export class Context<
 ```
    */
   set: Set<E> = (key: string, value: unknown) => {
-    this._var ??= {}
-    this._var[key as string] = value
-  }
+    this._var ??= {};
+    this._var[key as string] = value;
+  };
 
   /**
    * `.get()` can use the value specified by the key.
@@ -498,8 +540,8 @@ export class Context<
    * ```
    */
   get: Get<E> = (key: string) => {
-    return this._var ? this._var[key] : undefined
-  }
+    return this._var ? this._var[key] : undefined;
+  };
 
   /**
    * `.var` can access the value of a variable.
@@ -514,67 +556,69 @@ export class Context<
   // c.var.propName is a read-only
   get var(): Readonly<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ContextVariableMap & (IsAny<E['Variables']> extends true ? Record<string, any> : E['Variables'])
+    & ContextVariableMap
+    & (IsAny<E["Variables"]> extends true ? Record<string, any>
+      : E["Variables"])
   > {
-    return { ...this._var } as never
+    return { ...this._var } as never;
   }
 
   newResponse: NewResponse = (
     data: Data | null,
     arg?: StatusCode | ResponseInit,
-    headers?: HeaderRecord
+    headers?: HeaderRecord,
   ): Response => {
     // Optimized
     if (this.#isFresh && !headers && !arg && this.#status === 200) {
       return new Response(data, {
         headers: this.#preparedHeaders,
-      })
+      });
     }
 
-    if (arg && typeof arg !== 'number') {
-      const header = new Headers(arg.headers)
+    if (arg && typeof arg !== "number") {
+      const header = new Headers(arg.headers);
       if (this.#headers) {
         // If the header is set by c.header() and arg.headers, c.header() will be prioritized.
         this.#headers.forEach((v, k) => {
-          if (k === 'set-cookie') {
-            header.append(k, v)
+          if (k === "set-cookie") {
+            header.append(k, v);
           } else {
-            header.set(k, v)
+            header.set(k, v);
           }
-        })
+        });
       }
-      const headers = setHeaders(header, this.#preparedHeaders)
+      const headers = setHeaders(header, this.#preparedHeaders);
       return new Response(data, {
         headers,
         status: arg.status ?? this.#status,
-      })
+      });
     }
 
-    const status = typeof arg === 'number' ? arg : this.#status
-    this.#preparedHeaders ??= {}
+    const status = typeof arg === "number" ? arg : this.#status;
+    this.#preparedHeaders ??= {};
 
-    this.#headers ??= new Headers()
-    setHeaders(this.#headers, this.#preparedHeaders)
+    this.#headers ??= new Headers();
+    setHeaders(this.#headers, this.#preparedHeaders);
 
     if (this.#res) {
       this.#res.headers.forEach((v, k) => {
-        if (k === 'set-cookie') {
-          this.#headers?.append(k, v)
+        if (k === "set-cookie") {
+          this.#headers?.append(k, v);
         } else {
-          this.#headers?.set(k, v)
+          this.#headers?.set(k, v);
         }
-      })
-      setHeaders(this.#headers, this.#preparedHeaders)
+      });
+      setHeaders(this.#headers, this.#preparedHeaders);
     }
 
-    headers ??= {}
+    headers ??= {};
     for (const [k, v] of Object.entries(headers)) {
-      if (typeof v === 'string') {
-        this.#headers.set(k, v)
+      if (typeof v === "string") {
+        this.#headers.set(k, v);
       } else {
-        this.#headers.delete(k)
+        this.#headers.delete(k);
         for (const v2 of v) {
-          this.#headers.append(k, v2)
+          this.#headers.append(k, v2);
         }
       }
     }
@@ -582,8 +626,8 @@ export class Context<
     return new Response(data, {
       status,
       headers: this.#headers,
-    })
-  }
+    });
+  };
 
   /**
    * `.body()` can return the HTTP response.
@@ -609,12 +653,12 @@ export class Context<
   body: BodyRespond = (
     data: Data | null,
     arg?: StatusCode | ResponseInit,
-    headers?: HeaderRecord
+    headers?: HeaderRecord,
   ): Response => {
-    return typeof arg === 'number'
+    return typeof arg === "number"
       ? this.newResponse(data, arg, headers)
-      : this.newResponse(data, arg)
-  }
+      : this.newResponse(data, arg);
+  };
 
   /**
    * `.text()` can render text as `Content-Type:text/plain`.
@@ -631,23 +675,23 @@ export class Context<
   text: TextRespond = (
     text: string,
     arg?: StatusCode | ResponseInit,
-    headers?: HeaderRecord
+    headers?: HeaderRecord,
   ): ReturnType<TextRespond> => {
     // If the header is empty, return Response immediately.
     // Content-Type will be added automatically as `text/plain`.
     if (!this.#preparedHeaders) {
       if (this.#isFresh && !headers && !arg) {
         // @ts-expect-error `Response` due to missing some types-only keys
-        return new Response(text)
+        return new Response(text);
       }
-      this.#preparedHeaders = {}
+      this.#preparedHeaders = {};
     }
-    this.#preparedHeaders['content-type'] = TEXT_PLAIN
+    this.#preparedHeaders["content-type"] = TEXT_PLAIN;
     // @ts-expect-error `Response` due to missing some types-only keys
-    return typeof arg === 'number'
+    return typeof arg === "number"
       ? this.newResponse(text, arg, headers)
-      : this.newResponse(text, arg)
-  }
+      : this.newResponse(text, arg);
+  };
 
   /**
    * `.json()` can render JSON as `Content-Type:application/json`.
@@ -661,47 +705,54 @@ export class Context<
    * })
    * ```
    */
-  json: JSONRespond = <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode>(
+  json: JSONRespond = <
+    T extends JSONValue | SimplifyDeepArray<unknown>,
+    U extends StatusCode = StatusCode,
+  >(
     object: T,
     arg?: U | ResponseInit,
-    headers?: HeaderRecord
+    headers?: HeaderRecord,
   ): JSONRespondReturn<T, U> => {
-    const body = JSON.stringify(object)
-    this.#preparedHeaders ??= {}
-    this.#preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
+    const body = JSON.stringify(object);
+    this.#preparedHeaders ??= {};
+    this.#preparedHeaders["content-type"] = "application/json; charset=UTF-8";
     /* eslint-disable @typescript-eslint/no-explicit-any */
     return (
-      typeof arg === 'number' ? this.newResponse(body, arg, headers) : this.newResponse(body, arg)
-    ) as any
-  }
+      typeof arg === "number"
+        ? this.newResponse(body, arg, headers)
+        : this.newResponse(body, arg)
+    ) as any;
+  };
 
   html: HTMLRespond = (
     html: string | Promise<string>,
     arg?: StatusCode | ResponseInit,
-    headers?: HeaderRecord
+    headers?: HeaderRecord,
   ): Response | Promise<Response> => {
-    this.#preparedHeaders ??= {}
-    this.#preparedHeaders['content-type'] = 'text/html; charset=UTF-8'
+    this.#preparedHeaders ??= {};
+    this.#preparedHeaders["content-type"] = "text/html; charset=UTF-8";
 
-    if (typeof html === 'object') {
+    if (typeof html === "object") {
       if (!(html instanceof Promise)) {
-        html = (html as string).toString() // HtmlEscapedString object to string
+        html = (html as string).toString(); // HtmlEscapedString object to string
       }
       if ((html as string | Promise<string>) instanceof Promise) {
         return (html as unknown as Promise<string>)
-          .then((html) => resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}))
+          .then((html) =>
+            resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {})
+          )
           .then((html) => {
-            return typeof arg === 'number'
+            return typeof arg === "number"
               ? this.newResponse(html, arg, headers)
-              : this.newResponse(html, arg)
-          })
+              : this.newResponse(html, arg);
+          });
       }
     }
 
-    return typeof arg === 'number'
+    return typeof arg === "number"
       ? this.newResponse(html as string, arg, headers)
-      : this.newResponse(html as string, arg)
-  }
+      : this.newResponse(html as string, arg);
+  };
 
   /**
    * `.redirect()` can Redirect, default status code is 302.
@@ -720,12 +771,12 @@ export class Context<
    */
   redirect = <T extends RedirectStatusCode = 302>(
     location: string,
-    status?: T
-  ): Response & TypedResponse<undefined, T, 'redirect'> => {
-    this.#headers ??= new Headers()
-    this.#headers.set('Location', location)
-    return this.newResponse(null, status ?? 302) as any
-  }
+    status?: T,
+  ): Response & TypedResponse<undefined, T, "redirect"> => {
+    this.#headers ??= new Headers();
+    this.#headers.set("Location", location);
+    return this.newResponse(null, status ?? 302) as any;
+  };
 
   /**
    * `.notFound()` can return the Not Found Response.
@@ -740,6 +791,6 @@ export class Context<
    * ```
    */
   notFound = (): Response | Promise<Response> => {
-    return this.notFoundHandler(this)
-  }
+    return this.notFoundHandler(this);
+  };
 }
