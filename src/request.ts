@@ -213,17 +213,14 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
       return cachedBody
     }
 
-    if (!bodyCache[key]) {
-      for (const keyOfBodyCache of Object.keys(bodyCache)) {
-        return (async () => {
-          // @ts-expect-error bodyCache[keyOfBodyCache] can be passed as a body
-          let body = await bodyCache[keyOfBodyCache]
-          if (keyOfBodyCache === 'json') {
-            body = JSON.stringify(body)
-          }
-          return await new Response(body)[key]()
-        })()
-      }
+    const anyCachedKey = Object.keys(bodyCache)[0]
+    if (anyCachedKey) {
+      return (bodyCache[anyCachedKey as keyof Body] as Promise<BodyInit>).then((body) => {
+        if (anyCachedKey === 'json') {
+          body = JSON.stringify(body)
+        }
+        return new Response(body)[key]()
+      })
     }
 
     return (bodyCache[key] = raw[key]())
