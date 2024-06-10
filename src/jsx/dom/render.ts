@@ -511,13 +511,12 @@ export const buildNode = (node: Child): Node | undefined => {
     } else {
       const ns = nameSpaceMap[(node as JSXNode).tag as string]
       if (ns) {
-        ;(node as NodeObject).n = `http://www.w3.org/${ns}`
         nameSpaceContext ||= createContext('')
         ;(node as JSXNode).props.children = [
           {
             tag: nameSpaceContext.Provider,
             props: {
-              value: ns,
+              value: ((node as NodeObject).n = `http://www.w3.org/${ns}`),
               children: (node as JSXNode).props.children,
             },
           },
