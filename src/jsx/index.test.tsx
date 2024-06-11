@@ -4,7 +4,19 @@ import { html } from '../helper/html'
 import { Hono } from '../hono'
 import { Suspense, renderToReadableStream } from './streaming'
 import DefaultExport, { Fragment, StrictMode, createContext, memo, useContext, version } from '.'
-import type { Context, FC, PropsWithChildren } from '.'
+import type { Context, FC, JSXNode, PropsWithChildren } from '.'
+import type { HtmlEscapedString } from '../utils/html'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
+
+async function toString(
+  template: JSXNode | Promise<HtmlEscapedString> | Promise<string> | HtmlEscapedString
+) {
+  if (template instanceof Promise) {
+    template = (await template) as HtmlEscapedString
+  }
+  template = template.toString() as Promise<HtmlEscapedString>
+  return resolveCallback(await template, HtmlEscapedCallbackPhase.Stringify, false, template)
+}
 
 interface SiteData {
   title: string
@@ -395,6 +407,23 @@ describe('render to string', () => {
       const escapedString = html`${'<html-escaped-string>'}`
       const template = <span data-text={escapedString}>Hello</span>
       expect(template.toString()).toBe('<span data-text="&lt;html-escaped-string&gt;">Hello</span>')
+    })
+  })
+
+  describe('document metadata', () => {
+    it('should be hoisted title tag', async () => {
+      const template = (
+        <html>
+          <head></head>
+          <body>
+            <title>Hello</title>
+            <h1>World</h1>
+          </body>
+        </html>
+      )
+      expect(await toString(template)).toBe(
+        '<html><head><title>Hello</title></head><body><title>Hello</title><h1>World</h1></body></html>'
+      )
     })
   })
 })

@@ -1926,6 +1926,40 @@ describe('DOM', () => {
     })
   })
 
+  describe('document metadata', () => {
+    it('title element', () => {
+      const App = () => {
+        return (
+          <div>
+            <title>Document Title</title>
+            Content
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(document.head.innerHTML).toBe('<title>Document Title</title>')
+      expect(root.innerHTML).toBe('<div>Content</div>')
+    })
+
+    it('update title element', async () => {
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <div>
+            <title>Document Title {count}</title>
+            <button onClick={() => setCount(count + 1)}>+</button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(document.head.innerHTML).toBe('<title>Document Title 0</title>')
+      expect(root.innerHTML).toBe('<div><button>+</button></div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(document.head.innerHTML).toBe('<title>Document Title 1</title>')
+    })
+  })
+
   describe('SVG', () => {
     it('simple', () => {
       const App = () => {
@@ -1953,9 +1987,7 @@ describe('DOM', () => {
         )
       }
       render(<App />, root)
-      expect(root.innerHTML).toBe(
-        '<title>Document Title</title><svg><title>SVG Title</title></svg>'
-      )
+      expect(root.innerHTML).toBe('<svg><title>SVG Title</title></svg>')
       expect(document.querySelector('title')).toBeInstanceOf(dom.window.HTMLTitleElement)
       expect(document.querySelector('svg title')).toBeInstanceOf(dom.window.SVGTitleElement)
     })

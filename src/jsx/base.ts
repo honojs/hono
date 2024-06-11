@@ -3,6 +3,7 @@ import { escapeToBuffer, stringBufferToString } from '../utils/html'
 import type { HtmlEscaped, HtmlEscapedString, StringBuffer } from '../utils/html'
 import type { Context } from './context'
 import { globalContexts } from './context'
+import { DOM_RENDERER } from './constants'
 import type {
   JSX as HonoJSX,
   IntrinsicElements as IntrinsicElementsDefined,
@@ -28,6 +29,9 @@ export namespace JSX {
     [tagName: string]: Props
   }
 }
+
+import * as intrinsicElementTagsString from './intrinsic-element-tags'
+import * as intrinsicElementTagsDom from './dom/intrinsic-element-tags'
 
 const emptyTags = [
   'area',
@@ -272,13 +276,30 @@ export const jsx = (
   return node
 }
 
+let intrinsicElementTags: Record<string, Function> | undefined
 export const jsxFn = (
   tag: string | Function,
   props: Props,
   children: (string | number | HtmlEscapedString)[]
 ): JSXNode => {
+  if (!intrinsicElementTags) {
+    intrinsicElementTags = {
+      ...intrinsicElementTagsString,
+    }
+    for (const [key, value] of Object.entries(intrinsicElementTagsDom)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(intrinsicElementTags[key] as any)[DOM_RENDERER] = value
+    }
+  }
+
   if (typeof tag === 'function') {
     return new JSXFunctionNode(tag, props, children)
+  } else if (intrinsicElementTags[tag as keyof typeof intrinsicElementTags]) {
+    return new JSXFunctionNode(
+      intrinsicElementTags[tag as keyof typeof intrinsicElementTags],
+      props,
+      children
+    )
   } else {
     return new JSXNode(tag, props, children)
   }

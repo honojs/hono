@@ -94,6 +94,7 @@ export type Context =
 export const buildDataStack: [Context, Node][] = []
 
 let nameSpaceContext: JSXContext<string> | undefined = undefined
+export const getNameSpaceContext = () => nameSpaceContext
 
 const isNodeString = (node: Node): node is NodeString => 't' in (node as NodeString)
 
