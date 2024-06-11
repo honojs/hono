@@ -240,6 +240,23 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<button>remove</button>')
       expect(ref).toHaveBeenLastCalledWith(null)
     })
+
+    it('ref as a prop', async () => {
+      const ref = vi.fn()
+      const MyInput: FC = ({ placeholder, ref }) => {
+        return <input placeholder={placeholder} ref={ref} />
+      }
+      const App = () => {
+        return (
+          <>
+            <MyInput placeholder='input' ref={ref} />
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<input placeholder="input">')
+      expect(ref).toHaveBeenLastCalledWith(expect.any(dom.window.HTMLInputElement))
+    })
   })
 
   describe('defaultProps', () => {
