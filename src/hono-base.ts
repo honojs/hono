@@ -9,14 +9,14 @@ import { Context } from './context'
 import type { ExecutionContext } from './context'
 import { HonoRequest } from './request'
 import type { Router } from './router'
-import { METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS } from './router'
+import { METHODS, METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import type {
   Env,
   ErrorHandler,
   FetchEventLike,
   H,
-  HandlerInterface,
   HTTPResponseError,
+  HandlerInterface,
   MergePath,
   MergeSchemaPath,
   MiddlewareHandler,
