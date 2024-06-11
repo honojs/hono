@@ -1,6 +1,6 @@
-import { Context } from "./context";
-import type { ParamIndexMap, Params } from "./router";
-import type { Env, ErrorHandler, NotFoundHandler } from "./types";
+import { Context } from './context'
+import type { ParamIndexMap, Params } from './router'
+import type { Env, ErrorHandler, NotFoundHandler } from './types'
 
 /**
  * Interface representing the context for a composition operation.
@@ -9,13 +9,13 @@ interface ComposeContext {
   /**
    * Indicates whether the composition process has been finalized.
    */
-  finalized: boolean;
+  finalized: boolean
 
   /**
    * The result of the composition process. The type is unknown and should be
    * specified based on the context where this interface is used.
    */
-  res: unknown;
+  res: unknown
 }
 
 /**
@@ -33,11 +33,11 @@ interface ComposeContext {
 export const compose = <C extends ComposeContext, E extends Env = Env>(
   middleware: [[Function, unknown], ParamIndexMap | Params][],
   onError: ErrorHandler<E>,
-  onNotFound: NotFoundHandler<E>,
+  onNotFound: NotFoundHandler<E>
 ) => {
   return (context: C, next?: Function) => {
-    let index = -1;
-    return dispatch(0);
+    let index = -1
+    return dispatch(0)
 
     /**
      * Dispatch the middleware functions.
@@ -48,49 +48,47 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
      */
     async function dispatch(i: number): Promise<C> {
       if (i <= index) {
-        throw new Error("next() called multiple times");
+        throw new Error('next() called multiple times')
       }
-      index = i;
+      index = i
 
-      let res;
-      let isError = false;
-      let handler;
+      let res
+      let isError = false
+      let handler
 
       if (middleware[i]) {
-        handler = middleware[i][0][0];
+        handler = middleware[i][0][0]
         if (context instanceof Context) {
-          context.req.routeIndex = i;
+          context.req.routeIndex = i
         }
       } else {
-        handler = (i === middleware.length && next) || undefined;
+        handler = (i === middleware.length && next) || undefined
       }
 
       if (!handler) {
-        if (
-          context instanceof Context && context.finalized === false
-        ) {
-          res = await onNotFound(context);
+        if (context instanceof Context && context.finalized === false) {
+          res = await onNotFound(context)
         }
       } else {
         try {
           res = await handler(context, () => {
-            return dispatch(i + 1);
-          });
+            return dispatch(i + 1)
+          })
         } catch (err) {
           if (err instanceof Error && context instanceof Context) {
-            context.error = err;
-            res = await onError(err, context);
-            isError = true;
+            context.error = err
+            res = await onError(err, context)
+            isError = true
           } else {
-            throw err;
+            throw err
           }
         }
       }
 
       if (res && (context.finalized === false || isError)) {
-        context.res = res;
+        context.res = res
       }
-      return context;
+      return context
     }
-  };
-};
+  }
+}
