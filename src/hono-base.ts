@@ -7,7 +7,6 @@
 import { compose } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
-import { HTTPException } from './http-exception'
 import { HonoRequest } from './request'
 import type { Router } from './router'
 import { METHODS, METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
@@ -16,6 +15,7 @@ import type {
   ErrorHandler,
   FetchEventLike,
   H,
+  HTTPResponseError,
   HandlerInterface,
   MergePath,
   MergeSchemaPath,
@@ -38,8 +38,8 @@ const notFoundHandler = (c: Context) => {
   return c.text('404 Not Found', 404)
 }
 
-const errorHandler = (err: Error, c: Context) => {
-  if (err instanceof HTTPException) {
+const errorHandler = (err: Error | HTTPResponseError, c: Context) => {
+  if ('getResponse' in err) {
     return err.getResponse()
   }
   console.error(err)
@@ -144,9 +144,6 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
     // Implementation of app.on(method, path, ...handlers[])
     this.on = (method: string | string[], path: string | string[], ...handlers: H[]) => {
-      if (!method) {
-        return this
-      }
       for (const p of [path].flat()) {
         this.#path = p
         for (const m of [method].flat()) {
@@ -215,14 +212,9 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     SubBasePath extends string
   >(
     path: SubPath,
-    app?: Hono<SubEnv, SubSchema, SubBasePath>
+    app: Hono<SubEnv, SubSchema, SubBasePath>
   ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
     const subApp = this.basePath(path)
-
-    if (!app) {
-      return subApp
-    }
-
     app.routes.map((r) => {
       let handler
       if (app.errorHandler === errorHandler) {
@@ -441,7 +433,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
                 resolved || (c.finalized ? c.res : this.notFoundHandler(c))
             )
             .catch((err: Error) => this.handleError(err, c))
-        : res
+        : res ?? this.notFoundHandler(c)
     }
 
     const composed = compose<Context>(matchResult[0], this.errorHandler, this.notFoundHandler)
@@ -451,7 +443,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         const context = await composed(c)
         if (!context.finalized) {
           throw new Error(
-            'Context is not finalized. You may forget returning Response object or `await next()`'
+            'Context is not finalized. Did you forget to return a Response object or `await next()`?'
           )
         }
 

@@ -13,7 +13,6 @@ import type {
   IfAnyThenEmptyObject,
   IsAny,
   JSONValue,
-  Prettify,
   RemoveBlankRecord,
   Simplify,
   UnionToIntersection,
@@ -91,8 +90,12 @@ export type H<
 > = Handler<E, P, I, R> | MiddlewareHandler<E, P, I>
 
 export type NotFoundHandler<E extends Env = any> = (c: Context<E>) => Response | Promise<Response>
+
+export interface HTTPResponseError extends Error {
+  getResponse: () => Response
+}
 export type ErrorHandler<E extends Env = any> = (
-  err: Error,
+  err: Error | HTTPResponseError,
   c: Context<E>
 ) => Response | Promise<Response>
 
@@ -1613,7 +1616,7 @@ export type ToSchema<
   P extends string,
   I extends Input | Input['in'],
   RorO // Response or Output
-> = Prettify<{
+> = Simplify<{
   [K in P]: {
     [K2 in M as AddDollar<K2>]: Simplify<
       {
@@ -1666,7 +1669,7 @@ type ExtractParams<Path extends string> = string extends Path
 
 type FlattenIfIntersect<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
-export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = Prettify<{
+export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = Simplify<{
   [P in keyof OrigSchema as MergePath<SubPath, P & string>]: {
     [M in keyof OrigSchema[P]]: MergeEndpointParamsWithPath<OrigSchema[P][M], SubPath>
   }
@@ -1738,7 +1741,7 @@ export type MergePath<A extends string, B extends string> = B extends ''
 //////                            //////
 ////////////////////////////////////////
 
-export type KnownResponseFormat = 'json' | 'text'
+export type KnownResponseFormat = 'json' | 'text' | 'redirect'
 export type ResponseFormat = KnownResponseFormat | string
 
 export type TypedResponse<
@@ -1750,9 +1753,9 @@ export type TypedResponse<
     ? 'json'
     : ResponseFormat
 > = {
-  data: T
-  status: U
-  format: F
+  _data: T
+  _status: U
+  _format: F
 }
 
 type MergeTypedResponse<T> = T extends Promise<infer T2>

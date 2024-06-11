@@ -1,9 +1,9 @@
-export const normalizeIntrinsicElementProps = (props: Record<string, unknown>): void => {
-  if (props && 'className' in props) {
-    props['class'] = props['className']
-    delete props['className']
-  }
-}
+const normalizeElementKeyMap = new Map([
+  ['className', 'class'],
+  ['htmlFor', 'for'],
+])
+export const normalizeIntrinsicElementKey = (key: string): string =>
+  normalizeElementKeyMap.get(key) || key
 
 export const styleObjectForEach = (
   style: Record<string, string | number>,

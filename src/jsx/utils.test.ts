@@ -1,4 +1,15 @@
-import { styleObjectForEach } from './utils'
+import { normalizeIntrinsicElementKey, styleObjectForEach } from './utils'
+
+describe('normalizeIntrinsicElementKey', () => {
+  test.each`
+    key            | expected
+    ${'className'} | ${'class'}
+    ${'htmlFor'}   | ${'for'}
+    ${'href'}      | ${'href'}
+  `('should convert $key to $expected', ({ key, expected }) => {
+    expect(normalizeIntrinsicElementKey(key)).toBe(expected)
+  })
+})
 
 describe('styleObjectForEach', () => {
   describe('Should output the number as it is, when a number type is passed', () => {
