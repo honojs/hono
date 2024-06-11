@@ -21,7 +21,7 @@ export const getConnInfo: GetConnInfo = (c: Context) => {
   return {
     remote: {
       address: info.address,
-      addressType: info.family === 'IPv6' || info.family === 'IPv4' ? info.family : 'unknown',
+      addressType: info.family === 'IPv6' || info.family === 'IPv4' ? info.family : undefined,
       port: info.port,
     },
   }
