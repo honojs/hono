@@ -1,19 +1,9 @@
-/**
- * Normalizes intrinsic element properties by converting JSX element properties
- * to their corresponding HTML attributes.
- *
- * @param props - JSX element properties.
- */
-export const normalizeIntrinsicElementProps = (props: Record<string, unknown>): void => {
-  if (props && 'className' in props) {
-    props['class'] = props['className']
-    delete props['className']
-  }
-  if (props && 'htmlFor' in props) {
-    props['for'] = props['htmlFor']
-    delete props['htmlFor']
-  }
-}
+const normalizeElementKeyMap = new Map([
+  ['className', 'class'],
+  ['htmlFor', 'for'],
+])
+export const normalizeIntrinsicElementKey = (key: string): string =>
+  normalizeElementKeyMap.get(key) || key
 
 export const styleObjectForEach = (
   style: Record<string, string | number>,
