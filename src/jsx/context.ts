@@ -5,7 +5,7 @@ import { DOM_RENDERER } from './constants'
 import { createContextProviderFunction } from './dom/context'
 import type { FC, PropsWithChildren } from './'
 
-export interface Context<T> {
+export interface Context<T> extends FC<PropsWithChildren<{ value: T }>> {
   values: T[]
   Provider: FC<PropsWithChildren<{ value: T }>>
 }
@@ -14,33 +14,31 @@ export const globalContexts: Context<unknown>[] = []
 
 export const createContext = <T>(defaultValue: T): Context<T> => {
   const values = [defaultValue]
-  const context: Context<T> = {
-    values,
-    Provider(props): HtmlEscapedString | Promise<HtmlEscapedString> {
-      values.push(props.value)
-      let string
-      try {
-        string = props.children
-          ? (Array.isArray(props.children)
-              ? new JSXFragmentNode('', {}, props.children)
-              : props.children
-            ).toString()
-          : ''
-      } finally {
-        values.pop()
-      }
+  const context: Context<T> = ((props): HtmlEscapedString | Promise<HtmlEscapedString> => {
+    values.push(props.value)
+    let string
+    try {
+      string = props.children
+        ? (Array.isArray(props.children)
+            ? new JSXFragmentNode('', {}, props.children)
+            : props.children
+          ).toString()
+        : ''
+    } finally {
+      values.pop()
+    }
 
-      if (string instanceof Promise) {
-        return string.then((resString) =>
-          raw(resString, (resString as HtmlEscapedString).callbacks)
-        )
-      } else {
-        return raw(string)
-      }
-    },
-  }
+    if (string instanceof Promise) {
+      return string.then((resString) => raw(resString, (resString as HtmlEscapedString).callbacks))
+    } else {
+      return raw(string)
+    }
+  }) as Context<T>
+  context.values = values
+  context.Provider = context
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(context.Provider as any)[DOM_RENDERER] = createContextProviderFunction(values)
+  ;(context as any)[DOM_RENDERER] = createContextProviderFunction(values)
 
   globalContexts.push(context as Context<unknown>)
 

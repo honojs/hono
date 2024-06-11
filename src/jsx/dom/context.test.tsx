@@ -54,6 +54,24 @@ function runner(
         expect(root.innerHTML).toBe('<p>1</p>')
       })
 
+      it('<Context> as a provider ', async () => {
+        const Context = createContext(0)
+        const Content = () => {
+          const num = useContext(Context)
+          return <p>{num}</p>
+        }
+        const Component = () => {
+          return (
+            <Context value={1}>
+              <Content />
+            </Context>
+          )
+        }
+        const App = <Component />
+        render(App, root)
+        expect(root.innerHTML).toBe('<p>1</p>')
+      })
+
       it('simple context with state', async () => {
         const Context = createContext(0)
         const Content = () => {
