@@ -178,6 +178,11 @@
       "import": "./dist/jsx/dom/css.js",
       "require": "./dist/cjs/jsx/dom/css.js"
     },
+    "./jsx/dom/server": {
+      "types": "./dist/types/jsx/dom/server.d.ts",
+      "import": "./dist/jsx/dom/server.js",
+      "require": "./dist/cjs/jsx/dom/server.js"
+    },
     "./jwt": {
       "types": "./dist/types/middleware/jwt/index.d.ts",
       "import": "./dist/middleware/jwt/index.js",
@@ -433,6 +438,9 @@
       ],
       "jsx/dom/css": [
         "./dist/types/jsx/dom/css.d.ts"
+      ],
+      "jsx/dom/server": [
+        "./dist/types/jsx/dom/server.d.ts"
       ],
       "jwt": [
         "./dist/types/middleware/jwt"

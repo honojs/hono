@@ -122,7 +122,7 @@ const textEncoder = new TextEncoder()
  */
 export const renderToReadableStream = (
   str: HtmlEscapedString | Promise<HtmlEscapedString>,
-  onError: (e: unknown) => void = console.trace
+  onError: (e: unknown) => string | void = console.trace
 ): ReadableStream<Uint8Array> => {
   const reader = new ReadableStream<Uint8Array>({
     async start(controller) {
