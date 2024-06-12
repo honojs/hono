@@ -10,18 +10,26 @@ const insertIntoHead: (string: string) => HtmlEscapedCallback =
     if (!buffer) {
       return
     }
-    buffer[0] = buffer[0].replace(/<\/head>/, `${string}</head>`)
+    if (buffer[0].indexOf('</head>') !== -1) {
+      buffer[0] = buffer[0]
+        .replace(string, '')
+        .replace(/(<\/head>)/, `${string}$1`)
+    }
   }
 
 const documentMetadataTag = (tag: string, children: Child, props: Props) => {
   const string = new JSXNode(tag, props, children as Child[]).toString()
 
+  if (props?.itemProp || props?.itemprop) {
+    return raw(string)
+  }
+
   if (string instanceof Promise) {
     return string.then((resString) =>
-      raw('', [...((resString as HtmlEscapedString).callbacks || []), insertIntoHead(resString)])
+      raw(string, [...((resString as HtmlEscapedString).callbacks || []), insertIntoHead(resString)])
     )
   } else {
-    return Promise.resolve(raw(string, [insertIntoHead(string)]))
+    return raw(string, [insertIntoHead(string)])
   }
 }
 

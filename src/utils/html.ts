@@ -13,7 +13,9 @@ type HtmlEscapedCallbackOpts = {
   phase: (typeof HtmlEscapedCallbackPhase)[keyof typeof HtmlEscapedCallbackPhase]
   context: object // An object unique to each JSX tree. This object is used as the WeakMap key.
 }
-export type HtmlEscapedCallback = (opts: HtmlEscapedCallbackOpts) => Promise<string> | undefined
+export type HtmlEscapedCallback = (
+  opts: HtmlEscapedCallbackOpts
+) => Promise<string> | HtmlEscapedString | undefined
 export type HtmlEscaped = {
   isEscaped: true
   callbacks?: HtmlEscapedCallback[]
@@ -35,6 +37,7 @@ export type HtmlEscapedString = string & HtmlEscaped
  * ]
  */
 export type StringBuffer = (string | Promise<string>)[]
+export type StringBufferWithCallbacks = StringBuffer & { callbacks: HtmlEscapedCallback[] }
 
 export const raw = (value: unknown, callbacks?: HtmlEscapedCallback[]): HtmlEscapedString => {
   const escapedString = new String(value) as HtmlEscapedString
@@ -49,9 +52,12 @@ export const raw = (value: unknown, callbacks?: HtmlEscapedCallback[]): HtmlEsca
 
 const escapeRe = /[&<>'"]/
 
-export const stringBufferToString = async (buffer: StringBuffer): Promise<HtmlEscapedString> => {
+export const stringBufferToString = async (
+  buffer: StringBuffer,
+  callbacks: HtmlEscapedCallback[] | undefined
+): Promise<HtmlEscapedString> => {
   let str = ''
-  const callbacks: HtmlEscapedCallback[] = []
+  callbacks ||= []
   for (let i = buffer.length - 1; ; i--) {
     str += buffer[i]
     i--
@@ -119,6 +125,19 @@ export const escapeToBuffer = (str: string, buffer: StringBuffer): void => {
   }
 
   buffer[0] += str.substring(lastIndex, index)
+}
+
+export const resolveCallbackSync = (str: string | HtmlEscapedString): string => {
+  const callbacks = (str as HtmlEscapedString).callbacks as HtmlEscapedCallback[]
+  if (!callbacks?.length) {
+    return str
+  }
+  const buffer: [string] = [str]
+  const context = {}
+
+  callbacks.forEach((c) => c({ phase: HtmlEscapedCallbackPhase.Stringify, buffer, context }))
+
+  return buffer[0]
 }
 
 export const resolveCallback = async (

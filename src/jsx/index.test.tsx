@@ -4,19 +4,7 @@ import { html } from '../helper/html'
 import { Hono } from '../hono'
 import { Suspense, renderToReadableStream } from './streaming'
 import DefaultExport, { Fragment, StrictMode, createContext, memo, useContext, version } from '.'
-import type { Context, FC, JSXNode, PropsWithChildren } from '.'
-import type { HtmlEscapedString } from '../utils/html'
-import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
-
-async function toString(
-  template: JSXNode | Promise<HtmlEscapedString> | Promise<string> | HtmlEscapedString
-) {
-  if (template instanceof Promise) {
-    template = (await template) as HtmlEscapedString
-  }
-  template = template.toString() as Promise<HtmlEscapedString>
-  return resolveCallback(await template, HtmlEscapedCallbackPhase.Stringify, false, template)
-}
+import type { Context, FC, PropsWithChildren } from '.'
 
 interface SiteData {
   title: string
@@ -421,8 +409,8 @@ describe('render to string', () => {
           </body>
         </html>
       )
-      expect(await toString(template)).toBe(
-        '<html><head><title>Hello</title></head><body><title>Hello</title><h1>World</h1></body></html>'
+      expect(template.toString()).toBe(
+        '<html><head><title>Hello</title></head><body><h1>World</h1></body></html>'
       )
     })
   })

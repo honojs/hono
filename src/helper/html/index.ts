@@ -3,8 +3,8 @@
  * html Helper for Hono.
  */
 
-import { escapeToBuffer, raw, stringBufferToString } from '../../utils/html'
-import type { HtmlEscaped, HtmlEscapedString, StringBuffer } from '../../utils/html'
+import { escapeToBuffer, raw, resolveCallbackSync, stringBufferToString } from '../../utils/html'
+import type { HtmlEscaped, HtmlEscapedString, StringBufferWithCallbacks } from '../../utils/html'
 
 export { raw }
 
@@ -12,7 +12,7 @@ export const html = (
   strings: TemplateStringsArray,
   ...values: unknown[]
 ): HtmlEscapedString | Promise<HtmlEscapedString> => {
-  const buffer: StringBuffer = ['']
+  const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
 
   for (let i = 0, len = strings.length - 1; i < len; i++) {
     buffer[0] += strings[i]
@@ -48,5 +48,9 @@ export const html = (
   }
   buffer[0] += strings[strings.length - 1]
 
-  return buffer.length === 1 ? raw(buffer[0]) : stringBufferToString(buffer)
+  return buffer.length === 1
+    ? 'callbacks' in buffer
+      ? raw(resolveCallbackSync(raw(buffer[0], buffer.callbacks)))
+      : raw(buffer[0])
+    : stringBufferToString(buffer, buffer.callbacks)
 }
