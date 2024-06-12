@@ -29,6 +29,7 @@ import {
   useTransition,
   useViewTransition,
 } from '../hooks'
+import { useFormStatus } from './hooks'
 import { ErrorBoundary, Suspense } from './components'
 import { createContext } from './context'
 import { Fragment, jsx } from './jsx-runtime'
@@ -94,6 +95,7 @@ export {
   forwardRef,
   useImperativeHandle,
   useSyncExternalStore,
+  useFormStatus,
   Suspense,
   ErrorBoundary,
   createContext,
@@ -132,6 +134,7 @@ export default {
   forwardRef,
   useImperativeHandle,
   useSyncExternalStore,
+  useFormStatus,
   Suspense,
   ErrorBoundary,
   createContext,

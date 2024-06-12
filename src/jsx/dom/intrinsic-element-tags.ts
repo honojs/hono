@@ -1,8 +1,10 @@
 import type { Props } from '../base'
-import type { FC, PropsWithChildren } from '../types'
+import type { FC, PropsWithChildren, RefObject } from '../types'
 import { newJSXNode } from './utils'
 import { createPortal, getNameSpaceContext } from './render'
 import { useContext } from '../context'
+import { useCallback, useState } from '../hooks'
+import { FormContext } from './hooks'
 
 const documentMetadataTag = (tag: string, props: Props) => {
   const jsxNode = newJSXNode({
@@ -44,12 +46,83 @@ export const title: FC<PropsWithChildren> = (props) => {
   }
   return documentMetadataTag('title', props)
 }
+
 export const script: FC<PropsWithChildren> = (props) => {
   return documentMetadataTag('script', props)
 }
+
 export const style: FC<PropsWithChildren> = (props) => {
   return documentMetadataTag('style', props)
 }
+
 export const link: FC<PropsWithChildren> = (props) => {
   return documentMetadataTag('link', props)
+}
+
+export const form: FC<
+  PropsWithChildren<{
+    action?: Function | string
+    method?: 'get' | 'post'
+    ref?: RefObject<HTMLFormElement> | ((e: HTMLFormElement | null) => void | (() => void))
+  }>
+> = (props) => {
+  const { action, ...restProps } = props
+  if (typeof action !== 'function') {
+    return newJSXNode({
+      tag: 'form',
+      props,
+    })
+  }
+
+  const [data, setData] = useState<FormData | null>(null)
+  const onSubmit = useCallback<(e: SubmitEvent) => void>(async (e: Event) => {
+    e.preventDefault()
+    const form = e.target as HTMLFormElement
+    const formData = new FormData(form)
+    setData(formData)
+    await action(formData)
+    setData(null)
+  }, [])
+
+  const [ref] = useState(() => (e: HTMLFormElement) => {
+    let cleanup: (() => void) | undefined
+    const propsRef = props.ref
+    if (propsRef) {
+      if (typeof propsRef === 'function') {
+        cleanup =
+          propsRef(e) ||
+          (() => {
+            propsRef(null)
+          })
+      } else if (propsRef && 'current' in propsRef) {
+        propsRef.current = e
+      }
+    }
+
+    e.addEventListener('submit', onSubmit)
+    return () => {
+      e.removeEventListener('submit', onSubmit)
+      cleanup!()
+    }
+  })
+
+  return newJSXNode({
+    tag: FormContext as unknown as Function,
+    props: {
+      value: {
+        pending: data !== null,
+        data,
+        method: props.method || 'get',
+        action,
+      },
+      children: newJSXNode({
+        tag: 'form',
+        props: {
+          ...restProps,
+          ref,
+        },
+      }),
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  }) as any
 }

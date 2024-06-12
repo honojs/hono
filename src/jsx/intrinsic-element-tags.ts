@@ -45,3 +45,15 @@ export const style: FC<PropsWithChildren> = ({ children, ...props }) => {
 export const link: FC<PropsWithChildren> = ({ children, ...props }) => {
   return documentMetadataTag('link', children, props)
 }
+export const form: FC<
+  PropsWithChildren<{
+    action?: Function | string
+    method?: 'get' | 'post'
+  }>
+> = ({ children, ...props }) => {
+  if (typeof props.action !== 'function') {
+    delete props.action
+  }
+
+  return new JSXNode('form', props, children as Child[]).toString() as HtmlEscapedString
+}
