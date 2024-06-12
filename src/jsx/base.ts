@@ -357,4 +357,4 @@ export const cloneElement = <T extends JSXNode | JSX.Element>(
   ) as T
 }
 
-export const reactAPICompatVersion = '18.0.0-hono-jsx'
+export const reactAPICompatVersion = '19.0.0-hono-jsx'
