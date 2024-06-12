@@ -3,7 +3,7 @@
 import { html } from '../helper/html'
 import { Hono } from '../hono'
 import { Suspense, renderToReadableStream } from './streaming'
-import DefaultExport, { Fragment, createContext, memo, useContext, version } from '.'
+import DefaultExport, { Fragment, StrictMode, createContext, memo, useContext, version } from '.'
 import type { Context, FC, PropsWithChildren } from '.'
 
 interface SiteData {
@@ -532,6 +532,18 @@ describe('Fragment', () => {
   })
 })
 
+describe('StrictMode', () => {
+  it('Should render children', () => {
+    const template = (
+      <StrictMode>
+        <p>1</p>
+        <p>2</p>
+      </StrictMode>
+    )
+    expect(template.toString()).toBe('<p>1</p><p>2</p>')
+  })
+})
+
 describe('Context', () => {
   let ThemeContext: Context<string>
   let Consumer: FC
@@ -766,6 +778,7 @@ describe('default export', () => {
     'useLayoutEffect',
     'useInsertionEffect',
     'Suspense',
+    'StrictMode',
   ].forEach((key) => {
     it(key, () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

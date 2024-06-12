@@ -1680,6 +1680,31 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<div><p>0</p><button>+</button><p>1</p><button>+</button></div>')
       expect(callbackSet.size).toBe(1)
     })
+
+    it('deferent callbacks', async () => {
+      const callbackSet = new Set<Function>()
+      const Counter = () => {
+        const [count, setCount] = useState(0)
+        const double = useCallback((input: number): number => {
+          return input * 2
+        }, [])
+        callbackSet.add(double)
+        return (
+          <div>
+            <p>{double(count)}</p>
+            <button onClick={() => setCount((c) => c + 1)}>+</button>
+          </div>
+        )
+      }
+      const app = <Counter />
+      render(app, root)
+      expect(root.innerHTML).toBe('<div><p>0</p><button>+</button></div>')
+      const button = root.querySelector('button') as HTMLButtonElement
+      button.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><p>2</p><button>+</button></div>')
+      expect(callbackSet.size).toBe(1)
+    })
   })
 
   describe('useMemo', () => {
@@ -2163,6 +2188,7 @@ describe('default export', () => {
     'Fragment',
     'flushSync',
     'createPortal',
+    'StrictMode',
   ].forEach((key) => {
     it(key, () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
