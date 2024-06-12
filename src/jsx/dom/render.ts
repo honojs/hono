@@ -93,6 +93,8 @@ export type Context =
 
 export const buildDataStack: [Context, Node][] = []
 
+const refCleanupMap: WeakMap<Element, () => void> = new WeakMap()
+
 let nameSpaceContext: JSXContext<string> | undefined = undefined
 export const getNameSpaceContext = () => nameSpaceContext
 
@@ -138,11 +140,14 @@ const applyProps = (
       } else if (key === 'dangerouslySetInnerHTML' && value) {
         container.innerHTML = value.__html
       } else if (key === 'ref') {
+        let cleanup
         if (typeof value === 'function') {
-          value(container)
+          cleanup = value(container) || (() => value(null))
         } else if (value && 'current' in value) {
           value.current = container
+          cleanup = () => (value.current = null)
         }
+        refCleanupMap.set(container, cleanup)
       } else if (key === 'style') {
         const style = container.style
         if (typeof value === 'string') {
@@ -200,11 +205,7 @@ const applyProps = (
         if (eventSpec) {
           container.removeEventListener(eventSpec[0], value, eventSpec[1])
         } else if (key === 'ref') {
-          if (typeof value === 'function') {
-            value(null)
-          } else {
-            value.current = null
-          }
+          refCleanupMap.get(container)?.()
         } else {
           container.removeAttribute(toAttributeName(container, key))
         }
@@ -287,13 +288,7 @@ const removeNode = (node: Node): void => {
   if (!isNodeString(node)) {
     node[DOM_STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => data[2]?.())
 
-    if (node.e && node.props?.ref) {
-      if (typeof node.props.ref === 'function') {
-        node.props.ref(null)
-      } else {
-        node.props.ref.current = null
-      }
-    }
+    refCleanupMap.get(node.e as Element)?.()
     node.vC?.forEach(removeNode)
   }
   if (node.tag !== HONO_PORTAL_ELEMENT) {
