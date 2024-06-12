@@ -17,12 +17,15 @@ const documentMetadataTag = (tag: string, props: Props) => {
   let selector = tag
   if (props) {
     for (const [key, value] of Object.entries(props)) {
-      selector += `[${key}="${value}"]`
+      if (typeof value === 'string') {
+        const v = value.includes('"') ? value.replace(/"/g, '\\"') : value
+        selector += `[${key}="${v}"]`
+      }
     }
   }
-  const e = document.head.querySelector(selector)
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(jsxNode as any).e = e
+  ;(jsxNode as any).e = document.head.querySelector(selector)
 
   return createPortal(
     jsxNode,
