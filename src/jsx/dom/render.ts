@@ -386,7 +386,8 @@ export const build = (
   let errorHandler: ErrorHandler | undefined
   children ||=
     typeof node.tag == 'function' ? invokeTag(context, node) : toArray(node.props.children)
-  if ((children[0] as JSXNode)?.tag === '') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((children[0] as JSXNode)?.tag === '' && (children[0] as any)[DOM_ERROR_HANDLER]) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     errorHandler = (children[0] as any)[DOM_ERROR_HANDLER] as ErrorHandler
     topLevelErrorHandlerNode ||= node
