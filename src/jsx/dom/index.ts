@@ -104,6 +104,7 @@ export {
   cloneElement,
   Children,
   Fragment,
+  Fragment as StrictMode,
   DOMAttributes,
   flushSync,
   createPortal,
@@ -141,6 +142,7 @@ export default {
   cloneElement,
   Children,
   Fragment,
+  StrictMode: Fragment,
   flushSync,
   createPortal,
 }
