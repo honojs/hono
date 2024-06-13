@@ -69,8 +69,8 @@ const insertIntoHead: (
 
 const documentMetadataTag = (tag: string, children: Child, props: Props, sort: boolean) => {
   props = { ...props }
-  const precedence = sort ? props?.precedences ?? '' : undefined
-  delete props.precedences
+  const precedence = sort ? props?.precedence ?? '' : undefined
+  delete props.precedence
 
   const string = new JSXNode(tag, props, children as Child[]).toString()
 

@@ -1,30 +1,140 @@
 import type { Props } from '../../base'
-import type { FC, PropsWithChildren, RefObject } from '../../types'
+import type { FC, JSXNode, PropsWithChildren, RefObject } from '../../types'
 import { newJSXNode } from '../utils'
 import { createPortal, getNameSpaceContext } from '../render'
 import { useContext } from '../../context'
-import { useCallback, useState } from '../../hooks'
+import { use, useCallback, useMemo, useState } from '../../hooks'
 import { FormContext } from '../hooks'
 import { deDupeKeys } from '../../intrinsic-element/common'
+import { on } from 'events'
 
-const documentMetadataTag = (tag: string, props: Props) => {
+const composeRef = <T>(ref: RefObject<T> | Function | undefined, cb: (e: T) => void | (() => void)) => {
+  useMemo(
+    () => (e: T) => {
+      let refCleanup: (() => void) | undefined
+      if (ref) {
+        if (typeof ref === 'function') {
+          refCleanup =
+            ref(e) ||
+            (() => {
+              ref(null)
+            })
+        } else if (ref && 'current' in ref) {
+          ref.current = e
+        }
+      }
+
+      const cbCleanup = cb(e)
+      return () => {
+        cbCleanup?.()
+        refCleanup!()
+      }
+    },
+    [ref]
+  )
+}
+
+const precedenceMap: WeakMap<HTMLElement, string> = new WeakMap()
+const blockingPromiseMap: Record<string, Promise<Event> | undefined> = Object.create(null)
+const documentMetadataTag = (
+  tag: string,
+  props: Props,
+  deDupe: boolean,
+  sort: boolean,
+  blocking: boolean
+) => {
   const jsxNode = newJSXNode({
     tag,
     props,
-  })
+  }) as JSXNode & { e?: Element; nN: { e?: Element } }
 
   if (props?.itemProp) {
     return jsxNode
   }
 
-  document.head.querySelectorAll(tag).forEach((e) => {
-    for (const key of deDupeKeys[tag]) {
-      if ((e.getAttribute(key) ?? undefined) === props[key]) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(jsxNode as any).e = e
+  let { onLoad, onError, precedence, ...restProps } = props
+
+  if (deDupe) {
+    document.head.querySelectorAll(tag).forEach((e) => {
+      if (deDupeKeys[tag].length === 0) {
+        jsxNode.e = e
+      } else {
+        for (const key of deDupeKeys[tag]) {
+          if ((e.getAttribute(key) ?? undefined) === props[key]) {
+            jsxNode.e = e
+            break
+          }
+        }
+      }
+    })
+  }
+
+  if (props.disabled) {
+    if (jsxNode.e) {
+      jsxNode.e.remove()
+    }
+    return null
+  }
+
+  let nextNode = null
+  precedence = sort ? precedence ?? '' : undefined
+  if (precedence && !jsxNode.e) {
+    let found = false
+    for (const e of [...document.head.querySelectorAll<HTMLElement>(tag)]) {
+      if (found) {
+        nextNode = e
+        break
+      }
+      if (precedenceMap.get(e) === precedence) {
+        found = true
       }
     }
+    if (nextNode) {
+      jsxNode.nN = {
+        e: nextNode,
+      }
+    }
+  }
+
+  const ref = composeRef(props.ref, (e: HTMLElement) => {
+    const key = deDupeKeys[tag][0]
+    if (precedence) {
+      precedenceMap.set(e, precedence)
+    }
+    const promise = (blockingPromiseMap[e.getAttribute(key) as string] ||= new Promise<Event>((resolve, reject) => {
+      e.addEventListener('load', (e) => {
+        resolve(e)
+      })
+      e.addEventListener('error', (e) => {
+        reject(e)
+      })
+    }))
+    if (onLoad) {
+      promise.then(onLoad)
+    }
+    if (onError) {
+      promise.catch(onError)
+    }
   })
+
+  if (blocking && props?.blocking === 'render') {
+    const key = deDupeKeys[tag][0]
+    if (props[key]) {
+      const value = props[key]
+      const promise = (blockingPromiseMap[value] ||= new Promise<Event>((resolve, reject) => {
+        const e = document.createElement(tag)
+        e.setAttribute(key, value)
+        document.head.insertBefore(e, nextNode)
+        e.addEventListener('load', (e) => {
+          resolve(e)
+        })
+        e.addEventListener('error', (e) => {
+          reject(e)
+        })
+      }))
+      use(promise)
+    }
+  }
 
   return createPortal(
     jsxNode,
@@ -41,23 +151,27 @@ export const title: FC<PropsWithChildren> = (props) => {
       props,
     })
   }
-  return documentMetadataTag('title', props)
+  return documentMetadataTag('title', props, true, false, false)
 }
 
-export const script: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('script', props)
+export const script: FC<
+  PropsWithChildren<{
+    async?: boolean
+  }>
+> = (props) => {
+  return documentMetadataTag('script', props, !!props.async, false, true)
 }
 
 export const style: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('style', props)
+  return documentMetadataTag('style', props, true, true, true)
 }
 
 export const link: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('link', props)
+  return documentMetadataTag('link', props, true, true, true)
 }
 
 export const meta: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('meta', props)
+  return documentMetadataTag('meta', props, true, true, false)
 }
 
 export const form: FC<
@@ -85,25 +199,10 @@ export const form: FC<
     setData(null)
   }, [])
 
-  const [ref] = useState(() => (e: HTMLFormElement) => {
-    let cleanup: (() => void) | undefined
-    const propsRef = props.ref
-    if (propsRef) {
-      if (typeof propsRef === 'function') {
-        cleanup =
-          propsRef(e) ||
-          (() => {
-            propsRef(null)
-          })
-      } else if (propsRef && 'current' in propsRef) {
-        propsRef.current = e
-      }
-    }
-
+  const ref = composeRef(props.ref, (e: HTMLFormElement) => {
     e.addEventListener('submit', onSubmit)
     return () => {
       e.removeEventListener('submit', onSubmit)
-      cleanup!()
     }
   })
 
