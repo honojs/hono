@@ -3,14 +3,19 @@ import { JSXNode } from '../base'
 import type { Child, Props } from '../base'
 import type { FC, PropsWithChildren } from '../types'
 import { raw } from '../../helper/html'
+import { deDupeKeys } from './common'
 
-const metaTagMap: WeakMap<object, Record<string, [string, string | undefined][]>> = new WeakMap()
+const metaTagMap: WeakMap<
+  object,
+  Record<string, [string, Props, string | undefined][]>
+> = new WeakMap()
 const insertIntoHead: (
   tagName: string,
   tag: string,
+  props: Props,
   precedence: string | undefined
 ) => HtmlEscapedCallback =
-  (tagName, tag, precedence) =>
+  (tagName, tag, props, precedence) =>
   ({ buffer, context }): undefined => {
     if (!buffer) {
       return
@@ -18,7 +23,23 @@ const insertIntoHead: (
     const map = metaTagMap.get(context) || {}
     metaTagMap.set(context, map)
     const tags = (map[tagName] ||= [])
-    tags.push([tag, precedence])
+
+    let duped = false
+    const keys = deDupeKeys[tagName]
+    LOOP: for (const [, props] of tags) {
+      for (const key of keys) {
+        if (props?.[key] === props?.[key]) {
+          duped = true
+          break LOOP
+        }
+      }
+    }
+
+    if (duped) {
+      buffer[0] = buffer[0].replaceAll(tag, '')
+    } else {
+      tags.push([tag, props, precedence])
+    }
 
     if (buffer[0].indexOf('</head>') !== -1) {
       let insertTags
@@ -27,7 +48,7 @@ const insertIntoHead: (
       } else {
         const precedences: string[] = []
         insertTags = tags
-          .map(([tag, precedence]) => {
+          .map(([tag, , precedence]) => {
             let order = precedences.indexOf(precedence as string)
             if (order === -1) {
               precedences.push(precedence as string)
@@ -40,7 +61,7 @@ const insertIntoHead: (
       }
 
       insertTags.forEach((tag) => {
-        buffer[0] = buffer[0].replace(tag, '')
+        buffer[0] = buffer[0].replaceAll(tag, '')
       })
       buffer[0] = buffer[0].replace(/(?=<\/head>)/, insertTags.join(''))
     }
@@ -61,11 +82,11 @@ const documentMetadataTag = (tag: string, children: Child, props: Props, sort: b
     return string.then((resString) =>
       raw(string, [
         ...((resString as HtmlEscapedString).callbacks || []),
-        insertIntoHead(tag, resString, precedence),
+        insertIntoHead(tag, resString, props, precedence),
       ])
     )
   } else {
-    return raw(string, [insertIntoHead(tag, string, precedence)])
+    return raw(string, [insertIntoHead(tag, string, props, precedence)])
   }
 }
 

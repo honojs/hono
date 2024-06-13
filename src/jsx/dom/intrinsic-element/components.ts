@@ -5,8 +5,9 @@ import { createPortal, getNameSpaceContext } from '../render'
 import { useContext } from '../../context'
 import { useCallback, useState } from '../../hooks'
 import { FormContext } from '../hooks'
+import { deDupeKeys } from '../../intrinsic-element/common'
 
-const documentMetadataTag = (tag: string, props: Props, deDupAttrs: string[]) => {
+const documentMetadataTag = (tag: string, props: Props) => {
   const jsxNode = newJSXNode({
     tag,
     props,
@@ -16,18 +17,14 @@ const documentMetadataTag = (tag: string, props: Props, deDupAttrs: string[]) =>
     return jsxNode
   }
 
-  let selector = tag
-  if (props) {
-    for (const [key, value] of Object.entries(props)) {
-      if (typeof value === 'string') {
-        const v = value.includes('"') ? value.replace(/"/g, '\\"') : value
-        selector += `[${key}="${v}"]`
+  document.head.querySelectorAll(tag).forEach((e) => {
+    for (const key of deDupeKeys[tag]) {
+      if ((e.getAttribute(key) ?? undefined) === props[key]) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(jsxNode as any).e = e
       }
     }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(jsxNode as any).e = document.head.querySelector(selector)
+  })
 
   return createPortal(
     jsxNode,
@@ -44,23 +41,23 @@ export const title: FC<PropsWithChildren> = (props) => {
       props,
     })
   }
-  return documentMetadataTag('title', props, [])
+  return documentMetadataTag('title', props)
 }
 
 export const script: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('script', props, ['src'])
+  return documentMetadataTag('script', props)
 }
 
 export const style: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('style', props, ['href'])
+  return documentMetadataTag('style', props)
 }
 
 export const link: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('link', props, ['href'])
+  return documentMetadataTag('link', props)
 }
 
 export const meta: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('meta', props, ['name', 'httpEquiv', 'charset', 'itemProp'])
+  return documentMetadataTag('meta', props)
 }
 
 export const form: FC<
