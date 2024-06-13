@@ -276,7 +276,7 @@ export namespace JSX {
     name?: string | undefined
     novalidate?: boolean | undefined
     target?: string | undefined
-    action: string | Function | undefined
+    action?: string | Function | undefined
   }
 
   interface HtmlHTMLAttributes extends HTMLAttributes {
