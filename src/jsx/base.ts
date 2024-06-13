@@ -30,8 +30,8 @@ export namespace JSX {
   }
 }
 
-import * as intrinsicElementTagsString from './intrinsic-element-tags'
-import * as intrinsicElementTagsDom from './dom/intrinsic-element-tags'
+import * as intrinsicElementTagsString from './intrinsic-element/components'
+import * as intrinsicElementTagsDom from './dom/intrinsic-element/components'
 
 const emptyTags = [
   'area',
