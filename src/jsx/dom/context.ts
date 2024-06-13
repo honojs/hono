@@ -44,11 +44,9 @@ export const createContextProviderFunction = <T>(values: T[]): Function =>
 
 export const createContext = <T>(defaultValue: T): Context<T> => {
   const values = [defaultValue]
-  const context = {
-    values,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Provider: createContextProviderFunction(values) as any,
-  }
-  globalContexts.push(context)
+  const context: Context<T> = createContextProviderFunction(values) as Context<T>
+  context.values = values
+  context.Provider = context
+  globalContexts.push(context as Context<unknown>)
   return context
 }
