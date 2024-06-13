@@ -618,6 +618,17 @@ describe('Context', () => {
     })
   })
 
+  describe('<Context> as a provider ', () => {
+    it('has a child', () => {
+      const template = (
+        <ThemeContext value='dark'>
+          <Consumer />
+        </ThemeContext>
+      )
+      expect(template.toString()).toBe('<span>dark</span>')
+    })
+  })
+
   it('default value', () => {
     const template = <Consumer />
     expect(template.toString()).toBe('<span>light</span>')
