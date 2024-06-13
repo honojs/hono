@@ -6,10 +6,12 @@ import { useContext } from '../../context'
 import { use, useCallback, useMemo, useState } from '../../hooks'
 import { FormContext } from '../hooks'
 import { deDupeKeys } from '../../intrinsic-element/common'
-import { on } from 'events'
 
-const composeRef = <T>(ref: RefObject<T> | Function | undefined, cb: (e: T) => void | (() => void)) => {
-  useMemo(
+const composeRef = <T>(
+  ref: RefObject<T> | Function | undefined,
+  cb: (e: T) => void | (() => void)
+): ((e: T) => void | (() => void)) => {
+  return useMemo(
     () => (e: T) => {
       let refCleanup: (() => void) | undefined
       if (ref) {
@@ -43,25 +45,24 @@ const documentMetadataTag = (
   sort: boolean,
   blocking: boolean
 ) => {
-  const jsxNode = newJSXNode({
-    tag,
-    props,
-  }) as JSXNode & { e?: Element; nN: { e?: Element } }
-
   if (props?.itemProp) {
-    return jsxNode
+    return newJSXNode({
+      tag,
+      props,
+    })
   }
 
   let { onLoad, onError, precedence, ...restProps } = props
+  let element: HTMLElement | null = null
 
   if (deDupe) {
-    document.head.querySelectorAll(tag).forEach((e) => {
+    document.head.querySelectorAll<HTMLElement>(tag).forEach((e) => {
       if (deDupeKeys[tag].length === 0) {
-        jsxNode.e = e
+        element = e
       } else {
         for (const key of deDupeKeys[tag]) {
           if ((e.getAttribute(key) ?? undefined) === props[key]) {
-            jsxNode.e = e
+            element = e
             break
           }
         }
@@ -70,15 +71,15 @@ const documentMetadataTag = (
   }
 
   if (props.disabled) {
-    if (jsxNode.e) {
-      jsxNode.e.remove()
+    if (element) {
+      ;(element as HTMLElement).remove()
     }
     return null
   }
 
   let nextNode = null
   precedence = sort ? precedence ?? '' : undefined
-  if (precedence && !jsxNode.e) {
+  if (precedence && !element) {
     let found = false
     for (const e of [...document.head.querySelectorAll<HTMLElement>(tag)]) {
       if (found) {
@@ -89,11 +90,6 @@ const documentMetadataTag = (
         found = true
       }
     }
-    if (nextNode) {
-      jsxNode.nN = {
-        e: nextNode,
-      }
-    }
   }
 
   const ref = composeRef(props.ref, (e: HTMLElement) => {
@@ -101,14 +97,16 @@ const documentMetadataTag = (
     if (precedence) {
       precedenceMap.set(e, precedence)
     }
-    const promise = (blockingPromiseMap[e.getAttribute(key) as string] ||= new Promise<Event>((resolve, reject) => {
-      e.addEventListener('load', (e) => {
-        resolve(e)
-      })
-      e.addEventListener('error', (e) => {
-        reject(e)
-      })
-    }))
+    const promise = (blockingPromiseMap[e.getAttribute(key) as string] ||= new Promise<Event>(
+      (resolve, reject) => {
+        e.addEventListener('load', (e) => {
+          resolve(e)
+        })
+        e.addEventListener('error', (e) => {
+          reject(e)
+        })
+      }
+    ))
     if (onLoad) {
       promise.then(onLoad)
     }
@@ -134,6 +132,21 @@ const documentMetadataTag = (
       }))
       use(promise)
     }
+  }
+
+  const jsxNode = newJSXNode({
+    tag,
+    props: {
+      ...restProps,
+      ref,
+    },
+  }) as JSXNode & { e?: HTMLElement; nN?: { e?: HTMLElement } }
+
+  if (element) {
+    jsxNode.e = element
+  }
+  if (nextNode) {
+    jsxNode.nN = { e: nextNode }
   }
 
   return createPortal(
@@ -212,8 +225,8 @@ export const form: FC<
       value: {
         pending: data !== null,
         data,
-        method: props.method || 'get',
-        action,
+        method: data ? props.method || 'get' : null,
+        action: data ? action : null,
       },
       children: newJSXNode({
         tag: 'form',
