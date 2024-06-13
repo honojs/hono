@@ -4,20 +4,53 @@ import type { Child, Props } from './base'
 import type { FC, PropsWithChildren } from './types'
 import { raw } from '../helper/html'
 
-const insertIntoHead: (string: string) => HtmlEscapedCallback =
-  (string) =>
-  ({ buffer }): Promise<string> | undefined => {
+const metaTagMap: WeakMap<Object, Record<string, [string, string | undefined][]>> = new WeakMap()
+const insertIntoHead: (
+  tagName: string,
+  tag: string,
+  precedence: string | undefined
+) => HtmlEscapedCallback =
+  (tagName, tag, precedence) =>
+  ({ buffer, context }): undefined => {
     if (!buffer) {
       return
     }
+    const map = metaTagMap.get(context) || {}
+    metaTagMap.set(context, map)
+    const tags = (map[tagName] ||= [])
+    tags.push([tag, precedence])
+
     if (buffer[0].indexOf('</head>') !== -1) {
-      buffer[0] = buffer[0]
-        .replace(string, '')
-        .replace(/(<\/head>)/, `${string}$1`)
+      let insertTags
+      if (precedence === undefined) {
+        insertTags = tags.map(([tag]) => tag)
+      } else {
+        const precedences: string[] = []
+        insertTags = tags
+          .map(([tag, precedence]) => {
+            let order = precedences.indexOf(precedence as string)
+            if (order === -1) {
+              precedences.push(precedence as string)
+              order = precedences.length - 1
+            }
+            return [tag, order] as [string, number]
+          })
+          .sort((a, b) => a[1] - b[1])
+          .map(([tag]) => tag)
+      }
+
+      insertTags.forEach((tag) => {
+        buffer[0] = buffer[0].replace(tag, '')
+      })
+      buffer[0] = buffer[0].replace(/(?=<\/head>)/, insertTags.join(''))
     }
   }
 
-const documentMetadataTag = (tag: string, children: Child, props: Props) => {
+const documentMetadataTag = (tag: string, children: Child, props: Props, sort: boolean) => {
+  props = { ...props }
+  const precedence = sort ? props?.precedences ?? '' : undefined
+  delete props.precedences
+
   const string = new JSXNode(tag, props, children as Child[]).toString()
 
   if (props?.itemProp || props?.itemprop) {
@@ -26,24 +59,27 @@ const documentMetadataTag = (tag: string, children: Child, props: Props) => {
 
   if (string instanceof Promise) {
     return string.then((resString) =>
-      raw(string, [...((resString as HtmlEscapedString).callbacks || []), insertIntoHead(resString)])
+      raw(string, [
+        ...((resString as HtmlEscapedString).callbacks || []),
+        insertIntoHead(tag, resString, precedence),
+      ])
     )
   } else {
-    return raw(string, [insertIntoHead(string)])
+    return raw(string, [insertIntoHead(tag, string, precedence)])
   }
 }
 
 export const title: FC<PropsWithChildren> = ({ children, ...props }) => {
-  return documentMetadataTag('title', children, props)
+  return documentMetadataTag('title', children, props, false)
 }
 export const script: FC<PropsWithChildren> = ({ children, ...props }) => {
-  return documentMetadataTag('script', children, props)
+  return documentMetadataTag('script', children, props, false)
 }
 export const style: FC<PropsWithChildren> = ({ children, ...props }) => {
-  return documentMetadataTag('style', children, props)
+  return documentMetadataTag('style', children, props, true)
 }
 export const link: FC<PropsWithChildren> = ({ children, ...props }) => {
-  return documentMetadataTag('link', children, props)
+  return documentMetadataTag('link', children, props, true)
 }
 export const form: FC<
   PropsWithChildren<{
