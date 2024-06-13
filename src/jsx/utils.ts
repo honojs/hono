@@ -1,6 +1,7 @@
 const normalizeElementKeyMap = new Map([
   ['className', 'class'],
   ['htmlFor', 'for'],
+  ['crossOrigin', 'crossorigin'],
 ])
 export const normalizeIntrinsicElementKey = (key: string): string =>
   normalizeElementKeyMap.get(key) || key
