@@ -52,7 +52,12 @@ export const useOptimistic = <T, N>(
   return [optimisticState, cb]
 }
 
-export const useActionState = <T>(fn: Function, initialState: T): [T, Function] => {
+export const useActionState = <T>(
+  fn: Function,
+  initialState: T,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  permalink?: string
+): [T, Function] => {
   const [state, setState] = useState(initialState)
   const actionState = async (data: FormData) => {
     setState(await fn(state, data))
