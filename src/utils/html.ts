@@ -13,9 +13,7 @@ type HtmlEscapedCallbackOpts = {
   phase: (typeof HtmlEscapedCallbackPhase)[keyof typeof HtmlEscapedCallbackPhase]
   context: object // An object unique to each JSX tree. This object is used as the WeakMap key.
 }
-export type HtmlEscapedCallback = (
-  opts: HtmlEscapedCallbackOpts
-) => Promise<string> | HtmlEscapedString | undefined
+export type HtmlEscapedCallback = (opts: HtmlEscapedCallbackOpts) => Promise<string> | undefined
 export type HtmlEscaped = {
   isEscaped: true
   callbacks?: HtmlEscapedCallback[]
