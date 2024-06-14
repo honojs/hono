@@ -5,6 +5,7 @@
 import { useContext } from '../../context'
 import { createContext } from '../context'
 import { useCallback, useState } from '../../hooks'
+import { PERMALINK } from '../../constants'
 
 type FormStatus =
   | {
@@ -55,12 +56,13 @@ export const useOptimistic = <T, N>(
 export const useActionState = <T>(
   fn: Function,
   initialState: T,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   permalink?: string
 ): [T, Function] => {
   const [state, setState] = useState(initialState)
   const actionState = async (data: FormData) => {
     setState(await fn(state, data))
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(actionState as any)[PERMALINK] = permalink
   return [state, actionState]
 }

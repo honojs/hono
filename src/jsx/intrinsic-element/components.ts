@@ -4,6 +4,7 @@ import type { Child, Props } from '../base'
 import type { FC, PropsWithChildren } from '../types'
 import { raw } from '../../helper/html'
 import { deDupeKeys } from './common'
+import { PERMALINK } from '../constants'
 
 const metaTagMap: WeakMap<
   object,
@@ -111,8 +112,8 @@ export const form: FC<
     method?: 'get' | 'post'
   }>
 > = ({ children, ...props }) => {
-  if (typeof props.action !== 'function') {
-    delete props.action
+  if (typeof props.action === 'function') {
+    props.action = PERMALINK in props.action ? (props.action[PERMALINK] as string) : undefined
   }
 
   return new JSXNode('form', props, children as Child[]).toString() as HtmlEscapedString
