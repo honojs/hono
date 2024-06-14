@@ -23,13 +23,16 @@ const composeRef = <T>(
             })
         } else if (ref && 'current' in ref) {
           ref.current = e
+          refCleanup = () => {
+            ref.current = null
+          }
         }
       }
 
       const cbCleanup = cb(e)
       return () => {
         cbCleanup?.()
-        refCleanup!()
+        refCleanup?.()
       }
     },
     [ref]
