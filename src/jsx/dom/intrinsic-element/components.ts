@@ -4,7 +4,7 @@ import { newJSXNode } from '../utils'
 import { createPortal, getNameSpaceContext } from '../render'
 import { useContext } from '../../context'
 import { use, useCallback, useMemo, useState } from '../../hooks'
-import { FormContext } from '../hooks'
+import { FormContext, registerAction } from '../hooks'
 import { deDupeKeys } from '../../intrinsic-element/common'
 
 const composeRef = <T>(
@@ -208,7 +208,11 @@ export const form: FC<
     const form = e.target as HTMLFormElement
     const formData = new FormData(form)
     setData(formData)
-    await action(formData)
+    const actionRes = action(formData)
+    if (actionRes instanceof Promise) {
+      registerAction(actionRes)
+      await actionRes
+    }
     setData(null)
   }, [])
 

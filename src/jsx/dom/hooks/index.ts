@@ -4,7 +4,7 @@
 
 import { useContext } from '../../context'
 import { createContext } from '../context'
-import { useState } from '../../hooks'
+import { useCallback, useState } from '../../hooks'
 
 type FormStatus =
   | {
@@ -26,6 +26,12 @@ export const FormContext = createContext<FormStatus>({
   action: null,
 })
 
+const actions: Set<Promise<unknown>> = new Set()
+export const registerAction = (action: Promise<unknown>) => {
+  actions.add(action)
+  action.finally(() => actions.delete(action))
+}
+
 export const useFormStatus = (): FormStatus => {
   return useContext(FormContext)
 }
@@ -35,14 +41,15 @@ export const useOptimistic = <T, N>(
   updateState: (currentState: T, action: N) => T
 ): [T, (action: N) => void] => {
   const [optimisticState, setOptimisticState] = useState(state)
-  const { pending } = useContext(FormContext)
-  if (!pending) {
+  Promise.all(actions).finally(() => {
     setOptimisticState(state)
-  }
-  return [
-    pending ? optimisticState : state,
-    (newData: N) => setOptimisticState((currentState) => updateState(currentState, newData)),
-  ]
+  })
+
+  const cb = useCallback((newData: N) => {
+    setOptimisticState((currentState) => updateState(currentState, newData))
+  }, [])
+
+  return [optimisticState, cb]
 }
 
 export const useActionState = <T>(fn: Function, initialState: T): [T, Function] => {
