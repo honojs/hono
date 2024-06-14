@@ -45,8 +45,8 @@ const documentMetadataTag = (
   tag: string,
   props: Props,
   deDupe: boolean,
-  sort: boolean,
-  blocking: boolean
+  supportSort: boolean,
+  supportBlocking: boolean
 ) => {
   if (props?.itemProp) {
     return newJSXNode({
@@ -55,7 +55,7 @@ const documentMetadataTag = (
     })
   }
 
-  let { onLoad, onError, precedence, ...restProps } = props
+  let { onLoad, onError, precedence, blocking, ...restProps } = props
   let element: HTMLElement | null = null
 
   if (deDupe) {
@@ -81,7 +81,7 @@ const documentMetadataTag = (
   }
 
   let nextNode: HTMLElement | null = null
-  precedence = sort ? precedence ?? '' : undefined
+  precedence = supportSort ? precedence ?? '' : undefined
   if (precedence && !element) {
     let found = false
     for (const e of [...document.head.querySelectorAll<HTMLElement>(tag)]) {
@@ -118,7 +118,7 @@ const documentMetadataTag = (
     }
   })
 
-  if (blocking && props?.blocking === 'render') {
+  if (supportBlocking && blocking === 'render') {
     const key = deDupeKeys[tag][0]
     if (props[key]) {
       const value = props[key]
