@@ -9,6 +9,8 @@ import type {
   IntrinsicElements as IntrinsicElementsDefined,
 } from './intrinsic-elements'
 import { normalizeIntrinsicElementKey, styleObjectForEach } from './utils'
+import * as intrinsicElementTags from './intrinsic-element/components'
+import { domRenderers } from './intrinsic-element/common'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
@@ -29,9 +31,6 @@ export namespace JSX {
     [tagName: string]: Props
   }
 }
-
-import * as intrinsicElementTagsString from './intrinsic-element/components'
-import * as intrinsicElementTagsDom from './dom/intrinsic-element/components'
 
 const emptyTags = [
   'area',
@@ -284,19 +283,19 @@ export const jsx = (
   return node
 }
 
-let intrinsicElementTags: Record<string, Function & { [DOM_RENDERER]?: Function }>
+let initDomRenderer = false
 export const jsxFn = (
   tag: string | Function,
   props: Props,
   children: (string | number | HtmlEscapedString)[]
 ): JSXNode => {
-  if (!intrinsicElementTags) {
-    intrinsicElementTags = {
-      ...intrinsicElementTagsString,
+  if (!initDomRenderer) {
+    for (const k in domRenderers) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(intrinsicElementTags[k as keyof typeof intrinsicElementTags] as any)[DOM_RENDERER] =
+        domRenderers[k]
     }
-    for (const [key, value] of Object.entries(intrinsicElementTagsDom)) {
-      intrinsicElementTags[key][DOM_RENDERER] = value
-    }
+    initDomRenderer = true
   }
 
   if (typeof tag === 'function') {

@@ -511,14 +511,13 @@ export const buildNode = (node: Child): Node | undefined => {
         nameSpaceContext ||= createContext('')
         ;(node as JSXNode).props.children = [
           {
-            tag: nameSpaceContext.Provider,
+            tag: nameSpaceContext,
             props: {
               value: ((node as NodeObject).n = `http://www.w3.org/${ns}`),
               children: (node as JSXNode).props.children,
             },
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ] as any
+        ]
       }
     }
     return node as NodeObject

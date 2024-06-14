@@ -5,7 +5,7 @@ import { createPortal, getNameSpaceContext } from '../render'
 import { useContext } from '../../context'
 import { use, useCallback, useMemo, useState } from '../../hooks'
 import { FormContext, registerAction } from '../hooks'
-import { deDupeKeys } from '../../intrinsic-element/common'
+import { deDupeKeys, domRenderers } from '../../intrinsic-element/common'
 
 const composeRef = <T>(
   ref: RefObject<T> | Function | undefined,
@@ -77,7 +77,7 @@ const documentMetadataTag = (
     return null
   }
 
-  let nextNode = null
+  let nextNode: HTMLElement | null = null
   precedence = sort ? precedence ?? '' : undefined
   if (precedence && !element) {
     let found = false
@@ -158,7 +158,7 @@ const documentMetadataTag = (
 export const title: FC<PropsWithChildren> = (props) => {
   const nameSpaceContext = getNameSpaceContext()
   const ns = nameSpaceContext && useContext(nameSpaceContext)
-  if (ns?.includes('svg')) {
+  if (ns?.endsWith('svg')) {
     return newJSXNode({
       tag: 'title',
       props,
@@ -243,3 +243,12 @@ export const form: FC<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any
 }
+
+Object.assign(domRenderers, {
+  title,
+  script,
+  style,
+  link,
+  meta,
+  form,
+})
