@@ -175,10 +175,14 @@ type JSONRespondReturn<
  * @returns A Response object or a Promise that resolves to a Response object.
  */
 interface HTMLRespond {
-  (html: string | Promise<string>, status?: StatusCode, headers?: HeaderRecord):
-    | Response
-    | Promise<Response>
-  (html: string | Promise<string>, init?: ResponseInit): Response | Promise<Response>
+  <T extends string | Promise<string>>(
+    html: T,
+    status?: StatusCode,
+    headers?: HeaderRecord
+  ): T extends string ? Response : Promise<Response>
+  <T extends string | Promise<string>>(html: T, init?: ResponseInit): T extends string
+    ? Response
+    : Promise<Response>
 }
 
 /**
