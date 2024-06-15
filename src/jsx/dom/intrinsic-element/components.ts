@@ -2,6 +2,7 @@ import type { Props } from '../../base'
 import type { FC, JSXNode, PropsWithChildren, RefObject } from '../../types'
 import { newJSXNode } from '../utils'
 import { createPortal, getNameSpaceContext } from '../render'
+import type { PreserveNodeType } from '../render'
 import { useContext } from '../../context'
 import { use, useCallback, useMemo, useState } from '../../hooks'
 import { FormContext, registerAction } from '../hooks'
@@ -44,6 +45,7 @@ const blockingPromiseMap: Record<string, Promise<Event> | undefined> = Object.cr
 const documentMetadataTag = (
   tag: string,
   props: Props,
+  preserveNodeType: PreserveNodeType,
   deDupe: boolean,
   supportSort: boolean,
   supportBlocking: boolean
@@ -100,6 +102,9 @@ const documentMetadataTag = (
     if (precedence) {
       precedenceMap.set(e, precedence)
     }
+    if (preserveNodeType === 2) {
+      e.innerHTML = ''
+    }
     const promise = (blockingPromiseMap[e.getAttribute(key) as string] ||= new Promise<Event>(
       (resolve, reject) => {
         e.addEventListener('load', (e) => {
@@ -143,8 +148,9 @@ const documentMetadataTag = (
       ...restProps,
       ref,
     },
-  }) as JSXNode & { e?: HTMLElement; nN?: { e?: HTMLElement } }
+  }) as JSXNode & { e?: HTMLElement; nN?: { e?: HTMLElement }; p?: PreserveNodeType }
 
+  jsxNode.p = preserveNodeType // preserve for unmounting
   if (element) {
     jsxNode.e = element
   }
@@ -167,7 +173,7 @@ export const title: FC<PropsWithChildren> = (props) => {
       props,
     })
   }
-  return documentMetadataTag('title', props, true, false, false)
+  return documentMetadataTag('title', props, 2, true, false, false)
 }
 
 export const script: FC<
@@ -175,19 +181,19 @@ export const script: FC<
     async?: boolean
   }>
 > = (props) => {
-  return documentMetadataTag('script', props, !!props.async, false, true)
+  return documentMetadataTag('script', props, 1, !!props.async, false, true)
 }
 
 export const style: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('style', props, true, true, true)
+  return documentMetadataTag('style', props, 2, true, true, true)
 }
 
 export const link: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('link', props, true, true, true)
+  return documentMetadataTag('link', props, 1, true, true, true)
 }
 
 export const meta: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('meta', props, true, true, false)
+  return documentMetadataTag('meta', props, 1, true, true, false)
 }
 
 export const form: FC<

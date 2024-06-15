@@ -31,6 +31,9 @@ export type ErrorHandler = (error: any, retry: () => void) => Child | undefined
 type Container = HTMLElement | DocumentFragment
 type LocalJSXContexts = [JSXContext<unknown>, unknown][] | undefined
 type SupportedElement = HTMLElement | SVGElement | MathMLElement
+export type PreserveNodeType =
+  | 1 // preserve only self
+  | 2 // preserve self and children
 
 export type NodeObject = {
   pP: Props | undefined // previous props
@@ -41,6 +44,7 @@ export type NodeObject = {
   n?: string // namespace
   c: Container | undefined // container
   e: SupportedElement | Text | undefined // rendered element
+  p?: PreserveNodeType // preserve HTMLElement if it will be unmounted
   [DOM_STASH]:
     | [
         number, // current hook index
@@ -62,6 +66,7 @@ type NodeString = {
   // like a NodeObject
   vC: undefined
   nN: undefined
+  p?: true
   // from JSXNode
   key: undefined
   tag: undefined
@@ -289,9 +294,12 @@ const removeNode = (node: Node): void => {
     node[DOM_STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => data[2]?.())
 
     refCleanupMap.get(node.e as Element)?.()
+    if (node.p === 2) {
+      node.vC?.forEach((n) => (n.p = 2))
+    }
     node.vC?.forEach(removeNode)
   }
-  if (node.tag !== HONO_PORTAL_ELEMENT) {
+  if (!node.p) {
     node.e?.remove()
   }
   if (typeof node.tag === 'function') {
@@ -630,5 +638,6 @@ export const createPortal = (children: Child, container: HTMLElement, key?: stri
     },
     key,
     e: container,
+    p: 1,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any)
