@@ -4,6 +4,6 @@ module.exports = {
     '@typescript-eslint/unbound-method': 'error',
   },
   parserOptions: {
-    project: ['./tsconfig.json', './runtime_tests/tsconfig.json'],
+    project: ['./tsconfig.json', './runtime_tests/tsconfig.json', './build_tests/tsconfig.json'],
   },
 }
