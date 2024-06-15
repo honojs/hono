@@ -100,7 +100,7 @@ const documentMetadataTag = (
     precedenceMap.set(element as HTMLElement, precedence)
     if (created) {
       let found = false
-      for (const e of [...document.head.querySelectorAll<HTMLElement>(tag)]) {
+      for (const e of document.head.querySelectorAll<HTMLElement>(tag)) {
         if (found) {
           nextNode = e
           break
