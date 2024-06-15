@@ -42,6 +42,7 @@ const composeRef = <T>(
 
 const precedenceMap: WeakMap<HTMLElement, string> = new WeakMap()
 const blockingPromiseMap: Record<string, Promise<Event> | undefined> = Object.create(null)
+const createdTags: Record<string, HTMLElement> = Object.create(null)
 const documentMetadataTag = (
   tag: string,
   props: Props,
@@ -61,18 +62,27 @@ const documentMetadataTag = (
   let element: HTMLElement | null = null
 
   if (deDupe) {
-    document.head.querySelectorAll<HTMLElement>(tag).forEach((e) => {
-      if (deDupeKeys[tag].length === 0) {
-        element = e
-      } else {
+    const tags = document.head.querySelectorAll<HTMLElement>(tag)
+    if (deDupeKeys[tag].length === 0) {
+      element = tags[0]
+    } else {
+      LOOP: for (const e of tags) {
         for (const key of deDupeKeys[tag]) {
           if ((e.getAttribute(key) ?? undefined) === props[key]) {
             element = e
-            break
+            break LOOP
           }
         }
       }
-    })
+    }
+
+    if (!element) {
+      const key = deDupeKeys[tag].reduce(
+        (acc, key) => (props[key] === undefined ? acc : `${acc}-${props[key]}`),
+        tag
+      )
+      element = createdTags[key] ||= document.createElement(tag)
+    }
   }
 
   if (props.disabled) {
