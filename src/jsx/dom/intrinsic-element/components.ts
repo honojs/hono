@@ -94,22 +94,9 @@ const documentMetadataTag = (
     return null
   }
 
-  let nextNode: HTMLElement | null = null
   precedence = supportSort ? precedence ?? '' : undefined
   if (precedence) {
     precedenceMap.set(element as HTMLElement, precedence)
-    if (created) {
-      let found = false
-      for (const e of document.head.querySelectorAll<HTMLElement>(tag)) {
-        if (found) {
-          nextNode = e
-          break
-        }
-        if (precedenceMap.get(e) === precedence) {
-          found = true
-        }
-      }
-    }
   }
 
   const ref = composeRef(props.ref, (e: HTMLElement) => {
@@ -118,8 +105,17 @@ const documentMetadataTag = (
     if (preserveNodeType === 2) {
       e.innerHTML = ''
     }
-    if (nextNode) {
-      document.head.insertBefore(e, nextNode)
+    if (created) {
+      let found = false
+      for (const existingElement of document.head.querySelectorAll<HTMLElement>(tag)) {
+        if (found) {
+          document.head.insertBefore(e, existingElement)
+          break
+        }
+        if (precedenceMap.get(existingElement) === precedence) {
+          found = true
+        }
+      }
     }
 
     const promise = (blockingPromiseMap[e.getAttribute(key) as string] ||= new Promise<Event>(
