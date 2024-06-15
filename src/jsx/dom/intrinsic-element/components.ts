@@ -42,7 +42,7 @@ const composeRef = <T>(
 
 const precedenceMap: WeakMap<HTMLElement, string> = new WeakMap()
 const blockingPromiseMap: Record<string, Promise<Event> | undefined> = Object.create(null)
-const createdTags: Record<string, HTMLElement> = Object.create(null)
+const createdElements: Record<string, HTMLElement> = Object.create(null)
 const documentMetadataTag = (
   tag: string,
   props: Props,
@@ -60,6 +60,7 @@ const documentMetadataTag = (
 
   let { onLoad, onError, precedence, blocking, ...restProps } = props
   let element: HTMLElement | null = null
+  let created = false
 
   if (deDupe) {
     const tags = document.head.querySelectorAll<HTMLElement>(tag)
@@ -81,7 +82,8 @@ const documentMetadataTag = (
         (acc, key) => (props[key] === undefined ? acc : `${acc}-${props[key]}`),
         tag
       )
-      element = createdTags[key] ||= document.createElement(tag)
+      created = !createdElements[key]
+      element = createdElements[key] ||= document.createElement(tag)
     }
   }
 
@@ -94,27 +96,32 @@ const documentMetadataTag = (
 
   let nextNode: HTMLElement | null = null
   precedence = supportSort ? precedence ?? '' : undefined
-  if (precedence && !element) {
-    let found = false
-    for (const e of [...document.head.querySelectorAll<HTMLElement>(tag)]) {
-      if (found) {
-        nextNode = e
-        break
-      }
-      if (precedenceMap.get(e) === precedence) {
-        found = true
+  if (precedence) {
+    precedenceMap.set(element as HTMLElement, precedence)
+    if (created) {
+      let found = false
+      for (const e of [...document.head.querySelectorAll<HTMLElement>(tag)]) {
+        if (found) {
+          nextNode = e
+          break
+        }
+        if (precedenceMap.get(e) === precedence) {
+          found = true
+        }
       }
     }
   }
 
   const ref = composeRef(props.ref, (e: HTMLElement) => {
     const key = deDupeKeys[tag][0]
-    if (precedence) {
-      precedenceMap.set(e, precedence)
-    }
+
     if (preserveNodeType === 2) {
       e.innerHTML = ''
     }
+    if (nextNode) {
+      document.head.insertBefore(e, nextNode)
+    }
+
     const promise = (blockingPromiseMap[e.getAttribute(key) as string] ||= new Promise<Event>(
       (resolve, reject) => {
         e.addEventListener('load', (e) => {
@@ -158,14 +165,11 @@ const documentMetadataTag = (
       ...restProps,
       ref,
     },
-  }) as JSXNode & { e?: HTMLElement; nN?: { e?: HTMLElement }; p?: PreserveNodeType }
+  }) as JSXNode & { e?: HTMLElement; p?: PreserveNodeType }
 
   jsxNode.p = preserveNodeType // preserve for unmounting
   if (element) {
     jsxNode.e = element
-  }
-  if (nextNode) {
-    jsxNode.nN = { e: nextNode }
   }
 
   return createPortal(
