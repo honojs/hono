@@ -69,7 +69,7 @@ const documentMetadataTag = (
     } else {
       LOOP: for (const e of tags) {
         for (const key of deDupeKeys[tag]) {
-          if ((e.getAttribute(key) ?? undefined) === props[key]) {
+          if (e.getAttribute(key) === props[key]) {
             element = e
             break LOOP
           }
@@ -78,12 +78,26 @@ const documentMetadataTag = (
     }
 
     if (!element) {
-      const key = deDupeKeys[tag].reduce(
-        (acc, key) => (props[key] === undefined ? acc : `${acc}-${props[key]}`),
+      const cacheKey = deDupeKeys[tag].reduce(
+        (acc, key) => (props[key] === undefined ? acc : `${acc}-${key}-${props[key]}`),
         tag
       )
-      created = !createdElements[key]
-      element = createdElements[key] ||= document.createElement(tag)
+      created = !createdElements[cacheKey]
+      element =
+        createdElements[cacheKey] ||
+        (() => {
+          const e = document.createElement(tag)
+          for (const key of deDupeKeys[tag]) {
+            if (props[key] !== undefined) {
+              e.setAttribute(key, props[key] as string)
+            }
+          }
+          return e
+        })()
+      if (tag !== cacheKey) {
+        // cache only when tag has some deDupeKeys
+        createdElements[cacheKey] = element
+      }
     }
   }
 
@@ -95,9 +109,28 @@ const documentMetadataTag = (
   }
 
   precedence = supportSort ? precedence ?? '' : undefined
-  if (precedence) {
+  if (precedence && !precedenceMap.has(element as HTMLElement)) {
     precedenceMap.set(element as HTMLElement, precedence)
   }
+
+  const insert = useCallback(
+    (e: HTMLElement) => {
+      let found = false
+      for (const existingElement of document.head.querySelectorAll<HTMLElement>(tag)) {
+        if (found) {
+          document.head.insertBefore(e, existingElement)
+          return
+        }
+        if (precedence && precedenceMap.get(existingElement) === precedence) {
+          found = true
+        }
+      }
+
+      // if sentinel is not found, append to the end
+      document.head.appendChild(e)
+    },
+    [precedence]
+  )
 
   const ref = composeRef(props.ref, (e: HTMLElement) => {
     const key = deDupeKeys[tag][0]
@@ -106,19 +139,10 @@ const documentMetadataTag = (
       e.innerHTML = ''
     }
     if (created) {
-      let found = false
-      for (const existingElement of document.head.querySelectorAll<HTMLElement>(tag)) {
-        if (found) {
-          document.head.insertBefore(e, existingElement)
-          break
-        }
-        if (precedenceMap.get(existingElement) === precedence) {
-          found = true
-        }
-      }
+      insert(e)
     }
 
-    const promise = (blockingPromiseMap[e.getAttribute(key) as string] ||= new Promise<Event>(
+    let promise = (blockingPromiseMap[e.getAttribute(key) as string] ||= new Promise<Event>(
       (resolve, reject) => {
         e.addEventListener('load', (e) => {
           resolve(e)
@@ -129,11 +153,12 @@ const documentMetadataTag = (
       }
     ))
     if (onLoad) {
-      promise.then(onLoad)
+      promise = promise.then(onLoad)
     }
     if (onError) {
-      promise.catch(onError)
+      promise = promise.catch(onError)
     }
+    promise.catch(() => {})
   })
 
   if (supportBlocking && blocking === 'render') {
@@ -141,15 +166,9 @@ const documentMetadataTag = (
     if (props[key]) {
       const value = props[key]
       const promise = (blockingPromiseMap[value] ||= new Promise<Event>((resolve, reject) => {
-        const e = document.createElement(tag)
-        e.setAttribute(key, value)
-        document.head.insertBefore(e, nextNode)
-        e.addEventListener('load', (e) => {
-          resolve(e)
-        })
-        e.addEventListener('error', (e) => {
-          reject(e)
-        })
+        insert(element as HTMLElement)
+        element!.addEventListener('load', resolve)
+        element!.addEventListener('error', reject)
       }))
       use(promise)
     }
