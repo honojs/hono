@@ -408,11 +408,6 @@ export const build = (
     children.flat().forEach((c: Child) => {
       let child = buildNode(c)
       if (child) {
-        if (prevNode) {
-          prevNode.nN = child
-        }
-        prevNode = child
-
         if (
           typeof child.tag === 'function' &&
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -463,6 +458,11 @@ export const build = (
           build(context, child, topLevelErrorHandlerNode)
         }
         vChildren.push(child)
+
+        for (let p = prevNode; p && !isNodeString(p); p = p.vC?.at(-1) as NodeObject) {
+          p.nN = child
+        }
+        prevNode = child
       }
     })
     node.vC = vChildren

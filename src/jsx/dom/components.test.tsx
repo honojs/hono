@@ -131,6 +131,41 @@ function runner(
         await Promise.resolve()
         expect(root.innerHTML).toBe('<div><button>Hide</button><p>2</p></div>')
       })
+
+      it('Suspense at child', async () => {
+        let resolve: (value: number) => void = () => {}
+        const promise = new Promise<number>((_resolve) => (resolve = _resolve))
+        const Content = () => {
+          const num = use(promise)
+          return <p>{num}</p>
+        }
+
+        const Component = () => {
+          return (
+            <Suspense fallback={<div>Loading...</div>}>
+              <Content />
+            </Suspense>
+          )
+        }
+        const App = () => {
+          const [show, setShow] = useState(false)
+          return (
+            <div>
+              {show && <Component />}
+              <button onClick={() => setShow(true)}>Show</button>
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<div><button>Show</button></div>')
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><div>Loading...</div><button>Show</button></div>')
+        resolve(2)
+        await Promise.resolve()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><p>2</p><button>Show</button></div>')
+      })
     })
 
     describe('ErrorBoundary', () => {
