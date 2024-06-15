@@ -397,23 +397,6 @@ describe('render to string', () => {
       expect(template.toString()).toBe('<span data-text="&lt;html-escaped-string&gt;">Hello</span>')
     })
   })
-
-  describe('document metadata', () => {
-    it('should be hoisted title tag', async () => {
-      const template = (
-        <html>
-          <head></head>
-          <body>
-            <title>Hello</title>
-            <h1>World</h1>
-          </body>
-        </html>
-      )
-      expect(template.toString()).toBe(
-        '<html><head><title>Hello</title></head><body><h1>World</h1></body></html>'
-      )
-    })
-  })
 })
 
 describe('className', () => {

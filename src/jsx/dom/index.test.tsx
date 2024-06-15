@@ -240,23 +240,6 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<button>remove</button>')
       expect(ref).toHaveBeenLastCalledWith(null)
     })
-
-    it('ref as a prop', async () => {
-      const ref = vi.fn()
-      const MyInput: FC = ({ placeholder, ref }) => {
-        return <input placeholder={placeholder} ref={ref} />
-      }
-      const App = () => {
-        return (
-          <>
-            <MyInput placeholder='input' ref={ref} />
-          </>
-        )
-      }
-      render(<App />, root)
-      expect(root.innerHTML).toBe('<input placeholder="input">')
-      expect(ref).toHaveBeenLastCalledWith(expect.any(dom.window.HTMLInputElement))
-    })
   })
 
   describe('defaultProps', () => {
@@ -1220,15 +1203,11 @@ describe('DOM', () => {
         </div>
       )
     }
-    render(<App/>, root)
-    expect(root.innerHTML).toBe(
-      '<div><button>toggle</button></div>'
-    )
+    render(<App />, root)
+    expect(root.innerHTML).toBe('<div><button>toggle</button></div>')
     root.querySelector('button')?.click()
     await Promise.resolve()
-    expect(root.innerHTML).toBe(
-      '<div><p>Zero</p><button>+</button><button>toggle</button></div>'
-    )
+    expect(root.innerHTML).toBe('<div><p>Zero</p><button>+</button><button>toggle</button></div>')
     root.querySelector('button')?.click()
     await Promise.resolve()
     expect(root.innerHTML).toBe(
@@ -2008,6 +1987,7 @@ describe('DOM', () => {
         )
       }
       render(<App />, root)
+      expect(document.head.innerHTML).toBe('<title>Document Title</title>')
       expect(root.innerHTML).toBe('<svg><title>SVG Title</title></svg>')
       expect(document.querySelector('title')).toBeInstanceOf(dom.window.HTMLTitleElement)
       expect(document.querySelector('svg title')).toBeInstanceOf(dom.window.SVGTitleElement)
@@ -2191,40 +2171,6 @@ describe('DOM', () => {
       expect(createElementSpy).not.toHaveBeenCalled()
       expect(createElementNSSpy).toHaveBeenCalledWith('http://www.w3.org/1998/Math/MathML', 'math')
       expect(createElementNSSpy).toHaveBeenCalledWith('http://www.w3.org/1998/Math/MathML', 'mrow')
-    })
-  })
-
-  describe('document metadata', () => {
-    it('title element', () => {
-      const App = () => {
-        return (
-          <div>
-            <title>Document Title</title>
-            Content
-          </div>
-        )
-      }
-      render(<App />, root)
-      expect(document.head.innerHTML).toBe('<title>Document Title</title>')
-      expect(root.innerHTML).toBe('<div>Content</div>')
-    })
-
-    it('update title element', async () => {
-      const App = () => {
-        const [count, setCount] = useState(0)
-        return (
-          <div>
-            <title>Document Title {count}</title>
-            <button onClick={() => setCount(count + 1)}>+</button>
-          </div>
-        )
-      }
-      render(<App />, root)
-      expect(document.head.innerHTML).toBe('<title>Document Title 0</title>')
-      expect(root.innerHTML).toBe('<div><button>+</button></div>')
-      root.querySelector('button')?.click()
-      await Promise.resolve()
-      expect(document.head.innerHTML).toBe('<title>Document Title 1</title>')
     })
   })
 })

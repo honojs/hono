@@ -1,0 +1,301 @@
+/** @jsxImportSource ../ */
+
+describe('intrinsic element', () => {
+  describe('document metadata', () => {
+    describe('title element', () => {
+      it('should be hoisted title tag', async () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <title>Hello</title>
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><title>Hello</title></head><body><h1>World</h1></body></html>'
+        )
+      })
+    })
+
+    describe('link element', () => {
+      it('should be hoisted link tag', async () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <link rel='stylesheet' href='style.css' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><link rel="stylesheet" href="style.css"/></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be ordered by precedence attribute', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <link rel='stylesheet' href='style1.css' precedence='default' />
+              <link rel='stylesheet' href='style2.css' precedence='high' />
+              <link rel='stylesheet' href='style3.css' precedence='default' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><link rel="stylesheet" href="style1.css"/><link rel="stylesheet" href="style3.css"/><link rel="stylesheet" href="style2.css"/></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be de-duped by href', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <link rel='stylesheet' href='style1.css' precedence='default' />
+              <link rel='stylesheet' href='style2.css' precedence='high' />
+              <link rel='stylesheet' href='style1.css' precedence='default' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><link rel="stylesheet" href="style1.css"/><link rel="stylesheet" href="style2.css"/></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be inserted as is if <head> is not present', () => {
+        const template = (
+          <html>
+            <body>
+              <link rel='stylesheet' href='style1.css' precedence='default' />
+              <link rel='stylesheet' href='style2.css' precedence='high' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><body><link rel="stylesheet" href="style1.css"/><link rel="stylesheet" href="style2.css"/><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be removed if disabled={true}', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <link rel='stylesheet' href='style1.css' />
+              <link rel='stylesheet' href='style2.css' disabled />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><link rel="stylesheet" href="style1.css"/></head><body><h1>World</h1></body></html>'
+        )
+      })
+    })
+
+    describe('meta element', () => {
+      it('should be hoisted meta tag', async () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <meta name='description' content='Hello' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><meta name="description" content="Hello"/></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be de-duped by name', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <meta name='description' content='Hello' />
+              <meta name='description' content='World' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><meta name="description" content="Hello"/></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should not do special behavior if itemProp is present', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <meta name='description' content='Hello' itemProp='test' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head></head><body><meta name="description" content="Hello" itemprop="test"/><h1>World</h1></body></html>'
+        )
+      })
+    })
+
+    describe('script element', () => {
+      it('should be hoisted script tag', async () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <script src='script.js' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><script src="script.js"></script></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be de-duped by href with async={true}', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <script src='script.js' async />
+              <script src='script.js' async />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><script src="script.js" async=""></script></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be omitted "blocking", "onLoad" and "onError" props', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <script src='script.js' onLoad={() => {}} onError={() => {}} blocking='render' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><script src="script.js"></script></head><body><h1>World</h1></body></html>'
+        )
+      })
+    })
+
+    describe('style element', () => {
+      it('should be hoisted style tag', async () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <style>{'body { color: red; }'}</style>
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><style>body { color: red; }</style></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be sorted by precedence attribute', async () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <style precedence='default'>{'body { color: red; }'}</style>
+              <style precedence='high'>{'body { color: green; }'}</style>
+              <style precedence='default'>{'body { color: blue; }'}</style>
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><style>body { color: red; }</style><style>body { color: blue; }</style><style>body { color: green; }</style></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be omitted "blocking", "onLoad" and "onError" props', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <style>{'body { color: red; }'}</style>
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><style>body { color: red; }</style></head><body><h1>World</h1></body></html>'
+        )
+      })
+    })
+  })
+
+  describe('form element', () => {
+    it('should be omitted "action" prop if it is a function', () => {
+      const template = (
+        <html>
+          <head></head>
+          <body>
+            <form action={() => {}} method='get'>
+              <input type='text' />
+            </form>
+          </body>
+        </html>
+      )
+      expect(template.toString()).toBe(
+        '<html><head></head><body><form method="get"><input type="text"/></form></body></html>'
+      )
+    })
+
+    it('should not do special behavior if action is a string', () => {
+      const template = (
+        <html>
+          <head></head>
+          <body>
+            <form action='/entries' method='get'>
+              <input type='text' />
+            </form>
+          </body>
+        </html>
+      )
+      expect(template.toString()).toBe(
+        '<html><head></head><body><form action="/entries" method="get"><input type="text"/></form></body></html>'
+      )
+    })
+
+    it('should not do special behavior if no action prop', () => {
+      const template = (
+        <html>
+          <head></head>
+          <body>
+            <form>
+              <input type='text' />
+            </form>
+          </body>
+        </html>
+      )
+      expect(template.toString()).toBe(
+        '<html><head></head><body><form><input type="text"/></form></body></html>'
+      )
+    })
+  })
+})
+
+export {}
