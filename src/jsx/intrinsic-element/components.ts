@@ -5,6 +5,7 @@ import type { FC, PropsWithChildren } from '../types'
 import { raw } from '../../helper/html'
 import { deDupeKeys } from './common'
 import { PERMALINK } from '../constants'
+import { toArray } from '../children'
 
 const metaTagMap: WeakMap<
   object,
@@ -69,13 +70,17 @@ const insertIntoHead: (
   }
 
 const documentMetadataTag = (tag: string, children: Child, props: Props, sort: boolean) => {
-  props = { ...props }
-  const precedence = sort ? props?.precedence ?? '' : undefined
-  delete props.precedence
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let { onLoad, onError, disabled, precedence, blocking, ...restProps } = props
+  precedence = sort ? precedence ?? '' : undefined
 
-  const string = new JSXNode(tag, props, (children || []) as Child[]).toString()
+  const string = new JSXNode(tag, restProps, toArray(children || [])).toString()
 
-  if (props?.itemProp) {
+  if (disabled) {
+    return raw('')
+  }
+
+  if (restProps?.itemProp) {
     return raw(string)
   }
 
@@ -83,11 +88,11 @@ const documentMetadataTag = (tag: string, children: Child, props: Props, sort: b
     return string.then((resString) =>
       raw(string, [
         ...((resString as HtmlEscapedString).callbacks || []),
-        insertIntoHead(tag, resString, props, precedence),
+        insertIntoHead(tag, resString, restProps, precedence),
       ])
     )
   } else {
-    return raw(string, [insertIntoHead(tag, string, props, precedence)])
+    return raw(string, [insertIntoHead(tag, string, restProps, precedence)])
   }
 }
 
@@ -116,5 +121,6 @@ export const form: FC<
     props.action = PERMALINK in props.action ? (props.action[PERMALINK] as string) : undefined
   }
 
-  return new JSXNode('form', props, children as Child[]).toString() as HtmlEscapedString
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new JSXNode('form', props, toArray(children ?? []) as Child[]) as any
 }
