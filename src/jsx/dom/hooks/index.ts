@@ -42,9 +42,13 @@ export const useOptimistic = <T, N>(
   updateState: (currentState: T, action: N) => T
 ): [T, (action: N) => void] => {
   const [optimisticState, setOptimisticState] = useState(state)
-  Promise.all(actions).finally(() => {
+  if (actions.size > 0) {
+    Promise.all(actions).finally(() => {
+      setOptimisticState(state)
+    })
+  } else {
     setOptimisticState(state)
-  })
+  }
 
   const cb = useCallback((newData: N) => {
     setOptimisticState((currentState) => updateState(currentState, newData))
