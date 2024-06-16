@@ -27,9 +27,9 @@ const insertIntoHead: (
 
     let duped = false
     const keys = deDupeKeys[tagName]
-    LOOP: for (const [, props] of tags) {
+    LOOP: for (const [, tagProps] of tags) {
       for (const key of keys) {
-        if (props?.[key] === props?.[key]) {
+        if ((tagProps?.[key] ?? null) === props?.[key]) {
           duped = true
           break LOOP
         }
@@ -73,7 +73,7 @@ const documentMetadataTag = (tag: string, children: Child, props: Props, sort: b
   const precedence = sort ? props?.precedence ?? '' : undefined
   delete props.precedence
 
-  const string = new JSXNode(tag, props, children as Child[]).toString()
+  const string = new JSXNode(tag, props, (children || []) as Child[]).toString()
 
   if (props?.itemProp) {
     return raw(string)
