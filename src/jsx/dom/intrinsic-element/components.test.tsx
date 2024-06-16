@@ -2,6 +2,7 @@
 import { JSDOM, ResourceLoader } from 'jsdom'
 import { useState } from '../../hooks'
 import { Suspense, render } from '..'
+import { clearCache, composeRef } from './components'
 
 describe('intrinsic element', () => {
   let CustomResourceLoader: typeof ResourceLoader
@@ -12,7 +13,7 @@ describe('intrinsic element', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       fetch(url: string) {
         return url.includes('invalid')
-          ? Promise.reject()
+          ? Promise.reject('Invalid URL')
           : // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (Promise.resolve(Buffer.from('')) as any)
       }
@@ -22,6 +23,8 @@ describe('intrinsic element', () => {
   let dom: JSDOM
   let root: HTMLElement
   beforeEach(() => {
+    clearCache()
+
     dom = new JSDOM('<html><head></head><body><div id="root"></div></body></html>', {
       runScripts: 'dangerously',
       resources: new CustomResourceLoader(),
@@ -98,13 +101,15 @@ describe('intrinsic element', () => {
         const App = () => {
           return (
             <div>
-              <link rel='stylesheet' href='style.css' />
+              <link rel='stylesheet' href='style.css' precedence='default' />
               Content
             </div>
           )
         }
         render(<App />, root)
-        expect(document.head.innerHTML).toBe('<link href="style.css" rel="stylesheet">')
+        expect(document.head.innerHTML).toBe(
+          '<link href="style.css" rel="stylesheet" data-precedence="default">'
+        )
         expect(root.innerHTML).toBe('<div>Content</div>')
       })
 
@@ -113,91 +118,36 @@ describe('intrinsic element', () => {
           const [count, setCount] = useState(0)
           return (
             <div>
-              <link rel='stylesheet' href={`style${count}.css`} />
+              <link rel='stylesheet' href={`style${count}.css`} precedence='default' />
               <button onClick={() => setCount(count + 1)}>+</button>
             </div>
           )
         }
         render(<App />, root)
-        expect(document.head.innerHTML).toBe('<link href="style0.css" rel="stylesheet">')
+        expect(document.head.innerHTML).toBe(
+          '<link href="style0.css" rel="stylesheet" data-precedence="default">'
+        )
         expect(root.innerHTML).toBe('<div><button>+</button></div>')
         root.querySelector('button')?.click()
         await Promise.resolve()
-        expect(document.head.innerHTML).toBe('<link href="style1.css" rel="stylesheet">')
+        expect(document.head.innerHTML).toBe(
+          '<link href="style1.css" rel="stylesheet" data-precedence="default">'
+        )
       })
 
-      it('accept ref object', async () => {
-        const ref = { current: null }
+      it('should not do special behavior if disabled is present', () => {
         const App = () => {
-          const [disabled, setDisabled] = useState(false)
           return (
             <div>
-              <link rel='stylesheet' href={'style.css'} ref={ref} disabled={disabled} />
-              <button onClick={() => setDisabled(!disabled)}>+</button>
+              <link rel='stylesheet' href={'style.css'} precedence='default' disabled={true} />
             </div>
           )
         }
         render(<App />, root)
-        expect(ref.current).toBe(document.head.querySelector('link'))
-        root.querySelector('button')?.click()
-        await Promise.resolve()
-        expect(ref.current).toBe(null)
-      })
-
-      it('accept ref function', async () => {
-        const ref = vi.fn()
-        const App = () => {
-          const [disabled, setDisabled] = useState(false)
-          return (
-            <div>
-              <link rel='stylesheet' href={'style.css'} ref={ref} disabled={disabled} />
-              <button onClick={() => setDisabled(!disabled)}>+</button>
-            </div>
-          )
-        }
-        render(<App />, root)
-        expect(ref).toHaveBeenCalledTimes(1)
-        root.querySelector('button')?.click()
-        await Promise.resolve()
-        expect(ref).toHaveBeenCalledTimes(2)
-      })
-
-      it('accept ref function that returns cleanup function', async () => {
-        const cleanup = vi.fn()
-        const ref = vi.fn().mockReturnValue(cleanup)
-        const App = () => {
-          const [disabled, setDisabled] = useState(false)
-          return (
-            <div>
-              <link rel='stylesheet' href={'style.css'} ref={ref} disabled={disabled} />
-              <button onClick={() => setDisabled(!disabled)}>+</button>
-            </div>
-          )
-        }
-        render(<App />, root)
-        expect(ref).toHaveBeenCalledTimes(1)
-        root.querySelector('button')?.click()
-        await Promise.resolve()
-        expect(ref).toHaveBeenCalledTimes(1)
-        expect(cleanup).toHaveBeenCalledTimes(1)
-      })
-
-      it('should be removed if disabled={true}', async () => {
-        const App = () => {
-          const [count, setCount] = useState(0)
-          return (
-            <div>
-              <link rel='stylesheet' href={'style.css'} disabled={count === 1} />
-              <button onClick={() => setCount(count + 1)}>+</button>
-            </div>
-          )
-        }
-        render(<App />, root)
-        expect(document.head.innerHTML).toBe('<link href="style.css" rel="stylesheet">')
-        expect(root.innerHTML).toBe('<div><button>+</button></div>')
-        root.querySelector('button')?.click()
-        await Promise.resolve()
         expect(document.head.innerHTML).toBe('')
+        expect(root.innerHTML).toBe(
+          '<div><link rel="stylesheet" href="style.css" precedence="default" disabled=""></div>'
+        )
       })
 
       it('should be ordered by precedence attribute', () => {
@@ -213,7 +163,7 @@ describe('intrinsic element', () => {
         }
         render(<App />, root)
         expect(document.head.innerHTML).toBe(
-          '<link href="style-a.css" rel="stylesheet"><link href="style-c.css" rel="stylesheet"><link href="style-b.css" rel="stylesheet">'
+          '<link href="style-a.css" rel="stylesheet" data-precedence="default"><link href="style-c.css" rel="stylesheet" data-precedence="default"><link href="style-b.css" rel="stylesheet" data-precedence="high">'
         )
         expect(root.innerHTML).toBe('<div>Content</div>')
       })
@@ -227,7 +177,7 @@ describe('intrinsic element', () => {
               <link rel='stylesheet' href='style-b.css' precedence='high' />
               {count === 1 && (
                 <>
-                  <link rel='stylesheet' href='style-a.css' precedence='other' />
+                  <link rel='stylesheet' href='style-a.css' precedence='default' />
                   <link rel='stylesheet' href='style-c.css' precedence='other' />
                 </>
               )}
@@ -238,13 +188,13 @@ describe('intrinsic element', () => {
         }
         render(<App />, root)
         expect(document.head.innerHTML).toBe(
-          '<link href="style-a.css" rel="stylesheet"><link href="style-b.css" rel="stylesheet">'
+          '<link href="style-a.css" rel="stylesheet" data-precedence="default"><link href="style-b.css" rel="stylesheet" data-precedence="high">'
         )
         expect(root.innerHTML).toBe('<div><button>+</button>0</div>')
         root.querySelector('button')?.click()
         await Promise.resolve()
         expect(document.head.innerHTML).toBe(
-          '<link href="style-a.css" rel="stylesheet"><link href="style-b.css" rel="stylesheet"><link href="style-c.css" rel="stylesheet">'
+          '<link href="style-a.css" rel="stylesheet" data-precedence="default"><link href="style-b.css" rel="stylesheet" data-precedence="high"><link href="style-c.css" rel="stylesheet" data-precedence="other">'
         )
         expect(root.innerHTML).toBe('<div><button>+</button>1</div>')
       })
@@ -254,7 +204,7 @@ describe('intrinsic element', () => {
           const [count, setCount] = useState(0)
           return (
             <div>
-              {count === 1 && <link rel='stylesheet' href='style.css' />}
+              {count === 1 && <link rel='stylesheet' href='style.css' precedence='default' />}
               <div>{count}</div>
               <button onClick={() => setCount(count + 1)}>+</button>
             </div>
@@ -265,64 +215,16 @@ describe('intrinsic element', () => {
         expect(root.innerHTML).toBe('<div><div>0</div><button>+</button></div>')
         root.querySelector('button')?.click()
         await Promise.resolve()
-        expect(document.head.innerHTML).toBe('<link href="style.css" rel="stylesheet">')
+        expect(document.head.innerHTML).toBe(
+          '<link href="style.css" rel="stylesheet" data-precedence="default">'
+        )
         expect(root.innerHTML).toBe('<div><div>1</div><button>+</button></div>')
         root.querySelector('button')?.click()
         await Promise.resolve()
-        expect(document.head.innerHTML).toBe('<link href="style.css" rel="stylesheet">')
+        expect(document.head.innerHTML).toBe(
+          '<link href="style.css" rel="stylesheet" data-precedence="default">'
+        )
         expect(root.innerHTML).toBe('<div><div>2</div><button>+</button></div>')
-      })
-
-      it('should be fired onLoad event', async () => {
-        const onLoad = vi.fn()
-        const onError = vi.fn()
-        const App = () => {
-          return (
-            <div>
-              <link
-                rel='stylesheet'
-                href='http://localhost/style.css'
-                onLoad={onLoad}
-                onError={onError}
-              />
-              Content
-            </div>
-          )
-        }
-        render(<App />, root)
-        expect(document.head.innerHTML).toBe(
-          '<link href="http://localhost/style.css" rel="stylesheet">'
-        )
-        await Promise.resolve()
-        await new Promise((resolve) => setTimeout(resolve))
-        expect(onLoad).toBeCalledTimes(1)
-        expect(onError).not.toBeCalled()
-      })
-
-      it('should be fired onError event', async () => {
-        const onLoad = vi.fn()
-        const onError = vi.fn()
-        const App = () => {
-          return (
-            <div>
-              <link
-                rel='stylesheet'
-                href='http://localhost/invalid.css'
-                onLoad={onLoad}
-                onError={onError}
-              />
-              Content
-            </div>
-          )
-        }
-        render(<App />, root)
-        expect(document.head.innerHTML).toBe(
-          '<link href="http://localhost/invalid.css" rel="stylesheet">'
-        )
-        await Promise.resolve()
-        await new Promise((resolve) => setTimeout(resolve))
-        expect(onLoad).not.toBeCalled()
-        expect(onError).toBeCalledTimes(1)
       })
 
       it('should be blocked by blocking attribute', async () => {
@@ -330,7 +232,12 @@ describe('intrinsic element', () => {
           return (
             <Suspense fallback={<div>Loading...</div>}>
               <div>
-                <link rel='stylesheet' href='http://localhost/style.css' blocking='render' />
+                <link
+                  rel='stylesheet'
+                  href='http://localhost/style.css'
+                  precedence='default'
+                  blocking='render'
+                />
                 Content
               </div>
             </Suspense>
@@ -362,13 +269,17 @@ describe('intrinsic element', () => {
         const App = () => {
           return (
             <div>
-              <style>{'body { color: red; }'}</style>
+              <style href='red' precedence='default'>
+                {'body { color: red; }'}
+              </style>
               Content
             </div>
           )
         }
         render(<App />, root)
-        expect(document.head.innerHTML).toBe('<style>body { color: red; }</style>')
+        expect(document.head.innerHTML).toBe(
+          '<style data-href="red" data-precedence="default">body { color: red; }</style>'
+        )
         expect(root.innerHTML).toBe('<div>Content</div>')
       })
 
@@ -377,17 +288,23 @@ describe('intrinsic element', () => {
           const [count, setCount] = useState(0)
           return (
             <div>
-              <style>{`body { color: ${count % 2 ? 'red' : 'blue'}; }`}</style>
+              <style href='color' precedence='default'>{`body { color: ${
+                count % 2 ? 'red' : 'blue'
+              }; }`}</style>
               <button onClick={() => setCount(count + 1)}>+</button>
             </div>
           )
         }
         render(<App />, root)
-        expect(document.head.innerHTML).toBe('<style>body { color: blue; }</style>')
+        expect(document.head.innerHTML).toBe(
+          '<style data-href="color" data-precedence="default">body { color: blue; }</style>'
+        )
         expect(root.innerHTML).toBe('<div><button>+</button></div>')
         root.querySelector('button')?.click()
         await Promise.resolve()
-        expect(document.head.innerHTML).toBe('<style>body { color: red; }</style>')
+        expect(document.head.innerHTML).toBe(
+          '<style data-href="color" data-precedence="default">body { color: red; }</style>'
+        )
       })
 
       it('should be preserved when unmounted', async () => {
@@ -395,7 +312,11 @@ describe('intrinsic element', () => {
           const [count, setCount] = useState(0)
           return (
             <div>
-              {count === 1 && <style>{'body { color: red; }'}</style>}
+              {count === 1 && (
+                <style href='red' precedence='default'>
+                  {'body { color: red; }'}
+                </style>
+              )}
               <div>{count}</div>
               <button onClick={() => setCount(count + 1)}>+</button>
             </div>
@@ -406,11 +327,15 @@ describe('intrinsic element', () => {
         expect(root.innerHTML).toBe('<div><div>0</div><button>+</button></div>')
         root.querySelector('button')?.click()
         await Promise.resolve()
-        expect(document.head.innerHTML).toBe('<style>body { color: red; }</style>')
+        expect(document.head.innerHTML).toBe(
+          '<style data-href="red" data-precedence="default">body { color: red; }</style>'
+        )
         expect(root.innerHTML).toBe('<div><div>1</div><button>+</button></div>')
         root.querySelector('button')?.click()
         await Promise.resolve()
-        expect(document.head.innerHTML).toBe('<style>body { color: red; }</style>')
+        expect(document.head.innerHTML).toBe(
+          '<style data-href="red" data-precedence="default">body { color: red; }</style>'
+        )
         expect(root.innerHTML).toBe('<div><div>2</div><button>+</button></div>')
       })
 
@@ -419,13 +344,23 @@ describe('intrinsic element', () => {
           const [count, setCount] = useState(0)
           return (
             <div>
-              <style>{'body { color: red; }'}</style>
-              <style href='blue'>{'body { color: blue; }'}</style>
-              <style>{'body { color: green; }'}</style>
+              <style href='red' precedence='default'>
+                {'body { color: red; }'}
+              </style>
+              <style href='blue' precedence='default'>
+                {'body { color: blue; }'}
+              </style>
+              <style href='green' precedence='default'>
+                {'body { color: green; }'}
+              </style>
               {count === 1 && (
                 <>
-                  <style href='blue'>{'body { color: blue; }'}</style>
-                  <style>{'body { color: yellow; }'}</style>
+                  <style href='blue' precedence='default'>
+                    {'body { color: blue; }'}
+                  </style>
+                  <style href='yellow' precedence='default'>
+                    {'body { color: yellow; }'}
+                  </style>
                 </>
               )}
               <button onClick={() => setCount(count + 1)}>+</button>
@@ -435,13 +370,13 @@ describe('intrinsic element', () => {
         }
         render(<App />, root)
         expect(document.head.innerHTML).toBe(
-          '<style>body { color: red; }</style><style href="blue">body { color: blue; }</style><style>body { color: green; }</style>'
+          '<style data-href="red" data-precedence="default">body { color: red; }</style><style data-href="blue" data-precedence="default">body { color: blue; }</style><style data-href="green" data-precedence="default">body { color: green; }</style>'
         )
         expect(root.innerHTML).toBe('<div><button>+</button>0</div>')
         root.querySelector('button')?.click()
         await Promise.resolve()
         expect(document.head.innerHTML).toBe(
-          '<style>body { color: red; }</style><style href="blue">body { color: blue; }</style><style>body { color: green; }</style><style>body { color: yellow; }</style>'
+          '<style data-href="red" data-precedence="default">body { color: red; }</style><style data-href="blue" data-precedence="default">body { color: blue; }</style><style data-href="green" data-precedence="default">body { color: green; }</style><style data-href="yellow" data-precedence="default">body { color: yellow; }</style>'
         )
         expect(root.innerHTML).toBe('<div><button>+</button>1</div>')
       })
@@ -450,19 +385,41 @@ describe('intrinsic element', () => {
         const App = () => {
           return (
             <div>
-              <style precedence='default'>{'body { color: red; }'}</style>
-              <style precedence='high'>{'body { color: green; }'}</style>
-              <style precedence='default'>{'body { color: blue; }'}</style>
-              <style>{'body { color: yellow; }'}</style>
+              <style href='red' precedence='default'>
+                {'body { color: red; }'}
+              </style>
+              <style href='green' precedence='high'>
+                {'body { color: green; }'}
+              </style>
+              <style href='blue' precedence='default'>
+                {'body { color: blue; }'}
+              </style>
               Content
             </div>
           )
         }
         render(<App />, root)
         expect(document.head.innerHTML).toBe(
-          '<style>body { color: red; }</style><style>body { color: blue; }</style><style>body { color: green; }</style><style>body { color: yellow; }</style>'
+          '<style data-href="red" data-precedence="default">body { color: red; }</style><style data-href="blue" data-precedence="default">body { color: blue; }</style><style data-href="green" data-precedence="high">body { color: green; }</style>'
         )
         expect(root.innerHTML).toBe('<div>Content</div>')
+      })
+
+      it('should not do special behavior if href is present', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <style>{'body { color: red; }'}</style>
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        render(template, root)
+        expect(document.head.innerHTML).toBe('')
+        expect(root.innerHTML).toBe(
+          '<html><head></head><body><style>body { color: red; }</style><h1>World</h1></body></html>'
+        )
       })
     })
 
@@ -528,7 +485,7 @@ describe('intrinsic element', () => {
         }
         render(<App />, root)
         expect(document.head.innerHTML).toBe(
-          '<meta name="description-a" content="description-a"><meta name="description-c" content="description-c"><meta name="description-b" content="description-b">'
+          '<meta name="description-a" content="description-a"><meta name="description-b" content="description-b"><meta name="description-c" content="description-c">'
         )
         expect(root.innerHTML).toBe('<div>Content</div>')
       })
@@ -538,12 +495,12 @@ describe('intrinsic element', () => {
           const [count, setCount] = useState(0)
           return (
             <div>
-              <meta name='description-a' content='description-a' precedence='default' />
-              <meta name='description-b' content='description-b' precedence='high' />
+              <meta name='description-a' content='description-a' />
+              <meta name='description-b' content='description-b' />
               {count === 1 && (
                 <>
-                  <meta name='description-a' content='description-a' precedence='other' />
-                  <meta name='description-c' content='description-c' precedence='other' />
+                  <meta name='description-a' content='description-a' />
+                  <meta name='description-c' content='description-c' />
                 </>
               )}
               <button onClick={() => setCount(count + 1)}>+</button>
@@ -570,13 +527,13 @@ describe('intrinsic element', () => {
         const App = () => {
           return (
             <div>
-              <script src='script.js' />
+              <script src='script.js' async={true} />
               Content
             </div>
           )
         }
         render(<App />, root)
-        expect(document.head.innerHTML).toBe('<script src="script.js"></script>')
+        expect(document.head.innerHTML).toBe('<script src="script.js" async=""></script>')
         expect(root.innerHTML).toBe('<div>Content</div>')
       })
 
@@ -585,17 +542,17 @@ describe('intrinsic element', () => {
           const [count, setCount] = useState(0)
           return (
             <div>
-              <script src={`script${count}.js`} />
+              <script src={`script${count}.js`} async={true} />
               <button onClick={() => setCount(count + 1)}>+</button>
             </div>
           )
         }
         render(<App />, root)
-        expect(document.head.innerHTML).toBe('<script src="script0.js"></script>')
+        expect(document.head.innerHTML).toBe('<script src="script0.js" async=""></script>')
         expect(root.innerHTML).toBe('<div><button>+</button></div>')
         root.querySelector('button')?.click()
         await Promise.resolve()
-        expect(document.head.innerHTML).toBe('<script src="script1.js"></script>')
+        expect(document.head.innerHTML).toBe('<script src="script1.js" async=""></script>')
       })
 
       it('should be de-duplicated by src attribute with async=true', async () => {
@@ -634,7 +591,7 @@ describe('intrinsic element', () => {
           const [count, setCount] = useState(0)
           return (
             <div>
-              {count === 1 && <script src='script.js' />}
+              {count === 1 && <script src='script.js' async={true} />}
               <div>{count}</div>
               <button onClick={() => setCount(count + 1)}>+</button>
             </div>
@@ -645,11 +602,11 @@ describe('intrinsic element', () => {
         expect(root.innerHTML).toBe('<div><div>0</div><button>+</button></div>')
         root.querySelector('button')?.click()
         await Promise.resolve()
-        expect(document.head.innerHTML).toBe('<script src="script.js"></script>')
+        expect(document.head.innerHTML).toBe('<script src="script.js" async=""></script>')
         expect(root.innerHTML).toBe('<div><div>1</div><button>+</button></div>')
         root.querySelector('button')?.click()
         await Promise.resolve()
-        expect(document.head.innerHTML).toBe('<script src="script.js"></script>')
+        expect(document.head.innerHTML).toBe('<script src="script.js" async=""></script>')
         expect(root.innerHTML).toBe('<div><div>2</div><button>+</button></div>')
       })
 
@@ -659,13 +616,20 @@ describe('intrinsic element', () => {
         const App = () => {
           return (
             <div>
-              <script src='http://localhost/script.js' onLoad={onLoad} onError={onError} />
+              <script
+                src='http://localhost/script.js'
+                async={true}
+                onLoad={onLoad}
+                onError={onError}
+              />
               Content
             </div>
           )
         }
         render(<App />, root)
-        expect(document.head.innerHTML).toBe('<script src="http://localhost/script.js"></script>')
+        expect(document.head.innerHTML).toBe(
+          '<script src="http://localhost/script.js" async=""></script>'
+        )
         await Promise.resolve()
         await new Promise((resolve) => setTimeout(resolve))
         expect(onLoad).toBeCalledTimes(1)
@@ -678,13 +642,26 @@ describe('intrinsic element', () => {
         const App = () => {
           return (
             <div>
-              <script src='http://localhost/invalid.js' onLoad={onLoad} onError={onError} />
+              <script
+                src='http://localhost/invalid.js'
+                async={true}
+                onLoad={onLoad}
+                onError={onError}
+              />
               Content
             </div>
           )
         }
         render(<App />, root)
-        expect(document.head.innerHTML).toBe('<script src="http://localhost/invalid.js"></script>')
+        expect(document.head.innerHTML).toBe(
+          '<script src="http://localhost/invalid.js" async=""></script>'
+        )
+        await Promise.resolve()
+        await new Promise((resolve) => setTimeout(resolve))
+        await Promise.resolve()
+        await new Promise((resolve) => setTimeout(resolve))
+        await Promise.resolve()
+        await new Promise((resolve) => setTimeout(resolve))
         await Promise.resolve()
         await new Promise((resolve) => setTimeout(resolve))
         expect(onLoad).not.toBeCalled()
@@ -696,7 +673,7 @@ describe('intrinsic element', () => {
           return (
             <Suspense fallback={<div>Loading...</div>}>
               <div>
-                <script src='http://localhost/script.js' blocking='render' />
+                <script src='http://localhost/script.js' async={true} blocking='render' />
                 Content
               </div>
             </Suspense>
@@ -721,6 +698,32 @@ describe('intrinsic element', () => {
         await Promise.resolve()
         expect(root.innerHTML).toBe('<div><div>Content</div><button>Show</button></div>')
       })
+    })
+
+    it('accept ref object', async () => {
+      const ref = { current: null }
+      const App = () => {
+        return (
+          <div>
+            <script src='script-a.js' ref={ref} async={true} />
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(ref.current).toBe(document.head.querySelector('script'))
+    })
+
+    it('accept ref function', async () => {
+      const ref = vi.fn()
+      const App = () => {
+        return (
+          <div>
+            <script src='script-a.js' ref={ref} async={true} />
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(ref).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -760,7 +763,6 @@ describe('intrinsic element', () => {
       const action = vi.fn()
       const App = () => {
         const [show, setShow] = useState(false)
-        console.log(show)
         return (
           <div>
             {show && (
@@ -784,6 +786,55 @@ describe('intrinsic element', () => {
       await Promise.resolve()
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div><button>Toggle</button></div>')
+    })
+  })
+})
+
+describe('internal utility method', () => {
+  describe('composeRef()', () => {
+    it('should compose a ref object', () => {
+      const ref = { current: null }
+      const cbCleanUp = vi.fn()
+      const cb = vi.fn().mockReturnValue(cbCleanUp)
+      const composed = composeRef(ref, cb)
+      const cleanup = composed('ref')
+      expect(ref.current).toBe('ref')
+      expect(cb).toBeCalledWith('ref')
+      expect(cbCleanUp).not.toBeCalled()
+      cleanup()
+      expect(ref.current).toBe(null)
+      expect(cbCleanUp).toBeCalledTimes(1)
+    })
+
+    it('should compose a function', () => {
+      const ref = vi.fn()
+      const cbCleanUp = vi.fn()
+      const cb = vi.fn().mockReturnValue(cbCleanUp)
+      const composed = composeRef(ref, cb)
+      const cleanup = composed('ref')
+      expect(ref).toBeCalledWith('ref')
+      expect(cb).toBeCalledWith('ref')
+      expect(cbCleanUp).not.toBeCalled()
+      cleanup()
+      expect(ref).toBeCalledWith(null)
+      expect(cbCleanUp).toBeCalledTimes(1)
+    })
+
+    it('should compose a function returns a cleanup function', () => {
+      const refCleanUp = vi.fn()
+      const ref = vi.fn().mockReturnValue(refCleanUp)
+      const cbCleanUp = vi.fn()
+      const cb = vi.fn().mockReturnValue(cbCleanUp)
+      const composed = composeRef(ref, cb)
+      const cleanup = composed('ref')
+      expect(ref).toBeCalledWith('ref')
+      expect(cb).toBeCalledWith('ref')
+      expect(refCleanUp).not.toBeCalled()
+      expect(cbCleanUp).not.toBeCalled()
+      cleanup()
+      expect(ref).toHaveBeenCalledTimes(1)
+      expect(refCleanUp).toBeCalledTimes(1)
+      expect(cbCleanUp).toBeCalledTimes(1)
     })
   })
 })

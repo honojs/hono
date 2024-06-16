@@ -3,9 +3,10 @@ import { JSXNode } from '../base'
 import type { Child, Props } from '../base'
 import type { FC, PropsWithChildren } from '../types'
 import { raw } from '../../helper/html'
-import { deDupeKeys } from './common'
+import { dataPrecedenceAttr, deDupeKeys } from './common'
 import { PERMALINK } from '../constants'
 import { toArray } from '../children'
+import type { IntrinsicElements } from '../intrinsic-elements'
 
 const metaTagMap: WeakMap<
   object,
@@ -69,20 +70,22 @@ const insertIntoHead: (
     }
   }
 
+const returnWithoutSpecialBehavior = (tag: string, children: Child, props: Props) =>
+  raw(new JSXNode(tag, props, toArray(children ?? [])).toString())
+
 const documentMetadataTag = (tag: string, children: Child, props: Props, sort: boolean) => {
+  if ('itemProp' in props) {
+    return returnWithoutSpecialBehavior(tag, children, props)
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let { onLoad, onError, disabled, precedence, blocking, ...restProps } = props
+  let { precedence, blocking, ...restProps } = props
   precedence = sort ? precedence ?? '' : undefined
+  if (sort) {
+    restProps[dataPrecedenceAttr] = precedence
+  }
 
   const string = new JSXNode(tag, restProps, toArray(children || [])).toString()
-
-  if (disabled) {
-    return raw('')
-  }
-
-  if (restProps?.itemProp) {
-    return raw(string)
-  }
 
   if (string instanceof Promise) {
     return string.then((resString) =>
@@ -99,17 +102,39 @@ const documentMetadataTag = (tag: string, children: Child, props: Props, sort: b
 export const title: FC<PropsWithChildren> = ({ children, ...props }) => {
   return documentMetadataTag('title', children, props, false)
 }
-export const script: FC<PropsWithChildren> = ({ children, ...props }) => {
+export const script: FC<PropsWithChildren<IntrinsicElements['script']>> = ({
+  children,
+  ...props
+}) => {
+  if (['src', 'async'].some((k) => !props[k])) {
+    return returnWithoutSpecialBehavior('script', children, props)
+  }
+
   return documentMetadataTag('script', children, props, false)
 }
-export const style: FC<PropsWithChildren> = ({ children, ...props }) => {
+
+export const style: FC<PropsWithChildren<IntrinsicElements['style']>> = ({
+  children,
+  ...props
+}) => {
+  if (!['href', 'precedence'].every((k) => k in props)) {
+    return returnWithoutSpecialBehavior('style', children, props)
+  }
+  props['data-href'] = props.href
+  delete props.href
   return documentMetadataTag('style', children, props, true)
 }
-export const link: FC<PropsWithChildren> = ({ children, ...props }) => {
-  return documentMetadataTag('link', children, props, true)
+export const link: FC<PropsWithChildren<IntrinsicElements['link']>> = ({ children, ...props }) => {
+  if (
+    ['onLoad', 'onError'].some((k) => k in props) ||
+    (props.rel === 'stylesheet' && (!('precedence' in props) || 'disabled' in props))
+  ) {
+    return returnWithoutSpecialBehavior('link', children, props)
+  }
+  return documentMetadataTag('link', children, props, 'precedence' in props)
 }
 export const meta: FC<PropsWithChildren> = ({ children, ...props }) => {
-  return documentMetadataTag('meta', children, props, true)
+  return documentMetadataTag('meta', children, props, false)
 }
 export const form: FC<
   PropsWithChildren<{

@@ -6,12 +6,20 @@ import type { PreserveNodeType } from '../render'
 import { useContext } from '../../context'
 import { use, useCallback, useMemo, useState } from '../../hooks'
 import { FormContext, registerAction } from '../hooks'
-import { deDupeKeys, domRenderers } from '../../intrinsic-element/common'
+import { dataPrecedenceAttr, deDupeKeys, domRenderers } from '../../intrinsic-element/common'
+import type { IntrinsicElements } from '../../intrinsic-elements'
 
-const composeRef = <T>(
+// this function is a testing utility and should not be exported to the user
+export const clearCache = () => {
+  blockingPromiseMap = Object.create(null)
+  createdElements = Object.create(null)
+}
+
+// this function is exported for testing and should not be used by the user
+export const composeRef = <T>(
   ref: RefObject<T> | Function | undefined,
   cb: (e: T) => void | (() => void)
-): ((e: T) => void | (() => void)) => {
+): ((e: T) => () => void) => {
   return useMemo(
     () => (e: T) => {
       let refCleanup: (() => void) | undefined
@@ -40,9 +48,8 @@ const composeRef = <T>(
   )
 }
 
-const precedenceMap: WeakMap<HTMLElement, string> = new WeakMap()
-const blockingPromiseMap: Record<string, Promise<Event> | undefined> = Object.create(null)
-const createdElements: Record<string, HTMLElement> = Object.create(null)
+let blockingPromiseMap: Record<string, Promise<Event> | undefined> = Object.create(null)
+let createdElements: Record<string, HTMLElement> = Object.create(null)
 const documentMetadataTag = (
   tag: string,
   props: Props,
@@ -91,6 +98,10 @@ const documentMetadataTag = (
             if (props[key] !== undefined) {
               e.setAttribute(key, props[key] as string)
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((props as any).rel) {
+              e.setAttribute('rel', props.rel)
+            }
           }
           return e
         })()
@@ -101,27 +112,20 @@ const documentMetadataTag = (
     }
   }
 
-  if (props.disabled) {
-    if (element) {
-      ;(element as HTMLElement).remove()
-    }
-    return null
-  }
-
   precedence = supportSort ? precedence ?? '' : undefined
-  if (precedence && !precedenceMap.has(element as HTMLElement)) {
-    precedenceMap.set(element as HTMLElement, precedence)
+  if (supportSort) {
+    restProps[dataPrecedenceAttr] = precedence
   }
 
   const insert = useCallback(
     (e: HTMLElement) => {
       let found = false
       for (const existingElement of document.head.querySelectorAll<HTMLElement>(tag)) {
-        if (found) {
+        if (found && existingElement.getAttribute(dataPrecedenceAttr) !== precedence) {
           document.head.insertBefore(e, existingElement)
           return
         }
-        if (precedence && precedenceMap.get(existingElement) === precedence) {
+        if (existingElement.getAttribute(dataPrecedenceAttr) === precedence) {
           found = true
         }
       }
@@ -144,12 +148,8 @@ const documentMetadataTag = (
 
     let promise = (blockingPromiseMap[e.getAttribute(key) as string] ||= new Promise<Event>(
       (resolve, reject) => {
-        e.addEventListener('load', (e) => {
-          resolve(e)
-        })
-        e.addEventListener('error', (e) => {
-          reject(e)
-        })
+        e.addEventListener('load', resolve)
+        e.addEventListener('error', reject)
       }
     ))
     if (onLoad) {
@@ -205,24 +205,44 @@ export const title: FC<PropsWithChildren> = (props) => {
   return documentMetadataTag('title', props, 2, true, false, false)
 }
 
-export const script: FC<
-  PropsWithChildren<{
-    async?: boolean
-  }>
-> = (props) => {
-  return documentMetadataTag('script', props, 1, !!props.async, false, true)
+export const script: FC<PropsWithChildren<IntrinsicElements['script']>> = (props) => {
+  if (!props || ['src', 'async'].some((k) => !props[k])) {
+    return newJSXNode({
+      tag: 'style',
+      props,
+    })
+  }
+  return documentMetadataTag('script', props, 1, true, false, true)
 }
 
-export const style: FC<PropsWithChildren> = (props) => {
+export const style: FC<PropsWithChildren<IntrinsicElements['style']>> = (props) => {
+  if (!props || !['href', 'precedence'].every((k) => k in props)) {
+    return newJSXNode({
+      tag: 'style',
+      props,
+    })
+  }
+  props['data-href'] = props.href
+  delete props.href
   return documentMetadataTag('style', props, 2, true, true, true)
 }
 
-export const link: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('link', props, 1, true, true, true)
+export const link: FC<PropsWithChildren<IntrinsicElements['link']>> = (props) => {
+  if (
+    !props ||
+    ['onLoad', 'onError'].some((k) => k in props) ||
+    (props.rel === 'stylesheet' && (!('precedence' in props) || 'disabled' in props))
+  ) {
+    return newJSXNode({
+      tag: 'link',
+      props,
+    })
+  }
+  return documentMetadataTag('link', props, 1, true, 'precedence' in props, true)
 }
 
 export const meta: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('meta', props, 1, true, true, false)
+  return documentMetadataTag('meta', props, 1, true, false, false)
 }
 
 export const form: FC<

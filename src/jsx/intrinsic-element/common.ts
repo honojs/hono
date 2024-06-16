@@ -1,9 +1,11 @@
 export const deDupeKeys: Record<string, string[]> = {
   title: [],
   script: ['src'],
-  style: ['href'],
+  style: ['data-href'],
   link: ['href'],
   meta: ['name', 'httpEquiv', 'charset', 'itemProp'],
 }
 
 export const domRenderers: Record<string, Function> = {}
+
+export const dataPrecedenceAttr = 'data-precedence'
