@@ -8,9 +8,8 @@ type UpdateStateFunction<T> = (newState: T | ((currentState: T) => T)) => void
 const STASH_SATE = 0
 export const STASH_EFFECT = 1
 const STASH_CALLBACK = 2
-const STASH_USE = 3
-const STASH_MEMO = 4
-const STASH_REF = 5
+const STASH_MEMO = 3
+const STASH_REF = 4
 
 export type EffectData = [
   readonly unknown[] | undefined, // deps
