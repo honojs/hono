@@ -745,8 +745,8 @@ d.replaceWith(c.content)
 
   describe('use()', async () => {
     it('render to string', async () => {
+      const promise = new Promise((resolve) => setTimeout(() => resolve('Hello from use()'), 0))
       const Content = () => {
-        const promise = new Promise((resolve) => setTimeout(() => resolve('Hello from use()'), 0))
         const message = use(promise)
         return <h1>{message}</h1>
       }
@@ -765,8 +765,8 @@ d.replaceWith(c.content)
     })
 
     it('render to stream', async () => {
+      const promise = new Promise((resolve) => setTimeout(() => resolve('Hello from use()'), 0))
       const Content = () => {
-        const promise = new Promise((resolve) => setTimeout(() => resolve('Hello from use()'), 0))
         const message = use(promise)
         return <h1>{message}</h1>
       }

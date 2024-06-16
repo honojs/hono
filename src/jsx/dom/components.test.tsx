@@ -60,6 +60,40 @@ function runner(
         expect(root.innerHTML).toBe('<p>1</p>')
       })
 
+      it('with use() update', async () => {
+        const counterMap: Record<number, Promise<number>> = {}
+        const getCounter = (count: number) => (counterMap[count] ||= Promise.resolve(count + 1))
+        const Content = ({ count }: { count: number }) => {
+          const num = use(getCounter(count))
+          return (
+            <>
+              <div>{num}</div>
+            </>
+          )
+        }
+        const Component = () => {
+          const [count, setCount] = useState(0)
+          return (
+            <Suspense fallback={<div>Loading...</div>}>
+              <Content count={count} />
+              <button onClick={() => setCount(count + 1)}>Increment</button>
+            </Suspense>
+          )
+        }
+        const App = <Component />
+        render(App, root)
+        expect(root.innerHTML).toBe('<div>Loading...</div>')
+        await Promise.resolve()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div>1</div><button>Increment</button>')
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div>Loading...</div>')
+        await Promise.resolve()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div>2</div><button>Increment</button>')
+      })
+
       it('with use() nested', async () => {
         let resolve: (value: number) => void = () => {}
         const promise = new Promise<number>((_resolve) => (resolve = _resolve))

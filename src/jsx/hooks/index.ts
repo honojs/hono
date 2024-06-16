@@ -308,32 +308,6 @@ export const use = <T>(promise: Promise<T>): T => {
     (e) => resolvedPromiseValueMap.set(promise, [undefined, e])
   )
 
-  const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
-  if (!buildData) {
-    throw promise
-  }
-  const [, node] = buildData
-
-  const promiseArray = (node[DOM_STASH][1][STASH_USE] ||= [])
-  const hookIndex = node[DOM_STASH][0]++
-
-  promise.then(
-    (res) => {
-      promiseArray[hookIndex] = [res]
-    },
-    (e) => {
-      promiseArray[hookIndex] = [undefined, e]
-    }
-  )
-
-  const res = promiseArray[hookIndex]
-  if (res) {
-    if (res.length === 2) {
-      throw res[1]
-    }
-    return res[0] as T
-  }
-
   throw promise
 }
 
