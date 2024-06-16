@@ -240,6 +240,28 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<button>remove</button>')
       expect(ref).toHaveBeenLastCalledWith(null)
     })
+
+    it('ref cleanup function', async () => {
+      const cleanup = vi.fn()
+      const ref = vi.fn().mockReturnValue(cleanup)
+      const App = () => {
+        const [show, setShow] = useState(true)
+        return (
+          <>
+            {show && <div ref={ref} />}
+            <button onClick={() => setShow(false)}>remove</button>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div></div><button>remove</button>')
+      expect(ref).toHaveBeenLastCalledWith(expect.any(dom.window.HTMLDivElement))
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<button>remove</button>')
+      expect(ref).toBeCalledTimes(1)
+      expect(cleanup).toBeCalledTimes(1)
+    })
   })
 
   describe('defaultProps', () => {
