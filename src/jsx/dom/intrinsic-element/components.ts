@@ -241,10 +241,9 @@ export const form: FC<
   }
 
   const [data, setData] = useState<FormData | null>(null)
-  const onSubmit = useCallback<(e: SubmitEvent) => void>(async (e: Event) => {
-    e.preventDefault()
-    const form = e.target as HTMLFormElement
-    const formData = new FormData(form)
+  const onSubmit = useCallback<(ev: SubmitEvent) => void>(async (ev: SubmitEvent) => {
+    ev.preventDefault()
+    const formData = new FormData(ev.target as HTMLFormElement)
     setData(formData)
     const actionRes = action(formData)
     if (actionRes instanceof Promise) {
@@ -254,10 +253,10 @@ export const form: FC<
     setData(null)
   }, [])
 
-  const ref = composeRef(props.ref, (e: HTMLFormElement) => {
-    e.addEventListener('submit', onSubmit)
+  const ref = composeRef(props.ref, (el: HTMLFormElement) => {
+    el.addEventListener('submit', onSubmit)
     return () => {
-      e.removeEventListener('submit', onSubmit)
+      el.removeEventListener('submit', onSubmit)
     }
   })
 
