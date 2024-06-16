@@ -33,10 +33,21 @@ export const registerAction = (action: Promise<unknown>) => {
   action.finally(() => actions.delete(action))
 }
 
+/**
+ * This hook returns the current form status
+ * @returns FormStatus
+ */
 export const useFormStatus = (): FormStatus => {
   return useContext(FormContext)
 }
 
+/**
+ * This hook returns the current state and a function to update the state optimistically
+ * The current state is updated optimistically and then reverted to the original state when all actions are resolved
+ * @param state
+ * @param updateState
+ * @returns [T, (action: N) => void]
+ */
 export const useOptimistic = <T, N>(
   state: T,
   updateState: (currentState: T, action: N) => T
@@ -57,6 +68,13 @@ export const useOptimistic = <T, N>(
   return [optimisticState, cb]
 }
 
+/**
+ * This hook returns the current state and a function to update the state by form action
+ * @param fn
+ * @param initialState
+ * @param permalink
+ * @returns [T, (data: FormData) => void]
+ */
 export const useActionState = <T>(
   fn: Function,
   initialState: T,
