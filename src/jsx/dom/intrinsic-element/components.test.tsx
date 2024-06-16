@@ -126,6 +126,62 @@ describe('intrinsic element', () => {
         expect(document.head.innerHTML).toBe('<link href="style1.css" rel="stylesheet">')
       })
 
+      it('accept ref object', async () => {
+        const ref = { current: null }
+        const App = () => {
+          const [disabled, setDisabled] = useState(false)
+          return (
+            <div>
+              <link rel='stylesheet' href={'style.css'} ref={ref} disabled={disabled} />
+              <button onClick={() => setDisabled(!disabled)}>+</button>
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(ref.current).toBe(document.head.querySelector('link'))
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(ref.current).toBe(null)
+      })
+
+      it('accept ref function', async () => {
+        const ref = vi.fn()
+        const App = () => {
+          const [disabled, setDisabled] = useState(false)
+          return (
+            <div>
+              <link rel='stylesheet' href={'style.css'} ref={ref} disabled={disabled} />
+              <button onClick={() => setDisabled(!disabled)}>+</button>
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(ref).toHaveBeenCalledTimes(1)
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(ref).toHaveBeenCalledTimes(2)
+      })
+
+      it('accept ref function that returns cleanup function', async () => {
+        const cleanup = vi.fn()
+        const ref = vi.fn().mockReturnValue(cleanup)
+        const App = () => {
+          const [disabled, setDisabled] = useState(false)
+          return (
+            <div>
+              <link rel='stylesheet' href={'style.css'} ref={ref} disabled={disabled} />
+              <button onClick={() => setDisabled(!disabled)}>+</button>
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(ref).toHaveBeenCalledTimes(1)
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(ref).toHaveBeenCalledTimes(1)
+        expect(cleanup).toHaveBeenCalledTimes(1)
+      })
+
       it('should be removed if disabled={true}', async () => {
         const App = () => {
           const [count, setCount] = useState(0)
@@ -698,6 +754,36 @@ describe('intrinsic element', () => {
       expect(root.innerHTML).toBe(
         '<form action="/entries" method="post"><button type="submit">Submit</button></form>'
       )
+    })
+
+    it('toggle show / hide form', async () => {
+      const action = vi.fn()
+      const App = () => {
+        const [show, setShow] = useState(false)
+        console.log(show)
+        return (
+          <div>
+            {show && (
+              <form action={action} method='post'>
+                <input type='text' name='name' value='Hello' />
+              </form>
+            )}
+            <button onClick={() => setShow((status) => !status)}>Toggle</button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>Toggle</button></div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><form method="post"><input type="text" name="name" value="Hello"></form><button>Toggle</button></div>'
+      )
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>Toggle</button></div>')
     })
   })
 })

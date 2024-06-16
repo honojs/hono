@@ -2,7 +2,6 @@
 import { JSDOM } from 'jsdom'
 import { render, useState } from '..'
 import { useActionState, useFormStatus, useOptimistic } from '.'
-import { form } from '../intrinsic-element/components'
 
 describe('Hooks', () => {
   beforeAll(() => {
