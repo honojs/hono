@@ -25,13 +25,13 @@ describe('intrinsic element', () => {
           <html>
             <head></head>
             <body>
-              <link rel='stylesheet' href='style.css' />
+              <link rel='stylesheet' href='style.css' precedence='default' />
               <h1>World</h1>
             </body>
           </html>
         )
         expect(template.toString()).toBe(
-          '<html><head><link rel="stylesheet" href="style.css"/></head><body><h1>World</h1></body></html>'
+          '<html><head><link rel="stylesheet" href="style.css" data-precedence="default"/></head><body><h1>World</h1></body></html>'
         )
       })
 
@@ -48,7 +48,7 @@ describe('intrinsic element', () => {
           </html>
         )
         expect(template.toString()).toBe(
-          '<html><head><link rel="stylesheet" href="style1.css"/><link rel="stylesheet" href="style3.css"/><link rel="stylesheet" href="style2.css"/></head><body><h1>World</h1></body></html>'
+          '<html><head><link rel="stylesheet" href="style1.css" data-precedence="default"/><link rel="stylesheet" href="style3.css" data-precedence="default"/><link rel="stylesheet" href="style2.css" data-precedence="high"/></head><body><h1>World</h1></body></html>'
         )
       })
 
@@ -65,7 +65,7 @@ describe('intrinsic element', () => {
           </html>
         )
         expect(template.toString()).toBe(
-          '<html><head><link rel="stylesheet" href="style1.css"/><link rel="stylesheet" href="style2.css"/></head><body><h1>World</h1></body></html>'
+          '<html><head><link rel="stylesheet" href="style1.css" data-precedence="default"/><link rel="stylesheet" href="style2.css" data-precedence="high"/></head><body><h1>World</h1></body></html>'
         )
       })
 
@@ -80,23 +80,38 @@ describe('intrinsic element', () => {
           </html>
         )
         expect(template.toString()).toBe(
-          '<html><body><link rel="stylesheet" href="style1.css"/><link rel="stylesheet" href="style2.css"/><h1>World</h1></body></html>'
+          '<html><body><link rel="stylesheet" href="style1.css" data-precedence="default"/><link rel="stylesheet" href="style2.css" data-precedence="high"/><h1>World</h1></body></html>'
         )
       })
 
-      it('should be removed if disabled={true}', () => {
+      it('should not do special behavior if disabled is present', () => {
         const template = (
           <html>
             <head></head>
             <body>
-              <link rel='stylesheet' href='style1.css' />
-              <link rel='stylesheet' href='style2.css' disabled />
+              <link rel='stylesheet' href='style1.css' precedence='default' />
+              <link rel='stylesheet' href='style2.css' precedence='default' disabled />
               <h1>World</h1>
             </body>
           </html>
         )
         expect(template.toString()).toBe(
-          '<html><head><link rel="stylesheet" href="style1.css"/></head><body><h1>World</h1></body></html>'
+          '<html><head><link rel="stylesheet" href="style1.css" data-precedence="default"/></head><body><link rel="stylesheet" href="style2.css" precedence="default" disabled=""/><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should not be hoisted if has no precedence attribute', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <link rel='stylesheet' href='style1.css' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head></head><body><link rel="stylesheet" href="style1.css"/><h1>World</h1></body></html>'
         )
       })
     })
@@ -155,13 +170,13 @@ describe('intrinsic element', () => {
           <html>
             <head></head>
             <body>
-              <script src='script.js' />
+              <script src='script.js' async={true} />
               <h1>World</h1>
             </body>
           </html>
         )
         expect(template.toString()).toBe(
-          '<html><head><script src="script.js"></script></head><body><h1>World</h1></body></html>'
+          '<html><head><script src="script.js" async=""></script></head><body><h1>World</h1></body></html>'
         )
       })
 
@@ -186,13 +201,34 @@ describe('intrinsic element', () => {
           <html>
             <head></head>
             <body>
-              <script src='script.js' onLoad={() => {}} onError={() => {}} blocking='render' />
+              <script
+                src='script.js'
+                async={true}
+                onLoad={() => {}}
+                onError={() => {}}
+                blocking='render'
+              />
               <h1>World</h1>
             </body>
           </html>
         )
         expect(template.toString()).toBe(
-          '<html><head><script src="script.js"></script></head><body><h1>World</h1></body></html>'
+          '<html><head><script src="script.js" async=""></script></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should not do special behavior if async is not present', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <script src='script.js' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head></head><body><script src="script.js"></script><h1>World</h1></body></html>'
         )
       })
     })
@@ -203,13 +239,15 @@ describe('intrinsic element', () => {
           <html>
             <head></head>
             <body>
-              <style>{'body { color: red; }'}</style>
+              <style href='red' precedence='default'>
+                {'body { color: red; }'}
+              </style>
               <h1>World</h1>
             </body>
           </html>
         )
         expect(template.toString()).toBe(
-          '<html><head><style>body { color: red; }</style></head><body><h1>World</h1></body></html>'
+          '<html><head><style data-href="red" data-precedence="default">body { color: red; }</style></head><body><h1>World</h1></body></html>'
         )
       })
 
@@ -218,19 +256,25 @@ describe('intrinsic element', () => {
           <html>
             <head></head>
             <body>
-              <style precedence='default'>{'body { color: red; }'}</style>
-              <style precedence='high'>{'body { color: green; }'}</style>
-              <style precedence='default'>{'body { color: blue; }'}</style>
+              <style href='red' precedence='default'>
+                {'body { color: red; }'}
+              </style>
+              <style href='green' precedence='high'>
+                {'body { color: green; }'}
+              </style>
+              <style href='blue' precedence='default'>
+                {'body { color: blue; }'}
+              </style>
               <h1>World</h1>
             </body>
           </html>
         )
         expect(template.toString()).toBe(
-          '<html><head><style>body { color: red; }</style><style>body { color: blue; }</style><style>body { color: green; }</style></head><body><h1>World</h1></body></html>'
+          '<html><head><style data-href="red" data-precedence="default">body { color: red; }</style><style data-href="blue" data-precedence="default">body { color: blue; }</style><style data-href="green" data-precedence="high">body { color: green; }</style></head><body><h1>World</h1></body></html>'
         )
       })
 
-      it('should be omitted "blocking", "onLoad" and "onError" props', () => {
+      it('should not be hoisted if href is not present', () => {
         const template = (
           <html>
             <head></head>
@@ -241,7 +285,7 @@ describe('intrinsic element', () => {
           </html>
         )
         expect(template.toString()).toBe(
-          '<html><head><style>body { color: red; }</style></head><body><h1>World</h1></body></html>'
+          '<html><head></head><body><style>body { color: red; }</style><h1>World</h1></body></html>'
         )
       })
     })
