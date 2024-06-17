@@ -6,7 +6,7 @@ import type { PreserveNodeType } from '../render'
 import { useContext } from '../../context'
 import { use, useCallback, useMemo, useState } from '../../hooks'
 import { FormContext, registerAction } from '../hooks'
-import { dataPrecedenceAttr, deDupeKeys, domRenderers } from '../../intrinsic-element/common'
+import { dataPrecedenceAttr, deDupeKeyMap, domRenderers } from '../../intrinsic-element/common'
 import type { IntrinsicElements } from '../../intrinsic-elements'
 
 // this function is a testing utility and should not be exported to the user
@@ -53,8 +53,7 @@ let createdElements: Record<string, HTMLElement> = Object.create(null)
 const documentMetadataTag = (
   tag: string,
   props: Props,
-  preserveNodeType: PreserveNodeType,
-  deDupe: boolean,
+  preserveNodeType: PreserveNodeType | undefined,
   supportSort: boolean,
   supportBlocking: boolean
 ) => {
@@ -65,51 +64,47 @@ const documentMetadataTag = (
     })
   }
 
+  const head = document.head
+
   let { onLoad, onError, precedence, blocking, ...restProps } = props
   let element: HTMLElement | null = null
   let created = false
 
-  if (deDupe) {
-    const tags = document.head.querySelectorAll<HTMLElement>(tag)
-    if (deDupeKeys[tag].length === 0) {
-      element = tags[0]
-    } else {
-      LOOP: for (const e of tags) {
-        for (const key of deDupeKeys[tag]) {
-          if (e.getAttribute(key) === props[key]) {
-            element = e
-            break LOOP
-          }
+  const deDupeKeys = deDupeKeyMap[tag]
+  let existingElements: NodeListOf<HTMLElement> | undefined = undefined
+  if (deDupeKeys.length > 0) {
+    const tags = head.querySelectorAll<HTMLElement>(tag)
+    LOOP: for (const e of tags) {
+      for (const key of deDupeKeyMap[tag]) {
+        if (e.getAttribute(key) === props[key]) {
+          element = e
+          break LOOP
         }
       }
     }
 
     if (!element) {
-      const cacheKey = deDupeKeys[tag].reduce(
+      const cacheKey = deDupeKeys.reduce(
         (acc, key) => (props[key] === undefined ? acc : `${acc}-${key}-${props[key]}`),
         tag
       )
       created = !createdElements[cacheKey]
-      element =
-        createdElements[cacheKey] ||
-        (() => {
-          const e = document.createElement(tag)
-          for (const key of deDupeKeys[tag]) {
-            if (props[key] !== undefined) {
-              e.setAttribute(key, props[key] as string)
-            }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            if ((props as any).rel) {
-              e.setAttribute('rel', props.rel)
-            }
+      element = createdElements[cacheKey] ||= (() => {
+        const e = document.createElement(tag)
+        for (const key of deDupeKeys) {
+          if (props[key] !== undefined) {
+            e.setAttribute(key, props[key] as string)
           }
-          return e
-        })()
-      if (tag !== cacheKey) {
-        // cache only when tag has some deDupeKeys
-        createdElements[cacheKey] = element
-      }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((props as any).rel) {
+            e.setAttribute('rel', props.rel)
+          }
+        }
+        return e
+      })()
     }
+  } else {
+    existingElements = head.querySelectorAll<HTMLElement>(tag)
   }
 
   precedence = supportSort ? precedence ?? '' : undefined
@@ -119,31 +114,54 @@ const documentMetadataTag = (
 
   const insert = useCallback(
     (e: HTMLElement) => {
-      let found = false
-      for (const existingElement of document.head.querySelectorAll<HTMLElement>(tag)) {
-        if (found && existingElement.getAttribute(dataPrecedenceAttr) !== precedence) {
-          document.head.insertBefore(e, existingElement)
-          return
+      if (deDupeKeys.length > 0) {
+        let found = false
+        for (const existingElement of head.querySelectorAll<HTMLElement>(tag)) {
+          if (found && existingElement.getAttribute(dataPrecedenceAttr) !== precedence) {
+            head.insertBefore(e, existingElement)
+            return
+          }
+          if (existingElement.getAttribute(dataPrecedenceAttr) === precedence) {
+            found = true
+          }
         }
-        if (existingElement.getAttribute(dataPrecedenceAttr) === precedence) {
-          found = true
-        }
-      }
 
-      // if sentinel is not found, append to the end
-      document.head.appendChild(e)
+        // if sentinel is not found, append to the end
+        head.appendChild(e)
+      } else if (existingElements) {
+        let found = false
+        for (const existingElement of existingElements!) {
+          if (existingElement === e) {
+            found = true
+            break
+          }
+        }
+        if (!found) {
+          // newly created element
+          head.insertBefore(
+            e,
+            head.contains(existingElements[0]) ? existingElements[0] : head.querySelector(tag)
+          )
+        }
+        existingElements = undefined
+      }
     },
     [precedence]
   )
 
   const ref = composeRef(props.ref, (e: HTMLElement) => {
-    const key = deDupeKeys[tag][0]
+    const key = deDupeKeys[0]
 
     if (preserveNodeType === 2) {
       e.innerHTML = ''
     }
-    if (created) {
+
+    if (created || existingElements) {
       insert(e)
+    }
+
+    if (!onError && !onLoad) {
+      return
     }
 
     let promise = (blockingPromiseMap[e.getAttribute(key) as string] ||= new Promise<Event>(
@@ -162,7 +180,7 @@ const documentMetadataTag = (
   })
 
   if (supportBlocking && blocking === 'render') {
-    const key = deDupeKeys[tag][0]
+    const key = deDupeKeyMap[tag][0]
     if (props[key]) {
       const value = props[key]
       const promise = (blockingPromiseMap[value] ||= new Promise<Event>((resolve, reject) => {
@@ -189,7 +207,7 @@ const documentMetadataTag = (
 
   return createPortal(
     jsxNode,
-    document.head
+    head
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ) as any
 }
@@ -202,7 +220,7 @@ export const title: FC<PropsWithChildren> = (props) => {
       props,
     })
   }
-  return documentMetadataTag('title', props, 2, true, false, false)
+  return documentMetadataTag('title', props, undefined, false, false)
 }
 
 export const script: FC<PropsWithChildren<IntrinsicElements['script']>> = (props) => {
@@ -212,7 +230,7 @@ export const script: FC<PropsWithChildren<IntrinsicElements['script']>> = (props
       props,
     })
   }
-  return documentMetadataTag('script', props, 1, true, false, true)
+  return documentMetadataTag('script', props, 1, false, true)
 }
 
 export const style: FC<PropsWithChildren<IntrinsicElements['style']>> = (props) => {
@@ -224,7 +242,7 @@ export const style: FC<PropsWithChildren<IntrinsicElements['style']>> = (props) 
   }
   props['data-href'] = props.href
   delete props.href
-  return documentMetadataTag('style', props, 2, true, true, true)
+  return documentMetadataTag('style', props, 2, true, true)
 }
 
 export const link: FC<PropsWithChildren<IntrinsicElements['link']>> = (props) => {
@@ -238,11 +256,11 @@ export const link: FC<PropsWithChildren<IntrinsicElements['link']>> = (props) =>
       props,
     })
   }
-  return documentMetadataTag('link', props, 1, true, 'precedence' in props, true)
+  return documentMetadataTag('link', props, 1, 'precedence' in props, true)
 }
 
 export const meta: FC<PropsWithChildren> = (props) => {
-  return documentMetadataTag('meta', props, 1, true, false, false)
+  return documentMetadataTag('meta', props, undefined, false, false)
 }
 
 export const form: FC<

@@ -1,4 +1,4 @@
-export const deDupeKeys: Record<string, string[]> = {
+export const deDupeKeyMap: Record<string, string[]> = {
   title: [],
   script: ['src'],
   style: ['data-href'],

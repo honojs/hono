@@ -71,7 +71,7 @@ describe('intrinsic element', () => {
         expect(document.head.innerHTML).toBe('<title>Document Title 1</title>')
       })
 
-      it('should be preserved when unmounted', async () => {
+      it('should be removed when unmounted', async () => {
         const App = () => {
           const [count, setCount] = useState(0)
           return (
@@ -91,7 +91,58 @@ describe('intrinsic element', () => {
         expect(root.innerHTML).toBe('<div><div>1</div><button>+</button></div>')
         root.querySelector('button')?.click()
         await Promise.resolve()
+        expect(document.head.innerHTML).toBe('')
+        expect(root.innerHTML).toBe('<div><div>2</div><button>+</button></div>')
+      })
+
+      it('should be inserted bottom of head if existing element is removed', async () => {
+        document.head.innerHTML = '<title>Existing Title</title>'
+
+        const App = () => {
+          const [count, setCount] = useState(0)
+          return (
+            <div>
+              {count === 1 && <title>Document Title {count}</title>}
+              <div>{count}</div>
+              <button onClick={() => setCount(count + 1)}>+</button>
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(document.head.innerHTML).toBe('<title>Existing Title</title>')
+        expect(root.innerHTML).toBe('<div><div>0</div><button>+</button></div>')
+        root.querySelector('button')?.click()
+        document.head.querySelector('title')?.remove()
+        await Promise.resolve()
         expect(document.head.innerHTML).toBe('<title>Document Title 1</title>')
+        expect(root.innerHTML).toBe('<div><div>1</div><button>+</button></div>')
+      })
+
+      it('should be inserted before existing title element', async () => {
+        document.head.innerHTML = '<title>Existing Title</title>'
+
+        const App = () => {
+          const [count, setCount] = useState(0)
+          return (
+            <div>
+              {count === 1 && <title>Document Title {count}</title>}
+              <div>{count}</div>
+              <button onClick={() => setCount(count + 1)}>+</button>
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(document.head.innerHTML).toBe('<title>Existing Title</title>')
+        expect(root.innerHTML).toBe('<div><div>0</div><button>+</button></div>')
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(document.head.innerHTML).toBe(
+          '<title>Document Title 1</title><title>Existing Title</title>'
+        )
+        expect(root.innerHTML).toBe('<div><div>1</div><button>+</button></div>')
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(document.head.innerHTML).toBe('<title>Existing Title</title>')
         expect(root.innerHTML).toBe('<div><div>2</div><button>+</button></div>')
       })
     })

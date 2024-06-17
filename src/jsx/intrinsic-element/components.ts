@@ -3,7 +3,7 @@ import { JSXNode } from '../base'
 import type { Child, Props } from '../base'
 import type { FC, PropsWithChildren } from '../types'
 import { raw } from '../../helper/html'
-import { dataPrecedenceAttr, deDupeKeys } from './common'
+import { dataPrecedenceAttr, deDupeKeyMap } from './common'
 import { PERMALINK } from '../constants'
 import { toArray } from '../children'
 import type { IntrinsicElements } from '../intrinsic-elements'
@@ -28,20 +28,24 @@ const insertIntoHead: (
     const tags = (map[tagName] ||= [])
 
     let duped = false
-    const keys = deDupeKeys[tagName]
-    LOOP: for (const [, tagProps] of tags) {
-      for (const key of keys) {
-        if ((tagProps?.[key] ?? null) === props?.[key]) {
-          duped = true
-          break LOOP
+    const deDupeKeys = deDupeKeyMap[tagName]
+    if (deDupeKeys.length > 0) {
+      LOOP: for (const [, tagProps] of tags) {
+        for (const key of deDupeKeys) {
+          if ((tagProps?.[key] ?? null) === props?.[key]) {
+            duped = true
+            break LOOP
+          }
         }
       }
     }
 
     if (duped) {
       buffer[0] = buffer[0].replaceAll(tag, '')
-    } else {
+    } else if (deDupeKeys.length > 0) {
       tags.push([tag, props, precedence])
+    } else {
+      tags.unshift([tag, props, precedence])
     }
 
     if (buffer[0].indexOf('</head>') !== -1) {
