@@ -97,7 +97,7 @@ describe('removeIndexString', () => {
 describe('deepMerge', () => {
   it('should return the source object if the target object is not an object', () => {
     const target = null
-    const source = { a: 1 }
+    const source = 'not an object' as unknown as Record<string, unknown>
     const result = deepMerge(target, source)
     expect(result).toEqual(source)
   })
