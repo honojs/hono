@@ -140,16 +140,33 @@ export const link: FC<PropsWithChildren<IntrinsicElements['link']>> = ({ childre
 export const meta: FC<PropsWithChildren> = ({ children, ...props }) => {
   return documentMetadataTag('meta', children, props, false)
 }
+
+const newJSXNode = (tag: string, { children, ...props }: PropsWithChildren<unknown>) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  new JSXNode(tag, props, toArray(children ?? []) as Child[]) as any
 export const form: FC<
   PropsWithChildren<{
     action?: Function | string
     method?: 'get' | 'post'
   }>
-> = ({ children, ...props }) => {
+> = (props) => {
   if (typeof props.action === 'function') {
     props.action = PERMALINK in props.action ? (props.action[PERMALINK] as string) : undefined
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return new JSXNode('form', props, toArray(children ?? []) as Child[]) as any
+  return newJSXNode('form', props)
 }
+
+const formActionableElement = (
+  tag: string,
+  props: PropsWithChildren<{
+    formAction?: Function | string
+  }>
+) => {
+  if (typeof props.formAction === 'function') {
+    props.formAction =
+      PERMALINK in props.formAction ? (props.formAction[PERMALINK] as string) : undefined
+  }
+  return newJSXNode(tag, props)
+}
+export const input = (props: PropsWithChildren) => formActionableElement('input', props)
+export const button = (props: PropsWithChildren) => formActionableElement('button', props)

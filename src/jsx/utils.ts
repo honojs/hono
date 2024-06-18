@@ -6,6 +6,7 @@ const normalizeElementKeyMap = new Map([
   ['itemProp', 'itemprop'],
   ['fetchPriority', 'fetchpriority'],
   ['noModule', 'nomodule'],
+  ['formAction', 'formaction'],
 ])
 export const normalizeIntrinsicElementKey = (key: string): string =>
   normalizeElementKeyMap.get(key) || key

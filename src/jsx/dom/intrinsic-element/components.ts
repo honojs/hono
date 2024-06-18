@@ -263,6 +263,7 @@ export const meta: FC<PropsWithChildren> = (props) => {
   return documentMetadataTag('meta', props, undefined, false, false)
 }
 
+const customEventFormAction = Symbol()
 export const form: FC<
   PropsWithChildren<{
     action?: Function | string
@@ -272,24 +273,32 @@ export const form: FC<
 > = (props) => {
   const { action, ...restProps } = props
   if (typeof action !== 'function') {
-    return newJSXNode({
-      tag: 'form',
-      props,
-    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(restProps as any).action = action
   }
 
   const [data, setData] = useState<FormData | null>(null)
-  const onSubmit = useCallback<(ev: SubmitEvent) => void>(async (ev: SubmitEvent) => {
-    ev.preventDefault()
-    const formData = new FormData(ev.target as HTMLFormElement)
-    setData(formData)
-    const actionRes = action(formData)
-    if (actionRes instanceof Promise) {
-      registerAction(actionRes)
-      await actionRes
-    }
-    setData(null)
-  }, [])
+  const onSubmit = useCallback<(ev: SubmitEvent | CustomEvent) => void>(
+    async (ev: SubmitEvent | CustomEvent) => {
+      const currentAction = ev.isTrusted
+        ? action
+        : (ev as CustomEvent).detail[customEventFormAction]
+      if (typeof currentAction !== 'function') {
+        return
+      }
+
+      ev.preventDefault()
+      const formData = new FormData(ev.target as HTMLFormElement)
+      setData(formData)
+      const actionRes = currentAction(formData)
+      if (actionRes instanceof Promise) {
+        registerAction(actionRes)
+        await actionRes
+      }
+      setData(null)
+    },
+    []
+  )
 
   const ref = composeRef(props.ref, (el: HTMLFormElement) => {
     el.addEventListener('submit', onSubmit)
@@ -319,6 +328,45 @@ export const form: FC<
   }) as any
 }
 
+const formActionableElement = (
+  tag: string,
+  {
+    formAction,
+    ...props
+  }: {
+    formAction?: Function | string
+    ref?: RefObject<HTMLInputElement> | ((e: HTMLInputElement) => void | (() => void))
+  }
+) => {
+  if (typeof formAction === 'function') {
+    const onClick = useCallback<(ev: MouseEvent) => void>((ev: MouseEvent) => {
+      ev.preventDefault()
+      ;(ev.currentTarget! as HTMLInputElement).form!.dispatchEvent(
+        new CustomEvent('submit', { detail: { [customEventFormAction]: formAction } })
+      )
+    }, [])
+
+    props.ref = composeRef(props.ref, (el: HTMLInputElement) => {
+      el.addEventListener('click', onClick)
+      return () => {
+        el.removeEventListener('click', onClick)
+      }
+    })
+  }
+
+  return newJSXNode({
+    tag,
+    props,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  }) as any
+}
+
+export const input: FC<PropsWithChildren<IntrinsicElements['input']>> = (props) =>
+  formActionableElement('input', props)
+
+export const button: FC<PropsWithChildren<IntrinsicElements['button']>> = (props) =>
+  formActionableElement('button', props)
+
 Object.assign(domRenderers, {
   title,
   script,
@@ -326,4 +374,6 @@ Object.assign(domRenderers, {
   link,
   meta,
   form,
+  input,
+  button,
 })

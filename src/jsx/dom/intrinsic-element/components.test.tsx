@@ -34,6 +34,7 @@ describe('intrinsic element', () => {
     global.SVGElement = dom.window.SVGElement
     global.Text = dom.window.Text
     global.FormData = dom.window.FormData
+    global.CustomEvent = dom.window.CustomEvent
     root = document.getElementById('root') as HTMLElement
   })
 
@@ -806,7 +807,7 @@ describe('intrinsic element', () => {
       }
       render(<App />, root)
       expect(root.innerHTML).toBe(
-        '<form action="/entries" method="post"><button type="submit">Submit</button></form>'
+        '<form method="post" action="/entries"><button type="submit">Submit</button></form>'
       )
     })
 
@@ -837,6 +838,134 @@ describe('intrinsic element', () => {
       await Promise.resolve()
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div><button>Toggle</button></div>')
+    })
+  })
+
+  describe('input element', () => {
+    it('should accept Function as formAction', () => {
+      const action = vi.fn()
+      const App = () => {
+        return (
+          <form>
+            <input type='text' name='name' value='Hello' />
+            <input type='submit' value='Submit' formAction={action} />
+          </form>
+        )
+      }
+      render(<App />, root)
+      root.querySelector<HTMLInputElement>('input[type="submit"]')?.click()
+      expect(action).toBeCalledTimes(1)
+      const formData = action.mock.calls[0][0]
+      expect(formData.get('name')).toBe('Hello')
+    })
+
+    it('should accept string as formAction', () => {
+      const App = () => {
+        return (
+          <form method='post'>
+            <input type='submit' formAction={'/entries'} value='Submit' />
+          </form>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<form method="post"><input type="submit" value="Submit"></form>')
+    })
+
+    it('toggle show / hide input', async () => {
+      const action = vi.fn()
+      const App = () => {
+        const [show, setShow] = useState(false)
+        return (
+          <div>
+            {show && (
+              <form method='post'>
+                <input type='submit' formAction={action} value='Submit' />
+              </form>
+            )}
+            <button onClick={() => setShow((status) => !status)}>Toggle</button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>Toggle</button></div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><form method="post"><input type="submit" value="Submit"></form><button>Toggle</button></div>'
+      )
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>Toggle</button></div>')
+    })
+  })
+
+  describe('button element', () => {
+    it('should accept Function as formAction', () => {
+      const action = vi.fn()
+      const App = () => {
+        return (
+          <form>
+            <input type='text' name='name' value='Hello' />
+            <button type='submit' formAction={action}>
+              Submit
+            </button>
+          </form>
+        )
+      }
+      render(<App />, root)
+      root.querySelector('button')?.click()
+      expect(action).toBeCalledTimes(1)
+      const formData = action.mock.calls[0][0]
+      expect(formData.get('name')).toBe('Hello')
+    })
+
+    it('should accept string as formAction', () => {
+      const App = () => {
+        return (
+          <form method='post'>
+            <button type='submit' formAction={'/entries'}>
+              Submit
+            </button>
+          </form>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<form method="post"><button type="submit">Submit</button></form>'
+      )
+    })
+
+    it('toggle show / hide', async () => {
+      const action = vi.fn()
+      const App = () => {
+        const [show, setShow] = useState(false)
+        return (
+          <div>
+            {show && (
+              <form method='post'>
+                <button formAction={action}>Submit</button>
+              </form>
+            )}
+            <button id='toggle' onClick={() => setShow((status) => !status)}>
+              Toggle
+            </button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button id="toggle">Toggle</button></div>')
+      root.querySelector<HTMLButtonElement>('#toggle')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div><form method="post"><button>Submit</button></form><button id="toggle">Toggle</button></div>'
+      )
+      root.querySelector<HTMLButtonElement>('#toggle')?.click()
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button id="toggle">Toggle</button></div>')
     })
   })
 })

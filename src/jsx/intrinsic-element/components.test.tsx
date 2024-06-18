@@ -1,4 +1,5 @@
 /** @jsxImportSource ../ */
+import { useActionState } from '../'
 
 describe('intrinsic element', () => {
   describe('document metadata', () => {
@@ -308,6 +309,23 @@ describe('intrinsic element', () => {
       )
     })
 
+    it('should be rendered permalink', () => {
+      const [, action] = useActionState(() => {}, {}, 'permalink')
+      const template = (
+        <html>
+          <head></head>
+          <body>
+            <form action={action} method='get'>
+              <input type='text' />
+            </form>
+          </body>
+        </html>
+      )
+      expect(template.toString()).toBe(
+        '<html><head></head><body><form action="permalink" method="get"><input type="text"/></form></body></html>'
+      )
+    })
+
     it('should not do special behavior if action is a string', () => {
       const template = (
         <html>
@@ -338,6 +356,42 @@ describe('intrinsic element', () => {
       expect(template.toString()).toBe(
         '<html><head></head><body><form><input type="text"/></form></body></html>'
       )
+    })
+
+    describe('input element', () => {
+      it('should be rendered as is', () => {
+        const template = <input type='text' />
+        expect(template.toString()).toBe('<input type="text"/>')
+      })
+
+      it('should be omitted "formAction" prop if it is a function', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <input type='text' formAction={() => {}} />
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head></head><body><input type="text"/></body></html>'
+        )
+      })
+
+      it('should be rendered permalink', () => {
+        const [, formAction] = useActionState(() => {}, {}, 'permalink')
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <input type='text' formAction={formAction} />
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head></head><body><input type="text" formaction="permalink"/></body></html>'
+        )
+      })
     })
   })
 })

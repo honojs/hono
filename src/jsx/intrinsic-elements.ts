@@ -223,6 +223,9 @@ export namespace JSX {
     name?: string | undefined
     type?: 'submit' | 'reset' | 'button' | undefined
     value?: string | ReadonlyArray<string> | number | undefined
+
+    // React 19 compatibility
+    formAction?: string | Function | undefined
   }
 
   interface CanvasHTMLAttributes extends HTMLAttributes {
@@ -375,6 +378,9 @@ export namespace JSX {
     type?: HTMLInputTypeAttribute | undefined
     value?: string | ReadonlyArray<string> | number | undefined
     width?: number | string | undefined
+
+    // React 19 compatibility
+    formAction?: string | Function | undefined
   }
 
   interface KeygenHTMLAttributes extends HTMLAttributes {
