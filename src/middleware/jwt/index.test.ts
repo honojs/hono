@@ -230,6 +230,7 @@ describe('JWT', () => {
         cookie: {
           key: 'cookie_name',
           secret: 'cookie_secret',
+          prefixOptions: 'host',
         },
       })
     )
@@ -254,7 +255,7 @@ describe('JWT', () => {
       const req = new Request(url, {
         headers: new Headers({
           Cookie:
-            'cookie_name=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE.i2NSvtJOXOPS9NDL1u8dqTYmMrzcD4mNSws6P6qmeV0%3D; Path=/',
+            '__Host-cookie_name=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE.i2NSvtJOXOPS9NDL1u8dqTYmMrzcD4mNSws6P6qmeV0%3D; Path=/',
         }),
       })
       const res = await app.request(req)
