@@ -1,7 +1,8 @@
 import type { Context } from '../../context.ts'
-import { getCookie } from '../../helper/cookie/index.ts'
+import { getCookie, getSignedCookie } from '../../helper/cookie/index.ts'
 import { HTTPException } from '../../http-exception.ts'
 import type { MiddlewareHandler } from '../../types.ts'
+import type { CookiePrefixOptions } from '../../utils/cookie.ts'
 import { Jwt } from '../../utils/jwt/index.ts'
 import type { AlgorithmTypes } from '../../utils/jwt/types.ts'
 import '../../context.ts'
@@ -15,7 +16,9 @@ declare module '../../context.ts' {
 
 export const jwt = (options: {
   secret: string
-  cookie?: string
+  cookie?:
+    | string
+    | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
   alg?: string
 }): MiddlewareHandler => {
   if (!options) {
@@ -43,7 +46,18 @@ export const jwt = (options: {
         token = parts[1]
       }
     } else if (options.cookie) {
-      token = getCookie(ctx)[options.cookie]
+      if (typeof options.cookie == 'string') {
+        token = getCookie(ctx, options.cookie)
+      } else if (options.cookie.secret) {
+        token = await getSignedCookie(
+          ctx,
+          options.cookie.secret,
+          options.cookie.key,
+          options.cookie.prefixOptions
+        )
+      } else {
+        token = getCookie(ctx, options.cookie.key, options.cookie.prefixOptions)
+      }
     }
 
     if (!token) {
