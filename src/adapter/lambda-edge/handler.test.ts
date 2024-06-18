@@ -1,3 +1,4 @@
+import { encodeBase64 } from '../../utils/encode'
 import { createBody, isContentTypeBinary } from './handler'
 
 describe('isContentTypeBinary', () => {
@@ -18,10 +19,11 @@ describe('isContentTypeBinary', () => {
 
 describe('createBody', () => {
   it('Should the request be a GET or HEAD, the Request must not include a Body', () => {
-    const data = Buffer.from('test')
+    const encoder = new TextEncoder()
+    const data = encoder.encode('test')
     const body = {
       action: 'read-only',
-      data: data.toString('base64'),
+      data: encodeBase64(data),
       encoding: 'base64',
       inputTruncated: false,
     }

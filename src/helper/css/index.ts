@@ -1,15 +1,20 @@
+/**
+ * @module
+ * css Helper for Hono.
+ */
+
 import { raw } from '../../helper/html'
 import { DOM_RENDERER } from '../../jsx/constants'
 import { createCssJsxDomObjects } from '../../jsx/dom/css'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
 import type { CssClassName as CssClassNameCommon, CssVariableType } from './common'
 import {
-  SELECTOR,
   CLASS_NAME,
-  STYLE_STRING,
-  SELECTORS,
-  PSEUDO_GLOBAL_SELECTOR,
   DEFAULT_STYLE_ID,
+  PSEUDO_GLOBAL_SELECTOR,
+  SELECTOR,
+  SELECTORS,
+  STYLE_STRING,
   cssCommon,
   cxCommon,
   keyframesCommon,
@@ -24,12 +29,36 @@ type usedClassNameData = [
   Record<string, true> // class name already added
 ]
 
+interface CssType {
+  (strings: TemplateStringsArray, ...values: CssVariableType[]): Promise<string>
+}
+
+interface CxType {
+  (
+    ...args: (CssClassName | Promise<string> | string | boolean | null | undefined)[]
+  ): Promise<string>
+}
+
+interface KeyframesType {
+  (strings: TemplateStringsArray, ...values: CssVariableType[]): CssClassNameCommon
+}
+
+interface ViewTransitionType {
+  (strings: TemplateStringsArray, ...values: CssVariableType[]): Promise<string>
+  (content: Promise<string>): Promise<string>
+  (): Promise<string>
+}
+
+interface StyleType {
+  (args?: { children?: Promise<string> }): HtmlEscapedString
+}
+
 /**
  * @experimental
  * `createCssContext` is an experimental feature.
  * The API might be changed.
  */
-export const createCssContext = ({ id }: { id: Readonly<string> }) => {
+export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultContextType => {
   const [cssJsxDomObject, StyleRenderToDom] = createCssJsxDomObjects({ id })
 
   const contextMap: WeakMap<object, usedClassNameData> = new WeakMap()
@@ -101,17 +130,16 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
     ;(className as HtmlEscapedString).callbacks = [addClassNameToContext]
     const promise = Promise.resolve(className)
     Object.assign(promise, cssClassName)
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     promise.toString = cssJsxDomObject.toString
     return promise
   }
 
-  const css = (strings: TemplateStringsArray, ...values: CssVariableType[]): Promise<string> => {
+  const css: CssType = (strings, ...values) => {
     return newCssClassNameObject(cssCommon(strings, values))
   }
 
-  const cx = (
-    ...args: (CssClassName | Promise<string> | string | boolean | null | undefined)[]
-  ): Promise<string> => {
+  const cx: CxType = (...args) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     args = cxCommon(args as any) as any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -120,20 +148,15 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
 
   const keyframes = keyframesCommon
 
-  type ViewTransitionType = {
-    (strings: TemplateStringsArray, ...values: CssVariableType[]): Promise<string>
-    (content: Promise<string>): Promise<string>
-    (): Promise<string>
-  }
   const viewTransition: ViewTransitionType = ((
     strings: TemplateStringsArray | Promise<string> | undefined,
     ...values: CssVariableType[]
-  ): Promise<string> => {
+  ) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return newCssClassNameObject(viewTransitionCommon(strings as any, values))
   }) as ViewTransitionType
 
-  const Style = ({ children }: { children?: Promise<string> } = {}) =>
+  const Style: StyleType = ({ children } = {}) =>
     children
       ? raw(`<style id="${id}">${(children as unknown as CssClassName)[STYLE_STRING]}</style>`)
       : raw(`<style id="${id}"></style>`)
@@ -149,7 +172,17 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
   }
 }
 
-const defaultContext = createCssContext({ id: DEFAULT_STYLE_ID })
+interface DefaultContextType {
+  css: CssType
+  cx: CxType
+  keyframes: KeyframesType
+  viewTransition: ViewTransitionType
+  Style: StyleType
+}
+
+const defaultContext: DefaultContextType = createCssContext({
+  id: DEFAULT_STYLE_ID,
+})
 
 /**
  * @experimental

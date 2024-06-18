@@ -1,11 +1,13 @@
-// @denoify-ignore
-import crypto from 'node:crypto'
+import * as nodeCrypto from 'node:crypto'
 import { vi } from 'vitest'
 
 /**
  * crypto
  */
-vi.stubGlobal('crypto', crypto)
+if (!globalThis.crypto) {
+  vi.stubGlobal('crypto', nodeCrypto)
+  vi.stubGlobal('CryptoKey', nodeCrypto.webcrypto.CryptoKey)
+}
 
 /**
  * Cache API
@@ -23,6 +25,10 @@ class MockCache {
 
   async match(key: Request | string): Promise<Response | null> {
     return this.store.get(key) || null
+  }
+
+  async keys() {
+    return this.store.keys()
   }
 
   async put(key: Request | string, response: Response): Promise<void> {

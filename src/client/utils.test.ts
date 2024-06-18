@@ -1,4 +1,10 @@
-import { deepMerge, mergePath, removeIndexString, replaceUrlParam } from './utils'
+import {
+  deepMerge,
+  mergePath,
+  removeIndexString,
+  replaceUrlParam,
+  replaceUrlProtocol,
+} from './utils'
 
 describe('mergePath', () => {
   it('Should merge paths correctly', () => {
@@ -42,11 +48,37 @@ describe('replaceUrlParams', () => {
   })
 })
 
+describe('replaceUrlProtocol', () => {
+  it('Should replace http to ws', () => {
+    const url = 'http://localhost'
+    const newUrl = replaceUrlProtocol(url, 'ws')
+    expect(newUrl).toBe('ws://localhost')
+  })
+
+  it('Should replace https to wss', () => {
+    const url = 'https://localhost'
+    const newUrl = replaceUrlProtocol(url, 'ws')
+    expect(newUrl).toBe('wss://localhost')
+  })
+
+  it('Should replace ws to http', () => {
+    const url = 'ws://localhost'
+    const newUrl = replaceUrlProtocol(url, 'http')
+    expect(newUrl).toBe('http://localhost')
+  })
+
+  it('Should replace wss to https', () => {
+    const url = 'wss://localhost'
+    const newUrl = replaceUrlProtocol(url, 'http')
+    expect(newUrl).toBe('https://localhost')
+  })
+})
+
 describe('removeIndexString', () => {
   it('Should remove last `/index` string', () => {
     let url = 'http://localhost/index'
     let newUrl = removeIndexString(url)
-    expect(newUrl).toBe('http://localhost')
+    expect(newUrl).toBe('http://localhost/')
 
     url = '/index'
     newUrl = removeIndexString(url)
@@ -65,7 +97,7 @@ describe('removeIndexString', () => {
 describe('deepMerge', () => {
   it('should return the source object if the target object is not an object', () => {
     const target = null
-    const source = { a: 1 }
+    const source = 'not an object' as unknown as Record<string, unknown>
     const result = deepMerge(target, source)
     expect(result).toEqual(source)
   })

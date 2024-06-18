@@ -1,3 +1,8 @@
+/**
+ * @module
+ * HTTP Status utility.
+ */
+
 export type InfoStatusCode = 100 | 101 | 102 | 103
 export type SuccessStatusCode = 200 | 201 | 202 | 203 | 204 | 205 | 206 | 207 | 208 | 226
 export type DeprecatedStatusCode = 305 | 306
@@ -33,20 +38,27 @@ export type ClientErrorStatusCode =
   | 431
   | 451
 export type ServerErrorStatusCode = 500 | 501 | 502 | 503 | 504 | 505 | 506 | 507 | 508 | 510 | 511
+
 /**
- * `UnOfficalStatusCode` can be used to specify an informal status code.
+ * `UnofficialStatusCode` can be used to specify an unofficial status code.
  * @example
  *
  * ```ts
- * app.get('/', (c) => {
- *   return c.text("hono is cool", 666 as UnOfficalStatusCode)
+ * app.get('/unknown', (c) => {
+ *   return c.text("Unknown Error", 520 as UnofficialStatusCode)
  * })
  * ```
+ */
+export type UnofficialStatusCode = -1
+
+/**
+ * @deprecated
+ * Use `UnofficialStatusCode` instead.
  */
 export type UnOfficalStatusCode = -1
 
 /**
- * If you want to use an unofficial status, use `UnOfficalStatusCode`.
+ * If you want to use an unofficial status, use `UnofficialStatusCode`.
  */
 export type StatusCode =
   | InfoStatusCode
@@ -54,4 +66,5 @@ export type StatusCode =
   | RedirectStatusCode
   | ClientErrorStatusCode
   | ServerErrorStatusCode
+  | UnofficialStatusCode
   | UnOfficalStatusCode

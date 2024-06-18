@@ -1,3 +1,8 @@
+/**
+ * @module
+ * MIME utility.
+ */
+
 export const getMimeType = (filename: string, mimes = baseMimes): string | undefined => {
   const regexp = /\.([a-zA-Z0-9]+?)$/
   const match = filename.match(regexp)
@@ -19,6 +24,7 @@ export const getExtension = (mimeType: string): string | undefined => {
   }
 }
 
+export { baseMimes as mimes }
 const baseMimes: Record<string, string> = {
   aac: 'audio/aac',
   avi: 'video/x-msvideo',

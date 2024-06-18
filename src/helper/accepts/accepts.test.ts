@@ -1,6 +1,6 @@
 import { Hono } from '../..'
 import type { Accept, acceptsConfig, acceptsOptions } from './accepts'
-import { parseAccept, defaultMatch, accepts } from './accepts'
+import { accepts, defaultMatch, parseAccept } from './accepts'
 
 describe('parseAccept', () => {
   test('should parse accept header', () => {

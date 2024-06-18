@@ -1,0 +1,26 @@
+name: release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  jsr:
+    name: publish-to-jsr
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Publish to JSR
+        run: deno run -A jsr:@david/publish-on-tag@0.1.3

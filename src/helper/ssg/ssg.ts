@@ -4,10 +4,18 @@ import type { Env, Schema } from '../../types'
 import { createPool } from '../../utils/concurrent'
 import { getExtension } from '../../utils/mime'
 import type { AddedSSGDataRequest, SSGParams } from './middleware'
-import { SSG_DISABLED_RESPONSE, SSG_CONTEXT } from './middleware'
-import { joinPaths, dirname, filterStaticGenerateRoutes } from './utils'
+import { SSG_CONTEXT, X_HONO_DISABLE_SSG_HEADER_KEY } from './middleware'
+import { dirname, filterStaticGenerateRoutes, joinPaths } from './utils'
 
 const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
+
+// 'default_content_type' is designed according to Bun's performance optimization,
+//  which omits Content-Type by default for text responses.
+//  This is based on benchmarks showing performance gains without Content-Type.
+//  In Hono, using `c.text()` without a Content-Type implicitly assumes 'text/plain; charset=UTF-8'.
+//  This approach maintains performance consistency across different environments.
+//  For details, see GitHub issues: oven-sh/bun#8530 and https://github.com/honojs/hono/issues/2284.
+const DEFAULT_CONTENT_TYPE = 'text/plain'
 
 /**
  * @experimental
@@ -30,8 +38,13 @@ export interface ToSSGResult {
   error?: Error
 }
 
-const generateFilePath = (routePath: string, outDir: string, mimeType: string) => {
-  const extension = determineExtension(mimeType)
+const generateFilePath = (
+  routePath: string,
+  outDir: string,
+  mimeType: string,
+  extensionMap?: Record<string, string>
+): string => {
+  const extension = determineExtension(mimeType, extensionMap)
 
   if (routePath.endsWith(`.${extension}`)) {
     return joinPaths(outDir, routePath)
@@ -62,29 +75,90 @@ const parseResponseContent = async (response: Response): Promise<string | ArrayB
   }
 }
 
-const determineExtension = (mimeType: string): string => {
-  switch (mimeType) {
-    case 'text/html':
-      return 'html'
-    case 'text/xml':
-    case 'application/xml':
-      return 'xml'
-    default: {
-      return getExtension(mimeType) || 'html'
-    }
+export const defaultExtensionMap: Record<string, string> = {
+  'text/html': 'html',
+  'text/xml': 'xml',
+  'application/xml': 'xml',
+  'application/yaml': 'yaml',
+}
+
+const determineExtension = (
+  mimeType: string,
+  userExtensionMap?: Record<string, string>
+): string => {
+  const extensionMap = userExtensionMap || defaultExtensionMap
+  if (mimeType in extensionMap) {
+    return extensionMap[mimeType]
   }
+  return getExtension(mimeType) || 'html'
 }
 
 export type BeforeRequestHook = (req: Request) => Request | false | Promise<Request | false>
 export type AfterResponseHook = (res: Response) => Response | false | Promise<Response | false>
 export type AfterGenerateHook = (result: ToSSGResult) => void | Promise<void>
 
+export const combineBeforeRequestHooks = (
+  hooks: BeforeRequestHook | BeforeRequestHook[]
+): BeforeRequestHook => {
+  if (!Array.isArray(hooks)) {
+    return hooks
+  }
+  return async (req: Request): Promise<Request | false> => {
+    let currentReq = req
+    for (const hook of hooks) {
+      const result = await hook(currentReq)
+      if (result === false) {
+        return false
+      }
+      if (result instanceof Request) {
+        currentReq = result
+      }
+    }
+    return currentReq
+  }
+}
+
+export const combineAfterResponseHooks = (
+  hooks: AfterResponseHook | AfterResponseHook[]
+): AfterResponseHook => {
+  if (!Array.isArray(hooks)) {
+    return hooks
+  }
+  return async (res: Response): Promise<Response | false> => {
+    let currentRes = res
+    for (const hook of hooks) {
+      const result = await hook(currentRes)
+      if (result === false) {
+        return false
+      }
+      if (result instanceof Response) {
+        currentRes = result
+      }
+    }
+    return currentRes
+  }
+}
+
+export const combineAfterGenerateHooks = (
+  hooks: AfterGenerateHook | AfterGenerateHook[]
+): AfterGenerateHook => {
+  if (!Array.isArray(hooks)) {
+    return hooks
+  }
+  return async (result: ToSSGResult): Promise<void> => {
+    for (const hook of hooks) {
+      await hook(result)
+    }
+  }
+}
+
 export interface ToSSGOptions {
   dir?: string
-  beforeRequestHook?: BeforeRequestHook
-  afterResponseHook?: AfterResponseHook
-  afterGenerateHook?: AfterGenerateHook
+  beforeRequestHook?: BeforeRequestHook | BeforeRequestHook[]
+  afterResponseHook?: AfterResponseHook | AfterResponseHook[]
+  afterGenerateHook?: AfterGenerateHook | AfterGenerateHook[]
   concurrency?: number
+  extensionMap?: Record<string, string>
 }
 
 /**
@@ -157,7 +231,7 @@ export const fetchRoutesContent = function* <
                       [SSG_CONTEXT]: true,
                     })
                   )
-                  if (response === SSG_DISABLED_RESPONSE) {
+                  if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) {
                     resolveReq(undefined)
                     return
                   }
@@ -170,7 +244,7 @@ export const fetchRoutesContent = function* <
                     response = maybeResponse
                   }
                   const mimeType =
-                    response.headers.get('Content-Type')?.split(';')[0] || 'text/plain'
+                    response.headers.get('Content-Type')?.split(';')[0] || DEFAULT_CONTENT_TYPE
                   const content = await parseResponseContent(response)
                   resolveReq({
                     routePath: replacedUrlParam,
@@ -204,14 +278,15 @@ const createdDirs: Set<string> = new Set()
 export const saveContentToFile = async (
   data: Promise<{ routePath: string; content: string | ArrayBuffer; mimeType: string } | undefined>,
   fsModule: FileSystemModule,
-  outDir: string
+  outDir: string,
+  extensionMap?: Record<string, string>
 ): Promise<string | undefined> => {
   const awaitedData = await data
   if (!awaitedData) {
     return
   }
   const { routePath, content, mimeType } = awaitedData
-  const filePath = generateFilePath(routePath, outDir, mimeType)
+  const filePath = generateFilePath(routePath, outDir, mimeType, extensionMap)
   const dirPath = dirname(filePath)
 
   if (!createdDirs.has(dirPath)) {
@@ -259,17 +334,23 @@ export interface ToSSGAdaptorInterface<
  * The API might be changed.
  */
 export const toSSG: ToSSGInterface = async (app, fs, options) => {
-  let result: ToSSGResult | undefined = undefined
+  let result: ToSSGResult | undefined
   const getInfoPromises: Promise<unknown>[] = []
   const savePromises: Promise<string | undefined>[] = []
   try {
     const outputDir = options?.dir ?? './static'
     const concurrency = options?.concurrency ?? DEFAULT_CONCURRENCY
 
+    const combinedBeforeRequestHook = combineBeforeRequestHooks(
+      options?.beforeRequestHook || ((req) => req)
+    )
+    const combinedAfterResponseHook = combineAfterResponseHooks(
+      options?.afterResponseHook || ((req) => req)
+    )
     const getInfoGen = fetchRoutesContent(
       app,
-      options?.beforeRequestHook,
-      options?.afterResponseHook,
+      combinedBeforeRequestHook,
+      combinedAfterResponseHook,
       concurrency
     )
     for (const getInfo of getInfoGen) {
@@ -299,6 +380,9 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
     const errorObj = error instanceof Error ? error : new Error(String(error))
     result = { success: false, files: [], error: errorObj }
   }
-  await options?.afterGenerateHook?.(result)
+  if (options?.afterGenerateHook) {
+    const conbinedAfterGenerateHooks = combineAfterGenerateHooks(options?.afterGenerateHook)
+    await conbinedAfterGenerateHooks(result)
+  }
   return result
 }

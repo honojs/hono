@@ -1,25 +1,39 @@
-import { jsx, memo, Fragment, isValidElement, cloneElement } from './base'
+/**
+ * @module
+ * JSX for Hono.
+ */
+
+import { Fragment, cloneElement, isValidElement, jsx, memo, reactAPICompatVersion } from './base'
+import type { DOMAttributes } from './base'
+import { Children } from './children'
 import { ErrorBoundary } from './components'
 import { createContext, useContext } from './context'
 import {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  use,
+  createRef,
+  forwardRef,
   startTransition,
-  useTransition,
-  useDeferredValue,
   startViewTransition,
-  useViewTransition,
-  useMemo,
-  useLayoutEffect,
-  useReducer,
+  use,
+  useCallback,
   useDebugValue,
+  useDeferredValue,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useInsertionEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+  useViewTransition,
 } from './hooks'
 import { Suspense } from './streaming'
 
 export {
+  reactAPICompatVersion as version,
   jsx,
   memo,
   Fragment,
@@ -34,6 +48,7 @@ export {
   useRef,
   useCallback,
   useReducer,
+  useId,
   useDebugValue,
   use,
   startTransition,
@@ -43,10 +58,18 @@ export {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  useInsertionEffect,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
   Suspense,
+  Children,
+  DOMAttributes,
 }
 
 export default {
+  version: reactAPICompatVersion,
   memo,
   Fragment,
   isValidElement,
@@ -60,6 +83,7 @@ export default {
   useRef,
   useCallback,
   useReducer,
+  useId,
   useDebugValue,
   use,
   startTransition,
@@ -69,9 +93,15 @@ export default {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  useInsertionEffect,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
   Suspense,
+  Children,
 }
 
-// TODO: change to `export type *` after denoify bug is fixed
-// https://github.com/garronej/denoify/issues/124
-export * from './types'
+export type * from './types'
+
+export type { JSX } from './intrinsic-elements'

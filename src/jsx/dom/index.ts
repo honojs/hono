@@ -1,34 +1,51 @@
-import type { Props, Child, JSXNode } from '../base'
-import { memo, isValidElement } from '../base'
+/**
+ * @module
+ * This module provides APIs for `hono/jsx/dom`.
+ */
+
+import { isValidElement, memo, reactAPICompatVersion } from '../base'
+import type { Child, DOMAttributes, JSX, JSXNode, Props } from '../base'
+import { Children } from '../children'
 import { useContext } from '../context'
 import {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  use,
+  createRef,
+  forwardRef,
   startTransition,
-  useTransition,
-  useDeferredValue,
   startViewTransition,
-  useViewTransition,
-  useMemo,
-  useLayoutEffect,
-  useReducer,
+  use,
+  useCallback,
   useDebugValue,
+  useDeferredValue,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useInsertionEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+  useViewTransition,
 } from '../hooks'
-import { Suspense, ErrorBoundary } from './components'
+import { ErrorBoundary, Suspense } from './components'
 import { createContext } from './context'
-import { jsx } from './jsx-runtime'
+import { Fragment, jsx } from './jsx-runtime'
+import { createPortal, flushSync } from './render'
 
 export { render } from './render'
 
 const createElement = (
   tag: string | ((props: Props) => JSXNode),
-  props: Props,
+  props: Props | null,
   ...children: Child[]
 ): JSXNode => {
-  const jsxProps: Props = { ...props, children }
+  const jsxProps: Props = props ? { ...props } : {}
+  if (children.length) {
+    jsxProps.children = children.length === 1 ? children[0] : children
+  }
+
   let key = undefined
   if ('key' in jsxProps) {
     key = jsxProps.key
@@ -48,13 +65,14 @@ const cloneElement = <T extends JSXNode | JSX.Element>(
     {
       ...(element as JSXNode).props,
       ...props,
-      children: children.length ? children : (element as JSXNode).children,
+      children: children.length ? children : (element as JSXNode).props.children,
     },
     (element as JSXNode).key
   ) as T
 }
 
 export {
+  reactAPICompatVersion as version,
   createElement as jsx,
   useState,
   useEffect,
@@ -68,8 +86,14 @@ export {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  useInsertionEffect,
   useReducer,
+  useId,
   useDebugValue,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
   Suspense,
   ErrorBoundary,
   createContext,
@@ -78,9 +102,15 @@ export {
   isValidElement,
   createElement,
   cloneElement,
+  Children,
+  Fragment,
+  DOMAttributes,
+  flushSync,
+  createPortal,
 }
 
 export default {
+  version: reactAPICompatVersion,
   useState,
   useEffect,
   useRef,
@@ -93,8 +123,14 @@ export default {
   useViewTransition,
   useMemo,
   useLayoutEffect,
+  useInsertionEffect,
   useReducer,
+  useId,
   useDebugValue,
+  createRef,
+  forwardRef,
+  useImperativeHandle,
+  useSyncExternalStore,
   Suspense,
   ErrorBoundary,
   createContext,
@@ -103,6 +139,12 @@ export default {
   isValidElement,
   createElement,
   cloneElement,
+  Children,
+  Fragment,
+  flushSync,
+  createPortal,
 }
 
 export type { Context } from '../context'
+
+export type * from '../types'

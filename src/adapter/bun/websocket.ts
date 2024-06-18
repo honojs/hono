@@ -1,11 +1,11 @@
-// @denoify-ignore
-import {
-  createWSMessageEvent,
-  type UpgradeWebSocket,
-  type WSContext,
-  type WSEvents,
-  type WSMessageReceive,
+import { createWSMessageEvent } from '../../helper/websocket'
+import type {
+  UpgradeWebSocket,
+  WSContext,
+  WSEvents,
+  WSMessageReceive,
 } from '../../helper/websocket'
+import { getBunServer } from './server'
 
 interface BunServerWebSocket<T> {
   send(data: string | ArrayBufferLike, compress?: boolean): void
@@ -13,18 +13,11 @@ interface BunServerWebSocket<T> {
   data: T
   readyState: 0 | 1 | 2 | 3
 }
-interface BunServer {
-  upgrade<T>(
-    req: Request,
-    options?: {
-      data: T
-    }
-  ): boolean
-}
+
 interface BunWebSocketHandler<T> {
   open(ws: BunServerWebSocket<T>): void
   close(ws: BunServerWebSocket<T>, code?: number, reason?: string): void
-  message(ws: BunServerWebSocket<T>, message: string | Buffer): void
+  message(ws: BunServerWebSocket<T>, message: string | Uint8Array): void
 }
 interface CreateWebSocket {
   (): {
@@ -61,7 +54,10 @@ export const createBunWebSocket: CreateWebSocket = () => {
 
   const upgradeWebSocket: UpgradeWebSocket = (createEvents) => {
     return async (c, next) => {
-      const server = c.env as BunServer
+      const server = getBunServer(c)
+      if (!server) {
+        throw new TypeError('env has to include the 2nd argument of fetch.')
+      }
       const connId = websocketConns.push(await createEvents(c)) - 1
       const upgradeResult = server.upgrade<BunWebSocketData>(c.req.raw, {
         data: {

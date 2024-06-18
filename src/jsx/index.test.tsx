@@ -1,10 +1,9 @@
-// @denoify-ignore
+/** @jsxImportSource ./ */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from '../helper/html'
 import { Hono } from '../hono'
 import { Suspense, renderToReadableStream } from './streaming'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import DefaultExport, { jsx, memo, Fragment, createContext, useContext } from '.'
+import DefaultExport, { Fragment, createContext, memo, useContext, version } from '.'
 import type { Context, FC, PropsWithChildren } from '.'
 
 interface SiteData {
@@ -385,6 +384,10 @@ describe('render to string', () => {
       const template = <h1 style='color:red;font-size:small'>Hello</h1>
       expect(template.toString()).toBe('<h1 style="color:red;font-size:small">Hello</h1>')
     })
+    it('should render variable without any name conversion', () => {
+      const template = <h1 style={{ '--myVar': 1 }}>Hello</h1>
+      expect(template.toString()).toBe('<h1 style="--myVar:1px">Hello</h1>')
+    })
   })
 
   describe('HtmlEscaped in props', () => {
@@ -726,8 +729,15 @@ d.replaceWith(c.content)
   })
 })
 
+describe('version', () => {
+  it('should be defined with semantic versioning format', () => {
+    expect(version).toMatch(/^\d+\.\d+\.\d+-hono-jsx$/)
+  })
+})
+
 describe('default export', () => {
   ;[
+    'version',
     'memo',
     'Fragment',
     'isValidElement',
@@ -742,6 +752,10 @@ describe('default export', () => {
     'useCallback',
     'useReducer',
     'useDebugValue',
+    'createRef',
+    'forwardRef',
+    'useImperativeHandle',
+    'useSyncExternalStore',
     'use',
     'startTransition',
     'useTransition',
@@ -750,6 +764,7 @@ describe('default export', () => {
     'useViewTransition',
     'useMemo',
     'useLayoutEffect',
+    'useInsertionEffect',
     'Suspense',
   ].forEach((key) => {
     it(key, () => {

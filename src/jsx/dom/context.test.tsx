@@ -1,12 +1,14 @@
+/** @jsxImportSource ../ */
 import { JSDOM } from 'jsdom'
-import { createContext as createContextCommon, useContext as useContextCommon } from '..' // for common
-import { use, Suspense } from '..'
+import {
+  Suspense,
+  createContext as createContextCommon,
+  use,
+  useContext as useContextCommon,
+} from '..' // for common
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { jsx, Fragment } from '..'
-import { createContext as createContextDom, useContext as useContextDom } from '.' // for dom
-import { render } from '.'
+import { createContext as createContextDom, render, useContext as useContextDom, useState } from '.' // for dom
 
 runner('Common', createContextCommon, useContextCommon)
 runner('DOM', createContextDom, useContextDom)
@@ -50,6 +52,35 @@ function runner(
         const App = <Component />
         render(App, root)
         expect(root.innerHTML).toBe('<p>1</p>')
+      })
+
+      it('simple context with state', async () => {
+        const Context = createContext(0)
+        const Content = () => {
+          const [count, setCount] = useState(0)
+          const num = useContext(Context)
+          return (
+            <>
+              <p>
+                {num} - {count}
+              </p>
+              <button onClick={() => setCount(count + 1)}>+</button>
+            </>
+          )
+        }
+        const Component = () => {
+          return (
+            <Context.Provider value={1}>
+              <Content />
+            </Context.Provider>
+          )
+        }
+        const App = <Component />
+        render(App, root)
+        expect(root.innerHTML).toBe('<p>1 - 0</p><button>+</button>')
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<p>1 - 1</p><button>+</button>')
       })
 
       it('multiple provider', async () => {

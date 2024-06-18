@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.1.3",
+  "version": "4.4.6",
   "description": "Ultrafast web framework for the Edges",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -16,21 +16,20 @@
     "test:bun": "bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
     "test:fastly": "vitest --run --config ./runtime_tests/fastly/vitest.config.ts",
     "test:node": "vitest --run --config ./runtime_tests/node/vitest.config.ts",
-    "test:wrangler": "vitest --run --config ./runtime_tests/wrangler/vitest.config.ts",
+    "test:workerd": "vitest --run --config ./runtime_tests/workerd/vitest.config.ts",
     "test:lambda": "vitest --run --config ./runtime_tests/lambda/vitest.config.ts",
     "test:lambda-edge": "vitest --run --config ./runtime_tests/lambda-edge/vitest.config.ts",
-    "test:all": "bun run test && bun test:deno && bun test:bun && bun test:fastly && bun test:node && bun test:wrangler && bun test:lambda && bun test:lambda-edge",
+    "test:all": "bun run test && bun test:deno && bun test:bun && bun test:fastly && bun test:node && bun test:workerd && bun test:lambda && bun test:lambda-edge",
     "lint": "eslint --ext js,ts,tsx src runtime_tests",
     "lint:fix": "eslint --ext js,ts,tsx src runtime_tests --fix",
-    "format": "prettier --check \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
-    "format:fix": "prettier --write \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
-    "denoify": "rimraf deno_dist && denoify && rimraf \"deno_dist/**/*.test.{ts,tsx}\"",
+    "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
+    "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
     "build": "rimraf dist && tsx ./build.ts && bun run copy:package.cjs.json",
     "postbuild": "publint",
     "watch": "rimraf dist && tsx ./build.ts --watch && bun run copy:package.cjs.json",
     "coverage": "vitest --run --coverage",
-    "prerelease": "bun denoify && bun test:deno && bun run build",
+    "prerelease": "bun test:deno && bun run build",
     "release": "np"
   },
   "exports": {
@@ -114,6 +113,11 @@
       "import": "./dist/middleware/etag/index.js",
       "require": "./dist/cjs/middleware/etag/index.js"
     },
+    "./trailing-slash": {
+      "types": "./dist/types/middleware/trailing-slash/index.d.ts",
+      "import": "./dist/middleware/trailing-slash/index.js",
+      "require": "./dist/cjs/middleware/trailing-slash/index.js"
+    },
     "./html": {
       "types": "./dist/types/helper/html/index.d.ts",
       "import": "./dist/helper/html/index.js",
@@ -164,6 +168,11 @@
       "import": "./dist/jsx/dom/jsx-runtime.js",
       "require": "./dist/cjs/jsx/dom/jsx-runtime.js"
     },
+    "./jsx/dom/client": {
+      "types": "./dist/types/jsx/dom/client.d.ts",
+      "import": "./dist/jsx/dom/client.js",
+      "require": "./dist/cjs/jsx/dom/client.js"
+    },
     "./jsx/dom/css": {
       "types": "./dist/types/jsx/dom/css.d.ts",
       "import": "./dist/jsx/dom/css.js",
@@ -174,6 +183,11 @@
       "import": "./dist/middleware/jwt/index.js",
       "require": "./dist/cjs/middleware/jwt/index.js"
     },
+    "./timeout": {
+      "types": "./dist/types/middleware/timeout/index.d.ts",
+      "import": "./dist/middleware/timeout/index.js",
+      "require": "./dist/cjs/middleware/timeout/index.js"
+    },
     "./timing": {
       "types": "./dist/types/middleware/timing/index.d.ts",
       "import": "./dist/middleware/timing/index.js",
@@ -183,6 +197,11 @@
       "types": "./dist/types/middleware/logger/index.d.ts",
       "import": "./dist/middleware/logger/index.js",
       "require": "./dist/cjs/middleware/logger/index.js"
+    },
+    "./method-override": {
+      "types": "./dist/types/middleware/method-override/index.d.ts",
+      "import": "./dist/middleware/method-override/index.js",
+      "require": "./dist/cjs/middleware/method-override/index.js"
     },
     "./powered-by": {
       "types": "./dist/types/middleware/powered-by/index.d.ts",
@@ -269,6 +288,11 @@
       "import": "./dist/helper/factory/index.js",
       "require": "./dist/cjs/helper/factory/index.js"
     },
+    "./serve-static": {
+      "types": "./dist/types/middleware/serve-static/index.d.ts",
+      "import": "./dist/middleware/serve-static/index.js",
+      "require": "./dist/cjs/middleware/serve-static/index.js"
+    },
     "./cloudflare-workers": {
       "types": "./dist/types/adapter/cloudflare-workers/index.d.ts",
       "import": "./dist/adapter/cloudflare-workers/index.js",
@@ -323,6 +347,11 @@
       "types": "./dist/types/helper/websocket/index.d.ts",
       "import": "./dist/helper/websocket/index.js",
       "require": "./dist/cjs/helper/websocket/index.js"
+    },
+    "./conninfo": {
+      "types": "./dist/types/helper/conninfo/index.d.ts",
+      "import": "./dist/helper/conninfo/index.js",
+      "require": "./dist/cjs/helper/conninfo/index.js"
     }
   },
   "typesVersions": {
@@ -372,6 +401,9 @@
       "etag": [
         "./dist/types/middleware/etag"
       ],
+      "trailing-slash": [
+        "./dist/types/middleware/trailing-slash"
+      ],
       "html": [
         "./dist/types/helper/html"
       ],
@@ -396,17 +428,26 @@
       "jsx/dom": [
         "./dist/types/jsx/dom"
       ],
+      "jsx/dom/client": [
+        "./dist/types/jsx/dom/client.d.ts"
+      ],
       "jsx/dom/css": [
         "./dist/types/jsx/dom/css.d.ts"
       ],
       "jwt": [
         "./dist/types/middleware/jwt"
       ],
+      "timeout": [
+        "./dist/types/middleware/timeout"
+      ],
       "timing": [
         "./dist/types/middleware/timing"
       ],
       "logger": [
         "./dist/types/middleware/logger"
+      ],
+      "method-override": [
+        "./dist/types/middleware/method-override"
       ],
       "powered-by": [
         "./dist/types/middleware/powered-by"
@@ -459,6 +500,9 @@
       "factory": [
         "./dist/types/helper/factory/index.d.ts"
       ],
+      "serve-static": [
+        "./dist/types/middleware/serve-static"
+      ],
       "cloudflare-workers": [
         "./dist/types/adapter/cloudflare-workers"
       ],
@@ -491,6 +535,9 @@
       ],
       "ws": [
         "./dist/types/helper/websocket"
+      ],
+      "conninfo": [
+        "./dist/types/helper/conninfo"
       ]
     }
   },
@@ -522,8 +569,7 @@
     "nodejs"
   ],
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20231121.0",
-    "@hono/eslint-config": "^0.0.4",
+    "@hono/eslint-config": "^0.0.6",
     "@hono/node-server": "^1.8.2",
     "@types/crypto-js": "^4.1.1",
     "@types/glob": "^8.0.0",
@@ -533,12 +579,11 @@
     "@vitest/coverage-v8": "^1.1.0",
     "arg": "^5.0.2",
     "crypto-js": "^4.1.1",
-    "denoify": "^1.6.6",
     "esbuild": "^0.15.12",
     "eslint": "^8.55.0",
     "glob": "7.2.3",
     "jsdom": "^22.1.0",
-    "msw": "1.3.2",
+    "msw": "^2.3.0",
     "np": "7.7.0",
     "prettier": "^2.6.2",
     "publint": "^0.1.8",
@@ -548,7 +593,8 @@
     "typescript": "^5.3.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
     "vitest": "^1.2.2",
-    "wrangler": "3.17.1",
+    "wrangler": "^3.58.0",
+    "ws": "^8.17.0",
     "zod": "^3.20.2"
   },
   "engines": {

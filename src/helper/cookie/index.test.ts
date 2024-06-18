@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { getCookie, getSignedCookie, setCookie, setSignedCookie, deleteCookie } from '.'
+import { deleteCookie, getCookie, getSignedCookie, setCookie, setSignedCookie } from '.'
 
 describe('Cookie Middleware', () => {
   describe('Parse cookie', () => {
@@ -415,6 +415,20 @@ describe('Cookie Middleware', () => {
       expect(res2.status).toBe(200)
       const header2 = res2.headers.get('Set-Cookie')
       expect(header2).toBe('delicious_cookie=; Max-Age=0; Domain=example.com; Path=/; Secure')
+    })
+
+    app.get('/delete-cookie-with-deleted-value', (c) => {
+      const deleted = deleteCookie(c, 'delicious_cookie')
+      return c.text(deleted || '')
+    })
+
+    it('Get deleted value', async () => {
+      const cookieString = 'delicious_cookie=choco'
+      const req = new Request('http://localhost/delete-cookie-with-deleted-value')
+      req.headers.set('Cookie', cookieString)
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('choco')
     })
   })
 })

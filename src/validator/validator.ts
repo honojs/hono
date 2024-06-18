@@ -1,7 +1,7 @@
 import type { Context } from '../context'
 import { getCookie } from '../helper/cookie'
 import { HTTPException } from '../http-exception'
-import type { Env, ValidationTargets, MiddlewareHandler, TypedResponse } from '../types'
+import type { Env, MiddlewareHandler, TypedResponse, ValidationTargets } from '../types'
 import type { BodyData } from '../utils/body'
 import { bufferToFormData } from '../utils/buffer'
 
@@ -34,14 +34,18 @@ export const validator = <
   V extends {
     in: {
       [K in U]: K extends 'json'
-        ? InputType
+        ? unknown extends InputType
+          ? OutputTypeExcludeResponseType
+          : InputType
         : { [K2 in keyof OutputTypeExcludeResponseType]: ValidationTargets[K][K2] }
     }
     out: { [K in U]: OutputTypeExcludeResponseType }
   } = {
     in: {
       [K in U]: K extends 'json'
-        ? InputType
+        ? unknown extends InputType
+          ? OutputTypeExcludeResponseType
+          : InputType
         : { [K2 in keyof OutputTypeExcludeResponseType]: ValidationTargets[K][K2] }
     }
     out: { [K in U]: OutputTypeExcludeResponseType }
@@ -60,34 +64,15 @@ export const validator = <
   return async (c, next) => {
     let value = {}
     const contentType = c.req.header('Content-Type')
-    const bodyTypes = ['text', 'arrayBuffer', 'blob']
 
     switch (target) {
       case 'json':
-        if (!contentType || !contentType.startsWith('application/json')) {
+        if (!contentType || !/^application\/([a-z-\.]+\+)?json/.test(contentType)) {
           const message = `Invalid HTTP header: Content-Type=${contentType}`
           throw new HTTPException(400, { message })
         }
-
-        if (c.req.bodyCache.json) {
-          value = c.req.bodyCache.json
-          break
-        }
-
         try {
-          let arrayBuffer: ArrayBuffer | undefined = undefined
-          for (const type of bodyTypes) {
-            // @ts-expect-error bodyCache[type] is not typed
-            const body = c.req.bodyCache[type]
-            if (body) {
-              arrayBuffer = await new Response(await body).arrayBuffer()
-              break
-            }
-          }
-          arrayBuffer ??= await c.req.raw.arrayBuffer()
-          value = await new Response(arrayBuffer).json()
-          c.req.bodyCache.json = value
-          c.req.bodyCache.arrayBuffer = arrayBuffer
+          value = await c.req.json()
         } catch {
           const message = 'Malformed JSON in request body'
           throw new HTTPException(400, { message })
@@ -99,29 +84,27 @@ export const validator = <
         }
 
         if (c.req.bodyCache.formData) {
-          value = c.req.bodyCache.formData
+          value = await c.req.bodyCache.formData
           break
         }
 
         try {
-          let arrayBuffer: ArrayBuffer | undefined = undefined
-          for (const type of bodyTypes) {
-            // @ts-expect-error bodyCache[type] is not typed
-            const body = c.req.bodyCache[type]
-            if (body) {
-              arrayBuffer = await new Response(await body).arrayBuffer()
-              break
-            }
-          }
-          arrayBuffer ??= await c.req.arrayBuffer()
+          const arrayBuffer = await c.req.arrayBuffer()
           const formData = await bufferToFormData(arrayBuffer, contentType)
-          const form: BodyData = {}
+          const form: BodyData<{ all: true }> = {}
           formData.forEach((value, key) => {
-            form[key] = value
+            if (key.endsWith('[]')) {
+              if (form[key] === undefined) {
+                form[key] = [value]
+              } else if (Array.isArray(form[key])) {
+                ;(form[key] as unknown[]).push(value)
+              }
+            } else {
+              form[key] = value
+            }
           })
           value = form
           c.req.bodyCache.formData = formData
-          c.req.bodyCache.arrayBuffer = arrayBuffer
         } catch (e) {
           let message = 'Malformed FormData request.'
           message += e instanceof Error ? ` ${e.message}` : ` ${String(e)}`

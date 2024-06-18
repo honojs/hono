@@ -15,7 +15,19 @@ export const replaceUrlParam = (urlString: string, params: Record<string, string
   return urlString
 }
 
+export const replaceUrlProtocol = (urlString: string, protocol: 'ws' | 'http') => {
+  switch (protocol) {
+    case 'ws':
+      return urlString.replace(/^http/, 'ws')
+    case 'http':
+      return urlString.replace(/^ws/, 'http')
+  }
+}
+
 export const removeIndexString = (urlSting: string) => {
+  if (/^https?:\/\/[^\/]+?\/index$/.test(urlSting)) {
+    return urlSting.replace(/\/index$/, '/')
+  }
   return urlSting.replace(/\/index$/, '')
 }
 

@@ -1,8 +1,7 @@
-// @denoify-ignore
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 import type { Hono } from '../../hono'
 
-import { encodeBase64 } from '../../utils/encode'
+import { decodeBase64, encodeBase64 } from '../../utils/encode'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -111,13 +110,15 @@ const convertHeaders = (headers: Headers): CloudFrontHeaders => {
   return cfHeaders
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const handle = (app: Hono<any>) => {
-  return async (
-    event: CloudFrontEdgeEvent,
-    context?: CloudFrontContext,
-    callback?: Callback
-  ): Promise<CloudFrontResult> => {
+export const handle = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app: Hono<any>
+): ((
+  event: CloudFrontEdgeEvent,
+  context?: CloudFrontContext,
+  callback?: Callback
+) => Promise<CloudFrontResult>) => {
+  return async (event, context?, callback?) => {
     const res = await app.fetch(createRequest(event), {
       event,
       context,
@@ -144,7 +145,7 @@ const createResult = async (res: Response): Promise<CloudFrontResult> => {
   }
 }
 
-const createRequest = (event: CloudFrontEdgeEvent) => {
+const createRequest = (event: CloudFrontEdgeEvent): Request => {
   const queryString = event.Records[0].cf.request.querystring
   const urlPath = `https://${event.Records[0].cf.config.distributionDomainName}${event.Records[0].cf.request.uri}`
   const url = queryString ? `${urlPath}?${queryString}` : urlPath
@@ -165,7 +166,10 @@ const createRequest = (event: CloudFrontEdgeEvent) => {
   })
 }
 
-export const createBody = (method: string, requestBody: CloudFrontRequest['body']) => {
+export const createBody = (
+  method: string,
+  requestBody: CloudFrontRequest['body']
+): string | Uint8Array | undefined => {
   if (!requestBody || !requestBody.data) {
     return undefined
   }
@@ -173,12 +177,12 @@ export const createBody = (method: string, requestBody: CloudFrontRequest['body'
     return undefined
   }
   if (requestBody.encoding === 'base64') {
-    return Buffer.from(requestBody.data, 'base64')
+    return decodeBase64(requestBody.data)
   }
   return requestBody.data
 }
 
-export const isContentTypeBinary = (contentType: string) => {
+export const isContentTypeBinary = (contentType: string): boolean => {
   return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
     contentType
   )

@@ -20,8 +20,8 @@ describe('upgradeWebSocket middleware', () => {
     app.get(
       '/ws',
       upgradeWebSocket(() => ({
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         onMessage(evt, ws) {
-          console.log('evt')
           resolve(evt.data)
         },
       }))

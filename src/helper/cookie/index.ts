@@ -1,6 +1,11 @@
+/**
+ * @module
+ * Cookie Helper for Hono.
+ */
+
 import type { Context } from '../../context'
 import { parse, parseSigned, serialize, serializeSigned } from '../../utils/cookie'
-import type { CookieOptions, Cookie, SignedCookie, CookiePrefixOptions } from '../../utils/cookie'
+import type { Cookie, CookieOptions, CookiePrefixOptions, SignedCookie } from '../../utils/cookie'
 
 interface GetCookie {
   (c: Context, key: string): string | undefined
@@ -118,6 +123,8 @@ export const setSignedCookie = async (
   c.header('set-cookie', cookie, { append: true })
 }
 
-export const deleteCookie = (c: Context, name: string, opt?: CookieOptions): void => {
+export const deleteCookie = (c: Context, name: string, opt?: CookieOptions): string | undefined => {
+  const deletedCookie = getCookie(c, name)
   setCookie(c, name, '', { ...opt, maxAge: 0 })
+  return deletedCookie
 }

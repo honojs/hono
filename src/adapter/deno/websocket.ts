@@ -4,9 +4,9 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
   if (c.req.header('upgrade') !== 'websocket') {
     return await next()
   }
-  const { response, socket } = Deno.upgradeWebSocket(c.req.raw)
 
   const events = await createEvents(c)
+  const { response, socket } = Deno.upgradeWebSocket(c.req.raw)
 
   const wsContext: WSContext = {
     binaryType: 'arraybuffer',
@@ -21,10 +21,10 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
     url: socket.url ? new URL(socket.url) : null,
     send: (source) => socket.send(source),
   }
-  socket.onopen = (evt) => events.onOpen && events.onOpen(evt, wsContext)
-  socket.onmessage = (evt) => events.onMessage && events.onMessage(evt, wsContext)
-  socket.onclose = (evt) => events.onClose && events.onClose(evt, wsContext)
-  socket.onerror = (evt) => events.onError && events.onError(evt, wsContext)
+  socket.onopen = (evt) => events.onOpen?.(evt, wsContext)
+  socket.onmessage = (evt) => events.onMessage?.(evt, wsContext)
+  socket.onclose = (evt) => events.onClose?.(evt, wsContext)
+  socket.onerror = (evt) => events.onError?.(evt, wsContext)
 
   return response
 }

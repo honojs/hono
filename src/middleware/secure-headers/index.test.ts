@@ -1,7 +1,15 @@
 /* eslint-disable quotes */
 import { Hono } from '../../hono'
 import { poweredBy } from '../powered-by'
-import { secureHeaders } from '.'
+import { NONCE, secureHeaders } from '.'
+import type { ContentSecurityPolicyOptionHandler } from '.'
+
+declare module '../..' {
+  interface ContextVariableMap {
+    ['test-scriptSrc-nonce']?: string
+    ['test-styleSrc-nonce']?: string
+  }
+}
 
 describe('Secure Headers Middleware', () => {
   it('default middleware', async () => {
@@ -321,5 +329,80 @@ describe('Secure Headers Middleware', () => {
       'e1="https://a.example.com/reports", e2="https://b.example.com/reports"'
     )
     expect(res4.headers.get('Content-Security-Policy')).toEqual("default-src 'self'; report-to e1")
+  })
+
+  it('CSP nonce for script-src', async () => {
+    const app = new Hono()
+    app.use(
+      '/test',
+      secureHeaders({
+        contentSecurityPolicy: {
+          scriptSrc: ["'self'", NONCE],
+        },
+      })
+    )
+
+    app.all('*', async (c) => {
+      return c.text(`nonce: ${c.get('secureHeadersNonce')}`)
+    })
+
+    const res = await app.request('/test')
+    const csp = res.headers.get('Content-Security-Policy')
+    const nonce = csp?.match(/script-src 'self' 'nonce-([a-zA-Z0-9+/]+=*)'/)?.[1] || ''
+    expect(csp).toMatch(`script-src 'self' 'nonce-${nonce}'`)
+    expect(await res.text()).toEqual(`nonce: ${nonce}`)
+  })
+
+  it('CSP nonce for script-src and style-src', async () => {
+    const app = new Hono()
+    app.use(
+      '/test',
+      secureHeaders({
+        contentSecurityPolicy: {
+          scriptSrc: ["'self'", NONCE],
+          styleSrc: ["'self'", NONCE],
+        },
+      })
+    )
+
+    app.all('*', async (c) => {
+      return c.text(`nonce: ${c.get('secureHeadersNonce')}`)
+    })
+
+    const res = await app.request('/test')
+    const csp = res.headers.get('Content-Security-Policy')
+    const nonce = csp?.match(/script-src 'self' 'nonce-([a-zA-Z0-9+/]+=*)'/)?.[1] || ''
+    expect(csp).toMatch(`script-src 'self' 'nonce-${nonce}'`)
+    expect(csp).toMatch(`style-src 'self' 'nonce-${nonce}'`)
+    expect(await res.text()).toEqual(`nonce: ${nonce}`)
+  })
+
+  it('CSP nonce by app own function', async () => {
+    const app = new Hono()
+    const setNonce: ContentSecurityPolicyOptionHandler = (ctx, directive) => {
+      ctx.set(`test-${directive}-nonce`, directive)
+      return `'nonce-${directive}'`
+    }
+    app.use(
+      '/test',
+      secureHeaders({
+        contentSecurityPolicy: {
+          scriptSrc: ["'self'", setNonce],
+          styleSrc: ["'self'", setNonce],
+        },
+      })
+    )
+
+    app.all('*', async (c) => {
+      return c.text(
+        `script: ${c.get('test-scriptSrc-nonce')}, style: ${c.get('test-styleSrc-nonce')}`
+      )
+    })
+
+    const res = await app.request('/test')
+    const csp = res.headers.get('Content-Security-Policy')
+    expect(csp).toMatch(`script-src 'self' 'nonce-scriptSrc'`)
+    expect(csp).toMatch(`style-src 'self' 'nonce-styleSrc'`)
+    expect(await res.text()).toEqual('script: scriptSrc, style: styleSrc')
   })
 })

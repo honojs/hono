@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Cookie utility.
+ */
+
 import { decodeURIComponent_ } from './url'
 
 export type Cookie = Record<string, string>
@@ -17,7 +22,7 @@ export type CookieOptions = {
   path?: string
   secure?: boolean
   signingSecret?: string
-  sameSite?: 'Strict' | 'Lax' | 'None'
+  sameSite?: 'Strict' | 'Lax' | 'None' | 'strict' | 'lax' | 'none'
   partitioned?: boolean
   prefix?: CookiePrefixOptions
 } & PartitionCookieConstraint
@@ -188,7 +193,7 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   }
 
   if (opt.sameSite) {
-    cookie += `; SameSite=${opt.sameSite}`
+    cookie += `; SameSite=${opt.sameSite.charAt(0).toUpperCase() + opt.sameSite.slice(1)}`
   }
 
   if (opt.partitioned) {

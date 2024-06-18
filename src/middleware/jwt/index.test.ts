@@ -1,4 +1,5 @@
 import { Hono } from '../../hono'
+import { HTTPException } from '../../http-exception'
 import { jwt } from '.'
 
 describe('JWT', () => {
@@ -214,55 +215,30 @@ describe('JWT', () => {
       expect(handlerExecuted).toBeFalsy()
     })
   })
-  describe('Credentials in signed cookie', () => {
-    let handlerExecuted: boolean
 
-    beforeEach(() => {
-      handlerExecuted = false
-    })
-
+  describe('Error handling with `cause`', () => {
     const app = new Hono()
 
-    app.use(
-      '/auth/*',
-      jwt({
-        secret: 'a-secret',
-        cookie: {
-          key: 'cookie_name',
-          secret: 'cookie_secret',
-          prefixOptions: 'host',
-        },
-      })
-    )
+    app.use('/auth/*', jwt({ secret: 'a-secret' }))
+    app.get('/auth/*', (c) => c.text('Authorized'))
 
-    app.get('/auth/*', async (c) => {
-      handlerExecuted = true
-      const payload = c.get('jwtPayload')
-      return c.json(payload)
+    app.onError((e, c) => {
+      if (e instanceof HTTPException && e.cause instanceof Error) {
+        return c.json({ name: e.cause.name, message: e.cause.message }, 401)
+      }
+      return c.text(e.message, 401)
     })
 
     it('Should not authorize', async () => {
-      const req = new Request('http://localhost/auth/a')
+      const credential = 'abc.def.ghi'
+      const req = new Request('http://localhost/auth')
+      req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
-      expect(res).not.toBeNull()
       expect(res.status).toBe(401)
-      expect(await res.text()).toBe('Unauthorized')
-      expect(handlerExecuted).toBeFalsy()
-    })
-
-    it('Should authorize', async () => {
-      const url = 'http://localhost/auth/a'
-      const req = new Request(url, {
-        headers: new Headers({
-          Cookie:
-            '__Host-cookie_name=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE.i2NSvtJOXOPS9NDL1u8dqTYmMrzcD4mNSws6P6qmeV0%3D; Path=/',
-        }),
+      expect(await res.json()).toEqual({
+        name: 'JwtTokenInvalid',
+        message: `invalid JWT token: ${credential}`,
       })
-      const res = await app.request(req)
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-      expect(await res.json()).toEqual({ message: 'hello world' })
-      expect(handlerExecuted).toBeTruthy()
     })
   })
 })

@@ -1,3 +1,8 @@
+/**
+ * @module
+ * WebSocket Helper for Hono.
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
@@ -12,8 +17,6 @@ export interface WSEvents {
   onError?: (evt: Event, ws: WSContext) => void
 }
 
-export type UpgradedWebSocketResponseInputJSONType = '__websocket' | undefined
-
 /**
  * Upgrade WebSocket Type
  */
@@ -23,9 +26,7 @@ export type UpgradeWebSocket = (
   any,
   string,
   {
-    in: {
-      json: UpgradedWebSocketResponseInputJSONType
-    }
+    outputFormat: 'ws'
   }
 >
 

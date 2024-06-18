@@ -1,16 +1,7 @@
-// @denoify-ignore
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-import type { WebSocketPair } from '@cloudflare/workers-types'
 import type { UpgradeWebSocket, WSContext, WSReadyState } from '../../helper/websocket'
 
 // Based on https://github.com/honojs/hono/issues/1153#issuecomment-1767321332
 export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, next) => {
-  const CFWebSocketPair = (
-    globalThis as unknown as {
-      WebSocketPair: typeof WebSocketPair
-    }
-  ).WebSocketPair
-
   const events = await createEvents(c)
 
   const upgradeHeader = c.req.header('Upgrade')
@@ -18,9 +9,10 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
     return await next()
   }
 
-  const webSocketPair = new CFWebSocketPair()
-  const client = webSocketPair[0]
-  const server = webSocketPair[1]
+  // @ts-expect-error WebSocketPair is not typed
+  const webSocketPair = new WebSocketPair()
+  const client: WebSocket = webSocketPair[0]
+  const server: WebSocket = webSocketPair[1]
 
   const wsContext: WSContext = {
     binaryType: 'arraybuffer',
@@ -36,33 +28,23 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
     send: (source) => server.send(source),
   }
   if (events.onOpen) {
-    server.addEventListener(
-      'open',
-      (evt) => events.onOpen && events.onOpen(evt as Event, wsContext)
-    )
+    server.addEventListener('open', (evt: Event) => events.onOpen?.(evt, wsContext))
   }
   if (events.onClose) {
-    server.addEventListener(
-      'close',
-      (evt) => events.onClose && events.onClose(evt as CloseEvent, wsContext)
-    )
+    server.addEventListener('close', (evt: CloseEvent) => events.onClose?.(evt, wsContext))
   }
   if (events.onMessage) {
-    server.addEventListener(
-      'message',
-      (evt) => events.onMessage && events.onMessage(evt as MessageEvent, wsContext)
-    )
+    server.addEventListener('message', (evt: MessageEvent) => events.onMessage?.(evt, wsContext))
   }
   if (events.onError) {
-    server.addEventListener(
-      'error',
-      (evt) => events.onError && events.onError(evt as ErrorEvent as Event, wsContext)
-    )
+    server.addEventListener('error', (evt: Event) => events.onError?.(evt, wsContext))
   }
-  server.accept()
+
+  // @ts-expect-error - server.accept is not typed
+  server.accept?.()
   return new Response(null, {
     status: 101,
-    // @ts-expect-error Cloudflare Workers API
+    // @ts-expect-error - webSocket is not typed
     webSocket: client,
   })
 }

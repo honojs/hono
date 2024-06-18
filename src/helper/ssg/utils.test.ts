@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { joinPaths, dirname } from './utils'
+import { describe, expect, it } from 'vitest'
+import { dirname, joinPaths } from './utils'
 
 describe('joinPath', () => {
   it('Should joined path is valid.', () => {
@@ -18,6 +18,8 @@ describe('joinPath', () => {
     expect(joinPaths('test', '...', 'test2')).toBe('test/.../test2') // single triple dot and single
     expect(joinPaths('test', './test2', '.test3.')).toBe('test/test2/.test3.') // single and single with slash and single with dot
     expect(joinPaths('test', '../', '.test2')).toBe('.test2') // single and parent and single with dot
+    expect(joinPaths('..', '..', 'test')).toBe('../../test') // parent and parent and single
+    expect(joinPaths('..', '..')).toBe('../..') // parent and parent
     expect(joinPaths('.test../test2/../')).toBe('.test..') //shuffle
     expect(joinPaths('.test./.test2/../')).toBe('.test.') //shuffle2
   })

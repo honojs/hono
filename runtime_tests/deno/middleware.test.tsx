@@ -1,8 +1,7 @@
-/** @jsx jsx */
-/** @jsxFrag Fragment */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { basicAuth, jsx, Fragment, serveStatic, jwt } from '../../deno_dist/middleware.ts'
-import { Hono } from '../../deno_dist/mod.ts'
+import { serveStatic } from '../../src/adapter/deno/index.ts'
+import { Hono } from '../../src/hono.ts'
+import { basicAuth } from '../../src/middleware/basic-auth/index.ts'
+import { jwt } from '../../src/middleware/jwt/index.ts'
 import { assertEquals, assertMatch, assertSpyCall, assertSpyCalls, spy } from './deps.ts'
 
 // Test just only minimal patterns.
@@ -117,6 +116,13 @@ Deno.test('Serve Static middleware', async () => {
   assertEquals(res.status, 200)
   assertEquals(await res.text(), 'Deno!!')
   assertSpyCalls(onNotFound, 1)
+
+  res = await app.fetch({
+    method: 'GET',
+    url: 'http://localhost/static/%2e%2e/static/plain.txt',
+  } as Request)
+  assertEquals(res.status, 404)
+  assertEquals(await res.text(), '404 Not Found')
 })
 
 Deno.test('JWT Authentication middleware', async () => {

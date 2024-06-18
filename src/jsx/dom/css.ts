@@ -1,12 +1,17 @@
-import type { FC, PropsWithChildren } from '..'
+/**
+ * @module
+ * This module provides APIs that enable `hono/jsx/dom` to support.
+ */
+
+import type { FC, PropsWithChildren } from '../'
 import type { CssClassName, CssVariableType } from '../../helper/css/common'
 import {
-  SELECTOR,
   CLASS_NAME,
-  STYLE_STRING,
-  SELECTORS,
-  PSEUDO_GLOBAL_SELECTOR,
   DEFAULT_STYLE_ID,
+  PSEUDO_GLOBAL_SELECTOR,
+  SELECTOR,
+  SELECTORS,
+  STYLE_STRING,
   cssCommon,
   cxCommon,
   keyframesCommon,
@@ -56,7 +61,16 @@ const splitRule = (rule: string): string[] => {
   return result
 }
 
-export const createCssJsxDomObjects = ({ id }: { id: Readonly<string> }) => {
+interface CreateCssJsxDomObjectsType {
+  (args: { id: Readonly<string> }): readonly [
+    {
+      toString(this: CssClassName): string
+    },
+    FC<PropsWithChildren<void>>
+  ]
+}
+
+export const createCssJsxDomObjects: CreateCssJsxDomObjectsType = ({ id }) => {
   let styleSheet: CSSStyleSheet | null | undefined = undefined
   const findStyleSheet = (): [CSSStyleSheet, Set<string>] | [] => {
     if (!styleSheet) {
@@ -110,14 +124,44 @@ export const createCssJsxDomObjects = ({ id }: { id: Readonly<string> }) => {
   const Style: FC<PropsWithChildren<void>> = ({ children }) =>
     ({
       tag: 'style',
-      children: (Array.isArray(children) ? children : [children]).map(
-        (c) => (c as unknown as CssClassName)[STYLE_STRING]
-      ),
-      props: { id },
+      props: {
+        id,
+        children:
+          children &&
+          (Array.isArray(children) ? children : [children]).map(
+            (c) => (c as unknown as CssClassName)[STYLE_STRING]
+          ),
+      },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any)
 
   return [cssObject, Style] as const
+}
+
+interface CssType {
+  (strings: TemplateStringsArray, ...values: CssVariableType[]): string
+}
+
+interface CxType {
+  (...args: (string | boolean | null | undefined)[]): string
+}
+
+interface KeyframesType {
+  (strings: TemplateStringsArray, ...values: CssVariableType[]): CssClassName
+}
+
+interface ViewTransitionType {
+  (strings: TemplateStringsArray, ...values: CssVariableType[]): string
+  (content: string): string
+  (): string
+}
+
+interface DefaultContextType {
+  css: CssType
+  cx: CxType
+  keyframes: KeyframesType
+  viewTransition: ViewTransitionType
+  Style: FC<PropsWithChildren<void>>
 }
 
 /**
@@ -125,32 +169,28 @@ export const createCssJsxDomObjects = ({ id }: { id: Readonly<string> }) => {
  * `createCssContext` is an experimental feature.
  * The API might be changed.
  */
-export const createCssContext = ({ id }: { id: Readonly<string> }) => {
+export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultContextType => {
   const [cssObject, Style] = createCssJsxDomObjects({ id })
 
   const newCssClassNameObject = (cssClassName: CssClassName): string => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     cssClassName.toString = cssObject.toString
     return cssClassName as unknown as string
   }
 
-  const css = (strings: TemplateStringsArray, ...values: CssVariableType[]): string => {
+  const css: CssType = (strings, ...values) => {
     return newCssClassNameObject(cssCommon(strings, values))
   }
 
-  const cx = (...args: (string | boolean | null | undefined)[]): string => {
+  const cx: CxType = (...args) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     args = cxCommon(args as any) as any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return css(Array(args.length).fill('') as any, ...args)
   }
 
-  const keyframes = keyframesCommon
+  const keyframes: KeyframesType = keyframesCommon
 
-  type ViewTransitionType = {
-    (strings: TemplateStringsArray, ...values: CssVariableType[]): string
-    (content: string): string
-    (): string
-  }
   const viewTransition: ViewTransitionType = ((
     strings: TemplateStringsArray | string | undefined,
     ...values: CssVariableType[]
@@ -168,7 +208,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }) => {
   }
 }
 
-const defaultContext = createCssContext({ id: DEFAULT_STYLE_ID })
+const defaultContext: DefaultContextType = createCssContext({ id: DEFAULT_STYLE_ID })
 
 /**
  * @experimental

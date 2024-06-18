@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Hono } from '../hono'
 import { HTTPException } from '../http-exception'
 import type { ErrorHandler, ExtractSchema, MiddlewareHandler, ValidationTargets } from '../types'
+import type { StatusCode } from '../utils/http-status'
 import type { Equal, Expect } from '../utils/types'
 import type { ValidationFunction } from './validator'
 import { validator } from './validator'
@@ -56,7 +57,9 @@ describe('Validator middleware', () => {
         input: {
           query: undefined
         }
-        output: {}
+        output: 'Valid!'
+        outputFormat: 'text'
+        status: StatusCode
       }
     }
   }
@@ -114,6 +117,32 @@ describe('Malformed JSON', () => {
     expect(res.status).toBe(400)
   })
 
+  it('Should return 200 response, for request with Content-Type which is a subtype like application/merge-patch+json', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/merge-patch+json',
+      },
+      body: JSON.stringify({
+        any: 'thing',
+      }),
+    })
+    expect(res.status).toBe(200)
+  })
+
+  it('Should return 200 response, for request with JSON:API Content-Type application/vnd.api+json', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/vnd.api+json',
+      },
+      body: JSON.stringify({
+        any: 'thing',
+      }),
+    })
+    expect(res.status).toBe(200)
+  })
+
   it('Should return 400 response, if Content-Type header does not start with application/json', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
@@ -151,9 +180,7 @@ describe('Malformed FormData request', () => {
     expect(res.status).toBe(400)
     const data = await res.json()
     expect(data['success']).toBe(false)
-    expect(data['message']).toMatch(
-      /Malformed FormData request. \_*Response.formData: Could not parse content as FormData./
-    )
+    expect(data['message']).toMatch(/^Malformed FormData request./)
   })
 
   it('Should return 400 response, for malformed content type header', async () => {
@@ -165,10 +192,9 @@ describe('Malformed FormData request', () => {
       },
     })
     expect(res.status).toBe(400)
-    expect(await res.json()).toEqual({
-      success: false,
-      message: 'Malformed FormData request. Error: Multipart: Boundary not found',
-    })
+    const data = await res.json()
+    expect(data['success']).toBe(false)
+    expect(data['message']).toMatch(/^Malformed FormData request./)
   })
 })
 
@@ -186,6 +212,9 @@ describe('Cached contents', () => {
           await next()
         },
         validator('json', (value) => {
+          if (value instanceof Promise) {
+            throw new Error('Value is Promise')
+          }
           return value
         }),
         async (c) => {
@@ -224,6 +253,9 @@ describe('Cached contents', () => {
           await next()
         },
         validator('form', (value) => {
+          if (value instanceof Promise) {
+            throw new Error('Value is Promise')
+          }
           return value
         }),
         async (c) => {
@@ -245,6 +277,33 @@ describe('Cached contents', () => {
         expect(await res.json()).toEqual({ message: 'OK' })
       })
     }
+  })
+})
+
+describe('Form with multiple values', () => {
+  const app = new Hono()
+
+  app.post(
+    '/',
+    validator('form', (value) => value),
+    async (c) => {
+      const data = c.req.valid('form')
+      return c.json(data)
+    }
+  )
+
+  it('Should return `foo[]` as an array', async () => {
+    const form = new FormData()
+    form.append('foo[]', 'bar1')
+    form.append('foo[]', 'bar2')
+    const res = await app.request('/', {
+      method: 'POST',
+      body: form,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      'foo[]': ['bar1', 'bar2'],
+    })
   })
 })
 
@@ -281,6 +340,8 @@ describe('Validator middleware with a custom validation function', () => {
             id: number
           }
         }
+        outputFormat: 'json'
+        status: StatusCode
       }
     }
   }
@@ -342,6 +403,8 @@ describe('Validator middleware with Zod validates JSON', () => {
             title: string
           }
         }
+        outputFormat: 'json'
+        status: StatusCode
       }
     }
   }
@@ -629,6 +692,8 @@ describe('Validator middleware with Zod multiple validators', () => {
           page: number
           title: string
         }
+        outputFormat: 'json'
+        status: StatusCode
       }
     }
   }
@@ -685,7 +750,9 @@ it('With path parameters', () => {
             id: string
           }
         }
-        output: {}
+        output: 'Valid!'
+        outputFormat: 'text'
+        status: StatusCode
       }
     }
   }
@@ -732,6 +799,8 @@ it('`on`', () => {
         output: {
           success: boolean
         }
+        outputFormat: 'json'
+        status: StatusCode
       }
     }
   }
@@ -888,7 +957,7 @@ describe('Validator with using Zod directly', () => {
     })
     const app = new Hono()
 
-    app.post(
+    const route = app.post(
       '/posts',
       validator('json', (value, c) => {
         const parsed = testSchema.safeParse(value)
@@ -908,6 +977,25 @@ describe('Validator with using Zod directly', () => {
         )
       }
     )
+
+    expectTypeOf<ExtractSchema<typeof route>>().toEqualTypeOf<{
+      '/posts': {
+        $post: {
+          input: {
+            json: {
+              type: 'a'
+              name: string
+              age: number
+            }
+          }
+          output: {
+            message: string
+          }
+          outputFormat: 'json'
+          status: 201
+        }
+      }
+    }>()
   })
 })
 
@@ -938,6 +1026,8 @@ describe('Transform', () => {
           output: {
             page: number
           }
+          outputFormat: 'json'
+          status: StatusCode
         }
       }
     }

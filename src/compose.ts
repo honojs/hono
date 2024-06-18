@@ -1,13 +1,35 @@
 import { Context } from './context'
 import type { ParamIndexMap, Params } from './router'
-import type { Env, NotFoundHandler, ErrorHandler } from './types'
+import type { Env, ErrorHandler, NotFoundHandler } from './types'
 
+/**
+ * Interface representing the context for a composition operation.
+ */
 interface ComposeContext {
+  /**
+   * Indicates whether the composition process has been finalized.
+   */
   finalized: boolean
+
+  /**
+   * The result of the composition process. The type is unknown and should be
+   * specified based on the context where this interface is used.
+   */
   res: unknown
 }
 
-// Based on the code in the MIT licensed `koa-compose` package.
+/**
+ * Compose middleware functions into a single function based on `koa-compose` package.
+ *
+ * @template C - The context type.
+ * @template E - The environment type.
+ *
+ * @param {[[Function, unknown], ParamIndexMap | Params][]} middleware - An array of middleware functions and their corresponding parameters.
+ * @param {ErrorHandler<E>} [onError] - An optional error handler function.
+ * @param {NotFoundHandler<E>} [onNotFound] - An optional not-found handler function.
+ *
+ * @returns {(context: C, next?: Function) => Promise<C>} - A composed middleware function.
+ */
 export const compose = <C extends ComposeContext, E extends Env = Env>(
   middleware: [[Function, unknown], ParamIndexMap | Params][],
   onError?: ErrorHandler<E>,
@@ -17,6 +39,13 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
     let index = -1
     return dispatch(0)
 
+    /**
+     * Dispatch the middleware functions.
+     *
+     * @param {number} i - The current index in the middleware array.
+     *
+     * @returns {Promise<C>} - A promise that resolves to the context.
+     */
     async function dispatch(i: number): Promise<C> {
       if (i <= index) {
         throw new Error('next() called multiple times')

@@ -1,2 +1,13 @@
+/**
+ * @module
+ * SSG Helper for Hono.
+ */
+
 export * from './ssg'
-export { SSG_DISABLED_RESPONSE, ssgParams, isSSGContext, disableSSG, onlySSG } from './middleware'
+export {
+  X_HONO_DISABLE_SSG_HEADER_KEY,
+  ssgParams,
+  isSSGContext,
+  disableSSG,
+  onlySSG,
+} from './middleware'

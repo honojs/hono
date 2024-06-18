@@ -1,6 +1,11 @@
+/**
+ * @module
+ * Buffer utility.
+ */
+
 import { sha256 } from './crypto'
 
-export const equal = (a: ArrayBuffer, b: ArrayBuffer) => {
+export const equal = (a: ArrayBuffer, b: ArrayBuffer): boolean => {
   if (a === b) {
     return true
   }
@@ -25,7 +30,7 @@ export const timingSafeEqual = async (
   a: string | object | boolean,
   b: string | object | boolean,
   hashFunction?: Function
-) => {
+): Promise<boolean> => {
   if (!hashFunction) {
     hashFunction = sha256
   }
@@ -48,7 +53,10 @@ export const bufferToString = (buffer: ArrayBuffer): string => {
   return buffer
 }
 
-export const bufferToFormData = (arrayBuffer: ArrayBuffer, contentType: string) => {
+export const bufferToFormData = (
+  arrayBuffer: ArrayBuffer,
+  contentType: string
+): Promise<FormData> => {
   const response = new Response(arrayBuffer, {
     headers: {
       'Content-Type': contentType,

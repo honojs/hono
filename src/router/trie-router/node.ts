@@ -1,7 +1,7 @@
 import type { Params } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
 import type { Pattern } from '../../utils/url'
-import { splitPath, splitRoutingPath, getPattern } from '../../utils/url'
+import { getPattern, splitPath, splitRoutingPath } from '../../utils/url'
 
 type HandlerSet<T> = {
   handler: T
@@ -44,13 +44,11 @@ export class Node<T> {
     const parts = splitRoutingPath(path)
 
     const possibleKeys: string[] = []
-    const parentPatterns: Pattern[] = []
 
     for (let i = 0, len = parts.length; i < len; i++) {
       const p: string = parts[i]
 
       if (Object.keys(curNode.children).includes(p)) {
-        parentPatterns.push(...curNode.patterns)
         curNode = curNode.children[p]
         const pattern = getPattern(p)
         if (pattern) {
@@ -64,10 +62,8 @@ export class Node<T> {
       const pattern = getPattern(p)
       if (pattern) {
         curNode.patterns.push(pattern)
-        parentPatterns.push(...curNode.patterns)
         possibleKeys.push(pattern[1])
       }
-      parentPatterns.push(...curNode.patterns)
       curNode = curNode.children[p]
     }
 

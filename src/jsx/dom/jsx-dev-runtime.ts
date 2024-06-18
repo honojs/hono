@@ -1,23 +1,17 @@
-import type { Props } from '../base'
-import { normalizeIntrinsicElementProps } from '../utils'
+/**
+ * @module
+ * This module provides the `hono/jsx/dom` dev runtime.
+ */
 
-export const jsxDEV = (tag: string | Function, props: Props, key?: string) => {
-  if (typeof tag === 'string') {
-    normalizeIntrinsicElementProps(props)
-  }
-  let children
-  if (props && 'children' in props) {
-    children = props.children
-    delete props['children']
-  } else {
-    children = []
-  }
-  return {
+import type { JSXNode, Props } from '../base'
+import { newJSXNode } from './utils'
+
+export const jsxDEV = (tag: string | Function, props: Props, key?: string): JSXNode => {
+  return newJSXNode({
     tag,
     props,
     key,
-    children: Array.isArray(children) ? children : [children],
-  }
+  })
 }
 
-export const Fragment = (props: Record<string, unknown>) => jsxDEV('', props, undefined)
+export const Fragment = (props: Record<string, unknown>): JSXNode => jsxDEV('', props, undefined)
