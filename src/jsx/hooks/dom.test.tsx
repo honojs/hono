@@ -155,6 +155,40 @@ describe('Hooks', () => {
       expect(called).toBe(3)
     })
 
+    it('pending', async () => {
+      let resolve: (() => void) | undefined
+      const promise = new Promise<void>((r) => (resolve = r))
+      let called = 0
+      const App = () => {
+        const [isPending, startTransition] = useTransition()
+        called++
+
+        return (
+          <div>
+            <button
+              onClick={() => {
+                startTransition(async () => await promise)
+              }}
+            >
+              {isPending ? 'Pending...' : 'Click me'}
+            </button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>Click me</button></div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
+      expect(called).toBe(2)
+      resolve!()
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>Click me</button></div>')
+      expect(called).toBe(3)
+    })
+
     it('multiple setState at once', async () => {
       let called = 0
       const App = () => {

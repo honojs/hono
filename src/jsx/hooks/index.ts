@@ -99,11 +99,18 @@ export const useViewTransition = (): [boolean, (callback: () => void) => void] =
 }
 
 // PendingType is defined in "../dom/render", 3 is used for useDeferredValue
-const pendingStack: (PendingType | 3)[] = []
+const pendingStack: [PendingType | 3, Promise<void>][] = []
 const runCallback = (type: PendingType, callback: Function): void => {
-  pendingStack.push(type)
+  let resolve: (() => void) | undefined
+  const promise = new Promise<void>((r) => (resolve = r))
+  pendingStack.push([type, promise])
   try {
-    callback()
+    const res = callback()
+    if (res instanceof Promise) {
+      res.then(resolve, resolve)
+    } else {
+      resolve!()
+    }
   } finally {
     pendingStack.pop()
   }
@@ -112,7 +119,7 @@ const runCallback = (type: PendingType, callback: Function): void => {
 export const startTransition = (callback: () => void): void => {
   runCallback(1, callback)
 }
-const startTransitionHook = (callback: () => void): void => {
+const startTransitionHook = (callback: () => void): Promise<unknown> | void => {
   runCallback(2, callback)
 }
 
@@ -121,8 +128,17 @@ export const useTransition = (): [boolean, (callback: () => void) => void] => {
   if (!buildData) {
     return [false, () => {}]
   }
+
+  const [, updateState] = useState<boolean>(false)
+  const startTransitionLocalHook = useCallback<typeof startTransitionHook>((callback) => {
+    startTransitionHook(() => {
+      updateState((state) => !state)
+      return callback()
+    })
+  }, [])
+
   const [context] = buildData
-  return [context[0] === 2, startTransitionHook]
+  return [context[0] === 2, startTransitionLocalHook]
 }
 
 type UseDeferredValue = <T>(value: T, initialValue?: T) => T
@@ -134,7 +150,7 @@ export const useDeferredValue: UseDeferredValue = <T>(value: T, ...rest: [T | un
     return values[1]
   }
 
-  pendingStack.push(3)
+  pendingStack.push([3, Promise.resolve()])
   updateHook = async (context: Context, _, cb: (context: Context) => void) => {
     cb(context)
     values[0] = value
@@ -177,11 +193,16 @@ export const useState: UseStateType = <T>(
       if (!Object.is(newState, stateData[0])) {
         stateData[0] = newState
         if (pendingStack.length) {
-          const pendingType = pendingStack.at(-1) as PendingType | 3
-          ;(pendingType === 3
-            ? Promise.resolve(node)
-            : update([pendingType, false, localUpdateHook as UpdateHook], node)
-          ).then((node) => {
+          const [pendingType, pendingPromise] = pendingStack.at(-1) as [
+            PendingType | 3,
+            Promise<void>
+          ]
+          Promise.all([
+            pendingType === 3
+              ? node
+              : update([pendingType, false, localUpdateHook as UpdateHook], node),
+            pendingPromise,
+          ]).then(([node]) => {
             if (!node || !(pendingType === 2 || pendingType === 3)) {
               return
             }
