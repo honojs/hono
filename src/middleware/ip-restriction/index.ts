@@ -1,5 +1,5 @@
 /**
- * Middleware for Limiting IP Address
+ * Middleware for restrict IP Address
  * @module
  */
 
@@ -26,7 +26,7 @@ import {
  * - `::1` static
  * - `::1/10` CIDR Notation
  */
-export type IPLimitRule = string
+export type IPRestrictRule = string
 
 const IS_CIDR_NOTATION_REGEX = /\/[0-9]{0,3}$/
 export const isMatchForRule = (
@@ -34,7 +34,7 @@ export const isMatchForRule = (
     addr: string
     type: AddressType
   },
-  rule: IPLimitRule
+  rule: IPRestrictRule
 ): boolean => {
   if (rule === '*') {
     // Match all
@@ -77,9 +77,9 @@ export const isMatchForRule = (
 /**
  * Rules for IP Limit Middleware
  */
-export interface IPLimitRules {
-  deny?: IPLimitRule[]
-  allow?: IPLimitRule[]
+export interface IPRestrictRules {
+  deny?: IPRestrictRule[]
+  allow?: IPRestrictRule[]
 }
 
 /**
@@ -87,9 +87,9 @@ export interface IPLimitRules {
  *
  * @param getConnInfo getConnInfo helper
  */
-export const ipLimit = (
+export const ipRestriction = (
   getConnInfo: GetConnInfo,
-  { deny = [], allow = [] }: IPLimitRules
+  { deny = [], allow = [] }: IPRestrictRules
 ): MiddlewareHandler => {
   const denyLength = deny.length
   const allowLength = allow.length

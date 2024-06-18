@@ -21,7 +21,7 @@
     "./basic-auth": "./src/middleware/basic-auth/index.ts",
     "./bearer-auth": "./src/middleware/bearer-auth/index.ts",
     "./body-limit": "./src/middleware/body-limit/index.ts",
-    "./ip-limit": "./src/middleware/ip-limit/index.ts",
+    "./ip-restriction": "./src/middleware/ip-restriction/index.ts",
     "./cache": "./src/middleware/cache/index.ts",
     "./cookie": "./src/helper/cookie/index.ts",
     "./accepts": "./src/helper/accepts/index.ts",

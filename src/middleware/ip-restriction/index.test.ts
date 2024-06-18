@@ -1,6 +1,6 @@
 import { Hono } from '../..'
 import type { GetConnInfo } from '../../helper/conninfo'
-import { ipLimit, isMatchForRule } from '.'
+import { ipRestriction, isMatchForRule } from '.'
 
 describe('ipLimit middleware', () => {
   it('Should limit', async () => {
@@ -18,7 +18,7 @@ describe('ipLimit middleware', () => {
     }>()
     app.use(
       '/basic',
-      ipLimit(getConnInfo, {
+      ipRestriction(getConnInfo, {
         allow: ['192.168.1.0', '192.168.2.0/24'],
         deny: ['192.168.2.10'],
       })
@@ -27,7 +27,7 @@ describe('ipLimit middleware', () => {
 
     app.use(
       '/allow-empty',
-      ipLimit(getConnInfo, {
+      ipRestriction(getConnInfo, {
         deny: ['192.168.1.0'],
       })
     )
