@@ -112,7 +112,8 @@ export const ipRestriction = (
     if (!addr) {
       throw blockError()
     }
-    const type = (typeof connInfo !== 'string' && connInfo.remote.addressType) || distinctRemoteAddr(addr)
+    const type =
+      (typeof connInfo !== 'string' && connInfo.remote.addressType) || distinctRemoteAddr(addr)
 
     for (let i = 0; i < denyLength; i++) {
       const isValid = isMatchForRule({ type, addr }, deny[i])
