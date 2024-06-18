@@ -3,7 +3,7 @@
  * @module
  */
 
-import type { MiddlewareHandler } from '../..'
+import type { Context, MiddlewareHandler } from '../..'
 import type { AddressType, GetConnInfo } from '../../helper/conninfo'
 import { createMiddleware } from '../../helper/factory'
 import { HTTPException } from '../../http-exception'
@@ -13,6 +13,11 @@ import {
   distinctRemoteAddr,
   expandIPv6,
 } from '../../utils/ipaddr'
+
+/**
+ * Function to get IP Address
+ */
+type GetIPAddr = GetConnInfo | ((c: Context) => string)
 
 /**
  * ### IPv4 and IPv6
@@ -85,10 +90,10 @@ export interface IPRestrictRules {
 /**
  * IP Limit Middleware
  *
- * @param getConnInfo getConnInfo helper
+ * @param getIP function to get IP Address
  */
 export const ipRestriction = (
-  getConnInfo: GetConnInfo,
+  getIP: GetIPAddr,
   { deny = [], allow = [] }: IPRestrictRules
 ): MiddlewareHandler => {
   const denyLength = deny.length
@@ -102,12 +107,12 @@ export const ipRestriction = (
     })
 
   return createMiddleware(async (c, next) => {
-    const connInfo = getConnInfo(c)
-    const addr = connInfo.remote.address
+    const connInfo = getIP(c)
+    const addr = typeof connInfo === 'string' ? connInfo : connInfo.remote.address
     if (!addr) {
       throw blockError()
     }
-    const type = connInfo.remote.addressType ?? distinctRemoteAddr(addr)
+    const type = (typeof connInfo !== 'string' && connInfo.remote.addressType) || distinctRemoteAddr(addr)
 
     for (let i = 0; i < denyLength; i++) {
       const isValid = isMatchForRule({ type, addr }, deny[i])
