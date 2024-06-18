@@ -304,7 +304,7 @@ export const form: FC<
       value: {
         pending: data !== null,
         data,
-        method: data ? props.method || 'get' : null,
+        method: data ? 'post' : null,
         action: data ? action : null,
       },
       children: newJSXNode({

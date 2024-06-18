@@ -112,7 +112,7 @@ describe('Hooks', () => {
       expect(status).toEqual({
         pending: true,
         data: expect.any(FormData),
-        method: 'get',
+        method: 'post',
         action: expect.any(Function),
       })
       formResolve?.()
