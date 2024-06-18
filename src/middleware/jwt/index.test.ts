@@ -216,13 +216,13 @@ describe('JWT', () => {
   })
   describe('Credentials in signed cookie', () => {
     let handlerExecuted: boolean
-  
+
     beforeEach(() => {
       handlerExecuted = false
     })
-  
+
     const app = new Hono()
-  
+
     app.use(
       '/auth/*',
       jwt({
@@ -233,13 +233,13 @@ describe('JWT', () => {
         },
       })
     )
-  
+
     app.get('/auth/*', async (c) => {
       handlerExecuted = true
       const payload = c.get('jwtPayload')
       return c.json(payload)
     })
-  
+
     it('Should not authorize', async () => {
       const req = new Request('http://localhost/auth/a')
       const res = await app.request(req)
@@ -248,7 +248,7 @@ describe('JWT', () => {
       expect(await res.text()).toBe('Unauthorized')
       expect(handlerExecuted).toBeFalsy()
     })
-  
+
     it('Should authorize', async () => {
       const url = 'http://localhost/auth/a'
       const req = new Request(url, {
