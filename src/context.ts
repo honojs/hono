@@ -69,8 +69,8 @@ export type Layout<T = Record<string, any>> = (props: T) => any
  * @template E - Environment type.
  */
 interface Get<E extends Env> {
-  <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
   <Key extends keyof E['Variables']>(key: Key): E['Variables'][Key]
+  <Key extends keyof ContextVariableMap>(key: Key): ContextVariableMap[Key]
 }
 
 /**
@@ -79,8 +79,8 @@ interface Get<E extends Env> {
  * @template E - Environment type.
  */
 interface Set<E extends Env> {
-  <Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
   <Key extends keyof E['Variables']>(key: Key, value: E['Variables'][Key]): void
+  <Key extends keyof ContextVariableMap>(key: Key, value: ContextVariableMap[Key]): void
 }
 
 /**
