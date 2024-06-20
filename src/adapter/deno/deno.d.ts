@@ -19,14 +19,9 @@ declare namespace Deno {
 
   export function upgradeWebSocket(
     req: Request,
-    options: UpgradeWebSocketOptions
+    options: any
   ): {
     response: Response
     socket: WebSocket
   }
-}
-
-interface UpgradeWebSocketOptions {
-  protocol?: string
-  idleTimeout?: number
 }
