@@ -4,8 +4,9 @@ import type { Context } from '../context'
 import { globalContexts } from '../context'
 import { newJSXNode, setInternalTagFlag } from './utils'
 
-export const createContextProviderFunction = <T>(values: T[]): Function =>
-  setInternalTagFlag(({ value, children }: { value: T; children: Child[] }) => {
+export const createContextProviderFunction =
+  <T>(values: T[]): Function =>
+  ({ value, children }: { value: T; children: Child[] }) => {
     if (!children) {
       return undefined
     }
@@ -39,7 +40,7 @@ export const createContextProviderFunction = <T>(values: T[]): Function =>
       throw err
     }
     return res
-  })
+  }
 
 export const createContext = <T>(defaultValue: T): Context<T> => {
   const values = [defaultValue]

@@ -200,6 +200,46 @@ function runner(
         await Promise.resolve()
         expect(root.innerHTML).toBe('<div><p>2</p><button>Show</button></div>')
       })
+
+      it('Suspense at child counter', async () => {
+        const promiseMap: Record<number, Promise<number>> = {}
+        const Counter = () => {
+          const [count, setCount] = useState(0)
+          const promise = (promiseMap[count] ||= Promise.resolve(count))
+          const value = use(promise)
+          return (
+            <>
+              <p>{value}</p>
+              <button onClick={() => setCount(count + 1)}>Increment</button>
+            </>
+          )
+        }
+        const Component = () => {
+          return (
+            <Suspense fallback={<div>Loading...</div>}>
+              <Counter />
+            </Suspense>
+          )
+        }
+        const App = () => {
+          return (
+            <div>
+              <Component />
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<div><div>Loading...</div></div>')
+        await Promise.resolve()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><p>0</p><button>Increment</button></div>')
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><div>Loading...</div></div>')
+        await Promise.resolve()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><p>1</p><button>Increment</button></div>')
+      })
     })
 
     describe('ErrorBoundary', () => {
