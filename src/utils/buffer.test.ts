@@ -1,5 +1,6 @@
 import { SHA256 as sha256CryptoJS } from 'crypto-js'
 import { bufferToFormData, bufferToString, equal, timingSafeEqual } from './buffer'
+import { expect } from 'vitest'
 
 describe('equal', () => {
   it('should return true for identical ArrayBuffers', () => {
@@ -69,6 +70,7 @@ describe('buffer', () => {
     expect(await timingSafeEqual({ a: 1 }, { a: 2 })).toBe(false)
     expect(await timingSafeEqual([1, 2], [1, 2])).toBe(false)
     expect(await timingSafeEqual([1, 2], [1, 2, 3])).toBe(false)
+    expect(await timingSafeEqual('a', 'b', () => undefined)).toBe(false)
   })
 })
 
@@ -77,6 +79,10 @@ describe('bufferToString', () => {
     const bytes = [227, 129, 130, 227, 129, 132, 227, 129, 134, 227, 129, 136, 227, 129, 138]
     const buffer = Uint8Array.from(bytes).buffer
     expect(bufferToString(buffer)).toBe('あいうえお')
+  })
+  it('should return the passed arguments as is ', () => {
+    const notBuffer = 'あいうえお' as unknown as ArrayBuffer
+    expect(bufferToString(notBuffer)).toBe('あいうえお')
   })
 })
 
