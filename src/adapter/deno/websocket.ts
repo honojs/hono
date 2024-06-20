@@ -21,13 +21,13 @@ export interface UpgradeWebSocketOptions {
 }
 
 export const upgradeWebSocket: UpgradeWebSocket<UpgradeWebSocketOptions> =
-  (createEvents) => async (c, next) => {
+  (createEvents, options) => async (c, next) => {
     if (c.req.header('upgrade') !== 'websocket') {
       return await next()
     }
 
     const events = await createEvents(c)
-    const { response, socket } = Deno.upgradeWebSocket(c.req.raw, events['options'] || {})
+    const { response, socket } = Deno.upgradeWebSocket(c.req.raw, options || {})
 
     const wsContext: WSContext = {
       binaryType: 'arraybuffer',
