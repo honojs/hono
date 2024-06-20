@@ -2,7 +2,7 @@
 import { JSDOM } from 'jsdom'
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
-import { Suspense, render } from '../dom'
+import { ErrorBoundary, Suspense, render } from '../dom'
 import {
   createRef,
   forwardRef,
@@ -187,6 +187,45 @@ describe('Hooks', () => {
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<div><button>Click me</button></div>')
       expect(called).toBe(3)
+    })
+
+    it('pending - error', async () => {
+      let reject: (() => void) | undefined
+      const promise = new Promise<void>((_, r) => (reject = r))
+      let called = 0
+      const Component = () => {
+        const [isPending, startTransition] = useTransition()
+        called++
+
+        return (
+          <div>
+            <button
+              onClick={() => {
+                startTransition(async () => await promise)
+              }}
+            >
+              {isPending ? 'Pending...' : 'Click me'}
+            </button>
+          </div>
+        )
+      }
+      const App = () => (
+        <ErrorBoundary fallback={<div>Error</div>}>
+          <Component />
+        </ErrorBoundary>
+      )
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>Click me</button></div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
+      expect(called).toBe(2)
+      reject!()
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div>Error</div>')
+      expect(called).toBe(2)
     })
 
     it('multiple setState at once', async () => {

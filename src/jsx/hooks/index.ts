@@ -119,23 +119,36 @@ const runCallback = (type: PendingType, callback: Function): void => {
 export const startTransition = (callback: () => void): void => {
   runCallback(1, callback)
 }
-const startTransitionHook = (callback: () => void): Promise<unknown> | void => {
+const startTransitionHook = (callback: () => void | Promise<void>): void => {
   runCallback(2, callback)
 }
 
-export const useTransition = (): [boolean, (callback: () => void) => void] => {
+export const useTransition = (): [boolean, (callback: () => void | Promise<void>) => void] => {
   const buildData = buildDataStack.at(-1) as [Context, NodeObject]
   if (!buildData) {
     return [false, () => {}]
   }
 
-  const [, updateState] = useState<boolean>(false)
-  const startTransitionLocalHook = useCallback<typeof startTransitionHook>((callback) => {
-    startTransitionHook(() => {
-      updateState((state) => !state)
-      return callback()
-    })
-  }, [])
+  const [error, setError] = useState<[Error]>()
+  const [state, updateState] = useState<boolean>()
+  if (error) {
+    throw error[0]
+  }
+  const startTransitionLocalHook = useCallback<typeof startTransitionHook>(
+    (callback) => {
+      startTransitionHook(() => {
+        updateState((state) => !state)
+        let res = callback()
+        if (res instanceof Promise) {
+          res = res.catch((e) => {
+            setError([e])
+          })
+        }
+        return res
+      })
+    },
+    [state]
+  )
 
   const [context] = buildData
   return [context[0] === 2, startTransitionLocalHook]
