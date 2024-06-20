@@ -10,18 +10,19 @@ import type { MiddlewareHandler } from '../../types'
 /**
  * WebSocket Event Listeners type
  */
-export interface WSEvents {
+export interface WSEvents<T = any> {
   onOpen?: (evt: Event, ws: WSContext) => void
   onMessage?: (evt: MessageEvent<WSMessageReceive>, ws: WSContext) => void
   onClose?: (evt: CloseEvent, ws: WSContext) => void
   onError?: (evt: Event, ws: WSContext) => void
+  options?: T
 }
 
 /**
  * Upgrade WebSocket Type
  */
-export type UpgradeWebSocket = (
-  createEvents: (c: Context) => WSEvents | Promise<WSEvents>
+export type UpgradeWebSocket<T = any> = (
+  createEvents: (c: Context) => WSEvents<T> | Promise<WSEvents<T>>
 ) => MiddlewareHandler<
   any,
   string,
