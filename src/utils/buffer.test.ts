@@ -1,5 +1,31 @@
 import { SHA256 as sha256CryptoJS } from 'crypto-js'
-import { bufferToFormData, bufferToString, timingSafeEqual } from './buffer'
+import { bufferToFormData, bufferToString, equal, timingSafeEqual } from './buffer'
+
+describe('equal', () => {
+  it('should return true for identical ArrayBuffers', () => {
+    const buffer1 = new ArrayBuffer(1)
+    const buffer2 = buffer1
+    expect(equal(buffer1, buffer2)).toBe(true)
+  })
+
+  it('should return false for ArrayBuffers of different lengths', () => {
+    const buffer1 = new ArrayBuffer(1)
+    const buffer2 = new ArrayBuffer(2)
+    expect(equal(buffer1, buffer2)).toBe(false)
+  })
+
+  it('should return false for ArrayBuffers with different content', () => {
+    const buffer1 = new Uint8Array([1, 2, 3, 4]).buffer
+    const buffer2 = new Uint8Array([2, 2, 3, 4]).buffer
+    expect(equal(buffer1, buffer2)).toBe(false)
+  })
+
+  it('should return true for ArrayBuffers with identical content', () => {
+    const buffer1 = new Uint8Array([1, 2, 3, 4]).buffer
+    const buffer2 = new Uint8Array([1, 2, 3, 4]).buffer
+    expect(equal(buffer1, buffer2)).toBe(true)
+  })
+})
 
 describe('buffer', () => {
   it('positive', async () => {
