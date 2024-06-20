@@ -22,7 +22,7 @@ export interface WSEvents {
  */
 export type UpgradeWebSocket<T = any> = (
   createEvents: (c: Context) => WSEvents | Promise<WSEvents>,
-  options: T
+  options?: T
 ) => MiddlewareHandler<
   any,
   string,
