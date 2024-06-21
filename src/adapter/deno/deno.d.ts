@@ -17,7 +17,11 @@ declare namespace Deno {
    */
   export function writeFile(path: string, data: Uint8Array): Promise<void>
 
-  export function upgradeWebSocket(req: Request): {
+  export function upgradeWebSocket(
+    req: Request,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    options: any
+  ): {
     response: Response
     socket: WebSocket
   }
