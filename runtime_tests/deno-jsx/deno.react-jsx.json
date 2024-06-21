@@ -4,7 +4,8 @@
     "jsxImportSource": "hono/jsx",
     "lib": [
       "deno.ns",
-      "dom"
+      "dom",
+      "dom.iterable"
     ]
   },
   "unstable": [

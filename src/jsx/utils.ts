@@ -1,6 +1,12 @@
 const normalizeElementKeyMap: Map<string, string> = new Map([
   ['className', 'class'],
   ['htmlFor', 'for'],
+  ['crossOrigin', 'crossorigin'],
+  ['httpEquiv', 'http-equiv'],
+  ['itemProp', 'itemprop'],
+  ['fetchPriority', 'fetchpriority'],
+  ['noModule', 'nomodule'],
+  ['formAction', 'formaction'],
 ])
 export const normalizeIntrinsicElementKey = (key: string): string =>
   normalizeElementKeyMap.get(key) || key
