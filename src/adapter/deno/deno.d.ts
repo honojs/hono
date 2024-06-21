@@ -19,6 +19,7 @@ declare namespace Deno {
 
   export function upgradeWebSocket(
     req: Request,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     options: any
   ): {
     response: Response
