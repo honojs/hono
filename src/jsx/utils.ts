@@ -1,4 +1,4 @@
-const normalizeElementKeyMap = new Map([
+const normalizeElementKeyMap: Map<string, string> = new Map([
   ['className', 'class'],
   ['htmlFor', 'for'],
 ])
