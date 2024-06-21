@@ -240,6 +240,28 @@ describe('DOM', () => {
       expect(root.innerHTML).toBe('<button>remove</button>')
       expect(ref).toHaveBeenLastCalledWith(null)
     })
+
+    it('ref cleanup function', async () => {
+      const cleanup = vi.fn()
+      const ref = vi.fn().mockReturnValue(cleanup)
+      const App = () => {
+        const [show, setShow] = useState(true)
+        return (
+          <>
+            {show && <div ref={ref} />}
+            <button onClick={() => setShow(false)}>remove</button>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div></div><button>remove</button>')
+      expect(ref).toHaveBeenLastCalledWith(expect.any(dom.window.HTMLDivElement))
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<button>remove</button>')
+      expect(ref).toBeCalledTimes(1)
+      expect(cleanup).toBeCalledTimes(1)
+    })
   })
 
   describe('defaultProps', () => {
@@ -1139,7 +1161,7 @@ describe('DOM', () => {
     expect(createElementSpy).not.toHaveBeenCalled()
   })
 
-  it('setState for unnamed function', async () => {
+  it('useState for unnamed function', async () => {
     const Input = ({ label, onInput }: { label: string; onInput: (value: string) => void }) => {
       return (
         <div>
@@ -1178,6 +1200,40 @@ describe('DOM', () => {
     await Promise.resolve()
     expect(root.innerHTML).toBe(
       '<form><div><label>Name</label><input></div><div><label>Email</label><input></div><span>{"name":"John","email":"john@example.com"}</span></form>'
+    )
+  })
+
+  it('useState for grand child function', async () => {
+    const GrandChild = () => {
+      const [count, setCount] = useState(0)
+      return (
+        <>
+          {count === 0 ? <p>Zero</p> : <span>Not Zero</span>}
+          <button onClick={() => setCount(count + 1)}>+</button>
+        </>
+      )
+    }
+    const Child = () => {
+      return <GrandChild />
+    }
+    const App = () => {
+      const [show, setShow] = useState(false)
+      return (
+        <div>
+          {show && <Child />}
+          <button onClick={() => setShow(!show)}>toggle</button>
+        </div>
+      )
+    }
+    render(<App />, root)
+    expect(root.innerHTML).toBe('<div><button>toggle</button></div>')
+    root.querySelector('button')?.click()
+    await Promise.resolve()
+    expect(root.innerHTML).toBe('<div><p>Zero</p><button>+</button><button>toggle</button></div>')
+    root.querySelector('button')?.click()
+    await Promise.resolve()
+    expect(root.innerHTML).toBe(
+      '<div><span>Not Zero</span><button>+</button><button>toggle</button></div>'
     )
   })
 
@@ -1953,9 +2009,8 @@ describe('DOM', () => {
         )
       }
       render(<App />, root)
-      expect(root.innerHTML).toBe(
-        '<title>Document Title</title><svg><title>SVG Title</title></svg>'
-      )
+      expect(document.head.innerHTML).toBe('<title>Document Title</title>')
+      expect(root.innerHTML).toBe('<svg><title>SVG Title</title></svg>')
       expect(document.querySelector('title')).toBeInstanceOf(dom.window.HTMLTitleElement)
       expect(document.querySelector('svg title')).toBeInstanceOf(dom.window.SVGTitleElement)
     })
@@ -2182,6 +2237,9 @@ describe('default export', () => {
     'useDeferredValue',
     'startViewTransition',
     'useViewTransition',
+    'useActionState',
+    'useFormStatus',
+    'useOptimistic',
     'useMemo',
     'useLayoutEffect',
     'Suspense',
