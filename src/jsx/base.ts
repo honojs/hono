@@ -1,13 +1,16 @@
 import { raw } from '../helper/html'
-import { escapeToBuffer, stringBufferToString } from '../utils/html'
-import type { HtmlEscaped, HtmlEscapedString, StringBuffer } from '../utils/html'
+import { escapeToBuffer, resolveCallbackSync, stringBufferToString } from '../utils/html'
+import type { HtmlEscaped, HtmlEscapedString, StringBufferWithCallbacks } from '../utils/html'
 import type { Context } from './context'
 import { globalContexts } from './context'
+import { DOM_RENDERER } from './constants'
 import type {
   JSX as HonoJSX,
   IntrinsicElements as IntrinsicElementsDefined,
 } from './intrinsic-elements'
 import { normalizeIntrinsicElementKey, styleObjectForEach } from './utils'
+import * as intrinsicElementTags from './intrinsic-element/components'
+import { domRenderers } from './intrinsic-element/common'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
@@ -74,7 +77,7 @@ const booleanAttributes = [
   'selected',
 ]
 
-const childrenToStringToBuffer = (children: Child[], buffer: StringBuffer): void => {
+const childrenToStringToBuffer = (children: Child[], buffer: StringBufferWithCallbacks): void => {
   for (let i = 0, len = children.length; i < len; i++) {
     const child = children[i]
     if (typeof child === 'string') {
@@ -131,7 +134,7 @@ export class JSXNode implements HtmlEscaped {
   }
 
   toString(): string | Promise<string> {
-    const buffer: StringBuffer = ['']
+    const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
     this.localContexts?.forEach(([context, value]) => {
       context.values.push(value)
     })
@@ -142,10 +145,14 @@ export class JSXNode implements HtmlEscaped {
         context.values.pop()
       })
     }
-    return buffer.length === 1 ? buffer[0] : stringBufferToString(buffer)
+    return buffer.length === 1
+      ? 'callbacks' in buffer
+        ? resolveCallbackSync(raw(buffer[0], buffer.callbacks)).toString()
+        : buffer[0]
+      : stringBufferToString(buffer, buffer.callbacks)
   }
 
-  toStringToBuffer(buffer: StringBuffer): void {
+  toStringToBuffer(buffer: StringBufferWithCallbacks): void {
     const tag = this.tag as string
     const props = this.props
     let { children } = this
@@ -214,7 +221,7 @@ export class JSXNode implements HtmlEscaped {
 }
 
 class JSXFunctionNode extends JSXNode {
-  toStringToBuffer(buffer: StringBuffer): void {
+  toStringToBuffer(buffer: StringBufferWithCallbacks): void {
     const { children } = this
 
     const res = (this.tag as Function).call(null, {
@@ -242,6 +249,10 @@ class JSXFunctionNode extends JSXNode {
       res.toStringToBuffer(buffer)
     } else if (typeof res === 'number' || (res as HtmlEscaped).isEscaped) {
       buffer[0] += res
+      if (res.callbacks) {
+        buffer.callbacks ||= []
+        buffer.callbacks.push(...res.callbacks)
+      }
     } else {
       escapeToBuffer(res, buffer)
     }
@@ -249,7 +260,7 @@ class JSXFunctionNode extends JSXNode {
 }
 
 export class JSXFragmentNode extends JSXNode {
-  toStringToBuffer(buffer: StringBuffer): void {
+  toStringToBuffer(buffer: StringBufferWithCallbacks): void {
     childrenToStringToBuffer(this.children, buffer)
   }
 }
@@ -272,13 +283,29 @@ export const jsx = (
   return node
 }
 
+let initDomRenderer = false
 export const jsxFn = (
   tag: string | Function,
   props: Props,
   children: (string | number | HtmlEscapedString)[]
 ): JSXNode => {
+  if (!initDomRenderer) {
+    for (const k in domRenderers) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(intrinsicElementTags[k as keyof typeof intrinsicElementTags] as any)[DOM_RENDERER] =
+        domRenderers[k]
+    }
+    initDomRenderer = true
+  }
+
   if (typeof tag === 'function') {
     return new JSXFunctionNode(tag, props, children)
+  } else if (intrinsicElementTags[tag as keyof typeof intrinsicElementTags]) {
+    return new JSXFunctionNode(
+      intrinsicElementTags[tag as keyof typeof intrinsicElementTags],
+      props,
+      children
+    )
   } else {
     return new JSXNode(tag, props, children)
   }

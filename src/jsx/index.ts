@@ -30,6 +30,7 @@ import {
   useTransition,
   useViewTransition,
 } from './hooks'
+import { useActionState, useOptimistic } from './dom/hooks'
 import { Suspense } from './streaming'
 
 export {
@@ -64,6 +65,8 @@ export {
   forwardRef,
   useImperativeHandle,
   useSyncExternalStore,
+  useActionState,
+  useOptimistic,
   Suspense,
   Children,
   DOMAttributes,
@@ -100,6 +103,8 @@ export default {
   forwardRef,
   useImperativeHandle,
   useSyncExternalStore,
+  useActionState,
+  useOptimistic,
   Suspense,
   Children,
 }

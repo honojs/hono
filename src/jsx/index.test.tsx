@@ -788,6 +788,8 @@ describe('default export', () => {
     'useMemo',
     'useLayoutEffect',
     'useInsertionEffect',
+    'useActionState',
+    'useOptimistic',
     'Suspense',
     'StrictMode',
   ].forEach((key) => {
