@@ -1,6 +1,5 @@
 import { SHA256 as sha256CryptoJS } from 'crypto-js'
 import { bufferToFormData, bufferToString, equal, timingSafeEqual } from './buffer'
-import { expect } from 'vitest'
 
 describe('equal', () => {
   it('should return true for identical ArrayBuffers', () => {
