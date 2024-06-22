@@ -83,8 +83,8 @@ export const isMatchForRule = (
  * Rules for IP Limit Middleware
  */
 export interface IPRestrictRules {
-  deny?: IPRestrictRule[]
-  allow?: IPRestrictRule[]
+  denyList?: IPRestrictRule[]
+  allowList?: IPRestrictRule[]
 }
 
 /**
@@ -94,10 +94,10 @@ export interface IPRestrictRules {
  */
 export const ipRestriction = (
   getIP: GetIPAddr,
-  { deny = [], allow = [] }: IPRestrictRules
+  { denyList = [], allowList = [] }: IPRestrictRules
 ): MiddlewareHandler => {
-  const denyLength = deny.length
-  const allowLength = allow.length
+  const denyLength = denyList.length
+  const allowLength = allowList.length
 
   const blockError = (): HTTPException =>
     new HTTPException(403, {
@@ -116,13 +116,13 @@ export const ipRestriction = (
       (typeof connInfo !== 'string' && connInfo.remote.addressType) || distinctRemoteAddr(addr)
 
     for (let i = 0; i < denyLength; i++) {
-      const isValid = isMatchForRule({ type, addr }, deny[i])
+      const isValid = isMatchForRule({ type, addr }, denyList[i])
       if (isValid) {
         throw blockError()
       }
     }
     for (let i = 0; i < allowLength; i++) {
-      const isValid = isMatchForRule({ type, addr }, allow[i])
+      const isValid = isMatchForRule({ type, addr }, allowList[i])
       if (isValid) {
         return await next()
       }

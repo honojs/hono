@@ -19,8 +19,8 @@ describe('ipLimit middleware', () => {
     app.use(
       '/basic',
       ipRestriction(getConnInfo, {
-        allow: ['192.168.1.0', '192.168.2.0/24'],
-        deny: ['192.168.2.10'],
+        allowList: ['192.168.1.0', '192.168.2.0/24'],
+        denyList: ['192.168.2.10'],
       })
     )
     app.get('/basic', (c) => c.text('Hello World!'))
@@ -28,7 +28,7 @@ describe('ipLimit middleware', () => {
     app.use(
       '/allow-empty',
       ipRestriction(getConnInfo, {
-        deny: ['192.168.1.0'],
+        denyList: ['192.168.1.0'],
       })
     )
     app.get('/allow-empty', (c) => c.text('Hello World!'))
