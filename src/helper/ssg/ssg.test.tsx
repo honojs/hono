@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 /** @jsxImportSource ../../jsx */
-import { beforeEach, describe, expect, it } from 'vitest'
 import { Hono } from '../../hono'
 import { poweredBy } from '../../middleware/powered-by'
 import {
