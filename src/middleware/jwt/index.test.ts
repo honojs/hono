@@ -309,7 +309,7 @@ describe('JWT', () => {
         secret: 'a-secret',
         cookie: {
           key: 'cookie_name',
-          secret: 'cookie_secret'
+          secret: 'cookie_secret',
         },
       })
     )
@@ -360,7 +360,7 @@ describe('JWT', () => {
         secret: 'a-secret',
         cookie: {
           key: 'cookie_name',
-          prefixOptions: 'host'
+          prefixOptions: 'host',
         },
       })
     )
