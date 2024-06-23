@@ -2,7 +2,7 @@ import { Hono } from '../../hono'
 import { Context } from '../../context'
 import { HonoRequest } from '../../request'
 import type { GetConnInfo } from '../../helper/conninfo'
-import { ipRestriction, isMatchForRule } from '.'
+import { ipRestriction } from '.'
 
 describe('ipRestriction middleware', () => {
   it('Should restrict', async () => {
@@ -63,22 +63,50 @@ describe('ipRestriction middleware', () => {
 })
 
 describe('isMatchForRule', () => {
-  it('CIDR Notation', () => {
-    expect(isMatchForRule({ addr: '192.168.2.0', type: 'IPv4' }, '192.168.2.0/24')).toBeTruthy()
-    expect(isMatchForRule({ addr: '192.168.2.1', type: 'IPv4' }, '192.168.2.0/24')).toBeTruthy()
+  const isMatch = async (connInfo, rule) => {
+    const middleware = ipRestriction(
+      () => ({
+        remote: {
+          address: connInfo.addr,
+          addressType: connInfo.type,
+        },
+      }),
+      {
+        allowList: [rule],
+      }
+    )
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await middleware(undefined as any, () => Promise.resolve())
+    } catch (e) {
+      return false
+    }
+    return true
+  }
 
-    expect(isMatchForRule({ addr: '::0', type: 'IPv6' }, '::0/1')).toBeTruthy()
+  it('star', async () => {
+    expect(await isMatch({ addr: '192.168.2.0', type: 'IPv4' }, '*')).toBeTruthy()
+    expect(await isMatch({ addr: '192.168.2.1', type: 'IPv4' }, '*')).toBeTruthy()
+    expect(await isMatch({ addr: '::0', type: 'IPv6' }, '*')).toBeTruthy()
   })
-  it('Static Rules', () => {
-    expect(isMatchForRule({ addr: '192.168.2.1', type: 'IPv4' }, '192.168.2.1')).toBeTruthy()
-    expect(isMatchForRule({ addr: '1234::5678', type: 'IPv6' }, '1234::5678')).toBeTruthy()
+  it('CIDR Notation', async () => {
+    expect(await isMatch({ addr: '192.168.2.0', type: 'IPv4' }, '192.168.2.0/24')).toBeTruthy()
+    expect(await isMatch({ addr: '192.168.2.1', type: 'IPv4' }, '192.168.2.0/24')).toBeTruthy()
+    expect(await isMatch({ addr: '192.168.2.1', type: 'IPv4' }, '192.168.2.1/32')).toBeTruthy()
+    expect(await isMatch({ addr: '192.168.2.1', type: 'IPv4' }, '192.168.2.2/32')).toBeFalsy()
+
+    expect(await isMatch({ addr: '::0', type: 'IPv6' }, '::0/1')).toBeTruthy()
   })
-  it('Function Rules', () => {
-    expect(isMatchForRule({ addr: '0.0.0.0', type: 'IPv4' }, () => true)).toBeTruthy()
-    expect(isMatchForRule({ addr: '0.0.0.0', type: 'IPv4' }, () => false)).toBeFalsy()
+  it('Static Rules', async () => {
+    expect(await isMatch({ addr: '192.168.2.1', type: 'IPv4' }, '192.168.2.1')).toBeTruthy()
+    expect(await isMatch({ addr: '1234::5678', type: 'IPv6' }, '1234::5678')).toBeTruthy()
+  })
+  it('Function Rules', async () => {
+    expect(await isMatch({ addr: '0.0.0.0', type: 'IPv4' }, () => true)).toBeTruthy()
+    expect(await isMatch({ addr: '0.0.0.0', type: 'IPv4' }, () => false)).toBeFalsy()
 
     const randIP = Math.random().toString()
-    isMatchForRule({ addr: randIP, type: 'IPv4' }, (ip) => {
+    await isMatch({ addr: randIP, type: 'IPv4' }, (ip) => {
       expect(randIP).toBe(ip.addr)
       return false
     })

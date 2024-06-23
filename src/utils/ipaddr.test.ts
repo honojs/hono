@@ -1,4 +1,10 @@
-import { convertIPv4ToBinary, convertIPv6ToBinary, distinctRemoteAddr, expandIPv6 } from './ipaddr'
+import {
+  convertIPv4ToBinary,
+  convertIPv6ToBinary,
+  convertIPv6ToString,
+  distinctRemoteAddr,
+  expandIPv6,
+} from './ipaddr'
 
 describe('expandIPv6', () => {
   it('Should result be valid', () => {
@@ -35,5 +41,21 @@ describe('convertIPv6ToBinary', () => {
     expect(convertIPv6ToBinary('::1')).toBe(1n)
 
     expect(convertIPv6ToBinary('::f')).toBe(15n)
+    expect(convertIPv6ToBinary('1234:::5678')).toBe(24196103360772296748952112894165669496n)
+  })
+})
+
+describe('convertIPv6ToString', () => {
+  // add tons of test cases here
+  test.each`
+    input                                        | expected
+    ${'::1'}                                     | ${'::1'}
+    ${'1::'}                                     | ${'1::'}
+    ${'1234:::5678'}                             | ${'1234::5678'}
+    ${'2001:2::'}                                | ${'2001:2::'}
+    ${'2001::db8:0:0:0:0:1'}                     | ${'2001:0:db8::1'}
+    ${'1234:5678:9abc:def0:1234:5678:9abc:def0'} | ${'1234:5678:9abc:def0:1234:5678:9abc:def0'}
+  `('convertIPv6ToString($input) === $expected', ({ input, expected }) => {
+    expect(convertIPv6ToString(convertIPv6ToBinary(input))).toBe(expected)
   })
 })

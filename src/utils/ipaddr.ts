@@ -70,3 +70,45 @@ export const convertIPv6ToBinary = (ipV6: string): bigint => {
   }
   return result
 }
+
+/**
+ * Convert IPv4 to String
+ * @param ipV6 binary IPv6 Address
+ * @return normalized IPv6 Address in string
+ */
+export const convertIPv6ToString = (ipV6: bigint): string => {
+  const sections = []
+  for (let i = 0; i < 8; i++) {
+    sections.push(((ipV6 >> BigInt(16 * (7 - i))) & 0xffffn).toString(16))
+  }
+
+  let currentZeroStart = -1
+  let maxZeroStart = -1
+  let maxZeroEnd = -1
+  for (let i = 0; i < 8; i++) {
+    if (sections[i] === '0') {
+      if (currentZeroStart === -1) {
+        currentZeroStart = i
+      }
+    } else {
+      if (currentZeroStart > -1) {
+        if (i - currentZeroStart > maxZeroEnd - maxZeroStart) {
+          maxZeroStart = currentZeroStart
+          maxZeroEnd = i
+        }
+        currentZeroStart = -1
+      }
+    }
+  }
+  if (currentZeroStart > -1) {
+    if (8 - currentZeroStart > maxZeroEnd - maxZeroStart) {
+      maxZeroStart = currentZeroStart
+      maxZeroEnd = 8
+    }
+  }
+  if (maxZeroStart !== -1) {
+    sections.splice(maxZeroStart, maxZeroEnd - maxZeroStart, ':')
+  }
+
+  return sections.join(':').replace(/:{2,}/g, '::')
+}
