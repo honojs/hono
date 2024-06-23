@@ -1,4 +1,6 @@
-import { Hono } from '../..'
+import { Hono } from '../../hono'
+import { Context } from '../../context'
+import { HonoRequest } from '../../request'
 import type { GetConnInfo } from '../../helper/conninfo'
 import { ipRestriction, isMatchForRule } from '.'
 
@@ -46,6 +48,17 @@ describe('ipLimit middleware', () => {
 
     expect((await app.request('/allow-empty', {}, { ip: '192.168.2.5' })).status).toBe(200)
     expect((await app.request('/allow-empty', {}, { ip: '192.168.2.10' })).status).toBe(200)
+  })
+  it('Custom onerror', async () => {
+    const res = await ipRestriction(
+      () => '0.0.0.0',
+      { denyList: ['0.0.0.0'] },
+      () => new Response('error')
+    )(new Context(new HonoRequest(new Request('/'))), async () => void 0)
+    expect(res).toBeTruthy()
+    if (res) {
+      expect(await res.text()).toBe('error')
+    }
   })
 })
 

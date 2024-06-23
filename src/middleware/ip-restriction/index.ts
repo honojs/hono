@@ -97,7 +97,8 @@ export interface IPRestrictRules {
  */
 export const ipRestriction = (
   getIP: GetIPAddr,
-  { denyList = [], allowList = [] }: IPRestrictRules
+  { denyList = [], allowList = [] }: IPRestrictRules,
+  onError?: (remote: { addr: string; type: AddressType }) => Response | Promise<Response>
 ): MiddlewareHandler => {
   const denyLength = denyList.length
   const allowLength = allowList.length
@@ -121,6 +122,9 @@ export const ipRestriction = (
     for (let i = 0; i < denyLength; i++) {
       const isValid = isMatchForRule({ type, addr }, denyList[i])
       if (isValid) {
+        if (onError) {
+          return onError({ type, addr })
+        }
         throw blockError()
       }
     }
@@ -134,6 +138,9 @@ export const ipRestriction = (
     if (allowLength === 0) {
       return await next()
     } else {
+      if (onError) {
+        return await onError({ addr, type })
+      }
       throw blockError()
     }
   })
