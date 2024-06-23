@@ -27,7 +27,7 @@ export interface acceptsOptions extends acceptsConfig {
 
 export const parseAccept = (acceptHeader: string): Accept[] => {
   // Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
-  const accepts = acceptHeader.split(',')
+  const accepts = acceptHeader.split(',') // ['text/html', 'application/xhtml+xml', 'application/xml;q=0.9', 'image/webp', '*/*;q=0.8']
   return accepts.map((accept) => {
     const parts = accept.trim().split(';') // ['text/html', 'q=0.9', 'image/webp']
     const type = parts[0] // text/html
