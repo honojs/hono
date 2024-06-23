@@ -1,6 +1,7 @@
+import { getCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import type { EventContext } from './handler'
-import { handle } from './handler'
+import { handle, handleMiddleware } from './handler'
 
 type Env = {
   Bindings: {
@@ -47,5 +48,77 @@ describe('Adapter for Cloudflare Pages', () => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     expect(() => handler({ request })).toThrowError('Custom Error')
+  })
+})
+
+describe('Middleware adapter for Cloudflare Pages', () => {
+  it('Should return the middleware response', async () => {
+    const request = new Request('http://localhost/api/foo', {
+      headers: {
+        Cookie: 'my_cookie=1234',
+      },
+    })
+    const env = {
+      TOKEN: 'HONOISCOOL',
+    }
+    const handler = handleMiddleware(async (c, next) => {
+      const cookie = getCookie(c, 'my_cookie')
+
+      await next()
+
+      return c.json({ cookie, response: await c.res.json() })
+    })
+
+    const next = vi.fn().mockResolvedValue(Response.json('From Cloudflare Pages'))
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const res = await handler({ request, env, next })
+
+    expect(next).toHaveBeenCalled()
+
+    expect(await res.json()).toEqual({
+      cookie: '1234',
+      response: 'From Cloudflare Pages',
+    })
+  })
+
+  it('Should return the middleware response if next() is not called', async () => {
+    const request = new Request('http://localhost/api/foo')
+    const env = {
+      TOKEN: 'HONOISCOOL',
+    }
+    const handler = handleMiddleware(async (c) => {
+      return c.json({ response: 'Skip Cloudflare Pages' })
+    })
+
+    const next = vi.fn().mockResolvedValue(Response.json('From Cloudflare Pages'))
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const res = await handler({ request, env, next })
+
+    expect(next).not.toHaveBeenCalled()
+
+    expect(await res.json()).toEqual({
+      response: 'Skip Cloudflare Pages',
+    })
+  })
+
+  it('Should return the Pages response if the middleware does not return a response', async () => {
+    const request = new Request('http://localhost/api/foo')
+    const env = {
+      TOKEN: 'HONOISCOOL',
+    }
+    const handler = handleMiddleware(async (c, next) => {
+      await next()
+    })
+
+    const next = vi.fn().mockResolvedValue(Response.json('From Cloudflare Pages'))
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const res = await handler({ request, env, next })
+
+    expect(next).toHaveBeenCalled()
+
+    expect(await res.json()).toEqual('From Cloudflare Pages')
   })
 })
