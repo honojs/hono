@@ -4,8 +4,8 @@ import { HonoRequest } from '../../request'
 import type { GetConnInfo } from '../../helper/conninfo'
 import { ipRestriction, isMatchForRule } from '.'
 
-describe('ipLimit middleware', () => {
-  it('Should limit', async () => {
+describe('ipRestriction middleware', () => {
+  it('Should restrict', async () => {
     const getConnInfo: GetConnInfo = (c) => {
       return {
         remote: {
