@@ -5,7 +5,6 @@
 
 import type { Context, MiddlewareHandler } from '../..'
 import type { AddressType, GetConnInfo } from '../../helper/conninfo'
-import { createMiddleware } from '../../helper/factory'
 import { HTTPException } from '../../http-exception'
 import {
   convertIPv4ToBinary,
@@ -110,7 +109,7 @@ export const ipRestriction = (
       }),
     })
 
-  return createMiddleware(async (c, next) => {
+  return async function (c, next) {
     const connInfo = getIP(c)
     const addr = typeof connInfo === 'string' ? connInfo : connInfo.remote.address
     if (!addr) {
@@ -143,5 +142,5 @@ export const ipRestriction = (
       }
       throw blockError()
     }
-  })
+  }
 }
