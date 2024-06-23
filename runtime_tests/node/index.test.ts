@@ -7,6 +7,7 @@ import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 import { HonoRequest } from '../../src/request'
 import { stream, streamSSE } from '../../src/helper/streaming'
+import { getConnInfo } from '../../src/adapter/node/conninfo'
 
 // Test only minimal patterns.
 // See <https://github.com/honojs/node-server> for more tests and information.
@@ -161,5 +162,31 @@ describe('streamSSE', () => {
       await new Promise((resolve) => setTimeout(resolve))
     }
     expect(aborted).toBe(true)
+  })
+})
+
+describe('ConnInfo', () => {
+  const app = new Hono()
+
+  app.get('/', (c) => c.json(getConnInfo(c)))
+
+  const server = createAdaptorServer(app)
+  server.listen(0, '127.0.0.1')
+
+  it('Should return correct connection info', async () => {
+    const res = await request(server).get('/')
+    expect(res.status).toBe(200)
+    const info = JSON.parse(res.text).remote
+    expect(info).toEqual({
+      addressType: 'IPv4',
+      address: '127.0.0.1',
+      port: expect.any(Number),
+    })
+  })
+
+  it('Should throw error if no incoming object is provided', () => {
+    expect(() =>
+      getConnInfo(new Context(new HonoRequest(new Request('http://localhost/'))))
+    ).toThrow()
   })
 })
