@@ -63,7 +63,7 @@ describe('isMatchForRule', () => {
   it('Function Rules', () => {
     expect(isMatchForRule({ addr: '0.0.0.0', type: 'IPv4' }, () => true)).toBeTruthy()
     expect(isMatchForRule({ addr: '0.0.0.0', type: 'IPv4' }, () => false)).toBeFalsy()
-    
+
     const randIP = Math.random().toString()
     isMatchForRule({ addr: randIP, type: 'IPv4' }, (ip) => {
       expect(randIP).toBe(ip)
