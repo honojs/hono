@@ -60,4 +60,14 @@ describe('isMatchForRule', () => {
     expect(isMatchForRule({ addr: '192.168.2.1', type: 'IPv4' }, '192.168.2.1')).toBeTruthy()
     expect(isMatchForRule({ addr: '1234::5678', type: 'IPv6' }, '1234::5678')).toBeTruthy()
   })
+  it('Function Rules', () => {
+    expect(isMatchForRule({ addr: '0.0.0.0', type: 'IPv4' }, () => true)).toBeTruthy()
+    expect(isMatchForRule({ addr: '0.0.0.0', type: 'IPv4' }, () => false)).toBeFalsy()
+    
+    const randIP = Math.random().toString()
+    isMatchForRule({ addr: randIP, type: 'IPv4' }, (ip) => {
+      expect(randIP).toBe(ip)
+      return false
+    })
+  })
 })

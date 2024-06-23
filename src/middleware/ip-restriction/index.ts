@@ -31,7 +31,10 @@ type GetIPAddr = GetConnInfo | ((c: Context) => string)
  * - `::1` static
  * - `::1/10` CIDR Notation
  */
-export type IPRestrictRule = string
+export type IPRestrictRule = string | ((addr: {
+  addr: string
+  type: AddressType
+}) => boolean)
 
 const IS_CIDR_NOTATION_REGEX = /\/[0-9]{0,3}$/
 export const isMatchForRule = (
@@ -44,6 +47,9 @@ export const isMatchForRule = (
   if (rule === '*') {
     // Match all
     return true
+  }
+  if (typeof rule === 'function') {
+    return rule(remote)
   }
   if (IS_CIDR_NOTATION_REGEX.test(rule) && (remote.type === 'IPv4' || remote.type === 'IPv6')) {
     const isIPv4 = remote.type === 'IPv4'
