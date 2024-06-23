@@ -54,7 +54,7 @@ describe('ipLimit middleware', () => {
       () => '0.0.0.0',
       { denyList: ['0.0.0.0'] },
       () => new Response('error')
-    )(new Context(new HonoRequest(new Request('/'))), async () => void 0)
+    )(new Context(new HonoRequest(new Request('http://localhost/'))), async () => void 0)
     expect(res).toBeTruthy()
     if (res) {
       expect(await res.text()).toBe('error')
