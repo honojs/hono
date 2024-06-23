@@ -66,7 +66,7 @@ describe('isMatchForRule', () => {
 
     const randIP = Math.random().toString()
     isMatchForRule({ addr: randIP, type: 'IPv4' }, (ip) => {
-      expect(randIP).toBe(ip)
+      expect(randIP).toBe(ip.addr)
       return false
     })
   })
