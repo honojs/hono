@@ -43,11 +43,11 @@ export const distinctRemoteAddr = (remoteAddr: string): AddressType => {
 
 /**
  * Convert IPv4 to Uint8Array
- * @param ipV4 IPv4 Address
+ * @param ipv4 IPv4 Address
  * @returns BigInt
  */
-export const convertIPv4ToBinary = (ipV4: string): bigint => {
-  const parts = ipV4.split('.')
+export const convertIPv4ToBinary = (ipv4: string): bigint => {
+  const parts = ipv4.split('.')
   let result = 0n
   for (let i = 0; i < 4; i++) {
     result <<= 8n
@@ -58,11 +58,11 @@ export const convertIPv4ToBinary = (ipV4: string): bigint => {
 
 /**
  * Convert IPv6 to Uint8Array
- * @param ipV6 IPv6 Address
+ * @param ipv6 IPv6 Address
  * @returns BigInt
  */
-export const convertIPv6ToBinary = (ipV6: string): bigint => {
-  const sections = expandIPv6(ipV6).split(':')
+export const convertIPv6ToBinary = (ipv6: string): bigint => {
+  const sections = expandIPv6(ipv6).split(':')
   let result = 0n
   for (let i = 0; i < 8; i++) {
     result <<= 16n
