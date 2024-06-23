@@ -77,9 +77,9 @@ describe('isMatchForRule', () => {
     expect(isMatchForRule({ addr: '0.0.0.0', type: 'IPv4' }, () => true)).toBeTruthy()
     expect(isMatchForRule({ addr: '0.0.0.0', type: 'IPv4' }, () => false)).toBeFalsy()
 
-    const randIP = Math.random().toString()
-    isMatchForRule({ addr: randIP, type: 'IPv4' }, (ip) => {
-      expect(randIP).toBe(ip.addr)
+    const ip = '93.184.216.34'
+    isMatchForRule({ addr: ip, type: 'IPv4' }, (ip) => {
+      expect(ip).toBe(ip.addr)
       return false
     })
   })
