@@ -284,9 +284,9 @@ describe('TypedResponse', () => {
   test('unknown', () => {
     type Actual = TypedResponse
     type Expected = {
-      data: unknown
-      status: StatusCode
-      format: ResponseFormat
+      _data: unknown
+      _status: StatusCode
+      _format: ResponseFormat
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
@@ -294,9 +294,9 @@ describe('TypedResponse', () => {
   test('text auto infer', () => {
     type Actual = TypedResponse<string>
     type Expected = {
-      data: string
-      status: StatusCode
-      format: 'text'
+      _data: string
+      _status: StatusCode
+      _format: 'text'
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
@@ -304,9 +304,9 @@ describe('TypedResponse', () => {
   test('json auto infer', () => {
     type Actual = TypedResponse<{ ok: true }>
     type Expected = {
-      data: { ok: true }
-      status: StatusCode
-      format: 'json'
+      _data: { ok: true }
+      _status: StatusCode
+      _format: 'json'
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
@@ -1638,14 +1638,30 @@ declare module './context' {
   }
 }
 
-describe('c.var with ContextVariableMap - test only types', () => {
-  it('Should no throw a type error', () => {
+describe('ContextVariableMap type tests', () => {
+  it('Should not throw type errors with c.var', () => {
     new Hono().get((c) => {
       expectTypeOf(c.get('payload')).toEqualTypeOf<string>()
       return c.json(0)
     })
     new Hono().get((c) => {
       expectTypeOf(c.var.payload).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+  })
+
+  it('Should override ContextVariableMap with env variables', () => {
+    const middleware = createMiddleware<{
+      Variables: {
+        payload: number
+      }
+    }>(async (c, next) => {
+      c.set('payload', 123)
+      await next()
+    })
+
+    new Hono().get(middleware, (c) => {
+      expectTypeOf(c.get('payload')).toEqualTypeOf<number>()
       return c.json(0)
     })
   })

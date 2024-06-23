@@ -39,7 +39,7 @@ const run = async (
   stream: SSEStreamingApi,
   cb: (stream: SSEStreamingApi) => Promise<void>,
   onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>
-) => {
+): Promise<void> => {
   try {
     await cb(stream)
   } catch (e) {

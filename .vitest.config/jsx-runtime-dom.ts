@@ -8,5 +8,8 @@ if (config.test) {
     '**/src/jsx/dom/**/(*.)+(spec|test).+(ts|tsx|js)',
     'src/jsx/hooks/dom.test.tsx',
   ]
+  if (config.test.coverage) {
+    config.test.coverage.reportsDirectory = './coverage/raw/jsx-dom'
+  }
 }
 export default config

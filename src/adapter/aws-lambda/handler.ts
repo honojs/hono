@@ -6,8 +6,9 @@ import type {
   ALBRequestContext,
   ApiGatewayRequestContext,
   ApiGatewayRequestContextV2,
-} from './custom-context'
-import type { Handler, LambdaContext } from './types'
+  Handler,
+  LambdaContext,
+} from './types'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -95,7 +96,7 @@ const getRequestContext = (
 const streamToNodeStream = async (
   reader: ReadableStreamDefaultReader<Uint8Array>,
   writer: NodeJS.WritableStream
-) => {
+): Promise<void> => {
   let readResult = await reader.read()
   while (!readResult.done) {
     writer.write(readResult.value)
@@ -125,10 +126,21 @@ export const streamHandle = <
           context,
         })
 
+        const headers: Record<string, string> = {}
+        const cookies: string[] = []
+        res.headers.forEach((value, name) => {
+          if (name === 'set-cookie') {
+            cookies.push(value)
+          } else {
+            headers[name] = value
+          }
+        })
+
         // Check content type
         const httpResponseMetadata = {
           statusCode: res.status,
-          headers: Object.fromEntries(res.headers.entries()),
+          headers,
+          cookies,
         }
 
         // Update response stream
@@ -379,26 +391,7 @@ class ALBProcessor extends EventProcessor<ALBProxyEvent> {
     }
     return headers
   }
-  protected setHeadersToResult(
-    event: ALBProxyEvent,
-    result: APIGatewayProxyResult,
-    headers: Headers
-  ): void {
-    // When multiValueHeaders is present in event set multiValueHeaders in result
-    if (event.multiValueHeaders) {
-      const multiValueHeaders: { [key: string]: string[] } = {}
-      for (const [key, value] of headers.entries()) {
-        multiValueHeaders[key] = [value]
-      }
-      result.multiValueHeaders = multiValueHeaders
-    } else {
-      const singleValueHeaders: Record<string, string> = {}
-      for (const [key, value] of headers.entries()) {
-        singleValueHeaders[key] = value
-      }
-      result.headers = singleValueHeaders
-    }
-  }
+
   protected getPath(event: ALBProxyEvent): string {
     return event.path
   }

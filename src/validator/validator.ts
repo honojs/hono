@@ -67,7 +67,7 @@ export const validator = <
 
     switch (target) {
       case 'json':
-        if (!contentType || !/^application\/([a-z-]+\+)?json/.test(contentType)) {
+        if (!contentType || !/^application\/([a-z-\.]+\+)?json/.test(contentType)) {
           const message = `Invalid HTTP header: Content-Type=${contentType}`
           throw new HTTPException(400, { message })
         }

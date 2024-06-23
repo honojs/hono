@@ -1,11 +1,43 @@
 name: ci
 on:
   push:
-    branches: [main, next, v4]
+    branches: [main, next]
   pull_request:
     branches: ['*']
+    paths-ignore:
+      - 'docs/**'
+      - '.vscode/**'
+      - 'README.md'
+      - '.gitignore'
+      - 'LICENSE'
 
 jobs:
+  coverage:
+    name: 'Coverage'
+    runs-on: ubuntu-latest
+    needs:
+      # bun excluded because it uses built-in test tool which does not support coverage in v8/istanbul format.
+      # refer https://github.com/oven-sh/bun/issues/4015
+      - main
+      - fastly
+      - node
+      - workerd
+      - lambda
+      - lambda-edge
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          merge-multiple: true
+          path: ./coverage
+      - uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          directory: ./coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
   main:
     name: 'Main'
     runs-on: ubuntu-latest
@@ -22,6 +54,10 @@ jobs:
       - run: bun run lint
       - run: bun run build
       - run: bun run test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-main
+          path: coverage/
 
   jsr-dry-run:
     name: "Checking if it's valid for JSR"
@@ -41,9 +77,13 @@ jobs:
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
-      - run: env NAME=Deno deno test --allow-read --allow-env --allow-write -c runtime_tests/deno/deno.json runtime_tests/deno
-      - run: deno test -c runtime_tests/deno-jsx/deno.precompile.json runtime_tests/deno-jsx
-      - run: deno test -c runtime_tests/deno-jsx/deno.react-jsx.json runtime_tests/deno-jsx
+      - run: env NAME=Deno deno test --coverage=coverage/raw/deno-runtime --allow-read --allow-env --allow-write -c runtime_tests/deno/deno.json runtime_tests/deno
+      - run: deno test -c runtime_tests/deno-jsx/deno.precompile.json --coverage=coverage/raw/deno-precompile-jsx runtime_tests/deno-jsx
+      - run: deno test -c runtime_tests/deno-jsx/deno.react-jsx.json --coverage=coverage/raw/deno-react-jsx runtime_tests/deno-jsx
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-deno
+          path: coverage/
 
   bun:
     name: 'Bun'
@@ -64,13 +104,17 @@ jobs:
       - run: bun install
       - run: bun run build
       - run: bun run test:fastly
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-fastly
+          path: coverage/
 
   node:
     name: 'Node.js v${{ matrix.node }}'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: ['18.18.2', '20.x']
+        node: ['18.18.2', '20.x', '22.x']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -80,16 +124,28 @@ jobs:
       - run: bun install
       - run: bun run build
       - run: bun run test:node
+      - uses: actions/upload-artifact@v4
+        if: matrix.node == '22.x'
+        with:
+          name: coverage-node
+          path: coverage/
 
-  wrangler:
-    name: 'Cloudflare Workers'
+  workerd:
+    name: 'workerd'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
       - uses: oven-sh/setup-bun@v1
       - run: bun install
       - run: bun run build
-      - run: bun run test:wrangler
+      - run: bun run test:workerd
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-workerd
+          path: coverage/
 
   lambda:
     name: 'AWS Lambda'
@@ -100,6 +156,10 @@ jobs:
       - run: bun install
       - run: bun run build
       - run: bun run test:lambda
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lambda
+          path: coverage/
 
   lambda-edge:
     name: 'Lambda@Edge'
@@ -110,3 +170,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:lambda-edge
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lambda-edge
+          path: coverage/

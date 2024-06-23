@@ -7,10 +7,10 @@ import { expectTypeOf, vi } from 'vitest'
 import { upgradeWebSocket } from '../adapter/deno/websocket'
 import { Hono } from '../hono'
 import { parse } from '../utils/cookie'
-import type { Equal, Expect } from '../utils/types'
+import type { Equal, Expect, JSONValue, SimplifyDeepArray } from '../utils/types'
 import { validator } from '../validator'
 import { hc } from './client'
-import type { InferRequestType, InferResponseType } from './types'
+import type { ClientResponse, InferRequestType, InferResponseType } from './types'
 
 describe('Basic - JSON', () => {
   const app = new Hono()
@@ -461,6 +461,13 @@ describe('Merge path with `app.route()`', () => {
         ok: true,
       })
     }),
+    http.get('http://localhost/api/searchArray', async () => {
+      return HttpResponse.json([
+        {
+          ok: true,
+        },
+      ])
+    }),
     http.get('http://localhost/api/foo', async () => {
       return HttpResponse.json({
         ok: true,
@@ -535,6 +542,54 @@ describe('Merge path with `app.route()`', () => {
     const data = await res.json()
     type verify = Expect<Equal<Result, typeof data>>
     expect(data.ok).toBe(true)
+
+    // A few more types only tests
+    interface DeepInterface {
+      l2: {
+        l3: Result
+      }
+    }
+    interface ExtraDeepInterface {
+      l4: DeepInterface
+    }
+    type verifyDeepInterface = Expect<
+      Equal<SimplifyDeepArray<DeepInterface> extends JSONValue ? true : false, true>
+    >
+    type verifyExtraDeepInterface = Expect<
+      Equal<SimplifyDeepArray<ExtraDeepInterface> extends JSONValue ? true : false, true>
+    >
+  })
+
+  it('Should have correct types - with array of interfaces', async () => {
+    interface Result {
+      ok: boolean
+      okUndefined?: boolean
+    }
+    type Results = Result[]
+
+    const results: Results = [{ ok: true }]
+    const base = new Hono<Env>().basePath('/api')
+    const app = base.get('/searchArray', (c) => c.json(results))
+    type AppType = typeof app
+    const client = hc<AppType>('http://localhost')
+    const res = await client.api.searchArray.$get()
+    const data = await res.json()
+    type verify = Expect<Equal<Results, typeof data>>
+    expect(data[0].ok).toBe(true)
+
+    // A few more types only tests
+    type verifyNestedArrayTyped = Expect<
+      Equal<SimplifyDeepArray<[string, Results]> extends JSONValue ? true : false, true>
+    >
+    type verifyNestedArrayInterfaceArray = Expect<
+      Equal<SimplifyDeepArray<[string, Result[]]> extends JSONValue ? true : false, true>
+    >
+    type verifyExtraNestedArrayTyped = Expect<
+      Equal<SimplifyDeepArray<[string, Results[]]> extends JSONValue ? true : false, true>
+    >
+    type verifyExtraNestedArrayInterfaceArray = Expect<
+      Equal<SimplifyDeepArray<[string, Result[][]]> extends JSONValue ? true : false, true>
+    >
   })
 
   it('Should allow a Date object and return it as a string', async () => {
@@ -1054,5 +1109,59 @@ describe('Text response', () => {
     type Actual = ReturnType<typeof res.text>
     type Expected = Promise<string>
     type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+describe('Redirect response - only types', () => {
+  const server = setupServer(
+    http.get('http://localhost/', async () => {
+      return HttpResponse.redirect('/')
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  const condition = () => true
+  const app = new Hono().get('/', async (c) => {
+    const ok = condition()
+    const temporary = condition()
+    if (ok) {
+      return c.json({ ok: true }, 200)
+    }
+    if (temporary) {
+      return c.redirect('/302')
+    }
+    return c.redirect('/301', 301)
+  })
+
+  const client = hc<typeof app>('http://localhost/')
+  const req = client.index.$get
+
+  it('Should infer request type the type correctly', () => {
+    type Actual = InferResponseType<typeof req>
+    type Expected =
+      | {
+          ok: boolean
+        }
+      | undefined
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer response type correctly', async () => {
+    const res = await req()
+    if (res.ok) {
+      const data = await res.json()
+      expectTypeOf(data).toMatchTypeOf({ ok: true })
+    }
+    if (res.status === 301) {
+      type Expected = ClientResponse<undefined, 301, 'redirect'>
+      type verify = Expect<Equal<Expected, typeof res>>
+    }
+    if (res.status === 302) {
+      type Expected = ClientResponse<undefined, 302, 'redirect'>
+      type verify = Expect<Equal<Expected, typeof res>>
+    }
   })
 })

@@ -103,7 +103,8 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
       },
     })
 
-    c.req.raw = new Request(c.req.raw, { body: reader })
+    const requestInit: RequestInit & { duplex: 'half' } = { body: reader, duplex: 'half' }
+    c.req.raw = new Request(c.req.raw, requestInit as RequestInit)
 
     await next()
 

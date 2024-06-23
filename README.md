@@ -8,7 +8,7 @@
 
 <p align="center">
 <a href="https://hono.dev"><b>Documentation 👉 hono.dev</b></a><br />
-<i>v4 has been released!</i> <a href="docs/MIGRATION.md">Migration guide</b>
+<i>Now supports <a href="https://jsr.io/@hono/hono">JSR</a> and <code>deno.land/x</code> is deprecated! See <a href="docs/MIGRATION.md">Migration guide</a>.</i>
 </p>
 
 <hr />
@@ -22,6 +22,7 @@
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/hono)](https://bundlephobia.com/result?p=hono)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/honojs/hono)](https://github.com/honojs/hono/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/honojs/hono)](https://github.com/honojs/hono/commits/main)
+[![codecov](https://codecov.io/github/honojs/hono/graph/badge.svg)](https://codecov.io/github/honojs/hono)
 [![Discord badge](https://img.shields.io/discord/1011308539819597844?label=Discord&logo=Discord)](https://discord.gg/KMh2eNSdxV)
 
 Hono - _**\[炎\] means flame🔥 in Japanese**_ - is a small, simple, and ultrafast web framework for the Edges.
