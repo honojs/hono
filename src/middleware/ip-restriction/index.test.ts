@@ -105,9 +105,9 @@ describe('isMatchForRule', () => {
     expect(await isMatch({ addr: '0.0.0.0', type: 'IPv4' }, () => true)).toBeTruthy()
     expect(await isMatch({ addr: '0.0.0.0', type: 'IPv4' }, () => false)).toBeFalsy()
 
-    const randIP = Math.random().toString()
-    await isMatch({ addr: randIP, type: 'IPv4' }, (ip) => {
-      expect(randIP).toBe(ip.addr)
+    const ipaddr = '93.184.216.34'
+    await isMatch({ addr: ipaddr, type: 'IPv4' }, (ip) => {
+      expect(ipaddr).toBe(ip.addr)
       return false
     })
   })
