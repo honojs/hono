@@ -75,7 +75,11 @@ const buildMatcher = (
       if (type === 'unknown') {
         throw new TypeError(`Invalid rule: ${rule}`)
       }
-      staticRules.add(type === 'IPv4' ? rule : convertIPv6ToString(convertIPv6ToBinary(rule)))
+      staticRules.add(
+        type === 'IPv4'
+          ? rule // IPv4 address is already normalized, so it is registered as is.
+          : convertIPv6ToString(convertIPv6ToBinary(rule)) // normalize IPv6 address (e.g. 0000:0000:0000:0000:0000:0000:0000:0001 => ::1)
+      )
     }
   }
 
