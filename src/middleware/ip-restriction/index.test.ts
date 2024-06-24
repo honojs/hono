@@ -3,7 +3,7 @@ import { Context } from '../../context'
 import { HonoRequest } from '../../request'
 import type { AddressType, GetConnInfo } from '../../helper/conninfo'
 import { ipRestriction } from '.'
-import type { IPRestrictRule } from '.'
+import type { IPRestrictionRule } from '.'
 
 describe('ipRestriction middleware', () => {
   it('Should restrict', async () => {
@@ -64,7 +64,7 @@ describe('ipRestriction middleware', () => {
 })
 
 describe('isMatchForRule', () => {
-  const isMatch = async (info: { addr: string; type: AddressType }, rule: IPRestrictRule) => {
+  const isMatch = async (info: { addr: string; type: AddressType }, rule: IPRestrictionRule) => {
     const middleware = ipRestriction(
       () => ({
         remote: {

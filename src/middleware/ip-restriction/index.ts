@@ -30,14 +30,14 @@ type GetIPAddr = GetConnInfo | ((c: Context) => string)
  * - `::1` static
  * - `::1/10` CIDR Notation
  */
-type IPRestrictRuleFunction = (addr: { addr: string; type: AddressType }) => boolean
-export type IPRestrictRule = string | IPRestrictRuleFunction
+type IPRestrictionRuleFunction = (addr: { addr: string; type: AddressType }) => boolean
+export type IPRestrictionRule = string | ((addr: { addr: string; type: AddressType }) => boolean)
 
 const IS_CIDR_NOTATION_REGEX = /\/[0-9]{0,3}$/
 const buildMatcher = (
-  rules: IPRestrictRule[]
+  rules: IPRestrictionRule[]
 ): ((addr: { addr: string; type: AddressType; isIPv4: boolean }) => boolean) => {
-  const functionRules: IPRestrictRuleFunction[] = []
+  const functionRules: IPRestrictionRuleFunction[] = []
   const staticRules: Set<string> = new Set()
   const cidrRules: [boolean, bigint, bigint][] = []
 
@@ -111,9 +111,9 @@ const buildMatcher = (
 /**
  * Rules for IP Limit Middleware
  */
-export interface IPRestrictRules {
-  denyList?: IPRestrictRule[]
-  allowList?: IPRestrictRule[]
+export interface IPRestrictionRules {
+  denyList?: IPRestrictionRule[]
+  allowList?: IPRestrictionRule[]
 }
 
 /**
@@ -123,7 +123,7 @@ export interface IPRestrictRules {
  */
 export const ipRestriction = (
   getIP: GetIPAddr,
-  { denyList = [], allowList = [] }: IPRestrictRules,
+  { denyList = [], allowList = [] }: IPRestrictionRules,
   onError?: (remote: { addr: string; type: AddressType }) => Response | Promise<Response>
 ): MiddlewareHandler => {
   const allowLength = allowList.length
