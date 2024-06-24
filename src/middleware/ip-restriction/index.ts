@@ -30,7 +30,7 @@ type GetIPAddr = GetConnInfo | ((c: Context) => string)
  * - `::1` static
  * - `::1/10` CIDR Notation
  */
-export type IPRestrictRule = string | ((addr: { addr: string; type: AddressType }) => boolean)
+export type IPRestrictionRule = string | ((addr: { addr: string; type: AddressType }) => boolean)
 
 const IS_CIDR_NOTATION_REGEX = /\/[0-9]{0,3}$/
 export const isMatchForRule = (
@@ -38,7 +38,7 @@ export const isMatchForRule = (
     addr: string
     type: AddressType
   },
-  rule: IPRestrictRule
+  rule: IPRestrictionRule
 ): boolean => {
   if (rule === '*') {
     // Match all
@@ -84,9 +84,9 @@ export const isMatchForRule = (
 /**
  * Rules for IP Limit Middleware
  */
-export interface IPRestrictRules {
-  denyList?: IPRestrictRule[]
-  allowList?: IPRestrictRule[]
+export interface IPRestrictionRules {
+  denyList?: IPRestrictionRule[]
+  allowList?: IPRestrictionRule[]
 }
 
 /**
@@ -96,7 +96,7 @@ export interface IPRestrictRules {
  */
 export const ipRestriction = (
   getIP: GetIPAddr,
-  { denyList = [], allowList = [] }: IPRestrictRules,
+  { denyList = [], allowList = [] }: IPRestrictionRules,
   onError?: (remote: { addr: string; type: AddressType }) => Response | Promise<Response>
 ): MiddlewareHandler => {
   const denyLength = denyList.length
