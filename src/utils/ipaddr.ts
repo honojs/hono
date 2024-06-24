@@ -72,7 +72,7 @@ export const convertIPv6ToBinary = (ipv6: string): bigint => {
 }
 
 /**
- * Convert IPv4 to String
+ * Convert IPv6 to String
  * @param ipV6 binary IPv6 Address
  * @return normalized IPv6 Address in string
  */
