@@ -66,6 +66,15 @@ export const streamSSE = (
   const { readable, writable } = new TransformStream()
   const stream = new SSEStreamingApi(writable, readable)
 
+  // bun does not cancel response stream when request is canceled, so detect abort by signal
+  c.req.raw.signal.addEventListener('abort', () => {
+    // "referencing a `c` that is never null in a condition" is a work around for bun (maybe JIT).
+    // If `c` is not referenced in this closure, this event will not fire.
+    if (c) {
+      stream.abort()
+    }
+  })
+
   c.header('Transfer-Encoding', 'chunked')
   c.header('Content-Type', 'text/event-stream')
   c.header('Cache-Control', 'no-cache')
