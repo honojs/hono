@@ -4,6 +4,7 @@ import { createBunWebSocket } from '../../src/adapter/bun/websocket'
 import type { BunWebSocketData } from '../../src/adapter/bun/websocket'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
+import { stream } from '../../src/helper/streaming'
 import type { WSMessageReceive } from '../../src/helper/websocket'
 import { Hono } from '../../src/index'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -316,3 +317,40 @@ async function deleteDirectory(dirPath) {
     await fs.unlink(dirPath)
   }
 }
+
+describe('Stream Helper', () => {
+  it('`onAbort` should be called when the stream is aborted', async () => {
+    const app = new Hono()
+
+    let abortCount = 0
+
+    app.get('/stream', (c) => {
+      return stream(c, async (w) => {
+        w.onAbort(() => {
+          abortCount++
+        })
+
+        await w.writeln('Hello1')
+        await w.writeln('Hello2')
+        await w.writeln('Hello3')
+      })
+    })
+
+    app.get('/check-abort', (c) => {
+      return c.json({ abortCount })
+    })
+
+    const checkAbortRes = await app.request(new Request('http://localhost/check-abort'))
+    expect(checkAbortRes.status).toBe(200)
+    expect(await checkAbortRes.json()).toEqual({ abortCount: 0 })
+
+    const res = await app.request(new Request('http://localhost/stream'))
+    assert(res.body)
+    const reader = res.body.getReader()
+    reader.cancel()
+
+    const checkAbortRes2 = await app.request(new Request('http://localhost/check-abort'))
+    expect(checkAbortRes2.status).toBe(200)
+    expect(await checkAbortRes2.json()).toEqual({ abortCount: 1 })
+  })
+})
