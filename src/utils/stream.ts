@@ -30,7 +30,7 @@ export class StreamingApi {
         done ? controller.close() : controller.enqueue(value)
       },
       cancel: () => {
-        this.abortSubscribers.forEach((subscriber) => subscriber())
+        this.abort()
       },
     })
   }
@@ -72,5 +72,9 @@ export class StreamingApi {
 
   onAbort(listener: () => void | Promise<void>) {
     this.abortSubscribers.push(listener)
+  }
+
+  abort() {
+    this.abortSubscribers.forEach((subscriber) => subscriber())
   }
 }
