@@ -3,9 +3,11 @@ import request from 'supertest'
 import { Hono } from '../../src'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
+import { stream } from '../../src/helper/streaming'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 import { HonoRequest } from '../../src/request'
+import { StreamingApi } from '../../src/utils/stream'
 
 // Test only minimal patterns.
 // See <https://github.com/honojs/node-server> for more tests and information.
@@ -94,5 +96,21 @@ describe('JWT Auth Middleware', () => {
     const res = await request(server).get('/jwt/a').set('Authorization', `Bearer ${credential}`)
     expect(res.status).toBe(200)
     expect(res.text).toBe('auth')
+  })
+})
+
+describe('Stream Helper', () => {
+  it('`onAbort` should be called when the stream is aborted', async () => {
+    const { readable, writable } = new TransformStream()
+    const handleAbort1 = vi.fn()
+    const handleAbort2 = vi.fn()
+    const api = new StreamingApi(writable, readable)
+    api.onAbort(handleAbort1)
+    api.onAbort(handleAbort2)
+    expect(handleAbort1).not.toBeCalled()
+    expect(handleAbort2).not.toBeCalled()
+    await api.responseReadable.cancel()
+    expect(handleAbort1).toBeCalled()
+    expect(handleAbort2).toBeCalled()
   })
 })
