@@ -67,3 +67,23 @@ describe('workerd with WebSocket', () => {
     expect(closeHandler).toHaveBeenCalled()
   })
 })
+
+describe('workerd with Stream', () => {
+  it('`onAbort` should be called when the stream is aborted', async () => {
+    const worker = await unstable_dev('./runtime_tests/workerd/index.ts', {
+      experimental: { disableExperimentalWarning: true },
+    })
+
+    const checkAbortRes = await worker.fetch('/check-abort')
+    expect(checkAbortRes.status).toBe(200)
+    expect(await checkAbortRes.json()).toEqual({ abortCount: 0 })
+
+    const res = await worker.fetch('/stream')
+    const reader = res.body?.getReader()
+    reader?.cancel()
+
+    const checkAbortRes2 = await worker.fetch('/check-abort')
+    expect(checkAbortRes2.status).toBe(200)
+    expect(await checkAbortRes2.json()).toEqual({ abortCount: 1 })
+  })
+})

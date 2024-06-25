@@ -1,5 +1,6 @@
-import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { upgradeWebSocket } from '../../src/adapter/cloudflare-workers'
+import { env, getRuntimeKey } from '../../src/helper/adapter'
+import { stream } from '../../src/helper/streaming'
 import { Hono } from '../../src/hono'
 
 const app = new Hono()
@@ -21,5 +22,23 @@ app.get(
     }
   })
 )
+
+let abortCount = 0
+
+app.get('/stream', (c) => {
+  return stream(c, async (w) => {
+    w.onAbort(() => {
+      abortCount++
+    })
+
+    await w.writeln('Hello1')
+    await w.writeln('Hello2')
+    await w.writeln('Hello3')
+  })
+})
+
+app.get('/check-abort', (c) => {
+  return c.json({ abortCount })
+})
 
 export default app
