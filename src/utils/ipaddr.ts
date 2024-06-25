@@ -72,11 +72,11 @@ export const convertIPv6ToBinary = (ipv6: string): bigint => {
 }
 
 /**
- * Convert IPv6 to String
+ * Convert a binary representation of an IPv6 address to a string.
  * @param ipV6 binary IPv6 Address
  * @return normalized IPv6 Address in string
  */
-export const convertIPv6ToString = (ipV6: bigint): string => {
+export const convertIPv6BinaryToString = (ipV6: bigint): string => {
   const sections = []
   for (let i = 0; i < 8; i++) {
     sections.push(((ipV6 >> BigInt(16 * (7 - i))) & 0xffffn).toString(16))

@@ -1,7 +1,7 @@
 import {
   convertIPv4ToBinary,
+  convertIPv6BinaryToString,
   convertIPv6ToBinary,
-  convertIPv6ToString,
   distinctRemoteAddr,
   expandIPv6,
 } from './ipaddr'
@@ -56,6 +56,6 @@ describe('convertIPv6ToString', () => {
     ${'2001::db8:0:0:0:0:1'}                     | ${'2001:0:db8::1'}
     ${'1234:5678:9abc:def0:1234:5678:9abc:def0'} | ${'1234:5678:9abc:def0:1234:5678:9abc:def0'}
   `('convertIPv6ToString($input) === $expected', ({ input, expected }) => {
-    expect(convertIPv6ToString(convertIPv6ToBinary(input))).toBe(expected)
+    expect(convertIPv6BinaryToString(convertIPv6ToBinary(input))).toBe(expected)
   })
 })

@@ -8,8 +8,8 @@ import type { AddressType, GetConnInfo } from '../../helper/conninfo'
 import { HTTPException } from '../../http-exception'
 import {
   convertIPv4ToBinary,
+  convertIPv6BinaryToString,
   convertIPv6ToBinary,
-  convertIPv6ToString,
   distinctRemoteAddr,
 } from '../../utils/ipaddr'
 
@@ -78,7 +78,7 @@ const buildMatcher = (
       staticRules.add(
         type === 'IPv4'
           ? rule // IPv4 address is already normalized, so it is registered as is.
-          : convertIPv6ToString(convertIPv6ToBinary(rule)) // normalize IPv6 address (e.g. 0000:0000:0000:0000:0000:0000:0000:0001 => ::1)
+          : convertIPv6BinaryToString(convertIPv6ToBinary(rule)) // normalize IPv6 address (e.g. 0000:0000:0000:0000:0000:0000:0000:0001 => ::1)
       )
     }
   }
