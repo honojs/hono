@@ -137,7 +137,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   query(key: string): string | undefined
   query(): Record<string, string>
   query(key?: string) {
-    return getQueryParam(this.url, key)
+    const queryStrings = this.url.substring(this.url.indexOf(this.path, 8) + this.url.length)
+    return getQueryParam(queryStrings, key)
   }
 
   /**

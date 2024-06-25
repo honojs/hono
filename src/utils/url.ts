@@ -220,9 +220,9 @@ const _getQueryParam = (
   if (!multiple && key && !/[%+]/.test(key)) {
     // optimized for unencoded key
 
-    let keyIndex = url.indexOf(`?${key}`, 8)
+    let keyIndex = url.indexOf(`?${key}`)
     if (keyIndex === -1) {
-      keyIndex = url.indexOf(`&${key}`, 8)
+      keyIndex = url.indexOf(`&${key}`)
     }
     while (keyIndex !== -1) {
       const trailingKeyCode = url.charCodeAt(keyIndex + key.length + 1)
@@ -246,7 +246,7 @@ const _getQueryParam = (
   const results: Record<string, string> | Record<string, string[]> = {}
   encoded ??= /[%+]/.test(url)
 
-  let keyIndex = url.indexOf('?', 8)
+  let keyIndex = url.indexOf('?')
   while (keyIndex !== -1) {
     const nextKeyIndex = url.indexOf('&', keyIndex + 1)
     let valueIndex = url.indexOf('=', keyIndex)
