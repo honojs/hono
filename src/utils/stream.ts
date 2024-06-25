@@ -9,6 +9,7 @@ export class StreamingApi {
   private writable: WritableStream
   private abortSubscribers: (() => void | Promise<void>)[] = []
   responseReadable: ReadableStream
+  aborted: boolean = false
 
   constructor(writable: WritableStream, _readable: ReadableStream) {
     this.writable = writable
@@ -75,6 +76,9 @@ export class StreamingApi {
   }
 
   abort() {
-    this.abortSubscribers.forEach((subscriber) => subscriber())
+    if (!this.aborted) {
+      this.aborted = true
+      this.abortSubscribers.forEach((subscriber) => subscriber())
+    }
   }
 }
