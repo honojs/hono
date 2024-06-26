@@ -43,6 +43,7 @@ export type NodeObject = {
   vR: Node[] // virtual dom children to remove
   s?: Node[] // shadow virtual dom children
   n?: string // namespace
+  f?: boolean // force build
   c: Container | undefined // container
   e: SupportedElement | Text | undefined // rendered element
   p?: PreserveNodeType // preserve HTMLElement if it will be unmounted
@@ -444,6 +445,7 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
           oldVChildren.splice(i, 1)
         }
 
+        let skipBuild = false
         if (oldChild) {
           if (isNodeString(child)) {
             if ((oldChild as NodeString).t !== child.t) {
@@ -454,11 +456,19 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
           } else if (oldChild.tag !== child.tag) {
             node.vR.push(oldChild)
           } else {
-            oldChild.pP = oldChild.props
+            const pP = (oldChild.pP = oldChild.props)
             oldChild.props = child.props
             if (typeof child.tag === 'function') {
               oldChild[DOM_STASH][2] = child[DOM_STASH][2] || []
               oldChild[DOM_STASH][3] = child[DOM_STASH][3]
+
+              const prevPropsKeys = Object.keys(pP)
+              const currentProps = oldChild.props
+              skipBuild =
+                !oldChild.f &&
+                prevPropsKeys.length === Object.keys(currentProps).length &&
+                prevPropsKeys.every((k) => k in currentProps && currentProps[k] === pP[k])
+              delete oldChild.f
             }
             child = oldChild
           }
@@ -469,7 +479,7 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
           }
         }
 
-        if (!isNodeString(child)) {
+        if (!isNodeString(child) && !skipBuild) {
           build(context, child)
         }
         vChildren.push(child)
@@ -486,6 +496,7 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
       delete node.pC
     }
   } catch (e) {
+    node.f = true
     if (e === cancelBuild) {
       if (foundErrorHandler) {
         return
