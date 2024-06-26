@@ -458,17 +458,18 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
           } else {
             const pP = (oldChild.pP = oldChild.props)
             oldChild.props = child.props
+            oldChild.f ||= child.f || node.f
             if (typeof child.tag === 'function') {
               oldChild[DOM_STASH][2] = child[DOM_STASH][2] || []
               oldChild[DOM_STASH][3] = child[DOM_STASH][3]
 
-              const prevPropsKeys = Object.keys(pP)
-              const currentProps = oldChild.props
-              skipBuild =
-                !oldChild.f &&
-                prevPropsKeys.length === Object.keys(currentProps).length &&
-                prevPropsKeys.every((k) => k in currentProps && currentProps[k] === pP[k])
-              delete oldChild.f
+              if (!oldChild.f) {
+                const prevPropsKeys = Object.keys(pP)
+                const currentProps = oldChild.props
+                skipBuild =
+                  prevPropsKeys.length === Object.keys(currentProps).length &&
+                  prevPropsKeys.every((k) => k in currentProps && currentProps[k] === pP[k])
+              }
             }
             child = oldChild
           }
@@ -481,6 +482,7 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
 
         if (!isNodeString(child) && !skipBuild) {
           build(context, child)
+          delete child.f
         }
         vChildren.push(child)
 
@@ -563,7 +565,9 @@ export const buildNode = (node: Child): Node | undefined => {
         tag: (node as NodeObject).tag,
         props: (node as NodeObject).props,
         key: (node as NodeObject).key,
-      })
+        f: (node as NodeObject).f,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any)
     }
     if (typeof (node as JSXNode).tag === 'function') {
       ;(node as NodeObject)[DOM_STASH] = [0, []]
