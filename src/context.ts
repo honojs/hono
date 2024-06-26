@@ -408,7 +408,7 @@ export class Context<
    *
    * @returns The current layout function.
    */
-  getLayout = () => this.#layout
+  getLayout = (): Layout<PropsForRenderer & { Layout: Layout }> | undefined => this.#layout
 
   /**
    * `.setRenderer()` can set the layout in the custom middleware.

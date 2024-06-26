@@ -29,7 +29,7 @@ Deno.test('runtime', () => {
 })
 
 Deno.test('environment variables', () => {
-  const c = new Context(new HonoRequest(new Request('http://localhost/')))
+  const c = new Context(new Request('http://localhost/'))
   const { NAME } = env<{ NAME: string }>(c)
   assertEquals(NAME, 'Deno')
 })
