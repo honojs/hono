@@ -1,5 +1,14 @@
-import type { HonoRequest } from './request'
-import type { Env, FetchEventLike, Input, NotFoundHandler, TypedResponse } from './types'
+import { HonoRequest } from './request'
+import type { Result } from './router'
+import type {
+  Env,
+  FetchEventLike,
+  H,
+  Input,
+  NotFoundHandler,
+  RouterRoute,
+  TypedResponse,
+} from './types'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
 import type { IsAny, JSONParsed, JSONValue, SimplifyDeepArray } from './utils/types'
@@ -203,6 +212,8 @@ type ContextOptions<E extends Env> = {
    * Handler for not found responses.
    */
   notFoundHandler?: NotFoundHandler<E>
+  matchResult?: Result<[H, RouterRoute]>
+  path?: string
 }
 
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
@@ -226,10 +237,8 @@ export class Context<
   P extends string = any,
   I extends Input = {}
 > {
-  /**
-   * `.req` is the instance of {@link HonoRequest}.
-   */
-  req: HonoRequest<P, I['out']>
+  #rawRequest: Request
+  #req: HonoRequest<P, I['out']> | undefined
   /**
    * `.env` can get bindings (environment variables, secrets, KV namespaces, D1 database, R2 bucket etc.) in Cloudflare Workers.
    *
@@ -244,7 +253,7 @@ export class Context<
    * ```
    */
   env: E['Bindings'] = {}
-  private _var: E['Variables'] | undefined
+  #var: E['Variables'] | undefined
   finalized: boolean = false
   /**
    * `.error` can get the error object from the middleware if the Handler throws an error.
@@ -261,33 +270,44 @@ export class Context<
    * })
    * ```
    */
-  error: Error | undefined = undefined
+  error: Error | undefined
 
   #status: StatusCode = 200
   #executionCtx: FetchEventLike | ExecutionContext | undefined
-  #headers: Headers | undefined = undefined
-  #preparedHeaders: Record<string, string> | undefined = undefined
+  #headers: Headers | undefined
+  #preparedHeaders: Record<string, string> | undefined
   #res: Response | undefined
   #isFresh = true
-  private layout: Layout<PropsForRenderer & { Layout: Layout }> | undefined = undefined
-  private renderer: Renderer = (content: string | Promise<string>) => this.html(content)
-  private notFoundHandler: NotFoundHandler<E> = () => new Response()
+  #layout: Layout<PropsForRenderer & { Layout: Layout }> | undefined
+  #renderer: Renderer | undefined
+  #notFoundHandler: NotFoundHandler<E> | undefined
+
+  #matchResult: Result<[H, RouterRoute]> | undefined
+  #path: string | undefined
 
   /**
    * Creates an instance of the Context class.
    *
-   * @param req - The HonoRequest object.
+   * @param req - The Request object.
    * @param options - Optional configuration options for the context.
    */
-  constructor(req: HonoRequest<P, I['out']>, options?: ContextOptions<E>) {
-    this.req = req
+  constructor(req: Request, options?: ContextOptions<E>) {
+    this.#rawRequest = req
     if (options) {
       this.#executionCtx = options.executionCtx
       this.env = options.env
-      if (options.notFoundHandler) {
-        this.notFoundHandler = options.notFoundHandler
-      }
+      this.#notFoundHandler = options.notFoundHandler
+      this.#path = options.path
+      this.#matchResult = options.matchResult
     }
+  }
+
+  /**
+   * `.req` is the instance of {@link HonoRequest}.
+   */
+  get req(): HonoRequest<P, I['out']> {
+    this.#req ??= new HonoRequest(this.#rawRequest, this.#path, this.#matchResult)
+    return this.#req
   }
 
   /**
@@ -364,7 +384,10 @@ export class Context<
    * })
    * ```
    */
-  render: Renderer = (...args) => this.renderer(...args)
+  render: Renderer = (...args) => {
+    this.#renderer ??= (content: string | Promise<string>) => this.html(content)
+    return this.#renderer(...args)
+  }
 
   /**
    * Sets the layout for the response.
@@ -378,14 +401,14 @@ export class Context<
     PropsForRenderer & {
       Layout: Layout
     }
-  > => (this.layout = layout)
+  > => (this.#layout = layout)
 
   /**
    * Gets the current layout for the response.
    *
    * @returns The current layout function.
    */
-  getLayout = () => this.layout
+  getLayout = () => this.#layout
 
   /**
    * `.setRenderer()` can set the layout in the custom middleware.
@@ -409,7 +432,7 @@ export class Context<
    * ```
    */
   setRenderer = (renderer: Renderer): void => {
-    this.renderer = renderer
+    this.#renderer = renderer
   }
 
   /**
@@ -487,8 +510,8 @@ export class Context<
 ```
    */
   set: Set<E> = (key: string, value: unknown) => {
-    this._var ??= {}
-    this._var[key as string] = value
+    this.#var ??= {}
+    this.#var[key as string] = value
   }
 
   /**
@@ -505,7 +528,7 @@ export class Context<
    * ```
    */
   get: Get<E> = (key: string) => {
-    return this._var ? this._var[key] : undefined
+    return this.#var ? this.#var[key] : undefined
   }
 
   /**
@@ -523,7 +546,7 @@ export class Context<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ContextVariableMap & (IsAny<E['Variables']> extends true ? Record<string, any> : E['Variables'])
   > {
-    return { ...this._var } as never
+    return { ...this.#var } as never
   }
 
   newResponse: NewResponse = (
@@ -750,6 +773,7 @@ export class Context<
    * ```
    */
   notFound = (): Response | Promise<Response> => {
-    return this.notFoundHandler(this)
+    this.#notFoundHandler ??= () => new Response()
+    return this.#notFoundHandler(this)
   }
 }

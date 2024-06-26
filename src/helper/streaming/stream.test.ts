@@ -3,7 +3,7 @@ import { HonoRequest } from '../../request'
 import { stream } from '.'
 
 describe('Basic Streaming Helper', () => {
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   let c: Context
   beforeEach(() => {
     c = new Context(req)
