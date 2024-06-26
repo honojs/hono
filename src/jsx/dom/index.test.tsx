@@ -266,14 +266,16 @@ describe('DOM', () => {
 
   describe('skip build child', () => {
     it('simple', async () => {
-      const Child = vi.fn(({count}: {count: number}) => <div>{count}</div> )
+      const Child = vi.fn(({ count }: { count: number }) => <div>{count}</div>)
       const App = () => {
         const [count, setCount] = useState(0)
-        return <>
-          <div>{count}</div>
-          <Child count={Math.floor(count / 2)} />
-          <button onClick={() => setCount(count + 1)}>+</button>
-        </>
+        return (
+          <>
+            <div>{count}</div>
+            <Child count={Math.floor(count / 2)} />
+            <button onClick={() => setCount(count + 1)}>+</button>
+          </>
+        )
       }
       render(<App />, root)
       expect(root.innerHTML).toBe('<div>0</div><div>0</div><button>+</button>')
