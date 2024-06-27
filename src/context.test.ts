@@ -36,7 +36,7 @@ describe('Context', () => {
   })
 
   it('c.html()', async () => {
-    const res = await c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
+    const res: Response = c.html('<h1>Hello! Hono!</h1>', 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
     expect(res.headers.get('Content-Type')).toMatch('text/html')
     expect(await res.text()).toBe('<h1>Hello! Hono!</h1>')
@@ -44,13 +44,14 @@ describe('Context', () => {
   })
 
   it('c.html() with async', async () => {
-    const res = await c.html(
-      new Promise((resolve) => setTimeout(() => resolve('<h1>Hello! Hono!</h1>'), 0)),
+    const resPromise: Promise<Response> = c.html(
+      new Promise<string>((resolve) => setTimeout(() => resolve('<h1>Hello! Hono!</h1>'), 0)),
       201,
       {
         'X-Custom': 'Message',
       }
     )
+    const res = await resPromise
     expect(res.status).toBe(201)
     expect(res.headers.get('Content-Type')).toMatch('text/html')
     expect(await res.text()).toBe('<h1>Hello! Hono!</h1>')

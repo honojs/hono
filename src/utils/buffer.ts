@@ -35,8 +35,7 @@ export const timingSafeEqual = async (
     hashFunction = sha256
   }
 
-  const sa = await hashFunction(a)
-  const sb = await hashFunction(b)
+  const [sa, sb] = await Promise.all([hashFunction(a), hashFunction(b)])
 
   if (!sa || !sb) {
     return false
