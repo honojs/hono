@@ -1,5 +1,4 @@
 import { Context } from '../../context'
-import { HonoRequest } from '../../request'
 import { stream } from '.'
 
 describe('Basic Streaming Helper', () => {
