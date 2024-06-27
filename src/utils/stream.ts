@@ -9,6 +9,9 @@ export class StreamingApi {
   private writable: WritableStream
   private abortSubscribers: (() => void | Promise<void>)[] = []
   responseReadable: ReadableStream
+  /**
+   * Whether the stream has been aborted.
+   */
   aborted: boolean = false
 
   constructor(writable: WritableStream, _readable: ReadableStream) {
@@ -75,6 +78,10 @@ export class StreamingApi {
     this.abortSubscribers.push(listener)
   }
 
+  /**
+   * Abort the stream.
+   * You can call this method when stream is aborted by external event.
+   */
   abort() {
     if (!this.aborted) {
       this.aborted = true
