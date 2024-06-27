@@ -20,6 +20,7 @@ describe('getConnInfo', () => {
 
     expect(info.remote.port).toBe(port)
     expect(info.remote.address).toBe(address)
+    expect(info.remote.addressType).toBeUndefined()
     expect(info.remote.transport).toBe(transport)
   })
 })
