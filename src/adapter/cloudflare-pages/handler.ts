@@ -1,6 +1,6 @@
 import { Context } from '../../context'
 import type { Hono } from '../../hono'
-import { HonoRequest } from '../../request'
+import { HTTPException } from '../../http-exception'
 import type { Env, Input, MiddlewareHandler } from '../../types'
 
 // Ref: https://github.com/cloudflare/workerd/blob/main/types/defines/pages.d.ts
@@ -48,14 +48,24 @@ export function handleMiddleware<E extends Env = any, P extends string = any, I 
   middleware: MiddlewareHandler<E, P, I>
 ): PagesFunction {
   return async (executionCtx) => {
-    const context = new Context(new HonoRequest(executionCtx.request), {
+    const context = new Context(executionCtx.request, {
       env: executionCtx.env,
       executionCtx,
     })
 
-    const response = await middleware(context, async () => {
-      context.res = await executionCtx.next()
-    })
+    let response: Response | void = undefined
+
+    try {
+      response = await middleware(context, async () => {
+        context.res = await executionCtx.next()
+      })
+    } catch (error) {
+      if (error instanceof HTTPException) {
+        response = error.getResponse()
+      } else {
+        throw error
+      }
+    }
 
     return response ?? context.res
   }

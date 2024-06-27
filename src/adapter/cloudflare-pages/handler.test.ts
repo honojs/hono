@@ -1,5 +1,6 @@
 import { getCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
+import { HTTPException } from '../../http-exception'
 import type { EventContext } from './handler'
 import { handle, handleMiddleware } from './handler'
 
@@ -120,5 +121,42 @@ describe('Middleware adapter for Cloudflare Pages', () => {
     expect(next).toHaveBeenCalled()
 
     expect(await res.json()).toEqual('From Cloudflare Pages')
+  })
+
+  it('Should handle a HTTPException by returning error.getResponse()', async () => {
+    const request = new Request('http://localhost/api/foo')
+    const env = {
+      TOKEN: 'HONOISCOOL',
+    }
+    const handler = handleMiddleware(() => {
+      const res = new Response('Unauthorized', { status: 401 })
+      throw new HTTPException(401, { res })
+    })
+
+    const next = vi.fn().mockResolvedValue(Response.json('From Cloudflare Pages'))
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const res = await handler({ request, env, next })
+
+    expect(next).not.toHaveBeenCalled()
+
+    expect(res.status).toBe(401)
+    expect(await res.text()).toBe('Unauthorized')
+  })
+
+  it('Should rethrow an Error', async () => {
+    const request = new Request('http://localhost/api/foo')
+    const env = {
+      TOKEN: 'HONOISCOOL',
+    }
+    const handler = handleMiddleware(async () => {
+      throw new Error('Something went wrong')
+    })
+
+    const next = vi.fn().mockResolvedValue(Response.json('From Cloudflare Pages'))
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    await expect(handler({ request, env, next })).rejects.toThrowError('Something went wrong')
+    expect(next).not.toHaveBeenCalled()
   })
 })
