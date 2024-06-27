@@ -1,9 +1,8 @@
 import { Context } from './context'
 import { setCookie } from './helper/cookie'
-import { HonoRequest } from './request'
 
 describe('Context', () => {
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
 
   let c: Context
   beforeEach(() => {
@@ -214,7 +213,7 @@ describe('Context', () => {
   })
 
   it('Should be able read env', async () => {
-    const req = new HonoRequest(new Request('http://localhost/'))
+    const req = new Request('http://localhost/')
     const key = 'a-secret-key'
     const ctx = new Context(req, {
       env: {
@@ -244,7 +243,7 @@ describe('Context', () => {
 })
 
 describe('event and executionCtx', () => {
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
 
   it('Should return the event if accessing c.event', () => {
     const respondWith = vi.fn()
@@ -289,7 +288,7 @@ describe('event and executionCtx', () => {
 })
 
 describe('Context header', () => {
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   let c: Context
   beforeEach(() => {
     c = new Context(req)
@@ -357,7 +356,7 @@ describe('Context header', () => {
 })
 
 describe('Pass a ResponseInit to respond methods', () => {
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   let c: Context
   beforeEach(() => {
     c = new Context(req)
@@ -434,7 +433,7 @@ declare module './context' {
 }
 
 describe('c.render', () => {
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   let c: Context
   beforeEach(() => {
     c = new Context(req)

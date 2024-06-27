@@ -1,5 +1,4 @@
 import { Context } from '../../context'
-import { HonoRequest } from '../../request'
 import { getConnInfo } from './conninfo'
 import type { AddressType } from '../../helper/conninfo'
 
@@ -29,7 +28,7 @@ const createRandomBunServer = ({
 describe('getConnInfo', () => {
   it('Should info is valid', () => {
     const { port, server, address } = createRandomBunServer()
-    const c = new Context(new HonoRequest(new Request('http://localhost/')), { env: server })
+    const c = new Context(new Request('http://localhost/'), { env: server })
     const info = getConnInfo(c)
 
     expect(info.remote.port).toBe(port)
@@ -39,7 +38,7 @@ describe('getConnInfo', () => {
   })
   it('Should getConnInfo works when env is { server: server }', () => {
     const { port, server, address } = createRandomBunServer()
-    const c = new Context(new HonoRequest(new Request('http://localhost/')), { env: { server } })
+    const c = new Context(new Request('http://localhost/'), { env: { server } })
 
     const info = getConnInfo(c)
 
@@ -57,12 +56,12 @@ describe('getConnInfo', () => {
     expect(info.remote.addressType).toBeUndefined()
   })
   it('Should throw error when user did not give server', () => {
-    const c = new Context(new HonoRequest(new Request('http://localhost/')), { env: {} })
+    const c = new Context(new Request('http://localhost/'), { env: {} })
 
     expect(() => getConnInfo(c)).toThrowError(TypeError)
   })
   it('Should throw error when requestIP is not function', () => {
-    const c = new Context(new HonoRequest(new Request('http://localhost/')), {
+    const c = new Context(new Request('http://localhost/'), {
       env: {
         requestIP: 0,
       },

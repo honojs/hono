@@ -1,5 +1,4 @@
 import { Context } from '../../context'
-import { HonoRequest } from '../../request'
 import { getConnInfo } from './conninfo'
 
 describe('getConnInfo', () => {
@@ -7,7 +6,7 @@ describe('getConnInfo', () => {
     const transport = 'tcp'
     const address = Math.random().toString()
     const port = Math.floor(Math.random() * (65535 + 1))
-    const c = new Context(new HonoRequest(new Request('http://localhost/')), {
+    const c = new Context(new Request('http://localhost/'), {
       env: {
         remoteAddr: {
           transport,
