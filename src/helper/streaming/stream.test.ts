@@ -48,7 +48,7 @@ describe('Basic Streaming Helper', () => {
 
   it('Check stream Response if aborted by abort signal', async () => {
     const ac = new AbortController()
-    const req = new HonoRequest(new Request('http://localhost/', { signal: ac.signal }))
+    const req = new Request('http://localhost/', { signal: ac.signal })
     const c = new Context(req)
 
     let aborted = false
