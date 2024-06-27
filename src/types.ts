@@ -131,11 +131,7 @@ export interface HandlerInterface<
   >(
     path: P,
     handler: H<E2, MergedPath, I, R>
-  ): Hono<
-    IntersectNonAnyTypes<[E, E2]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>,
-    BasePath
-  >
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>, BasePath>
 
   // app.get(handler x2)
   <
@@ -165,11 +161,7 @@ export interface HandlerInterface<
   >(
     path: P,
     ...handlers: [H<E2, MergedPath, I>, H<E3, MergedPath, I2, R>]
-  ): Hono<
-    IntersectNonAnyTypes<[E, E2, E3]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I2, MergeTypedResponse<R>>,
-    BasePath
-  >
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I2, MergeTypedResponse<R>>, BasePath>
 
   // app.get(handler x 3)
   <
@@ -203,11 +195,7 @@ export interface HandlerInterface<
   >(
     path: P,
     ...handlers: [H<E2, MergedPath, I>, H<E3, MergedPath, I2>, H<E4, MergedPath, I3, R>]
-  ): Hono<
-    IntersectNonAnyTypes<[E, E2, E3, E4]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I3, MergeTypedResponse<R>>,
-    BasePath
-  >
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I3, MergeTypedResponse<R>>, BasePath>
 
   // app.get(handler x 4)
   <
@@ -250,11 +238,7 @@ export interface HandlerInterface<
       H<E4, MergedPath, I3>,
       H<E5, MergedPath, I4, R>
     ]
-  ): Hono<
-    IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I4, MergeTypedResponse<R>>,
-    BasePath
-  >
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I4, MergeTypedResponse<R>>, BasePath>
 
   // app.get(handler x 5)
   <
@@ -302,11 +286,7 @@ export interface HandlerInterface<
       H<E5, MergedPath, I4>,
       H<E6, MergedPath, I5, R>
     ]
-  ): Hono<
-    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I5, MergeTypedResponse<R>>,
-    BasePath
-  >
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I5, MergeTypedResponse<R>>, BasePath>
 
   // app.get(handler x 6)
   <
@@ -366,11 +346,7 @@ export interface HandlerInterface<
       H<E6, MergedPath, I5>,
       H<E7, MergedPath, I6, R>
     ]
-  ): Hono<
-    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I6, MergeTypedResponse<R>>,
-    BasePath
-  >
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I6, MergeTypedResponse<R>>, BasePath>
 
   // app.get(handler x 7)
   <
@@ -436,11 +412,7 @@ export interface HandlerInterface<
       H<E7, MergedPath, I6>,
       H<E8, MergedPath, I7, R>
     ]
-  ): Hono<
-    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I7, MergeTypedResponse<R>>,
-    BasePath
-  >
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I7, MergeTypedResponse<R>>, BasePath>
 
   // app.get(handler x 8)
   <
@@ -512,11 +484,7 @@ export interface HandlerInterface<
       H<E8, MergedPath, I7>,
       H<E9, MergedPath, I8, R>
     ]
-  ): Hono<
-    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I8, MergeTypedResponse<R>>,
-    BasePath
-  >
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I8, MergeTypedResponse<R>>, BasePath>
 
   // app.get(handler x 9)
   <
@@ -594,11 +562,7 @@ export interface HandlerInterface<
       H<E9, MergedPath, I8>,
       H<E10, MergedPath, I9, R>
     ]
-  ): Hono<
-    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I9, MergeTypedResponse<R>>,
-    BasePath
-  >
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I9, MergeTypedResponse<R>>, BasePath>
 
   // app.get(handler x 10)
   <
@@ -682,11 +646,7 @@ export interface HandlerInterface<
       H<E10, MergedPath, I9>,
       H<E11, MergedPath, I10, R>
     ]
-  ): Hono<
-    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11]>,
-    S & ToSchema<M, MergePath<BasePath, P>, I10, MergeTypedResponse<R>>,
-    BasePath
-  >
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I10, MergeTypedResponse<R>>, BasePath>
 
   // app.get(...handlers[])
   <

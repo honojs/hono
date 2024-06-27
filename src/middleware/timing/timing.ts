@@ -87,6 +87,11 @@ export const timing = (config?: TimingOptions): MiddlewareHandler => {
   return async function timing(c, next) {
     const headers: string[] = []
     const timers = new Map<string, Timer>()
+
+    if (c.get('metric')) {
+      return await next()
+    }
+
     c.set('metric', { headers, timers })
 
     if (options.total) {
