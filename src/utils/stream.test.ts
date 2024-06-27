@@ -96,4 +96,26 @@ describe('StreamingApi', () => {
     expect(handleAbort1).toBeCalled()
     expect(handleAbort2).toBeCalled()
   })
+
+  it('abort()', async () => {
+    const { readable, writable } = new TransformStream()
+    const handleAbort1 = vi.fn()
+    const handleAbort2 = vi.fn()
+    const api = new StreamingApi(writable, readable)
+    api.onAbort(handleAbort1)
+    api.onAbort(handleAbort2)
+    expect(handleAbort1).not.toBeCalled()
+    expect(handleAbort2).not.toBeCalled()
+    expect(api.aborted).toBe(false)
+
+    api.abort()
+    expect(handleAbort1).toHaveBeenCalledOnce()
+    expect(handleAbort2).toHaveBeenCalledOnce()
+    expect(api.aborted).toBe(true)
+
+    api.abort()
+    expect(handleAbort1).toHaveBeenCalledOnce()
+    expect(handleAbort2).toHaveBeenCalledOnce()
+    expect(api.aborted).toBe(true)
+  })
 })

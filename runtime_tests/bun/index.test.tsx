@@ -11,6 +11,7 @@ import { jsx } from '../../src/jsx'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 import { HonoRequest } from '../../src/request'
+import { stream, streamSSE } from '../..//src/helper/streaming'
 
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.
@@ -316,3 +317,71 @@ async function deleteDirectory(dirPath) {
     await fs.unlink(dirPath)
   }
 }
+
+describe('streaming', () => {
+  const app = new Hono()
+  let aborted = false
+
+  app.get('/stream', (c) => {
+    return stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      return new Promise<void>((resolve) => {
+        stream.onAbort(resolve)
+      })
+    })
+  })
+  app.get('/streamSSE', (c) => {
+    return streamSSE(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      return new Promise<void>((resolve) => {
+        stream.onAbort(resolve)
+      })
+    })
+  })
+
+  beforeEach(() => {
+    aborted = false
+  })
+
+  describe('stream', () => {
+    it('Should call onAbort', async () => {
+      const server = Bun.serve({ port: 0, fetch: app.fetch })
+      const ac = new AbortController()
+      const req = new Request(`http://localhost:${server.port}/stream`, {
+        signal: ac.signal,
+      })
+      expect(aborted).toBe(false)
+      const res = fetch(req).catch(() => {})
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      ac.abort()
+      await res
+      while (!aborted) {
+        await new Promise((resolve) => setTimeout(resolve))
+      }
+      expect(aborted).toBe(true)
+    })
+  })
+
+  describe('streamSSE', () => {
+    it('Should call onAbort', async () => {
+      const server = Bun.serve({ port: 0, fetch: app.fetch })
+      const ac = new AbortController()
+      const req = new Request(`http://localhost:${server.port}/streamSSE`, {
+        signal: ac.signal,
+      })
+      expect(aborted).toBe(false)
+      const res = fetch(req).catch(() => {})
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      ac.abort()
+      await res
+      while (!aborted) {
+        await new Promise((resolve) => setTimeout(resolve))
+      }
+      expect(aborted).toBe(true)
+    })
+  })
+})

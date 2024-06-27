@@ -74,6 +74,33 @@ describe('SSE Streaming helper', () => {
     expect(aborted).toBeTruthy()
   })
 
+  it('Check streamSSE Response if aborted by abort signal', async () => {
+    const ac = new AbortController()
+    const req = new HonoRequest(new Request('http://localhost/', { signal: ac.signal }))
+    const c = new Context(req)
+
+    let aborted = false
+    const res = streamSSE(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.writeSSE({
+          data: `Message ${i}`,
+        })
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toEqual(new TextEncoder().encode('data: Message 0\n\n'))
+    ac.abort()
+    expect(aborted).toBeTruthy()
+  })
+
   it('Should include retry in the SSE message', async () => {
     const retryTime = 3000 // 3 seconds
     const res = streamSSE(c, async (stream) => {
