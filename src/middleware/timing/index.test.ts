@@ -29,6 +29,12 @@ describe('Server-Timing API', () => {
     return c.text('cache!')
   })
 
+  const sub = new Hono()
+
+  sub.use(timing())
+  sub.get('/', (c) => c.text('sub'))
+  app.route('/sub', sub)
+
   it('Should contain total duration', async () => {
     const res = await app.request('http://localhost/')
     expect(res).not.toBeNull()
@@ -54,6 +60,16 @@ describe('Server-Timing API', () => {
     ).toBeTruthy()
     expect(res.headers.get('server-timing')?.includes(region)).toBeTruthy()
     expect(res.headers.get('server-timing')?.includes(regionDesc)).toBeTruthy()
+  })
+
+  it('Should not be enabled if the main app has the timing middleware', async () => {
+    const consoleWarnSpy = vi.spyOn(console, 'warn')
+    const res = await app.request('/sub')
+    expect(res.status).toBe(200)
+    expect(res.headers.has('server-timing')).toBeTruthy()
+    expect(res.headers.get('server-timing')?.includes(totalDescription)).toBeTruthy()
+    expect(consoleWarnSpy).not.toHaveBeenCalled()
+    consoleWarnSpy.mockRestore()
   })
 
   describe('Should handle crossOrigin setting', async () => {

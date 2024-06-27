@@ -7,7 +7,6 @@
 import { compose } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
-import { HonoRequest } from './request'
 import type { Router } from './router'
 import { METHODS, METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import type {
@@ -409,7 +408,9 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     const path = this.getPath(request, { env })
     const matchResult = this.matchRoute(method, path)
 
-    const c = new Context(new HonoRequest(request, path, matchResult), {
+    const c = new Context(request, {
+      path,
+      matchResult,
       env,
       executionCtx,
       notFoundHandler: this.notFoundHandler,
