@@ -194,7 +194,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    *
    * @param {string} path - base Path
    * @param {Hono} app - other Hono instance
-   * @returns {Hono} routed Hono instnace
+   * @returns {Hono} routed Hono instance
    *
    * @example
    * ```ts
@@ -459,7 +459,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    *
    * @see {@link https://hono.dev/api/hono#fetch}
    *
-   * @param {Request} request - reuqest Object of request
+   * @param {Request} request - request Object of request
    * @param {Env} Env - env Object
    * @param {ExecutionContext} - context of execution
    * @returns {Response | Promise<Response>} response of request

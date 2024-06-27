@@ -1638,14 +1638,30 @@ declare module './context' {
   }
 }
 
-describe('c.var with ContextVariableMap - test only types', () => {
-  it('Should no throw a type error', () => {
+describe('ContextVariableMap type tests', () => {
+  it('Should not throw type errors with c.var', () => {
     new Hono().get((c) => {
       expectTypeOf(c.get('payload')).toEqualTypeOf<string>()
       return c.json(0)
     })
     new Hono().get((c) => {
       expectTypeOf(c.var.payload).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+  })
+
+  it('Should override ContextVariableMap with env variables', () => {
+    const middleware = createMiddleware<{
+      Variables: {
+        payload: number
+      }
+    }>(async (c, next) => {
+      c.set('payload', 123)
+      await next()
+    })
+
+    new Hono().get(middleware, (c) => {
+      expectTypeOf(c.get('payload')).toEqualTypeOf<number>()
       return c.json(0)
     })
   })
