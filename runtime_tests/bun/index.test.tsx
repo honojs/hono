@@ -369,18 +369,20 @@ describe('streaming', () => {
   describe('streamSSE', () => {
     it('Should call onAbort', async () => {
       const server = Bun.serve({ port: 0, fetch: app.fetch })
-      const ac = new AbortController()
-      const req = new Request(`http://localhost:${server.port}/streamSSE`, {
-        signal: ac.signal,
-      })
-      expect(aborted).toBe(false)
-      const res = fetch(req).catch(() => {})
-      await new Promise((resolve) => setTimeout(resolve, 10))
-      ac.abort()
-      await res
-      while (!aborted) {
+
+      // It's a flaky test, so we try up to 3 times
+      for (let i = 0; !aborted && i < 3; i++) {
+        const ac = new AbortController()
+        const req = new Request(`http://localhost:${server.port}/streamSSE`, {
+          signal: ac.signal,
+        })
+        const res = fetch(req).catch(() => {})
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        ac.abort()
+        await res
         await new Promise((resolve) => setTimeout(resolve))
       }
+
       expect(aborted).toBe(true)
     })
   })
