@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { serveStatic, toSSG } from '../../src/adapter/bun'
 import { createBunWebSocket } from '../../src/adapter/bun/websocket'
 import type { BunWebSocketData } from '../../src/adapter/bun/websocket'
@@ -320,6 +320,7 @@ async function deleteDirectory(dirPath) {
 
 describe('streaming', () => {
   const app = new Hono()
+  let server: ReturnType<typeof Bun.serve>
   let aborted = false
 
   app.get('/stream', (c) => {
@@ -345,11 +346,15 @@ describe('streaming', () => {
 
   beforeEach(() => {
     aborted = false
+    server = Bun.serve({ port: 0, fetch: app.fetch })
+  })
+
+  afterEach(() => {
+    server.stop()
   })
 
   describe('stream', () => {
     it('Should call onAbort', async () => {
-      const server = Bun.serve({ port: 0, fetch: app.fetch })
       const ac = new AbortController()
       const req = new Request(`http://localhost:${server.port}/stream`, {
         signal: ac.signal,
@@ -368,8 +373,6 @@ describe('streaming', () => {
 
   describe('streamSSE', () => {
     it('Should call onAbort', async () => {
-      const server = Bun.serve({ port: 0, fetch: app.fetch })
-
       // It's a flaky test, so we try up to 3 times
       for (let i = 0; !aborted && i < 3; i++) {
         const ac = new AbortController()
