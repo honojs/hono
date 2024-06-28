@@ -9,6 +9,7 @@ import { Hono } from '../../src/index'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { jsx } from '../../src/jsx'
 import { basicAuth } from '../../src/middleware/basic-auth'
+import { etag } from '../../src/middleware/etag'
 import { jwt } from '../../src/middleware/jwt'
 import { HonoRequest } from '../../src/request'
 
@@ -316,3 +317,21 @@ async function deleteDirectory(dirPath) {
     await fs.unlink(dirPath)
   }
 }
+
+describe('Etag Middleware', () => {
+  it('Should not be the same etag - Uint8Array', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/ui1', (c) => {
+      return c.body(new Uint8Array(20000))
+    })
+    app.get('/etag/ui2', (c) => {
+      return c.body(new Uint8Array(22000))
+    })
+
+    let res = await app.request('http://localhost/etag/ui1')
+    const hash = res.headers.get('Etag')
+    res = await app.request('http://localhost/etag/ui2')
+    expect(res.headers.get('ETag')).not.toBe(hash)
+  })
+})

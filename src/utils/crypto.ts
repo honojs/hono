@@ -34,11 +34,19 @@ export const createHash = async (data: Data, algorithm: Algorithm): Promise<stri
   if (data instanceof ReadableStream) {
     let body = ''
     const reader = data.getReader()
-    await reader?.read().then(async (chuck) => {
-      const value = await createHash(chuck.value || '', algorithm)
+    let chunks = 0
+    let chunk = await reader?.read()
+    while (chunk && !chunk.done) {
+      chunks++
+      const value = await createHash(chunk.value || '', algorithm)
       body += value
-    })
-    return body
+
+      chunk = await reader?.read()
+    }
+    if (chunks === 1) {
+      return body
+    }
+    data = body
   }
   if (ArrayBuffer.isView(data) || data instanceof ArrayBuffer) {
     sourceBuffer = data
