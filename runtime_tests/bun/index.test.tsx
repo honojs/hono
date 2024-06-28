@@ -373,19 +373,17 @@ describe('streaming', () => {
 
   describe('streamSSE', () => {
     it('Should call onAbort', async () => {
-      // It's a flaky test, so we try up to 3 times
-      for (let i = 0; !aborted && i < 3; i++) {
-        const ac = new AbortController()
-        const req = new Request(`http://localhost:${server.port}/streamSSE`, {
-          signal: ac.signal,
-        })
-        const res = fetch(req).catch(() => {})
-        await new Promise((resolve) => setTimeout(resolve, 10))
-        ac.abort()
-        await res
+      const ac = new AbortController()
+      const req = new Request(`http://localhost:${server.port}/streamSSE`, {
+        signal: ac.signal,
+      })
+      const res = fetch(req).catch(() => {})
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      ac.abort()
+      await res
+      while (!aborted) {
         await new Promise((resolve) => setTimeout(resolve))
       }
-
       expect(aborted).toBe(true)
     })
   })

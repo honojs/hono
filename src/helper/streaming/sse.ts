@@ -58,6 +58,7 @@ const run = async (
   }
 }
 
+const contextStash = new WeakMap<ReadableStream, Context>()
 export const streamSSE = (
   c: Context,
   cb: (stream: SSEStreamingApi) => Promise<void>,
@@ -68,11 +69,7 @@ export const streamSSE = (
 
   // bun does not cancel response stream when request is canceled, so detect abort by signal
   c.req.raw.signal.addEventListener('abort', () => {
-    // "referencing a `c` that is never null in a condition" is a work around for bun (maybe JIT).
-    // If `c` is not referenced in this closure, this event will not fire.
-    if (c) {
-      stream.abort()
-    }
+    stream.abort()
   })
 
   c.header('Transfer-Encoding', 'chunked')
@@ -80,6 +77,8 @@ export const streamSSE = (
   c.header('Cache-Control', 'no-cache')
   c.header('Connection', 'keep-alive')
 
+  // in bun, `c` is destroyed when the request is returned, so hold it until the end of streaming
+  contextStash.set(stream.responseReadable, c)
   run(stream, cb, onError)
 
   return c.newResponse(stream.responseReadable)
