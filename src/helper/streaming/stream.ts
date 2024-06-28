@@ -1,6 +1,7 @@
 import type { Context } from '../../context'
 import { StreamingApi } from '../../utils/stream'
 
+const contextStash = new WeakMap<ReadableStream, Context>()
 export const stream = (
   c: Context,
   cb: (stream: StreamingApi) => Promise<void>,
@@ -8,6 +9,13 @@ export const stream = (
 ): Response => {
   const { readable, writable } = new TransformStream()
   const stream = new StreamingApi(writable, readable)
+
+  // bun does not cancel response stream when request is canceled, so detect abort by signal
+  c.req.raw.signal.addEventListener('abort', () => {
+    stream.abort()
+  })
+  // in bun, `c` is destroyed when the request is returned, so hold it until the end of streaming
+  contextStash.set(stream.responseReadable, c)
   ;(async () => {
     try {
       await cb(stream)
@@ -21,5 +29,6 @@ export const stream = (
       stream.close()
     }
   })()
+
   return c.newResponse(stream.responseReadable)
 }
