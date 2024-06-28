@@ -57,17 +57,37 @@ export function handleMiddleware<E extends Env = any, P extends string = any, I 
 
     try {
       response = await middleware(context, async () => {
-        context.res = await executionCtx.next()
+        try {
+          context.res = await executionCtx.next()
+        } catch (error) {
+          if (error instanceof Error) {
+            context.error = error
+          } else {
+            throw error
+          }
+        }
       })
     } catch (error) {
-      if (error instanceof HTTPException) {
-        response = error.getResponse()
+      if (error instanceof Error) {
+        context.error = error
       } else {
         throw error
       }
     }
 
-    return response ?? context.res
+    if (response) {
+      return response
+    }
+
+    if (context.error instanceof HTTPException) {
+      return context.error.getResponse()
+    }
+
+    if (context.error) {
+      throw context.error
+    }
+
+    return context.res
   }
 }
 

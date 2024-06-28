@@ -83,6 +83,29 @@ describe('Middleware adapter for Cloudflare Pages', () => {
     })
   })
 
+  it('Should return the middleware response when exceptions are handled', async () => {
+    const request = new Request('http://localhost/api/foo')
+    const env = {
+      TOKEN: 'HONOISCOOL',
+    }
+    const handler = handleMiddleware(async (c, next) => {
+      await next()
+
+      return c.json({ error: c.error?.message })
+    })
+
+    const next = vi.fn().mockRejectedValue(new Error('Error from next()'))
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const res = await handler({ request, env, next })
+
+    expect(next).toHaveBeenCalled()
+
+    expect(await res.json()).toEqual({
+      error: 'Error from next()',
+    })
+  })
+
   it('Should return the middleware response if next() is not called', async () => {
     const request = new Request('http://localhost/api/foo')
     const env = {
@@ -92,7 +115,7 @@ describe('Middleware adapter for Cloudflare Pages', () => {
       return c.json({ response: 'Skip Cloudflare Pages' })
     })
 
-    const next = vi.fn().mockResolvedValue(Response.json('From Cloudflare Pages'))
+    const next = vi.fn()
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const res = await handler({ request, env, next })
@@ -109,9 +132,7 @@ describe('Middleware adapter for Cloudflare Pages', () => {
     const env = {
       TOKEN: 'HONOISCOOL',
     }
-    const handler = handleMiddleware(async (c, next) => {
-      await next()
-    })
+    const handler = handleMiddleware((c, next) => next())
 
     const next = vi.fn().mockResolvedValue(Response.json('From Cloudflare Pages'))
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -133,7 +154,7 @@ describe('Middleware adapter for Cloudflare Pages', () => {
       throw new HTTPException(401, { res })
     })
 
-    const next = vi.fn().mockResolvedValue(Response.json('From Cloudflare Pages'))
+    const next = vi.fn()
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const res = await handler({ request, env, next })
@@ -144,16 +165,76 @@ describe('Middleware adapter for Cloudflare Pages', () => {
     expect(await res.text()).toBe('Unauthorized')
   })
 
+  it('Should handle an HTTPException thrown by next()', async () => {
+    const request = new Request('http://localhost/api/foo')
+    const env = {
+      TOKEN: 'HONOISCOOL',
+    }
+    const handler = handleMiddleware((c, next) => next())
+
+    const next = vi
+      .fn()
+      .mockRejectedValue(new HTTPException(401, { res: Response.json('Unauthorized') }))
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const res = await handler({ request, env, next })
+
+    expect(next).toHaveBeenCalled()
+
+    expect(await res.json()).toEqual('Unauthorized')
+  })
+
+  it('Should handle an Error thrown by next()', async () => {
+    const request = new Request('http://localhost/api/foo')
+    const env = {
+      TOKEN: 'HONOISCOOL',
+    }
+    const handler = handleMiddleware((c, next) => next())
+
+    const next = vi.fn().mockRejectedValue(new Error('Error from next()'))
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    await expect(handler({ request, env, next })).rejects.toThrowError('Error from next()')
+    expect(next).toHaveBeenCalled()
+  })
+
+  it('Should handle a non-Error thrown by next()', async () => {
+    const request = new Request('http://localhost/api/foo')
+    const env = {
+      TOKEN: 'HONOISCOOL',
+    }
+    const handler = handleMiddleware((c, next) => next())
+
+    const next = vi.fn().mockRejectedValue('Error from next()')
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    await expect(handler({ request, env, next })).rejects.toThrowError('Error from next()')
+    expect(next).toHaveBeenCalled()
+  })
+
   it('Should rethrow an Error', async () => {
     const request = new Request('http://localhost/api/foo')
     const env = {
       TOKEN: 'HONOISCOOL',
     }
-    const handler = handleMiddleware(async () => {
+    const handler = handleMiddleware(() => {
       throw new Error('Something went wrong')
     })
 
-    const next = vi.fn().mockResolvedValue(Response.json('From Cloudflare Pages'))
+    const next = vi.fn()
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    await expect(handler({ request, env, next })).rejects.toThrowError('Something went wrong')
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('Should rethrow non-Error exceptions', async () => {
+    const request = new Request('http://localhost/api/foo')
+    const env = {
+      TOKEN: 'HONOISCOOL',
+    }
+    const handler = handleMiddleware(() => Promise.reject('Something went wrong'))
+    const next = vi.fn()
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     await expect(handler({ request, env, next })).rejects.toThrowError('Something went wrong')
