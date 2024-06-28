@@ -14,7 +14,6 @@ export const stream = (
   c.req.raw.signal.addEventListener('abort', () => {
     stream.abort()
   })
-
   // in bun, `c` is destroyed when the request is returned, so hold it until the end of streaming
   contextStash.set(stream.responseReadable, c)
   ;(async () => {

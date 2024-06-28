@@ -71,14 +71,14 @@ export const streamSSE = (
   c.req.raw.signal.addEventListener('abort', () => {
     stream.abort()
   })
+  // in bun, `c` is destroyed when the request is returned, so hold it until the end of streaming
+  contextStash.set(stream.responseReadable, c)
 
   c.header('Transfer-Encoding', 'chunked')
   c.header('Content-Type', 'text/event-stream')
   c.header('Cache-Control', 'no-cache')
   c.header('Connection', 'keep-alive')
 
-  // in bun, `c` is destroyed when the request is returned, so hold it until the end of streaming
-  contextStash.set(stream.responseReadable, c)
   run(stream, cb, onError)
 
   return c.newResponse(stream.responseReadable)
