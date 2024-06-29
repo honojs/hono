@@ -49,7 +49,7 @@ describe('getConnInfo', () => {
   })
   it('should return undefined when addressType is invalid string', () => {
     const { server } = createRandomBunServer({ family: 'invalid' })
-    const c = new Context(new HonoRequest(new Request('http://localhost/')), { env: { server } })
+    const c = new Context(new Request('http://localhost/'), { env: { server } })
 
     const info = getConnInfo(c)
 
