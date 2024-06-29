@@ -146,7 +146,7 @@ export type InferRequestOptionsType<T> = T extends (
 type PathToChain<
   Path extends string,
   E extends Schema,
-  Original extends string = ''
+  Original extends string = Path
 > = Path extends `/${infer P}`
   ? PathToChain<P, E, Path>
   : Path extends `${infer P}/${infer R}`
