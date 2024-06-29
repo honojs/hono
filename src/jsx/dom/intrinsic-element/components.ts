@@ -277,7 +277,7 @@ export const form: FC<
     ;(restProps as any).action = action
   }
 
-  const [data, setData] = useState<FormData | null>(null)
+  const [state, setState] = useState<[FormData | null, boolean]>([null, false]) // [FormData, isDirty]
   const onSubmit = useCallback<(ev: SubmitEvent | CustomEvent) => void>(
     async (ev: SubmitEvent | CustomEvent) => {
       const currentAction = ev.isTrusted
@@ -289,13 +289,13 @@ export const form: FC<
 
       ev.preventDefault()
       const formData = new FormData(ev.target as HTMLFormElement)
-      setData(formData)
+      setState([formData, true])
       const actionRes = currentAction(formData)
       if (actionRes instanceof Promise) {
         registerAction(actionRes)
         await actionRes
       }
-      setData(null)
+      setState([null, true])
     },
     []
   )
@@ -307,6 +307,8 @@ export const form: FC<
     }
   })
 
+  const [data, isDirty] = state
+  state[1] = false
   return newJSXNode({
     tag: FormContext as unknown as Function,
     props: {
@@ -324,8 +326,9 @@ export const form: FC<
         },
       }),
     },
+    f: isDirty,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }) as any
+  } as any) as any
 }
 
 const formActionableElement = (
