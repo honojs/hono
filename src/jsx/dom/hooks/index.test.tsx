@@ -1,6 +1,6 @@
 /** @jsxImportSource ../../ */
 import { JSDOM } from 'jsdom'
-import { render, useState } from '..'
+import { render, useCallback, useState } from '..'
 import { useActionState, useFormStatus, useOptimistic } from '.'
 
 describe('Hooks', () => {
@@ -84,14 +84,13 @@ describe('Hooks', () => {
       }
       const App = () => {
         const [, setCount] = useState(0)
+        const action = useCallback(() => {
+          setCount((count) => count + 1)
+          return formPromise
+        }, [])
         return (
           <>
-            <form
-              action={() => {
-                setCount((count) => count + 1)
-                return formPromise
-              }}
-            >
+            <form action={action}>
               <Status />
               <input type='text' name='name' value='updated' />
               <button>Submit</button>
@@ -134,15 +133,15 @@ describe('Hooks', () => {
       const App = () => {
         const [count, setCount] = useState(0)
         const [optimisticCount, setOptimisticCount] = useOptimistic(count, (c, n: number) => n)
+        const action = useCallback(async () => {
+          setOptimisticCount(count + 1)
+          await formPromise
+          setCount((count) => count + 2)
+        }, [])
+
         return (
           <>
-            <form
-              action={async () => {
-                setOptimisticCount(count + 1)
-                await formPromise
-                setCount((count) => count + 2)
-              }}
-            >
+            <form action={action}>
               <div>{optimisticCount}</div>
               <input type='text' name='name' value='updated' />
               <button>Submit</button>
