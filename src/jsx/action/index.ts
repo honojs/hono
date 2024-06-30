@@ -20,7 +20,7 @@ interface ActionHandler<Env extends BlankEnv> {
     | Promise<Response>
 }
 
-type ActionReturn = [(key: string) => void, FC]
+type ActionReturn = [(key: string) => () => void, FC]
 
 const clientScript = `(${client.toString()})()`
 const clientScriptUrl = `/hono-action-${createHash('sha256').update(clientScript).digest('hex')}.js`
@@ -67,10 +67,9 @@ export const createAction = <Env extends BlankEnv>(
       })
   )
 
-  let actionName: string | undefined
-  const action = (key: string) => {
-    actionName = undefined
-    ;(action as any)[PERMALINK] = () => {
+  const permalinkGenerator = (key: string) => {
+    let actionName: string | undefined
+    const subAction = () => {
       if (!actionName) {
         app.routes.forEach(({ path }) => {
           if (path.includes(name)) {
@@ -80,14 +79,22 @@ export const createAction = <Env extends BlankEnv>(
       }
       return actionName
     }
-    return action
+    ;(subAction as any)['key'] = key
+    return subAction
   }
 
+  const action = (key: string) => {
+    const a = () => {}
+    ;(a as any)[PERMALINK] = permalinkGenerator(key)
+    return a
+  }
+  ;(action as any)[PERMALINK] = permalinkGenerator('default')
+
   return [
-    action('default'),
+    action,
     async (props: Props = {}) => {
-      const key = props?.key || 'default'
-      delete props.key
+      const subAction = props.action || action
+      const key = (subAction as any)[PERMALINK]['key']
 
       const c = useRequestContext()
       const res = await handler(undefined, c, props)
@@ -120,11 +127,11 @@ export const createForm = <Env extends BlankEnv>(
   handler: ActionHandler<Env>
 ): [ActionReturn[1]] => {
   const [action, Component] = createAction(app, handler)
+  const subAction = action(Math.random().toString(36).substring(2, 15))
   return [
     (props: Props = {}) => {
-      const key = Math.random().toString(36).substring(2, 15)
-      return jsxFn('form', { action: action(key) }, [
-        jsxFn(Component as any, { ...props, key }, []) as any,
+      return jsxFn('form', { action: subAction }, [
+        jsxFn(Component as any, { ...props, action: subAction }, []) as any,
       ]) as any
     },
   ]
