@@ -333,6 +333,11 @@
       "import": "./dist/adapter/lambda-edge/index.js",
       "require": "./dist/cjs/adapter/lambda-edge/index.js"
     },
+    "./service-worker": {
+      "types": "./dist/types/adapter/service-worker/index.d.ts",
+      "import": "./dist/adapter/service-worker/index.js",
+      "require": "./dist/cjs/adapter/service-worker/index.js"
+    },
     "./testing": {
       "types": "./dist/types/helper/testing/index.d.ts",
       "import": "./dist/helper/testing/index.js",
@@ -526,6 +531,9 @@
       ],
       "lambda-edge": [
         "./dist/types/adapter/lambda-edge"
+      ],
+      "service-worker": [
+        "./dist/types/adapter/service-worker"
       ],
       "testing": [
         "./dist/types/helper/testing"
