@@ -37,6 +37,13 @@ export const createAction = <Env extends BlankEnv>(
     const data = await c.req.parseBody()
     const res = await handler(data, c)
     if (res instanceof Response) {
+      if (res.status > 300 && res.status < 400) {
+        return new Response('', {
+          headers: {
+            'X-Hono-Action-Redirect': res.headers.get('Location') || '',
+          },
+        })
+      }
       return res
     } else {
       return c.body(renderToReadableStream(res), {

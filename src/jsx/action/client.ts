@@ -25,9 +25,8 @@ export default function client() {
           },
         })
 
-        // FIXME: requested twice
-        if (response.redirected) {
-          return (window.location.href = response.url)
+        if (response.headers.get('X-Hono-Action-Redirect')) {
+          return (window.location.href = response.headers.get('X-Hono-Action-Redirect')!)
         }
 
         const component = document.querySelector<HTMLElement>(
