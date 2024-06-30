@@ -23,7 +23,7 @@ describe('RegExpRouter', () => {
   })
 
   describe('Return value type', () => {
-    it('Should return [[T, ParamIndexMap][], ParamStash]', async () => {
+    it('Should return [[T, ParamIndexMap][], ParamStash]', () => {
       const router = new RegExpRouter<string>()
       router.add('GET', '/posts/:id', 'get post')
 
@@ -42,7 +42,7 @@ describe('RegExpRouter', () => {
       router.add('GET', '/entry/:name', 'get entry')
       router.add('POST', '/entry', 'create entry')
 
-      it('GET /entry/entries', async () => {
+      it('GET /entry/entries', () => {
         expect(() => {
           router.match('GET', '/entry/entries')
         }).toThrowError(UnsupportedPathError)
@@ -56,7 +56,7 @@ describe('RegExpRouter', () => {
       router.add('GET', '/:class/:id', ':class')
       router.add('GET', '/:model/:id', ':model')
 
-      it('GET /entry/123', async () => {
+      it('GET /entry/123', () => {
         expect(() => {
           router.match('GET', '/entry/123')
         }).toThrowError(UnsupportedPathError)
