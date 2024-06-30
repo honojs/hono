@@ -19,7 +19,7 @@ interface ActionHandler<Env extends BlankEnv> {
     | Promise<Response>
 }
 
-type ActionReturn = [() => void, FC]
+type ActionReturn = [(key?: string) => void, FC]
 
 const clientScript = `(${client.toString()})()`
 const clientScriptUrl = `/hono-action-${createHash('sha256').update(clientScript).digest('hex')}.js`
@@ -30,11 +30,12 @@ export const createAction = <Env extends BlankEnv>(
 ): ActionReturn => {
   const name = `/hono-action-${createHash('sha256').update(handler.toString()).digest('hex')}`
 
-  app.post(name, async (c) => {
+  app.post(`${name}/:key`, async (c) => {
     if (!c.req.header('X-Hono-Action')) {
       return c.json({ error: 'Not a Hono Action' }, 400)
     }
 
+    const key = c.req.param('key')
     const data = await c.req.parseBody()
     const res = await handler(data, c)
     if (res instanceof Response) {
@@ -65,27 +66,31 @@ export const createAction = <Env extends BlankEnv>(
       })
   )
 
-  const action = () => {}
   let actionName: string | undefined
-  ;(action as any)[PERMALINK] = () => {
-    if (!actionName) {
-      app.routes.forEach(({ path }) => {
-        if (path.includes(name)) {
-          actionName = path
-        }
-      })
+  const action = (key?: string) => {
+    actionName = undefined
+    ;(action as any)[PERMALINK] = () => {
+      if (!actionName) {
+        app.routes.forEach(({ path }) => {
+          if (path.includes(name)) {
+            actionName = path.replace(':key', key)
+          }
+        })
+      }
+      return actionName
     }
-    return actionName
+    return action
   }
 
   return [
-    action,
-    async () => {
+    action('default'),
+    async (props?: Record<string, any>) => {
       const c = useRequestContext()
       const res = await handler(undefined, c)
       if (res instanceof Response) {
         throw new Error('Response is not supported in JSX')
       }
+      const key = props?.key || 'default'
       return Fragment({
         children: [
           // TBD: load client library, Might be simpler to make it globally referenceable and read from CDN
@@ -94,9 +99,9 @@ export const createAction = <Env extends BlankEnv>(
             { src: clientScriptUrl, async: true },
             jsxFn(async () => '', {}, []) as any
           ) as any,
-          raw(`<!-- ${name} -->`),
+          raw(`<!-- ${name}/${key} -->`),
           res,
-          raw(`<!-- /${name} -->`),
+          raw(`<!-- /${name}/${key} -->`),
         ],
       })
     },
@@ -109,8 +114,11 @@ export const createForm = <Env extends BlankEnv>(
 ): [ActionReturn[1]] => {
   const [action, Component] = createAction(app, handler)
   return [
-    () => {
-      return jsxFn('form', { action }, [jsxFn(Component as any, {}, []) as any]) as any
+    (props) => {
+      const key = Math.random().toString(36).substring(2, 15)
+      return jsxFn('form', { ...props, action: action(key) }, [
+        jsxFn(Component as any, { key }, []) as any,
+      ]) as any
     },
   ]
 }
