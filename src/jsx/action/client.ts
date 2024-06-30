@@ -45,6 +45,7 @@ export default function client() {
               break
             }
 
+            // FIXME: Replace only the difference
             if (!removed) {
               component.innerHTML = ''
               removed = true
