@@ -2,6 +2,7 @@ import type { Context, Hono } from '../..'
 import type { BlankEnv } from '../../types'
 import type { FC } from '../types'
 import { useRequestContext } from '../../middleware/jsx-renderer'
+import { raw } from '../../utils/html'
 import type { HtmlEscapedString } from '../../utils/html'
 import { renderToReadableStream } from '../streaming'
 import { jsxFn, Fragment } from '../base'
@@ -93,7 +94,9 @@ export const createAction = <Env extends BlankEnv>(
             { src: clientScriptUrl, async: true },
             jsxFn(async () => '', {}, []) as any
           ) as any,
-          jsxFn('hono-action', { 'data-hono-action': name }, [res]),
+          raw(`<!-- ${name} -->`),
+          res,
+          raw(`<!-- /${name} -->`),
         ],
       })
     },
