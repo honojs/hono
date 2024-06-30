@@ -130,11 +130,28 @@ export const getPathNoStrict = (request: Request): string => {
   return result.length > 1 && result[result.length - 1] === '/' ? result.slice(0, -1) : result
 }
 
+export const absolutePath = <T extends string>(path: T): T => {
+  return `@@@${path}` as T
+}
+
+export const isAbsolutePath = (path: string) => {
+  return path.startsWith('@@@')
+}
+
+export const getRoutePath = (path: string) => {
+  return path.startsWith('@@@') ? path.slice(3) : path
+}
+
 export const mergePath = (...paths: string[]): string => {
   let p: string = ''
   let endsWithSlash = false
 
   for (let path of paths) {
+    if (isAbsolutePath(path)) {
+      p = path
+      continue
+    }
+
     /* ['/hey/','/say'] => ['/hey', '/say'] */
     if (p[p.length - 1] === '/') {
       p = p.slice(0, -1)

@@ -26,7 +26,7 @@ import type {
   RouterRoute,
   Schema,
 } from './types'
-import { getPath, getPathNoStrict, mergePath } from './utils/url'
+import { getPath, getPathNoStrict, mergePath, getRoutePath } from './utils/url'
 
 /**
  * Symbol used to mark a composed handler.
@@ -378,7 +378,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
     const r: RouterRoute = { path: path, method: method, handler: handler }
-    this.router.add(method, path, [handler, r])
+    this.router.add(method, getRoutePath(path), [handler, r])
     this.routes.push(r)
   }
 

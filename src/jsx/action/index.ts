@@ -7,6 +7,8 @@ import { renderToReadableStream } from '../streaming'
 import { jsxFn, Fragment } from '../base'
 import client from './client'
 import { PERMALINK } from '../constants'
+import { absolutePath } from '../../utils/url'
+import { createHash } from 'node:crypto'
 
 interface ActionHandler<Env extends BlankEnv> {
   (data: Record<string, any> | undefined, c: Context<Env>):
@@ -18,8 +20,8 @@ interface ActionHandler<Env extends BlankEnv> {
 
 type ActionReturn = [() => void, FC]
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const actionHandlerIndex = new WeakMap<Hono<any>, number>()
+const clientScript = `(${client.toString()})()`
+const clientScriptUrl = `/hono-action-${createHash('sha256').update(clientScript).digest('hex')}.js`
 
 export const createAction = <Env extends BlankEnv>(
   app: Hono<Env>,
@@ -47,15 +49,15 @@ export const createAction = <Env extends BlankEnv>(
       })
     }
   })
-  if (index === 0) {
-    app.get(
-      'action.js',
-      () =>
-        new Response(`(${client.toString()})()`, {
-          headers: { 'Content-Type': 'application/javascript' },
-        })
-    )
-  }
+
+  // FIXME: dedupe
+  app.get(
+    absolutePath(clientScriptUrl),
+    () =>
+      new Response(clientScript, {
+        headers: { 'Content-Type': 'application/javascript' },
+      })
+  )
 
   const action = () => {}
   ;(action as any)[PERMALINK] = () => name
@@ -72,7 +74,7 @@ export const createAction = <Env extends BlankEnv>(
           // TBD: load client library, Might be simpler to make it globally referenceable and read from CDN
           jsxFn(
             'script',
-            { src: 'action.js', async: true },
+            { src: clientScriptUrl, async: true },
             jsxFn(async () => '', {}, []) as any
           ) as any,
           jsxFn('hono-action', { 'data-hono-action': name }, [res]),
