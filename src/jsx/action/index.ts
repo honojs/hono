@@ -30,6 +30,10 @@ export const createAction = <Env extends BlankEnv>(
   const name = `/hono-action-${createHash('sha256').update(handler.toString()).digest('hex')}`
 
   app.post(name, async (c) => {
+    if (!c.req.header('X-Hono-Action')) {
+      return c.json({ error: 'Not a Hono Action' }, 400)
+    }
+
     const data = await c.req.parseBody()
     const res = await handler(data, c)
     if (res instanceof Response) {

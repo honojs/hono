@@ -20,6 +20,9 @@ export default function client() {
         const response = await fetch(action, {
           method: 'POST',
           body: formData,
+          headers: {
+            'X-Hono-Action': 'true',
+          },
         })
 
         // FIXME: requested twice
