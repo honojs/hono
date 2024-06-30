@@ -27,14 +27,8 @@ export const createAction = <Env extends BlankEnv>(
   app: Hono<Env>,
   handler: ActionHandler<Env>
 ): ActionReturn => {
-  const index = actionHandlerIndex.get(app) || 0
-  actionHandlerIndex.set(app, index + 1)
-  let name = handler.name
-  if (!name) {
-    name = `/hono-action-${index}`
-  }
+  const name = `/hono-action-${createHash('sha256').update(handler.toString()).digest('hex')}`
 
-  // FIXME: parentApp.route('/subdir', app)
   app.post(name, async (c) => {
     const data = await c.req.parseBody()
     const res = await handler(data, c)
@@ -60,7 +54,18 @@ export const createAction = <Env extends BlankEnv>(
   )
 
   const action = () => {}
-  ;(action as any)[PERMALINK] = () => name
+  let actionName: string | undefined
+  ;(action as any)[PERMALINK] = () => {
+    if (!actionName) {
+      app.routes.forEach(({ path }) => {
+        if (path.includes(name)) {
+          actionName = path
+        }
+      })
+    }
+    return actionName
+  }
+
   return [
     action,
     async () => {
