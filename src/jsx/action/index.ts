@@ -6,20 +6,21 @@ import { raw } from '../../utils/html'
 import type { HtmlEscapedString } from '../../utils/html'
 import { renderToReadableStream } from '../streaming'
 import { jsxFn, Fragment } from '../base'
+import type { Props } from '../base'
 import client from './client'
 import { PERMALINK } from '../constants'
 import { absolutePath } from '../../utils/url'
 import { createHash } from 'node:crypto'
 
 interface ActionHandler<Env extends BlankEnv> {
-  (data: Record<string, any> | undefined, c: Context<Env>):
+  (data: Record<string, any> | undefined, c: Context<Env>, props: Props | undefined):
     | HtmlEscapedString
     | Promise<HtmlEscapedString>
     | Response
     | Promise<Response>
 }
 
-type ActionReturn = [(key?: string) => void, FC]
+type ActionReturn = [(key: string) => void, FC]
 
 const clientScript = `(${client.toString()})()`
 const clientScriptUrl = `/hono-action-${createHash('sha256').update(clientScript).digest('hex')}.js`
@@ -35,9 +36,9 @@ export const createAction = <Env extends BlankEnv>(
       return c.json({ error: 'Not a Hono Action' }, 400)
     }
 
-    const key = c.req.param('key')
+    const props = JSON.parse(c.req.header('X-Hono-Action-Props') || '{}')
     const data = await c.req.parseBody()
-    const res = await handler(data, c)
+    const res = await handler(data, c, props)
     if (res instanceof Response) {
       if (res.status > 300 && res.status < 400) {
         return new Response('', {
@@ -67,7 +68,7 @@ export const createAction = <Env extends BlankEnv>(
   )
 
   let actionName: string | undefined
-  const action = (key?: string) => {
+  const action = (key: string) => {
     actionName = undefined
     ;(action as any)[PERMALINK] = () => {
       if (!actionName) {
@@ -84,13 +85,15 @@ export const createAction = <Env extends BlankEnv>(
 
   return [
     action('default'),
-    async (props?: Record<string, any>) => {
+    async (props: Props = {}) => {
+      const key = props?.key || 'default'
+      delete props.key
+
       const c = useRequestContext()
-      const res = await handler(undefined, c)
+      const res = await handler(undefined, c, props)
       if (res instanceof Response) {
         throw new Error('Response is not supported in JSX')
       }
-      const key = props?.key || 'default'
       return Fragment({
         children: [
           // TBD: load client library, Might be simpler to make it globally referenceable and read from CDN
@@ -99,7 +102,11 @@ export const createAction = <Env extends BlankEnv>(
             { src: clientScriptUrl, async: true },
             jsxFn(async () => '', {}, []) as any
           ) as any,
-          raw(`<!-- ${name}/${key} -->`),
+          raw(
+            `<!-- ${name}/${key} props:${JSON.stringify(props)
+              .replace(/</g, '\\u003c')
+              .replace(/>/g, '\\u003e')} -->`
+          ),
           res,
           raw(`<!-- /${name}/${key} -->`),
         ],
@@ -114,10 +121,10 @@ export const createForm = <Env extends BlankEnv>(
 ): [ActionReturn[1]] => {
   const [action, Component] = createAction(app, handler)
   return [
-    (props) => {
+    (props: Props = {}) => {
       const key = Math.random().toString(36).substring(2, 15)
-      return jsxFn('form', { ...props, action: action(key) }, [
-        jsxFn(Component as any, { key }, []) as any,
+      return jsxFn('form', { action: action(key) }, [
+        jsxFn(Component as any, { ...props, key }, []) as any,
       ]) as any
     },
   ]

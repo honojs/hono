@@ -12,24 +12,6 @@ export default function client() {
         }
 
         const handler = async (ev: SubmitEvent | MouseEvent) => {
-          ev.preventDefault()
-
-          if (form.getAttribute('data-hono-disabled')) {
-            form.setAttribute('data-hono-disabled', '1')
-          }
-          const formData = new FormData(form)
-          const response = await fetch(action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-              'X-Hono-Action': 'true',
-            },
-          })
-
-          if (response.headers.get('X-Hono-Action-Redirect')) {
-            return (window.location.href = response.headers.get('X-Hono-Action-Redirect')!)
-          }
-
           const commentNodes = document.createTreeWalker(document, NodeFilter.SHOW_COMMENT, {
             acceptNode: (node) => {
               return node.nodeValue?.includes(action)
@@ -41,6 +23,27 @@ export default function client() {
           const endNode = commentNodes.nextNode()
           if (!startNode || !endNode) {
             return
+          }
+
+          ev.preventDefault()
+
+          const props = startNode.nodeValue?.split('props:')[1] || '{}'
+
+          if (form.getAttribute('data-hono-disabled')) {
+            form.setAttribute('data-hono-disabled', '1')
+          }
+          const formData = new FormData(form)
+          const response = await fetch(action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Hono-Action': 'true',
+              'X-Hono-Action-Props': props,
+            },
+          })
+
+          if (response.headers.get('X-Hono-Action-Redirect')) {
+            return (window.location.href = response.headers.get('X-Hono-Action-Redirect')!)
           }
 
           let removed = false
