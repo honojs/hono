@@ -1776,6 +1776,46 @@ describe('Env types with chained routes - test only types', () => {
   })
 })
 
+/**
+ * Ref: https://github.com/honojs/hono/issues/3027
+ */
+describe('Env types with validator as first middleware - test only types', () => {
+  const app = new Hono<{ Variables: { testVar: string } }>()
+  it('Should not throw a type error', () => {
+    const testApp = app.get(
+      validator('json', () => {
+        return {
+          cd: 'bar',
+        }
+      }),
+      async (c) => {
+        const foo = c.req.valid('json') // Error here
+        return c.json(1)
+      }
+    )
+
+    const dummyMiddleware1 = createMiddleware(async (c, next) => {
+      await next()
+    })
+    // Multiple levels of middleware
+    const testApp2 = app.post(
+      validator('json', () => {
+        return {
+          cd: 'bar',
+        }
+      }),
+      dummyMiddleware1,
+      createMiddleware(async (c, next) => {
+        await next()
+      }),
+      async (c) => {
+        const foo = c.req.valid('json') // Error here also
+        return c.json(1)
+      }
+    )
+  })
+})
+
 describe('Env types with `use` middleware - test only types', () => {
   const app = new Hono()
 
