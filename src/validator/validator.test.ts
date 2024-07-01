@@ -917,9 +917,8 @@ describe('Clone Request object', () => {
         await next()
       },
       validator('form', (value) => {
-        // the value should not be a FormData
         if (value instanceof FormData) {
-          throw new Error('value should be FormData')
+          throw new Error('The value should not be a FormData')
         }
         return value
       }),
