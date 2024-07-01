@@ -375,7 +375,7 @@ describe('Support c.json(undefined)', () => {
       '/this/is/a/test': {
         $get: {
           input: {}
-          output: undefined
+          output: never
           outputFormat: 'json'
           status: StatusCode
         }
@@ -528,7 +528,7 @@ describe('Path parameters', () => {
       type Output = T['/api/:a/:b?']['$get']['output']
       type Expected = {
         a: string
-        b: string | undefined
+        b?: string | undefined
       }
       type verify = Expect<Equal<Expected, Output>>
     })
