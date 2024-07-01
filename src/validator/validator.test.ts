@@ -948,6 +948,7 @@ describe('Clone Request object', () => {
       })
       const res = await app.request(req)
       expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ foo: 'bar' })
     })
   })
 })
