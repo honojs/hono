@@ -65,6 +65,7 @@
     "./cloudflare-pages": "./src/adapter/cloudflare-pages/index.ts",
     "./deno": "./src/adapter/deno/index.ts",
     "./bun": "./src/adapter/bun/index.ts",
+    "./node": "./src/adapter/node/index.ts",
     "./aws-lambda": "./src/adapter/aws-lambda/index.ts",
     "./vercel": "./src/adapter/vercel/index.ts",
     "./netlify": "./src/adapter/netlify/index.ts",
