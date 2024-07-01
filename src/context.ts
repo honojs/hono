@@ -11,7 +11,13 @@ import type {
 } from './types'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
-import type { IsAny, JSONParsed, JSONValue, SimplifyDeepArray } from './utils/types'
+import type {
+  InvalidJSONValue,
+  IsAny,
+  JSONParsed,
+  JSONValue,
+  SimplifyDeepArray,
+} from './utils/types'
 
 type HeaderRecord = Record<string, string | string[]>
 
@@ -142,12 +148,18 @@ interface TextRespond {
  * @returns {JSONRespondReturn<T, U>} - The response after rendering the JSON object, typed with the provided object and status code types.
  */
 interface JSONRespond {
-  <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode = StatusCode>(
+  <
+    T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
+    U extends StatusCode = StatusCode
+  >(
     object: T,
     status?: U,
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U>
-  <T extends JSONValue | SimplifyDeepArray<unknown>, U extends StatusCode = StatusCode>(
+  <
+    T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
+    U extends StatusCode = StatusCode
+  >(
     object: T,
     init?: ResponseInit
   ): JSONRespondReturn<T, U>
@@ -160,7 +172,7 @@ interface JSONRespond {
  * @returns {Response & TypedResponse<SimplifyDeepArray<T> extends JSONValue ? (JSONValue extends SimplifyDeepArray<T> ? never : JSONParsed<T>) : never, U, 'json'>} - The response after rendering the JSON object, typed with the provided object and status code types.
  */
 type JSONRespondReturn<
-  T extends JSONValue | SimplifyDeepArray<unknown>,
+  T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
   U extends StatusCode
 > = Response &
   TypedResponse<
@@ -168,7 +180,7 @@ type JSONRespondReturn<
       ? JSONValue extends SimplifyDeepArray<T>
         ? never
         : JSONParsed<T>
-      : never,
+      : JSONParsed<T>,
     U,
     'json'
   >
@@ -692,7 +704,7 @@ export class Context<
    * ```
    */
   json: JSONRespond = <
-    T extends JSONValue | SimplifyDeepArray<unknown>,
+    T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
     U extends StatusCode = StatusCode
   >(
     object: T,
