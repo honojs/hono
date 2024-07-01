@@ -1,7 +1,7 @@
 import { Context } from '../../context'
 import type { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
-import type { Env, Input, MiddlewareHandler } from '../../types'
+import type { BlankSchema, Env, Input, MiddlewareHandler, Schema } from '../../types'
 
 // Ref: https://github.com/cloudflare/workerd/blob/main/types/defines/pages.d.ts
 
@@ -27,26 +27,25 @@ declare type PagesFunction<
   Data extends Record<string, unknown> = Record<string, unknown>
 > = (context: EventContext<Env, Params, Data>) => Response | Promise<Response>
 
-interface HandleInterface {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (app: Hono<any, any, any>): (eventContext: EventContext) => Response | Promise<Response>
-}
-
-export const handle: HandleInterface = (app: Hono) => (eventContext: EventContext) => {
-  return app.fetch(
-    eventContext.request,
-    { ...eventContext.env, eventContext },
-    {
-      waitUntil: eventContext.waitUntil,
-      passThroughOnException: eventContext.passThroughOnException,
-    }
-  )
-}
+export const handle =
+  <E extends Env = Env, S extends Schema = BlankSchema, BasePath extends string = '/'>(
+    app: Hono<E, S, BasePath>
+  ): PagesFunction<E['Bindings']> =>
+  (eventContext) => {
+    return app.fetch(
+      eventContext.request,
+      { ...eventContext.env, eventContext },
+      {
+        waitUntil: eventContext.waitUntil,
+        passThroughOnException: eventContext.passThroughOnException,
+      }
+    )
+  }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function handleMiddleware<E extends Env = any, P extends string = any, I extends Input = {}>(
   middleware: MiddlewareHandler<E, P, I>
-): PagesFunction {
+): PagesFunction<E['Bindings']> {
   return async (executionCtx) => {
     const context = new Context(executionCtx.request, {
       env: executionCtx.env,
