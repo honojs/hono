@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'node:http'
-import type { GetConnInfo, AddressType } from '../../helper/conninfo'
+import type { AddressType, GetConnInfo } from '../../helper/conninfo'
 
 /**
  * Get conninfo with Node.js
