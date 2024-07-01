@@ -1,4 +1,4 @@
-import { getConnInfo } from './conninfo'
+import { getConnInfo } from '.'
 
 describe('ConnInfo', () => {
   it('Should be re-exported', () => {
