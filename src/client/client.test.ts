@@ -1044,6 +1044,81 @@ describe('WebSocket URL Protocol Translation', () => {
   })
 })
 
+describe('WebSocket URL Protocol Translation with Query Parameters', () => {
+  const app = new Hono()
+  const route = app.get(
+    '/',
+    upgradeWebSocket((c) => ({
+      onMessage(event, ws) {
+        console.log(`Message from client: ${event.data}`)
+        ws.send('Hello from server!')
+      },
+      onClose: () => {
+        console.log('Connection closed')
+      },
+    }))
+  )
+
+  type AppType = typeof route
+
+  const server = setupServer()
+  const webSocketMock = vi.fn()
+
+  beforeAll(() => server.listen())
+  beforeEach(() => {
+    vi.stubGlobal('WebSocket', webSocketMock)
+  })
+  afterEach(() => {
+    vi.clearAllMocks()
+    server.resetHandlers()
+  })
+  afterAll(() => server.close())
+
+  it('Translates HTTP to ws and includes query parameters', async () => {
+    const client = hc<AppType>('http://localhost')
+    client.index.$ws({
+      query: {
+        id: '123',
+        type: 'test',
+      },
+    })
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index?id=123&type=test')
+  })
+
+  it('Translates HTTPS to wss and includes query parameters', async () => {
+    const client = hc<AppType>('https://localhost')
+    client.index.$ws({
+      query: {
+        id: '456',
+        type: 'secure',
+      },
+    })
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index?id=456&type=secure')
+  })
+
+  it('Keeps ws unchanged and includes query parameters', async () => {
+    const client = hc<AppType>('ws://localhost')
+    client.index.$ws({
+      query: {
+        id: '789',
+        type: 'plain',
+      },
+    })
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index?id=789&type=plain')
+  })
+
+  it('Keeps wss unchanged and includes query parameters', async () => {
+    const client = hc<AppType>('wss://localhost')
+    client.index.$ws({
+      query: {
+        id: '1011',
+        type: 'secure',
+      },
+    })
+    expect(webSocketMock).toHaveBeenCalledWith('wss://localhost/index?id=1011&type=secure')
+  })
+})
+
 describe('Client can be console.log in react native', () => {
   it('Returns a function name with function.name.toString', async () => {
     const client = hc('http://localhost')
