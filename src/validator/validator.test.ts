@@ -910,6 +910,24 @@ describe('Clone Request object', () => {
       }
     )
 
+    app.post(
+      '/cached',
+      async (c, next) => {
+        await c.req.parseBody()
+        await next()
+      },
+      validator('form', (value) => {
+        if (value instanceof FormData) {
+          throw new Error('The value should not be a FormData')
+        }
+        return value
+      }),
+      (c) => {
+        const v = c.req.valid('form')
+        return c.json(v)
+      }
+    )
+
     it('Should not throw the error with c.req.parseBody()', async () => {
       const body = new FormData()
       body.append('foo', 'bar')
@@ -919,6 +937,18 @@ describe('Clone Request object', () => {
       })
       const res = await app.request(req)
       expect(res.status).toBe(200)
+    })
+
+    it('Should not be an instance of FormData if the formData is cached', async () => {
+      const body = new FormData()
+      body.append('foo', 'bar')
+      const req = new Request('http://localhost/cached', {
+        method: 'POST',
+        body: body,
+      })
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ foo: 'bar' })
     })
   })
 })
