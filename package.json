@@ -113,6 +113,11 @@
       "import": "./dist/middleware/etag/index.js",
       "require": "./dist/cjs/middleware/etag/index.js"
     },
+    "./event-emitter": {
+      "types": "./dist/types/middleware/event-emitter/index.d.ts",
+      "import": "./dist/middleware/event-emitter/index.js",
+      "require": "./dist/cjs/middleware/event-emitter/index.js"
+    },
     "./trailing-slash": {
       "types": "./dist/types/middleware/trailing-slash/index.d.ts",
       "import": "./dist/middleware/trailing-slash/index.js",
@@ -400,6 +405,9 @@
       ],
       "etag": [
         "./dist/types/middleware/etag"
+      ],
+      "event-emitter": [
+        "./dist/types/middleware/event-emitter"
       ],
       "trailing-slash": [
         "./dist/types/middleware/trailing-slash"
