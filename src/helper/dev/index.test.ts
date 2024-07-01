@@ -171,7 +171,7 @@ describe('showRoutes() in NO_COLOR', () => {
   })
 })
 
-describe('geRouterName()', () => {
+describe('getRouterName()', () => {
   it('Should return the correct router name', async () => {
     const app = new Hono({
       router: new RegExpRouter(),
