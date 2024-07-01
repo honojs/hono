@@ -27,7 +27,7 @@ describe('LinearRouter', () => {
         router.add('GET', '/entry/:id/:action', 'action')
       })
 
-      it('GET /entry/123/show', async () => {
+      it('GET /entry/123/show', () => {
         expect(() => {
           router.match('GET', '/entry/123/show')
         }).toThrowError(UnsupportedPathError)
