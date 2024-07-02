@@ -124,6 +124,10 @@ describe('stream', () => {
 
   const server = createAdaptorServer(app)
 
+  beforeEach(() => {
+    aborted = false
+  })
+
   it('Should call onAbort', async () => {
     const req = request(server)
       .get('/stream')
@@ -172,6 +176,10 @@ describe('streamSSE', () => {
   })
 
   const server = createAdaptorServer(app)
+
+  beforeEach(() => {
+    aborted = false
+  })
 
   it('Should call onAbort', async () => {
     const req = request(server)
