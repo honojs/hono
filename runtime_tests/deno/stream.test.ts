@@ -35,6 +35,26 @@ Deno.test('Shuld call onAbort via stream', async () => {
   await server.shutdown()
 })
 
+Deno.test('Shuld not call onAbort via stream if already closed', async () => {
+  const app = new Hono()
+  let aborted = false
+  app.get('/stream', (c) => {
+    return stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      await stream.write('Hello')
+    })
+  })
+
+  const server = Deno.serve({ port: 0 }, app.fetch)
+  assertEquals(aborted, false)
+  const res = await fetch(`http://localhost:${server.addr.port}/stream`)
+  assertEquals(await res.text(), 'Hello')
+  assertEquals(aborted, false)
+  await server.shutdown()
+})
+
 Deno.test('Shuld call onAbort via streamSSE', async () => {
   const app = new Hono()
   let aborted = false
@@ -65,5 +85,25 @@ Deno.test('Shuld call onAbort via streamSSE', async () => {
   }
   assertEquals(aborted, true)
 
+  await server.shutdown()
+})
+
+Deno.test('Shuld not call onAbort via streamSSE if already closed', async () => {
+  const app = new Hono()
+  let aborted = false
+  app.get('/stream', (c) => {
+    return streamSSE(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      await stream.write('Hello')
+    })
+  })
+
+  const server = Deno.serve({ port: 0 }, app.fetch)
+  assertEquals(aborted, false)
+  const res = await fetch(`http://localhost:${server.addr.port}/stream`)
+  assertEquals(await res.text(), 'Hello')
+  assertEquals(aborted, false)
   await server.shutdown()
 })

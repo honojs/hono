@@ -113,6 +113,14 @@ describe('stream', () => {
       })
     })
   })
+  app.get('/streamHello', (c) => {
+    return stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      await stream.write('Hello')
+    })
+  })
 
   const server = createAdaptorServer(app)
 
@@ -128,6 +136,14 @@ describe('stream', () => {
       await new Promise((resolve) => setTimeout(resolve))
     }
     expect(aborted).toBe(true)
+  })
+
+  it('Should not be called onAbort if already closed', async () => {
+    expect(aborted).toBe(false)
+    const res = await request(server).get('/streamHello')
+    expect(res.status).toBe(200)
+    expect(res.text).toBe('Hello')
+    expect(aborted).toBe(false)
   })
 })
 
@@ -146,6 +162,14 @@ describe('streamSSE', () => {
       })
     })
   })
+  app.get('/streamHello', (c) => {
+    return streamSSE(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      await stream.write('Hello')
+    })
+  })
 
   const server = createAdaptorServer(app)
 
@@ -161,5 +185,13 @@ describe('streamSSE', () => {
       await new Promise((resolve) => setTimeout(resolve))
     }
     expect(aborted).toBe(true)
+  })
+
+  it('Should not be called onAbort if already closed', async () => {
+    expect(aborted).toBe(false)
+    const res = await request(server).get('/streamHello')
+    expect(res.status).toBe(200)
+    expect(res.text).toBe('Hello')
+    expect(aborted).toBe(false)
   })
 })
