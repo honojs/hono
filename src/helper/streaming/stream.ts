@@ -12,7 +12,9 @@ export const stream = (
 
   // bun does not cancel response stream when request is canceled, so detect abort by signal
   c.req.raw.signal.addEventListener('abort', () => {
-    stream.abort()
+    if (!stream.closed) {
+      stream.abort()
+    }
   })
   // in bun, `c` is destroyed when the request is returned, so hold it until the end of streaming
   contextStash.set(stream.responseReadable, c)

@@ -333,6 +333,14 @@ describe('streaming', () => {
       })
     })
   })
+  app.get('/streamHello', (c) => {
+    return stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      await stream.write('Hello')
+    })
+  })
   app.get('/streamSSE', (c) => {
     return streamSSE(c, async (stream) => {
       stream.onAbort(() => {
@@ -341,6 +349,14 @@ describe('streaming', () => {
       return new Promise<void>((resolve) => {
         stream.onAbort(resolve)
       })
+    })
+  })
+  app.get('/streamSSEHello', (c) => {
+    return streamSSE(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      await stream.write('Hello')
     })
   })
 
@@ -369,6 +385,13 @@ describe('streaming', () => {
       }
       expect(aborted).toBe(true)
     })
+
+    it('Should not be called onAbort if already closed', async () => {
+      expect(aborted).toBe(false)
+      const res = await fetch(`http://localhost:${server.port}/streamHello`)
+      expect(await res.text()).toBe('Hello')
+      expect(aborted).toBe(false)
+    })
   })
 
   describe('streamSSE', () => {
@@ -385,6 +408,13 @@ describe('streaming', () => {
         await new Promise((resolve) => setTimeout(resolve))
       }
       expect(aborted).toBe(true)
+    })
+
+    it('Should not be called onAbort if already closed', async () => {
+      expect(aborted).toBe(false)
+      const res = await fetch(`http://localhost:${server.port}/streamSSEHello`)
+      expect(await res.text()).toBe('Hello')
+      expect(aborted).toBe(false)
     })
   })
 })

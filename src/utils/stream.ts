@@ -13,6 +13,10 @@ export class StreamingApi {
    * Whether the stream has been aborted.
    */
   aborted: boolean = false
+  /**
+   * Whether the stream has been closed normally.
+   */
+  closed: boolean = false
 
   constructor(writable: WritableStream, _readable: ReadableStream) {
     this.writable = writable
@@ -66,6 +70,7 @@ export class StreamingApi {
     } catch (e) {
       // Do nothing. If you want to handle errors, create a stream by yourself.
     }
+    this.closed = true
   }
 
   async pipe(body: ReadableStream) {
