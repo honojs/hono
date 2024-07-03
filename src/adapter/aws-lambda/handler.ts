@@ -260,7 +260,9 @@ abstract class EventProcessor<E extends LambdaEvent> {
     if (res.headers.has('set-cookie')) {
       const cookies = res.headers.getSetCookie
         ? res.headers.getSetCookie()
-        : Array.from(res.headers.entries()).filter(([k]) => k === 'set-cookie').map(([, v]) => v)
+        : Array.from(res.headers.entries())
+            .filter(([k]) => k === 'set-cookie')
+            .map(([, v]) => v)
 
       if (Array.isArray(cookies)) {
         this.setCookiesToResult(event, result, cookies)
