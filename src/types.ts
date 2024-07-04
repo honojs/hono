@@ -701,6 +701,16 @@ export interface MiddlewareHandlerInterface<
     ...handlers: [MiddlewareHandler<E2, P>, MiddlewareHandler<E3, P>]
   ): Hono<IntersectNonAnyTypes<[E, E2, E3]>, S, BasePath>
 
+  // app.get(path, handler)
+  <
+    P extends string,
+    MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
+    E2 extends Env = E
+  >(
+    path: P,
+    handler: MiddlewareHandler<E2, MergedPath>
+  ): Hono<IntersectNonAnyTypes<[E, E2]>, ChangePathOfSchema<S, MergedPath>, BasePath>
+
   // app.use(handler x3)
   <
     E2 extends Env = E,
@@ -710,6 +720,17 @@ export interface MiddlewareHandlerInterface<
   >(
     ...handlers: [MiddlewareHandler<E2, P>, MiddlewareHandler<E3, P>, MiddlewareHandler<E4, P>]
   ): Hono<IntersectNonAnyTypes<[E, E2, E3, E4]>, S, BasePath>
+
+  // app.get(path, handler x2)
+  <
+    P extends string,
+    MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>
+  >(
+    path: P,
+    ...handlers: [MiddlewareHandler<E2, P>, MiddlewareHandler<E3, P>]
+  ): Hono<IntersectNonAnyTypes<[E, E2, E3]>, ChangePathOfSchema<S, MergedPath>, BasePath>
 
   // app.use(handler x4)
   <
@@ -726,6 +747,18 @@ export interface MiddlewareHandlerInterface<
       MiddlewareHandler<E5, P>
     ]
   ): Hono<IntersectNonAnyTypes<[E, E2, E3, E4, E5]>, S, BasePath>
+
+  // app.get(path, handler x3)
+  <
+    P extends string,
+    MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
+    E2 extends Env = E,
+    E3 extends Env = E,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>
+  >(
+    path: P,
+    ...handlers: [MiddlewareHandler<E2, P>, MiddlewareHandler<E3, P>, MiddlewareHandler<E4, P>]
+  ): Hono<IntersectNonAnyTypes<[E, E2, E3, E4]>, ChangePathOfSchema<S, MergedPath>, BasePath>
 
   // app.use(handler x5)
   <
@@ -744,6 +777,24 @@ export interface MiddlewareHandlerInterface<
       MiddlewareHandler<E6, P>
     ]
   ): Hono<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>, S, BasePath>
+
+  // app.get(path, handler x4)
+  <
+    P extends string,
+    MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
+    E2 extends Env = E,
+    E3 extends Env = E,
+    E4 extends Env = E,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>
+  >(
+    path: P,
+    ...handlers: [
+      MiddlewareHandler<E2, P>,
+      MiddlewareHandler<E3, P>,
+      MiddlewareHandler<E4, P>,
+      MiddlewareHandler<E5, P>
+    ]
+  ): Hono<IntersectNonAnyTypes<[E, E2, E3, E4, E5]>, ChangePathOfSchema<S, MergedPath>, BasePath>
 
   // app.use(handler x6)
   <
@@ -764,6 +815,30 @@ export interface MiddlewareHandlerInterface<
       MiddlewareHandler<E7, P>
     ]
   ): Hono<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>, S, BasePath>
+
+  // app.get(path, handler x5)
+  <
+    P extends string,
+    MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
+    E2 extends Env = E,
+    E3 extends Env = E,
+    E4 extends Env = E,
+    E5 extends Env = E,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>
+  >(
+    path: P,
+    ...handlers: [
+      MiddlewareHandler<E2, P>,
+      MiddlewareHandler<E3, P>,
+      MiddlewareHandler<E4, P>,
+      MiddlewareHandler<E5, P>,
+      MiddlewareHandler<E6, P>
+    ]
+  ): Hono<
+    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    ChangePathOfSchema<S, MergedPath>,
+    BasePath
+  >
 
   // app.use(handler x7)
   <
@@ -786,6 +861,32 @@ export interface MiddlewareHandlerInterface<
       MiddlewareHandler<E8, P>
     ]
   ): Hono<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>, S, BasePath>
+
+  // app.get(path, handler x6)
+  <
+    P extends string,
+    MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
+    E2 extends Env = E,
+    E3 extends Env = E,
+    E4 extends Env = E,
+    E5 extends Env = E,
+    E6 extends Env = E,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>
+  >(
+    path: P,
+    ...handlers: [
+      MiddlewareHandler<E2, P>,
+      MiddlewareHandler<E3, P>,
+      MiddlewareHandler<E4, P>,
+      MiddlewareHandler<E5, P>,
+      MiddlewareHandler<E6, P>,
+      MiddlewareHandler<E7, P>
+    ]
+  ): Hono<
+    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    ChangePathOfSchema<S, MergedPath>,
+    BasePath
+  >
 
   // app.use(handler x8)
   <
@@ -810,6 +911,34 @@ export interface MiddlewareHandlerInterface<
       MiddlewareHandler<E9, P>
     ]
   ): Hono<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>, S, BasePath>
+
+  // app.get(path, handler x7)
+  <
+    P extends string,
+    MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
+    E2 extends Env = E,
+    E3 extends Env = E,
+    E4 extends Env = E,
+    E5 extends Env = E,
+    E6 extends Env = E,
+    E7 extends Env = E,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>
+  >(
+    path: P,
+    ...handlers: [
+      MiddlewareHandler<E2, P>,
+      MiddlewareHandler<E3, P>,
+      MiddlewareHandler<E4, P>,
+      MiddlewareHandler<E5, P>,
+      MiddlewareHandler<E6, P>,
+      MiddlewareHandler<E7, P>,
+      MiddlewareHandler<E8, P>
+    ]
+  ): Hono<
+    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+    ChangePathOfSchema<S, MergedPath>,
+    BasePath
+  >
 
   // app.use(handler x9)
   <
@@ -836,6 +965,36 @@ export interface MiddlewareHandlerInterface<
       MiddlewareHandler<E10, P>
     ]
   ): Hono<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>, S, BasePath>
+
+  // app.get(path, handler x8)
+  <
+    P extends string,
+    MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
+    E2 extends Env = E,
+    E3 extends Env = E,
+    E4 extends Env = E,
+    E5 extends Env = E,
+    E6 extends Env = E,
+    E7 extends Env = E,
+    E8 extends Env = E,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>
+  >(
+    path: P,
+    ...handlers: [
+      MiddlewareHandler<E2, P>,
+      MiddlewareHandler<E3, P>,
+      MiddlewareHandler<E4, P>,
+      MiddlewareHandler<E5, P>,
+      MiddlewareHandler<E6, P>,
+      MiddlewareHandler<E7, P>,
+      MiddlewareHandler<E8, P>,
+      MiddlewareHandler<E9, P>
+    ]
+  ): Hono<
+    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
+    ChangePathOfSchema<S, MergedPath>,
+    BasePath
+  >
 
   // app.use(handler x10)
   <
@@ -864,6 +1023,38 @@ export interface MiddlewareHandlerInterface<
       MiddlewareHandler<E11, P>
     ]
   ): Hono<IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11]>, S, BasePath>
+
+  // app.get(path, handler x9)
+  <
+    P extends string,
+    MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
+    E2 extends Env = E,
+    E3 extends Env = E,
+    E4 extends Env = E,
+    E5 extends Env = E,
+    E6 extends Env = E,
+    E7 extends Env = E,
+    E8 extends Env = E,
+    E9 extends Env = E,
+    E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>
+  >(
+    path: P,
+    ...handlers: [
+      MiddlewareHandler<E2, P>,
+      MiddlewareHandler<E3, P>,
+      MiddlewareHandler<E4, P>,
+      MiddlewareHandler<E5, P>,
+      MiddlewareHandler<E6, P>,
+      MiddlewareHandler<E7, P>,
+      MiddlewareHandler<E8, P>,
+      MiddlewareHandler<E9, P>,
+      MiddlewareHandler<E10, P>
+    ]
+  ): Hono<
+    IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>,
+    ChangePathOfSchema<S, MergedPath>,
+    BasePath
+  >
 
   //// app.use(path, ...handlers[])
   <P extends string, E2 extends Env = E>(
@@ -1611,6 +1802,10 @@ export type Schema = {
     [Method: `$${Lowercase<string>}`]: Endpoint
   }
 }
+
+type ChangePathOfSchema<S extends Schema, Path extends string> = keyof S extends never
+  ? { [K in Path]: never }
+  : { [K in keyof S as Path]: S[K] }
 
 export type Endpoint = {
   input: Partial<ValidationTargets>
