@@ -35,7 +35,7 @@ const DEFAULT_METHOD_FORM_NAME = '_method'
 /**
  * Method Override Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/method-override}
+ * @see {@link https://hono.dev/docs/middleware/builtin/method-override}
  *
  * @param {MethodOverrideOptions} options - The options for the method override middleware.
  * @param {Hono} options.app - The instance of Hono is used in your application.
