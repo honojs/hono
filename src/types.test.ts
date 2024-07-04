@@ -1838,3 +1838,390 @@ describe('Env types with `use` middleware - test only types', () => {
     })
   })
 })
+
+describe('Env types and a path type with `app.use(path, handler...)` - test only types', () => {
+  it('Should not throw a type error', () => {
+    type Env = {
+      Variables: {
+        foo: string
+      }
+    }
+
+    // app.use(path, handler)
+    new Hono<Env>()
+      .use('/:id', async (c, next) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        await next()
+      })
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x2)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x3)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x4)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x5)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x6)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x7)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x8)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x9)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x10)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+  })
+})
