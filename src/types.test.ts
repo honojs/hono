@@ -528,7 +528,7 @@ describe('Path parameters', () => {
       type Output = T['/api/:a/:b?']['$get']['output']
       type Expected = {
         a: string
-        b?: string | undefined
+        b: string | undefined
       }
       type verify = Expect<Equal<Expected, Output>>
     })

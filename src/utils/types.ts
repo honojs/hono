@@ -34,24 +34,9 @@ type InvalidToNull<T> = T extends InvalidJSONValue ? null : T
 type IsInvalid<T> = T extends InvalidJSONValue ? true : false
 
 /**
- * @typeParams T - union type
- * @example
- * IncludeInvalidButNotAll<number> returns `false`
- * IncludeInvalidButNotAll<undefined> returns `true`
- * IncludeInvalidButNotAll<number | undefined> returns `true` because some branches are invalid
- * IncludeInvalidButNotAll<symbol | undefined> returns `false` because all branches are invalid
- */
-type IncludeInvalidButNotAll<T> = boolean extends IsInvalid<T> ? true : false
-
-type Flatten<T> = { [K in keyof T]: T[K] }
-/**
  * symbol keys are omitted through `JSON.stringify`
  */
-type OmitSymbolKeys<T> = { [K in Exclude<keyof T, symbol>]: T[K] }
-/**
- * if the value is an invalid value, its key is omitted
- */
-type OmitInvalidValueKeys<T> = { [K in keyof T as T[K] extends InvalidJSONValue ? never : K]: T[K] }
+type OmitSymbolKeys<T> = { [K in keyof T as K extends symbol ? never : K]: T[K] }
 
 export type JSONValue = JSONObject | JSONArray | JSONPrimitive
 // Non-JSON values such as `Date` implement `.toJSON()`, so they can be transformed to a value assignable to `JSONObject`:
@@ -74,20 +59,11 @@ export type JSONParsed<T> = T extends { toJSON(): infer J }
   : T extends Set<unknown> | Map<unknown, unknown>
   ? {}
   : T extends object
-  ? Flatten<
-      // if the value is T | undefined, its key is converted to optional
-      Partial<{
-        [K in keyof OmitSymbolKeys<T> as IncludeInvalidButNotAll<T[K]> extends true
-          ? K
-          : never]: JSONParsed<T[K]>
-      }> & {
-        [K in keyof OmitInvalidValueKeys<OmitSymbolKeys<T>> as IncludeInvalidButNotAll<
-          T[K]
-        > extends false
-          ? K
-          : never]: JSONParsed<T[K]>
-      }
-    >
+  ? {
+      [K in keyof OmitSymbolKeys<T> as IsInvalid<T[K]> extends true
+        ? never
+        : K]: boolean extends IsInvalid<T[K]> ? JSONParsed<T[K]> | undefined : JSONParsed<T[K]>
+    }
   : never
 
 /**
