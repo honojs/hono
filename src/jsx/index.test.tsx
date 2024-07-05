@@ -297,6 +297,28 @@ describe('render to string', () => {
     })
   })
 
+  describe('download attribute', () => {
+    it('<a download={true}></a> should be rendered as <a download=""></a>', () => {
+      const template = <a download={true}></a>
+      expect(template.toString()).toBe('<a download=""></a>')
+    })
+
+    it('<a download={false}></a> should be rendered as <a></a>', () => {
+      const template = <a download={false}></a>
+      expect(template.toString()).toBe('<a></a>')
+    })
+
+    it('<a download></a> should be rendered as <a download=""></a>', () => {
+      const template = <a download></a>
+      expect(template.toString()).toBe('<a download=""></a>')
+    })
+
+    it('<a download="test"></a> should be rendered as <a download="test"></a>', () => {
+      const template = <a download='test'></a>
+      expect(template.toString()).toBe('<a download="test"></a>')
+    })
+  })
+
   describe('Function', () => {
     it('should be ignored used in on* props', () => {
       const onClick = () => {}
