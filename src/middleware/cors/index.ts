@@ -18,7 +18,7 @@ type CORSOptions = {
 /**
  * CORS Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/cors}
+ * @see {@link https://hono.dev/docs/middleware/builtin/cors}
  *
  * @param {CORSOptions} [options] - The options for the CORS middleware.
  * @param {string | string[] | ((origin: string, c: Context) => string | undefined | null)} [options.origin='*'] - The value of "Access-Control-Allow-Origin" CORS header.

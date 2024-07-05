@@ -33,7 +33,7 @@ function etagMatches(etag: string, ifNoneMatch: string | null) {
 /**
  * ETag Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/etag}
+ * @see {@link https://hono.dev/docs/middleware/builtin/etag}
  *
  * @param {ETagOptions} [options] - The options for the ETag middleware.
  * @param {boolean} [options.weak=false] - Define using or not using a weak validation. If true is set, then `W/` is added to the prefix of the value.

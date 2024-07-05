@@ -14,7 +14,7 @@ interface CompressionOptions {
 /**
  * Compress Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/compress}
+ * @see {@link https://hono.dev/docs/middleware/builtin/compress}
  *
  * @param {CompressionOptions} [options] - The options for the compress middleware.
  * @param {'gzip' | 'deflate'} [options.encoding] - The compression scheme to allow for response compression. Either 'gzip' or 'deflate'. If not defined, both are allowed and will be used based on the Accept-Encoding header. 'gzip' is prioritized if this option is not provided and the client provides both in the Accept-Encoding header.

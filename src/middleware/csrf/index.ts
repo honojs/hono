@@ -19,7 +19,7 @@ const isRequestedByFormElementRe =
 /**
  * CSRF Protection Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/csrf}
+ * @see {@link https://hono.dev/docs/middleware/builtin/csrf}
  *
  * @param {CSRFOptions} [options] - The options for the CSRF protection middleware.
  * @param {string|string[]|(origin: string, context: Context) => boolean} [options.origin] - Specify origins.

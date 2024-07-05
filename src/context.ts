@@ -242,7 +242,7 @@ export class Context<
   /**
    * `.env` can get bindings (environment variables, secrets, KV namespaces, D1 database, R2 bucket etc.) in Cloudflare Workers.
    *
-   * @see {@link https://hono.dev/api/context#env}
+   * @see {@link https://hono.dev/docs/api/context#env}
    *
    * @example
    * ```ts
@@ -258,7 +258,7 @@ export class Context<
   /**
    * `.error` can get the error object from the middleware if the Handler throws an error.
    *
-   * @see {@link https://hono.dev/api/context#error}
+   * @see {@link https://hono.dev/docs/api/context#error}
    *
    * @example
    * ```ts
@@ -311,7 +311,7 @@ export class Context<
   }
 
   /**
-   * @see {@link https://hono.dev/api/context#event}
+   * @see {@link https://hono.dev/docs/api/context#event}
    * The FetchEvent associated with the current request.
    *
    * @throws Will throw an error if the context does not have a FetchEvent.
@@ -325,7 +325,7 @@ export class Context<
   }
 
   /**
-   * @see {@link https://hono.dev/api/context#executionctx}
+   * @see {@link https://hono.dev/docs/api/context#executionctx}
    * The ExecutionContext associated with the current request.
    *
    * @throws Will throw an error if the context does not have an ExecutionContext.
@@ -339,7 +339,7 @@ export class Context<
   }
 
   /**
-   * @see {@link https://hono.dev/api/context#res}
+   * @see {@link https://hono.dev/docs/api/context#res}
    * The Response object for the current request.
    */
   get res(): Response {
@@ -375,7 +375,7 @@ export class Context<
   /**
    * `.render()` can create a response within a layout.
    *
-   * @see {@link https://hono.dev/api/context#render-setrenderer}
+   * @see {@link https://hono.dev/docs/api/context#render-setrenderer}
    *
    * @example
    * ```ts
@@ -413,7 +413,7 @@ export class Context<
   /**
    * `.setRenderer()` can set the layout in the custom middleware.
    *
-   * @see {@link https://hono.dev/api/context#render-setrenderer}
+   * @see {@link https://hono.dev/docs/api/context#render-setrenderer}
    *
    * @example
    * ```tsx
@@ -438,7 +438,7 @@ export class Context<
   /**
    * `.header()` can set headers.
    *
-   * @see {@link https://hono.dev/api/context#body}
+   * @see {@link https://hono.dev/docs/api/context#body}
    *
    * @example
    * ```ts
@@ -498,7 +498,7 @@ export class Context<
   /**
    * `.set()` can set the value specified by the key.
    *
-   * @see {@link https://hono.dev/api/context#set-get}
+   * @see {@link https://hono.dev/docs/api/context#set-get}
    *
    * @example
    * ```ts
@@ -517,7 +517,7 @@ export class Context<
   /**
    * `.get()` can use the value specified by the key.
    *
-   * @see {@link https://hono.dev/api/context#set-get}
+   * @see {@link https://hono.dev/docs/api/context#set-get}
    *
    * @example
    * ```ts
@@ -534,7 +534,7 @@ export class Context<
   /**
    * `.var` can access the value of a variable.
    *
-   * @see {@link https://hono.dev/api/context#var}
+   * @see {@link https://hono.dev/docs/api/context#var}
    *
    * @example
    * ```ts
@@ -620,7 +620,7 @@ export class Context<
    * You can set headers with `.header()` and set HTTP status code with `.status`.
    * This can also be set in `.text()`, `.json()` and so on.
    *
-   * @see {@link https://hono.dev/api/context#body}
+   * @see {@link https://hono.dev/docs/api/context#body}
    *
    * @example
    * ```ts
@@ -649,7 +649,7 @@ export class Context<
   /**
    * `.text()` can render text as `Content-Type:text/plain`.
    *
-   * @see {@link https://hono.dev/api/context#text}
+   * @see {@link https://hono.dev/docs/api/context#text}
    *
    * @example
    * ```ts
@@ -682,7 +682,7 @@ export class Context<
   /**
    * `.json()` can render JSON as `Content-Type:application/json`.
    *
-   * @see {@link https://hono.dev/api/context#json}
+   * @see {@link https://hono.dev/docs/api/context#json}
    *
    * @example
    * ```ts
@@ -739,7 +739,7 @@ export class Context<
   /**
    * `.redirect()` can Redirect, default status code is 302.
    *
-   * @see {@link https://hono.dev/api/context#redirect}
+   * @see {@link https://hono.dev/docs/api/context#redirect}
    *
    * @example
    * ```ts
@@ -763,7 +763,7 @@ export class Context<
   /**
    * `.notFound()` can return the Not Found Response.
    *
-   * @see {@link https://hono.dev/api/context#notfound}
+   * @see {@link https://hono.dev/docs/api/context#notfound}
    *
    * @example
    * ```ts
