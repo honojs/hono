@@ -27,7 +27,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.raw` can get the raw Request object.
    *
-   * @see {@link https://hono.dev/api/request#raw}
+   * @see {@link https://hono.dev/docs/api/request#raw}
    *
    * @example
    * ```ts
@@ -46,7 +46,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.path` can get the pathname of the request.
    *
-   * @see {@link https://hono.dev/api/request#path}
+   * @see {@link https://hono.dev/docs/api/request#path}
    *
    * @example
    * ```ts
@@ -72,7 +72,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.req.param()` gets the path parameters.
    *
-   * @see {@link https://hono.dev/api/routing#path-parameter}
+   * @see {@link https://hono.dev/docs/api/routing#path-parameter}
    *
    * @example
    * ```ts
@@ -119,7 +119,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.query()` can get querystring parameters.
    *
-   * @see {@link https://hono.dev/api/request#query}
+   * @see {@link https://hono.dev/docs/api/request#query}
    *
    * @example
    * ```ts
@@ -143,7 +143,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.queries()` can get multiple querystring parameter values, e.g. /search?tags=A&tags=B
    *
-   * @see {@link https://hono.dev/api/request#queries}
+   * @see {@link https://hono.dev/docs/api/request#queries}
    *
    * @example
    * ```ts
@@ -162,7 +162,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.header()` can get the request header value.
    *
-   * @see {@link https://hono.dev/api/request#header}
+   * @see {@link https://hono.dev/docs/api/request#header}
    *
    * @example
    * ```ts
@@ -188,7 +188,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.parseBody()` can parse Request body of type `multipart/form-data` or `application/x-www-form-urlencoded`
    *
-   * @see {@link https://hono.dev/api/request#parsebody}
+   * @see {@link https://hono.dev/docs/api/request#parsebody}
    *
    * @example
    * ```ts
@@ -229,7 +229,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.json()` can parse Request body of type `application/json`
    *
-   * @see {@link https://hono.dev/api/request#json}
+   * @see {@link https://hono.dev/docs/api/request#json}
    *
    * @example
    * ```ts
@@ -245,7 +245,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.text()` can parse Request body of type `text/plain`
    *
-   * @see {@link https://hono.dev/api/request#text}
+   * @see {@link https://hono.dev/docs/api/request#text}
    *
    * @example
    * ```ts
@@ -261,7 +261,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.arrayBuffer()` parse Request body as an `ArrayBuffer`
    *
-   * @see {@link https://hono.dev/api/request#arraybuffer}
+   * @see {@link https://hono.dev/docs/api/request#arraybuffer}
    *
    * @example
    * ```ts
@@ -282,7 +282,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    *   const body = await c.req.blob();
    * });
    * ```
-   * @see https://hono.dev/api/request#blob
+   * @see https://hono.dev/docs/api/request#blob
    */
   blob(): Promise<Blob> {
     return this.cachedBody('blob')
@@ -296,7 +296,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    *   const body = await c.req.formData();
    * });
    * ```
-   * @see https://hono.dev/api/request#formdata
+   * @see https://hono.dev/docs/api/request#formdata
    */
   formData(): Promise<FormData> {
     return this.cachedBody('formData')
@@ -318,7 +318,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * @param target - The target of the validation.
    * @returns The validated data.
    *
-   * @see https://hono.dev/api/request#valid
+   * @see https://hono.dev/docs/api/request#valid
    */
   valid<T extends keyof I & keyof ValidationTargets>(target: T): InputToDataByTarget<I, T>
   valid(target: keyof ValidationTargets) {
@@ -328,7 +328,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.url()` can get the request url strings.
    *
-   * @see {@link https://hono.dev/api/request#url}
+   * @see {@link https://hono.dev/docs/api/request#url}
    *
    * @example
    * ```ts
@@ -345,7 +345,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.method()` can get the method name of the request.
    *
-   * @see {@link https://hono.dev/api/request#method}
+   * @see {@link https://hono.dev/docs/api/request#method}
    *
    * @example
    * ```ts
@@ -361,7 +361,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `.matchedRoutes()` can return a matched route in the handler
    *
-   * @see {@link https://hono.dev/api/request#matchedroutes}
+   * @see {@link https://hono.dev/docs/api/request#matchedroutes}
    *
    * @example
    * ```ts
@@ -388,7 +388,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
    * `routePath()` can retrieve the path registered within the handler
    *
-   * @see {@link https://hono.dev/api/request#routepath}
+   * @see {@link https://hono.dev/docs/api/request#routepath}
    *
    * @example
    * ```ts

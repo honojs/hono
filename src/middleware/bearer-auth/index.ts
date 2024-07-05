@@ -31,7 +31,7 @@ type BearerAuthOptions =
 /**
  * Bearer Auth Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/bearer-auth}
+ * @see {@link https://hono.dev/docs/middleware/builtin/bearer-auth}
  *
  * @param {BearerAuthOptions} options - The options for the bearer authentication middleware.
  * @param {string | string[]} [options.token] - The string or array of strings to validate the incoming bearer token against.

@@ -19,7 +19,7 @@ export type JwtVariables = {
 /**
  * JWT Auth Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/jwt}
+ * @see {@link https://hono.dev/docs/middleware/builtin/jwt}
  *
  * @param {object} options - The options for the JWT middleware.
  * @param {string} [options.secret] - A value of your secret key.

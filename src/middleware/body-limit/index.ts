@@ -25,7 +25,7 @@ class BodyLimitError extends Error {
 /**
  * Body Limit Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/body-limit}
+ * @see {@link https://hono.dev/docs/middleware/builtin/body-limit}
  *
  * @param {BodyLimitOptions} options - The options for the body limit middleware.
  * @param {number} options.maxSize - The maximum body size allowed.
