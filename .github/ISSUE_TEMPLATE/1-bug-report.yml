@@ -1,6 +1,6 @@
 name: 🐛 Bug Report
 description: Report an issue that should be fixed
-labels: [bug, triage]
+labels: [triage]
 body:
   - type: markdown
     attributes:
