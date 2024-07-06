@@ -375,7 +375,7 @@ describe('Support c.json(undefined)', () => {
       '/this/is/a/test': {
         $get: {
           input: {}
-          output: undefined
+          output: never
           outputFormat: 'json'
           status: StatusCode
         }
