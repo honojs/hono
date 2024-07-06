@@ -128,7 +128,10 @@ export interface IPRestrictionRules {
 export const ipRestriction = (
   getIP: GetIPAddr,
   { denyList = [], allowList = [] }: IPRestrictionRules,
-  onError?: (remote: { addr: string; type: AddressType }, c: Context) => Response | Promise<Response>
+  onError?: (
+    remote: { addr: string; type: AddressType },
+    c: Context
+  ) => Response | Promise<Response>
 ): MiddlewareHandler => {
   const allowLength = allowList.length
 
