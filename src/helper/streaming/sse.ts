@@ -58,7 +58,7 @@ const run = async (
   }
 }
 
-const contextStash = new WeakMap<ReadableStream, Context>()
+const contextStash: WeakMap<ReadableStream, Context> = new WeakMap<ReadableStream, Context>()
 export const streamSSE = (
   c: Context,
   cb: (stream: SSEStreamingApi) => Promise<void>,
