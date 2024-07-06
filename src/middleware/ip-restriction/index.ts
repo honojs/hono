@@ -140,7 +140,7 @@ export const ipRestriction = (
 
   const blockError = (c: Context): HTTPException =>
     new HTTPException(403, {
-      res: c.text('Unauthorized', {
+      res: c.text('Forbidden', {
         status: 403,
       }),
     })
