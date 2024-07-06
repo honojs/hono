@@ -135,9 +135,9 @@ export const ipRestriction = (
   const denyMatcher = buildMatcher(denyList)
   const allowMatcher = buildMatcher(allowList)
 
-  const blockError = (): HTTPException =>
+  const blockError = (c: Context): HTTPException =>
     new HTTPException(403, {
-      res: new Response('Unauthorized', {
+      res: c.text('Unauthorized', {
         status: 403,
       }),
     })
@@ -146,7 +146,7 @@ export const ipRestriction = (
     const connInfo = getIP(c)
     const addr = typeof connInfo === 'string' ? connInfo : connInfo.remote.address
     if (!addr) {
-      throw blockError()
+      throw blockError(c)
     }
     const type =
       (typeof connInfo !== 'string' && connInfo.remote.addressType) || distinctRemoteAddr(addr)
@@ -157,7 +157,7 @@ export const ipRestriction = (
       if (onError) {
         return onError({ addr, type }, c)
       }
-      throw blockError()
+      throw blockError(c)
     }
     if (allowMatcher(remoteData)) {
       return await next()
@@ -169,7 +169,7 @@ export const ipRestriction = (
       if (onError) {
         return await onError({ addr, type }, c)
       }
-      throw blockError()
+      throw blockError(c)
     }
   }
 }
