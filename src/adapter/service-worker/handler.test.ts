@@ -38,10 +38,10 @@ describe('handle', () => {
   })
   it('Fallback 404 when app does not response Promise', async () => {
     const app = new Hono()
-    app.get('/', c => c.text('Not found', 404))
+    app.get('/', (c) => c.text('Not found', 404))
     const handler = handle(app)
     const result = handler({
-      request: new Request('https://localhost/')
+      request: new Request('https://localhost/'),
     } as FetchEventLike)
 
     expect(result).toBeUndefined()
