@@ -1,3 +1,9 @@
+/**
+ * @module
+ * JSON Web Token (JWT)
+ * https://datatracker.ietf.org/doc/html/rfc7519
+ */
+
 import { decodeBase64Url, encodeBase64Url } from '../../utils/encode'
 import { AlgorithmTypes } from './jwa'
 import type { SignatureAlgorithm } from './jwa'
