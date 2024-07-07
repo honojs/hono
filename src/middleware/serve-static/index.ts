@@ -25,7 +25,7 @@ const defaultPathResolve = (path: string) => path
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E> & {
     getContent: (path: string, c: Context<E>) => Promise<Data | Response | null>
-    pathResolve?: (path: string) => string
+    pathResolve?: (path: string, isAbsolutePath?: boolean) => string
   }
 ): MiddlewareHandler => {
   return async (c, next) => {
@@ -50,7 +50,9 @@ export const serveStatic = <E extends Env = Env>(
     }
 
     const getContent = options.getContent
-    const pathResolve = options.pathResolve ?? defaultPathResolve
+    const pathResolve = (p: string) => {
+      return (options.pathResolve ?? defaultPathResolve)(p, root?.startsWith('/'))
+    }
 
     path = pathResolve(path)
     let content = await getContent(path, c)
