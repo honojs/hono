@@ -1,12 +1,12 @@
 import { Hono } from '../../hono'
-import { requestID } from '.'
+import { requestId } from '.'
 
 const regexUUIDv4 = /([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})/
 
 describe('Request ID Middleware', () => {
   const app = new Hono()
-  app.use('*', requestID())
-  app.get('/requestId', (c) => c.text(c.get('requestID') ?? 'No Request ID'))
+  app.use('*', requestId())
+  app.get('/requestId', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
 
   it('Should return random request id', async () => {
     const res = await app.request('http://localhost/requestId')
@@ -46,8 +46,8 @@ describe('Request ID Middleware with custom generator', () => {
     return 'HonoHonoHono'
   }
   const app = new Hono()
-  app.use('*', requestID({ generator: generateWord }))
-  app.get('/requestId', (c) => c.text(c.get('requestID') ?? 'No Request ID'))
+  app.use('*', requestId({ generator: generateWord }))
+  app.get('/requestId', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
 
   it('Should return custom request id', async () => {
     const res = await app.request('http://localhost/requestId')
@@ -60,10 +60,10 @@ describe('Request ID Middleware with custom generator', () => {
 
 describe('Request ID Middleware with custom max length', () => {
   const app = new Hono()
-  app.use('/requestId', requestID({ limitLength: 9 }))
-  app.use('/zeroId', requestID({ limitLength: 0 }))
-  app.get('/requestId', (c) => c.text(c.get('requestID') ?? 'No Request ID'))
-  app.get('/zeroId', (c) => c.text(c.get('requestID') ?? 'No Request ID'))
+  app.use('/requestId', requestId({ limitLength: 9 }))
+  app.use('/zeroId', requestId({ limitLength: 0 }))
+  app.get('/requestId', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
+  app.get('/zeroId', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
 
   it('Should return cut custom request id', async () => {
     const res = await app.request('http://localhost/requestId', {
@@ -93,10 +93,10 @@ describe('Request ID Middleware with custom max length', () => {
 
 describe('Request ID Middleware with custom header', () => {
   const app = new Hono()
-  app.use('/requestId', requestID({ headerName: 'Hono-Request-Id' }))
-  app.get('/emptyId', requestID({ headerName: '' }))
-  app.get('/requestId', (c) => c.text(c.get('requestID') ?? 'No Request ID'))
-  app.get('/emptyId', (c) => c.text(c.get('requestID') ?? 'No Request ID'))
+  app.use('/requestId', requestId({ headerName: 'Hono-Request-Id' }))
+  app.get('/emptyId', requestId({ headerName: '' }))
+  app.get('/requestId', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
+  app.get('/emptyId', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
 
   it('Should return custom request id', async () => {
     const res = await app.request('http://localhost/requestId', {

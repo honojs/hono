@@ -5,11 +5,11 @@
 
 import type { MiddlewareHandler } from '../../types'
 
-export type RequestIDVariables = {
-  requestID: string
+export type RequestIdVariables = {
+  requestId: string
 }
 
-export type RequesIDOptions = {
+export type RequesIdOptions = {
   limitLength?: number
   headerName?: string
   generator?: () => string
@@ -28,34 +28,34 @@ export type RequesIDOptions = {
  *
  * @example
  * ```ts
- * type Variables = RequestIDVariables
+ * type Variables = RequestIdVariables
  * const app = new Hono<{Variables: Variables}>()
  *
- * app.use(requestID())
+ * app.use(requestId())
  * app.get('/', (c) => {
- *   console.log(c.get('requestID')) // Debug
+ *   console.log(c.get('requestId')) // Debug
  *   return c.text('Hello World!')
  * })
  * ```
  */
-export const requestID = (options?: RequesIDOptions): MiddlewareHandler => {
+export const requestId = (options?: RequesIdOptions): MiddlewareHandler => {
   const limitLength = options?.limitLength ?? 255
   const headerName = options?.headerName ?? 'X-Request-Id'
 
-  return async function requestID(c, next) {
+  return async function requestId(c, next) {
     // If `headerName` is empty string, req.header will return the object
-    let requestId = headerName ? c.req.header(headerName) : undefined
+    let reqId = headerName ? c.req.header(headerName) : undefined
 
-    if (requestId) {
-      requestId = requestId.replace(/[^\w\-]/g, '')
-      requestId = limitLength > 0 ? requestId.substring(0, limitLength) : requestId
+    if (reqId) {
+      reqId = reqId.replace(/[^\w\-]/g, '')
+      reqId = limitLength > 0 ? reqId.substring(0, limitLength) : reqId
     } else {
-      requestId = options?.generator?.() ?? crypto.randomUUID()
+      reqId = options?.generator?.() ?? crypto.randomUUID()
     }
 
-    c.set('requestID', requestId)
+    c.set('requestId', reqId)
     if (headerName) {
-      c.header(headerName, requestId)
+      c.header(headerName, reqId)
     }
     await next()
   }
