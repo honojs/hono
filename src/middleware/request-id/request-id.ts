@@ -3,6 +3,7 @@
  * Request ID Middleware for Hono.
  */
 
+import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
 export type RequestIdVariables = {
@@ -12,7 +13,7 @@ export type RequestIdVariables = {
 export type RequesIdOptions = {
   limitLength?: number
   headerName?: string
-  generator?: () => string
+  generator?: (c: Context) => string
 }
 
 /**
@@ -22,7 +23,7 @@ export type RequesIdOptions = {
  * @param {number} [options.limitLength=255] - The maximum length of request id.
  * If positive truncates the request id at the specified length.
  * @param {string} [options.headerName=X-Request-Id] - The header name used in request id.
- * @param {generator} [options.generator=crypto.randomUUID()] - The request id generation function.
+ * @param {generator} [options.generator=() => crypto.randomUUID()] - The request id generation function.
  *
  * @returns {MiddlewareHandler} The middleware handler function.
  *
@@ -38,10 +39,11 @@ export type RequesIdOptions = {
  * })
  * ```
  */
-export const requestId = (options?: RequesIdOptions): MiddlewareHandler => {
-  const limitLength = options?.limitLength ?? 255
-  const headerName = options?.headerName ?? 'X-Request-Id'
-
+export const requestId = ({
+  limitLength = 255,
+  headerName = 'X-Request-Id',
+  generator = () => crypto.randomUUID(),
+}: RequesIdOptions = {}): MiddlewareHandler => {
   return async function requestId(c, next) {
     // If `headerName` is empty string, req.header will return the object
     let reqId = headerName ? c.req.header(headerName) : undefined
@@ -50,7 +52,7 @@ export const requestId = (options?: RequesIdOptions): MiddlewareHandler => {
       reqId = reqId.replace(/[^\w\-]/g, '')
       reqId = limitLength > 0 ? reqId.substring(0, limitLength) : reqId
     } else {
-      reqId = options?.generator?.() ?? crypto.randomUUID()
+      reqId = generator(c)
     }
 
     c.set('requestId', reqId)

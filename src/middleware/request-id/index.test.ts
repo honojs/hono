@@ -1,3 +1,4 @@
+import type { Context } from '../../context'
 import { Hono } from '../../hono'
 import { requestId } from '.'
 
@@ -43,18 +44,40 @@ describe('Request ID Middleware', () => {
 
 describe('Request ID Middleware with custom generator', () => {
   function generateWord() {
-    return 'HonoHonoHono'
+    return 'HonoIsWebFramework'
+  }
+  function generateDoubleRequestId(c: Context) {
+    const honoId = c.req.header('Hono-Request-Id')
+    const ohnoId = c.req.header('Ohno-Request-Id')
+    if (honoId && ohnoId) {
+      return honoId + ohnoId
+    }
+    return crypto.randomUUID()
   }
   const app = new Hono()
-  app.use('*', requestId({ generator: generateWord }))
-  app.get('/requestId', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
-
+  app.use('/word', requestId({ generator: generateWord }))
+  app.use('/doubleRequestId', requestId({ generator: generateDoubleRequestId }))
+  app.get('/word', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
+  app.get('/doubleRequestId', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
   it('Should return custom request id', async () => {
-    const res = await app.request('http://localhost/requestId')
+    const res = await app.request('http://localhost/word')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(res.headers.get('X-Request-Id')).toBe('HonoHonoHono')
-    expect(await res.text()).toBe('HonoHonoHono')
+    expect(res.headers.get('X-Request-Id')).toBe('HonoIsWebFramework')
+    expect(await res.text()).toBe('HonoIsWebFramework')
+  })
+
+  it('Should return complex request id', async () => {
+    const res = await app.request('http://localhost/doubleRequestId', {
+      headers: {
+        'Hono-Request-Id': 'Hello',
+        'Ohno-Request-Id': 'World',
+      },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Request-Id')).toBe('HelloWorld')
+    expect(await res.text()).toBe('HelloWorld')
   })
 })
 
