@@ -43,7 +43,9 @@ export const requestID = (options?: RequesIDOptions): MiddlewareHandler => {
   const headerName = options?.headerName ?? 'X-Request-Id'
 
   return async function requestID(c, next) {
-    let requestId = c.req.header(headerName)
+    // If `headerName` is empty string, req.header will return the object
+    let requestId = headerName ? c.req.header(headerName) : undefined
+
     if (requestId) {
       requestId = requestId.replace(/[^\w\-]/g, '')
       requestId = limitLength > 0 ? requestId.substring(0, limitLength) : requestId

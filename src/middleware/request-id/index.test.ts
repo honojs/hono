@@ -110,10 +110,11 @@ describe('Request ID Middleware with custom header', () => {
     expect(await res.text()).toBe('hono-is-cool')
   })
 
-  it('Should return default random request id', async () => {
-    const res = await app.request('http://localhost/requestId')
+  it('Should not return request id', async () => {
+    const res = await app.request('http://localhost/emptyId')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
+    expect(res.headers.get('X-Request-Id')).toBeNull()
     expect(await res.text()).toMatch(regexUUIDv4)
   })
 })
