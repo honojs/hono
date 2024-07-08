@@ -5,7 +5,7 @@ import type { Context as JSXContext } from '../context'
 import { globalContexts as globalJSXContexts, useContext } from '../context'
 import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
-import { styleObjectForEach } from '../utils'
+import { normalizeIntrinsicElementKey, styleObjectForEach } from '../utils'
 import { createContext } from './context' // import dom-specific versions
 import { newJSXNode } from './utils'
 
@@ -17,8 +17,8 @@ const eventAliasMap: Record<string, string> = {
 } as const
 
 const nameSpaceMap: Record<string, string> = {
-  svg: 'http://www.w3.org/2000/svg',
-  math: 'http://www.w3.org/1998/Math/MathML',
+  svg: '2000/svg',
+  math: '1998/Math/MathML',
 } as const
 
 const skipProps: Set<string> = new Set(['children'])
@@ -31,28 +31,33 @@ export type ErrorHandler = (error: any, retry: () => void) => Child | undefined
 type Container = HTMLElement | DocumentFragment
 type LocalJSXContexts = [JSXContext<unknown>, unknown][] | undefined
 type SupportedElement = HTMLElement | SVGElement | MathMLElement
+export type PreserveNodeType =
+  | 1 // preserve only self
+  | 2 // preserve self and children
 
 export type NodeObject = {
   pP: Props | undefined // previous props
   nN: Node | undefined // next node
   vC: Node[] // virtual dom children
+  pC?: Node[] // previous virtual dom children
   vR: Node[] // virtual dom children to remove
   s?: Node[] // shadow virtual dom children
   n?: string // namespace
+  f?: boolean // force build
   c: Container | undefined // container
   e: SupportedElement | Text | undefined // rendered element
+  p?: PreserveNodeType // preserve HTMLElement if it will be unmounted
+  a?: boolean // cancel apply() if true
   [DOM_STASH]:
     | [
         number, // current hook index
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         any[][], // stash for hooks
-        LocalJSXContexts // context
+        LocalJSXContexts, // context
+        [Context, Function, NodeObject] // [context, error handler, node] for closest error boundary or suspense
       ]
-    | [
-        number,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        any[][]
-      ]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    | [number, any[][]]
 } & JSXNode
 type NodeString = {
   t: string // text content
@@ -62,6 +67,7 @@ type NodeString = {
   // like a NodeObject
   vC: undefined
   nN: undefined
+  p?: true
   // from JSXNode
   key: undefined
   tag: undefined
@@ -83,7 +89,8 @@ export type Context =
       boolean, // got an error
       UpdateHook, // update hook
       boolean, // is in view transition
-      boolean // is in top level render
+      boolean, // is in top level render
+      [Context, Function, NodeObject][] //  [context, error handler, node] stack for this context
     ]
   | [PendingType, boolean, UpdateHook, boolean]
   | [PendingType, boolean, UpdateHook]
@@ -93,7 +100,10 @@ export type Context =
 
 export const buildDataStack: [Context, Node][] = []
 
+const refCleanupMap: WeakMap<Element, () => void> = new WeakMap()
+
 let nameSpaceContext: JSXContext<string> | undefined = undefined
+export const getNameSpaceContext = () => nameSpaceContext
 
 const isNodeString = (node: Node): node is NodeString => 't' in (node as NodeString)
 
@@ -114,10 +124,15 @@ const toAttributeName = (element: SupportedElement, key: string): string =>
     ? key.replace(/([A-Z])/g, '-$1').toLowerCase()
     : key
 
-const applyProps = (container: SupportedElement, attributes: Props, oldAttributes?: Props) => {
+const applyProps = (
+  container: SupportedElement,
+  attributes: Props,
+  oldAttributes?: Props
+): void => {
   attributes ||= {}
-  for (const [key, value] of Object.entries(attributes)) {
+  for (let [key, value] of Object.entries(attributes)) {
     if (!skipProps.has(key) && (!oldAttributes || oldAttributes[key] !== value)) {
+      key = normalizeIntrinsicElementKey(key)
       const eventSpec = getEventSpec(key)
       if (eventSpec) {
         if (oldAttributes) {
@@ -132,11 +147,14 @@ const applyProps = (container: SupportedElement, attributes: Props, oldAttribute
       } else if (key === 'dangerouslySetInnerHTML' && value) {
         container.innerHTML = value.__html
       } else if (key === 'ref') {
+        let cleanup
         if (typeof value === 'function') {
-          value(container)
+          cleanup = value(container) || (() => value(null))
         } else if (value && 'current' in value) {
           value.current = container
+          cleanup = () => (value.current = null)
         }
+        refCleanupMap.set(container, cleanup)
       } else if (key === 'style') {
         const style = container.style
         if (typeof value === 'string') {
@@ -187,17 +205,14 @@ const applyProps = (container: SupportedElement, attributes: Props, oldAttribute
     }
   }
   if (oldAttributes) {
-    for (const [key, value] of Object.entries(oldAttributes)) {
+    for (let [key, value] of Object.entries(oldAttributes)) {
       if (!skipProps.has(key) && !(key in attributes)) {
+        key = normalizeIntrinsicElementKey(key)
         const eventSpec = getEventSpec(key)
         if (eventSpec) {
           container.removeEventListener(eventSpec[0], value, eventSpec[1])
         } else if (key === 'ref') {
-          if (typeof value === 'function') {
-            value(null)
-          } else {
-            value.current = null
-          }
+          refCleanupMap.get(container)?.()
         } else {
           container.removeAttribute(toAttributeName(container, key))
         }
@@ -235,7 +250,7 @@ const getNextChildren = (
   nextChildren: Node[],
   childrenToRemove: Node[],
   callbacks: EffectData[]
-) => {
+): void => {
   childrenToRemove.push(...node.vR)
   if (typeof node.tag === 'function') {
     node[DOM_STASH][1][STASH_EFFECT]?.forEach((data: EffectData) => callbacks.push(data))
@@ -276,34 +291,35 @@ const findInsertBefore = (node: Node | undefined): SupportedElement | Text | nul
   return findInsertBefore(node.nN)
 }
 
-const removeNode = (node: Node) => {
+const removeNode = (node: Node): void => {
   if (!isNodeString(node)) {
     node[DOM_STASH]?.[1][STASH_EFFECT]?.forEach((data: EffectData) => data[2]?.())
 
-    if (node.e && node.props?.ref) {
-      if (typeof node.props.ref === 'function') {
-        node.props.ref(null)
-      } else {
-        node.props.ref.current = null
-      }
+    refCleanupMap.get(node.e as Element)?.()
+    if (node.p === 2) {
+      node.vC?.forEach((n) => (n.p = 2))
     }
     node.vC?.forEach(removeNode)
   }
-  if (node.tag !== HONO_PORTAL_ELEMENT) {
+  if (!node.p) {
     node.e?.remove()
+    delete node.e
   }
   if (typeof node.tag === 'function') {
     updateMap.delete(node)
     fallbackUpdateFnArrayMap.delete(node)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (node as any)[DOM_STASH][3] // delete explicitly for avoid circular reference
+    node.a = true
   }
 }
 
-const apply = (node: NodeObject, container: Container) => {
+const apply = (node: NodeObject, container: Container): void => {
   node.c = container
   applyNodeObject(node, container)
 }
 
-const applyNode = (node: Node, container: Container) => {
+const applyNode = (node: Node, container: Container): void => {
   if (isNodeString(node)) {
     container.textContent = node.t
   } else {
@@ -328,7 +344,8 @@ const findChildNodeIndex = (
   return
 }
 
-const applyNodeObject = (node: NodeObject, container: Container) => {
+const cancelBuild = Symbol()
+const applyNodeObject = (node: NodeObject, container: Container): void => {
   const next: Node[] = []
   const remove: Node[] = []
   const callbacks: EffectData[] = []
@@ -375,40 +392,44 @@ const fallbackUpdateFnArrayMap: WeakMap<
   NodeObject,
   Array<() => Promise<NodeObject | undefined>>
 > = new WeakMap<NodeObject, Array<() => Promise<NodeObject | undefined>>>()
-export const build = (
-  context: Context,
-  node: NodeObject,
-  topLevelErrorHandlerNode: NodeObject | undefined,
-  children?: Child[]
-): void => {
-  let errorHandler: ErrorHandler | undefined
-  children ||=
-    typeof node.tag == 'function' ? invokeTag(context, node) : toArray(node.props.children)
-  if ((children[0] as JSXNode)?.tag === '') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    errorHandler = (children[0] as any)[DOM_ERROR_HANDLER] as ErrorHandler
-    topLevelErrorHandlerNode ||= node
+export const build = (context: Context, node: NodeObject, children?: Child[]): void => {
+  const buildWithPreviousChildren = !children && node.pC
+  if (children) {
+    node.pC ||= node.vC
   }
-  const oldVChildren: Node[] = node.vC ? [...node.vC] : []
-  const vChildren: Node[] = []
-  node.vR = []
-  let prevNode: Node | undefined
+
+  let foundErrorHandler: ErrorHandler | undefined
   try {
+    children ||=
+      typeof node.tag == 'function' ? invokeTag(context, node) : toArray(node.props.children)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((children[0] as JSXNode)?.tag === '' && (children[0] as any)[DOM_ERROR_HANDLER]) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      foundErrorHandler = (children[0] as any)[DOM_ERROR_HANDLER] as ErrorHandler
+      context[5]!.push([context, foundErrorHandler, node])
+    }
+    const oldVChildren: Node[] = buildWithPreviousChildren
+      ? [...(node.pC as Node[])]
+      : node.vC
+      ? [...node.vC]
+      : []
+    const vChildren: Node[] = []
+    node.vR = buildWithPreviousChildren ? [...node.vC] : []
+    let prevNode: Node | undefined
     children.flat().forEach((c: Child) => {
       let child = buildNode(c)
       if (child) {
-        if (prevNode) {
-          prevNode.nN = child
-        }
-        prevNode = child
-
         if (
           typeof child.tag === 'function' &&
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          !(child.tag as any)[DOM_INTERNAL_TAG] &&
-          globalJSXContexts.length > 0
+          !(child.tag as any)[DOM_INTERNAL_TAG]
         ) {
-          child[DOM_STASH][2] = globalJSXContexts.map((c) => [c, c.values.at(-1)])
+          if (globalJSXContexts.length > 0) {
+            child[DOM_STASH][2] = globalJSXContexts.map((c) => [c, c.values.at(-1)])
+          }
+          if (context[5]?.length) {
+            child[DOM_STASH][3] = context[5].at(-1) as [Context, ErrorHandler, NodeObject]
+          }
         }
 
         let oldChild: Node | undefined
@@ -424,6 +445,7 @@ export const build = (
           oldVChildren.splice(i, 1)
         }
 
+        let skipBuild = false
         if (oldChild) {
           if (isNodeString(child)) {
             if ((oldChild as NodeString).t !== child.t) {
@@ -434,10 +456,20 @@ export const build = (
           } else if (oldChild.tag !== child.tag) {
             node.vR.push(oldChild)
           } else {
-            oldChild.pP = oldChild.props
+            const pP = (oldChild.pP = oldChild.props)
             oldChild.props = child.props
+            oldChild.f ||= child.f || node.f
             if (typeof child.tag === 'function') {
               oldChild[DOM_STASH][2] = child[DOM_STASH][2] || []
+              oldChild[DOM_STASH][3] = child[DOM_STASH][3]
+
+              if (!oldChild.f) {
+                const prevPropsKeys = Object.keys(pP)
+                const currentProps = oldChild.props
+                skipBuild =
+                  prevPropsKeys.length === Object.keys(currentProps).length &&
+                  prevPropsKeys.every((k) => k in currentProps && currentProps[k] === pP[k])
+              }
             }
             child = oldChild
           }
@@ -448,24 +480,45 @@ export const build = (
           }
         }
 
-        if (!isNodeString(child)) {
-          build(context, child, topLevelErrorHandlerNode)
+        if (!isNodeString(child) && !skipBuild) {
+          build(context, child)
+          delete child.f
         }
         vChildren.push(child)
+
+        for (let p = prevNode; p && !isNodeString(p); p = p.vC?.at(-1) as NodeObject) {
+          p.nN = child
+        }
+        prevNode = child
       }
     })
     node.vC = vChildren
     node.vR.push(...oldVChildren)
+    if (buildWithPreviousChildren) {
+      delete node.pC
+    }
   } catch (e) {
+    node.f = true
+    if (e === cancelBuild) {
+      if (foundErrorHandler) {
+        return
+      } else {
+        throw e
+      }
+    }
+
+    const [errorHandlerContext, errorHandler, errorHandlerNode] =
+      node[DOM_STASH]?.[3] || ([] as unknown as [undefined, undefined])
+
     if (errorHandler) {
       const fallbackUpdateFn = () =>
-        update([0, false, context[2] as UpdateHook], topLevelErrorHandlerNode as NodeObject)
+        update([0, false, context[2] as UpdateHook], errorHandlerNode as NodeObject)
       const fallbackUpdateFnArray =
-        fallbackUpdateFnArrayMap.get(topLevelErrorHandlerNode as NodeObject) || []
+        fallbackUpdateFnArrayMap.get(errorHandlerNode as NodeObject) || []
       fallbackUpdateFnArray.push(fallbackUpdateFn)
-      fallbackUpdateFnArrayMap.set(topLevelErrorHandlerNode as NodeObject, fallbackUpdateFnArray)
+      fallbackUpdateFnArrayMap.set(errorHandlerNode as NodeObject, fallbackUpdateFnArray)
       const fallback = errorHandler(e, () => {
-        const fnArray = fallbackUpdateFnArrayMap.get(topLevelErrorHandlerNode as NodeObject)
+        const fnArray = fallbackUpdateFnArrayMap.get(errorHandlerNode as NodeObject)
         if (fnArray) {
           const i = fnArray.indexOf(fallbackUpdateFn)
           if (i !== -1) {
@@ -476,14 +529,28 @@ export const build = (
       })
       if (fallback) {
         if (context[0] === 1) {
+          // low priority render
           context[1] = true
         } else {
-          build(context, node, topLevelErrorHandlerNode, [fallback])
+          build(context, errorHandlerNode, [fallback])
+          if (
+            (errorHandler.length === 1 || context !== errorHandlerContext) &&
+            errorHandlerNode.c
+          ) {
+            // render error boundary immediately
+            apply(errorHandlerNode, errorHandlerNode.c as Container)
+            return
+          }
         }
-        return
+        throw cancelBuild
       }
     }
+
     throw e
+  } finally {
+    if (foundErrorHandler) {
+      context[5]!.pop()
+    }
   }
 }
 
@@ -498,43 +565,51 @@ export const buildNode = (node: Child): Node | undefined => {
         tag: (node as NodeObject).tag,
         props: (node as NodeObject).props,
         key: (node as NodeObject).key,
-      })
+        f: (node as NodeObject).f,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any)
     }
     if (typeof (node as JSXNode).tag === 'function') {
       ;(node as NodeObject)[DOM_STASH] = [0, []]
     } else {
       const ns = nameSpaceMap[(node as JSXNode).tag as string]
       if (ns) {
-        ;(node as NodeObject).n = ns
         nameSpaceContext ||= createContext('')
         ;(node as JSXNode).props.children = [
           {
-            tag: nameSpaceContext.Provider,
+            tag: nameSpaceContext,
             props: {
-              value: ns,
+              value: ((node as NodeObject).n = `http://www.w3.org/${ns}`),
               children: (node as JSXNode).props.children,
             },
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ] as any
+        ]
       }
     }
     return node as NodeObject
   }
 }
 
-const replaceContainer = (node: NodeObject, from: DocumentFragment, to: Container) => {
+const replaceContainer = (node: NodeObject, from: DocumentFragment, to: Container): void => {
   if (node.c === from) {
     node.c = to
     node.vC.forEach((child) => replaceContainer(child as NodeObject, from, to))
   }
 }
 
-const updateSync = (context: Context, node: NodeObject) => {
+const updateSync = (context: Context, node: NodeObject): void => {
   node[DOM_STASH][2]?.forEach(([c, v]) => {
     c.values.push(v)
   })
-  build(context, node, undefined)
+  try {
+    build(context, node, undefined)
+  } catch (e) {
+    return
+  }
+  if (node.a) {
+    delete node.a
+    return
+  }
   node[DOM_STASH][2]?.forEach(([c]) => {
     c.values.pop()
   })
@@ -553,6 +628,8 @@ export const update = async (
   context: Context,
   node: NodeObject
 ): Promise<NodeObject | undefined> => {
+  context[5] ||= []
+
   const existing = updateMap.get(node)
   if (existing) {
     // execute only the last update() call, so the previous update will be canceled.
@@ -590,8 +667,9 @@ export const update = async (
   return promise
 }
 
-export const renderNode = (node: NodeObject, container: Container) => {
+export const renderNode = (node: NodeObject, container: Container): void => {
   const context: Context = []
+  ;(context as Context)[5] = [] // error handler stack
   ;(context as Context)[4] = true // start top level render
   build(context, node, undefined)
   ;(context as Context)[4] = false // finish top level render
@@ -602,12 +680,12 @@ export const renderNode = (node: NodeObject, container: Container) => {
   container.replaceChildren(fragment)
 }
 
-export const render = (jsxNode: Child, container: Container) => {
+export const render = (jsxNode: Child, container: Container): void => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   renderNode(buildNode({ tag: '', props: { children: jsxNode } } as any) as NodeObject, container)
 }
 
-export const flushSync = (callback: () => void) => {
+export const flushSync = (callback: () => void): void => {
   const set = new Set<NodeObject>()
   currentUpdateSets.push(set)
   callback()
@@ -629,5 +707,6 @@ export const createPortal = (children: Child, container: HTMLElement, key?: stri
     },
     key,
     e: container,
+    p: 1,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any)

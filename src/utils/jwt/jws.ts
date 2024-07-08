@@ -1,11 +1,14 @@
+/**
+ * @module
+ * JSON Web Signature (JWS)
+ * https://datatracker.ietf.org/doc/html/rfc7515
+ */
+
 import { getRuntimeKey } from '../../helper/adapter'
 import { decodeBase64 } from '../encode'
 import type { SignatureAlgorithm } from './jwa'
 import { CryptoKeyUsage, JwtAlgorithmNotImplemented } from './types'
 import { utf8Encoder } from './utf8'
-
-// JSON Web Signature (JWS)
-// https://datatracker.ietf.org/doc/html/rfc7515
 
 type KeyImporterAlgorithm = Parameters<typeof crypto.subtle.importKey>[2]
 type KeyAlgorithm =

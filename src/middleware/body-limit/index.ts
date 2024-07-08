@@ -25,7 +25,7 @@ class BodyLimitError extends Error {
 /**
  * Body Limit Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/body-limit}
+ * @see {@link https://hono.dev/docs/middleware/builtin/body-limit}
  *
  * @param {BodyLimitOptions} options - The options for the body limit middleware.
  * @param {number} options.maxSize - The maximum body size allowed.
@@ -103,7 +103,8 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
       },
     })
 
-    c.req.raw = new Request(c.req.raw, { body: reader })
+    const requestInit: RequestInit & { duplex: 'half' } = { body: reader, duplex: 'half' }
+    c.req.raw = new Request(c.req.raw, requestInit as RequestInit)
 
     await next()
 

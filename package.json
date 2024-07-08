@@ -1,7 +1,7 @@
 {
   "name": "hono",
-  "version": "4.4.0",
-  "description": "Ultrafast web framework for the Edges",
+  "version": "4.5.0-rc.2",
+  "description": "Web framework built on Web Standards",
   "main": "dist/cjs/index.js",
   "type": "module",
   "module": "dist/index.js",
@@ -12,22 +12,22 @@
   "scripts": {
     "test": "tsc --noEmit && vitest --run && vitest -c .vitest.config/jsx-runtime-default.ts --run && vitest -c .vitest.config/jsx-runtime-dom.ts --run",
     "test:watch": "vitest --watch",
-    "test:deno": "deno test --allow-read --allow-env --allow-write -c runtime_tests/deno/deno.json runtime_tests/deno && deno test --no-lock -c runtime_tests/deno-jsx/deno.precompile.json runtime_tests/deno-jsx && deno test --no-lock -c runtime_tests/deno-jsx/deno.react-jsx.json runtime_tests/deno-jsx",
+    "test:deno": "deno test --allow-read --allow-env --allow-write --allow-net -c runtime_tests/deno/deno.json runtime_tests/deno && deno test --no-lock -c runtime_tests/deno-jsx/deno.precompile.json runtime_tests/deno-jsx && deno test --no-lock -c runtime_tests/deno-jsx/deno.react-jsx.json runtime_tests/deno-jsx",
     "test:bun": "bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
     "test:fastly": "vitest --run --config ./runtime_tests/fastly/vitest.config.ts",
     "test:node": "vitest --run --config ./runtime_tests/node/vitest.config.ts",
-    "test:wrangler": "vitest --run --config ./runtime_tests/wrangler/vitest.config.ts",
+    "test:workerd": "vitest --run --config ./runtime_tests/workerd/vitest.config.ts",
     "test:lambda": "vitest --run --config ./runtime_tests/lambda/vitest.config.ts",
     "test:lambda-edge": "vitest --run --config ./runtime_tests/lambda-edge/vitest.config.ts",
-    "test:all": "bun run test && bun test:deno && bun test:bun && bun test:fastly && bun test:node && bun test:wrangler && bun test:lambda && bun test:lambda-edge",
+    "test:all": "bun run test && bun test:deno && bun test:bun && bun test:fastly && bun test:node && bun test:workerd && bun test:lambda && bun test:lambda-edge",
     "lint": "eslint --ext js,ts,tsx src runtime_tests",
     "lint:fix": "eslint --ext js,ts,tsx src runtime_tests --fix",
     "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
     "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
-    "build": "rimraf dist && tsx ./build.ts && bun run copy:package.cjs.json",
+    "build": "rimraf dist && bun ./build.ts && bun run copy:package.cjs.json",
     "postbuild": "publint",
-    "watch": "rimraf dist && tsx ./build.ts --watch && bun run copy:package.cjs.json",
+    "watch": "rimraf dist && bun ./build.ts --watch && bun run copy:package.cjs.json",
     "coverage": "vitest --run --coverage",
     "prerelease": "bun test:deno && bun run build",
     "release": "np"
@@ -182,6 +182,11 @@
       "types": "./dist/types/jsx/dom/css.d.ts",
       "import": "./dist/jsx/dom/css.js",
       "require": "./dist/cjs/jsx/dom/css.js"
+    },
+    "./jsx/dom/server": {
+      "types": "./dist/types/jsx/dom/server.d.ts",
+      "import": "./dist/jsx/dom/server.js",
+      "require": "./dist/cjs/jsx/dom/server.js"
     },
     "./jwt": {
       "types": "./dist/types/middleware/jwt/index.d.ts",
@@ -442,6 +447,9 @@
       "jsx/dom/css": [
         "./dist/types/jsx/dom/css.d.ts"
       ],
+      "jsx/dom/server": [
+        "./dist/types/jsx/dom/server.d.ts"
+      ],
       "jwt": [
         "./dist/types/middleware/jwt"
       ],
@@ -591,17 +599,17 @@
     "eslint": "^8.55.0",
     "glob": "7.2.3",
     "jsdom": "^22.1.0",
-    "msw": "1.3.2",
+    "msw": "^2.3.0",
     "np": "7.7.0",
     "prettier": "^2.6.2",
     "publint": "^0.1.8",
     "rimraf": "^3.0.2",
     "supertest": "^6.3.3",
-    "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
     "vitest": "^1.2.2",
-    "wrangler": "3.17.1",
+    "wrangler": "^3.58.0",
+    "ws": "^8.17.0",
     "zod": "^3.20.2"
   },
   "engines": {

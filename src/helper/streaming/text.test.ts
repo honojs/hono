@@ -1,9 +1,8 @@
 import { Context } from '../../context'
-import { HonoRequest } from '../../request'
 import { streamText } from '.'
 
 describe('Text Streaming Helper', () => {
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   let c: Context
   beforeEach(() => {
     c = new Context(req)

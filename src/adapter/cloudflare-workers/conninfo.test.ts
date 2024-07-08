@@ -1,5 +1,4 @@
 import { Context } from '../../context'
-import { HonoRequest } from '../../request'
 import { getConnInfo } from './conninfo'
 
 describe('getConnInfo', () => {
@@ -10,10 +9,11 @@ describe('getConnInfo', () => {
         'cf-connecting-ip': address,
       },
     })
-    const c = new Context(new HonoRequest(req))
+    const c = new Context(req)
 
     const info = getConnInfo(c)
 
     expect(info.remote.address).toBe(address)
+    expect(info.remote.addressType).toBeUndefined()
   })
 })

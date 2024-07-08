@@ -1,11 +1,11 @@
 import { Readable } from 'stream'
+import { handle, streamHandle } from '../../src/adapter/aws-lambda/handler'
+import type { LambdaEvent } from '../../src/adapter/aws-lambda/handler'
 import type {
   ApiGatewayRequestContext,
   ApiGatewayRequestContextV2,
-} from '../../src/adapter/aws-lambda/custom-context'
-import { handle, streamHandle } from '../../src/adapter/aws-lambda/handler'
-import type { LambdaEvent } from '../../src/adapter/aws-lambda/handler'
-import type { LambdaContext } from '../../src/adapter/aws-lambda/types'
+  LambdaContext,
+} from '../../src/adapter/aws-lambda/types'
 import { getCookie, setCookie } from '../../src/helper/cookie'
 import { streamSSE } from '../../src/helper/streaming'
 import { Hono } from '../../src/hono'

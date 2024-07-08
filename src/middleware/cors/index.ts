@@ -18,7 +18,7 @@ type CORSOptions = {
 /**
  * CORS Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/cors}
+ * @see {@link https://hono.dev/docs/middleware/builtin/cors}
  *
  * @param {CORSOptions} [options] - The options for the CORS middleware.
  * @param {string | string[] | ((origin: string, c: Context) => string | undefined | null)} [options.origin='*'] - The value of "Access-Control-Allow-Origin" CORS header.
@@ -89,7 +89,13 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
     // Suppose the server sends a response with an Access-Control-Allow-Origin value with an explicit origin (rather than the "*" wildcard).
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
     if (opts.origin !== '*') {
-      set('Vary', 'Origin')
+      const existingVary = c.req.header('Vary')
+
+      if (existingVary) {
+        set('Vary', existingVary)
+      } else {
+        set('Vary', 'Origin')
+      }
     }
 
     if (opts.credentials) {

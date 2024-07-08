@@ -6,8 +6,9 @@ import type {
   ALBRequestContext,
   ApiGatewayRequestContext,
   ApiGatewayRequestContextV2,
-} from './custom-context'
-import type { Handler, LambdaContext } from './types'
+  Handler,
+  LambdaContext,
+} from './types'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -95,7 +96,7 @@ const getRequestContext = (
 const streamToNodeStream = async (
   reader: ReadableStreamDefaultReader<Uint8Array>,
   writer: NodeJS.WritableStream
-) => {
+): Promise<void> => {
   let readResult = await reader.read()
   while (!readResult.done) {
     writer.write(readResult.value)
@@ -125,10 +126,21 @@ export const streamHandle = <
           context,
         })
 
+        const headers: Record<string, string> = {}
+        const cookies: string[] = []
+        res.headers.forEach((value, name) => {
+          if (name === 'set-cookie') {
+            cookies.push(value)
+          } else {
+            headers[name] = value
+          }
+        })
+
         // Check content type
         const httpResponseMetadata = {
           statusCode: res.status,
-          headers: Object.fromEntries(res.headers.entries()),
+          headers,
+          cookies,
         }
 
         // Update response stream
@@ -246,7 +258,12 @@ abstract class EventProcessor<E extends LambdaEvent> {
 
   setCookies(event: E, res: Response, result: APIGatewayProxyResult) {
     if (res.headers.has('set-cookie')) {
-      const cookies = res.headers.get('set-cookie')?.split(', ')
+      const cookies = res.headers.getSetCookie
+        ? res.headers.getSetCookie()
+        : Array.from(res.headers.entries())
+            .filter(([k]) => k === 'set-cookie')
+            .map(([, v]) => v)
+
       if (Array.isArray(cookies)) {
         this.setCookiesToResult(event, result, cookies)
         res.headers.delete('set-cookie')
@@ -379,26 +396,7 @@ class ALBProcessor extends EventProcessor<ALBProxyEvent> {
     }
     return headers
   }
-  protected setHeadersToResult(
-    event: ALBProxyEvent,
-    result: APIGatewayProxyResult,
-    headers: Headers
-  ): void {
-    // When multiValueHeaders is present in event set multiValueHeaders in result
-    if (event.multiValueHeaders) {
-      const multiValueHeaders: { [key: string]: string[] } = {}
-      for (const [key, value] of headers.entries()) {
-        multiValueHeaders[key] = [value]
-      }
-      result.multiValueHeaders = multiValueHeaders
-    } else {
-      const singleValueHeaders: Record<string, string> = {}
-      for (const [key, value] of headers.entries()) {
-        singleValueHeaders[key] = value
-      }
-      result.headers = singleValueHeaders
-    }
-  }
+
   protected getPath(event: ALBProxyEvent): string {
     return event.path
   }
@@ -409,15 +407,26 @@ class ALBProcessor extends EventProcessor<ALBProxyEvent> {
 
   protected getQueryString(event: ALBProxyEvent): string {
     // In the case of ALB Integration either queryStringParameters or multiValueQueryStringParameters can be present not both
-    if (event.queryStringParameters) {
-      return Object.entries(event.queryStringParameters || {})
-        .filter(([, value]) => value)
-        .map(([key, value]) => `${key}=${value}`)
-        .join('&')
-    } else {
+    /* 
+      In other cases like when using the serverless framework, the event object does contain both queryStringParameters and multiValueQueryStringParameters:
+      Below is an example event object for this URL: /payment/b8c55e69?select=amount&select=currency
+      {
+        ...
+        queryStringParameters: { select: 'currency' },
+        multiValueQueryStringParameters: { select: [ 'amount', 'currency' ] },
+      }
+      The expected results is for select to be an array with two items. However the pre-fix code is only returning one item ('currency') in the array.
+      A simple fix would be to invert the if statement and check the multiValueQueryStringParameters first.
+    */
+    if (event.multiValueQueryStringParameters) {
       return Object.entries(event.multiValueQueryStringParameters || {})
         .filter(([, value]) => value)
         .map(([key, value]) => `${key}=${value.join(`&${key}=`)}`)
+        .join('&')
+    } else {
+      return Object.entries(event.queryStringParameters || {})
+        .filter(([, value]) => value)
+        .map(([key, value]) => `${key}=${value}`)
         .join('&')
     }
   }
@@ -462,11 +471,11 @@ export const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> =>
 }
 
 const isProxyEventALB = (event: LambdaEvent): event is ALBProxyEvent => {
-  return Object.prototype.hasOwnProperty.call(event.requestContext, 'elb')
+  return Object.hasOwn(event.requestContext, 'elb')
 }
 
 const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => {
-  return Object.prototype.hasOwnProperty.call(event, 'rawPath')
+  return Object.hasOwn(event, 'rawPath')
 }
 
 export const isContentTypeBinary = (contentType: string) => {

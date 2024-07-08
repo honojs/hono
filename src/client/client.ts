@@ -68,7 +68,13 @@ class ClientRequestImpl {
       if (args.form) {
         const form = new FormData()
         for (const [k, v] of Object.entries(args.form)) {
-          form.append(k, v)
+          if (Array.isArray(v)) {
+            for (const v2 of v) {
+              form.append(k, v2)
+            }
+          } else {
+            form.append(k, v)
+          }
         }
         this.rBody = form
       }
@@ -172,12 +178,16 @@ export const hc = <T extends Hono<any, any, any>>(
       return new URL(url)
     }
     if (method === 'ws') {
-      const targetUrl = replaceUrlProtocol(
+      const webSocketUrl = replaceUrlProtocol(
         opts.args[0] && opts.args[0].param ? replaceUrlParam(url, opts.args[0].param) : url,
         'ws'
       )
+      const targetUrl = new URL(webSocketUrl)
+      for (const key in opts.args[0]?.query) {
+        targetUrl.searchParams.set(key, opts.args[0].query[key])
+      }
 
-      return new WebSocket(targetUrl)
+      return new WebSocket(targetUrl.toString())
     }
 
     const req = new ClientRequestImpl(url, method)

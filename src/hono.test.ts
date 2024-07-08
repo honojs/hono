@@ -19,11 +19,17 @@ function throwExpression(errorMessage: string): never {
   throw new Error(errorMessage)
 }
 
+type Env = {
+  Bindings: {
+    _: string
+  }
+}
+
 describe('GET Request', () => {
   describe('without middleware', () => {
     // In other words, this is a test for cases that do not use `compose()`
 
-    const app = new Hono()
+    const app = new Hono<Env>()
 
     app.get('/hello', async () => {
       return new Response('hello', {
@@ -130,7 +136,7 @@ describe('GET Request', () => {
   describe('with middleware', () => {
     // when using `compose()`
 
-    const app = new Hono()
+    const app = new Hono<Env>()
 
     app.use('*', async (ctx, next) => {
       await next()
@@ -1382,6 +1388,10 @@ describe('Error handle', () => {
       throw new Error('This is Error')
     })
 
+    app.get('/error-string', () => {
+      throw 'This is Error'
+    })
+
     app.use('/error-middleware', async () => {
       throw new Error('This is Middleware Error')
     })
@@ -1389,6 +1399,10 @@ describe('Error handle', () => {
     app.onError((err, c) => {
       c.header('x-debug', err.message)
       return c.text('Custom Error Message', 500)
+    })
+
+    it('Should throw Error if a non-Error object is thrown in a handler', async () => {
+      expect(() => app.request('/error-string')).toThrowError()
     })
 
     it('Custom Error Message', async () => {
@@ -1471,6 +1485,26 @@ describe('Error handle', () => {
       const res = await app2.request('http://localhost/exception')
       expect(res.status).toBe(401)
       expect(await res.text()).toBe('Custom Error Message')
+    })
+  })
+
+  describe('Handle HTTPException like object', () => {
+    const app = new Hono()
+
+    class CustomError extends Error {
+      getResponse() {
+        return new Response('Custom Error', { status: 400 })
+      }
+    }
+
+    app.get('/exception', () => {
+      throw new CustomError()
+    })
+
+    it('Should return 401 response', async () => {
+      const res = await app.request('http://localhost/exception')
+      expect(res.status).toBe(400)
+      expect(await res.text()).toBe('Custom Error')
     })
   })
 })
@@ -2156,6 +2190,23 @@ describe('Multiple handler - async', () => {
   })
 })
 
+describe('Lack returning response with a single handler', () => {
+  const app = new Hono()
+  // @ts-expect-error it should return Response to type it
+  app.get('/sync', () => {})
+  app.get('/async', async () => {})
+
+  it('Should return 404 response if lacking returning response', async () => {
+    const res = await app.request('/sync')
+    expect(res.status).toBe(404)
+  })
+
+  it('Should return 404 response if lacking returning response in an async handler', async () => {
+    const res = await app.request('/async')
+    expect(res.status).toBe(404)
+  })
+})
+
 describe('Context is not finalized', () => {
   it('should throw error - lack `await next()`', async () => {
     const app = new Hono()
@@ -2462,7 +2513,7 @@ describe('Optional parameters', () => {
 
 describe('app.mount()', () => {
   describe('Basic', () => {
-    const anotherApp = (req: Request, params: unknown) => {
+    const anotherApp = (req: Request, ...params: unknown[]) => {
       const path = getPath(req)
       if (path === '/') {
         return new Response('AnotherApp')
@@ -2490,6 +2541,9 @@ describe('app.mount()', () => {
           }
         )
       }
+      if (path === '/undefined') {
+        return undefined as unknown as Response
+      }
       return new Response('Not Found from AnotherApp', {
         status: 404,
       })
@@ -2501,8 +2555,15 @@ describe('app.mount()', () => {
       c.header('x-message', 'Foo')
     })
     app.get('/', (c) => c.text('Hono'))
+    app.notFound((c) => {
+      return c.text('Not Found from App', 404)
+    })
+
     app.mount('/another-app', anotherApp, () => {
       return 'params'
+    })
+    app.mount('/another-app-with-array-option', anotherApp, () => {
+      return ['param1', 'param2']
     })
     app.mount('/another-app2/sub-slash/', anotherApp)
 
@@ -2549,7 +2610,19 @@ describe('app.mount()', () => {
       res = await app.request('/another-app/with-params')
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({
-        params: 'params',
+        params: ['params'],
+      })
+
+      res = await app.request('/another-app/undefined')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Not Found from App')
+    })
+
+    it('Should return response from Another app with an array option', async () => {
+      const res = await app.request('/another-app-with-array-option/with-params')
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        params: ['param1', 'param2'],
       })
     })
 
@@ -2655,6 +2728,27 @@ describe('app.mount()', () => {
       expect(await res.text()).toBe('Not Found from AnotherApp')
     })
   })
+
+  describe('With replaceRequest option', () => {
+    const anotherApp = (req: Request) => {
+      const path = getPath(req)
+      if (path === '/app') {
+        return new Response(getPath(req))
+      }
+      return new Response(null, { status: 404 })
+    }
+
+    const app = new Hono()
+    app.mount('/app', anotherApp, {
+      replaceRequest: (req) => req,
+    })
+
+    it('Should return 200 response with the correct path', async () => {
+      const res = await app.request('/app')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/app')
+    })
+  })
 })
 
 describe('HEAD method', () => {
@@ -2691,6 +2785,39 @@ declare module './context' {
     (content: string | Promise<string>, head: { title: string }): Response | Promise<Response>
   }
 }
+
+describe('app.request()', () => {
+  it('Should return response with Request and RequestInit as args', async () => {
+    const app = new Hono()
+    app.get('/foo', (c) => {
+      return c.json(c.req.header('x-message'))
+    })
+    const req = new Request('http://localhost/foo')
+    const headers = new Headers()
+    headers.append('x-message', 'hello')
+    const res = await app.request(req, {
+      headers,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('"hello"')
+  })
+})
+
+describe('app.fire()', () => {
+  it('Should call global.addEventListener', () => {
+    const app = new Hono()
+    const addEventListener = vi.fn()
+    global.addEventListener = addEventListener
+    app.fire()
+    expect(addEventListener).toHaveBeenCalledWith('fetch', expect.any(Function))
+
+    const fetchEventListener = addEventListener.mock.calls[0][1]
+    const respondWith = vi.fn()
+    const request = new Request('http://localhost')
+    fetchEventListener({ respondWith, request })
+    expect(respondWith).toHaveBeenCalledWith(expect.any(Promise))
+  })
+})
 
 describe('Context render and setRenderer', () => {
   const app = new Hono()
@@ -3439,6 +3566,7 @@ describe('Compatible with extended Hono classes, such Zod OpenAPI Hono.', () => 
   class ExtendedHono extends Hono {
     // @ts-ignore
     route(path: string, app?: Hono) {
+      // @ts-ignore
       super.route(path, app)
       return this
     }

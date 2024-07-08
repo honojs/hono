@@ -1,5 +1,8 @@
-// JSON Web Algorithms (JWA)
-// https://datatracker.ietf.org/doc/html/rfc7518
+/**
+ * @module
+ * JSON Web Algorithms (JWA)
+ * https://datatracker.ietf.org/doc/html/rfc7518
+ */
 
 export enum AlgorithmTypes {
   HS256 = 'HS256',

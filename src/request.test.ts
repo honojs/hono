@@ -38,7 +38,7 @@ describe('Query', () => {
 })
 
 describe('Param', () => {
-  test('req.param() withth ParamStash', () => {
+  test('req.param() with ParamStash', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
     const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
       [
@@ -176,7 +176,6 @@ describe('Body methods with caching', () => {
       })
     )
     expect(await req.text()).toEqual(text)
-    expect(await req.text()).toEqual(text)
     expect(await req.json()).toEqual(json)
     expect(await req.arrayBuffer()).toEqual(buffer)
     expect(await req.blob()).toEqual(
@@ -193,7 +192,6 @@ describe('Body methods with caching', () => {
         body: '{"foo":"bar"}',
       })
     )
-    expect(await req.json()).toEqual(json)
     expect(await req.json()).toEqual(json)
     expect(await req.text()).toEqual(text)
     expect(await req.arrayBuffer()).toEqual(buffer)
@@ -212,7 +210,6 @@ describe('Body methods with caching', () => {
         body: buffer,
       })
     )
-    expect(await req.arrayBuffer()).toEqual(buffer)
     expect(await req.arrayBuffer()).toEqual(buffer)
     expect(await req.text()).toEqual(text)
     expect(await req.json()).toEqual(json)
@@ -234,7 +231,6 @@ describe('Body methods with caching', () => {
       })
     )
     expect(await req.blob()).toEqual(blob)
-    expect(await req.blob()).toEqual(blob)
     expect(await req.text()).toEqual(text)
     expect(await req.json()).toEqual(json)
     expect(await req.arrayBuffer()).toEqual(buffer)
@@ -249,7 +245,6 @@ describe('Body methods with caching', () => {
         body: data,
       })
     )
-    expect((await req.formData()).get('foo')).toBe('bar')
     expect((await req.formData()).get('foo')).toBe('bar')
     expect(async () => await req.text()).not.toThrow()
     expect(async () => await req.arrayBuffer()).not.toThrow()
@@ -266,7 +261,6 @@ describe('Body methods with caching', () => {
           body: data,
         })
       )
-      expect((await req.parseBody())['foo']).toBe('bar')
       expect((await req.parseBody())['foo']).toBe('bar')
       expect(async () => await req.text()).not.toThrow()
       expect(async () => await req.arrayBuffer()).not.toThrow()

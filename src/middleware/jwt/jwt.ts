@@ -4,9 +4,10 @@
  */
 
 import type { Context } from '../../context'
-import { getCookie } from '../../helper/cookie'
+import { getCookie, getSignedCookie } from '../../helper/cookie'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
+import type { CookiePrefixOptions } from '../../utils/cookie'
 import { Jwt } from '../../utils/jwt'
 import '../../context'
 import type { SignatureAlgorithm } from '../../utils/jwt/jwa'
@@ -19,7 +20,7 @@ export type JwtVariables = {
 /**
  * JWT Auth Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/jwt}
+ * @see {@link https://hono.dev/docs/middleware/builtin/jwt}
  *
  * @param {object} options - The options for the JWT middleware.
  * @param {string} [options.secret] - A value of your secret key.
@@ -45,7 +46,9 @@ export type JwtVariables = {
  */
 export const jwt = (options: {
   secret: string
-  cookie?: string
+  cookie?:
+    | string
+    | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
   alg?: SignatureAlgorithm
 }): MiddlewareHandler => {
   if (!options || !options.secret) {
@@ -75,7 +78,26 @@ export const jwt = (options: {
         token = parts[1]
       }
     } else if (options.cookie) {
-      token = getCookie(ctx)[options.cookie]
+      if (typeof options.cookie == 'string') {
+        token = getCookie(ctx, options.cookie)
+      } else if (options.cookie.secret) {
+        if (options.cookie.prefixOptions) {
+          token = await getSignedCookie(
+            ctx,
+            options.cookie.secret,
+            options.cookie.key,
+            options.cookie.prefixOptions
+          )
+        } else {
+          token = await getSignedCookie(ctx, options.cookie.secret, options.cookie.key)
+        }
+      } else {
+        if (options.cookie.prefixOptions) {
+          token = getCookie(ctx, options.cookie.key, options.cookie.prefixOptions)
+        } else {
+          token = getCookie(ctx, options.cookie.key)
+        }
+      }
     }
 
     if (!token) {

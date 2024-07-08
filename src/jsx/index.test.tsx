@@ -3,7 +3,7 @@
 import { html } from '../helper/html'
 import { Hono } from '../hono'
 import { Suspense, renderToReadableStream } from './streaming'
-import DefaultExport, { Fragment, createContext, memo, useContext, version } from '.'
+import DefaultExport, { Fragment, StrictMode, createContext, memo, useContext, version } from '.'
 import type { Context, FC, PropsWithChildren } from '.'
 
 interface SiteData {
@@ -297,6 +297,28 @@ describe('render to string', () => {
     })
   })
 
+  describe('download attribute', () => {
+    it('<a download={true}></a> should be rendered as <a download=""></a>', () => {
+      const template = <a download={true}></a>
+      expect(template.toString()).toBe('<a download=""></a>')
+    })
+
+    it('<a download={false}></a> should be rendered as <a></a>', () => {
+      const template = <a download={false}></a>
+      expect(template.toString()).toBe('<a></a>')
+    })
+
+    it('<a download></a> should be rendered as <a download=""></a>', () => {
+      const template = <a download></a>
+      expect(template.toString()).toBe('<a download=""></a>')
+    })
+
+    it('<a download="test"></a> should be rendered as <a download="test"></a>', () => {
+      const template = <a download='test'></a>
+      expect(template.toString()).toBe('<a download="test"></a>')
+    })
+  })
+
   describe('Function', () => {
     it('should be ignored used in on* props', () => {
       const onClick = () => {}
@@ -532,6 +554,18 @@ describe('Fragment', () => {
   })
 })
 
+describe('StrictMode', () => {
+  it('Should render children', () => {
+    const template = (
+      <StrictMode>
+        <p>1</p>
+        <p>2</p>
+      </StrictMode>
+    )
+    expect(template.toString()).toBe('<p>1</p><p>2</p>')
+  })
+})
+
 describe('Context', () => {
   let ThemeContext: Context<string>
   let Consumer: FC
@@ -603,6 +637,17 @@ describe('Context', () => {
 
       const nextRequest = <Consumer />
       expect(nextRequest.toString()).toBe('<span>light</span>')
+    })
+  })
+
+  describe('<Context> as a provider ', () => {
+    it('has a child', () => {
+      const template = (
+        <ThemeContext value='dark'>
+          <Consumer />
+        </ThemeContext>
+      )
+      expect(template.toString()).toBe('<span>dark</span>')
     })
   })
 
@@ -765,7 +810,10 @@ describe('default export', () => {
     'useMemo',
     'useLayoutEffect',
     'useInsertionEffect',
+    'useActionState',
+    'useOptimistic',
     'Suspense',
+    'StrictMode',
   ].forEach((key) => {
     it(key, () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

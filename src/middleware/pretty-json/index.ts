@@ -12,7 +12,7 @@ type prettyOptions = {
 /**
  * Pretty JSON Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/pretty-json}
+ * @see {@link https://hono.dev/docs/middleware/builtin/pretty-json}
  *
  * @param {prettyOptions} [options] - The options for the pretty JSON middleware.
  * @param {number} [options.space=2] - Number of spaces for indentation.
@@ -30,7 +30,7 @@ type prettyOptions = {
  */
 export const prettyJSON = (options: prettyOptions = { space: 2 }): MiddlewareHandler => {
   return async function prettyJSON(c, next) {
-    const pretty = c.req.query('pretty') || c.req.query('pretty') === '' ? true : false
+    const pretty = c.req.query('pretty') || c.req.query('pretty') === ''
     await next()
     if (pretty && c.res.headers.get('Content-Type')?.startsWith('application/json')) {
       const obj = await c.res.json()

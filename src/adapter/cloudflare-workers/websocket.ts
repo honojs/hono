@@ -28,31 +28,23 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
     send: (source) => server.send(source),
   }
   if (events.onOpen) {
-    server.addEventListener('open', (evt: Event) => events.onOpen && events.onOpen(evt, wsContext))
+    server.addEventListener('open', (evt: Event) => events.onOpen?.(evt, wsContext))
   }
   if (events.onClose) {
-    server.addEventListener(
-      'close',
-      (evt: CloseEvent) => events.onClose && events.onClose(evt, wsContext)
-    )
+    server.addEventListener('close', (evt: CloseEvent) => events.onClose?.(evt, wsContext))
   }
   if (events.onMessage) {
-    server.addEventListener(
-      'message',
-      (evt: MessageEvent) => events.onMessage && events.onMessage(evt, wsContext)
-    )
+    server.addEventListener('message', (evt: MessageEvent) => events.onMessage?.(evt, wsContext))
   }
   if (events.onError) {
-    server.addEventListener(
-      'error',
-      (evt: Event) => events.onError && events.onError(evt, wsContext)
-    )
+    server.addEventListener('error', (evt: Event) => events.onError?.(evt, wsContext))
   }
-  // @ts-expect-error server.accept is not typed
-  server.accept()
+
+  // @ts-expect-error - server.accept is not typed
+  server.accept?.()
   return new Response(null, {
     status: 101,
-    // @ts-expect-error type not typed
+    // @ts-expect-error - webSocket is not typed
     webSocket: client,
   })
 }

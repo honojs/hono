@@ -1,6 +1,6 @@
 import type { JSX } from '../base'
 import { DOM_STASH } from '../constants'
-import { build, buildDataStack, update } from '../dom/render'
+import { buildDataStack, update } from '../dom/render'
 import type { Context, Node, NodeObject, PendingType, UpdateHook } from '../dom/render'
 
 type UpdateStateFunction<T> = (newState: T | ((currentState: T) => T)) => void
@@ -8,9 +8,8 @@ type UpdateStateFunction<T> = (newState: T | ((currentState: T) => T)) => void
 const STASH_SATE = 0
 export const STASH_EFFECT = 1
 const STASH_CALLBACK = 2
-const STASH_USE = 3
-const STASH_MEMO = 4
-const STASH_REF = 5
+const STASH_MEMO = 3
+const STASH_REF = 4
 
 export type EffectData = [
   readonly unknown[] | undefined, // deps
@@ -99,11 +98,19 @@ export const useViewTransition = (): [boolean, (callback: () => void) => void] =
   return [!!viewTransitionState?.[0], startViewTransition]
 }
 
-const pendingStack: PendingType[] = []
+// PendingType is defined in "../dom/render", 3 is used for useDeferredValue
+const pendingStack: [PendingType | 3, Promise<void>][] = []
 const runCallback = (type: PendingType, callback: Function): void => {
-  pendingStack.push(type)
+  let resolve: (() => void) | undefined
+  const promise = new Promise<void>((r) => (resolve = r))
+  pendingStack.push([type, promise])
   try {
-    callback()
+    const res = callback()
+    if (res instanceof Promise) {
+      res.then(resolve, resolve)
+    } else {
+      resolve!()
+    }
   } finally {
     pendingStack.pop()
   }
@@ -112,35 +119,60 @@ const runCallback = (type: PendingType, callback: Function): void => {
 export const startTransition = (callback: () => void): void => {
   runCallback(1, callback)
 }
-const startTransitionHook = (callback: () => void): void => {
+const startTransitionHook = (callback: () => void | Promise<void>): void => {
   runCallback(2, callback)
 }
 
-export const useTransition = (): [boolean, (callback: () => void) => void] => {
+export const useTransition = (): [boolean, (callback: () => void | Promise<void>) => void] => {
   const buildData = buildDataStack.at(-1) as [Context, NodeObject]
   if (!buildData) {
     return [false, () => {}]
   }
+
+  const [error, setError] = useState<[Error]>()
+  const [state, updateState] = useState<boolean>()
+  if (error) {
+    throw error[0]
+  }
+  const startTransitionLocalHook = useCallback<typeof startTransitionHook>(
+    (callback) => {
+      startTransitionHook(() => {
+        updateState((state) => !state)
+        let res = callback()
+        if (res instanceof Promise) {
+          res = res.catch((e) => {
+            setError([e])
+          })
+        }
+        return res
+      })
+    },
+    [state]
+  )
+
   const [context] = buildData
-  return [context[0] === 2, startTransitionHook]
+  return [context[0] === 2, startTransitionLocalHook]
 }
 
-export const useDeferredValue = <T>(value: T): T => {
-  const buildData = buildDataStack.at(-1) as [Context, NodeObject]
-  if (buildData) {
-    buildData[0][0] = 1
+type UseDeferredValue = <T>(value: T, initialValue?: T) => T
+export const useDeferredValue: UseDeferredValue = <T>(value: T, ...rest: [T | undefined]): T => {
+  const [values, setValues] = useState<[T, T]>(
+    (rest.length ? [rest[0], rest[0]] : [value, value]) as [T, T]
+  )
+  if (Object.is(values[1], value)) {
+    return values[1]
   }
-  return value
-}
 
-const setShadow = (node: Node) => {
-  if (node.vC) {
-    node.s = node.vC
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(node as any).vC = undefined
+  pendingStack.push([3, Promise.resolve()])
+  updateHook = async (context: Context, _, cb: (context: Context) => void) => {
+    cb(context)
+    values[0] = value
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(node as any).s?.forEach(setShadow)
+  setValues([values[0], value])
+  updateHook = undefined
+  pendingStack.pop()
+
+  return values[0]
 }
 
 type UseStateType = {
@@ -174,9 +206,17 @@ export const useState: UseStateType = <T>(
       if (!Object.is(newState, stateData[0])) {
         stateData[0] = newState
         if (pendingStack.length) {
-          const pendingType = pendingStack.at(-1) as PendingType
-          update([pendingType, false, localUpdateHook as UpdateHook], node).then((node) => {
-            if (!node || pendingType !== 2) {
+          const [pendingType, pendingPromise] = pendingStack.at(-1) as [
+            PendingType | 3,
+            Promise<void>
+          ]
+          Promise.all([
+            pendingType === 3
+              ? node
+              : update([pendingType, false, localUpdateHook as UpdateHook], node),
+            pendingPromise,
+          ]).then(([node]) => {
+            if (!node || !(pendingType === 2 || pendingType === 3)) {
               return
             }
 
@@ -184,29 +224,15 @@ export const useState: UseStateType = <T>(
 
             const addUpdateTask = () => {
               setTimeout(() => {
-                // `node` is not rerendered after current transition
+                // return if `node` is rerendered after current transition
                 if (lastVC !== node.vC) {
                   return
                 }
-
-                const shadowNode = Object.assign({}, node) as NodeObject
-
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                ;(shadowNode as any).vC = undefined // delete the prev build data and build with clean state
-                build([], shadowNode, undefined)
-                setShadow(shadowNode) // save the `shadowNode.vC` of the virtual DOM of the build result as a result of shadow virtual DOM `shadowNode.s`
-
-                node.s = shadowNode.s
-                update([0, false, localUpdateHook as UpdateHook], node)
+                update([pendingType === 3 ? 1 : 0, false, localUpdateHook as UpdateHook], node)
               })
             }
 
-            if (localUpdateHook) {
-              // wait for next animation frame, then invoke `update()`
-              requestAnimationFrame(addUpdateTask)
-            } else {
-              addUpdateTask()
-            }
+            requestAnimationFrame(addUpdateTask)
           })
         } else {
           update([0, false, localUpdateHook as UpdateHook], node)
@@ -269,10 +295,7 @@ export const useInsertionEffect = (
   deps?: readonly unknown[]
 ): void => useEffectCommon(4, effect, deps)
 
-export const useCallback = <T extends (...args: unknown[]) => unknown>(
-  callback: T,
-  deps: readonly unknown[]
-): T => {
+export const useCallback = <T extends Function>(callback: T, deps: readonly unknown[]): T => {
   const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
   if (!buildData) {
     return callback
@@ -317,32 +340,6 @@ export const use = <T>(promise: Promise<T>): T => {
     (res) => resolvedPromiseValueMap.set(promise, [res]),
     (e) => resolvedPromiseValueMap.set(promise, [undefined, e])
   )
-
-  const buildData = buildDataStack.at(-1) as [unknown, NodeObject]
-  if (!buildData) {
-    throw promise
-  }
-  const [, node] = buildData
-
-  const promiseArray = (node[DOM_STASH][1][STASH_USE] ||= [])
-  const hookIndex = node[DOM_STASH][0]++
-
-  promise.then(
-    (res) => {
-      promiseArray[hookIndex] = [res]
-    },
-    (e) => {
-      promiseArray[hookIndex] = [undefined, e]
-    }
-  )
-
-  const res = promiseArray[hookIndex]
-  if (res) {
-    if (res.length === 2) {
-      throw res[1]
-    }
-    return res[0] as T
-  }
 
   throw promise
 }

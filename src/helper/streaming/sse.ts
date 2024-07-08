@@ -39,7 +39,7 @@ const run = async (
   stream: SSEStreamingApi,
   cb: (stream: SSEStreamingApi) => Promise<void>,
   onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>
-) => {
+): Promise<void> => {
   try {
     await cb(stream)
   } catch (e) {
@@ -58,6 +58,7 @@ const run = async (
   }
 }
 
+const contextStash: WeakMap<ReadableStream, Context> = new WeakMap<ReadableStream, Context>()
 export const streamSSE = (
   c: Context,
   cb: (stream: SSEStreamingApi) => Promise<void>,
@@ -65,6 +66,15 @@ export const streamSSE = (
 ): Response => {
   const { readable, writable } = new TransformStream()
   const stream = new SSEStreamingApi(writable, readable)
+
+  // bun does not cancel response stream when request is canceled, so detect abort by signal
+  c.req.raw.signal.addEventListener('abort', () => {
+    if (!stream.closed) {
+      stream.abort()
+    }
+  })
+  // in bun, `c` is destroyed when the request is returned, so hold it until the end of streaming
+  contextStash.set(stream.responseReadable, c)
 
   c.header('Transfer-Encoding', 'chunked')
   c.header('Content-Type', 'text/event-stream')
