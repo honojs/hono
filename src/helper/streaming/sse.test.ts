@@ -1,9 +1,8 @@
 import { Context } from '../../context'
-import { HonoRequest } from '../../request'
 import { streamSSE } from '.'
 
 describe('SSE Streaming helper', () => {
-  const req = new HonoRequest(new Request('http://localhost/'))
+  const req = new Request('http://localhost/')
   let c: Context
   beforeEach(() => {
     c = new Context(req)
@@ -71,6 +70,33 @@ describe('SSE Streaming helper', () => {
     const { value } = await reader.read()
     expect(value).toEqual(new TextEncoder().encode('data: Message 0\n\n'))
     reader.cancel()
+    expect(aborted).toBeTruthy()
+  })
+
+  it('Check streamSSE Response if aborted by abort signal', async () => {
+    const ac = new AbortController()
+    const req = new Request('http://localhost/', { signal: ac.signal })
+    const c = new Context(req)
+
+    let aborted = false
+    const res = streamSSE(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.writeSSE({
+          data: `Message ${i}`,
+        })
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toEqual(new TextEncoder().encode('data: Message 0\n\n'))
+    ac.abort()
     expect(aborted).toBeTruthy()
   })
 

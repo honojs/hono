@@ -51,9 +51,6 @@ export type ServerErrorStatusCode = 500 | 501 | 502 | 503 | 504 | 505 | 506 | 50
  */
 export type UnofficialStatusCode = -1
 
-/**
- * If you want to use an unofficial status, use `UnofficialStatusCode`.
- */
 export type StatusCode =
   | InfoStatusCode
   | SuccessStatusCode

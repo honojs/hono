@@ -20,7 +20,7 @@ type HTTPExceptionOptions = {
 /**
  * `HTTPException` must be used when a fatal error such as authentication failure occurs.
  *
- * @see {@link https://hono.dev/api/exception}
+ * @see {@link https://hono.dev/docs/api/exception}
  *
  * @param {StatusCode} status - status code of HTTPException
  * @param {HTTPExceptionOptions} options - options of HTTPException

@@ -7,7 +7,6 @@
 import { compose } from './compose'
 import { Context } from './context'
 import type { ExecutionContext } from './context'
-import { HonoRequest } from './request'
 import type { Router } from './router'
 import { METHODS, METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import type {
@@ -52,7 +51,7 @@ export type HonoOptions<E extends Env> = {
   /**
    * `strict` option specifies whether to distinguish whether the last path is a directory or not.
    *
-   * @see {@link https://hono.dev/api/hono#strict-mode}
+   * @see {@link https://hono.dev/docs/api/hono#strict-mode}
    *
    * @default true
    */
@@ -60,7 +59,7 @@ export type HonoOptions<E extends Env> = {
   /**
    * `router` option specifices which router to use.
    *
-   * @see {@link https://hono.dev/api/hono#router-option}
+   * @see {@link https://hono.dev/docs/api/hono#router-option}
    *
    * @example
    * ```ts
@@ -71,7 +70,7 @@ export type HonoOptions<E extends Env> = {
   /**
    * `getPath` can handle the host header value.
    *
-   * @see {@link https://hono.dev/api/routing#routing-with-host-header-value}
+   * @see {@link https://hono.dev/docs/api/routing#routing-with-host-header-value}
    *
    * @example
    * ```ts
@@ -144,9 +143,6 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
     // Implementation of app.on(method, path, ...handlers[])
     this.on = (method: string | string[], path: string | string[], ...handlers: H[]) => {
-      if (!method) {
-        return this
-      }
       for (const p of [path].flat()) {
         this.#path = p
         for (const m of [method].flat()) {
@@ -193,11 +189,11 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   /**
    * `.route()` allows grouping other Hono instance in routes.
    *
-   * @see {@link https://hono.dev/api/routing#grouping}
+   * @see {@link https://hono.dev/docs/api/routing#grouping}
    *
    * @param {string} path - base Path
    * @param {Hono} app - other Hono instance
-   * @returns {Hono} routed Hono instnace
+   * @returns {Hono} routed Hono instance
    *
    * @example
    * ```ts
@@ -215,14 +211,9 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     SubBasePath extends string
   >(
     path: SubPath,
-    app?: Hono<SubEnv, SubSchema, SubBasePath>
+    app: Hono<SubEnv, SubSchema, SubBasePath>
   ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
     const subApp = this.basePath(path)
-
-    if (!app) {
-      return subApp
-    }
-
     app.routes.map((r) => {
       let handler
       if (app.errorHandler === errorHandler) {
@@ -241,7 +232,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   /**
    * `.basePath()` allows base paths to be specified.
    *
-   * @see {@link https://hono.dev/api/routing#base-path}
+   * @see {@link https://hono.dev/docs/api/routing#base-path}
    *
    * @param {string} path - base Path
    * @returns {Hono} changed Hono instance
@@ -260,7 +251,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   /**
    * `.onError()` handles an error and returns a customized Response.
    *
-   * @see {@link https://hono.dev/api/hono#error-handling}
+   * @see {@link https://hono.dev/docs/api/hono#error-handling}
    *
    * @param {ErrorHandler} handler - request Handler for error
    * @returns {Hono} changed Hono instance
@@ -281,7 +272,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   /**
    * `.notFound()` allows you to customize a Not Found Response.
    *
-   * @see {@link https://hono.dev/api/hono#not-found}
+   * @see {@link https://hono.dev/docs/api/hono#not-found}
    *
    * @param {NotFoundHandler} handler - request handler for not-found
    * @returns {Hono} changed Hono instance
@@ -301,7 +292,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   /**
    * `.mount()` allows you to mount applications built with other frameworks into your Hono application.
    *
-   * @see {@link https://hono.dev/api/hono#mount}
+   * @see {@link https://hono.dev/docs/api/hono#mount}
    *
    * @param {string} path - base Path
    * @param {Function} applicationHandler - other Request Handler
@@ -417,7 +408,9 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     const path = this.getPath(request, { env })
     const matchResult = this.matchRoute(method, path)
 
-    const c = new Context(new HonoRequest(request, path, matchResult), {
+    const c = new Context(request, {
+      path,
+      matchResult,
       env,
       executionCtx,
       notFoundHandler: this.notFoundHandler,
@@ -465,9 +458,9 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   /**
    * `.fetch()` will be entry point of your app.
    *
-   * @see {@link https://hono.dev/api/hono#fetch}
+   * @see {@link https://hono.dev/docs/api/hono#fetch}
    *
-   * @param {Request} request - reuqest Object of request
+   * @param {Request} request - request Object of request
    * @param {Env} Env - env Object
    * @param {ExecutionContext} - context of execution
    * @returns {Response | Promise<Response>} response of request
@@ -491,7 +484,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    *   expect(res.status).toBe(200)
    * })
    * ```
-   * @see https://hono.dev/api/hono#request
+   * @see https://hono.dev/docs/api/hono#request
    */
   request = (
     input: RequestInfo | URL,
@@ -514,7 +507,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   /**
    * `.fire()` automatically adds a global fetch event listener.
    * This can be useful for environments that adhere to the Service Worker API, such as non-ES module Cloudflare Workers.
-   * @see https://hono.dev/api/hono#fire
+   * @see https://hono.dev/docs/api/hono#fire
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
    * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/
    */

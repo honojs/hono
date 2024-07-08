@@ -375,7 +375,7 @@ describe('Support c.json(undefined)', () => {
       '/this/is/a/test': {
         $get: {
           input: {}
-          output: undefined
+          output: never
           outputFormat: 'json'
           status: StatusCode
         }
@@ -1348,11 +1348,12 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
+        // @ts-expect-error foo1 is not typed
         c.get('foo1')
+        // @ts-expect-error foo1 is not typed
         c.var.foo1
         return c.json(0)
       })
-
     new Hono<Env>()
       .get('/', mw1, mw2, (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
@@ -1366,13 +1367,16 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
+        // @ts-expect-error foo1 is not typed
         c.get('foo1')
+        // @ts-expect-error foo1 is not typed
         c.var.foo1
+        // @ts-expect-error foo2 is not typed
         c.get('foo2')
+        // @ts-expect-error foo2 is not typed
         c.var.foo2
         return c.json(0)
       })
-
     new Hono<Env>()
       .get('/', mw1, mw2, mw3, (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
@@ -1388,15 +1392,20 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
+        // @ts-expect-error foo1 is not typed
         c.get('foo1')
+        // @ts-expect-error foo1 is not typed
         c.var.foo1
+        // @ts-expect-error foo2 is not typed
         c.get('foo2')
+        // @ts-expect-error foo2 is not typed
         c.var.foo2
+        // @ts-expect-error foo3 is not typed
         c.get('foo3')
+        // @ts-expect-error foo3 is not typed
         c.var.foo3
         return c.json(0)
       })
-
     new Hono<Env>()
       .get('/', mw1, mw2, mw3, mw4, (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
@@ -1414,13 +1423,21 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
+        // @ts-expect-error foo1 is not typed
         c.get('foo1')
+        // @ts-expect-error foo1 is not typed
         c.var.foo1
+        // @ts-expect-error foo2 is not typed
         c.get('foo2')
+        // @ts-expect-error foo2 is not typed
         c.var.foo2
+        // @ts-expect-error foo3 is not typed
         c.get('foo3')
+        // @ts-expect-error foo3 is not typed
         c.var.foo3
+        // @ts-expect-error foo4 is not typed
         c.get('foo4')
+        // @ts-expect-error foo4 is not typed
         c.var.foo4
         return c.json(0)
       })
@@ -1444,19 +1461,28 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
+        // @ts-expect-error foo1 is not typed
         c.get('foo1')
+        // @ts-expect-error foo1 is not typed
         c.var.foo1
+        // @ts-expect-error foo2 is not typed
         c.get('foo2')
+        // @ts-expect-error foo2 is not typed
         c.var.foo2
+        // @ts-expect-error foo3 is not typed
         c.get('foo3')
+        // @ts-expect-error foo3 is not typed
         c.var.foo3
+        // @ts-expect-error foo4 is not typed
         c.get('foo4')
+        // @ts-expect-error foo4 is not typed
         c.var.foo4
+        // @ts-expect-error foo5 is not typed
         c.get('foo5')
+        // @ts-expect-error foo5 is not typed
         c.var.foo5
         return c.json(0)
       })
-
     new Hono<Env>()
       .get('/', mw1, mw2, mw3, mw4, mw5, mw6, (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
@@ -1478,22 +1504,32 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
+        // @ts-expect-error foo1 is not typed
         c.get('foo1')
+        // @ts-expect-error foo1 is not typed
         c.var.foo1
+        // @ts-expect-error foo2 is not typed
         c.get('foo2')
+        // @ts-expect-error foo2 is not typed
         c.var.foo2
+        // @ts-expect-error foo3 is not typed
         c.get('foo3')
+        // @ts-expect-error foo3 is not typed
         c.var.foo3
+        // @ts-expect-error foo4 is not typed
         c.get('foo4')
+        // @ts-expect-error foo4 is not typed
         c.var.foo4
+        // @ts-expect-error foo5 is not typed
         c.get('foo5')
+        // @ts-expect-error foo5 is not typed
         c.var.foo5
+        // @ts-expect-error foo6 is not typed
         c.get('foo6')
-
+        // @ts-expect-error foo6 is not typed
         c.var.foo6
         return c.json(0)
       })
-
     new Hono<Env>()
       .get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7, (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
@@ -1517,23 +1553,36 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
+        // @ts-expect-error foo1 is not typed
         c.get('foo1')
+        // @ts-expect-error foo1 is not typed
         c.var.foo1
+        // @ts-expect-error foo2 is not typed
         c.get('foo2')
+        // @ts-expect-error foo2 is not typed
         c.var.foo2
+        // @ts-expect-error foo3 is not typed
         c.get('foo3')
+        // @ts-expect-error foo3 is not typed
         c.var.foo3
+        // @ts-expect-error foo4 is not typed
         c.get('foo4')
+        // @ts-expect-error foo4 is not typed
         c.var.foo4
+        // @ts-expect-error foo5 is not typed
         c.get('foo5')
+        // @ts-expect-error foo5 is not typed
         c.var.foo5
+        // @ts-expect-error foo6 is not typed
         c.get('foo6')
+        // @ts-expect-error foo6 is not typed
         c.var.foo6
+        // @ts-expect-error foo7 is not typed
         c.get('foo7')
+        // @ts-expect-error foo7 is not typed
         c.var.foo7
         return c.json(0)
       })
-
     new Hono<Env>()
       .get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
@@ -1559,21 +1608,37 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
+        // @ts-expect-error foo1 is not typed
         c.get('foo1')
+        // @ts-expect-error foo1 is not typed
         c.var.foo1
+        // @ts-expect-error foo2 is not typed
         c.get('foo2')
+        // @ts-expect-error foo2 is not typed
         c.var.foo2
+        // @ts-expect-error foo3 is not typed
         c.get('foo3')
+        // @ts-expect-error foo3 is not typed
         c.var.foo3
+        // @ts-expect-error foo4 is not typed
         c.get('foo4')
+        // @ts-expect-error foo4 is not typed
         c.var.foo4
+        // @ts-expect-error foo5 is not typed
         c.get('foo5')
+        // @ts-expect-error foo5 is not typed
         c.var.foo5
+        // @ts-expect-error foo6 is not typed
         c.get('foo6')
+        // @ts-expect-error foo6 is not typed
         c.var.foo6
+        // @ts-expect-error foo7 is not typed
         c.get('foo7')
+        // @ts-expect-error foo7 is not typed
         c.var.foo7
+        // @ts-expect-error foo8 is not typed
         c.get('foo8')
+        // @ts-expect-error foo8 is not typed
         c.var.foo8
         return c.json(0)
       })
@@ -1605,23 +1670,41 @@ describe('c.var with chaining - test only types', () => {
       .get('/', (c) => {
         expectTypeOf(c.get('init')).toEqualTypeOf<number>()
         expectTypeOf(c.var.init).toEqualTypeOf<number>()
+        // @ts-expect-error foo1 is not typed
         c.get('foo1')
+        // @ts-expect-error foo1 is not typed
         c.var.foo1
+        // @ts-expect-error foo2 is not typed
         c.get('foo2')
+        // @ts-expect-error foo2 is not typed
         c.var.foo2
+        // @ts-expect-error foo3 is not typed
         c.get('foo3')
+        // @ts-expect-error foo3 is not typed
         c.var.foo3
+        // @ts-expect-error foo4 is not typed
         c.get('foo4')
+        // @ts-expect-error foo4 is not typed
         c.var.foo4
+        // @ts-expect-error foo5 is not typed
         c.get('foo5')
+        // @ts-expect-error foo5 is not typed
         c.var.foo5
+        // @ts-expect-error foo6 is not typed
         c.get('foo6')
+        // @ts-expect-error foo6 is not typed
         c.var.foo6
+        // @ts-expect-error foo7 is not typed
         c.get('foo7')
+        // @ts-expect-error foo7 is not typed
         c.var.foo7
+        // @ts-expect-error foo8 is not typed
         c.get('foo8')
+        // @ts-expect-error foo8 is not typed
         c.var.foo8
+        // @ts-expect-error foo9 is not typed
         c.get('foo9')
+        // @ts-expect-error foo9 is not typed
         c.var.foo9
         return c.json(0)
       })
@@ -1638,14 +1721,30 @@ declare module './context' {
   }
 }
 
-describe('c.var with ContextVariableMap - test only types', () => {
-  it('Should no throw a type error', () => {
+describe('ContextVariableMap type tests', () => {
+  it('Should not throw type errors with c.var', () => {
     new Hono().get((c) => {
       expectTypeOf(c.get('payload')).toEqualTypeOf<string>()
       return c.json(0)
     })
     new Hono().get((c) => {
       expectTypeOf(c.var.payload).toEqualTypeOf<string>()
+      return c.json(0)
+    })
+  })
+
+  it('Should override ContextVariableMap with env variables', () => {
+    const middleware = createMiddleware<{
+      Variables: {
+        payload: number
+      }
+    }>(async (c, next) => {
+      c.set('payload', 123)
+      await next()
+    })
+
+    new Hono().get(middleware, (c) => {
+      expectTypeOf(c.get('payload')).toEqualTypeOf<number>()
       return c.json(0)
     })
   })
@@ -1677,6 +1776,46 @@ describe('Env types with chained routes - test only types', () => {
   })
 })
 
+/**
+ * Ref: https://github.com/honojs/hono/issues/3027
+ */
+describe('Env types with validator as first middleware - test only types', () => {
+  const app = new Hono<{ Variables: { testVar: string } }>()
+  it('Should not throw a type error', () => {
+    const testApp = app.get(
+      validator('json', () => {
+        return {
+          cd: 'bar',
+        }
+      }),
+      async (c) => {
+        const foo = c.req.valid('json') // Error here
+        return c.json(1)
+      }
+    )
+
+    const dummyMiddleware1 = createMiddleware(async (c, next) => {
+      await next()
+    })
+    // Multiple levels of middleware
+    const testApp2 = app.post(
+      validator('json', () => {
+        return {
+          cd: 'bar',
+        }
+      }),
+      dummyMiddleware1,
+      createMiddleware(async (c, next) => {
+        await next()
+      }),
+      async (c) => {
+        const foo = c.req.valid('json') // Error here also
+        return c.json(1)
+      }
+    )
+  })
+})
+
 describe('Env types with `use` middleware - test only types', () => {
   const app = new Hono()
 
@@ -1697,5 +1836,392 @@ describe('Env types with `use` middleware - test only types', () => {
       expectTypeOf(c.get('foo2')).toEqualTypeOf<string>()
       return c.json({ success: true })
     })
+  })
+})
+
+describe('Env types and a path type with `app.use(path, handler...)` - test only types', () => {
+  it('Should not throw a type error', () => {
+    type Env = {
+      Variables: {
+        foo: string
+      }
+    }
+
+    // app.use(path, handler)
+    new Hono<Env>()
+      .use('/:id', async (c, next) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        await next()
+      })
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x2)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x3)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x4)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x5)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x6)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x7)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x8)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x9)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
+
+    // app.use(path, handler x10)
+    new Hono<Env>()
+      .use(
+        '/:id',
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        },
+        async (c, next) => {
+          expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+          expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+          await next()
+        }
+      )
+      .get((c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.req.param('id')).toEqualTypeOf<string>()
+        return c.json(0)
+      })
   })
 })

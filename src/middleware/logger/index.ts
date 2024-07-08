@@ -63,7 +63,7 @@ function log(
 /**
  * Logger Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/logger}
+ * @see {@link https://hono.dev/docs/middleware/builtin/logger}
  *
  * @param {PrintFunc} [fn=console.log] - Optional function for customized logging behavior.
  * @returns {MiddlewareHandler} The middleware handler function.

@@ -6,6 +6,7 @@ import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 import { HonoRequest } from '../../src/request'
+import { stream, streamSSE } from '../../src/helper/streaming'
 
 // Test only minimal patterns.
 // See <https://github.com/honojs/node-server> for more tests and information.
@@ -94,5 +95,111 @@ describe('JWT Auth Middleware', () => {
     const res = await request(server).get('/jwt/a').set('Authorization', `Bearer ${credential}`)
     expect(res.status).toBe(200)
     expect(res.text).toBe('auth')
+  })
+})
+
+describe('stream', () => {
+  const app = new Hono()
+
+  let aborted = false
+
+  app.get('/stream', (c) => {
+    return stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      return new Promise<void>((resolve) => {
+        stream.onAbort(resolve)
+      })
+    })
+  })
+  app.get('/streamHello', (c) => {
+    return stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      await stream.write('Hello')
+    })
+  })
+
+  const server = createAdaptorServer(app)
+
+  beforeEach(() => {
+    aborted = false
+  })
+
+  it('Should call onAbort', async () => {
+    const req = request(server)
+      .get('/stream')
+      .end(() => {})
+
+    expect(aborted).toBe(false)
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    req.abort()
+    while (!aborted) {
+      await new Promise((resolve) => setTimeout(resolve))
+    }
+    expect(aborted).toBe(true)
+  })
+
+  it('Should not be called onAbort if already closed', async () => {
+    expect(aborted).toBe(false)
+    const res = await request(server).get('/streamHello')
+    expect(res.status).toBe(200)
+    expect(res.text).toBe('Hello')
+    expect(aborted).toBe(false)
+  })
+})
+
+describe('streamSSE', () => {
+  const app = new Hono()
+
+  let aborted = false
+
+  app.get('/stream', (c) => {
+    return streamSSE(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      return new Promise<void>((resolve) => {
+        stream.onAbort(resolve)
+      })
+    })
+  })
+  app.get('/streamHello', (c) => {
+    return streamSSE(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      await stream.write('Hello')
+    })
+  })
+
+  const server = createAdaptorServer(app)
+
+  beforeEach(() => {
+    aborted = false
+  })
+
+  it('Should call onAbort', async () => {
+    const req = request(server)
+      .get('/stream')
+      .end(() => {})
+
+    expect(aborted).toBe(false)
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    req.abort()
+    while (!aborted) {
+      await new Promise((resolve) => setTimeout(resolve))
+    }
+    expect(aborted).toBe(true)
+  })
+
+  it('Should not be called onAbort if already closed', async () => {
+    expect(aborted).toBe(false)
+    const res = await request(server).get('/streamHello')
+    expect(res.status).toBe(200)
+    expect(res.text).toBe('Hello')
+    expect(aborted).toBe(false)
   })
 })

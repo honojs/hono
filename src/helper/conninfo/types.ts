@@ -30,11 +30,11 @@ export type NetAddrInfo = {
 )
 
 /**
- * HTTP Connection infomation
+ * HTTP Connection information
  */
 export interface ConnInfo {
   /**
-   * Remote infomation
+   * Remote information
    */
   remote: NetAddrInfo
 }

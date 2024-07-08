@@ -1,2 +1,7 @@
 [install.lockfile]
 print = "yarn"
+
+[test]
+coverage = true
+coverageReporter = ["text", "lcov"]
+coverageDir = "coverage/raw/bun"

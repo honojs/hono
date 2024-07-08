@@ -48,7 +48,7 @@ type BasicAuthOptions =
 /**
  * Basic Auth Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/basic-auth}
+ * @see {@link https://hono.dev/docs/middleware/builtin/basic-auth}
  *
  * @param {BasicAuthOptions} options - The options for the basic authentication middleware.
  * @param {string} options.username - The username for authentication.

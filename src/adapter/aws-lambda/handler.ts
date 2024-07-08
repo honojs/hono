@@ -126,10 +126,21 @@ export const streamHandle = <
           context,
         })
 
+        const headers: Record<string, string> = {}
+        const cookies: string[] = []
+        res.headers.forEach((value, name) => {
+          if (name === 'set-cookie') {
+            cookies.push(value)
+          } else {
+            headers[name] = value
+          }
+        })
+
         // Check content type
         const httpResponseMetadata = {
           statusCode: res.status,
-          headers: Object.fromEntries(res.headers.entries()),
+          headers,
+          cookies,
         }
 
         // Update response stream
@@ -247,7 +258,12 @@ abstract class EventProcessor<E extends LambdaEvent> {
 
   setCookies(event: E, res: Response, result: APIGatewayProxyResult) {
     if (res.headers.has('set-cookie')) {
-      const cookies = res.headers.get('set-cookie')?.split(', ')
+      const cookies = res.headers.getSetCookie
+        ? res.headers.getSetCookie()
+        : Array.from(res.headers.entries())
+            .filter(([k]) => k === 'set-cookie')
+            .map(([, v]) => v)
+
       if (Array.isArray(cookies)) {
         this.setCookiesToResult(event, result, cookies)
         res.headers.delete('set-cookie')

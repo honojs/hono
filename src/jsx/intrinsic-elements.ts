@@ -8,7 +8,7 @@
  */
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace Hono {
+export namespace JSX {
   export type CrossOrigin = 'anonymous' | 'use-credentials' | '' | undefined
   export type CSSProperties = {}
   type AnyAttributes = { [attributeName: string]: any }
@@ -179,7 +179,7 @@ export namespace Hono {
   type HTMLAttributeAnchorTarget = '_self' | '_blank' | '_parent' | '_top' | string
 
   interface AnchorHTMLAttributes extends HTMLAttributes {
-    download?: any
+    download?: string | boolean | undefined
     href?: string | undefined
     hreflang?: string | undefined
     media?: string | undefined
@@ -194,7 +194,7 @@ export namespace Hono {
   interface AreaHTMLAttributes extends HTMLAttributes {
     alt?: string | undefined
     coords?: string | undefined
-    download?: any
+    download?: string | boolean | undefined
     href?: string | undefined
     hreflang?: string | undefined
     media?: string | undefined
@@ -726,4 +726,4 @@ export namespace Hono {
   }
 }
 
-export interface IntrinsicElements extends Hono.IntrinsicElements {}
+export interface IntrinsicElements extends JSX.IntrinsicElements {}

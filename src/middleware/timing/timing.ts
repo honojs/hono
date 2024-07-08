@@ -37,7 +37,7 @@ const getTime = (): number => {
 /**
  * Server-Timing Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/timing}
+ * @see {@link https://hono.dev/docs/middleware/builtin/timing}
  *
  * @param {TimingOptions} [config] - The options for the timing middleware.
  * @param {boolean} [config.total=true] - Show the total response time.
@@ -87,6 +87,11 @@ export const timing = (config?: TimingOptions): MiddlewareHandler => {
   return async function timing(c, next) {
     const headers: string[] = []
     const timers = new Map<string, Timer>()
+
+    if (c.get('metric')) {
+      return await next()
+    }
+
     c.set('metric', { headers, timers })
 
     if (options.total) {
