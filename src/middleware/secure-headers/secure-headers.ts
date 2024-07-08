@@ -133,7 +133,7 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
 /**
  * Secure Headers Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/secure-headers}
+ * @see {@link https://hono.dev/docs/middleware/builtin/secure-headers}
  *
  * @param {Partial<SecureHeadersOptions>} [customOptions] - The options for the secure headers middleware.
  * @param {ContentSecurityPolicyOptions} [customOptions.contentSecurityPolicy] - Settings for the Content-Security-Policy header.

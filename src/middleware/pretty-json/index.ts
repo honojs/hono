@@ -12,7 +12,7 @@ type prettyOptions = {
 /**
  * Pretty JSON Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/pretty-json}
+ * @see {@link https://hono.dev/docs/middleware/builtin/pretty-json}
  *
  * @param {prettyOptions} [options] - The options for the pretty JSON middleware.
  * @param {number} [options.space=2] - Number of spaces for indentation.

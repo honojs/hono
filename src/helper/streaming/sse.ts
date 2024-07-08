@@ -58,7 +58,7 @@ const run = async (
   }
 }
 
-const contextStash = new WeakMap<ReadableStream, Context>()
+const contextStash: WeakMap<ReadableStream, Context> = new WeakMap<ReadableStream, Context>()
 export const streamSSE = (
   c: Context,
   cb: (stream: SSEStreamingApi) => Promise<void>,
@@ -69,7 +69,9 @@ export const streamSSE = (
 
   // bun does not cancel response stream when request is canceled, so detect abort by signal
   c.req.raw.signal.addEventListener('abort', () => {
-    stream.abort()
+    if (!stream.closed) {
+      stream.abort()
+    }
   })
   // in bun, `c` is destroyed when the request is returned, so hold it until the end of streaming
   contextStash.set(stream.responseReadable, c)

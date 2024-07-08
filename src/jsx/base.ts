@@ -59,6 +59,7 @@ const booleanAttributes = [
   'default',
   'defer',
   'disabled',
+  'download',
   'formnovalidate',
   'hidden',
   'inert',

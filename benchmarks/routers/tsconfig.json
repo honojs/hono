@@ -3,5 +3,8 @@
     "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "NodeNext"
-  }
+  },
+  "include": [
+    "./src"
+  ]
 }

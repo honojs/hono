@@ -21,6 +21,147 @@ describe('JSONParsed', () => {
     someMeta: Meta
   }
 
+  describe('primitives', () => {
+    it('should convert number type to number', () => {
+      type Actual = JSONParsed<number>
+      type Expected = number
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert string type to string', () => {
+      type Actual = JSONParsed<string>
+      type Expected = string
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert boolean type to boolean', () => {
+      type Actual = JSONParsed<boolean>
+      type Expected = boolean
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert null type to null', () => {
+      type Actual = JSONParsed<null>
+      type Expected = null
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
+  describe('toJSON', () => {
+    it('should convert { toJSON() => T } to T', () => {
+      type Actual = JSONParsed<{ toJSON(): number }>
+      type Expected = number
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('toJSON is not called recursively', () => {
+      type Actual = JSONParsed<{ toJSON(): { toJSON(): number } }>
+      type Expected = {}
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert { a: { toJSON() => T } } to { a: T }', () => {
+      type Actual = JSONParsed<{ a: { toJSON(): number } }>
+      type Expected = { a: number }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
+  describe('invalid types', () => {
+    it('should convert undefined type to never', () => {
+      type Actual = JSONParsed<undefined>
+      type Expected = never
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert symbol type to never', () => {
+      type Actual = JSONParsed<symbol>
+      type Expected = never
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert function type to never', () => {
+      type Actual = JSONParsed<() => void>
+      type Expected = never
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
+  describe('array', () => {
+    it('should convert undefined[] type to null[]', () => {
+      type Actual = JSONParsed<undefined[]>
+      type Expected = null[]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert Function[] type to null[]', () => {
+      type Actual = JSONParsed<(() => void)[]>
+      type Expected = null[]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert symbol[] type to null[]', () => {
+      type Actual = JSONParsed<symbol[]>
+      type Expected = null[]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert (T | undefined)[] type to JSONParsedT | null>[]', () => {
+      type Actual = JSONParsed<(number | undefined)[]>
+      type Expected = (number | null)[]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
+  describe('tuple', () => {
+    it('should convert [T, S] type to [T, S]', () => {
+      type Actual = JSONParsed<[number, string]>
+      type Expected = [number, string]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert [T, undefined] type to [T, null]', () => {
+      type Actual = JSONParsed<[number, undefined]>
+      type Expected = [number, null]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
+  describe('object', () => {
+    it('should omit keys with undefined value', () => {
+      type Actual = JSONParsed<{ a: number; b: undefined }>
+      type Expected = { a: number }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should omit keys with symbol value', () => {
+      type Actual = JSONParsed<{ a: number; b: symbol }>
+      type Expected = { a: number }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should omit keys with function value', () => {
+      type Actual = JSONParsed<{ a: number; b: () => void }>
+      type Expected = { a: number }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should omit symbol keys', () => {
+      type Actual = JSONParsed<{ a: number; [x: symbol]: number }>
+      type Expected = { a: number }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert T | undefined to T | undefined', () => {
+      type Actual = JSONParsed<{ a: number; b: number | undefined }>
+      type Expected = { a: number; b: number | undefined }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should omit keys with invalid union', () => {
+      type Actual = JSONParsed<{ a: number; b: undefined | symbol }>
+      type Expected = { a: number }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
+  describe('Set/Map', () => {
+    it('should convert Set to empty object', () => {
+      type Actual = JSONParsed<Set<number>>
+      type Expected = {}
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert Map to empty object', () => {
+      type Actual = JSONParsed<Map<number, number>>
+      type Expected = {}
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
   it('Should parse a complex type', () => {
     const sample: JSONParsed<SampleType> = {
       someMeta: {

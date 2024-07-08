@@ -180,7 +180,7 @@ export namespace JSX {
   type HTMLAttributeAnchorTarget = '_self' | '_blank' | '_parent' | '_top' | string
 
   interface AnchorHTMLAttributes extends HTMLAttributes {
-    download?: any
+    download?: string | boolean | undefined
     href?: string | undefined
     hreflang?: string | undefined
     media?: string | undefined
@@ -195,7 +195,7 @@ export namespace JSX {
   interface AreaHTMLAttributes extends HTMLAttributes {
     alt?: string | undefined
     coords?: string | undefined
-    download?: any
+    download?: string | boolean | undefined
     href?: string | undefined
     hreflang?: string | undefined
     media?: string | undefined
