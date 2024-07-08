@@ -67,4 +67,3 @@ export type StatusCode =
   | ClientErrorStatusCode
   | ServerErrorStatusCode
   | UnofficialStatusCode
-  | UnOfficalStatusCode
