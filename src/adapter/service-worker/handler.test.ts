@@ -15,7 +15,7 @@ describe('handle', () => {
         respondWith(res) {
           resolve(res)
         },
-      } as FetchEventLike)
+      } as FetchEvent)
     }).then((res) => res.json())
     expect(json).toStrictEqual({ hello: 'world' })
   })
@@ -32,18 +32,26 @@ describe('handle', () => {
         respondWith(res) {
           resolve(res)
         },
-      } as FetchEventLike)
+      } as FetchEvent)
     }).then((res) => res.text())
     expect(text).toBe('hello world')
   })
-  it('Fallback 404 when app does not response Promise', async () => {
+  it('Do not fallback 404 when fetch is undefined', async () => {
     const app = new Hono()
     app.get('/', (c) => c.text('Not found', 404))
-    const handler = handle(app)
-    const result = handler({
-      request: new Request('https://localhost/'),
-    } as FetchEventLike)
+    const handler = handle(app, {
+      fetch: undefined,
+    })
+    const result = await new Promise<Response>((resolve) =>
+      handler({
+        request: new Request('https://localhost/'),
+        respondWith(r) {
+          resolve(r)
+        },
+      } as FetchEvent)
+    )
 
-    expect(result).toBeUndefined()
+    expect(result.status).toBe(404)
+    expect(await result.text()).toBe('Not found')
   })
 })
