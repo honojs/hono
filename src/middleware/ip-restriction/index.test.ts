@@ -1,6 +1,5 @@
 import { Hono } from '../../hono'
 import { Context } from '../../context'
-import { HonoRequest } from '../../request'
 import type { AddressType, GetConnInfo } from '../../helper/conninfo'
 import { ipRestriction } from '.'
 import type { IPRestrictionRule } from '.'
