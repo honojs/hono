@@ -52,7 +52,7 @@ const buildMatcher = (
 
         const addrStr = splittedRule[0]
         const type = distinctRemoteAddr(addrStr)
-        if (type === 'unknown') {
+        if (type === undefined) {
           throw new TypeError(`Invalid rule: ${rule}`)
         }
 
@@ -72,7 +72,7 @@ const buildMatcher = (
       }
 
       const type = distinctRemoteAddr(rule)
-      if (type === 'unknown') {
+      if (type === undefined) {
         throw new TypeError(`Invalid rule: ${rule}`)
       }
       staticRules.add(

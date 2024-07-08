@@ -38,7 +38,6 @@ export const distinctRemoteAddr = (remoteAddr: string): AddressType => {
     // Domain can't include `:`
     return 'IPv6'
   }
-  return 'unknown'
 }
 
 /**

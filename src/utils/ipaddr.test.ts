@@ -23,7 +23,7 @@ describe('distinctRemoteAddr', () => {
     expect(distinctRemoteAddr('192.168.2.0')).toBe('IPv4')
     expect(distinctRemoteAddr('192.168.2.0')).toBe('IPv4')
 
-    expect(distinctRemoteAddr('example.com')).toBe('unknown')
+    expect(distinctRemoteAddr('example.com')).toBeUndefined()
   })
 })
 
