@@ -460,6 +460,9 @@
       "pretty-json": [
         "./dist/types/middleware/pretty-json"
       ],
+      "request-id": [
+        "./dist/types/middleware/request-id"
+      ],
       "streaming": [
         "./dist/types/helper/streaming"
       ],
