@@ -3,8 +3,6 @@
  * @module
  */
 
-/// <reference lib="webworker" />
-
 import type { Hono } from '../../hono'
 
 type Handler = (evt: FetchEvent) => void

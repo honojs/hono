@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "lib": ["webworker"],
     "target": "ES2022",
     "declaration": true,
     "moduleResolution": "Bundler",
