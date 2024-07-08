@@ -145,7 +145,7 @@ export const ipRestriction = (
       }),
     })
 
-  return async function (c, next) {
+  return async function ipRestriction(c, next) {
     const connInfo = getIP(c)
     const addr = typeof connInfo === 'string' ? connInfo : connInfo.remote.address
     if (!addr) {
