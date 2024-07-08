@@ -1,5 +1,4 @@
 import { Hono } from '../../hono'
-import type { FetchEventLike } from '../../types'
 import { handle } from './handler'
 
 describe('handle', () => {
