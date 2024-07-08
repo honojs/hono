@@ -11,4 +11,5 @@ export type {
   ClientRequestOptions,
   ClientRequest,
   ClientResponse,
+  Client
 } from './types'
