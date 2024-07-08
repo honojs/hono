@@ -78,6 +78,11 @@
       "import": "./dist/middleware/body-limit/index.js",
       "require": "./dist/cjs/middleware/body-limit/index.js"
     },
+    "./ip-restriction": {
+      "types": "./dist/types/middleware/ip-restriction/index.d.ts",
+      "import": "./dist/middleware/ip-restriction/index.js",
+      "require": "./dist/cjs/middleware/ip-restriction/index.js"
+    },
     "./cache": {
       "types": "./dist/types/middleware/cache/index.d.ts",
       "import": "./dist/middleware/cache/index.js",
@@ -384,6 +389,9 @@
       ],
       "body-limit": [
         "./dist/types/middleware/body-limit"
+      ],
+      "ip-restriction": [
+        "./dist/types/middleware/ip-restriction"
       ],
       "cache": [
         "./dist/types/middleware/cache"
