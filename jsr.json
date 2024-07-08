@@ -21,6 +21,7 @@
     "./basic-auth": "./src/middleware/basic-auth/index.ts",
     "./bearer-auth": "./src/middleware/bearer-auth/index.ts",
     "./body-limit": "./src/middleware/body-limit/index.ts",
+    "./ip-restriction": "./src/middleware/ip-restriction/index.ts",
     "./cache": "./src/middleware/cache/index.ts",
     "./cookie": "./src/helper/cookie/index.ts",
     "./accepts": "./src/helper/accepts/index.ts",
@@ -93,7 +94,8 @@
     "./utils/mime": "./src/utils/mime.ts",
     "./utils/stream": "./src/utils/stream.ts",
     "./utils/types": "./src/utils/types.ts",
-    "./utils/url": "./src/utils/url.ts"
+    "./utils/url": "./src/utils/url.ts",
+    "./utils/ipaddr": "./src/utils/ipaddr.ts"
   },
   "publish": {
     "include": [
