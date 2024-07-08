@@ -83,33 +83,35 @@ export const validator = <
           break
         }
 
+        let formData: FormData
+
         if (c.req.bodyCache.formData) {
-          value = await c.req.bodyCache.formData
-          break
+          formData = await c.req.bodyCache.formData
+        } else {
+          try {
+            const arrayBuffer = await c.req.arrayBuffer()
+            formData = await bufferToFormData(arrayBuffer, contentType)
+            c.req.bodyCache.formData = formData
+          } catch (e) {
+            let message = 'Malformed FormData request.'
+            message += e instanceof Error ? ` ${e.message}` : ` ${String(e)}`
+            throw new HTTPException(400, { message })
+          }
         }
 
-        try {
-          const arrayBuffer = await c.req.arrayBuffer()
-          const formData = await bufferToFormData(arrayBuffer, contentType)
-          const form: BodyData<{ all: true }> = {}
-          formData.forEach((value, key) => {
-            if (key.endsWith('[]')) {
-              if (form[key] === undefined) {
-                form[key] = [value]
-              } else if (Array.isArray(form[key])) {
-                ;(form[key] as unknown[]).push(value)
-              }
-            } else {
-              form[key] = value
+        const form: BodyData<{ all: true }> = {}
+        formData.forEach((value, key) => {
+          if (key.endsWith('[]')) {
+            if (form[key] === undefined) {
+              form[key] = [value]
+            } else if (Array.isArray(form[key])) {
+              ;(form[key] as unknown[]).push(value)
             }
-          })
-          value = form
-          c.req.bodyCache.formData = formData
-        } catch (e) {
-          let message = 'Malformed FormData request.'
-          message += e instanceof Error ? ` ${e.message}` : ` ${String(e)}`
-          throw new HTTPException(400, { message })
-        }
+          } else {
+            form[key] = value
+          }
+        })
+        value = form
         break
       }
       case 'query':

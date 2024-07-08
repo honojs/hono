@@ -9,7 +9,7 @@ import type { MiddlewareHandler } from '../../types'
 /**
  * Cache Middleware for Hono.
  *
- * @see {@link https://hono.dev/middleware/builtin/cache}
+ * @see {@link https://hono.dev/docs/middleware/builtin/cache}
  *
  * @param {Object} options - The options for the cache middleware.
  * @param {string | Function} options.cacheName - The name of the cache. Can be used to store multiple caches with different identifiers.
