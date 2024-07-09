@@ -5,8 +5,7 @@
     "lib": [
       "dom",
       "dom.iterable",
-      "deno.ns",
-      "webworker"
+      "deno.ns"
     ]
   },
   "unstable": [

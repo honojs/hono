@@ -4,6 +4,7 @@
  */
 
 import type { Hono } from '../../hono'
+import type { FetchEvent } from './types'
 
 type Handler = (evt: FetchEvent) => void
 

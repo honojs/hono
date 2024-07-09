@@ -1,5 +1,6 @@
 import { Hono } from '../../hono'
 import { handle } from './handler'
+import type { FetchEvent } from './types'
 
 describe('handle', () => {
   it('Success to fetch', async () => {
