@@ -10,7 +10,7 @@ export type RequestIdVariables = {
   requestId: string
 }
 
-export type RequesIdOptions = {
+export type RequestIdOptions = {
   limitLength?: number
   headerName?: string
   generator?: (c: Context) => string
@@ -43,7 +43,7 @@ export const requestId = ({
   limitLength = 255,
   headerName = 'X-Request-Id',
   generator = () => crypto.randomUUID(),
-}: RequesIdOptions = {}): MiddlewareHandler => {
+}: RequestIdOptions = {}): MiddlewareHandler => {
   return async function requestId(c, next) {
     // If `headerName` is empty string, req.header will return the object
     let reqId = headerName ? c.req.header(headerName) : undefined
