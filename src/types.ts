@@ -1927,11 +1927,12 @@ type MergeTypedResponse<T> = T extends Promise<infer T2>
 //////                             /////
 ////////////////////////////////////////
 
-export type FormValue = string | File
+export type FormValue = string | File | Blob
+export type ParsedFormValue = string | File
 
-export type ValidationTargets = {
+export type ValidationTargets<T extends FormValue = ParsedFormValue> = {
   json: any
-  form: Record<string, FormValue | FormValue[]>
+  form: Record<string, T | T[]>
   query: Record<string, string | string[]>
   param: Record<string, string> | Record<string, string | undefined>
   header: Record<string, string>

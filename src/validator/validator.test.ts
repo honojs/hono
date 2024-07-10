@@ -8,6 +8,7 @@ import type {
   ExtractSchema,
   FormValue,
   MiddlewareHandler,
+  ParsedFormValue,
   ValidationTargets,
 } from '../types'
 import type { StatusCode } from '../utils/http-status'
@@ -749,7 +750,7 @@ it('With path parameters', () => {
       $put: {
         input: {
           form: {
-            title: FormValue | FormValue[]
+            title: ParsedFormValue | ParsedFormValue[]
           }
         } & {
           param: {
@@ -795,7 +796,7 @@ it('`on`', () => {
       $purge: {
         input: {
           form: {
-            tag: FormValue | FormValue[]
+            tag: ParsedFormValue | ParsedFormValue[]
           }
         } & {
           query: {
