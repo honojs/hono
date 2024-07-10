@@ -18,7 +18,7 @@ type Condition = (c: Context) => boolean
  *
  * @example
  * ```ts
- * import { some } from 'predicate'
+ * import { some } from 'combine'
  * import { bearerAuth } from 'bearer-auth'
  * import { myRateLimit } from '@/rate-limit'
  *
@@ -67,7 +67,7 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
  *
  * @example
  * ```ts
- * import { some, every } from 'predicate'
+ * import { some, every } from 'combine'
  * import { bearerAuth } from 'bearer-auth'
  * import { myCheckLocalNetwork } from '@/check-local-network'
  * import { myRateLimit } from '@/rate-limit'
@@ -110,7 +110,7 @@ export const every = (...middleware: (MiddlewareHandler | Condition)[]): Middlew
  *
  * @example
  * ```ts
- * import { except } from 'predicate'
+ * import { except } from 'combine'
  * import { bearerAuth } from 'bearer-auth
  *
  * // If client is accessing public API, then skip authentication.

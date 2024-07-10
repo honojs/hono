@@ -48,7 +48,7 @@
     "./powered-by": "./src/middleware/powered-by/index.ts",
     "./pretty-json": "./src/middleware/pretty-json/index.ts",
     "./secure-headers": "./src/middleware/secure-headers/secure-headers.ts",
-    "./predicate": "./src/middleware/predicate/index.ts",
+    "./combine": "./src/middleware/combine/index.ts",
     "./ssg": "./src/helper/ssg/index.ts",
     "./streaming": "./src/helper/streaming/index.ts",
     "./validator": "./src/validator/index.ts",

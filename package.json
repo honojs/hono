@@ -218,10 +218,10 @@
       "import": "./dist/middleware/secure-headers/index.js",
       "require": "./dist/cjs/middleware/secure-headers/index.js"
     },
-    "./predicate": {
-      "types": "./dist/types/middleware/predicate/index.d.ts",
-      "import": "./dist/middleware/predicate/index.js",
-      "require": "./dist/cjs/middleware/predicate/index.js"
+    "./combine": {
+      "types": "./dist/types/middleware/combine/index.d.ts",
+      "import": "./dist/middleware/combine/index.js",
+      "require": "./dist/cjs/middleware/combine/index.js"
     },
     "./ssg": {
       "types": "./dist/types/helper/ssg/index.d.ts",
@@ -469,8 +469,8 @@
       "secure-headers": [
         "./dist/types/middleware/secure-headers"
       ],
-      "predicate": [
-        "./dist/types/middleware/predicate"
+      "combine": [
+        "./dist/types/middleware/combine"
       ],
       "validator": [
         "./dist/types/validator/index.d.ts"
