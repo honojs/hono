@@ -81,35 +81,48 @@ describe('Request ID Middleware with custom generator', () => {
   })
 })
 
-describe('Request ID Middleware with custom max length', () => {
-  const characterOf255 = 'h'.repeat(255)
-  const characterOf256 = 'h'.repeat(256)
+describe('Request ID Middleware with limit length', () => {
+  const charactersOf255 = 'h'.repeat(255)
+  const charactersOf256 = 'h'.repeat(256)
 
   const app = new Hono()
   app.use('/requestId', requestId())
+  app.use('/limit256', requestId({ limitLength: 256 }))
   app.get('/requestId', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
+  app.get('/limit256', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
 
   it('Should return custom request id', async () => {
     const res = await app.request('http://localhost/requestId', {
       headers: {
-        'X-Request-Id': characterOf255,
+        'X-Request-Id': charactersOf255,
       },
     })
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(res.headers.get('X-Request-Id')).toBe(characterOf255)
-    expect(await res.text()).toBe(characterOf255)
+    expect(res.headers.get('X-Request-Id')).toBe(charactersOf255)
+    expect(await res.text()).toBe(charactersOf255)
   })
   it('Should return random request id without using request header', async () => {
     const res = await app.request('http://localhost/requestId', {
       headers: {
-        'X-Request-Id': characterOf256,
+        'X-Request-Id': charactersOf256,
       },
     })
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
     expect(res.headers.get('X-Request-Id')).toMatch(regexUUIDv4)
     expect(await res.text()).toMatch(regexUUIDv4)
+  })
+  it('Should return custom request id with 256 characters', async () => {
+    const res = await app.request('http://localhost/limit256', {
+      headers: {
+        'X-Request-Id': charactersOf256,
+      },
+    })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Request-Id')).toBe(charactersOf256)
+    expect(await res.text()).toBe(charactersOf256)
   })
 })
 
