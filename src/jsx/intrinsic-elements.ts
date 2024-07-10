@@ -580,7 +580,7 @@ export namespace JSX {
     colspan?: number | undefined
     headers?: string | undefined
     rowspan?: number | undefined
-    scope?: string | undefined
+    scope?: 'row' | 'col' | 'rowgroup' | 'colgroup' | string | undefined
     abbr?: string | undefined
   }
 
