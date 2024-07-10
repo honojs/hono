@@ -29,7 +29,7 @@ describe('Request ID Middleware', () => {
     expect(await res.text()).toBe('hono-is-cool')
   })
 
-  it('Should return sanitized custom request id', async () => {
+  it('Should return random request id without using request header', async () => {
     const res = await app.request('http://localhost/requestId', {
       headers: {
         'X-Request-Id': 'Hello!12345-@*^',
@@ -37,8 +37,8 @@ describe('Request ID Middleware', () => {
     })
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(res.headers.get('X-Request-Id')).toBe('Hello12345-')
-    expect(await res.text()).toBe('Hello12345-')
+    expect(res.headers.get('X-Request-Id')).toMatch(regexUUIDv4)
+    expect(await res.text()).toMatch(regexUUIDv4)
   })
 })
 
@@ -82,35 +82,34 @@ describe('Request ID Middleware with custom generator', () => {
 })
 
 describe('Request ID Middleware with custom max length', () => {
-  const app = new Hono()
-  app.use('/requestId', requestId({ limitLength: 9 }))
-  app.use('/zeroId', requestId({ limitLength: 0 }))
-  app.get('/requestId', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
-  app.get('/zeroId', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
+  const characterOf255 = 'h'.repeat(255)
+  const characterOf256 = 'h'.repeat(256)
 
-  it('Should return cut custom request id', async () => {
+  const app = new Hono()
+  app.use('/requestId', requestId())
+  app.get('/requestId', (c) => c.text(c.get('requestId') ?? 'No Request ID'))
+
+  it('Should return custom request id', async () => {
     const res = await app.request('http://localhost/requestId', {
       headers: {
-        'X-Request-Id': '12345678910',
+        'X-Request-Id': characterOf255,
       },
     })
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(res.headers.get('X-Request-Id')).toBe('123456789')
-    expect(await res.text()).toBe('123456789')
+    expect(res.headers.get('X-Request-Id')).toBe(characterOf255)
+    expect(await res.text()).toBe(characterOf255)
   })
-
-  it('Should return uncut request id', async () => {
-    const characterOf260 = 'h'.repeat(260)
-    const res = await app.request('http://localhost/zeroId', {
+  it('Should return random request id without using request header', async () => {
+    const res = await app.request('http://localhost/requestId', {
       headers: {
-        'X-Request-Id': characterOf260,
+        'X-Request-Id': characterOf256,
       },
     })
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(res.headers.get('X-Request-Id')).toBe(characterOf260)
-    expect(await res.text()).toBe(characterOf260)
+    expect(res.headers.get('X-Request-Id')).toMatch(regexUUIDv4)
+    expect(await res.text()).toMatch(regexUUIDv4)
   })
 })
 

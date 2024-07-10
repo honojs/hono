@@ -21,7 +21,6 @@ export type RequestIdOptions = {
  *
  * @param {object} options - Options for Request ID middleware.
  * @param {number} [options.limitLength=255] - The maximum length of request id.
- * If positive truncates the request id at the specified length.
  * @param {string} [options.headerName=X-Request-Id] - The header name used in request id.
  * @param {generator} [options.generator=() => crypto.randomUUID()] - The request id generation function.
  *
@@ -47,11 +46,7 @@ export const requestId = ({
   return async function requestId(c, next) {
     // If `headerName` is empty string, req.header will return the object
     let reqId = headerName ? c.req.header(headerName) : undefined
-
-    if (reqId) {
-      reqId = reqId.replace(/[^\w\-]/g, '')
-      reqId = limitLength > 0 ? reqId.substring(0, limitLength) : reqId
-    } else {
+    if (!reqId || reqId.length > limitLength || /[^\w\-]/.test(reqId)) {
       reqId = generator(c)
     }
 
