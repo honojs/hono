@@ -1927,7 +1927,7 @@ type MergeTypedResponse<T> = T extends Promise<infer T2>
 //////                             /////
 ////////////////////////////////////////
 
-export type FormValue = string | File | Blob
+export type FormValue = string | Blob
 export type ParsedFormValue = string | File
 
 export type ValidationTargets<T extends FormValue = ParsedFormValue> = {
