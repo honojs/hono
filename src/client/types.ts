@@ -144,8 +144,8 @@ export type InferRequestOptionsType<T> = T extends (
   : never
 
 type FilterNeverKeys<T> = {
-  [K in keyof T as (T[K] extends never ? never : T ) extends never ? never : K]: T[K]
-};
+  [K in keyof T as (T[K] extends never ? never : T) extends never ? never : K]: T[K]
+}
 
 type PathToChain<
   Path extends string,
@@ -153,15 +153,19 @@ type PathToChain<
   Original extends string = Path
 > = Path extends `/${infer P}`
   ? PathToChain<P, E, Path>
-  : (Path extends `${infer P}/${infer R}`
-  ? { [K in P]: PathToChain<R, E, Original> }
-  : {
-      [K in Path extends '' ? 'index' : Path]: ClientRequest<
-        E extends Record<string, unknown> ? E[Original] : never
-      >
-    }) extends infer R ? {
-      [K in keyof R as (R[K] extends never ? never : R ) extends never ? never : K]: R[K]
-    } : never
+  : (
+      Path extends `${infer P}/${infer R}`
+        ? { [K in P]: PathToChain<R, E, Original> }
+        : {
+            [K in Path extends '' ? 'index' : Path]: ClientRequest<
+              E extends Record<string, unknown> ? E[Original] : never
+            >
+          }
+    ) extends infer R
+  ? {
+      [K in keyof R as (R[K] extends never ? never : R) extends never ? never : K]: R[K]
+    }
+  : never
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Client<T> = T extends Hono<any, infer S, any>
