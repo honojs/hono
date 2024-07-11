@@ -1,5 +1,5 @@
 import type { Hono } from '../hono'
-import type { ValidationTargets } from '../types'
+import type { FormValue, ValidationTargets } from '../types'
 import { serialize } from '../utils/cookie'
 import type { UnionToIntersection } from '../utils/types'
 import type { Callback, Client, ClientRequestOptions } from './types'
@@ -42,7 +42,7 @@ class ClientRequestImpl {
     this.method = method
   }
   fetch = async (
-    args?: ValidationTargets & {
+    args?: ValidationTargets<FormValue> & {
       param?: Record<string, string>
     },
     opt?: ClientRequestOptions
