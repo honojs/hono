@@ -1804,7 +1804,7 @@ export type Schema = {
 }
 
 type ChangePathOfSchema<S extends Schema, Path extends string> = keyof S extends never
-  ? { [K in Path]: never }
+  ? { [K in Path]: {} }
   : { [K in keyof S as Path]: S[K] }
 
 export type Endpoint = {
