@@ -2225,3 +2225,18 @@ describe('Env types and a path type with `app.use(path, handler...)` - test only
       })
   })
 })
+
+// https://github.com/honojs/hono/issues/3122
+describe('Returning type from `app.use(path, mw)`', () => {
+  const mw = createMiddleware(async (c, next) => {
+    await next()
+  })
+  it('Should not mark `*` as never', () => {
+    const app = new Hono().use('*', mw)
+    type Actual = ExtractSchema<typeof app>
+    type Expected = {
+      '*': {}
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
