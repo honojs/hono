@@ -241,6 +241,10 @@ export const createFactory = <E extends Env = any, P extends string = string>(in
   initApp?: InitApp<E>
 }): Factory<E, P> => new Factory<E, P>(init)
 
-export const createMiddleware = <E extends Env = any, P extends string = string, I extends Input = {}>(
+export const createMiddleware = <
+  E extends Env = any,
+  P extends string = string,
+  I extends Input = {}
+>(
   middleware: MiddlewareHandler<E, P, I>
 ): MiddlewareHandler<E, P, I> => createFactory<E, P>().createMiddleware<I>(middleware)
