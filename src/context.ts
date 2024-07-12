@@ -521,7 +521,13 @@ export class Context<
    * ```
 ```
    */
-  set: Set<E> = (key: string, value: unknown) => {
+  set: Set<
+    IsAny<E> extends true
+      ? {
+          Variables: ContextVariableMap & Record<string, unknown>
+        }
+      : E
+  > = (key: string, value: unknown) => {
     this.#var ??= {}
     this.#var[key as string] = value
   }
@@ -539,7 +545,13 @@ export class Context<
    * })
    * ```
    */
-  get: Get<E> = (key: string) => {
+  get: Get<
+    IsAny<E> extends true
+      ? {
+          Variables: ContextVariableMap & Record<string, unknown>
+        }
+      : E
+  > = (key: string) => {
     return this.#var ? this.#var[key] : undefined
   }
 
