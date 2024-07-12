@@ -524,7 +524,8 @@ export class Context<
   set: Set<
     IsAny<E> extends true
       ? {
-          Variables: ContextVariableMap & Record<string, unknown>
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          Variables: ContextVariableMap & Record<string, any>
         }
       : E
   > = (key: string, value: unknown) => {
@@ -548,7 +549,8 @@ export class Context<
   get: Get<
     IsAny<E> extends true
       ? {
-          Variables: ContextVariableMap & Record<string, unknown>
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          Variables: ContextVariableMap & Record<string, any>
         }
       : E
   > = (key: string) => {
