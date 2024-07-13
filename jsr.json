@@ -49,6 +49,7 @@
     "./method-override": "./src/middleware/method-override/index.ts",
     "./powered-by": "./src/middleware/powered-by/index.ts",
     "./pretty-json": "./src/middleware/pretty-json/index.ts",
+    "./request-id": "./src/middleware/request-id/request-id.ts",
     "./secure-headers": "./src/middleware/secure-headers/secure-headers.ts",
     "./ssg": "./src/helper/ssg/index.ts",
     "./streaming": "./src/helper/streaming/index.ts",
