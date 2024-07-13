@@ -558,7 +558,10 @@ export class Context<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ContextVariableMap & (IsAny<E['Variables']> extends true ? Record<string, any> : E['Variables'])
   > {
-    if (!this.#var) return {} as any
+    if (!this.#var) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return {} as any
+    }
     return Object.fromEntries(this.#var)
   }
 
