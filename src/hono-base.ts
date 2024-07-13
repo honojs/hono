@@ -47,7 +47,7 @@ const errorHandler = (err: Error | HTTPResponseError, c: Context) => {
 
 type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings'] }) => string
 
-export type HonoOptions<E extends Env> = {
+export type HonoOptions<E extends Env<any, any>> = {
   /**
    * `strict` option specifies whether to distinguish whether the last path is a directory or not.
    *
@@ -99,7 +99,7 @@ type MountOptions =
       replaceRequest?: MountReplaceRequest
     }
 
-class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
+class Hono<E extends Env<any, any> = Env, S extends Schema = {}, BasePath extends string = '/'> {
   get!: HandlerInterface<E, 'get', S, BasePath>
   post!: HandlerInterface<E, 'post', S, BasePath>
   put!: HandlerInterface<E, 'put', S, BasePath>

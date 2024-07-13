@@ -93,3 +93,5 @@ export type HasRequiredKeys<BaseType extends object> = RequiredKeysOf<BaseType> 
   : true
 
 export type IsAny<T> = boolean extends (T extends never ? true : false) ? true : false
+
+export type IsObject<T> = T extends object ? (T extends any[] ? false : true) : false

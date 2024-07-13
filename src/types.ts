@@ -12,6 +12,7 @@ import type { StatusCode } from './utils/http-status'
 import type {
   IfAnyThenEmptyObject,
   IsAny,
+  IsObject,
   JSONValue,
   RemoveBlankRecord,
   Simplify,
@@ -24,13 +25,14 @@ import type {
 //////                            //////
 ////////////////////////////////////////
 
-export type Bindings = Record<string, unknown>
-export type Variables = Record<string, unknown>
+export type Bindings<B> = IsObject<B> extends true ? B : Record<string, unknown>
+export type Variables<V> = IsObject<V> extends true ? V : Record<string, unknown>
 
 export type BlankEnv = {}
-export type Env = {
-  Bindings?: Bindings
-  Variables?: Variables
+
+export type Env<B = object, V = object> = {
+  Bindings?: Bindings<B>
+  Variables?: Variables<V>
 }
 
 export type Next = () => Promise<void>

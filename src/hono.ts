@@ -13,8 +13,9 @@ import type { BlankEnv, BlankSchema, Env, Schema } from './types'
  * @template S - The schema type.
  * @template BasePath - The base path type.
  */
+
 export class Hono<
-  E extends Env = BlankEnv,
+  E extends Env<E['Bindings'], E['Variables']> = BlankEnv,
   S extends Schema = BlankSchema,
   BasePath extends string = '/'
 > extends HonoBase<E, S, BasePath> {
