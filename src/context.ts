@@ -180,7 +180,7 @@ type JSONRespondReturn<
       ? JSONValue extends SimplifyDeepArray<T>
         ? never
         : JSONParsed<T>
-      : JSONParsed<T>,
+      : never,
     U,
     'json'
   >

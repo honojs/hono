@@ -2240,3 +2240,24 @@ describe('Returning type from `app.use(path, mw)`', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 })
+describe('generic typed variables', () => {
+  type Variables = {
+    ok: <TData>(data: TData) => TypedResponse<{ data: TData }>
+  }
+  const app = new Hono<{ Variables: Variables }>()
+
+  it('Should set and get variables with correct types', async () => {
+    const route = app
+      .use('*', async (c, next) => {
+        c.set('ok', (data) => c.json({ data }))
+        await next()
+      })
+      .get('/', (c) => {
+        const ok = c.get('ok')
+        return ok('Hello')
+      })
+    type Actual = ExtractSchema<typeof route>['/']['$get']['output']
+    type Expected = { data: string }
+    expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+  })
+})
