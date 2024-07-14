@@ -73,7 +73,7 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
 
     if (c.req.raw.headers.has('content-length')) {
       // we can trust content-length header because it's already validated by server
-      const contentLength = parseInt(c.req.raw.headers.get('content-length') || '0', 10)
+      const contentLength = parseInt(c.req.raw.headers.get('content-length') ?? '0', 10)
       return contentLength > maxSize ? onError(c) : next()
     }
 

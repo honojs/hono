@@ -92,6 +92,5 @@ export const serveStatic = <E extends Env = Env>(
 
     await options.onNotFound?.(path, c)
     await next()
-    return
   }
 }

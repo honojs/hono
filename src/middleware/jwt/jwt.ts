@@ -48,11 +48,11 @@ export const jwt = (options: {
   cookie?: string
   alg?: SignatureAlgorithm
 }): MiddlewareHandler => {
-  if (!options || !options.secret) {
+  if (!options?.secret) {
     throw new Error('JWT auth middleware requires options for "secret"')
   }
 
-  if (!crypto.subtle || !crypto.subtle.importKey) {
+  if (!crypto.subtle?.importKey) {
     throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
   }
 

@@ -45,12 +45,12 @@ export interface ExecutionContext {
 /**
  * Interface for context variable mapping.
  */
-export interface ContextVariableMap {}
+export interface ContextVariableMap { }
 
 /**
  * Interface for context renderer.
  */
-export interface ContextRenderer {}
+export interface ContextRenderer { }
 
 /**
  * Interface representing a renderer for content.
@@ -109,7 +109,7 @@ interface NewResponse {
 /**
  * Interface for responding with a body.
  */
-interface BodyRespond extends NewResponse {}
+interface BodyRespond extends NewResponse { }
 
 /**
  * Interface for responding with text.
@@ -177,10 +177,10 @@ type JSONRespondReturn<
 > = Response &
   TypedResponse<
     SimplifyDeepArray<T> extends JSONValue
-      ? JSONValue extends SimplifyDeepArray<T>
-        ? never
-        : JSONParsed<T>
-      : JSONParsed<T>,
+    ? JSONValue extends SimplifyDeepArray<T>
+    ? never
+    : JSONParsed<T>
+    : JSONParsed<T>,
     U,
     'json'
   >
@@ -219,7 +219,7 @@ type ContextOptions<E extends Env> = {
   /**
    * Execution context for the request.
    */
-  executionCtx?: FetchEventLike | ExecutionContext | undefined
+  executionCtx?: FetchEventLike | ExecutionContext
   /**
    * Handler for not found responses.
    */
@@ -484,13 +484,11 @@ export class Context<
         this.#preparedHeaders = {}
       }
       this.#headers.append(name, value)
+    } else if (this.#headers) {
+      this.#headers.set(name, value)
     } else {
-      if (this.#headers) {
-        this.#headers.set(name, value)
-      } else {
-        this.#preparedHeaders ??= {}
-        this.#preparedHeaders[name.toLowerCase()] = value
-      }
+      this.#preparedHeaders ??= {}
+      this.#preparedHeaders[name.toLowerCase()] = value
     }
 
     if (this.finalized) {
@@ -523,7 +521,7 @@ export class Context<
    */
   set: Set<E> = (key: string, value: unknown) => {
     this.#var ??= {}
-    this.#var[key as string] = value
+    this.#var[key] = value
   }
 
   /**
@@ -732,7 +730,7 @@ export class Context<
       if (!(html instanceof Promise)) {
         html = (html as string).toString() // HtmlEscapedString object to string
       }
-      if ((html as string | Promise<string>) instanceof Promise) {
+      if ((html) instanceof Promise) {
         return (html as unknown as Promise<string>)
           .then((html) => resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}))
           .then((html) => {
@@ -744,8 +742,8 @@ export class Context<
     }
 
     return typeof arg === 'number'
-      ? this.newResponse(html as string, arg, headers)
-      : this.newResponse(html as string, arg)
+      ? this.newResponse(html, arg, headers)
+      : this.newResponse(html, arg)
   }
 
   /**

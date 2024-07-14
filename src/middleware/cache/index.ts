@@ -72,7 +72,7 @@ export const cache = (options: {
         let [name, value] = directive.trim().split('=', 2)
         name = name.toLowerCase()
         if (!existingDirectives.includes(name)) {
-          c.header('Cache-Control', `${name}${value ? `=${value}` : ''}`, { append: true })
+          c.header('Cache-Control', `${name}${value ? '=' + value : ''}`, { append: true })
         }
       }
     }
@@ -88,7 +88,7 @@ export const cache = (options: {
         new Set(
           [...existingDirectives, ...varyDirectives].map((directive) => directive.toLowerCase())
         )
-      ).sort()
+      ).sort((a, b) => a.localeCompare(b))
 
       if (vary.includes('*')) {
         c.header('Vary', '*')
