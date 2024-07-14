@@ -6,11 +6,11 @@
 /**
  * Constant representing all HTTP methods in uppercase.
  */
-export const METHOD_NAME_ALL = 'ALL'
+export const METHOD_NAME_ALL = 'ALL' as const
 /**
  * Constant representing all HTTP methods in lowercase.
  */
-export const METHOD_NAME_ALL_LOWERCASE = 'all'
+export const METHOD_NAME_ALL_LOWERCASE = 'all' as const
 /**
  * Array of supported HTTP methods.
  */
