@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.4.13",
+  "version": "4.5.0-rc.2",
   "description": "Web framework built on Web Standards",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -77,6 +77,11 @@
       "types": "./dist/types/middleware/body-limit/index.d.ts",
       "import": "./dist/middleware/body-limit/index.js",
       "require": "./dist/cjs/middleware/body-limit/index.js"
+    },
+    "./ip-restriction": {
+      "types": "./dist/types/middleware/ip-restriction/index.d.ts",
+      "import": "./dist/middleware/ip-restriction/index.js",
+      "require": "./dist/cjs/middleware/ip-restriction/index.js"
     },
     "./cache": {
       "types": "./dist/types/middleware/cache/index.d.ts",
@@ -178,6 +183,11 @@
       "import": "./dist/jsx/dom/css.js",
       "require": "./dist/cjs/jsx/dom/css.js"
     },
+    "./jsx/dom/server": {
+      "types": "./dist/types/jsx/dom/server.d.ts",
+      "import": "./dist/jsx/dom/server.js",
+      "require": "./dist/cjs/jsx/dom/server.js"
+    },
     "./jwt": {
       "types": "./dist/types/middleware/jwt/index.d.ts",
       "import": "./dist/middleware/jwt/index.js",
@@ -213,10 +223,20 @@
       "import": "./dist/middleware/pretty-json/index.js",
       "require": "./dist/cjs/middleware/pretty-json/index.js"
     },
+    "./request-id": {
+      "types": "./dist/types/middleware/request-id/index.d.ts",
+      "import": "./dist/middleware/request-id/index.js",
+      "require": "./dist/cjs/middleware/request-id/index.js"
+    },
     "./secure-headers": {
       "types": "./dist/types/middleware/secure-headers/index.d.ts",
       "import": "./dist/middleware/secure-headers/index.js",
       "require": "./dist/cjs/middleware/secure-headers/index.js"
+    },
+    "./combine": {
+      "types": "./dist/types/middleware/combine/index.d.ts",
+      "import": "./dist/middleware/combine/index.js",
+      "require": "./dist/cjs/middleware/combine/index.js"
     },
     "./ssg": {
       "types": "./dist/types/helper/ssg/index.d.ts",
@@ -333,6 +353,11 @@
       "import": "./dist/adapter/lambda-edge/index.js",
       "require": "./dist/cjs/adapter/lambda-edge/index.js"
     },
+    "./service-worker": {
+      "types": "./dist/types/adapter/service-worker/index.d.ts",
+      "import": "./dist/adapter/service-worker/index.js",
+      "require": "./dist/cjs/adapter/service-worker/index.js"
+    },
     "./testing": {
       "types": "./dist/types/helper/testing/index.d.ts",
       "import": "./dist/helper/testing/index.js",
@@ -379,6 +404,9 @@
       ],
       "body-limit": [
         "./dist/types/middleware/body-limit"
+      ],
+      "ip-restriction": [
+        "./dist/types/middleware/ip-restriction"
       ],
       "cache": [
         "./dist/types/middleware/cache"
@@ -434,6 +462,9 @@
       "jsx/dom/css": [
         "./dist/types/jsx/dom/css.d.ts"
       ],
+      "jsx/dom/server": [
+        "./dist/types/jsx/dom/server.d.ts"
+      ],
       "jwt": [
         "./dist/types/middleware/jwt"
       ],
@@ -455,6 +486,9 @@
       "pretty-json": [
         "./dist/types/middleware/pretty-json"
       ],
+      "request-id": [
+        "./dist/types/middleware/request-id"
+      ],
       "streaming": [
         "./dist/types/helper/streaming"
       ],
@@ -463,6 +497,9 @@
       ],
       "secure-headers": [
         "./dist/types/middleware/secure-headers"
+      ],
+      "combine": [
+        "./dist/types/middleware/combine"
       ],
       "validator": [
         "./dist/types/validator/index.d.ts"
@@ -526,6 +563,9 @@
       ],
       "lambda-edge": [
         "./dist/types/adapter/lambda-edge"
+      ],
+      "service-worker": [
+        "./dist/types/adapter/service-worker"
       ],
       "testing": [
         "./dist/types/helper/testing"

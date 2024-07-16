@@ -60,6 +60,40 @@ function runner(
         expect(root.innerHTML).toBe('<p>1</p>')
       })
 
+      it('with use() update', async () => {
+        const counterMap: Record<number, Promise<number>> = {}
+        const getCounter = (count: number) => (counterMap[count] ||= Promise.resolve(count + 1))
+        const Content = ({ count }: { count: number }) => {
+          const num = use(getCounter(count))
+          return (
+            <>
+              <div>{num}</div>
+            </>
+          )
+        }
+        const Component = () => {
+          const [count, setCount] = useState(0)
+          return (
+            <Suspense fallback={<div>Loading...</div>}>
+              <Content count={count} />
+              <button onClick={() => setCount(count + 1)}>Increment</button>
+            </Suspense>
+          )
+        }
+        const App = <Component />
+        render(App, root)
+        expect(root.innerHTML).toBe('<div>Loading...</div>')
+        await Promise.resolve()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div>1</div><button>Increment</button>')
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div>Loading...</div>')
+        await Promise.resolve()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div>2</div><button>Increment</button>')
+      })
+
       it('with use() nested', async () => {
         let resolve: (value: number) => void = () => {}
         const promise = new Promise<number>((_resolve) => (resolve = _resolve))
@@ -130,6 +164,81 @@ function runner(
         await Promise.resolve()
         await Promise.resolve()
         expect(root.innerHTML).toBe('<div><button>Hide</button><p>2</p></div>')
+      })
+
+      it('Suspense at child', async () => {
+        let resolve: (value: number) => void = () => {}
+        const promise = new Promise<number>((_resolve) => (resolve = _resolve))
+        const Content = () => {
+          const num = use(promise)
+          return <p>{num}</p>
+        }
+
+        const Component = () => {
+          return (
+            <Suspense fallback={<div>Loading...</div>}>
+              <Content />
+            </Suspense>
+          )
+        }
+        const App = () => {
+          const [show, setShow] = useState(false)
+          return (
+            <div>
+              {show && <Component />}
+              <button onClick={() => setShow(true)}>Show</button>
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<div><button>Show</button></div>')
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><div>Loading...</div><button>Show</button></div>')
+        resolve(2)
+        await Promise.resolve()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><p>2</p><button>Show</button></div>')
+      })
+
+      it('Suspense at child counter', async () => {
+        const promiseMap: Record<number, Promise<number>> = {}
+        const Counter = () => {
+          const [count, setCount] = useState(0)
+          const promise = (promiseMap[count] ||= Promise.resolve(count))
+          const value = use(promise)
+          return (
+            <>
+              <p>{value}</p>
+              <button onClick={() => setCount(count + 1)}>Increment</button>
+            </>
+          )
+        }
+        const Component = () => {
+          return (
+            <Suspense fallback={<div>Loading...</div>}>
+              <Counter />
+            </Suspense>
+          )
+        }
+        const App = () => {
+          return (
+            <div>
+              <Component />
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(root.innerHTML).toBe('<div><div>Loading...</div></div>')
+        await Promise.resolve()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><p>0</p><button>Increment</button></div>')
+        root.querySelector('button')?.click()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><div>Loading...</div></div>')
+        await Promise.resolve()
+        await Promise.resolve()
+        expect(root.innerHTML).toBe('<div><p>1</p><button>Increment</button></div>')
       })
     })
 

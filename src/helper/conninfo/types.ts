@@ -1,6 +1,6 @@
 import type { Context } from '../../context'
 
-export type AddressType = 'IPv6' | 'IPv4' | 'unknown'
+export type AddressType = 'IPv6' | 'IPv4' | undefined
 
 export type NetAddrInfo = {
   /**
