@@ -3,5 +3,5 @@
  * Cloudflare Pages Adapter for Hono.
  */
 
-export { handle, serveStatic } from './handler'
+export { handle, handleMiddleware, serveStatic } from './handler'
 export type { EventContext } from './handler'

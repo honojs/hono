@@ -265,7 +265,7 @@ export class Context<
    * ```
    */
   env: E['Bindings'] = {}
-  #var: E['Variables'] | undefined
+  #var: Map<unknown, unknown> | undefined
   finalized: boolean = false
   /**
    * `.error` can get the error object from the middleware if the Handler throws an error.
@@ -519,11 +519,17 @@ export class Context<
    *   await next()
    * })
    * ```
-```
    */
-  set: Set<E> = (key: string, value: unknown) => {
-    this.#var ??= {}
-    this.#var[key as string] = value
+  set: Set<
+    IsAny<E> extends true
+      ? {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          Variables: ContextVariableMap & Record<string, any>
+        }
+      : E
+  > = (key: string, value: unknown) => {
+    this.#var ??= new Map()
+    this.#var.set(key, value)
   }
 
   /**
@@ -539,8 +545,15 @@ export class Context<
    * })
    * ```
    */
-  get: Get<E> = (key: string) => {
-    return this.#var ? this.#var[key] : undefined
+  get: Get<
+    IsAny<E> extends true
+      ? {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          Variables: ContextVariableMap & Record<string, any>
+        }
+      : E
+  > = (key: string) => {
+    return this.#var ? this.#var.get(key) : undefined
   }
 
   /**
@@ -558,7 +571,11 @@ export class Context<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ContextVariableMap & (IsAny<E['Variables']> extends true ? Record<string, any> : E['Variables'])
   > {
-    return { ...this.#var } as never
+    if (!this.#var) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return {} as any
+    }
+    return Object.fromEntries(this.#var)
   }
 
   newResponse: NewResponse = (

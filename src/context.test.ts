@@ -88,6 +88,13 @@ describe('Context', () => {
     expect(c.get('foo2')).toBe(undefined)
   })
 
+  it('c.var', async () => {
+    expect(c.var.foo).toBe(undefined)
+    c.set('foo', 'bar')
+    expect(c.var.foo).toBe('bar')
+    expect(c.var.foo2).toBe(undefined)
+  })
+
   it('c.notFound()', async () => {
     const res = c.notFound()
     expect(res).instanceOf(Response)

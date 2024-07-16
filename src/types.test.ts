@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { expectTypeOf } from 'vitest'
-import type { Context } from './context'
+import { Context } from './context'
 import { createMiddleware } from './helper/factory'
 import { Hono } from './hono'
 import { poweredBy } from './middleware/powered-by'
@@ -1747,6 +1747,14 @@ describe('ContextVariableMap type tests', () => {
       expectTypeOf(c.get('payload')).toEqualTypeOf<number>()
       return c.json(0)
     })
+  })
+
+  it('Should use ContextVariableMap when c is Context<any>', () => {
+    const c = new Context(new Request('http://localhost'))
+    expectTypeOf(c.get('payload')).toEqualTypeOf<string>()
+    expectTypeOf(c.var.payload).toEqualTypeOf<string>()
+    // @ts-expect-error the value of payload should be string
+    expectTypeOf(c.set('payload', 123))
   })
 })
 
