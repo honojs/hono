@@ -1,6 +1,6 @@
 /** @jsxImportSource ../ */
 import { JSDOM } from 'jsdom'
-import { createRoot, hydrateRoot } from './client'
+import DefaultExport, { createRoot, hydrateRoot } from './client'
 import { useEffect } from '.'
 
 describe('createRoot', () => {
@@ -115,5 +115,14 @@ describe('hydrateRoot', () => {
     expect(rootElement.innerHTML).toBe('<h1>Hello</h1>')
     root.unmount()
     expect(() => root.render(App2)).toThrow('Cannot update an unmounted root')
+  })
+})
+
+describe('default export', () => {
+  ;['createRoot', 'hydrateRoot'].forEach((key) => {
+    it(key, () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((DefaultExport as any)[key]).toBeDefined()
+    })
   })
 })

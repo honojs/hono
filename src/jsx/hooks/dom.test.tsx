@@ -2,7 +2,7 @@
 import { JSDOM } from 'jsdom'
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings
-import { Suspense, render } from '../dom'
+import { ErrorBoundary, Suspense, render } from '../dom'
 import {
   createRef,
   forwardRef,
@@ -150,8 +150,82 @@ describe('Hooks', () => {
       expect(called).toBe(2)
       await new Promise((r) => setTimeout(r))
       await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<div><button>1</button></div>')
       expect(called).toBe(3)
+    })
+
+    it('pending', async () => {
+      let resolve: (() => void) | undefined
+      const promise = new Promise<void>((r) => (resolve = r))
+      let called = 0
+      const App = () => {
+        const [isPending, startTransition] = useTransition()
+        called++
+
+        return (
+          <div>
+            <button
+              onClick={() => {
+                startTransition(async () => await promise)
+              }}
+            >
+              {isPending ? 'Pending...' : 'Click me'}
+            </button>
+          </div>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>Click me</button></div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
+      expect(called).toBe(2)
+      resolve!()
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>Click me</button></div>')
+      expect(called).toBe(3)
+    })
+
+    it('pending - error', async () => {
+      let reject: (() => void) | undefined
+      const promise = new Promise<void>((_, r) => (reject = r))
+      let called = 0
+      const Component = () => {
+        const [isPending, startTransition] = useTransition()
+        called++
+
+        return (
+          <div>
+            <button
+              onClick={() => {
+                startTransition(async () => await promise)
+              }}
+            >
+              {isPending ? 'Pending...' : 'Click me'}
+            </button>
+          </div>
+        )
+      }
+      const App = () => (
+        <ErrorBoundary fallback={<div>Error</div>}>
+          <Component />
+        </ErrorBoundary>
+      )
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>Click me</button></div>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
+      expect(called).toBe(2)
+      reject!()
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div>Error</div>')
+      expect(called).toBe(2)
     })
 
     it('multiple setState at once', async () => {
@@ -183,6 +257,7 @@ describe('Hooks', () => {
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
       expect(called).toBe(2)
+      await new Promise((r) => setTimeout(r))
       await new Promise((r) => setTimeout(r))
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<div><button>3</button></div>')
@@ -221,6 +296,7 @@ describe('Hooks', () => {
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div><button>Pending...</button></div>')
       expect(called).toBe(2)
+      await new Promise((r) => setTimeout(r))
       await new Promise((r) => setTimeout(r))
       await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<div><button>3</button></div>')
@@ -263,7 +339,56 @@ describe('Hooks', () => {
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div><button>+1</button></div><div>0</div>')
       await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>+1</button></div><div>0</div>')
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>+1</button></div><div>0</div>')
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>+1</button></div><div>0</div>')
+      await new Promise((r) => setTimeout(r))
       expect(root.innerHTML).toBe('<div><button>+1</button></div><div>2</div>')
+    })
+
+    it('initial value', async () => {
+      const promiseMap = {} as Record<number, Promise<number>>
+      const getPromise = (count: number) => {
+        return (promiseMap[count] ||= new Promise((r) => setTimeout(() => r(count + 1))))
+      }
+      const ShowCount = ({ count }: { count: number }) => {
+        if (count === 0 || count === 99) {
+          return <div>{count}</div>
+        }
+
+        const c = use(getPromise(count))
+        return <div>{c}</div>
+      }
+
+      const App = () => {
+        const [count, setCount] = useState(1)
+        const c = useDeferredValue(count, 99)
+        return (
+          <>
+            <div>
+              <button onClick={() => setCount((c) => c + 1)}>+1</button>
+            </div>
+            <Suspense fallback={<div>Loading...</div>}>
+              <ShowCount count={c} />
+            </Suspense>
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><button>+1</button></div><div>99</div>')
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>+1</button></div><div>2</div>')
+      root.querySelector('button')?.click()
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      await new Promise((r) => setTimeout(r))
+      expect(root.innerHTML).toBe('<div><button>+1</button></div><div>3</div>')
     })
   })
 

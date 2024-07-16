@@ -30,6 +30,7 @@ import {
   useTransition,
   useViewTransition,
 } from './hooks'
+import { useActionState, useOptimistic } from './dom/hooks'
 import { Suspense } from './streaming'
 
 export {
@@ -37,6 +38,7 @@ export {
   jsx,
   memo,
   Fragment,
+  Fragment as StrictMode,
   isValidElement,
   jsx as createElement,
   cloneElement,
@@ -63,6 +65,8 @@ export {
   forwardRef,
   useImperativeHandle,
   useSyncExternalStore,
+  useActionState,
+  useOptimistic,
   Suspense,
   Children,
   DOMAttributes,
@@ -72,6 +76,7 @@ export default {
   version: reactAPICompatVersion,
   memo,
   Fragment,
+  StrictMode: Fragment,
   isValidElement,
   createElement: jsx,
   cloneElement,
@@ -98,6 +103,8 @@ export default {
   forwardRef,
   useImperativeHandle,
   useSyncExternalStore,
+  useActionState,
+  useOptimistic,
   Suspense,
   Children,
 }
