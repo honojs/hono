@@ -3,7 +3,14 @@ import type { ZodSchema } from 'zod'
 import { z } from 'zod'
 import { Hono } from '../hono'
 import { HTTPException } from '../http-exception'
-import type { ErrorHandler, ExtractSchema, MiddlewareHandler, ValidationTargets } from '../types'
+import type {
+  ErrorHandler,
+  ExtractSchema,
+  FormValue,
+  MiddlewareHandler,
+  ParsedFormValue,
+  ValidationTargets,
+} from '../types'
 import type { StatusCode } from '../utils/http-status'
 import type { Equal, Expect } from '../utils/types'
 import type { ValidationFunction } from './validator'
@@ -743,7 +750,7 @@ it('With path parameters', () => {
       $put: {
         input: {
           form: {
-            title: string | File
+            title: ParsedFormValue | ParsedFormValue[]
           }
         } & {
           param: {
@@ -789,7 +796,7 @@ it('`on`', () => {
       $purge: {
         input: {
           form: {
-            tag: string | File
+            tag: ParsedFormValue | ParsedFormValue[]
           }
         } & {
           query: {

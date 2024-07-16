@@ -1804,7 +1804,7 @@ export type Schema = {
 }
 
 type ChangePathOfSchema<S extends Schema, Path extends string> = keyof S extends never
-  ? { [K in Path]: never }
+  ? { [K in Path]: {} }
   : { [K in keyof S as Path]: S[K] }
 
 export type Endpoint = {
@@ -1927,9 +1927,12 @@ type MergeTypedResponse<T> = T extends Promise<infer T2>
 //////                             /////
 ////////////////////////////////////////
 
-export type ValidationTargets = {
+export type FormValue = string | Blob
+export type ParsedFormValue = string | File
+
+export type ValidationTargets<T extends FormValue = ParsedFormValue> = {
   json: any
-  form: Record<string, string | File>
+  form: Record<string, T | T[]>
   query: Record<string, string | string[]>
   param: Record<string, string> | Record<string, string | undefined>
   header: Record<string, string>
