@@ -1,5 +1,5 @@
 /**
- * Middleware for restrict IP Address
+ * IP Restriction Middleware for Hono
  * @module
  */
 
@@ -113,7 +113,7 @@ const buildMatcher = (
 }
 
 /**
- * Rules for IP Limit Middleware
+ * Rules for IP Restriction Middleware
  */
 export interface IPRestrictionRules {
   denyList?: IPRestrictionRule[]
@@ -121,7 +121,7 @@ export interface IPRestrictionRules {
 }
 
 /**
- * IP Limit Middleware
+ * IP Restriction Middleware
  *
  * @param getIP function to get IP Address
  */

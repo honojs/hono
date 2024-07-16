@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Combine Middleware for Hono.
+ */
+
 import type { Context } from '../../context'
 import type { MiddlewareHandler, Next } from '../../types'
 import { TrieRouter } from '../../router/trie-router'
@@ -18,8 +23,8 @@ type Condition = (c: Context) => boolean
  *
  * @example
  * ```ts
- * import { some } from 'combine'
- * import { bearerAuth } from 'bearer-auth'
+ * import { some } from 'hono/combine'
+ * import { bearerAuth } from 'hono/bearer-auth'
  * import { myRateLimit } from '@/rate-limit'
  *
  * // If client has a valid token, then skip rate limiting.
@@ -67,8 +72,8 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
  *
  * @example
  * ```ts
- * import { some, every } from 'combine'
- * import { bearerAuth } from 'bearer-auth'
+ * import { some, every } from 'hono/combine'
+ * import { bearerAuth } from 'hono/bearer-auth'
  * import { myCheckLocalNetwork } from '@/check-local-network'
  * import { myRateLimit } from '@/rate-limit'
  *
@@ -110,8 +115,8 @@ export const every = (...middleware: (MiddlewareHandler | Condition)[]): Middlew
  *
  * @example
  * ```ts
- * import { except } from 'combine'
- * import { bearerAuth } from 'bearer-auth
+ * import { except } from 'hono/combine'
+ * import { bearerAuth } from 'hono/bearer-auth
  *
  * // If client is accessing public API, then skip authentication.
  * // Otherwise, require a valid token.
