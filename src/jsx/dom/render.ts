@@ -344,7 +344,7 @@ const findChildNodeIndex = (
   return
 }
 
-const cancelBuild = Symbol()
+const cancelBuild: symbol = Symbol()
 const applyNodeObject = (node: NodeObject, container: Container): void => {
   const next: Node[] = []
   const remove: Node[] = []
