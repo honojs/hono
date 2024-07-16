@@ -2,10 +2,16 @@ import { normalizeIntrinsicElementKey, styleObjectForEach } from './utils'
 
 describe('normalizeIntrinsicElementKey', () => {
   test.each`
-    key            | expected
-    ${'className'} | ${'class'}
-    ${'htmlFor'}   | ${'for'}
-    ${'href'}      | ${'href'}
+    key                | expected
+    ${'className'}     | ${'class'}
+    ${'htmlFor'}       | ${'for'}
+    ${'crossOrigin'}   | ${'crossorigin'}
+    ${'httpEquiv'}     | ${'http-equiv'}
+    ${'itemProp'}      | ${'itemprop'}
+    ${'fetchPriority'} | ${'fetchpriority'}
+    ${'noModule'}      | ${'nomodule'}
+    ${'formAction'}    | ${'formaction'}
+    ${'href'}          | ${'href'}
   `('should convert $key to $expected', ({ key, expected }) => {
     expect(normalizeIntrinsicElementKey(key)).toBe(expected)
   })

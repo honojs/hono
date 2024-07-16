@@ -24,8 +24,8 @@ import type {
 //////                            //////
 ////////////////////////////////////////
 
-export type Bindings = Record<string, unknown>
-export type Variables = Record<string, unknown>
+export type Bindings = object
+export type Variables = object
 
 export type BlankEnv = {}
 export type Env = {

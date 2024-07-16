@@ -29,6 +29,7 @@ import {
   useTransition,
   useViewTransition,
 } from '../hooks'
+import { useActionState, useFormStatus, useOptimistic } from './hooks'
 import { ErrorBoundary, Suspense } from './components'
 import { createContext } from './context'
 import { Fragment, jsx } from './jsx-runtime'
@@ -94,6 +95,9 @@ export {
   forwardRef,
   useImperativeHandle,
   useSyncExternalStore,
+  useFormStatus,
+  useActionState,
+  useOptimistic,
   Suspense,
   ErrorBoundary,
   createContext,
@@ -104,6 +108,7 @@ export {
   cloneElement,
   Children,
   Fragment,
+  Fragment as StrictMode,
   DOMAttributes,
   flushSync,
   createPortal,
@@ -131,6 +136,9 @@ export default {
   forwardRef,
   useImperativeHandle,
   useSyncExternalStore,
+  useFormStatus,
+  useActionState,
+  useOptimistic,
   Suspense,
   ErrorBoundary,
   createContext,
@@ -141,6 +149,7 @@ export default {
   cloneElement,
   Children,
   Fragment,
+  StrictMode: Fragment,
   flushSync,
   createPortal,
 }
