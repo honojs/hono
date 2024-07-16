@@ -146,17 +146,37 @@ export namespace JSX {
 
   export interface HTMLAttributes extends JSXAttributes, EventAttributes, AnyAttributes {
     accesskey?: string | undefined
+    autocapitalize?: 'off' | 'none' | 'on' | 'sentences' | 'words' | 'characters' | undefined
     autofocus?: boolean | undefined
     class?: string | Promise<string> | undefined
     contenteditable?: boolean | 'inherit' | undefined
     contextmenu?: string | undefined
     dir?: string | undefined
     draggable?: boolean | undefined
+    enterkeyhint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send' | undefined
     hidden?: boolean | undefined
     id?: string | undefined
+    inert?: boolean | undefined
+    inputmode?:
+      | 'none'
+      | 'text'
+      | 'tel'
+      | 'url'
+      | 'email'
+      | 'numeric'
+      | 'decimal'
+      | 'search'
+      | undefined
+    is?: string | undefined
+    itemid?: string | undefined
+    itemprop?: string | undefined
+    itemref?: string | undefined
+    itemscope?: boolean | undefined
+    itemtype?: string | undefined
     lang?: string | undefined
     nonce?: string | undefined
     placeholder?: string | undefined
+    popover?: string | undefined
     slot?: string | undefined
     spellcheck?: boolean | undefined
     style?: CSSProperties | undefined
@@ -354,7 +374,6 @@ export namespace JSX {
     capture?: boolean | 'user' | 'environment' | undefined // https://www.w3.org/TR/html-media-capture/#the-capture-attribute
     checked?: boolean | undefined
     disabled?: boolean | undefined
-    enterkeyhint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send' | undefined
     form?: string | undefined
     formenctype?: string | undefined
     formmethod?: string | undefined
