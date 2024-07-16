@@ -168,5 +168,8 @@ const formActionableElement = (
   }
   return newJSXNode(tag, props)
 }
-export const input = (props: PropsWithChildren) => formActionableElement('input', props)
-export const button = (props: PropsWithChildren) => formActionableElement('button', props)
+
+export const input: (props: PropsWithChildren) => unknown = (props) =>
+  formActionableElement('input', props)
+export const button: (props: PropsWithChildren) => unknown = (props) =>
+  formActionableElement('button', props)
