@@ -2,6 +2,7 @@
  * Provide hooks used only in jsx/dom
  */
 
+import type { Context } from '../../context'
 import { useContext } from '../../context'
 import { createContext } from '../context'
 import { useCallback, useState } from '../../hooks'
@@ -20,7 +21,7 @@ type FormStatus =
       method: 'get' | 'post'
       action: string | ((formData: FormData) => void | Promise<void>)
     }
-export const FormContext = createContext<FormStatus>({
+export const FormContext: Context<FormStatus> = createContext<FormStatus>({
   pending: false,
   data: null,
   method: null,

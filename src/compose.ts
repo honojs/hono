@@ -34,8 +34,8 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
   middleware: [[Function, unknown], ParamIndexMap | Params][],
   onError?: ErrorHandler<E>,
   onNotFound?: NotFoundHandler<E>
-) => {
-  return (context: C, next?: Function) => {
+): ((context: C, next?: Function) => Promise<C>) => {
+  return (context, next) => {
     let index = -1
     return dispatch(0)
 
