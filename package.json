@@ -25,12 +25,13 @@
     "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
     "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
-    "build": "rimraf dist && bun ./build.ts && bun run copy:package.cjs.json",
+    "build": "bun run --shell bun remove-dist && bun ./build.ts && bun run copy:package.cjs.json",
     "postbuild": "publint",
-    "watch": "rimraf dist && bun ./build.ts --watch && bun run copy:package.cjs.json",
+    "watch": "bun run --shell bun remove-dist && bun ./build.ts --watch && bun run copy:package.cjs.json",
     "coverage": "vitest --run --coverage",
     "prerelease": "bun test:deno && bun run build",
-    "release": "np"
+    "release": "np",
+    "remove-dist": "rm -rf dist"
   },
   "exports": {
     ".": {
@@ -587,7 +588,6 @@
     "np": "7.7.0",
     "prettier": "^2.6.2",
     "publint": "^0.1.8",
-    "rimraf": "^3.0.2",
     "supertest": "^6.3.3",
     "typescript": "^5.3.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
