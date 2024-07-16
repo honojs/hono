@@ -519,9 +519,15 @@ export class Context<
    *   await next()
    * })
    * ```
-```
    */
-  set: Set<E> = (key: unknown, value: unknown) => {
+  set: Set<
+    IsAny<E> extends true
+      ? {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          Variables: ContextVariableMap & Record<string, any>
+        }
+      : E
+  > = (key: string, value: unknown) => {
     this.#var ??= new Map()
     this.#var.set(key, value)
   }
@@ -539,7 +545,14 @@ export class Context<
    * })
    * ```
    */
-  get: Get<E> = (key: unknown) => {
+  get: Get<
+    IsAny<E> extends true
+      ? {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          Variables: ContextVariableMap & Record<string, any>
+        }
+      : E
+  > = (key: string) => {
     return this.#var ? this.#var.get(key) : undefined
   }
 
