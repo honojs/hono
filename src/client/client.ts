@@ -39,9 +39,9 @@ function clientRequestImpl(baseUrl: string, method: string) {
   return {
     fetch: async (
       args?: ValidationTargets<FormValue> & {
-        param?: Record<string, string>;
+        param?: Record<string, string>
       },
-      opt?: ClientRequestOptions,
+      opt?: ClientRequestOptions
     ) => {
       if (args) {
         if (args.query) {
@@ -92,8 +92,8 @@ function clientRequestImpl(baseUrl: string, method: string) {
         ...(typeof opt?.headers === 'function'
           ? await opt.headers()
           : opt?.headers
-            ? opt.headers
-            : {}),
+          ? opt.headers
+          : {}),
       }
 
       if (args?.cookie) {
@@ -134,7 +134,7 @@ function clientRequestImpl(baseUrl: string, method: string) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const hc = <T extends Hono<any, Schema, string>>(
   baseUrl: string,
-  options?: ClientRequestOptions,
+  options?: ClientRequestOptions
 ) =>
   createProxy(function proxyCallback(opts) {
     const parts = [...opts.path]
@@ -177,7 +177,7 @@ export const hc = <T extends Hono<any, Schema, string>>(
     if (method === 'ws') {
       const webSocketUrl = replaceUrlProtocol(
         opts.args[0] && opts.args[0].param ? replaceUrlParam(url, opts.args[0].param) : url,
-        'ws',
+        'ws'
       )
       const targetUrl = new URL(webSocketUrl)
       for (const key in opts.args[0]?.query ?? []) {
