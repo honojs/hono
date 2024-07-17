@@ -342,7 +342,6 @@ describe('Form - Multiple Values', () => {
   const client = hc('http://localhost/')
 
   it('Should get 200 response - query', async () => {
-    // @ts-expect-error `client['multiple-values'].$post` is not typed
     const res = await client['multiple-values'].$post({
       form: {
         key: ['foo', 'bar'],
