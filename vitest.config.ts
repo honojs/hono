@@ -10,7 +10,7 @@ export default defineConfig({
     globals: true,
     include: ['**/src/**/(*.)+(spec|test).+(ts|tsx|js)'],
     exclude: [...configDefaults.exclude, '**/sandbox/**', '**/*.case.test.+(ts|tsx|js)'],
-    setupFiles: ['./src/test-utils/setup-vitest.ts'],
+    setupFiles: ['./.vitest.config/setup-vitest.ts'],
     coverage: {
       enabled: true,
       provider: 'v8',
