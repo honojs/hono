@@ -21,7 +21,7 @@ export class LinearRouter<T> implements Router<T> {
   match(method: string, path: string): Result<T> {
     const handlers: [T, Params][] = []
     const routesLength = this.routes.length
-    ROUTES_LOOP: for (let i = 0, len = routesLength; i < len; i++) {
+    ROUTES_LOOP: for (let i = 0; i < routesLength; i++) {
       const [routeMethod, routePath, handler] = this.routes[i]
       if (routeMethod !== method && routeMethod !== METHOD_NAME_ALL) {
         continue
