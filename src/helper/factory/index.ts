@@ -221,7 +221,9 @@ export class Factory<E extends Env = any, P extends string = '/'> {
    * @experimental
    * `createApp` is an experimental feature.
    */
-  createApp = <A extends InitApp<E>>(init?: { initApp?: A }): ReturnType<A> extends void ? Hono<E, BlankSchema> : ReturnType<A> => {
+  createApp = <A extends InitApp<E>>(init?: {
+    initApp?: A
+  }): ReturnType<A> extends void ? Hono<E, BlankSchema> : ReturnType<A> => {
     if (init?.initApp) {
       this.initApp = init?.initApp
     }
