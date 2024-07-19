@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from '../../hono'
-import type { BlankEnv, BlankSchema, Env, H, HandlerResponse, Input, MergePath, MiddlewareHandler } from '../../types'
+import type { BlankSchema, Env, H, HandlerResponse, Input, MiddlewareHandler } from '../../types'
 
 type InitApp<E extends Env = Env> = (app: Hono<E>) => Hono<E> | void
 
@@ -210,7 +210,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
   ]
 }
 
-export class Factory<E extends Env = any, P extends string = "/"> {
+export class Factory<E extends Env = any, P extends string = '/'> {
   private initApp?: InitApp<E>
 
   constructor(init?: { initApp?: InitApp<E> }) {
@@ -230,7 +230,7 @@ export class Factory<E extends Env = any, P extends string = "/"> {
     if (this.initApp) {
       this.initApp(app)
     }
-    return app as ReturnType<A> extends void ? Hono<E, BlankSchema> : ReturnType<A>;
+    return app as ReturnType<A> extends void ? Hono<E, BlankSchema> : ReturnType<A>
   }
 
   createMiddleware = <I extends Input = {}>(middleware: MiddlewareHandler<E, P, I>) => middleware
@@ -241,15 +241,13 @@ export class Factory<E extends Env = any, P extends string = "/"> {
   }
 }
 
-export const createFactory = <E extends Env = any, P extends string = any>(
-  init?: {
-    /**
-      * @deprecated
-      * use `factory.createApp({ initApp })` instead of `createFactory({ initApp })` 
-      */
-    initApp?: InitApp<E>
-  }
-): Factory<E, P> => new Factory<E, P>(init)
+export const createFactory = <E extends Env = any, P extends string = any>(init?: {
+  /**
+   * @deprecated
+   * use `factory.createApp({ initApp })` instead of `createFactory({ initApp })`
+   */
+  initApp?: InitApp<E>
+}): Factory<E, P> => new Factory<E, P>(init)
 
 export const createMiddleware = <
   E extends Env = any,

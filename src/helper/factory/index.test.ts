@@ -222,23 +222,29 @@ describe('createApp', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('bar')
   })
-  
+
   const app2 = factory.createApp({
     initApp: (app) => {
-      return app.get("/", (c) => c.text("Hono is cool"))
-    }
+      return app.get('/', (c) => c.text('Hono is cool'))
+    },
   })
   it('Should set the correct type and initialize the app', async () => {
-    expectTypeOf(app2).toEqualTypeOf<Hono<Env, {
-      "/": {
-          $get: {
-              input: {};
-              output: "Hono is cool";
-              outputFormat: "text";
-              status: StatusCode;
-          };
-      };
-  }, "/">>()
+    expectTypeOf(app2).toEqualTypeOf<
+      Hono<
+        Env,
+        {
+          '/': {
+            $get: {
+              input: {}
+              output: 'Hono is cool'
+              outputFormat: 'text'
+              status: StatusCode
+            }
+          }
+        },
+        '/'
+      >
+    >()
     const res = await app2.request('/')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Hono is cool')
