@@ -1,5 +1,5 @@
 import type { Hono } from '../hono'
-import type { Endpoint, ResponseFormat, Schema } from '../types'
+import type { Endpoint, FormValue, ResponseFormat, Schema, ValidationTargets } from '../types'
 import type { StatusCode, SuccessStatusCode } from '../utils/http-status'
 import type { HasRequiredKeys } from '../utils/types'
 
@@ -170,8 +170,9 @@ export type Callback = (opts: CallbackOptions) => unknown
 
 interface CallbackOptions {
   path: string[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  args: any[]
+  args: (ValidationTargets<FormValue> & {
+    param?: Record<string, string>
+  })[]
 }
 
 export type ObjectType<T = unknown> = {

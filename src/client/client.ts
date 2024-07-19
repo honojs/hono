@@ -186,7 +186,7 @@ export const hc = <T extends Hono<any, Schema, string>>(
       const targetUrl = new URL(webSocketUrl)
       for (const key in opts.args[0]?.query ?? []) {
         const value = opts.args[0].query[key]
-        targetUrl.searchParams.set(key, Array.isArray(value) ? value.join(',') : value)
+        targetUrl.searchParams.set(key, Array.isArray(value) ? value.toString() : value)
       }
 
       return new WebSocket(targetUrl.toString())
