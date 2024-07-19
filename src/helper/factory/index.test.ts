@@ -204,7 +204,8 @@ describe('createHandler', () => {
 
 describe('createApp', () => {
   type Env = { Variables: { foo: string } }
-  const factory = createFactory<Env>({
+  const factory = createFactory<Env>()
+  const app = factory.createApp({
     initApp: (app) => {
       app.use((c, next) => {
         c.set('foo', 'bar')
@@ -212,7 +213,6 @@ describe('createApp', () => {
       })
     },
   })
-  const app = factory.createApp()
   it('Should set the correct type and initialize the app', async () => {
     app.get('/', (c) => {
       expectTypeOf(c.var.foo).toEqualTypeOf<string>()
@@ -221,6 +221,27 @@ describe('createApp', () => {
     const res = await app.request('/')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('bar')
+  })
+  
+  const app2 = factory.createApp({
+    initApp: (app) => {
+      return app.get("/", (c) => c.text("Hono is cool"))
+    }
+  })
+  it('Should set the correct type and initialize the app', async () => {
+    expectTypeOf(app2).toEqualTypeOf<Hono<Env, {
+      "/": {
+          $get: {
+              input: {};
+              output: "Hono is cool";
+              outputFormat: "text";
+              status: StatusCode;
+          };
+      };
+  }, "/">>()
+    const res = await app2.request('/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Hono is cool')
   })
 })
 
