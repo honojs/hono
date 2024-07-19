@@ -23,6 +23,10 @@ export type ValidationFunction<
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ExcludeResponseType<T> = T extends Response & TypedResponse<any> ? never : T
 
+const jsonRegex = /^application\/([a-z-\.]+\+)?json$/
+const multipartRegex = /^multipart\/form-data(; boundary=[A-Za-z0-9'()+_,\-./:=?]+)?$/
+const urlencodedRegex = /^application\/x-www-form-urlencoded$/
+
 export const validator = <
   InputType,
   P extends string,
@@ -67,9 +71,8 @@ export const validator = <
 
     switch (target) {
       case 'json':
-        if (!contentType || !/^application\/([a-z-\.]+\+)?json/.test(contentType)) {
-          const message = `Invalid HTTP header: Content-Type=${contentType}`
-          throw new HTTPException(400, { message })
+        if (!contentType || !jsonRegex.test(contentType)) {
+          break
         }
         try {
           value = await c.req.json()
@@ -79,7 +82,10 @@ export const validator = <
         }
         break
       case 'form': {
-        if (!contentType) {
+        if (
+          !contentType ||
+          !(multipartRegex.test(contentType) || urlencodedRegex.test(contentType))
+        ) {
           break
         }
 
