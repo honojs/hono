@@ -11,6 +11,7 @@ import type { CookiePrefixOptions } from '../../utils/cookie'
 import { Jwt } from '../../utils/jwt'
 import '../../context'
 import type { SignatureAlgorithm } from '../../utils/jwt/jwa'
+import { SignatureKey } from '../../utils/jwt/jws'
 
 export type JwtVariables = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,7 +24,7 @@ export type JwtVariables = {
  * @see {@link https://hono.dev/docs/middleware/builtin/jwt}
  *
  * @param {object} options - The options for the JWT middleware.
- * @param {string} [options.secret] - A value of your secret key.
+ * @param {SignatureKey} [options.secret] - A value of your secret key.
  * @param {string} [options.cookie] - If this value is set, then the value is retrieved from the cookie header using that value as a key, which is then validated as a token.
  * @param {SignatureAlgorithm} [options.alg=HS256] - An algorithm type that is used for verifying. Available types are `HS256` | `HS384` | `HS512` | `RS256` | `RS384` | `RS512` | `PS256` | `PS384` | `PS512` | `ES256` | `ES384` | `ES512` | `EdDSA`.
  * @returns {MiddlewareHandler} The middleware handler function.
@@ -45,7 +46,7 @@ export type JwtVariables = {
  * ```
  */
 export const jwt = (options: {
-  secret: string
+  secret: SignatureKey
   cookie?:
     | string
     | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
