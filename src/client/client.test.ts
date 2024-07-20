@@ -1079,9 +1079,10 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
       query: {
         id: '123',
         type: 'test',
+        tag: ['a', 'b'],
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index?id=123&type=test')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index?id=123&type=test&tag=a&tag=b')
   })
 
   it('Translates HTTPS to wss and includes query parameters', async () => {

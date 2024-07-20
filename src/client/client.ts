@@ -183,8 +183,16 @@ export const hc = <T extends Hono<any, any, any>>(
         'ws'
       )
       const targetUrl = new URL(webSocketUrl)
-      for (const key in opts.args[0]?.query) {
-        targetUrl.searchParams.set(key, opts.args[0].query[key])
+
+      const queryParams: Record<string, string | string[]> | undefined = opts.args[0]?.query
+      if (queryParams) {
+        Object.entries(queryParams).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            value.forEach((item) => targetUrl.searchParams.append(key, item))
+          } else {
+            targetUrl.searchParams.set(key, value)
+          }
+        })
       }
 
       return new WebSocket(targetUrl.toString())
