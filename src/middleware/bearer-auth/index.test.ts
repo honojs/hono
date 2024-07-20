@@ -29,6 +29,12 @@ describe('Bearer Auth by Middleware', () => {
       return c.text('auth bot')
     })
 
+    app.use('/apiKey/*', bearerAuth({ token, prefix: '', headerName: 'X-Api-Key' }))
+    app.get('/apiKey/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth apiKey')
+    })
+
     app.use('/nested/*', async (c, next) => {
       const auth = bearerAuth({ token })
       return auth(c, next)
@@ -124,6 +130,26 @@ describe('Bearer Auth by Middleware', () => {
     expect(handlerExecuted).toBeFalsy()
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('Bad Request')
+  })
+
+  it('Should authorize', async () => {
+    const req = new Request('http://localhost/apiKey/a')
+    req.headers.set('X-Api-Key', 'abcdefg12345-._~+/=')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(handlerExecuted).toBeTruthy()
+    expect(await res.text()).toBe('auth apiKey')
+  })
+
+  it('Should not authorize - invalid request', async () => {
+    const req = new Request('http://localhost/apiKey/a')
+    req.headers.set('Authorization', 'Bearer abcdefg12345-._~+/=')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(handlerExecuted).toBeFalsy()
+    expect(res.status).toBe(401)
+    expect(await res.text()).toBe('Unauthorized')
   })
 
   it('Should authorize - nested', async () => {
