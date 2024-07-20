@@ -11,7 +11,7 @@ import type { CookiePrefixOptions } from '../../utils/cookie'
 import { Jwt } from '../../utils/jwt'
 import '../../context'
 import type { SignatureAlgorithm } from '../../utils/jwt/jwa'
-import { SignatureKey } from '../../utils/jwt/jws'
+import type { SignatureKey } from '../../utils/jwt/jws'
 
 export type JwtVariables = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
