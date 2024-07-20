@@ -37,7 +37,7 @@ type BearerAuthOptions =
  * @param {string | string[]} [options.token] - The string or array of strings to validate the incoming bearer token against.
  * @param {Function} [options.verifyToken] - The function to verify the token.
  * @param {string} [options.realm=""] - The domain name of the realm, as part of the returned WWW-Authenticate challenge header.
- * @param {string} [options.prefix="Bearer"] - The prefix (or known as `schema`) for the Authorization header value.
+ * @param {string} [options.prefix="Bearer"] - The prefix (or known as `schema`) for the Authorization header value. If set to the empty string, no prefix is expected.
  * @param {string} [options.headerName=Authorization] - The header name.
  * @param {Function} [options.hashFunction] - A function to handle hashing for safe comparison of authentication tokens.
  * @returns {MiddlewareHandler} The middleware handler function.
@@ -64,33 +64,34 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
   if (!options.realm) {
     options.realm = ''
   }
-  if (!options.prefix) {
+  if (options.prefix === undefined) {
     options.prefix = PREFIX
   }
 
   const realm = options.realm?.replace(/"/g, '\\"')
+  const prefixRegexStr = options.prefix === '' ? '' : `${options.prefix} +`
+  const regexp = new RegExp(`^${prefixRegexStr}(${TOKEN_STRINGS}) *$`)
+  const wwwAuthenticatePrefix = options.prefix === '' ? '' : `${options.prefix} `
 
   return async function bearerAuth(c, next) {
     const headerToken = c.req.header(options.headerName || HEADER)
-
     if (!headerToken) {
       // No Authorization header
       const res = new Response('Unauthorized', {
         status: 401,
         headers: {
-          'WWW-Authenticate': `${options.prefix} realm="` + realm + '"',
+          'WWW-Authenticate': `${wwwAuthenticatePrefix}realm="` + realm + '"',
         },
       })
       throw new HTTPException(401, { res })
     } else {
-      const regexp = new RegExp('^' + options.prefix + ' +(' + TOKEN_STRINGS + ') *$')
       const match = regexp.exec(headerToken)
       if (!match) {
         // Invalid Request
         const res = new Response('Bad Request', {
           status: 400,
           headers: {
-            'WWW-Authenticate': `${options.prefix} error="invalid_request"`,
+            'WWW-Authenticate': `${wwwAuthenticatePrefix}error="invalid_request"`,
           },
         })
         throw new HTTPException(400, { res })
@@ -113,7 +114,7 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
           const res = new Response('Unauthorized', {
             status: 401,
             headers: {
-              'WWW-Authenticate': `${options.prefix} error="invalid_token"`,
+              'WWW-Authenticate': `${wwwAuthenticatePrefix}error="invalid_token"`,
             },
           })
           throw new HTTPException(401, { res })
