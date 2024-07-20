@@ -217,10 +217,6 @@ export class Factory<E extends Env = any, P extends string = any> {
     this.initApp = init?.initApp
   }
 
-  /**
-   * @experimental
-   * `createApp` is an experimental feature.
-   */
   createApp = (): Hono<E> => {
     const app = new Hono<E>()
     if (this.initApp) {
