@@ -6,7 +6,6 @@ import { HTTPException } from '../http-exception'
 import type {
   ErrorHandler,
   ExtractSchema,
-  FormValue,
   MiddlewareHandler,
   ParsedFormValue,
   ValidationTargets,
@@ -39,7 +38,7 @@ const zodValidator = <
     return data
   })
 
-describe('Validator middleware', () => {
+describe('Basic', () => {
   const app = new Hono()
 
   const route = app.get(
@@ -93,77 +92,160 @@ const onErrorHandler: ErrorHandler = (e, c) => {
   return c.json({ message: e.message }, 500)
 }
 
-describe('Malformed JSON', () => {
+describe('JSON', () => {
   const app = new Hono()
   app.post(
     '/post',
-    validator('json', (value, c) => {}),
+    validator('json', (value) => value),
     (c) => {
-      return c.text('Valid!')
+      return c.json(c.req.valid('json'))
     }
   )
-  app.onError(onErrorHandler)
 
-  it('Should return 400 response', async () => {
+  it('Should return 200 response with a valid JSON data', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
+      body: JSON.stringify({ foo: 'bar' }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
     })
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data).toEqual({ foo: 'bar' })
   })
 
-  it('Should return 400 response, for request with wrong Content-Type header', async () => {
+  it('Should not validate if Content-Type is not set', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      body: JSON.stringify({ foo: 'bar' }),
+    })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.foo).toBeUndefined()
+  })
+
+  it('Should not validate if Content-Type is wrong', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
       },
-      body: JSON.stringify({
-        any: 'thing',
-      }),
+      body: JSON.stringify({ foo: 'bar' }),
     })
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(200)
   })
 
-  it('Should return 200 response, for request with Content-Type which is a subtype like application/merge-patch+json', async () => {
+  it('Should validate if Content-Type is a subtype like application/merge-patch+json', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/merge-patch+json',
       },
-      body: JSON.stringify({
-        any: 'thing',
-      }),
+      body: JSON.stringify({ foo: 'bar' }),
     })
     expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ foo: 'bar' })
   })
 
-  it('Should return 200 response, for request with JSON:API Content-Type application/vnd.api+json', async () => {
+  it('Should validate if Content-Type is application/vnd.api+json', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/vnd.api+json',
       },
-      body: JSON.stringify({
-        any: 'thing',
-      }),
+      body: JSON.stringify({ foo: 'bar' }),
     })
     expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ foo: 'bar' })
   })
 
-  it('Should return 400 response, if Content-Type header does not start with application/json', async () => {
+  it('Should not validate if Content-Type does not start with application/json', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
         'Content-Type': 'Xapplication/json',
       },
-      body: JSON.stringify({
-        any: 'thing',
-      }),
+      body: JSON.stringify({ foo: 'bar' }),
+    })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.foo).toBeUndefined()
+  })
+})
+
+describe('Malformed JSON', () => {
+  const app = new Hono()
+  app.post(
+    '/post',
+    validator('json', (value) => value),
+    (c) => {
+      return c.json(c.req.valid('json'))
+    }
+  )
+
+  it('Should return 400 response if the body data is not a valid JSON', async () => {
+    const formData = new FormData()
+    formData.append('foo', 'bar')
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: formData,
     })
     expect(res.status).toBe(400)
+  })
+})
+
+describe('FormData', () => {
+  const app = new Hono()
+  app.post(
+    '/post',
+    validator('form', (value) => value),
+    (c) => {
+      return c.json(c.req.valid('form'))
+    }
+  )
+
+  it('Should return 200 response with a valid form data', async () => {
+    const formData = new FormData()
+    formData.append('message', 'hi')
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      body: formData,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ message: 'hi' })
+  })
+
+  it('Should validate a URL Encoded Data', async () => {
+    const params = new URLSearchParams()
+    params.append('foo', 'bar')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: params,
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+    })
+    expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
-      success: false,
-      message: 'Invalid HTTP header: Content-Type=Xapplication/json',
+      foo: 'bar',
+    })
+  })
+
+  it('Should return `foo[]` as an array', async () => {
+    const form = new FormData()
+    form.append('foo[]', 'bar1')
+    form.append('foo[]', 'bar2')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: form,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      'foo[]': ['bar1', 'bar2'],
     })
   })
 })
@@ -172,23 +254,12 @@ describe('Malformed FormData request', () => {
   const app = new Hono()
   app.post(
     '/post',
-    validator('form', (value, c) => ({})),
+    validator('form', (value) => value),
     (c) => {
-      return c.text('Valid!')
+      return c.json(c.req.valid('form'))
     }
   )
   app.onError(onErrorHandler)
-
-  it('Should return 400 response, for unsupported content type header', async () => {
-    const res = await app.request('http://localhost/post', {
-      method: 'POST',
-      body: 'hi',
-    })
-    expect(res.status).toBe(400)
-    const data = await res.json()
-    expect(data['success']).toBe(false)
-    expect(data['message']).toMatch(/^Malformed FormData request./)
-  })
 
   it('Should return 400 response, for malformed content type header', async () => {
     const res = await app.request('http://localhost/post', {
@@ -202,6 +273,48 @@ describe('Malformed FormData request', () => {
     const data = await res.json()
     expect(data['success']).toBe(false)
     expect(data['message']).toMatch(/^Malformed FormData request./)
+  })
+})
+
+describe('JSON and FormData', () => {
+  const app = new Hono()
+  app.post(
+    '/',
+    validator('json', (value) => value),
+    validator('form', (value) => value),
+    async (c) => {
+      const jsonData = c.req.valid('json')
+      const formData = c.req.valid('form')
+      return c.json({
+        json: jsonData,
+        form: formData,
+      })
+    }
+  )
+
+  it('Should validate a JSON request', async () => {
+    const res = await app.request('/', {
+      method: 'POST',
+      body: JSON.stringify({ foo: 'bar' }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.json).toEqual({ foo: 'bar' })
+  })
+
+  it('Should validate a FormData request', async () => {
+    const form = new FormData()
+    form.append('foo', 'bar')
+    const res = await app.request('/', {
+      method: 'POST',
+      body: form,
+    })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.form).toEqual({ foo: 'bar' })
   })
 })
 
@@ -247,7 +360,7 @@ describe('Cached contents', () => {
     }
   })
 
-  describe('form', () => {
+  describe('Cached content', () => {
     const app = new Hono()
     const bodyTypes = ['formData', 'text', 'arrayBuffer', 'blob']
 
@@ -284,33 +397,6 @@ describe('Cached contents', () => {
         expect(await res.json()).toEqual({ message: 'OK' })
       })
     }
-  })
-})
-
-describe('Form with multiple values', () => {
-  const app = new Hono()
-
-  app.post(
-    '/',
-    validator('form', (value) => value),
-    async (c) => {
-      const data = c.req.valid('form')
-      return c.json(data)
-    }
-  )
-
-  it('Should return `foo[]` as an array', async () => {
-    const form = new FormData()
-    form.append('foo[]', 'bar1')
-    form.append('foo[]', 'bar2')
-    const res = await app.request('/', {
-      method: 'POST',
-      body: form,
-    })
-    expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({
-      'foo[]': ['bar1', 'bar2'],
-    })
   })
 })
 
