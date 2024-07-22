@@ -47,12 +47,8 @@ export const getRuntimeKey = (): Runtime => {
   const global = globalThis as any
 
   // check if the current runtime supports navigator.userAgent
-  let userAgentSupported = false
-  // In Cloudflare Pages, navigator is undefined in the production environment.
-  // Therefore, it only check navigator.userAgent.
-  try {
-    userAgentSupported = typeof navigator.userAgent === 'string'
-  } catch {}
+  const userAgentSupported =
+    typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string'
 
   // if supported, check the user agent
   if (userAgentSupported) {
