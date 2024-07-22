@@ -56,6 +56,8 @@ export type JSONParsed<T> = T extends { toJSON(): infer J }
   ? [JSONParsed<InvalidToNull<R>>, ...JSONParsed<U>]
   : T extends Array<infer U>
   ? Array<JSONParsed<InvalidToNull<U>>>
+  : T extends ReadonlyArray<infer U>
+  ? ReadonlyArray<JSONParsed<InvalidToNull<U>>>
   : T extends Set<unknown> | Map<unknown, unknown>
   ? {}
   : T extends object
