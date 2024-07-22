@@ -204,7 +204,7 @@ export const secureHeaders = (
         : callbacks.reduce((acc, cb) => cb(ctx, acc), headersToSet)
     await next()
     setHeaders(ctx, headersToSetForReq)
-    if (internalOptions.removePoweredBy) {
+    if (internalOptions && internalOptions.removePoweredBy) {
       ctx.res.headers.delete('X-Powered-By')
     }
   }
