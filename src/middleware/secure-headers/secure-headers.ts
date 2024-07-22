@@ -74,6 +74,10 @@ interface SecureHeadersOptions {
   xXssProtection?: overridableHeader
 }
 
+interface InternalOptions {
+  removePoweredBy?: boolean
+}
+
 type HeadersMap = {
   [key in keyof SecureHeadersOptions]: [string, string]
 }
@@ -93,7 +97,7 @@ const HEADERS_MAP: HeadersMap = {
   xXssProtection: ['X-XSS-Protection', '0'],
 }
 
-const DEFAULT_OPTIONS: SecureHeadersOptions = {
+const HEADERS_DEFAULT_OPTIONS: SecureHeadersOptions = {
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: true,
   crossOriginOpenerPolicy: true,
@@ -106,6 +110,10 @@ const DEFAULT_OPTIONS: SecureHeadersOptions = {
   xFrameOptions: true,
   xPermittedCrossDomainPolicies: true,
   xXssProtection: true,
+}
+
+const INTERNAL_DEFAULT_OPTIONS: InternalOptions = {
+  removePoweredBy: true,
 }
 
 type SecureHeadersCallback = (
@@ -159,25 +167,32 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
  * app.use(secureHeaders())
  * ```
  */
-export const secureHeaders = (customOptions?: SecureHeadersOptions): MiddlewareHandler => {
-  const options = { ...DEFAULT_OPTIONS, ...customOptions }
-  const headersToSet = getFilteredHeaders(options)
+export const secureHeaders = (
+  secureHeadersOptions?: SecureHeadersOptions,
+  internalOptions?: InternalOptions
+): MiddlewareHandler => {
+  secureHeadersOptions = { ...HEADERS_DEFAULT_OPTIONS, ...secureHeadersOptions }
+  internalOptions = { ...INTERNAL_DEFAULT_OPTIONS, ...internalOptions }
+  const headersToSet = getFilteredHeaders(secureHeadersOptions)
   const callbacks: SecureHeadersCallback[] = []
 
-  if (options.contentSecurityPolicy) {
-    const [callback, value] = getCSPDirectives(options.contentSecurityPolicy)
+  if (secureHeadersOptions.contentSecurityPolicy) {
+    const [callback, value] = getCSPDirectives(secureHeadersOptions.contentSecurityPolicy)
     if (callback) {
       callbacks.push(callback)
     }
     headersToSet.push(['Content-Security-Policy', value as string])
   }
 
-  if (options.reportingEndpoints) {
-    headersToSet.push(['Reporting-Endpoints', getReportingEndpoints(options.reportingEndpoints)])
+  if (secureHeadersOptions.reportingEndpoints) {
+    headersToSet.push([
+      'Reporting-Endpoints',
+      getReportingEndpoints(secureHeadersOptions.reportingEndpoints),
+    ])
   }
 
-  if (options.reportTo) {
-    headersToSet.push(['Report-To', getReportToOptions(options.reportTo)])
+  if (secureHeadersOptions.reportTo) {
+    headersToSet.push(['Report-To', getReportToOptions(secureHeadersOptions.reportTo)])
   }
 
   return async function secureHeaders(ctx, next) {
@@ -189,7 +204,9 @@ export const secureHeaders = (customOptions?: SecureHeadersOptions): MiddlewareH
         : callbacks.reduce((acc, cb) => cb(ctx, acc), headersToSet)
     await next()
     setHeaders(ctx, headersToSetForReq)
-    ctx.res.headers.delete('X-Powered-By')
+    if (internalOptions.removePoweredBy) {
+      ctx.res.headers.delete('X-Powered-By')
+    }
   }
 }
 
