@@ -405,4 +405,33 @@ describe('Secure Headers Middleware', () => {
     expect(csp).toMatch(`style-src 'self' 'nonce-styleSrc'`)
     expect(await res.text()).toEqual('script: scriptSrc, style: styleSrc')
   })
+
+  it('Remove X-Powered-By', async () => {
+    const app = new Hono()
+
+    app.get('/test', secureHeaders(), poweredBy(), async (c) => {
+      return c.text('Hono is cool')
+    })
+
+    app.get(
+      '/test2',
+      secureHeaders(undefined, {
+        removePoweredBy: false,
+      }),
+      poweredBy(),
+      async (c) => {
+        return c.text('Hono is cool')
+      }
+    )
+
+    const res = await app.request('/test')
+    const poweredby = res.headers.get('X-Powered-By')
+    expect(poweredby).toEqual(null)
+    expect(await res.text()).toEqual('Hono is cool')
+
+    const res2 = await app.request('/test2')
+    const poweredby2 = res2.headers.get('X-Powered-By')
+    expect(poweredby2).toEqual('Hono')
+    expect(await res2.text()).toEqual('Hono is cool')
+  })
 })
