@@ -415,7 +415,7 @@ describe('Secure Headers Middleware', () => {
 
     app.get(
       '/test2',
-      secureHeaders(undefined, {
+      secureHeaders({}, {
         removePoweredBy: false,
       }),
       poweredBy(),
