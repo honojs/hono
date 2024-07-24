@@ -72,10 +72,7 @@ interface SecureHeadersOptions {
   xFrameOptions?: overridableHeader
   xPermittedCrossDomainPolicies?: overridableHeader
   xXssProtection?: overridableHeader
-}
-
-interface InternalOptions {
-  removePoweredBy?: boolean
+  xPoweredBy?: overridableHeader
 }
 
 type HeadersMap = {
@@ -110,10 +107,7 @@ const HEADERS_DEFAULT_OPTIONS: SecureHeadersOptions = {
   xFrameOptions: true,
   xPermittedCrossDomainPolicies: true,
   xXssProtection: true,
-}
-
-const INTERNAL_DEFAULT_OPTIONS: InternalOptions = {
-  removePoweredBy: true,
+  xPoweredBy: false,
 }
 
 type SecureHeadersCallback = (
@@ -167,12 +161,9 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
  * app.use(secureHeaders())
  * ```
  */
-export const secureHeaders = (
-  secureHeadersOptions?: SecureHeadersOptions,
-  internalOptions?: InternalOptions
-): MiddlewareHandler => {
+export const secureHeaders = (secureHeadersOptions?: SecureHeadersOptions): MiddlewareHandler => {
   secureHeadersOptions = { ...HEADERS_DEFAULT_OPTIONS, ...secureHeadersOptions }
-  internalOptions = { ...INTERNAL_DEFAULT_OPTIONS, ...internalOptions }
+
   const headersToSet = getFilteredHeaders(secureHeadersOptions)
   const callbacks: SecureHeadersCallback[] = []
 
@@ -204,7 +195,8 @@ export const secureHeaders = (
         : callbacks.reduce((acc, cb) => cb(ctx, acc), headersToSet)
     await next()
     setHeaders(ctx, headersToSetForReq)
-    if (internalOptions && internalOptions.removePoweredBy) {
+
+    if (!secureHeadersOptions?.xPoweredBy) {
       ctx.res.headers.delete('X-Powered-By')
     }
   }
