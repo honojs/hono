@@ -72,7 +72,7 @@ interface SecureHeadersOptions {
   xFrameOptions?: overridableHeader
   xPermittedCrossDomainPolicies?: overridableHeader
   xXssProtection?: overridableHeader
-  xPoweredBy?: overridableHeader
+  removePoweredBy?: overridableHeader
 }
 
 type HeadersMap = {
@@ -107,7 +107,7 @@ const HEADERS_DEFAULT_OPTIONS: SecureHeadersOptions = {
   xFrameOptions: true,
   xPermittedCrossDomainPolicies: true,
   xXssProtection: true,
-  xPoweredBy: false,
+  removePoweredBy: true,
 }
 
 type SecureHeadersCallback = (
@@ -196,7 +196,7 @@ export const secureHeaders = (secureHeadersOptions?: SecureHeadersOptions): Midd
     await next()
     setHeaders(ctx, headersToSetForReq)
 
-    if (!secureHeadersOptions?.xPoweredBy) {
+    if (secureHeadersOptions?.removePoweredBy) {
       ctx.res.headers.delete('X-Powered-By')
     }
   }
