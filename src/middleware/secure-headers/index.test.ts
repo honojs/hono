@@ -415,12 +415,9 @@ describe('Secure Headers Middleware', () => {
 
     app.get(
       '/test2',
-      secureHeaders(
-        {},
-        {
-          removePoweredBy: false,
-        }
-      ),
+      secureHeaders({
+        xPoweredBy: true,
+      }),
       poweredBy(),
       async (c) => {
         return c.text('Hono is cool')
