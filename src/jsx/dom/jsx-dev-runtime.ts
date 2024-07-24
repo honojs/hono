@@ -5,10 +5,13 @@
 
 import type { JSXNode, Props } from '../base'
 import { newJSXNode } from './utils'
+import * as intrinsicElementTags from './intrinsic-element/components'
 
 export const jsxDEV = (tag: string | Function, props: Props, key?: string): JSXNode => {
   return newJSXNode({
-    tag,
+    tag:
+      (typeof tag === 'string' && intrinsicElementTags[tag as keyof typeof intrinsicElementTags]) ||
+      tag,
     props,
     key,
   })

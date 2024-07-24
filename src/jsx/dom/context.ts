@@ -2,11 +2,11 @@ import type { Child } from '../base'
 import { DOM_ERROR_HANDLER } from '../constants'
 import type { Context } from '../context'
 import { globalContexts } from '../context'
-import { Fragment } from './jsx-runtime'
-import { setInternalTagFlag } from './utils'
+import { newJSXNode, setInternalTagFlag } from './utils'
 
-export const createContextProviderFunction = <T>(values: T[]): Function =>
-  setInternalTagFlag(({ value, children }: { value: T; children: Child[] }) => {
+export const createContextProviderFunction =
+  <T>(values: T[]): Function =>
+  ({ value, children }: { value: T; children: Child[] }) => {
     if (!children) {
       return undefined
     }
@@ -33,22 +33,20 @@ export const createContextProviderFunction = <T>(values: T[]): Function =>
       }),
       props: {},
     })
-    const res = Fragment(props)
+    const res = newJSXNode({ tag: '', props })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(res as any)[DOM_ERROR_HANDLER] = (err: unknown) => {
       values.pop()
       throw err
     }
     return res
-  })
+  }
 
 export const createContext = <T>(defaultValue: T): Context<T> => {
   const values = [defaultValue]
-  const context = {
-    values,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Provider: createContextProviderFunction(values) as any,
-  }
-  globalContexts.push(context)
+  const context: Context<T> = createContextProviderFunction(values) as Context<T>
+  context.values = values
+  context.Provider = context
+  globalContexts.push(context as Context<unknown>)
   return context
 }

@@ -146,23 +146,44 @@ export namespace JSX {
 
   export interface HTMLAttributes extends JSXAttributes, EventAttributes, AnyAttributes {
     accesskey?: string | undefined
+    autocapitalize?: 'off' | 'none' | 'on' | 'sentences' | 'words' | 'characters' | undefined
     autofocus?: boolean | undefined
     class?: string | Promise<string> | undefined
     contenteditable?: boolean | 'inherit' | undefined
     contextmenu?: string | undefined
     dir?: string | undefined
     draggable?: boolean | undefined
+    enterkeyhint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send' | undefined
     hidden?: boolean | undefined
     id?: string | undefined
+    inert?: boolean | undefined
+    inputmode?:
+      | 'none'
+      | 'text'
+      | 'tel'
+      | 'url'
+      | 'email'
+      | 'numeric'
+      | 'decimal'
+      | 'search'
+      | undefined
+    is?: string | undefined
+    itemid?: string | undefined
+    itemprop?: string | undefined
+    itemref?: string | undefined
+    itemscope?: boolean | undefined
+    itemtype?: string | undefined
     lang?: string | undefined
     nonce?: string | undefined
     placeholder?: string | undefined
+    popover?: string | undefined
     slot?: string | undefined
     spellcheck?: boolean | undefined
     style?: CSSProperties | undefined
     tabindex?: number | undefined
     title?: string | undefined
     translate?: 'yes' | 'no' | undefined
+    itemProp?: string | undefined
   }
 
   type HTMLAttributeReferrerPolicy =
@@ -222,6 +243,9 @@ export namespace JSX {
     name?: string | undefined
     type?: 'submit' | 'reset' | 'button' | undefined
     value?: string | ReadonlyArray<string> | number | undefined
+
+    // React 19 compatibility
+    formAction?: string | Function | undefined
   }
 
   interface CanvasHTMLAttributes extends HTMLAttributes {
@@ -276,6 +300,9 @@ export namespace JSX {
     name?: string | undefined
     novalidate?: boolean | undefined
     target?: string | undefined
+
+    // React 19 compatibility
+    action?: string | Function | undefined
   }
 
   interface HtmlHTMLAttributes extends HTMLAttributes {
@@ -347,7 +374,6 @@ export namespace JSX {
     capture?: boolean | 'user' | 'environment' | undefined // https://www.w3.org/TR/html-media-capture/#the-capture-attribute
     checked?: boolean | undefined
     disabled?: boolean | undefined
-    enterkeyhint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send' | undefined
     form?: string | undefined
     formenctype?: string | undefined
     formmethod?: string | undefined
@@ -371,6 +397,9 @@ export namespace JSX {
     type?: HTMLInputTypeAttribute | undefined
     value?: string | ReadonlyArray<string> | number | undefined
     width?: number | string | undefined
+
+    // React 19 compatibility
+    formAction?: string | Function | undefined
   }
 
   interface KeygenHTMLAttributes extends HTMLAttributes {
@@ -403,6 +432,15 @@ export namespace JSX {
     sizes?: string | undefined
     type?: string | undefined
     charSet?: string | undefined
+
+    // React 19 compatibility
+    rel?: string | undefined
+    precedence?: string | undefined
+    title?: string | undefined
+    disabled?: boolean | undefined
+    onError?: ((event: Event) => void) | undefined
+    onLoad?: ((event: Event) => void) | undefined
+    blocking?: 'render' | undefined
   }
 
   interface MapHTMLAttributes extends HTMLAttributes {
@@ -432,6 +470,9 @@ export namespace JSX {
     name?: string | undefined
     media?: string | undefined
     content?: string | undefined
+
+    // React 19 compatibility
+    httpEquiv?: string | undefined
   }
 
   interface MeterHTMLAttributes extends HTMLAttributes {
@@ -505,6 +546,15 @@ export namespace JSX {
     referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
     src?: string | undefined
     type?: string | undefined
+
+    // React 19 compatibility
+    crossOrigin?: CrossOrigin
+    fetchPriority?: string | undefined
+    noModule?: boolean | undefined
+    referrer?: HTMLAttributeReferrerPolicy | undefined
+    onError?: ((event: Event) => void) | undefined
+    onLoad?: ((event: Event) => void) | undefined
+    blocking?: 'render' | undefined
   }
 
   interface SelectHTMLAttributes extends HTMLAttributes {
@@ -532,6 +582,13 @@ export namespace JSX {
     media?: string | undefined
     scoped?: boolean | undefined
     type?: string | undefined
+
+    // React 19 compatibility
+    href?: string | undefined
+    precedence?: string | undefined
+    title?: string | undefined
+    disabled?: boolean | undefined
+    blocking?: 'render' | undefined
   }
 
   interface TableHTMLAttributes extends HTMLAttributes {

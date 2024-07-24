@@ -26,7 +26,9 @@ export type IfAnyThenEmptyObject<T> = 0 extends 1 & T ? {} : T
 
 export type JSONPrimitive = string | boolean | number | null
 export type JSONArray = (JSONPrimitive | JSONObject | JSONArray)[]
-export type JSONObject = { [key: string]: JSONPrimitive | JSONArray | JSONObject | object }
+export type JSONObject = {
+  [key: string]: JSONPrimitive | JSONArray | JSONObject | object | InvalidJSONValue
+}
 export type InvalidJSONValue = undefined | symbol | ((...args: unknown[]) => unknown)
 
 type InvalidToNull<T> = T extends InvalidJSONValue ? null : T
@@ -56,6 +58,8 @@ export type JSONParsed<T> = T extends { toJSON(): infer J }
   ? [JSONParsed<InvalidToNull<R>>, ...JSONParsed<U>]
   : T extends Array<infer U>
   ? Array<JSONParsed<InvalidToNull<U>>>
+  : T extends ReadonlyArray<infer U>
+  ? ReadonlyArray<JSONParsed<InvalidToNull<U>>>
   : T extends Set<unknown> | Map<unknown, unknown>
   ? {}
   : T extends object

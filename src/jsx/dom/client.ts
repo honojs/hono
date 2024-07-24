@@ -82,3 +82,8 @@ export const hydrateRoot = (
   root.render(reactNode)
   return root
 }
+
+export default {
+  createRoot,
+  hydrateRoot,
+}

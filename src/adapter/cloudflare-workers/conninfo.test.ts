@@ -14,5 +14,6 @@ describe('getConnInfo', () => {
     const info = getConnInfo(c)
 
     expect(info.remote.address).toBe(address)
+    expect(info.remote.addressType).toBeUndefined()
   })
 })
