@@ -94,7 +94,7 @@ const HEADERS_MAP: HeadersMap = {
   xXssProtection: ['X-XSS-Protection', '0'],
 }
 
-const HEADERS_DEFAULT_OPTIONS: SecureHeadersOptions = {
+const DEFAULT_OPTIONS: SecureHeadersOptions = {
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: true,
   crossOriginOpenerPolicy: true,
@@ -161,29 +161,29 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
  * app.use(secureHeaders())
  * ```
  */
-export const secureHeaders = (secureHeadersOptions?: SecureHeadersOptions): MiddlewareHandler => {
-  secureHeadersOptions = { ...HEADERS_DEFAULT_OPTIONS, ...secureHeadersOptions }
+export const secureHeaders = (options?: SecureHeadersOptions): MiddlewareHandler => {
+  options = { ...DEFAULT_OPTIONS, ...options }
 
-  const headersToSet = getFilteredHeaders(secureHeadersOptions)
+  const headersToSet = getFilteredHeaders(options)
   const callbacks: SecureHeadersCallback[] = []
 
-  if (secureHeadersOptions.contentSecurityPolicy) {
-    const [callback, value] = getCSPDirectives(secureHeadersOptions.contentSecurityPolicy)
+  if (options.contentSecurityPolicy) {
+    const [callback, value] = getCSPDirectives(options.contentSecurityPolicy)
     if (callback) {
       callbacks.push(callback)
     }
     headersToSet.push(['Content-Security-Policy', value as string])
   }
 
-  if (secureHeadersOptions.reportingEndpoints) {
+  if (options.reportingEndpoints) {
     headersToSet.push([
       'Reporting-Endpoints',
-      getReportingEndpoints(secureHeadersOptions.reportingEndpoints),
+      getReportingEndpoints(options.reportingEndpoints),
     ])
   }
 
-  if (secureHeadersOptions.reportTo) {
-    headersToSet.push(['Report-To', getReportToOptions(secureHeadersOptions.reportTo)])
+  if (options.reportTo) {
+    headersToSet.push(['Report-To', getReportToOptions(options.reportTo)])
   }
 
   return async function secureHeaders(ctx, next) {
@@ -196,7 +196,7 @@ export const secureHeaders = (secureHeadersOptions?: SecureHeadersOptions): Midd
     await next()
     setHeaders(ctx, headersToSetForReq)
 
-    if (secureHeadersOptions?.removePoweredBy) {
+    if (options?.removePoweredBy) {
       ctx.res.headers.delete('X-Powered-By')
     }
   }
