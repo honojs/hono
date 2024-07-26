@@ -155,13 +155,6 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   }
 
   if (opt && typeof opt.maxAge === 'number' && opt.maxAge >= 0) {
-    if (opt.maxAge > 34560000) {
-      // FIXME: replace link to RFC
-      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.2.2
-      throw new Error(
-        'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
-      )
-    }
     cookie += `; Max-Age=${Math.floor(opt.maxAge)}`
   }
 
