@@ -176,10 +176,7 @@ export const secureHeaders = (options?: SecureHeadersOptions): MiddlewareHandler
   }
 
   if (options.reportingEndpoints) {
-    headersToSet.push([
-      'Reporting-Endpoints',
-      getReportingEndpoints(options.reportingEndpoints),
-    ])
+    headersToSet.push(['Reporting-Endpoints', getReportingEndpoints(options.reportingEndpoints)])
   }
 
   if (options.reportTo) {
