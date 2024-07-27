@@ -72,6 +72,7 @@ interface SecureHeadersOptions {
   xFrameOptions?: overridableHeader
   xPermittedCrossDomainPolicies?: overridableHeader
   xXssProtection?: overridableHeader
+  removePoweredBy?: boolean
 }
 
 type HeadersMap = {
@@ -106,6 +107,7 @@ const DEFAULT_OPTIONS: SecureHeadersOptions = {
   xFrameOptions: true,
   xPermittedCrossDomainPolicies: true,
   xXssProtection: true,
+  removePoweredBy: true,
 }
 
 type SecureHeadersCallback = (
@@ -151,6 +153,7 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
  * @param {overridableHeader} [customOptions.xFrameOptions=true] - Settings for the X-Frame-Options header.
  * @param {overridableHeader} [customOptions.xPermittedCrossDomainPolicies=true] - Settings for the X-Permitted-Cross-Domain-Policies header.
  * @param {overridableHeader} [customOptions.xXssProtection=true] - Settings for the X-XSS-Protection header.
+ * @param {boolean} [customOptions.removePoweredBy=true] - Settings for remove X-Powered-By header.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
@@ -189,7 +192,10 @@ export const secureHeaders = (customOptions?: SecureHeadersOptions): MiddlewareH
         : callbacks.reduce((acc, cb) => cb(ctx, acc), headersToSet)
     await next()
     setHeaders(ctx, headersToSetForReq)
-    ctx.res.headers.delete('X-Powered-By')
+
+    if (options?.removePoweredBy) {
+      ctx.res.headers.delete('X-Powered-By')
+    }
   }
 }
 
