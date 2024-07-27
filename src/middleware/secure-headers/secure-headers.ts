@@ -161,26 +161,29 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
  * app.use(secureHeaders())
  * ```
  */
-export const secureHeaders = (options?: SecureHeadersOptions): MiddlewareHandler => {
-  options = { ...DEFAULT_OPTIONS, ...options }
+export const secureHeaders = (customOptions?: SecureHeadersOptions): MiddlewareHandler => {
+  customOptions = { ...DEFAULT_OPTIONS, ...customOptions }
 
-  const headersToSet = getFilteredHeaders(options)
+  const headersToSet = getFilteredHeaders(customOptions)
   const callbacks: SecureHeadersCallback[] = []
 
-  if (options.contentSecurityPolicy) {
-    const [callback, value] = getCSPDirectives(options.contentSecurityPolicy)
+  if (customOptions.contentSecurityPolicy) {
+    const [callback, value] = getCSPDirectives(customOptions.contentSecurityPolicy)
     if (callback) {
       callbacks.push(callback)
     }
     headersToSet.push(['Content-Security-Policy', value as string])
   }
 
-  if (options.reportingEndpoints) {
-    headersToSet.push(['Reporting-Endpoints', getReportingEndpoints(options.reportingEndpoints)])
+  if (customOptions.reportingEndpoints) {
+    headersToSet.push([
+      'Reporting-Endpoints',
+      getReportingEndpoints(customOptions.reportingEndpoints),
+    ])
   }
 
-  if (options.reportTo) {
-    headersToSet.push(['Report-To', getReportToOptions(options.reportTo)])
+  if (customOptions.reportTo) {
+    headersToSet.push(['Report-To', getReportToOptions(customOptions.reportTo)])
   }
 
   return async function secureHeaders(ctx, next) {
@@ -193,7 +196,7 @@ export const secureHeaders = (options?: SecureHeadersOptions): MiddlewareHandler
     await next()
     setHeaders(ctx, headersToSetForReq)
 
-    if (options?.removePoweredBy) {
+    if (customOptions?.removePoweredBy) {
       ctx.res.headers.delete('X-Powered-By')
     }
   }
