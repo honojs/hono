@@ -165,7 +165,6 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
 export const secureHeaders = (customOptions?: SecureHeadersOptions): MiddlewareHandler => {
   const options = { ...DEFAULT_OPTIONS, ...customOptions }
   const headersToSet = getFilteredHeaders(options)
-
   const callbacks: SecureHeadersCallback[] = []
 
   if (options.contentSecurityPolicy) {
