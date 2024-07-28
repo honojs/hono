@@ -136,6 +136,18 @@ describe('JSON', () => {
     expect(res.status).toBe(200)
   })
 
+  it('Should validate if Content-Type is a application/json with a charset', async () => {
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=utf8',
+      },
+      body: JSON.stringify({ foo: 'bar' }),
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ foo: 'bar' })
+  })
+
   it('Should validate if Content-Type is a subtype like application/merge-patch+json', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
