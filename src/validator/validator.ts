@@ -23,8 +23,8 @@ export type ValidationFunction<
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ExcludeResponseType<T> = T extends Response & TypedResponse<any> ? never : T
 
-const jsonRegex = /^application\/([a-z-\.]+\+)?json$/
-const multipartRegex = /^multipart\/form-data(; boundary=[A-Za-z0-9'"()+_,\-./:=?]+)?$/
+const jsonRegex = /^application\/([a-z-\.]+\+)?json(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/
+const multipartRegex = /^multipart\/form-data(; boundary=[a-zA-Z0-9'"()+_,\-./:=?]+)?$/
 const urlencodedRegex = /^application\/x-www-form-urlencoded$/
 
 export const validator = <
