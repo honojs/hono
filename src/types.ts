@@ -115,12 +115,31 @@ export interface HandlerInterface<
   <
     I extends Input = BlankInput,
     R extends HandlerResponse<any> = any,
+  >(
+    handler: H<E, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I, R>
+  ): Hono<E, S & ToSchema<M, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I, MergeTypedResponse<R>>, BasePath>
+
+  <
+    I extends Input = BlankInput,
+    R extends HandlerResponse<any> = any,
     E2 extends Env = E
   >(
     handler: H<E2, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I, R>
   ): Hono<IntersectNonAnyTypes<[E, E2]>, S & ToSchema<M, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I, MergeTypedResponse<R>>, BasePath>
 
   // app.get(handler x2)
+  <
+    I extends Input = BlankInput,
+    I2 extends Input = I,
+    R extends HandlerResponse<any> = any,
+    E2 extends Env = E,
+  >(
+    ...handlers: [H<E2, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I>, H<IntersectNonAnyTypes<[E, E2]>, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I2, R>]
+  ): Hono<
+    IntersectNonAnyTypes<[E, E2]>,
+    S & ToSchema<M, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I2, MergeTypedResponse<R>>,
+    BasePath
+  >
   <
     P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
     I extends Input = BlankInput,
