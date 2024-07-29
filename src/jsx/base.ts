@@ -35,6 +35,16 @@ export namespace JSX {
 let nameSpaceContext: Context<string> | undefined = undefined
 export const getNameSpaceContext = () => nameSpaceContext
 
+const toSVGAttributeName = (key: string): string =>
+  /[A-Z]/.test(key) &&
+  // Presentation attributes are findable in style object. "clip-path", "font-size", "stroke-width", etc.
+  // Or other un-deprecated kebab-case attributes. "overline-position", "paint-order", "strikethrough-position", etc.
+  key.match(
+    /^(?:al|basel|clip(?:Path|Rule)$|co|do|fill|fl|fo|gl|let|lig|i|marker[EMS]|o|pai|pointe|sh|st[or]|text[^L]|tr|u|ve|w)/
+  )
+    ? key.replace(/([A-Z])/g, '-$1').toLowerCase()
+    : key
+
 const emptyTags = [
   'area',
   'base',
@@ -163,8 +173,12 @@ export class JSXNode implements HtmlEscaped {
 
     buffer[0] += `<${tag}`
 
+    const normalizeKey: (key: string) => string =
+      nameSpaceContext && useContext(nameSpaceContext) === 'svg'
+        ? (key) => toSVGAttributeName(normalizeIntrinsicElementKey(key))
+        : (key) => normalizeIntrinsicElementKey(key)
     for (let [key, v] of Object.entries(props)) {
-      key = normalizeIntrinsicElementKey(key)
+      key = normalizeKey(key)
       if (key === 'children') {
         // skip children
       } else if (key === 'style' && typeof v === 'object') {
