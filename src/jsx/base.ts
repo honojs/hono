@@ -2,7 +2,7 @@ import { raw } from '../helper/html'
 import { escapeToBuffer, resolveCallbackSync, stringBufferToString } from '../utils/html'
 import type { HtmlEscaped, HtmlEscapedString, StringBufferWithCallbacks } from '../utils/html'
 import type { Context } from './context'
-import { globalContexts } from './context'
+import { createContext, globalContexts, useContext } from './context'
 import { DOM_RENDERER } from './constants'
 import type {
   JSX as HonoJSX,
@@ -31,6 +31,9 @@ export namespace JSX {
     [tagName: string]: Props
   }
 }
+
+let nameSpaceContext: Context<string> | undefined = undefined
+export const getNameSpaceContext = () => nameSpaceContext
 
 const emptyTags = [
   'area',
@@ -307,6 +310,17 @@ export const jsxFn = (
       props,
       children
     )
+  } else if (tag === 'svg') {
+    nameSpaceContext ||= createContext('')
+    return new JSXNode(tag, props, [
+      new JSXFunctionNode(
+        nameSpaceContext,
+        {
+          value: tag,
+        },
+        children
+      ),
+    ])
   } else {
     return new JSXNode(tag, props, children)
   }

@@ -1,5 +1,6 @@
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
-import { JSXNode } from '../base'
+import { JSXNode, getNameSpaceContext } from '../base'
+import { useContext } from '../context'
 import type { Child, Props } from '../base'
 import type { FC, PropsWithChildren } from '../types'
 import { raw } from '../../helper/html'
@@ -104,6 +105,11 @@ const documentMetadataTag = (tag: string, children: Child, props: Props, sort: b
 }
 
 export const title: FC<PropsWithChildren> = ({ children, ...props }) => {
+  const nameSpaceContext = getNameSpaceContext()
+  if (nameSpaceContext && useContext(nameSpaceContext) === 'svg') {
+    new JSXNode('title', props, toArray(children ?? []) as Child[])
+  }
+
   return documentMetadataTag('title', children, props, false)
 }
 export const script: FC<PropsWithChildren<IntrinsicElements['script']>> = ({

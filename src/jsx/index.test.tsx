@@ -566,6 +566,35 @@ describe('StrictMode', () => {
   })
 })
 
+describe('SVG', () => {
+  it('simple', () => {
+    const template = (
+      <svg>
+        <circle cx='50' cy='50' r='40' stroke='black' stroke-width='3' fill='red' />
+      </svg>
+    )
+    expect(template.toString()).toBe(
+      '<svg><circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red"></circle></svg>'
+    )
+  })
+
+  it('title element', () => {
+    const template = (
+      <>
+        <head>
+          <title>Document Title</title>
+        </head>
+        <svg>
+          <title>SVG Title</title>
+        </svg>
+      </>
+    )
+    expect(template.toString()).toBe(
+      '<head><title>Document Title</title></head><svg><title>SVG Title</title></svg>'
+    )
+  })
+})
+
 describe('Context', () => {
   let ThemeContext: Context<string>
   let Consumer: FC
