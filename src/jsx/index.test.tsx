@@ -566,6 +566,183 @@ describe('StrictMode', () => {
   })
 })
 
+describe('SVG', () => {
+  it('simple', () => {
+    const template = (
+      <svg>
+        <circle cx='50' cy='50' r='40' stroke='black' stroke-width='3' fill='red' />
+      </svg>
+    )
+    expect(template.toString()).toBe(
+      '<svg><circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red"></circle></svg>'
+    )
+  })
+
+  it('title element', () => {
+    const template = (
+      <>
+        <head>
+          <title>Document Title</title>
+        </head>
+        <svg>
+          <title>SVG Title</title>
+        </svg>
+      </>
+    )
+    expect(template.toString()).toBe(
+      '<head><title>Document Title</title></head><svg><title>SVG Title</title></svg>'
+    )
+  })
+
+  describe('attribute', () => {
+    describe('camelCase', () => {
+      test.each`
+        key
+        ${'attributeName'}
+        ${'baseFrequency'}
+        ${'calcMode'}
+        ${'clipPathUnits'}
+        ${'diffuseConstant'}
+        ${'edgeMode'}
+        ${'filterUnits'}
+        ${'gradientTransform'}
+        ${'gradientUnits'}
+        ${'kernelMatrix'}
+        ${'kernelUnitLength'}
+        ${'keyPoints'}
+        ${'keySplines'}
+        ${'keyTimes'}
+        ${'lengthAdjust'}
+        ${'limitingConeAngle'}
+        ${'markerHeight'}
+        ${'markerUnits'}
+        ${'markerWidth'}
+        ${'maskContentUnits'}
+        ${'maskUnits'}
+        ${'numOctaves'}
+        ${'pathLength'}
+        ${'patternContentUnits'}
+        ${'patternTransform'}
+        ${'patternUnits'}
+        ${'pointsAtX'}
+        ${'pointsAtY'}
+        ${'pointsAtZ'}
+        ${'preserveAlpha'}
+        ${'preserveAspectRatio'}
+        ${'primitiveUnits'}
+        ${'refX'}
+        ${'refY'}
+        ${'repeatCount'}
+        ${'repeatDur'}
+        ${'specularConstant'}
+        ${'specularExponent'}
+        ${'spreadMethod'}
+        ${'startOffset'}
+        ${'stdDeviation'}
+        ${'stitchTiles'}
+        ${'surfaceScale'}
+        ${'crossorigin'}
+        ${'systemLanguage'}
+        ${'tableValues'}
+        ${'targetX'}
+        ${'targetY'}
+        ${'textLength'}
+        ${'viewBox'}
+        ${'xChannelSelector'}
+        ${'yChannelSelector'}
+      `('$key', ({ key }) => {
+        const template = (
+          <svg>
+            <g {...{ [key]: 'test' }} />
+          </svg>
+        )
+        expect(template.toString()).toBe(`<svg><g ${key}="test"></g></svg>`)
+      })
+    })
+
+    describe('kebab-case', () => {
+      test.each`
+        key
+        ${'alignmentBaseline'}
+        ${'baselineShift'}
+        ${'clipPath'}
+        ${'clipRule'}
+        ${'colorInterpolation'}
+        ${'colorInterpolationFilters'}
+        ${'dominantBaseline'}
+        ${'fillOpacity'}
+        ${'fillRule'}
+        ${'floodColor'}
+        ${'floodOpacity'}
+        ${'fontFamily'}
+        ${'fontSize'}
+        ${'fontSizeAdjust'}
+        ${'fontStretch'}
+        ${'fontStyle'}
+        ${'fontVariant'}
+        ${'fontWeight'}
+        ${'imageRendering'}
+        ${'letterSpacing'}
+        ${'lightingColor'}
+        ${'markerEnd'}
+        ${'markerMid'}
+        ${'markerStart'}
+        ${'overlinePosition'}
+        ${'overlineThickness'}
+        ${'paintOrder'}
+        ${'pointerEvents'}
+        ${'shapeRendering'}
+        ${'stopColor'}
+        ${'stopOpacity'}
+        ${'strikethroughPosition'}
+        ${'strikethroughThickness'}
+        ${'strokeDasharray'}
+        ${'strokeDashoffset'}
+        ${'strokeLinecap'}
+        ${'strokeLinejoin'}
+        ${'strokeMiterlimit'}
+        ${'strokeOpacity'}
+        ${'strokeWidth'}
+        ${'textAnchor'}
+        ${'textDecoration'}
+        ${'textRendering'}
+        ${'transformOrigin'}
+        ${'underlinePosition'}
+        ${'underlineThickness'}
+        ${'unicodeBidi'}
+        ${'vectorEffect'}
+        ${'wordSpacing'}
+        ${'writingMode'}
+      `('$key', ({ key }) => {
+        const template = (
+          <svg>
+            <g {...{ [key]: 'test' }} />
+          </svg>
+        )
+        expect(template.toString()).toBe(
+          `<svg><g ${key.replace(/([A-Z])/g, '-$1').toLowerCase()}="test"></g></svg>`
+        )
+      })
+    })
+
+    describe('data-*', () => {
+      test.each`
+        key
+        ${'data-foo'}
+        ${'data-foo-bar'}
+        ${'data-fooBar'}
+      `('$key', ({ key }) => {
+        const template = (
+          <svg>
+            <g {...{ [key]: 'test' }} />
+          </svg>
+        )
+        expect(template.toString()).toBe(`<svg><g ${key}="test"></g></svg>`)
+      })
+    })
+  })
+})
+
 describe('Context', () => {
   let ThemeContext: Context<string>
   let Consumer: FC
