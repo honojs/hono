@@ -117,6 +117,24 @@ describe('DOM', () => {
     expect(root.innerHTML).toBe('Hello')
   })
 
+  describe('performance', () => {
+    it('should be O(N) for each additional element', () => {
+      const App = () => (
+        <>
+          {Array.from({ length: 1000 }, (_, i) => (
+            <div>
+              <span>{i}</span>
+            </div>
+          ))}
+        </>
+      )
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        Array.from({ length: 1000 }, (_, i) => `<div><span>${i}</span></div>`).join('')
+      )
+    })
+  })
+
   describe('attribute', () => {
     it('simple', () => {
       const App = () => <div id='app' class='app' />

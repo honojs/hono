@@ -271,24 +271,11 @@ const getNextChildren = (
 }
 
 const findInsertBefore = (node: Node | undefined): SupportedElement | Text | null => {
-  if (!node) {
-    return null
-  } else if (node.tag === HONO_PORTAL_ELEMENT) {
-    return findInsertBefore(node.nN)
-  } else if (node.e) {
-    return node.e
-  }
-
-  if (node.vC) {
-    for (let i = 0, len = node.vC.length; i < len; i++) {
-      const e = findInsertBefore(node.vC[i])
-      if (e) {
-        return e
-      }
-    }
-  }
-
-  return findInsertBefore(node.nN)
+  return !node
+    ? null
+    : node.tag === HONO_PORTAL_ELEMENT
+    ? findInsertBefore(node.nN)
+    : node.e || (node.vC && node.pP && findInsertBefore(node.vC[0])) || findInsertBefore(node.nN)
 }
 
 const removeNode = (node: Node): void => {
