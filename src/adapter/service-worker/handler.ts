@@ -16,7 +16,8 @@ export const handle = (
   opts: {
     fetch?: typeof fetch
   } = {
-    fetch: fetch,
+    // To use `fetch` on a Service Worker correctly, first refer to `self.fetch`.
+    fetch: globalThis.self !== undefined ? globalThis.self.fetch : fetch,
   }
 ): Handler => {
   return (evt) => {
