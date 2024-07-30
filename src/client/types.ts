@@ -7,6 +7,7 @@ type HonoRequest = (typeof Hono.prototype)['request']
 
 export type ClientRequestOptions<T = unknown> = {
   fetch?: typeof fetch | HonoRequest
+  webSocket?: (...args: ConstructorParameters<typeof WebSocket>) => WebSocket
   /**
    * Standard `RequestInit`, caution that this take highest priority
    * and could be used to overwrite things that Hono sets for you, like `body | method | headers`.
@@ -43,7 +44,7 @@ export type ClientRequest<S extends Schema> = {
 } & (S['$get'] extends { outputFormat: 'ws' }
     ? S['$get'] extends { input: infer I }
       ? {
-          $ws: (args?: I) => WebSocket
+          $ws: (args?: I, options?: Pick<ClientRequestOptions, 'webSocket'>) => WebSocket
         }
       : {}
     : {})

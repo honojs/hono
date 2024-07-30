@@ -194,8 +194,17 @@ export const hc = <T extends Hono<any, any, any>>(
           }
         })
       }
+      const establishWebSocket = (...args: ConstructorParameters<typeof WebSocket>) => {
+        if (opts.args[1] !== undefined && typeof opts.args[1].webSocket === 'function') {
+          return opts.args[1].webSocket(...args)
+        }
+        if (options?.webSocket !== undefined && typeof options.webSocket === 'function') {
+          return options.webSocket(...args)
+        }
+        return new WebSocket(...args)
+      }
 
-      return new WebSocket(targetUrl.toString())
+      return establishWebSocket(targetUrl.toString())
     }
 
     const req = new ClientRequestImpl(url, method)
