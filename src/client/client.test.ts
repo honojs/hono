@@ -1250,7 +1250,7 @@ describe('WebSocket Provider Integration', () => {
         console.log(`Message from client: ${event.data}`)
         ws.send('Hello from server!')
       },
-      onClose: () => {
+      onClose() {
         console.log('Connection closed')
       },
     }))
