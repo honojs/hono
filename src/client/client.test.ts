@@ -1240,3 +1240,80 @@ describe('Redirect response - only types', () => {
     }
   })
 })
+
+describe('WebSocket Provider Integration', () => {
+  const app = new Hono()
+  const route = app.get(
+    '/',
+    upgradeWebSocket((c) => ({
+      onMessage(event, ws) {
+        console.log(`Message from client: ${event.data}`)
+        ws.send('Hello from server!')
+      },
+      onClose: () => {
+        console.log('Connection closed')
+      },
+    }))
+  )
+
+  type AppType = typeof route
+
+  const server = setupServer()
+  beforeAll(() => server.listen())
+  afterEach(() => {
+    vi.clearAllMocks()
+    server.resetHandlers()
+  })
+  afterAll(() => server.close())
+
+  it.each([
+    {
+      description: 'should initialize the WebSocket provider correctly',
+      url: 'http://localhost',
+      query: undefined,
+      expectedUrl: 'ws://localhost/index',
+    },
+    {
+      description: 'should correctly add query parameters to the WebSocket URL',
+      url: 'http://localhost',
+      query: { id: '123', type: 'test', tag: ['a', 'b'] },
+      expectedUrl: 'ws://localhost/index?id=123&type=test&tag=a&tag=b',
+    },
+  ])('$description', ({ url, expectedUrl, query }) => {
+    const webSocketMock = vi.fn()
+    const client = hc<AppType>(url, {
+      webSocket(url, options) {
+        return webSocketMock(url, options)
+      },
+    })
+    client.index.$ws({ query })
+    expect(webSocketMock).toHaveBeenCalledWith(expectedUrl, undefined)
+  })
+
+  it.each([
+    {
+      description: 'should use the default WebSocket URL when no query parameters are provided',
+      url: 'http://localhost',
+      query: undefined,
+      expectedUrl: 'ws://localhost/index',
+    },
+    {
+      description: 'should correctly add query parameters in the WebSocket URL',
+      url: 'http://localhost',
+      query: { id: '123', type: 'test', tag: ['a', 'b'] },
+      expectedUrl: 'ws://localhost/index?id=123&type=test&tag=a&tag=b',
+    },
+  ])('$description', ({ url, expectedUrl, query }) => {
+    const webSocketMock = vi.fn()
+    const client = hc<AppType>(url)
+    client.index.$ws(
+      { query },
+      {
+        webSocket(url, options) {
+          return webSocketMock(url, options)
+        },
+      }
+    )
+    expect(webSocketMock).toHaveBeenCalledWith(expectedUrl, undefined)
+  })
+})
