@@ -1289,31 +1289,4 @@ describe('WebSocket Provider Integration', () => {
     client.index.$ws({ query })
     expect(webSocketMock).toHaveBeenCalledWith(expectedUrl, undefined)
   })
-
-  it.each([
-    {
-      description: 'should use the default WebSocket URL when no query parameters are provided',
-      url: 'http://localhost',
-      query: undefined,
-      expectedUrl: 'ws://localhost/index',
-    },
-    {
-      description: 'should correctly add query parameters in the WebSocket URL',
-      url: 'http://localhost',
-      query: { id: '123', type: 'test', tag: ['a', 'b'] },
-      expectedUrl: 'ws://localhost/index?id=123&type=test&tag=a&tag=b',
-    },
-  ])('$description', ({ url, expectedUrl, query }) => {
-    const webSocketMock = vi.fn()
-    const client = hc<AppType>(url)
-    client.index.$ws(
-      { query },
-      {
-        webSocket(url, options) {
-          return webSocketMock(url, options)
-        },
-      }
-    )
-    expect(webSocketMock).toHaveBeenCalledWith(expectedUrl, undefined)
-  })
 })

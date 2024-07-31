@@ -44,7 +44,7 @@ export type ClientRequest<S extends Schema> = {
 } & (S['$get'] extends { outputFormat: 'ws' }
     ? S['$get'] extends { input: infer I }
       ? {
-          $ws: (args?: I, options?: Pick<ClientRequestOptions, 'webSocket'>) => WebSocket
+          $ws: (args?: I) => WebSocket
         }
       : {}
     : {})
