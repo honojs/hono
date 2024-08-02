@@ -152,7 +152,7 @@ export namespace JSX {
     contenteditable?: boolean | 'inherit' | undefined
     contextmenu?: string | undefined
     dir?: string | undefined
-    draggable?: boolean | undefined
+    draggable?: 'true' | 'false' | undefined
     enterkeyhint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send' | undefined
     hidden?: boolean | undefined
     id?: string | undefined
