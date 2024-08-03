@@ -1808,7 +1808,7 @@ type ChangePathOfSchema<S extends Schema, Path extends string> = keyof S extends
   : { [K in keyof S as Path]: S[K] }
 
 export type Endpoint = {
-  input: Partial<ValidationTargets>
+  input: any
   output: any
   outputFormat: ResponseFormat
   status: StatusCode
@@ -1930,11 +1930,11 @@ type MergeTypedResponse<T> = T extends Promise<infer T2>
 export type FormValue = string | Blob
 export type ParsedFormValue = string | File
 
-export type ValidationTargets<T extends FormValue = ParsedFormValue> = {
+export type ValidationTargets<T extends FormValue = ParsedFormValue, P extends string = string> = {
   json: any
   form: Record<string, T | T[]>
   query: Record<string, string | string[]>
-  param: Record<string, string> | Record<string, string | undefined>
+  param: Record<P, P extends `${infer _}?` ? string | undefined : string>
   header: Record<string, string>
   cookie: Record<string, string>
 }
