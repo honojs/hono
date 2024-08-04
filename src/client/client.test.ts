@@ -1247,7 +1247,6 @@ describe('WebSocket Provider Integration', () => {
     '/',
     upgradeWebSocket((c) => ({
       onMessage(event, ws) {
-        console.log(`Message from client: ${event.data}`)
         ws.send('Hello from server!')
       },
       onClose() {
