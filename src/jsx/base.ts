@@ -15,7 +15,7 @@ import { domRenderers } from './intrinsic-element/common'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
 export type FC<P = Props> = {
-  (props: P): HtmlEscapedString | Promise<HtmlEscapedString>
+  (props: P): HtmlEscapedString | Promise<HtmlEscapedString> | null
   defaultProps?: Partial<P> | undefined
   displayName?: string | undefined
 }
@@ -374,11 +374,11 @@ export const memo = <T>(
   component: FC<T>,
   propsAreEqual: (prevProps: Readonly<T>, nextProps: Readonly<T>) => boolean = shallowEqual
 ): FC<T> => {
-  let computed: HtmlEscapedString | Promise<HtmlEscapedString> | undefined = undefined
+  let computed: ReturnType<FC<T>> = null
   let prevProps: T | undefined = undefined
-  return ((props: T & { children?: Child }): HtmlEscapedString | Promise<HtmlEscapedString> => {
+  return ((props) => {
     if (prevProps && !propsAreEqual(prevProps, props)) {
-      computed = undefined
+      computed = null
     }
     prevProps = props
     return (computed ||= component(props))
