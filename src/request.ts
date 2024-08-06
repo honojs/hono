@@ -113,7 +113,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   }
 
   private getParamValue(paramKey: any): string | undefined {
-    return this.#matchResult[1] ? this.#matchResult[1][paramKey as any] : paramKey
+    return this.#matchResult[1] ? this.#matchResult[1][paramKey] : paramKey
   }
 
   /**
@@ -223,7 +223,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
       })
     }
 
-    return (bodyCache[key] = raw[key]())
+    bodyCache[key] = raw[key]()
+    return bodyCache[key]
   }
 
   /**
