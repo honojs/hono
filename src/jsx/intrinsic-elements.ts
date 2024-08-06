@@ -10,7 +10,9 @@
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JSX {
   export type CrossOrigin = 'anonymous' | 'use-credentials' | '' | undefined
-  export type CSSProperties = {}
+  export interface CSSProperties {
+    [propertyKey: string]: unknown
+  }
   type AnyAttributes = { [attributeName: string]: any }
 
   interface JSXAttributes {
@@ -179,7 +181,7 @@ export namespace JSX {
     popover?: string | undefined
     slot?: string | undefined
     spellcheck?: boolean | undefined
-    style?: CSSProperties | undefined
+    style?: CSSProperties | string | undefined
     tabindex?: number | undefined
     title?: string | undefined
     translate?: 'yes' | 'no' | undefined
