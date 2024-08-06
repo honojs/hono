@@ -833,6 +833,11 @@ it('With path parameters', () => {
 
   const route = app.put(
     '/posts/:id',
+    validator('param', () => {
+      return {
+        id: '123',
+      }
+    }),
     validator('form', () => {
       return {
         title: 'Foo',
