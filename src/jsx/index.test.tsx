@@ -383,6 +383,24 @@ describe('render to string', () => {
         '<html><head><title>Home page</title></head><body><h1>Hono</h1><p>Hono is great</p></body></html>'
       )
     })
+
+    describe('Booleans, Null, and Undefined Are Ignored', () => {
+      it.each([true, false, undefined, null])('%s', (item) => {
+        const Component: FC = (() => {
+          return item
+        }) as FC
+        const template = <Component />
+        expect(template.toString()).toBe('')
+      })
+
+      it('falsy value', () => {
+        const Component: FC = (() => {
+          return 0
+        }) as unknown as FC
+        const template = <Component />
+        expect(template.toString()).toBe('0')
+      })
+    })
   })
 
   describe('style attribute', () => {

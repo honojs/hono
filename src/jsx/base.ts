@@ -247,7 +247,10 @@ class JSXFunctionNode extends JSXNode {
       children: children.length <= 1 ? children[0] : children,
     })
 
-    if (res instanceof Promise) {
+    if (typeof res === 'boolean' || res == null) {
+      // boolean or null or undefined
+      return
+    } else if (res instanceof Promise) {
       if (globalContexts.length === 0) {
         buffer.unshift('', res)
       } else {
