@@ -308,7 +308,11 @@ interface SetHeaders {
   (name: string, value?: string, options?: SetHeadersOptions): void
 }
 
-type ResponseHeadersInit = [string, string][] | Record<string, string> | Record<ResponseHeader, string> | Headers
+type ResponseHeadersInit =
+  | [string, string][]
+  | Record<string, string>
+  | Record<ResponseHeader, string>
+  | Headers
 
 interface ResponseInit {
   headers?: ResponseHeadersInit
