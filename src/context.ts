@@ -19,7 +19,7 @@ import type {
   SimplifyDeepArray,
 } from './utils/types'
 
-type HeaderRecord = Record<string, string | string[]>
+type HeaderRecord = Record<ResponseHeader, string | string[]> | Record<string, string | string[]>
 
 /**
  * Data type can be a string, ArrayBuffer, or ReadableStream.
@@ -228,372 +228,92 @@ type ContextOptions<E extends Env> = {
   path?: string
 }
 
-type SetHeadersValue = string | undefined
-type SetHeadersOptions = { append?: boolean }
+interface SetHeadersOptions {
+  append?: boolean
+}
+
+type ResponseHeader =
+  | 'Access-Control-Allow-Credentials'
+  | 'Access-Control-Allow-Headers'
+  | 'Access-Control-Allow-Methods'
+  | 'Access-Control-Allow-Origin'
+  | 'Access-Control-Expose-Headers'
+  | 'Access-Control-Max-Age'
+  | 'Age'
+  | 'Allow'
+  | 'Cache-Control'
+  | 'Clear-Site-Data'
+  | 'Content-Disposition'
+  | 'Content-Encoding'
+  | 'Content-Language'
+  | 'Content-Length'
+  | 'Content-Location'
+  | 'Content-Range'
+  | 'Content-Security-Policy'
+  | 'Content-Security-Policy-Report-Only'
+  | 'Content-Type'
+  | 'Cookie'
+  | 'Cross-Origin-Embedder-Policy'
+  | 'Cross-Origin-Opener-Policy'
+  | 'Cross-Origin-Resource-Policy'
+  | 'Date'
+  | 'ETag'
+  | 'Expires'
+  | 'Last-Modified'
+  | 'Location'
+  | 'Permissions-Policy'
+  | 'Pragma'
+  | 'Retry-After'
+  | 'Save-Data'
+  | 'Sec-CH-Prefers-Color-Scheme'
+  | 'Sec-CH-Prefers-Reduced-Motion'
+  | 'Sec-CH-UA'
+  | 'Sec-CH-UA-Arch'
+  | 'Sec-CH-UA-Bitness'
+  | 'Sec-CH-UA-Form-Factor'
+  | 'Sec-CH-UA-Full-Version'
+  | 'Sec-CH-UA-Full-Version-List'
+  | 'Sec-CH-UA-Mobile'
+  | 'Sec-CH-UA-Model'
+  | 'Sec-CH-UA-Platform'
+  | 'Sec-CH-UA-Platform-Version'
+  | 'Sec-CH-UA-WoW64'
+  | 'Sec-Fetch-Dest'
+  | 'Sec-Fetch-Mode'
+  | 'Sec-Fetch-Site'
+  | 'Sec-Fetch-User'
+  | 'Sec-GPC'
+  | 'Server'
+  | 'Server-Timing'
+  | 'Service-Worker-Navigation-Preload'
+  | 'Set-Cookie'
+  | 'Strict-Transport-Security'
+  | 'Timing-Allow-Origin'
+  | 'Trailer'
+  | 'Transfer-Encoding'
+  | 'Upgrade'
+  | 'Vary'
+  | 'WWW-Authenticate'
+  | 'Warning'
+  | 'X-Content-Type-Options'
+  | 'X-DNS-Prefetch-Control'
+  | 'X-Frame-Options'
+  | 'X-Permitted-Cross-Domain-Policies'
+  | 'X-Powered-By'
+  | 'X-Robots-Tag'
+  | 'X-XSS-Protection'
 
 interface SetHeaders {
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials}
-   */
-  (
-    name: 'Access-Control-Allow-Credentials',
-    value: SetHeadersValue,
-    options?: SetHeadersOptions
-  ): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers}
-   */
-  (name: 'Access-Control-Allow-Headers', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Methods}
-   */
-  (name: 'Access-Control-Allow-Methods', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin}
-   */
-  (name: 'Access-Control-Allow-Origin', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers}
-   */
-  (name: 'Access-Control-Expose-Headers', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age}
-   */
-  (name: 'Access-Control-Max-Age', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Age}
-   */
-  (name: 'Age', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Allow}
-   */
-  (name: 'Allow', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control}
-   */
-  (name: 'Cache-Control', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Clear-Site-Data}
-   */
-  (name: 'Clear-Site-Data', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition}
-   */
-  (name: 'Content-Disposition', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding}
-   */
-  (name: 'Content-Encoding', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Language}
-   */
-  (name: 'Content-Language', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length}
-   */
-  (name: 'Content-Length', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Location}
-   */
-  (name: 'Content-Location', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Range}
-   */
-  (name: 'Content-Range', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy}
-   */
-  (name: 'Content-Security-Policy', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy-Report-Only}
-   */
-  (
-    name: 'Content-Security-Policy-Report-Only',
-    value: SetHeadersValue,
-    options?: SetHeadersOptions
-  ): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type}
-   */
-  (name: 'Content-Type', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie}
-   */
-  (name: 'Cookie', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy}
-   */
-  (name: 'Cross-Origin-Embedder-Policy', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Opener-Policy}
-   */
-  (name: 'Cross-Origin-Opener-Policy', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Resource-Policy}
-   */
-  (name: 'Cross-Origin-Resource-Policy', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Date}
-   */
-  (name: 'Date', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag}
-   */
-  (name: 'ETag', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires}
-   */
-  (name: 'Expires', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified}
-   */
-  (name: 'Last-Modified', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location}
-   */
-  (name: 'Location', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy}
-   */
-  (name: 'Permissions-Policy', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Pragma}
-   */
-  (name: 'Pragma', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After}
-   */
-  (name: 'Retry-After', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Save-Data}
-   */
-  (name: 'Save-Data', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-Prefers-Color-Scheme}
-   */
-  (name: 'Sec-CH-Prefers-Color-Scheme', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-Prefers-Reduced-Motion}
-   */
-  (name: 'Sec-CH-Prefers-Reduced-Motion', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-UA}
-   */
-  (name: 'Sec-CH-UA', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-UA-Arch}
-   */
-  (name: 'Sec-CH-UA-Arch', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-UA-Bitness}
-   */
-  (name: 'Sec-CH-UA-Bitness', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-UA-Form-Factor}
-   */
-  (name: 'Sec-CH-UA-Form-Factor', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-UA-Full-Version}
-   */
-  (name: 'Sec-CH-UA-Full-Version', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-UA-Full-Version-List}
-   */
-  (name: 'Sec-CH-UA-Full-Version-List', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-UA-Mobile}
-   */
-  (name: 'Sec-CH-UA-Mobile', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-UA-Model}
-   */
-  (name: 'Sec-CH-UA-Model', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-UA-Platform}
-   */
-  (name: 'Sec-CH-UA-Platform', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-UA-Platform-Version}
-   */
-  (name: 'Sec-CH-UA-Platform-Version', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-UA-WoW64}
-   */
-  (name: 'Sec-CH-UA-WoW64', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-Fetch-Dest}
-   */
-  (name: 'Sec-Fetch-Dest', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-Fetch-Mode}
-   */
-  (name: 'Sec-Fetch-Mode', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-Fetch-Site}
-   */
-  (name: 'Sec-Fetch-Site', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-Fetch-User}
-   */
-  (name: 'Sec-Fetch-User', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-GPC}
-   */
-  (name: 'Sec-GPC', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server}
-   */
-  (name: 'Server', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing}
-   */
-  (name: 'Server-Timing', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Service-Worker-Navigation-Preload}
-   */
-  (
-    name: 'Service-Worker-Navigation-Preload',
-    value: SetHeadersValue,
-    options?: SetHeadersOptions
-  ): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie}
-   */
-  (name: 'Set-Cookie', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security}
-   */
-  (name: 'Strict-Transport-Security', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Timing-Allow-Origin}
-   */
-  (name: 'Timing-Allow-Origin', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Trailer}
-   */
-  (name: 'Trailer', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding}
-   */
-  (name: 'Transfer-Encoding', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Upgrade}
-   */
-  (name: 'Upgrade', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary}
-   */
-  (name: 'Vary', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/WWW-Authenticate}
-   */
-  (name: 'WWW-Authenticate', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Warning}
-   */
-  (name: 'Warning', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options}
-   */
-  (name: 'X-Content-Type-Options', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-DNS-Prefetch-Control}
-   */
-  (name: 'X-DNS-Prefetch-Control', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options}
-   */
-  (name: 'X-Frame-Options', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Permitted-Cross-Domain-Policies}
-   */
-  (
-    name: 'X-Permitted-Cross-Domain-Policies',
-    value: SetHeadersValue,
-    options?: SetHeadersOptions
-  ): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Powered-By}
-   */
-  (name: 'X-Powered-By', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Robots-Tag}
-   */
-  (name: 'X-Robots-Tag', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  /**
-   * MDN: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection}
-   */
-  (name: 'X-XSS-Protection', value: SetHeadersValue, options?: SetHeadersOptions): void
-
-  (name: string, value: SetHeadersValue, options?: SetHeadersOptions): void
+  (name: ResponseHeader, value?: string, options?: SetHeadersOptions): void
+  (name: string, value?: string, options?: SetHeadersOptions): void
+}
+
+type ResponseHeadersInit = [string, string][] | Record<string, string> | Record<ResponseHeader, string> | Headers
+
+interface ResponseInit {
+  headers?: ResponseHeadersInit
+  status?: number
+  statusText?: string
 }
 
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
@@ -663,7 +383,7 @@ export class Context<
   #notFoundHandler: NotFoundHandler<E> | undefined
 
   #matchResult: Result<[H, RouterRoute]> | undefined
-  #path: SetHeadersValue
+  #path: string | undefined
 
   /**
    * Creates an instance of the Context class.
