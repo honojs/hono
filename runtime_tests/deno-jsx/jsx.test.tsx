@@ -28,6 +28,12 @@ Deno.test('JSX: Fragment', () => {
   assertEquals(fragment.toString(), '<p>1</p><p>2</p>')
 })
 
+Deno.test('JSX: Empty Fragment', () => {
+  const Component = () => <></>
+  const html = <Component />
+  assertEquals(html.toString(), '')
+})
+
 Deno.test('JSX: Async Component', async () => {
   const Component = async ({ name }: { name: string }) =>
     new Promise<HtmlEscapedString>((resolve) => setTimeout(() => resolve(<span>{name}</span>), 10))
