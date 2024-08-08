@@ -93,6 +93,13 @@ Deno.test('Serve Static middleware', async () => {
     })
   )
 
+  app.get(
+    '/abs-static/*',
+    serveStatic({
+      root: await Deno.realPath('./runtime_tests/deno'),
+    })
+  )
+
   let res = await app.request('http://localhost/favicon.ico')
   assertEquals(res.status, 200)
   assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
@@ -116,6 +123,10 @@ Deno.test('Serve Static middleware', async () => {
   assertEquals(res.status, 200)
   assertEquals(await res.text(), 'Deno!!')
   assertSpyCalls(onNotFound, 1)
+
+  res = await app.request('http://localhost/abs-static/plain.txt')
+  assertEquals(res.status, 200)
+  assertEquals(await res.text(), 'Deno!!!')
 
   res = await app.fetch({
     method: 'GET',

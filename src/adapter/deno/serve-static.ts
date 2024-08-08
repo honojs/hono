@@ -19,8 +19,8 @@ export const serveStatic = <E extends Env = Env>(
         console.warn(`${e}`)
       }
     }
-    const pathResolve = (path: string) => {
-      return `./${path}`
+    const pathResolve = (path: string, isAbsolutePath?: boolean) => {
+      return isAbsolutePath ? `/${path}` : `./${path}`
     }
     return baseServeStatic({
       ...options,

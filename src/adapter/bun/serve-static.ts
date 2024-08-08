@@ -8,13 +8,12 @@ export const serveStatic = <E extends Env = Env>(
 ): MiddlewareHandler => {
   return async function serveStatic(c, next) {
     const getContent = async (path: string) => {
-      path = `./${path}`
       // @ts-ignore
       const file = Bun.file(path)
       return (await file.exists()) ? file : null
     }
-    const pathResolve = (path: string) => {
-      return `./${path}`
+    const pathResolve = (path: string, isAbsolutePath?: boolean) => {
+      return isAbsolutePath ? `/${path}` : `./${path}`
     }
     return baseServeStatic({
       ...options,
