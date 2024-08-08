@@ -19,7 +19,7 @@ import type {
   SimplifyDeepArray,
 } from './utils/types'
 
-type HeaderRecord = Record<string, string | string[]>
+type HeaderRecord = Record<ResponseHeader, string | string[]> | Record<string, string | string[]>
 
 /**
  * Data type can be a string, ArrayBuffer, or ReadableStream.
@@ -226,6 +226,98 @@ type ContextOptions<E extends Env> = {
   notFoundHandler?: NotFoundHandler<E>
   matchResult?: Result<[H, RouterRoute]>
   path?: string
+}
+
+interface SetHeadersOptions {
+  append?: boolean
+}
+
+type ResponseHeader =
+  | 'Access-Control-Allow-Credentials'
+  | 'Access-Control-Allow-Headers'
+  | 'Access-Control-Allow-Methods'
+  | 'Access-Control-Allow-Origin'
+  | 'Access-Control-Expose-Headers'
+  | 'Access-Control-Max-Age'
+  | 'Age'
+  | 'Allow'
+  | 'Cache-Control'
+  | 'Clear-Site-Data'
+  | 'Content-Disposition'
+  | 'Content-Encoding'
+  | 'Content-Language'
+  | 'Content-Length'
+  | 'Content-Location'
+  | 'Content-Range'
+  | 'Content-Security-Policy'
+  | 'Content-Security-Policy-Report-Only'
+  | 'Content-Type'
+  | 'Cookie'
+  | 'Cross-Origin-Embedder-Policy'
+  | 'Cross-Origin-Opener-Policy'
+  | 'Cross-Origin-Resource-Policy'
+  | 'Date'
+  | 'ETag'
+  | 'Expires'
+  | 'Last-Modified'
+  | 'Location'
+  | 'Permissions-Policy'
+  | 'Pragma'
+  | 'Retry-After'
+  | 'Save-Data'
+  | 'Sec-CH-Prefers-Color-Scheme'
+  | 'Sec-CH-Prefers-Reduced-Motion'
+  | 'Sec-CH-UA'
+  | 'Sec-CH-UA-Arch'
+  | 'Sec-CH-UA-Bitness'
+  | 'Sec-CH-UA-Form-Factor'
+  | 'Sec-CH-UA-Full-Version'
+  | 'Sec-CH-UA-Full-Version-List'
+  | 'Sec-CH-UA-Mobile'
+  | 'Sec-CH-UA-Model'
+  | 'Sec-CH-UA-Platform'
+  | 'Sec-CH-UA-Platform-Version'
+  | 'Sec-CH-UA-WoW64'
+  | 'Sec-Fetch-Dest'
+  | 'Sec-Fetch-Mode'
+  | 'Sec-Fetch-Site'
+  | 'Sec-Fetch-User'
+  | 'Sec-GPC'
+  | 'Server'
+  | 'Server-Timing'
+  | 'Service-Worker-Navigation-Preload'
+  | 'Set-Cookie'
+  | 'Strict-Transport-Security'
+  | 'Timing-Allow-Origin'
+  | 'Trailer'
+  | 'Transfer-Encoding'
+  | 'Upgrade'
+  | 'Vary'
+  | 'WWW-Authenticate'
+  | 'Warning'
+  | 'X-Content-Type-Options'
+  | 'X-DNS-Prefetch-Control'
+  | 'X-Frame-Options'
+  | 'X-Permitted-Cross-Domain-Policies'
+  | 'X-Powered-By'
+  | 'X-Robots-Tag'
+  | 'X-XSS-Protection'
+
+interface SetHeaders {
+  (name: ResponseHeader, value?: string, options?: SetHeadersOptions): void
+  (name: string, value?: string, options?: SetHeadersOptions): void
+}
+
+type ResponseHeadersInit =
+  | [string, string][]
+  | Record<string, string>
+  | Record<ResponseHeader, string>
+  | Headers
+
+interface ResponseInit {
+  headers?: ResponseHeadersInit
+  status?: number
+  statusText?: string
 }
 
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
@@ -463,7 +555,7 @@ export class Context<
    * })
    * ```
    */
-  header = (name: string, value: string | undefined, options?: { append?: boolean }): void => {
+  header: SetHeaders = (name, value, options): void => {
     // Clear the header
     if (value === undefined) {
       if (this.#headers) {
