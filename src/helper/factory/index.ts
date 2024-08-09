@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from '../../hono'
-import type { Env, H, HandlerResponse, Input, MiddlewareHandler } from '../../types'
+import type { BlankEnv, Env, H, HandlerResponse, Input, MiddlewareHandler } from '../../types'
 
 type InitApp<E extends Env = Env> = (app: Hono<E>) => void
 
@@ -217,7 +217,7 @@ export class Factory<E extends Env = any, P extends string = any> {
     this.initApp = init?.initApp
   }
 
-  createApp = (): Hono<E> => {
+  createApp = (): Hono<E, BlankEnv, P> => {
     const app = new Hono<E>()
     if (this.initApp) {
       this.initApp(app)
