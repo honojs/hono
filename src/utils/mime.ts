@@ -26,6 +26,9 @@ export const getExtension = (mimeType: string): string | undefined => {
 
 export { baseMimes as mimes }
 
+/**
+ * Union types for BaseMime
+ */
 export type BaseMime = 'audio/aac'
 | 'video/x-msvideo'
 | 'image/avif'
