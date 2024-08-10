@@ -26,6 +26,7 @@ export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E> & {
     getContent: (path: string, c: Context<E>) => Promise<Data | Response | null>
     pathResolve?: (path: string) => string
+    isDir?: (path: string) => boolean | undefined | Promise<boolean | undefined>
   }
 ): MiddlewareHandler => {
   return async (c, next) => {
@@ -38,6 +39,17 @@ export const serveStatic = <E extends Env = Env>(
     let filename = options.path ?? decodeURI(c.req.path)
     filename = options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename
     const root = options.root
+
+    // If it was Directory, force `/` on the end.
+    if (!filename.endsWith('/') && options.isDir) {
+      const path = getFilePathWithoutDefaultDocument({
+        filename,
+        root,
+      })
+      if (path && (await options.isDir(path))) {
+        filename = filename + '/'
+      }
+    }
 
     let path = getFilePath({
       filename,

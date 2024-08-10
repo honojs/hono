@@ -15,6 +15,9 @@ describe('Serve Static Middleware', () => {
     pathResolve: (path) => {
       return `./${path}`
     },
+    isDir: (path) => {
+      return path === 'static/hello.world'
+    },
   })
 
   app.get('/static/*', serveStatic)
@@ -35,6 +38,20 @@ describe('Serve Static Middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
     expect(await res.text()).toBe('Hello in ./static/sub/index.html')
+  })
+
+  it('Should return 200 response - /static/helloworld', async () => {
+    const res = await app.request('/static/helloworld')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
+    expect(await res.text()).toBe('Hello in ./static/helloworld/index.html')
+  })
+
+  it('Should return 200 response - /static/hello.world', async () => {
+    const res = await app.request('/static/hello.world')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
+    expect(await res.text()).toBe('Hello in ./static/hello.world/index.html')
   })
 
   it('Should decode URI strings - /static/%E7%82%8E.txt', async () => {
