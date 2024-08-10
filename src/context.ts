@@ -18,6 +18,7 @@ import type {
   JSONValue,
   SimplifyDeepArray,
 } from './utils/types'
+import type { BaseMime } from './utils/mime'
 
 type HeaderRecord = Record<ResponseHeader, string | string[]> | Record<string, string | string[]>
 
@@ -304,6 +305,7 @@ type ResponseHeader =
   | 'X-XSS-Protection'
 
 interface SetHeaders {
+  (name: 'Content-Type', value?: BaseMime, options?: SetHeadersOptions): void
   (name: ResponseHeader, value?: string, options?: SetHeadersOptions): void
   (name: string, value?: string, options?: SetHeadersOptions): void
 }
