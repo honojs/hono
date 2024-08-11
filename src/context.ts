@@ -20,7 +20,10 @@ import type {
 } from './utils/types'
 import type { BaseMime } from './utils/mime'
 
-type HeaderRecord = Record<ResponseHeader, string | string[]> | Record<string, string | string[]>
+type HeaderRecord =
+  | Record<'Content-Type', BaseMime>
+  | Record<ResponseHeader, string | string[]>
+  | Record<string, string | string[]>
 
 /**
  * Data type can be a string, ArrayBuffer, or ReadableStream.
@@ -312,8 +315,9 @@ interface SetHeaders {
 
 type ResponseHeadersInit =
   | [string, string][]
-  | Record<string, string>
+  | Record<'Content-Type', BaseMime>
   | Record<ResponseHeader, string>
+  | Record<string, string>
   | Headers
 
 interface ResponseInit {

@@ -3,7 +3,10 @@
  * MIME utility.
  */
 
-export const getMimeType = (filename: string, mimes = baseMimes): string | undefined => {
+export const getMimeType = (
+  filename: string,
+  mimes: Record<string, string> = baseMimes
+): string | undefined => {
   const regexp = /\.([a-zA-Z0-9]+?)$/
   const match = filename.match(regexp)
   if (!match) {
@@ -79,7 +82,6 @@ export type BaseMime =
   | 'video/3gpp2'
   | 'model/gltf+json'
   | 'model/gltf-binary'
-  | (string & {})
 
 const baseMimes: Record<string, BaseMime> = {
   aac: 'audio/aac',
