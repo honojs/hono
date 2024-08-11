@@ -154,7 +154,7 @@ export class RegExpRouter<T> implements Router<T> {
 
     const paramCount = (path.match(/\/:/g) || []).length
 
-    if (/\*$/.test(path)) {
+    if (path.endsWith('*')) {
       const re = buildWildcardRegExp(path)
       if (method === METHOD_NAME_ALL) {
         Object.keys(middleware).forEach((m) => {
@@ -218,7 +218,7 @@ export class RegExpRouter<T> implements Router<T> {
         return staticMatch
       }
 
-      const match = path.match(matcher[0])
+      const match = RegExp(matcher[0]).exec(path)
       if (!match) {
         return [[], emptyParam]
       }

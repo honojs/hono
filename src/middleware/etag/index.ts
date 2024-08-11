@@ -59,7 +59,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
 
     await next()
 
-    const res = c.res as Response
+    const res = c.res
     let etag = res.headers.get('ETag')
 
     if (!etag) {
