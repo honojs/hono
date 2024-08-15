@@ -56,14 +56,15 @@ export const stringBufferToString = async (
 ): Promise<HtmlEscapedString> => {
   let str = ''
   callbacks ||= []
-  for (let i = buffer.length - 1; ; i--) {
-    str += buffer[i]
+  const resolvedBuffer = await Promise.all(buffer)
+  for (let i = resolvedBuffer.length - 1; ; i--) {
+    str += resolvedBuffer[i]
     i--
     if (i < 0) {
       break
     }
 
-    let r = await buffer[i]
+    let r = resolvedBuffer[i]
     if (typeof r === 'object') {
       callbacks.push(...((r as HtmlEscapedString).callbacks || []))
     }
