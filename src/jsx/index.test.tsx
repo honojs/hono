@@ -112,6 +112,39 @@ describe('JSX middleware', () => {
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
     expect(await res.text()).toBe('<html><body><h1>Hello from async component</h1></body></html>')
   })
+
+  it('Should handle async component error', async () => {
+    const componentError = new Error('Error from async error component')
+
+    const AsyncComponent = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      return <h1>Hello from async component</h1>
+    }
+    const AsyncErrorComponent = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      throw componentError
+    }
+
+    let raisedError: any
+    app.onError((e, c) => {
+      raisedError = e
+      return c.html('<html><body><h1>Error from onError</h1></body></html>', 500)
+    })
+    app.get('/', (c) => {
+      return c.html(
+        <>
+          <AsyncComponent />
+          <AsyncErrorComponent />
+        </>
+      )
+    })
+
+    const res = await app.request('http://localhost/')
+    expect(res.status).toBe(500)
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(await res.text()).toBe('<html><body><h1>Error from onError</h1></body></html>')
+    expect(raisedError).toBe(componentError)
+  })
 })
 
 describe('render to string', () => {
