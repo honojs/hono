@@ -466,15 +466,73 @@ export namespace JSX {
     src?: string | undefined
   }
 
+  /**
+   * String literal types with auto-complition
+   * @see https://github.com/Microsoft/TypeScript/issues/29729
+   */
+  type LiteralUnion<T> = T | (string & Record<never, never>)
+  /**
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#http-equiv
+   */
+  type MetaHttpEquiv =
+    | LiteralUnion<
+        'content-security-policy' | 'content-type' | 'default-style' | 'x-ua-compatible' | 'refresh'
+      >
+    | undefined
+  /**
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta/name
+   */
+  type MetaName =
+    | LiteralUnion<
+        | 'application-name'
+        | 'author'
+        | 'description'
+        | 'generator'
+        | 'keywords'
+        | 'referrer'
+        | 'theme-color'
+        | 'color-scheme'
+        | 'viewport'
+        | 'creator'
+        | 'googlebot'
+        | 'publisher'
+        | 'robots'
+      >
+    | undefined
+  /**
+   * @see https://ogp.me/
+   */
+  type MetaProperty =
+    | LiteralUnion<
+        | 'og:title'
+        | 'og:type'
+        | 'og:image'
+        | 'og:url'
+        | 'og:audio'
+        | 'og:description'
+        | 'og:determiner'
+        | 'og:locale'
+        | 'og:locale:alternate'
+        | 'og:site_name'
+        | 'og:video'
+        | 'og:image:url'
+        | 'og:image:secure_url'
+        | 'og:image:type'
+        | 'og:image:width'
+        | 'og:image:height'
+        | 'og:image:alt'
+      >
+    | undefined
   interface MetaHTMLAttributes extends HTMLAttributes {
-    charset?: string | undefined
-    'http-equiv'?: string | undefined
-    name?: string | undefined
+    charset?: LiteralUnion<'utf-8'> | undefined
+    'http-equiv'?: MetaHttpEquiv
+    name?: MetaName
     media?: string | undefined
     content?: string | undefined
+    property?: MetaProperty
 
     // React 19 compatibility
-    httpEquiv?: string | undefined
+    httpEquiv?: MetaHttpEquiv
   }
 
   interface MeterHTMLAttributes extends HTMLAttributes {
