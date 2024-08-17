@@ -126,6 +126,7 @@ const getEventSpec = (key: string): [string, boolean] | undefined => {
 }
 
 const toAttributeName = (element: SupportedElement, key: string): string =>
+  nameSpaceContext &&
   element instanceof SVGElement &&
   /[A-Z]/.test(key) &&
   (key in element.style || // Presentation attributes are findable in style object. "clip-path", "font-size", "stroke-width", etc.
