@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import type { BaseMime } from '../utils/mime'
 import type { StringLiteralUnion } from '../utils/types'
 
 /**
@@ -201,7 +202,7 @@ export namespace JSX {
     | 'strict-origin-when-cross-origin'
     | 'unsafe-url'
 
-  type HTMLAttributeAnchorTarget = '_self' | '_blank' | '_parent' | '_top' | string
+  type HTMLAttributeAnchorTarget = StringLiteralUnion<'_self' | '_blank' | '_parent' | '_top'>
 
   interface AnchorHTMLAttributes extends HTMLAttributes {
     download?: string | boolean | undefined
@@ -210,7 +211,7 @@ export namespace JSX {
     media?: string | undefined
     ping?: string | undefined
     target?: HTMLAttributeAnchorTarget | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<BaseMime> | undefined
     referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
   }
 
