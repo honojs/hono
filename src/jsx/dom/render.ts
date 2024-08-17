@@ -20,8 +20,6 @@ const nameSpaceMap: Record<string, string> = {
   math: '1998/Math/MathML',
 } as const
 
-const skipProps: Set<string> = new Set(['children'])
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type HasRenderToDom = FC<any> & { [DOM_RENDERER]: FC<any> }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -141,7 +139,7 @@ const applyProps = (
 ): void => {
   attributes ||= {}
   for (let [key, value] of Object.entries(attributes)) {
-    if (!skipProps.has(key) && (!oldAttributes || oldAttributes[key] !== value)) {
+    if (key !== 'children' && (!oldAttributes || oldAttributes[key] !== value)) {
       key = normalizeIntrinsicElementKey(key)
       const eventSpec = getEventSpec(key)
       if (eventSpec) {
@@ -218,7 +216,7 @@ const applyProps = (
   }
   if (oldAttributes) {
     for (let [key, value] of Object.entries(oldAttributes)) {
-      if (!skipProps.has(key) && !(key in attributes)) {
+      if (key !== 'children' && !(key in attributes)) {
         key = normalizeIntrinsicElementKey(key)
         const eventSpec = getEventSpec(key)
         if (eventSpec) {
