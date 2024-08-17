@@ -379,11 +379,25 @@ const applyNodeObject = (node: NodeObject, container: Container): void => {
     }
   }
   remove.forEach(removeNode)
-  callbacks.forEach(([, , , , cb]) => cb?.()) // invoke useInsertionEffect callbacks
-  callbacks.forEach(([, cb]) => cb?.()) // invoke useLayoutEffect callbacks
-  requestAnimationFrame(() => {
-    callbacks.forEach(([, , , cb]) => cb?.()) // invoke useEffect callbacks
-  })
+  if (callbacks.length) {
+    const useLayoutEffectCbs: Array<() => void> = []
+    const useEffectCbs: Array<() => void> = []
+    callbacks.forEach(([, useLayoutEffectCb, , useEffectCb, useInsertionEffectCb]) => {
+      if (useLayoutEffectCb) {
+        useLayoutEffectCbs.push(useLayoutEffectCb)
+      }
+      if (useEffectCb) {
+        useEffectCbs.push(useEffectCb)
+      }
+      useInsertionEffectCb?.() // invoke useInsertionEffect callbacks
+    })
+    useLayoutEffectCbs.forEach((cb) => cb()) // invoke useLayoutEffect callbacks
+    if (useEffectCbs.length) {
+      requestAnimationFrame(() => {
+        useEffectCbs.forEach((cb) => cb()) // invoke useEffect callbacks
+      })
+    }
+  }
 }
 
 const fallbackUpdateFnArrayMap: WeakMap<
