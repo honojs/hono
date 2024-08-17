@@ -105,11 +105,22 @@ export const getNameSpaceContext = () => nameSpaceContext
 
 const isNodeString = (node: Node): node is NodeString => 't' in (node as NodeString)
 
+const eventCache: Record<string, [string, boolean]> = {
+  // pre-define events that are used very frequently
+  onClick: ['click', false],
+}
 const getEventSpec = (key: string): [string, boolean] | undefined => {
+  if (!key.startsWith('on')) {
+    return undefined
+  }
+  if (eventCache[key]) {
+    return eventCache[key]
+  }
+
   const match = key.match(/^on([A-Z][a-zA-Z]+?(?:PointerCapture)?)(Capture)?$/)
   if (match) {
     const [, eventName, capture] = match
-    return [(eventAliasMap[eventName] || eventName).toLowerCase(), !!capture]
+    return (eventCache[key] = [(eventAliasMap[eventName] || eventName).toLowerCase(), !!capture])
   }
   return undefined
 }
