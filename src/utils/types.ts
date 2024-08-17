@@ -97,3 +97,9 @@ export type HasRequiredKeys<BaseType extends object> = RequiredKeysOf<BaseType> 
   : true
 
 export type IsAny<T> = boolean extends (T extends never ? true : false) ? true : false
+
+/**
+ * String literal types with auto-completion
+ * @see https://github.com/Microsoft/TypeScript/issues/29729
+ */
+export type StringLiteralUnion<T> = T | (string & Record<never, never>)

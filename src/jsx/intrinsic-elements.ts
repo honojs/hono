@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import type { StringLiteralUnion } from '../utils/types'
+
 /**
  * This code is based on React.
  * https://github.com/facebook/react
@@ -467,11 +469,6 @@ export namespace JSX {
   }
 
   /**
-   * String literal types with auto-completion
-   * @see https://github.com/Microsoft/TypeScript/issues/29729
-   */
-  type LiteralUnion<T> = T | (string & Record<never, never>)
-  /**
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#http-equiv
    */
   type MetaHttpEquiv =
@@ -519,15 +516,15 @@ export namespace JSX {
     | 'og:image:height'
     | 'og:image:alt'
   interface MetaHTMLAttributes extends HTMLAttributes {
-    charset?: LiteralUnion<'utf-8'> | undefined
-    'http-equiv'?: LiteralUnion<MetaHttpEquiv> | undefined
-    name?: LiteralUnion<MetaName> | undefined
+    charset?: StringLiteralUnion<'utf-8'> | undefined
+    'http-equiv'?: StringLiteralUnion<MetaHttpEquiv> | undefined
+    name?: StringLiteralUnion<MetaName> | undefined
     media?: string | undefined
     content?: string | undefined
-    property?: LiteralUnion<MetaProperty> | undefined
+    property?: StringLiteralUnion<MetaProperty> | undefined
 
     // React 19 compatibility
-    httpEquiv?: LiteralUnion<MetaHttpEquiv> | undefined
+    httpEquiv?: StringLiteralUnion<MetaHttpEquiv> | undefined
   }
 
   interface MeterHTMLAttributes extends HTMLAttributes {
