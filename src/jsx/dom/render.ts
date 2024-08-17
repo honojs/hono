@@ -261,7 +261,9 @@ const getNextChildren = (
   childrenToRemove: Node[],
   callbacks: EffectData[]
 ): void => {
-  childrenToRemove.push(...node.vR)
+  if (node.vR?.length) {
+    childrenToRemove.push(...node.vR)
+  }
   if (typeof node.tag === 'function') {
     node[DOM_STASH][1][STASH_EFFECT]?.forEach((data: EffectData) => callbacks.push(data))
   }
@@ -274,7 +276,9 @@ const getNextChildren = (
         getNextChildren(child, container, nextChildren, childrenToRemove, callbacks)
       } else {
         nextChildren.push(child)
-        childrenToRemove.push(...child.vR)
+        if (child.vR?.length) {
+          childrenToRemove.push(...child.vR)
+        }
       }
     }
   })
