@@ -145,14 +145,16 @@ const applyProps = (
       key = normalizeIntrinsicElementKey(key)
       const eventSpec = getEventSpec(key)
       if (eventSpec) {
-        if (oldAttributes) {
-          container.removeEventListener(eventSpec[0], oldAttributes[key], eventSpec[1])
-        }
-        if (value != null) {
-          if (typeof value !== 'function') {
-            throw new Error(`Event handler for "${key}" is not a function`)
+        if (oldAttributes?.[key] !== value) {
+          if (oldAttributes) {
+            container.removeEventListener(eventSpec[0], oldAttributes[key], eventSpec[1])
           }
-          container.addEventListener(eventSpec[0], value, eventSpec[1])
+          if (value != null) {
+            if (typeof value !== 'function') {
+              throw new Error(`Event handler for "${key}" is not a function`)
+            }
+            container.addEventListener(eventSpec[0], value, eventSpec[1])
+          }
         }
       } else if (key === 'dangerouslySetInnerHTML' && value) {
         container.innerHTML = value.__html
