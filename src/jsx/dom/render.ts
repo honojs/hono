@@ -263,11 +263,14 @@ const getNextChildren = (
 }
 
 const findInsertBefore = (node: Node | undefined): SupportedElement | Text | null => {
-  return !node
-    ? null
-    : node.tag === HONO_PORTAL_ELEMENT
-    ? findInsertBefore(node.nN)
-    : node.e || (node.vC && node.pP && findInsertBefore(node.vC[0])) || findInsertBefore(node.nN)
+  for (; ; node = node.tag === HONO_PORTAL_ELEMENT || !node.vC || !node.pP ? node.nN : node.vC[0]) {
+    if (!node) {
+      return null
+    }
+    if (node.tag !== HONO_PORTAL_ELEMENT && node.e) {
+      return node.e
+    }
+  }
 }
 
 const removeNode = (node: Node): void => {
