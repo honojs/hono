@@ -273,7 +273,14 @@ const getNextChildren = (
     } else {
       if (typeof child.tag === 'function' || child.tag === '') {
         child.c = container
+        const currentNextChildrenIndex = nextChildren.length
         getNextChildren(child, container, nextChildren, childrenToRemove, callbacks)
+        if (child.s) {
+          for (let i = currentNextChildrenIndex; i < nextChildren.length; i++) {
+            nextChildren[i].s = true
+          }
+          child.s = false
+        }
       } else {
         nextChildren.push(child)
         if (child.vR?.length) {
@@ -318,16 +325,16 @@ const removeNode = (node: Node): void => {
   }
 }
 
-const apply = (node: NodeObject, container: Container): void => {
+const apply = (node: NodeObject, container: Container, isNew: boolean): void => {
   node.c = container
-  applyNodeObject(node, container)
+  applyNodeObject(node, container, isNew)
 }
 
-const applyNode = (node: Node, container: Container): void => {
+const applyNode = (node: Node, container: Container, isNew: boolean): void => {
   if (isNodeString(node)) {
     container.textContent = node.t
   } else {
-    applyNodeObject(node, container)
+    applyNodeObject(node, container, isNew)
   }
 }
 
@@ -349,42 +356,80 @@ const findChildNodeIndex = (
 }
 
 const cancelBuild: symbol = Symbol()
-const applyNodeObject = (node: NodeObject, container: Container): void => {
+const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean): void => {
   const next: Node[] = []
   const remove: Node[] = []
   const callbacks: EffectData[] = []
   getNextChildren(node, container, next, remove, callbacks)
+  remove.forEach(removeNode)
 
-  const childNodes = container.childNodes
-  let offset =
-    findChildNodeIndex(childNodes, findInsertBefore(node.nN)) ??
-    findChildNodeIndex(childNodes, next.find((n) => n.tag !== HONO_PORTAL_ELEMENT && n.e)?.e) ??
-    childNodes.length
+  const childNodes = (isNew ? undefined : container.childNodes) as NodeListOf<ChildNode>
+  let offset: number
+  if (isNew) {
+    offset = -1
+  } else {
+    offset =
+      (childNodes.length &&
+        (findChildNodeIndex(childNodes, findInsertBefore(node.nN)) ??
+          findChildNodeIndex(
+            childNodes,
+            next.find((n) => n.tag !== HONO_PORTAL_ELEMENT && n.e)?.e
+          ))) ??
+      -1
+    if (offset === -1) {
+      isNew = true
+    }
+  }
 
   for (let i = 0, len = next.length; i < len; i++, offset++) {
     const child = next[i]
 
     let el: SupportedElement | Text
-    if (isNodeString(child)) {
-      if (child.e && child.d) {
-        child.e.textContent = child.t
-      }
-      child.d = false
-      el = child.e ||= document.createTextNode(child.t)
+    if (child.s && child.e) {
+      el = child.e
+      child.s = false
     } else {
-      el = child.e ||= child.n
-        ? (document.createElementNS(child.n, child.tag as string) as SVGElement | MathMLElement)
-        : document.createElement(child.tag as string)
-      applyProps(el as HTMLElement, child.props, child.pP)
-      applyNode(child, el as HTMLElement)
+      const isNewLocal = isNew || !child.e
+      if (isNodeString(child)) {
+        if (child.e && child.d) {
+          child.e.textContent = child.t
+        }
+        child.d = false
+        el = child.e ||= document.createTextNode(child.t)
+      } else {
+        el = child.e ||= child.n
+          ? (document.createElementNS(child.n, child.tag as string) as SVGElement | MathMLElement)
+          : document.createElement(child.tag as string)
+        applyProps(el as HTMLElement, child.props, child.pP)
+        applyNode(child, el as HTMLElement, isNewLocal)
+        if (child.vR.length) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          delete (child as any).vR
+          delete child.pP
+        }
+      }
     }
     if (child.tag === HONO_PORTAL_ELEMENT) {
       offset--
-    } else if (childNodes[offset] !== el && childNodes[offset - 1] !== child.e) {
-      container.insertBefore(el, childNodes[offset] || null)
+    } else if (isNew) {
+      if (!el.parentNode) {
+        container.appendChild(el)
+      }
+    } else if (childNodes[offset] !== el && childNodes[offset - 1] !== el) {
+      if (childNodes[offset + 1] === el) {
+        // Move extra elements to the back of the container. This is to be done efficiently when elements are swapped.
+        container.appendChild(childNodes[offset])
+      } else {
+        container.insertBefore(el, childNodes[offset] || null)
+      }
     }
   }
-  remove.forEach(removeNode)
+  if (node.vR.length) {
+    node.vR = []
+  }
+  if (node.pP) {
+    delete node.pP
+  }
   if (callbacks.length) {
     const useLayoutEffectCbs: Array<() => void> = []
     const useEffectCbs: Array<() => void> = []
@@ -563,7 +608,7 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
             errorHandlerNode.c
           ) {
             // render error boundary immediately
-            apply(errorHandlerNode, errorHandlerNode.c as Container)
+            apply(errorHandlerNode, errorHandlerNode.c as Container, false)
             return
           }
         }
@@ -641,7 +686,7 @@ const updateSync = (context: Context, node: NodeObject): void => {
     c.values.pop()
   })
   if (context[0] !== 1 || !context[1]) {
-    apply(node, node.c as Container)
+    apply(node, node.c as Container, false)
   }
 }
 
@@ -702,7 +747,7 @@ export const renderNode = (node: NodeObject, container: Container): void => {
   ;(context as Context)[4] = false // finish top level render
 
   const fragment = document.createDocumentFragment()
-  apply(node, fragment)
+  apply(node, fragment, true)
   replaceContainer(node, fragment, container)
   container.replaceChildren(fragment)
 }
