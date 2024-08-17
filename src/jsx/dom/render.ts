@@ -40,6 +40,7 @@ export type NodeObject = {
   vR: Node[] // virtual dom children to remove
   n?: string // namespace
   f?: boolean // force build
+  s?: boolean // skip build and apply
   c: Container | undefined // container
   e: SupportedElement | Text | undefined // rendered element
   p?: PreserveNodeType // preserve HTMLElement if it will be unmounted
@@ -58,6 +59,7 @@ export type NodeObject = {
 type NodeString = {
   t: string // text content
   d: boolean // is dirty
+  s?: boolean // skip build and apply
 } & {
   e?: Text
   // like a NodeObject
@@ -420,16 +422,18 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
       foundErrorHandler = (children[0] as any)[DOM_ERROR_HANDLER] as ErrorHandler
       context[5]!.push([context, foundErrorHandler, node])
     }
-    const oldVChildren: Node[] = buildWithPreviousChildren
+    const oldVChildren: Node[] | undefined = buildWithPreviousChildren
       ? [...(node.pC as Node[])]
       : node.vC
       ? [...node.vC]
-      : []
+      : undefined
     const vChildren: Node[] = []
-    node.vR = buildWithPreviousChildren ? [...node.vC] : []
     let prevNode: Node | undefined
-    children.flat().forEach((c: Child) => {
-      let child = buildNode(c)
+    for (let i = 0; i < children.length; i++) {
+      if (Array.isArray(children[i])) {
+        children.splice(i, 1, ...(children[i] as Child[]).flat())
+      }
+      let child = buildNode(children[i])
       if (child) {
         if (
           typeof child.tag === 'function' &&
@@ -444,29 +448,29 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
           }
         }
 
-        let oldChild: Node | undefined
-        const i = oldVChildren.findIndex(
-          isNodeString(child)
-            ? (c) => isNodeString(c)
-            : child.key !== undefined
-            ? (c) => c.key === (child as Node).key
-            : (c) => c.tag === (child as Node).tag
-        )
-        if (i !== -1) {
-          oldChild = oldVChildren[i]
-          oldVChildren.splice(i, 1)
+        let oldChild: NodeObject | undefined
+        if (oldVChildren && oldVChildren.length) {
+          const i = oldVChildren.findIndex(
+            isNodeString(child)
+              ? (c) => isNodeString(c)
+              : child.key !== undefined
+              ? (c) => c.key === (child as Node).key && c.tag === (child as Node).tag
+              : (c) => c.tag === (child as Node).tag
+          )
+
+          if (i !== -1) {
+            oldChild = oldVChildren[i] as NodeObject
+            oldVChildren.splice(i, 1)
+          }
         }
 
-        let skipBuild = false
         if (oldChild) {
           if (isNodeString(child)) {
-            if ((oldChild as NodeString).t !== child.t) {
-              ;(oldChild as NodeString).t = child.t // update text content
-              ;(oldChild as NodeString).d = true
+            if ((oldChild as unknown as NodeString).t !== child.t) {
+              ;(oldChild as unknown as NodeString).t = child.t // update text content
+              ;(oldChild as unknown as NodeString).d = true
             }
             child = oldChild
-          } else if (oldChild.tag !== child.tag) {
-            node.vR.push(oldChild)
           } else {
             const pP = (oldChild.pP = oldChild.props)
             oldChild.props = child.props
@@ -478,9 +482,12 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
               if (!oldChild.f) {
                 const prevPropsKeys = Object.keys(pP)
                 const currentProps = oldChild.props
-                skipBuild =
+                if (
                   prevPropsKeys.length === Object.keys(currentProps).length &&
                   prevPropsKeys.every((k) => k in currentProps && currentProps[k] === pP[k])
+                ) {
+                  oldChild.s = true
+                }
               }
             }
             child = oldChild
@@ -492,20 +499,22 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
           }
         }
 
-        if (!isNodeString(child) && !skipBuild) {
+        if (!isNodeString(child) && !child.s) {
           build(context, child)
           delete child.f
         }
         vChildren.push(child)
 
-        for (let p = prevNode; p && !isNodeString(p); p = p.vC?.at(-1) as NodeObject) {
-          p.nN = child
+        if (prevNode && !prevNode.s && !child.s) {
+          for (let p = prevNode; p && !isNodeString(p); p = p.vC?.at(-1) as NodeObject) {
+            p.nN = child
+          }
         }
         prevNode = child
       }
-    })
+    }
+    node.vR = buildWithPreviousChildren ? [...node.vC, ...(oldVChildren || [])] : oldVChildren || []
     node.vC = vChildren
-    node.vR.push(...oldVChildren)
     if (buildWithPreviousChildren) {
       delete node.pC
     }
