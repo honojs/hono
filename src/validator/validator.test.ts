@@ -260,6 +260,21 @@ describe('FormData', () => {
       'foo[]': ['bar1', 'bar2'],
     })
   })
+
+  it('Should return `foo` as an array if multiple values are appended', async () => {
+    const form = new FormData()
+    form.append('foo', 'bar1')
+    form.append('foo', 'bar2')
+    form.append('foo', 'bar3')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: form,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      foo: ['bar1', 'bar2', 'bar3'],
+    })
+  })
 })
 
 describe('Malformed FormData request', () => {
