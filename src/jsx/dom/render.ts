@@ -237,14 +237,16 @@ const invokeTag = (context: Context, node: NodeObject): Child[] => {
   node[DOM_STASH][0] = 0
   buildDataStack.push([context, node])
   const func = (node.tag as HasRenderToDom)[DOM_RENDERER] || node.tag
-  try {
-    return [
-      func.call(null, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const props = (func as any).defaultProps
+    ? {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ...((func as any).defaultProps || {}),
+        ...(func as any).defaultProps,
         ...node.props,
-      }),
-    ]
+      }
+    : node.props
+  try {
+    return [func.call(null, props)]
   } finally {
     buildDataStack.pop()
   }
