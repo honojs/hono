@@ -40,7 +40,6 @@ export type NodeObject = {
   vC: Node[] // virtual dom children
   pC?: Node[] // previous virtual dom children
   vR: Node[] // virtual dom children to remove
-  s?: Node[] // shadow virtual dom children
   n?: string // namespace
   f?: boolean // force build
   c: Container | undefined // container
@@ -221,12 +220,6 @@ const applyProps = (
 }
 
 const invokeTag = (context: Context, node: NodeObject): Child[] => {
-  if (node.s) {
-    const res = node.s
-    node.s = undefined
-    return res as Child[]
-  }
-
   node[DOM_STASH][0] = 0
   buildDataStack.push([context, node])
   const func = (node.tag as HasRenderToDom)[DOM_RENDERER] || node.tag
