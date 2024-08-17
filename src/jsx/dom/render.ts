@@ -138,7 +138,8 @@ const applyProps = (
   oldAttributes?: Props
 ): void => {
   attributes ||= {}
-  for (let [key, value] of Object.entries(attributes)) {
+  for (let key in attributes) {
+    const value = attributes[key]
     if (key !== 'children' && (!oldAttributes || oldAttributes[key] !== value)) {
       key = normalizeIntrinsicElementKey(key)
       const eventSpec = getEventSpec(key)
@@ -215,7 +216,8 @@ const applyProps = (
     }
   }
   if (oldAttributes) {
-    for (let [key, value] of Object.entries(oldAttributes)) {
+    for (let key in oldAttributes) {
+      const value = oldAttributes[key]
       if (key !== 'children' && !(key in attributes)) {
         key = normalizeIntrinsicElementKey(key)
         const eventSpec = getEventSpec(key)
