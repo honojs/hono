@@ -178,8 +178,8 @@ const applyProps = (
           }
         }
       } else {
-        const nodeName = container.nodeName
         if (key === 'value') {
+          const nodeName = container.nodeName
           if (nodeName === 'INPUT' || nodeName === 'TEXTAREA' || nodeName === 'SELECT') {
             ;(container as unknown as HTMLInputElement).value =
               value === null || value === undefined || value === false ? null : value
@@ -195,8 +195,8 @@ const applyProps = (
             }
           }
         } else if (
-          (key === 'checked' && nodeName === 'INPUT') ||
-          (key === 'selected' && nodeName === 'OPTION')
+          (key === 'checked' && container.nodeName === 'INPUT') ||
+          (key === 'selected' && container.nodeName === 'OPTION')
         ) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ;(container as any)[key] = value
