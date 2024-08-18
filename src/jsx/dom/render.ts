@@ -263,6 +263,8 @@ const getNextChildren = (
 ): void => {
   if (node.vR?.length) {
     childrenToRemove.push(...node.vR)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (node as any).vR
   }
   if (typeof node.tag === 'function') {
     node[DOM_STASH][1][STASH_EFFECT]?.forEach((data: EffectData) => callbacks.push(data))
@@ -285,6 +287,8 @@ const getNextChildren = (
         nextChildren.push(child)
         if (child.vR?.length) {
           childrenToRemove.push(...child.vR)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          delete (child as any).vR
         }
       }
     }
@@ -394,11 +398,6 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
           : document.createElement(child.tag as string)
         applyProps(el as HTMLElement, child.props, child.pP)
         applyNodeObject(child, el as HTMLElement, isNewLocal)
-        if (child.vR.length) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          delete (child as any).vR
-          delete child.pP
-        }
       }
     }
     if (child.tag === HONO_PORTAL_ELEMENT) {
@@ -415,9 +414,6 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
         container.insertBefore(el, childNodes[offset] || null)
       }
     }
-  }
-  if (node.vR.length) {
-    node.vR = []
   }
   if (node.pP) {
     delete node.pP
