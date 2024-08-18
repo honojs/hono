@@ -330,14 +330,6 @@ const apply = (node: NodeObject, container: Container, isNew: boolean): void => 
   applyNodeObject(node, container, isNew)
 }
 
-const applyNode = (node: Node, container: Container, isNew: boolean): void => {
-  if (isNodeString(node)) {
-    container.textContent = node.t
-  } else {
-    applyNodeObject(node, container, isNew)
-  }
-}
-
 const findChildNodeIndex = (
   childNodes: NodeListOf<ChildNode>,
   child: ChildNode | null | undefined
@@ -401,7 +393,7 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
           ? (document.createElementNS(child.n, child.tag as string) as SVGElement | MathMLElement)
           : document.createElement(child.tag as string)
         applyProps(el as HTMLElement, child.props, child.pP)
-        applyNode(child, el as HTMLElement, isNewLocal)
+        applyNodeObject(child, el as HTMLElement, isNewLocal)
         if (child.vR.length) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           delete (child as any).vR
