@@ -1,4 +1,28 @@
 declare namespace Deno {
+  interface FileHandleLike {
+    readonly readable: ReadableStream<Uint8Array>
+  }
+
+  /**
+   * Open file with the specified path.
+   *
+   * @param path The path to open file.
+   * @returns FileHandle object.
+   */
+  export function open(path: string): Promise<FileHandleLike>
+
+  interface StatsLike {
+    isDirectory: boolean
+  }
+
+  /**
+   * Get stats with the specified path.
+   *
+   * @param path The path to get stats.
+   * @returns Stats object.
+   */
+  export function lstatSync(path: string): StatsLike
+
   /**
    * Creates a new directory with the specified path.
    *
@@ -19,10 +43,29 @@ declare namespace Deno {
 
   export function upgradeWebSocket(
     req: Request,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    options: any
+    options: UpgradeWebSocketOptions
   ): {
     response: Response
     socket: WebSocket
+  }
+
+  export interface UpgradeWebSocketOptions {
+    /**
+     * Sets the `.protocol` property on the client side web socket to the
+     * value provided here, which should be one of the strings specified in the
+     * `protocols` parameter when requesting the web socket. This is intended
+     * for clients and servers to specify sub-protocols to use to communicate to
+     * each other.
+     */
+    protocol?: string
+    /**
+     * If the client does not respond to this frame with a
+     * `pong` within the timeout specified, the connection is deemed
+     * unhealthy and is closed. The `close` and `error` event will be emitted.
+     *
+     * The unit is seconds, with a default of 30.
+     * Set to `0` to disable timeouts.
+     */
+    idleTimeout?: number
   }
 }
