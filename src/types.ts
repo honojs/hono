@@ -26,11 +26,13 @@ import type {
 
 export type Bindings = object
 export type Variables = object
+export type CustomHeaders = string
 
 export type BlankEnv = {}
 export type Env = {
   Bindings?: Bindings
   Variables?: Variables
+  Headers?: CustomHeaders
 }
 
 export type Next = () => Promise<void>
