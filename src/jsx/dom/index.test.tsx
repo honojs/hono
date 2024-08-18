@@ -736,6 +736,16 @@ describe('DOM', () => {
     })
   })
 
+  describe('dangerouslySetInnerHTML', () => {
+    it('string', () => {
+      const App = () => {
+        return <div dangerouslySetInnerHTML={{ __html: '<p>Hello</p>' }} />
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe('<div><p>Hello</p></div>')
+    })
+  })
+
   describe('Event', () => {
     it('bubbling phase', async () => {
       const clicked: string[] = []
@@ -883,6 +893,13 @@ describe('DOM', () => {
       const addEventListenerSpy = vi.spyOn(dom.window.Node.prototype, 'addEventListener')
       render(<App />, root)
       expect(addEventListenerSpy).not.toHaveBeenCalled()
+    })
+
+    it('invalid event handler value', async () => {
+      const App = () => {
+        return <div onClick={1 as unknown as () => void}></div>
+      }
+      expect(() => render(<App />, root)).toThrow()
     })
   })
 
@@ -1874,6 +1891,16 @@ describe('DOM', () => {
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div><p>1</p></div>')
     })
+
+    it('title', async () => {
+      const App = () => {
+        return <div>{createElement('title', {}, 'Hello')}</div>
+      }
+      const app = <App />
+      render(app, root)
+      expect(document.head.innerHTML).toBe('<title>Hello</title>')
+      expect(root.innerHTML).toBe('<div></div>')
+    })
   })
 
   describe('dom-specific createElement', () => {
@@ -1888,6 +1915,16 @@ describe('DOM', () => {
       root.querySelector('p')?.click()
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div><p>1</p></div>')
+    })
+
+    it('title', async () => {
+      const App = () => {
+        return <div>{createElementForDom('title', {}, 'Hello')}</div>
+      }
+      const app = <App />
+      render(app, root)
+      expect(document.head.innerHTML).toBe('<title>Hello</title>')
+      expect(root.innerHTML).toBe('<div></div>')
     })
   })
 
