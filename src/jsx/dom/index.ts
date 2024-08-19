@@ -32,7 +32,7 @@ import {
 import { useActionState, useFormStatus, useOptimistic } from './hooks'
 import { ErrorBoundary, Suspense } from './components'
 import { createContext } from './context'
-import { Fragment, jsx } from './jsx-runtime'
+import { Fragment, jsx } from './tiny/jsx-runtime'
 import { createPortal, flushSync } from './render'
 
 export { render } from './render'

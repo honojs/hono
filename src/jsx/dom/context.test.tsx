@@ -1,5 +1,6 @@
 /** @jsxImportSource ../ */
 import { JSDOM } from 'jsdom'
+import './feat/intrinsic-element'
 import {
   Suspense,
   createContext as createContextCommon,

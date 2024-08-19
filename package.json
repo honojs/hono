@@ -169,6 +169,11 @@
       "import": "./dist/jsx/dom/jsx-dev-runtime.js",
       "require": "./dist/cjs/jsx/dom/jsx-dev-runtime.js"
     },
+    "./jsx/dom/jsx-dev-runtime/tiny": {
+      "types": "./dist/types/jsx/dom/tiny/jsx-dev-runtime.d.ts",
+      "import": "./dist/jsx/dom/tiny/jsx-dev-runtime.js",
+      "require": "./dist/cjs/jsx/dom/tiny/jsx-dev-runtime.js"
+    },
     "./jsx/dom/jsx-runtime": {
       "types": "./dist/types/jsx/dom/jsx-runtime.d.ts",
       "import": "./dist/jsx/dom/jsx-runtime.js",
