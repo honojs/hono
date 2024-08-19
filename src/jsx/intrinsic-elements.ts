@@ -466,15 +466,68 @@ export namespace JSX {
     src?: string | undefined
   }
 
+  /**
+   * String literal types with auto-completion
+   * @see https://github.com/Microsoft/TypeScript/issues/29729
+   */
+  type LiteralUnion<T> = T | (string & Record<never, never>)
+  /**
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#http-equiv
+   */
+  type MetaHttpEquiv =
+    | 'content-security-policy'
+    | 'content-type'
+    | 'default-style'
+    | 'x-ua-compatible'
+    | 'refresh'
+  /**
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta/name
+   */
+  type MetaName =
+    | 'application-name'
+    | 'author'
+    | 'description'
+    | 'generator'
+    | 'keywords'
+    | 'referrer'
+    | 'theme-color'
+    | 'color-scheme'
+    | 'viewport'
+    | 'creator'
+    | 'googlebot'
+    | 'publisher'
+    | 'robots'
+  /**
+   * @see https://ogp.me/
+   */
+  type MetaProperty =
+    | 'og:title'
+    | 'og:type'
+    | 'og:image'
+    | 'og:url'
+    | 'og:audio'
+    | 'og:description'
+    | 'og:determiner'
+    | 'og:locale'
+    | 'og:locale:alternate'
+    | 'og:site_name'
+    | 'og:video'
+    | 'og:image:url'
+    | 'og:image:secure_url'
+    | 'og:image:type'
+    | 'og:image:width'
+    | 'og:image:height'
+    | 'og:image:alt'
   interface MetaHTMLAttributes extends HTMLAttributes {
-    charset?: string | undefined
-    'http-equiv'?: string | undefined
-    name?: string | undefined
+    charset?: LiteralUnion<'utf-8'> | undefined
+    'http-equiv'?: LiteralUnion<MetaHttpEquiv> | undefined
+    name?: LiteralUnion<MetaName> | undefined
     media?: string | undefined
     content?: string | undefined
+    property?: LiteralUnion<MetaProperty> | undefined
 
     // React 19 compatibility
-    httpEquiv?: string | undefined
+    httpEquiv?: LiteralUnion<MetaHttpEquiv> | undefined
   }
 
   interface MeterHTMLAttributes extends HTMLAttributes {

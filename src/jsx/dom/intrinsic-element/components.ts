@@ -232,9 +232,9 @@ export const title: FC<PropsWithChildren> = (props) => {
 export const script: FC<PropsWithChildren<IntrinsicElements['script']>> = (props) => {
   if (!props || ['src', 'async'].some((k) => !props[k])) {
     return {
-      tag: 'style',
+      tag: 'script',
       props,
-      type: 'style',
+      type: 'script',
       ref: props.ref,
     } as unknown as JSXNode
   }
