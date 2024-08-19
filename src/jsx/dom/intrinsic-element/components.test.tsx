@@ -524,7 +524,7 @@ describe('intrinsic element', () => {
         )
       })
 
-      it('should be ordered by precedence attribute', () => {
+      it('should ignore precedence attribute', () => {
         const App = () => {
           return (
             <div>
