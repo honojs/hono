@@ -247,6 +247,22 @@ describe('FormData', () => {
     })
   })
 
+  it('Should validate if Content-Type is a application/x-www-form-urlencoded with a charset', async () => {
+    const params = new URLSearchParams()
+    params.append('foo', 'bar')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: params,
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      foo: 'bar',
+    })
+  })
+
   it('Should return `foo[]` as an array', async () => {
     const form = new FormData()
     form.append('foo[]', 'bar1')
