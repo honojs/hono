@@ -226,7 +226,7 @@ export const title: FC<PropsWithChildren> = (props) => {
 export const script: FC<PropsWithChildren<IntrinsicElements['script']>> = (props) => {
   if (!props || ['src', 'async'].some((k) => !props[k])) {
     return newJSXNode({
-      tag: 'style',
+      tag: 'script',
       props,
     })
   }
