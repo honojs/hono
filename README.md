@@ -62,7 +62,7 @@ The migration guide is available on [docs/MIGRATION.md](docs/MIGRATION.md).
 
 ## Communication
 
-[Twitter](https://twitter.com/honojs) and [Discord channel](https://discord.gg/KMh2eNSdxV) are available.
+[X](https://x.com/honojs) and [Discord channel](https://discord.gg/KMh2eNSdxV) are available.
 
 ## Contributing
 
