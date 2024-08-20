@@ -226,12 +226,12 @@ export namespace JSX {
     media?: string | undefined
     referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
     shape?: string | undefined
-    target?: string | undefined
+    target?: HTMLAttributeAnchorTarget | undefined
   }
 
   interface BaseHTMLAttributes extends HTMLAttributes {
     href?: string | undefined
-    target?: string | undefined
+    target?: HTMLAttributeAnchorTarget | undefined
   }
 
   interface BlockquoteHTMLAttributes extends HTMLAttributes {
@@ -244,7 +244,7 @@ export namespace JSX {
     formenctype?: string | undefined
     formmethod?: string | undefined
     formnovalidate?: boolean | undefined
-    formtarget?: string | undefined
+    formtarget?: HTMLAttributeAnchorTarget | undefined
     name?: string | undefined
     type?: 'submit' | 'reset' | 'button' | undefined
     value?: string | ReadonlyArray<string> | number | undefined
@@ -304,7 +304,7 @@ export namespace JSX {
     method?: string | undefined
     name?: string | undefined
     novalidate?: boolean | undefined
-    target?: string | undefined
+    target?: HTMLAttributeAnchorTarget | undefined
 
     // React 19 compatibility
     action?: string | Function | undefined
@@ -383,7 +383,7 @@ export namespace JSX {
     formenctype?: string | undefined
     formmethod?: string | undefined
     formnovalidate?: boolean | undefined
-    formtarget?: string | undefined
+    formtarget?: HTMLAttributeAnchorTarget | undefined
     height?: number | string | undefined
     list?: string | undefined
     max?: number | string | undefined
