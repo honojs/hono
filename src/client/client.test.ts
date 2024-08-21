@@ -815,7 +815,9 @@ describe('Infer the response type with different status codes', () => {
 })
 
 describe('$url() with a param option', () => {
-  const app = new Hono().get('/posts/:id/comments', (c) => c.json({ ok: true }))
+  const app = new Hono()
+    .get('/posts/:id/comments', (c) => c.json({ ok: true }))
+    .get('/something/:firstId/:secondId/:version?', (c) => c.json({ ok: true }))
   type AppType = typeof app
   const client = hc<AppType>('http://localhost')
 
@@ -831,6 +833,17 @@ describe('$url() with a param option', () => {
   it('Should return the correct path - /posts/:id/comments', async () => {
     const url = client.posts[':id'].comments.$url()
     expect(url.pathname).toBe('/posts/:id/comments')
+  })
+
+  it('Should return the correct path - /something/123/456', async () => {
+    const url = client.something[':firstId'][':secondId'][':version?'].$url({
+      param: {
+        firstId: '123',
+        secondId: '456',
+        version: undefined,
+      },
+    })
+    expect(url.pathname).toBe('/something/123/456')
   })
 })
 
