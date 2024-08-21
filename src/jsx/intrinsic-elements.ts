@@ -287,7 +287,7 @@ export namespace JSX {
   interface EmbedHTMLAttributes extends HTMLAttributes {
     height?: number | string | undefined
     src?: string | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<BaseMime> | undefined
     width?: number | string | undefined
   }
 
@@ -495,7 +495,7 @@ export namespace JSX {
     imagesizes?: string | undefined
     referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
     sizes?: string | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<BaseMime> | undefined
     charSet?: string | undefined
 
     // React 19 compatibility
@@ -607,7 +607,7 @@ export namespace JSX {
     form?: string | undefined
     height?: number | string | undefined
     name?: string | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<BaseMime> | undefined
     usemap?: string | undefined
     width?: number | string | undefined
   }
@@ -658,7 +658,10 @@ export namespace JSX {
     nomodule?: boolean | undefined
     referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
     src?: string | undefined
-    type?: string | undefined
+    /**
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type
+     */
+    type?: StringLiteralUnion<'' | 'text/javascript' | 'importmap' | 'module'> | undefined
 
     // React 19 compatibility
     crossOrigin?: CrossOrigin
@@ -687,14 +690,17 @@ export namespace JSX {
     sizes?: string | undefined
     src?: string | undefined
     srcset?: string | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<BaseMime> | undefined
     width?: number | string | undefined
   }
 
   interface StyleHTMLAttributes extends HTMLAttributes {
     media?: string | undefined
     scoped?: boolean | undefined
-    type?: string | undefined
+    /**
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style#type
+     */
+    type?: '' | 'text/css' | undefined
 
     // React 19 compatibility
     href?: string | undefined
