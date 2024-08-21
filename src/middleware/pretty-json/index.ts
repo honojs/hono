@@ -37,16 +37,14 @@ interface PrettyOptions {
  * })
  * ```
  */
-export const prettyJSON = (
-  options: PrettyOptions = { space: 2, query: 'pretty' }
-): MiddlewareHandler => {
-  const targetQuery = options.query ?? 'pretty'
+export const prettyJSON = (options?: PrettyOptions): MiddlewareHandler => {
+  const targetQuery = options?.query ?? 'pretty'
   return async function prettyJSON(c, next) {
     const pretty = c.req.query(targetQuery) || c.req.query(targetQuery) === ''
     await next()
     if (pretty && c.res.headers.get('Content-Type')?.startsWith('application/json')) {
       const obj = await c.res.json()
-      c.res = new Response(JSON.stringify(obj, null, options.space ?? 2), c.res)
+      c.res = new Response(JSON.stringify(obj, null, options?.space ?? 2), c.res)
     }
   }
 }
