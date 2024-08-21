@@ -25,4 +25,6 @@ declare namespace Deno {
     response: Response
     socket: WebSocket
   }
+
+  export function cwd(): string
 }

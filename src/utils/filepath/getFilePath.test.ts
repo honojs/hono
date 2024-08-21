@@ -1,4 +1,4 @@
-import { getFilePath, getFilePathWithoutDefaultDocument } from './filepath'
+import { getFilePath, getFilePathWithoutDefaultDocument } from './getFilePath'
 
 describe('getFilePathWithoutDefaultDocument', () => {
   it('Should return file path correctly', async () => {
