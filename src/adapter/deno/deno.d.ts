@@ -17,6 +17,23 @@ declare namespace Deno {
    */
   export function writeFile(path: string, data: Uint8Array): Promise<void>
 
+  export function remove(path: string, options?: {
+    recursive?: boolean
+  }): Promise<void>
+
+  export function readDir(path: string): AsyncIterable<{
+    name: string
+    isFile: boolean
+    isDirectory: boolean
+    isSymlink: boolean
+  }>
+
+  export interface FileInfo {
+    isDirectory: boolean
+  }
+
+  export function stat(path: string): Promise<FileInfo>
+
   export function upgradeWebSocket(
     req: Request,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
