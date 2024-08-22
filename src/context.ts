@@ -9,7 +9,7 @@ import type {
   RouterRoute,
   TypedResponse,
 } from './types'
-import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
+import { HtmlEscapedCallbackPhase, HTMLInput, resolveCallback } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
 import type {
   InvalidJSONValue,
@@ -192,7 +192,7 @@ type JSONRespondReturn<
 /**
  * Interface representing a function that responds with HTML content.
  *
- * @param html - The HTML content to respond with, which can be a string or a Promise that resolves to a string.
+ * @param html - The HTML content to respond with, which can be anything with a `toString` method or a Promise that resolves to anything with a `toString` method.
  * @param status - (Optional) The HTTP status code for the response.
  * @param headers - (Optional) A record of headers to include in the response.
  * @param init - (Optional) The response initialization object.
@@ -200,12 +200,12 @@ type JSONRespondReturn<
  * @returns A Response object or a Promise that resolves to a Response object.
  */
 interface HTMLRespond {
-  <T extends string | Promise<string>>(
+  <T extends HTMLInput | Promise<HTMLInput>>(
     html: T,
     status?: StatusCode,
     headers?: HeaderRecord
-  ): T extends string ? Response : Promise<Response>
-  <T extends string | Promise<string>>(html: T, init?: ResponseInit): T extends string
+  ): T extends HTMLInput ? Response : Promise<Response>
+  <T extends HTMLInput | Promise<HTMLInput>>(html: T, init?: ResponseInit): T extends HTMLInput
     ? Response
     : Promise<Response>
 }
@@ -836,7 +836,7 @@ export class Context<
   }
 
   html: HTMLRespond = (
-    html: string | Promise<string>,
+    html: HTMLInput | Promise<HTMLInput>,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
   ): Response | Promise<Response> => {
@@ -845,10 +845,10 @@ export class Context<
 
     if (typeof html === 'object') {
       if (!(html instanceof Promise)) {
-        html = (html as string).toString() // HtmlEscapedString object to string
+        html = html.toString() // HtmlEscapedString object to string
       }
-      if ((html as string | Promise<string>) instanceof Promise) {
-        return (html as unknown as Promise<string>)
+      if (html instanceof Promise) {
+        return html
           .then((html) => resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}))
           .then((html) => {
             return typeof arg === 'number'
