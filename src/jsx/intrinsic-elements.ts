@@ -684,13 +684,14 @@ export namespace JSX {
     value?: string | ReadonlyArray<string> | number | undefined
   }
 
+  type MediaMime = BaseMime & (`image/${string}` | `audio/${string}` | `video/${string}`)
   interface SourceHTMLAttributes extends HTMLAttributes {
     height?: number | string | undefined
     media?: string | undefined
     sizes?: string | undefined
     src?: string | undefined
     srcset?: string | undefined
-    type?: StringLiteralUnion<BaseMime> | undefined
+    type?: StringLiteralUnion<MediaMime> | undefined
     width?: number | string | undefined
   }
 
