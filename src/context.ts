@@ -9,7 +9,8 @@ import type {
   RouterRoute,
   TypedResponse,
 } from './types'
-import { HtmlEscapedCallbackPhase, HTMLInput, resolveCallback } from './utils/html'
+import type { HTMLInput } from './utils/html'
+import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
 import type {
   InvalidJSONValue,
