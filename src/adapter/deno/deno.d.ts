@@ -34,6 +34,32 @@ declare namespace Deno {
 
   export function stat(path: string): Promise<FileInfo>
 
+  export interface OpenOptions {
+    read?: boolean
+    write?: boolean
+    append?: boolean
+    truncate?: boolean
+    create?: boolean
+    createNew?: boolean
+    mode?: number
+  }
+
+  export type SeekMode = 0 | 1 | 2
+  export interface FsFile {
+    readonly readable: ReadableStream<Uint8Array>
+    readonly writable: WritableStream<Uint8Array>
+
+    close(): void
+    seek(offset: number, whence?: SeekMode): Promise<void>
+    truncate(len?: number): Promise<void>
+
+    write(p: Uint8Array): Promise<number>
+  }
+  export function open(
+    path: string | URL,
+    options?: OpenOptions,
+  ): Promise<FsFile> 
+
   export function upgradeWebSocket(
     req: Request,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
