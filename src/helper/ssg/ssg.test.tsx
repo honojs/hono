@@ -216,7 +216,7 @@ describe('toSSG function', () => {
       writeFile: vi.fn(() => Promise.resolve()),
       mkdir: vi.fn(() => Promise.resolve()),
     }
-    const afterGenerateHookMock: AfterGenerateHook = vi.fn((result) => {
+    const afterGenerateHookMock: AfterGenerateHook = vi.fn<AfterGenerateHook>((result) => {
       if (result.files) {
         result.files.forEach((file) => console.log(file))
       }
