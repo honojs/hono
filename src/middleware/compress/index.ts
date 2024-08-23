@@ -63,8 +63,6 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
     }
 
     // Compress the response
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     const stream = new CompressionStream(encoding)
     ctx.res = new Response(res.body.pipeThrough(stream), res)
     ctx.res.headers.delete('Content-Length')

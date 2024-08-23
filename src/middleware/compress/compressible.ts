@@ -18,7 +18,7 @@ export default function compressible(type: string): boolean {
     return false
   }
 
-  // @ts-ignore: db might not have an index signature
+  // @ts-expect-error: db might not have an index signature
   const data = db[mime]
 
   // return database information
