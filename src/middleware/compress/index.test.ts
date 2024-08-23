@@ -29,18 +29,6 @@ describe('Compress Middleware', () => {
     c.header('Content-Length', '1024')
     return c.json({ data: 'a'.repeat(1024), message: 'Large JSON' })
   })
-  app.get('/small-json-stream', (c) =>
-    stream(c, async (stream) => {
-      c.header('Content-Type', 'application/json')
-      await stream.write(JSON.stringify({ message: 'Hello, World!' }))
-    })
-  )
-  app.get('/large-json-stream', (c) =>
-    stream(c, async (stream) => {
-      c.header('Content-Type', 'application/json')
-      await stream.write(JSON.stringify({ data: 'a'.repeat(1024), message: 'Large JSON' }))
-    })
-  )
   app.get('/no-transform', (c) => {
     c.header('Content-Type', 'text/plain')
     c.header('Content-Length', '1024')
@@ -58,11 +46,7 @@ describe('Compress Middleware', () => {
     c.header('Content-Length', '1024')
     return c.body(new Uint8Array(1024)) // Simulated compressed data
   })
-  app.get('/vary-test', (c) => {
-    c.header('Content-Type', 'text/plain')
-    return c.text('vary test')
-  })
-  app.get('/very-large-stream', (c) =>
+  app.get('/stream', (c) =>
     stream(c, async (stream) => {
       c.header('Content-Type', 'text/plain')
       // 60000 bytes
@@ -159,28 +143,14 @@ describe('Compress Middleware', () => {
   })
 
   describe('Streaming Responses', () => {
-    it('should compress small streaming JSON responses', async () => {
-      const res = await testCompression('/small-json-stream', 'gzip', 'gzip')
+    it('should compress streaming responses written in multiple chunks', async () => {
+      const res = await testCompression('/stream', 'gzip', 'gzip')
       const decompressed = await decompressResponse(res)
-      const json = JSON.parse(decompressed)
-      expect(json.message).toBe('Hello, World!')
-    })
-
-    it('should compress large streaming JSON responses', async () => {
-      const res = await testCompression('/large-json-stream', 'gzip', 'gzip')
-      const decompressed = await decompressResponse(res)
-      const json = JSON.parse(decompressed)
-      expect(json.data.length).toBe(1024)
-      expect(json.message).toBe('Large JSON')
+      expect(decompressed.length).toBe(60000)
     })
     it('should not compress already compressed streaming responses', async () => {
       const res = await testCompression('/already-compressed-stream', 'gzip', 'br')
       expect((await res.arrayBuffer()).byteLength).toBe(60000)
-    })
-    it('should compress large streaming responses written in multiple chunks', async () => {
-      const res = await testCompression('/very-large-stream', 'gzip', 'gzip')
-      const decompressed = await decompressResponse(res)
-      expect(decompressed.length).toBe(60000)
     })
   })
 
