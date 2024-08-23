@@ -38,18 +38,16 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
   return async function compress(ctx, next) {
     await next()
 
-    const res = ctx.res
-    const req = ctx.req
-    const contentEncoding = res.headers.get('Content-Encoding') || 'identity'
-    const contentLength = res.headers.get('Content-Length')
+    const contentEncoding = ctx.res.headers.get('Content-Encoding') || 'identity'
+    const contentLength = ctx.res.headers.get('Content-Length')
 
     // Check if response should be compressed
     if (
       contentEncoding !== 'identity' || // already encoded
       (contentLength && Number(contentLength) < threshold) || // content-length below threshold
-      !shouldCompress(res) || // not compressible type
-      !shouldTransform(res) || // cache-control: no-transform
-      req.method === 'HEAD' // HEAD request
+      !shouldCompress(ctx.res) || // not compressible type
+      !shouldTransform(ctx.res) || // cache-control: no-transform
+      ctx.req.method === 'HEAD' // HEAD request
     ) {
       return
     }
@@ -58,13 +56,13 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
     const encoding =
       options?.encoding ?? ENCODING_TYPES.find((encoding) => accepted?.includes(encoding))
 
-    if (!encoding || !res.body) {
+    if (!encoding || !ctx.res.body) {
       return
     }
 
     // Compress the response
     const stream = new CompressionStream(encoding)
-    ctx.res = new Response(res.body.pipeThrough(stream), res)
+    ctx.res = new Response(ctx.res.body.pipeThrough(stream), ctx.res)
     ctx.res.headers.delete('Content-Length')
     ctx.res.headers.set('Content-Encoding', encoding)
   }
