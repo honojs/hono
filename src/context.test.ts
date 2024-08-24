@@ -247,6 +247,13 @@ describe('Context', () => {
     expect(res.headers.get('foo')).not.toBeNull()
     expect(res.headers.get('foo')).toBe('bar')
   })
+
+  it('Should set headers on a fetch Response', async () => {
+    const res = await fetch('https://jsonplaceholder.typicode.com/todos/1')
+    c.res = res
+    c.res.headers.set('X-Custom', 'Message')
+    expect(c.res.headers.get('X-Custom')).toBe('Message')
+  })
 })
 
 describe('event and executionCtx', () => {
