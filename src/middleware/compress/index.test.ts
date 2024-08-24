@@ -65,20 +65,6 @@ describe('Compress Middleware', () => {
       }
     })
   )
-  app.get('/fetch', () => {
-    return fetch('https://jsonplaceholder.typicode.com/comments', {
-      headers: {
-        'Accept-Encoding': 'identity',
-      },
-    })
-  })
-  app.get('/fetch-already-compressed', () => {
-    return fetch('https://jsonplaceholder.typicode.com/comments', {
-      headers: {
-        'Accept-Encoding': 'br',
-      },
-    })
-  })
   app.notFound((c) => c.text('Custom NotFound', 404))
 
   const testCompression = async (
@@ -195,17 +181,6 @@ describe('Compress Middleware', () => {
     it('should not compress when Content-Encoding is already set', async () => {
       const res = await testCompression('/already-compressed', 'gzip', 'br')
       expect(res.headers.get('Content-Length')).toBe('1024')
-    })
-
-    it('should compress fetch responses', async () => {
-      const res = await testCompression('/fetch', 'gzip', 'gzip')
-      const decompressed = await decompressResponse(res)
-      expect(JSON.parse(decompressed)).toBeTruthy()
-    })
-
-    it('should not compress already compressed fetch responses', async () => {
-      const res = await testCompression('/fetch-already-compressed', 'gzip', 'br')
-      expect(JSON.parse(await res.text())).toBeTruthy()
     })
   })
 })
