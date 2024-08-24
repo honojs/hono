@@ -55,7 +55,6 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
     const accepted = ctx.req.header('Accept-Encoding')
     const encoding =
       options?.encoding ?? ENCODING_TYPES.find((encoding) => accepted?.includes(encoding))
-
     if (!encoding || !ctx.res.body) {
       return
     }
