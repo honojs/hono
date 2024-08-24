@@ -478,7 +478,6 @@ export class Context<
         }
       }
     }
-
     this.#res = _res
     this.finalized = true
   }
