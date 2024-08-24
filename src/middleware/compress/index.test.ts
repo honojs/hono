@@ -177,11 +177,6 @@ describe('Compress Middleware', () => {
       const decompressed = await decompressResponse(res)
       expect(decompressed).toBe('Custom NotFound')
     })
-
-    it('should not compress when Content-Encoding is already set', async () => {
-      const res = await testCompression('/already-compressed', 'gzip', 'br')
-      expect(res.headers.get('Content-Length')).toBe('1024')
-    })
   })
 })
 

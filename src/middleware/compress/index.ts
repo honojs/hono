@@ -4,16 +4,16 @@
  */
 
 import type { MiddlewareHandler } from '../../types'
-import compressible from './compressible'
 
 const ENCODING_TYPES = ['gzip', 'deflate'] as const
+const cacheControlNoTransformRegExp = /(?:^|,)\s*?no-transform\s*?(?:,|$)/i
+const compressibleContentTypeRegExp =
+  /^\s*(?:text\/[^;\s]+|application\/(?:javascript|json|xml|xml-dtd|ecmascript|dart|postscript|rtf|tar|toml|vnd\.dart|vnd\.ms-fontobject|vnd\.ms-opentype|wasm|x-httpd-php|x-javascript|x-ns-proxy-autoconfig|x-sh|x-tar|x-virtualbox-hdd|x-virtualbox-ova|x-virtualbox-ovf|x-virtualbox-vbox|x-virtualbox-vdi|x-virtualbox-vhd|x-virtualbox-vmdk|x-www-form-urlencoded)|font\/(?:otf|ttf)|image\/(?:bmp|vnd\.adobe\.photoshop|vnd\.microsoft\.icon|vnd\.ms-dds|x-icon|x-ms-bmp)|message\/rfc822|model\/gltf-binary|x-shader\/x-fragment|x-shader\/x-vertex|[^;\s]+?\+(?:json|text|xml|yaml))(?:[;\s]|$)/i
 
 interface CompressionOptions {
   encoding?: (typeof ENCODING_TYPES)[number]
   threshold?: number
 }
-
-const cacheControlNoTransformRegExp = /(?:^|,)\s*?no-transform\s*?(?:,|$)/
 
 /**
  * Compress Middleware for Hono.
@@ -38,16 +38,15 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
   return async function compress(ctx, next) {
     await next()
 
-    const contentEncoding = ctx.res.headers.get('Content-Encoding') || 'identity'
     const contentLength = ctx.res.headers.get('Content-Length')
 
     // Check if response should be compressed
     if (
-      contentEncoding !== 'identity' || // already encoded
+      ctx.res.headers.has('Content-Encoding') || // already encoded
+      ctx.req.method === 'HEAD' || // HEAD request
       (contentLength && Number(contentLength) < threshold) || // content-length below threshold
       !shouldCompress(ctx.res) || // not compressible type
-      !shouldTransform(ctx.res) || // cache-control: no-transform
-      ctx.req.method === 'HEAD' // HEAD request
+      !shouldTransform(ctx.res) // cache-control: no-transform
     ) {
       return
     }
@@ -69,10 +68,7 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
 
 const shouldCompress = (res: Response) => {
   const type = res.headers.get('Content-Type')
-  if (!type) {
-    return false
-  }
-  return compressible(type)
+  return type && compressibleContentTypeRegExp.test(type)
 }
 
 const shouldTransform = (res: Response) => {
