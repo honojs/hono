@@ -1,6 +1,6 @@
 // credits: https://github.com/jshttp/compressible
 
-import db from './mime-db'
+import db from './compressible-types'
 
 const COMPRESSIBLE_TYPE_REGEXP = /^text\/|\+(?:json|text|xml)$/i
 const EXTRACT_TYPE_REGEXP = /^\s*([^;\s]*)(?:;|\s|$)/
@@ -18,14 +18,5 @@ export default function compressible(type: string): boolean {
     return false
   }
 
-  // @ts-expect-error: db might not have an index signature
-  const data = db[mime]
-
-  // return database information
-  if (data && data.compressible !== undefined) {
-    return data.compressible
-  }
-
-  // fallback to regexp
-  return COMPRESSIBLE_TYPE_REGEXP.test(mime)
+  return db.has(mime) || COMPRESSIBLE_TYPE_REGEXP.test(mime)
 }
