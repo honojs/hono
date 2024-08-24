@@ -480,6 +480,18 @@ export class Context<
     }
     this.#res = _res
     this.finalized = true
+
+    // fixes: https://github.com/honojs/hono/issues/3316
+    if (this.#res) {
+      const headersObj = this.#res.headers as unknown as Record<symbol, string>
+      const guardSymbol = Object.getOwnPropertySymbols(headersObj).find(
+        (symbol) => symbol.toString() === 'Symbol(guard)'
+      )
+      // Make the headers mutable again
+      if (guardSymbol && headersObj[guardSymbol] === 'immutable') {
+        headersObj[guardSymbol] = 'response'
+      }
+    }
   }
 
   /**
