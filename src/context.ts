@@ -479,6 +479,13 @@ export class Context<
       }
     }
     this.#res = _res
+      ? // fixes: https://github.com/honojs/hono/issues/3316
+        new Response(_res.body, {
+          status: _res.status,
+          statusText: _res.statusText,
+          headers: new Headers(_res.headers),
+        })
+      : _res
     this.finalized = true
   }
 
