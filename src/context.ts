@@ -464,34 +464,38 @@ export class Context<
    */
   set res(_res: Response | undefined) {
     this.#isFresh = false
-    if (this.#res && _res) {
-      this.#res.headers.delete('content-type')
-      for (const [k, v] of this.#res.headers.entries()) {
-        if (k === 'set-cookie') {
-          const cookies = this.#res.headers.getSetCookie()
-          _res.headers.delete('set-cookie')
-          for (const cookie of cookies) {
-            _res.headers.append('set-cookie', cookie)
+    if (_res) {
+      try {
+        // Check if `_res` headers are immutable.
+        _res.headers.delete('______________________________')
+      } catch (e) {
+        if (e instanceof TypeError && e.message.includes('immutable')) {
+          // `_res` is immutable (probably a response from a fetch API), so retry with a new response.
+          this.res = new Response(_res.body, {
+            headers: _res.headers,
+            status: _res.status,
+          })
+          return
+        }
+      }
+
+      if (this.#res) {
+        for (const [k, v] of this.#res.headers.entries()) {
+          if (k === 'set-cookie') {
+            const cookies = this.#res.headers.getSetCookie()
+            _res.headers.delete('set-cookie')
+            for (const cookie of cookies) {
+              _res.headers.append('set-cookie', cookie)
+            }
+          } else if (!_res.headers.has(k)) {
+            // Prioritize the new response's headers over the old response's headers.
+            _res.headers.set(k, v)
           }
-        } else {
-          _res.headers.set(k, v)
         }
       }
     }
     this.#res = _res
     this.finalized = true
-
-    // fixes: https://github.com/honojs/hono/issues/3316
-    if (this.#res) {
-      const headersObj = this.#res.headers as unknown as Record<symbol, string>
-      const guardSymbol = Object.getOwnPropertySymbols(headersObj).find(
-        (symbol) => symbol.toString() === 'Symbol(guard)'
-      )
-      // Make the headers mutable again
-      if (guardSymbol && headersObj[guardSymbol] === 'immutable') {
-        headersObj[guardSymbol] = 'response'
-      }
-    }
   }
 
   /**
