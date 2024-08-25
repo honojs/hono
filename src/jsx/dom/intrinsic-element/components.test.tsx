@@ -524,7 +524,7 @@ describe('intrinsic element', () => {
         )
       })
 
-      it('should be ordered by precedence attribute', () => {
+      it('should ignore precedence attribute', () => {
         const App = () => {
           return (
             <div>
@@ -749,6 +749,33 @@ describe('intrinsic element', () => {
         await new Promise((resolve) => setTimeout(resolve))
         await Promise.resolve()
         expect(root.innerHTML).toBe('<div><div>Content</div><button>Show</button></div>')
+      })
+
+      it('should be inserted into body if has no props', async () => {
+        const App = () => {
+          return (
+            <div>
+              <script>alert('Hello')</script>
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(document.head.innerHTML).toBe('')
+        // prettier-ignore
+        expect(root.innerHTML).toBe('<div><script>alert(\'Hello\')</script></div>')
+      })
+
+      it('should be inserted into body if has only src prop', async () => {
+        const App = () => {
+          return (
+            <div>
+              <script src='script.js'></script>
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(document.head.innerHTML).toBe('')
+        expect(root.innerHTML).toBe('<div><script src="script.js"></script></div>')
       })
     })
 

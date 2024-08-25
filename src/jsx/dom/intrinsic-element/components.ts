@@ -1,6 +1,5 @@
 import type { Props } from '../../base'
 import type { FC, JSXNode, PropsWithChildren, RefObject } from '../../types'
-import { newJSXNode } from '../utils'
 import { createPortal, getNameSpaceContext } from '../render'
 import type { PreserveNodeType } from '../render'
 import { useContext } from '../../context'
@@ -58,10 +57,12 @@ const documentMetadataTag = (
   supportBlocking: boolean
 ) => {
   if (props?.itemProp) {
-    return newJSXNode({
+    return {
       tag,
       props,
-    })
+      type: tag,
+      ref: props.ref,
+    }
   }
 
   const head = document.head
@@ -192,13 +193,15 @@ const documentMetadataTag = (
     }
   }
 
-  const jsxNode = newJSXNode({
+  const jsxNode = {
     tag,
+    type: tag,
     props: {
       ...restProps,
       ref,
     },
-  }) as JSXNode & { e?: HTMLElement; p?: PreserveNodeType }
+    ref,
+  } as unknown as JSXNode & { e?: HTMLElement; p?: PreserveNodeType }
 
   jsxNode.p = preserveNodeType // preserve for unmounting
   if (element) {
@@ -215,30 +218,37 @@ export const title: FC<PropsWithChildren> = (props) => {
   const nameSpaceContext = getNameSpaceContext()
   const ns = nameSpaceContext && useContext(nameSpaceContext)
   if (ns?.endsWith('svg')) {
-    return newJSXNode({
+    return {
       tag: 'title',
       props,
-    })
+      type: 'title',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ref: (props as any).ref,
+    } as unknown as JSXNode
   }
   return documentMetadataTag('title', props, undefined, false, false)
 }
 
 export const script: FC<PropsWithChildren<IntrinsicElements['script']>> = (props) => {
   if (!props || ['src', 'async'].some((k) => !props[k])) {
-    return newJSXNode({
-      tag: 'style',
+    return {
+      tag: 'script',
       props,
-    })
+      type: 'script',
+      ref: props.ref,
+    } as unknown as JSXNode
   }
   return documentMetadataTag('script', props, 1, false, true)
 }
 
 export const style: FC<PropsWithChildren<IntrinsicElements['style']>> = (props) => {
   if (!props || !['href', 'precedence'].every((k) => k in props)) {
-    return newJSXNode({
+    return {
       tag: 'style',
       props,
-    })
+      type: 'style',
+      ref: props.ref,
+    } as unknown as JSXNode
   }
   props['data-href'] = props.href
   delete props.href
@@ -251,10 +261,12 @@ export const link: FC<PropsWithChildren<IntrinsicElements['link']>> = (props) =>
     ['onLoad', 'onError'].some((k) => k in props) ||
     (props.rel === 'stylesheet' && (!('precedence' in props) || 'disabled' in props))
   ) {
-    return newJSXNode({
+    return {
       tag: 'link',
       props,
-    })
+      type: 'link',
+      ref: props.ref,
+    } as unknown as JSXNode
   }
   return documentMetadataTag('link', props, 1, 'precedence' in props, true)
 }
@@ -309,7 +321,7 @@ export const form: FC<
 
   const [data, isDirty] = state
   state[1] = false
-  return newJSXNode({
+  return {
     tag: FormContext as unknown as Function,
     props: {
       value: {
@@ -318,17 +330,19 @@ export const form: FC<
         method: data ? 'post' : null,
         action: data ? action : null,
       },
-      children: newJSXNode({
+      children: {
         tag: 'form',
         props: {
           ...restProps,
           ref,
         },
-      }),
+        type: 'form',
+        ref,
+      },
     },
     f: isDirty,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any) as any
+  } as any
 }
 
 const formActionableElement = (
@@ -357,11 +371,13 @@ const formActionableElement = (
     })
   }
 
-  return newJSXNode({
+  return {
     tag,
     props,
+    type: tag,
+    ref: props.ref,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }) as any
+  } as any
 }
 
 export const input: FC<PropsWithChildren<IntrinsicElements['input']>> = (props) =>

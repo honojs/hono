@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import type { BaseMime } from '../utils/mime'
+import type { StringLiteralUnion } from '../utils/types'
+
 /**
  * This code is based on React.
  * https://github.com/facebook/react
@@ -199,7 +202,7 @@ export namespace JSX {
     | 'strict-origin-when-cross-origin'
     | 'unsafe-url'
 
-  type HTMLAttributeAnchorTarget = '_self' | '_blank' | '_parent' | '_top' | string
+  type HTMLAttributeAnchorTarget = StringLiteralUnion<'_self' | '_blank' | '_parent' | '_top'>
 
   interface AnchorHTMLAttributes extends HTMLAttributes {
     download?: string | boolean | undefined
@@ -208,7 +211,7 @@ export namespace JSX {
     media?: string | undefined
     ping?: string | undefined
     target?: HTMLAttributeAnchorTarget | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<BaseMime> | undefined
     referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
   }
 
@@ -223,12 +226,12 @@ export namespace JSX {
     media?: string | undefined
     referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
     shape?: string | undefined
-    target?: string | undefined
+    target?: HTMLAttributeAnchorTarget | undefined
   }
 
   interface BaseHTMLAttributes extends HTMLAttributes {
     href?: string | undefined
-    target?: string | undefined
+    target?: HTMLAttributeAnchorTarget | undefined
   }
 
   interface BlockquoteHTMLAttributes extends HTMLAttributes {
@@ -241,7 +244,7 @@ export namespace JSX {
     formenctype?: string | undefined
     formmethod?: string | undefined
     formnovalidate?: boolean | undefined
-    formtarget?: string | undefined
+    formtarget?: HTMLAttributeAnchorTarget | undefined
     name?: string | undefined
     type?: 'submit' | 'reset' | 'button' | undefined
     value?: string | ReadonlyArray<string> | number | undefined
@@ -301,7 +304,7 @@ export namespace JSX {
     method?: string | undefined
     name?: string | undefined
     novalidate?: boolean | undefined
-    target?: string | undefined
+    target?: HTMLAttributeAnchorTarget | undefined
 
     // React 19 compatibility
     action?: string | Function | undefined
@@ -344,7 +347,7 @@ export namespace JSX {
     datetime?: string | undefined
   }
 
-  type HTMLInputTypeAttribute =
+  type HTMLInputTypeAttribute = StringLiteralUnion<
     | 'button'
     | 'checkbox'
     | 'color'
@@ -367,12 +370,72 @@ export namespace JSX {
     | 'time'
     | 'url'
     | 'week'
-    | string
+  >
+  type AutoFillAddressKind = 'billing' | 'shipping'
+  type AutoFillBase = '' | 'off' | 'on'
+  type AutoFillContactField =
+    | 'email'
+    | 'tel'
+    | 'tel-area-code'
+    | 'tel-country-code'
+    | 'tel-extension'
+    | 'tel-local'
+    | 'tel-local-prefix'
+    | 'tel-local-suffix'
+    | 'tel-national'
+  type AutoFillContactKind = 'home' | 'mobile' | 'work'
+  type AutoFillCredentialField = 'webauthn'
+  type AutoFillNormalField =
+    | 'additional-name'
+    | 'address-level1'
+    | 'address-level2'
+    | 'address-level3'
+    | 'address-level4'
+    | 'address-line1'
+    | 'address-line2'
+    | 'address-line3'
+    | 'bday-day'
+    | 'bday-month'
+    | 'bday-year'
+    | 'cc-csc'
+    | 'cc-exp'
+    | 'cc-exp-month'
+    | 'cc-exp-year'
+    | 'cc-family-name'
+    | 'cc-given-name'
+    | 'cc-name'
+    | 'cc-number'
+    | 'cc-type'
+    | 'country'
+    | 'country-name'
+    | 'current-password'
+    | 'family-name'
+    | 'given-name'
+    | 'honorific-prefix'
+    | 'honorific-suffix'
+    | 'name'
+    | 'new-password'
+    | 'one-time-code'
+    | 'organization'
+    | 'postal-code'
+    | 'street-address'
+    | 'transaction-amount'
+    | 'transaction-currency'
+    | 'username'
+  type OptionalPrefixToken<T extends string> = `${T} ` | ''
+  type OptionalPostfixToken<T extends string> = ` ${T}` | ''
+  type AutoFillField =
+    | AutoFillNormalField
+    | `${OptionalPrefixToken<AutoFillContactKind>}${AutoFillContactField}`
+  type AutoFillSection = `section-${string}`
+  type AutoFill =
+    | AutoFillBase
+    | `${OptionalPrefixToken<AutoFillSection>}${OptionalPrefixToken<AutoFillAddressKind>}${AutoFillField}${OptionalPostfixToken<AutoFillCredentialField>}`
 
   interface InputHTMLAttributes extends HTMLAttributes {
     accept?: string | undefined
     alt?: string | undefined
-    autocomplete?: string | undefined
+    autocomplete?: StringLiteralUnion<AutoFill> | undefined
     capture?: boolean | 'user' | 'environment' | undefined // https://www.w3.org/TR/html-media-capture/#the-capture-attribute
     checked?: boolean | undefined
     disabled?: boolean | undefined
@@ -380,7 +443,7 @@ export namespace JSX {
     formenctype?: string | undefined
     formmethod?: string | undefined
     formnovalidate?: boolean | undefined
-    formtarget?: string | undefined
+    formtarget?: HTMLAttributeAnchorTarget | undefined
     height?: number | string | undefined
     list?: string | undefined
     max?: number | string | undefined
@@ -467,11 +530,6 @@ export namespace JSX {
   }
 
   /**
-   * String literal types with auto-completion
-   * @see https://github.com/Microsoft/TypeScript/issues/29729
-   */
-  type LiteralUnion<T> = T | (string & Record<never, never>)
-  /**
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#http-equiv
    */
   type MetaHttpEquiv =
@@ -519,15 +577,15 @@ export namespace JSX {
     | 'og:image:height'
     | 'og:image:alt'
   interface MetaHTMLAttributes extends HTMLAttributes {
-    charset?: LiteralUnion<'utf-8'> | undefined
-    'http-equiv'?: LiteralUnion<MetaHttpEquiv> | undefined
-    name?: LiteralUnion<MetaName> | undefined
+    charset?: StringLiteralUnion<'utf-8'> | undefined
+    'http-equiv'?: StringLiteralUnion<MetaHttpEquiv> | undefined
+    name?: StringLiteralUnion<MetaName> | undefined
     media?: string | undefined
     content?: string | undefined
-    property?: LiteralUnion<MetaProperty> | undefined
+    property?: StringLiteralUnion<MetaProperty> | undefined
 
     // React 19 compatibility
-    httpEquiv?: LiteralUnion<MetaHttpEquiv> | undefined
+    httpEquiv?: StringLiteralUnion<MetaHttpEquiv> | undefined
   }
 
   interface MeterHTMLAttributes extends HTMLAttributes {

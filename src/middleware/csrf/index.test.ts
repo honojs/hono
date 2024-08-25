@@ -194,6 +194,18 @@ describe('CSRF by Middleware', () => {
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('hono')
     })
+
+    it('should be 403 for "Application/x-www-form-urlencoded" cross origin', async () => {
+      const res = await app.request('http://localhost/form', {
+        method: 'POST',
+        headers: Object.assign({
+          'content-type': 'Application/x-www-form-urlencoded',
+        }),
+        body: 'name=hono',
+      })
+      expect(res.status).toBe(403)
+      expect(simplePostHandler).not.toHaveBeenCalled()
+    })
   })
 
   describe('with origin option', () => {

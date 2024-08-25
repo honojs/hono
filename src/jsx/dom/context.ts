@@ -2,7 +2,7 @@ import type { Child } from '../base'
 import { DOM_ERROR_HANDLER } from '../constants'
 import type { Context } from '../context'
 import { globalContexts } from '../context'
-import { newJSXNode, setInternalTagFlag } from './utils'
+import { setInternalTagFlag } from './utils'
 
 export const createContextProviderFunction =
   <T>(values: T[]): Function =>
@@ -33,7 +33,7 @@ export const createContextProviderFunction =
       }),
       props: {},
     })
-    const res = newJSXNode({ tag: '', props })
+    const res = { tag: '', props, type: '' }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(res as any)[DOM_ERROR_HANDLER] = (err: unknown) => {
       values.pop()

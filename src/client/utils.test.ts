@@ -46,6 +46,17 @@ describe('replaceUrlParams', () => {
     const replacedUrl = replaceUrlParam(url, params)
     expect(replacedUrl).toBe('http://localhost/year/2024/month/2')
   })
+
+  it('Should replace correctly when it has optional parameters', () => {
+    const url = 'http://localhost/something/:firstId/:secondId/:version?'
+    const params = {
+      firstId: '123',
+      secondId: '456',
+      version: undefined,
+    }
+    const replacedUrl = replaceUrlParam(url, params)
+    expect(replacedUrl).toBe('http://localhost/something/123/456')
+  })
 })
 
 describe('replaceUrlProtocol', () => {
