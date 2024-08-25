@@ -2249,15 +2249,18 @@ describe('Returning type from `app.use(path, mw)`', () => {
   })
 })
 describe('generic typed variables', () => {
+  const okHelper = (c: Context) => {
+    return <TData>(data: TData) => c.json({ data })
+  }
   type Variables = {
-    ok: <TData>(data: TData) => TypedResponse<{ data: TData }>
+    ok: ReturnType<typeof okHelper>
   }
   const app = new Hono<{ Variables: Variables }>()
 
   it('Should set and get variables with correct types', async () => {
     const route = app
       .use('*', async (c, next) => {
-        c.set('ok', (data) => c.json({ data }))
+        c.set('ok', okHelper(c))
         await next()
       })
       .get('/', (c) => {
