@@ -480,6 +480,7 @@ export class Context<
       }
 
       if (this.#res) {
+        this.#res.headers.delete('content-type')
         for (const [k, v] of this.#res.headers.entries()) {
           if (k === 'set-cookie') {
             const cookies = this.#res.headers.getSetCookie()
@@ -487,8 +488,7 @@ export class Context<
             for (const cookie of cookies) {
               _res.headers.append('set-cookie', cookie)
             }
-          } else if (!_res.headers.has(k)) {
-            // Prioritize the new response's headers over the old response's headers.
+          } else {
             _res.headers.set(k, v)
           }
         }
