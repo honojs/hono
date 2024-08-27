@@ -33,14 +33,14 @@ export type UpgradeWebSocket<T = any> = (
 
 export type WSReadyState = 0 | 1 | 2 | 3
 
-export type WSContext = {
+export type WSContext<T = unknown> = {
   send(
     source: string | ArrayBuffer | Uint8Array,
     options?: {
       compress: boolean
     }
   ): void
-  raw?: unknown
+  raw?: T
   binaryType: BinaryType
   readyState: WSReadyState
   url: URL | null

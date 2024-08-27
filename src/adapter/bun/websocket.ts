@@ -31,7 +31,7 @@ export interface BunWebSocketData {
   protocol: string
 }
 
-const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSContext => {
+const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSContext<BunServerWebSocket<BunWebSocketData>> => {
   return {
     send: (source, options) => {
       const sendingData =

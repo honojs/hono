@@ -14,7 +14,7 @@ export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, ne
   const client: WebSocket = webSocketPair[0]
   const server: WebSocket = webSocketPair[1]
 
-  const wsContext: WSContext = {
+  const wsContext: WSContext<WebSocket> = {
     binaryType: 'arraybuffer',
     close: (code, reason) => server.close(code, reason),
     get protocol() {

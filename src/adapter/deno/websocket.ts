@@ -29,7 +29,7 @@ export const upgradeWebSocket: UpgradeWebSocket<UpgradeWebSocketOptions> =
     const events = await createEvents(c)
     const { response, socket } = Deno.upgradeWebSocket(c.req.raw, options || {})
 
-    const wsContext: WSContext = {
+    const wsContext: WSContext<WebSocket> = {
       binaryType: 'arraybuffer',
       close: (code, reason) => socket.close(code, reason),
       get protocol() {
