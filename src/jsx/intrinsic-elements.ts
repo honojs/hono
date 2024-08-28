@@ -181,7 +181,8 @@ export namespace JSX {
     lang?: string | undefined
     nonce?: string | undefined
     placeholder?: string | undefined
-    popover?: string | undefined
+    /** @see https://developer.mozilla.org/en-US/docs/Web/API/Popover_API */
+    popover?: boolean | 'auto' | 'manual' | undefined
     slot?: string | undefined
     spellcheck?: boolean | undefined
     style?: CSSProperties | string | undefined
@@ -238,6 +239,9 @@ export namespace JSX {
     cite?: string | undefined
   }
 
+  /** @see https://developer.mozilla.org/en-US/docs/Web/API/Popover_API */
+  type HTMLAttributePopoverTargetAction = 'show' | 'hide' | 'toggle'
+
   interface ButtonHTMLAttributes extends HTMLAttributes {
     disabled?: boolean | undefined
     form?: string | undefined
@@ -248,6 +252,8 @@ export namespace JSX {
     name?: string | undefined
     type?: 'submit' | 'reset' | 'button' | undefined
     value?: string | ReadonlyArray<string> | number | undefined
+    popovertarget?: string | undefined
+    popovertargetaction?: HTMLAttributePopoverTargetAction | undefined
 
     // React 19 compatibility
     formAction?: string | Function | undefined
@@ -462,6 +468,8 @@ export namespace JSX {
     type?: HTMLInputTypeAttribute | undefined
     value?: string | ReadonlyArray<string> | number | undefined
     width?: number | string | undefined
+    popovertarget?: string | undefined
+    popovertargetaction?: HTMLAttributePopoverTargetAction | undefined
 
     // React 19 compatibility
     formAction?: string | Function | undefined
