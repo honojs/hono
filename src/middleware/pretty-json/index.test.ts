@@ -31,4 +31,28 @@ describe('JSON pretty by Middleware', () => {
     "message": "Hono!"
 }`)
   })
+
+  it('Should return pretty JSON output when middleware received custom query', async () => {
+    const targetQuery = 'format'
+
+    const app = new Hono()
+    app.use(
+      '*',
+      prettyJSON({
+        query: targetQuery,
+      })
+    )
+    app.get('/', (c) =>
+      c.json({
+        message: 'Hono!',
+      })
+    )
+
+    const prettyText = await (await app.request(`?${targetQuery}`)).text()
+    expect(prettyText).toBe(`{
+  "message": "Hono!"
+}`)
+    const nonPrettyText = await (await app.request('?pretty')).text()
+    expect(nonPrettyText).toBe('{"message":"Hono!"}')
+  })
 })

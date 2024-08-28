@@ -181,7 +181,8 @@ export namespace JSX {
     lang?: string | undefined
     nonce?: string | undefined
     placeholder?: string | undefined
-    popover?: string | undefined
+    /** @see https://developer.mozilla.org/en-US/docs/Web/API/Popover_API */
+    popover?: boolean | 'auto' | 'manual' | undefined
     slot?: string | undefined
     spellcheck?: boolean | undefined
     style?: CSSProperties | string | undefined
@@ -238,6 +239,9 @@ export namespace JSX {
     cite?: string | undefined
   }
 
+  /** @see https://developer.mozilla.org/en-US/docs/Web/API/Popover_API */
+  type HTMLAttributePopoverTargetAction = 'show' | 'hide' | 'toggle'
+
   interface ButtonHTMLAttributes extends HTMLAttributes {
     disabled?: boolean | undefined
     form?: string | undefined
@@ -248,6 +252,8 @@ export namespace JSX {
     name?: string | undefined
     type?: 'submit' | 'reset' | 'button' | undefined
     value?: string | ReadonlyArray<string> | number | undefined
+    popovertarget?: string | undefined
+    popovertargetaction?: HTMLAttributePopoverTargetAction | undefined
 
     // React 19 compatibility
     formAction?: string | Function | undefined
@@ -287,7 +293,7 @@ export namespace JSX {
   interface EmbedHTMLAttributes extends HTMLAttributes {
     height?: number | string | undefined
     src?: string | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<BaseMime> | undefined
     width?: number | string | undefined
   }
 
@@ -462,6 +468,8 @@ export namespace JSX {
     type?: HTMLInputTypeAttribute | undefined
     value?: string | ReadonlyArray<string> | number | undefined
     width?: number | string | undefined
+    popovertarget?: string | undefined
+    popovertargetaction?: HTMLAttributePopoverTargetAction | undefined
 
     // React 19 compatibility
     formAction?: string | Function | undefined
@@ -495,7 +503,7 @@ export namespace JSX {
     imagesizes?: string | undefined
     referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
     sizes?: string | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<BaseMime> | undefined
     charSet?: string | undefined
 
     // React 19 compatibility
@@ -607,7 +615,7 @@ export namespace JSX {
     form?: string | undefined
     height?: number | string | undefined
     name?: string | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<BaseMime> | undefined
     usemap?: string | undefined
     width?: number | string | undefined
   }
@@ -658,7 +666,10 @@ export namespace JSX {
     nomodule?: boolean | undefined
     referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
     src?: string | undefined
-    type?: string | undefined
+    /**
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type
+     */
+    type?: StringLiteralUnion<'' | 'text/javascript' | 'importmap' | 'module'> | undefined
 
     // React 19 compatibility
     crossOrigin?: CrossOrigin
@@ -681,20 +692,24 @@ export namespace JSX {
     value?: string | ReadonlyArray<string> | number | undefined
   }
 
+  type MediaMime = BaseMime & (`image/${string}` | `audio/${string}` | `video/${string}`)
   interface SourceHTMLAttributes extends HTMLAttributes {
     height?: number | string | undefined
     media?: string | undefined
     sizes?: string | undefined
     src?: string | undefined
     srcset?: string | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<MediaMime> | undefined
     width?: number | string | undefined
   }
 
   interface StyleHTMLAttributes extends HTMLAttributes {
     media?: string | undefined
     scoped?: boolean | undefined
-    type?: string | undefined
+    /**
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style#type
+     */
+    type?: '' | 'text/css' | undefined
 
     // React 19 compatibility
     href?: string | undefined
