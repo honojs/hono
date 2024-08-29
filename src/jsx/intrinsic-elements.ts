@@ -245,8 +245,8 @@ export namespace JSX {
   interface ButtonHTMLAttributes extends HTMLAttributes {
     disabled?: boolean | undefined
     form?: string | undefined
-    formenctype?: string | undefined
-    formmethod?: string | undefined
+    formenctype?: HTMLAttributeFormEnctype | undefined
+    formmethod?: HTMLAttributeFormMethod | undefined
     formnovalidate?: boolean | undefined
     formtarget?: HTMLAttributeAnchorTarget | undefined
     name?: string | undefined
@@ -303,11 +303,21 @@ export namespace JSX {
     name?: string | undefined
   }
 
+  /** @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#method */
+  type HTMLAttributeFormMethod = 'get' | 'post' | 'dialog'
+  /** @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#enctype */
+  type HTMLAttributeFormEnctype =
+    | 'application/x-www-form-urlencoded'
+    | 'multipart/form-data'
+    | 'text/plain'
+  /** @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#autocomplete */
+  type HTMLAttributeFormAutocomplete = 'on' | 'off'
+
   interface FormHTMLAttributes extends HTMLAttributes {
-    'accept-charset'?: string | undefined
-    autocomplete?: string | undefined
-    enctype?: string | undefined
-    method?: string | undefined
+    'accept-charset'?: StringLiteralUnion<'utf-8'> | undefined
+    autocomplete?: HTMLAttributeFormAutocomplete | undefined
+    enctype?: HTMLAttributeFormEnctype | undefined
+    method?: HTMLAttributeFormMethod | undefined
     name?: string | undefined
     novalidate?: boolean | undefined
     target?: HTMLAttributeAnchorTarget | undefined
@@ -446,8 +456,8 @@ export namespace JSX {
     checked?: boolean | undefined
     disabled?: boolean | undefined
     form?: string | undefined
-    formenctype?: string | undefined
-    formmethod?: string | undefined
+    formenctype?: HTMLAttributeFormEnctype | undefined
+    formmethod?: HTMLAttributeFormMethod | undefined
     formnovalidate?: boolean | undefined
     formtarget?: HTMLAttributeAnchorTarget | undefined
     height?: number | string | undefined
