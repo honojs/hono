@@ -617,7 +617,7 @@
     "@types/jsdom": "^21.1.4",
     "@types/node": "20.11.4",
     "@types/supertest": "^2.0.12",
-    "@vitest/coverage-v8": "^1.1.0",
+    "@vitest/coverage-v8": "^2.0.5",
     "arg": "^5.0.2",
     "crypto-js": "^4.1.1",
     "esbuild": "^0.15.12",
@@ -631,7 +631,7 @@
     "supertest": "^6.3.3",
     "typescript": "^5.3.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
-    "vitest": "^1.2.2",
+    "vitest": "^2.0.5",
     "wrangler": "^3.58.0",
     "ws": "^8.17.0",
     "zod": "^3.20.2"

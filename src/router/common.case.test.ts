@@ -1,7 +1,7 @@
 import type { Suite } from 'vitest'
 import type { ParamIndexMap, Params, Router } from '../router'
 
-const getSuiteHierarchy = (suite: Suite) => {
+const getSuiteHierarchy = (suite?: Suite) => {
   const res: Suite[] = []
   let s: Suite | undefined = suite
   while (s) {
@@ -28,7 +28,7 @@ export const runTest = ({
 
     beforeEach(({ task, skip: skipTask }) => {
       const suites = getSuiteHierarchy(task.suite)
-      const name = [...suites.slice(3).map((s) => s.name), task.name].join(' > ')
+      const name = [...suites.slice(2).map((s) => s.name), task.name].join(' > ')
       const isSkip = skip.find((s) => s.tests.includes(name))
       if (isSkip) {
         console.log(`Skip: ${isSkip.reason}`)
