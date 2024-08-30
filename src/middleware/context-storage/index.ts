@@ -5,7 +5,6 @@
 
 import type { Context } from '../../context'
 import type { Env, MiddlewareHandler } from '../../types'
-// import { createMiddleware } from '../../helper/factory'
 import { AsyncLocalStorage } from 'node:async_hooks'
 
 const asyncLocalStorage = new AsyncLocalStorage<Context>()
