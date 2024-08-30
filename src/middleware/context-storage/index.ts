@@ -41,7 +41,7 @@ const asyncLocalStorage = new AsyncLocalStorage<Context>()
  * ```
  */
 export const contextStorage = (): MiddlewareHandler => {
-  return async (c, next) => {
+  return async function contextStorage(c, next) {
     await asyncLocalStorage.run(c, next)
   }
 }
