@@ -19,11 +19,9 @@ interface BunWebSocketHandler<T> {
   close(ws: BunServerWebSocket<T>, code?: number, reason?: string): void
   message(ws: BunServerWebSocket<T>, message: string | Uint8Array): void
 }
-interface CreateWebSocket {
-  (): {
-    upgradeWebSocket: UpgradeWebSocket
-    websocket: BunWebSocketHandler<BunWebSocketData>
-  }
+interface CreateWebSocket<T> {
+  upgradeWebSocket: UpgradeWebSocket<T>
+  websocket: BunWebSocketHandler<BunWebSocketData>
 }
 export interface BunWebSocketData {
   connId: number
@@ -49,10 +47,10 @@ const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSContext<Bu
   }
 }
 
-export const createBunWebSocket: CreateWebSocket = () => {
+export const createBunWebSocket = <T>(): CreateWebSocket<T> => {
   const websocketConns: WSEvents[] = []
 
-  const upgradeWebSocket: UpgradeWebSocket = (createEvents) => {
+  const upgradeWebSocket: UpgradeWebSocket<any> = (createEvents) => {
     return async (c, next) => {
       const server = getBunServer(c)
       if (!server) {

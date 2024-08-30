@@ -1,7 +1,7 @@
 import type { UpgradeWebSocket, WSContext, WSReadyState } from '../../helper/websocket'
 
 // Based on https://github.com/honojs/hono/issues/1153#issuecomment-1767321332
-export const upgradeWebSocket: UpgradeWebSocket = (createEvents) => async (c, next) => {
+export const upgradeWebSocket: UpgradeWebSocket<WebSocket> = (createEvents) => async (c, next) => {
   const events = await createEvents(c)
 
   const upgradeHeader = c.req.header('Upgrade')

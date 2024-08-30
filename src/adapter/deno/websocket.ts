@@ -20,7 +20,7 @@ export interface UpgradeWebSocketOptions {
   idleTimeout?: number
 }
 
-export const upgradeWebSocket: UpgradeWebSocket<UpgradeWebSocketOptions> =
+export const upgradeWebSocket: UpgradeWebSocket<WebSocket, UpgradeWebSocketOptions> =
   (createEvents, options) => async (c, next) => {
     if (c.req.header('upgrade') !== 'websocket') {
       return await next()
