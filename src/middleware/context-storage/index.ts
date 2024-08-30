@@ -4,8 +4,8 @@
  */
 
 import type { Context } from '../../context'
-import type { Env } from '../../types'
-import { createMiddleware } from '../../helper/factory'
+import type { Env, MiddlewareHandler } from '../../types'
+// import { createMiddleware } from '../../helper/factory'
 import { AsyncLocalStorage } from 'node:async_hooks'
 
 const asyncLocalStorage = new AsyncLocalStorage<Context>()
@@ -15,8 +15,7 @@ const asyncLocalStorage = new AsyncLocalStorage<Context>()
  *
  * @see {@link https://hono.dev/docs/middleware/builtin/context-storage}
  *
- * @template E - The environment type.
- * @return The context storage object containing the 'setContext' middleware handler.
+ * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
  * ```ts
@@ -28,11 +27,7 @@ const asyncLocalStorage = new AsyncLocalStorage<Context>()
  *
  * const app = new Hono<Env>()
  *
- * // create the middleware
- * const { setContext, getContext } = contextStorage<Env>()
- *
- * // add the middleware to your router
- * app.use(setContext)
+ * app.use(contextStorage())
  *
  * app.use(async (c, next) => {
  *   c.set('message', 'Hono is cool!!)
@@ -42,25 +37,20 @@ const asyncLocalStorage = new AsyncLocalStorage<Context>()
  * app.get('/', async (c) => { c.text(getMessage()) })
  *
  * const getMessage = () => {
- *   return getContext().var.message
+ *   return getContext<Env>().var.message
  * }
  * ```
  */
-export const contextStorage = <E extends Env = Env>() => {
-  return {
-    setContext: createMiddleware(async (c, next) => {
-      return asyncLocalStorage.run(c, next)
-    }),
-    getContext: () => {
-      const context = asyncLocalStorage.getStore() as Context<E>
-      if (!context) {
-        throw new Error('Context is not available')
-      }
-      return context
-    },
+export const contextStorage = (): MiddlewareHandler => {
+  return async (c, next) => {
+    await asyncLocalStorage.run(c, next)
   }
 }
 
 export const getContext = <E extends Env = Env>() => {
-  return contextStorage<E>().getContext()
+  const context = asyncLocalStorage.getStore() as Context<E>
+  if (!context) {
+    throw new Error('Context is not available')
+  }
+  return context
 }
