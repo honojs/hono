@@ -29,7 +29,9 @@ export interface BunWebSocketData {
   protocol: string
 }
 
-const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSContext<BunServerWebSocket<BunWebSocketData>> => {
+const createWSContext = (
+  ws: BunServerWebSocket<BunWebSocketData>
+): WSContext<BunServerWebSocket<BunWebSocketData>> => {
   return {
     send: (source, options) => {
       const sendingData =
@@ -50,6 +52,7 @@ const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSContext<Bu
 export const createBunWebSocket = <T>(): CreateWebSocket<T> => {
   const websocketConns: WSEvents[] = []
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const upgradeWebSocket: UpgradeWebSocket<any> = (createEvents) => {
     return async (c, next) => {
       const server = getBunServer(c)

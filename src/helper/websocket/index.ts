@@ -20,7 +20,7 @@ export interface WSEvents<T = unknown> {
 /**
  * Upgrade WebSocket Type
  */
-export type UpgradeWebSocket<T = unknown,U = any> = (
+export type UpgradeWebSocket<T = unknown, U = any> = (
   createEvents: (c: Context) => WSEvents<T> | Promise<WSEvents<T>>,
   options?: U
 ) => MiddlewareHandler<
