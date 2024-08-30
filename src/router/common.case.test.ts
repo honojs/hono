@@ -1,9 +1,9 @@
-import type { Suite } from 'vitest'
+import type { RunnerTestSuite } from 'vitest'
 import type { ParamIndexMap, Params, Router } from '../router'
 
-const getSuiteHierarchy = (suite?: Suite) => {
-  const res: Suite[] = []
-  let s: Suite | undefined = suite
+const getSuiteHierarchy = (suite?: RunnerTestSuite) => {
+  const res: RunnerTestSuite[] = []
+  let s: RunnerTestSuite | undefined = suite
   while (s) {
     res.unshift(s)
     s = s.suite
