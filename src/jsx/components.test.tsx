@@ -191,6 +191,34 @@ describe('ErrorBoundary', () => {
     })
   })
 
+  describe('async : setTimeout', async () => {
+    const TimeoutSuccessComponent = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      return <div>OK</div>
+    }
+    const TimeoutErrorComponent = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      throw new Error('Error')
+    }
+
+    it('fallback', async () => {
+      const html = (
+        <>
+          <TimeoutSuccessComponent />
+          <ErrorBoundary fallback={<Fallback />}>
+            <TimeoutErrorComponent />
+          </ErrorBoundary>
+        </>
+      ).toString()
+
+      expect((await resolveCallback(await html)).toString()).toEqual(
+        '<div>OK</div><div>Out Of Service</div>'
+      )
+
+      suspenseCounter--
+    })
+  })
+
   describe('streaming', async () => {
     const Component = async ({ error }: { error?: boolean }) => {
       await new Promise((resolve) => setTimeout(resolve, 10))
