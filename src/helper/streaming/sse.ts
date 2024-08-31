@@ -1,8 +1,9 @@
 import type { Context } from '../../context'
 import { StreamingApi } from '../../utils/stream'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
 
 export interface SSEMessage {
-  data: string
+  data: string | Promise<string>
   event?: string
   id?: string
   retry?: number
@@ -14,7 +15,17 @@ export class SSEStreamingApi extends StreamingApi {
   }
 
   async writeSSE(message: SSEMessage) {
-    const data = message.data
+    let data = message.data
+    if (typeof data === 'object') {
+      if (!(data instanceof Promise)) {
+        data = (data as string).toString() // HtmlEscapedString object to string
+      }
+      if ((data as string | Promise<string>) instanceof Promise) {
+        data = await resolveCallback(await data, HtmlEscapedCallbackPhase.Stringify, false, {})
+      }
+    }
+
+    const dataLines = (data as string)
       .split('\n')
       .map((line) => {
         return `data: ${line}`
@@ -24,7 +35,7 @@ export class SSEStreamingApi extends StreamingApi {
     const sseData =
       [
         message.event && `event: ${message.event}`,
-        data,
+        dataLines,
         message.id && `id: ${message.id}`,
         message.retry && `retry: ${message.retry}`,
       ]
