@@ -93,13 +93,19 @@ d.replaceWith(c.content)
 })(document)
 </script>`
     }
+
+    let error: unknown
+    const promiseAll = Promise.all(resArray).catch((e) => (error = e))
     return raw(`<template id="E:${index}"></template><!--E:${index}-->`, [
       ({ phase, buffer, context }) => {
         if (phase === HtmlEscapedCallbackPhase.BeforeStream) {
           return
         }
-        return Promise.all(resArray)
-          .then(async (htmlArray) => {
+        return promiseAll
+          .then(async (htmlArray: HtmlEscapedString[]) => {
+            if (error) {
+              throw error
+            }
             htmlArray = htmlArray.flat()
             const content = htmlArray.join('')
             let html = buffer
