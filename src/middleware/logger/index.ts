@@ -55,8 +55,8 @@ function log(
 ) {
   const out =
     prefix === LogPrefix.Incoming
-      ? `  ${prefix} ${method} ${path}`
-      : `  ${prefix} ${method} ${path} ${colorStatus(status)} ${elapsed}`
+      ? `${prefix} ${method} ${path}`
+      : `${prefix} ${method} ${path} ${colorStatus(status)} ${elapsed}`
   fn(out)
 }
 
