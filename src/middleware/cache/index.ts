@@ -16,6 +16,7 @@ import type { MiddlewareHandler } from '../../types'
  * @param {boolean} [options.wait=false] - A boolean indicating if Hono should wait for the Promise of the `cache.put` function to resolve before continuing with the request. Required to be true for the Deno environment.
  * @param {string} [options.cacheControl] - A string of directives for the `Cache-Control` header.
  * @param {string | string[]} [options.vary] - Sets the `Vary` header in the response. If the original response header already contains a `Vary` header, the values are merged, removing any duplicates.
+ * @param {number} [options.duration] - A number of seconds to cache the response.
  * @param {Function} [options.keyGenerator] - Generates keys for every request in the `cacheName` store. This can be used to cache data based on request parameters or context parameters.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If the `vary` option includes "*".
@@ -36,6 +37,7 @@ export const cache = (options: {
   wait?: boolean
   cacheControl?: string
   vary?: string | string[]
+  duration?: number
   keyGenerator?: (c: Context) => Promise<string> | string
 }): MiddlewareHandler => {
   if (!globalThis.caches) {
@@ -72,7 +74,9 @@ export const cache = (options: {
         let [name, value] = directive.trim().split('=', 2)
         name = name.toLowerCase()
         if (!existingDirectives.includes(name)) {
-          c.header('Cache-Control', `${name}${value ? `=${value}` : ''}`, { append: true })
+          c.header('Cache-Control', `${name}${value ? `=${value}` : ''}`, {
+            append: true,
+          })
         }
       }
     }
@@ -98,6 +102,8 @@ export const cache = (options: {
     }
   }
 
+  const expirationHeader = 'Hono-Cache-Expiration'
+
   return async function cache(c, next) {
     let key = c.req.url
     if (options.keyGenerator) {
@@ -109,7 +115,18 @@ export const cache = (options: {
     const cache = await caches.open(cacheName)
     const response = await cache.match(key)
     if (response) {
-      return new Response(response.body, response)
+      if (options.duration) {
+        const duration = Number(response.headers.get(expirationHeader))
+        if (duration) {
+          const now = Date.now()
+          response.headers.delete(expirationHeader)
+          if (duration > now) {
+            return new Response(response.body, response)
+          }
+        }
+      } else {
+        return new Response(response.body, response)
+      }
     }
 
     await next()
@@ -118,6 +135,10 @@ export const cache = (options: {
     }
     addHeader(c)
     const res = c.res.clone()
+    if (options.duration) {
+      const expiration = Date.now() + options.duration * 1000
+      res.headers.set(expirationHeader, String(expiration))
+    }
     if (options.wait) {
       await cache.put(key, res)
     } else {
