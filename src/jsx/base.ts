@@ -327,7 +327,7 @@ export const jsxFn = (
       props,
       children
     )
-  } else if (tag === 'svg') {
+  } else if (tag === 'svg' || tag === 'head') {
     nameSpaceContext ||= createContext('')
     return new JSXNode(tag, props, [
       new JSXFunctionNode(
