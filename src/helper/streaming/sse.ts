@@ -15,16 +15,7 @@ export class SSEStreamingApi extends StreamingApi {
   }
 
   async writeSSE(message: SSEMessage) {
-    let data = message.data
-    if (typeof data === 'object') {
-      if (!(data instanceof Promise)) {
-        data = (data as string).toString() // HtmlEscapedString object to string
-      }
-      if ((data as string | Promise<string>) instanceof Promise) {
-        data = await resolveCallback(await data, HtmlEscapedCallbackPhase.Stringify, false, {})
-      }
-    }
-
+    const data = await resolveCallback(message.data, HtmlEscapedCallbackPhase.Stringify, false, {})
     const dataLines = (data as string)
       .split('\n')
       .map((line) => {
