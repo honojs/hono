@@ -101,8 +101,8 @@ export const parseBody: ParseBody = async (
   const contentType = headers.get('Content-Type')
 
   if (
-    (contentType !== null && contentType.startsWith('multipart/form-data')) ||
-    (contentType !== null && contentType.startsWith('application/x-www-form-urlencoded'))
+    contentType?.startsWith('multipart/form-data') ||
+    contentType?.startsWith('application/x-www-form-urlencoded')
   ) {
     return parseFormData(request, { all, dot })
   }
