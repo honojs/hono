@@ -9,6 +9,7 @@ import type { HonoRequest } from '../../request'
 import type { MiddlewareHandler } from '../../types'
 import { timingSafeEqual } from '../../utils/buffer'
 import { decodeBase64 } from '../../utils/encode'
+import { APPLICATION_JSON_UTF_8 } from '../../utils/mime'
 
 const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/
@@ -38,11 +39,13 @@ type BasicAuthOptions =
       password: string
       realm?: string
       hashFunction?: Function
+      invalidUserMessage?: string | object | Function
     }
   | {
       verifyUser: (username: string, password: string, c: Context) => boolean | Promise<boolean>
       realm?: string
       hashFunction?: Function
+      invalidUserMessage?: string | object | Function
     }
 
 /**
@@ -56,6 +59,7 @@ type BasicAuthOptions =
  * @param {string} [options.realm="Secure Area"] - The realm attribute for the WWW-Authenticate header.
  * @param {Function} [options.hashFunction] - The hash function used for secure comparison.
  * @param {Function} [options.verifyUser] - The function to verify user credentials.
+ * @param {string | object | Function} [options.invalidUserMessage="Unauthorized"] - The invalid user message.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {HTTPException} If neither "username and password" nor "verifyUser" options are provided.
  *
@@ -93,6 +97,10 @@ export const basicAuth = (
     options.realm = 'Secure Area'
   }
 
+  if (!options.invalidUserMessage) {
+    options.invalidUserMessage = 'Unauthorized'
+  }
+
   if (usernamePasswordInOptions) {
     users.unshift({ username: options.username, password: options.password })
   }
@@ -118,12 +126,25 @@ export const basicAuth = (
         }
       }
     }
-    const res = new Response('Unauthorized', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"',
-      },
-    })
-    throw new HTTPException(401, { res })
+    // Invalid user.
+    const status = 401
+    const headers = {
+      'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"',
+    }
+    const responseMessage =
+      typeof options.invalidUserMessage === 'function'
+        ? await options.invalidUserMessage(ctx)
+        : options.invalidUserMessage
+    const res =
+      typeof responseMessage === 'string'
+        ? new Response(responseMessage, { status, headers })
+        : new Response(JSON.stringify(responseMessage), {
+            status,
+            headers: {
+              ...headers,
+              'content-type': APPLICATION_JSON_UTF_8,
+            },
+          })
+    throw new HTTPException(status, { res })
   }
 }
