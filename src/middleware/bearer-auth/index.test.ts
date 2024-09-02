@@ -68,6 +68,163 @@ describe('Bearer Auth by Middleware', () => {
       handlerExecuted = true
       return c.text('auth-custom-header')
     })
+
+    app.use(
+      '/auth-custom-no-authentication-header-message-string/*',
+      bearerAuth({
+        token,
+        noAuthenticationHeaderMessage: 'Custom no authentication header message as string',
+      })
+    )
+    app.get('/auth-custom-no-authentication-header-message-string/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-no-authentication-header-message-object/*',
+      bearerAuth({
+        token,
+        noAuthenticationHeaderMessage: {
+          message: 'Custom no authentication header message as object',
+        },
+      })
+    )
+    app.get('/auth-custom-no-authentication-header-message-object/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-no-authentication-header-message-function-string/*',
+      bearerAuth({
+        token,
+        noAuthenticationHeaderMessage: () =>
+          'Custom no authentication header message as function string',
+      })
+    )
+    app.get('/auth-custom-no-authentication-header-message-function-string/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-no-authentication-header-message-function-object/*',
+      bearerAuth({
+        token,
+        noAuthenticationHeaderMessage: () => ({
+          message: 'Custom no authentication header message as function object',
+        }),
+      })
+    )
+    app.get('/auth-custom-no-authentication-header-message-function-object/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-authentication-header-message-string/*',
+      bearerAuth({
+        token,
+        invalidAuthenticationHeaderMeasage:
+          'Custom invalid authentication header message as string',
+      })
+    )
+    app.get('/auth-custom-invalid-authentication-header-message-string/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-authentication-header-message-object/*',
+      bearerAuth({
+        token,
+        invalidAuthenticationHeaderMeasage: {
+          message: 'Custom invalid authentication header message as object',
+        },
+      })
+    )
+    app.get('/auth-custom-invalid-authentication-header-message-object/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-authentication-header-message-function-string/*',
+      bearerAuth({
+        token,
+        invalidAuthenticationHeaderMeasage: () =>
+          'Custom invalid authentication header message as function string',
+      })
+    )
+    app.get('/auth-custom-invalid-authentication-header-message-function-string/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-authentication-header-message-function-object/*',
+      bearerAuth({
+        token,
+        invalidAuthenticationHeaderMeasage: () => ({
+          message: 'Custom invalid authentication header message as function object',
+        }),
+      })
+    )
+    app.get('/auth-custom-invalid-authentication-header-message-function-object/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-token-message-string/*',
+      bearerAuth({
+        token,
+        invalidTokenMessage: 'Custom invalid token message as string',
+      })
+    )
+    app.get('/auth-custom-invalid-token-message-string/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-token-message-object/*',
+      bearerAuth({
+        token,
+        invalidTokenMessage: { message: 'Custom invalid token message as object' },
+      })
+    )
+    app.get('/auth-custom-invalid-token-message-object/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-token-message-function-string/*',
+      bearerAuth({
+        token,
+        invalidTokenMessage: () => 'Custom invalid token message as function string',
+      })
+    )
+    app.get('/auth-custom-invalid-token-message-function-string/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
+
+    app.use(
+      '/auth-custom-invalid-token-message-function-object/*',
+      bearerAuth({
+        token,
+        invalidTokenMessage: () => ({
+          message: 'Custom invalid token message as function object',
+        }),
+      })
+    )
+    app.get('/auth-custom-invalid-token-message-function-object/*', (c) => {
+      handlerExecuted = true
+      return c.text('auth')
+    })
   })
 
   it('Should authorize', async () => {
@@ -227,5 +384,145 @@ describe('Bearer Auth by Middleware', () => {
     expect(handlerExecuted).toBeFalsy()
     expect(res.status).toBe(401)
     expect(await res.text()).toBe('Unauthorized')
+  })
+
+  it('Should not authorize - custom no authorization header message as string', async () => {
+    const req = new Request('http://localhost/auth-custom-no-authentication-header-message-string')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('Custom no authentication header message as string')
+  })
+
+  it('Should not authorize - custom no authorization header message as object', async () => {
+    const req = new Request('http://localhost/auth-custom-no-authentication-header-message-object')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('{"message":"Custom no authentication header message as object"}')
+  })
+
+  it('Should not authorize - custom no authorization header message as function string', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-no-authentication-header-message-function-string'
+    )
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('Custom no authentication header message as function string')
+  })
+
+  it('Should not authorize - custom no authorization header message as function object', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-no-authentication-header-message-function-object'
+    )
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe(
+      '{"message":"Custom no authentication header message as function object"}'
+    )
+  })
+
+  it('Should not authorize - custom invalid authentication header message as string', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-invalid-authentication-header-message-string'
+    )
+    req.headers.set('Authorization', 'Beare abcdefg12345-._~+/=')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(400)
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('Custom invalid authentication header message as string')
+  })
+
+  it('Should not authorize - custom invalid authentication header message as object', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-invalid-authentication-header-message-object'
+    )
+    req.headers.set('Authorization', 'Beare abcdefg12345-._~+/=')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(400)
+    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe(
+      '{"message":"Custom invalid authentication header message as object"}'
+    )
+  })
+
+  it('Should not authorize - custom invalid authentication header message as function string', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-invalid-authentication-header-message-function-string'
+    )
+    req.headers.set('Authorization', 'Beare abcdefg12345-._~+/=')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(400)
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('Custom invalid authentication header message as function string')
+  })
+
+  it('Should not authorize - custom invalid authentication header message as function object', async () => {
+    const req = new Request(
+      'http://localhost/auth-custom-invalid-authentication-header-message-function-object'
+    )
+    req.headers.set('Authorization', 'Beare abcdefg12345-._~+/=')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(400)
+    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe(
+      '{"message":"Custom invalid authentication header message as function object"}'
+    )
+  })
+
+  it('Should not authorize - custom invalid token message as string', async () => {
+    const req = new Request('http://localhost/auth-custom-invalid-token-message-string')
+    req.headers.set('Authorization', 'Bearer invalid-token')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('Custom invalid token message as string')
+  })
+
+  it('Should not authorize - custom invalid token message as object', async () => {
+    const req = new Request('http://localhost/auth-custom-invalid-token-message-object')
+    req.headers.set('Authorization', 'Bearer invalid-token')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('{"message":"Custom invalid token message as object"}')
+  })
+
+  it('Should not authorize - custom invalid token message as function string', async () => {
+    const req = new Request('http://localhost/auth-custom-invalid-token-message-function-string')
+    req.headers.set('Authorization', 'Bearer invalid-token')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('Custom invalid token message as function string')
+  })
+
+  it('Should not authorize - custom invalid token message as function object', async () => {
+    const req = new Request('http://localhost/auth-custom-invalid-token-message-function-object')
+    req.headers.set('Authorization', 'Bearer invalid-token')
+    const res = await app.request(req)
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(401)
+    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(handlerExecuted).toBeFalsy()
+    expect(await res.text()).toBe('{"message":"Custom invalid token message as function object"}')
   })
 })
