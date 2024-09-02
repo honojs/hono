@@ -66,38 +66,38 @@ describe('Basic Auth by Middleware', () => {
   )
 
   app.use(
-    '/auth-override-invalid-user-message-string/*',
+    '/auth-custom-invalid-user-message-string/*',
     basicAuth({
       username,
       password,
-      invalidUserMessage: 'Prohibited',
+      invalidUserMessage: 'Custom unauthorized message as string',
     })
   )
 
   app.use(
-    '/auth-override-invalid-user-message-object/*',
+    '/auth-custom-invalid-user-message-object/*',
     basicAuth({
       username,
       password,
-      invalidUserMessage: { message: 'Prohibited' },
+      invalidUserMessage: { message: 'Custom unauthorized message as object' },
     })
   )
 
   app.use(
-    '/auth-override-invalid-user-message-function-string/*',
+    '/auth-custom-invalid-user-message-function-string/*',
     basicAuth({
       username,
       password,
-      invalidUserMessage: () => 'Unpermitted',
+      invalidUserMessage: () => 'Custom unauthorized message as function string',
     })
   )
 
   app.use(
-    '/auth-override-invalid-user-message-function-object/*',
+    '/auth-custom-invalid-user-message-function-object/*',
     basicAuth({
       username,
       password,
-      invalidUserMessage: () => ({ message: 'Unpermitted' }),
+      invalidUserMessage: () => ({ message: 'Custom unauthorized message as function object' }),
     })
   )
 
@@ -135,20 +135,20 @@ describe('Basic Auth by Middleware', () => {
     handlerExecuted = true
     return c.text('auth')
   })
-  app.get('/auth-override-invalid-user-message-string/*', (c) => {
+  app.get('/auth-custom-invalid-user-message-string/*', (c) => {
     handlerExecuted = true
     return c.text('auth')
   })
-  app.get('/auth-override-invalid-user-message-object/*', (c) => {
+  app.get('/auth-custom-invalid-user-message-object/*', (c) => {
     handlerExecuted = true
     return c.text('auth')
   })
-  app.get('/auth-override-invalid-user-message-function-string/*', (c) => {
+  app.get('/auth-custom-invalid-user-message-function-string/*', (c) => {
     handlerExecuted = true
     return c.text('auth')
   })
 
-  app.get('/auth-override-invalid-user-message-function-object/*', (c) => {
+  app.get('/auth-custom-invalid-user-message-function-object/*', (c) => {
     handlerExecuted = true
     return c.text('auth')
   })
@@ -281,40 +281,40 @@ describe('Basic Auth by Middleware', () => {
   })
 
   it('Should not authorize - custom invalid user message as string', async () => {
-    const req = new Request('http://localhost/auth-override-invalid-user-message-string')
+    const req = new Request('http://localhost/auth-custom-invalid-user-message-string')
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
     expect(handlerExecuted).toBeFalsy()
-    expect(await res.text()).toBe('Prohibited')
+    expect(await res.text()).toBe('Custom unauthorized message as string')
   })
 
   it('Should not authorize - custom invalid user message as object', async () => {
-    const req = new Request('http://localhost/auth-override-invalid-user-message-object')
+    const req = new Request('http://localhost/auth-custom-invalid-user-message-object')
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
     expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
     expect(handlerExecuted).toBeFalsy()
-    expect(await res.text()).toBe('{"message":"Prohibited"}')
+    expect(await res.text()).toBe('{"message":"Custom unauthorized message as object"}')
   })
 
   it('Should not authorize - custom invalid user message as function string', async () => {
-    const req = new Request('http://localhost/auth-override-invalid-user-message-function-string')
+    const req = new Request('http://localhost/auth-custom-invalid-user-message-function-string')
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
     expect(handlerExecuted).toBeFalsy()
-    expect(await res.text()).toBe('Unpermitted')
+    expect(await res.text()).toBe('Custom unauthorized message as function string')
   })
 
   it('Should not authorize - custom invalid user message as function object', async () => {
-    const req = new Request('http://localhost/auth-override-invalid-user-message-function-object')
+    const req = new Request('http://localhost/auth-custom-invalid-user-message-function-object')
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
     expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
     expect(handlerExecuted).toBeFalsy()
-    expect(await res.text()).toBe('{"message":"Unpermitted"}')
+    expect(await res.text()).toBe('{"message":"Custom unauthorized message as function object"}')
   })
 })
