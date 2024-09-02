@@ -75,7 +75,7 @@ export const basicAuth = (
   }
 
   return async function basicAuth(ctx, next) {
-    const requestUser = auth(ctx.req)
+    const requestUser = auth(ctx.req.raw)
     if (requestUser) {
       if (verifyUserInOptions) {
         if (await options.verifyUser(requestUser.username, requestUser.password, ctx)) {
