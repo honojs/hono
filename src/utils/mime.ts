@@ -3,6 +3,8 @@
  * MIME utility.
  */
 
+export const APPLICATION_JSON_UTF_8 = 'application/json; charset=UTF-8'
+
 export const getMimeType = (
   filename: string,
   mimes: Record<string, string> = baseMimes

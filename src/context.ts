@@ -18,6 +18,7 @@ import type {
   JSONValue,
   SimplifyDeepArray,
 } from './utils/types'
+import { APPLICATION_JSON_UTF_8 } from './utils/mime'
 import type { BaseMime } from './utils/mime'
 
 type HeaderRecord =
@@ -828,7 +829,7 @@ export class Context<
   ): JSONRespondReturn<T, U> => {
     const body = JSON.stringify(object)
     this.#preparedHeaders ??= {}
-    this.#preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
+    this.#preparedHeaders['content-type'] = APPLICATION_JSON_UTF_8
     /* eslint-disable @typescript-eslint/no-explicit-any */
     return (
       typeof arg === 'number' ? this.newResponse(body, arg, headers) : this.newResponse(body, arg)
