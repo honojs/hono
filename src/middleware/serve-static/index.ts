@@ -54,7 +54,7 @@ export const serveStatic = <E extends Env = Env>(
         root,
       })
       if (path && (await options.isDir(path))) {
-        filename = filename + '/'
+        filename += '/'
       }
     }
 
@@ -107,19 +107,19 @@ export const serveStatic = <E extends Env = Env>(
     let content = await getContent(path, c)
 
     if (!content) {
-      let pathWithOutDefaultDocument = getFilePathWithoutDefaultDocument({
+      let pathWithoutDefaultDocument = getFilePathWithoutDefaultDocument({
         filename,
         root,
       })
-      if (!pathWithOutDefaultDocument) {
+      if (!pathWithoutDefaultDocument) {
         return await next()
       }
-      pathWithOutDefaultDocument = pathResolve(pathWithOutDefaultDocument)
+      pathWithoutDefaultDocument = pathResolve(pathWithoutDefaultDocument)
 
-      if (pathWithOutDefaultDocument !== path) {
-        content = await getContent(pathWithOutDefaultDocument, c)
+      if (pathWithoutDefaultDocument !== path) {
+        content = await getContent(pathWithoutDefaultDocument, c)
         if (content) {
-          path = pathWithOutDefaultDocument
+          path = pathWithoutDefaultDocument
         }
       }
     }
