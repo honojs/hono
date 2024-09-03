@@ -70,41 +70,12 @@ export const serveStatic = <E extends Env = Env>(
 
     const getContent = options.getContent
     const pathResolve = options.pathResolve ?? defaultPathResolve
-    let mimeType: string | undefined
-
-    if (options.precompressed) {
-      if (options.mimes) {
-        mimeType = getMimeType(path, options.mimes) ?? getMimeType(path)
-      } else {
-        mimeType = getMimeType(path)
-      }
-
-      const acceptEncodings =
-        c.req
-          .header('Accept-Encoding')
-          ?.split(',')
-          .map((encoding) => encoding.trim())
-          .filter((encoding): encoding is keyof typeof ENCODINGS =>
-            Object.hasOwn(ENCODINGS, encoding)
-          )
-          .sort((a, b) => Object.keys(ENCODINGS).indexOf(a) - Object.keys(ENCODINGS).indexOf(b)) ||
-        []
-
-      for (const acceptEncoding of acceptEncodings) {
-        const extension = ENCODINGS[acceptEncoding]
-
-        if (await getContent(path + extension, c)) {
-          path = pathResolve(path + extension)
-          c.header('Content-Encoding', acceptEncoding)
-          c.header('Vary', 'Accept-Encoding', { append: true })
-          break
-        }
-      }
-    } else {
-      path = pathResolve(path)
-    }
-
+    path = pathResolve(path)
     let content = await getContent(path, c)
+
+    if (content instanceof Response) {
+      return c.newResponse(content.body, content)
+    }
 
     if (!content) {
       let pathWithoutDefaultDocument = getFilePathWithoutDefaultDocument({
@@ -117,28 +88,46 @@ export const serveStatic = <E extends Env = Env>(
       pathWithoutDefaultDocument = pathResolve(pathWithoutDefaultDocument)
 
       if (pathWithoutDefaultDocument !== path) {
-        content = await getContent(pathWithoutDefaultDocument, c)
+        content = (await getContent(pathWithoutDefaultDocument, c)) as Data | null
         if (content) {
           path = pathWithoutDefaultDocument
         }
       }
     }
 
-    if (content instanceof Response) {
-      return c.newResponse(content.body, content)
+    const mimeType = options.mimes
+      ? getMimeType(path, options.mimes) ?? getMimeType(path)
+      : getMimeType(path)
+
+    if (mimeType) {
+      c.header('Content-Type', mimeType)
+    }
+
+    if (options.precompressed) {
+      const acceptEncodings =
+        c.req
+          .header('Accept-Encoding')
+          ?.split(',')
+          .map((encoding) => encoding.trim())
+          .filter((encoding): encoding is keyof typeof ENCODINGS =>
+            Object.hasOwn(ENCODINGS, encoding)
+          )
+          .sort((a, b) => Object.keys(ENCODINGS).indexOf(a) - Object.keys(ENCODINGS).indexOf(b)) ||
+        []
+
+      for (const encoding of acceptEncodings) {
+        const compressedContent = (await getContent(path + ENCODINGS[encoding], c)) as Data | null
+
+        if (compressedContent) {
+          content = compressedContent
+          c.header('Content-Encoding', encoding)
+          c.header('Vary', 'Accept-Encoding', { append: true })
+          break
+        }
+      }
     }
 
     if (content) {
-      if (!mimeType) {
-        if (options.mimes) {
-          mimeType = getMimeType(path, options.mimes) ?? getMimeType(path)
-        } else {
-          mimeType = getMimeType(path)
-        }
-      }
-      if (mimeType) {
-        c.header('Content-Type', mimeType)
-      }
       return c.body(content)
     }
 
