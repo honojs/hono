@@ -11,10 +11,17 @@ import { getMimeType } from '../../utils/mime'
 export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
   path?: string
+  precompressed?: boolean
   mimes?: Record<string, string>
   rewriteRequestPath?: (path: string) => string
   onNotFound?: (path: string, c: Context<E>) => void | Promise<void>
 }
+
+const ENCODINGS = {
+  br: '.br',
+  zstd: '.zst',
+  gzip: '.gz',
+} as const
 
 const DEFAULT_DOCUMENT = 'index.html'
 const defaultPathResolve = (path: string) => path
@@ -63,8 +70,40 @@ export const serveStatic = <E extends Env = Env>(
 
     const getContent = options.getContent
     const pathResolve = options.pathResolve ?? defaultPathResolve
+    let mimeType: string | undefined
 
-    path = pathResolve(path)
+    if (options.precompressed) {
+      if (options.mimes) {
+        mimeType = getMimeType(path, options.mimes) ?? getMimeType(path)
+      } else {
+        mimeType = getMimeType(path)
+      }
+
+      const acceptEncodings =
+        c.req
+          .header('Accept-Encoding')
+          ?.split(',')
+          .map((encoding) => encoding.trim())
+          .filter((encoding): encoding is keyof typeof ENCODINGS =>
+            Object.hasOwn(ENCODINGS, encoding)
+          )
+          .sort((a, b) => Object.keys(ENCODINGS).indexOf(a) - Object.keys(ENCODINGS).indexOf(b)) ||
+        []
+
+      for (const acceptEncoding of acceptEncodings) {
+        const extension = ENCODINGS[acceptEncoding]
+
+        if (await getContent(path + extension, c)) {
+          path = pathResolve(path + extension)
+          c.header('Content-Encoding', acceptEncoding)
+          c.header('Vary', 'Accept-Encoding', { append: true })
+          break
+        }
+      }
+    } else {
+      path = pathResolve(path)
+    }
+
     let content = await getContent(path, c)
 
     if (!content) {
@@ -90,11 +129,12 @@ export const serveStatic = <E extends Env = Env>(
     }
 
     if (content) {
-      let mimeType: string | undefined
-      if (options.mimes) {
-        mimeType = getMimeType(path, options.mimes) ?? getMimeType(path)
-      } else {
-        mimeType = getMimeType(path)
+      if (!mimeType) {
+        if (options.mimes) {
+          mimeType = getMimeType(path, options.mimes) ?? getMimeType(path)
+        } else {
+          mimeType = getMimeType(path)
+        }
       }
       if (mimeType) {
         c.header('Content-Type', mimeType)

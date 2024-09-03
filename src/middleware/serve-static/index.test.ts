@@ -76,6 +76,49 @@ describe('Serve Static Middleware', () => {
     expect(await res.text()).toBe('404 Not Found')
   })
 
+  it('Should return pre-compressed response - /static/hello.html', async () => {
+    const app = new Hono().use(
+      '*',
+      baseServeStatic({
+        getContent,
+        precompressed: true,
+      })
+    )
+
+    const res = await app.request('/static/hello.html', {
+      headers: { 'Accept-Encoding': 'gzip, deflate, br' },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Encoding')).toBe('br')
+    expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
+    expect(await res.text()).toBe('Hello in static/hello.html.br')
+  })
+
+  it('Should not return pre-compressed response - /static/hello.html', async () => {
+    const app = new Hono().use(
+      '*',
+      baseServeStatic({
+        getContent: vi.fn(async (path) => {
+          if (/\.(br|zst|gz)$/.test(path)) {
+            return null
+          }
+          return `Hello in ${path}`
+        }),
+        precompressed: true,
+      })
+    )
+
+    const res = await app.request('/static/hello.html', {
+      headers: { 'Accept-Encoding': 'gzip, deflate, br' },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Encoding')).toBeNull()
+    expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
+    expect(await res.text()).toBe('Hello in static/hello.html')
+  })
+
   it('Should return response object content as-is', async () => {
     const body = new ReadableStream()
     const response = new Response(body)
