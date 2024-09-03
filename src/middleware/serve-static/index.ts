@@ -73,10 +73,6 @@ export const serveStatic = <E extends Env = Env>(
     path = pathResolve(path)
     let content = await getContent(path, c)
 
-    if (content instanceof Response) {
-      return c.newResponse(content.body, content)
-    }
-
     if (!content) {
       let pathWithoutDefaultDocument = getFilePathWithoutDefaultDocument({
         filename,
@@ -88,11 +84,15 @@ export const serveStatic = <E extends Env = Env>(
       pathWithoutDefaultDocument = pathResolve(pathWithoutDefaultDocument)
 
       if (pathWithoutDefaultDocument !== path) {
-        content = (await getContent(pathWithoutDefaultDocument, c)) as Data | null
+        content = await getContent(pathWithoutDefaultDocument, c)
         if (content) {
           path = pathWithoutDefaultDocument
         }
       }
+    }
+
+    if (content instanceof Response) {
+      return c.newResponse(content.body, content)
     }
 
     const mimeType = options.mimes
