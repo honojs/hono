@@ -38,7 +38,7 @@ const notFoundHandler = (c: Context, message?: string | object) => {
     message = '404 Not Found'
   }
   const status = 404
-  if (typeof responseMessage === 'string') {
+  if (typeof message === 'string') {
     return c.text(message, status)
   }
   return c.json(message, 404)
