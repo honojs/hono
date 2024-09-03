@@ -1365,6 +1365,46 @@ describe('Not Found', () => {
       expect(await res.text()).toBe('Custom NotFound')
     })
   })
+
+  describe('Not Found message as string', () => {
+    const app = new Hono()
+
+    app.get('/not-found', (c) => c.notFound('Custom not found message string'))
+
+    it('Custom 404 Not Found message as string', async () => {
+      const res = await app.request('http://localhost/not-found')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Custom not found message string')
+    })
+  })
+
+  describe('Not Found message as object', () => {
+    const app = new Hono()
+
+    app.get('/not-found', (c) => c.notFound({ message: 'Custom not found message object' }))
+
+    it('Custom 404 Not Found message as object', async () => {
+      const res = await app.request('http://localhost/not-found')
+      expect(res.status).toBe(404)
+	  expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+      expect(await res.text()).toBe('{"message":"Custom not found message object"}')
+    })
+  })
+
+  describe('Custom 404 Not Found handler with message', () => {
+    const app = new Hono()
+    app.notFound((c, message) => {
+      return c.text(message, 404)
+    })	
+
+    app.get('/not-found', (c) => c.notFound('Custom not found handler and message'))
+
+    it('Custom 404 Not Found handler and message', async () => {
+      const res = await app.request('http://localhost/not-found')
+      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Custom not found handler and message')
+    })
+  })
 })
 
 describe('Redirect', () => {
