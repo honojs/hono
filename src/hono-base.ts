@@ -33,8 +33,15 @@ import { getPath, getPathNoStrict, mergePath } from './utils/url'
  */
 export const COMPOSED_HANDLER = Symbol('composedHandler')
 
-const notFoundHandler = (c: Context) => {
-  return c.text('404 Not Found', 404)
+const notFoundHandler = (c: Context, message?: string | object) => {
+  if (!message) {
+    message = '404 Not Found'
+  }
+  const status = 404
+  if (typeof responseMessage === 'string') {
+    return c.text(message, status)
+  }
+  return c.json(message, 404)
 }
 
 const errorHandler = (err: Error | HTTPResponseError, c: Context) => {
