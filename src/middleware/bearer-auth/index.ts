@@ -19,6 +19,9 @@ type BearerAuthOptions =
       prefix?: string
       headerName?: string
       hashFunction?: Function
+      noAuthenticationHeaderMessage?: string | object | Function
+      invalidAuthenticationHeaderMeasage?: string | object | Function
+      invalidTokenMessage?: string | object | Function
     }
   | {
       realm?: string
@@ -26,6 +29,9 @@ type BearerAuthOptions =
       headerName?: string
       verifyToken: (token: string, c: Context) => boolean | Promise<boolean>
       hashFunction?: Function
+      noAuthenticationHeaderMessage?: string | object | Function
+      invalidAuthenticationHeaderMeasage?: string | object | Function
+      invalidTokenMessage?: string | object | Function
     }
 
 /**
@@ -40,6 +46,9 @@ type BearerAuthOptions =
  * @param {string} [options.prefix="Bearer"] - The prefix (or known as `schema`) for the Authorization header value. If set to the empty string, no prefix is expected.
  * @param {string} [options.headerName=Authorization] - The header name.
  * @param {Function} [options.hashFunction] - A function to handle hashing for safe comparison of authentication tokens.
+ * @param {string | object | Function} [options.noAuthenticationHeaderMessage="Unauthorized"] - The no authentication header message.
+ * @param {string | object | Function} [options.invalidAuthenticationHeaderMeasage="Bad Request"] - The invalid authentication header message.
+ * @param {string | object | Function} [options.invalidTokenMessage="Unauthorized"] - The invalid token message.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If neither "token" nor "verifyToken" options are provided.
  * @throws {HTTPException} If authentication fails, with 401 status code for missing or invalid token, or 400 status code for invalid request.
@@ -67,6 +76,15 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
   if (options.prefix === undefined) {
     options.prefix = PREFIX
   }
+  if (!options.noAuthenticationHeaderMessage) {
+    options.noAuthenticationHeaderMessage = 'Unauthorized'
+  }
+  if (!options.invalidAuthenticationHeaderMeasage) {
+    options.invalidAuthenticationHeaderMeasage = 'Bad Request'
+  }
+  if (!options.invalidTokenMessage) {
+    options.invalidTokenMessage = 'Unauthorized'
+  }
 
   const realm = options.realm?.replace(/"/g, '\\"')
   const prefixRegexStr = options.prefix === '' ? '' : `${options.prefix} +`
@@ -77,24 +95,48 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
     const headerToken = c.req.header(options.headerName || HEADER)
     if (!headerToken) {
       // No Authorization header
-      const res = new Response('Unauthorized', {
-        status: 401,
-        headers: {
-          'WWW-Authenticate': `${wwwAuthenticatePrefix}realm="` + realm + '"',
-        },
-      })
-      throw new HTTPException(401, { res })
+      const status = 401
+      const headers = {
+        'WWW-Authenticate': `${wwwAuthenticatePrefix}realm="` + realm + '"',
+      }
+      const responseMessage =
+        typeof options.noAuthenticationHeaderMessage === 'function'
+          ? await options.noAuthenticationHeaderMessage(c)
+          : options.noAuthenticationHeaderMessage
+      const res =
+        typeof responseMessage === 'string'
+          ? new Response(responseMessage, { status, headers })
+          : new Response(JSON.stringify(responseMessage), {
+              status,
+              headers: {
+                ...headers,
+                'content-type': 'application/json; charset=UTF-8',
+              },
+            })
+      throw new HTTPException(status, { res })
     } else {
       const match = regexp.exec(headerToken)
       if (!match) {
         // Invalid Request
-        const res = new Response('Bad Request', {
-          status: 400,
-          headers: {
-            'WWW-Authenticate': `${wwwAuthenticatePrefix}error="invalid_request"`,
-          },
-        })
-        throw new HTTPException(400, { res })
+        const status = 400
+        const headers = {
+          'WWW-Authenticate': `${wwwAuthenticatePrefix}error="invalid_request"`,
+        }
+        const responseMessage =
+          typeof options.invalidAuthenticationHeaderMeasage === 'function'
+            ? await options.invalidAuthenticationHeaderMeasage(c)
+            : options.invalidAuthenticationHeaderMeasage
+        const res =
+          typeof responseMessage === 'string'
+            ? new Response(responseMessage, { status, headers })
+            : new Response(JSON.stringify(responseMessage), {
+                status,
+                headers: {
+                  ...headers,
+                  'content-type': 'application/json; charset=UTF-8',
+                },
+              })
+        throw new HTTPException(status, { res })
       } else {
         let equal = false
         if ('verifyToken' in options) {
@@ -111,13 +153,25 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
         }
         if (!equal) {
           // Invalid Token
-          const res = new Response('Unauthorized', {
-            status: 401,
-            headers: {
-              'WWW-Authenticate': `${wwwAuthenticatePrefix}error="invalid_token"`,
-            },
-          })
-          throw new HTTPException(401, { res })
+          const status = 401
+          const headers = {
+            'WWW-Authenticate': `${wwwAuthenticatePrefix}error="invalid_token"`,
+          }
+          const responseMessage =
+            typeof options.invalidTokenMessage === 'function'
+              ? await options.invalidTokenMessage(c)
+              : options.invalidTokenMessage
+          const res =
+            typeof responseMessage === 'string'
+              ? new Response(responseMessage, { status, headers })
+              : new Response(JSON.stringify(responseMessage), {
+                  status,
+                  headers: {
+                    ...headers,
+                    'content-type': 'application/json; charset=UTF-8',
+                  },
+                })
+          throw new HTTPException(status, { res })
         }
       }
     }
