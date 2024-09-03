@@ -26,6 +26,7 @@
     "./cookie": "./src/helper/cookie/index.ts",
     "./accepts": "./src/helper/accepts/index.ts",
     "./compress": "./src/middleware/compress/index.ts",
+    "./context-storage": "./src/middleware/context-storage/index.ts",
     "./cors": "./src/middleware/cors/index.ts",
     "./csrf": "./src/middleware/csrf/index.ts",
     "./etag": "./src/middleware/etag/index.ts",
