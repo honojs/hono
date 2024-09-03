@@ -104,6 +104,11 @@
       "import": "./dist/middleware/compress/index.js",
       "require": "./dist/cjs/middleware/compress/index.js"
     },
+    "./context-storage": {
+      "types": "./dist/types/middleware/context-storage/index.d.ts",
+      "import": "./dist/middleware/context-storage/index.js",
+      "require": "./dist/cjs/middleware/context-storage/index.js"
+    },
     "./cors": {
       "types": "./dist/types/middleware/cors/index.d.ts",
       "import": "./dist/middleware/cors/index.js",
@@ -420,6 +425,9 @@
       ],
       "compress": [
         "./dist/types/middleware/compress"
+      ],
+      "context-storage": [
+        "./dist/types/middleware/context-storage"
       ],
       "cors": [
         "./dist/types/middleware/cors"
