@@ -1,12 +1,12 @@
 import { Hono } from '../../src/hono.ts'
-import { assertEquals } from './deps.ts'
 import { stream, streamSSE } from '../../src/helper/streaming/index.ts'
+import { assertEquals } from '@std/assert'
 
 Deno.test('Shuld call onAbort via stream', async () => {
   const app = new Hono()
   let aborted = false
   app.get('/stream', (c) => {
-    return stream(c, async (stream) => {
+    return stream(c, (stream) => {
       stream.onAbort(() => {
         aborted = true
       })
@@ -21,7 +21,6 @@ Deno.test('Shuld call onAbort via stream', async () => {
   const req = new Request(`http://localhost:${server.addr.port}/stream`, {
     signal: ac.signal,
   })
-  assertEquals
   const res = fetch(req).catch(() => {})
   assertEquals(aborted, false)
   await new Promise((resolve) => setTimeout(resolve, 10))
@@ -59,7 +58,7 @@ Deno.test('Shuld call onAbort via streamSSE', async () => {
   const app = new Hono()
   let aborted = false
   app.get('/stream', (c) => {
-    return streamSSE(c, async (stream) => {
+    return streamSSE(c, (stream) => {
       stream.onAbort(() => {
         aborted = true
       })

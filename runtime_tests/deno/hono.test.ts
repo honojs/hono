@@ -1,7 +1,7 @@
 import { Context } from '../../src/context.ts'
 import { env, getRuntimeKey } from '../../src/helper/adapter/index.ts'
 import { Hono } from '../../src/hono.ts'
-import { assertEquals } from './deps.ts'
+import { assertEquals } from '@std/assert'
 
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.
