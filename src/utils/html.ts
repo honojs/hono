@@ -21,6 +21,15 @@ export type HtmlEscaped = {
 export type HtmlEscapedString = string & HtmlEscaped
 
 /**
+ * Anything that has a `toString` method.
+ */
+type HasToString = {
+  toString(): string
+}
+
+export type HTMLInput = string | HtmlEscapedString | HasToString
+
+/**
  * StringBuffer contains string and Promise<string> alternately
  * The length of the array will be odd, the odd numbered element will be a string,
  * and the even numbered element will be a Promise<string>.
@@ -140,7 +149,7 @@ export const resolveCallbackSync = (str: string | HtmlEscapedString): string => 
 }
 
 export const resolveCallback = async (
-  str: string | HtmlEscapedString,
+  str: HTMLInput,
   phase: (typeof HtmlEscapedCallbackPhase)[keyof typeof HtmlEscapedCallbackPhase],
   preserveCallbacks: boolean,
   context: object,
@@ -148,12 +157,12 @@ export const resolveCallback = async (
 ): Promise<string> => {
   const callbacks = (str as HtmlEscapedString).callbacks as HtmlEscapedCallback[]
   if (!callbacks?.length) {
-    return Promise.resolve(str)
+    return Promise.resolve(str.toString())
   }
   if (buffer) {
     buffer[0] += str
   } else {
-    buffer = [str]
+    buffer = [str.toString()]
   }
 
   const resStr = Promise.all(callbacks.map((c) => c({ phase, buffer, context }))).then((res) =>
