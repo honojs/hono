@@ -5,32 +5,9 @@
 
 import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
-import type { HonoRequest } from '../../request'
 import type { MiddlewareHandler } from '../../types'
+import { auth } from '../../utils/basic-auth'
 import { timingSafeEqual } from '../../utils/buffer'
-import { decodeBase64 } from '../../utils/encode'
-
-const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
-const USER_PASS_REGEXP = /^([^:]*):(.*)$/
-const utf8Decoder = new TextDecoder()
-const auth = (req: HonoRequest) => {
-  const match = CREDENTIALS_REGEXP.exec(req.header('Authorization') || '')
-  if (!match) {
-    return undefined
-  }
-
-  let userPass = undefined
-  // If an invalid string is passed to atob(), it throws a `DOMException`.
-  try {
-    userPass = USER_PASS_REGEXP.exec(utf8Decoder.decode(decodeBase64(match[1])))
-  } catch {} // Do nothing
-
-  if (!userPass) {
-    return undefined
-  }
-
-  return { username: userPass[1], password: userPass[2] }
-}
 
 type BasicAuthOptions =
   | {
@@ -98,7 +75,7 @@ export const basicAuth = (
   }
 
   return async function basicAuth(ctx, next) {
-    const requestUser = auth(ctx.req)
+    const requestUser = auth(ctx.req.raw)
     if (requestUser) {
       if (verifyUserInOptions) {
         if (await options.verifyUser(requestUser.username, requestUser.password, ctx)) {
