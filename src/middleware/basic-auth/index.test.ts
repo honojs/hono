@@ -121,20 +121,7 @@ describe('Basic Auth by Middleware', () => {
     return c.text('verify-user')
   })
 
-  app.get('/auth-custom-invalid-user-message-string/*', (c) => {
-    handlerExecuted = true
-    return c.text('auth')
-  })
-  app.get('/auth-custom-invalid-user-message-object/*', (c) => {
-    handlerExecuted = true
-    return c.text('auth')
-  })
-  app.get('/auth-custom-invalid-user-message-function-string/*', (c) => {
-    handlerExecuted = true
-    return c.text('auth')
-  })
-
-  app.get('/auth-custom-invalid-user-message-function-object/*', (c) => {
+  app.get('/auth-custom-invalid-user-message/*', (c) => {
     handlerExecuted = true
     return c.text('auth')
   })
