@@ -112,32 +112,49 @@ export interface HandlerInterface<
   BasePath extends string = '/'
 > {
   // app.get(handler)
-  <
-    I extends Input = BlankInput,
-    R extends HandlerResponse<any> = any,
-  >(
+  <I extends Input = BlankInput, R extends HandlerResponse<any> = any>(
     handler: H<E, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I, R>
-  ): Hono<E, S & ToSchema<M, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I, MergeTypedResponse<R>>, BasePath>
+  ): Hono<
+    E,
+    S &
+      ToSchema<M, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I, MergeTypedResponse<R>>,
+    BasePath
+  >
 
-  <
-    I extends Input = BlankInput,
-    R extends HandlerResponse<any> = any,
-    E2 extends Env = E
-  >(
+  <I extends Input = BlankInput, R extends HandlerResponse<any> = any, E2 extends Env = E>(
     handler: H<E2, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I, R>
-  ): Hono<IntersectNonAnyTypes<[E, E2]>, S & ToSchema<M, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I, MergeTypedResponse<R>>, BasePath>
+  ): Hono<
+    IntersectNonAnyTypes<[E, E2]>,
+    S &
+      ToSchema<M, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I, MergeTypedResponse<R>>,
+    BasePath
+  >
 
   // app.get(handler x2)
   <
     I extends Input = BlankInput,
     I2 extends Input = I,
     R extends HandlerResponse<any> = any,
-    E2 extends Env = E,
+    E2 extends Env = E
   >(
-    ...handlers: [H<E2, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I>, H<IntersectNonAnyTypes<[E, E2]>, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I2, R>]
+    ...handlers: [
+      H<E2, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I>,
+      H<
+        IntersectNonAnyTypes<[E, E2]>,
+        ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+        I2,
+        R
+      >
+    ]
   ): Hono<
     IntersectNonAnyTypes<[E, E2]>,
-    S & ToSchema<M, ExtractKey<S> extends never ? BasePath : ExtractKey<S>, I2, MergeTypedResponse<R>>,
+    S &
+      ToSchema<
+        M,
+        ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+        I2,
+        MergeTypedResponse<R>
+      >,
     BasePath
   >
   <
@@ -156,6 +173,10 @@ export interface HandlerInterface<
   >
 
   // app.get(path, handler)
+  <P extends string, I extends Input = BlankInput, R extends HandlerResponse<any> = any>(
+    path: P,
+    handler: H<E, MergePath<BasePath, P>, I, R>
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>, BasePath>
   <
     P extends string,
     R extends HandlerResponse<any> = any,

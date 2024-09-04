@@ -2269,3 +2269,58 @@ describe('generic typed variables', () => {
     expectTypeOf<Actual>().toEqualTypeOf<Expected>()
   })
 })
+
+describe('dynamic middleware', () => {
+  const app = new Hono<{
+    Variables: {
+      foo: string
+    }
+  }>().basePath('/api/:v')
+
+  type CreateMiddleware = <E extends Env, P extends string>(
+    handler: (c: Context<E, P>) => any
+  ) => MiddlewareHandler<E, P>
+
+  const createMiddleware: CreateMiddleware = () => {
+    return async () => {}
+  }
+
+  it('should inherit the env type in createMiddleware', () => {
+    app.get(
+      createMiddleware(async (c) => {
+        const foo = c.get('foo')
+        const v = c.req.param('v')
+        expectTypeOf<typeof foo>().toEqualTypeOf<string>()
+        expectTypeOf<typeof v>().toEqualTypeOf<string>()
+      })
+    )
+    app.get(
+      '/a/:id',
+      createMiddleware(async (c) => {
+        const foo = c.get('foo')
+        const v = c.req.param('v')
+        const id = c.req.param('id')
+        expectTypeOf<typeof foo>().toEqualTypeOf<string>()
+        expectTypeOf<typeof v>().toEqualTypeOf<string>()
+        expectTypeOf<typeof id>().toEqualTypeOf<string>()
+      })
+    )
+
+    /**
+     * there is a handler that follows `createMiddleware`
+     * If you want to support this, you need another type overload,
+     * I'm not sure if it's a common use case though.
+     */
+    app.get(
+      createMiddleware(async (c) => {
+        // @ts-expect-error never
+        const foo = c.get('foo')
+        // @ts-expect-error fails
+        expectTypeOf<typeof foo>().toEqualTypeOf<string>()
+      }),
+      (c) => {
+        return c.json({ ok: true })
+      }
+    )
+  })
+})
