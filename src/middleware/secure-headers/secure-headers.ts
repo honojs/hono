@@ -275,16 +275,17 @@ function getCSPDirectives(
 function getPermissionsPolicyDirectives(policy: PermissionsPolicyOptions): string {
   return Object.entries(policy)
     .map(([directive, value]) => {
+      const kebabDirective = camelToKebab(directive)
+
       if (typeof value === 'boolean') {
-        return `${camelToKebab(directive)}=${value ? '()' : 'none'}`
+        return `${kebabDirective}=${value ? '()' : 'none'}`
       }
+
       if (Array.isArray(value)) {
-        if (value.length === 0) {
-          return `${camelToKebab(directive)}=()`
-        }
-        const allowlist = value.map((v) => (v === 'self' || v === 'src' ? v : v)).join(' ')
-        return `${camelToKebab(directive)}=(${allowlist})`
+        const allowlist = value.length === 0 ? '()' : `(${value.join(' ')})`
+        return `${kebabDirective}=${allowlist}`
       }
+
       return ''
     })
     .filter(Boolean)
@@ -292,14 +293,7 @@ function getPermissionsPolicyDirectives(policy: PermissionsPolicyOptions): strin
 }
 
 function camelToKebab(str: string): string {
-  return str
-    .split('')
-    .map((letter, idx) => {
-      return letter.toUpperCase() === letter
-        ? `${idx !== 0 ? '-' : ''}${letter.toLowerCase()}`
-        : letter
-    })
-    .join('')
+  return str.replace(/([a-z\d])([A-Z])/g, '$1-$2').toLowerCase()
 }
 
 function getReportingEndpoints(
