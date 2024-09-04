@@ -1,6 +1,6 @@
 import { toSSG } from '../../src/adapter/deno/ssg.ts'
 import { Hono } from '../../src/hono.ts'
-import { assertEquals } from '../deno/deps.ts'
+import { assertEquals } from '@std/assert'
 
 Deno.test('toSSG function', async () => {
   const app = new Hono()
