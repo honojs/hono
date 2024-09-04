@@ -40,7 +40,7 @@ export const getFilePathWithoutDefaultDocument = (
   }
 
   // /foo.html => foo.html
-  filename = filename.replace(/^\.?[\/\\]/, '')
+  filename = filename.replace(/^\.[\/\\]/, '')
 
   // foo\bar.txt => foo/bar.txt
   filename = filename.replace(/\\/, '/')
@@ -50,7 +50,8 @@ export const getFilePathWithoutDefaultDocument = (
 
   // ./assets/foo.html => assets/foo.html
   let path = root ? root + '/' + filename : filename
-  path = path.replace(/^\.?\//, '')
+
+  path = path.replace(/^\.\//, '')
 
   return path
 }
