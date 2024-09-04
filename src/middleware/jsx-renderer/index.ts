@@ -1,6 +1,6 @@
 /**
  * @module
- * JSR Renderer Middleware for Hono.
+ * JSX Renderer Middleware for Hono.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
