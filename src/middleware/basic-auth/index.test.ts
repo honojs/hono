@@ -84,38 +84,13 @@ describe('Basic Auth by Middleware', () => {
   })
 
   app.use(
-    '/auth-custom-invalid-user-message-string/*',
+    '/auth-custom-invalid-user-message/*',
     basicAuth({
       username,
       password,
-      invalidUserMessage: 'Custom unauthorized message as string',
-    })
-  )
-
-  app.use(
-    '/auth-custom-invalid-user-message-object/*',
-    basicAuth({
-      username,
-      password,
-      invalidUserMessage: { message: 'Custom unauthorized message as object' },
-    })
-  )
-
-  app.use(
-    '/auth-custom-invalid-user-message-function-string/*',
-    basicAuth({
-      username,
-      password,
-      invalidUserMessage: () => 'Custom unauthorized message as function string',
-    })
-  )
-
-  app.use(
-    '/auth-custom-invalid-user-message-function-object/*',
-    basicAuth({
-      username,
-      password,
-      invalidUserMessage: () => ({ message: 'Custom unauthorized message as function object' }),
+      invalidUserMessage: (c) => {
+        return c.json({ message: 'Custom unauthorized message' })
+      },
     })
   )
 
@@ -281,41 +256,13 @@ describe('Basic Auth by Middleware', () => {
     expect(await res.text()).toBe('Unauthorized')
   })
 
-  it('Should not authorize - custom invalid user message as string', async () => {
-    const req = new Request('http://localhost/auth-custom-invalid-user-message-string')
-    const res = await app.request(req)
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(401)
-    expect(handlerExecuted).toBeFalsy()
-    expect(await res.text()).toBe('Custom unauthorized message as string')
-  })
-
-  it('Should not authorize - custom invalid user message as object', async () => {
-    const req = new Request('http://localhost/auth-custom-invalid-user-message-object')
+  it('Should not authorize - custom invalid user message', async () => {
+    const req = new Request('http://localhost/auth-custom-invalid-user-message')
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
     expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
     expect(handlerExecuted).toBeFalsy()
-    expect(await res.text()).toBe('{"message":"Custom unauthorized message as object"}')
-  })
-
-  it('Should not authorize - custom invalid user message as function string', async () => {
-    const req = new Request('http://localhost/auth-custom-invalid-user-message-function-string')
-    const res = await app.request(req)
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(401)
-    expect(handlerExecuted).toBeFalsy()
-    expect(await res.text()).toBe('Custom unauthorized message as function string')
-  })
-
-  it('Should not authorize - custom invalid user message as function object', async () => {
-    const req = new Request('http://localhost/auth-custom-invalid-user-message-function-object')
-    const res = await app.request(req)
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(401)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
-    expect(handlerExecuted).toBeFalsy()
-    expect(await res.text()).toBe('{"message":"Custom unauthorized message as function object"}')
+    expect(await res.text()).toBe('{"message":"Custom unauthorized message"}')
   })
 })
