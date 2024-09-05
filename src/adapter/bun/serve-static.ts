@@ -9,12 +9,14 @@ export const serveStatic = <E extends Env = Env>(
 ): MiddlewareHandler => {
   return async function serveStatic(c, next) {
     const getContent = async (path: string) => {
+      // let absolute path be, otherwise add './'
       path = path.startsWith('/') ? path : `./${path}`
       // @ts-ignore
       const file = Bun.file(path)
       return (await file.exists()) ? file : null
     }
     const pathResolve = (path: string) => {
+      // let absolute path be, otherwise add './'
       return path.startsWith('/') ? path : `./${path}`
     }
     const isDir = async (path: string) => {
