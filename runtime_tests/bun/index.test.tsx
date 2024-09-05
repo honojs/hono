@@ -12,11 +12,20 @@ import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 import { HonoRequest } from '../../src/request'
 import { stream, streamSSE } from '../..//src/helper/streaming'
+import os from 'node:os'
+import { unlink } from 'node:fs/promises'
 
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.
 
 Bun.env.NAME = 'Bun'
+
+// BEGIN: for staticServe absolute path
+const homedir = os.homedir()
+const absolute_path_file = `${homedir}/test-serve-static-hono-bun.css`
+// temporary creation, will be deleted
+await Bun.write(absolute_path_file, 'body {background-color: blue;}')
+// END
 
 describe('Basic', () => {
   const app = new Hono()
@@ -88,6 +97,7 @@ describe('Serve Static Middleware', () => {
     '/favicon-notfound.ico',
     serveStatic({ path: './runtime_tests/bun/favicon-notfound.ico', onNotFound })
   )
+  app.use('/test-serve-static-hono-bun.css', serveStatic({ path: absolute_path_file }))
   app.use('/favicon-notfound.ico', async (c, next) => {
     await next()
     c.header('X-Custom', 'Bun')
@@ -114,6 +124,15 @@ describe('Serve Static Middleware', () => {
     await res.arrayBuffer()
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/x-icon')
+  })
+
+  it('Should return static file with absolute path correctly', async () => {
+    const res = await app.request(new Request('http://localhost/test-serve-static-hono-bun.css'))
+    await res.arrayBuffer()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('text/css; charset=utf-8')
+    // deleting 'test-serve-static-hono-bun.css'
+    await unlink(absolute_path_file)
   })
 
   it('Should return 404 response', async () => {
