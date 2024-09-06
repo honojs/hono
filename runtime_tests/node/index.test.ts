@@ -207,10 +207,11 @@ describe('streamSSE', () => {
 })
 
 describe('compress', async () => {
+  const cssContent = Array.from({ length: 60 }, () => 'body { color: red; }').join('\n')
   const [externalServer, serverInfo] = await new Promise<[Server, AddressInfo]>((resolve) => {
     const externalApp = new Hono()
     externalApp.get('/style.css', (c) =>
-      c.text('body { color: red; }', {
+      c.text(cssContent, {
         headers: {
           'Content-Type': 'text/css',
         },
@@ -242,6 +243,6 @@ describe('compress', async () => {
     const res = await request(server).get('/fetch/style.css')
     expect(res.status).toBe(200)
     expect(res.headers['content-encoding']).toBe('gzip')
-    expect(res.text).toBe('body { color: red; }')
+    expect(res.text).toBe(cssContent)
   })
 })
