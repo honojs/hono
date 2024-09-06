@@ -230,7 +230,7 @@ describe('compress', async () => {
   const app = new Hono()
   app.use(compress())
   app.get('/fetch/:file', (c) => {
-    return fetch(`http://localhost:${externalPort}/${c.req.param('file')}`)
+    return fetch(`http://127.0.0.1:${externalPort}/${c.req.param('file')}`)
   })
   const server = createAdaptorServer(app)
 
