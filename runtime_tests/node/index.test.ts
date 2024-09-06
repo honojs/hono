@@ -1,10 +1,12 @@
-import { createAdaptorServer } from '@hono/node-server'
+import type { Server } from 'node:http'
+import { createAdaptorServer, serve } from '@hono/node-server'
 import request from 'supertest'
 import { Hono } from '../../src'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
+import { compress } from '../../src/middleware/compress'
 import { HonoRequest } from '../../src/request'
 import { stream, streamSSE } from '../../src/helper/streaming'
 
@@ -38,7 +40,7 @@ describe('Basic', () => {
 
 describe('Environment Variables', () => {
   it('Should return the environment variable', async () => {
-    const c = new Context(new HonoRequest(new Request('http://localhost/')))
+    const c = new Context(new Request('http://localhost/'))
     const { NAME } = env<{ NAME: string }>(c)
     expect(NAME).toBe('Node')
   })
@@ -201,5 +203,45 @@ describe('streamSSE', () => {
     expect(res.status).toBe(200)
     expect(res.text).toBe('Hello')
     expect(aborted).toBe(false)
+  })
+})
+
+describe('compress', async () => {
+  const [externalServer, externalPort] = await new Promise<[Server, number]>((resolve) => {
+    const externalApp = new Hono()
+    externalApp.get('/style.css', (c) =>
+      c.text('body { color: red; }', {
+        headers: {
+          'Content-Type': 'text/css',
+        },
+      })
+    )
+    const server = serve(
+      {
+        fetch: externalApp.fetch,
+        port: 0,
+      },
+      (serverInfo) => {
+        resolve([server as Server, serverInfo.port])
+      }
+    )
+  })
+
+  const app = new Hono()
+  app.use(compress())
+  app.get('/fetch/:file', (c) => {
+    return fetch(`http://localhost:${externalPort}/${c.req.param('file')}`)
+  })
+  const server = createAdaptorServer(app)
+
+  afterAll(() => {
+    externalServer.close()
+  })
+
+  it('Should be compressed a fetch response', async () => {
+    const res = await request(server).get('/fetch/style.css')
+    expect(res.status).toBe(200)
+    expect(res.headers['content-encoding']).toBe('gzip')
+    expect(res.text).toBe('body { color: red; }')
   })
 })
