@@ -7,8 +7,8 @@ import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 import { compress } from '../../src/middleware/compress'
-import { HonoRequest } from '../../src/request'
 import { stream, streamSSE } from '../../src/helper/streaming'
+import type { AddressInfo } from 'node:net'
 
 // Test only minimal patterns.
 // See <https://github.com/honojs/node-server> for more tests and information.
@@ -207,7 +207,7 @@ describe('streamSSE', () => {
 })
 
 describe('compress', async () => {
-  const [externalServer, externalPort] = await new Promise<[Server, number]>((resolve) => {
+  const [externalServer, serverInfo] = await new Promise<[Server, AddressInfo]>((resolve) => {
     const externalApp = new Hono()
     externalApp.get('/style.css', (c) =>
       c.text('body { color: red; }', {
@@ -222,7 +222,7 @@ describe('compress', async () => {
         port: 0,
       },
       (serverInfo) => {
-        resolve([server as Server, serverInfo.port])
+        resolve([server as Server, serverInfo])
       }
     )
   })
@@ -230,7 +230,7 @@ describe('compress', async () => {
   const app = new Hono()
   app.use(compress())
   app.get('/fetch/:file', (c) => {
-    return fetch(`http://127.0.0.1:${externalPort}/${c.req.param('file')}`)
+    return fetch(`http://${serverInfo.address}:${serverInfo.port}/${c.req.param('file')}`)
   })
   const server = createAdaptorServer(app)
 
