@@ -103,31 +103,32 @@ export const serveStatic = <E extends Env = Env>(
       c.header('Content-Type', mimeType)
     }
 
-    if (options.precompressed) {
-      const acceptEncodings =
-        c.req
-          .header('Accept-Encoding')
-          ?.split(',')
-          .map((encoding) => encoding.trim())
-          .filter((encoding): encoding is keyof typeof ENCODINGS =>
-            Object.hasOwn(ENCODINGS, encoding)
-          )
-          .sort((a, b) => Object.keys(ENCODINGS).indexOf(a) - Object.keys(ENCODINGS).indexOf(b)) ||
-        []
+    if (content) {
+      if (options.precompressed) {
+        const acceptEncodings =
+          c.req
+            .header('Accept-Encoding')
+            ?.split(',')
+            .map((encoding) => encoding.trim())
+            .filter((encoding): encoding is keyof typeof ENCODINGS =>
+              Object.hasOwn(ENCODINGS, encoding)
+            )
+            .sort(
+              (a, b) => Object.keys(ENCODINGS).indexOf(a) - Object.keys(ENCODINGS).indexOf(b)
+            ) ?? []
 
-      for (const encoding of acceptEncodings) {
-        const compressedContent = (await getContent(path + ENCODINGS[encoding], c)) as Data | null
+        for (const encoding of acceptEncodings) {
+          const compressedContent = (await getContent(path + ENCODINGS[encoding], c)) as Data | null
 
-        if (compressedContent) {
-          content = compressedContent
-          c.header('Content-Encoding', encoding)
-          c.header('Vary', 'Accept-Encoding', { append: true })
-          break
+          if (compressedContent) {
+            content = compressedContent
+            c.header('Content-Encoding', encoding)
+            c.header('Vary', 'Accept-Encoding', { append: true })
+            break
+          }
         }
       }
-    }
 
-    if (content) {
       return c.body(content)
     }
 
