@@ -102,7 +102,7 @@ export const cache = (options: {
     }
   }
 
-  const expirationHeader = 'Hono-Cache-Expiration'
+  const durationHeader = 'Hono-Cache-Duration'
 
   return async function cache(c, next) {
     let key = c.req.url
@@ -116,13 +116,11 @@ export const cache = (options: {
     const response = await cache.match(key)
     if (response) {
       if (options.duration) {
-        const duration = Number(response.headers.get(expirationHeader))
-        if (duration) {
-          const now = Date.now()
-          response.headers.delete(expirationHeader)
-          if (duration > now) {
-            return new Response(response.body, response)
-          }
+        const duration = Number(response.headers.get(durationHeader))
+        if (duration && duration > Date.now()) {
+          const newResponse = new Response(response.body, response)
+          newResponse.headers.delete(durationHeader)
+          return newResponse
         }
       } else {
         return new Response(response.body, response)
@@ -136,8 +134,8 @@ export const cache = (options: {
     addHeader(c)
     const res = c.res.clone()
     if (options.duration) {
-      const expiration = Date.now() + options.duration * 1000
-      res.headers.set(expirationHeader, String(expiration))
+      const duration = String(Date.now() + options.duration * 1000)
+      res.headers.set(durationHeader, duration)
     }
     if (options.wait) {
       await cache.put(key, res)
