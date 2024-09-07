@@ -2,24 +2,43 @@
   "version": "3",
   "packages": {
     "specifiers": {
-      "jsr:@std/assert@^1.0.3": "jsr:@std/assert@1.0.3",
-      "jsr:@std/internal@^1.0.2": "jsr:@std/internal@1.0.2",
-      "jsr:@std/testing@^1.0.1": "jsr:@std/testing@1.0.1"
+      "jsr:@std/assert@^1.0.3": "jsr:@std/assert@1.0.4",
+      "jsr:@std/assert@^1.0.4": "jsr:@std/assert@1.0.4",
+      "jsr:@std/async@^1.0.5": "jsr:@std/async@1.0.5",
+      "jsr:@std/data-structures@^1.0.2": "jsr:@std/data-structures@1.0.2",
+      "jsr:@std/expect@^1.0.2": "jsr:@std/expect@1.0.2",
+      "jsr:@std/internal@^1.0.3": "jsr:@std/internal@1.0.3",
+      "jsr:@std/testing@^1.0.1": "jsr:@std/testing@1.0.2"
     },
     "jsr": {
-      "@std/assert@1.0.3": {
-        "integrity": "b0d03ce1ced880df67132eea140623010d415848df66f6aa5df76507ca7c26d8",
+      "@std/assert@1.0.4": {
+        "integrity": "d4c767ea578e5bc09c15b6e503376003e5b2d1f4c0cdf08524a92101ff4d7b96",
         "dependencies": [
-          "jsr:@std/internal@^1.0.2"
+          "jsr:@std/internal@^1.0.3"
         ]
       },
-      "@std/internal@1.0.2": {
-        "integrity": "f4cabe2021352e8bfc24e6569700df87bf070914fc38d4b23eddd20108ac4495"
+      "@std/async@1.0.5": {
+        "integrity": "31d68214bfbb31bd4c6022401d484e3964147c76c9220098baa703a39b6c2da6"
       },
-      "@std/testing@1.0.1": {
-        "integrity": "9c25841137ee818933e1722091bb9ed5fdc251c35e84c97979a52196bdb6c5c3",
+      "@std/data-structures@1.0.2": {
+        "integrity": "d586efced05ed91923514a192996d23673f32f695f7ebc37f0cc1e17928be600"
+      },
+      "@std/expect@1.0.2": {
+        "integrity": "37d5162eb1d30505e09f77f3fabbf6cde1e81ed0e72d2371cddbce1173eb86b4",
         "dependencies": [
-          "jsr:@std/assert@^1.0.3"
+          "jsr:@std/assert@^1.0.4",
+          "jsr:@std/internal@^1.0.3"
+        ]
+      },
+      "@std/internal@1.0.3": {
+        "integrity": "208e9b94a3d5649bd880e9ca38b885ab7651ab5b5303a56ed25de4755fb7b11e"
+      },
+      "@std/testing@1.0.2": {
+        "integrity": "9e8a7f4e26c219addabe7942d09c3450fa0a74e9662341961bc0ef502274dec3",
+        "dependencies": [
+          "jsr:@std/assert@^1.0.4",
+          "jsr:@std/async@^1.0.5",
+          "jsr:@std/data-structures@^1.0.2"
         ]
       }
     }
@@ -28,6 +47,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@^1.0.3",
+      "jsr:@std/expect@^1.0.2",
       "jsr:@std/testing@^1.0.1"
     ]
   }
