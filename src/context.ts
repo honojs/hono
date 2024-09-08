@@ -465,16 +465,31 @@ export class Context<
   set res(_res: Response | undefined) {
     this.#isFresh = false
     if (this.#res && _res) {
-      this.#res.headers.delete('content-type')
-      for (const [k, v] of this.#res.headers.entries()) {
-        if (k === 'set-cookie') {
-          const cookies = this.#res.headers.getSetCookie()
-          _res.headers.delete('set-cookie')
-          for (const cookie of cookies) {
-            _res.headers.append('set-cookie', cookie)
+      try {
+        for (const [k, v] of this.#res.headers.entries()) {
+          if (k === 'content-type') {
+            continue
           }
+          if (k === 'set-cookie') {
+            const cookies = this.#res.headers.getSetCookie()
+            _res.headers.delete('set-cookie')
+            for (const cookie of cookies) {
+              _res.headers.append('set-cookie', cookie)
+            }
+          } else {
+            _res.headers.set(k, v)
+          }
+        }
+      } catch (e) {
+        if (e instanceof TypeError && e.message.includes('immutable')) {
+          // `_res` is immutable (probably a response from a fetch API), so retry with a new response.
+          this.res = new Response(_res.body, {
+            headers: _res.headers,
+            status: _res.status,
+          })
+          return
         } else {
-          _res.headers.set(k, v)
+          throw e
         }
       }
     }
