@@ -1,4 +1,3 @@
-import { HonoRequest } from '../request'
 import { auth } from './basic-auth'
 
 describe('auth', () => {

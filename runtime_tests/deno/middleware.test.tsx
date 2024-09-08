@@ -1,9 +1,9 @@
+import { assertEquals, assertMatch } from '@std/assert'
+import { assertSpyCall, assertSpyCalls, spy } from '@std/testing/mock'
 import { serveStatic } from '../../src/adapter/deno/index.ts'
 import { Hono } from '../../src/hono.ts'
 import { basicAuth } from '../../src/middleware/basic-auth/index.ts'
 import { jwt } from '../../src/middleware/jwt/index.ts'
-import { assertSpyCall, assertSpyCalls, spy } from '@std/testing/mock'
-import { assertEquals, assertMatch } from '@std/assert'
 
 // Test just only minimal patterns.
 // Because others are already tested well in Cloudflare Workers environment.

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+ 
 import type { ParamIndexMap, Result, Router } from '../../router'
 import {
   MESSAGE_MATCHER_IS_ALREADY_BUILT,
@@ -247,7 +247,7 @@ export class RegExpRouter<T> implements Router<T> {
     const routes: [string, HandlerWithMetadata<T>[]][] = []
 
     let hasOwnRoute = method === METHOD_NAME_ALL
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     ;[this.middleware!, this.routes!].forEach((r) => {
       const ownRoute = r[method]
         ? Object.keys(r[method]).map((path) => [path, r[method][path]])

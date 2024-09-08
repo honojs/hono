@@ -1059,7 +1059,7 @@ describe('default export', () => {
     'StrictMode',
   ].forEach((key) => {
     it(key, () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       expect((DefaultExport as any)[key]).toBeDefined()
     })
   })

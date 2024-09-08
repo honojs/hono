@@ -3,10 +3,10 @@ import request from 'supertest'
 import { Hono } from '../../src'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
+import { stream, streamSSE } from '../../src/helper/streaming'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 import { HonoRequest } from '../../src/request'
-import { stream, streamSSE } from '../../src/helper/streaming'
 
 // Test only minimal patterns.
 // See <https://github.com/honojs/node-server> for more tests and information.

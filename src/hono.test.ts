@@ -1599,7 +1599,7 @@ describe('Request methods with custom middleware', () => {
 
   app.use('*', async (c, next) => {
     const query = c.req.query('foo')
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+     
     // @ts-ignore
     const param = c.req.param('foo') // This will cause a type error.
     const header = c.req.header('User-Agent')
@@ -2210,7 +2210,7 @@ describe('Lack returning response with a single handler', () => {
 describe('Context is not finalized', () => {
   it('should throw error - lack `await next()`', async () => {
     const app = new Hono()
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+     
     // @ts-ignore
     app.use('*', () => {})
     app.get('/foo', (c) => {
@@ -2229,7 +2229,7 @@ describe('Context is not finalized', () => {
     app.use('*', async (_c, next) => {
       await next()
     })
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+     
     // @ts-ignore
     app.get('/foo', () => {})
     app.onError((err, c) => {
@@ -2672,10 +2672,10 @@ describe('app.mount()', () => {
         },
         {
           // Force mocking!
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+           
           // @ts-ignore
           waitUntil: 'waitUntil',
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+           
           // @ts-ignore
           passThroughOnException: 'passThroughOnException',
         }
