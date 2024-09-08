@@ -1,3 +1,5 @@
+/** @jsxImportSource ../../jsx */
+import { ErrorBoundary } from '../../jsx'
 import { Context } from '../../context'
 import { streamSSE } from '.'
 
@@ -144,5 +146,91 @@ describe('SSE Streaming helper', () => {
     expect(decodedValue).toBe('event: error\ndata: Test error\n\n')
     expect(onError).toBeCalledTimes(1)
     expect(onError).toBeCalledWith(new Error('Test error'), expect.anything()) // 2nd argument is StreamingApi instance
+  })
+
+  it('Check streamSSE Response via Promise<string>', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({ data: Promise.resolve('Async Message') })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: Async Message\n\n')
+  })
+
+  it('Check streamSSE Response via JSX.Element', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({ data: <div>Hello</div> })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: <div>Hello</div>\n\n')
+  })
+
+  it('Check streamSSE Response via ErrorBoundary in success case', async () => {
+    const AsyncComponent = async () => Promise.resolve(<div>Async Hello</div>)
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <ErrorBoundary fallback={<div>Error</div>}>
+            <AsyncComponent />
+          </ErrorBoundary>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: <div>Async Hello</div>\n\n')
+  })
+
+  it('Check streamSSE Response via ErrorBoundary in error case', async () => {
+    const AsyncComponent = async () => Promise.reject()
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <ErrorBoundary fallback={<div>Error</div>}>
+            <AsyncComponent />
+          </ErrorBoundary>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: <div>Error</div>\n\n')
   })
 })
