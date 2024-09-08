@@ -6,6 +6,7 @@
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 import { encodeBase64 } from '../../utils/encode'
+import type { PermissionsPolicyDirective } from './permissions-policy'
 
 export type SecureHeadersVariables = {
   secureHeadersNonce?: string
@@ -54,6 +55,12 @@ interface ReportingEndpointOptions {
   url: string
 }
 
+type PermissionsPolicyValue = '*' | 'self' | 'src' | 'none' | string
+
+type PermissionsPolicyOptions = Partial<
+  Record<PermissionsPolicyDirective, PermissionsPolicyValue[] | boolean>
+>
+
 type overridableHeader = boolean | string
 
 interface SecureHeadersOptions {
@@ -73,6 +80,7 @@ interface SecureHeadersOptions {
   xPermittedCrossDomainPolicies?: overridableHeader
   xXssProtection?: overridableHeader
   removePoweredBy?: boolean
+  permissionsPolicy?: PermissionsPolicyOptions
 }
 
 type HeadersMap = {
@@ -108,6 +116,7 @@ const DEFAULT_OPTIONS: SecureHeadersOptions = {
   xPermittedCrossDomainPolicies: true,
   xXssProtection: true,
   removePoweredBy: true,
+  permissionsPolicy: {},
 }
 
 type SecureHeadersCallback = (
@@ -154,6 +163,7 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
  * @param {overridableHeader} [customOptions.xPermittedCrossDomainPolicies=true] - Settings for the X-Permitted-Cross-Domain-Policies header.
  * @param {overridableHeader} [customOptions.xXssProtection=true] - Settings for the X-XSS-Protection header.
  * @param {boolean} [customOptions.removePoweredBy=true] - Settings for remove X-Powered-By header.
+ * @param {PermissionsPolicyOptions} [customOptions.permissionsPolicy] - Settings for the Permissions-Policy header.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
@@ -173,6 +183,13 @@ export const secureHeaders = (customOptions?: SecureHeadersOptions): MiddlewareH
       callbacks.push(callback)
     }
     headersToSet.push(['Content-Security-Policy', value as string])
+  }
+
+  if (options.permissionsPolicy && Object.keys(options.permissionsPolicy).length > 0) {
+    headersToSet.push([
+      'Permissions-Policy',
+      getPermissionsPolicyDirectives(options.permissionsPolicy),
+    ])
   }
 
   if (options.reportingEndpoints) {
@@ -253,6 +270,30 @@ function getCSPDirectives(
           }),
         resultValues,
       ]
+}
+
+function getPermissionsPolicyDirectives(policy: PermissionsPolicyOptions): string {
+  return Object.entries(policy)
+    .map(([directive, value]) => {
+      const kebabDirective = camelToKebab(directive)
+
+      if (typeof value === 'boolean') {
+        return `${kebabDirective}=${value ? '()' : 'none'}`
+      }
+
+      if (Array.isArray(value)) {
+        const allowlist = value.length === 0 ? '()' : `(${value.join(' ')})`
+        return `${kebabDirective}=${allowlist}`
+      }
+
+      return ''
+    })
+    .filter(Boolean)
+    .join(', ')
+}
+
+function camelToKebab(str: string): string {
+  return str.replace(/([a-z\d])([A-Z])/g, '$1-$2').toLowerCase()
 }
 
 function getReportingEndpoints(
