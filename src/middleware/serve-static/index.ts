@@ -13,6 +13,7 @@ export type ServeStaticOptions<E extends Env = Env> = {
   path?: string
   mimes?: Record<string, string>
   rewriteRequestPath?: (path: string) => string
+  onFound?: (path: string, c: Context<E>) => void | Promise<void>
   onNotFound?: (path: string, c: Context<E>) => void | Promise<void>
 }
 
@@ -99,6 +100,7 @@ export const serveStatic = <E extends Env = Env>(
       if (mimeType) {
         c.header('Content-Type', mimeType)
       }
+      await options.onFound?.(path, c)
       return c.body(content)
     }
 
