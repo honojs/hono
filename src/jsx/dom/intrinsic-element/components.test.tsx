@@ -10,7 +10,6 @@ describe('intrinsic element', () => {
     global.requestAnimationFrame = (cb) => setTimeout(cb)
 
     CustomResourceLoader = class CustomResourceLoader extends ResourceLoader {
-       
       fetch(url: string) {
         return url.includes('invalid')
           ? Promise.reject('Invalid URL')

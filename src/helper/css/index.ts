@@ -130,7 +130,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
     ;(className as HtmlEscapedString).callbacks = [addClassNameToContext]
     const promise = Promise.resolve(className)
     Object.assign(promise, cssClassName)
-     
+
     promise.toString = cssJsxDomObject.toString
     return promise
   }

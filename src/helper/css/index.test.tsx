@@ -1,4 +1,3 @@
- 
 /** @jsxImportSource ../../jsx */
 import { Hono } from '../../'
 import { html } from '../../helper/html'

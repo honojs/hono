@@ -79,7 +79,7 @@ function log(
 export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
   return async function logger(c, next) {
     const { method } = c.req
-     
+
     const path = getPath(c.req.raw)
 
     log(fn, LogPrefix.Incoming, method, path)

@@ -7,7 +7,7 @@ export interface CognitoIdentity {
 
 export interface ClientContext {
   client: ClientContextClient
-   
+
   Custom?: any
   env: ClientContextEnv
 }

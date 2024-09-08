@@ -120,7 +120,6 @@ export const createCssJsxDomObjects: CreateCssJsxDomObjectsType = ({ id }) => {
     },
   }
 
-   
   const Style: FC<PropsWithChildren<void>> = ({ children }) =>
     ({
       tag: 'style',
@@ -173,7 +172,6 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
   const [cssObject, Style] = createCssJsxDomObjects({ id })
 
   const newCssClassNameObject = (cssClassName: CssClassName): string => {
-     
     cssClassName.toString = cssObject.toString
     return cssClassName as unknown as string
   }

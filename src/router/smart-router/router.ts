@@ -1,4 +1,3 @@
- 
 import type { Result, Router } from '../../router'
 import { MESSAGE_MATCHER_IS_ALREADY_BUILT, UnsupportedPathError } from '../../router'
 

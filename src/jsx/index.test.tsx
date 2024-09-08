@@ -1059,7 +1059,6 @@ describe('default export', () => {
     'StrictMode',
   ].forEach((key) => {
     it(key, () => {
-       
       expect((DefaultExport as any)[key]).toBeDefined()
     })
   })
