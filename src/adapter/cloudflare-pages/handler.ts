@@ -9,7 +9,7 @@ import type { BlankSchema, Env, Input, MiddlewareHandler, Schema } from '../../t
 type Params<P extends string = any> = Record<P, string | string[]>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type EventContext<Env = {}, P extends string = any, Data = {}> = {
+export type EventContext<Env = {}, P extends string = any, Data = Record<string, unknown>> = {
   request: Request
   functionPath: string
   waitUntil: (promise: Promise<unknown>) => void
@@ -43,12 +43,20 @@ export const handle =
   }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function handleMiddleware<E extends Env = any, P extends string = any, I extends Input = {}>(
-  middleware: MiddlewareHandler<E, P, I>
+export function handleMiddleware<E extends Env = {}, P extends string = any, I extends Input = {}>(
+  middleware: MiddlewareHandler<
+    E & {
+      Bindings: {
+        eventContext: EventContext
+      }
+    },
+    P,
+    I
+  >
 ): PagesFunction<E['Bindings']> {
   return async (executionCtx) => {
     const context = new Context(executionCtx.request, {
-      env: executionCtx.env,
+      env: { ...executionCtx.env, eventContext: executionCtx },
       executionCtx,
     })
 
