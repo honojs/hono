@@ -36,6 +36,7 @@ describe('Secure Headers Middleware', () => {
     expect(res.headers.get('Cross-Origin-Resource-Policy')).toEqual('same-origin')
     expect(res.headers.get('Cross-Origin-Opener-Policy')).toEqual('same-origin')
     expect(res.headers.get('Origin-Agent-Cluster')).toEqual('?1')
+    expect(res.headers.get('Permissions-Policy')).toBeNull()
     expect(res.headers.get('Content-Security-Policy')).toBeFalsy()
   })
 
@@ -48,6 +49,9 @@ describe('Secure Headers Middleware', () => {
           defaultSrc: ["'self'"],
         },
         crossOriginEmbedderPolicy: true,
+        permissionsPolicy: {
+          camera: [],
+        },
       })
     )
     app.get('/test', async (ctx) => {
@@ -72,6 +76,7 @@ describe('Secure Headers Middleware', () => {
     expect(res.headers.get('Cross-Origin-Opener-Policy')).toEqual('same-origin')
     expect(res.headers.get('Origin-Agent-Cluster')).toEqual('?1')
     expect(res.headers.get('Cross-Origin-Embedder-Policy')).toEqual('require-corp')
+    expect(res.headers.get('Permissions-Policy')).toEqual('camera=()')
     expect(res.headers.get('Content-Security-Policy')).toEqual("default-src 'self'")
   })
 
@@ -98,6 +103,7 @@ describe('Secure Headers Middleware', () => {
     expect(res.headers.get('X-Permitted-Cross-Domain-Policies')).toEqual('none')
     expect(res.headers.get('Cross-Origin-Resource-Policy')).toEqual('same-origin')
     expect(res.headers.get('Cross-Origin-Opener-Policy')).toEqual('same-origin')
+    expect(res.headers.get('Permissions-Policy')).toBeNull()
     expect(res.headers.get('Origin-Agent-Cluster')).toEqual('?1')
   })
 
@@ -154,6 +160,28 @@ describe('Secure Headers Middleware', () => {
     expect(res.headers.get('X-XSS-Protection')).toEqual('1')
   })
 
+  it('should set Permission-Policy header', async () => {
+    const app = new Hono()
+    app.use(
+      '/test',
+      secureHeaders({
+        permissionsPolicy: {
+          fullscreen: ['self'],
+          bluetooth: ['none'],
+          payment: ['self', 'example.com'],
+          syncXhr: [],
+          camera: false,
+          microphone: true,
+          geolocation: ['*'],
+        },
+      })
+    )
+
+    const res = await app.request('/test')
+    expect(res.headers.get('Permissions-Policy')).toEqual(
+      'fullscreen=(self), bluetooth=(none), payment=(self example.com), sync-xhr=(), camera=none, microphone=(), geolocation=(*)'
+    )
+  })
   it('CSP Setting', async () => {
     const app = new Hono()
     app.use(
