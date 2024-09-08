@@ -60,6 +60,7 @@ const createRenderer =
       if (options.stream === true) {
         c.header('Transfer-Encoding', 'chunked')
         c.header('Content-Type', 'text/html; charset=UTF-8')
+        c.header('Content-Encoding', 'Identity')
       } else {
         for (const [key, value] of Object.entries(options.stream)) {
           c.header(key, value)
