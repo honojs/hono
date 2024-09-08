@@ -844,18 +844,11 @@ export class Context<
     this.#preparedHeaders['content-type'] = 'text/html; charset=UTF-8'
 
     if (typeof html === 'object') {
-      if (!(html instanceof Promise)) {
-        html = (html as string).toString() // HtmlEscapedString object to string
-      }
-      if ((html as string | Promise<string>) instanceof Promise) {
-        return (html as unknown as Promise<string>)
-          .then((html) => resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}))
-          .then((html) => {
-            return typeof arg === 'number'
-              ? this.newResponse(html, arg, headers)
-              : this.newResponse(html, arg)
-          })
-      }
+      return resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then((html) => {
+        return typeof arg === 'number'
+          ? this.newResponse(html, arg, headers)
+          : this.newResponse(html, arg)
+      })
     }
 
     return typeof arg === 'number'
