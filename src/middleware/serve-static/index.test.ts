@@ -18,6 +18,9 @@ describe('Serve Static Middleware', () => {
     isDir: (path) => {
       return path === 'static/hello.world'
     },
+    headers: (c) => ({
+      'Cache-Control': c.req.path === '/static/hello.html' ? 'public, max-age=31536000' : undefined,
+    }),
   })
 
   app.get('/static/*', serveStatic)
@@ -30,6 +33,7 @@ describe('Serve Static Middleware', () => {
     const res = await app.request('/static/hello.html')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
+    expect(res.headers.get('Cache-Control')).toBe('public, max-age=31536000')
     expect(await res.text()).toBe('Hello in ./static/hello.html')
   })
 
@@ -52,6 +56,7 @@ describe('Serve Static Middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
     expect(await res.text()).toBe('Hello in ./static/hello.world/index.html')
+    expect(res.headers.get('Cache-Control')).toBe(null)
   })
 
   it('Should decode URI strings - /static/%E7%82%8E.txt', async () => {
@@ -65,6 +70,7 @@ describe('Serve Static Middleware', () => {
     expect(res.status).toBe(404)
     expect(await res.text()).toBe('404 Not Found')
     expect(getContent).toBeCalledTimes(1)
+    expect(res.headers.get('Cache-Control')).toBe(null)
   })
 
   it('Should not allow a directory traversal - /static/%2e%2e/static/hello.html', async () => {

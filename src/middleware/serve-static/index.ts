@@ -12,6 +12,7 @@ export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
   path?: string
   mimes?: Record<string, string>
+  headers?: (c: Context) => Record<string, string | undefined>
   rewriteRequestPath?: (path: string) => string
   onNotFound?: (path: string, c: Context<E>) => void | Promise<void>
 }
@@ -81,6 +82,15 @@ export const serveStatic = <E extends Env = Env>(
         content = await getContent(pathWithOutDefaultDocument, c)
         if (content) {
           path = pathWithOutDefaultDocument
+        }
+      }
+    }
+
+    const headers = options.headers?.(c)
+    if (headers) {
+      for (const [key, value] of Object.entries(headers)) {
+        if (value) {
+          c.header(key, value)
         }
       }
     }
