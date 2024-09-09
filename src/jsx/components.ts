@@ -4,7 +4,7 @@ import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import { DOM_RENDERER } from './constants'
 import { ErrorBoundary as ErrorBoundaryDomRenderer } from './dom/components'
 import type { HasRenderToDom } from './dom/render'
-import type { Child, FC, PropsWithChildren } from './'
+import type { Child, FC, PropsWithChildren } from '.'
 
 let errorBoundaryCounter = 0
 

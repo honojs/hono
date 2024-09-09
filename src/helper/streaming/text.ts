@@ -1,7 +1,7 @@
 import type { Context } from '../../context'
 import { TEXT_PLAIN } from '../../context'
 import type { StreamingApi } from '../../utils/stream'
-import { stream } from './'
+import { stream } from '.'
 
 export const streamText = (
   c: Context,

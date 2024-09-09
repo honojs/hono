@@ -11,7 +11,7 @@ import { DOM_RENDERER, DOM_STASH } from './constants'
 import { Suspense as SuspenseDomRenderer } from './dom/components'
 import { buildDataStack } from './dom/render'
 import type { HasRenderToDom, NodeObject } from './dom/render'
-import type { Child, FC, PropsWithChildren } from './'
+import type { Child, FC, PropsWithChildren } from '.'
 
 let suspenseCounter = 0
 
