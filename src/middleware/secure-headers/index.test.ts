@@ -160,7 +160,7 @@ describe('Secure Headers Middleware', () => {
     expect(res.headers.get('X-XSS-Protection')).toEqual('1')
   })
 
-  it('should set Permission-Policy header', async () => {
+  it('should set Permission-Policy header correctly', async () => {
     const app = new Hono()
     app.use(
       '/test',
@@ -173,13 +173,20 @@ describe('Secure Headers Middleware', () => {
           camera: false,
           microphone: true,
           geolocation: ['*'],
+          usb: ['self', 'https://a.example.com', 'https://b.example.com'],
+          accelerometer: ['https://*.example.com'],
+          gyroscope: ['src'],
+          magnetometer: ['https://a.example.com', 'https://b.example.com'],
         },
       })
     )
 
     const res = await app.request('/test')
     expect(res.headers.get('Permissions-Policy')).toEqual(
-      'fullscreen=(self), bluetooth=(none), payment=(self example.com), sync-xhr=(), camera=none, microphone=(), geolocation=(*)'
+      'fullscreen=(self), bluetooth=none, payment=(self "example.com"), sync-xhr=(), camera=none, microphone=*, ' +
+        'geolocation=*, usb=(self "https://a.example.com" "https://b.example.com"), ' +
+        'accelerometer=("https://*.example.com"), gyroscope=(src), ' +
+        'magnetometer=("https://a.example.com" "https://b.example.com")'
     )
   })
   it('CSP Setting', async () => {
