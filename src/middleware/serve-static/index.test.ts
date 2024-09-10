@@ -18,6 +18,11 @@ describe('Serve Static Middleware', () => {
     isDir: (path) => {
       return path === 'static/hello.world'
     },
+    onFound: (path, c) => {
+      if (path.endsWith('hello.html')) {
+        c.header('X-Custom', `Found the file at ${path}`)
+      }
+    },
   })
 
   app.get('/static/*', serveStatic)
@@ -32,6 +37,7 @@ describe('Serve Static Middleware', () => {
     expect(res.headers.get('Content-Encoding')).toBeNull()
     expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
     expect(await res.text()).toBe('Hello in ./static/hello.html')
+    expect(res.headers.get('X-Custom')).toBe('Found the file at ./static/hello.html')
   })
 
   it('Should return 200 response - /static/sub', async () => {
