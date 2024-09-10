@@ -9,19 +9,21 @@ import type { MiddlewareHandler } from '../../types'
 import { auth } from '../../utils/basic-auth'
 import { timingSafeEqual } from '../../utils/buffer'
 
+type MessageFunction = (c: Context) => string | object | Promise<string | object>
+
 type BasicAuthOptions =
   | {
       username: string
       password: string
       realm?: string
       hashFunction?: Function
-      invalidUserMessage?: string | object | Function
+      invalidUserMessage?: string | object | MessageFunction
     }
   | {
       verifyUser: (username: string, password: string, c: Context) => boolean | Promise<boolean>
       realm?: string
       hashFunction?: Function
-      invalidUserMessage?: string | object | Function
+      invalidUserMessage?: string | object | MessageFunction
     }
 
 /**
@@ -35,7 +37,7 @@ type BasicAuthOptions =
  * @param {string} [options.realm="Secure Area"] - The realm attribute for the WWW-Authenticate header.
  * @param {Function} [options.hashFunction] - The hash function used for secure comparison.
  * @param {Function} [options.verifyUser] - The function to verify user credentials.
- * @param {string | object | Function} [options.invalidUserMessage="Unauthorized"] - The invalid user message.
+ * @param {string | object | MessageFunction} [options.invalidUserMessage="Unauthorized"] - The invalid user message.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {HTTPException} If neither "username and password" nor "verifyUser" options are provided.
  *
