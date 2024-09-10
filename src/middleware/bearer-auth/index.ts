@@ -12,6 +12,8 @@ const TOKEN_STRINGS = '[A-Za-z0-9._~+/-]+=*'
 const PREFIX = 'Bearer'
 const HEADER = 'Authorization'
 
+type MessageFunction = (c: Context) => string | object | Promise<string | object>
+
 type BearerAuthOptions =
   | {
       token: string | string[]
@@ -19,9 +21,9 @@ type BearerAuthOptions =
       prefix?: string
       headerName?: string
       hashFunction?: Function
-      noAuthenticationHeaderMessage?: string | object | Function
-      invalidAuthenticationHeaderMeasage?: string | object | Function
-      invalidTokenMessage?: string | object | Function
+      noAuthenticationHeaderMessage?: string | object | MessageFunction
+      invalidAuthenticationHeaderMeasage?: string | object | MessageFunction
+      invalidTokenMessage?: string | object | MessageFunction
     }
   | {
       realm?: string
@@ -29,9 +31,9 @@ type BearerAuthOptions =
       headerName?: string
       verifyToken: (token: string, c: Context) => boolean | Promise<boolean>
       hashFunction?: Function
-      noAuthenticationHeaderMessage?: string | object | Function
-      invalidAuthenticationHeaderMeasage?: string | object | Function
-      invalidTokenMessage?: string | object | Function
+      noAuthenticationHeaderMessage?: string | object | MessageFunction
+      invalidAuthenticationHeaderMeasage?: string | object | MessageFunction
+      invalidTokenMessage?: string | object | MessageFunction
     }
 
 /**
@@ -46,9 +48,9 @@ type BearerAuthOptions =
  * @param {string} [options.prefix="Bearer"] - The prefix (or known as `schema`) for the Authorization header value. If set to the empty string, no prefix is expected.
  * @param {string} [options.headerName=Authorization] - The header name.
  * @param {Function} [options.hashFunction] - A function to handle hashing for safe comparison of authentication tokens.
- * @param {string | object | Function} [options.noAuthenticationHeaderMessage="Unauthorized"] - The no authentication header message.
- * @param {string | object | Function} [options.invalidAuthenticationHeaderMeasage="Bad Request"] - The invalid authentication header message.
- * @param {string | object | Function} [options.invalidTokenMessage="Unauthorized"] - The invalid token message.
+ * @param {string | object | MessageFunction} [options.noAuthenticationHeaderMessage="Unauthorized"] - The no authentication header message.
+ * @param {string | object | MessageFunction} [options.invalidAuthenticationHeaderMeasage="Bad Request"] - The invalid authentication header message.
+ * @param {string | object | MessageFunction} [options.invalidTokenMessage="Unauthorized"] - The invalid token message.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If neither "token" nor "verifyToken" options are provided.
  * @throws {HTTPException} If authentication fails, with 401 status code for missing or invalid token, or 400 status code for invalid request.
