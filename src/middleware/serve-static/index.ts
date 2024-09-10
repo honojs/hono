@@ -14,6 +14,7 @@ export type ServeStaticOptions<E extends Env = Env> = {
   precompressed?: boolean
   mimes?: Record<string, string>
   rewriteRequestPath?: (path: string) => string
+  onFound?: (path: string, c: Context<E>) => void | Promise<void>
   onNotFound?: (path: string, c: Context<E>) => void | Promise<void>
 }
 
@@ -128,7 +129,7 @@ export const serveStatic = <E extends Env = Env>(
           }
         }
       }
-
+      await options.onFound?.(path, c)
       return c.body(content)
     }
 
