@@ -23,7 +23,7 @@ type BearerAuthOptions =
       headerName?: string
       hashFunction?: Function
       noAuthenticationHeaderMessage?: string | object | MessageFunction
-      invalidAuthenticationHeaderMeasage?: string | object | MessageFunction
+      invalidAuthenticationHeaderMessage?: string | object | MessageFunction
       invalidTokenMessage?: string | object | MessageFunction
     }
   | {
@@ -33,7 +33,7 @@ type BearerAuthOptions =
       verifyToken: (token: string, c: Context) => boolean | Promise<boolean>
       hashFunction?: Function
       noAuthenticationHeaderMessage?: string | object | MessageFunction
-      invalidAuthenticationHeaderMeasage?: string | object | MessageFunction
+      invalidAuthenticationHeaderMessage?: string | object | MessageFunction
       invalidTokenMessage?: string | object | MessageFunction
     }
 
@@ -127,7 +127,7 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
           c,
           400,
           `${wwwAuthenticatePrefix}error="invalid_request"`,
-          options.invalidAuthenticationHeaderMeasage || 'Bad Request'
+          options.invalidAuthenticationHeaderMessage || 'Bad Request'
         )
       } else {
         let equal = false
