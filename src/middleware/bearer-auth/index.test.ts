@@ -126,7 +126,7 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-authentication-header-message-string/*',
       bearerAuth({
         token,
-        invalidAuthenticationHeaderMeasage:
+        invalidAuthenticationHeaderMessage:
           'Custom invalid authentication header message as string',
       })
     )
@@ -139,7 +139,7 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-authentication-header-message-object/*',
       bearerAuth({
         token,
-        invalidAuthenticationHeaderMeasage: {
+        invalidAuthenticationHeaderMessage: {
           message: 'Custom invalid authentication header message as object',
         },
       })
@@ -153,7 +153,7 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-authentication-header-message-function-string/*',
       bearerAuth({
         token,
-        invalidAuthenticationHeaderMeasage: () =>
+        invalidAuthenticationHeaderMessage: () =>
           'Custom invalid authentication header message as function string',
       })
     )
@@ -166,7 +166,7 @@ describe('Bearer Auth by Middleware', () => {
       '/auth-custom-invalid-authentication-header-message-function-object/*',
       bearerAuth({
         token,
-        invalidAuthenticationHeaderMeasage: () => ({
+        invalidAuthenticationHeaderMessage: () => ({
           message: 'Custom invalid authentication header message as function object',
         }),
       })
