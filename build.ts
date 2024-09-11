@@ -41,7 +41,11 @@ const addExtension = (extension: string = '.js', fileExtension: string = '.ts'):
         } else {
           tsPath = path.join(args.resolveDir, args.path, `index${fileExtension}`)
           if (fs.existsSync(tsPath)) {
-            importPath = `${args.path}/index${extension}`
+            if (args.path.endsWith('/')) {
+              importPath = `${args.path}index${extension}`
+            } else {
+              importPath = `${args.path}/index${extension}`
+            }
           }
         }
         return { path: importPath, external: true }
