@@ -3,7 +3,8 @@
   "compilerOptions": {
     "module": "esnext",
     "noEmit": true,
-    "rootDir": ".."
+    "rootDir": "..",
+    "strict": true
   },
   "include": [
     "**/*.ts",

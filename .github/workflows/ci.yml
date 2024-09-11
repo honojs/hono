@@ -177,3 +177,54 @@ jobs:
         with:
           name: coverage-lambda-edge
           path: coverage/
+
+  type-check-perf-monitoring-on-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      pull-requests: 'write'
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      - uses: actions/cache/restore@v4
+        with:
+          path: type-check-perf/previous-result.txt
+          restore-keys: |
+            type-check-perf-previous-result-
+          key: type-check-perf-previous-result-
+      - run: bun generate-app.ts
+        working-directory: type-check-perf
+      - run: bun tsc --diagnostics > result.txt
+        working-directory: type-check-perf
+      - run: |
+          {
+            echo 'COMPARISON<<EOF'
+            bun process-results.ts
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+        working-directory: type-check-perf
+      - run: echo "$COMPARISON"
+    # remove the comment out after we make sure that caching is working
+    # - uses: thollander/actions-comment-pull-request@v2
+    #   with:
+    #     comment_tag: type-check-perf
+    #     message: ${{ env.COMPARISON }}
+
+
+  post-type-check-perf-on-main:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      - run: bun generate-app.ts
+        working-directory: type-check-perf
+      - run: bun tsc --diagnostics > previous-result.txt
+        working-directory: type-check-perf
+      - uses: actions/cache/save@v4
+        with:
+          path: type-check-perf/previous-result.txt
+          key: type-check-perf-previous-result-${{ github.sha }}
