@@ -5,7 +5,7 @@
 
 import type { Context, Data } from '../../context'
 import type { Env, MiddlewareHandler } from '../../types'
-import { getFilePath, getFilePathWithoutDefaultDocument } from '../../utils/filepath'
+import { getFilePath, getFilePathWithoutDefaultDocument } from '../../utils/filepath/getFilePath'
 import { getMimeType } from '../../utils/mime'
 
 export type ServeStaticOptions<E extends Env = Env> = {

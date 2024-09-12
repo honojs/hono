@@ -1,6 +1,6 @@
 /**
  * @module
- * FilePath utility.
+ * getFilePath utility.
  */
 
 type FilePathOptions = {
