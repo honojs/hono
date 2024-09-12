@@ -1,5 +1,6 @@
 /** @jsxImportSource ../ */
 import { JSDOM } from 'jsdom'
+import './feat/intrinsic-element'
 import { ErrorBoundary as ErrorBoundaryCommon, Suspense as SuspenseCommon } from '..' // for common
 // run tests by old style jsx default
 // hono/jsx/jsx-runtime and hono/jsx/dom/jsx-runtime are tested in their respective settings

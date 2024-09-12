@@ -1,7 +1,7 @@
 import type { Child, FC, PropsWithChildren } from '../'
 import type { ErrorHandler, FallbackRender } from '../components'
 import { DOM_ERROR_HANDLER } from '../constants'
-import { Fragment } from './jsx-runtime'
+import { Fragment } from './tiny/jsx-runtime'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const ErrorBoundary: FC<
