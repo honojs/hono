@@ -1,6 +1,6 @@
 /** @jsxImportSource ../../jsx */
-import { ErrorBoundary } from '../../jsx'
 import { Context } from '../../context'
+import { ErrorBoundary } from '../../jsx'
 import { streamSSE } from '.'
 
 describe('SSE Streaming helper', () => {

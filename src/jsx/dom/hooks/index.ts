@@ -2,11 +2,11 @@
  * Provide hooks used only in jsx/dom
  */
 
+import { PERMALINK } from '../../constants'
 import type { Context } from '../../context'
 import { useContext } from '../../context'
-import { createContext } from '../context'
 import { useCallback, useState } from '../../hooks'
-import { PERMALINK } from '../../constants'
+import { createContext } from '../context'
 
 type FormStatus =
   | {

@@ -3,11 +3,11 @@
  * Combine Middleware for Hono.
  */
 
-import type { Context } from '../../context'
-import type { MiddlewareHandler, Next } from '../../types'
-import { TrieRouter } from '../../router/trie-router'
-import { METHOD_NAME_ALL } from '../../router'
 import { compose } from '../../compose'
+import type { Context } from '../../context'
+import { METHOD_NAME_ALL } from '../../router'
+import { TrieRouter } from '../../router/trie-router'
+import type { MiddlewareHandler, Next } from '../../types'
 
 type Condition = (c: Context) => boolean
 

@@ -1,6 +1,6 @@
+import type { Context } from '../../context'
 import type { GetConnInfo } from '../../helper/conninfo'
 import type { CloudFrontEdgeEvent } from './handler'
-import type { Context } from '../../context'
 
 type Env = {
   Bindings: {

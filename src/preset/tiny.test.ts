@@ -1,5 +1,5 @@
-import { Hono } from './tiny'
 import { getRouterName } from '../helper/dev'
+import { Hono } from './tiny'
 
 describe('hono/tiny preset', () => {
   it('Should have PatternRouter', async () => {

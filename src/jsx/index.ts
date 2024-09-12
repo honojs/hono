@@ -8,6 +8,7 @@ import type { DOMAttributes } from './base'
 import { Children } from './children'
 import { ErrorBoundary } from './components'
 import { createContext, useContext } from './context'
+import { useActionState, useOptimistic } from './dom/hooks'
 import {
   createRef,
   forwardRef,
@@ -30,7 +31,6 @@ import {
   useTransition,
   useViewTransition,
 } from './hooks'
-import { useActionState, useOptimistic } from './dom/hooks'
 import { Suspense } from './streaming'
 
 export {

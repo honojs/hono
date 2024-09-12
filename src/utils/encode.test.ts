@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { decodeBase64Url, encodeBase64Url } from './encode'
 
 const toURLBase64 = (base64String: string): string =>

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 /** @jsxImportSource ../../jsx */
 import { Hono } from '../../hono'
 import { poweredBy } from '../../middleware/powered-by'

@@ -1,9 +1,9 @@
 /** @jsxImportSource ../../src/jsx */
+import { assertEquals } from '@std/assert'
 import { Style, css } from '../../src/helper/css/index.ts'
 import { Suspense, renderToReadableStream } from '../../src/jsx/streaming.ts'
 import type { HtmlEscapedString } from '../../src/utils/html.ts'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../src/utils/html.ts'
-import { assertEquals } from '@std/assert'
 
 Deno.test('JSX', () => {
   const Component = ({ name }: { name: string }) => <span>{name}</span>
