@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "test": "tsc --noEmit && vitest --run && vitest -c .vitest.config/jsx-runtime-default.ts --run && vitest -c .vitest.config/jsx-runtime-dom.ts --run",
+    "test": "tsc --noEmit && vitest --run && vitest -c .vitest.config/jsx-runtime-default.ts --run && vitest -c .vitest.config/jsx-runtime-dom.ts --run && vitest -c .vitest.config/build.ts --run",
     "test:watch": "vitest --watch",
     "test:deno": "deno test --allow-read --allow-env --allow-write --allow-net -c runtime_tests/deno/deno.json runtime_tests/deno && deno test --no-lock -c runtime_tests/deno-jsx/deno.precompile.json runtime_tests/deno-jsx && deno test --no-lock -c runtime_tests/deno-jsx/deno.react-jsx.json runtime_tests/deno-jsx",
     "test:bun": "bun test --jsx-import-source ../../src/jsx runtime_tests/bun/index.test.tsx",
@@ -20,10 +20,10 @@
     "test:lambda": "vitest --run --config ./runtime_tests/lambda/vitest.config.ts",
     "test:lambda-edge": "vitest --run --config ./runtime_tests/lambda-edge/vitest.config.ts",
     "test:all": "bun run test && bun test:deno && bun test:bun && bun test:fastly && bun test:node && bun test:workerd && bun test:lambda && bun test:lambda-edge",
-    "lint": "eslint --ext js,ts,tsx src runtime_tests",
-    "lint:fix": "eslint --ext js,ts,tsx src runtime_tests --fix",
-    "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
-    "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime_tests/**/*.{js,ts,tsx}\"",
+    "lint": "eslint --ext js,ts,tsx src runtime_tests build_tests",
+    "lint:fix": "eslint --ext js,ts,tsx src runtime_tests build_tests --fix",
+    "format": "prettier --check --cache \"{src,runtime_tests,build_tests}/**/*.{js,ts,tsx}\"",
+    "format:fix": "prettier --write --cache --cache-strategy metadata \"{src,runtime_tests,build_tests}/**/*.{js,ts,tsx}\"",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
     "build": "bun run --shell bun remove-dist && bun ./build.ts && bun run copy:package.cjs.json",
     "postbuild": "publint",
