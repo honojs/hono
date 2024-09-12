@@ -1,12 +1,14 @@
-import { createAdaptorServer } from '@hono/node-server'
+import { createAdaptorServer, serve } from '@hono/node-server'
 import request from 'supertest'
+import type { Server } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { Hono } from '../../src'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { stream, streamSSE } from '../../src/helper/streaming'
 import { basicAuth } from '../../src/middleware/basic-auth'
+import { compress } from '../../src/middleware/compress'
 import { jwt } from '../../src/middleware/jwt'
-import { HonoRequest } from '../../src/request'
 
 // Test only minimal patterns.
 // See <https://github.com/honojs/node-server> for more tests and information.
@@ -38,7 +40,7 @@ describe('Basic', () => {
 
 describe('Environment Variables', () => {
   it('Should return the environment variable', async () => {
-    const c = new Context(new HonoRequest(new Request('http://localhost/')))
+    const c = new Context(new Request('http://localhost/'))
     const { NAME } = env<{ NAME: string }>(c)
     expect(NAME).toBe('Node')
   })
@@ -201,5 +203,46 @@ describe('streamSSE', () => {
     expect(res.status).toBe(200)
     expect(res.text).toBe('Hello')
     expect(aborted).toBe(false)
+  })
+})
+
+describe('compress', async () => {
+  const cssContent = Array.from({ length: 60 }, () => 'body { color: red; }').join('\n')
+  const [externalServer, serverInfo] = await new Promise<[Server, AddressInfo]>((resolve) => {
+    const externalApp = new Hono()
+    externalApp.get('/style.css', (c) =>
+      c.text(cssContent, {
+        headers: {
+          'Content-Type': 'text/css',
+        },
+      })
+    )
+    const server = serve(
+      {
+        fetch: externalApp.fetch,
+        port: 0,
+      },
+      (serverInfo) => {
+        resolve([server as Server, serverInfo])
+      }
+    )
+  })
+
+  const app = new Hono()
+  app.use(compress())
+  app.get('/fetch/:file', (c) => {
+    return fetch(`http://${serverInfo.address}:${serverInfo.port}/${c.req.param('file')}`)
+  })
+  const server = createAdaptorServer(app)
+
+  afterAll(() => {
+    externalServer.close()
+  })
+
+  it('Should be compressed a fetch response', async () => {
+    const res = await request(server).get('/fetch/style.css')
+    expect(res.status).toBe(200)
+    expect(res.headers['content-encoding']).toBe('gzip')
+    expect(res.text).toBe(cssContent)
   })
 })

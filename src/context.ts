@@ -465,16 +465,31 @@ export class Context<
   set res(_res: Response | undefined) {
     this.#isFresh = false
     if (this.#res && _res) {
-      this.#res.headers.delete('content-type')
-      for (const [k, v] of this.#res.headers.entries()) {
-        if (k === 'set-cookie') {
-          const cookies = this.#res.headers.getSetCookie()
-          _res.headers.delete('set-cookie')
-          for (const cookie of cookies) {
-            _res.headers.append('set-cookie', cookie)
+      try {
+        for (const [k, v] of this.#res.headers.entries()) {
+          if (k === 'content-type') {
+            continue
           }
+          if (k === 'set-cookie') {
+            const cookies = this.#res.headers.getSetCookie()
+            _res.headers.delete('set-cookie')
+            for (const cookie of cookies) {
+              _res.headers.append('set-cookie', cookie)
+            }
+          } else {
+            _res.headers.set(k, v)
+          }
+        }
+      } catch (e) {
+        if (e instanceof TypeError && e.message.includes('immutable')) {
+          // `_res` is immutable (probably a response from a fetch API), so retry with a new response.
+          this.res = new Response(_res.body, {
+            headers: _res.headers,
+            status: _res.status,
+          })
+          return
         } else {
-          _res.headers.set(k, v)
+          throw e
         }
       }
     }
@@ -844,18 +859,11 @@ export class Context<
     this.#preparedHeaders['content-type'] = 'text/html; charset=UTF-8'
 
     if (typeof html === 'object') {
-      if (!(html instanceof Promise)) {
-        html = (html as string).toString() // HtmlEscapedString object to string
-      }
-      if ((html as string | Promise<string>) instanceof Promise) {
-        return (html as unknown as Promise<string>)
-          .then((html) => resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}))
-          .then((html) => {
-            return typeof arg === 'number'
-              ? this.newResponse(html, arg, headers)
-              : this.newResponse(html, arg)
-          })
-      }
+      return resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then((html) => {
+        return typeof arg === 'number'
+          ? this.newResponse(html, arg, headers)
+          : this.newResponse(html, arg)
+      })
     }
 
     return typeof arg === 'number'

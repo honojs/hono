@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.5.11",
+  "version": "4.6.1",
   "description": "Web framework built on Web Standards",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -103,6 +103,11 @@
       "types": "./dist/types/middleware/compress/index.d.ts",
       "import": "./dist/middleware/compress/index.js",
       "require": "./dist/cjs/middleware/compress/index.js"
+    },
+    "./context-storage": {
+      "types": "./dist/types/middleware/context-storage/index.d.ts",
+      "import": "./dist/middleware/context-storage/index.js",
+      "require": "./dist/cjs/middleware/context-storage/index.js"
     },
     "./cors": {
       "types": "./dist/types/middleware/cors/index.d.ts",
@@ -420,6 +425,9 @@
       ],
       "compress": [
         "./dist/types/middleware/compress"
+      ],
+      "context-storage": [
+        "./dist/types/middleware/context-storage"
       ],
       "cors": [
         "./dist/types/middleware/cors"

@@ -238,6 +238,7 @@ describe('JSX renderer', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Transfer-Encoding')).toEqual('chunked')
     expect(res.headers.get('Content-Type')).toEqual('text/html; charset=UTF-8')
+    expect(res.headers.get('Content-Encoding')).toEqual('Identity')
 
     if (!res.body) {
       throw new Error('Body is null')
