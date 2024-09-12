@@ -1,14 +1,14 @@
-import type { Server } from 'node:http'
 import { createAdaptorServer, serve } from '@hono/node-server'
 import request from 'supertest'
+import type { Server } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { Hono } from '../../src'
 import { Context } from '../../src/context'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
-import { basicAuth } from '../../src/middleware/basic-auth'
-import { jwt } from '../../src/middleware/jwt'
-import { compress } from '../../src/middleware/compress'
 import { stream, streamSSE } from '../../src/helper/streaming'
-import type { AddressInfo } from 'node:net'
+import { basicAuth } from '../../src/middleware/basic-auth'
+import { compress } from '../../src/middleware/compress'
+import { jwt } from '../../src/middleware/jwt'
 
 // Test only minimal patterns.
 // See <https://github.com/honojs/node-server> for more tests and information.

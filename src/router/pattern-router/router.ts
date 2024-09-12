@@ -31,7 +31,7 @@ export class PatternRouter<T> implements Router<T> {
     let re
     try {
       re = new RegExp(`^${parts.join('')}${endsWithWildcard ? '' : '/?$'}`)
-    } catch (e) {
+    } catch {
       throw new UnsupportedPathError()
     }
     this.routes.push([re, method, handler])

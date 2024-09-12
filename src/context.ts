@@ -11,6 +11,7 @@ import type {
 } from './types'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
+import type { BaseMime } from './utils/mime'
 import type {
   InvalidJSONValue,
   IsAny,
@@ -18,7 +19,6 @@ import type {
   JSONValue,
   SimplifyDeepArray,
 } from './utils/types'
-import type { BaseMime } from './utils/mime'
 
 type HeaderRecord =
   | Record<'Content-Type', BaseMime>

@@ -1,1 +1,0 @@
-.eslintrc.cjs

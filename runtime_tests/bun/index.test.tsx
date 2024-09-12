@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { stream, streamSSE } from '../..//src/helper/streaming'
 import { serveStatic, toSSG } from '../../src/adapter/bun'
 import { createBunWebSocket } from '../../src/adapter/bun/websocket'
 import type { BunWebSocketData } from '../../src/adapter/bun/websocket'
@@ -11,7 +12,6 @@ import { jsx } from '../../src/jsx'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
 import { HonoRequest } from '../../src/request'
-import { stream, streamSSE } from '../..//src/helper/streaming'
 
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.

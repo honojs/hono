@@ -3,9 +3,9 @@
  * Context Storage Middleware for Hono.
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks'
 import type { Context } from '../../context'
 import type { Env, MiddlewareHandler } from '../../types'
-import { AsyncLocalStorage } from 'node:async_hooks'
 
 const asyncLocalStorage = new AsyncLocalStorage<Context>()
 

@@ -1,6 +1,6 @@
 import { Context } from '../../context'
-import type { CloudFrontEdgeEvent } from './handler'
 import { getConnInfo } from './conninfo'
+import type { CloudFrontEdgeEvent } from './handler'
 
 describe('getConnInfo', () => {
   it('Should info is valid', () => {

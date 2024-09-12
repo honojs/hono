@@ -1,6 +1,6 @@
 import type { Context } from '../../context'
-import { StreamingApi } from '../../utils/stream'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
+import { StreamingApi } from '../../utils/stream'
 
 export interface SSEMessage {
   data: string | Promise<string>

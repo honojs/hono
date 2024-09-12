@@ -1,5 +1,5 @@
-import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { upgradeWebSocket } from '../../src/adapter/cloudflare-workers'
+import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { Hono } from '../../src/hono'
 
 const app = new Hono()
