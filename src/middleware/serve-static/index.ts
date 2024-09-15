@@ -97,15 +97,15 @@ export const serveStatic = <E extends Env = Env>(
       return c.newResponse(content.body, content)
     }
 
-    const mimeType = options.mimes
-      ? getMimeType(path, options.mimes) ?? getMimeType(path)
-      : getMimeType(path)
-
-    if (mimeType) {
-      c.header('Content-Type', mimeType)
-    }
-
     if (content) {
+      const mimeType = options.mimes
+        ? getMimeType(path, options.mimes) ?? getMimeType(path)
+        : getMimeType(path)
+
+      if (mimeType) {
+        c.header('Content-Type', mimeType)
+      }
+
       if (options.precompressed) {
         const acceptEncodingSet = new Set(
           c.req
