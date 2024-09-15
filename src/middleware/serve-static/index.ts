@@ -5,6 +5,7 @@
 
 import type { Context, Data } from '../../context'
 import type { Env, MiddlewareHandler } from '../../types'
+import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
 import { getFilePath, getFilePathWithoutDefaultDocument } from '../../utils/filepath'
 import { getMimeType } from '../../utils/mime'
 
@@ -106,7 +107,7 @@ export const serveStatic = <E extends Env = Env>(
         c.header('Content-Type', mimeType)
       }
 
-      if (options.precompressed) {
+      if (options.precompressed && (!mimeType || COMPRESSIBLE_CONTENT_TYPE_REGEX.test(mimeType))) {
         const acceptEncodingSet = new Set(
           c.req
             .header('Accept-Encoding')

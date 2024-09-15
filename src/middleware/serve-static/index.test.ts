@@ -127,6 +127,25 @@ describe('Serve Static Middleware', () => {
     expect(await res.text()).toBe('Hello in static/hello.html.br')
   })
 
+  it('Should return a pre-compressed brotli response - /static/hello.unknown', async () => {
+    const app = new Hono().use(
+      '*',
+      baseServeStatic({
+        getContent,
+        precompressed: true,
+      })
+    )
+
+    const res = await app.request('/static/hello.unknown', {
+      headers: { 'Accept-Encoding': 'wompwomp, gzip, br, deflate, zstd' },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Encoding')).toBe('br')
+    expect(res.headers.get('Vary')).toBe('Accept-Encoding')
+    expect(await res.text()).toBe('Hello in static/hello.unknown.br')
+  })
+
   it('Should not return a pre-compressed response - /static/not-found.txt', async () => {
     const app = new Hono().use(
       '*',
@@ -165,6 +184,26 @@ describe('Serve Static Middleware', () => {
     expect(res.headers.get('Vary')).toBeNull()
     expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
     expect(await res.text()).toBe('Hello in static/hello.html')
+  })
+
+  it('Should not find pre-compressed files - /static/hello.jpg', async () => {
+    const app = new Hono().use(
+      '*',
+      baseServeStatic({
+        getContent,
+        precompressed: true,
+      })
+    )
+
+    const res = await app.request('/static/hello.jpg', {
+      headers: { 'Accept-Encoding': 'gzip, br, deflate, zstd' },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Encoding')).toBeNull()
+    expect(res.headers.get('Vary')).toBeNull()
+    expect(res.headers.get('Content-Type')).toMatch(/^image\/jpeg/)
+    expect(await res.text()).toBe('Hello in static/hello.jpg')
   })
 
   it('Should return response object content as-is', async () => {
