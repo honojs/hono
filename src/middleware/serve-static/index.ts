@@ -5,6 +5,7 @@
 
 import type { Context, Data } from '../../context'
 import type { Env, MiddlewareHandler } from '../../types'
+import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
 import { getFilePath, getFilePathWithoutDefaultDocument } from '../../utils/filepath'
 import { getMimeType } from '../../utils/mime'
 
@@ -23,6 +24,7 @@ const ENCODINGS = {
   zstd: '.zst',
   gzip: '.gz',
 } as const
+const ENCODINGS_ORDERED_KEYS = Object.keys(ENCODINGS) as (keyof typeof ENCODINGS)[]
 
 const DEFAULT_DOCUMENT = 'index.html'
 const defaultPathResolve = (path: string) => path
@@ -96,29 +98,27 @@ export const serveStatic = <E extends Env = Env>(
       return c.newResponse(content.body, content)
     }
 
-    const mimeType = options.mimes
-      ? getMimeType(path, options.mimes) ?? getMimeType(path)
-      : getMimeType(path)
-
-    if (mimeType) {
-      c.header('Content-Type', mimeType)
-    }
-
     if (content) {
-      if (options.precompressed) {
-        const acceptEncodings =
+      const mimeType = options.mimes
+        ? getMimeType(path, options.mimes) ?? getMimeType(path)
+        : getMimeType(path)
+
+      if (mimeType) {
+        c.header('Content-Type', mimeType)
+      }
+
+      if (options.precompressed && (!mimeType || COMPRESSIBLE_CONTENT_TYPE_REGEX.test(mimeType))) {
+        const acceptEncodingSet = new Set(
           c.req
             .header('Accept-Encoding')
             ?.split(',')
             .map((encoding) => encoding.trim())
-            .filter((encoding): encoding is keyof typeof ENCODINGS =>
-              Object.hasOwn(ENCODINGS, encoding)
-            )
-            .sort(
-              (a, b) => Object.keys(ENCODINGS).indexOf(a) - Object.keys(ENCODINGS).indexOf(b)
-            ) ?? []
+        )
 
-        for (const encoding of acceptEncodings) {
+        for (const encoding of ENCODINGS_ORDERED_KEYS) {
+          if (!acceptEncodingSet.has(encoding)) {
+            continue
+          }
           const compressedContent = (await getContent(path + ENCODINGS[encoding], c)) as Data | null
 
           if (compressedContent) {

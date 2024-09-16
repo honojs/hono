@@ -4,11 +4,10 @@
  */
 
 import type { MiddlewareHandler } from '../../types'
+import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
 
 const ENCODING_TYPES = ['gzip', 'deflate'] as const
 const cacheControlNoTransformRegExp = /(?:^|,)\s*?no-transform\s*?(?:,|$)/i
-const compressibleContentTypeRegExp =
-  /^\s*(?:text\/[^;\s]+|application\/(?:javascript|json|xml|xml-dtd|ecmascript|dart|postscript|rtf|tar|toml|vnd\.dart|vnd\.ms-fontobject|vnd\.ms-opentype|wasm|x-httpd-php|x-javascript|x-ns-proxy-autoconfig|x-sh|x-tar|x-virtualbox-hdd|x-virtualbox-ova|x-virtualbox-ovf|x-virtualbox-vbox|x-virtualbox-vdi|x-virtualbox-vhd|x-virtualbox-vmdk|x-www-form-urlencoded)|font\/(?:otf|ttf)|image\/(?:bmp|vnd\.adobe\.photoshop|vnd\.microsoft\.icon|vnd\.ms-dds|x-icon|x-ms-bmp)|message\/rfc822|model\/gltf-binary|x-shader\/x-fragment|x-shader\/x-vertex|[^;\s]+?\+(?:json|text|xml|yaml))(?:[;\s]|$)/i
 
 interface CompressionOptions {
   encoding?: (typeof ENCODING_TYPES)[number]
@@ -68,7 +67,7 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
 
 const shouldCompress = (res: Response) => {
   const type = res.headers.get('Content-Type')
-  return type && compressibleContentTypeRegExp.test(type)
+  return type && COMPRESSIBLE_CONTENT_TYPE_REGEX.test(type)
 }
 
 const shouldTransform = (res: Response) => {
