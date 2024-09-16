@@ -134,7 +134,7 @@ export const cache = (options: {
     const cache = await caches.open(cacheName)
     const response = await cache.match(key)
     if (response) {
-      if (typeof options.duration === 'number'){
+      if (typeof options.duration === 'number') {
         const expires = Number(response.headers.get(internalCacheExpires))
         if (expires > Date.now()) {
           const res = createNewResponse(response, (res) => res.headers.delete(internalCacheExpires))
