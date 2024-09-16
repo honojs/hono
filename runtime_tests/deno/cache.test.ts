@@ -1,7 +1,7 @@
-import { Hono } from '../../src/hono.ts'
-import { cache } from '../../src/middleware/cache/index.ts'
 import { expect } from '@std/expect'
 import { FakeTime } from '@std/testing/time'
+import { Hono } from '../../src/hono.ts'
+import { cache } from '../../src/middleware/cache/index.ts'
 
 Deno.test('Should return cached response', async () => {
   const c = await caches.open('my-app')
