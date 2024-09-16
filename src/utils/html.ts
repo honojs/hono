@@ -140,12 +140,21 @@ export const resolveCallbackSync = (str: string | HtmlEscapedString): string => 
 }
 
 export const resolveCallback = async (
-  str: string | HtmlEscapedString,
+  str: string | HtmlEscapedString | Promise<string>,
   phase: (typeof HtmlEscapedCallbackPhase)[keyof typeof HtmlEscapedCallbackPhase],
   preserveCallbacks: boolean,
   context: object,
   buffer?: [string]
 ): Promise<string> => {
+  if (typeof str === 'object' && !(str instanceof String)) {
+    if (!((str as unknown) instanceof Promise)) {
+      str = (str as unknown as string).toString() // HtmlEscapedString object to string
+    }
+    if ((str as string | Promise<string>) instanceof Promise) {
+      str = await (str as unknown as Promise<string>)
+    }
+  }
+
   const callbacks = (str as HtmlEscapedString).callbacks as HtmlEscapedCallback[]
   if (!callbacks?.length) {
     return Promise.resolve(str)
@@ -153,7 +162,7 @@ export const resolveCallback = async (
   if (buffer) {
     buffer[0] += str
   } else {
-    buffer = [str]
+    buffer = [str as string]
   }
 
   const resStr = Promise.all(callbacks.map((c) => c({ phase, buffer, context }))).then((res) =>

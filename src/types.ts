@@ -5,7 +5,6 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/ban-types */
 import type { Context } from './context'
 import type { Hono } from './hono'
 import type { StatusCode } from './utils/http-status'

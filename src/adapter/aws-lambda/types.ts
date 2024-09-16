@@ -7,7 +7,7 @@ export interface CognitoIdentity {
 
 export interface ClientContext {
   client: ClientContextClient
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   Custom?: any
   env: ClientContextEnv
 }

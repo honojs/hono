@@ -1,6 +1,6 @@
-import { compress } from '.'
 import { stream } from '../../helper/streaming'
 import { Hono } from '../../hono'
+import { compress } from '.'
 
 describe('Compress Middleware', () => {
   const app = new Hono()
