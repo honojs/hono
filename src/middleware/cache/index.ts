@@ -102,7 +102,26 @@ export const cache = (options: {
     }
   }
 
-  const cachedTime = 'Hono-Cached-Time'
+  const internalCacheExpires = 'Hono-Cache-Expires'
+
+  // Create a new response for avoiding the immutable response.
+  const createNewResponse = (res: Response, callbackFn: (res: Response) => void): Response => {
+    try {
+      callbackFn(res)
+    } catch (e) {
+      if (e instanceof TypeError && e.message.includes('immutable')) {
+        // `res` is immutable (probably a response from a fetch API), so retry with a new response.
+        res = new Response(res.body, {
+          headers: res.headers,
+          status: res.status,
+        })
+        callbackFn(res)
+      } else {
+        throw e
+      }
+    }
+    return res
+  }
 
   return async function cache(c, next) {
     let key = c.req.url
@@ -115,13 +134,14 @@ export const cache = (options: {
     const cache = await caches.open(cacheName)
     const response = await cache.match(key)
     if (response) {
-      if (options.duration) {
-        const duration = Number(response.headers.get(cachedTime)) + options.duration * 1000
-        if (duration && duration > Date.now()) {
-          return new Response(response.body, response).headers.delete(cachedTime)
+      if (typeof options.duration === 'number'){
+        const expires = Number(response.headers.get(internalCacheExpires))
+        if (expires > Date.now()) {
+          const res = createNewResponse(response, (res) => res.headers.delete(internalCacheExpires))
+          return res
         }
       } else {
-        return new Response(response.body, response)
+        return response
       }
     }
 
@@ -130,9 +150,11 @@ export const cache = (options: {
       return
     }
     addHeader(c)
-    const res = c.res.clone()
-    if (options.duration) {
-      res.headers.set(cachedTime, String(Date.now()))
+    let res = c.res.clone()
+
+    if (options.duration && options.duration > 0) {
+      const expiresTime = String(Date.now() + options.duration * 1000)
+      res = createNewResponse(res, (res) => res.headers.set(internalCacheExpires, expiresTime))
     }
     if (options.wait) {
       await cache.put(key, res)
