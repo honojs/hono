@@ -12,6 +12,7 @@ import { getMimeType } from '../../utils/mime'
 export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
   path?: string
+  allowAbsoluteRoot?: boolean
   precompressed?: boolean
   mimes?: Record<string, string>
   rewriteRequestPath?: (path: string) => string
@@ -50,11 +51,14 @@ export const serveStatic = <E extends Env = Env>(
     filename = options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename
     const root = options.root
 
+    const allowAbsoluteRoot = options.allowAbsoluteRoot ?? false
+
     // If it was Directory, force `/` on the end.
     if (!filename.endsWith('/') && options.isDir) {
       const path = getFilePathWithoutDefaultDocument({
         filename,
         root,
+        allowAbsoluteRoot,
       })
       if (path && (await options.isDir(path))) {
         filename += '/'
@@ -64,6 +68,7 @@ export const serveStatic = <E extends Env = Env>(
     let path = getFilePath({
       filename,
       root,
+      allowAbsoluteRoot,
       defaultDocument: DEFAULT_DOCUMENT,
     })
 
