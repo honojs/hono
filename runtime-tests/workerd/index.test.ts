@@ -6,7 +6,7 @@ describe('workerd', () => {
   let worker: UnstableDevWorker
 
   beforeAll(async () => {
-    worker = await unstable_dev('./runtime_tests/workerd/index.ts', {
+    worker = await unstable_dev('./runtime-tests/workerd/index.ts', {
       vars: {
         NAME: 'Hono',
       },
@@ -35,7 +35,7 @@ describe('workerd with WebSocket', () => {
   // worker.fetch does not support WebSocket:
   // https://github.com/cloudflare/workers-sdk/issues/4573#issuecomment-1850420973
   it('Should handle the WebSocket connection correctly', async () => {
-    const worker = await unstable_dev('./runtime_tests/workerd/index.ts', {
+    const worker = await unstable_dev('./runtime-tests/workerd/index.ts', {
       experimental: { disableExperimentalWarning: true },
     })
     const ws = new WebSocket(`ws://${worker.address}:${worker.port}/ws`)

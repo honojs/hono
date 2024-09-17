@@ -68,10 +68,10 @@ Deno.test('JSX middleware', async () => {
 Deno.test('Serve Static middleware', async () => {
   const app = new Hono()
   const onNotFound = spy(() => {})
-  app.all('/favicon.ico', serveStatic({ path: './runtime_tests/deno/favicon.ico' }))
+  app.all('/favicon.ico', serveStatic({ path: './runtime-tests/deno/favicon.ico' }))
   app.all(
     '/favicon-notfound.ico',
-    serveStatic({ path: './runtime_tests/deno/favicon-notfound.ico', onNotFound })
+    serveStatic({ path: './runtime-tests/deno/favicon-notfound.ico', onNotFound })
   )
   app.use('/favicon-notfound.ico', async (c, next) => {
     await next()
@@ -81,7 +81,7 @@ Deno.test('Serve Static middleware', async () => {
   app.get(
     '/static/*',
     serveStatic({
-      root: './runtime_tests/deno',
+      root: './runtime-tests/deno',
       onNotFound,
     })
   )
@@ -89,7 +89,7 @@ Deno.test('Serve Static middleware', async () => {
   app.get(
     '/dot-static/*',
     serveStatic({
-      root: './runtime_tests/deno',
+      root: './runtime-tests/deno',
       rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
     })
   )
