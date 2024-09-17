@@ -143,6 +143,7 @@ describe('Serve Static Middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Encoding')).toBe('br')
     expect(res.headers.get('Vary')).toBe('Accept-Encoding')
+    expect(res.headers.get('Content-Type')).toBe('application/octet-stream')
     expect(await res.text()).toBe('Hello in static/hello.unknown.br')
   })
 
