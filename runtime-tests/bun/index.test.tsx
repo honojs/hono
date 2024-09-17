@@ -166,7 +166,7 @@ describe('Serve Static Middleware', () => {
   })
 
   it('Should return 200 response - /static-absolute-root/plain.txt', async () => {
-    const res = await app.request(new Request('http://localhost/static-absolute-root/plain.txt'))
+    const res = await app.request('http://localhost/static-absolute-root/plain.txt')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Bun!')
     expect(onNotFound).not.toHaveBeenCalled()
