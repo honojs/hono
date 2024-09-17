@@ -74,11 +74,9 @@ describe('getFilePath', () => {
     expect(getFilePath({ filename: 'foo', root: '/p/bar', allowAbsoluteRoot })).toBe(
       '/p/bar/foo/index.html'
     )
-
     expect(
       getFilePath({ filename: 'foo.txt', root: slashToBackslash('/p'), allowAbsoluteRoot })
     ).toBe('/p/foo.txt')
-
     expect(
       getFilePath({ filename: 'foo.txt', root: slashToBackslash('/p/../p2'), allowAbsoluteRoot })
     ).toBe('/p2/foo.txt')

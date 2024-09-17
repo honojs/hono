@@ -1,4 +1,6 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import fs from 'fs/promises'
+import path from 'path'
 import { stream, streamSSE } from '../..//src/helper/streaming'
 import { serveStatic, toSSG } from '../../src/adapter/bun'
 import { createBunWebSocket } from '../../src/adapter/bun/websocket'
@@ -42,7 +44,7 @@ describe('Basic', () => {
 
 describe('Environment Variables', () => {
   it('Should return the environment variable', async () => {
-    const c = new Context(new HonoRequest(new Request('http://localhost/')))
+    const c = new Context(new Request('http://localhost/'))
     const { NAME } = env<{ NAME: string }>(c)
     expect(NAME).toBe('Bun')
   })
@@ -107,6 +109,11 @@ describe('Serve Static Middleware', () => {
     })
   )
 
+  app.all(
+    '/static-absolute-root/*',
+    serveStatic({ root: path.dirname(__filename), allowAbsoluteRoot: true })
+  )
+
   beforeEach(() => onNotFound.mockClear())
 
   it('Should return static file correctly', async () => {
@@ -156,6 +163,13 @@ describe('Serve Static Middleware', () => {
     const res = await app.request('http://localhost/static/hello.world')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Hi\n')
+  })
+
+  it('Should return 200 response - /static-absolute-root/plain.txt', async () => {
+    const res = await app.request(new Request('http://localhost/static-absolute-root/plain.txt'))
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Bun!')
+    expect(onNotFound).not.toHaveBeenCalled()
   })
 })
 
@@ -310,8 +324,6 @@ describe('WebSockets Helper', () => {
     expect(receivedMessage).toBe(message)
   })
 })
-const fs = require('fs').promises
-const path = require('path')
 
 async function deleteDirectory(dirPath) {
   if (
