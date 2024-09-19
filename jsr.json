@@ -13,6 +13,7 @@
   ],
   "exports": {
     ".": "./src/index.ts",
+    "./request": "./src/request.ts",
     "./types": "./src/types.ts",
     "./hono-base": "./src/hono-base.ts",
     "./tiny": "./src/preset/tiny.ts",
