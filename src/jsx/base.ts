@@ -62,7 +62,7 @@ const emptyTags = [
   'track',
   'wbr',
 ]
-const booleanAttributes = [
+export const booleanAttributes = [
   'allowfullscreen',
   'async',
   'autofocus',

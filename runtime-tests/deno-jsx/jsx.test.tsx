@@ -110,3 +110,35 @@ Deno.test('JSX: css', async () => {
     '<html><head><style id="hono-css">.css-3142110215{color:red}</style></head><body><div class="css-3142110215"></div></body></html>'
   )
 })
+
+Deno.test('JSX: className', async () => {
+  const html = <div className='foo'></div>
+  assertEquals(html.toString(), '<div class="foo"></div>')
+})
+
+Deno.test('JSX: null or undefined', async () => {
+  const nullHtml = <div className={null}></div>
+  const undefinedHtml = <div className={undefined}></div>
+
+  assertEquals(nullHtml.toString(), '<div ></div>')
+  assertEquals(undefinedHtml.toString(), '<div ></div>')
+})
+
+Deno.test('JSX: boolean attributes', async () => {
+  const trueHtml = <div disabled={true}></div>
+  const falseHtml = <div disabled={false}></div>
+
+  assertEquals(trueHtml.toString(), '<div disabled></div>')
+  assertEquals(falseHtml.toString(), '<div></div>')
+})
+
+Deno.test('JSX: number', async () => {
+  const html = <div tabIndex={1}></div>
+
+  assertEquals(html.toString(), '<div tabindex="1"></div>')
+})
+
+Deno.test('JSX: style', async () => {
+  const html = <div style={{ fontSize: '12px', color: null }}></div>
+  assertEquals(html.toString(), '<div style="font-size:12px"></div>')
+})
