@@ -1,4 +1,5 @@
 import { assertEquals, assertMatch } from '@std/assert'
+import { dirname, fromFileUrl } from '@std/path'
 import { assertSpyCall, assertSpyCalls, spy } from '@std/testing/mock'
 import { serveStatic } from '../../src/adapter/deno/index.ts'
 import { Hono } from '../../src/hono.ts'
@@ -94,6 +95,21 @@ Deno.test('Serve Static middleware', async () => {
     })
   )
 
+  console.log(dirname(fromFileUrl(import.meta.url)))
+
+  app.get(
+    '/static-absolute-root/*',
+    serveStatic({ root: dirname(fromFileUrl(import.meta.url)), allowAbsoluteRoot: true })
+  )
+
+  app.get(
+    '/static/*',
+    serveStatic({
+      root: './runtime-tests/deno',
+      onNotFound,
+    })
+  )
+
   let res = await app.request('http://localhost/favicon.ico')
   assertEquals(res.status, 200)
   assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
@@ -132,6 +148,10 @@ Deno.test('Serve Static middleware', async () => {
   res = await app.request('http://localhost/static/hello.world')
   assertEquals(res.status, 200)
   assertEquals(await res.text(), 'Hi\n')
+
+  res = await app.request('http://localhost/static-absolute-root/plain.txt')
+  assertEquals(res.status, 200)
+  assertEquals(await res.text(), 'Deno!')
 })
 
 Deno.test('JWT Authentication middleware', async () => {
