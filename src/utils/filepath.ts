@@ -31,6 +31,24 @@ export const getFilePath = (options: FilePathOptions): string | undefined => {
   return path
 }
 
+const normalizeFilePath = (filePath: string) => {
+  const parts = filePath.split(/[\/\\]/)
+
+  const result = []
+
+  for (const part of parts) {
+    if (part === '' || part === '.') {
+      continue
+    } else if (part === '..') {
+      result.pop()
+    } else {
+      result.push(part)
+    }
+  }
+
+  return '/' + (result.length === 1 ? result[0] : result.join('/'))
+}
+
 export const getFilePathWithoutDefaultDocument = (
   options: Omit<FilePathOptions, 'defaultDocument'>
 ): string | undefined => {
@@ -61,9 +79,8 @@ export const getFilePathWithoutDefaultDocument = (
   } else {
     // assets => /assets
     path = path.replace(/^(?!\/)/, '/')
-    // Using URL to normalize the path.
-    const url = new URL(`file://${path}`)
-    path = url.pathname
+    // /assets/foo/../bar => /assets/bar
+    path = normalizeFilePath(path)
   }
 
   return path

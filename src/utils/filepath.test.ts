@@ -80,6 +80,17 @@ describe('getFilePath', () => {
     expect(
       getFilePath({ filename: 'foo.txt', root: slashToBackslash('/p/../p2'), allowAbsoluteRoot })
     ).toBe('/p2/foo.txt')
+    expect(
+      getFilePath({ filename: 'foo.txt', root: slashToBackslash('/p/.../p2'), allowAbsoluteRoot })
+    ).toBe('/p/.../p2/foo.txt')
+
+    expect(
+      getFilePathWithoutDefaultDocument({
+        filename: '/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd',
+        root: '/p/p2',
+        allowAbsoluteRoot: true,
+      })
+    ).toBe('/p/p2/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd') // /etc/passwd
   })
 })
 
