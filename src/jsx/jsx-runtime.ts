@@ -9,7 +9,7 @@ export type { JSX } from './jsx-dev-runtime'
 import { html, raw } from '../helper/html'
 import type { HtmlEscapedString, StringBuffer, HtmlEscaped } from '../utils/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
-import { normalizeIntrinsicElementKey, styleObjectForEach } from './utils'
+import { styleObjectForEach } from './utils'
 
 export { html as jsxTemplate }
 
@@ -17,7 +17,6 @@ export const jsxAttr = (
   key: string,
   v: string | Promise<string> | Record<string, string | number | null | undefined | boolean>
 ): HtmlEscapedString | Promise<HtmlEscapedString> => {
-  key = normalizeIntrinsicElementKey(key)
   const buffer: StringBuffer = [`${key}="`] as StringBuffer
   if (key === 'style' && typeof v === 'object') {
     // object to style strings
