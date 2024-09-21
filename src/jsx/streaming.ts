@@ -6,6 +6,7 @@
 import { raw } from '../helper/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import type { HtmlEscapedString } from '../utils/html'
+import { JSXNode } from './base'
 import { childrenToString } from './components'
 import { DOM_RENDERER, DOM_STASH } from './constants'
 import { Suspense as SuspenseDomRenderer } from './dom/components'
@@ -121,16 +122,19 @@ const textEncoder = new TextEncoder()
  * The API might be changed.
  */
 export const renderToReadableStream = (
-  str: HtmlEscapedString | Promise<HtmlEscapedString>,
+  content: HtmlEscapedString | JSXNode | Promise<HtmlEscapedString>,
   onError: (e: unknown) => string | void = console.trace
 ): ReadableStream<Uint8Array> => {
   const reader = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        const tmp = str instanceof Promise ? await str : await str.toString()
-        const context = typeof tmp === 'object' ? tmp : {}
+        if (content instanceof JSXNode) {
+          // aJSXNode.toString() returns a string or Promise<string> and string is already escaped
+          content = content.toString() as HtmlEscapedString | Promise<HtmlEscapedString>
+        }
+        const context = typeof content === 'object' ? content : {}
         const resolved = await resolveCallback(
-          tmp,
+          content,
           HtmlEscapedCallbackPhase.BeforeStream,
           true,
           context
