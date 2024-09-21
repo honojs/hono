@@ -27,6 +27,16 @@ describe('Serve Static Middleware', () => {
 
   app.get('/static/*', serveStatic)
 
+  const serveStaticAbsoluteRoot = baseServeStatic({
+    getContent,
+    pathResolve: (path) => {
+      return path
+    },
+    root: '/home/hono/../foo',
+  })
+
+  app.get('/static-absolute/*', serveStaticAbsoluteRoot)
+
   beforeEach(() => {
     getContent.mockClear()
   })
@@ -225,5 +235,11 @@ describe('Serve Static Middleware', () => {
     } as Request)
     expect(res.status).toBe(200)
     expect(res.body).toBe(body)
+  })
+
+  it('Should traverse directories with absolute root path', async () => {
+    const res = await app.request('/static-absolute/bar/hello.html')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Hello in /home/foo/static-absolute/bar/hello.html')
   })
 })

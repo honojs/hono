@@ -60,38 +60,6 @@ describe('getFilePath', () => {
     expect(getFilePath({ filename: 'filename.suffix_index' })).toBe('filename.suffix_index')
     expect(getFilePath({ filename: 'filename.suffix-index' })).toBe('filename.suffix-index')
   })
-
-  it('Should return file path correctly with allowAbsoluteRoot', async () => {
-    const allowAbsoluteRoot = true
-    expect(getFilePath({ filename: 'foo.txt', allowAbsoluteRoot })).toBe('/foo.txt')
-    expect(getFilePath({ filename: 'foo.txt', root: '/p', allowAbsoluteRoot })).toBe('/p/foo.txt')
-    expect(getFilePath({ filename: 'foo', root: '/p', allowAbsoluteRoot })).toBe(
-      '/p/foo/index.html'
-    )
-    expect(getFilePath({ filename: 'foo.txt', root: '/p/../p2', allowAbsoluteRoot })).toBe(
-      '/p2/foo.txt'
-    )
-    expect(getFilePath({ filename: 'foo', root: '/p/bar', allowAbsoluteRoot })).toBe(
-      '/p/bar/foo/index.html'
-    )
-    expect(
-      getFilePath({ filename: 'foo.txt', root: slashToBackslash('/p'), allowAbsoluteRoot })
-    ).toBe('/p/foo.txt')
-    expect(
-      getFilePath({ filename: 'foo.txt', root: slashToBackslash('/p/../p2'), allowAbsoluteRoot })
-    ).toBe('/p2/foo.txt')
-    expect(
-      getFilePath({ filename: 'foo.txt', root: slashToBackslash('/p/.../p2'), allowAbsoluteRoot })
-    ).toBe('/p/.../p2/foo.txt')
-
-    expect(
-      getFilePathWithoutDefaultDocument({
-        filename: '/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd',
-        root: '/p/p2',
-        allowAbsoluteRoot: true,
-      })
-    ).toBe('/p/p2/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd') // /etc/passwd
-  })
 })
 
 function slashToBackslash(filename: string) {

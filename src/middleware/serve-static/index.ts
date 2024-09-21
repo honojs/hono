@@ -12,7 +12,6 @@ import { getMimeType } from '../../utils/mime'
 export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
   path?: string
-  allowAbsoluteRoot?: boolean
   precompressed?: boolean
   mimes?: Record<string, string>
   rewriteRequestPath?: (path: string) => string
@@ -40,6 +39,16 @@ export const serveStatic = <E extends Env = Env>(
     isDir?: (path: string) => boolean | undefined | Promise<boolean | undefined>
   }
 ): MiddlewareHandler => {
+  let isAbsoluteRoot = false
+  let root: string
+
+  if (options.root) {
+    if (options.root.startsWith('/')) {
+      isAbsoluteRoot = true
+    }
+    root = new URL(`file://${options.root}`).pathname
+  }
+
   return async (c, next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
@@ -49,16 +58,12 @@ export const serveStatic = <E extends Env = Env>(
 
     let filename = options.path ?? decodeURI(c.req.path)
     filename = options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename
-    const root = options.root
-
-    const allowAbsoluteRoot = options.allowAbsoluteRoot ?? false
 
     // If it was Directory, force `/` on the end.
     if (!filename.endsWith('/') && options.isDir) {
       const path = getFilePathWithoutDefaultDocument({
         filename,
         root,
-        allowAbsoluteRoot,
       })
       if (path && (await options.isDir(path))) {
         filename += '/'
@@ -68,12 +73,15 @@ export const serveStatic = <E extends Env = Env>(
     let path = getFilePath({
       filename,
       root,
-      allowAbsoluteRoot,
       defaultDocument: DEFAULT_DOCUMENT,
     })
 
     if (!path) {
       return await next()
+    }
+
+    if (isAbsoluteRoot) {
+      path = '/' + path
     }
 
     const getContent = options.getContent

@@ -7,7 +7,6 @@ type FilePathOptions = {
   filename: string
   root?: string
   defaultDocument?: string
-  allowAbsoluteRoot?: boolean
 }
 
 export const getFilePath = (options: FilePathOptions): string | undefined => {
@@ -24,29 +23,10 @@ export const getFilePath = (options: FilePathOptions): string | undefined => {
 
   const path = getFilePathWithoutDefaultDocument({
     root: options.root,
-    allowAbsoluteRoot: options.allowAbsoluteRoot,
     filename,
   })
 
   return path
-}
-
-const normalizeFilePath = (filePath: string) => {
-  const parts = filePath.split(/[\/\\]/)
-
-  const result = []
-
-  for (const part of parts) {
-    if (part === '' || part === '.') {
-      continue
-    } else if (part === '..') {
-      result.pop()
-    } else {
-      result.push(part)
-    }
-  }
-
-  return '/' + (result.length === 1 ? result[0] : result.join('/'))
 }
 
 export const getFilePathWithoutDefaultDocument = (
@@ -62,9 +42,6 @@ export const getFilePathWithoutDefaultDocument = (
   // /foo.html => foo.html
   filename = filename.replace(/^\.?[\/\\]/, '')
 
-  // assets\foo => assets/foo
-  root = root.replace(/\\/, '/')
-
   // foo\bar.txt => foo/bar.txt
   filename = filename.replace(/\\/, '/')
 
@@ -73,15 +50,7 @@ export const getFilePathWithoutDefaultDocument = (
 
   // ./assets/foo.html => assets/foo.html
   let path = root ? root + '/' + filename : filename
-
-  if (!options.allowAbsoluteRoot) {
-    path = path.replace(/^\.?\//, '')
-  } else {
-    // assets => /assets
-    path = path.replace(/^(?!\/)/, '/')
-    // /assets/foo/../bar => /assets/bar
-    path = normalizeFilePath(path)
-  }
+  path = path.replace(/^\.?\//, '')
 
   return path
 }

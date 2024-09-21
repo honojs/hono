@@ -13,7 +13,6 @@ import { Hono } from '../../src/index'
 import { jsx } from '../../src/jsx'
 import { basicAuth } from '../../src/middleware/basic-auth'
 import { jwt } from '../../src/middleware/jwt'
-import { HonoRequest } from '../../src/request'
 
 // Test just only minimal patterns.
 // Because others are tested well in Cloudflare Workers environment already.
@@ -109,10 +108,7 @@ describe('Serve Static Middleware', () => {
     })
   )
 
-  app.all(
-    '/static-absolute-root/*',
-    serveStatic({ root: path.dirname(__filename), allowAbsoluteRoot: true })
-  )
+  app.all('/static-absolute-root/*', serveStatic({ root: path.dirname(__filename) }))
 
   beforeEach(() => onNotFound.mockClear())
 
