@@ -95,8 +95,6 @@ Deno.test('Serve Static middleware', async () => {
     })
   )
 
-  console.log(dirname(fromFileUrl(import.meta.url)))
-
   app.get(
     '/static-absolute-root/*',
     serveStatic({ root: dirname(fromFileUrl(import.meta.url)), allowAbsoluteRoot: true })
