@@ -37,12 +37,6 @@ export const jsxAttr = (
     return raw('')
   } else if (typeof v === 'number' || (v as unknown as HtmlEscaped).isEscaped) {
     buffer[0] += `${v}"`
-  } else if (typeof v === 'boolean' && booleanAttributes.includes(key)) {
-    if (v) {
-      buffer[0] += '"'
-    } else {
-      return raw('')
-    }
   } else if (v instanceof Promise) {
     buffer.unshift('"', v)
   } else {
