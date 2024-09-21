@@ -9,7 +9,6 @@ export type { JSX } from './jsx-dev-runtime'
 import { html, raw } from '../helper/html'
 import type { HtmlEscapedString, StringBuffer, HtmlEscaped } from '../utils/html'
 import { escapeToBuffer, stringBufferToString } from '../utils/html'
-import { booleanAttributes } from './base'
 import { normalizeIntrinsicElementKey, styleObjectForEach } from './utils'
 
 export { html as jsxTemplate }
