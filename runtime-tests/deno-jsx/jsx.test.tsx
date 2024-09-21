@@ -120,20 +120,27 @@ Deno.test('JSX: null or undefined', async () => {
   const nullHtml = <div className={null}></div>
   const undefinedHtml = <div className={undefined}></div>
 
-  assertEquals(nullHtml.toString(), '<div ></div>')
-  assertEquals(undefinedHtml.toString(), '<div ></div>')
+  // react-jsx : <div>
+  // precompile : <div > // Extra whitespace is allowed because it is a specification.
+
+  assertEquals(nullHtml.toString().replace(/\s+/g, ''), '<div></div>')
+  assertEquals(undefinedHtml.toString().replace(/\s+/g, ''), '<div></div>')
 })
 
 Deno.test('JSX: boolean attributes', async () => {
   const trueHtml = <div disabled={true}></div>
   const falseHtml = <div disabled={false}></div>
 
-  assertEquals(trueHtml.toString(), '<div disabled></div>')
+  // output is different, but semantics as HTML is the same, so both are OK
+  // react-jsx : <div disabled="">
+  // precompile : <div disabled>
+
+  assertEquals(trueHtml.toString().replace('=""', ''), '<div disabled></div>')
   assertEquals(falseHtml.toString(), '<div></div>')
 })
 
 Deno.test('JSX: number', async () => {
-  const html = <div tabIndex={1}></div>
+  const html = <div tabindex={1}></div>
 
   assertEquals(html.toString(), '<div tabindex="1"></div>')
 })
