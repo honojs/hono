@@ -45,8 +45,10 @@ export const serveStatic = <E extends Env = Env>(
   if (options.root) {
     if (options.root.startsWith('/')) {
       isAbsoluteRoot = true
+      root = new URL(`file://${options.root}`).pathname
+    } else {
+      root = options.root
     }
-    root = new URL(`file://${options.root}`).pathname
   }
 
   return async (c, next) => {

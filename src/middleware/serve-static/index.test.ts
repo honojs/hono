@@ -27,16 +27,6 @@ describe('Serve Static Middleware', () => {
 
   app.get('/static/*', serveStatic)
 
-  const serveStaticAbsoluteRoot = baseServeStatic({
-    getContent,
-    pathResolve: (path) => {
-      return path
-    },
-    root: '/home/hono/../foo',
-  })
-
-  app.get('/static-absolute/*', serveStaticAbsoluteRoot)
-
   beforeEach(() => {
     getContent.mockClear()
   })
@@ -237,9 +227,61 @@ describe('Serve Static Middleware', () => {
     expect(res.body).toBe(body)
   })
 
-  it('Should traverse directories with absolute root path', async () => {
-    const res = await app.request('/static-absolute/bar/hello.html')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('Hello in /home/foo/static-absolute/bar/hello.html')
+  describe('Changing root path', () => {
+    const pathResolve = (path: string) => {
+      return path.startsWith('/') ? path : `./${path}`
+    }
+
+    it('Should return the content with absolute root path', async () => {
+      const app = new Hono()
+      const serveStatic = baseServeStatic({
+        getContent,
+        pathResolve,
+        root: '/home/hono/child',
+      })
+      app.get('/static/*', serveStatic)
+
+      const res = await app.request('/static/html/hello.html')
+      expect(await res.text()).toBe('Hello in /home/hono/child/static/html/hello.html')
+    })
+
+    it('Should traverse the directories with absolute root path', async () => {
+      const app = new Hono()
+      const serveStatic = baseServeStatic({
+        getContent,
+        pathResolve,
+        root: '/home/hono/../parent',
+      })
+      app.get('/static/*', serveStatic)
+
+      const res = await app.request('/static/html/hello.html')
+      expect(await res.text()).toBe('Hello in /home/parent/static/html/hello.html')
+    })
+
+    it('Should treat the root path includes .. as relative path', async () => {
+      const app = new Hono()
+      const serveStatic = baseServeStatic({
+        getContent,
+        pathResolve,
+        root: '../home/hono',
+      })
+      app.get('/static/*', serveStatic)
+
+      const res = await app.request('/static/html/hello.html')
+      expect(await res.text()).toBe('Hello in ./../home/hono/static/html/hello.html')
+    })
+
+    it('Should not allow directory traversal with . as relative path', async () => {
+      const app = new Hono()
+      const serveStatic = baseServeStatic({
+        getContent,
+        pathResolve,
+        root: '.',
+      })
+      app.get('*', serveStatic)
+
+      const res = await app.request('///etc/passwd')
+      expect(res.status).toBe(404)
+    })
   })
 })
