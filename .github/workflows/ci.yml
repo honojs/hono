@@ -206,11 +206,15 @@ jobs:
           } >> "$GITHUB_ENV"
         working-directory: perf-measures/type-check
       - run: echo "$COMPARISON"
-    # remove the comment out after we make sure that caching is working
-    # - uses: thollander/actions-comment-pull-request@v2
-    #   with:
-    #     comment_tag: perf-measures/type-check
-    #     message: ${{ env.COMPARISON }}
+      - uses: thollander/actions-comment-pull-request@v2
+        with:
+          comment_tag: perf-measures/type-check
+          message: |
+            ## Result of perf-measures/type-check
+            Here is a comparison of the type-checking performance between the current PR and main branch.
+            One of the most important metrics is `Type Instantiaion`. The smaller it is, the faster type-checking is.
+            
+            ${{ env.COMPARISON }}
 
 
   perf-measures-type-check-on-main:
