@@ -7,7 +7,7 @@ async function main() {
         .catch(() => null)
     const table = ['|| Current | Previous |', '|---|---|---|']    
     for (const [i, line] of currentResult.entries()) {
-        if (line === '') continue;
+        if (line === '') {continue}
         const [name, value] = line.split(':')
         const mainValue = previousResult?.[i]?.split(':')?.[1]
         table.push(`| ${name?.trim()} | ${value?.trim()} | ${mainValue ? mainValue.trim() : 'N/A'} |`)
