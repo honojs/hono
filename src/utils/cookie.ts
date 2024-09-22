@@ -60,7 +60,7 @@ const verifySignature = async (
       signature[i] = signatureBinStr.charCodeAt(i)
     }
     return await crypto.subtle.verify(algorithm, secret, signature, new TextEncoder().encode(value))
-  } catch (e) {
+  } catch {
     return false
   }
 }

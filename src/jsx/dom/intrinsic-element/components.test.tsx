@@ -1,7 +1,7 @@
 /** @jsxImportSource ../../ */
 import { JSDOM, ResourceLoader } from 'jsdom'
-import { useState } from '../../hooks'
 import { Suspense, render } from '..'
+import { useState } from '../../hooks'
 import { clearCache, composeRef } from './components'
 
 describe('intrinsic element', () => {
@@ -10,7 +10,6 @@ describe('intrinsic element', () => {
     global.requestAnimationFrame = (cb) => setTimeout(cb)
 
     CustomResourceLoader = class CustomResourceLoader extends ResourceLoader {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       fetch(url: string) {
         return url.includes('invalid')
           ? Promise.reject('Invalid URL')

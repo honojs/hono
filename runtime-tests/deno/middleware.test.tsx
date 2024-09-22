@@ -1,9 +1,9 @@
+import { assertEquals, assertMatch } from '@std/assert'
+import { assertSpyCall, assertSpyCalls, spy } from '@std/testing/mock'
 import { serveStatic } from '../../src/adapter/deno/index.ts'
 import { Hono } from '../../src/hono.ts'
 import { basicAuth } from '../../src/middleware/basic-auth/index.ts'
 import { jwt } from '../../src/middleware/jwt/index.ts'
-import { assertSpyCall, assertSpyCalls, spy } from '@std/testing/mock'
-import { assertEquals, assertMatch } from '@std/assert'
 
 // Test just only minimal patterns.
 // Because others are already tested well in Cloudflare Workers environment.
@@ -68,10 +68,10 @@ Deno.test('JSX middleware', async () => {
 Deno.test('Serve Static middleware', async () => {
   const app = new Hono()
   const onNotFound = spy(() => {})
-  app.all('/favicon.ico', serveStatic({ path: './runtime_tests/deno/favicon.ico' }))
+  app.all('/favicon.ico', serveStatic({ path: './runtime-tests/deno/favicon.ico' }))
   app.all(
     '/favicon-notfound.ico',
-    serveStatic({ path: './runtime_tests/deno/favicon-notfound.ico', onNotFound })
+    serveStatic({ path: './runtime-tests/deno/favicon-notfound.ico', onNotFound })
   )
   app.use('/favicon-notfound.ico', async (c, next) => {
     await next()
@@ -81,7 +81,7 @@ Deno.test('Serve Static middleware', async () => {
   app.get(
     '/static/*',
     serveStatic({
-      root: './runtime_tests/deno',
+      root: './runtime-tests/deno',
       onNotFound,
     })
   )
@@ -89,7 +89,7 @@ Deno.test('Serve Static middleware', async () => {
   app.get(
     '/dot-static/*',
     serveStatic({
-      root: './runtime_tests/deno',
+      root: './runtime-tests/deno',
       rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
     })
   )

@@ -230,6 +230,18 @@ describe('Middleware adapter for Cloudflare Pages', () => {
     await expect(handler(eventContext)).rejects.toThrowError('Something went wrong')
     expect(next).not.toHaveBeenCalled()
   })
+
+  it('Should set the data in eventContext.data', async () => {
+    const next = vi.fn()
+    const eventContext = createEventContext({ next })
+    const handler = handleMiddleware(async (c, next) => {
+      c.env.eventContext.data.user = 'Joe'
+      await next()
+    })
+    expect(eventContext.data.user).toBeUndefined()
+    await handler(eventContext)
+    expect(eventContext.data.user).toBe('Joe')
+  })
 })
 
 describe('serveStatic()', () => {

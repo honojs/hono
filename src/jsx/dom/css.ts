@@ -120,7 +120,6 @@ export const createCssJsxDomObjects: CreateCssJsxDomObjectsType = ({ id }) => {
     },
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Style: FC<PropsWithChildren<void>> = ({ children }) =>
     ({
       tag: 'style',
@@ -173,7 +172,6 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
   const [cssObject, Style] = createCssJsxDomObjects({ id })
 
   const newCssClassNameObject = (cssClassName: CssClassName): string => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     cssClassName.toString = cssObject.toString
     return cssClassName as unknown as string
   }

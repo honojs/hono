@@ -1,13 +1,13 @@
+import { raw } from '../../helper/html'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
 import { JSXNode, getNameSpaceContext } from '../base'
-import { useContext } from '../context'
 import type { Child, Props } from '../base'
-import type { FC, PropsWithChildren } from '../types'
-import { raw } from '../../helper/html'
-import { dataPrecedenceAttr, deDupeKeyMap } from './common'
-import { PERMALINK } from '../constants'
 import { toArray } from '../children'
+import { PERMALINK } from '../constants'
+import { useContext } from '../context'
 import type { IntrinsicElements } from '../intrinsic-elements'
+import type { FC, PropsWithChildren } from '../types'
+import { dataPrecedenceAttr, deDupeKeyMap } from './common'
 
 const metaTagMap: WeakMap<
   object,

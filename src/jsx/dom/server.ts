@@ -3,10 +3,10 @@
  * This module provides APIs for `hono/jsx/server`, which is compatible with `react-dom/server`.
  */
 
+import type { HtmlEscapedString } from '../../utils/html'
 import type { Child } from '../base'
 import { renderToReadableStream as renderToReadableStreamHono } from '../streaming'
 import version from './'
-import type { HtmlEscapedString } from '../../utils/html'
 
 export interface RenderToStringOptions {
   identifierPrefix?: string

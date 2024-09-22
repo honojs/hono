@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+import { stat } from 'node:fs/promises'
 import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
 import type { ServeStaticOptions } from '../../middleware/serve-static'
 import type { Env, MiddlewareHandler } from '../../types'
-import { stat } from 'node:fs/promises'
 
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E>

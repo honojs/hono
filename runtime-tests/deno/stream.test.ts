@@ -1,6 +1,6 @@
-import { Hono } from '../../src/hono.ts'
-import { stream, streamSSE } from '../../src/helper/streaming/index.ts'
 import { assertEquals } from '@std/assert'
+import { stream, streamSSE } from '../../src/helper/streaming/index.ts'
+import { Hono } from '../../src/hono.ts'
 
 Deno.test('Shuld call onAbort via stream', async () => {
   const app = new Hono()

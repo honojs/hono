@@ -1,6 +1,6 @@
 import { Context } from '../../context'
-import { getConnInfo } from './conninfo'
 import type { AddressType } from '../../helper/conninfo'
+import { getConnInfo } from './conninfo'
 
 const createRandomBunServer = ({
   address = Math.random().toString(),
