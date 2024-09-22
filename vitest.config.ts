@@ -22,6 +22,7 @@ export default defineConfig({
         'runtime-tests',
         'build.ts',
         'src/test-utils',
+        'perf-measures',
 
         // types are compile-time only, so their coverage cannot be measured
         'src/**/types.ts',
