@@ -146,7 +146,11 @@ export interface HandlerInterface<
   >(
     path: P,
     handler: H<E2, MergedPath, I, R>
-  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>, BasePath>
+  ): Hono<
+    E,
+    ExcludeEmptyObject<S | ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>>,
+    BasePath
+  >
 
   // app.get(handler x 3)
   <
@@ -1817,24 +1821,19 @@ type ExtractParams<Path extends string> = string extends Path
 
 type FlattenIfIntersect<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
-export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = Simplify<{
-  [P in keyof OrigSchema as MergePath<SubPath, P & string>]: {
-    [M in keyof OrigSchema[P]]: MergeEndpointParamsWithPath<OrigSchema[P][M], SubPath>
-  }
-}>
-
-type MergeEndpointParamsWithPath<T, SubPath extends string> = T extends {
-  input: infer Input
-  output: infer Output
-  outputFormat: infer OutputFormat
-  status: infer Status
+export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = {
+  [P in keyof OrigSchema as MergePath<SubPath, P & string>]:
+      [OrigSchema[P]] extends [Record<string, Endpoint>]
+      ? { [M in keyof OrigSchema[P]]: MergeEndpointParamsWithPath<OrigSchema[P][M], SubPath> }
+      : never
 }
-  ? {
-      input: Input extends { param: infer _ }
+
+type MergeEndpointParamsWithPath<T extends Endpoint, SubPath extends string> = T extends unknown ? {
+      input: T['input'] extends { param: infer _ }
         ? ExtractParams<SubPath> extends never
-          ? Input
+          ? T['input']
           : FlattenIfIntersect<
-              Input & {
+              T['input'] & {
                 param: {
                   // Maps extracted keys, stripping braces, to a string-typed record.
                   [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
@@ -1844,8 +1843,8 @@ type MergeEndpointParamsWithPath<T, SubPath extends string> = T extends {
               }
             >
         : RemoveBlankRecord<ExtractParams<SubPath>> extends never
-        ? Input
-        : Input & {
+        ? T['input']
+        : T['input'] & {
             // Maps extracted keys, stripping braces, to a string-typed record.
             param: {
               [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
@@ -1853,12 +1852,11 @@ type MergeEndpointParamsWithPath<T, SubPath extends string> = T extends {
                 : K]: string
             }
           }
-      output: Output
-      outputFormat: OutputFormat
-      status: Status
+      output: T['output']
+      outputFormat: T['outputFormat']
+      status: T['status']
     }
-  : never
-
+    : never
 export type AddParam<I, P extends string> = ParamKeys<P> extends never
   ? I
   : I extends { param: infer _ }
@@ -1987,6 +1985,8 @@ type EnvOrEmpty<T> = T extends Env ? (Env extends T ? {} : T) : T
 type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...infer Rest]
   ? IfAnyThenEmptyObject<EnvOrEmpty<Head>> & IntersectNonAnyTypes<Rest>
   : {}
+
+type ExcludeEmptyObject<T> = T extends {} ? ({} extends T ? never : T) : T
 
 ////////////////////////////////////////
 //////                            //////

@@ -212,7 +212,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   >(
     path: SubPath,
     app: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
+  ): Hono<E, ExcludeEmptyObject<MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S>, BasePath> {
     const subApp = this.basePath(path)
     app.routes.map((r) => {
       let handler
@@ -519,5 +519,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     })
   }
 }
+export type ExcludeEmptyObject<T> = T extends {} ? ({} extends T ? never : T) : T
+
 
 export { Hono as HonoBase }
