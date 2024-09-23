@@ -112,7 +112,7 @@ export interface HandlerInterface<
 > {
   // app.get(handler)
   <
-    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    P extends string = ExtractStringKey<S> extends never ? BasePath : ExtractStringKey<S>,
     I extends Input = BlankInput,
     R extends HandlerResponse<any> = any,
     E2 extends Env = E
@@ -122,7 +122,7 @@ export interface HandlerInterface<
 
   // app.get(handler x2)
   <
-    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    P extends string = ExtractStringKey<S> extends never ? BasePath : ExtractStringKey<S>,
     I extends Input = BlankInput,
     I2 extends Input = I,
     R extends HandlerResponse<any> = any,
@@ -150,7 +150,7 @@ export interface HandlerInterface<
 
   // app.get(handler x 3)
   <
-    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    P extends string = ExtractStringKey<S> extends never ? BasePath : ExtractStringKey<S>,
     R extends HandlerResponse<any> = any,
     I extends Input = BlankInput,
     I2 extends Input = I,
@@ -182,7 +182,7 @@ export interface HandlerInterface<
 
   // app.get(handler x 4)
   <
-    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    P extends string = ExtractStringKey<S> extends never ? BasePath : ExtractStringKey<S>,
     R extends HandlerResponse<any> = any,
     I extends Input = BlankInput,
     I2 extends Input = I,
@@ -218,7 +218,7 @@ export interface HandlerInterface<
 
   // app.get(handler x 5)
   <
-    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    P extends string = ExtractStringKey<S> extends never ? BasePath : ExtractStringKey<S>,
     R extends HandlerResponse<any> = any,
     I extends Input = BlankInput,
     I2 extends Input = I,
@@ -263,7 +263,7 @@ export interface HandlerInterface<
 
   // app.get(handler x 6)
   <
-    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    P extends string = ExtractStringKey<S> extends never ? BasePath : ExtractStringKey<S>,
     R extends HandlerResponse<any> = any,
     I extends Input = BlankInput,
     I2 extends Input = I,
@@ -320,7 +320,7 @@ export interface HandlerInterface<
 
   // app.get(handler x 7)
   <
-    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    P extends string = ExtractStringKey<S> extends never ? BasePath : ExtractStringKey<S>,
     R extends HandlerResponse<any> = any,
     I extends Input = BlankInput,
     I2 extends Input = I,
@@ -383,7 +383,7 @@ export interface HandlerInterface<
 
   // app.get(handler x 8)
   <
-    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    P extends string = ExtractStringKey<S> extends never ? BasePath : ExtractStringKey<S>,
     R extends HandlerResponse<any> = any,
     I extends Input = BlankInput,
     I2 extends Input = I,
@@ -452,7 +452,7 @@ export interface HandlerInterface<
 
   // app.get(handler x 9)
   <
-    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    P extends string = ExtractStringKey<S> extends never ? BasePath : ExtractStringKey<S>,
     R extends HandlerResponse<any> = any,
     I extends Input = BlankInput,
     I2 extends Input = I,
@@ -527,7 +527,7 @@ export interface HandlerInterface<
 
   // app.get(handler x 10)
   <
-    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    P extends string = ExtractStringKey<S> extends never ? BasePath : ExtractStringKey<S>,
     R extends HandlerResponse<any> = any,
     I extends Input = BlankInput,
     I2 extends Input = I,
@@ -649,7 +649,7 @@ export interface HandlerInterface<
 
   // app.get(...handlers[])
   <
-    P extends string = ExtractKey<S> extends never ? BasePath : ExtractKey<S>,
+    P extends string = ExtractStringKey<S> extends never ? BasePath : ExtractStringKey<S>,
     I extends Input = BlankInput,
     R extends HandlerResponse<any> = any
   >(
@@ -681,21 +681,19 @@ export interface MiddlewareHandlerInterface<
 > {
   //// app.use(...handlers[])
   <E2 extends Env = E>(
-    ...handlers: MiddlewareHandler<E2, MergePath<BasePath, ExtractKey<S>>>[]
+    ...handlers: MiddlewareHandler<E2, MergePath<BasePath, ExtractStringKey<S>>>[]
   ): Hono<IntersectNonAnyTypes<[E, E2]>, S, BasePath>
 
   // app.use(handler)
-  <E2 extends Env = E>(handler: MiddlewareHandler<E2, MergePath<BasePath, ExtractKey<S>>>): Hono<
-    IntersectNonAnyTypes<[E, E2]>,
-    S,
-    BasePath
-  >
+  <E2 extends Env = E>(
+    handler: MiddlewareHandler<E2, MergePath<BasePath, ExtractStringKey<S>>>
+  ): Hono<IntersectNonAnyTypes<[E, E2]>, S, BasePath>
 
   // app.use(handler x2)
   <
     E2 extends Env = E,
     E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
-    P extends string = MergePath<BasePath, ExtractKey<S>>
+    P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
     ...handlers: [MiddlewareHandler<E2, P>, MiddlewareHandler<E3, P>]
   ): Hono<IntersectNonAnyTypes<[E, E2, E3]>, S, BasePath>
@@ -715,7 +713,7 @@ export interface MiddlewareHandlerInterface<
     E2 extends Env = E,
     E3 extends Env = E,
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
-    P extends string = MergePath<BasePath, ExtractKey<S>>
+    P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
     ...handlers: [MiddlewareHandler<E2, P>, MiddlewareHandler<E3, P>, MiddlewareHandler<E4, P>]
   ): Hono<IntersectNonAnyTypes<[E, E2, E3, E4]>, S, BasePath>
@@ -737,7 +735,7 @@ export interface MiddlewareHandlerInterface<
     E3 extends Env = E,
     E4 extends Env = E,
     E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
-    P extends string = MergePath<BasePath, ExtractKey<S>>
+    P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
     ...handlers: [
       MiddlewareHandler<E2, P>,
@@ -766,7 +764,7 @@ export interface MiddlewareHandlerInterface<
     E4 extends Env = E,
     E5 extends Env = E,
     E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
-    P extends string = MergePath<BasePath, ExtractKey<S>>
+    P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
     ...handlers: [
       MiddlewareHandler<E2, P>,
@@ -803,7 +801,7 @@ export interface MiddlewareHandlerInterface<
     E5 extends Env = E,
     E6 extends Env = E,
     E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
-    P extends string = MergePath<BasePath, ExtractKey<S>>
+    P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
     ...handlers: [
       MiddlewareHandler<E2, P>,
@@ -848,7 +846,7 @@ export interface MiddlewareHandlerInterface<
     E6 extends Env = E,
     E7 extends Env = E,
     E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
-    P extends string = MergePath<BasePath, ExtractKey<S>>
+    P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
     ...handlers: [
       MiddlewareHandler<E2, P>,
@@ -897,7 +895,7 @@ export interface MiddlewareHandlerInterface<
     E7 extends Env = E,
     E8 extends Env = E,
     E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
-    P extends string = MergePath<BasePath, ExtractKey<S>>
+    P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
     ...handlers: [
       MiddlewareHandler<E2, P>,
@@ -950,7 +948,7 @@ export interface MiddlewareHandlerInterface<
     E8 extends Env = E,
     E9 extends Env = E,
     E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
-    P extends string = MergePath<BasePath, ExtractKey<S>>
+    P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
     ...handlers: [
       MiddlewareHandler<E2, P>,
@@ -1007,7 +1005,7 @@ export interface MiddlewareHandlerInterface<
     E9 extends Env = E,
     E10 extends Env = E,
     E11 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>,
-    P extends string = MergePath<BasePath, ExtractKey<S>>
+    P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
     ...handlers: [
       MiddlewareHandler<E2, P>,
@@ -1749,11 +1747,7 @@ export interface OnHandlerInterface<
   ): Hono<E, S & ToSchema<string, string, I, MergeTypedResponse<R>>, BasePath>
 }
 
-type ExtractKey<S> = S extends Record<infer Key, unknown>
-  ? Key extends string
-    ? Key
-    : never
-  : string
+type ExtractStringKey<S> = keyof S & string
 
 ////////////////////////////////////////
 //////                            //////
