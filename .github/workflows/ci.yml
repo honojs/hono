@@ -180,9 +180,6 @@ jobs:
 
   perf-measures-type-check-on-pr:
     runs-on: ubuntu-latest
-    permissions:
-      contents: 'read'
-      pull-requests: 'write'
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
@@ -201,16 +198,12 @@ jobs:
       - run: |
           {
             echo 'COMPARISON<<EOF'
-            bun scripts/process-results.ts
+            bun scripts/process-results.ts | column -s '|' -t
             echo 'EOF'
           } >> "$GITHUB_ENV"
         working-directory: perf-measures/type-check
       - run: echo "$COMPARISON"
-    # remove the comment out after we make sure that caching is working
-    # - uses: thollander/actions-comment-pull-request@v2
-    #   with:
-    #     comment_tag: perf-measures/type-check
-    #     message: ${{ env.COMPARISON }}
+        name: display comparison
 
 
   perf-measures-type-check-on-main:
