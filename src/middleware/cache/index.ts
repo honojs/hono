@@ -16,6 +16,7 @@ import type { MiddlewareHandler } from '../../types'
  * @param {boolean} [options.wait=false] - A boolean indicating if Hono should wait for the Promise of the `cache.put` function to resolve before continuing with the request. Required to be true for the Deno environment.
  * @param {string} [options.cacheControl] - A string of directives for the `Cache-Control` header.
  * @param {string | string[]} [options.vary] - Sets the `Vary` header in the response. If the original response header already contains a `Vary` header, the values are merged, removing any duplicates.
+ * @param {number} [options.duration] - A number of seconds to cache the response.
  * @param {Function} [options.keyGenerator] - Generates keys for every request in the `cacheName` store. This can be used to cache data based on request parameters or context parameters.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If the `vary` option includes "*".
@@ -36,6 +37,7 @@ export const cache = (options: {
   wait?: boolean
   cacheControl?: string
   vary?: string | string[]
+  duration?: number
   keyGenerator?: (c: Context) => Promise<string> | string
 }): MiddlewareHandler => {
   if (!globalThis.caches) {
@@ -72,7 +74,9 @@ export const cache = (options: {
         let [name, value] = directive.trim().split('=', 2)
         name = name.toLowerCase()
         if (!existingDirectives.includes(name)) {
-          c.header('Cache-Control', `${name}${value ? `=${value}` : ''}`, { append: true })
+          c.header('Cache-Control', `${name}${value ? `=${value}` : ''}`, {
+            append: true,
+          })
         }
       }
     }
@@ -98,6 +102,27 @@ export const cache = (options: {
     }
   }
 
+  const internalCacheExpires = 'Hono-Cache-Expires'
+
+  // Create a new response for avoiding the immutable response.
+  const createNewResponse = (res: Response, callbackFn: (res: Response) => void): Response => {
+    try {
+      callbackFn(res)
+    } catch (e) {
+      if (e instanceof TypeError && e.message.includes('immutable')) {
+        // `res` is immutable (probably a response from a fetch API), so retry with a new response.
+        res = new Response(res.body, {
+          headers: res.headers,
+          status: res.status,
+        })
+        callbackFn(res)
+      } else {
+        throw e
+      }
+    }
+    return res
+  }
+
   return async function cache(c, next) {
     let key = c.req.url
     if (options.keyGenerator) {
@@ -109,7 +134,15 @@ export const cache = (options: {
     const cache = await caches.open(cacheName)
     const response = await cache.match(key)
     if (response) {
-      return new Response(response.body, response)
+      if (typeof options.duration === 'number') {
+        const expires = Number(response.headers.get(internalCacheExpires))
+        if (expires > Date.now()) {
+          const res = createNewResponse(response, (res) => res.headers.delete(internalCacheExpires))
+          return res
+        }
+      } else {
+        return response
+      }
     }
 
     await next()
@@ -117,7 +150,12 @@ export const cache = (options: {
       return
     }
     addHeader(c)
-    const res = c.res.clone()
+    let res = c.res.clone()
+
+    if (options.duration && options.duration > 0) {
+      const expiresTime = String(Date.now() + options.duration * 1000)
+      res = createNewResponse(res, (res) => res.headers.set(internalCacheExpires, expiresTime))
+    }
     if (options.wait) {
       await cache.put(key, res)
     } else {

@@ -83,10 +83,10 @@ describe('Basic Auth Middleware', () => {
 describe('Serve Static Middleware', () => {
   const app = new Hono()
   const onNotFound = vi.fn(() => {})
-  app.all('/favicon.ico', serveStatic({ path: './runtime-tests/bun/favicon.ico' }))
+  app.all('/favicon.ico', serveStatic({ path: './runtime_tests/bun/favicon.ico' }))
   app.all(
     '/favicon-notfound.ico',
-    serveStatic({ path: './runtime-tests/bun/favicon-notfound.ico', onNotFound })
+    serveStatic({ path: './runtime_tests/bun/favicon-notfound.ico', onNotFound })
   )
   app.use('/favicon-notfound.ico', async (c, next) => {
     await next()
@@ -95,14 +95,14 @@ describe('Serve Static Middleware', () => {
   app.get(
     '/static/*',
     serveStatic({
-      root: './runtime-tests/bun/',
+      root: './runtime_tests/bun/',
       onNotFound,
     })
   )
   app.get(
     '/dot-static/*',
     serveStatic({
-      root: './runtime-tests/bun/',
+      root: './runtime_tests/bun/',
       rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
     })
   )
@@ -121,7 +121,7 @@ describe('Serve Static Middleware', () => {
     expect(res.status).toBe(404)
     expect(res.headers.get('X-Custom')).toBe('Bun')
     expect(onNotFound).toHaveBeenCalledWith(
-      './runtime-tests/bun/favicon-notfound.ico',
+      './runtime_tests/bun/favicon-notfound.ico',
       expect.anything()
     )
   })

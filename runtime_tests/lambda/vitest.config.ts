@@ -8,11 +8,15 @@ export default defineConfig({
       NAME: 'Node',
     },
     globals: true,
-    include: ['**/runtime-tests/node/**/*.+(ts|tsx|js)'],
-    exclude: ['**/runtime-tests/node/vitest.config.ts'],
+    include: ['**/runtime_tests/lambda/**/*.+(ts|tsx|js)'],
+    exclude: [
+      '**/runtime_tests/lambda/vitest.config.ts',
+      '**/runtime_tests/lambda/mock.ts',
+      '**/runtime_tests/lambda/stream-mock.ts',
+    ],
     coverage: {
       ...config.test?.coverage,
-      reportsDirectory: './coverage/raw/runtime-node',
+      reportsDirectory: './coverage/raw/runtime-lambda',
     },
   },
 })

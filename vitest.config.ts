@@ -19,7 +19,7 @@ export default defineConfig({
       exclude: [
         ...(configDefaults.coverage.exclude ?? []),
         'benchmarks',
-        'runtime-tests',
+        'runtime_tests',
         'build.ts',
         'src/test-utils',
         'perf-measures',
