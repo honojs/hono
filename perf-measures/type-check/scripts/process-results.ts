@@ -5,7 +5,7 @@ async function main() {
     const previousResult = await fs.readFile('./previous-result.txt')
         .then((data) => data.toString().split('\n'))
         .catch(() => null)
-    const table = ['|| Current | Previous |', '|---|---|---|']    
+    const table = ['| | Current | Previous |', '| --- | --- | --- |']
     for (const [i, line] of currentResult.entries()) {
         if (line === '') {continue}
         const [name, value] = line.split(':')
