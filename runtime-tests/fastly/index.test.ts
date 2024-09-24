@@ -1,4 +1,4 @@
-import { SHA256 } from 'crypto-js'
+import { createHash } from 'crypto'
 import { getRuntimeKey } from '../../src/helper/adapter'
 import { Hono } from '../../src/index'
 import { basicAuth } from '../../src/middleware/basic-auth'
@@ -62,7 +62,7 @@ describe('Basic Auth Middleware with `hashFunction`', () => {
     basicAuth({
       username,
       password,
-      hashFunction: (m: string) => SHA256(m).toString(),
+      hashFunction: (m: string) => createHash('sha256').update(m).digest('hex'),
     })
   )
 
