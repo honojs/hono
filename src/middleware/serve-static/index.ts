@@ -39,6 +39,18 @@ export const serveStatic = <E extends Env = Env>(
     isDir?: (path: string) => boolean | undefined | Promise<boolean | undefined>
   }
 ): MiddlewareHandler => {
+  let isAbsoluteRoot = false
+  let root: string
+
+  if (options.root) {
+    if (options.root.startsWith('/')) {
+      isAbsoluteRoot = true
+      root = new URL(`file://${options.root}`).pathname
+    } else {
+      root = options.root
+    }
+  }
+
   return async (c, next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
@@ -48,7 +60,6 @@ export const serveStatic = <E extends Env = Env>(
 
     let filename = options.path ?? decodeURI(c.req.path)
     filename = options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename
-    const root = options.root
 
     // If it was Directory, force `/` on the end.
     if (!filename.endsWith('/') && options.isDir) {
@@ -69,6 +80,10 @@ export const serveStatic = <E extends Env = Env>(
 
     if (!path) {
       return await next()
+    }
+
+    if (isAbsoluteRoot) {
+      path = '/' + path
     }
 
     const getContent = options.getContent

@@ -52,5 +52,9 @@ export const getFilePathWithoutDefaultDocument = (
   let path = root ? root + '/' + filename : filename
   path = path.replace(/^\.?\//, '')
 
+  if (root[0] !== '/' && path[0] === '/') {
+    return
+  }
+
   return path
 }
