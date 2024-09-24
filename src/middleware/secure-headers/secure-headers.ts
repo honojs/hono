@@ -65,6 +65,7 @@ type overridableHeader = boolean | string
 
 interface SecureHeadersOptions {
   contentSecurityPolicy?: ContentSecurityPolicyOptions
+  contentSecurityPolicyReportOnly?: ContentSecurityPolicyOptions
   crossOriginEmbedderPolicy?: overridableHeader
   crossOriginResourcePolicy?: overridableHeader
   crossOriginOpenerPolicy?: overridableHeader
@@ -148,6 +149,7 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
  *
  * @param {Partial<SecureHeadersOptions>} [customOptions] - The options for the secure headers middleware.
  * @param {ContentSecurityPolicyOptions} [customOptions.contentSecurityPolicy] - Settings for the Content-Security-Policy header.
+ * @param {ContentSecurityPolicyOptions} [customOptions.contentSecurityPolicyReportOnly] - Settings for the Content-Security-Policy-Report-Only header.
  * @param {overridableHeader} [customOptions.crossOriginEmbedderPolicy=false] - Settings for the Cross-Origin-Embedder-Policy header.
  * @param {overridableHeader} [customOptions.crossOriginResourcePolicy=true] - Settings for the Cross-Origin-Resource-Policy header.
  * @param {overridableHeader} [customOptions.crossOriginOpenerPolicy=true] - Settings for the Cross-Origin-Opener-Policy header.
@@ -183,6 +185,14 @@ export const secureHeaders = (customOptions?: SecureHeadersOptions): MiddlewareH
       callbacks.push(callback)
     }
     headersToSet.push(['Content-Security-Policy', value as string])
+  }
+
+  if (options.contentSecurityPolicyReportOnly) {
+    const [callback, value] = getCSPDirectives(options.contentSecurityPolicyReportOnly)
+    if (callback) {
+      callbacks.push(callback)
+    }
+    headersToSet.push(['Content-Security-Policy-Report-Only', value as string])
   }
 
   if (options.permissionsPolicy && Object.keys(options.permissionsPolicy).length > 0) {
@@ -258,7 +268,10 @@ function getCSPDirectives(
     : [
         (ctx, headersToSet) =>
           headersToSet.map((values) => {
-            if (values[0] === 'Content-Security-Policy') {
+            if (
+              values[0] === 'Content-Security-Policy' ||
+              values[0] === 'Content-Security-Policy-Report-Only'
+            ) {
               const clone = values[1].slice() as unknown as string[]
               callbacks.forEach((cb) => {
                 cb(ctx, clone)
