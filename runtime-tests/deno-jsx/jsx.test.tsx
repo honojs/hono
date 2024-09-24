@@ -110,3 +110,57 @@ Deno.test('JSX: css', async () => {
     '<html><head><style id="hono-css">.css-3142110215{color:red}</style></head><body><div class="css-3142110215"></div></body></html>'
   )
 })
+
+Deno.test('JSX: normalize key', async () => {
+  const className = <div className='foo'></div>
+  const htmlFor = <div htmlFor='foo'></div>
+  const crossOrigin = <div crossOrigin='foo'></div>
+  const httpEquiv = <div httpEquiv='foo'></div>
+  const itemProp = <div itemProp='foo'></div>
+  const fetchPriority = <div fetchPriority='foo'></div>
+  const noModule = <div noModule='foo'></div>
+  const formAction = <div formAction='foo'></div>
+
+  assertEquals(className.toString(), '<div class="foo"></div>')
+  assertEquals(htmlFor.toString(), '<div for="foo"></div>')
+  assertEquals(crossOrigin.toString(), '<div crossorigin="foo"></div>')
+  assertEquals(httpEquiv.toString(), '<div http-equiv="foo"></div>')
+  assertEquals(itemProp.toString(), '<div itemprop="foo"></div>')
+  assertEquals(fetchPriority.toString(), '<div fetchpriority="foo"></div>')
+  assertEquals(noModule.toString(), '<div nomodule="foo"></div>')
+  assertEquals(formAction.toString(), '<div formaction="foo"></div>')
+})
+
+Deno.test('JSX: null or undefined', async () => {
+  const nullHtml = <div className={null}></div>
+  const undefinedHtml = <div className={undefined}></div>
+
+  // react-jsx : <div>
+  // precompile : <div > // Extra whitespace is allowed because it is a specification.
+
+  assertEquals(nullHtml.toString().replace(/\s+/g, ''), '<div></div>')
+  assertEquals(undefinedHtml.toString().replace(/\s+/g, ''), '<div></div>')
+})
+
+Deno.test('JSX: boolean attributes', async () => {
+  const trueHtml = <div disabled={true}></div>
+  const falseHtml = <div disabled={false}></div>
+
+  // output is different, but semantics as HTML is the same, so both are OK
+  // react-jsx : <div disabled="">
+  // precompile : <div disabled>
+
+  assertEquals(trueHtml.toString().replace('=""', ''), '<div disabled></div>')
+  assertEquals(falseHtml.toString(), '<div></div>')
+})
+
+Deno.test('JSX: number', async () => {
+  const html = <div tabindex={1}></div>
+
+  assertEquals(html.toString(), '<div tabindex="1"></div>')
+})
+
+Deno.test('JSX: style', async () => {
+  const html = <div style={{ fontSize: '12px', color: null }}></div>
+  assertEquals(html.toString(), '<div style="font-size:12px"></div>')
+})
