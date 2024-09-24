@@ -1,4 +1,4 @@
-import { SHA256 as sha256CryptoJS } from 'crypto-js'
+import { createHash } from 'crypto'
 import { bufferToFormData, bufferToString, equal, timingSafeEqual } from './buffer'
 
 describe('equal', () => {
@@ -42,7 +42,11 @@ describe('buffer', () => {
     expect(await timingSafeEqual(undefined, undefined)).toBe(true)
     expect(await timingSafeEqual(true, true)).toBe(true)
     expect(await timingSafeEqual(false, false)).toBe(true)
-    expect(await timingSafeEqual(true, true, (d: string) => sha256CryptoJS(d).toString()))
+    expect(
+      await timingSafeEqual(true, true, (d: boolean) =>
+        createHash('sha256').update(d.toString()).digest('hex')
+      )
+    )
   })
 
   it('negative', async () => {
