@@ -94,6 +94,7 @@ export const every = (...middleware: (MiddlewareHandler | Condition)[]): Middlew
     if (res === false) {
       throw new Error('Unmet condition')
     }
+    return res
   })
 
   const handler = async (c: Context, next: Next) =>

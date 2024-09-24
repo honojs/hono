@@ -150,6 +150,22 @@ describe('every', () => {
     expect(await res.text()).toBe('oops')
     expect(middleware2).not.toBeCalled()
   })
+
+  it('Should return the same response a middleware returns if it short-circuits the chain', async () => {
+    const middleware1: MiddlewareHandler = async (c) => {
+      return c.text('Hello Middleware 1')
+    }
+    const middleware2 = vi.fn(nextMiddleware)
+
+    app.use('/', every(middleware1, middleware2))
+    app.get('/', (c) => {
+      return c.text('Hello World')
+    })
+    const res = await app.request('http://localhost/')
+
+    expect(await res.text()).toBe('Hello Middleware 1')
+    expect(middleware2).not.toBeCalled()
+  })
 })
 
 describe('except', () => {
