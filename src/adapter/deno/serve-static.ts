@@ -20,7 +20,7 @@ export const serveStatic = <E extends Env = Env>(
       }
     }
     const pathResolve = (path: string) => {
-      return `./${path}`
+      return path.startsWith('/') ? path : `./${path}`
     }
     const isDir = (path: string) => {
       let isDir
