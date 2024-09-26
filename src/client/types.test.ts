@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { expectTypeOf } from 'vitest'
 import { Hono } from '..'
 import { upgradeWebSocket } from '../adapter/deno/websocket'
