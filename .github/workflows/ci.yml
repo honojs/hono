@@ -32,10 +32,12 @@ jobs:
           pattern: coverage-*
           merge-multiple: true
           path: ./coverage
+      - run: sudo apt-get update && sudo apt-get install -y lcov
+      - run: lcov $(find coverage -name '*.info' -printf '-a %p ') -o coverage/all-lcov.info
       - uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
-          directory: ./coverage
+          file: ./coverage/all-lcov.info
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
