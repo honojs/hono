@@ -21,6 +21,7 @@ jobs:
       - main
       - fastly
       - node
+      - deno
       - workerd
       - lambda
       - lambda-edge
@@ -80,6 +81,8 @@ jobs:
       - run: env NAME=Deno deno test --coverage=coverage/raw/deno-runtime --allow-read --allow-env --allow-write --allow-net -c runtime-tests/deno/deno.json runtime-tests/deno
       - run: deno test -c runtime-tests/deno-jsx/deno.precompile.json --coverage=coverage/raw/deno-precompile-jsx runtime-tests/deno-jsx
       - run: deno test -c runtime-tests/deno-jsx/deno.react-jsx.json --coverage=coverage/raw/deno-react-jsx runtime-tests/deno-jsx
+      - run: grep -R '"url":' coverage | grep -v runtime-tests | sed -e 's/.*file:..//;s/.,//' | xargs deno cache --unstable-sloppy-imports
+      - run: deno coverage --lcov | sed -e 's#SF:.*/src/#SF:src/#' > coverage/deno-runtime-coverage-lcov.info
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-deno
