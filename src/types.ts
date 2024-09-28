@@ -146,11 +146,7 @@ export interface HandlerInterface<
   >(
     path: P,
     handler: H<E2, MergedPath, I, R>
-  ): Hono<
-    E,
-    S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>,
-    BasePath
-  >
+  ): Hono<E, S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>, BasePath>
 
   // app.get(handler x 3)
   <
@@ -1822,13 +1818,15 @@ type ExtractParams<Path extends string> = string extends Path
 type FlattenIfIntersect<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
 export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = {
-  [P in keyof OrigSchema as MergePath<SubPath, P & string>]:
-      [OrigSchema[P]] extends [Record<string, Endpoint>]
-      ? { [M in keyof OrigSchema[P]]: MergeEndpointParamsWithPath<OrigSchema[P][M], SubPath> }
-      : never
+  [P in keyof OrigSchema as MergePath<SubPath, P & string>]: [OrigSchema[P]] extends [
+    Record<string, Endpoint>
+  ]
+    ? { [M in keyof OrigSchema[P]]: MergeEndpointParamsWithPath<OrigSchema[P][M], SubPath> }
+    : never
 }
 
-type MergeEndpointParamsWithPath<T extends Endpoint, SubPath extends string> = T extends unknown ? {
+type MergeEndpointParamsWithPath<T extends Endpoint, SubPath extends string> = T extends unknown
+  ? {
       input: T['input'] extends { param: infer _ }
         ? ExtractParams<SubPath> extends never
           ? T['input']
@@ -1856,7 +1854,7 @@ type MergeEndpointParamsWithPath<T extends Endpoint, SubPath extends string> = T
       outputFormat: T['outputFormat']
       status: T['status']
     }
-    : never
+  : never
 export type AddParam<I, P extends string> = ParamKeys<P> extends never
   ? I
   : I extends { param: infer _ }
