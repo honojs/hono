@@ -148,7 +148,7 @@ export interface HandlerInterface<
     handler: H<E2, MergedPath, I, R>
   ): Hono<
     E,
-    ExcludeEmptyObject<S | ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>>,
+    S & ToSchema<M, MergePath<BasePath, P>, I, MergeTypedResponse<R>>,
     BasePath
   >
 
@@ -1985,8 +1985,6 @@ type EnvOrEmpty<T> = T extends Env ? (Env extends T ? {} : T) : T
 type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...infer Rest]
   ? IfAnyThenEmptyObject<EnvOrEmpty<Head>> & IntersectNonAnyTypes<Rest>
   : {}
-
-type ExcludeEmptyObject<T> = T extends {} ? ({} extends T ? never : T) : T
 
 ////////////////////////////////////////
 //////                            //////
