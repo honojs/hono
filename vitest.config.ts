@@ -15,7 +15,7 @@ export default defineConfig({
       enabled: true,
       provider: 'v8',
       reportsDirectory: './coverage/raw/default',
-      reporter: ['lcov', 'text', 'html'],
+      reporter: ['json', 'text', 'html'],
       exclude: [
         ...(configDefaults.coverage.exclude ?? []),
         'benchmarks',

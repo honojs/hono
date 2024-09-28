@@ -32,12 +32,10 @@ jobs:
           pattern: coverage-*
           merge-multiple: true
           path: ./coverage
-      - run: sudo apt-get update && sudo apt-get install -y lcov
-      - run: lcov $(find coverage -name '*.info' -printf '-a %p ') -o coverage/all-lcov.info
       - uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
-          file: ./coverage/all-lcov.info
+          directory: ./coverage
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -84,7 +82,7 @@ jobs:
       - run: deno test -c runtime-tests/deno-jsx/deno.precompile.json --coverage=coverage/raw/deno-precompile-jsx runtime-tests/deno-jsx
       - run: deno test -c runtime-tests/deno-jsx/deno.react-jsx.json --coverage=coverage/raw/deno-react-jsx runtime-tests/deno-jsx
       - run: grep -R '"url":' coverage | grep -v runtime-tests | sed -e 's/.*file:..//;s/.,//' | xargs deno cache --unstable-sloppy-imports
-      - run: deno coverage --lcov | sed -e 's#SF:.*/src/#SF:src/#' > coverage/deno-runtime-coverage-lcov.info
+      - run: deno coverage --lcov > coverage/deno-runtime-coverage-lcov.info
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-deno
