@@ -167,6 +167,77 @@ describe('Serve Static Middleware', () => {
     expect(await res.text()).toBe('Bun!')
     expect(onNotFound).not.toHaveBeenCalled()
   })
+
+  describe('Range Request', () => {
+    it('Should support a single range request', async () => {
+      const res = await app.request(
+        new Request('http://localhost/favicon.ico', { headers: { Range: 'bytes=0-4' } })
+      )
+      expect(await res.text()).toBe('\u0000\u0000\u0001\u0000\u0003')
+      expect(res.status).toBe(206)
+      expect(res.headers.get('Content-Type')).toBe('image/x-icon')
+      expect(res.headers.get('Content-Length')).toBe('5')
+      expect(res.headers.get('Content-Range')).toBe('bytes 0-4/15406')
+    })
+
+    it('Should support a single range where its end is larger than the actual size', async () => {
+      const res = await app.request(
+        new Request('http://localhost/favicon.ico', { headers: { Range: 'bytes=15400-20000' } })
+      )
+      expect(await res.text()).toBe('\u0000\u0000\u0000\u0000\u0000\u0000')
+      expect(res.status).toBe(206)
+      expect(res.headers.get('Content-Type')).toBe('image/x-icon')
+      expect(res.headers.get('Content-Length')).toBe('6')
+      expect(res.headers.get('Content-Range')).toBe('bytes 15400-15405/15406')
+    })
+
+    it('Should support omitted end', async () => {
+      const res = await app.request(
+        new Request('http://localhost/favicon.ico', { headers: { Range: 'bytes=15400-' } })
+      )
+      expect(await res.text()).toBe('\u0000\u0000\u0000\u0000\u0000\u0000')
+      expect(res.status).toBe(206)
+      expect(res.headers.get('Content-Type')).toBe('image/x-icon')
+      expect(res.headers.get('Content-Length')).toBe('6')
+      expect(res.headers.get('Content-Range')).toBe('bytes 15400-15405/15406')
+    })
+
+    it('Should support the last N bytes request', async () => {
+      const res = await app.request(
+        new Request('http://localhost/favicon.ico', { headers: { Range: 'bytes=-10' } })
+      )
+      expect(await res.text()).toBe('\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000')
+      expect(res.status).toBe(206)
+      expect(res.headers.get('Content-Type')).toBe('image/x-icon')
+      expect(res.headers.get('Content-Length')).toBe('10')
+      expect(res.headers.get('Content-Range')).toBe('bytes 15396-15405/15406')
+    })
+
+    it('Should support multiple ranges', async () => {
+      const res = await app.request(
+        new Request('http://localhost/favicon.ico', {
+          headers: { Range: 'bytes=151-200,351-400,15401-15500' },
+        })
+      )
+      await res.arrayBuffer()
+      expect(res.status).toBe(206)
+      expect(res.headers.get('Content-Type')).toBe(
+        'multipart/byteranges; boundary=PARTIAL_CONTENT_BOUNDARY'
+      )
+      expect(res.headers.get('Content-Length')).toBe('105')
+      expect(res.headers.get('Content-Range')).toBeNull()
+    })
+
+    it('Should return 404 if file no found', async () => {
+      const res = await app.request(
+        new Request('http://localhost/static/no-such-image.png', {
+          headers: { Range: 'bytes=151-200,351-400,15401-15500' },
+        })
+      )
+      await res.arrayBuffer()
+      expect(res.status).toBe(404)
+    })
+  })
 })
 
 // Bun support WebCrypto since v0.2.2

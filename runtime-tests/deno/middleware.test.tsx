@@ -147,6 +147,70 @@ Deno.test('Serve Static middleware', async () => {
   res = await app.request('http://localhost/static-absolute-root/plain.txt')
   assertEquals(res.status, 200)
   assertEquals(await res.text(), 'Deno!')
+
+  // Should support a single range request
+  res = await app.request(
+    new Request('http://localhost/favicon.ico', { headers: { Range: 'bytes=0-4' } })
+  )
+  assertEquals(await res.text(), '\u0000\u0000\u0001\u0000\u0003')
+  assertEquals(res.status, 206)
+  assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
+  assertEquals(res.headers.get('Content-Length'), '5')
+  assertEquals(res.headers.get('Content-Range'), 'bytes 0-4/15406')
+
+  // Should support a single range where its end is larger than the actual size
+  res = await app.request(
+    new Request('http://localhost/favicon.ico', { headers: { Range: 'bytes=15400-20000' } })
+  )
+  assertEquals(await res.text(), '\u0000\u0000\u0000\u0000\u0000\u0000')
+  assertEquals(res.status, 206)
+  assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
+  assertEquals(res.headers.get('Content-Length'), '6')
+  assertEquals(res.headers.get('Content-Range'), 'bytes 15400-15405/15406')
+
+  // Should support omitted end
+  res = await app.request(
+    new Request('http://localhost/favicon.ico', { headers: { Range: 'bytes=15400-' } })
+  )
+  assertEquals(await res.text(), '\u0000\u0000\u0000\u0000\u0000\u0000')
+  assertEquals(res.status, 206)
+  assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
+  assertEquals(res.headers.get('Content-Length'), '6')
+  assertEquals(res.headers.get('Content-Range'), 'bytes 15400-15405/15406')
+
+  // Should support the last N bytes request
+  res = await app.request(
+    new Request('http://localhost/favicon.ico', { headers: { Range: 'bytes=-10' } })
+  )
+  assertEquals(await res.text(), '\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000')
+  assertEquals(res.status, 206)
+  assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
+  assertEquals(res.headers.get('Content-Length'), '10')
+  assertEquals(res.headers.get('Content-Range'), 'bytes 15396-15405/15406')
+
+  // Should support multiple ranges
+  res = await app.request(
+    new Request('http://localhost/favicon.ico', {
+      headers: { Range: 'bytes=151-200,351-400,15401-15500' },
+    })
+  )
+  await res.arrayBuffer()
+  assertEquals(res.status, 206)
+  assertEquals(
+    res.headers.get('Content-Type'),
+    'multipart/byteranges; boundary=PARTIAL_CONTENT_BOUNDARY'
+  )
+  assertEquals(res.headers.get('Content-Length'), '105')
+  assertEquals(res.headers.get('Content-Range'), null)
+
+  // Should return 404 if file no found'
+  res = await app.request(
+    new Request('http://localhost/static/no-such-image.png', {
+      headers: { Range: 'bytes=151-200,351-400,15401-15500' },
+    })
+  )
+  await res.arrayBuffer()
+  assertEquals(res.status, 404)
 })
 
 Deno.test('JWT Authentication middleware', async () => {

@@ -284,4 +284,289 @@ describe('Serve Static Middleware', () => {
       expect(res.status).toBe(404)
     })
   })
+
+  describe('206 Partial Content support', async () => {
+    const getContent = vi.fn()
+    const onFound = vi.fn()
+    const onNotFound = vi.fn()
+    const close = vi.fn()
+    const partialContentSupport = vi.fn(async (path) => {
+      return {
+        size: 1000,
+        getPartialContent: (start: number, end: number) => ({
+          start,
+          end,
+          data: `Hello in ${path}`,
+        }),
+        close,
+      }
+    })
+    beforeEach(() => {
+      getContent.mockClear()
+      onFound.mockClear()
+      onNotFound.mockClear()
+      partialContentSupport.mockClear()
+      close.mockClear()
+    })
+
+    it('fallbacks to getContent if Range header can not be decoded', async () => {
+      const app = new Hono().use(
+        '*',
+        baseServeStatic({
+          getContent,
+          partialContentSupport,
+          onNotFound,
+          onFound,
+        })
+      )
+
+      const res = await app.request('/static/hello.jpg', {
+        headers: {
+          Range: 'bytes=INVALID',
+        },
+      })
+
+      expect(getContent).toBeCalledTimes(1)
+      expect(partialContentSupport).not.toBeCalled()
+      expect(res.status).toBe(404)
+      // Other parts of the response is not interesting here
+    })
+
+    // https://www.rfc-editor.org/rfc/rfc9110#name-416-range-not-satisfiable
+    it('returns 416 Range Not Satisfiable if excessive number of ranges (11 or more)', async () => {
+      const app = new Hono().use(
+        '*',
+        baseServeStatic({
+          getContent,
+          partialContentSupport,
+          onNotFound,
+          onFound,
+        })
+      )
+
+      const res416 = await app.request('/static/hello.jpg', {
+        headers: {
+          // 11 ranges is too much
+          Range: 'bytes=0-0,1-1,2-2,3-3,4-4,5-5,6-6,7-7,8-8,9-9,10-10',
+        },
+      })
+
+      expect(getContent).not.toBeCalled()
+      expect(partialContentSupport).toBeCalledTimes(1)
+      expect(res416.status).toBe(416)
+      expect(res416.headers.get('Content-Range')).toBeNull()
+      expect(res416.headers.get('Content-Length')).toMatch(/^1000$/)
+
+      const resOK = await app.request('/static/hello.jpg', {
+        headers: {
+          // 10 ranges is OK
+          Range: 'bytes=0-0,1-1,2-2,3-3,4-4,5-5,6-6,7-7,8-8,9-9',
+        },
+      })
+
+      expect(getContent).not.toBeCalled()
+      expect(partialContentSupport).toBeCalledTimes(2)
+      expect(resOK.status).toBe(206)
+    })
+
+    it('supports bytes=N-M to return a single requested range', async () => {
+      const app = new Hono().use(
+        '*',
+        baseServeStatic({
+          getContent,
+          partialContentSupport,
+          onNotFound,
+          onFound,
+        })
+      )
+
+      const res = await app.request('/static/hello.jpg', {
+        headers: {
+          Range: 'bytes=31-130',
+        },
+      })
+
+      expect(getContent).not.toBeCalled()
+      expect(partialContentSupport).toBeCalledTimes(1)
+      expect(close).toBeCalledTimes(1)
+      expect(onFound).toBeCalledTimes(1)
+      expect(onNotFound).not.toBeCalled()
+      expect(res.status).toBe(206)
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Vary')).toBeNull()
+      expect(res.headers.get('Content-Type')).toMatch(/^image\/jpeg$/)
+      expect(res.headers.get('Accept-Ranges')).toMatch(/^bytes$/)
+      expect(res.headers.get('Content-Range')).toMatch(/^bytes 31-130\/1000$/)
+      expect(res.headers.get('Content-Length')).toMatch(/^100$/)
+      expect(await res.text()).toBe('Hello in static/hello.jpg')
+    })
+
+    it('supports bytes=N- to return the remaining bytes after the first (N-1) bytes', async () => {
+      const app = new Hono().use(
+        '*',
+        baseServeStatic({
+          getContent,
+          partialContentSupport,
+          onNotFound,
+          onFound,
+        })
+      )
+
+      const res = await app.request('/static/hello.jpg', {
+        headers: {
+          Range: 'bytes=31-',
+        },
+      })
+
+      expect(getContent).not.toBeCalled()
+      expect(partialContentSupport).toBeCalledTimes(1)
+      expect(close).toBeCalledTimes(1)
+      expect(onFound).toBeCalledTimes(1)
+      expect(onNotFound).not.toBeCalled()
+      expect(res.status).toBe(206)
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Vary')).toBeNull()
+      expect(res.headers.get('Content-Type')).toMatch(/^image\/jpeg$/)
+      expect(res.headers.get('Accept-Ranges')).toMatch(/^bytes$/)
+      expect(res.headers.get('Content-Range')).toMatch(/^bytes 31-999\/1000$/)
+      expect(res.headers.get('Content-Length')).toMatch(/^969$/)
+      expect(await res.text()).toBe('Hello in static/hello.jpg')
+    })
+
+    it('supports bytes=-N to return the last N bytes', async () => {
+      const app = new Hono().use(
+        '*',
+        baseServeStatic({
+          getContent,
+          partialContentSupport,
+          onNotFound,
+          onFound,
+        })
+      )
+
+      const res = await app.request('/static/hello.jpg', {
+        headers: {
+          Range: 'bytes=-100',
+        },
+      })
+
+      expect(getContent).not.toBeCalled()
+      expect(partialContentSupport).toBeCalledTimes(1)
+      expect(close).toBeCalledTimes(1)
+      expect(onFound).toBeCalledTimes(1)
+      expect(onNotFound).not.toBeCalled()
+      expect(res.status).toBe(206)
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Vary')).toBeNull()
+      expect(res.headers.get('Content-Type')).toMatch(/^image\/jpeg$/)
+      expect(res.headers.get('Accept-Ranges')).toMatch(/^bytes$/)
+      expect(res.headers.get('Content-Range')).toMatch(/^bytes 900-999\/1000$/)
+      expect(res.headers.get('Content-Length')).toMatch(/^100$/)
+      expect(await res.text()).toBe('Hello in static/hello.jpg')
+    })
+
+    it('supports multiple ranges byte=N1-N2,N3-N4,...', async () => {
+      const partialContentSupport = vi.fn(async (path: string) => {
+        return {
+          getPartialContent: (start: number, end: number) => {
+            const data =
+              start === 101
+                ? `Hello in ${path}`
+                : start === 301
+                ? new Blob([`Hello in ${path}`]).stream()
+                : start === 501
+                ? new TextEncoder().encode(`Hello in ${path}`)
+                : null
+            return { start, end, data: data! }
+          },
+          size: 1000,
+          close,
+        }
+      })
+      const app = new Hono().use(
+        '*',
+        baseServeStatic({
+          getContent,
+          partialContentSupport,
+          onNotFound,
+          onFound,
+        })
+      )
+
+      const res = await app.request('/static/hello.jpg', {
+        headers: {
+          Range: 'bytes=101-200, 301-400, 501-600',
+        },
+      })
+
+      expect(getContent).not.toBeCalled()
+      expect(partialContentSupport).toBeCalledTimes(1)
+      expect(close).toBeCalledTimes(1)
+      expect(onFound).toBeCalledTimes(1)
+      expect(onNotFound).not.toBeCalled()
+      expect(res.status).toBe(206)
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Vary')).toBeNull()
+      expect(res.headers.get('Content-Type')).toMatch(
+        /^multipart\/byteranges; boundary=PARTIAL_CONTENT_BOUNDARY$/
+      )
+      expect(res.headers.get('Accept-Ranges')).toMatch(/^bytes$/)
+      expect(res.headers.get('Content-Range')).toBeNull()
+      expect(res.headers.get('Content-Length')).toMatch(/^300$/)
+      expect(await res.text()).toBe(
+        [
+          '--PARTIAL_CONTENT_BOUNDARY',
+          'Content-Type: image/jpeg',
+          'Content-Range: bytes 101-200/1000',
+          '',
+          'Hello in static/hello.jpg',
+          '--PARTIAL_CONTENT_BOUNDARY',
+          'Content-Type: image/jpeg',
+          'Content-Range: bytes 301-400/1000',
+          '',
+          'Hello in static/hello.jpg',
+          '--PARTIAL_CONTENT_BOUNDARY',
+          'Content-Type: image/jpeg',
+          'Content-Range: bytes 501-600/1000',
+          '',
+          'Hello in static/hello.jpg',
+          '--PARTIAL_CONTENT_BOUNDARY--',
+          '',
+        ].join('\r\n')
+      )
+    })
+
+    it('return 404 if not found', async () => {
+      const partialContentSupport = vi.fn(async () => {
+        throw new Error('Not found')
+      })
+      const app = new Hono().use(
+        '*',
+        baseServeStatic({
+          getContent,
+          partialContentSupport,
+          onNotFound,
+          onFound,
+        })
+      )
+
+      const res = await app.request('/static/hello.jpg', {
+        headers: {
+          Range: 'bytes=-100',
+        },
+      })
+
+      expect(getContent).not.toBeCalled()
+      expect(partialContentSupport).toBeCalledTimes(1)
+      expect(close).not.toBeCalled()
+      expect(onFound).not.toBeCalled()
+      expect(onNotFound).toBeCalledTimes(1)
+      expect(res.status).toBe(404)
+      expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
+      expect(res.headers.get('Accept-Ranges')).toBeNull()
+      expect(res.headers.get('Content-Range')).toBeNull()
+      expect(res.headers.get('Content-Length')).toBeNull()
+      expect(await res.text()).toBe('404 Not Found')
+    })
+  })
 })
