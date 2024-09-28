@@ -16,9 +16,8 @@ jobs:
     name: 'Coverage'
     runs-on: ubuntu-latest
     needs:
-      # bun excluded because it uses built-in test tool which does not support coverage in v8/istanbul format.
-      # refer https://github.com/oven-sh/bun/issues/4015
       - main
+      - bun
       - fastly
       - node
       - workerd

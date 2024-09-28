@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /** @jsxImportSource ../../jsx */
 import { Hono } from '../../hono'
 import { poweredBy } from '../../middleware/powered-by'
