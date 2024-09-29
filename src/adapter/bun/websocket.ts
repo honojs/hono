@@ -12,6 +12,8 @@ interface BunServerWebSocket<T> {
   close(code?: number, reason?: string): void
   data: T
   readyState: 0 | 1 | 2 | 3
+  subscribe(channel: string): void
+  unsubscribe(channel: string): void
 }
 
 interface BunWebSocketHandler<T> {
@@ -44,6 +46,12 @@ const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSContext =>
     close(code, reason) {
       ws.close(code, reason)
     },
+    subscribe(channel) {
+      ws.subscribe(channel)
+    },
+    unsubscribe(channel) {
+      ws.unsubscribe(channel)
+    }
   }
 }
 
