@@ -97,6 +97,18 @@ jobs:
         with:
           name: coverage-bun
           path: coverage/
+
+  bun-windows:
+    name: 'Bun - Windows'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: '1.1.16'
+      - run: bun install
+      - run: bun run test
+
   fastly:
     name: 'Fastly Compute'
     runs-on: ubuntu-latest
@@ -203,7 +215,6 @@ jobs:
         working-directory: perf-measures/type-check
       - run: echo "$COMPARISON"
         name: display comparison
-
 
   perf-measures-type-check-on-main:
     runs-on: ubuntu-latest
