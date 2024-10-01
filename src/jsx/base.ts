@@ -31,7 +31,7 @@ export namespace JSX {
     [tagName: string]: Props
   }
   export interface IntrinsicAttributes {
-      key?: string | number | bigint | null | undefined;
+    key?: string | number | bigint | null | undefined
   }
 }
 
