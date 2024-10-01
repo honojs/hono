@@ -106,8 +106,7 @@ jobs:
       - uses: oven-sh/setup-bun@v1
         with:
           bun-version: '1.1.16'
-      - run: bun install
-      - run: bun run test
+      - run: bun run test:bun
 
   fastly:
     name: 'Fastly Compute'
