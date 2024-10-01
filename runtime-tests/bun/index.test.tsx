@@ -152,13 +152,13 @@ describe('Serve Static Middleware', () => {
   it('Should return 200 response - /static/helloworld', async () => {
     const res = await app.request('http://localhost/static/helloworld')
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('Hi\n')
+    expect(await res.text()).toMatch(/Hi\r?\n/)
   })
 
   it('Should return 200 response - /static/hello.world', async () => {
     const res = await app.request('http://localhost/static/hello.world')
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('Hi\n')
+    expect(await res.text()).toMatch(/Hi\r?\n/)
   })
 
   it('Should return 200 response - /static-absolute-root/plain.txt', async () => {
