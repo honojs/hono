@@ -29,6 +29,17 @@ const ENCODINGS_ORDERED_KEYS = Object.keys(ENCODINGS) as (keyof typeof ENCODINGS
 const DEFAULT_DOCUMENT = 'index.html'
 const defaultPathResolve = (path: string) => path
 
+const isAbsolutePath = (path: string) => {
+  const isUnixAbsolutePath = path.startsWith('/')
+  const hasDriveLetter = /^[a-zA-Z]:\\/.test(path)
+  const isUncPath = /^\\\\[^\\]+\\[^\\]+/.test(path)
+  return isUnixAbsolutePath || hasDriveLetter || isUncPath
+}
+
+const windowsPathToUnixPath = (path: string) => {
+  return path.replace(/^[a-zA-Z]:/, '').replace(/\\/g, '/')
+}
+
 /**
  * This middleware is not directly used by the user. Create a wrapper specifying `getContent()` by the environment such as Deno or Bun.
  */
@@ -43,9 +54,10 @@ export const serveStatic = <E extends Env = Env>(
   let root: string
 
   if (options.root) {
-    if (options.root.startsWith('/')) {
+    if (isAbsolutePath(options.root)) {
       isAbsoluteRoot = true
-      root = new URL(`file://${options.root}`).pathname
+      root = windowsPathToUnixPath(options.root)
+      root = new URL(`file://${root}`).pathname
     } else {
       root = options.root
     }
