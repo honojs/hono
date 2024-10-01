@@ -20,6 +20,7 @@ describe('Text Streaming Helper', () => {
     expect(res.headers.get('content-type')).toMatch(/^text\/plain/)
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
     expect(res.headers.get('transfer-encoding')).toBe('chunked')
+    expect(res.headers.get('content-encoding')).toBe('identity')
 
     if (!res.body) {
       throw new Error('Body is null')

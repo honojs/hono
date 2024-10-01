@@ -11,5 +11,6 @@ export const streamText = (
   c.header('Content-Type', TEXT_PLAIN)
   c.header('X-Content-Type-Options', 'nosniff')
   c.header('Transfer-Encoding', 'chunked')
+  c.header('Content-Encoding', 'identity')
   return stream(c, cb, onError)
 }
