@@ -30,6 +30,9 @@ export namespace JSX {
   export interface IntrinsicElements extends IntrinsicElementsDefined {
     [tagName: string]: Props
   }
+  export interface IntrinsicAttributes {
+    key?: string | number | bigint | null | undefined
+  }
 }
 
 let nameSpaceContext: Context<string> | undefined = undefined
