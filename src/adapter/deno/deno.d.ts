@@ -8,6 +8,11 @@ declare namespace Deno {
    */
   export function mkdir(path: string, options?: { recursive?: boolean }): Promise<void>
 
+  export function lstatSync(path: string): {
+    isDirectory: boolean
+    size: number
+  }
+
   /**
    * Write a new file, with the specified path and data.
    *
@@ -24,5 +29,20 @@ declare namespace Deno {
   ): {
     response: Response
     socket: WebSocket
+  }
+
+  export function open(path: string): Promise<FsFile>
+
+  export enum SeekMode {
+    Start = 0,
+  }
+
+  export function seekSync(rid: number, offset: number, whence: SeekMode): number
+  export function readSync(rid: number, buffer: Uint8Array): number
+
+  export type FsFile = {
+    rid: number
+    readable: ReadableStream<Uint8Array>
+    close(): void
   }
 }
