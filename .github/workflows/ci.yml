@@ -195,6 +195,10 @@ jobs:
       - run: bun tsc -p tsconfig.build.json --diagnostics > result.txt
         working-directory: perf-measures/type-check
       - run: |
+          echo result.txt
+          bun scripts/process-results.ts 
+        working-directory: perf-measures/type-check
+      - run: |
           {
             echo 'COMPARISON<<EOF'
             bun scripts/process-results.ts | column -s '|' -t
