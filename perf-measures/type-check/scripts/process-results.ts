@@ -14,7 +14,8 @@ async function main() {
     }
     const metrics = []
     for await (const line of rl) {
-        if (line === '') {continue}
+        if (line === '')
+            continue
         const [name, value] = line.split(':')
         const unitMatch = value?.trim().match(/^(\d+(\.\d+)?)([a-zA-Z]*)$/)
         if (unitMatch) {
