@@ -5,9 +5,9 @@
 
 import type { MiddlewareHandler } from '../../types'
 
-export const poweredBy = (): MiddlewareHandler => {
+export const poweredBy = (serverName = 'Hono'): MiddlewareHandler => {
   return async function poweredBy(c, next) {
     await next()
-    c.res.headers.set('X-Powered-By', 'Hono')
+    c.res.headers.set('X-Powered-By', serverName)
   }
 }
