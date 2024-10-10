@@ -1817,24 +1817,21 @@ type ExtractParams<Path extends string> = string extends Path
 
 type FlattenIfIntersect<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
-export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = Simplify<{
-  [P in keyof OrigSchema as MergePath<SubPath, P & string>]: {
-    [M in keyof OrigSchema[P]]: MergeEndpointParamsWithPath<OrigSchema[P][M], SubPath>
-  }
-}>
-
-type MergeEndpointParamsWithPath<T, SubPath extends string> = T extends {
-  input: infer Input
-  output: infer Output
-  outputFormat: infer OutputFormat
-  status: infer Status
+export type MergeSchemaPath<OrigSchema extends Schema, SubPath extends string> = {
+  [P in keyof OrigSchema as MergePath<SubPath, P & string>]: [OrigSchema[P]] extends [
+    Record<string, Endpoint>
+  ]
+    ? { [M in keyof OrigSchema[P]]: MergeEndpointParamsWithPath<OrigSchema[P][M], SubPath> }
+    : never
 }
+
+type MergeEndpointParamsWithPath<T extends Endpoint, SubPath extends string> = T extends unknown
   ? {
-      input: Input extends { param: infer _ }
+      input: T['input'] extends { param: infer _ }
         ? ExtractParams<SubPath> extends never
-          ? Input
+          ? T['input']
           : FlattenIfIntersect<
-              Input & {
+              T['input'] & {
                 param: {
                   // Maps extracted keys, stripping braces, to a string-typed record.
                   [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
@@ -1844,8 +1841,8 @@ type MergeEndpointParamsWithPath<T, SubPath extends string> = T extends {
               }
             >
         : RemoveBlankRecord<ExtractParams<SubPath>> extends never
-        ? Input
-        : Input & {
+        ? T['input']
+        : T['input'] & {
             // Maps extracted keys, stripping braces, to a string-typed record.
             param: {
               [K in keyof ExtractParams<SubPath> as K extends `${infer Prefix}{${infer _}}`
@@ -1853,12 +1850,11 @@ type MergeEndpointParamsWithPath<T, SubPath extends string> = T extends {
                 : K]: string
             }
           }
-      output: Output
-      outputFormat: OutputFormat
-      status: Status
+      output: T['output']
+      outputFormat: T['outputFormat']
+      status: T['status']
     }
   : never
-
 export type AddParam<I, P extends string> = ParamKeys<P> extends never
   ? I
   : I extends { param: infer _ }
