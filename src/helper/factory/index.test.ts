@@ -48,6 +48,7 @@ describe('createMiddleware', () => {
       type Variables = {
         MY_VAR: string
       }
+
       const middleware = (_variable: string) =>
         createMiddleware<{ Variables: Variables }>(async (c, next) => {
           await next()
