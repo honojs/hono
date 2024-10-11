@@ -26,6 +26,7 @@ import type {
   RouterRoute,
   Schema,
 } from './types'
+import type { ExcludeEmptyObject } from './utils/types'
 import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
 /**
@@ -523,6 +524,5 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     })
   }
 }
-export type ExcludeEmptyObject<T> = T extends {} ? ({} extends T ? never : T) : T
 
 export { Hono as HonoBase }
