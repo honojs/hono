@@ -26,7 +26,6 @@ import type {
   RouterRoute,
   Schema,
 } from './types'
-import type { ExcludeEmptyObject } from './utils/types'
 import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
 /**
@@ -99,6 +98,8 @@ type MountOptions =
       optionHandler?: MountOptionHandler
       replaceRequest?: MountReplaceRequest
     }
+
+type ExcludeEmptyObject<T> = T extends {} ? ({} extends T ? never : T) : T
 
 class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
   get!: HandlerInterface<E, 'get', S, BasePath>
