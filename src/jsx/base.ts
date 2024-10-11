@@ -242,7 +242,7 @@ export class JSXNode implements HtmlEscaped {
 }
 
 class JSXFunctionNode extends JSXNode {
-  toStringToBuffer(buffer: StringBufferWithCallbacks): void {
+  override toStringToBuffer(buffer: StringBufferWithCallbacks): void {
     const { children } = this
 
     const res = (this.tag as Function).call(null, {
@@ -284,7 +284,7 @@ class JSXFunctionNode extends JSXNode {
 }
 
 export class JSXFragmentNode extends JSXNode {
-  toStringToBuffer(buffer: StringBufferWithCallbacks): void {
+  override toStringToBuffer(buffer: StringBufferWithCallbacks): void {
     childrenToStringToBuffer(this.children, buffer)
   }
 }
