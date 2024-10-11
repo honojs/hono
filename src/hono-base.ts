@@ -99,8 +99,6 @@ type MountOptions =
       replaceRequest?: MountReplaceRequest
     }
 
-type ExcludeEmptyObject<T> = T extends {} ? ({} extends T ? never : T) : T
-
 class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
   get!: HandlerInterface<E, 'get', S, BasePath>
   post!: HandlerInterface<E, 'post', S, BasePath>
@@ -214,11 +212,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   >(
     path: SubPath,
     app: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<
-    E,
-    ExcludeEmptyObject<MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S>,
-    BasePath
-  > {
+  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S, BasePath> {
     const subApp = this.basePath(path)
     app.routes.map((r) => {
       let handler
