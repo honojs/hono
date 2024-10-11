@@ -26,6 +26,7 @@ import type {
   RouterRoute,
   Schema,
 } from './types'
+import type { ExcludeEmptyObject } from './utils/types'
 import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
 /**
@@ -212,7 +213,11 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   >(
     path: SubPath,
     app: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
+  ): Hono<
+    E,
+    ExcludeEmptyObject<MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S>,
+    BasePath
+  > {
     const subApp = this.basePath(path)
     app.routes.map((r) => {
       let handler
