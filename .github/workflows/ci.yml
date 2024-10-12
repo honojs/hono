@@ -66,6 +66,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - run: deno install --no-lock
       - run: deno publish --dry-run
 
   deno:
