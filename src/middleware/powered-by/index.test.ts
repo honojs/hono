@@ -11,8 +11,8 @@ describe('Powered by Middleware', () => {
   app.use('/poweredBy2/*', poweredBy())
   app.get('/poweredBy2', (c) => c.text('root'))
 
-  app.use('/poweredByPatrickJS/*', poweredBy({ serverName: 'PatrickJS' }))
-  app.get('/poweredByPatrickJS', (c) => c.text('root'))
+  app.use('/poweredBy3/*', poweredBy({ serverName: 'Foo' }))
+  app.get('/poweredBy3', (c) => c.text('root'))
 
   it('Should return with X-Powered-By header', async () => {
     const res = await app.request('http://localhost/poweredBy')
@@ -29,9 +29,9 @@ describe('Powered by Middleware', () => {
   })
 
   it('Should return custom serverName', async () => {
-    const res = await app.request('http://localhost/poweredByPatrickJS')
+    const res = await app.request('http://localhost/poweredBy3')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(res.headers.get('X-Powered-By')).toBe('PatrickJS')
+    expect(res.headers.get('X-Powered-By')).toBe('Foo')
   })
 })
