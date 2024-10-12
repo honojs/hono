@@ -63,10 +63,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
-      - run: deno publish --dry-run
+          deno-version: v2.x
+      - uses: oven-sh/setup-bun@v1
+      - run: bunx jsr publish --dry-run
 
   deno:
     name: 'Deno'
@@ -203,7 +204,6 @@ jobs:
         working-directory: perf-measures/type-check
       - run: echo "$COMPARISON"
         name: display comparison
-
 
   perf-measures-type-check-on-main:
     runs-on: ubuntu-latest
