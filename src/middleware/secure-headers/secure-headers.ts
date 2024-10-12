@@ -132,13 +132,12 @@ const generateNonce = () => {
 }
 
 export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
-  const nonce =
-    ctx.get('secureHeadersNonce') ||
-    (() => {
-      const newNonce = generateNonce()
-      ctx.set('secureHeadersNonce', newNonce)
-      return newNonce
-    })()
+  const key = 'secureHeadersNonce'
+  const init = ctx.get(key)
+  const nonce = init || generateNonce()
+  if (init == null) {
+    ctx.set(key, nonce)
+  }
   return `'nonce-${nonce}'`
 }
 
