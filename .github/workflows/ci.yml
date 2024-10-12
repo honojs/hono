@@ -66,8 +66,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno install --no-lock
-      - run: deno publish --dry-run
+      - run: bunx jsr publish --dry-run
 
   deno:
     name: 'Deno'
