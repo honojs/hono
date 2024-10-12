@@ -68,11 +68,15 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
 
   const findAllowOrigin = ((optsOrigin) => {
     if (typeof optsOrigin === 'string') {
-      return () => optsOrigin
+      if (optsOrigin === '*') {
+        return () => optsOrigin
+      } else {
+        return (origin: string) => (optsOrigin === origin ? origin : null)
+      }
     } else if (typeof optsOrigin === 'function') {
       return optsOrigin
     } else {
-      return (origin: string) => (optsOrigin.includes(origin) ? origin : optsOrigin[0])
+      return (origin: string) => (optsOrigin.includes(origin) ? origin : null)
     }
   })(opts.origin)
 
