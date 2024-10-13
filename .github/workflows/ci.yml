@@ -74,9 +74,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
+          deno-version: v2.x
       - run: env NAME=Deno deno test --coverage=coverage/raw/deno-runtime --allow-read --allow-env --allow-write --allow-net -c runtime-tests/deno/deno.json runtime-tests/deno
       - run: deno test -c runtime-tests/deno-jsx/deno.precompile.json --coverage=coverage/raw/deno-precompile-jsx runtime-tests/deno-jsx
       - run: deno test -c runtime-tests/deno-jsx/deno.react-jsx.json --coverage=coverage/raw/deno-react-jsx runtime-tests/deno-jsx
