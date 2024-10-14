@@ -1,4 +1,5 @@
 import type { Hono } from '../hono'
+import type { HonoBase } from '../hono-base'
 import type { Endpoint, ResponseFormat, Schema } from '../types'
 import type { StatusCode, SuccessStatusCode } from '../utils/http-status'
 import type { HasRequiredKeys } from '../utils/types'
@@ -159,7 +160,7 @@ type PathToChain<
     }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Client<T> = T extends Hono<any, infer S, any>
+export type Client<T> = T extends HonoBase<any, infer S, any>
   ? S extends Record<infer K, Schema>
     ? K extends string
       ? PathToChain<K, S>
