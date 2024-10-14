@@ -40,6 +40,12 @@ describe('CORS by Middleware', () => {
       origin: 'http://example.com',
     })
   )
+  app.use(
+    '/api6/*',
+    cors({
+      origin: 'http://example.com',
+    })
+  )
 
   app.get('/api/abc', (c) => {
     return c.json({ success: true })
@@ -83,7 +89,10 @@ describe('CORS by Middleware', () => {
   })
 
   it('Preflight with options', async () => {
-    const req = new Request('https://localhost/api2/abc', { method: 'OPTIONS' })
+    const req = new Request('https://localhost/api2/abc', {
+      method: 'OPTIONS',
+      headers: { origin: 'http://example.com' },
+    })
     const res = await app.request(req)
 
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
@@ -105,6 +114,15 @@ describe('CORS by Middleware', () => {
     expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
   })
 
+  it('Disallow an unmatched origin', async () => {
+    const req = new Request('https://localhost/api2/abc', {
+      method: 'OPTIONS',
+      headers: { origin: 'http://example.net' },
+    })
+    const res = await app.request(req)
+    expect(res.headers.has('Access-Control-Allow-Origin')).toBeFalsy()
+  })
+
   it('Allow multiple origins', async () => {
     let req = new Request('http://localhost/api3/abc', {
       headers: {
@@ -116,7 +134,10 @@ describe('CORS by Middleware', () => {
 
     req = new Request('http://localhost/api3/abc')
     res = await app.request(req)
-    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(
+      res.headers.has('Access-Control-Allow-Origin'),
+      'An unmatched origin should be disallowed'
+    ).toBeFalsy()
 
     req = new Request('http://localhost/api3/abc', {
       headers: {
@@ -124,13 +145,17 @@ describe('CORS by Middleware', () => {
       },
     })
     res = await app.request(req)
-    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(
+      res.headers.has('Access-Control-Allow-Origin'),
+      'An unmatched origin should be disallowed'
+    ).toBeFalsy()
   })
 
   it('Allow different Vary header value', async () => {
     const res = await app.request('http://localhost/api3/abc', {
       headers: {
         Vary: 'accept-encoding',
+        Origin: 'http://example.com',
       },
     })
 
@@ -169,7 +194,11 @@ describe('CORS by Middleware', () => {
   })
 
   it('Should not return duplicate header values', async () => {
-    const res = await app.request('http://localhost/api6/abc')
+    const res = await app.request('http://localhost/api6/abc', {
+      headers: {
+        origin: 'http://example.com',
+      },
+    })
 
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
   })
