@@ -37,34 +37,30 @@ describe('createMiddleware', () => {
     expect(url.pathname).toBe('/message')
   })
 
-  describe('Relax types for Bindings and Variables', () => {
-    it('Should not throw a type error', () => {
-      type Bindings = {
-        MY_VAR_IN_BINDINGS: string
+  it('Should pass generics types to chained handlers', () => {
+    type Bindings = {
+      MY_VAR_IN_BINDINGS: string
+    }
+
+    type Variables = {
+      MY_VAR: string
+    }
+
+    const app = new Hono<{ Bindings: Bindings }>()
+
+    app.get(
+      '/',
+      createMiddleware<{ Variables: Variables }>(async (c, next) => {
+        await next()
+      }),
+      createMiddleware(async (c, next) => {
+        await next()
+      }),
+      async (c) => {
+        const v = c.get('MY_VAR')
+        expectTypeOf(v).toEqualTypeOf<string>()
       }
-
-      const app = new Hono<{ Bindings: Bindings }>()
-
-      type Variables = {
-        MY_VAR: string
-      }
-
-      const middleware = (_variable: string) =>
-        createMiddleware<{ Variables: Variables }>(async (c, next) => {
-          await next()
-        })
-
-      app.get(
-        '/',
-        createMiddleware<{ Bindings: Bindings }>(async (c, next) => {
-          const mw = middleware(c.env.MY_VAR_IN_BINDINGS)
-          await mw(c, next) // `c` does not throw an error
-        }),
-        (c) => {
-          return c.json({})
-        }
-      )
-    })
+    )
   })
 })
 
