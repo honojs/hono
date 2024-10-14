@@ -5,13 +5,16 @@
   Copyright (c) 2022 Taishi Naritomi
 */
 
-import { exec } from 'child_process'
+/// <reference types="bun-types/bun" />
+
 import fs from 'fs'
 import path from 'path'
 import arg from 'arg'
 import { build } from 'esbuild'
 import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
-import glob from 'glob'
+import * as glob from 'glob'
+import { removePrivateFields } from './scripts/remove-private-fields'
+import { $ } from 'bun'
 
 const args = arg({
   '--watch': Boolean,
@@ -81,4 +84,9 @@ const esmBuild = () =>
 
 Promise.all([esmBuild(), cjsBuild()])
 
-exec(`tsc ${isWatch ? '-w' : ''} --emitDeclarationOnly --declaration --project tsconfig.build.json`)
+await $`tsc ${isWatch ? '-w' : ''} --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow()
+
+console.log('Removing private fields...')
+for await (const entry of await glob.glob('./dist/types/**/*.d.ts')) {
+  fs.writeFileSync(entry, removePrivateFields(entry))
+}
