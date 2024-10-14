@@ -39,13 +39,13 @@ const removePrivateTransformer = <T extends ts.Node>(ctx: ts.TransformationConte
 export const removePrivateFields = (tsPath: string) => {
   const program = ts.createProgram([tsPath], {
     target: ts.ScriptTarget.ESNext,
-    module: ts.ModuleKind.ESNext
+    module: ts.ModuleKind.ESNext,
   })
   const file = program.getSourceFile(tsPath)
 
   const transformed = ts.transform(file!, [removePrivateTransformer])
-  const printer = ts.createPrinter();
-  const transformedSourceFile = transformed.transformed[0] as ts.SourceFile;
+  const printer = ts.createPrinter()
+  const transformedSourceFile = transformed.transformed[0] as ts.SourceFile
   const code = printer.printFile(transformedSourceFile)
   transformed.dispose()
   return code
