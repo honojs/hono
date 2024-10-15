@@ -31,6 +31,7 @@ export const serveStatic = <E extends Env = Env>(
           : undefined,
       })
     }
+    // partialContentSupport is not implemented since this middleware is deprecated
     return baseServeStatic({
       ...options,
       getContent,

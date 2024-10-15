@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { stat } from 'node:fs/promises'
+import { open, stat } from 'node:fs/promises'
 import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
 import type { ServeStaticOptions } from '../../middleware/serve-static'
 import type { Env, MiddlewareHandler } from '../../types'
@@ -30,6 +30,38 @@ export const serveStatic = <E extends Env = Env>(
       getContent,
       pathResolve,
       isDir,
+      partialContentSupport: async (path: string) => {
+        path = path.startsWith('/') ? path : `./${path}`
+        const handle = await open(path)
+        const size = (await handle.stat()).size
+        return {
+          size,
+          getPartialContent: function getPartialContent(start: number, end: number) {
+            const readStream = handle.createReadStream({ start, end })
+            const data = new ReadableStream({
+              start(controller) {
+                readStream.on('data', (chunk) => {
+                  controller.enqueue(chunk)
+                })
+                readStream.on('end', () => {
+                  controller.close()
+                })
+                readStream.on('error', (e) => {
+                  controller.error(e)
+                })
+              },
+            })
+            return {
+              start,
+              end,
+              data,
+            }
+          },
+          close: () => {
+            handle.close()
+          },
+        }
+      },
     })(c, next)
   }
 }

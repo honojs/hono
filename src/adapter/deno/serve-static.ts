@@ -2,9 +2,7 @@ import type { ServeStaticOptions } from '../../middleware/serve-static'
 import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
 import type { Env, MiddlewareHandler } from '../../types'
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-const { open, lstatSync } = Deno
+const { open, lstatSync, seekSync, readSync, SeekMode } = Deno
 
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E>
@@ -13,10 +11,10 @@ export const serveStatic = <E extends Env = Env>(
     const getContent = async (path: string) => {
       try {
         const file = await open(path)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return file ? (file.readable as any) : null
+        return file?.readable ?? null
       } catch (e) {
         console.warn(`${e}`)
+        return null
       }
     }
     const pathResolve = (path: string) => {
@@ -35,6 +33,27 @@ export const serveStatic = <E extends Env = Env>(
       getContent,
       pathResolve,
       isDir,
+      partialContentSupport: async (path: string) => {
+        path = path.startsWith('/') ? path : `./${path}`
+        const handle = await open(path)
+        const size = lstatSync(path).size
+        return {
+          size,
+          getPartialContent: function getPartialContent(start: number, end: number) {
+            seekSync(handle.rid, start, SeekMode.Start)
+            const data = new Uint8Array(end - start + 1)
+            readSync(handle.rid, data)
+            return {
+              start,
+              end,
+              data,
+            }
+          },
+          close: () => {
+            handle.close()
+          },
+        }
+      },
     })(c, next)
   }
 }
