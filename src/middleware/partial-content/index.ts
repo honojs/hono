@@ -55,7 +55,7 @@ export const partialContent = (): MiddlewareHandler =>
     const contentLength = c.res.headers.get('Content-Length')
 
     if (rangeRequest && contentLength && c.res.body) {
-      const totalSize = parseInt(contentLength, 10)
+      const totalSize = Number(contentLength)
       const offsetSize = totalSize - 1
       const bodyStream = c.res.body.getReader()
 
@@ -74,17 +74,26 @@ export const partialContent = (): MiddlewareHandler =>
             ]
 
       if (contents.length > 10) {
-        c.header('Content-Length', undefined)
-        c.header('Content-Range', `bytes bytes */${totalSize}`)
+        c.header('Content-Length', totalSize.toString())
         c.res = c.body(null, 416)
+        return
       }
 
       const contentType = c.res.headers.get('Content-Type')
+
+      if (contents.length === 1) {
+        const part = contents[0]
+        const contentRange = formatRangeSize(part.start, part.end, totalSize)
+        c.header('Content-Range', contentRange)
+      } else {
+        c.header('Content-Type', `multipart/byteranges; boundary=${PARTIAL_CONTENT_BOUNDARY}`)
+      }
 
       const responseBody = new ReadableStream({
         async start(controller) {
           const encoder = new TextEncoder()
           const { done, value } = await bodyStream.read()
+
           if (done || !value) {
             controller.close()
             return
@@ -92,26 +101,31 @@ export const partialContent = (): MiddlewareHandler =>
 
           for (const part of contents) {
             const contentRange = formatRangeSize(part.start, part.end, totalSize)
-            controller.enqueue(
-              encoder.encode(
-                `--${PARTIAL_CONTENT_BOUNDARY}\r\nContent-Type: ${contentType}\r\nContent-Range: ${contentRange}\r\n\r\n`
-              )
-            )
-
             const sliceStart = part.start
             const sliceEnd = part.end + 1
-
             const chunk = value.subarray(sliceStart, sliceEnd)
-            controller.enqueue(chunk)
-            controller.enqueue(encoder.encode('\r\n'))
+
+            if (contents.length === 1) {
+              controller.enqueue(chunk)
+            } else {
+              controller.enqueue(
+                encoder.encode(
+                  `--${PARTIAL_CONTENT_BOUNDARY}\r\nContent-Type: ${contentType}\r\nContent-Range: ${contentRange}\r\n\r\n`
+                )
+              )
+              controller.enqueue(chunk)
+              controller.enqueue(encoder.encode('\r\n'))
+            }
           }
 
-          controller.enqueue(encoder.encode(`--${PARTIAL_CONTENT_BOUNDARY}--\r\n`))
+          if (contents.length !== 1) {
+            controller.enqueue(encoder.encode(`--${PARTIAL_CONTENT_BOUNDARY}--\r\n`))
+          }
+
           controller.close()
         },
       })
 
-      c.header('Content-Type', `multipart/byteranges; boundary=${PARTIAL_CONTENT_BOUNDARY}`)
       c.res = c.body(responseBody, 206)
     }
   }
