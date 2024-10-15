@@ -6,7 +6,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from '../../hono'
 import type { Env, H, HandlerResponse, Input, MiddlewareHandler } from '../../types'
-import type { Simplify } from '../../utils/types'
 
 type InitApp<E extends Env = Env> = (app: Hono<E>) => void
 
@@ -238,20 +237,10 @@ export const createFactory = <E extends Env = any, P extends string = any>(init?
   initApp?: InitApp<E>
 }): Factory<E, P> => new Factory<E, P>(init)
 
-// Add `any` if it's undefined to relax types
-// { Variables: Variables } => { Bindings: any, Variables: any }
-// { Bindings: Bindings } => { Bindings: Bindings, Variables: any }
-
-type AddAnyToEnv<T extends { Variables?: object; Bindings?: object }> = {
-  Bindings: undefined extends T['Bindings'] ? any : T['Bindings']
-  Variables: undefined extends T['Variables'] ? any : T['Variables']
-}
-
 export const createMiddleware = <
   E extends Env = any,
   P extends string = string,
-  I extends Input = {},
-  E2 extends Env = Simplify<AddAnyToEnv<E>>
+  I extends Input = {}
 >(
-  middleware: MiddlewareHandler<E2, P, I>
-): MiddlewareHandler<E2, P, I> => createFactory<E2, P>().createMiddleware<I>(middleware)
+  middleware: MiddlewareHandler<E, P, I>
+): MiddlewareHandler<E, P, I> => createFactory<E, P>().createMiddleware<I>(middleware)
