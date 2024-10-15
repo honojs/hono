@@ -13,7 +13,7 @@ import arg from 'arg'
 import { build } from 'esbuild'
 import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
 import * as glob from 'glob'
-import { removePrivateFields } from './scripts/remove-private-fields'
+import { removePrivateFields } from './remove-private-fields'
 import { $, stdout } from 'bun'
 
 const args = arg({
@@ -84,7 +84,9 @@ const esmBuild = () =>
 
 Promise.all([esmBuild(), cjsBuild()])
 
-await $`tsc ${isWatch ? '-w' : ''} --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow()
+await $`tsc ${
+  isWatch ? '-w' : ''
+} --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow()
 
 // Remove #private fields
 const dtsEntries = glob.globSync('./dist/types/**/*.d.ts')
