@@ -7,14 +7,14 @@
 
 /// <reference types="bun-types/bun" />
 
-import fs from 'fs'
+import fs, { write } from 'fs'
 import path from 'path'
 import arg from 'arg'
 import { build } from 'esbuild'
 import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
 import * as glob from 'glob'
 import { removePrivateFields } from './scripts/remove-private-fields'
-import { $ } from 'bun'
+import { $, stdout } from 'bun'
 
 const args = arg({
   '--watch': Boolean,
@@ -86,7 +86,19 @@ Promise.all([esmBuild(), cjsBuild()])
 
 await $`tsc ${isWatch ? '-w' : ''} --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow()
 
-console.log('Removing private fields...')
-for await (const entry of await glob.glob('./dist/types/**/*.d.ts')) {
+// Remove #private fields
+const dtsEntries = glob.globSync('./dist/types/**/*.d.ts')
+const writer = stdout.writer()
+writer.write('\n')
+let lastOutputLength = 0
+for (let i = 0; i < dtsEntries.length; i++) {
+  const entry = dtsEntries[i]
+
+  const message = `Removing private fields(${i}/${dtsEntries.length}): ${entry}`
+  writer.write(`\r${' '.repeat(lastOutputLength)}`)
+  lastOutputLength = message.length
+  writer.write(`\r${message}`)
+
   fs.writeFileSync(entry, removePrivateFields(entry))
 }
+writer.write('\n')
