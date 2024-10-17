@@ -96,8 +96,11 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Middlew
 
     if (stats && stats.isDirectory()) {
       path = getFilePath({
-        filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
-        root: options.root,
+        filename: (options.rewriteRequestPath
+          ? options.rewriteRequestPath(filename)
+          : filename
+        ).replace(/\/?$/, '/'),
+        root,
         defaultDocument: options.index ?? 'index.html',
       })
 
