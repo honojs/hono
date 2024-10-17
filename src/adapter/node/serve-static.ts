@@ -58,6 +58,17 @@ const getStats = (path: string) => {
 }
 
 export const serveStatic = (options: ServeStaticOptions = { root: '' }): MiddlewareHandler => {
+  let isAbsoluteRoot = false
+  let root: string
+
+  if (options.root) {
+    if (options.root.startsWith('/')) {
+      isAbsoluteRoot = true
+      root = new URL(`file://${options.root}`).pathname
+    } else {
+      root = options.root
+    }
+  }
   return async (c, next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
@@ -68,13 +79,17 @@ export const serveStatic = (options: ServeStaticOptions = { root: '' }): Middlew
 
     let path = getFilePathWithoutDefaultDocument({
       filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
-      root: options.root,
+      root,
     })
 
-    if (path) {
-      path = addCurrentDirPrefix(path)
-    } else {
+    if (!path) {
       return next()
+    }
+
+    if (isAbsoluteRoot) {
+      path = '/' + path
+    } else {
+      path = addCurrentDirPrefix(path)
     }
 
     let stats = getStats(path)
