@@ -40,8 +40,10 @@ export class PatternRouter<T> implements Router<T> {
   match(method: string, path: string): Result<T> {
     const handlers: [T, Params][] = []
 
-    for (const [pattern, routeMethod, handler] of this.routes) {
-      if (routeMethod === METHOD_NAME_ALL || routeMethod === method) {
+    for (let i = 0, len = this.routes.length; i < len; i++) {
+      const [pattern, routeMethod, handler] = this.routes[i]
+
+      if (routeMethod === method || routeMethod === METHOD_NAME_ALL) {
         const match = pattern.exec(path)
         if (match) {
           handlers.push([handler, match.groups || Object.create(null)])
