@@ -1,5 +1,5 @@
 import { Context } from '../../context'
-import type { WSContestInit} from '.'
+import type { WSContestInit } from '.'
 import { WSContext, createWSMessageEvent, defineWebSocketHelper } from '.'
 
 describe('`createWSMessageEvent`', () => {
