@@ -1,10 +1,5 @@
-import type {
-  UpgradeWebSocket,
-  WSReadyState} from '../../helper/websocket'
-import {
-  WSContext,
-  defineWebSocketHelper,
-} from '../../helper/websocket'
+import type { UpgradeWebSocket, WSReadyState } from '../../helper/websocket'
+import { WSContext, defineWebSocketHelper } from '../../helper/websocket'
 
 export interface UpgradeWebSocketOptions {
   /**

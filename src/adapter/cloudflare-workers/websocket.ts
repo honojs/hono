@@ -1,10 +1,5 @@
-import {
-  WSContext,
-  defineWebSocketHelper
-  
-  
-} from '../../helper/websocket'
-import type {UpgradeWebSocket, WSReadyState} from '../../helper/websocket'
+import { WSContext, defineWebSocketHelper } from '../../helper/websocket'
+import type { UpgradeWebSocket, WSReadyState } from '../../helper/websocket'
 
 // Based on https://github.com/honojs/hono/issues/1153#issuecomment-1767321332
 export const upgradeWebSocket: UpgradeWebSocket<WebSocket> = defineWebSocketHelper(
