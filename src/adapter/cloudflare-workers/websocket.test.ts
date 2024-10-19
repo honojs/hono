@@ -1,6 +1,6 @@
 import { Hono } from '../..'
-import { upgradeWebSocket } from '.'
 import { Context } from '../../context'
+import { upgradeWebSocket } from '.'
 
 describe('upgradeWebSocket middleware', () => {
   const server = new EventTarget()

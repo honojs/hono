@@ -1,5 +1,6 @@
 import { Context } from '../../context'
-import { WSContestInit, WSContext, createWSMessageEvent, defineWebSocketHelper } from '.'
+import type { WSContestInit} from '.'
+import { WSContext, createWSMessageEvent, defineWebSocketHelper } from '.'
 
 describe('`createWSMessageEvent`', () => {
   it('Should `createWSMessageEvent` is working for string', () => {
@@ -56,6 +57,7 @@ describe('WSContext', () => {
     let ws!: WSContext
     const promise = new Promise<string | ArrayBuffer>((resolve) => {
       ws = new WSContext({
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         send(data, _options) {
           resolve(data)
         },
