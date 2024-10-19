@@ -78,11 +78,16 @@ describe('WebSockets', () => {
   })
   it('Should call next() when header does not have upgrade', async () => {
     const next = vi.fn()
-    await upgradeWebSocket(() => ({}))(new Context(new Request('http://localhost', {
-      headers: {
-        Upgrade: 'example'
-      }
-    })), next)
+    await upgradeWebSocket(() => ({}))(
+      new Context(
+        new Request('http://localhost', {
+          headers: {
+            Upgrade: 'example',
+          },
+        })
+      ),
+      next
+    )
     expect(next).toBeCalled()
   })
 })

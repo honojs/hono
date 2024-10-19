@@ -58,7 +58,7 @@ describe('WSContext', () => {
       ws = new WSContext({
         send(data, _options) {
           resolve(data)
-        }
+        },
       } as WSContestInit)
     })
     ws.send('Hello')
@@ -66,7 +66,7 @@ describe('WSContext', () => {
   })
   it('Should readyState works', () => {
     const ws = new WSContext({
-      readyState: 0
+      readyState: 0,
     } as WSContestInit)
     expect(ws.readyState).toBe(0)
   })
