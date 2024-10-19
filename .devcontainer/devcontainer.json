@@ -21,7 +21,11 @@
                 "editor.codeActionsOnSave": {
                     "source.fixAll.eslint": "explicit"
                 }
-            }
+            },
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode"
+            ]
         }
     }
 }
