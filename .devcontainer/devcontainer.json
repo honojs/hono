@@ -2,6 +2,12 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
+    "runArgs": [
+        "--userns=keep-id"
+    ],
+    "containerEnv": {
+        "HOME": "/home/node"
+    },
     "customizations": {
         "vscode": {
             "settings": {
