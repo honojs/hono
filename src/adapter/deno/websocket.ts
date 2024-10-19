@@ -1,7 +1,8 @@
-import {
+import type {
   UpgradeWebSocket,
+  WSReadyState} from '../../helper/websocket'
+import {
   WSContext,
-  WSReadyState,
   defineWebSocketHelper,
 } from '../../helper/websocket'
 

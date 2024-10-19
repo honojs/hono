@@ -1,5 +1,5 @@
-import { createWSMessageEvent, defineWebSocketHelper } from '../../helper/websocket'
-import { UpgradeWebSocket, WSContext, WSEvents, WSMessageReceive } from '../../helper/websocket'
+import type { UpgradeWebSocket, WSEvents, WSMessageReceive } from '../../helper/websocket'
+import { createWSMessageEvent, defineWebSocketHelper , WSContext } from '../../helper/websocket'
 import { getBunServer } from './server'
 
 interface BunServerWebSocket<T> {

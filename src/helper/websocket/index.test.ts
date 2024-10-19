@@ -1,6 +1,5 @@
-import { createWSMessageEvent, defineWebSocketHelper } from '.'
 import { Context } from '../../context'
-import { HonoRequest } from '../../request'
+import { createWSMessageEvent, defineWebSocketHelper } from '.'
 
 describe('`createWSMessageEvent`', () => {
   it('Should `createWSMessageEvent` is working for string', () => {
