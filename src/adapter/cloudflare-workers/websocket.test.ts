@@ -1,5 +1,6 @@
 import { Hono } from '../..'
 import { upgradeWebSocket } from '.'
+import { Context } from '../../context'
 
 describe('upgradeWebSocket middleware', () => {
   const server = new EventTarget()
@@ -41,5 +42,14 @@ describe('upgradeWebSocket middleware', () => {
     )
 
     expect(sendingData).toBe(await wsPromise)
+  })
+  it('Should call next() when header does not have upgrade', async () => {
+    const next = vi.fn()
+    await upgradeWebSocket(() => ({}))(new Context(new Request('http://localhost', {
+      headers: {
+        Upgrade: 'example'
+      }
+    })), next)
+    expect(next).toBeCalled()
   })
 })

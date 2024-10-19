@@ -1,5 +1,6 @@
 import { Hono } from '../..'
 import { upgradeWebSocket } from './websocket'
+import { Context } from '../../context'
 
 globalThis.Deno = {} as typeof Deno
 
@@ -74,5 +75,14 @@ describe('WebSockets', () => {
         })
       )
     expect(await messagePromise).toBe(data)
+  })
+  it('Should call next() when header does not have upgrade', async () => {
+    const next = vi.fn()
+    await upgradeWebSocket(() => ({}))(new Context(new Request('http://localhost', {
+      headers: {
+        Upgrade: 'example'
+      }
+    })), next)
+    expect(next).toBeCalled()
   })
 })
