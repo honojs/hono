@@ -13,8 +13,8 @@ export class TrieRouter<T> implements Router<T> {
   add(method: string, path: string, handler: T) {
     const results = checkOptionalParameter(path)
     if (results) {
-      for (const p of results) {
-        this.node.insert(method, p, handler)
+      for (let i = 0, len = results.length; i < len; i++) {
+        this.node.insert(method, results[i], handler)
       }
       return
     }
