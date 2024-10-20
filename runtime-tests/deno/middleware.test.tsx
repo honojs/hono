@@ -66,79 +66,84 @@ Deno.test('JSX middleware', async () => {
   assertEquals(template.toString(), '<p>1</p><p>2</p>')
 })
 
-Deno.test('Serve Static middleware', async () => {
-  const app = new Hono()
-  const onNotFound = spy(() => {})
-  app.all('/favicon.ico', serveStatic({ path: './runtime-tests/deno/favicon.ico' }))
-  app.all(
-    '/favicon-notfound.ico',
-    serveStatic({ path: './runtime-tests/deno/favicon-notfound.ico', onNotFound })
-  )
-  app.use('/favicon-notfound.ico', async (c, next) => {
-    await next()
-    c.header('X-Custom', 'Deno')
-  })
-
-  app.get(
-    '/static/*',
-    serveStatic({
-      root: './runtime-tests/deno',
-      onNotFound,
+Deno.test({
+  name: 'Serve Static middleware',
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn: async () => {
+    const app = new Hono()
+    const onNotFound = spy(() => {})
+    app.all('/favicon.ico', serveStatic({ path: './runtime-tests/deno/favicon.ico' }))
+    app.all(
+      '/favicon-notfound.ico',
+      serveStatic({ path: './runtime-tests/deno/favicon-notfound.ico', onNotFound })
+    )
+    app.use('/favicon-notfound.ico', async (c, next) => {
+      await next()
+      c.header('X-Custom', 'Deno')
     })
-  )
 
-  app.get(
-    '/dot-static/*',
-    serveStatic({
-      root: './runtime-tests/deno',
-      rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
-    })
-  )
+    app.get(
+      '/static/*',
+      serveStatic({
+        root: './runtime-tests/deno',
+        onNotFound,
+      })
+    )
 
-  app.get('/static-absolute-root/*', serveStatic({ root: dirname(fromFileUrl(import.meta.url)) }))
+    app.get(
+      '/dot-static/*',
+      serveStatic({
+        root: './runtime-tests/deno',
+        rewriteRequestPath: (path) => path.replace(/^\/dot-static/, './.static'),
+      })
+    )
 
-  let res = await app.request('http://localhost/favicon.ico')
-  assertEquals(res.status, 200)
-  assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
-  await res.body?.cancel()
+    app.get('/static-absolute-root/*', serveStatic({ root: dirname(fromFileUrl(import.meta.url)) }))
 
-  res = await app.request('http://localhost/favicon-notfound.ico')
-  assertEquals(res.status, 404)
-  assertMatch(res.headers.get('Content-Type') || '', /^text\/plain/)
-  assertEquals(res.headers.get('X-Custom'), 'Deno')
-  assertSpyCall(onNotFound, 0)
+    let res = await app.request('http://localhost/favicon.ico')
+    assertEquals(res.status, 200)
+    assertEquals(res.headers.get('Content-Type'), 'image/x-icon')
+    await res.body?.cancel()
 
-  res = await app.request('http://localhost/static/plain.txt')
-  assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'Deno!')
+    res = await app.request('http://localhost/favicon-notfound.ico')
+    assertEquals(res.status, 404)
+    assertMatch(res.headers.get('Content-Type') || '', /^text\/plain/)
+    assertEquals(res.headers.get('X-Custom'), 'Deno')
+    assertSpyCall(onNotFound, 0)
 
-  res = await app.request('http://localhost/static/download')
-  assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'download')
+    res = await app.request('http://localhost/static/plain.txt')
+    assertEquals(res.status, 200)
+    assertEquals(await res.text(), 'Deno!')
 
-  res = await app.request('http://localhost/dot-static/plain.txt')
-  assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'Deno!!')
-  assertSpyCalls(onNotFound, 1)
+    res = await app.request('http://localhost/static/download')
+    assertEquals(res.status, 200)
+    assertEquals(await res.text(), 'download')
 
-  res = await app.fetch({
-    method: 'GET',
-    url: 'http://localhost/static/%2e%2e/static/plain.txt',
-  } as Request)
-  assertEquals(res.status, 404)
-  assertEquals(await res.text(), '404 Not Found')
+    res = await app.request('http://localhost/dot-static/plain.txt')
+    assertEquals(res.status, 200)
+    assertEquals(await res.text(), 'Deno!!')
+    assertSpyCalls(onNotFound, 1)
 
-  res = await app.request('http://localhost/static/helloworld')
-  assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'Hi\n')
+    res = await app.fetch({
+      method: 'GET',
+      url: 'http://localhost/static/%2e%2e/static/plain.txt',
+    } as Request)
+    assertEquals(res.status, 404)
+    assertEquals(await res.text(), '404 Not Found')
 
-  res = await app.request('http://localhost/static/hello.world')
-  assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'Hi\n')
+    res = await app.request('http://localhost/static/helloworld')
+    assertEquals(res.status, 200)
+    assertEquals(await res.text(), 'Hi\n')
 
-  res = await app.request('http://localhost/static-absolute-root/plain.txt')
-  assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'Deno!')
+    res = await app.request('http://localhost/static/hello.world')
+    assertEquals(res.status, 200)
+    assertEquals(await res.text(), 'Hi\n')
+
+    res = await app.request('http://localhost/static-absolute-root/plain.txt')
+    assertEquals(res.status, 200)
+    assertEquals(await res.text(), 'Deno!')
+  },
 })
 
 Deno.test('JWT Authentication middleware', async () => {
