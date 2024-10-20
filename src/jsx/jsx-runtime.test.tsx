@@ -11,12 +11,16 @@ describe('jsx-runtime', () => {
 
   it('Should render HTML strings', async () => {
     app.get('/', (c) => {
-      return c.html(<h1>Hello</h1>)
+      return c.html(
+        <h1 class='hello' style={{ margin: '1px', padding: '1px' }}>
+          Hello
+        </h1>
+      )
     })
     const res = await app.request('http://localhost/')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
-    expect(await res.text()).toBe('<h1>Hello</h1>')
+    expect(await res.text()).toBe('<h1 class="hello" style="margin:1px;padding:1px">Hello</h1>')
   })
 
   // https://en.reactjs.org/docs/jsx-in-depth.html#booleans-null-and-undefined-are-ignored
