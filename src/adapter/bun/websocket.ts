@@ -2,7 +2,10 @@ import type { UpgradeWebSocket, WSEvents, WSMessageReceive } from '../../helper/
 import { createWSMessageEvent, defineWebSocketHelper, WSContext } from '../../helper/websocket'
 import { getBunServer } from './server'
 
-interface BunServerWebSocket<T> {
+/**
+ * @internal
+ */
+export interface BunServerWebSocket<T> {
   send(data: string | ArrayBufferLike, compress?: boolean): void
   close(code?: number, reason?: string): void
   data: T
@@ -24,7 +27,10 @@ export interface BunWebSocketData {
   protocol: string
 }
 
-const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSContext => {
+/**
+ * @internal
+ */
+export const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSContext => {
   return new WSContext({
     send: (source, options) => {
       ws.send(source, options?.compress)

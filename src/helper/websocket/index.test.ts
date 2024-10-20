@@ -72,4 +72,38 @@ describe('WSContext', () => {
     } as WSContestInit)
     expect(ws.readyState).toBe(0)
   })
+  it('Should normalize URL', () => {
+    const stringURLWS = new WSContext({
+      url: 'http://localhost',
+    } as WSContestInit)
+    expect(stringURLWS.url).toBeInstanceOf(URL)
+
+    const urlURLWS = new WSContext({
+      url: new URL('http://localhost'),
+    } as WSContestInit)
+    expect(urlURLWS.url).toBeInstanceOf(URL)
+
+    const nullURLWS = new WSContext({
+      url: undefined,
+    } as WSContestInit)
+    expect(nullURLWS.url).toBeNull()
+  })
+  it('Should normalize message in send()', () => {
+    let data: string | ArrayBuffer | null = null
+    const wsContext = new WSContext({
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      send(received, _options) {
+        data = received
+      },
+    } as WSContestInit)
+
+    wsContext.send('string')
+    expect(data).toBe('string')
+
+    wsContext.send(new ArrayBuffer(16))
+    expect(data).toBeInstanceOf(ArrayBuffer)
+
+    wsContext.send(new Uint8Array(16))
+    expect(data).toBeInstanceOf(ArrayBuffer)
+  })
 })
