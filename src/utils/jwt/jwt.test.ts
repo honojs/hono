@@ -235,6 +235,48 @@ describe('JWT', () => {
     expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
   })
 
+  it('sign & verify & decode with a custom secret', async () => {
+    const payload = { message: 'hello world' }
+    const algorithm = {
+      name: 'HMAC',
+      hash: {
+        name: 'SHA-256',
+      },
+    }
+    const secret = await crypto.subtle.importKey(
+      'raw',
+      Buffer.from('cefb73234d5fae4bf27662900732b52943e8d53e871fe0f353da95de4599c21d', 'hex'),
+      algorithm,
+      false,
+      ['sign', 'verify']
+    )
+    const tok = await JWT.sign(payload, secret)
+    const expected =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.qunGhchNXH_unqWXN6hB0Elhzr5SykSXVhklLti1aFI'
+    expect(tok).toEqual(expected)
+
+    const verifiedPayload = await JWT.verify(tok, secret)
+    expect(verifiedPayload).not.toBeUndefined()
+    expect(verifiedPayload).toEqual(payload)
+
+    const invalidSecret = await crypto.subtle.importKey(
+      'raw',
+      Buffer.from('cefb73234d5fae4bf27662900732b52943e8d53e871fe0f353da95de41111111', 'hex'),
+      algorithm,
+      false,
+      ['sign', 'verify']
+    )
+    let err = null
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, invalidSecret)
+    } catch (e) {
+      err = e
+    }
+    expect(authorized).toBeUndefined()
+    expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+  })
+
   const rsTestCases = [
     {
       alg: AlgorithmTypes.RS256,
