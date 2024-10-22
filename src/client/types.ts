@@ -38,7 +38,11 @@ export type ClientRequest<S extends Schema> = {
   $url: (
     arg?: S[keyof S] extends { input: infer R }
       ? R extends { param: infer P }
-        ? { param: P }
+        ? R extends { query: infer Q }
+          ? { param: P; query: Q }
+          : { param: P }
+        : R extends { query: infer Q }
+        ? { query: Q }
         : {}
       : {}
   ) => URL
