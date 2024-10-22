@@ -4,7 +4,7 @@ import type { Env, MiddlewareHandler } from '../../types'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-const { open, lstatSync } = Deno
+const { open, lstatSync, errors } = Deno
 
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E>
@@ -16,7 +16,9 @@ export const serveStatic = <E extends Env = Env>(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return file ? (file.readable as any) : null
       } catch (e) {
-        console.warn(`${e}`)
+        if (!(e instanceof errors.NotFound)) {
+          console.warn(`${e}`)
+        }
       }
     }
     const pathResolve = (path: string) => {
