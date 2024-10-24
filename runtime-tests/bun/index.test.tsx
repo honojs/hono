@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import fs from 'fs/promises'
 import path from 'path'
 import { stream, streamSSE } from '../..//src/helper/streaming'
@@ -83,7 +83,7 @@ describe('Basic Auth Middleware', () => {
 
 describe('Serve Static Middleware', () => {
   const app = new Hono()
-  const onNotFound = vi.fn(() => {})
+  const onNotFound = mock(() => {})
   app.all('/favicon.ico', serveStatic({ path: './runtime-tests/bun/favicon.ico' }))
   app.all(
     '/favicon-notfound.ico',
