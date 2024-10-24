@@ -10,9 +10,9 @@ import type { Env, H, HandlerResponse, Input, MiddlewareHandler } from '../../ty
 type InitApp<E extends Env = Env> = (app: Hono<E>) => void
 
 export interface CreateHandlersInterface<E extends Env, P extends string> {
-  <I extends Input = {}, R extends HandlerResponse<any> = any>(handler1: H<E, P, I, R>): [
-    H<E, P, I, R>
-  ]
+  <I extends Input = {}, R extends HandlerResponse<any> = any>(
+    handler1: H<E, P, I, R>
+  ): [H<E, P, I, R>]
   // handler x2
   <I extends Input = {}, I2 extends Input = I, R extends HandlerResponse<any> = any>(
     handler1: H<E, P, I, R>,
@@ -24,7 +24,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I extends Input = {},
     I2 extends Input = I,
     I3 extends Input = I & I2,
-    R extends HandlerResponse<any> = any
+    R extends HandlerResponse<any> = any,
   >(
     handler1: H<E, P, I, R>,
     handler2: H<E, P, I2, R>,
@@ -37,7 +37,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I2 extends Input = I,
     I3 extends Input = I & I2,
     I4 extends Input = I & I2 & I3,
-    R extends HandlerResponse<any> = any
+    R extends HandlerResponse<any> = any,
   >(
     handler1: H<E, P, I, R>,
     handler2: H<E, P, I2, R>,
@@ -52,7 +52,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I3 extends Input = I & I2,
     I4 extends Input = I & I2 & I3,
     I5 extends Input = I & I2 & I3 & I4,
-    R extends HandlerResponse<any> = any
+    R extends HandlerResponse<any> = any,
   >(
     handler1: H<E, P, I, R>,
     handler2: H<E, P, I2, R>,
@@ -69,7 +69,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I4 extends Input = I & I2 & I3,
     I5 extends Input = I & I2 & I3 & I4,
     I6 extends Input = I & I2 & I3 & I4 & I5,
-    R extends HandlerResponse<any> = any
+    R extends HandlerResponse<any> = any,
   >(
     handler1: H<E, P, I, R>,
     handler2: H<E, P, I2, R>,
@@ -88,7 +88,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I5 extends Input = I & I2 & I3 & I4,
     I6 extends Input = I & I2 & I3 & I4 & I5,
     I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
-    R extends HandlerResponse<any> = any
+    R extends HandlerResponse<any> = any,
   >(
     handler1: H<E, P, I, R>,
     handler2: H<E, P, I2, R>,
@@ -104,7 +104,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     H<E, P, I4, R>,
     H<E, P, I5, R>,
     H<E, P, I6, R>,
-    H<E, P, I7, R>
+    H<E, P, I7, R>,
   ]
 
   // handler x8
@@ -117,7 +117,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I6 extends Input = I & I2 & I3 & I4 & I5,
     I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
     I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
-    R extends HandlerResponse<any> = any
+    R extends HandlerResponse<any> = any,
   >(
     handler1: H<E, P, I, R>,
     handler2: H<E, P, I2, R>,
@@ -135,7 +135,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     H<E, P, I5, R>,
     H<E, P, I6, R>,
     H<E, P, I7, R>,
-    H<E, P, I8, R>
+    H<E, P, I8, R>,
   ]
 
   // handler x9
@@ -149,7 +149,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
     I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
     I9 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8,
-    R extends HandlerResponse<any> = any
+    R extends HandlerResponse<any> = any,
   >(
     handler1: H<E, P, I, R>,
     handler2: H<E, P, I2, R>,
@@ -169,7 +169,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     H<E, P, I6, R>,
     H<E, P, I7, R>,
     H<E, P, I8, R>,
-    H<E, P, I9, R>
+    H<E, P, I9, R>,
   ]
 
   // handler x10
@@ -184,7 +184,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
     I9 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8,
     I10 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8 & I9,
-    R extends HandlerResponse<any> = any
+    R extends HandlerResponse<any> = any,
   >(
     handler1: H<E, P, I, R>,
     handler2: H<E, P, I2, R>,
@@ -206,7 +206,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     H<E, P, I7, R>,
     H<E, P, I8, R>,
     H<E, P, I9, R>,
-    H<E, P, I10, R>
+    H<E, P, I10, R>,
   ]
 }
 
@@ -240,7 +240,7 @@ export const createFactory = <E extends Env = any, P extends string = any>(init?
 export const createMiddleware = <
   E extends Env = any,
   P extends string = string,
-  I extends Input = {}
+  I extends Input = {},
 >(
   middleware: MiddlewareHandler<E, P, I>
 ): MiddlewareHandler<E, P, I> => createFactory<E, P>().createMiddleware<I>(middleware)

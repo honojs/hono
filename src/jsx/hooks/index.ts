@@ -16,7 +16,7 @@ export type EffectData = [
   (() => void | (() => void)) | undefined, // layout effect
   (() => void) | undefined, // cleanup
   (() => void) | undefined, // effect
-  (() => void) | undefined // insertion effect
+  (() => void) | undefined, // insertion effect
 ]
 
 const resolvedPromiseValueMap: WeakMap<Promise<unknown>, unknown> = new WeakMap<
@@ -36,7 +36,7 @@ const isDepsChanged = (
 let viewTransitionState:
   | [
       boolean, // isUpdating
-      boolean // useViewTransition() is called
+      boolean, // useViewTransition() is called
     ]
   | undefined = undefined
 
@@ -208,7 +208,7 @@ export const useState: UseStateType = <T>(
         if (pendingStack.length) {
           const [pendingType, pendingPromise] = pendingStack.at(-1) as [
             PendingType | 3,
-            Promise<void>
+            Promise<void>,
           ]
           Promise.all([
             pendingType === 3

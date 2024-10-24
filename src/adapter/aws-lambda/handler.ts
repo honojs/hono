@@ -108,7 +108,7 @@ const streamToNodeStream = async (
 export const streamHandle = <
   E extends Env = Env,
   S extends Schema = {},
-  BasePath extends string = '/'
+  BasePath extends string = '/',
 >(
   app: Hono<E, S, BasePath>
 ): Handler => {
@@ -206,7 +206,7 @@ abstract class EventProcessor<E extends LambdaEvent> {
     const domainName =
       event.requestContext && 'domainName' in event.requestContext
         ? event.requestContext.domainName
-        : event.headers?.['host'] ?? event.multiValueHeaders?.['host']?.[0]
+        : (event.headers?.['host'] ?? event.multiValueHeaders?.['host']?.[0])
     const path = this.getPath(event)
     const urlPath = `https://${domainName}${path}`
     const url = queryString ? `${urlPath}?${queryString}` : urlPath

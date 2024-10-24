@@ -69,7 +69,7 @@ describe('Parse Body Util', () => {
             cb(file, 'file', data)
             cb('hoo', 'file.hoo', data)
           },
-        } as FormData)
+        }) as FormData
     )
 
     const parsedData = await parseBody(req, { dot: true })

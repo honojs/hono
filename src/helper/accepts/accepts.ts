@@ -34,13 +34,16 @@ export const parseAccept = (acceptHeader: string): Accept[] => {
     const params = parts.slice(1) // ['q=0.9', 'image/webp']
     const q = params.find((param) => param.startsWith('q='))
 
-    const paramsObject = params.reduce((acc, param) => {
-      const keyValue = param.split('=')
-      const key = keyValue[0].trim()
-      const value = keyValue[1].trim()
-      acc[key] = value
-      return acc
-    }, {} as { [key: string]: string })
+    const paramsObject = params.reduce(
+      (acc, param) => {
+        const keyValue = param.split('=')
+        const key = keyValue[0].trim()
+        const value = keyValue[1].trim()
+        acc[key] = value
+        return acc
+      },
+      {} as { [key: string]: string }
+    )
 
     return {
       type: type,

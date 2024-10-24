@@ -27,8 +27,8 @@ export const serveStatic = <E extends Env = Env>(
         namespace: options.namespace
           ? options.namespace
           : c.env
-          ? c.env.__STATIC_CONTENT
-          : undefined,
+            ? c.env.__STATIC_CONTENT
+            : undefined,
       })
     }
     return baseServeStatic({

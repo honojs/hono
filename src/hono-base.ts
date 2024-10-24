@@ -171,7 +171,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     const strict = options.strict ?? true
     delete options.strict
     Object.assign(this, options)
-    this.getPath = strict ? options.getPath ?? getPath : getPathNoStrict
+    this.getPath = strict ? (options.getPath ?? getPath) : getPathNoStrict
   }
 
   private clone(): Hono<E, S, BasePath> {
@@ -208,7 +208,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     SubPath extends string,
     SubEnv extends Env,
     SubSchema extends Schema,
-    SubBasePath extends string
+    SubBasePath extends string,
   >(
     path: SubPath,
     app: Hono<SubEnv, SubSchema, SubBasePath>
@@ -434,7 +434,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
                 resolved || (c.finalized ? c.res : this.notFoundHandler(c))
             )
             .catch((err: Error) => this.handleError(err, c))
-        : res ?? this.notFoundHandler(c)
+        : (res ?? this.notFoundHandler(c))
     }
 
     const composed = compose<Context>(matchResult[0], this.errorHandler, this.notFoundHandler)

@@ -16,7 +16,7 @@ import type { BlankEnv, BlankSchema, Env, Schema } from './types'
 export class Hono<
   E extends Env = BlankEnv,
   S extends Schema = BlankSchema,
-  BasePath extends string = '/'
+  BasePath extends string = '/',
 > extends HonoBase<E, S, BasePath> {
   /**
    * Creates an instance of the Hono class.

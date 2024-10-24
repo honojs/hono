@@ -5,9 +5,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type Expect<T extends true> = T
-export type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2
-  ? true
-  : false
+export type Equal<X, Y> =
+  (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
 export type NotEqual<X, Y> = true extends Equal<X, Y> ? false : true
 
 export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
@@ -16,11 +15,8 @@ export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) ex
   ? I
   : never
 
-export type RemoveBlankRecord<T> = T extends Record<infer K, unknown>
-  ? K extends string
-    ? T
-    : never
-  : never
+export type RemoveBlankRecord<T> =
+  T extends Record<infer K, unknown> ? (K extends string ? T : never) : never
 
 export type IfAnyThenEmptyObject<T> = 0 extends 1 & T ? {} : T
 
@@ -46,23 +42,25 @@ export type JSONParsed<T> = T extends { toJSON(): infer J }
   ? (() => J) extends () => JSONPrimitive
     ? J
     : (() => J) extends () => { toJSON(): unknown }
-    ? {}
-    : JSONParsed<J>
+      ? {}
+      : JSONParsed<J>
   : T extends JSONPrimitive
-  ? T
-  : T extends InvalidJSONValue
-  ? never
-  : T extends ReadonlyArray<unknown>
-  ? { [K in keyof T]: JSONParsed<InvalidToNull<T[K]>> }
-  : T extends Set<unknown> | Map<unknown, unknown>
-  ? {}
-  : T extends object
-  ? {
-      [K in keyof OmitSymbolKeys<T> as IsInvalid<T[K]> extends true
-        ? never
-        : K]: boolean extends IsInvalid<T[K]> ? JSONParsed<T[K]> | undefined : JSONParsed<T[K]>
-    }
-  : never
+    ? T
+    : T extends InvalidJSONValue
+      ? never
+      : T extends ReadonlyArray<unknown>
+        ? { [K in keyof T]: JSONParsed<InvalidToNull<T[K]>> }
+        : T extends Set<unknown> | Map<unknown, unknown>
+          ? {}
+          : T extends object
+            ? {
+                [K in keyof OmitSymbolKeys<T> as IsInvalid<T[K]> extends true
+                  ? never
+                  : K]: boolean extends IsInvalid<T[K]>
+                  ? JSONParsed<T[K]> | undefined
+                  : JSONParsed<T[K]>
+              }
+            : never
 
 /**
  * Useful to flatten the type output to improve type hints shown in editors. And also to transform an interface into a type to aide with assignability.
@@ -86,9 +84,8 @@ export type RequiredKeysOf<BaseType extends object> = Exclude<
   undefined
 >
 
-export type HasRequiredKeys<BaseType extends object> = RequiredKeysOf<BaseType> extends never
-  ? false
-  : true
+export type HasRequiredKeys<BaseType extends object> =
+  RequiredKeysOf<BaseType> extends never ? false : true
 
 export type IsAny<T> = boolean extends (T extends never ? true : false) ? true : false
 

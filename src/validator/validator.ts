@@ -14,7 +14,7 @@ export type ValidationFunction<
   InputType,
   OutputType,
   E extends Env = {},
-  P extends string = string
+  P extends string = string,
 > = (
   value: InputType,
   c: Context<E, P>
@@ -55,7 +55,7 @@ export const validator = <
     out: { [K in U]: OutputTypeExcludeResponseType }
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  E extends Env = any
+  E extends Env = any,
 >(
   target: U,
   validationFunc: ValidationFunction<

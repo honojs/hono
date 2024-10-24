@@ -103,7 +103,7 @@ export class Node<T> {
         handlerSet.possibleKeys.forEach((key) => {
           const processed = processedSet[handlerSet.name]
           handlerSet.params[key] =
-            params[key] && !processed ? params[key] : nodeParams[key] ?? params[key]
+            params[key] && !processed ? params[key] : (nodeParams[key] ?? params[key])
           processedSet[handlerSet.name] = true
         })
         handlerSets.push(handlerSet)

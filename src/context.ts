@@ -134,8 +134,10 @@ interface TextRespond {
     status?: U,
     headers?: HeaderRecord
   ): Response & TypedResponse<T, U, 'text'>
-  <T extends string, U extends StatusCode = StatusCode>(text: T, init?: ResponseInit): Response &
-    TypedResponse<T, U, 'text'>
+  <T extends string, U extends StatusCode = StatusCode>(
+    text: T,
+    init?: ResponseInit
+  ): Response & TypedResponse<T, U, 'text'>
 }
 
 /**
@@ -154,7 +156,7 @@ interface TextRespond {
 interface JSONRespond {
   <
     T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-    U extends StatusCode = StatusCode
+    U extends StatusCode = StatusCode,
   >(
     object: T,
     status?: U,
@@ -162,7 +164,7 @@ interface JSONRespond {
   ): JSONRespondReturn<T, U>
   <
     T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-    U extends StatusCode = StatusCode
+    U extends StatusCode = StatusCode,
   >(
     object: T,
     init?: ResponseInit
@@ -177,7 +179,7 @@ interface JSONRespond {
  */
 type JSONRespondReturn<
   T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-  U extends StatusCode
+  U extends StatusCode,
 > = Response &
   TypedResponse<
     SimplifyDeepArray<T> extends JSONValue
@@ -205,9 +207,10 @@ interface HTMLRespond {
     status?: StatusCode,
     headers?: HeaderRecord
   ): T extends string ? Response : Promise<Response>
-  <T extends string | Promise<string>>(html: T, init?: ResponseInit): T extends string
-    ? Response
-    : Promise<Response>
+  <T extends string | Promise<string>>(
+    html: T,
+    init?: ResponseInit
+  ): T extends string ? Response : Promise<Response>
 }
 
 /**
@@ -345,7 +348,7 @@ export class Context<
   E extends Env = any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   P extends string = any,
-  I extends Input = {}
+  I extends Input = {},
 > {
   #rawRequest: Request
   #req: HonoRequest<P, I['out']> | undefined
@@ -835,7 +838,7 @@ export class Context<
    */
   json: JSONRespond = <
     T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-    U extends StatusCode = StatusCode
+    U extends StatusCode = StatusCode,
   >(
     object: T,
     arg?: U | ResponseInit,

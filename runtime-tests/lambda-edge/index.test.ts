@@ -886,7 +886,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
         {
           key: string
           value: string
-        }
+        },
       ]
     }
     let called = false
@@ -1032,7 +1032,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
         {
           key: string
           value: string
-        }
+        },
       ]
     }
     let called = false

@@ -20,7 +20,7 @@ const zodValidator = <
   T extends ZodSchema,
   E extends {},
   P extends string,
-  Target extends keyof ValidationTargets
+  Target extends keyof ValidationTargets,
 >(
   target: Target,
   schema: T
