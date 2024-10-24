@@ -30,7 +30,9 @@ interface TimingOptions {
 const getTime = (): number => {
   try {
     return performance.now()
-  } catch {}
+  } catch (e) {
+    console.warn('performance.now() is not available. Falling back to Date.now()', e)
+  }
   return Date.now()
 }
 
@@ -75,13 +77,11 @@ const getTime = (): number => {
  */
 export const timing = (config?: TimingOptions): MiddlewareHandler => {
   const options: TimingOptions = {
-    ...{
-      total: true,
-      enabled: true,
-      totalDescription: 'Total Response Time',
-      autoEnd: true,
-      crossOrigin: false,
-    },
+    total: true,
+    enabled: true,
+    totalDescription: 'Total Response Time',
+    autoEnd: true,
+    crossOrigin: false,
     ...config,
   }
   return async function timing(c, next) {
