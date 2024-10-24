@@ -163,7 +163,6 @@ type PathToChain<
         >
       }
 
- 
 export type Client<T> =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   T extends HonoBase<any, infer S, string>
