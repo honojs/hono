@@ -27,7 +27,7 @@ export const Suspense: FC<PropsWithChildren<{ fallback: any }>> = async ({
   fallback,
 }) => {
   if (!children) {
-    return fallback.toString()
+    return await fallback.toString()
   }
   if (!Array.isArray(children)) {
     children = [children]
