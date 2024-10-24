@@ -46,6 +46,8 @@ export type WSContext<T = unknown> = {
   url: URL | null
   protocol: string | null
   close(code?: number, reason?: string): void
+  subscribe?(channel: string): void
+  unsubscribe?(channel: string): void
 }
 
 export type WSMessageReceive = string | Blob | ArrayBufferLike
