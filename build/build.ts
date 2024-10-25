@@ -58,7 +58,6 @@ const addExtension = (extension: string = '.js', fileExtension: string = '.ts'):
 })
 
 const commonOptions: BuildOptions = {
-  watch: isWatch,
   entryPoints,
   logLevel: 'info',
   platform: 'node',
