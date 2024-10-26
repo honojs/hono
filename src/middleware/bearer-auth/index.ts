@@ -51,10 +51,10 @@ type BearerAuthOptions =
  * @param {Function} [options.hashFunction] - A function to handle hashing for safe comparison of authentication tokens.
  * @param {string | object | MessageFunction} [options.noAuthenticationHeaderMessage="Unauthorized"] - The no authentication header message.
  * @param {string | object | MessageFunction} [options.invalidAuthenticationHeaderMeasage="Bad Request"] - The invalid authentication header message.
- * @param {string | object | MessageFunction} [options.invalidTokenMessage="Unauthorized"] - The invalid token message.
+ * @param {string | object | MessageFunction} [options.invalidTokenMessage="Forbidden"] - The invalid token message.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If neither "token" nor "verifyToken" options are provided.
- * @throws {HTTPException} If authentication fails, with 401 status code for missing or invalid token, or 400 status code for invalid request.
+ * @throws {HTTPException} If request lacks authentication credentials, return 401 status code; if request is invalid, return 400 status code; if credentials are invalid, return 403 status code.
  *
  * @example
  * ```ts
@@ -147,9 +147,9 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
           // Invalid Token
           await throwHTTPException(
             c,
-            401,
+            403,
             `${wwwAuthenticatePrefix}error="invalid_token"`,
-            options.invalidTokenMessage || 'Unauthorized'
+            options.invalidTokenMessage || 'Forbidden'
           )
         }
       }

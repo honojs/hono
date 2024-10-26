@@ -264,8 +264,8 @@ describe('Bearer Auth by Middleware', () => {
     req.headers.set('Authorization', 'Bearer invalid-token')
     const res = await app.request(req)
     expect(res).not.toBeNull()
-    expect(res.status).toBe(401)
-    expect(await res.text()).toBe('Unauthorized')
+    expect(res.status).toBe(403)
+    expect(await res.text()).toBe('Forbidden')
     expect(res.headers.get('x-custom')).toBeNull()
   })
 
@@ -325,8 +325,8 @@ describe('Bearer Auth by Middleware', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(handlerExecuted).toBeFalsy()
-    expect(res.status).toBe(401)
-    expect(await res.text()).toBe('Unauthorized')
+    expect(res.status).toBe(403)
+    expect(await res.text()).toBe('Forbidden')
   })
 
   it('Should authorize - with any token in list', async () => {
@@ -363,7 +363,7 @@ describe('Bearer Auth by Middleware', () => {
     })
     expect(res).not.toBeNull()
     expect(handlerExecuted).toBeFalsy()
-    expect(res.status).toBe(401)
+    expect(res.status).toBe(403)
   })
 
   it('Should authorize - custom header', async () => {
@@ -382,8 +382,8 @@ describe('Bearer Auth by Middleware', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(handlerExecuted).toBeFalsy()
-    expect(res.status).toBe(401)
-    expect(await res.text()).toBe('Unauthorized')
+    expect(res.status).toBe(403)
+    expect(await res.text()).toBe('Forbidden')
   })
 
   it('Should not authorize - custom no authorization header message as string', async () => {
@@ -489,7 +489,7 @@ describe('Bearer Auth by Middleware', () => {
     req.headers.set('Authorization', 'Bearer invalid-token')
     const res = await app.request(req)
     expect(res).not.toBeNull()
-    expect(res.status).toBe(401)
+    expect(res.status).toBe(403)
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe('Custom invalid token message as string')
   })
@@ -499,7 +499,7 @@ describe('Bearer Auth by Middleware', () => {
     req.headers.set('Authorization', 'Bearer invalid-token')
     const res = await app.request(req)
     expect(res).not.toBeNull()
-    expect(res.status).toBe(401)
+    expect(res.status).toBe(403)
     expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe('{"message":"Custom invalid token message as object"}')
@@ -510,7 +510,7 @@ describe('Bearer Auth by Middleware', () => {
     req.headers.set('Authorization', 'Bearer invalid-token')
     const res = await app.request(req)
     expect(res).not.toBeNull()
-    expect(res.status).toBe(401)
+    expect(res.status).toBe(403)
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe('Custom invalid token message as function string')
   })
@@ -520,7 +520,7 @@ describe('Bearer Auth by Middleware', () => {
     req.headers.set('Authorization', 'Bearer invalid-token')
     const res = await app.request(req)
     expect(res).not.toBeNull()
-    expect(res.status).toBe(401)
+    expect(res.status).toBe(403)
     expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe('{"message":"Custom invalid token message as function object"}')
