@@ -7,7 +7,6 @@ type HandlerSet<T> = {
   handler: T
   possibleKeys: string[]
   score: number
-  name: string // For debug
 }
 
 type HandlerParamsSet<T> = HandlerSet<T> & {
@@ -20,23 +19,20 @@ export class Node<T> {
   children: Record<string, Node<T>>
   patterns: Pattern[]
   order: number = 0
-  name: string
   params: Record<string, string> = Object.create(null)
 
   constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
     this.children = children || Object.create(null)
     this.methods = []
-    this.name = ''
     if (method && handler) {
       const m: Record<string, HandlerSet<T>> = Object.create(null)
-      m[method] = { handler, possibleKeys: [], score: 0, name: this.name }
+      m[method] = { handler, possibleKeys: [], score: 0 }
       this.methods = [m]
     }
     this.patterns = []
   }
 
   insert(method: string, path: string, handler: T): Node<T> {
-    this.name = `${method} ${path}`
     this.order = ++this.order
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -76,7 +72,6 @@ export class Node<T> {
     const handlerSet: HandlerSet<T> = {
       handler,
       possibleKeys: possibleKeys.filter((v, i, a) => a.indexOf(v) === i),
-      name: this.name,
       score: this.order,
     }
 
@@ -100,12 +95,14 @@ export class Node<T> {
       const processedSet: Record<string, boolean> = Object.create(null)
       if (handlerSet !== undefined) {
         handlerSet.params = Object.create(null)
-        handlerSet.possibleKeys.forEach((key) => {
-          const processed = processedSet[handlerSet.name]
+        for (let i = 0, len = handlerSet.possibleKeys.length; i < len; i++) {
+          const key = handlerSet.possibleKeys[i]
+          const processed = processedSet[handlerSet.score]
           handlerSet.params[key] =
             params[key] && !processed ? params[key] : nodeParams[key] ?? params[key]
-          processedSet[handlerSet.name] = true
-        })
+          processedSet[handlerSet.score] = true
+        }
+
         handlerSets.push(handlerSet)
       }
     }
@@ -132,7 +129,7 @@ export class Node<T> {
 
         if (nextNode) {
           nextNode.params = node.params
-          if (isLast === true) {
+          if (isLast) {
             // '/hello/*' => match '/hello'
             if (nextNode.children['*']) {
               handlerSets.push(
@@ -177,10 +174,10 @@ export class Node<T> {
             continue
           }
 
-          if (matcher === true || (matcher instanceof RegExp && matcher.test(part))) {
+          if (matcher === true || matcher.test(part)) {
             if (typeof key === 'string') {
               params[name] = part
-              if (isLast === true) {
+              if (isLast) {
                 handlerSets.push(...this.gHSets(child, method, params, node.params))
                 if (child.children['*']) {
                   handlerSets.push(...this.gHSets(child.children['*'], method, params, node.params))
