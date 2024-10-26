@@ -30,9 +30,9 @@ export class SmartRouter<T> implements Router<T> {
     for (; i < len; i++) {
       const router = routers[i]
       try {
-        routes.forEach((args) => {
-          router.add(...args)
-        })
+        for (let i = 0, len = routes.length; i < len; i++) {
+          router.add(...routes[i])
+        }
         res = router.match(method, path)
       } catch (e) {
         if (e instanceof UnsupportedPathError) {
