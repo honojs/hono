@@ -373,6 +373,9 @@ const shallowEqual = (a: Props, b: Props): boolean => {
   return true
 }
 
+export type MemorableFC<T> = FC<T> & {
+  [DOM_MEMO]: (prevProps: Readonly<T>, nextProps: Readonly<T>) => boolean
+}
 export const memo = <T>(
   component: FC<T>,
   propsAreEqual: (prevProps: Readonly<T>, nextProps: Readonly<T>) => boolean = shallowEqual
