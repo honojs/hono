@@ -1,7 +1,7 @@
 import { raw } from '../helper/html'
 import { escapeToBuffer, resolveCallbackSync, stringBufferToString } from '../utils/html'
 import type { HtmlEscaped, HtmlEscapedString, StringBufferWithCallbacks } from '../utils/html'
-import { DOM_RENDERER } from './constants'
+import { DOM_RENDERER, DOM_MEMO } from './constants'
 import type { Context } from './context'
 import { createContext, globalContexts, useContext } from './context'
 import { domRenderers } from './intrinsic-element/common'
@@ -346,7 +346,7 @@ export const jsxFn = (
   }
 }
 
-const shallowEqual = (a: Props, b: Props): boolean => {
+export const shallowEqual = (a: Props, b: Props): boolean => {
   if (a === b) {
     return true
   }
@@ -382,13 +382,21 @@ export const memo = <T>(
 ): FC<T> => {
   let computed: ReturnType<FC<T>> = null
   let prevProps: T | undefined = undefined
-  return ((props) => {
+  const wrapper: MemorableFC<T> = ((props: T) => {
     if (prevProps && !propsAreEqual(prevProps, props)) {
       computed = null
     }
     prevProps = props
     return (computed ||= component(props))
-  }) as FC<T>
+  }) as MemorableFC<T>
+
+  // This function is for toString(), but it can also be used for DOM renderer.
+  // So, set DOM_MEMO and DOM_RENDERER for DOM renderer.
+  wrapper[DOM_MEMO] = propsAreEqual
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(wrapper as any)[DOM_RENDERER] = component
+
+  return wrapper as FC<T>
 }
 
 export const Fragment = ({
