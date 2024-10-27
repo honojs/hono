@@ -8,9 +8,9 @@ import { decodeURIComponent_ } from './url'
 export type Cookie = Record<string, string>
 export type SignedCookie = Record<string, string | false>
 
-type PartitionCookieConstraint =
-  | { partition: true; secure: true }
-  | { partition?: boolean; secure?: boolean } // reset to default
+type PartitionedCookieConstraint =
+  | { partitioned: true; secure: true }
+  | { partitioned?: boolean; secure?: boolean } // reset to default
 type SecureCookieConstraint = { secure: true }
 type HostCookieConstraint = { secure: true; path: '/'; domain?: undefined }
 
@@ -25,7 +25,7 @@ export type CookieOptions = {
   sameSite?: 'Strict' | 'Lax' | 'None' | 'strict' | 'lax' | 'none'
   partitioned?: boolean
   prefix?: CookiePrefixOptions
-} & PartitionCookieConstraint
+} & PartitionedCookieConstraint
 export type CookiePrefixOptions = 'host' | 'secure'
 
 export type CookieConstraint<Name> = Name extends `__Secure-${string}`
