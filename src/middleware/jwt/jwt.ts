@@ -13,9 +13,9 @@ import '../../context'
 import type { SignatureAlgorithm } from '../../utils/jwt/jwa'
 import type { SignatureKey } from '../../utils/jwt/jws'
 
-export type JwtVariables = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  jwtPayload: any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type JwtVariables<T = any> = {
+  jwtPayload: T
 }
 
 /**

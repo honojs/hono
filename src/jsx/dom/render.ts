@@ -663,7 +663,7 @@ const updateSync = (context: Context, node: NodeObject): void => {
   })
   try {
     build(context, node, undefined)
-  } catch (e) {
+  } catch {
     return
   }
   if (node.a) {

@@ -49,7 +49,7 @@ export class StreamingApi {
         input = this.encoder.encode(input)
       }
       await this.writer.write(input)
-    } catch (e) {
+    } catch {
       // Do nothing. If you want to handle errors, create a stream by yourself.
     }
     return this
@@ -67,7 +67,7 @@ export class StreamingApi {
   async close() {
     try {
       await this.writer.close()
-    } catch (e) {
+    } catch {
       // Do nothing. If you want to handle errors, create a stream by yourself.
     }
     this.closed = true

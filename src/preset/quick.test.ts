@@ -1,5 +1,5 @@
-import { Hono } from './quick'
 import { getRouterName } from '../helper/dev'
+import { Hono } from './quick'
 
 describe('hono/quick preset', () => {
   it('Should have SmartRouter + LinearRouter', async () => {

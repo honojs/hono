@@ -6,6 +6,7 @@
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 import { encodeBase64 } from '../../utils/encode'
+import type { PermissionsPolicyDirective } from './permissions-policy'
 
 export type SecureHeadersVariables = {
   secureHeadersNonce?: string
@@ -54,10 +55,17 @@ interface ReportingEndpointOptions {
   url: string
 }
 
+type PermissionsPolicyValue = '*' | 'self' | 'src' | 'none' | string
+
+type PermissionsPolicyOptions = Partial<
+  Record<PermissionsPolicyDirective, PermissionsPolicyValue[] | boolean>
+>
+
 type overridableHeader = boolean | string
 
 interface SecureHeadersOptions {
   contentSecurityPolicy?: ContentSecurityPolicyOptions
+  contentSecurityPolicyReportOnly?: ContentSecurityPolicyOptions
   crossOriginEmbedderPolicy?: overridableHeader
   crossOriginResourcePolicy?: overridableHeader
   crossOriginOpenerPolicy?: overridableHeader
@@ -73,6 +81,7 @@ interface SecureHeadersOptions {
   xPermittedCrossDomainPolicies?: overridableHeader
   xXssProtection?: overridableHeader
   removePoweredBy?: boolean
+  permissionsPolicy?: PermissionsPolicyOptions
 }
 
 type HeadersMap = {
@@ -108,6 +117,7 @@ const DEFAULT_OPTIONS: SecureHeadersOptions = {
   xPermittedCrossDomainPolicies: true,
   xXssProtection: true,
   removePoweredBy: true,
+  permissionsPolicy: {},
 }
 
 type SecureHeadersCallback = (
@@ -122,13 +132,12 @@ const generateNonce = () => {
 }
 
 export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
-  const nonce =
-    ctx.get('secureHeadersNonce') ||
-    (() => {
-      const newNonce = generateNonce()
-      ctx.set('secureHeadersNonce', newNonce)
-      return newNonce
-    })()
+  const key = 'secureHeadersNonce'
+  const init = ctx.get(key)
+  const nonce = init || generateNonce()
+  if (init == null) {
+    ctx.set(key, nonce)
+  }
   return `'nonce-${nonce}'`
 }
 
@@ -139,6 +148,7 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
  *
  * @param {Partial<SecureHeadersOptions>} [customOptions] - The options for the secure headers middleware.
  * @param {ContentSecurityPolicyOptions} [customOptions.contentSecurityPolicy] - Settings for the Content-Security-Policy header.
+ * @param {ContentSecurityPolicyOptions} [customOptions.contentSecurityPolicyReportOnly] - Settings for the Content-Security-Policy-Report-Only header.
  * @param {overridableHeader} [customOptions.crossOriginEmbedderPolicy=false] - Settings for the Cross-Origin-Embedder-Policy header.
  * @param {overridableHeader} [customOptions.crossOriginResourcePolicy=true] - Settings for the Cross-Origin-Resource-Policy header.
  * @param {overridableHeader} [customOptions.crossOriginOpenerPolicy=true] - Settings for the Cross-Origin-Opener-Policy header.
@@ -154,6 +164,7 @@ export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
  * @param {overridableHeader} [customOptions.xPermittedCrossDomainPolicies=true] - Settings for the X-Permitted-Cross-Domain-Policies header.
  * @param {overridableHeader} [customOptions.xXssProtection=true] - Settings for the X-XSS-Protection header.
  * @param {boolean} [customOptions.removePoweredBy=true] - Settings for remove X-Powered-By header.
+ * @param {PermissionsPolicyOptions} [customOptions.permissionsPolicy] - Settings for the Permissions-Policy header.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
@@ -173,6 +184,21 @@ export const secureHeaders = (customOptions?: SecureHeadersOptions): MiddlewareH
       callbacks.push(callback)
     }
     headersToSet.push(['Content-Security-Policy', value as string])
+  }
+
+  if (options.contentSecurityPolicyReportOnly) {
+    const [callback, value] = getCSPDirectives(options.contentSecurityPolicyReportOnly)
+    if (callback) {
+      callbacks.push(callback)
+    }
+    headersToSet.push(['Content-Security-Policy-Report-Only', value as string])
+  }
+
+  if (options.permissionsPolicy && Object.keys(options.permissionsPolicy).length > 0) {
+    headersToSet.push([
+      'Permissions-Policy',
+      getPermissionsPolicyDirectives(options.permissionsPolicy),
+    ])
   }
 
   if (options.reportingEndpoints) {
@@ -241,7 +267,10 @@ function getCSPDirectives(
     : [
         (ctx, headersToSet) =>
           headersToSet.map((values) => {
-            if (values[0] === 'Content-Security-Policy') {
+            if (
+              values[0] === 'Content-Security-Policy' ||
+              values[0] === 'Content-Security-Policy-Report-Only'
+            ) {
               const clone = values[1].slice() as unknown as string[]
               callbacks.forEach((cb) => {
                 cb(ctx, clone)
@@ -253,6 +282,36 @@ function getCSPDirectives(
           }),
         resultValues,
       ]
+}
+
+function getPermissionsPolicyDirectives(policy: PermissionsPolicyOptions): string {
+  return Object.entries(policy)
+    .map(([directive, value]) => {
+      const kebabDirective = camelToKebab(directive)
+
+      if (typeof value === 'boolean') {
+        return `${kebabDirective}=${value ? '*' : 'none'}`
+      }
+
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          return `${kebabDirective}=()`
+        }
+        if (value.length === 1 && (value[0] === '*' || value[0] === 'none')) {
+          return `${kebabDirective}=${value[0]}`
+        }
+        const allowlist = value.map((item) => (['self', 'src'].includes(item) ? item : `"${item}"`))
+        return `${kebabDirective}=(${allowlist.join(' ')})`
+      }
+
+      return ''
+    })
+    .filter(Boolean)
+    .join(', ')
+}
+
+function camelToKebab(str: string): string {
+  return str.replace(/([a-z\d])([A-Z])/g, '$1-$2').toLowerCase()
 }
 
 function getReportingEndpoints(

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /** @jsxImportSource ../../jsx */
 import { Hono } from '../../hono'
 import { poweredBy } from '../../middleware/powered-by'
@@ -216,7 +216,7 @@ describe('toSSG function', () => {
       writeFile: vi.fn(() => Promise.resolve()),
       mkdir: vi.fn(() => Promise.resolve()),
     }
-    const afterGenerateHookMock: AfterGenerateHook = vi.fn((result) => {
+    const afterGenerateHookMock: AfterGenerateHook = vi.fn<AfterGenerateHook>((result) => {
       if (result.files) {
         result.files.forEach((file) => console.log(file))
       }

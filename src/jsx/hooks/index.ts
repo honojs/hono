@@ -396,7 +396,7 @@ export const useImperativeHandle = <T>(
 }
 
 export const useSyncExternalStore = <T>(
-  subscribe: (callback: (value: T) => void) => () => void,
+  subscribe: (callback: () => void) => () => void,
   getSnapshot: () => T,
   getServerSnapshot?: () => T
 ): T => {

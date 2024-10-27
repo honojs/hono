@@ -1,6 +1,6 @@
-import { Hono } from '../../hono'
 import { Context } from '../../context'
 import type { AddressType, GetConnInfo } from '../../helper/conninfo'
+import { Hono } from '../../hono'
 import { ipRestriction } from '.'
 import type { IPRestrictionRule } from '.'
 
@@ -78,7 +78,7 @@ describe('isMatchForRule', () => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await middleware(undefined as any, () => Promise.resolve())
-    } catch (e) {
+    } catch {
       return false
     }
     return true

@@ -470,6 +470,21 @@ describe('render to string', () => {
       expect(template.toString()).toBe('<span data-text="&lt;html-escaped-string&gt;">Hello</span>')
     })
   })
+
+  describe('head', () => {
+    it('Simple head elements should be rendered as is', () => {
+      const template = (
+        <head>
+          <title>Hono!</title>
+          <meta name='description' content='A description' />
+          <script src='script.js'></script>
+        </head>
+      )
+      expect(template.toString()).toBe(
+        '<head><title>Hono!</title><meta name="description" content="A description"/><script src="script.js"></script></head>'
+      )
+    })
+  })
 })
 
 describe('className', () => {
@@ -1044,7 +1059,6 @@ describe('default export', () => {
     'StrictMode',
   ].forEach((key) => {
     it(key, () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((DefaultExport as any)[key]).toBeDefined()
     })
   })

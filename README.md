@@ -71,7 +71,7 @@ Contributions Welcome! You can contribute in the following ways.
 - Create an Issue - Propose a new feature. Report a bug.
 - Pull Request - Fix a bug and typo. Refactor the code.
 - Create third-party middleware - Instruct below.
-- Share - Share your thoughts on the Blog, Twitter, and others.
+- Share - Share your thoughts on the Blog, X, and others.
 - Make your application - Please try to use Hono.
 
 For more details, see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).

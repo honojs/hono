@@ -1,0 +1,4 @@
+generated
+!generated/.gitkeep
+trace
+*result.txt

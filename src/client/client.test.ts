@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { HttpResponse, http } from 'msw'
 import { setupServer } from 'msw/node'
@@ -844,6 +844,27 @@ describe('$url() with a param option', () => {
       },
     })
     expect(url.pathname).toBe('/something/123/456')
+  })
+})
+
+describe('$url() with a query option', () => {
+  const app = new Hono().get(
+    '/posts',
+    validator('query', () => {
+      return {} as { filter: 'test' }
+    }),
+    (c) => c.json({ ok: true })
+  )
+  type AppType = typeof app
+  const client = hc<AppType>('http://localhost')
+
+  it('Should return the correct path - /posts?filter=test', async () => {
+    const url = client.posts.$url({
+      query: {
+        filter: 'test',
+      },
+    })
+    expect(url.search).toBe('?filter=test')
   })
 })
 

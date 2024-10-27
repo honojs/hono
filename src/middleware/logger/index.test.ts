@@ -34,7 +34,7 @@ describe('Logger by Middleware', () => {
     const res = await app.request('http://localhost/empty')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(log.startsWith('  --> GET /empty \x1b[32m200\x1b[0m')).toBe(true)
+    expect(log.startsWith('--> GET /empty \x1b[32m200\x1b[0m')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 
@@ -42,7 +42,7 @@ describe('Logger by Middleware', () => {
     const res = await app.request('http://localhost/short')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(log.startsWith('  --> GET /short \x1b[32m200\x1b[0m')).toBe(true)
+    expect(log.startsWith('--> GET /short \x1b[32m200\x1b[0m')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 
@@ -50,7 +50,7 @@ describe('Logger by Middleware', () => {
     const res = await app.request('http://localhost/long')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(log.startsWith('  --> GET /long \x1b[32m200\x1b[0m')).toBe(true)
+    expect(log.startsWith('--> GET /long \x1b[32m200\x1b[0m')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 
@@ -58,7 +58,7 @@ describe('Logger by Middleware', () => {
     const res = await app.request('http://localhost/seconds')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(log.startsWith('  --> GET /seconds \x1b[32m200\x1b[0m')).toBe(true)
+    expect(log.startsWith('--> GET /seconds \x1b[32m200\x1b[0m')).toBe(true)
     expect(log).toMatch(/1s/)
   })
 
@@ -70,7 +70,7 @@ describe('Logger by Middleware', () => {
     const res = await app.request('http://localhost/notfound')
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
-    expect(log.startsWith('  --> GET /notfound \x1b[33m404\x1b[0m')).toBe(true)
+    expect(log.startsWith('--> GET /notfound \x1b[33m404\x1b[0m')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 })
@@ -111,7 +111,7 @@ describe('Logger by Middleware in NO_COLOR', () => {
     const res = await app.request('http://localhost/empty')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(log.startsWith('  --> GET /empty 200')).toBe(true)
+    expect(log.startsWith('--> GET /empty 200')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 
@@ -119,7 +119,7 @@ describe('Logger by Middleware in NO_COLOR', () => {
     const res = await app.request('http://localhost/short')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(log.startsWith('  --> GET /short 200')).toBe(true)
+    expect(log.startsWith('--> GET /short 200')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 
@@ -127,7 +127,7 @@ describe('Logger by Middleware in NO_COLOR', () => {
     const res = await app.request('http://localhost/long')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(log.startsWith('  --> GET /long 200')).toBe(true)
+    expect(log.startsWith('--> GET /long 200')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 
@@ -135,7 +135,7 @@ describe('Logger by Middleware in NO_COLOR', () => {
     const res = await app.request('http://localhost/seconds')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    expect(log.startsWith('  --> GET /seconds 200')).toBe(true)
+    expect(log.startsWith('--> GET /seconds 200')).toBe(true)
     expect(log).toMatch(/1s/)
   })
 
@@ -147,7 +147,7 @@ describe('Logger by Middleware in NO_COLOR', () => {
     const res = await app.request('http://localhost/notfound')
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
-    expect(log.startsWith('  --> GET /notfound 404')).toBe(true)
+    expect(log.startsWith('--> GET /notfound 404')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 })
