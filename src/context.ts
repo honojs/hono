@@ -307,9 +307,10 @@ type ResponseHeader =
   | 'X-Robots-Tag'
   | 'X-XSS-Protection'
 
-interface SetHeaders {
+interface SetHeaders<E extends Env> {
   (name: 'Content-Type', value?: BaseMime, options?: SetHeadersOptions): void
   (name: ResponseHeader, value?: string, options?: SetHeadersOptions): void
+  (name: NonNullable<E['Headers']>, value?: string, options?: SetHeadersOptions): void
   (name: string, value?: string, options?: SetHeadersOptions): void
 }
 
@@ -576,7 +577,7 @@ export class Context<
    * })
    * ```
    */
-  header: SetHeaders = (name, value, options): void => {
+  header: SetHeaders<E> = (name, value, options): void => {
     // Clear the header
     if (value === undefined) {
       if (this.#headers) {
