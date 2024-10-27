@@ -31,7 +31,7 @@ export type RequestIdOptions = {
  * type Variables = RequestIdVariables
  * const app = new Hono<{Variables: Variables}>()
  *
- * app.use(requestId())
+ * app.use('*', requestId())
  * app.get('/', (c) => {
  *   console.log(c.get('requestId')) // Debug
  *   return c.text('Hello World!')
