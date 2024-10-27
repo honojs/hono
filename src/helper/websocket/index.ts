@@ -69,7 +69,7 @@ export class WSContext<T = unknown> {
   }
   send(source: string | ArrayBuffer | Uint8Array, options?: SendOptions): void {
     this.#init.send(
-      typeof source === 'string' ? source : source instanceof Uint8Array ? source.buffer : source,
+      source,
       options ?? {}
     )
   }
