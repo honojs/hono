@@ -15,7 +15,7 @@ export interface BunServerWebSocket<T> {
 interface BunWebSocketHandler<T> {
   open(ws: BunServerWebSocket<T>): void
   close(ws: BunServerWebSocket<T>, code?: number, reason?: string): void
-  message(ws: BunServerWebSocket<T>, message: string | Uint8Array): void
+  message(ws: BunServerWebSocket<T>, message: string | { buffer: ArrayBufferLike }): void
 }
 interface CreateWebSocket<T> {
   upgradeWebSocket: UpgradeWebSocket<T>
