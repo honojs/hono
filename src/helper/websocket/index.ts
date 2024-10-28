@@ -68,10 +68,7 @@ export class WSContext<T = unknown> {
     this.protocol = init.protocol ?? null
   }
   send(source: string | ArrayBuffer | Uint8Array, options?: SendOptions): void {
-    this.#init.send(
-      source,
-      options ?? {}
-    )
+    this.#init.send(source, options ?? {})
   }
   raw?: T
   binaryType: BinaryType = 'arraybuffer'
