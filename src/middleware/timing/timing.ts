@@ -30,9 +30,7 @@ interface TimingOptions {
 const getTime = (): number => {
   try {
     return performance.now()
-  } catch (e) {
-    console.warn('performance.now() is not available. Falling back to Date.now()', e)
-  }
+  } catch {}
   return Date.now()
 }
 
