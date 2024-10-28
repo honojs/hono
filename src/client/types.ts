@@ -1,7 +1,6 @@
 import type { Hono } from '../hono'
 import type { HonoBase } from '../hono-base'
 import type { Endpoint, ResponseFormat, Schema } from '../types'
-import type { CustomHeader, RequestHeader } from '../utils/headers'
 import type { StatusCode, SuccessStatusCode } from '../utils/http-status'
 import type { HasRequiredKeys } from '../utils/types'
 
@@ -20,8 +19,8 @@ export type ClientRequestOptions<T = unknown> = {
 } & (keyof T extends never
   ? {
       headers?:
-        | Record<RequestHeader | CustomHeader, string>
-        | (() => Record<RequestHeader | CustomHeader, string> | Promise<Record<string, string>>)
+        | Record<string, string>
+        | (() => Record<string, string> | Promise<Record<string, string>>)
     }
   : {
       headers: T | (() => T | Promise<T>)

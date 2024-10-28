@@ -174,7 +174,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    */
   header(name: RequestHeader): string | undefined
   header(name: string): string | undefined
-  header(): Record<RequestHeader | CustomHeader, string>
+  header(): Record<RequestHeader | (string & CustomHeader), string>
   header(name?: string) {
     if (name) {
       return this.raw.headers.get(name.toLowerCase()) ?? undefined
