@@ -12,7 +12,7 @@ import type {
 import { parseBody } from './utils/body'
 import type { BodyData, ParseBodyOptions } from './utils/body'
 import type { Simplify, UnionToIntersection } from './utils/types'
-import { decodeURIComponent_, getQueryParam, getQueryParams } from './utils/url'
+import { getQueryParam, getQueryParams, tryDecode } from './utils/url'
 
 type Body = {
   json: any
@@ -91,11 +91,12 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return key ? this.getDecodedParam(key) : this.getAllDecodedParams()
   }
 
+  #tryDecodeURIComponent = (str: string) => tryDecode(str, decodeURIComponent)
+
   private getDecodedParam(key: string): string | undefined {
     const paramKey = this.#matchResult[0][this.routeIndex][1][key]
     const param = this.getParamValue(paramKey)
-
-    return param ? (/\%/.test(param) ? decodeURIComponent_(param) : param) : undefined
+    return param ? this.#tryDecodeURIComponent(param) : undefined
   }
 
   private getAllDecodedParams(): Record<string, string> {
@@ -105,7 +106,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     for (const key of keys) {
       const value = this.getParamValue(this.#matchResult[0][this.routeIndex][1][key])
       if (value && typeof value === 'string') {
-        decoded[key] = /\%/.test(value) ? decodeURIComponent_(value) : value
+        decoded[key] = this.#tryDecodeURIComponent(value)
       }
     }
 
