@@ -330,4 +330,4 @@ export type AcceptHeader =
   | 'Accept-Ranges'
 
 // note: `X-${string}` is deprecated
-export type CustomHeader = (string & {})
+export type CustomHeader = string & {}
