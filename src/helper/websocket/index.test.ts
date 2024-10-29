@@ -89,7 +89,7 @@ describe('WSContext', () => {
     expect(nullURLWS.url).toBeNull()
   })
   it('Should normalize message in send()', () => {
-    let data: string | ArrayBuffer | null = null
+    let data: string | ArrayBuffer | Uint8Array | null = null
     const wsContext = new WSContext({
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       send(received, _options) {
@@ -104,6 +104,6 @@ describe('WSContext', () => {
     expect(data).toBeInstanceOf(ArrayBuffer)
 
     wsContext.send(new Uint8Array(16))
-    expect(data).toBeInstanceOf(ArrayBuffer)
+    expect(data).toBeInstanceOf(Uint8Array)
   })
 })
