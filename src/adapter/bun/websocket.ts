@@ -22,7 +22,7 @@ interface CreateWebSocket<T> {
   websocket: BunWebSocketHandler<BunWebSocketData>
 }
 export interface BunWebSocketData {
-  connId: number
+  events: WSEvents
   url: URL
   protocol: string
 }
@@ -46,18 +46,15 @@ export const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSCon
 }
 
 export const createBunWebSocket = <T>(): CreateWebSocket<T> => {
-  const websocketConns: WSEvents[] = []
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const upgradeWebSocket: UpgradeWebSocket<any> = defineWebSocketHelper((c, events) => {
     const server = getBunServer(c)
     if (!server) {
       throw new TypeError('env has to include the 2nd argument of fetch.')
     }
-    const connId = websocketConns.push(events) - 1
     const upgradeResult = server.upgrade<BunWebSocketData>(c.req.raw, {
       data: {
-        connId,
+        events,
         url: new URL(c.req.url),
         protocol: c.req.url,
       },
@@ -69,13 +66,13 @@ export const createBunWebSocket = <T>(): CreateWebSocket<T> => {
   })
   const websocket: BunWebSocketHandler<BunWebSocketData> = {
     open(ws) {
-      const websocketListeners = websocketConns[ws.data.connId]
+      const websocketListeners = ws.data.events
       if (websocketListeners.onOpen) {
         websocketListeners.onOpen(new Event('open'), createWSContext(ws))
       }
     },
     close(ws, code, reason) {
-      const websocketListeners = websocketConns[ws.data.connId]
+      const websocketListeners = ws.data.events
       if (websocketListeners.onClose) {
         websocketListeners.onClose(
           new CloseEvent('close', {
@@ -87,7 +84,7 @@ export const createBunWebSocket = <T>(): CreateWebSocket<T> => {
       }
     },
     message(ws, message) {
-      const websocketListeners = websocketConns[ws.data.connId]
+      const websocketListeners = ws.data.events
       if (websocketListeners.onMessage) {
         const normalizedReceiveData =
           typeof message === 'string' ? message : (message.buffer satisfies WSMessageReceive)
