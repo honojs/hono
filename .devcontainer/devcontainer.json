@@ -2,9 +2,6 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
-    "runArgs": [
-        "--userns=keep-id"
-    ],
     "containerEnv": {
         "HOME": "/home/node"
     },
