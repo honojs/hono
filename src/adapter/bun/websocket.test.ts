@@ -72,31 +72,35 @@ describe('createBunWebSocket()', () => {
   })
   it('Should events are called', async () => {
     const { websocket, upgradeWebSocket } = createBunWebSocket()
-    const ws = {
-      data: {
-        connId: 0,
-      },
-    } as BunServerWebSocket<BunWebSocketData>
 
     const open = vi.fn()
     const message = vi.fn()
     const close = vi.fn()
 
+    const ws = {
+      data: {
+        events: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          onOpen(evt, ws) {
+            open()
+          },
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          onMessage(evt, ws) {
+            message()
+            if (evt.data instanceof ArrayBuffer) {
+              receivedArrayBuffer = evt.data
+            }
+          },
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          onClose(evt, ws) {
+            close()
+          },
+        },
+      },
+    } as BunServerWebSocket<BunWebSocketData>
+
     let receivedArrayBuffer: ArrayBuffer | undefined = undefined
-    await upgradeWebSocket(() => ({
-      onOpen() {
-        open()
-      },
-      onMessage(evt) {
-        message()
-        if (evt.data instanceof ArrayBuffer) {
-          receivedArrayBuffer = evt.data
-        }
-      },
-      onClose() {
-        close()
-      },
-    }))(
+    await upgradeWebSocket(() => ({}))(
       new Context(new Request('http://localhost'), {
         env: {
           upgrade() {
