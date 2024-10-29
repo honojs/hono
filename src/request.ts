@@ -12,7 +12,7 @@ import type {
 import { parseBody } from './utils/body'
 import type { BodyData, ParseBodyOptions } from './utils/body'
 import type { Simplify, UnionToIntersection } from './utils/types'
-import { getQueryParam, getQueryParams, tryDecode } from './utils/url'
+import { decodeURIComponent_, getQueryParam, getQueryParams, tryDecode } from './utils/url'
 
 type Body = {
   json: any
@@ -22,6 +22,8 @@ type Body = {
   formData: FormData
 }
 type BodyCache = Partial<Body & { parsedBody: BodyData }>
+
+const tryDecodeURIComponent = (str: string) => tryDecode(str, decodeURIComponent_)
 
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   /**
@@ -91,12 +93,10 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return key ? this.getDecodedParam(key) : this.getAllDecodedParams()
   }
 
-  #tryDecodeURIComponent = (str: string) => tryDecode(str, decodeURIComponent)
-
   private getDecodedParam(key: string): string | undefined {
     const paramKey = this.#matchResult[0][this.routeIndex][1][key]
     const param = this.getParamValue(paramKey)
-    return param ? this.#tryDecodeURIComponent(param) : undefined
+    return param ? tryDecodeURIComponent(param) : undefined
   }
 
   private getAllDecodedParams(): Record<string, string> {
@@ -106,7 +106,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     for (const key of keys) {
       const value = this.getParamValue(this.#matchResult[0][this.routeIndex][1][key])
       if (value && typeof value === 'string') {
-        decoded[key] = this.#tryDecodeURIComponent(value)
+        decoded[key] = tryDecodeURIComponent(value)
       }
     }
 
