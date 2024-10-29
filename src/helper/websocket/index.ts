@@ -39,7 +39,7 @@ export type WSReadyState = 0 | 1 | 2 | 3
 /**
  * An argument for WSContext class
  */
-export interface WSContestInit<T = unknown> {
+export interface WSContextInit<T = unknown> {
   send(data: string | ArrayBuffer, options: SendOptions): void
   close(code?: number, reason?: string): void
 
@@ -60,8 +60,8 @@ export interface SendOptions {
  * A context for controlling WebSockets
  */
 export class WSContext<T = unknown> {
-  #init: WSContestInit<T>
-  constructor(init: WSContestInit<T>) {
+  #init: WSContextInit<T>
+  constructor(init: WSContextInit<T>) {
     this.#init = init
     this.raw = init.raw
     this.url = init.url ? new URL(init.url) : null
