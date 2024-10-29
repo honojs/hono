@@ -1,5 +1,5 @@
 import { Context } from '../../context'
-import type { WSContestInit } from '.'
+import type { WSContextInit } from '.'
 import { WSContext, createWSMessageEvent, defineWebSocketHelper } from '.'
 
 describe('`createWSMessageEvent`', () => {
@@ -46,7 +46,7 @@ describe('WSContext', () => {
         close(code, reason) {
           resolve([code, reason])
         },
-      } as WSContestInit)
+      } as WSContextInit)
     })
     ws.close(0, 'reason')
     const [code, reason] = await promise
@@ -61,7 +61,7 @@ describe('WSContext', () => {
         send(data, _options) {
           resolve(data)
         },
-      } as WSContestInit)
+      } as WSContextInit)
     })
     ws.send('Hello')
     expect(await promise).toBe('Hello')
@@ -69,33 +69,33 @@ describe('WSContext', () => {
   it('Should readyState works', () => {
     const ws = new WSContext({
       readyState: 0,
-    } as WSContestInit)
+    } as WSContextInit)
     expect(ws.readyState).toBe(0)
   })
   it('Should normalize URL', () => {
     const stringURLWS = new WSContext({
       url: 'http://localhost',
-    } as WSContestInit)
+    } as WSContextInit)
     expect(stringURLWS.url).toBeInstanceOf(URL)
 
     const urlURLWS = new WSContext({
       url: new URL('http://localhost'),
-    } as WSContestInit)
+    } as WSContextInit)
     expect(urlURLWS.url).toBeInstanceOf(URL)
 
     const nullURLWS = new WSContext({
       url: undefined,
-    } as WSContestInit)
+    } as WSContextInit)
     expect(nullURLWS.url).toBeNull()
   })
   it('Should normalize message in send()', () => {
-    let data: string | ArrayBuffer | null = null
+    let data: string | ArrayBuffer | Uint8Array | null = null
     const wsContext = new WSContext({
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       send(received, _options) {
         data = received
       },
-    } as WSContestInit)
+    } as WSContextInit)
 
     wsContext.send('string')
     expect(data).toBe('string')
@@ -104,6 +104,6 @@ describe('WSContext', () => {
     expect(data).toBeInstanceOf(ArrayBuffer)
 
     wsContext.send(new Uint8Array(16))
-    expect(data).toBeInstanceOf(ArrayBuffer)
+    expect(data).toBeInstanceOf(Uint8Array)
   })
 })

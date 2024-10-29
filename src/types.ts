@@ -7,6 +7,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Context } from './context'
 import type { HonoBase } from './hono-base'
+import type { CustomHeader, RequestHeader } from './utils/headers'
 import type { StatusCode } from './utils/http-status'
 import type {
   IfAnyThenEmptyObject,
@@ -1928,7 +1929,7 @@ export type ValidationTargets<T extends FormValue = ParsedFormValue, P extends s
   form: Record<string, T | T[]>
   query: Record<string, string | string[]>
   param: Record<P, P extends `${infer _}?` ? string | undefined : string>
-  header: Record<string, string>
+  header: Record<RequestHeader | CustomHeader, string>
   cookie: Record<string, string>
 }
 

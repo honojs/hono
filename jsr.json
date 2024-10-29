@@ -88,6 +88,7 @@
     "./utils/encode": "./src/utils/encode.ts",
     "./utils/filepath": "./src/utils/filepath.ts",
     "./utils/handler": "./src/utils/handler.ts",
+    "./utils/headers": "./src/utils/headers.ts",
     "./utils/html": "./src/utils/html.ts",
     "./utils/http-status": "./src/utils/http-status.ts",
     "./utils/jwt": "./src/utils/jwt/index.ts",

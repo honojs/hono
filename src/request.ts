@@ -11,6 +11,7 @@ import type {
 } from './types'
 import { parseBody } from './utils/body'
 import type { BodyData, ParseBodyOptions } from './utils/body'
+import type { CustomHeader, RequestHeader } from './utils/headers'
 import type { Simplify, UnionToIntersection } from './utils/types'
 import { decodeURIComponent_, getQueryParam, getQueryParams } from './utils/url'
 
@@ -171,8 +172,9 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * })
    * ```
    */
+  header(name: RequestHeader): string | undefined
   header(name: string): string | undefined
-  header(): Record<string, string>
+  header(): Record<RequestHeader | (string & CustomHeader), string>
   header(name?: string) {
     if (name) {
       return this.raw.headers.get(name.toLowerCase()) ?? undefined
