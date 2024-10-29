@@ -57,7 +57,7 @@ export type HonoOptions<E extends Env> = {
    */
   strict?: boolean
   /**
-   * `router` option specifices which router to use.
+   * `router` option specifies which router to use.
    *
    * @see {@link https://hono.dev/docs/api/hono#router-option}
    *

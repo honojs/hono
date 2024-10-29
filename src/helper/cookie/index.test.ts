@@ -106,7 +106,7 @@ describe('Cookie Middleware', () => {
       expect(res.headers.get('Fortune-Cookie')).toBe('lots-of-money')
     })
 
-    it('Get signed cookie witn invalid signature', async () => {
+    it('Get signed cookie with invalid signature', async () => {
       const req = new Request('http://localhost/cookie-signed-get-one')
       // fortune_cookie has invalid signature
       const cookieString =

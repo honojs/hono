@@ -381,8 +381,8 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
     result = { success: false, files: [], error: errorObj }
   }
   if (options?.afterGenerateHook) {
-    const conbinedAfterGenerateHooks = combineAfterGenerateHooks(options?.afterGenerateHook)
-    await conbinedAfterGenerateHooks(result)
+    const combinedAfterGenerateHooks = combineAfterGenerateHooks(options?.afterGenerateHook)
+    await combinedAfterGenerateHooks(result)
   }
   return result
 }
