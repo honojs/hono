@@ -232,7 +232,7 @@ export class RegExpRouter<T> implements Router<T> {
   private buildAllMatchers(): Record<string, Matcher<T> | null> {
     const matchers: Record<string, Matcher<T> | null> = Object.create(null)
 
-    ;[...Object.keys(this.routes!), ...Object.keys(this.middleware!)].forEach((method) => {
+    Object.keys(this.routes!).concat(Object.keys(this.middleware!)).forEach((method) => {
       matchers[method] ||= this.buildMatcher(method)
     })
 
