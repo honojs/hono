@@ -41,6 +41,11 @@ declare namespace Deno {
    */
   export function writeFile(path: string, data: Uint8Array): Promise<void>
 
+  /**
+   * errors of Deno
+   */
+  export const errors: Record<string, Function>
+
   export function upgradeWebSocket(
     req: Request,
     options: UpgradeWebSocketOptions
@@ -49,6 +54,9 @@ declare namespace Deno {
     socket: WebSocket
   }
 
+  /**
+   * Options of `upgradeWebSocket`
+   */
   export interface UpgradeWebSocketOptions {
     /**
      * Sets the `.protocol` property on the client side web socket to the
