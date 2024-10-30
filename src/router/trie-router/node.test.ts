@@ -28,7 +28,7 @@ describe('Get with *', () => {
   })
 })
 
-describe('Get with * inclusing JS reserved words', () => {
+describe('Get with * including JS reserved words', () => {
   const node = new Node()
   node.insert('get', '*', 'get all')
   it('get /', () => {
