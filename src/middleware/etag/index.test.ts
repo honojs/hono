@@ -65,6 +65,38 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).not.toBe(hash)
   })
 
+  it('Should not be the same etag - ReadableStream', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/rs1', (c) => {
+      return c.body(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array([1]))
+            controller.enqueue(new Uint8Array([2]))
+            controller.close()
+          },
+        })
+      )
+    })
+    app.get('/etag/rs2', (c) => {
+      return c.body(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array([1]))
+            controller.enqueue(new Uint8Array([3]))
+            controller.close()
+          },
+        })
+      )
+    })
+
+    let res = await app.request('http://localhost/etag/rs1')
+    const hash = res.headers.get('Etag')
+    res = await app.request('http://localhost/etag/rs2')
+    expect(res.headers.get('ETag')).not.toBe(hash)
+  })
+
   it('Should return etag header - weak', async () => {
     const app = new Hono()
     app.use('/etag/*', etag({ weak: true }))

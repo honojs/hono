@@ -4,7 +4,7 @@
  */
 
 import type { MiddlewareHandler } from '../../types'
-import { sha1 } from '../../utils/crypto'
+import { generateDigest } from './digest'
 
 type ETagOptions = {
   retainedHeaders?: string[]
@@ -63,7 +63,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     let etag = res.headers.get('ETag')
 
     if (!etag) {
-      const hash = await sha1(res.clone().body || '')
+      const hash = await generateDigest(res.clone().body)
       etag = weak ? `W/"${hash}"` : `"${hash}"`
     }
 
