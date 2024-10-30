@@ -3,13 +3,6 @@
  * Proxy Helper for Hono.
  */
 
-/*
- * The following headers will be deleted from the response:
- * * Content-Encoding
- * * Content-Length
- */
-const forceDeleteResponseHeaderNames = ['Content-Encoding', 'Content-Length']
-
 // Typical header names for requests for proxy use
 type ProxyRequestHeaderName = 'X-Forwarded-For' | 'X-Forwarded-Proto' | 'X-Forwarded-Host'
 
@@ -73,7 +66,12 @@ export const proxyFetch: ProxyFetch = async (input, proxyInit) => {
 
   const res = await fetch(req)
   const resHeaders = new Headers(res.headers)
-  for (const key of forceDeleteResponseHeaderNames.concat(proxyDeleteResponseHeaderNames)) {
+  if (resHeaders.has('content-encoding')) {
+    resHeaders.delete('content-encoding')
+    // Content-Length is the size of the compressed content, not the size of the original content
+    resHeaders.delete('content-length')
+  }
+  for (const key of proxyDeleteResponseHeaderNames) {
     resHeaders.delete(key)
   }
 

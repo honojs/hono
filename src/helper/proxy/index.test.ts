@@ -4,19 +4,34 @@ import { proxyFetch } from '.'
 describe('Proxy Middleware', () => {
   describe('proxyFetch', () => {
     beforeEach(() => {
-      global.fetch = vi.fn().mockResolvedValue(
-        new Response('ok', {
-          headers: {
-            'Content-Encoding': 'gzip',
-            'Content-Length': '100',
-            'Content-Range': 'bytes 0-2/1024',
-            'X-Response-Id': '456',
-          },
-        })
-      )
+      global.fetch = vi.fn().mockImplementation((req) => {
+        if (req.url === 'https://example.com/compressed') {
+          return Promise.resolve(
+            new Response('ok', {
+              headers: {
+                'Content-Encoding': 'gzip',
+                'Content-Length': '1',
+                'Content-Range': 'bytes 0-2/1024',
+                'X-Response-Id': '456',
+              },
+            })
+          )
+        } else if (req.url === 'https://example.com/uncompressed') {
+          return Promise.resolve(
+            new Response('ok', {
+              headers: {
+                'Content-Length': '2',
+                'Content-Range': 'bytes 0-2/1024',
+                'X-Response-Id': '456',
+              },
+            })
+          )
+        }
+        return Promise.resolve(new Response('not found', { status: 404 }))
+      })
     })
 
-    it('simple proxy', async () => {
+    it('compressed', async () => {
       const app = new Hono()
       app.get('/proxy/:path', (c) =>
         proxyFetch(
@@ -28,10 +43,10 @@ describe('Proxy Middleware', () => {
           })
         )
       )
-      const res = await app.request('/proxy/test')
+      const res = await app.request('/proxy/compressed')
       const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
 
-      expect(req.url).toBe('https://example.com/test')
+      expect(req.url).toBe('https://example.com/compressed')
       expect(req.headers.get('X-Request-Id')).toBe('123')
       expect(req.headers.get('Accept-Encoding')).toBeNull()
 
@@ -39,6 +54,31 @@ describe('Proxy Middleware', () => {
       expect(res.headers.get('X-Response-Id')).toBe('456')
       expect(res.headers.get('Content-Encoding')).toBeNull()
       expect(res.headers.get('Content-Length')).toBeNull()
+      expect(res.headers.get('Content-Range')).toBe('bytes 0-2/1024')
+    })
+
+    it('uncompressed', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) =>
+        proxyFetch(
+          new Request(`https://example.com/${c.req.param('path')}`, {
+            headers: {
+              'X-Request-Id': '123',
+              'Accept-Encoding': 'gzip',
+            },
+          })
+        )
+      )
+      const res = await app.request('/proxy/uncompressed')
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+
+      expect(req.url).toBe('https://example.com/uncompressed')
+      expect(req.headers.get('X-Request-Id')).toBe('123')
+      expect(req.headers.get('Accept-Encoding')).toBeNull()
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('X-Response-Id')).toBe('456')
+      expect(res.headers.get('Content-Length')).toBe('2')
       expect(res.headers.get('Content-Range')).toBe('bytes 0-2/1024')
     })
 
@@ -63,10 +103,10 @@ describe('Proxy Middleware', () => {
           }
         )
       )
-      const res = await app.request('/proxy/test')
+      const res = await app.request('/proxy/compressed')
       const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
 
-      expect(req.url).toBe('https://example.com/test')
+      expect(req.url).toBe('https://example.com/compressed')
       expect(req.headers.get('X-Request-Id')).toBe('abc')
       expect(req.headers.get('X-Forwarded-For')).toBe('127.0.0.1')
       expect(req.headers.get('X-Forwarded-Host')).toBe('example.com')
@@ -95,10 +135,10 @@ describe('Proxy Middleware', () => {
           }
         )
       )
-      const res = await app.request('/proxy/test')
+      const res = await app.request('/proxy/compressed')
       const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
 
-      expect(req.url).toBe('https://example.com/test')
+      expect(req.url).toBe('https://example.com/compressed')
       expect(req.headers.get('X-Request-Id')).toBe('123')
       expect(req.headers.get('Accept-Encoding')).toBeNull()
 
