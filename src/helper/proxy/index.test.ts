@@ -80,7 +80,7 @@ describe('Proxy Middleware', () => {
       expect(res.headers.get('Content-Range')).toBeNull()
     })
 
-    it('proxySetRequestHeaders option', async () => {
+    it('proxySetRequestHeaderNames option', async () => {
       const app = new Hono()
       app.get('/proxy/:path', (c) =>
         proxyFetch(
