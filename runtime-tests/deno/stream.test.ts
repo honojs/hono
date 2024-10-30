@@ -2,7 +2,7 @@ import { assertEquals } from '@std/assert'
 import { stream, streamSSE } from '../../src/helper/streaming/index.ts'
 import { Hono } from '../../src/hono.ts'
 
-Deno.test('Shuld call onAbort via stream', async () => {
+Deno.test('Should call onAbort via stream', async () => {
   const app = new Hono()
   let aborted = false
   app.get('/stream', (c) => {
@@ -34,7 +34,7 @@ Deno.test('Shuld call onAbort via stream', async () => {
   await server.shutdown()
 })
 
-Deno.test('Shuld not call onAbort via stream if already closed', async () => {
+Deno.test('Should not call onAbort via stream if already closed', async () => {
   const app = new Hono()
   let aborted = false
   app.get('/stream', (c) => {
@@ -54,7 +54,7 @@ Deno.test('Shuld not call onAbort via stream if already closed', async () => {
   await server.shutdown()
 })
 
-Deno.test('Shuld call onAbort via streamSSE', async () => {
+Deno.test('Should call onAbort via streamSSE', async () => {
   const app = new Hono()
   let aborted = false
   app.get('/stream', (c) => {
@@ -87,7 +87,7 @@ Deno.test('Shuld call onAbort via streamSSE', async () => {
   await server.shutdown()
 })
 
-Deno.test('Shuld not call onAbort via streamSSE if already closed', async () => {
+Deno.test('Should not call onAbort via streamSSE if already closed', async () => {
   const app = new Hono()
   let aborted = false
   app.get('/stream', (c) => {
