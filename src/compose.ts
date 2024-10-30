@@ -60,7 +60,9 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
 
       if (middleware[i]) {
         handler = middleware[i][0][0]
-        if (isContext) context.req.routeIndex = i
+        if (isContext) {
+          context.req.routeIndex = i
+        }
       } else {
         handler = (i === middleware.length && next) || undefined
       }
