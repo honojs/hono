@@ -1119,6 +1119,46 @@ describe('DOM', () => {
     )
   })
 
+  it('consecutive fragment', async () => {
+    const ComponentA = () => {
+      const [count, setCount] = useState(0)
+      return (
+        <>
+          <div>A: {count}</div>
+          <button id='a-button' onClick={() => setCount(count + 1)}>
+            A: +
+          </button>
+        </>
+      )
+    }
+    const App = () => {
+      const [count, setCount] = useState(0)
+      return (
+        <>
+          <ComponentA />
+          <div>B: {count}</div>
+          <button id='b-button' onClick={() => setCount(count + 1)}>
+            B: +
+          </button>
+        </>
+      )
+    }
+    render(<App />, root)
+    expect(root.innerHTML).toBe(
+      '<div>A: 0</div><button id="a-button">A: +</button><div>B: 0</div><button id="b-button">B: +</button>'
+    )
+    root.querySelector<HTMLButtonElement>('#b-button')?.click()
+    await Promise.resolve()
+    expect(root.innerHTML).toBe(
+      '<div>A: 0</div><button id="a-button">A: +</button><div>B: 1</div><button id="b-button">B: +</button>'
+    )
+    root.querySelector<HTMLButtonElement>('#a-button')?.click()
+    await Promise.resolve()
+    expect(root.innerHTML).toBe(
+      '<div>A: 1</div><button id="a-button">A: +</button><div>B: 1</div><button id="b-button">B: +</button>'
+    )
+  })
+
   it('switch child component', async () => {
     const Even = () => <p>Even</p>
     const Odd = () => <div>Odd</div>
