@@ -368,17 +368,22 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
 
   const childNodes = (isNew ? undefined : container.childNodes) as NodeListOf<ChildNode>
   let offset: number
+  let insertBeforeNode: ChildNode | null = null
   if (isNew) {
     offset = -1
+  } else if (!childNodes.length) {
+    offset = 0
   } else {
-    offset =
-      (childNodes.length &&
-        (findChildNodeIndex(childNodes, findInsertBefore(node.nN)) ??
-          findChildNodeIndex(
-            childNodes,
-            next.find((n) => n.tag !== HONO_PORTAL_ELEMENT && n.e)?.e
-          ))) ??
-      -1
+    const offsetByNextNode = findChildNodeIndex(childNodes, findInsertBefore(node.nN))
+    if (offsetByNextNode !== undefined) {
+      insertBeforeNode = childNodes[offsetByNextNode]
+      offset = offsetByNextNode
+    } else {
+      offset =
+        findChildNodeIndex(childNodes, next.find((n) => n.tag !== HONO_PORTAL_ELEMENT && n.e)?.e) ??
+        -1
+    }
+
     if (offset === -1) {
       isNew = true
     }
@@ -418,7 +423,7 @@ const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean)
         // Move extra elements to the back of the container. This is to be done efficiently when elements are swapped.
         container.appendChild(childNodes[offset])
       } else {
-        container.insertBefore(el, childNodes[offset] || null)
+        container.insertBefore(el, insertBeforeNode || childNodes[offset] || null)
       }
     }
   }
