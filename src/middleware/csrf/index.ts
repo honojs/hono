@@ -14,7 +14,7 @@ interface CSRFOptions {
 
 const isSafeMethodRe = /^(GET|HEAD)$/
 const isRequestedByFormElementRe =
-  /^\b(application\/x-www-form-urlencoded|multipart\/form-data|text\/plain)\b/
+  /^\b(application\/x-www-form-urlencoded|multipart\/form-data|text\/plain)\b/i
 
 /**
  * CSRF Protection Middleware for Hono.
@@ -76,7 +76,7 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
   return async function csrf(c, next) {
     if (
       !isSafeMethodRe.test(c.req.method) &&
-      isRequestedByFormElementRe.test(c.req.header('content-type') || '') &&
+      isRequestedByFormElementRe.test(c.req.header('content-type') || 'text/plain') &&
       !isAllowedOrigin(c.req.header('origin'), c)
     ) {
       const res = new Response('Forbidden', {

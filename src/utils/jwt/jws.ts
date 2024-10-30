@@ -50,8 +50,10 @@ async function importPrivateKey(key: SignatureKey, alg: KeyImporterAlgorithm): P
     throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
   }
   if (isCryptoKey(key)) {
-    if (key.type !== 'private') {
-      throw new Error(`unexpected non private key: CryptoKey.type is ${key.type}`)
+    if (key.type !== 'private' && key.type !== 'secret') {
+      throw new Error(
+        `unexpected key type: CryptoKey.type is ${key.type}, expected private or secret`
+      )
     }
     return key
   }

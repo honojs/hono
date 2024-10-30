@@ -52,14 +52,8 @@ export type JSONParsed<T> = T extends { toJSON(): infer J }
   ? T
   : T extends InvalidJSONValue
   ? never
-  : T extends []
-  ? []
-  : T extends readonly [infer R, ...infer U]
-  ? [JSONParsed<InvalidToNull<R>>, ...JSONParsed<U>]
-  : T extends Array<infer U>
-  ? Array<JSONParsed<InvalidToNull<U>>>
-  : T extends ReadonlyArray<infer U>
-  ? ReadonlyArray<JSONParsed<InvalidToNull<U>>>
+  : T extends ReadonlyArray<unknown>
+  ? { [K in keyof T]: JSONParsed<InvalidToNull<T[K]>> }
   : T extends Set<unknown> | Map<unknown, unknown>
   ? {}
   : T extends object
@@ -97,3 +91,9 @@ export type HasRequiredKeys<BaseType extends object> = RequiredKeysOf<BaseType> 
   : true
 
 export type IsAny<T> = boolean extends (T extends never ? true : false) ? true : false
+
+/**
+ * String literal types with auto-completion
+ * @see https://github.com/Microsoft/TypeScript/issues/29729
+ */
+export type StringLiteralUnion<T> = T | (string & Record<never, never>)

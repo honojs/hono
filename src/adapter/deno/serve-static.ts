@@ -2,7 +2,7 @@ import type { ServeStaticOptions } from '../../middleware/serve-static'
 import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
 import type { Env, MiddlewareHandler } from '../../types'
 
-const { open, lstatSync } = Deno
+const { open, lstatSync, errors } = Deno
 
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E>
@@ -13,12 +13,14 @@ export const serveStatic = <E extends Env = Env>(
         const file = await open(path)
         return file.readable
       } catch (e) {
-        console.warn(`${e}`)
+        if (!(e instanceof errors.NotFound)) {
+          console.warn(`${e}`)
+        }
         return null
       }
     }
     const pathResolve = (path: string) => {
-      return `./${path}`
+      return path.startsWith('/') ? path : `./${path}`
     }
     const isDir = (path: string) => {
       let isDir

@@ -1,16 +1,16 @@
 import { raw } from '../helper/html'
 import { escapeToBuffer, resolveCallbackSync, stringBufferToString } from '../utils/html'
 import type { HtmlEscaped, HtmlEscapedString, StringBufferWithCallbacks } from '../utils/html'
+import { DOM_RENDERER, DOM_MEMO } from './constants'
 import type { Context } from './context'
 import { createContext, globalContexts, useContext } from './context'
-import { DOM_RENDERER } from './constants'
+import { domRenderers } from './intrinsic-element/common'
+import * as intrinsicElementTags from './intrinsic-element/components'
 import type {
   JSX as HonoJSX,
   IntrinsicElements as IntrinsicElementsDefined,
 } from './intrinsic-elements'
 import { normalizeIntrinsicElementKey, styleObjectForEach } from './utils'
-import * as intrinsicElementTags from './intrinsic-element/components'
-import { domRenderers } from './intrinsic-element/common'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Props = Record<string, any>
@@ -29,6 +29,9 @@ export namespace JSX {
   }
   export interface IntrinsicElements extends IntrinsicElementsDefined {
     [tagName: string]: Props
+  }
+  export interface IntrinsicAttributes {
+    key?: string | number | bigint | null | undefined
   }
 }
 
@@ -62,7 +65,7 @@ const emptyTags = [
   'track',
   'wbr',
 ]
-const booleanAttributes = [
+export const booleanAttributes = [
   'allowfullscreen',
   'async',
   'autofocus',
@@ -239,7 +242,7 @@ export class JSXNode implements HtmlEscaped {
 }
 
 class JSXFunctionNode extends JSXNode {
-  toStringToBuffer(buffer: StringBufferWithCallbacks): void {
+  override toStringToBuffer(buffer: StringBufferWithCallbacks): void {
     const { children } = this
 
     const res = (this.tag as Function).call(null, {
@@ -281,7 +284,7 @@ class JSXFunctionNode extends JSXNode {
 }
 
 export class JSXFragmentNode extends JSXNode {
-  toStringToBuffer(buffer: StringBufferWithCallbacks): void {
+  override toStringToBuffer(buffer: StringBufferWithCallbacks): void {
     childrenToStringToBuffer(this.children, buffer)
   }
 }
@@ -327,7 +330,7 @@ export const jsxFn = (
       props,
       children
     )
-  } else if (tag === 'svg') {
+  } else if (tag === 'svg' || tag === 'head') {
     nameSpaceContext ||= createContext('')
     return new JSXNode(tag, props, [
       new JSXFunctionNode(
@@ -343,7 +346,7 @@ export const jsxFn = (
   }
 }
 
-const shallowEqual = (a: Props, b: Props): boolean => {
+export const shallowEqual = (a: Props, b: Props): boolean => {
   if (a === b) {
     return true
   }
@@ -370,19 +373,30 @@ const shallowEqual = (a: Props, b: Props): boolean => {
   return true
 }
 
+export type MemorableFC<T> = FC<T> & {
+  [DOM_MEMO]: (prevProps: Readonly<T>, nextProps: Readonly<T>) => boolean
+}
 export const memo = <T>(
   component: FC<T>,
   propsAreEqual: (prevProps: Readonly<T>, nextProps: Readonly<T>) => boolean = shallowEqual
 ): FC<T> => {
   let computed: ReturnType<FC<T>> = null
   let prevProps: T | undefined = undefined
-  return ((props) => {
+  const wrapper: MemorableFC<T> = ((props: T) => {
     if (prevProps && !propsAreEqual(prevProps, props)) {
       computed = null
     }
     prevProps = props
     return (computed ||= component(props))
-  }) as FC<T>
+  }) as MemorableFC<T>
+
+  // This function is for toString(), but it can also be used for DOM renderer.
+  // So, set DOM_MEMO and DOM_RENDERER for DOM renderer.
+  wrapper[DOM_MEMO] = propsAreEqual
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(wrapper as any)[DOM_RENDERER] = component
+
+  return wrapper as FC<T>
 }
 
 export const Fragment = ({

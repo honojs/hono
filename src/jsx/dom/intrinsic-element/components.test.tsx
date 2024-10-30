@@ -1,7 +1,7 @@
 /** @jsxImportSource ../../ */
 import { JSDOM, ResourceLoader } from 'jsdom'
-import { useState } from '../../hooks'
 import { Suspense, render } from '..'
+import { useState } from '../../hooks'
 import { clearCache, composeRef } from './components'
 
 describe('intrinsic element', () => {
@@ -10,7 +10,6 @@ describe('intrinsic element', () => {
     global.requestAnimationFrame = (cb) => setTimeout(cb)
 
     CustomResourceLoader = class CustomResourceLoader extends ResourceLoader {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       fetch(url: string) {
         return url.includes('invalid')
           ? Promise.reject('Invalid URL')
@@ -524,7 +523,7 @@ describe('intrinsic element', () => {
         )
       })
 
-      it('should be ordered by precedence attribute', () => {
+      it('should ignore precedence attribute', () => {
         const App = () => {
           return (
             <div>
@@ -749,6 +748,33 @@ describe('intrinsic element', () => {
         await new Promise((resolve) => setTimeout(resolve))
         await Promise.resolve()
         expect(root.innerHTML).toBe('<div><div>Content</div><button>Show</button></div>')
+      })
+
+      it('should be inserted into body if has no props', async () => {
+        const App = () => {
+          return (
+            <div>
+              <script>alert('Hello')</script>
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(document.head.innerHTML).toBe('')
+        // prettier-ignore
+        expect(root.innerHTML).toBe('<div><script>alert(\'Hello\')</script></div>')
+      })
+
+      it('should be inserted into body if has only src prop', async () => {
+        const App = () => {
+          return (
+            <div>
+              <script src='script.js'></script>
+            </div>
+          )
+        }
+        render(<App />, root)
+        expect(document.head.innerHTML).toBe('')
+        expect(root.innerHTML).toBe('<div><script src="script.js"></script></div>')
       })
     })
 

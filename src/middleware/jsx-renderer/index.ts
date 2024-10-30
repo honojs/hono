@@ -1,6 +1,6 @@
 /**
  * @module
- * JSR Renderer Middleware for Hono.
+ * JSX Renderer Middleware for Hono.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -60,6 +60,7 @@ const createRenderer =
       if (options.stream === true) {
         c.header('Transfer-Encoding', 'chunked')
         c.header('Content-Type', 'text/html; charset=UTF-8')
+        c.header('Content-Encoding', 'Identity')
       } else {
         for (const [key, value] of Object.entries(options.stream)) {
           c.header(key, value)
@@ -74,7 +75,7 @@ const createRenderer =
 /**
  * JSX Renderer Middleware for hono.
  *
- * @see {@link{https://hono.dev/docs/middleware/builtin/jsx-renderer}}
+ * @see {@link https://hono.dev/docs/middleware/builtin/jsx-renderer}
  *
  * @param {ComponentWithChildren} [component] - The component to render, which can accept children and props.
  * @param {RendererOptions} [options] - The options for the JSX renderer middleware.

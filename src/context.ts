@@ -9,8 +9,10 @@ import type {
   RouterRoute,
   TypedResponse,
 } from './types'
+import type { ResponseHeader } from './utils/headers'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
+import type { BaseMime } from './utils/mime'
 import type {
   InvalidJSONValue,
   IsAny,
@@ -18,7 +20,6 @@ import type {
   JSONValue,
   SimplifyDeepArray,
 } from './utils/types'
-import type { BaseMime } from './utils/mime'
 
 type HeaderRecord =
   | Record<'Content-Type', BaseMime>
@@ -236,77 +237,6 @@ interface SetHeadersOptions {
   append?: boolean
 }
 
-type ResponseHeader =
-  | 'Access-Control-Allow-Credentials'
-  | 'Access-Control-Allow-Headers'
-  | 'Access-Control-Allow-Methods'
-  | 'Access-Control-Allow-Origin'
-  | 'Access-Control-Expose-Headers'
-  | 'Access-Control-Max-Age'
-  | 'Age'
-  | 'Allow'
-  | 'Cache-Control'
-  | 'Clear-Site-Data'
-  | 'Content-Disposition'
-  | 'Content-Encoding'
-  | 'Content-Language'
-  | 'Content-Length'
-  | 'Content-Location'
-  | 'Content-Range'
-  | 'Content-Security-Policy'
-  | 'Content-Security-Policy-Report-Only'
-  | 'Content-Type'
-  | 'Cookie'
-  | 'Cross-Origin-Embedder-Policy'
-  | 'Cross-Origin-Opener-Policy'
-  | 'Cross-Origin-Resource-Policy'
-  | 'Date'
-  | 'ETag'
-  | 'Expires'
-  | 'Last-Modified'
-  | 'Location'
-  | 'Permissions-Policy'
-  | 'Pragma'
-  | 'Retry-After'
-  | 'Save-Data'
-  | 'Sec-CH-Prefers-Color-Scheme'
-  | 'Sec-CH-Prefers-Reduced-Motion'
-  | 'Sec-CH-UA'
-  | 'Sec-CH-UA-Arch'
-  | 'Sec-CH-UA-Bitness'
-  | 'Sec-CH-UA-Form-Factor'
-  | 'Sec-CH-UA-Full-Version'
-  | 'Sec-CH-UA-Full-Version-List'
-  | 'Sec-CH-UA-Mobile'
-  | 'Sec-CH-UA-Model'
-  | 'Sec-CH-UA-Platform'
-  | 'Sec-CH-UA-Platform-Version'
-  | 'Sec-CH-UA-WoW64'
-  | 'Sec-Fetch-Dest'
-  | 'Sec-Fetch-Mode'
-  | 'Sec-Fetch-Site'
-  | 'Sec-Fetch-User'
-  | 'Sec-GPC'
-  | 'Server'
-  | 'Server-Timing'
-  | 'Service-Worker-Navigation-Preload'
-  | 'Set-Cookie'
-  | 'Strict-Transport-Security'
-  | 'Timing-Allow-Origin'
-  | 'Trailer'
-  | 'Transfer-Encoding'
-  | 'Upgrade'
-  | 'Vary'
-  | 'WWW-Authenticate'
-  | 'Warning'
-  | 'X-Content-Type-Options'
-  | 'X-DNS-Prefetch-Control'
-  | 'X-Frame-Options'
-  | 'X-Permitted-Cross-Domain-Policies'
-  | 'X-Powered-By'
-  | 'X-Robots-Tag'
-  | 'X-XSS-Protection'
-
 interface SetHeaders {
   (name: 'Content-Type', value?: BaseMime, options?: SetHeadersOptions): void
   (name: ResponseHeader, value?: string, options?: SetHeadersOptions): void
@@ -465,16 +395,31 @@ export class Context<
   set res(_res: Response | undefined) {
     this.#isFresh = false
     if (this.#res && _res) {
-      this.#res.headers.delete('content-type')
-      for (const [k, v] of this.#res.headers.entries()) {
-        if (k === 'set-cookie') {
-          const cookies = this.#res.headers.getSetCookie()
-          _res.headers.delete('set-cookie')
-          for (const cookie of cookies) {
-            _res.headers.append('set-cookie', cookie)
+      try {
+        for (const [k, v] of this.#res.headers.entries()) {
+          if (k === 'content-type') {
+            continue
           }
+          if (k === 'set-cookie') {
+            const cookies = this.#res.headers.getSetCookie()
+            _res.headers.delete('set-cookie')
+            for (const cookie of cookies) {
+              _res.headers.append('set-cookie', cookie)
+            }
+          } else {
+            _res.headers.set(k, v)
+          }
+        }
+      } catch (e) {
+        if (e instanceof TypeError && e.message.includes('immutable')) {
+          // `_res` is immutable (probably a response from a fetch API), so retry with a new response.
+          this.res = new Response(_res.body, {
+            headers: _res.headers,
+            status: _res.status,
+          })
+          return
         } else {
-          _res.headers.set(k, v)
+          throw e
         }
       }
     }
@@ -844,18 +789,11 @@ export class Context<
     this.#preparedHeaders['content-type'] = 'text/html; charset=UTF-8'
 
     if (typeof html === 'object') {
-      if (!(html instanceof Promise)) {
-        html = (html as string).toString() // HtmlEscapedString object to string
-      }
-      if ((html as string | Promise<string>) instanceof Promise) {
-        return (html as unknown as Promise<string>)
-          .then((html) => resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}))
-          .then((html) => {
-            return typeof arg === 'number'
-              ? this.newResponse(html, arg, headers)
-              : this.newResponse(html, arg)
-          })
-      }
+      return resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then((html) => {
+        return typeof arg === 'number'
+          ? this.newResponse(html, arg, headers)
+          : this.newResponse(html, arg)
+      })
     }
 
     return typeof arg === 'number'

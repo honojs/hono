@@ -247,13 +247,14 @@ export const useReducer = <T, A>(
   initialArg: T,
   init?: (initialState: T) => T
 ): [T, (action: A) => void] => {
-  const [state, setState] = useState(() => (init ? init(initialArg) : initialArg))
-  return [
-    state,
+  const handler = useCallback(
     (action: A) => {
       setState((state) => reducer(state, action))
     },
-  ]
+    [reducer]
+  )
+  const [state, setState] = useState(() => (init ? init(initialArg) : initialArg))
+  return [state, handler]
 }
 
 const useEffectCommon = (
@@ -395,7 +396,7 @@ export const useImperativeHandle = <T>(
 }
 
 export const useSyncExternalStore = <T>(
-  subscribe: (callback: (value: T) => void) => () => void,
+  subscribe: (callback: () => void) => () => void,
   getSnapshot: () => T,
   getServerSnapshot?: () => T
 ): T => {

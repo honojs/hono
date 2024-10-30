@@ -57,7 +57,7 @@ export type HonoOptions<E extends Env> = {
    */
   strict?: boolean
   /**
-   * `router` option specifices which router to use.
+   * `router` option specifies which router to use.
    *
    * @see {@link https://hono.dev/docs/api/hono#router-option}
    *
@@ -212,7 +212,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   >(
     path: SubPath,
     app: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> & S, BasePath> {
+  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S, BasePath> {
     const subApp = this.basePath(path)
     app.routes.map((r) => {
       let handler

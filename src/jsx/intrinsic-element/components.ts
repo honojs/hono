@@ -1,13 +1,13 @@
+import { raw } from '../../helper/html'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
 import { JSXNode, getNameSpaceContext } from '../base'
-import { useContext } from '../context'
 import type { Child, Props } from '../base'
-import type { FC, PropsWithChildren } from '../types'
-import { raw } from '../../helper/html'
-import { dataPrecedenceAttr, deDupeKeyMap } from './common'
-import { PERMALINK } from '../constants'
 import { toArray } from '../children'
+import { PERMALINK } from '../constants'
+import { useContext } from '../context'
 import type { IntrinsicElements } from '../intrinsic-elements'
+import type { FC, PropsWithChildren } from '../types'
+import { dataPrecedenceAttr, deDupeKeyMap } from './common'
 
 const metaTagMap: WeakMap<
   object,
@@ -106,8 +106,15 @@ const documentMetadataTag = (tag: string, children: Child, props: Props, sort: b
 
 export const title: FC<PropsWithChildren> = ({ children, ...props }) => {
   const nameSpaceContext = getNameSpaceContext()
-  if (nameSpaceContext && useContext(nameSpaceContext) === 'svg') {
-    new JSXNode('title', props, toArray(children ?? []) as Child[])
+  if (nameSpaceContext) {
+    const context = useContext(nameSpaceContext)
+    if (context === 'svg' || context === 'head') {
+      return new JSXNode(
+        'title',
+        props,
+        toArray(children ?? []) as Child[]
+      ) as unknown as HtmlEscapedString
+    }
   }
 
   return documentMetadataTag('title', children, props, false)
@@ -116,7 +123,11 @@ export const script: FC<PropsWithChildren<IntrinsicElements['script']>> = ({
   children,
   ...props
 }) => {
-  if (['src', 'async'].some((k) => !props[k])) {
+  const nameSpaceContext = getNameSpaceContext()
+  if (
+    ['src', 'async'].some((k) => !props[k]) ||
+    (nameSpaceContext && useContext(nameSpaceContext) === 'head')
+  ) {
     return returnWithoutSpecialBehavior('script', children, props)
   }
 
@@ -144,6 +155,10 @@ export const link: FC<PropsWithChildren<IntrinsicElements['link']>> = ({ childre
   return documentMetadataTag('link', children, props, 'precedence' in props)
 }
 export const meta: FC<PropsWithChildren> = ({ children, ...props }) => {
+  const nameSpaceContext = getNameSpaceContext()
+  if (nameSpaceContext && useContext(nameSpaceContext) === 'head') {
+    return returnWithoutSpecialBehavior('meta', children, props)
+  }
   return documentMetadataTag('meta', children, props, false)
 }
 

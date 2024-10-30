@@ -55,8 +55,8 @@ function log(
 ) {
   const out =
     prefix === LogPrefix.Incoming
-      ? `  ${prefix} ${method} ${path}`
-      : `  ${prefix} ${method} ${path} ${colorStatus(status)} ${elapsed}`
+      ? `${prefix} ${method} ${path}`
+      : `${prefix} ${method} ${path} ${colorStatus(status)} ${elapsed}`
   fn(out)
 }
 
@@ -79,7 +79,7 @@ function log(
 export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
   return async function logger(c, next) {
     const { method } = c.req
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     const path = getPath(c.req.raw)
 
     log(fn, LogPrefix.Incoming, method, path)

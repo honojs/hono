@@ -25,7 +25,7 @@ type ExcludeResponseType<T> = T extends Response & TypedResponse<any> ? never : 
 
 const jsonRegex = /^application\/([a-z-\.]+\+)?json(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/
 const multipartRegex = /^multipart\/form-data(;\s?boundary=[a-zA-Z0-9'"()+_,\-./:=?]+)?$/
-const urlencodedRegex = /^application\/x-www-form-urlencoded$/
+const urlencodedRegex = /^application\/x-www-form-urlencoded(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/
 
 export const validator = <
   InputType,
