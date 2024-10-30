@@ -383,6 +383,11 @@
       "types": "./dist/types/helper/conninfo/index.d.ts",
       "import": "./dist/helper/conninfo/index.js",
       "require": "./dist/cjs/helper/conninfo/index.js"
+    },
+    "./proxy": {
+      "types": "./dist/types/helper/proxy/index.d.ts",
+      "import": "./dist/helper/proxy/index.js",
+      "require": "./dist/cjs/helper/proxy/index.js"
     }
   },
   "typesVersions": {
@@ -587,6 +592,9 @@
       ],
       "conninfo": [
         "./dist/types/helper/conninfo"
+      ],
+      "proxy": [
+        "./dist/types/helper/proxy"
       ]
     }
   },
