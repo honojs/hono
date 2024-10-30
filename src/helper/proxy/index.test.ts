@@ -9,7 +9,7 @@ describe('Proxy Middleware', () => {
           headers: {
             'Content-Encoding': 'gzip',
             'Content-Length': '100',
-            'Content-Range': '100-200',
+            'Content-Range': 'bytes 0-2/1024',
             'X-Response-Id': '456',
           },
         })
@@ -39,7 +39,7 @@ describe('Proxy Middleware', () => {
       expect(res.headers.get('X-Response-Id')).toBe('456')
       expect(res.headers.get('Content-Encoding')).toBeNull()
       expect(res.headers.get('Content-Length')).toBeNull()
-      expect(res.headers.get('Content-Range')).toBeNull()
+      expect(res.headers.get('Content-Range')).toBe('bytes 0-2/1024')
     })
 
     it('proxySetRequestHeaders option', async () => {
@@ -77,7 +77,7 @@ describe('Proxy Middleware', () => {
       expect(res.headers.get('X-Response-Id')).toBe('456')
       expect(res.headers.get('Content-Encoding')).toBeNull()
       expect(res.headers.get('Content-Length')).toBeNull()
-      expect(res.headers.get('Content-Range')).toBeNull()
+      expect(res.headers.get('Content-Range')).toBe('bytes 0-2/1024')
     })
 
     it('proxySetRequestHeaderNames option', async () => {
@@ -106,7 +106,7 @@ describe('Proxy Middleware', () => {
       expect(res.headers.get('X-Response-Id')).toBeNull()
       expect(res.headers.get('Content-Encoding')).toBeNull()
       expect(res.headers.get('Content-Length')).toBeNull()
-      expect(res.headers.get('Content-Range')).toBeNull()
+      expect(res.headers.get('Content-Range')).toBe('bytes 0-2/1024')
     })
   })
 })

@@ -7,9 +7,8 @@
  * The following headers will be deleted from the response:
  * * Content-Encoding
  * * Content-Length
- * * Content-Range
  */
-const forceDeleteResponseHeaderNames = ['Content-Encoding', 'Content-Length', 'Content-Range']
+const forceDeleteResponseHeaderNames = ['Content-Encoding', 'Content-Length']
 
 // Typical header names for requests for proxy use
 type ProxyRequestHeaderName = 'X-Forwarded-For' | 'X-Forwarded-Proto' | 'X-Forwarded-Host'
