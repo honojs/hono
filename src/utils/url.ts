@@ -104,7 +104,7 @@ export const getPath = (request: Request): string => {
   const url = request.url
   const start = url.indexOf('/', 8)
   let i = start
-  for (const len = url.length; i < len; i++) {
+  for (; i < url.length; i++) {
     const charCode = url.charCodeAt(i)
     if (charCode === 37) {
       // '%'
