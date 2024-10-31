@@ -207,10 +207,10 @@ const _decodeURI = (value: string) => {
   if (!/[%+]/.test(value)) {
     return value
   }
-  if (value.indexOf('+') !== -1) {
+  if (value.includes('+')) {
     value = value.replace(/\+/g, ' ')
   }
-  return value.indexOf('%') !== -1 ? decodeURIComponent_(value) : value
+  return value.includes('%') ? decodeURIComponent_(value) : value
 }
 
 const _getQueryParam = (

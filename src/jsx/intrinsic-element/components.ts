@@ -49,7 +49,7 @@ const insertIntoHead: (
       tags.unshift([tag, props, precedence])
     }
 
-    if (buffer[0].indexOf('</head>') !== -1) {
+    if (buffer[0].includes('</head>')) {
       let insertTags
       if (precedence === undefined) {
         insertTags = tags.map(([tag]) => tag)

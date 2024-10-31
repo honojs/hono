@@ -27,7 +27,7 @@ export const RETAINED_304_HEADERS = [
 ]
 
 function etagMatches(etag: string, ifNoneMatch: string | null) {
-  return ifNoneMatch != null && ifNoneMatch.split(/,\s*/).indexOf(etag) > -1
+  return ifNoneMatch != null && ifNoneMatch.split(/,\s*/).includes(etag)
 }
 
 /**
@@ -77,7 +77,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
         },
       })
       c.res.headers.forEach((_, key) => {
-        if (retainedHeaders.indexOf(key.toLowerCase()) === -1) {
+        if (!retainedHeaders.includes(key.toLowerCase())) {
           c.res.headers.delete(key)
         }
       })

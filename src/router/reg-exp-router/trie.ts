@@ -34,7 +34,7 @@ export class Trie {
     for (let i = groups.length - 1; i >= 0; i--) {
       const [mark] = groups[i]
       for (let j = tokens.length - 1; j >= 0; j--) {
-        if (tokens[j].indexOf(mark) !== -1) {
+        if (tokens[j].includes(mark)) {
           tokens[j] = tokens[j].replace(mark, groups[i][1])
           break
         }
