@@ -211,4 +211,29 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('x-message-retain')).toBe(message)
     expect(res.headers.get('x-message')).toBeFalsy()
   })
+
+  describe('When crypto is not available', () => {
+    let _crypto: Crypto | undefined
+    beforeAll(() => {
+      _crypto = globalThis.crypto
+      Object.defineProperty(globalThis, 'crypto', {
+        value: {},
+      })
+    })
+
+    afterAll(() => {
+      Object.defineProperty(globalThis, 'crypto', {
+        value: _crypto,
+      })
+    })
+
+    it('Should not generate etag', async () => {
+      const app = new Hono()
+      app.use('/etag/*', etag())
+      app.get('/etag/no-digest', (c) => c.text('Hono is cool'))
+      const res = await app.request('/etag/no-digest')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('ETag')).toBeNull()
+    })
+  })
 })

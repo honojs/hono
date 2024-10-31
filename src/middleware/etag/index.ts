@@ -64,6 +64,9 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
 
     if (!etag) {
       const hash = await generateDigest(res.clone().body)
+      if (hash === null) {
+        return
+      }
       etag = weak ? `W/"${hash}"` : `"${hash}"`
     }
 
