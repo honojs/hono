@@ -8,7 +8,7 @@ type Algorithm = {
   alias: string
 }
 
-type Data = string | boolean | number | object | ArrayBufferView | ArrayBuffer | ReadableStream
+type Data = string | boolean | number | object | ArrayBufferView | ArrayBuffer
 
 export const sha256 = async (data: Data): Promise<string | null> => {
   const algorithm: Algorithm = { name: 'SHA-256', alias: 'sha256' }
@@ -31,15 +31,6 @@ export const md5 = async (data: Data): Promise<string | null> => {
 export const createHash = async (data: Data, algorithm: Algorithm): Promise<string | null> => {
   let sourceBuffer: ArrayBufferView | ArrayBuffer
 
-  if (data instanceof ReadableStream) {
-    let body = ''
-    const reader = data.getReader()
-    await reader?.read().then(async (chuck) => {
-      const value = await createHash(chuck.value || '', algorithm)
-      body += value
-    })
-    return body
-  }
   if (ArrayBuffer.isView(data) || data instanceof ArrayBuffer) {
     sourceBuffer = data
   } else {
