@@ -17,7 +17,7 @@ export function getColorEnabled(): boolean {
   const isNoColor =
     typeof Deno?.noColor === 'boolean'
       ? (Deno.noColor as boolean)
-      : typeof process !== 'undefined'
+      : process !== undefined
       ? // eslint-disable-next-line no-unsafe-optional-chaining
         'NO_COLOR' in process?.env
       : false

@@ -57,11 +57,11 @@ export class Trie {
     const paramReplacementMap: ReplacementMap = []
 
     regexp = regexp.replace(/#(\d+)|@(\d+)|\.\*\$/g, (_, handlerIndex, paramIndex) => {
-      if (typeof handlerIndex !== 'undefined') {
+      if (handlerIndex !== undefined) {
         indexReplacementMap[++captureIndex] = Number(handlerIndex)
         return '$()'
       }
-      if (typeof paramIndex !== 'undefined') {
+      if (paramIndex !== undefined) {
         paramReplacementMap[Number(paramIndex)] = ++captureIndex
         return ''
       }
