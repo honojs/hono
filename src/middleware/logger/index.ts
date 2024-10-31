@@ -28,19 +28,23 @@ const time = (start: number) => {
 
 const colorStatus = (status: number) => {
   const colorEnabled = getColorEnabled()
-  const out: { [key: string]: string } = {
-    7: colorEnabled ? `\x1b[35m${status}\x1b[0m` : `${status}`,
-    5: colorEnabled ? `\x1b[31m${status}\x1b[0m` : `${status}`,
-    4: colorEnabled ? `\x1b[33m${status}\x1b[0m` : `${status}`,
-    3: colorEnabled ? `\x1b[36m${status}\x1b[0m` : `${status}`,
-    2: colorEnabled ? `\x1b[32m${status}\x1b[0m` : `${status}`,
-    1: colorEnabled ? `\x1b[32m${status}\x1b[0m` : `${status}`,
-    0: colorEnabled ? `\x1b[33m${status}\x1b[0m` : `${status}`,
+  if (!colorEnabled) {
+    return `${status}`
   }
-
-  const calculateStatus = (status / 100) | 0
-
-  return out[calculateStatus]
+  switch ((status / 100) | 0) {
+    case 7: // magenta = ???
+      return `\x1b[35m${status}\x1b[0m`
+    case 5: // red = error
+      return `\x1b[31m${status}\x1b[0m`
+    case 3: // cyan = redirect
+      return `\x1b[36m${status}\x1b[0m`
+    case 2:
+    case 1: // green = success
+      return `\x1b[32m${status}\x1b[0m`
+    case 4:
+    case 0: // yellow = warning
+      return `\x1b[33m${status}\x1b[0m`
+  }
 }
 
 type PrintFunc = (str: string, ...rest: string[]) => void
