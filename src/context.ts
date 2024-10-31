@@ -690,6 +690,8 @@ export class Context<
     })
   }
 
+  #newResponse = this.newResponse
+
   /**
    * `.body()` can return the HTTP response.
    * You can set headers with `.header()` and set HTTP status code with `.status`.
@@ -717,8 +719,8 @@ export class Context<
     headers?: HeaderRecord
   ): Response => {
     return typeof arg === 'number'
-      ? this.newResponse(data, arg, headers)
-      : this.newResponse(data, arg)
+      ? this.#newResponse(data, arg, headers)
+      : this.#newResponse(data, arg)
   }
 
   /**
@@ -750,8 +752,8 @@ export class Context<
     this.#preparedHeaders['content-type'] = TEXT_PLAIN
     // @ts-expect-error `Response` due to missing some types-only keys
     return typeof arg === 'number'
-      ? this.newResponse(text, arg, headers)
-      : this.newResponse(text, arg)
+      ? this.#newResponse(text, arg, headers)
+      : this.#newResponse(text, arg)
   }
 
   /**
@@ -779,7 +781,7 @@ export class Context<
     this.#preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
     /* eslint-disable @typescript-eslint/no-explicit-any */
     return (
-      typeof arg === 'number' ? this.newResponse(body, arg, headers) : this.newResponse(body, arg)
+      typeof arg === 'number' ? this.#newResponse(body, arg, headers) : this.#newResponse(body, arg)
     ) as any
   }
 
@@ -794,14 +796,14 @@ export class Context<
     if (typeof html === 'object') {
       return resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then((html) => {
         return typeof arg === 'number'
-          ? this.newResponse(html, arg, headers)
-          : this.newResponse(html, arg)
+          ? this.#newResponse(html, arg, headers)
+          : this.#newResponse(html, arg)
       })
     }
 
     return typeof arg === 'number'
-      ? this.newResponse(html as string, arg, headers)
-      : this.newResponse(html as string, arg)
+      ? this.#newResponse(html as string, arg, headers)
+      : this.#newResponse(html as string, arg)
   }
 
   /**
@@ -825,7 +827,7 @@ export class Context<
   ): Response & TypedResponse<undefined, T, 'redirect'> => {
     this.#headers ??= new Headers()
     this.#headers.set('Location', location)
-    return this.newResponse(null, status ?? 302) as any
+    return this.#newResponse(null, status ?? 302) as any
   }
 
   /**
