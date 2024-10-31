@@ -630,9 +630,8 @@ export class Context<
     headers?: HeaderRecord
   ): Response => {
     // Optimized
-    if (this.#isFresh && !headers && !arg) {
+    if (this.#isFresh && !headers && !arg && this.#status === 200) {
       return new Response(data, {
-        status: this.#status,
         headers: this.#preparedHeaders,
       })
     }
