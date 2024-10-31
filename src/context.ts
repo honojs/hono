@@ -266,7 +266,10 @@ export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
  * @returns The updated Headers object.
  */
 const setHeaders = (headers: Headers, map: Record<string, string> = {}) => {
-  Object.entries(map).forEach(([key, value]) => headers.set(key, value))
+  for (let i = 0, keys = Object.keys(map), len = keys.length; i < len; i++) {
+    const key = keys[i]
+    headers.set(key, map[key])
+  }
   return headers
 }
 
@@ -627,8 +630,9 @@ export class Context<
     headers?: HeaderRecord
   ): Response => {
     // Optimized
-    if (this.#isFresh && !headers && !arg && this.#status === 200) {
+    if (this.#isFresh && !headers && !arg) {
       return new Response(data, {
+        status: this.#status,
         headers: this.#preparedHeaders,
       })
     }
