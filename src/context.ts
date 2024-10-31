@@ -266,8 +266,7 @@ export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
  * @returns The updated Headers object.
  */
 const setHeaders = (headers: Headers, map: Record<string, string> = {}) => {
-  for (let i = 0, keys = Object.keys(map), len = keys.length; i < len; i++) {
-    const key = keys[i]
+  for (const key of Object.keys(map)) {
     headers.set(key, map[key])
   }
   return headers
