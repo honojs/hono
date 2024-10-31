@@ -28,6 +28,20 @@ describe('Logger by Middleware', () => {
       return c.text(longRandomString)
     })
     app.get('/empty', (c) => c.text(''))
+    app.get('/redirect', (c) => {
+      return c.text('', 301, {
+        Location: '/empty',
+      })
+    })
+    app.get('/1xx', (c) => {
+      return c.text('', 100)
+    })
+    app.get('/5xx', (c) => {
+      return c.text('', 511)
+    })
+    app.get('/7xx', (c) => {
+      return c.text('', 777 as never)
+    })
   })
 
   it('Log status 200 with empty body', async () => {
@@ -62,6 +76,14 @@ describe('Logger by Middleware', () => {
     expect(log).toMatch(/1s/)
   })
 
+  it('Log status 301 with empty body', async () => {
+    const res = await app.request('http://localhost/redirect')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(301)
+    expect(log.startsWith('--> GET /redirect \x1b[36m301\x1b[0m')).toBe(true)
+    expect(log).toMatch(/m?s$/)
+  })
+
   it('Log status 404', async () => {
     const msg = 'Default 404 Not Found'
     app.all('*', (c) => {
@@ -71,6 +93,30 @@ describe('Logger by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
     expect(log.startsWith('--> GET /notfound \x1b[33m404\x1b[0m')).toBe(true)
+    expect(log).toMatch(/m?s$/)
+  })
+
+  it('Log status 511 with empty body', async () => {
+    const res = await app.request('http://localhost/5xx')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(511)
+    expect(log.startsWith('--> GET /5xx \x1b[31m511\x1b[0m')).toBe(true)
+    expect(log).toMatch(/m?s$/)
+  })
+
+  it('Log status 777 with empty body', async () => {
+    const res = await app.request('http://localhost/7xx')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(777)
+    expect(log.startsWith('--> GET /7xx \x1b[35m200\x1b[0m')).toBe(true)
+    expect(log).toMatch(/m?s$/)
+  })
+
+  it('Log status 100 with empty body', async () => {
+    const res = await app.request('http://localhost/1xx')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(100)
+    expect(log.startsWith('--> GET /1xx \x1b[35m100\x1b[0m')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 })
