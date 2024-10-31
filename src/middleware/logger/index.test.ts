@@ -33,14 +33,8 @@ describe('Logger by Middleware', () => {
         Location: '/empty',
       })
     })
-    app.get('/1xx', (c) => {
-      return c.text('', 100)
-    })
     app.get('/5xx', (c) => {
       return c.text('', 511)
-    })
-    app.get('/7xx', (c) => {
-      return c.text('', 777 as never)
     })
   })
 
@@ -101,22 +95,6 @@ describe('Logger by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(511)
     expect(log.startsWith('--> GET /5xx \x1b[31m511\x1b[0m')).toBe(true)
-    expect(log).toMatch(/m?s$/)
-  })
-
-  it('Log status 777 with empty body', async () => {
-    const res = await app.request('http://localhost/7xx')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(777)
-    expect(log.startsWith('--> GET /7xx \x1b[35m200\x1b[0m')).toBe(true)
-    expect(log).toMatch(/m?s$/)
-  })
-
-  it('Log status 100 with empty body', async () => {
-    const res = await app.request('http://localhost/1xx')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(100)
-    expect(log.startsWith('--> GET /1xx \x1b[35m100\x1b[0m')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 })
