@@ -104,7 +104,7 @@ export const getPath = (request: Request): string => {
   const url = request.url
   const start = url.indexOf('/', 8)
   let i = start
-  for (; i < url.length; i++) {
+  for (const len = url.length; i < len; i++) {
     const charCode = url.charCodeAt(i)
     if (charCode === 37) {
       // '%'
@@ -210,7 +210,7 @@ const _decodeURI = (value: string) => {
   if (value.indexOf('+') !== -1) {
     value = value.replace(/\+/g, ' ')
   }
-  return /%/.test(value) ? decodeURIComponent_(value) : value
+  return value.indexOf('%') !== -1 ? decodeURIComponent_(value) : value
 }
 
 const _getQueryParam = (
