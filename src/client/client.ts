@@ -81,11 +81,7 @@ class ClientRequestImpl {
 
     const headerValues: Record<string, string> = {
       ...args?.header,
-      ...(typeof opt?.headers === 'function'
-        ? await opt.headers()
-        : opt?.headers
-        ? opt.headers
-        : {}),
+      ...(typeof opt?.headers === 'function' ? await opt.headers() : opt?.headers),
     }
 
     if (args?.cookie) {
