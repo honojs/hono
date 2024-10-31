@@ -382,10 +382,6 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     this.routes.push(r)
   }
 
-  private matchRoute(method: string, path: string) {
-    return this.router.match(method, path)
-  }
-
   private handleError(err: unknown, c: Context<E>) {
     if (err instanceof Error) {
       return this.errorHandler(err, c)
@@ -406,7 +402,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     }
 
     const path = this.getPath(request, { env })
-    const matchResult = this.matchRoute(method, path)
+    const matchResult = this.router.match(method, path)
 
     const c = new Context(request, {
       path,
