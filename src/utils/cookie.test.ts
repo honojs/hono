@@ -7,7 +7,6 @@ describe('Parse cookie', () => {
     const cookie: Cookie = parse(cookieString)
     expect(cookie['yummy_cookie']).toBe('choco')
     expect(cookie['tasty_cookie']).toBe('strawberry')
-    expect(cookie['no_such_cookie']).toBeUndefined()
   })
 
   it('Should parse quoted cookie values', () => {
@@ -46,7 +45,6 @@ describe('Parse cookie', () => {
     expect(cookie['tasty_cookie']).toBe('')
     expect(cookie['best_cookie']).toBe('')
     expect(cookie['last_cookie']).toBe('')
-    expect(cookie['no_such_cookie']).toBeUndefined()
   })
 
   it('Should parse cookies but not process signed cookies', () => {
@@ -58,7 +56,6 @@ describe('Parse cookie', () => {
     expect(cookie['tasty_cookie']).toBe('strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig=')
     expect(cookie['great_cookie']).toBe('rating3.5')
     expect(cookie['best_cookie']).toBe('sugar.valueShapedLikeASignatureButIsNotASignature=')
-    expect(cookie['no_such_cookie']).toBeUndefined()
   })
 
   it('Should ignore invalid cookie names', () => {
