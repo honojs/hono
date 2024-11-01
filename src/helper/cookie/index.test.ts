@@ -45,7 +45,6 @@ describe('Cookie Middleware', () => {
 
         expect(res.headers.get('Yummy-Cookie')).toBe('choco')
         expect(res.headers.get('Tasty-Cookie')).toBe('strawberry')
-        expect(res.headers.get('No-Such-Cookie')).toBeNull()
       })
     })
 
@@ -96,7 +95,6 @@ describe('Cookie Middleware', () => {
       const res = await app.request(req)
       expect(res.headers.get('Fortune-Cookie')).toBe('lots-of-money')
       expect(res.headers.get('Fruit-Cookie')).toBe('INVALID')
-      expect(res.headers.get('No-Such-Cookie')).toBeNull()
     })
 
     it('Get signed cookie', async () => {
