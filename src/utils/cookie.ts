@@ -77,6 +77,10 @@ const validCookieNameRegEx = /^[\w!#$%&'*.^`|~+-]+$/
 const validCookieValueRegEx = /^[ !#-:<-[\]-~]*$/
 
 export const parse = (cookie: string, name?: string): Cookie => {
+  if (name && cookie.indexOf(name) === -1) {
+    // Fast-path: return immediately if the demanded-key is not in the cookie string
+    return {}
+  }
   const pairs = cookie.trim().split(';')
   const parsedCookie: Cookie = {}
   for (let pairStr of pairs) {
