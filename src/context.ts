@@ -824,7 +824,7 @@ export class Context<
     status?: T
   ): Response & TypedResponse<undefined, T, 'redirect'> => {
     this.#headers ??= new Headers()
-    this.#headers.set('Location', location.toString())
+    this.#headers.set('Location', String(location))
     return this.newResponse(null, status ?? 302) as any
   }
 
