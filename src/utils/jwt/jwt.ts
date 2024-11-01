@@ -74,7 +74,7 @@ export const verify = async (
   if (!isTokenHeader(header)) {
     throw new JwtHeaderInvalid(header)
   }
-  const now = Math.floor(Date.now() / 1000)
+  const now = (Date.now() / 1000) | 0
   if (payload.nbf && payload.nbf > now) {
     throw new JwtTokenNotBefore(token)
   }
