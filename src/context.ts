@@ -690,7 +690,10 @@ export class Context<
     })
   }
 
-  #newResponse = this.newResponse
+  #newResponse(...args: unknown[]) {
+    // @ts-expect-error Type mismatch for args in newResponse call
+    return this.newResponse(...args)
+  }
 
   /**
    * `.body()` can return the HTTP response.
