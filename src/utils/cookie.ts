@@ -78,16 +78,17 @@ const validCookieValueRegEx = /^[ !#-:<-[\]-~]*$/
 
 export const parse = (cookie: string, name?: string): Cookie => {
   const pairs = cookie.trim().split(';')
-  return pairs.reduce((parsedCookie, pairStr) => {
+  const parsedCookie: Cookie = {}
+  for (let pairStr of pairs) {
     pairStr = pairStr.trim()
     const valueStartPos = pairStr.indexOf('=')
     if (valueStartPos === -1) {
-      return parsedCookie
+      continue
     }
 
     const cookieName = pairStr.substring(0, valueStartPos).trim()
     if ((name && name !== cookieName) || !validCookieNameRegEx.test(cookieName)) {
-      return parsedCookie
+      continue
     }
 
     let cookieValue = pairStr.substring(valueStartPos + 1).trim()
@@ -96,10 +97,13 @@ export const parse = (cookie: string, name?: string): Cookie => {
     }
     if (validCookieValueRegEx.test(cookieValue)) {
       parsedCookie[cookieName] = decodeURIComponent_(cookieValue)
+      if (name) {
+        // Fast-path: return only the demanded-key immediately. Other keys are not needed.
+        break
+      }
     }
-
-    return parsedCookie
-  }, {} as Cookie)
+  }
+  return parsedCookie
 }
 
 export const parseSigned = async (
