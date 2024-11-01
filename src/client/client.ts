@@ -80,12 +80,8 @@ class ClientRequestImpl {
     let methodUpperCase = this.method.toUpperCase()
 
     const headerValues: Record<string, string> = {
-      ...(args?.header ?? {}),
-      ...(typeof opt?.headers === 'function'
-        ? await opt.headers()
-        : opt?.headers
-        ? opt.headers
-        : {}),
+      ...args?.header,
+      ...(typeof opt?.headers === 'function' ? await opt.headers() : opt?.headers),
     }
 
     if (args?.cookie) {
@@ -201,7 +197,7 @@ export const hc = <T extends Hono<any, any, any>>(
     const req = new ClientRequestImpl(url, method)
     if (method) {
       options ??= {}
-      const args = deepMerge<ClientRequestOptions>(options, { ...(opts.args[1] ?? {}) })
+      const args = deepMerge<ClientRequestOptions>(options, { ...opts.args[1] })
       return req.fetch(opts.args[0], args)
     }
     return req
