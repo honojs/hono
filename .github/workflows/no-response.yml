@@ -19,7 +19,8 @@ jobs:
           days-before-close: 2                     
           stale-issue-message: '' # No Comment
           close-issue-message: '' # No Comment
-          exempt-issue-labels: ''                  
+          exempt-issue-labels: ''         
+          stale-issue-label: 'stale'
           only-labels: 'not bug'                   
           operations-per-run: 30                   
           remove-stale-when-updated: true          
