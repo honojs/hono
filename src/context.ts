@@ -623,11 +623,11 @@ export class Context<
     return Object.fromEntries(this.#var)
   }
 
-  #newResponse: NewResponse = (
+  #newResponse(
     data: Data | null,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
-  ): Response => {
+  ): Response {
     // Optimized
     if (this.#isFresh && !headers && !arg && this.#status === 200) {
       return new Response(data, {
