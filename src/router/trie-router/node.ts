@@ -82,7 +82,7 @@ export class Node<T> {
   }
 
   // getHandlerSets
-  private gHSets(
+  #gHSets(
     node: Node<T>,
     method: string,
     nodeParams: Record<string, string>,
@@ -133,10 +133,10 @@ export class Node<T> {
             // '/hello/*' => match '/hello'
             if (nextNode.children['*']) {
               handlerSets.push(
-                ...this.gHSets(nextNode.children['*'], method, node.params, Object.create(null))
+                ...this.#gHSets(nextNode.children['*'], method, node.params, Object.create(null))
               )
             }
-            handlerSets.push(...this.gHSets(nextNode, method, node.params, Object.create(null)))
+            handlerSets.push(...this.#gHSets(nextNode, method, node.params, Object.create(null)))
           } else {
             tempNodes.push(nextNode)
           }
@@ -152,7 +152,7 @@ export class Node<T> {
           if (pattern === '*') {
             const astNode = node.children['*']
             if (astNode) {
-              handlerSets.push(...this.gHSets(astNode, method, node.params, Object.create(null)))
+              handlerSets.push(...this.#gHSets(astNode, method, node.params, Object.create(null)))
               tempNodes.push(astNode)
             }
             continue
@@ -170,7 +170,7 @@ export class Node<T> {
           const restPathString = parts.slice(i).join('/')
           if (matcher instanceof RegExp && matcher.test(restPathString)) {
             params[name] = restPathString
-            handlerSets.push(...this.gHSets(child, method, node.params, params))
+            handlerSets.push(...this.#gHSets(child, method, node.params, params))
             continue
           }
 
@@ -178,9 +178,11 @@ export class Node<T> {
             if (typeof key === 'string') {
               params[name] = part
               if (isLast) {
-                handlerSets.push(...this.gHSets(child, method, params, node.params))
+                handlerSets.push(...this.#gHSets(child, method, params, node.params))
                 if (child.children['*']) {
-                  handlerSets.push(...this.gHSets(child.children['*'], method, params, node.params))
+                  handlerSets.push(
+                    ...this.#gHSets(child.children['*'], method, params, node.params)
+                  )
                 }
               } else {
                 child.params = params
