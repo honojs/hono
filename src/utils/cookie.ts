@@ -162,7 +162,7 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
         'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
       )
     }
-    cookie += `; Max-Age=${Math.floor(opt.maxAge)}`
+    cookie += `; Max-Age=${opt.maxAge | 0}`
   }
 
   if (opt.domain && opt.prefix !== 'host') {
