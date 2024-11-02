@@ -623,7 +623,7 @@ export class Context<
     return Object.fromEntries(this.#var)
   }
 
-  newResponse: NewResponse = (
+  #newResponse: NewResponse = (
     data: Data | null,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
@@ -689,10 +689,7 @@ export class Context<
     })
   }
 
-  #newResponse(...args: unknown[]) {
-    // @ts-expect-error Type mismatch for args in newResponse call
-    return this.newResponse(...args)
-  }
+  newResponse: NewResponse = (...args) => this.#newResponse(...(args as Parameters<NewResponse>))
 
   /**
    * `.body()` can return the HTTP response.
