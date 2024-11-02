@@ -29,11 +29,9 @@ describe('Logger by Middleware', () => {
     })
     app.get('/empty', (c) => c.text(''))
     app.get('/redirect', (c) => {
-      return c.text('', 301, {
-        Location: '/empty',
-      })
+      return c.redirect('/empty', 301)
     })
-    app.get('/5xx', (c) => {
+    app.get('/server-error', (c) => {
       return c.text('', 511)
     })
   })
@@ -91,10 +89,10 @@ describe('Logger by Middleware', () => {
   })
 
   it('Log status 511 with empty body', async () => {
-    const res = await app.request('http://localhost/5xx')
+    const res = await app.request('http://localhost/server-error')
     expect(res).not.toBeNull()
     expect(res.status).toBe(511)
-    expect(log.startsWith('--> GET /5xx \x1b[31m511\x1b[0m')).toBe(true)
+    expect(log.startsWith('--> GET /server-error \x1b[31m511\x1b[0m')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 })
