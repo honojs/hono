@@ -45,6 +45,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20.x'
+      - name: Hide noisy "Unchanged files with check annotations"
+        if: github.event_name == 'push'
+        run: |
+          echo "::remove-matcher owner=eslint-compact::"
+          echo "::remove-matcher owner=eslint-stylish::"
       - uses: oven-sh/setup-bun@v1
         with:
           bun-version: '1.1.16'
