@@ -92,4 +92,4 @@ const _baseMimes = {
   glb: 'model/gltf-binary',
 } as const
 
-const baseMimes: Record<string, string> = _baseMimes
+const baseMimes: Record<string, BaseMime> = _baseMimes
