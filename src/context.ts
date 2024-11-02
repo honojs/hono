@@ -266,8 +266,7 @@ export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
  * @returns The updated Headers object.
  */
 const setHeaders = (headers: Headers, map: Record<string, string> = {}) => {
-  for (let i = 0, keys = Object.keys(map), len = keys.length; i < len; i++) {
-    const key = keys[i]
+  for (const key of Object.keys(map)) {
     headers.set(key, map[key])
   }
   return headers
@@ -825,12 +824,12 @@ export class Context<
    * ```
    */
   redirect = <T extends RedirectStatusCode = 302>(
-    location: string,
+    location: string | URL,
     status?: T
   ): Response & TypedResponse<undefined, T, 'redirect'> => {
     this.#headers ??= new Headers()
-    this.#headers.set('Location', location)
-    return this.#newResponse(null, status ?? 302) as any
+    this.#headers.set('Location', String(location))
+    return this.newResponse(null, status ?? 302) as any
   }
 
   /**
