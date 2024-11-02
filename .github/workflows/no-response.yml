@@ -17,8 +17,8 @@ jobs:
         with:
           days-before-stale: 7                    
           days-before-close: 2                     
-          stale-issue-message: '' # No Comment
-          close-issue-message: '' # No Comment
+          stale-issue-message: 'This issue has been marked as stale due to inactivity.'
+          close-issue-message: 'Closing this issue due to inactivity.'
           exempt-issue-labels: ''         
           stale-issue-label: 'stale'
           only-labels: 'not bug'                   
