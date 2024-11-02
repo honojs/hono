@@ -32,7 +32,12 @@ describe('Logger by Middleware', () => {
       return c.redirect('/empty', 301)
     })
     app.get('/server-error', (c) => {
-      return c.text('', 511)
+      const res = new Response('', { status: 511 })
+      if (c.req.query('status')) {
+        // test status code not yet supported by runtime `Response` object
+        Object.defineProperty(res, 'status', { value: parseInt(c.req.query('status') as string) })
+      }
+      return res
     })
   })
 
@@ -93,6 +98,22 @@ describe('Logger by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(511)
     expect(log.startsWith('--> GET /server-error \x1b[31m511\x1b[0m')).toBe(true)
+    expect(log).toMatch(/m?s$/)
+  })
+
+  it('Log status 100', async () => {
+    const res = await app.request('http://localhost/server-error?status=100')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(100)
+    expect(log.startsWith('--> GET /server-error 100')).toBe(true)
+    expect(log).toMatch(/m?s$/)
+  })
+
+  it('Log status 700', async () => {
+    const res = await app.request('http://localhost/server-error?status=700')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(700)
+    expect(log.startsWith('--> GET /server-error 700')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 })
