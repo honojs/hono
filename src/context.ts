@@ -623,11 +623,11 @@ export class Context<
     return Object.fromEntries(this.#var)
   }
 
-  newResponse: NewResponse = (
+  #newResponse(
     data: Data | null,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
-  ): Response => {
+  ): Response {
     // Optimized
     if (this.#isFresh && !headers && !arg && this.#status === 200) {
       return new Response(data, {
@@ -689,6 +689,8 @@ export class Context<
     })
   }
 
+  newResponse: NewResponse = (...args) => this.#newResponse(...(args as Parameters<NewResponse>))
+
   /**
    * `.body()` can return the HTTP response.
    * You can set headers with `.header()` and set HTTP status code with `.status`.
@@ -716,8 +718,8 @@ export class Context<
     headers?: HeaderRecord
   ): Response => {
     return typeof arg === 'number'
-      ? this.newResponse(data, arg, headers)
-      : this.newResponse(data, arg)
+      ? this.#newResponse(data, arg, headers)
+      : this.#newResponse(data, arg)
   }
 
   /**
@@ -749,8 +751,8 @@ export class Context<
     this.#preparedHeaders['content-type'] = TEXT_PLAIN
     // @ts-expect-error `Response` due to missing some types-only keys
     return typeof arg === 'number'
-      ? this.newResponse(text, arg, headers)
-      : this.newResponse(text, arg)
+      ? this.#newResponse(text, arg, headers)
+      : this.#newResponse(text, arg)
   }
 
   /**
@@ -778,7 +780,7 @@ export class Context<
     this.#preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
     /* eslint-disable @typescript-eslint/no-explicit-any */
     return (
-      typeof arg === 'number' ? this.newResponse(body, arg, headers) : this.newResponse(body, arg)
+      typeof arg === 'number' ? this.#newResponse(body, arg, headers) : this.#newResponse(body, arg)
     ) as any
   }
 
@@ -793,14 +795,14 @@ export class Context<
     if (typeof html === 'object') {
       return resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then((html) => {
         return typeof arg === 'number'
-          ? this.newResponse(html, arg, headers)
-          : this.newResponse(html, arg)
+          ? this.#newResponse(html, arg, headers)
+          : this.#newResponse(html, arg)
       })
     }
 
     return typeof arg === 'number'
-      ? this.newResponse(html as string, arg, headers)
-      : this.newResponse(html as string, arg)
+      ? this.#newResponse(html as string, arg, headers)
+      : this.#newResponse(html as string, arg)
   }
 
   /**

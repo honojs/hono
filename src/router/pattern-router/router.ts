@@ -5,7 +5,7 @@ type Route<T> = [RegExp, string, T] // [pattern, method, handler, path]
 
 export class PatternRouter<T> implements Router<T> {
   name: string = 'PatternRouter'
-  private routes: Route<T>[] = []
+  #routes: Route<T>[] = []
 
   add(method: string, path: string, handler: T) {
     const endsWithWildcard = path[path.length - 1] === '*'
@@ -34,14 +34,14 @@ export class PatternRouter<T> implements Router<T> {
     } catch {
       throw new UnsupportedPathError()
     }
-    this.routes.push([re, method, handler])
+    this.#routes.push([re, method, handler])
   }
 
   match(method: string, path: string): Result<T> {
     const handlers: [T, Params][] = []
 
-    for (let i = 0, len = this.routes.length; i < len; i++) {
-      const [pattern, routeMethod, handler] = this.routes[i]
+    for (let i = 0, len = this.#routes.length; i < len; i++) {
+      const [pattern, routeMethod, handler] = this.#routes[i]
 
       if (routeMethod === method || routeMethod === METHOD_NAME_ALL) {
         const match = pattern.exec(path)
