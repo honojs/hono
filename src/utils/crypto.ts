@@ -3,7 +3,7 @@
  * Crypto utility.
  */
 
-import { JSONValue } from './types'
+import type { JSONValue } from './types'
 
 type Algorithm = {
   name: string
