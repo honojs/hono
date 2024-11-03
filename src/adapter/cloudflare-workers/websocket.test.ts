@@ -22,7 +22,7 @@ describe('upgradeWebSocket middleware', () => {
       '/ws',
       upgradeWebSocket(() => ({
         onMessage(evt, ws) {
-          resolve([evt.data, ws.readyState])
+          resolve([evt.data, ws.readyState || 1])
         },
       }))
     )
