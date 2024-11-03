@@ -136,7 +136,7 @@ export function getQueryFn<T extends () => unknown>(fn: T) {
  * {
  *   queryKey: [
  *     "dashboard.deployments.user[\":userId\"].$get({ param: { userId } })",
- *     "0h2s23e0uppe1ee"
+ *     "6h8s62e7uppe4ee"
  *   ],
  *   queryFn: async (): Promise<ResType> => {
  *     const res = await api.dashboard.deployments.user[':userId'].$get({ param: { userId } };
