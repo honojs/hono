@@ -93,7 +93,7 @@ export function getQueryKey<T extends () => unknown>(
   keyComplement: unknown[] = [undefined]
 ) {
   const queryKeyString = fn.toString().split('.').slice(1).join('.')
-  return [queryKeyString, ...keyComplement]
+  return [queryKeyString, ...keyComplement].filter(Boolean)
 }
 
 /**
