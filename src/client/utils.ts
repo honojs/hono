@@ -1,4 +1,4 @@
-import type { ObjectType } from './types'
+import type { InferResponseType, ObjectType } from './types'
 
 export const mergePath = (base: string, path: string) => {
   base = base.replace(/\/+$/, '')
@@ -71,4 +71,74 @@ export function deepMerge<T>(target: T, source: Record<string, unknown>): T {
   }
 
   return merged as T
+}
+
+/*
+  generate a tanstack query key from a hono client function:
+  call: get_query_key(() => api.dashboard.deployments.user[':userId'].$get({ param: { userId } }), [userId]) 
+  returns: [
+    "dashboard.deployments.user[\":userId\"].$get({ param: { userId } })",
+    "9h8s62e7uppe4ee"
+  ]
+*/
+export function getQueryKey<T extends () => any>(
+  fn: T,
+  keyComplement: any[] = [undefined]
+) {
+  const queryKeyString = fn.toString().split(".").slice(1).join(".");
+  return [queryKeyString, ...keyComplement];
+};
+
+/*
+  generate a tanstack query function from a hono client function:
+  call: getQueryFn(()=> api.dashboard.deployments.user[':userId'].$get({ param: { userId } }))
+  returns: 
+   return async (): Promise<ResType> => {
+    const res = await api.dashboard.deployments.user[':userId'].$get({ param: { userId } };
+    if (!res.ok) {
+      throw new Error("server error");
+    }
+    const data = await res.json();
+    return data;
+  };
+*/
+export function getQueryFn<T extends () => any>(fn: T) {
+  type ResType = InferResponseType<T>;
+
+  return async (): Promise<ResType> => {
+    const res = await fn();
+    if (!res.ok) {
+      throw new Error("server error");
+    }
+    const data = await res.json();
+    return data;
+  };
+}
+
+/*
+  generate tanstack query options from a hono client function:
+  call: getQueryOptions(() => api.dashboard.deployments.user[':userId'].$get({ param: { userId } }), [userId]) 
+  returns: 
+  { 
+    queryKey: [
+      "dashboard.deployments.user[\":userId\"].$get({ param: { userId } })",
+      "0h2s23e0uppe1ee"
+    ],
+    queryFn: async (): Promise<ResType> => {
+    const res = await api.dashboard.deployments.user[':userId'].$get({ param: { userId } };
+    if (!res.ok) {
+      throw new Error("server error");
+    }
+    const data = await res.json();
+    return data;
+  }
+*/
+export function getQueryOptions<T extends () => any>(
+  fn: T,
+  keyComplement: any[] = [undefined]
+) {
+  return {
+    queryKey: getQueryKey(fn, keyComplement),
+    queryFn: getQueryFn(fn),
+  };
 }
