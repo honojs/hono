@@ -4,6 +4,7 @@ import type { UpgradeWebSocket, WSEvents, WSReadyState } from '../../helper/webs
 // Based on https://github.com/honojs/hono/issues/1153#issuecomment-1767321332
 export const upgradeWebSocket: UpgradeWebSocket<
   WebSocket,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   any,
   Omit<WSEvents<WebSocket>, 'onOpen'>
 > = defineWebSocketHelper(async (c, events) => {
