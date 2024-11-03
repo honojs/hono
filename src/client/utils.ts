@@ -73,72 +73,91 @@ export function deepMerge<T>(target: T, source: Record<string, unknown>): T {
   return merged as T
 }
 
-/*
-  generate a tanstack query key from a hono client function:
-  call: get_query_key(() => api.dashboard.deployments.user[':userId'].$get({ param: { userId } }), [userId]) 
-  returns: [
-    "dashboard.deployments.user[\":userId\"].$get({ param: { userId } })",
-    "9h8s62e7uppe4ee"
-  ]
-*/
-export function getQueryKey<T extends () => any>(
+/**
+ * Generate a TanStack Query key from a Hono client function
+ *
+ * @example
+ * getQueryKey(() => api.dashboard.deployments.user[':userId'].$get({ param: { userId } }), [userId])
+ * Returns:
+ * [
+ *   "dashboard.deployments.user[\":userId\"].$get({ param: { userId } })",
+ *   "6h8s62e7uppe4ee"
+ * ]
+ *
+ * @param fn - function that returns the Hono client function: () => api.$get()
+ * @param keyComplement - Additional key elements
+ * @returns Array containing a query key string based on the hono client function name, and additional elements passed by the user.
+ */
+export function getQueryKey<T extends () => unknown>(
   fn: T,
-  keyComplement: any[] = [undefined]
+  keyComplement: unknown[] = [undefined]
 ) {
-  const queryKeyString = fn.toString().split(".").slice(1).join(".");
-  return [queryKeyString, ...keyComplement];
-};
-
-/*
-  generate a tanstack query function from a hono client function:
-  call: getQueryFn(()=> api.dashboard.deployments.user[':userId'].$get({ param: { userId } }))
-  returns: 
-   return async (): Promise<ResType> => {
-    const res = await api.dashboard.deployments.user[':userId'].$get({ param: { userId } };
-    if (!res.ok) {
-      throw new Error("server error");
-    }
-    const data = await res.json();
-    return data;
-  };
-*/
-export function getQueryFn<T extends () => any>(fn: T) {
-  type ResType = InferResponseType<T>;
-
-  return async (): Promise<ResType> => {
-    const res = await fn();
-    if (!res.ok) {
-      throw new Error("server error");
-    }
-    const data = await res.json();
-    return data;
-  };
+  const queryKeyString = fn.toString().split('.').slice(1).join('.')
+  return [queryKeyString, ...keyComplement]
 }
 
-/*
-  generate tanstack query options from a hono client function:
-  call: getQueryOptions(() => api.dashboard.deployments.user[':userId'].$get({ param: { userId } }), [userId]) 
-  returns: 
-  { 
-    queryKey: [
-      "dashboard.deployments.user[\":userId\"].$get({ param: { userId } })",
-      "0h2s23e0uppe1ee"
-    ],
-    queryFn: async (): Promise<ResType> => {
-    const res = await api.dashboard.deployments.user[':userId'].$get({ param: { userId } };
+/**
+ * Generate a TanStack Query function from a Hono client function
+ *
+ * @example
+ * getQueryFn(()=> api.dashboard.deployments.user[':userId'].$get({ param: { userId } }))
+ * Returns:
+ * async (): Promise<ResType> => {
+ *   const res = await api.dashboard.deployments.user[':userId'].$get({ param: { userId } };
+ *   if (!res.ok) {
+ *     throw new Error("server error");
+ *   }
+ *   const data = await res.json();
+ *   return data;
+ * }
+ *
+ * @param fn - function that returns the Hono client function: () => api.$get()
+ * @returns Async function that handles the API call and response
+ */
+export function getQueryFn<T extends () => unknown>(fn: T) {
+  type ResType = InferResponseType<T>
+
+  return async (): Promise<ResType> => {
+    const res = (await fn()) as Response
     if (!res.ok) {
-      throw new Error("server error");
+      throw new Error('server error')
     }
-    const data = await res.json();
-    return data;
+    const data = await res.json()
+    return data
   }
-*/
-export function getQueryOptions<T extends () => any>(
+}
+
+/**
+ * Generate TanStack Query options from a Hono client function
+ *
+ * @example
+ * getQueryOptions(() => api.dashboard.deployments.user[':userId'].$get({ param: { userId } }), [userId])
+ * Returns:
+ * {
+ *   queryKey: [
+ *     "dashboard.deployments.user[\":userId\"].$get({ param: { userId } })",
+ *     "0h2s23e0uppe1ee"
+ *   ],
+ *   queryFn: async (): Promise<ResType> => {
+ *     const res = await api.dashboard.deployments.user[':userId'].$get({ param: { userId } };
+ *     if (!res.ok) {
+ *       throw new Error("server error");
+ *     }
+ *     const data = await res.json();
+ *     return data;
+ *   }
+ * }
+ *
+ * @param fn - Hono client function
+ * @param keyComplement - Additional key elements
+ * @returns Object containing queryKey and queryFn
+ */
+export function getQueryOptions<T extends () => unknown>(
   fn: T,
-  keyComplement: any[] = [undefined]
+  keyComplement: unknown[] = [undefined]
 ) {
   return {
     queryKey: getQueryKey(fn, keyComplement),
     queryFn: getQueryFn(fn),
-  };
+  }
 }
