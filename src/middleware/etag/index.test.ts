@@ -65,6 +65,63 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).not.toBe(hash)
   })
 
+  it('Should not be the same etag - ReadableStream', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/rs1', (c) => {
+      return c.body(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array([1]))
+            controller.enqueue(new Uint8Array([2]))
+            controller.close()
+          },
+        })
+      )
+    })
+    app.get('/etag/rs2', (c) => {
+      return c.body(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array([1]))
+            controller.enqueue(new Uint8Array([3]))
+            controller.close()
+          },
+        })
+      )
+    })
+
+    let res = await app.request('http://localhost/etag/rs1')
+    const hash = res.headers.get('Etag')
+    res = await app.request('http://localhost/etag/rs2')
+    expect(res.headers.get('ETag')).not.toBe(hash)
+  })
+
+  it('Should not return etag header when the stream is empty', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/abc', (c) => {
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.close()
+        },
+      })
+      return c.body(stream)
+    })
+    const res = await app.request('http://localhost/etag/abc')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('ETag')).toBeNull()
+  })
+
+  it('Should not return etag header when body is null', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/abc', () => new Response(null, { status: 500 }))
+    const res = await app.request('http://localhost/etag/abc')
+    expect(res.status).toBe(500)
+    expect(res.headers.get('ETag')).toBeNull()
+  })
+
   it('Should return etag header - weak', async () => {
     const app = new Hono()
     app.use('/etag/*', etag({ weak: true }))
@@ -178,5 +235,30 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('Cache-Control')).toBe(cacheControl)
     expect(res.headers.get('x-message-retain')).toBe(message)
     expect(res.headers.get('x-message')).toBeFalsy()
+  })
+
+  describe('When crypto is not available', () => {
+    let _crypto: Crypto | undefined
+    beforeAll(() => {
+      _crypto = globalThis.crypto
+      Object.defineProperty(globalThis, 'crypto', {
+        value: {},
+      })
+    })
+
+    afterAll(() => {
+      Object.defineProperty(globalThis, 'crypto', {
+        value: _crypto,
+      })
+    })
+
+    it('Should not generate etag', async () => {
+      const app = new Hono()
+      app.use('/etag/*', etag())
+      app.get('/etag/no-digest', (c) => c.text('Hono is cool'))
+      const res = await app.request('/etag/no-digest')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('ETag')).toBeNull()
+    })
   })
 })
