@@ -40,7 +40,7 @@ describe('upgradeWebSocket middleware', () => {
       })
     )
 
-    expect([sendingData, 1]).toBe(await wsPromise)
+    expect([sendingData, 1]).toStrictEqual(await wsPromise)
   })
   it('Should call next() when header does not have upgrade', async () => {
     const next = vi.fn()
