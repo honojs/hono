@@ -20,6 +20,6 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - uses: oven-sh/setup-bun@v2
+      - run: deno install --no-lock --allow-scripts
       - name: Publish to JSR
-        run: bunx deno run -A jsr:@david/publish-on-tag@0.1.4
+        run: deno run -A jsr:@david/publish-on-tag@0.1.4
