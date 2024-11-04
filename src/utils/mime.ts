@@ -32,58 +32,9 @@ export { baseMimes as mimes }
 /**
  * Union types for BaseMime
  */
-export type BaseMime =
-  | 'audio/aac'
-  | 'video/x-msvideo'
-  | 'image/avif'
-  | 'video/av1'
-  | 'application/octet-stream'
-  | 'image/bmp'
-  | 'text/css'
-  | 'text/csv'
-  | 'application/vnd.ms-fontobject'
-  | 'application/epub+zip'
-  | 'image/gif'
-  | 'application/gzip'
-  | 'text/html'
-  | 'image/x-icon'
-  | 'text/calendar'
-  | 'image/jpeg'
-  | 'text/javascript'
-  | 'application/json'
-  | 'application/ld+json'
-  | 'audio/x-midi'
-  | 'audio/mpeg'
-  | 'video/mp4'
-  | 'video/mpeg'
-  | 'audio/ogg'
-  | 'video/ogg'
-  | 'application/ogg'
-  | 'audio/opus'
-  | 'font/otf'
-  | 'application/pdf'
-  | 'image/png'
-  | 'application/rtf'
-  | 'image/svg+xml'
-  | 'image/tiff'
-  | 'video/mp2t'
-  | 'font/ttf'
-  | 'text/plain'
-  | 'application/wasm'
-  | 'video/webm'
-  | 'audio/webm'
-  | 'image/webp'
-  | 'font/woff'
-  | 'font/woff2'
-  | 'application/xhtml+xml'
-  | 'application/xml'
-  | 'application/zip'
-  | 'video/3gpp'
-  | 'video/3gpp2'
-  | 'model/gltf+json'
-  | 'model/gltf-binary'
+export type BaseMime = (typeof _baseMimes)[keyof typeof _baseMimes]
 
-const baseMimes: Record<string, BaseMime> = {
+const _baseMimes = {
   aac: 'audio/aac',
   avi: 'video/x-msvideo',
   avif: 'image/avif',
@@ -139,4 +90,6 @@ const baseMimes: Record<string, BaseMime> = {
   '3g2': 'video/3gpp2',
   gltf: 'model/gltf+json',
   glb: 'model/gltf-binary',
-}
+} as const
+
+const baseMimes: Record<string, BaseMime> = _baseMimes

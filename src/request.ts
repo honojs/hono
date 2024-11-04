@@ -91,21 +91,21 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   param(key: string): string | undefined
   param<P2 extends string = P>(): Simplify<UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>>
   param(key?: string): unknown {
-    return key ? this.getDecodedParam(key) : this.getAllDecodedParams()
+    return key ? this.#getDecodedParam(key) : this.#getAllDecodedParams()
   }
 
-  private getDecodedParam(key: string): string | undefined {
+  #getDecodedParam(key: string): string | undefined {
     const paramKey = this.#matchResult[0][this.routeIndex][1][key]
-    const param = this.getParamValue(paramKey)
+    const param = this.#getParamValue(paramKey)
     return param ? (/\%/.test(param) ? tryDecodeURIComponent(param) : param) : undefined
   }
 
-  private getAllDecodedParams(): Record<string, string> {
+  #getAllDecodedParams(): Record<string, string> {
     const decoded: Record<string, string> = {}
 
     const keys = Object.keys(this.#matchResult[0][this.routeIndex][1])
     for (const key of keys) {
-      const value = this.getParamValue(this.#matchResult[0][this.routeIndex][1][key])
+      const value = this.#getParamValue(this.#matchResult[0][this.routeIndex][1][key])
       if (value && typeof value === 'string') {
         decoded[key] = /\%/.test(value) ? tryDecodeURIComponent(value) : value
       }
@@ -114,7 +114,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return decoded
   }
 
-  private getParamValue(paramKey: any): string | undefined {
+  #getParamValue(paramKey: any): string | undefined {
     return this.#matchResult[1] ? this.#matchResult[1][paramKey as any] : paramKey
   }
 
@@ -208,7 +208,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return (this.bodyCache.parsedBody ??= await parseBody(this, options))
   }
 
-  private cachedBody = (key: keyof Body) => {
+  #cachedBody = (key: keyof Body) => {
     const { bodyCache, raw } = this
     const cachedBody = bodyCache[key]
 
@@ -242,7 +242,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   json<T = any>(): Promise<T> {
-    return this.cachedBody('json')
+    return this.#cachedBody('json')
   }
 
   /**
@@ -258,7 +258,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   text(): Promise<string> {
-    return this.cachedBody('text')
+    return this.#cachedBody('text')
   }
 
   /**
@@ -274,7 +274,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   arrayBuffer(): Promise<ArrayBuffer> {
-    return this.cachedBody('arrayBuffer')
+    return this.#cachedBody('arrayBuffer')
   }
 
   /**
@@ -288,7 +288,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * @see https://hono.dev/docs/api/request#blob
    */
   blob(): Promise<Blob> {
-    return this.cachedBody('blob')
+    return this.#cachedBody('blob')
   }
 
   /**
@@ -302,7 +302,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * @see https://hono.dev/docs/api/request#formdata
    */
   formData(): Promise<FormData> {
-    return this.cachedBody('formData')
+    return this.#cachedBody('formData')
   }
 
   /**
