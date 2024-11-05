@@ -5,6 +5,7 @@ import { render as renderHono } from './hono'
 import { render as renderNano } from './nano'
 import { render as renderPreact } from './preact'
 import { render as renderReact } from './react'
+import { render as renderKita } from './kita'
 
 const suite = new Suite()
 
@@ -28,6 +29,9 @@ suite
   })
   .add('Nano', () => {
     renderNano()
+  })
+  .add('Kita', () => {
+    renderKita()
   })
   .on('cycle', (ev) => {
     console.log(String(ev.target))
