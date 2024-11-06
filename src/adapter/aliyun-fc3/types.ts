@@ -1,4 +1,4 @@
-// https://help.aliyun.com/zh/functioncompute/fc-3-0/user-guide/http-trigger-invoking-function
+// https://www.alibabacloud.com/help/en/functioncompute/fc-3-0/user-guide/http-trigger-invoking-function
 export interface AliyunFCEvent {
   version: string
   rawPath: string
@@ -31,7 +31,7 @@ export interface AliyunFCEvent {
 // can't find the related document
 export type AliyunFCEventRaw = Buffer
 
-// https://help.aliyun.com/zh/functioncompute/context
+// https://www.alibabacloud.com/help/en/functioncompute/context
 export interface AliyunFCContext {
   requestId: string
   credentials: {
@@ -62,6 +62,7 @@ export interface AliyunFCContext {
   }
 }
 
+// https://www.alibabacloud.com/help/en/functioncompute/fc-3-0/user-guide/http-trigger-invoking-function
 export interface AliyunFCResponse {
   statusCode: number
   headers?: {
