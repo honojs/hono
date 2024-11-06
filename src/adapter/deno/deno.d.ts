@@ -76,4 +76,12 @@ declare namespace Deno {
      */
     idleTimeout?: number
   }
+
+  /**
+   * Get stats asynchronously for the specified path.
+   *
+   * @param path The path to get stats.
+   * @returns A promise that resolves to Stats object.
+   */
+  export function stat(path: string): Promise<StatsLike>
 }

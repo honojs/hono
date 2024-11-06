@@ -2,7 +2,7 @@ import type { ServeStaticOptions } from '../../middleware/serve-static'
 import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
 import type { Env, MiddlewareHandler } from '../../types'
 
-const { open, lstatSync, errors } = Deno
+const { open, lstatSync, errors, stat } = Deno
 
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E>
@@ -10,6 +10,11 @@ export const serveStatic = <E extends Env = Env>(
   return async function serveStatic(c, next) {
     const getContent = async (path: string) => {
       try {
+        const fileInfo = await stat(path)
+        if (fileInfo.isDirectory) {
+          return null
+        }
+
         const file = await open(path)
         return file.readable
       } catch (e) {
