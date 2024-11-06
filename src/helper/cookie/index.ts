@@ -93,7 +93,7 @@ export const setCookie = (c: Context, name: string, value: string, opt?: CookieO
   } else {
     cookie = serialize(name, value, { path: '/', ...opt })
   }
-  c.header('set-cookie', cookie, { append: true })
+  c.header('Set-Cookie', cookie, { append: true })
 }
 
 export const setSignedCookie = async (

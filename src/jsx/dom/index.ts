@@ -3,9 +3,10 @@
  * This module provides APIs for `hono/jsx/dom`.
  */
 
-import { isValidElement, memo, reactAPICompatVersion } from '../base'
-import type { Child, DOMAttributes, JSX, JSXNode, Props } from '../base'
+import { isValidElement, reactAPICompatVersion, shallowEqual } from '../base'
+import type { Child, DOMAttributes, JSX, JSXNode, Props, FC, MemorableFC } from '../base'
 import { Children } from '../children'
+import { DOM_MEMO } from '../constants'
 import { useContext } from '../context'
 import {
   createRef,
@@ -29,9 +30,9 @@ import {
   useTransition,
   useViewTransition,
 } from '../hooks'
-import { useActionState, useFormStatus, useOptimistic } from './hooks'
 import { ErrorBoundary, Suspense } from './components'
 import { createContext } from './context'
+import { useActionState, useFormStatus, useOptimistic } from './hooks'
 import { Fragment, jsx } from './jsx-runtime'
 import { createPortal, flushSync } from './render'
 
@@ -70,6 +71,15 @@ const cloneElement = <T extends JSXNode | JSX.Element>(
     },
     (element as JSXNode).key
   ) as T
+}
+
+const memo = <T>(
+  component: FC<T>,
+  propsAreEqual: (prevProps: Readonly<T>, nextProps: Readonly<T>) => boolean = shallowEqual
+): FC<T> => {
+  const wrapper = ((props: T) => component(props)) as MemorableFC<T>
+  wrapper[DOM_MEMO] = propsAreEqual
+  return wrapper as FC<T>
 }
 
 export {

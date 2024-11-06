@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { HttpResponse, http } from 'msw'
 import { setupServer } from 'msw/node'
@@ -815,7 +815,9 @@ describe('Infer the response type with different status codes', () => {
 })
 
 describe('$url() with a param option', () => {
-  const app = new Hono().get('/posts/:id/comments', (c) => c.json({ ok: true }))
+  const app = new Hono()
+    .get('/posts/:id/comments', (c) => c.json({ ok: true }))
+    .get('/something/:firstId/:secondId/:version?', (c) => c.json({ ok: true }))
   type AppType = typeof app
   const client = hc<AppType>('http://localhost')
 
@@ -831,6 +833,38 @@ describe('$url() with a param option', () => {
   it('Should return the correct path - /posts/:id/comments', async () => {
     const url = client.posts[':id'].comments.$url()
     expect(url.pathname).toBe('/posts/:id/comments')
+  })
+
+  it('Should return the correct path - /something/123/456', async () => {
+    const url = client.something[':firstId'][':secondId'][':version?'].$url({
+      param: {
+        firstId: '123',
+        secondId: '456',
+        version: undefined,
+      },
+    })
+    expect(url.pathname).toBe('/something/123/456')
+  })
+})
+
+describe('$url() with a query option', () => {
+  const app = new Hono().get(
+    '/posts',
+    validator('query', () => {
+      return {} as { filter: 'test' }
+    }),
+    (c) => c.json({ ok: true })
+  )
+  type AppType = typeof app
+  const client = hc<AppType>('http://localhost')
+
+  it('Should return the correct path - /posts?filter=test', async () => {
+    const url = client.posts.$url({
+      query: {
+        filter: 'test',
+      },
+    })
+    expect(url.search).toBe('?filter=test')
   })
 })
 
@@ -1079,9 +1113,10 @@ describe('WebSocket URL Protocol Translation with Query Parameters', () => {
       query: {
         id: '123',
         type: 'test',
+        tag: ['a', 'b'],
       },
     })
-    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index?id=123&type=test')
+    expect(webSocketMock).toHaveBeenCalledWith('ws://localhost/index?id=123&type=test&tag=a&tag=b')
   })
 
   it('Translates HTTPS to wss and includes query parameters', async () => {
@@ -1237,5 +1272,54 @@ describe('Redirect response - only types', () => {
       type Expected = ClientResponse<undefined, 302, 'redirect'>
       type verify = Expect<Equal<Expected, typeof res>>
     }
+  })
+})
+
+describe('WebSocket Provider Integration', () => {
+  const app = new Hono()
+  const route = app.get(
+    '/',
+    upgradeWebSocket((c) => ({
+      onMessage(event, ws) {
+        ws.send('Hello from server!')
+      },
+      onClose() {
+        console.log('Connection closed')
+      },
+    }))
+  )
+
+  type AppType = typeof route
+
+  const server = setupServer()
+  beforeAll(() => server.listen())
+  afterEach(() => {
+    vi.clearAllMocks()
+    server.resetHandlers()
+  })
+  afterAll(() => server.close())
+
+  it.each([
+    {
+      description: 'should initialize the WebSocket provider correctly',
+      url: 'http://localhost',
+      query: undefined,
+      expectedUrl: 'ws://localhost/index',
+    },
+    {
+      description: 'should correctly add query parameters to the WebSocket URL',
+      url: 'http://localhost',
+      query: { id: '123', type: 'test', tag: ['a', 'b'] },
+      expectedUrl: 'ws://localhost/index?id=123&type=test&tag=a&tag=b',
+    },
+  ])('$description', ({ url, expectedUrl, query }) => {
+    const webSocketMock = vi.fn()
+    const client = hc<AppType>(url, {
+      webSocket(url, options) {
+        return webSocketMock(url, options)
+      },
+    })
+    client.index.$ws({ query })
+    expect(webSocketMock).toHaveBeenCalledWith(expectedUrl, undefined)
   })
 })

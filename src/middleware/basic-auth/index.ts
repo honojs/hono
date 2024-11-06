@@ -5,32 +5,11 @@
 
 import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
-import type { HonoRequest } from '../../request'
 import type { MiddlewareHandler } from '../../types'
+import { auth } from '../../utils/basic-auth'
 import { timingSafeEqual } from '../../utils/buffer'
-import { decodeBase64 } from '../../utils/encode'
 
-const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
-const USER_PASS_REGEXP = /^([^:]*):(.*)$/
-const utf8Decoder = new TextDecoder()
-const auth = (req: HonoRequest) => {
-  const match = CREDENTIALS_REGEXP.exec(req.header('Authorization') || '')
-  if (!match) {
-    return undefined
-  }
-
-  let userPass = undefined
-  // If an invalid string is passed to atob(), it throws a `DOMException`.
-  try {
-    userPass = USER_PASS_REGEXP.exec(utf8Decoder.decode(decodeBase64(match[1])))
-  } catch {} // Do nothing
-
-  if (!userPass) {
-    return undefined
-  }
-
-  return { username: userPass[1], password: userPass[2] }
-}
+type MessageFunction = (c: Context) => string | object | Promise<string | object>
 
 type BasicAuthOptions =
   | {
@@ -38,11 +17,13 @@ type BasicAuthOptions =
       password: string
       realm?: string
       hashFunction?: Function
+      invalidUserMessage?: string | object | MessageFunction
     }
   | {
       verifyUser: (username: string, password: string, c: Context) => boolean | Promise<boolean>
       realm?: string
       hashFunction?: Function
+      invalidUserMessage?: string | object | MessageFunction
     }
 
 /**
@@ -56,6 +37,7 @@ type BasicAuthOptions =
  * @param {string} [options.realm="Secure Area"] - The realm attribute for the WWW-Authenticate header.
  * @param {Function} [options.hashFunction] - The hash function used for secure comparison.
  * @param {Function} [options.verifyUser] - The function to verify user credentials.
+ * @param {string | object | MessageFunction} [options.invalidUserMessage="Unauthorized"] - The invalid user message.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {HTTPException} If neither "username and password" nor "verifyUser" options are provided.
  *
@@ -93,12 +75,16 @@ export const basicAuth = (
     options.realm = 'Secure Area'
   }
 
+  if (!options.invalidUserMessage) {
+    options.invalidUserMessage = 'Unauthorized'
+  }
+
   if (usernamePasswordInOptions) {
     users.unshift({ username: options.username, password: options.password })
   }
 
   return async function basicAuth(ctx, next) {
-    const requestUser = auth(ctx.req)
+    const requestUser = auth(ctx.req.raw)
     if (requestUser) {
       if (verifyUserInOptions) {
         if (await options.verifyUser(requestUser.username, requestUser.password, ctx)) {
@@ -118,12 +104,25 @@ export const basicAuth = (
         }
       }
     }
-    const res = new Response('Unauthorized', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"',
-      },
-    })
-    throw new HTTPException(401, { res })
+    // Invalid user.
+    const status = 401
+    const headers = {
+      'WWW-Authenticate': 'Basic realm="' + options.realm?.replace(/"/g, '\\"') + '"',
+    }
+    const responseMessage =
+      typeof options.invalidUserMessage === 'function'
+        ? await options.invalidUserMessage(ctx)
+        : options.invalidUserMessage
+    const res =
+      typeof responseMessage === 'string'
+        ? new Response(responseMessage, { status, headers })
+        : new Response(JSON.stringify(responseMessage), {
+            status,
+            headers: {
+              ...headers,
+              'content-type': 'application/json; charset=UTF-8',
+            },
+          })
+    throw new HTTPException(status, { res })
   }
 }

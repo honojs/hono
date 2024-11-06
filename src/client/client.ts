@@ -4,6 +4,7 @@ import { serialize } from '../utils/cookie'
 import type { UnionToIntersection } from '../utils/types'
 import type { Callback, Client, ClientRequestOptions } from './types'
 import {
+  buildSearchParams,
   deepMerge,
   mergePath,
   removeIndexString,
@@ -49,20 +50,7 @@ class ClientRequestImpl {
   ) => {
     if (args) {
       if (args.query) {
-        for (const [k, v] of Object.entries(args.query)) {
-          if (v === undefined) {
-            continue
-          }
-
-          this.queryParams ||= new URLSearchParams()
-          if (Array.isArray(v)) {
-            for (const v2 of v) {
-              this.queryParams.append(k, v2)
-            }
-          } else {
-            this.queryParams.set(k, v)
-          }
-        }
+        this.queryParams = buildSearchParams(args.query)
       }
 
       if (args.form) {
@@ -92,12 +80,8 @@ class ClientRequestImpl {
     let methodUpperCase = this.method.toUpperCase()
 
     const headerValues: Record<string, string> = {
-      ...(args?.header ?? {}),
-      ...(typeof opt?.headers === 'function'
-        ? await opt.headers()
-        : opt?.headers
-        ? opt.headers
-        : {}),
+      ...args?.header,
+      ...(typeof opt?.headers === 'function' ? await opt.headers() : opt?.headers),
     }
 
     if (args?.cookie) {
@@ -172,10 +156,16 @@ export const hc = <T extends Hono<any, any, any>>(
     const path = parts.join('/')
     const url = mergePath(baseUrl, path)
     if (method === 'url') {
-      if (opts.args[0] && opts.args[0].param) {
-        return new URL(replaceUrlParam(url, opts.args[0].param))
+      let result = url
+      if (opts.args[0]) {
+        if (opts.args[0].param) {
+          result = replaceUrlParam(url, opts.args[0].param)
+        }
+        if (opts.args[0].query) {
+          result = result + '?' + buildSearchParams(opts.args[0].query).toString()
+        }
       }
-      return new URL(url)
+      return new URL(result)
     }
     if (method === 'ws') {
       const webSocketUrl = replaceUrlProtocol(
@@ -183,17 +173,31 @@ export const hc = <T extends Hono<any, any, any>>(
         'ws'
       )
       const targetUrl = new URL(webSocketUrl)
-      for (const key in opts.args[0]?.query) {
-        targetUrl.searchParams.set(key, opts.args[0].query[key])
+
+      const queryParams: Record<string, string | string[]> | undefined = opts.args[0]?.query
+      if (queryParams) {
+        Object.entries(queryParams).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            value.forEach((item) => targetUrl.searchParams.append(key, item))
+          } else {
+            targetUrl.searchParams.set(key, value)
+          }
+        })
+      }
+      const establishWebSocket = (...args: ConstructorParameters<typeof WebSocket>) => {
+        if (options?.webSocket !== undefined && typeof options.webSocket === 'function') {
+          return options.webSocket(...args)
+        }
+        return new WebSocket(...args)
       }
 
-      return new WebSocket(targetUrl.toString())
+      return establishWebSocket(targetUrl.toString())
     }
 
     const req = new ClientRequestImpl(url, method)
     if (method) {
       options ??= {}
-      const args = deepMerge<ClientRequestOptions>(options, { ...(opts.args[1] ?? {}) })
+      const args = deepMerge<ClientRequestOptions>(options, { ...opts.args[1] })
       return req.fetch(opts.args[0], args)
     }
     return req

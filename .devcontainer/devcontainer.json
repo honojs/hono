@@ -2,6 +2,9 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
+    "containerEnv": {
+        "HOME": "/home/node"
+    },
     "customizations": {
         "vscode": {
             "settings": {
@@ -13,9 +16,13 @@
                     "typescriptreact"
                 ],
                 "editor.codeActionsOnSave": {
-                    "source.fixAll.eslint": true
+                    "source.fixAll.eslint": "explicit"
                 }
-            }
+            },
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode"
+            ]
         }
     }
 }

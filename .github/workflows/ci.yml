@@ -16,11 +16,11 @@ jobs:
     name: 'Coverage'
     runs-on: ubuntu-latest
     needs:
-      # bun excluded because it uses built-in test tool which does not support coverage in v8/istanbul format.
-      # refer https://github.com/oven-sh/bun/issues/4015
       - main
+      - bun
       - fastly
       - node
+      - deno
       - workerd
       - lambda
       - lambda-edge
@@ -46,9 +46,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.1.16'
+          bun-version: '1.1.33'
       - run: bun install
       - run: bun run format
       - run: bun run lint
@@ -64,22 +64,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
-      - run: deno publish --dry-run
+          deno-version: v2.x
+      - uses: oven-sh/setup-bun@v2
+      - run: bunx jsr publish --dry-run
 
   deno:
     name: 'Deno'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
-      - run: env NAME=Deno deno test --coverage=coverage/raw/deno-runtime --allow-read --allow-env --allow-write --allow-net -c runtime_tests/deno/deno.json runtime_tests/deno
-      - run: deno test -c runtime_tests/deno-jsx/deno.precompile.json --coverage=coverage/raw/deno-precompile-jsx runtime_tests/deno-jsx
-      - run: deno test -c runtime_tests/deno-jsx/deno.react-jsx.json --coverage=coverage/raw/deno-react-jsx runtime_tests/deno-jsx
+          deno-version: v2.x
+      - run: env NAME=Deno deno test --coverage=coverage/raw/deno-runtime --allow-read --allow-env --allow-write --allow-net -c runtime-tests/deno/deno.json runtime-tests/deno
+      - run: deno test -c runtime-tests/deno-jsx/deno.precompile.json --coverage=coverage/raw/deno-precompile-jsx runtime-tests/deno-jsx
+      - run: deno test -c runtime-tests/deno-jsx/deno.react-jsx.json --coverage=coverage/raw/deno-react-jsx runtime-tests/deno-jsx
+      - run: grep -R '"url":' coverage | grep -v runtime-tests | sed -e 's/.*file:..//;s/.,//' | xargs deno cache --unstable-sloppy-imports
+      - run: deno coverage --lcov > coverage/deno-runtime-coverage-lcov.info
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-deno
@@ -90,9 +93,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.1.16'
+          bun-version: '1.1.33'
       - run: bun run test:bun
       - uses: actions/upload-artifact@v4
         with:
@@ -103,7 +106,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run build
       - run: bun run test:fastly
@@ -123,7 +126,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run build
       - run: bun run test:node
@@ -141,7 +144,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run build
       - run: bun run test:workerd
@@ -155,7 +158,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run build
       - run: bun run test:lambda
@@ -169,7 +172,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:lambda-edge
@@ -177,3 +180,46 @@ jobs:
         with:
           name: coverage-lambda-edge
           path: coverage/
+
+  perf-measures-type-check-on-pr:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - uses: actions/cache/restore@v4
+        with:
+          path: perf-measures/type-check/previous-result.txt
+          restore-keys: |
+            type-check-perf-previous-result-
+          key: type-check-perf-previous-result-
+      - run: bun scripts/generate-app.ts
+        working-directory: perf-measures/type-check
+      - run: bun tsc -p tsconfig.build.json --diagnostics > result.txt
+        working-directory: perf-measures/type-check
+      - run: |
+          {
+            echo 'COMPARISON<<EOF'
+            bun scripts/process-results.ts | column -s '|' -t
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+        working-directory: perf-measures/type-check
+      - run: echo "$COMPARISON"
+        name: display comparison
+
+  perf-measures-type-check-on-main:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun scripts/generate-app.ts
+        working-directory: perf-measures/type-check
+      - run: bun tsc -p tsconfig.build.json --diagnostics > previous-result.txt
+        working-directory: perf-measures/type-check
+      - uses: actions/cache/save@v4
+        with:
+          path: perf-measures/type-check/previous-result.txt
+          key: type-check-perf-previous-result-${{ github.sha }}

@@ -30,6 +30,14 @@ describe('Parse cookie', () => {
     expect(cookie['tasty_cookie']).toBeUndefined()
   })
 
+  it('Should parse one cookie specified by name even if it is not found', () => {
+    const cookieString = 'yummy_cookie=choco; tasty_cookie = strawberry '
+    const cookie: Cookie = parse(cookieString, 'no_such_cookie')
+    expect(cookie['yummy_cookie']).toBeUndefined()
+    expect(cookie['tasty_cookie']).toBeUndefined()
+    expect(cookie['no_such_cookie']).toBeUndefined()
+  })
+
   it('Should parse cookies with no value', () => {
     const cookieString = 'yummy_cookie=; tasty_cookie = ; best_cookie= ; last_cookie=""'
     const cookie: Cookie = parse(cookieString)

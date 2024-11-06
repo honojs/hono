@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import type { BaseMime } from '../utils/mime'
+import type { StringLiteralUnion } from '../utils/types'
+
 /**
  * This code is based on React.
  * https://github.com/facebook/react
@@ -10,7 +13,9 @@
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JSX {
   export type CrossOrigin = 'anonymous' | 'use-credentials' | '' | undefined
-  export type CSSProperties = {}
+  export interface CSSProperties {
+    [propertyKey: string]: unknown
+  }
   type AnyAttributes = { [attributeName: string]: any }
 
   interface JSXAttributes {
@@ -152,7 +157,7 @@ export namespace JSX {
     contenteditable?: boolean | 'inherit' | undefined
     contextmenu?: string | undefined
     dir?: string | undefined
-    draggable?: boolean | undefined
+    draggable?: 'true' | 'false' | boolean | undefined
     enterkeyhint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send' | undefined
     hidden?: boolean | undefined
     id?: string | undefined
@@ -176,10 +181,11 @@ export namespace JSX {
     lang?: string | undefined
     nonce?: string | undefined
     placeholder?: string | undefined
-    popover?: string | undefined
+    /** @see https://developer.mozilla.org/en-US/docs/Web/API/Popover_API */
+    popover?: boolean | 'auto' | 'manual' | undefined
     slot?: string | undefined
     spellcheck?: boolean | undefined
-    style?: CSSProperties | undefined
+    style?: CSSProperties | string | undefined
     tabindex?: number | undefined
     title?: string | undefined
     translate?: 'yes' | 'no' | undefined
@@ -197,7 +203,7 @@ export namespace JSX {
     | 'strict-origin-when-cross-origin'
     | 'unsafe-url'
 
-  type HTMLAttributeAnchorTarget = '_self' | '_blank' | '_parent' | '_top' | string
+  type HTMLAttributeAnchorTarget = StringLiteralUnion<'_self' | '_blank' | '_parent' | '_top'>
 
   interface AnchorHTMLAttributes extends HTMLAttributes {
     download?: string | boolean | undefined
@@ -206,7 +212,7 @@ export namespace JSX {
     media?: string | undefined
     ping?: string | undefined
     target?: HTMLAttributeAnchorTarget | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<BaseMime> | undefined
     referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
   }
 
@@ -221,28 +227,33 @@ export namespace JSX {
     media?: string | undefined
     referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
     shape?: string | undefined
-    target?: string | undefined
+    target?: HTMLAttributeAnchorTarget | undefined
   }
 
   interface BaseHTMLAttributes extends HTMLAttributes {
     href?: string | undefined
-    target?: string | undefined
+    target?: HTMLAttributeAnchorTarget | undefined
   }
 
   interface BlockquoteHTMLAttributes extends HTMLAttributes {
     cite?: string | undefined
   }
 
+  /** @see https://developer.mozilla.org/en-US/docs/Web/API/Popover_API */
+  type HTMLAttributePopoverTargetAction = 'show' | 'hide' | 'toggle'
+
   interface ButtonHTMLAttributes extends HTMLAttributes {
     disabled?: boolean | undefined
     form?: string | undefined
-    formenctype?: string | undefined
-    formmethod?: string | undefined
+    formenctype?: HTMLAttributeFormEnctype | undefined
+    formmethod?: HTMLAttributeFormMethod | undefined
     formnovalidate?: boolean | undefined
-    formtarget?: string | undefined
+    formtarget?: HTMLAttributeAnchorTarget | undefined
     name?: string | undefined
     type?: 'submit' | 'reset' | 'button' | undefined
     value?: string | ReadonlyArray<string> | number | undefined
+    popovertarget?: string | undefined
+    popovertargetaction?: HTMLAttributePopoverTargetAction | undefined
 
     // React 19 compatibility
     formAction?: string | Function | undefined
@@ -282,7 +293,7 @@ export namespace JSX {
   interface EmbedHTMLAttributes extends HTMLAttributes {
     height?: number | string | undefined
     src?: string | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<BaseMime> | undefined
     width?: number | string | undefined
   }
 
@@ -292,14 +303,24 @@ export namespace JSX {
     name?: string | undefined
   }
 
+  /** @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#method */
+  type HTMLAttributeFormMethod = 'get' | 'post' | 'dialog'
+  /** @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#enctype */
+  type HTMLAttributeFormEnctype =
+    | 'application/x-www-form-urlencoded'
+    | 'multipart/form-data'
+    | 'text/plain'
+  /** @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#autocomplete */
+  type HTMLAttributeFormAutocomplete = 'on' | 'off'
+
   interface FormHTMLAttributes extends HTMLAttributes {
-    'accept-charset'?: string | undefined
-    autocomplete?: string | undefined
-    enctype?: string | undefined
-    method?: string | undefined
+    'accept-charset'?: StringLiteralUnion<'utf-8'> | undefined
+    autocomplete?: HTMLAttributeFormAutocomplete | undefined
+    enctype?: HTMLAttributeFormEnctype | undefined
+    method?: HTMLAttributeFormMethod | undefined
     name?: string | undefined
     novalidate?: boolean | undefined
-    target?: string | undefined
+    target?: HTMLAttributeAnchorTarget | undefined
 
     // React 19 compatibility
     action?: string | Function | undefined
@@ -342,7 +363,7 @@ export namespace JSX {
     datetime?: string | undefined
   }
 
-  type HTMLInputTypeAttribute =
+  type HTMLInputTypeAttribute = StringLiteralUnion<
     | 'button'
     | 'checkbox'
     | 'color'
@@ -365,20 +386,80 @@ export namespace JSX {
     | 'time'
     | 'url'
     | 'week'
-    | string
+  >
+  type AutoFillAddressKind = 'billing' | 'shipping'
+  type AutoFillBase = '' | 'off' | 'on'
+  type AutoFillContactField =
+    | 'email'
+    | 'tel'
+    | 'tel-area-code'
+    | 'tel-country-code'
+    | 'tel-extension'
+    | 'tel-local'
+    | 'tel-local-prefix'
+    | 'tel-local-suffix'
+    | 'tel-national'
+  type AutoFillContactKind = 'home' | 'mobile' | 'work'
+  type AutoFillCredentialField = 'webauthn'
+  type AutoFillNormalField =
+    | 'additional-name'
+    | 'address-level1'
+    | 'address-level2'
+    | 'address-level3'
+    | 'address-level4'
+    | 'address-line1'
+    | 'address-line2'
+    | 'address-line3'
+    | 'bday-day'
+    | 'bday-month'
+    | 'bday-year'
+    | 'cc-csc'
+    | 'cc-exp'
+    | 'cc-exp-month'
+    | 'cc-exp-year'
+    | 'cc-family-name'
+    | 'cc-given-name'
+    | 'cc-name'
+    | 'cc-number'
+    | 'cc-type'
+    | 'country'
+    | 'country-name'
+    | 'current-password'
+    | 'family-name'
+    | 'given-name'
+    | 'honorific-prefix'
+    | 'honorific-suffix'
+    | 'name'
+    | 'new-password'
+    | 'one-time-code'
+    | 'organization'
+    | 'postal-code'
+    | 'street-address'
+    | 'transaction-amount'
+    | 'transaction-currency'
+    | 'username'
+  type OptionalPrefixToken<T extends string> = `${T} ` | ''
+  type OptionalPostfixToken<T extends string> = ` ${T}` | ''
+  type AutoFillField =
+    | AutoFillNormalField
+    | `${OptionalPrefixToken<AutoFillContactKind>}${AutoFillContactField}`
+  type AutoFillSection = `section-${string}`
+  type AutoFill =
+    | AutoFillBase
+    | `${OptionalPrefixToken<AutoFillSection>}${OptionalPrefixToken<AutoFillAddressKind>}${AutoFillField}${OptionalPostfixToken<AutoFillCredentialField>}`
 
   interface InputHTMLAttributes extends HTMLAttributes {
     accept?: string | undefined
     alt?: string | undefined
-    autocomplete?: string | undefined
+    autocomplete?: StringLiteralUnion<AutoFill> | undefined
     capture?: boolean | 'user' | 'environment' | undefined // https://www.w3.org/TR/html-media-capture/#the-capture-attribute
     checked?: boolean | undefined
     disabled?: boolean | undefined
     form?: string | undefined
-    formenctype?: string | undefined
-    formmethod?: string | undefined
+    formenctype?: HTMLAttributeFormEnctype | undefined
+    formmethod?: HTMLAttributeFormMethod | undefined
     formnovalidate?: boolean | undefined
-    formtarget?: string | undefined
+    formtarget?: HTMLAttributeAnchorTarget | undefined
     height?: number | string | undefined
     list?: string | undefined
     max?: number | string | undefined
@@ -397,6 +478,8 @@ export namespace JSX {
     type?: HTMLInputTypeAttribute | undefined
     value?: string | ReadonlyArray<string> | number | undefined
     width?: number | string | undefined
+    popovertarget?: string | undefined
+    popovertargetaction?: HTMLAttributePopoverTargetAction | undefined
 
     // React 19 compatibility
     formAction?: string | Function | undefined
@@ -430,7 +513,7 @@ export namespace JSX {
     imagesizes?: string | undefined
     referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
     sizes?: string | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<BaseMime> | undefined
     charSet?: string | undefined
 
     // React 19 compatibility
@@ -464,15 +547,63 @@ export namespace JSX {
     src?: string | undefined
   }
 
+  /**
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#http-equiv
+   */
+  type MetaHttpEquiv =
+    | 'content-security-policy'
+    | 'content-type'
+    | 'default-style'
+    | 'x-ua-compatible'
+    | 'refresh'
+  /**
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta/name
+   */
+  type MetaName =
+    | 'application-name'
+    | 'author'
+    | 'description'
+    | 'generator'
+    | 'keywords'
+    | 'referrer'
+    | 'theme-color'
+    | 'color-scheme'
+    | 'viewport'
+    | 'creator'
+    | 'googlebot'
+    | 'publisher'
+    | 'robots'
+  /**
+   * @see https://ogp.me/
+   */
+  type MetaProperty =
+    | 'og:title'
+    | 'og:type'
+    | 'og:image'
+    | 'og:url'
+    | 'og:audio'
+    | 'og:description'
+    | 'og:determiner'
+    | 'og:locale'
+    | 'og:locale:alternate'
+    | 'og:site_name'
+    | 'og:video'
+    | 'og:image:url'
+    | 'og:image:secure_url'
+    | 'og:image:type'
+    | 'og:image:width'
+    | 'og:image:height'
+    | 'og:image:alt'
   interface MetaHTMLAttributes extends HTMLAttributes {
-    charset?: string | undefined
-    'http-equiv'?: string | undefined
-    name?: string | undefined
+    charset?: StringLiteralUnion<'utf-8'> | undefined
+    'http-equiv'?: StringLiteralUnion<MetaHttpEquiv> | undefined
+    name?: StringLiteralUnion<MetaName> | undefined
     media?: string | undefined
     content?: string | undefined
+    property?: StringLiteralUnion<MetaProperty> | undefined
 
     // React 19 compatibility
-    httpEquiv?: string | undefined
+    httpEquiv?: StringLiteralUnion<MetaHttpEquiv> | undefined
   }
 
   interface MeterHTMLAttributes extends HTMLAttributes {
@@ -494,7 +625,7 @@ export namespace JSX {
     form?: string | undefined
     height?: number | string | undefined
     name?: string | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<BaseMime> | undefined
     usemap?: string | undefined
     width?: number | string | undefined
   }
@@ -545,7 +676,10 @@ export namespace JSX {
     nomodule?: boolean | undefined
     referrerpolicy?: HTMLAttributeReferrerPolicy | undefined
     src?: string | undefined
-    type?: string | undefined
+    /**
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type
+     */
+    type?: StringLiteralUnion<'' | 'text/javascript' | 'importmap' | 'module'> | undefined
 
     // React 19 compatibility
     crossOrigin?: CrossOrigin
@@ -568,20 +702,24 @@ export namespace JSX {
     value?: string | ReadonlyArray<string> | number | undefined
   }
 
+  type MediaMime = BaseMime & (`image/${string}` | `audio/${string}` | `video/${string}`)
   interface SourceHTMLAttributes extends HTMLAttributes {
     height?: number | string | undefined
     media?: string | undefined
     sizes?: string | undefined
     src?: string | undefined
     srcset?: string | undefined
-    type?: string | undefined
+    type?: StringLiteralUnion<MediaMime> | undefined
     width?: number | string | undefined
   }
 
   interface StyleHTMLAttributes extends HTMLAttributes {
     media?: string | undefined
     scoped?: boolean | undefined
-    type?: string | undefined
+    /**
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style#type
+     */
+    type?: '' | 'text/css' | undefined
 
     // React 19 compatibility
     href?: string | undefined

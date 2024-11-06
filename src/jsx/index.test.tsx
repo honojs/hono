@@ -112,6 +112,39 @@ describe('JSX middleware', () => {
     expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
     expect(await res.text()).toBe('<html><body><h1>Hello from async component</h1></body></html>')
   })
+
+  it('Should handle async component error', async () => {
+    const componentError = new Error('Error from async error component')
+
+    const AsyncComponent = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      return <h1>Hello from async component</h1>
+    }
+    const AsyncErrorComponent = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      throw componentError
+    }
+
+    let raisedError: any
+    app.onError((e, c) => {
+      raisedError = e
+      return c.html('<html><body><h1>Error from onError</h1></body></html>', 500)
+    })
+    app.get('/', (c) => {
+      return c.html(
+        <>
+          <AsyncComponent />
+          <AsyncErrorComponent />
+        </>
+      )
+    })
+
+    const res = await app.request('http://localhost/')
+    expect(res.status).toBe(500)
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=UTF-8')
+    expect(await res.text()).toBe('<html><body><h1>Error from onError</h1></body></html>')
+    expect(raisedError).toBe(componentError)
+  })
 })
 
 describe('render to string', () => {
@@ -126,7 +159,7 @@ describe('render to string', () => {
     expect(template.toString()).toBe('<p><span>a</span><span>b</span></p>')
   })
 
-  it('Empty elements are rended withtout closing tag', () => {
+  it('Empty elements are rended without closing tag', () => {
     const template = <input />
     expect(template.toString()).toBe('<input/>')
   })
@@ -383,6 +416,24 @@ describe('render to string', () => {
         '<html><head><title>Home page</title></head><body><h1>Hono</h1><p>Hono is great</p></body></html>'
       )
     })
+
+    describe('Booleans, Null, and Undefined Are Ignored', () => {
+      it.each([true, false, undefined, null])('%s', (item) => {
+        const Component: FC = (() => {
+          return item
+        }) as FC
+        const template = <Component />
+        expect(template.toString()).toBe('')
+      })
+
+      it('falsy value', () => {
+        const Component: FC = (() => {
+          return 0
+        }) as unknown as FC
+        const template = <Component />
+        expect(template.toString()).toBe('0')
+      })
+    })
   })
 
   describe('style attribute', () => {
@@ -417,6 +468,21 @@ describe('render to string', () => {
       const escapedString = html`${'<html-escaped-string>'}`
       const template = <span data-text={escapedString}>Hello</span>
       expect(template.toString()).toBe('<span data-text="&lt;html-escaped-string&gt;">Hello</span>')
+    })
+  })
+
+  describe('head', () => {
+    it('Simple head elements should be rendered as is', () => {
+      const template = (
+        <head>
+          <title>Hono!</title>
+          <meta name='description' content='A description' />
+          <script src='script.js'></script>
+        </head>
+      )
+      expect(template.toString()).toBe(
+        '<head><title>Hono!</title><meta name="description" content="A description"/><script src="script.js"></script></head>'
+      )
     })
   })
 })
@@ -563,6 +629,183 @@ describe('StrictMode', () => {
       </StrictMode>
     )
     expect(template.toString()).toBe('<p>1</p><p>2</p>')
+  })
+})
+
+describe('SVG', () => {
+  it('simple', () => {
+    const template = (
+      <svg>
+        <circle cx='50' cy='50' r='40' stroke='black' stroke-width='3' fill='red' />
+      </svg>
+    )
+    expect(template.toString()).toBe(
+      '<svg><circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red"></circle></svg>'
+    )
+  })
+
+  it('title element', () => {
+    const template = (
+      <>
+        <head>
+          <title>Document Title</title>
+        </head>
+        <svg>
+          <title>SVG Title</title>
+        </svg>
+      </>
+    )
+    expect(template.toString()).toBe(
+      '<head><title>Document Title</title></head><svg><title>SVG Title</title></svg>'
+    )
+  })
+
+  describe('attribute', () => {
+    describe('camelCase', () => {
+      test.each`
+        key
+        ${'attributeName'}
+        ${'baseFrequency'}
+        ${'calcMode'}
+        ${'clipPathUnits'}
+        ${'diffuseConstant'}
+        ${'edgeMode'}
+        ${'filterUnits'}
+        ${'gradientTransform'}
+        ${'gradientUnits'}
+        ${'kernelMatrix'}
+        ${'kernelUnitLength'}
+        ${'keyPoints'}
+        ${'keySplines'}
+        ${'keyTimes'}
+        ${'lengthAdjust'}
+        ${'limitingConeAngle'}
+        ${'markerHeight'}
+        ${'markerUnits'}
+        ${'markerWidth'}
+        ${'maskContentUnits'}
+        ${'maskUnits'}
+        ${'numOctaves'}
+        ${'pathLength'}
+        ${'patternContentUnits'}
+        ${'patternTransform'}
+        ${'patternUnits'}
+        ${'pointsAtX'}
+        ${'pointsAtY'}
+        ${'pointsAtZ'}
+        ${'preserveAlpha'}
+        ${'preserveAspectRatio'}
+        ${'primitiveUnits'}
+        ${'refX'}
+        ${'refY'}
+        ${'repeatCount'}
+        ${'repeatDur'}
+        ${'specularConstant'}
+        ${'specularExponent'}
+        ${'spreadMethod'}
+        ${'startOffset'}
+        ${'stdDeviation'}
+        ${'stitchTiles'}
+        ${'surfaceScale'}
+        ${'crossorigin'}
+        ${'systemLanguage'}
+        ${'tableValues'}
+        ${'targetX'}
+        ${'targetY'}
+        ${'textLength'}
+        ${'viewBox'}
+        ${'xChannelSelector'}
+        ${'yChannelSelector'}
+      `('$key', ({ key }) => {
+        const template = (
+          <svg>
+            <g {...{ [key]: 'test' }} />
+          </svg>
+        )
+        expect(template.toString()).toBe(`<svg><g ${key}="test"></g></svg>`)
+      })
+    })
+
+    describe('kebab-case', () => {
+      test.each`
+        key
+        ${'alignmentBaseline'}
+        ${'baselineShift'}
+        ${'clipPath'}
+        ${'clipRule'}
+        ${'colorInterpolation'}
+        ${'colorInterpolationFilters'}
+        ${'dominantBaseline'}
+        ${'fillOpacity'}
+        ${'fillRule'}
+        ${'floodColor'}
+        ${'floodOpacity'}
+        ${'fontFamily'}
+        ${'fontSize'}
+        ${'fontSizeAdjust'}
+        ${'fontStretch'}
+        ${'fontStyle'}
+        ${'fontVariant'}
+        ${'fontWeight'}
+        ${'imageRendering'}
+        ${'letterSpacing'}
+        ${'lightingColor'}
+        ${'markerEnd'}
+        ${'markerMid'}
+        ${'markerStart'}
+        ${'overlinePosition'}
+        ${'overlineThickness'}
+        ${'paintOrder'}
+        ${'pointerEvents'}
+        ${'shapeRendering'}
+        ${'stopColor'}
+        ${'stopOpacity'}
+        ${'strikethroughPosition'}
+        ${'strikethroughThickness'}
+        ${'strokeDasharray'}
+        ${'strokeDashoffset'}
+        ${'strokeLinecap'}
+        ${'strokeLinejoin'}
+        ${'strokeMiterlimit'}
+        ${'strokeOpacity'}
+        ${'strokeWidth'}
+        ${'textAnchor'}
+        ${'textDecoration'}
+        ${'textRendering'}
+        ${'transformOrigin'}
+        ${'underlinePosition'}
+        ${'underlineThickness'}
+        ${'unicodeBidi'}
+        ${'vectorEffect'}
+        ${'wordSpacing'}
+        ${'writingMode'}
+      `('$key', ({ key }) => {
+        const template = (
+          <svg>
+            <g {...{ [key]: 'test' }} />
+          </svg>
+        )
+        expect(template.toString()).toBe(
+          `<svg><g ${key.replace(/([A-Z])/g, '-$1').toLowerCase()}="test"></g></svg>`
+        )
+      })
+    })
+
+    describe('data-*', () => {
+      test.each`
+        key
+        ${'data-foo'}
+        ${'data-foo-bar'}
+        ${'data-fooBar'}
+      `('$key', ({ key }) => {
+        const template = (
+          <svg>
+            <g {...{ [key]: 'test' }} />
+          </svg>
+        )
+        expect(template.toString()).toBe(`<svg><g ${key}="test"></g></svg>`)
+      })
+    })
   })
 })
 
@@ -816,7 +1059,6 @@ describe('default export', () => {
     'StrictMode',
   ].forEach((key) => {
     it(key, () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((DefaultExport as any)[key]).toBeDefined()
     })
   })

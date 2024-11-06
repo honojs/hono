@@ -23,6 +23,10 @@ export type ValidationFunction<
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ExcludeResponseType<T> = T extends Response & TypedResponse<any> ? never : T
 
+const jsonRegex = /^application\/([a-z-\.]+\+)?json(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/
+const multipartRegex = /^multipart\/form-data(;\s?boundary=[a-zA-Z0-9'"()+_,\-./:=?]+)?$/
+const urlencodedRegex = /^application\/x-www-form-urlencoded(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/
+
 export const validator = <
   InputType,
   P extends string,
@@ -67,9 +71,8 @@ export const validator = <
 
     switch (target) {
       case 'json':
-        if (!contentType || !/^application\/([a-z-\.]+\+)?json/.test(contentType)) {
-          const message = `Invalid HTTP header: Content-Type=${contentType}`
-          throw new HTTPException(400, { message })
+        if (!contentType || !jsonRegex.test(contentType)) {
+          break
         }
         try {
           value = await c.req.json()
@@ -79,7 +82,10 @@ export const validator = <
         }
         break
       case 'form': {
-        if (!contentType) {
+        if (
+          !contentType ||
+          !(multipartRegex.test(contentType) || urlencodedRegex.test(contentType))
+        ) {
           break
         }
 
@@ -102,11 +108,11 @@ export const validator = <
         const form: BodyData<{ all: true }> = {}
         formData.forEach((value, key) => {
           if (key.endsWith('[]')) {
-            if (form[key] === undefined) {
-              form[key] = [value]
-            } else if (Array.isArray(form[key])) {
-              ;(form[key] as unknown[]).push(value)
-            }
+            ;((form[key] ??= []) as unknown[]).push(value)
+          } else if (Array.isArray(form[key])) {
+            ;(form[key] as unknown[]).push(value)
+          } else if (key in form) {
+            form[key] = [form[key] as string | File, value]
           } else {
             form[key] = value
           }

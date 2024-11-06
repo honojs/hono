@@ -9,8 +9,10 @@ import type {
   RouterRoute,
   TypedResponse,
 } from './types'
+import type { ResponseHeader } from './utils/headers'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
+import type { BaseMime } from './utils/mime'
 import type {
   InvalidJSONValue,
   IsAny,
@@ -19,7 +21,10 @@ import type {
   SimplifyDeepArray,
 } from './utils/types'
 
-type HeaderRecord = Record<string, string | string[]>
+type HeaderRecord =
+  | Record<'Content-Type', BaseMime>
+  | Record<ResponseHeader, string | string[]>
+  | Record<string, string | string[]>
 
 /**
  * Data type can be a string, ArrayBuffer, or ReadableStream.
@@ -180,7 +185,7 @@ type JSONRespondReturn<
       ? JSONValue extends SimplifyDeepArray<T>
         ? never
         : JSONParsed<T>
-      : JSONParsed<T>,
+      : never,
     U,
     'json'
   >
@@ -228,6 +233,29 @@ type ContextOptions<E extends Env> = {
   path?: string
 }
 
+interface SetHeadersOptions {
+  append?: boolean
+}
+
+interface SetHeaders {
+  (name: 'Content-Type', value?: BaseMime, options?: SetHeadersOptions): void
+  (name: ResponseHeader, value?: string, options?: SetHeadersOptions): void
+  (name: string, value?: string, options?: SetHeadersOptions): void
+}
+
+type ResponseHeadersInit =
+  | [string, string][]
+  | Record<'Content-Type', BaseMime>
+  | Record<ResponseHeader, string>
+  | Record<string, string>
+  | Headers
+
+interface ResponseInit {
+  headers?: ResponseHeadersInit
+  status?: number
+  statusText?: string
+}
+
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
 /**
@@ -238,7 +266,9 @@ export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
  * @returns The updated Headers object.
  */
 const setHeaders = (headers: Headers, map: Record<string, string> = {}) => {
-  Object.entries(map).forEach(([key, value]) => headers.set(key, value))
+  for (const key of Object.keys(map)) {
+    headers.set(key, map[key])
+  }
   return headers
 }
 
@@ -367,16 +397,31 @@ export class Context<
   set res(_res: Response | undefined) {
     this.#isFresh = false
     if (this.#res && _res) {
-      this.#res.headers.delete('content-type')
-      for (const [k, v] of this.#res.headers.entries()) {
-        if (k === 'set-cookie') {
-          const cookies = this.#res.headers.getSetCookie()
-          _res.headers.delete('set-cookie')
-          for (const cookie of cookies) {
-            _res.headers.append('set-cookie', cookie)
+      try {
+        for (const [k, v] of this.#res.headers.entries()) {
+          if (k === 'content-type') {
+            continue
           }
+          if (k === 'set-cookie') {
+            const cookies = this.#res.headers.getSetCookie()
+            _res.headers.delete('set-cookie')
+            for (const cookie of cookies) {
+              _res.headers.append('set-cookie', cookie)
+            }
+          } else {
+            _res.headers.set(k, v)
+          }
+        }
+      } catch (e) {
+        if (e instanceof TypeError && e.message.includes('immutable')) {
+          // `_res` is immutable (probably a response from a fetch API), so retry with a new response.
+          this.res = new Response(_res.body, {
+            headers: _res.headers,
+            status: _res.status,
+          })
+          return
         } else {
-          _res.headers.set(k, v)
+          throw e
         }
       }
     }
@@ -463,7 +508,7 @@ export class Context<
    * })
    * ```
    */
-  header = (name: string, value: string | undefined, options?: { append?: boolean }): void => {
+  header: SetHeaders = (name, value, options): void => {
     // Clear the header
     if (value === undefined) {
       if (this.#headers) {
@@ -578,11 +623,11 @@ export class Context<
     return Object.fromEntries(this.#var)
   }
 
-  newResponse: NewResponse = (
+  #newResponse(
     data: Data | null,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
-  ): Response => {
+  ): Response {
     // Optimized
     if (this.#isFresh && !headers && !arg && this.#status === 200) {
       return new Response(data, {
@@ -644,6 +689,8 @@ export class Context<
     })
   }
 
+  newResponse: NewResponse = (...args) => this.#newResponse(...(args as Parameters<NewResponse>))
+
   /**
    * `.body()` can return the HTTP response.
    * You can set headers with `.header()` and set HTTP status code with `.status`.
@@ -671,8 +718,8 @@ export class Context<
     headers?: HeaderRecord
   ): Response => {
     return typeof arg === 'number'
-      ? this.newResponse(data, arg, headers)
-      : this.newResponse(data, arg)
+      ? this.#newResponse(data, arg, headers)
+      : this.#newResponse(data, arg)
   }
 
   /**
@@ -704,8 +751,8 @@ export class Context<
     this.#preparedHeaders['content-type'] = TEXT_PLAIN
     // @ts-expect-error `Response` due to missing some types-only keys
     return typeof arg === 'number'
-      ? this.newResponse(text, arg, headers)
-      : this.newResponse(text, arg)
+      ? this.#newResponse(text, arg, headers)
+      : this.#newResponse(text, arg)
   }
 
   /**
@@ -733,7 +780,7 @@ export class Context<
     this.#preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
     /* eslint-disable @typescript-eslint/no-explicit-any */
     return (
-      typeof arg === 'number' ? this.newResponse(body, arg, headers) : this.newResponse(body, arg)
+      typeof arg === 'number' ? this.#newResponse(body, arg, headers) : this.#newResponse(body, arg)
     ) as any
   }
 
@@ -746,23 +793,16 @@ export class Context<
     this.#preparedHeaders['content-type'] = 'text/html; charset=UTF-8'
 
     if (typeof html === 'object') {
-      if (!(html instanceof Promise)) {
-        html = (html as string).toString() // HtmlEscapedString object to string
-      }
-      if ((html as string | Promise<string>) instanceof Promise) {
-        return (html as unknown as Promise<string>)
-          .then((html) => resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}))
-          .then((html) => {
-            return typeof arg === 'number'
-              ? this.newResponse(html, arg, headers)
-              : this.newResponse(html, arg)
-          })
-      }
+      return resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then((html) => {
+        return typeof arg === 'number'
+          ? this.#newResponse(html, arg, headers)
+          : this.#newResponse(html, arg)
+      })
     }
 
     return typeof arg === 'number'
-      ? this.newResponse(html as string, arg, headers)
-      : this.newResponse(html as string, arg)
+      ? this.#newResponse(html as string, arg, headers)
+      : this.#newResponse(html as string, arg)
   }
 
   /**
@@ -781,11 +821,11 @@ export class Context<
    * ```
    */
   redirect = <T extends RedirectStatusCode = 302>(
-    location: string,
+    location: string | URL,
     status?: T
   ): Response & TypedResponse<undefined, T, 'redirect'> => {
     this.#headers ??= new Headers()
-    this.#headers.set('Location', location)
+    this.#headers.set('Location', String(location))
     return this.newResponse(null, status ?? 302) as any
   }
 

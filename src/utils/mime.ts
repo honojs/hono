@@ -3,7 +3,10 @@
  * MIME utility.
  */
 
-export const getMimeType = (filename: string, mimes = baseMimes): string | undefined => {
+export const getMimeType = (
+  filename: string,
+  mimes: Record<string, string> = baseMimes
+): string | undefined => {
   const regexp = /\.([a-zA-Z0-9]+?)$/
   const match = filename.match(regexp)
   if (!match) {
@@ -25,7 +28,13 @@ export const getExtension = (mimeType: string): string | undefined => {
 }
 
 export { baseMimes as mimes }
-const baseMimes: Record<string, string> = {
+
+/**
+ * Union types for BaseMime
+ */
+export type BaseMime = (typeof _baseMimes)[keyof typeof _baseMimes]
+
+const _baseMimes = {
   aac: 'audio/aac',
   avi: 'video/x-msvideo',
   avif: 'image/avif',
@@ -81,4 +90,6 @@ const baseMimes: Record<string, string> = {
   '3g2': 'video/3gpp2',
   gltf: 'model/gltf+json',
   glb: 'model/gltf-binary',
-}
+} as const
+
+const baseMimes: Record<string, BaseMime> = _baseMimes

@@ -40,8 +40,11 @@ describe('Hooks', () => {
 
   describe('useReducer()', () => {
     it('simple', async () => {
+      const reducer = (state: number, action: number) => state + action
+      const functions: Function[] = []
       const App = () => {
-        const [state, dispatch] = useReducer((state: number, action: number) => state + action, 0)
+        const [state, dispatch] = useReducer(reducer, 0)
+        functions.push(dispatch)
         return (
           <div>
             <button onClick={() => dispatch(1)}>{state}</button>
@@ -53,6 +56,7 @@ describe('Hooks', () => {
       root.querySelector('button')?.click()
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div><button>1</button></div>')
+      expect(functions[0]).toBe(functions[1])
     })
   })
 

@@ -13,6 +13,7 @@
   ],
   "exports": {
     ".": "./src/index.ts",
+    "./request": "./src/request.ts",
     "./types": "./src/types.ts",
     "./hono-base": "./src/hono-base.ts",
     "./tiny": "./src/preset/tiny.ts",
@@ -26,6 +27,7 @@
     "./cookie": "./src/helper/cookie/index.ts",
     "./accepts": "./src/helper/accepts/index.ts",
     "./compress": "./src/middleware/compress/index.ts",
+    "./context-storage": "./src/middleware/context-storage/index.ts",
     "./cors": "./src/middleware/cors/index.ts",
     "./csrf": "./src/middleware/csrf/index.ts",
     "./etag": "./src/middleware/etag/index.ts",
@@ -86,6 +88,7 @@
     "./utils/encode": "./src/utils/encode.ts",
     "./utils/filepath": "./src/utils/filepath.ts",
     "./utils/handler": "./src/utils/handler.ts",
+    "./utils/headers": "./src/utils/headers.ts",
     "./utils/html": "./src/utils/html.ts",
     "./utils/http-status": "./src/utils/http-status.ts",
     "./utils/jwt": "./src/utils/jwt/index.ts",

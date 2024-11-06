@@ -15,7 +15,7 @@ export const SSG_DISABLED_RESPONSE = (() => {
       status: 404,
       headers: { [X_HONO_DISABLE_SSG_HEADER_KEY]: 'true' },
     })
-  } catch (e) {
+  } catch {
     return null
   }
 })() as Response

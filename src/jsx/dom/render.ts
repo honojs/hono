@@ -1,13 +1,18 @@
-import type { Child, FC, JSXNode, Props } from '../base'
+import type { Child, FC, JSXNode, Props, MemorableFC } from '../base'
 import { toArray } from '../children'
-import { DOM_ERROR_HANDLER, DOM_INTERNAL_TAG, DOM_RENDERER, DOM_STASH } from '../constants'
+import {
+  DOM_ERROR_HANDLER,
+  DOM_INTERNAL_TAG,
+  DOM_MEMO,
+  DOM_RENDERER,
+  DOM_STASH,
+} from '../constants'
 import type { Context as JSXContext } from '../context'
 import { globalContexts as globalJSXContexts, useContext } from '../context'
 import type { EffectData } from '../hooks'
 import { STASH_EFFECT } from '../hooks'
 import { normalizeIntrinsicElementKey, styleObjectForEach } from '../utils'
 import { createContext } from './context' // import dom-specific versions
-import { newJSXNode } from './utils'
 
 const HONO_PORTAL_ELEMENT = '_hp'
 
@@ -20,8 +25,6 @@ const nameSpaceMap: Record<string, string> = {
   svg: '2000/svg',
   math: '1998/Math/MathML',
 } as const
-
-const skipProps: Set<string> = new Set(['children'])
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type HasRenderToDom = FC<any> & { [DOM_RENDERER]: FC<any> }
@@ -41,13 +44,14 @@ export type NodeObject = {
   vC: Node[] // virtual dom children
   pC?: Node[] // previous virtual dom children
   vR: Node[] // virtual dom children to remove
-  s?: Node[] // shadow virtual dom children
   n?: string // namespace
   f?: boolean // force build
+  s?: boolean // skip build and apply
   c: Container | undefined // container
   e: SupportedElement | Text | undefined // rendered element
   p?: PreserveNodeType // preserve HTMLElement if it will be unmounted
   a?: boolean // cancel apply() if true
+  o?: NodeObject // original node
   [DOM_STASH]:
     | [
         number, // current hook index
@@ -62,6 +66,7 @@ export type NodeObject = {
 type NodeString = {
   t: string // text content
   d: boolean // is dirty
+  s?: boolean // skip build and apply
 } & {
   e?: Text
   // like a NodeObject
@@ -107,16 +112,28 @@ export const getNameSpaceContext = () => nameSpaceContext
 
 const isNodeString = (node: Node): node is NodeString => 't' in (node as NodeString)
 
+const eventCache: Record<string, [string, boolean]> = {
+  // pre-define events that are used very frequently
+  onClick: ['click', false],
+}
 const getEventSpec = (key: string): [string, boolean] | undefined => {
+  if (!key.startsWith('on')) {
+    return undefined
+  }
+  if (eventCache[key]) {
+    return eventCache[key]
+  }
+
   const match = key.match(/^on([A-Z][a-zA-Z]+?(?:PointerCapture)?)(Capture)?$/)
   if (match) {
     const [, eventName, capture] = match
-    return [(eventAliasMap[eventName] || eventName).toLowerCase(), !!capture]
+    return (eventCache[key] = [(eventAliasMap[eventName] || eventName).toLowerCase(), !!capture])
   }
   return undefined
 }
 
 const toAttributeName = (element: SupportedElement, key: string): string =>
+  nameSpaceContext &&
   element instanceof SVGElement &&
   /[A-Z]/.test(key) &&
   (key in element.style || // Presentation attributes are findable in style object. "clip-path", "font-size", "stroke-width", etc.
@@ -130,19 +147,22 @@ const applyProps = (
   oldAttributes?: Props
 ): void => {
   attributes ||= {}
-  for (let [key, value] of Object.entries(attributes)) {
-    if (!skipProps.has(key) && (!oldAttributes || oldAttributes[key] !== value)) {
+  for (let key in attributes) {
+    const value = attributes[key]
+    if (key !== 'children' && (!oldAttributes || oldAttributes[key] !== value)) {
       key = normalizeIntrinsicElementKey(key)
       const eventSpec = getEventSpec(key)
       if (eventSpec) {
-        if (oldAttributes) {
-          container.removeEventListener(eventSpec[0], oldAttributes[key], eventSpec[1])
-        }
-        if (value != null) {
-          if (typeof value !== 'function') {
-            throw new Error(`Event handler for "${key}" is not a function`)
+        if (oldAttributes?.[key] !== value) {
+          if (oldAttributes) {
+            container.removeEventListener(eventSpec[0], oldAttributes[key], eventSpec[1])
           }
-          container.addEventListener(eventSpec[0], value, eventSpec[1])
+          if (value != null) {
+            if (typeof value !== 'function') {
+              throw new Error(`Event handler for "${key}" is not a function`)
+            }
+            container.addEventListener(eventSpec[0], value, eventSpec[1])
+          }
         }
       } else if (key === 'dangerouslySetInnerHTML' && value) {
         container.innerHTML = value.__html
@@ -166,8 +186,8 @@ const applyProps = (
           }
         }
       } else {
-        const nodeName = container.nodeName
         if (key === 'value') {
+          const nodeName = container.nodeName
           if (nodeName === 'INPUT' || nodeName === 'TEXTAREA' || nodeName === 'SELECT') {
             ;(container as unknown as HTMLInputElement).value =
               value === null || value === undefined || value === false ? null : value
@@ -183,8 +203,8 @@ const applyProps = (
             }
           }
         } else if (
-          (key === 'checked' && nodeName === 'INPUT') ||
-          (key === 'selected' && nodeName === 'OPTION')
+          (key === 'checked' && container.nodeName === 'INPUT') ||
+          (key === 'selected' && container.nodeName === 'OPTION')
         ) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ;(container as any)[key] = value
@@ -205,8 +225,9 @@ const applyProps = (
     }
   }
   if (oldAttributes) {
-    for (let [key, value] of Object.entries(oldAttributes)) {
-      if (!skipProps.has(key) && !(key in attributes)) {
+    for (let key in oldAttributes) {
+      const value = oldAttributes[key]
+      if (key !== 'children' && !(key in attributes)) {
         key = normalizeIntrinsicElementKey(key)
         const eventSpec = getEventSpec(key)
         if (eventSpec) {
@@ -222,23 +243,19 @@ const applyProps = (
 }
 
 const invokeTag = (context: Context, node: NodeObject): Child[] => {
-  if (node.s) {
-    const res = node.s
-    node.s = undefined
-    return res as Child[]
-  }
-
   node[DOM_STASH][0] = 0
   buildDataStack.push([context, node])
   const func = (node.tag as HasRenderToDom)[DOM_RENDERER] || node.tag
-  try {
-    return [
-      func.call(null, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const props = (func as any).defaultProps
+    ? {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ...((func as any).defaultProps || {}),
+        ...(func as any).defaultProps,
         ...node.props,
-      }),
-    ]
+      }
+    : node.props
+  try {
+    return [func.call(null, props)]
   } finally {
     buildDataStack.pop()
   }
@@ -251,7 +268,11 @@ const getNextChildren = (
   childrenToRemove: Node[],
   callbacks: EffectData[]
 ): void => {
-  childrenToRemove.push(...node.vR)
+  if (node.vR?.length) {
+    childrenToRemove.push(...node.vR)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (node as any).vR
+  }
   if (typeof node.tag === 'function') {
     node[DOM_STASH][1][STASH_EFFECT]?.forEach((data: EffectData) => callbacks.push(data))
   }
@@ -261,34 +282,35 @@ const getNextChildren = (
     } else {
       if (typeof child.tag === 'function' || child.tag === '') {
         child.c = container
+        const currentNextChildrenIndex = nextChildren.length
         getNextChildren(child, container, nextChildren, childrenToRemove, callbacks)
+        if (child.s) {
+          for (let i = currentNextChildrenIndex; i < nextChildren.length; i++) {
+            nextChildren[i].s = true
+          }
+          child.s = false
+        }
       } else {
         nextChildren.push(child)
-        childrenToRemove.push(...child.vR)
+        if (child.vR?.length) {
+          childrenToRemove.push(...child.vR)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          delete (child as any).vR
+        }
       }
     }
   })
 }
 
 const findInsertBefore = (node: Node | undefined): SupportedElement | Text | null => {
-  if (!node) {
-    return null
-  } else if (node.tag === HONO_PORTAL_ELEMENT) {
-    return findInsertBefore(node.nN)
-  } else if (node.e) {
-    return node.e
-  }
-
-  if (node.vC) {
-    for (let i = 0, len = node.vC.length; i < len; i++) {
-      const e = findInsertBefore(node.vC[i])
-      if (e) {
-        return e
-      }
+  for (; ; node = node.tag === HONO_PORTAL_ELEMENT || !node.vC || !node.pP ? node.nN : node.vC[0]) {
+    if (!node) {
+      return null
+    }
+    if (node.tag !== HONO_PORTAL_ELEMENT && node.e) {
+      return node.e
     }
   }
-
-  return findInsertBefore(node.nN)
 }
 
 const removeNode = (node: Node): void => {
@@ -314,17 +336,9 @@ const removeNode = (node: Node): void => {
   }
 }
 
-const apply = (node: NodeObject, container: Container): void => {
+const apply = (node: NodeObject, container: Container, isNew: boolean): void => {
   node.c = container
-  applyNodeObject(node, container)
-}
-
-const applyNode = (node: Node, container: Container): void => {
-  if (isNodeString(node)) {
-    container.textContent = node.t
-  } else {
-    applyNodeObject(node, container)
-  }
+  applyNodeObject(node, container, isNew)
 }
 
 const findChildNodeIndex = (
@@ -345,47 +359,96 @@ const findChildNodeIndex = (
 }
 
 const cancelBuild: symbol = Symbol()
-const applyNodeObject = (node: NodeObject, container: Container): void => {
+const applyNodeObject = (node: NodeObject, container: Container, isNew: boolean): void => {
   const next: Node[] = []
   const remove: Node[] = []
   const callbacks: EffectData[] = []
   getNextChildren(node, container, next, remove, callbacks)
+  remove.forEach(removeNode)
 
-  const childNodes = container.childNodes
-  let offset =
-    findChildNodeIndex(childNodes, findInsertBefore(node.nN)) ??
-    findChildNodeIndex(childNodes, next.find((n) => n.tag !== HONO_PORTAL_ELEMENT && n.e)?.e) ??
-    childNodes.length
+  const childNodes = (isNew ? undefined : container.childNodes) as NodeListOf<ChildNode>
+  let offset: number
+  let insertBeforeNode: ChildNode | null = null
+  if (isNew) {
+    offset = -1
+  } else if (!childNodes.length) {
+    offset = 0
+  } else {
+    const offsetByNextNode = findChildNodeIndex(childNodes, findInsertBefore(node.nN))
+    if (offsetByNextNode !== undefined) {
+      insertBeforeNode = childNodes[offsetByNextNode]
+      offset = offsetByNextNode
+    } else {
+      offset =
+        findChildNodeIndex(childNodes, next.find((n) => n.tag !== HONO_PORTAL_ELEMENT && n.e)?.e) ??
+        -1
+    }
+
+    if (offset === -1) {
+      isNew = true
+    }
+  }
 
   for (let i = 0, len = next.length; i < len; i++, offset++) {
     const child = next[i]
 
     let el: SupportedElement | Text
-    if (isNodeString(child)) {
-      if (child.e && child.d) {
-        child.e.textContent = child.t
-      }
-      child.d = false
-      el = child.e ||= document.createTextNode(child.t)
+    if (child.s && child.e) {
+      el = child.e
+      child.s = false
     } else {
-      el = child.e ||= child.n
-        ? (document.createElementNS(child.n, child.tag as string) as SVGElement | MathMLElement)
-        : document.createElement(child.tag as string)
-      applyProps(el as HTMLElement, child.props, child.pP)
-      applyNode(child, el as HTMLElement)
+      const isNewLocal = isNew || !child.e
+      if (isNodeString(child)) {
+        if (child.e && child.d) {
+          child.e.textContent = child.t
+        }
+        child.d = false
+        el = child.e ||= document.createTextNode(child.t)
+      } else {
+        el = child.e ||= child.n
+          ? (document.createElementNS(child.n, child.tag as string) as SVGElement | MathMLElement)
+          : document.createElement(child.tag as string)
+        applyProps(el as HTMLElement, child.props, child.pP)
+        applyNodeObject(child, el as HTMLElement, isNewLocal)
+      }
     }
     if (child.tag === HONO_PORTAL_ELEMENT) {
       offset--
-    } else if (childNodes[offset] !== el && childNodes[offset - 1] !== child.e) {
-      container.insertBefore(el, childNodes[offset] || null)
+    } else if (isNew) {
+      if (!el.parentNode) {
+        container.appendChild(el)
+      }
+    } else if (childNodes[offset] !== el && childNodes[offset - 1] !== el) {
+      if (childNodes[offset + 1] === el) {
+        // Move extra elements to the back of the container. This is to be done efficiently when elements are swapped.
+        container.appendChild(childNodes[offset])
+      } else {
+        container.insertBefore(el, insertBeforeNode || childNodes[offset] || null)
+      }
     }
   }
-  remove.forEach(removeNode)
-  callbacks.forEach(([, , , , cb]) => cb?.()) // invoke useInsertionEffect callbacks
-  callbacks.forEach(([, cb]) => cb?.()) // invoke useLayoutEffect callbacks
-  requestAnimationFrame(() => {
-    callbacks.forEach(([, , , cb]) => cb?.()) // invoke useEffect callbacks
-  })
+  if (node.pP) {
+    delete node.pP
+  }
+  if (callbacks.length) {
+    const useLayoutEffectCbs: Array<() => void> = []
+    const useEffectCbs: Array<() => void> = []
+    callbacks.forEach(([, useLayoutEffectCb, , useEffectCb, useInsertionEffectCb]) => {
+      if (useLayoutEffectCb) {
+        useLayoutEffectCbs.push(useLayoutEffectCb)
+      }
+      if (useEffectCb) {
+        useEffectCbs.push(useEffectCb)
+      }
+      useInsertionEffectCb?.() // invoke useInsertionEffect callbacks
+    })
+    useLayoutEffectCbs.forEach((cb) => cb()) // invoke useLayoutEffect callbacks
+    if (useEffectCbs.length) {
+      requestAnimationFrame(() => {
+        useEffectCbs.forEach((cb) => cb()) // invoke useEffect callbacks
+      })
+    }
+  }
 }
 
 const fallbackUpdateFnArrayMap: WeakMap<
@@ -408,16 +471,18 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
       foundErrorHandler = (children[0] as any)[DOM_ERROR_HANDLER] as ErrorHandler
       context[5]!.push([context, foundErrorHandler, node])
     }
-    const oldVChildren: Node[] = buildWithPreviousChildren
+    const oldVChildren: Node[] | undefined = buildWithPreviousChildren
       ? [...(node.pC as Node[])]
       : node.vC
       ? [...node.vC]
-      : []
+      : undefined
     const vChildren: Node[] = []
-    node.vR = buildWithPreviousChildren ? [...node.vC] : []
     let prevNode: Node | undefined
-    children.flat().forEach((c: Child) => {
-      let child = buildNode(c)
+    for (let i = 0; i < children.length; i++) {
+      if (Array.isArray(children[i])) {
+        children.splice(i, 1, ...(children[i] as Child[]).flat())
+      }
+      let child = buildNode(children[i])
       if (child) {
         if (
           typeof child.tag === 'function' &&
@@ -432,29 +497,29 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
           }
         }
 
-        let oldChild: Node | undefined
-        const i = oldVChildren.findIndex(
-          isNodeString(child)
-            ? (c) => isNodeString(c)
-            : child.key !== undefined
-            ? (c) => c.key === (child as Node).key
-            : (c) => c.tag === (child as Node).tag
-        )
-        if (i !== -1) {
-          oldChild = oldVChildren[i]
-          oldVChildren.splice(i, 1)
+        let oldChild: NodeObject | undefined
+        if (oldVChildren && oldVChildren.length) {
+          const i = oldVChildren.findIndex(
+            isNodeString(child)
+              ? (c) => isNodeString(c)
+              : child.key !== undefined
+              ? (c) => c.key === (child as Node).key && c.tag === (child as Node).tag
+              : (c) => c.tag === (child as Node).tag
+          )
+
+          if (i !== -1) {
+            oldChild = oldVChildren[i] as NodeObject
+            oldVChildren.splice(i, 1)
+          }
         }
 
-        let skipBuild = false
         if (oldChild) {
           if (isNodeString(child)) {
-            if ((oldChild as NodeString).t !== child.t) {
-              ;(oldChild as NodeString).t = child.t // update text content
-              ;(oldChild as NodeString).d = true
+            if ((oldChild as unknown as NodeString).t !== child.t) {
+              ;(oldChild as unknown as NodeString).t = child.t // update text content
+              ;(oldChild as unknown as NodeString).d = true
             }
             child = oldChild
-          } else if (oldChild.tag !== child.tag) {
-            node.vR.push(oldChild)
           } else {
             const pP = (oldChild.pP = oldChild.props)
             oldChild.props = child.props
@@ -463,12 +528,12 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
               oldChild[DOM_STASH][2] = child[DOM_STASH][2] || []
               oldChild[DOM_STASH][3] = child[DOM_STASH][3]
 
-              if (!oldChild.f) {
-                const prevPropsKeys = Object.keys(pP)
-                const currentProps = oldChild.props
-                skipBuild =
-                  prevPropsKeys.length === Object.keys(currentProps).length &&
-                  prevPropsKeys.every((k) => k in currentProps && currentProps[k] === pP[k])
+              if (
+                !oldChild.f &&
+                ((oldChild.o || oldChild) === child.o || // The code generated by the react compiler is memoized under this condition.
+                  (oldChild.tag as MemorableFC<unknown>)[DOM_MEMO]?.(pP, oldChild.props)) // The `memo` function is memoized under this condition.
+              ) {
+                oldChild.s = true
               }
             }
             child = oldChild
@@ -480,20 +545,22 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
           }
         }
 
-        if (!isNodeString(child) && !skipBuild) {
+        if (!isNodeString(child) && !child.s) {
           build(context, child)
           delete child.f
         }
         vChildren.push(child)
 
-        for (let p = prevNode; p && !isNodeString(p); p = p.vC?.at(-1) as NodeObject) {
-          p.nN = child
+        if (prevNode && !prevNode.s && !child.s) {
+          for (let p = prevNode; p && !isNodeString(p); p = p.vC?.at(-1) as NodeObject) {
+            p.nN = child
+          }
         }
         prevNode = child
       }
-    })
+    }
+    node.vR = buildWithPreviousChildren ? [...node.vC, ...(oldVChildren || [])] : oldVChildren || []
     node.vC = vChildren
-    node.vR.push(...oldVChildren)
     if (buildWithPreviousChildren) {
       delete node.pC
     }
@@ -538,7 +605,7 @@ export const build = (context: Context, node: NodeObject, children?: Child[]): v
             errorHandlerNode.c
           ) {
             // render error boundary immediately
-            apply(errorHandlerNode, errorHandlerNode.c as Container)
+            apply(errorHandlerNode, errorHandlerNode.c as Container, false)
             return
           }
         }
@@ -561,13 +628,16 @@ export const buildNode = (node: Child): Node | undefined => {
     return { t: node.toString(), d: true } as NodeString
   } else {
     if ('vR' in node) {
-      node = newJSXNode({
+      node = {
         tag: (node as NodeObject).tag,
         props: (node as NodeObject).props,
         key: (node as NodeObject).key,
         f: (node as NodeObject).f,
+        type: (node as NodeObject).tag,
+        ref: (node as NodeObject).props.ref,
+        o: (node as NodeObject).o || node,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any)
+      } as any
     }
     if (typeof (node as JSXNode).tag === 'function') {
       ;(node as NodeObject)[DOM_STASH] = [0, []]
@@ -603,7 +673,7 @@ const updateSync = (context: Context, node: NodeObject): void => {
   })
   try {
     build(context, node, undefined)
-  } catch (e) {
+  } catch {
     return
   }
   if (node.a) {
@@ -614,7 +684,7 @@ const updateSync = (context: Context, node: NodeObject): void => {
     c.values.pop()
   })
   if (context[0] !== 1 || !context[1]) {
-    apply(node, node.c as Container)
+    apply(node, node.c as Container, false)
   }
 }
 
@@ -675,7 +745,7 @@ export const renderNode = (node: NodeObject, container: Container): void => {
   ;(context as Context)[4] = false // finish top level render
 
   const fragment = document.createDocumentFragment()
-  apply(node, fragment)
+  apply(node, fragment, true)
   replaceContainer(node, fragment, container)
   container.replaceChildren(fragment)
 }

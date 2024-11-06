@@ -1,6 +1,29 @@
 import { Context } from './context'
 import { setCookie } from './helper/cookie'
 
+const makeResponseHeaderImmutable = (res: Response) => {
+  Object.defineProperty(res, 'headers', {
+    value: new Proxy(res.headers, {
+      set(target, prop, value) {
+        if (prop === 'set') {
+          throw new TypeError('Cannot modify headers: Headers are immutable')
+        }
+        return Reflect.set(target, prop, value)
+      },
+      get(target, prop) {
+        if (prop === 'set') {
+          return function () {
+            throw new TypeError('Cannot modify headers: Headers are immutable')
+          }
+        }
+        return Reflect.get(target, prop)
+      },
+    }),
+    writable: false,
+  })
+  return res
+}
+
 describe('Context', () => {
   const req = new Request('http://localhost/')
 
@@ -62,6 +85,12 @@ describe('Context', () => {
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe('/destination')
     res = c.redirect('https://example.com/destination')
+    expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe('https://example.com/destination')
+  })
+
+  it('c.redirect() w/ URL', async () => {
+    const res = c.redirect(new URL('/destination', 'https://example.com'))
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe('https://example.com/destination')
   })
@@ -359,6 +388,28 @@ describe('Context header', () => {
     })
     const res = c.text('Hi')
     expect(res.headers.get('set-cookie')).toBe('a, b, c')
+  })
+
+  it('Should be able to overwrite a fetch response with a new response.', async () => {
+    c.res = makeResponseHeaderImmutable(new Response('bar'))
+    c.res = new Response('foo', {
+      headers: {
+        'X-Custom': 'Message',
+      },
+    })
+    expect(c.res.text()).resolves.toBe('foo')
+    expect(c.res.headers.get('X-Custom')).toBe('Message')
+  })
+
+  it('Should be able to overwrite a response with a fetch response.', async () => {
+    c.res = new Response('foo', {
+      headers: {
+        'X-Custom': 'Message',
+      },
+    })
+    c.res = makeResponseHeaderImmutable(new Response('bar'))
+    expect(c.res.text()).resolves.toBe('bar')
+    expect(c.res.headers.get('X-Custom')).toBe('Message')
   })
 })
 

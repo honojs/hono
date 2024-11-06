@@ -1,13 +1,5 @@
 import type { Context } from '../../context'
-
-export type AcceptHeader =
-  | 'Accept'
-  | 'Accept-Charset'
-  | 'Accept-Encoding'
-  | 'Accept-Language'
-  | 'Accept-Patch'
-  | 'Accept-Post'
-  | 'Accept-Ranges'
+import type { AcceptHeader } from '../../utils/headers'
 
 export interface Accept {
   type: string

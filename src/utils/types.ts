@@ -26,7 +26,9 @@ export type IfAnyThenEmptyObject<T> = 0 extends 1 & T ? {} : T
 
 export type JSONPrimitive = string | boolean | number | null
 export type JSONArray = (JSONPrimitive | JSONObject | JSONArray)[]
-export type JSONObject = { [key: string]: JSONPrimitive | JSONArray | JSONObject | object }
+export type JSONObject = {
+  [key: string]: JSONPrimitive | JSONArray | JSONObject | object | InvalidJSONValue
+}
 export type InvalidJSONValue = undefined | symbol | ((...args: unknown[]) => unknown)
 
 type InvalidToNull<T> = T extends InvalidJSONValue ? null : T
@@ -50,12 +52,8 @@ export type JSONParsed<T> = T extends { toJSON(): infer J }
   ? T
   : T extends InvalidJSONValue
   ? never
-  : T extends []
-  ? []
-  : T extends readonly [infer R, ...infer U]
-  ? [JSONParsed<InvalidToNull<R>>, ...JSONParsed<U>]
-  : T extends Array<infer U>
-  ? Array<JSONParsed<InvalidToNull<U>>>
+  : T extends ReadonlyArray<unknown>
+  ? { [K in keyof T]: JSONParsed<InvalidToNull<T[K]>> }
   : T extends Set<unknown> | Map<unknown, unknown>
   ? {}
   : T extends object
@@ -93,3 +91,9 @@ export type HasRequiredKeys<BaseType extends object> = RequiredKeysOf<BaseType> 
   : true
 
 export type IsAny<T> = boolean extends (T extends never ? true : false) ? true : false
+
+/**
+ * String literal types with auto-completion
+ * @see https://github.com/Microsoft/TypeScript/issues/29729
+ */
+export type StringLiteralUnion<T> = T | (string & Record<never, never>)
