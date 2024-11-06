@@ -7,14 +7,14 @@
 
 /// <reference types="bun-types/bun" />
 
-import fs, { write } from 'fs'
-import path from 'path'
 import arg from 'arg'
+import { $, stdout } from 'bun'
 import { build } from 'esbuild'
 import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
 import * as glob from 'glob'
+import fs from 'fs'
+import path from 'path'
 import { removePrivateFields } from './remove-private-fields'
-import { $, stdout } from 'bun'
 
 const args = arg({
   '--watch': Boolean,
@@ -25,6 +25,24 @@ const isWatch = args['--watch'] || false
 const entryPoints = glob.sync('./src/**/*.ts', {
   ignore: ['./src/**/*.test.ts', './src/mod.ts', './src/middleware.ts', './src/deno/**/*.ts'],
 })
+
+const readJsonExports = (path: string) => JSON.parse(fs.readFileSync(path, 'utf-8')).exports
+
+const [packageJsonExports, jsrJsonExports] = ['./package.json', './jsr.json'].map(readJsonExports)
+
+const validateEntries = (
+  source: Record<string, unknown>,
+  target: Record<string, unknown>,
+  fileName: string
+) =>
+  Object.keys(source).forEach((entry) => {
+    if (!(entry in target)) {
+      throw new Error(`Missing ${entry} in ${fileName}`)
+    }
+  })
+
+validateEntries(packageJsonExports, jsrJsonExports, 'jsr.json')
+validateEntries(jsrJsonExports, packageJsonExports, 'package.json')
 
 /*
   This plugin is inspired by the following.
