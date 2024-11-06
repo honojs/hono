@@ -97,14 +97,6 @@ Deno.test('Serve Static middleware', async () => {
 
   app.get('/static-absolute-root/*', serveStatic({ root: dirname(fromFileUrl(import.meta.url)) }))
 
-  app.get(
-    '/static/*',
-    serveStatic({
-      root: './runtime-tests/deno',
-      onNotFound,
-    })
-  )
-
   let res = await app.request('http://localhost/favicon.ico')
   assertEquals(res.status, 200)
   assertEquals(res.headers.get('Content-Type'), 'image/x-icon')

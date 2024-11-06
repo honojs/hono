@@ -28,6 +28,17 @@ describe('Logger by Middleware', () => {
       return c.text(longRandomString)
     })
     app.get('/empty', (c) => c.text(''))
+    app.get('/redirect', (c) => {
+      return c.redirect('/empty', 301)
+    })
+    app.get('/server-error', (c) => {
+      const res = new Response('', { status: 511 })
+      if (c.req.query('status')) {
+        // test status code not yet supported by runtime `Response` object
+        Object.defineProperty(res, 'status', { value: parseInt(c.req.query('status') as string) })
+      }
+      return res
+    })
   })
 
   it('Log status 200 with empty body', async () => {
@@ -62,6 +73,14 @@ describe('Logger by Middleware', () => {
     expect(log).toMatch(/1s/)
   })
 
+  it('Log status 301 with empty body', async () => {
+    const res = await app.request('http://localhost/redirect')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(301)
+    expect(log.startsWith('--> GET /redirect \x1b[36m301\x1b[0m')).toBe(true)
+    expect(log).toMatch(/m?s$/)
+  })
+
   it('Log status 404', async () => {
     const msg = 'Default 404 Not Found'
     app.all('*', (c) => {
@@ -71,6 +90,30 @@ describe('Logger by Middleware', () => {
     expect(res).not.toBeNull()
     expect(res.status).toBe(404)
     expect(log.startsWith('--> GET /notfound \x1b[33m404\x1b[0m')).toBe(true)
+    expect(log).toMatch(/m?s$/)
+  })
+
+  it('Log status 511 with empty body', async () => {
+    const res = await app.request('http://localhost/server-error')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(511)
+    expect(log.startsWith('--> GET /server-error \x1b[31m511\x1b[0m')).toBe(true)
+    expect(log).toMatch(/m?s$/)
+  })
+
+  it('Log status 100', async () => {
+    const res = await app.request('http://localhost/server-error?status=100')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(100)
+    expect(log.startsWith('--> GET /server-error 100')).toBe(true)
+    expect(log).toMatch(/m?s$/)
+  })
+
+  it('Log status 700', async () => {
+    const res = await app.request('http://localhost/server-error?status=700')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(700)
+    expect(log.startsWith('--> GET /server-error 700')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 })

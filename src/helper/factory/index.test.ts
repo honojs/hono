@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { expectTypeOf } from 'vitest'
 import { hc } from '../../client'
 import type { ClientRequest } from '../../client/types'
@@ -34,6 +35,32 @@ describe('createMiddleware', () => {
     const client = hc<typeof route>('http://localhost')
     const url = client.message.$url()
     expect(url.pathname).toBe('/message')
+  })
+
+  it('Should pass generics types to chained handlers', () => {
+    type Bindings = {
+      MY_VAR_IN_BINDINGS: string
+    }
+
+    type Variables = {
+      MY_VAR: string
+    }
+
+    const app = new Hono<{ Bindings: Bindings }>()
+
+    app.get(
+      '/',
+      createMiddleware<{ Variables: Variables }>(async (c, next) => {
+        await next()
+      }),
+      createMiddleware(async (c, next) => {
+        await next()
+      }),
+      async (c) => {
+        const v = c.get('MY_VAR')
+        expectTypeOf(v).toEqualTypeOf<string>()
+      }
+    )
   })
 })
 

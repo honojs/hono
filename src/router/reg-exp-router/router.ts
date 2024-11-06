@@ -207,7 +207,7 @@ export class RegExpRouter<T> implements Router<T> {
   match(method: string, path: string): Result<T> {
     clearWildcardRegExpCache() // no longer used.
 
-    const matchers = this.buildAllMatchers()
+    const matchers = this.#buildAllMatchers()
 
     this.match = (method, path) => {
       const matcher = (matchers[method] || matchers[METHOD_NAME_ALL]) as Matcher<T>
@@ -229,12 +229,14 @@ export class RegExpRouter<T> implements Router<T> {
     return this.match(method, path)
   }
 
-  private buildAllMatchers(): Record<string, Matcher<T> | null> {
+  #buildAllMatchers(): Record<string, Matcher<T> | null> {
     const matchers: Record<string, Matcher<T> | null> = Object.create(null)
 
-    ;[...Object.keys(this.routes!), ...Object.keys(this.middleware!)].forEach((method) => {
-      matchers[method] ||= this.buildMatcher(method)
-    })
+    Object.keys(this.routes!)
+      .concat(Object.keys(this.middleware!))
+      .forEach((method) => {
+        matchers[method] ||= this.#buildMatcher(method)
+      })
 
     // Release cache
     this.middleware = this.routes = undefined
@@ -242,7 +244,7 @@ export class RegExpRouter<T> implements Router<T> {
     return matchers
   }
 
-  private buildMatcher(method: string): Matcher<T> | null {
+  #buildMatcher(method: string): Matcher<T> | null {
     const routes: [string, HandlerWithMetadata<T>[]][] = []
 
     let hasOwnRoute = method === METHOD_NAME_ALL

@@ -8,9 +8,9 @@ import { decodeURIComponent_ } from './url'
 export type Cookie = Record<string, string>
 export type SignedCookie = Record<string, string | false>
 
-type PartitionCookieConstraint =
-  | { partition: true; secure: true }
-  | { partition?: boolean; secure?: boolean } // reset to default
+type PartitionedCookieConstraint =
+  | { partitioned: true; secure: true }
+  | { partitioned?: boolean; secure?: boolean } // reset to default
 type SecureCookieConstraint = { secure: true }
 type HostCookieConstraint = { secure: true; path: '/'; domain?: undefined }
 
@@ -25,7 +25,7 @@ export type CookieOptions = {
   sameSite?: 'Strict' | 'Lax' | 'None' | 'strict' | 'lax' | 'none'
   partitioned?: boolean
   prefix?: CookiePrefixOptions
-} & PartitionCookieConstraint
+} & PartitionedCookieConstraint
 export type CookiePrefixOptions = 'host' | 'secure'
 
 export type CookieConstraint<Name> = Name extends `__Secure-${string}`
@@ -77,17 +77,22 @@ const validCookieNameRegEx = /^[\w!#$%&'*.^`|~+-]+$/
 const validCookieValueRegEx = /^[ !#-:<-[\]-~]*$/
 
 export const parse = (cookie: string, name?: string): Cookie => {
+  if (name && cookie.indexOf(name) === -1) {
+    // Fast-path: return immediately if the demanded-key is not in the cookie string
+    return {}
+  }
   const pairs = cookie.trim().split(';')
-  return pairs.reduce((parsedCookie, pairStr) => {
+  const parsedCookie: Cookie = {}
+  for (let pairStr of pairs) {
     pairStr = pairStr.trim()
     const valueStartPos = pairStr.indexOf('=')
     if (valueStartPos === -1) {
-      return parsedCookie
+      continue
     }
 
     const cookieName = pairStr.substring(0, valueStartPos).trim()
     if ((name && name !== cookieName) || !validCookieNameRegEx.test(cookieName)) {
-      return parsedCookie
+      continue
     }
 
     let cookieValue = pairStr.substring(valueStartPos + 1).trim()
@@ -96,10 +101,13 @@ export const parse = (cookie: string, name?: string): Cookie => {
     }
     if (validCookieValueRegEx.test(cookieValue)) {
       parsedCookie[cookieName] = decodeURIComponent_(cookieValue)
+      if (name) {
+        // Fast-path: return only the demanded-key immediately. Other keys are not needed.
+        break
+      }
     }
-
-    return parsedCookie
-  }, {} as Cookie)
+  }
+  return parsedCookie
 }
 
 export const parseSigned = async (
@@ -162,7 +170,7 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
         'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
       )
     }
-    cookie += `; Max-Age=${Math.floor(opt.maxAge)}`
+    cookie += `; Max-Age=${opt.maxAge | 0}`
   }
 
   if (opt.domain && opt.prefix !== 'host') {

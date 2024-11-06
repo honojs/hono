@@ -847,6 +847,27 @@ describe('$url() with a param option', () => {
   })
 })
 
+describe('$url() with a query option', () => {
+  const app = new Hono().get(
+    '/posts',
+    validator('query', () => {
+      return {} as { filter: 'test' }
+    }),
+    (c) => c.json({ ok: true })
+  )
+  type AppType = typeof app
+  const client = hc<AppType>('http://localhost')
+
+  it('Should return the correct path - /posts?filter=test', async () => {
+    const url = client.posts.$url({
+      query: {
+        filter: 'test',
+      },
+    })
+    expect(url.search).toBe('?filter=test')
+  })
+})
+
 describe('Client can be awaited', () => {
   it('Can be awaited without side effects', async () => {
     const client = hc('http://localhost')
