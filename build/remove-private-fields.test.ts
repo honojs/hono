@@ -1,9 +1,9 @@
 /// <reference types="vitest/globals" />
 
-import fs from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
 import { removePrivateFields } from './remove-private-fields'
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import os from 'node:os'
 
 describe('removePrivateFields', () => {
   it('Works', async () => {
