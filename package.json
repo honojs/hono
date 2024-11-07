@@ -39,6 +39,11 @@
       "import": "./dist/index.js",
       "require": "./dist/cjs/index.js"
     },
+    "./request": {
+      "types": "./dist/types/request.d.ts",
+      "import": "./dist/request.js",
+      "require": "./dist/cjs/request.js"
+    },
     "./types": {
       "types": "./dist/types/types.d.ts",
       "import": "./dist/types.js",
@@ -387,6 +392,9 @@
   },
   "typesVersions": {
     "*": {
+      "request": [
+        "./dist/types/request"
+      ],
       "types": [
         "./dist/types/types"
       ],
