@@ -377,7 +377,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   #addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
-    const r: RouterRoute = { path: path, method: method, handler: handler }
+    const r: RouterRoute = { path, method, handler }
     this.router.add(method, path, [handler, r])
     this.routes.push(r)
   }
