@@ -30,19 +30,46 @@ const readJsonExports = (path: string) => JSON.parse(fs.readFileSync(path, 'utf-
 
 const [packageJsonExports, jsrJsonExports] = ['./package.json', './jsr.json'].map(readJsonExports)
 
-const validateEntries = (
+const validateExports = (
   source: Record<string, unknown>,
   target: Record<string, unknown>,
   fileName: string
-) =>
-  Object.keys(source).forEach((entry) => {
-    if (!(entry in target)) {
-      throw new Error(`Missing ${entry} in ${fileName}`)
+) => {
+  const isEntryInTarget = (entry: string): boolean => {
+    if (entry in target) {
+      return true
+    }
+
+    // e.g., "./utils/*" -> "./utils"
+    const wildcardPrefix = entry.replace(/\/\*$/, '')
+    if (entry.endsWith('/*')) {
+      return Object.keys(target).some(
+        (targetEntry) =>
+          targetEntry.startsWith(wildcardPrefix + '/') && targetEntry !== wildcardPrefix
+      )
+    }
+
+    const separatedEntry = entry.split('/')
+    while (separatedEntry.length > 0) {
+      const pattern = `${separatedEntry.join('/')}/*`
+      if (pattern in target) {
+        return true
+      }
+      separatedEntry.pop()
+    }
+
+    return false
+  }
+
+  Object.keys(source).forEach((sourceEntry) => {
+    if (!isEntryInTarget(sourceEntry)) {
+      throw new Error(`Missing ${sourceEntry} in ${fileName}`)
     }
   })
+}
 
-validateEntries(packageJsonExports, jsrJsonExports, 'jsr.json')
-validateEntries(jsrJsonExports, packageJsonExports, 'package.json')
+validateExports(packageJsonExports, jsrJsonExports, 'jsr.json')
+validateExports(jsrJsonExports, packageJsonExports, 'package.json')
 
 /*
   This plugin is inspired by the following.
