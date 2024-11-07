@@ -7,6 +7,9 @@ const parseEvent = (event: AliyunFCEventRaw): AliyunFCEvent => {
   return JSON.parse(event.toString('utf-8'))
 }
 
+/**
+ * Accepts events from Aliyun FC3 and return Aliyun FC3 responses
+ */
 export const handle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
   app: Hono<E, S, BasePath>
 ): AliyunFCHandler => {
