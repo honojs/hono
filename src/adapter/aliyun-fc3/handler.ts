@@ -22,7 +22,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
   }
 }
 
-const createRequest = (event: AliyunFCEvent): Request => {
+export const createRequest = (event: AliyunFCEvent): Request => {
   const queryString = Object.entries(event.queryParameters || {})
     .map(([key, value]) => `${key}=${value}`)
     .join('&')
@@ -51,7 +51,7 @@ const createRequest = (event: AliyunFCEvent): Request => {
   return new Request(url, requestInit)
 }
 
-const createResponse = async (res: Response) => {
+export const createResponse = async (res: Response) => {
   const contentType = res.headers.get('content-type')
   let isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
 
@@ -75,13 +75,13 @@ const createResponse = async (res: Response) => {
   }
 }
 
-const isContentTypeBinary = (contentType: string) => {
+export const isContentTypeBinary = (contentType: string) => {
   return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
     contentType
   )
 }
 
-const isContentEncodingBinary = (contentEncoding: string | null) => {
+export const isContentEncodingBinary = (contentEncoding: string | null) => {
   if (contentEncoding === null) {
     return false
   }
