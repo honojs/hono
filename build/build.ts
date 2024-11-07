@@ -15,6 +15,7 @@ import * as glob from 'glob'
 import fs from 'fs'
 import path from 'path'
 import { removePrivateFields } from './remove-private-fields'
+import { validateExports } from './validate-exports'
 
 const args = arg({
   '--watch': Boolean,
@@ -22,54 +23,16 @@ const args = arg({
 
 const isWatch = args['--watch'] || false
 
-const entryPoints = glob.sync('./src/**/*.ts', {
-  ignore: ['./src/**/*.test.ts', './src/mod.ts', './src/middleware.ts', './src/deno/**/*.ts'],
-})
-
 const readJsonExports = (path: string) => JSON.parse(fs.readFileSync(path, 'utf-8')).exports
 
 const [packageJsonExports, jsrJsonExports] = ['./package.json', './jsr.json'].map(readJsonExports)
 
-const validateExports = (
-  source: Record<string, unknown>,
-  target: Record<string, unknown>,
-  fileName: string
-) => {
-  const isEntryInTarget = (entry: string): boolean => {
-    if (entry in target) {
-      return true
-    }
-
-    // e.g., "./utils/*" -> "./utils"
-    const wildcardPrefix = entry.replace(/\/\*$/, '')
-    if (entry.endsWith('/*')) {
-      return Object.keys(target).some(
-        (targetEntry) =>
-          targetEntry.startsWith(wildcardPrefix + '/') && targetEntry !== wildcardPrefix
-      )
-    }
-
-    const separatedEntry = entry.split('/')
-    while (separatedEntry.length > 0) {
-      const pattern = `${separatedEntry.join('/')}/*`
-      if (pattern in target) {
-        return true
-      }
-      separatedEntry.pop()
-    }
-
-    return false
-  }
-
-  Object.keys(source).forEach((sourceEntry) => {
-    if (!isEntryInTarget(sourceEntry)) {
-      throw new Error(`Missing ${sourceEntry} in ${fileName}`)
-    }
-  })
-}
-
 validateExports(packageJsonExports, jsrJsonExports, 'jsr.json')
 validateExports(jsrJsonExports, packageJsonExports, 'package.json')
+
+const entryPoints = glob.sync('./src/**/*.ts', {
+  ignore: ['./src/**/*.test.ts', './src/mod.ts', './src/middleware.ts', './src/deno/**/*.ts'],
+})
 
 /*
   This plugin is inspired by the following.
