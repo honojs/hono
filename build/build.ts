@@ -27,6 +27,7 @@ const readJsonExports = (path: string) => JSON.parse(fs.readFileSync(path, 'utf-
 
 const [packageJsonExports, jsrJsonExports] = ['./package.json', './jsr.json'].map(readJsonExports)
 
+// Validate exports of package.json and jsr.json
 validateExports(packageJsonExports, jsrJsonExports, 'jsr.json')
 validateExports(jsrJsonExports, packageJsonExports, 'package.json')
 

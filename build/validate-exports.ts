@@ -31,7 +31,7 @@ export const validateExports = (
 
   Object.keys(source).forEach((sourceEntry) => {
     if (!isEntryInTarget(sourceEntry)) {
-      throw new Error(`Missing ${sourceEntry} in ${fileName}`)
+      throw new Error(`Missing "${sourceEntry}" in '${fileName}'`)
     }
   })
 }
