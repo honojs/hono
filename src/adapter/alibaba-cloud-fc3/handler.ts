@@ -31,20 +31,11 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
 }
 
 export const createRequest = (event: AlibabaCloudFC3Event): Request => {
-  const queryString = Object.entries(event.queryParameters || {})
-    .map(([key, value]) => `${key}=${value}`)
-    .join('&')
+  const url = new URL(`https://${event.requestContext.domainName}${event.rawPath}`)
 
-  const url = `https://${event.requestContext.domainName}${event.rawPath}${
-    queryString ? `?${queryString}` : ''
-  }`
-
-  const headers = new Headers()
-  if (event.headers) {
-    for (const [key, value] of Object.entries(event.headers)) {
-      headers.set(key, value)
-    }
-  }
+  const params = new URLSearchParams(event.queryParameters)
+  url.search = params.toString()
+  const headers = new Headers(event.headers)
 
   const method = event.requestContext.http.method
   const requestInit: RequestInit = {

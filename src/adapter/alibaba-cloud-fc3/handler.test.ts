@@ -149,6 +149,48 @@ describe('createRequest', () => {
     const text = await request.text()
     expect(text).toEqual('Request Body')
   })
+
+  it('Should handle escaped paths in request URL correctly', () => {
+    const event: AlibabaCloudFC3Event = {
+      version: 'v1',
+      rawPath: '/my/path%E4%BD%A0%E5%A5%BD',
+      headers: {
+        Accept: '*/*',
+        'User-Agent': 'curl/7.81.0',
+      },
+      queryParameters: {
+        你好: '世界',
+      },
+      body: '',
+      isBase64Encoded: true,
+      requestContext: {
+        accountId: '1234567890123456',
+        domainName: 'hono-al-fc-test.us-east-1.fcapp.run',
+        domainPrefix: 'hono-al-fc-test',
+        requestId: '1-12345678-12345678-123456789012',
+        time: '2024-11-07T07:52:56Z',
+        timeEpoch: '1730965976961',
+        http: {
+          method: 'GET',
+          path: '/my/path你好',
+          protocol: 'HTTP/1.1',
+          sourceIp: '1.2.3.4',
+          userAgent: 'curl/7.81.0',
+        },
+      },
+    }
+
+    const request = createRequest(event)
+
+    expect(request.method).toEqual('GET')
+    const requestUrl = new URL(request.url)
+    expect(requestUrl.pathname).toEqual('/my/path%E4%BD%A0%E5%A5%BD')
+    expect(requestUrl.searchParams.get('你好')).toEqual('世界')
+    expect(Object.fromEntries(request.headers)).toEqual({
+      accept: '*/*',
+      'user-agent': 'curl/7.81.0',
+    })
+  })
 })
 
 describe('createResponse', () => {
