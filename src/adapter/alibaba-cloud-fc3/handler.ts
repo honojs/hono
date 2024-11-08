@@ -1,19 +1,24 @@
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 import { decodeBase64, encodeBase64 } from '../../utils/encode'
-import type { AliyunFCContext, AliyunFCEvent, AliyunFCEventRaw, AliyunFCHandler } from './types'
+import type {
+  AlibabaCloudFC3Context,
+  AlibabaCloudFC3Event,
+  AlibabaCloudFC3EventRaw,
+  AlibabaCloudFC3Handler,
+} from './types'
 
-const parseEvent = (event: AliyunFCEventRaw): AliyunFCEvent => {
+const parseEvent = (event: AlibabaCloudFC3EventRaw): AlibabaCloudFC3Event => {
   return JSON.parse(event.toString('utf-8'))
 }
 
 /**
- * Accepts events from Aliyun FC3 and return Aliyun FC3 responses
+ * Accepts events from Alibaba Cloud FC3 and return Alibaba Cloud FC3 responses
  */
 export const handle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
   app: Hono<E, S, BasePath>
-): AliyunFCHandler => {
-  return async (eventRaw: AliyunFCEventRaw, context: AliyunFCContext) => {
+): AlibabaCloudFC3Handler => {
+  return async (eventRaw: AlibabaCloudFC3EventRaw, context: AlibabaCloudFC3Context) => {
     const event = parseEvent(eventRaw)
     const req = createRequest(event)
     const res = await app.fetch(req, {
@@ -25,7 +30,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
   }
 }
 
-export const createRequest = (event: AliyunFCEvent): Request => {
+export const createRequest = (event: AlibabaCloudFC3Event): Request => {
   const queryString = Object.entries(event.queryParameters || {})
     .map(([key, value]) => `${key}=${value}`)
     .join('&')

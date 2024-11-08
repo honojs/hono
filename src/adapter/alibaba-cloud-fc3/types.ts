@@ -1,5 +1,5 @@
 // https://www.alibabacloud.com/help/en/functioncompute/fc-3-0/user-guide/http-trigger-invoking-function
-export interface AliyunFCEvent {
+export interface AlibabaCloudFC3Event {
   version: string
   rawPath: string
   body: string
@@ -29,10 +29,10 @@ export interface AliyunFCEvent {
 
 // don't know why it's a buffer
 // can't find the related document
-export type AliyunFCEventRaw = Buffer
+export type AlibabaCloudFC3EventRaw = Buffer
 
 // https://www.alibabacloud.com/help/en/functioncompute/context
-export interface AliyunFCContext {
+export interface AlibabaCloudFC3Context {
   requestId: string
   credentials: {
     accessKeyId: string
@@ -63,7 +63,7 @@ export interface AliyunFCContext {
 }
 
 // https://www.alibabacloud.com/help/en/functioncompute/fc-3-0/user-guide/http-trigger-invoking-function
-export interface AliyunFCResponse {
+export interface AlibabaCloudFC3Response {
   statusCode: number
   headers?: {
     [key: string]: string
@@ -72,7 +72,7 @@ export interface AliyunFCResponse {
   body: string
 }
 
-export type AliyunFCHandler = (
-  event: AliyunFCEventRaw,
-  context: AliyunFCContext
-) => Promise<AliyunFCResponse>
+export type AlibabaCloudFC3Handler = (
+  event: AlibabaCloudFC3EventRaw,
+  context: AlibabaCloudFC3Context
+) => Promise<AlibabaCloudFC3Response>

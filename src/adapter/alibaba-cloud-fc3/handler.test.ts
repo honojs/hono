@@ -1,5 +1,5 @@
 import { isContentEncodingBinary, isContentTypeBinary, createRequest } from './handler'
-import type { AliyunFCEvent } from './types'
+import type { AlibabaCloudFC3Event } from './types'
 
 // copied from aws-lambda/handler.test.ts
 describe('isContentTypeBinary', () => {
@@ -32,8 +32,8 @@ describe('isContentEncodingBinary', () => {
 })
 
 describe('createRequest', () => {
-  it('Should return valid Request object from aliyun fc3 event', () => {
-    const event: AliyunFCEvent = {
+  it('Should return valid Request object from alibaba cloud fc3 event', () => {
+    const event: AlibabaCloudFC3Event = {
       version: 'v1',
       rawPath: '/my/path',
       headers: {
