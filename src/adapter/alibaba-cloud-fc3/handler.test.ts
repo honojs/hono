@@ -1,4 +1,10 @@
-import { isContentEncodingBinary, isContentTypeBinary, createRequest } from './handler'
+import { decodeBase64 } from '../../utils/encode'
+import {
+  isContentEncodingBinary,
+  isContentTypeBinary,
+  createRequest,
+  createResponse,
+} from './handler'
 import type { AlibabaCloudFC3Event } from './types'
 
 // copied from aws-lambda/handler.test.ts
@@ -32,7 +38,7 @@ describe('isContentEncodingBinary', () => {
 })
 
 describe('createRequest', () => {
-  it('Should return valid Request object from alibaba cloud fc3 event', () => {
+  it('Should return valid javascript Request object from alibaba cloud fc3 event', () => {
     const event: AlibabaCloudFC3Event = {
       version: 'v1',
       rawPath: '/my/path',
@@ -70,5 +76,141 @@ describe('createRequest', () => {
       accept: '*/*',
       'user-agent': 'curl/7.81.0',
     })
+  })
+
+  it('Should return valid javascript Request object from alibaba cloud fc3 event with base64 encoded body', async () => {
+    const event: AlibabaCloudFC3Event = {
+      version: 'v1',
+      rawPath: '/my/path',
+      headers: {
+        Accept: '*/*',
+        'User-Agent': 'curl/7.81.0',
+      },
+      queryParameters: { parameter2: 'value' },
+      body: 'UmVxdWVzdCBCb2R5',
+      isBase64Encoded: true,
+      requestContext: {
+        accountId: '1234567890123456',
+        domainName: 'hono-al-fc-test.us-east-1.fcapp.run',
+        domainPrefix: 'hono-al-fc-test',
+        requestId: '1-12345678-12345678-123456789012',
+        time: '2024-11-07T07:52:56Z',
+        timeEpoch: '1730965976961',
+        http: {
+          method: 'POST',
+          path: '/my/path',
+          protocol: 'HTTP/1.1',
+          sourceIp: '1.2.3.4',
+          userAgent: 'curl/7.81.0',
+        },
+      },
+    }
+
+    const request = createRequest(event)
+
+    expect(request.method).toEqual('POST')
+    expect(request.url).toEqual(
+      'https://hono-al-fc-test.us-east-1.fcapp.run/my/path?parameter2=value'
+    )
+    const text = await request.text()
+    expect(text).toEqual('Request Body')
+  })
+
+  it('Should return valid javascript Request object from alibaba cloud fc3 event with not base64 encoded body', async () => {
+    const event: AlibabaCloudFC3Event = {
+      version: 'v1',
+      rawPath: '/my/path',
+      headers: {
+        Accept: '*/*',
+        'User-Agent': 'curl/7.81.0',
+      },
+      queryParameters: { parameter2: 'value' },
+      body: 'Request Body',
+      isBase64Encoded: false,
+      requestContext: {
+        accountId: '1234567890123456',
+        domainName: 'hono-al-fc-test.us-east-1.fcapp.run',
+        domainPrefix: 'hono-al-fc-test',
+        requestId: '1-12345678-12345678-123456789012',
+        time: '2024-11-07T07:52:56Z',
+        timeEpoch: '1730965976961',
+        http: {
+          method: 'POST',
+          path: '/my/path',
+          protocol: 'HTTP/1.1',
+          sourceIp: '1.2.3.4',
+          userAgent: 'curl/7.81.0',
+        },
+      },
+    }
+
+    const request = createRequest(event)
+
+    const text = await request.text()
+    expect(text).toEqual('Request Body')
+  })
+})
+
+describe('createResponse', () => {
+  it('Should return valid alibaba cloud fc3 Response object from javascript Response', async () => {
+    const response = new Response('Response Content', {
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+    })
+
+    const res = await createResponse(response)
+
+    expect(res.statusCode).toEqual(200)
+    expect(res.headers).toEqual({
+      'content-type': 'text/plain',
+    })
+    expect(res.body).toEqual('Response Content')
+    expect(res.isBase64Encoded).toEqual(false)
+  })
+
+  it('Should return valid alibaba cloud fc3 Response object from base64 encoded javascript Response', async () => {
+    const response = new Response('Response Content', {
+      headers: {
+        'Content-Type': 'image/png',
+      },
+    })
+
+    const res = await createResponse(response)
+
+    expect(res.statusCode).toEqual(200)
+    expect(res.headers).toEqual({
+      'content-type': 'image/png',
+    })
+    expect(res.body).toEqual('UmVzcG9uc2UgQ29udGVudA==')
+    expect(res.isBase64Encoded).toEqual(true)
+  })
+
+  it('Should return valid alibaba cloud fc3 Response object from compressed javascript Response', async () => {
+    const body = 'Response Content'
+    const plainResponse = new Response(body)
+    const compressedStream = plainResponse.body?.pipeThrough(new CompressionStream('gzip'))
+
+    const compressedResponse = new Response(compressedStream, {
+      headers: {
+        'Content-Type': 'text/plain',
+        'Content-Encoding': 'gzip',
+      },
+    })
+
+    const res = await createResponse(compressedResponse)
+
+    expect(res.statusCode).toEqual(200)
+    expect(res.headers).toEqual({
+      'content-type': 'text/plain',
+      'content-encoding': 'gzip',
+    })
+
+    const compressedBodyStream = new Response(decodeBase64(res.body)).body
+    const decompressedStream = compressedBodyStream?.pipeThrough(new DecompressionStream('gzip'))
+    const decompressedBody = await new Response(decompressedStream).text()
+
+    expect(decompressedBody).toEqual('Response Content')
+    expect(res.isBase64Encoded).toEqual(true)
   })
 })
