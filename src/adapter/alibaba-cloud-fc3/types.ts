@@ -32,12 +32,45 @@ export interface AlibabaCloudFC3Event {
 export type AlibabaCloudFC3EventRaw = Buffer
 
 // https://www.alibabacloud.com/help/en/functioncompute/context
+// real world context object:
+/*
+{
+  callbackWaitsForEmptyEventLoop: false,
+  requestId: "1-1234678-12345678-123456789012",
+  credentials: {},
+  function: {
+    name: "hono-alibaba-cloud-fc3",
+    handler: "index.handler",
+    memory: 1024,
+    timeout: 300
+  },
+  service: {
+    logProject: "serverless-us-east-1-12345678-1234-1234-1234-123456789012",
+    logStore: "default-logs",
+    qualifier: "LATEST"
+  },
+  region: "us-east-1",
+  accountId: "12345678790123456",
+  logger: {
+    requestId: "1-1234678-12345678-123456789012",
+    logLevel: {
+      name: "debug",
+      priority: 1
+    }
+  },
+  retryCount: 0,
+  tracing: {
+    openTracingSpanBaggages: {}
+  }
+}
+*/
 export interface AlibabaCloudFC3Context {
+  callbackWaitsForEmptyEventLoop?: boolean // undocumented
   requestId: string
   credentials: {
-    accessKeyId: string
-    accessKeySecret: string
-    securityToken: string
+    accessKeyId?: string
+    accessKeySecret?: string
+    securityToken?: string
   }
   function: {
     name: string
@@ -49,17 +82,21 @@ export interface AlibabaCloudFC3Context {
     logProject: string
     logStore: string
     qualifier: string
-    versionId: string
+    versionId?: string
   }
   region: string
   accountId: string
   logger: {
-    debug: (message: string) => void
-    info: (message: string) => void
-    warn: (message: string) => void
-    error: (message: string) => void
-    log: (message: string) => void
+    requestId: string // undocumented
+    logLevel: {
+      name: 'debug' | 'info' | 'warn' | 'error' | 'log'
+      priority: number
+    } // undocumented
   }
+  retryCount: number // undocumented
+  tracing: {
+    openTracingSpanBaggages: {} // undocumented
+  } // undocumented
 }
 
 // https://www.alibabacloud.com/help/en/functioncompute/fc-3-0/user-guide/http-trigger-invoking-function
