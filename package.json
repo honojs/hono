@@ -360,6 +360,11 @@
       "import": "./dist/adapter/lambda-edge/index.js",
       "require": "./dist/cjs/adapter/lambda-edge/index.js"
     },
+    "./alibaba-cloud-fc3": {
+      "types": "./dist/types/adapter/alibaba-cloud-fc3/index.d.ts",
+      "import": "./dist/adapter/alibaba-cloud-fc3/index.js",
+      "require": "./dist/cjs/adapter/alibaba-cloud-fc3/index.js"
+    },
     "./service-worker": {
       "types": "./dist/types/adapter/service-worker/index.d.ts",
       "import": "./dist/adapter/service-worker/index.js",
@@ -573,6 +578,9 @@
       ],
       "lambda-edge": [
         "./dist/types/adapter/lambda-edge"
+      ],
+      "alibaba-cloud-fc3": [
+        "./dist/types/adapter/alibaba-cloud-fc3"
       ],
       "service-worker": [
         "./dist/types/adapter/service-worker"

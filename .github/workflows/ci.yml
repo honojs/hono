@@ -23,6 +23,7 @@ jobs:
       - workerd
       - lambda
       - lambda-edge
+      - alibaba-cloud-fc3
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -176,6 +177,20 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-lambda-edge
+          path: coverage/
+
+  alibaba-cloud-fc3:
+    name: 'Alibaba Cloud FC3'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bun run test:alibaba-cloud-fc3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-alibaba-cloud-fc3
           path: coverage/
 
   perf-measures-type-check-on-pr:
