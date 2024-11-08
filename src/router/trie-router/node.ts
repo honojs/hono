@@ -63,10 +63,6 @@ export class Node<T> {
       curNode = curNode.children[p]
     }
 
-    if (!curNode.methods.length) {
-      curNode.methods = []
-    }
-
     const m: Record<string, HandlerSet<T>> = Object.create(null)
 
     const handlerSet: HandlerSet<T> = {
@@ -82,7 +78,7 @@ export class Node<T> {
   }
 
   // getHandlerSets
-  #gHSets(
+  #getHandlerSets(
     node: Node<T>,
     method: string,
     nodeParams: Record<string, string>,
@@ -92,7 +88,7 @@ export class Node<T> {
     for (let i = 0, len = node.methods.length; i < len; i++) {
       const m = node.methods[i]
       const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>
-      const processedSet: Record<string, boolean> = Object.create(null)
+      const processedSet: Record<number, boolean> = {}
       if (handlerSet !== undefined) {
         handlerSet.params = Object.create(null)
         for (let i = 0, len = handlerSet.possibleKeys.length; i < len; i++) {
@@ -131,12 +127,15 @@ export class Node<T> {
           nextNode.params = node.params
           if (isLast) {
             // '/hello/*' => match '/hello'
-            if (nextNode.children['*']) {
+            const astNode = nextNode.children['*']
+            if (astNode) {
               handlerSets.push(
-                ...this.#gHSets(nextNode.children['*'], method, node.params, Object.create(null))
+                ...this.#getHandlerSets(astNode, method, node.params, Object.create(null))
               )
             }
-            handlerSets.push(...this.#gHSets(nextNode, method, node.params, Object.create(null)))
+            handlerSets.push(
+              ...this.#getHandlerSets(nextNode, method, node.params, Object.create(null))
+            )
           } else {
             tempNodes.push(nextNode)
           }
@@ -152,7 +151,9 @@ export class Node<T> {
           if (pattern === '*') {
             const astNode = node.children['*']
             if (astNode) {
-              handlerSets.push(...this.#gHSets(astNode, method, node.params, Object.create(null)))
+              handlerSets.push(
+                ...this.#getHandlerSets(astNode, method, node.params, Object.create(null))
+              )
               tempNodes.push(astNode)
             }
             continue
@@ -170,24 +171,21 @@ export class Node<T> {
           const restPathString = parts.slice(i).join('/')
           if (matcher instanceof RegExp && matcher.test(restPathString)) {
             params[name] = restPathString
-            handlerSets.push(...this.#gHSets(child, method, node.params, params))
+            handlerSets.push(...this.#getHandlerSets(child, method, node.params, params))
             continue
           }
 
           if (matcher === true || matcher.test(part)) {
-            if (typeof key === 'string') {
-              params[name] = part
-              if (isLast) {
-                handlerSets.push(...this.#gHSets(child, method, params, node.params))
-                if (child.children['*']) {
-                  handlerSets.push(
-                    ...this.#gHSets(child.children['*'], method, params, node.params)
-                  )
-                }
-              } else {
-                child.params = params
-                tempNodes.push(child)
+            params[name] = part
+            if (isLast) {
+              handlerSets.push(...this.#getHandlerSets(child, method, params, node.params))
+              const astNode = child.children['*']
+              if (astNode) {
+                handlerSets.push(...this.#getHandlerSets(astNode, method, params, node.params))
               }
+            } else {
+              child.params = params
+              tempNodes.push(child)
             }
           }
         }
