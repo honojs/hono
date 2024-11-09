@@ -133,9 +133,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
           this.#addRoute(method, this.#path, args1)
         }
         args.forEach((handler) => {
-          if (typeof handler !== 'string') {
-            this.#addRoute(method, this.#path, handler)
-          }
+          this.#addRoute(method, this.#path, handler)
         })
         return this as any
       }
@@ -489,15 +487,17 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     executionCtx?: ExecutionContext
   ): Response | Promise<Response> => {
     if (input instanceof Request) {
-      if (requestInit !== undefined) {
-        input = new Request(input, requestInit)
-      }
-      return this.fetch(input, Env, executionCtx)
+      return this.fetch(requestInit ? new Request(input, requestInit) : input, Env, executionCtx)
     }
     input = input.toString()
-    const path = /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`
-    const req = new Request(path, requestInit)
-    return this.fetch(req, Env, executionCtx)
+    return this.fetch(
+      new Request(
+        /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`,
+        requestInit
+      ),
+      Env,
+      executionCtx
+    )
   }
 
   /**
