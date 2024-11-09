@@ -127,10 +127,14 @@ export class Node<T> {
           nextNode.params = node.params
           if (isLast) {
             // '/hello/*' => match '/hello'
-            const astNode = nextNode.children['*']
-            if (astNode) {
+            if (nextNode.children['*']) {
               handlerSets.push(
-                ...this.#getHandlerSets(astNode, method, node.params, Object.create(null))
+                ...this.#getHandlerSets(
+                  nextNode.children['*'],
+                  method,
+                  node.params,
+                  Object.create(null)
+                )
               )
             }
             handlerSets.push(
@@ -150,7 +154,7 @@ export class Node<T> {
           // '/hello/*/foo' => match /hello/bar/foo
           if (pattern === '*') {
             const astNode = node.children['*']
-            if (astNode) {
+            if (node.children['*']) {
               handlerSets.push(
                 ...this.#getHandlerSets(astNode, method, node.params, Object.create(null))
               )
@@ -179,9 +183,10 @@ export class Node<T> {
             params[name] = part
             if (isLast) {
               handlerSets.push(...this.#getHandlerSets(child, method, params, node.params))
-              const astNode = child.children['*']
-              if (astNode) {
-                handlerSets.push(...this.#getHandlerSets(astNode, method, params, node.params))
+              if (child.children['*']) {
+                handlerSets.push(
+                  ...this.#getHandlerSets(child.children['*'], method, params, node.params)
+                )
               }
             } else {
               child.params = params
