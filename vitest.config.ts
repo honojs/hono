@@ -8,7 +8,11 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    include: ['**/src/**/(*.)+(spec|test).+(ts|tsx|js)', '**/scripts/**/(*.)+(spec|test).+(ts|tsx|js)', '**/build/**/(*.)+(spec|test).+(ts|tsx|js)'],
+    include: [
+      '**/src/**/(*.)+(spec|test).+(ts|tsx|js)',
+      '**/scripts/**/(*.)+(spec|test).+(ts|tsx|js)',
+      '**/build/**/(*.)+(spec|test).+(ts|tsx|js)',
+    ],
     exclude: [...configDefaults.exclude, '**/sandbox/**', '**/*.case.test.+(ts|tsx|js)'],
     setupFiles: ['./.vitest.config/setup-vitest.ts'],
     coverage: {
@@ -20,7 +24,7 @@ export default defineConfig({
         ...(configDefaults.coverage.exclude ?? []),
         'benchmarks',
         'runtime-tests',
-        'build/build.ts',
+        ...['prepare.ts', 'build.ts', 'post.ts'].map((name) => `build/${name}`),
         'src/test-utils',
         'perf-measures',
 
