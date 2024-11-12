@@ -10,7 +10,7 @@ const splitPathRe = /\/(:\w+(?:{(?:(?:{[\d,]+})|[^}])+})?)|\/[^\/\?]+|(\?)/g
 const splitByStarRe = /\*/
 export class LinearRouter<T> implements Router<T> {
   name: string = 'LinearRouter'
-  routes: [string, string, T][] = []
+  #routes: [string, string, T][] = []
 
   add(method: string, path: string, handler: T) {
     for (
@@ -18,14 +18,14 @@ export class LinearRouter<T> implements Router<T> {
       i < len;
       i++
     ) {
-      this.routes.push([method, paths[i], handler])
+      this.#routes.push([method, paths[i], handler])
     }
   }
 
   match(method: string, path: string): Result<T> {
     const handlers: [T, Params][] = []
-    ROUTES_LOOP: for (let i = 0, len = this.routes.length; i < len; i++) {
-      const [routeMethod, routePath, handler] = this.routes[i]
+    ROUTES_LOOP: for (let i = 0, len = this.#routes.length; i < len; i++) {
+      const [routeMethod, routePath, handler] = this.#routes[i]
       if (routeMethod === method || routeMethod === METHOD_NAME_ALL) {
         if (routePath === '*' || routePath === '/*') {
           handlers.push([handler, emptyParams])
