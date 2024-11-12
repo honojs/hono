@@ -228,13 +228,12 @@ jobs:
 
   perf-measures-bundle-check-on-pr:
     name: 'Bundle Check on PR'
+    needs: main
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun install
-      - run: bun run build
       - run: bunx esbuild --minify --bundle dist/index.js --format=esm --outfile=perf-measures/bundle-check/generated/after.js
       - uses: actions/cache/restore@v4
         with:
