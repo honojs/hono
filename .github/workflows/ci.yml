@@ -182,6 +182,7 @@ jobs:
           path: coverage/
 
   perf-measures-type-check-on-pr:
+    name: 'Type Check on PR'
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
@@ -209,6 +210,7 @@ jobs:
         name: display comparison
 
   perf-measures-type-check-on-main:
+    name: 'Type Check on Main'
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -225,6 +227,7 @@ jobs:
           key: type-check-perf-previous-result-${{ github.sha }}
 
   perf-measures-bundle-check-on-pr:
+    name: 'Bundle Check on PR'
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
@@ -250,6 +253,7 @@ jobs:
         name: display comparison
 
   perf-measures-bundle-check-on-main:
+    name: 'Bundle Check on Main'
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
