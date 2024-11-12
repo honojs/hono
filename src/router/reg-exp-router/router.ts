@@ -123,16 +123,17 @@ function findMiddleware<T>(
 
 export class RegExpRouter<T> implements Router<T> {
   name: string = 'RegExpRouter'
-  middleware?: Record<string, Record<string, HandlerWithMetadata<T>[]>>
-  routes?: Record<string, Record<string, HandlerWithMetadata<T>[]>>
+  #middleware?: Record<string, Record<string, HandlerWithMetadata<T>[]>>
+  #routes?: Record<string, Record<string, HandlerWithMetadata<T>[]>>
 
   constructor() {
-    this.middleware = { [METHOD_NAME_ALL]: Object.create(null) }
-    this.routes = { [METHOD_NAME_ALL]: Object.create(null) }
+    this.#middleware = { [METHOD_NAME_ALL]: Object.create(null) }
+    this.#routes = { [METHOD_NAME_ALL]: Object.create(null) }
   }
 
   add(method: string, path: string, handler: T) {
-    const { middleware, routes } = this
+    const middleware = this.#middleware
+    const routes = this.#routes
 
     if (!middleware || !routes) {
       throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT)
@@ -232,14 +233,14 @@ export class RegExpRouter<T> implements Router<T> {
   #buildAllMatchers(): Record<string, Matcher<T> | null> {
     const matchers: Record<string, Matcher<T> | null> = Object.create(null)
 
-    Object.keys(this.routes!)
-      .concat(Object.keys(this.middleware!))
+    Object.keys(this.#routes!)
+      .concat(Object.keys(this.#middleware!))
       .forEach((method) => {
         matchers[method] ||= this.#buildMatcher(method)
       })
 
     // Release cache
-    this.middleware = this.routes = undefined
+    this.#middleware = this.#routes = undefined
 
     return matchers
   }
@@ -249,7 +250,7 @@ export class RegExpRouter<T> implements Router<T> {
 
     let hasOwnRoute = method === METHOD_NAME_ALL
 
-    ;[this.middleware!, this.routes!].forEach((r) => {
+    ;[this.#middleware!, this.#routes!].forEach((r) => {
       const ownRoute = r[method]
         ? Object.keys(r[method]).map((path) => [path, r[method][path]])
         : []
