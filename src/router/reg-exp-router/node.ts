@@ -43,9 +43,9 @@ function compareKey(a: string, b: string): number {
 }
 
 export class Node {
-  index?: number
-  varIndex?: number
-  children: Record<string, Node> = Object.create(null)
+  #index?: number
+  #varIndex?: number
+  #children: Record<string, Node> = Object.create(null)
 
   insert(
     tokens: readonly string[],
@@ -55,14 +55,14 @@ export class Node {
     pathErrorCheckOnly: boolean
   ): void {
     if (tokens.length === 0) {
-      if (this.index !== undefined) {
+      if (this.#index !== undefined) {
         throw PATH_ERROR
       }
       if (pathErrorCheckOnly) {
         return
       }
 
-      this.index = index
+      this.#index = index
       return
     }
 
@@ -88,10 +88,10 @@ export class Node {
         }
       }
 
-      node = this.children[regexpStr]
+      node = this.#children[regexpStr]
       if (!node) {
         if (
-          Object.keys(this.children).some(
+          Object.keys(this.#children).some(
             (k) => k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR
           )
         ) {
@@ -100,19 +100,19 @@ export class Node {
         if (pathErrorCheckOnly) {
           return
         }
-        node = this.children[regexpStr] = new Node()
+        node = this.#children[regexpStr] = new Node()
         if (name !== '') {
-          node.varIndex = context.varIndex++
+          node.#varIndex = context.varIndex++
         }
       }
       if (!pathErrorCheckOnly && name !== '') {
-        paramMap.push([name, node.varIndex as number])
+        paramMap.push([name, node.#varIndex as number])
       }
     } else {
-      node = this.children[token]
+      node = this.#children[token]
       if (!node) {
         if (
-          Object.keys(this.children).some(
+          Object.keys(this.#children).some(
             (k) =>
               k.length > 1 && k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR
           )
@@ -122,7 +122,7 @@ export class Node {
         if (pathErrorCheckOnly) {
           return
         }
-        node = this.children[token] = new Node()
+        node = this.#children[token] = new Node()
       }
     }
 
@@ -130,21 +130,21 @@ export class Node {
   }
 
   buildRegExpStr(): string {
-    const childKeys = Object.keys(this.children).sort(compareKey)
+    const childKeys = Object.keys(this.#children).sort(compareKey)
 
     const strList = childKeys.map((k) => {
-      const c = this.children[k]
+      const c = this.#children[k]
       return (
-        (typeof c.varIndex === 'number'
-          ? `(${k})@${c.varIndex}`
+        (typeof c.#varIndex === 'number'
+          ? `(${k})@${c.#varIndex}`
           : regExpMetaChars.has(k)
           ? `\\${k}`
           : k) + c.buildRegExpStr()
       )
     })
 
-    if (typeof this.index === 'number') {
-      strList.unshift(`#${this.index}`)
+    if (typeof this.#index === 'number') {
+      strList.unshift(`#${this.#index}`)
     }
 
     if (strList.length === 0) {
