@@ -154,7 +154,7 @@ export class Node<T> {
           // '/hello/*/foo' => match /hello/bar/foo
           if (pattern === '*') {
             const astNode = node.children['*']
-            if (node.children['*']) {
+            if (astNode) {
               handlerSets.push(
                 ...this.#getHandlerSets(astNode, method, node.params, Object.create(null))
               )
