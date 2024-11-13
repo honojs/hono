@@ -102,10 +102,10 @@ const dtsEntries = glob.globSync('./dist/types/**/*.d.ts')
 const writer = stdout.writer()
 writer.write('\n')
 let lastOutputLength = 0
-for (let i = 0; i < dtsEntries.length; i++) {
+for (let i = 1; i < dtsEntries.length + 1; i++) {
   const entry = dtsEntries[i]
 
-  const message = `Removing private fields(${i + 1}/${dtsEntries.length}): ${entry}`
+  const message = `Removing private fields(${i}/${dtsEntries.length}): ${entry}`
   writer.write(`\r${' '.repeat(lastOutputLength)}`)
   lastOutputLength = message.length
   writer.write(`\r${message}`)
