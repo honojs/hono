@@ -26,6 +26,7 @@ import type {
   RouterRoute,
   Schema,
 } from './types'
+import { newResponse, newRequest } from './utils/constructors'
 import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
 /**
@@ -355,7 +356,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
       return (request) => {
         const url = new URL(request.url)
         url.pathname = url.pathname.slice(pathPrefixLength) || '/'
-        return new Request(url, request)
+        return newRequest(url, request)
       }
     })()
 
@@ -396,7 +397,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     // Handle HEAD method
     if (method === 'HEAD') {
       return (async () =>
-        new Response(null, await this.#dispatch(request, executionCtx, env, 'GET')))()
+        newResponse(null, await this.#dispatch(request, executionCtx, env, 'GET')))()
     }
 
     const path = this.getPath(request, { env })
@@ -487,11 +488,11 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     executionCtx?: ExecutionContext
   ): Response | Promise<Response> => {
     if (input instanceof Request) {
-      return this.fetch(requestInit ? new Request(input, requestInit) : input, Env, executionCtx)
+      return this.fetch(requestInit ? newRequest(input, requestInit) : input, Env, executionCtx)
     }
     input = input.toString()
     return this.fetch(
-      new Request(
+      newRequest(
         /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`,
         requestInit
       ),
