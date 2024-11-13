@@ -89,19 +89,22 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
  * ```
  */
 export const every = (...middleware: (MiddlewareHandler | Condition)[]): MiddlewareHandler => {
-  const wrappedMiddleware = middleware.map((m) => async (c: Context, next: Next) => {
-    const res = await m(c, next)
-    if (res === false) {
-      throw new Error('Unmet condition')
-    }
-    return res
-  })
-
-  const handler = async (c: Context, next: Next) =>
-    compose<Context>(wrappedMiddleware.map((m) => [[m, undefined], c.req.param()]))(c, next)
-
   return async function every(c, next) {
-    await handler(c, next)
+    const currentRouteIndex = c.req.routeIndex
+    await compose<Context>(
+      middleware.map((m) => [
+        [
+          async (c: Context, next: Next) => {
+            c.req.routeIndex = currentRouteIndex // should be unchanged in this context
+            const res = await m(c, next)
+            if (res === false) {
+              throw new Error('Unmet condition')
+            }
+            return res
+          },
+        ],
+      ])
+    )(c, next)
   }
 }
 
