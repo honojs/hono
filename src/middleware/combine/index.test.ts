@@ -166,6 +166,22 @@ describe('every', () => {
     expect(await res.text()).toBe('Hello Middleware 1')
     expect(middleware2).not.toBeCalled()
   })
+
+  it('Should pass the path params to middlewares', async () => {
+    const app = new Hono()
+    app.use('*', nextMiddleware)
+    const paramMiddleware: MiddlewareHandler = async (c) => {
+      return c.json(c.req.param(), 200)
+    }
+
+    app.use('/:id', every(paramMiddleware))
+    app.get('/:id', (c) => {
+      return c.text('Hello World')
+    })
+
+    const res = await app.request('http://localhost/123')
+    expect(await res.json()).toEqual({ id: '123' })
+  })
 })
 
 describe('except', () => {
