@@ -1,4 +1,3 @@
-import { parse } from 'fast-querystring'
 import qs from 'qs'
 
 const getQueryStringFromURL = (url: string): string => {
