@@ -105,7 +105,7 @@ let lastOutputLength = 0
 for (let i = 0; i < dtsEntries.length; i++) {
   const entry = dtsEntries[i]
 
-  const message = `Removing private fields(${i}/${dtsEntries.length}): ${entry}`
+  const message = `Removing private fields(${i + 1}/${dtsEntries.length}): ${entry}`
   writer.write(`\r${' '.repeat(lastOutputLength)}`)
   lastOutputLength = message.length
   writer.write(`\r${message}`)
