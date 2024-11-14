@@ -227,6 +227,29 @@ describe('createHandler', () => {
       expectTypeOf(routes).toEqualTypeOf<Expected>()
     })
   })
+
+  describe('Types - Context Env with Multiple Middlewares', () => {
+    const factory = createFactory()
+
+    const mw1 = createMiddleware<{ Variables: { foo: string } }>(async (c, next) => {
+      c.set('foo', 'bar')
+      await next()
+    })
+
+    const mw2 = createMiddleware<{ Variables: { bar: number } }>(async (c, next) => {
+      c.set('bar', 1)
+      await next()
+    })
+
+    it('Should set the correct type for context from multiple middlewares', () => {
+      factory.createHandlers(mw1, mw2, (c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        expectTypeOf(c.var.bar).toEqualTypeOf<number>()
+
+        return c.json({ foo: c.var.foo, bar: c.var.bar })
+      })
+    })
+  })
 })
 
 describe('createApp', () => {

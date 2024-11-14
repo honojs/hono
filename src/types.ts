@@ -1985,7 +1985,7 @@ export type ExtractSchema<T> = UnionToIntersection<
 >
 
 type EnvOrEmpty<T> = T extends Env ? (Env extends T ? {} : T) : T
-type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...infer Rest]
+export type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...infer Rest]
   ? IfAnyThenEmptyObject<EnvOrEmpty<Head>> & IntersectNonAnyTypes<Rest>
   : {}
 
