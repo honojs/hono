@@ -245,7 +245,7 @@ jobs:
       - run: |
           {
             echo 'COMPARISON<<EOF'
-            ls -l ./generated | column -s '|' -t
+            bun scripts/process-results.ts | column -s '|' -t
             echo 'EOF'
           } >> "$GITHUB_ENV"
         working-directory: perf-measures/bundle-check
