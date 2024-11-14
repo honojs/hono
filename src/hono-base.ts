@@ -184,6 +184,10 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   #notFoundHandler: NotFoundHandler = notFoundHandler
   #errorHandler: ErrorHandler = errorHandler
 
+  get errorHandler() {
+    return this.#errorHandler
+  }
+
   /**
    * `.route()` allows grouping other Hono instance in routes.
    *
@@ -214,11 +218,11 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     const subApp = this.basePath(path)
     app.routes.map((r) => {
       let handler
-      if (app.#errorHandler === errorHandler) {
+      if (app.errorHandler === errorHandler) {
         handler = r.handler
       } else {
         handler = async (c: Context, next: Next) =>
-          (await compose<Context>([], app.#errorHandler)(c, () => r.handler(c, next))).res
+          (await compose<Context>([], app.errorHandler)(c, () => r.handler(c, next))).res
         ;(handler as any)[COMPOSED_HANDLER] = r.handler
       }
 
