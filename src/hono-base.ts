@@ -133,9 +133,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
           this.#addRoute(method, this.#path, args1)
         }
         args.forEach((handler) => {
-          if (typeof handler !== 'string') {
-            this.#addRoute(method, this.#path, handler)
-          }
+          this.#addRoute(method, this.#path, handler)
         })
         return this as any
       }
@@ -377,7 +375,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   #addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
-    const r: RouterRoute = { path: path, method: method, handler: handler }
+    const r: RouterRoute = { path, method, handler }
     this.router.add(method, path, [handler, r])
     this.routes.push(r)
   }
@@ -489,15 +487,17 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     executionCtx?: ExecutionContext
   ): Response | Promise<Response> => {
     if (input instanceof Request) {
-      if (requestInit !== undefined) {
-        input = new Request(input, requestInit)
-      }
-      return this.fetch(input, Env, executionCtx)
+      return this.fetch(requestInit ? new Request(input, requestInit) : input, Env, executionCtx)
     }
     input = input.toString()
-    const path = /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`
-    const req = new Request(path, requestInit)
-    return this.fetch(req, Env, executionCtx)
+    return this.fetch(
+      new Request(
+        /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`,
+        requestInit
+      ),
+      Env,
+      executionCtx
+    )
   }
 
   /**

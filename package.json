@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.6.9",
+  "version": "4.6.10",
   "description": "Web framework built on Web Standards",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -38,6 +38,11 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/cjs/index.js"
+    },
+    "./request": {
+      "types": "./dist/types/request.d.ts",
+      "import": "./dist/request.js",
+      "require": "./dist/cjs/request.js"
     },
     "./types": {
       "types": "./dist/types/types.d.ts",
@@ -387,6 +392,9 @@
   },
   "typesVersions": {
     "*": {
+      "request": [
+        "./dist/types/request"
+      ],
       "types": [
         "./dist/types/types"
       ],

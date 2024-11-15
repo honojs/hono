@@ -10,6 +10,10 @@ export const serveStatic = <E extends Env = Env>(
   return async function serveStatic(c, next) {
     const getContent = async (path: string) => {
       try {
+        if (isDir(path)) {
+          return null
+        }
+
         const file = await open(path)
         return file.readable
       } catch (e) {
@@ -30,6 +34,7 @@ export const serveStatic = <E extends Env = Env>(
       } catch {}
       return isDir
     }
+
     return baseServeStatic({
       ...options,
       getContent,

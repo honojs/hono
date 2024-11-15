@@ -139,6 +139,22 @@ Deno.test('Serve Static middleware', async () => {
   res = await app.request('http://localhost/static-absolute-root/plain.txt')
   assertEquals(res.status, 200)
   assertEquals(await res.text(), 'Deno!')
+
+  res = await app.request('http://localhost/static')
+  assertEquals(res.status, 404)
+  assertEquals(await res.text(), '404 Not Found')
+
+  res = await app.request('http://localhost/static/dir')
+  assertEquals(res.status, 404)
+  assertEquals(await res.text(), '404 Not Found')
+
+  res = await app.request('http://localhost/static/helloworld/nested')
+  assertEquals(res.status, 404)
+  assertEquals(await res.text(), '404 Not Found')
+
+  res = await app.request('http://localhost/static/helloworld/../')
+  assertEquals(res.status, 404)
+  assertEquals(await res.text(), '404 Not Found')
 })
 
 Deno.test('JWT Authentication middleware', async () => {
