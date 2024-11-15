@@ -182,6 +182,7 @@ jobs:
           path: coverage/
 
   perf-measures-type-check-on-pr:
+    name: 'Type Check on PR'
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
@@ -209,6 +210,7 @@ jobs:
         name: display comparison
 
   perf-measures-type-check-on-main:
+    name: 'Type Check on Main'
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -223,3 +225,44 @@ jobs:
         with:
           path: perf-measures/type-check/previous-result.txt
           key: type-check-perf-previous-result-${{ github.sha }}
+
+  perf-measures-bundle-check-on-pr:
+    name: 'Bundle Check on PR'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run build
+      - run: bunx esbuild --minify --bundle dist/index.js --format=esm --outfile=perf-measures/bundle-check/generated/after.js
+      - uses: actions/cache/restore@v4
+        with:
+          path: perf-measures/bundle-check/generated/before.js
+          restore-keys: |
+            perf-measures-bundle-check-previous-file-
+          key: perf-measures-bundle-check-previous-file-
+      - run: |
+          {
+            echo 'COMPARISON<<EOF'
+            bun scripts/process-results.ts | column -s '|' -t
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+        working-directory: perf-measures/bundle-check
+      - run: echo "$COMPARISON"
+        name: display comparison
+
+  perf-measures-bundle-check-on-main:
+    name: 'Bundle Check on Main'
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run build
+      - run: bunx esbuild --minify --bundle dist/index.js --format=esm --outfile=perf-measures/bundle-check/generated/before.js
+      - uses: actions/cache/save@v4
+        with:
+          path: perf-measures/bundle-check/generated/before.js
+          key: perf-measures-bundle-check-previous-file-${{ github.sha }}
