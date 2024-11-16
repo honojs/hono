@@ -28,19 +28,22 @@ const time = (start: number) => {
 
 const colorStatus = (status: number) => {
   const colorEnabled = getColorEnabled()
-  const out: { [key: string]: string } = {
-    7: colorEnabled ? `\x1b[35m${status}\x1b[0m` : `${status}`,
-    5: colorEnabled ? `\x1b[31m${status}\x1b[0m` : `${status}`,
-    4: colorEnabled ? `\x1b[33m${status}\x1b[0m` : `${status}`,
-    3: colorEnabled ? `\x1b[36m${status}\x1b[0m` : `${status}`,
-    2: colorEnabled ? `\x1b[32m${status}\x1b[0m` : `${status}`,
-    1: colorEnabled ? `\x1b[32m${status}\x1b[0m` : `${status}`,
-    0: colorEnabled ? `\x1b[33m${status}\x1b[0m` : `${status}`,
+  if (colorEnabled) {
+    switch ((status / 100) | 0) {
+      case 5: // red = error
+        return `\x1b[31m${status}\x1b[0m`
+      case 4: // yellow = warning
+        return `\x1b[33m${status}\x1b[0m`
+      case 3: // cyan = redirect
+        return `\x1b[36m${status}\x1b[0m`
+      case 2: // green = success
+        return `\x1b[32m${status}\x1b[0m`
+    }
   }
-
-  const calculateStatus = (status / 100) | 0
-
-  return out[calculateStatus]
+  // Fallback to unsupported status code.
+  // E.g.) Bun and Deno supports new Response with 101, but Node.js does not.
+  // And those may evolve to accept more status.
+  return `${status}`
 }
 
 type PrintFunc = (str: string, ...rest: string[]) => void

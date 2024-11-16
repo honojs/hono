@@ -20,6 +20,7 @@ jobs:
       - bun
       - fastly
       - node
+      - deno
       - workerd
       - lambda
       - lambda-edge
@@ -50,9 +51,9 @@ jobs:
         run: |
           echo "::remove-matcher owner=eslint-compact::"
           echo "::remove-matcher owner=eslint-stylish::"
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.1.16'
+          bun-version: '1.1.33'
       - run: bun install
       - run: bun run format
       - run: bun run lint
@@ -71,7 +72,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bunx jsr publish --dry-run
 
   deno:
@@ -85,6 +86,8 @@ jobs:
       - run: env NAME=Deno deno test --coverage=coverage/raw/deno-runtime --allow-read --allow-env --allow-write --allow-net -c runtime-tests/deno/deno.json runtime-tests/deno
       - run: deno test -c runtime-tests/deno-jsx/deno.precompile.json --coverage=coverage/raw/deno-precompile-jsx runtime-tests/deno-jsx
       - run: deno test -c runtime-tests/deno-jsx/deno.react-jsx.json --coverage=coverage/raw/deno-react-jsx runtime-tests/deno-jsx
+      - run: grep -R '"url":' coverage | grep -v runtime-tests | sed -e 's/.*file:..//;s/.,//' | xargs deno cache --unstable-sloppy-imports
+      - run: deno coverage --lcov > coverage/deno-runtime-coverage-lcov.info
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-deno
@@ -95,9 +98,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.1.16'
+          bun-version: '1.1.33'
       - run: bun run test:bun
       - uses: actions/upload-artifact@v4
         with:
@@ -108,7 +111,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run build
       - run: bun run test:fastly
@@ -128,7 +131,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run build
       - run: bun run test:node
@@ -146,7 +149,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run build
       - run: bun run test:workerd
@@ -160,7 +163,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run build
       - run: bun run test:lambda
@@ -174,7 +177,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:lambda-edge
@@ -184,11 +187,12 @@ jobs:
           path: coverage/
 
   perf-measures-type-check-on-pr:
+    name: 'Type Check on PR'
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bun install
       - uses: actions/cache/restore@v4
         with:
@@ -211,11 +215,12 @@ jobs:
         name: display comparison
 
   perf-measures-type-check-on-main:
+    name: 'Type Check on Main'
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun scripts/generate-app.ts
         working-directory: perf-measures/type-check
@@ -225,3 +230,44 @@ jobs:
         with:
           path: perf-measures/type-check/previous-result.txt
           key: type-check-perf-previous-result-${{ github.sha }}
+
+  perf-measures-bundle-check-on-pr:
+    name: 'Bundle Check on PR'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run build
+      - run: bunx esbuild --minify --bundle dist/index.js --format=esm --outfile=perf-measures/bundle-check/generated/after.js
+      - uses: actions/cache/restore@v4
+        with:
+          path: perf-measures/bundle-check/generated/before.js
+          restore-keys: |
+            perf-measures-bundle-check-previous-file-
+          key: perf-measures-bundle-check-previous-file-
+      - run: |
+          {
+            echo 'COMPARISON<<EOF'
+            bun scripts/process-results.ts | column -s '|' -t
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+        working-directory: perf-measures/bundle-check
+      - run: echo "$COMPARISON"
+        name: display comparison
+
+  perf-measures-bundle-check-on-main:
+    name: 'Bundle Check on Main'
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run build
+      - run: bunx esbuild --minify --bundle dist/index.js --format=esm --outfile=perf-measures/bundle-check/generated/before.js
+      - uses: actions/cache/save@v4
+        with:
+          path: perf-measures/bundle-check/generated/before.js
+          key: perf-measures-bundle-check-previous-file-${{ github.sha }}
