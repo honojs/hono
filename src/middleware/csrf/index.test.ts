@@ -206,6 +206,15 @@ describe('CSRF by Middleware', () => {
       expect(res.status).toBe(403)
       expect(simplePostHandler).not.toHaveBeenCalled()
     })
+
+    it('should be 403 if the content-type is not set', async () => {
+      const res = await app.request('/form', {
+        method: 'POST',
+        body: new Blob(['test'], {}),
+      })
+      expect(res.status).toBe(403)
+      expect(simplePostHandler).not.toHaveBeenCalled()
+    })
   })
 
   describe('with origin option', () => {

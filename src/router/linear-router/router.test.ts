@@ -49,4 +49,17 @@ describe('LinearRouter', () => {
       expect(res[0][0]).toBe('GET /book')
     })
   })
+
+  describe('Skip part', () => {
+    const router = new LinearRouter<string>()
+
+    beforeEach(() => {
+      router.add('GET', '/products/:id{d+}', 'GET /products/:id{d+}')
+    })
+
+    it('GET /products/list', () => {
+      const [res] = router.match('GET', '/products/list')
+      expect(res.length).toBe(0)
+    })
+  })
 })

@@ -26,7 +26,6 @@ import type {
   RouterRoute,
   Schema,
 } from './types'
-import type { ExcludeEmptyObject } from './utils/types'
 import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
 /**
@@ -58,7 +57,7 @@ export type HonoOptions<E extends Env> = {
    */
   strict?: boolean
   /**
-   * `router` option specifices which router to use.
+   * `router` option specifies which router to use.
    *
    * @see {@link https://hono.dev/docs/api/hono#router-option}
    *
@@ -131,12 +130,10 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         if (typeof args1 === 'string') {
           this.#path = args1
         } else {
-          this.addRoute(method, this.#path, args1)
+          this.#addRoute(method, this.#path, args1)
         }
         args.forEach((handler) => {
-          if (typeof handler !== 'string') {
-            this.addRoute(method, this.#path, handler)
-          }
+          this.#addRoute(method, this.#path, handler)
         })
         return this as any
       }
@@ -148,7 +145,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         this.#path = p
         for (const m of [method].flat()) {
           handlers.map((handler) => {
-            this.addRoute(m.toUpperCase(), this.#path, handler)
+            this.#addRoute(m.toUpperCase(), this.#path, handler)
           })
         }
       }
@@ -164,7 +161,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         handlers.unshift(arg1)
       }
       handlers.forEach((handler) => {
-        this.addRoute(METHOD_NAME_ALL, this.#path, handler)
+        this.#addRoute(METHOD_NAME_ALL, this.#path, handler)
       })
       return this as any
     }
@@ -175,7 +172,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     this.getPath = strict ? options.getPath ?? getPath : getPathNoStrict
   }
 
-  private clone(): Hono<E, S, BasePath> {
+  #clone(): Hono<E, S, BasePath> {
     const clone = new Hono<E, S, BasePath>({
       router: this.router,
       getPath: this.getPath,
@@ -184,8 +181,8 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     return clone
   }
 
-  private notFoundHandler: NotFoundHandler = notFoundHandler
-  private errorHandler: ErrorHandler = errorHandler
+  #notFoundHandler: NotFoundHandler = notFoundHandler
+  #errorHandler: ErrorHandler = errorHandler
 
   /**
    * `.route()` allows grouping other Hono instance in routes.
@@ -213,23 +210,19 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   >(
     path: SubPath,
     app: Hono<SubEnv, SubSchema, SubBasePath>
-  ): Hono<
-    E,
-    ExcludeEmptyObject<MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S>,
-    BasePath
-  > {
+  ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S, BasePath> {
     const subApp = this.basePath(path)
     app.routes.map((r) => {
       let handler
-      if (app.errorHandler === errorHandler) {
+      if (app.#errorHandler === errorHandler) {
         handler = r.handler
       } else {
         handler = async (c: Context, next: Next) =>
-          (await compose<Context>([], app.errorHandler)(c, () => r.handler(c, next))).res
+          (await compose<Context>([], app.#errorHandler)(c, () => r.handler(c, next))).res
         ;(handler as any)[COMPOSED_HANDLER] = r.handler
       }
 
-      subApp.addRoute(r.method, r.path, handler)
+      subApp.#addRoute(r.method, r.path, handler)
     })
     return this
   }
@@ -248,7 +241,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * ```
    */
   basePath<SubPath extends string>(path: SubPath): Hono<E, S, MergePath<BasePath, SubPath>> {
-    const subApp = this.clone()
+    const subApp = this.#clone()
     subApp._basePath = mergePath(this._basePath, path)
     return subApp
   }
@@ -270,7 +263,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * ```
    */
   onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath> => {
-    this.errorHandler = handler
+    this.#errorHandler = handler
     return this
   }
 
@@ -290,7 +283,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * ```
    */
   notFound = (handler: NotFoundHandler<E>): Hono<E, S, BasePath> => {
-    this.notFoundHandler = handler
+    this.#notFoundHandler = handler
     return this
   }
 
@@ -375,30 +368,26 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
       await next()
     }
-    this.addRoute(METHOD_NAME_ALL, mergePath(path, '*'), handler)
+    this.#addRoute(METHOD_NAME_ALL, mergePath(path, '*'), handler)
     return this
   }
 
-  private addRoute(method: string, path: string, handler: H) {
+  #addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
-    const r: RouterRoute = { path: path, method: method, handler: handler }
+    const r: RouterRoute = { path, method, handler }
     this.router.add(method, path, [handler, r])
     this.routes.push(r)
   }
 
-  private matchRoute(method: string, path: string) {
-    return this.router.match(method, path)
-  }
-
-  private handleError(err: unknown, c: Context<E>) {
+  #handleError(err: unknown, c: Context<E>) {
     if (err instanceof Error) {
-      return this.errorHandler(err, c)
+      return this.#errorHandler(err, c)
     }
     throw err
   }
 
-  private dispatch(
+  #dispatch(
     request: Request,
     executionCtx: ExecutionContext | FetchEventLike | undefined,
     env: E['Bindings'],
@@ -407,18 +396,18 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     // Handle HEAD method
     if (method === 'HEAD') {
       return (async () =>
-        new Response(null, await this.dispatch(request, executionCtx, env, 'GET')))()
+        new Response(null, await this.#dispatch(request, executionCtx, env, 'GET')))()
     }
 
     const path = this.getPath(request, { env })
-    const matchResult = this.matchRoute(method, path)
+    const matchResult = this.router.match(method, path)
 
     const c = new Context(request, {
       path,
       matchResult,
       env,
       executionCtx,
-      notFoundHandler: this.notFoundHandler,
+      notFoundHandler: this.#notFoundHandler,
     })
 
     // Do not `compose` if it has only one handler
@@ -426,23 +415,23 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
       let res: ReturnType<H>
       try {
         res = matchResult[0][0][0][0](c, async () => {
-          c.res = await this.notFoundHandler(c)
+          c.res = await this.#notFoundHandler(c)
         })
       } catch (err) {
-        return this.handleError(err, c)
+        return this.#handleError(err, c)
       }
 
       return res instanceof Promise
         ? res
             .then(
               (resolved: Response | undefined) =>
-                resolved || (c.finalized ? c.res : this.notFoundHandler(c))
+                resolved || (c.finalized ? c.res : this.#notFoundHandler(c))
             )
-            .catch((err: Error) => this.handleError(err, c))
-        : res ?? this.notFoundHandler(c)
+            .catch((err: Error) => this.#handleError(err, c))
+        : res ?? this.#notFoundHandler(c)
     }
 
-    const composed = compose<Context>(matchResult[0], this.errorHandler, this.notFoundHandler)
+    const composed = compose<Context>(matchResult[0], this.#errorHandler, this.#notFoundHandler)
 
     return (async () => {
       try {
@@ -455,7 +444,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
         return context.res
       } catch (err) {
-        return this.handleError(err, c)
+        return this.#handleError(err, c)
       }
     })()
   }
@@ -476,7 +465,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     Env?: E['Bindings'] | {},
     executionCtx?: ExecutionContext
   ) => Response | Promise<Response> = (request, ...rest) => {
-    return this.dispatch(request, rest[1], rest[0], request.method)
+    return this.#dispatch(request, rest[1], rest[0], request.method)
   }
 
   /**
@@ -498,15 +487,17 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     executionCtx?: ExecutionContext
   ): Response | Promise<Response> => {
     if (input instanceof Request) {
-      if (requestInit !== undefined) {
-        input = new Request(input, requestInit)
-      }
-      return this.fetch(input, Env, executionCtx)
+      return this.fetch(requestInit ? new Request(input, requestInit) : input, Env, executionCtx)
     }
     input = input.toString()
-    const path = /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`
-    const req = new Request(path, requestInit)
-    return this.fetch(req, Env, executionCtx)
+    return this.fetch(
+      new Request(
+        /^https?:\/\//.test(input) ? input : `http://localhost${mergePath('/', input)}`,
+        requestInit
+      ),
+      Env,
+      executionCtx
+    )
   }
 
   /**
@@ -520,7 +511,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     addEventListener('fetch', (event: FetchEventLike): void => {
-      event.respondWith(this.dispatch(event.request, event, undefined, event.request.method))
+      event.respondWith(this.#dispatch(event.request, event, undefined, event.request.method))
     })
   }
 }

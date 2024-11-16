@@ -1,6 +1,7 @@
 import { run, group, bench } from 'mitata'
 import fastQuerystring from './fast-querystring.mts'
 import hono from './hono.mts'
+import qs from './qs.mts'
 ;[
   {
     url: 'http://example.com/?page=1',
@@ -36,6 +37,7 @@ import hono from './hono.mts'
   group(JSON.stringify(data), () => {
     bench('hono', () => hono(url, key))
     bench('fastQuerystring', () => fastQuerystring(url, key))
+    bench('qs', () => qs(url, key))
   })
 })
 

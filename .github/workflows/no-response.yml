@@ -1,0 +1,26 @@
+name: Close stale issues with "not bug" label
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close stale issues with "not bug" label
+        uses: actions/stale@v8
+        with:
+          days-before-stale: 7
+          days-before-close: 2
+          stale-issue-message: 'This issue has been marked as stale due to inactivity.'
+          close-issue-message: 'Closing this issue due to inactivity.'
+          exempt-issue-labels: ''
+          stale-issue-label: 'stale'
+          only-labels: 'not bug'
+          operations-per-run: 30
+          remove-stale-when-updated: true

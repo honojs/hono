@@ -221,6 +221,7 @@ describe('compress', async () => {
       {
         fetch: externalApp.fetch,
         port: 0,
+        hostname: '0.0.0.0',
       },
       (serverInfo) => {
         resolve([server as Server, serverInfo])

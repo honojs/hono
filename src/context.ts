@@ -9,6 +9,7 @@ import type {
   RouterRoute,
   TypedResponse,
 } from './types'
+import type { ResponseHeader } from './utils/headers'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
 import type { BaseMime } from './utils/mime'
@@ -236,77 +237,6 @@ interface SetHeadersOptions {
   append?: boolean
 }
 
-type ResponseHeader =
-  | 'Access-Control-Allow-Credentials'
-  | 'Access-Control-Allow-Headers'
-  | 'Access-Control-Allow-Methods'
-  | 'Access-Control-Allow-Origin'
-  | 'Access-Control-Expose-Headers'
-  | 'Access-Control-Max-Age'
-  | 'Age'
-  | 'Allow'
-  | 'Cache-Control'
-  | 'Clear-Site-Data'
-  | 'Content-Disposition'
-  | 'Content-Encoding'
-  | 'Content-Language'
-  | 'Content-Length'
-  | 'Content-Location'
-  | 'Content-Range'
-  | 'Content-Security-Policy'
-  | 'Content-Security-Policy-Report-Only'
-  | 'Content-Type'
-  | 'Cookie'
-  | 'Cross-Origin-Embedder-Policy'
-  | 'Cross-Origin-Opener-Policy'
-  | 'Cross-Origin-Resource-Policy'
-  | 'Date'
-  | 'ETag'
-  | 'Expires'
-  | 'Last-Modified'
-  | 'Location'
-  | 'Permissions-Policy'
-  | 'Pragma'
-  | 'Retry-After'
-  | 'Save-Data'
-  | 'Sec-CH-Prefers-Color-Scheme'
-  | 'Sec-CH-Prefers-Reduced-Motion'
-  | 'Sec-CH-UA'
-  | 'Sec-CH-UA-Arch'
-  | 'Sec-CH-UA-Bitness'
-  | 'Sec-CH-UA-Form-Factor'
-  | 'Sec-CH-UA-Full-Version'
-  | 'Sec-CH-UA-Full-Version-List'
-  | 'Sec-CH-UA-Mobile'
-  | 'Sec-CH-UA-Model'
-  | 'Sec-CH-UA-Platform'
-  | 'Sec-CH-UA-Platform-Version'
-  | 'Sec-CH-UA-WoW64'
-  | 'Sec-Fetch-Dest'
-  | 'Sec-Fetch-Mode'
-  | 'Sec-Fetch-Site'
-  | 'Sec-Fetch-User'
-  | 'Sec-GPC'
-  | 'Server'
-  | 'Server-Timing'
-  | 'Service-Worker-Navigation-Preload'
-  | 'Set-Cookie'
-  | 'Strict-Transport-Security'
-  | 'Timing-Allow-Origin'
-  | 'Trailer'
-  | 'Transfer-Encoding'
-  | 'Upgrade'
-  | 'Vary'
-  | 'WWW-Authenticate'
-  | 'Warning'
-  | 'X-Content-Type-Options'
-  | 'X-DNS-Prefetch-Control'
-  | 'X-Frame-Options'
-  | 'X-Permitted-Cross-Domain-Policies'
-  | 'X-Powered-By'
-  | 'X-Robots-Tag'
-  | 'X-XSS-Protection'
-
 interface SetHeaders {
   (name: 'Content-Type', value?: BaseMime, options?: SetHeadersOptions): void
   (name: ResponseHeader, value?: string, options?: SetHeadersOptions): void
@@ -336,7 +266,9 @@ export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
  * @returns The updated Headers object.
  */
 const setHeaders = (headers: Headers, map: Record<string, string> = {}) => {
-  Object.entries(map).forEach(([key, value]) => headers.set(key, value))
+  for (const key of Object.keys(map)) {
+    headers.set(key, map[key])
+  }
   return headers
 }
 
@@ -691,11 +623,11 @@ export class Context<
     return Object.fromEntries(this.#var)
   }
 
-  newResponse: NewResponse = (
+  #newResponse(
     data: Data | null,
     arg?: StatusCode | ResponseInit,
     headers?: HeaderRecord
-  ): Response => {
+  ): Response {
     // Optimized
     if (this.#isFresh && !headers && !arg && this.#status === 200) {
       return new Response(data, {
@@ -757,6 +689,8 @@ export class Context<
     })
   }
 
+  newResponse: NewResponse = (...args) => this.#newResponse(...(args as Parameters<NewResponse>))
+
   /**
    * `.body()` can return the HTTP response.
    * You can set headers with `.header()` and set HTTP status code with `.status`.
@@ -784,8 +718,8 @@ export class Context<
     headers?: HeaderRecord
   ): Response => {
     return typeof arg === 'number'
-      ? this.newResponse(data, arg, headers)
-      : this.newResponse(data, arg)
+      ? this.#newResponse(data, arg, headers)
+      : this.#newResponse(data, arg)
   }
 
   /**
@@ -817,8 +751,8 @@ export class Context<
     this.#preparedHeaders['content-type'] = TEXT_PLAIN
     // @ts-expect-error `Response` due to missing some types-only keys
     return typeof arg === 'number'
-      ? this.newResponse(text, arg, headers)
-      : this.newResponse(text, arg)
+      ? this.#newResponse(text, arg, headers)
+      : this.#newResponse(text, arg)
   }
 
   /**
@@ -846,7 +780,7 @@ export class Context<
     this.#preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
     /* eslint-disable @typescript-eslint/no-explicit-any */
     return (
-      typeof arg === 'number' ? this.newResponse(body, arg, headers) : this.newResponse(body, arg)
+      typeof arg === 'number' ? this.#newResponse(body, arg, headers) : this.#newResponse(body, arg)
     ) as any
   }
 
@@ -861,14 +795,14 @@ export class Context<
     if (typeof html === 'object') {
       return resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then((html) => {
         return typeof arg === 'number'
-          ? this.newResponse(html, arg, headers)
-          : this.newResponse(html, arg)
+          ? this.#newResponse(html, arg, headers)
+          : this.#newResponse(html, arg)
       })
     }
 
     return typeof arg === 'number'
-      ? this.newResponse(html as string, arg, headers)
-      : this.newResponse(html as string, arg)
+      ? this.#newResponse(html as string, arg, headers)
+      : this.#newResponse(html as string, arg)
   }
 
   /**
@@ -887,11 +821,11 @@ export class Context<
    * ```
    */
   redirect = <T extends RedirectStatusCode = 302>(
-    location: string,
+    location: string | URL,
     status?: T
   ): Response & TypedResponse<undefined, T, 'redirect'> => {
     this.#headers ??= new Headers()
-    this.#headers.set('Location', location)
+    this.#headers.set('Location', String(location))
     return this.newResponse(null, status ?? 302) as any
   }
 

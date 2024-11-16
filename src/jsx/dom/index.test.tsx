@@ -282,7 +282,7 @@ describe('DOM', () => {
     })
   })
 
-  describe('skip build child', () => {
+  describe('child component', () => {
     it('simple', async () => {
       const Child = vi.fn(({ count }: { count: number }) => <div>{count}</div>)
       const App = () => {
@@ -301,11 +301,11 @@ describe('DOM', () => {
       root.querySelector('button')?.click()
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div>1</div><div>0</div><button>+</button>')
-      expect(Child).toBeCalledTimes(1)
+      expect(Child).toBeCalledTimes(2)
       root.querySelector('button')?.click()
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div>2</div><div>1</div><button>+</button>')
-      expect(Child).toBeCalledTimes(2)
+      expect(Child).toBeCalledTimes(3)
     })
   })
 
@@ -1119,6 +1119,46 @@ describe('DOM', () => {
     )
   })
 
+  it('consecutive fragment', async () => {
+    const ComponentA = () => {
+      const [count, setCount] = useState(0)
+      return (
+        <>
+          <div>A: {count}</div>
+          <button id='a-button' onClick={() => setCount(count + 1)}>
+            A: +
+          </button>
+        </>
+      )
+    }
+    const App = () => {
+      const [count, setCount] = useState(0)
+      return (
+        <>
+          <ComponentA />
+          <div>B: {count}</div>
+          <button id='b-button' onClick={() => setCount(count + 1)}>
+            B: +
+          </button>
+        </>
+      )
+    }
+    render(<App />, root)
+    expect(root.innerHTML).toBe(
+      '<div>A: 0</div><button id="a-button">A: +</button><div>B: 0</div><button id="b-button">B: +</button>'
+    )
+    root.querySelector<HTMLButtonElement>('#b-button')?.click()
+    await Promise.resolve()
+    expect(root.innerHTML).toBe(
+      '<div>A: 0</div><button id="a-button">A: +</button><div>B: 1</div><button id="b-button">B: +</button>'
+    )
+    root.querySelector<HTMLButtonElement>('#a-button')?.click()
+    await Promise.resolve()
+    expect(root.innerHTML).toBe(
+      '<div>A: 1</div><button id="a-button">A: +</button><div>B: 1</div><button id="b-button">B: +</button>'
+    )
+  })
+
   it('switch child component', async () => {
     const Even = () => <p>Even</p>
     const Odd = () => <div>Odd</div>
@@ -1321,38 +1361,137 @@ describe('DOM', () => {
     })
   })
 
-  it('memo', async () => {
-    let renderCount = 0
-    const Counter = ({ count }: { count: number }) => {
-      renderCount++
-      return (
-        <div>
-          <p>Count: {count}</p>
-        </div>
+  describe('memo', () => {
+    it('simple', async () => {
+      let renderCount = 0
+      const Counter = ({ count }: { count: number }) => {
+        renderCount++
+        return (
+          <div>
+            <p>Count: {count}</p>
+          </div>
+        )
+      }
+      const MemoCounter = memo(Counter)
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <div>
+            <MemoCounter count={Math.min(count, 1)} />
+            <button onClick={() => setCount(count + 1)}>+</button>
+          </div>
+        )
+      }
+      const app = <App />
+      render(app, root)
+      expect(root.innerHTML).toBe('<div><div><p>Count: 0</p></div><button>+</button></div>')
+      expect(renderCount).toBe(1)
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><div><p>Count: 1</p></div><button>+</button></div>')
+      expect(renderCount).toBe(2)
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><div><p>Count: 1</p></div><button>+</button></div>')
+      expect(renderCount).toBe(2)
+    })
+
+    it('useState', async () => {
+      const Child = vi.fn(({ count }: { count: number }) => {
+        const [count2, setCount2] = useState(0)
+        return (
+          <>
+            <div>
+              {count} : {count2}
+            </div>
+            <button id='child-button' onClick={() => setCount2(count2 + 1)}>
+              Child +
+            </button>
+          </>
+        )
+      })
+      const MemoChild = memo(Child)
+      const App = () => {
+        const [count, setCount] = useState(0)
+        return (
+          <>
+            <button id='app-button' onClick={() => setCount(count + 1)}>
+              App +
+            </button>
+            <MemoChild count={Math.floor(count / 2)} />
+          </>
+        )
+      }
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<button id="app-button">App +</button><div>0 : 0</div><button id="child-button">Child +</button>'
       )
-    }
-    const MemoCounter = memo(Counter)
-    const App = () => {
-      const [count, setCount] = useState(0)
-      return (
-        <div>
-          <MemoCounter count={Math.min(count, 1)} />
-          <button onClick={() => setCount(count + 1)}>+</button>
-        </div>
+      root.querySelector<HTMLButtonElement>('button#app-button')?.click()
+      await Promise.resolve()
+      expect(Child).toBeCalledTimes(1)
+      expect(root.innerHTML).toBe(
+        '<button id="app-button">App +</button><div>0 : 0</div><button id="child-button">Child +</button>'
       )
-    }
-    const app = <App />
-    render(app, root)
-    expect(root.innerHTML).toBe('<div><div><p>Count: 0</p></div><button>+</button></div>')
-    expect(renderCount).toBe(1)
-    root.querySelector('button')?.click()
-    await Promise.resolve()
-    expect(root.innerHTML).toBe('<div><div><p>Count: 1</p></div><button>+</button></div>')
-    expect(renderCount).toBe(2)
-    root.querySelector('button')?.click()
-    await Promise.resolve()
-    expect(root.innerHTML).toBe('<div><div><p>Count: 1</p></div><button>+</button></div>')
-    expect(renderCount).toBe(2)
+      root.querySelector<HTMLButtonElement>('button#app-button')?.click()
+      await Promise.resolve()
+      expect(Child).toBeCalledTimes(2)
+      expect(root.innerHTML).toBe(
+        '<button id="app-button">App +</button><div>1 : 0</div><button id="child-button">Child +</button>'
+      )
+      root.querySelector<HTMLButtonElement>('button#child-button')?.click()
+      await Promise.resolve()
+      expect(Child).toBeCalledTimes(3)
+      expect(root.innerHTML).toBe(
+        '<button id="app-button">App +</button><div>1 : 1</div><button id="child-button">Child +</button>'
+      )
+    })
+
+    // The react compiler generates code like the following for memoization.
+    it('react compiler', async () => {
+      let renderCount = 0
+      const Counter = ({ count }: { count: number }) => {
+        renderCount++
+        return (
+          <div>
+            <p>Count: {count}</p>
+          </div>
+        )
+      }
+
+      const App = () => {
+        const [cache] = useState<unknown[]>(() => [])
+        const [count, setCount] = useState(0)
+        const countForDisplay = Math.floor(count / 2)
+
+        let localCounter
+        if (cache[0] !== countForDisplay) {
+          localCounter = <Counter count={countForDisplay} />
+          cache[0] = countForDisplay
+          cache[1] = localCounter
+        } else {
+          localCounter = cache[1]
+        }
+
+        return (
+          <div>
+            {localCounter}
+            <button onClick={() => setCount(count + 1)}>+</button>
+          </div>
+        )
+      }
+      const app = <App />
+      render(app, root)
+      expect(root.innerHTML).toBe('<div><div><p>Count: 0</p></div><button>+</button></div>')
+      expect(renderCount).toBe(1)
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><div><p>Count: 0</p></div><button>+</button></div>')
+      expect(renderCount).toBe(1)
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<div><div><p>Count: 1</p></div><button>+</button></div>')
+      expect(renderCount).toBe(2)
+    })
   })
 
   describe('useRef', async () => {

@@ -97,5 +97,3 @@ export type IsAny<T> = boolean extends (T extends never ? true : false) ? true :
  * @see https://github.com/Microsoft/TypeScript/issues/29729
  */
 export type StringLiteralUnion<T> = T | (string & Record<never, never>)
-
-export type ExcludeEmptyObject<T> = T extends {} ? ({} extends T ? never : T) : T

@@ -16,7 +16,7 @@ describe('expandIPv6', () => {
   })
 })
 describe('distinctRemoteAddr', () => {
-  it('Should result be valud', () => {
+  it('Should result be valid', () => {
     expect(distinctRemoteAddr('1::1')).toBe('IPv6')
     expect(distinctRemoteAddr('::1')).toBe('IPv6')
 
