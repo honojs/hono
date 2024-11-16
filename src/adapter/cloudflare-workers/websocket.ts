@@ -1,12 +1,16 @@
-import type { UpgradeWebSocket, WSContext, WSReadyState } from '../../helper/websocket'
+import { WSContext, defineWebSocketHelper } from '../../helper/websocket'
+import type { UpgradeWebSocket, WSEvents, WSReadyState } from '../../helper/websocket'
 
 // Based on https://github.com/honojs/hono/issues/1153#issuecomment-1767321332
-export const upgradeWebSocket: UpgradeWebSocket<WebSocket> = (createEvents) => async (c, next) => {
-  const events = await createEvents(c)
-
+export const upgradeWebSocket: UpgradeWebSocket<
+  WebSocket,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  Omit<WSEvents<WebSocket>, 'onOpen'>
+> = defineWebSocketHelper(async (c, events) => {
   const upgradeHeader = c.req.header('Upgrade')
   if (upgradeHeader !== 'websocket') {
-    return await next()
+    return
   }
 
   // @ts-expect-error WebSocketPair is not typed
@@ -14,8 +18,7 @@ export const upgradeWebSocket: UpgradeWebSocket<WebSocket> = (createEvents) => a
   const client: WebSocket = webSocketPair[0]
   const server: WebSocket = webSocketPair[1]
 
-  const wsContext: WSContext<WebSocket> = {
-    binaryType: 'arraybuffer',
+  const wsContext = new WSContext<WebSocket>({
     close: (code, reason) => server.close(code, reason),
     get protocol() {
       return server.protocol
@@ -26,10 +29,10 @@ export const upgradeWebSocket: UpgradeWebSocket<WebSocket> = (createEvents) => a
     },
     url: server.url ? new URL(server.url) : null,
     send: (source) => server.send(source),
-  }
-  if (events.onOpen) {
-    server.addEventListener('open', (evt: Event) => events.onOpen?.(evt, wsContext))
-  }
+  })
+
+  // note: cloudflare workers doesn't support 'open' event
+
   if (events.onClose) {
     server.addEventListener('close', (evt: CloseEvent) => events.onClose?.(evt, wsContext))
   }
@@ -47,4 +50,4 @@ export const upgradeWebSocket: UpgradeWebSocket<WebSocket> = (createEvents) => a
     // @ts-expect-error - webSocket is not typed
     webSocket: client,
   })
-}
+})

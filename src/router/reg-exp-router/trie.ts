@@ -4,8 +4,8 @@ import { Node } from './node'
 export type ReplacementMap = number[]
 
 export class Trie {
-  context: Context = { varIndex: 0 }
-  root: Node = new Node()
+  #context: Context = { varIndex: 0 }
+  #root: Node = new Node()
 
   insert(path: string, index: number, pathErrorCheckOnly: boolean): ParamAssocArray {
     const paramAssoc: ParamAssocArray = []
@@ -41,13 +41,13 @@ export class Trie {
       }
     }
 
-    this.root.insert(tokens, index, paramAssoc, this.context, pathErrorCheckOnly)
+    this.#root.insert(tokens, index, paramAssoc, this.#context, pathErrorCheckOnly)
 
     return paramAssoc
   }
 
   buildRegExp(): [RegExp, ReplacementMap, ReplacementMap] {
-    let regexp = this.root.buildRegExpStr()
+    let regexp = this.#root.buildRegExpStr()
     if (regexp === '') {
       return [/^$/, [], []] // never match
     }
@@ -57,11 +57,11 @@ export class Trie {
     const paramReplacementMap: ReplacementMap = []
 
     regexp = regexp.replace(/#(\d+)|@(\d+)|\.\*\$/g, (_, handlerIndex, paramIndex) => {
-      if (typeof handlerIndex !== 'undefined') {
+      if (handlerIndex !== undefined) {
         indexReplacementMap[++captureIndex] = Number(handlerIndex)
         return '$()'
       }
-      if (typeof paramIndex !== 'undefined') {
+      if (paramIndex !== undefined) {
         paramReplacementMap[Number(paramIndex)] = ++captureIndex
         return ''
       }

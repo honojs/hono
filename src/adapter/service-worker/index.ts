@@ -1,5 +1,5 @@
 /**
- * Cloudflare Workers Adapter for Hono.
+ * Service Worker Adapter for Hono.
  * @module
  */
 export { handle } from './handler'

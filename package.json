@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.6.4",
+  "version": "4.6.10",
   "description": "Web framework built on Web Standards",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -22,12 +22,12 @@
     "test:all": "bun run test && bun test:deno && bun test:bun && bun test:fastly && bun test:node && bun test:workerd && bun test:lambda && bun test:lambda-edge",
     "lint": "eslint src runtime-tests",
     "lint:fix": "eslint src runtime-tests --fix",
-    "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\"",
-    "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\"",
-    "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
-    "build": "bun run --shell bun remove-dist && bun ./build.ts && bun run copy:package.cjs.json",
+    "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\"",
+    "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\"",
+    "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json",
+    "build": "bun run --shell bun remove-dist && bun ./build/build.ts && bun run copy:package.cjs.json",
     "postbuild": "publint",
-    "watch": "bun run --shell bun remove-dist && bun ./build.ts --watch && bun run copy:package.cjs.json",
+    "watch": "bun run --shell bun remove-dist && bun ./build/build.ts --watch && bun run copy:package.cjs.json",
     "coverage": "vitest --run --coverage",
     "prerelease": "bun test:deno && bun run build",
     "release": "np",
@@ -38,6 +38,11 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/cjs/index.js"
+    },
+    "./request": {
+      "types": "./dist/types/request.d.ts",
+      "import": "./dist/request.js",
+      "require": "./dist/cjs/request.js"
     },
     "./types": {
       "types": "./dist/types/types.d.ts",
@@ -387,6 +392,9 @@
   },
   "typesVersions": {
     "*": {
+      "request": [
+        "./dist/types/request"
+      ],
       "types": [
         "./dist/types/types"
       ],
@@ -619,28 +627,29 @@
   ],
   "devDependencies": {
     "@hono/eslint-config": "^1.0.2",
-    "@hono/node-server": "^1.8.2",
-    "@types/glob": "^8.0.0",
-    "@types/jsdom": "^21.1.4",
+    "@hono/node-server": "^1.13.5",
+    "@types/glob": "^8.1.0",
+    "@types/jsdom": "^21.1.7",
     "@types/node": "20.11.4",
-    "@types/supertest": "^2.0.12",
+    "@types/supertest": "^2.0.16",
     "@vitest/coverage-v8": "^2.0.5",
     "arg": "^5.0.2",
-    "esbuild": "^0.15.12",
+    "bun-types": "^1.1.34",
+    "esbuild": "^0.15.18",
     "eslint": "^9.10.0",
-    "glob": "7.2.3",
+    "glob": "^11.0.0",
     "jsdom": "^22.1.0",
-    "msw": "^2.3.0",
+    "msw": "^2.6.0",
     "np": "7.7.0",
     "prettier": "^2.6.2",
-    "publint": "^0.1.8",
-    "supertest": "^6.3.3",
+    "publint": "^0.1.16",
+    "supertest": "^6.3.4",
     "typescript": "^5.3.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
     "vitest": "^2.0.5",
     "wrangler": "3.58.0",
-    "ws": "^8.17.0",
-    "zod": "^3.20.2"
+    "ws": "^8.18.0",
+    "zod": "^3.23.8"
   },
   "engines": {
     "node": ">=16.9.0"

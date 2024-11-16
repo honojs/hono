@@ -1,5 +1,4 @@
 import { Context } from './context'
-import type { ParamIndexMap, Params } from './router'
 import type { Env, ErrorHandler, NotFoundHandler } from './types'
 
 /**
@@ -31,12 +30,14 @@ interface ComposeContext {
  * @returns {(context: C, next?: Function) => Promise<C>} - A composed middleware function.
  */
 export const compose = <C extends ComposeContext, E extends Env = Env>(
-  middleware: [[Function, unknown], ParamIndexMap | Params][],
+  middleware: [[Function, unknown], unknown][] | [[Function]][],
   onError?: ErrorHandler<E>,
   onNotFound?: NotFoundHandler<E>
 ): ((context: C, next?: Function) => Promise<C>) => {
   return (context, next) => {
     let index = -1
+    const isContext = context instanceof Context
+
     return dispatch(0)
 
     /**
@@ -58,7 +59,7 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
 
       if (middleware[i]) {
         handler = middleware[i][0][0]
-        if (context instanceof Context) {
+        if (isContext) {
           context.req.routeIndex = i
         }
       } else {
@@ -66,7 +67,7 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
       }
 
       if (!handler) {
-        if (context instanceof Context && context.finalized === false && onNotFound) {
+        if (isContext && context.finalized === false && onNotFound) {
           res = await onNotFound(context)
         }
       } else {
@@ -75,7 +76,7 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
             return dispatch(i + 1)
           })
         } catch (err) {
-          if (err instanceof Error && context instanceof Context && onError) {
+          if (err instanceof Error && isContext && onError) {
             context.error = err
             res = await onError(err, context)
             isError = true

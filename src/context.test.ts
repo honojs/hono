@@ -89,6 +89,12 @@ describe('Context', () => {
     expect(res.headers.get('Location')).toBe('https://example.com/destination')
   })
 
+  it('c.redirect() w/ URL', async () => {
+    const res = c.redirect(new URL('/destination', 'https://example.com'))
+    expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe('https://example.com/destination')
+  })
+
   it('c.header()', async () => {
     c.header('X-Foo', 'Bar')
     const res = c.body('Hi')
