@@ -1,10 +1,10 @@
-import * as fs from 'node:fs/promises'
+import * as fs from 'node:fs'
 
 async function main() {
     const args = process.argv.slice(2);
     const filePath = args[0];
 
-    const bundleSize = (await fs.readFile(filePath)).byteLength
+    const bundleSize = fs.statSync(filePath).size
     const metrics = []
     metrics.push({
         key: 'bundle-size',
