@@ -10,7 +10,8 @@ async function main() {
         key: 'bundle-size',
         name: 'Bundle Size',
         value: bundleSize,
-    })    
+        unit: 'B'
+    })
     const diagnostics = {
         key: "bundle-check",
         name: "Bundle check",
