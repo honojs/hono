@@ -13,8 +13,8 @@ async function main() {
         unit: 'B'
     })
     const diagnostics = {
-        key: "bundle-check",
-        name: "Bundle check",
+        key: "bundle-size-check",
+        name: "Bundle size check",
         metrics
     }
     console.log(JSON.stringify(diagnostics, null, 2))

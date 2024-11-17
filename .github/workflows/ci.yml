@@ -182,7 +182,7 @@ jobs:
           path: coverage/
 
   perf-measures-type-and-bundle-check-on-pr:
-    name: 'Type & Bundle Check on PR'
+    name: 'Type & Bundle size Check on PR'
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
@@ -208,7 +208,7 @@ jobs:
           OCTOCOV_CUSTOM_METRICS_BENCHMARK_TYPE: perf-measures/type-check/diagnostics.json
 
   perf-measures-type-and-bundle-check-on-main:
-    name: 'Type & Bundle Check on Main'
+    name: 'Type & Bundle size Check on Main'
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
