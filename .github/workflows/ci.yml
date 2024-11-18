@@ -226,7 +226,7 @@ jobs:
       - name: Run octocov (main)
         uses: k1LoW/octocov-action@v1
         with:
-          config: perf-measures/type-check/.octocov.perf-measures.main.yml
+          config: perf-measures/.octocov.perf-measures.main.yml
         env:
           OCTOCOV_GITHUB_REF: refs/heads/main
           OCTOCOV_CUSTOM_METRICS_BENCHMARK_BUNDLE: perf-measures/bundle-check/size.json
