@@ -50,7 +50,7 @@ interface ViewTransitionType {
 }
 
 interface StyleType {
-  (args?: { children?: Promise<string> }): HtmlEscapedString
+  (args?: { children?: Promise<string>; nonce?: string }): HtmlEscapedString
 }
 
 /**
@@ -88,9 +88,12 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
         return
       }
 
-      const appendStyleScript = `<script>document.querySelector('#${id}').textContent+=${JSON.stringify(
-        stylesStr
-      )}</script>`
+      const styleNonce = (context as any)?.style?.nonce
+
+      const appendStyleScript = `<script${
+        styleNonce ? ` nonce="${styleNonce}"` : ''
+      }>document.querySelector('#${id}').textContent+=${JSON.stringify(stylesStr)}</script>`
+
       if (buffer) {
         buffer[0] = `${appendStyleScript}${buffer[0]}`
         return
@@ -156,10 +159,36 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
     return newCssClassNameObject(viewTransitionCommon(strings as any, values))
   }) as ViewTransitionType
 
-  const Style: StyleType = ({ children } = {}) =>
-    children
-      ? raw(`<style id="${id}">${(children as unknown as CssClassName)[STYLE_STRING]}</style>`)
-      : raw(`<style id="${id}"></style>`)
+  const Style: StyleType = ({ children, nonce } = {}) => {
+    const styleTag = children
+      ? raw(
+          `<style id="${id}"${nonce ? ` nonce="${nonce}"` : ''}>${
+            (children as unknown as CssClassName)[STYLE_STRING]
+          }</style>`
+        )
+      : raw(`<style id="${id}"${nonce ? ` nonce="${nonce}"` : ''}></style>`)
+
+    ;(styleTag as any).nonce = nonce
+
+    const storeNonce: HtmlEscapedCallback = ({ context }) => {
+      if (!nonce) {
+        return
+      }
+      if (!(context as any)?.style) {
+        ;(context as any).style = {}
+      }
+      ;(context as any).style.nonce = nonce
+      return Promise.resolve(nonce)
+    }
+
+    if (!styleTag.callbacks) {
+      styleTag.callbacks = []
+    }
+    styleTag.callbacks.push(storeNonce)
+
+    return styleTag
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(Style as any)[DOM_RENDERER] = StyleRenderToDom
 

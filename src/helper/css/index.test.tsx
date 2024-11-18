@@ -1,8 +1,8 @@
 /** @jsxImportSource ../../jsx */
 import { Hono } from '../../'
 import { html } from '../../helper/html'
-import { isValidElement } from '../../jsx'
 import type { JSXNode } from '../../jsx'
+import { isValidElement } from '../../jsx'
 import { Suspense, renderToReadableStream } from '../../jsx/streaming'
 import type { HtmlEscapedString } from '../../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
@@ -55,6 +55,18 @@ describe('CSS Helper', () => {
         <h1 class="${headerClass}">Hello!</h1>`
       expect(await toString(template)).toBe(
         `<style id="hono-css">.css-2458908649{background-color:blue}</style>
+        <h1 class="css-2458908649">Hello!</h1>`
+      )
+    })
+
+    it('Should render CSS styles with `html` tag function and CSP nonce', async () => {
+      const headerClass = css`
+        background-color: blue;
+      `
+      const template = html`${Style({ nonce: '1234' })}
+        <h1 class="${headerClass}">Hello!</h1>`
+      expect(await toString(template)).toBe(
+        `<style id="hono-css" nonce="1234">.css-2458908649{background-color:blue}</style>
         <h1 class="css-2458908649">Hello!</h1>`
       )
     })
