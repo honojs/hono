@@ -197,8 +197,7 @@ jobs:
       - name: Performance measurement of bundle check
         run: |
           bun run build
-          bunx esbuild --minify --bundle dist/index.js --format=esm --outfile=perf-measures/bundle-check/generated/bundle.js
-          bun perf-measures/bundle-check/scripts/process-results.ts perf-measures/bundle-check/generated/bundle.js > perf-measures/bundle-check/size.json
+          bun perf-measures/bundle-check/scripts/check-bundle-size.ts > perf-measures/bundle-check/size.json
       - name: Run octocov
         uses: k1LoW/octocov-action@v1
         with:
@@ -223,8 +222,7 @@ jobs:
       - name: Performance measurement of bundle check
         run: |
           bun run build
-          bunx esbuild --minify --bundle dist/index.js --format=esm --outfile=perf-measures/bundle-check/generated/bundle.js
-          bun perf-measures/bundle-check/scripts/process-results.ts perf-measures/bundle-check/generated/bundle.js > perf-measures/bundle-check/size.json
+          perf-measures/bundle-check/scripts/check-bundle-size.ts > perf-measures/bundle-check/size.json
       - name: Run octocov (main)
         uses: k1LoW/octocov-action@v1
         with:
