@@ -1,7 +1,7 @@
-import * as path from 'path'
 import * as os from 'os'
-import * as fs from 'node:fs'
+import * as path from 'path'
 import * as esbuild from 'esbuild'
+import * as fs from 'node:fs'
 
 async function main() {
   const tempDir = os.tmpdir()

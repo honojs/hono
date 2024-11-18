@@ -33,12 +33,12 @@ async function main() {
       })
     }
   }
-  const diagnostics = {
+  const benchmark = {
     key: 'diagnostics',
     name: 'Compiler Diagnostics',
     metrics,
   }
-  console.log(JSON.stringify(diagnostics, null, 2))
+  console.log(JSON.stringify(benchmark, null, 2))
 }
 
 main()
