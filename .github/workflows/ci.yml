@@ -222,7 +222,7 @@ jobs:
       - name: Performance measurement of bundle check
         run: |
           bun run build
-          perf-measures/bundle-check/scripts/check-bundle-size.ts > perf-measures/bundle-check/size.json
+          bun perf-measures/bundle-check/scripts/check-bundle-size.ts > perf-measures/bundle-check/size.json
       - name: Run octocov (main)
         uses: k1LoW/octocov-action@v1
         with:
