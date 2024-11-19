@@ -407,7 +407,7 @@ class ALBProcessor extends EventProcessor<ALBProxyEvent> {
 
   protected getQueryString(event: ALBProxyEvent): string {
     // In the case of ALB Integration either queryStringParameters or multiValueQueryStringParameters can be present not both
-    /* 
+    /*
       In other cases like when using the serverless framework, the event object does contain both queryStringParameters and multiValueQueryStringParameters:
       Below is an example event object for this URL: /payment/b8c55e69?select=amount&select=currency
       {
@@ -471,7 +471,10 @@ export const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> =>
 }
 
 const isProxyEventALB = (event: LambdaEvent): event is ALBProxyEvent => {
-  return Object.hasOwn(event.requestContext, 'elb')
+  if (event.requestContext) {
+    return Object.hasOwn(event.requestContext, 'elb')
+  }
+  return false
 }
 
 const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => {
