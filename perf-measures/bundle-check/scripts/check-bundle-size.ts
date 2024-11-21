@@ -30,7 +30,7 @@ async function main() {
     metrics.push({
       key: 'bundle-size-kb',
       name: 'Bundle Size (KB)',
-      value: (bundleSize / 1024).toFixed(2).toString(),
+      value: parseFloat((bundleSize / 1024).toFixed(2)),
       unit: 'KB',
     })
 
