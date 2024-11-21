@@ -19,12 +19,21 @@ async function main() {
 
     const bundleSize = fs.statSync(tempFilePath).size
     const metrics = []
+
     metrics.push({
-      key: 'bundle-size',
-      name: 'Bundle Size',
+      key: 'bundle-size-b',
+      name: 'Bundle Size (B)',
       value: bundleSize,
       unit: 'B',
     })
+
+    metrics.push({
+      key: 'bundle-size-kb',
+      name: 'Bundle Size (KB)',
+      value: (bundleSize / 1024).toFixed(2),
+      unit: 'KB',
+    })
+
     const benchmark = {
       key: 'bundle-size-check',
       name: 'Bundle size check',
