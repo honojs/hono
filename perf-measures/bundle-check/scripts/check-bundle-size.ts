@@ -31,7 +31,7 @@ async function main() {
       key: 'bundle-size-kb',
       name: 'Bundle Size (KB)',
       value: parseFloat((bundleSize / 1024).toFixed(2)),
-      unit: 'KB',
+      unit: 'K',
     })
 
     const benchmark = {
