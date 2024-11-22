@@ -103,7 +103,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
     }
 
     const addClassNameToContext: HtmlEscapedCallback = ({ context }) => {
-      if (!contextMap.get(context)) {
+      if (!contextMap.has(context)) {
         contextMap.set(context, [{}, {}])
       }
       const [toAdd, added] = contextMap.get(context) as usedClassNameData
