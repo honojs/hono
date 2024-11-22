@@ -127,7 +127,6 @@ describe('Name path', () => {
     node.insert('get', '/resource/a', 'A')
     node.insert('get', '/resource/*', 'Star')
     const [res] = node.search('get', '/resource/a')
-    console.log(res)
     expect(res).not.toBeNull()
     expect(res.length).toBe(2)
     expect(res[0][0]).toEqual('A')
