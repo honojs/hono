@@ -62,6 +62,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
   const [cssJsxDomObject, StyleRenderToDom] = createCssJsxDomObjects({ id })
 
   const contextMap: WeakMap<object, usedClassNameData> = new WeakMap()
+  const nonceMap: WeakMap<object, string | undefined> = new WeakMap()
 
   const replaceStyleRe = new RegExp(`(<style id="${id}"(?: nonce="[^"]*")?>.*?)(</style>)`)
 
@@ -88,10 +89,9 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
         return
       }
 
-      const styleNonce = (context as any)?.style?.nonce
-
+      const nonce = nonceMap.get(context)
       const appendStyleScript = `<script${
-        styleNonce ? ` nonce="${styleNonce}"` : ''
+        nonce ? ` nonce="${nonce}"` : ''
       }>document.querySelector('#${id}').textContent+=${JSON.stringify(stylesStr)}</script>`
 
       if (buffer) {
@@ -159,35 +159,18 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
     return newCssClassNameObject(viewTransitionCommon(strings as any, values))
   }) as ViewTransitionType
 
-  const Style: StyleType = ({ children, nonce } = {}) => {
-    const styleTag = children
-      ? raw(
-          `<style id="${id}"${nonce ? ` nonce="${nonce}"` : ''}>${
-            (children as unknown as CssClassName)[STYLE_STRING]
-          }</style>`
-        )
-      : raw(`<style id="${id}"${nonce ? ` nonce="${nonce}"` : ''}></style>`)
-
-    ;(styleTag as any).nonce = nonce
-
-    const storeNonce: HtmlEscapedCallback = ({ context }) => {
-      if (!nonce) {
-        return
-      }
-      if (!(context as any)?.style) {
-        ;(context as any).style = {}
-      }
-      ;(context as any).style.nonce = nonce
-      return Promise.resolve(nonce)
-    }
-
-    if (!styleTag.callbacks) {
-      styleTag.callbacks = []
-    }
-    styleTag.callbacks.push(storeNonce)
-
-    return styleTag
-  }
+  const Style: StyleType = ({ children, nonce } = {}) =>
+    raw(
+      `<style id="${id}"${nonce ? ` nonce="${nonce}"` : ''}>${
+        children ? (children as unknown as CssClassName)[STYLE_STRING] : ''
+      }</style>`,
+      [
+        ({ context }) => {
+          nonceMap.set(context, nonce)
+          return undefined
+        },
+      ]
+    )
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(Style as any)[DOM_RENDERER] = StyleRenderToDom
