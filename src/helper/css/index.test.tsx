@@ -239,6 +239,23 @@ describe('CSS Helper', () => {
       })
     })
 
+    app.get('/stream-with-nonce', (c) => {
+      const stream = renderToReadableStream(
+        <>
+          <Style nonce='1234' />
+          <Suspense fallback={<p>Loading...</p>}>
+            <h1 class={headerClass}>Hello!</h1>
+          </Suspense>
+        </>
+      )
+      return c.body(stream, {
+        headers: {
+          'Content-Type': 'text/html; charset=UTF-8',
+          'Transfer-Encoding': 'chunked',
+        },
+      })
+    })
+
     it('/sync', async () => {
       const res = await app.request('http://localhost/sync')
       expect(res).not.toBeNull()
@@ -255,6 +272,22 @@ describe('CSS Helper', () => {
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:0')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`
+      )
+    })
+
+    it('/stream-with-nonce', async () => {
+      const res = await app.request('http://localhost/stream-with-nonce')
+      expect(res).not.toBeNull()
+      expect(await res.text()).toBe(
+        `<style id="hono-css" nonce="1234"></style><template id="H:1"></template><p>Loading...</p><!--/$--><script nonce="1234">document.querySelector('#hono-css').textContent+=".css-2458908649{background-color:blue}"</script><template data-hono-target="H:1"><h1 class="css-2458908649">Hello!</h1></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:1')
 if(!d)return
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)
