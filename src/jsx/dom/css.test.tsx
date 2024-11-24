@@ -52,6 +52,18 @@ describe('Style and css for jsx/dom', () => {
     )
   })
 
+  it('<Style nonce="1234" />', async () => {
+    const App = () => {
+      return (
+        <div>
+          <Style nonce='1234' />
+        </div>
+      )
+    }
+    render(<App />, root)
+    expect(root.innerHTML).toBe('<div><style id="hono-css" nonce="1234"></style></div>')
+  })
+
   it('<Style>{css`global`}</Style>', async () => {
     const App = () => {
       return (
