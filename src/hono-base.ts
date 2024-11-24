@@ -183,7 +183,8 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   }
 
   #notFoundHandler: NotFoundHandler = notFoundHandler
-  #errorHandler: ErrorHandler = errorHandler
+  // Cannot use `#` because it requires visibility at JavaScript runtime.
+  private errorHandler: ErrorHandler = errorHandler
 
   /**
    * `.route()` allows grouping other Hono instance in routes.
@@ -215,11 +216,11 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     const subApp = this.basePath(path)
     app.routes.map((r) => {
       let handler
-      if (app.#errorHandler === errorHandler) {
+      if (app.errorHandler === errorHandler) {
         handler = r.handler
       } else {
         handler = async (c: Context, next: Next) =>
-          (await compose<Context>([], app.#errorHandler)(c, () => r.handler(c, next))).res
+          (await compose<Context>([], app.errorHandler)(c, () => r.handler(c, next))).res
         ;(handler as any)[COMPOSED_HANDLER] = r.handler
       }
 
@@ -264,7 +265,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * ```
    */
   onError = (handler: ErrorHandler<E>): Hono<E, S, BasePath> => {
-    this.#errorHandler = handler
+    this.errorHandler = handler
     return this
   }
 
@@ -383,7 +384,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
 
   #handleError(err: unknown, c: Context<E>) {
     if (err instanceof Error) {
-      return this.#errorHandler(err, c)
+      return this.errorHandler(err, c)
     }
     throw err
   }
@@ -432,7 +433,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         : res ?? this.#notFoundHandler(c)
     }
 
-    const composed = compose<Context>(matchResult[0], this.#errorHandler, this.#notFoundHandler)
+    const composed = compose<Context>(matchResult[0], this.errorHandler, this.#notFoundHandler)
 
     return (async () => {
       try {

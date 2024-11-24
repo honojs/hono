@@ -198,10 +198,13 @@ export class Node<T> {
 
       curNodes = tempNodes
     }
-    const results = handlerSets.sort((a, b) => {
-      return a.score - b.score
-    })
 
-    return [results.map(({ handler, params }) => [handler, params] as [T, Params])]
+    if (handlerSets.length > 1) {
+      handlerSets.sort((a, b) => {
+        return a.score - b.score
+      })
+    }
+
+    return [handlerSets.map(({ handler, params }) => [handler, params] as [T, Params])]
   }
 }
