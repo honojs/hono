@@ -8,7 +8,7 @@ export class PatternRouter<T> implements Router<T> {
   #routes: Route<T>[] = []
 
   add(method: string, path: string, handler: T) {
-    const endsWithWildcard = path[path.length - 1] === '*'
+    const endsWithWildcard = path.at(-1) === '*'
     if (endsWithWildcard) {
       path = path.slice(0, -2)
     }
