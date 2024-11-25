@@ -1,6 +1,17 @@
 import { Readable } from 'stream'
-import { handle, streamHandle } from '../../src/adapter/aws-lambda/handler'
-import type { LambdaEvent } from '../../src/adapter/aws-lambda/handler'
+import {
+  ALBProcessor,
+  EventV1Processor,
+  EventV2Processor,
+  getProcessor,
+  handle,
+  streamHandle,
+} from '../../src/adapter/aws-lambda/handler'
+import type {
+  ALBProxyEvent,
+  APIGatewayProxyEventV2,
+  LambdaEvent,
+} from '../../src/adapter/aws-lambda/handler'
 import type {
   ApiGatewayRequestContext,
   ApiGatewayRequestContextV2,
@@ -965,5 +976,55 @@ describe('streamHandle function', () => {
     // Check for JSON prelude and NULL sequence
     const nullSequence = '\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000'
     expect(output).toContain(jsonResponsePrelude.replace(nullSequence, ''))
+  })
+})
+
+describe('getProcessor function', () => {
+  it('Should return ALBProcessor for an ALBProxyEvent event', () => {
+    const event: ALBProxyEvent = {
+      httpMethod: 'GET',
+      path: '/',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: {
+        elb: {
+          targetGroupArn:
+            'arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/lambda-279XGJDqGZ5rsrHC2Fjr/49e9d65c45c6791a',
+        },
+      },
+    }
+
+    const processor = getProcessor(event)
+    expect(processor).toBeInstanceOf(ALBProcessor)
+  })
+
+  it('Should return EventV1Processor for an event without requestContext', () => {
+    const event = {
+      httpMethod: 'GET',
+      path: '/',
+      body: null,
+      isBase64Encoded: false,
+    }
+
+    // while LambdaEvent RequestContext property is mandatory, it can be absent when testing through invoke-api or AWS Console
+    // in such cases, a V1 processor should be returned
+    const processor = getProcessor(event as unknown as LambdaEvent)
+    expect(processor).toBeInstanceOf(EventV1Processor)
+  })
+
+  it('Should return EventV2Processor for an APIGatewayProxyEventV2 event', () => {
+    const event: APIGatewayProxyEventV2 = {
+      version: '2.0',
+      routeKey: '$default',
+      headers: { 'content-type': 'text/plain' },
+      rawPath: '/',
+      rawQueryString: '',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testApiGatewayRequestContextV2,
+    }
+
+    const processor = getProcessor(event)
+    expect(processor).toBeInstanceOf(EventV2Processor)
   })
 })
