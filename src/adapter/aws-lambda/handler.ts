@@ -184,7 +184,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
   }
 }
 
-abstract class EventProcessor<E extends LambdaEvent> {
+export abstract class EventProcessor<E extends LambdaEvent> {
   protected abstract getPath(event: E): string
 
   protected abstract getMethod(event: E): string
@@ -272,7 +272,7 @@ abstract class EventProcessor<E extends LambdaEvent> {
   }
 }
 
-class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
+export class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
   protected getPath(event: APIGatewayProxyEventV2): string {
     return event.rawPath
   }
@@ -315,7 +315,7 @@ class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
 
 const v2Processor: EventV2Processor = new EventV2Processor()
 
-class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGatewayProxyEventV2>> {
+export class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGatewayProxyEventV2>> {
   protected getPath(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
     return event.path
   }
@@ -375,7 +375,7 @@ class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGatewayPro
 
 const v1Processor: EventV1Processor = new EventV1Processor()
 
-class ALBProcessor extends EventProcessor<ALBProxyEvent> {
+export class ALBProcessor extends EventProcessor<ALBProxyEvent> {
   protected getHeaders(event: ALBProxyEvent): Headers {
     const headers = new Headers()
     // if multiValueHeaders is present the ALB will use it instead of the headers field

@@ -1,5 +1,12 @@
 import { Readable } from 'stream'
-import { getProcessor, handle, streamHandle } from '../../src/adapter/aws-lambda/handler'
+import {
+  ALBProcessor,
+  EventV1Processor,
+  EventV2Processor,
+  getProcessor,
+  handle,
+  streamHandle,
+} from '../../src/adapter/aws-lambda/handler'
 import type {
   ALBProxyEvent,
   APIGatewayProxyEventV2,
@@ -973,7 +980,7 @@ describe('streamHandle function', () => {
 })
 
 describe('getProcessor function', () => {
-  it('Should return a Processor (ALB) for an ALBProxyEvent event', () => {
+  it('Should return ALBProcessor for an ALBProxyEvent event', () => {
     const event: ALBProxyEvent = {
       httpMethod: 'GET',
       path: '/',
@@ -988,10 +995,10 @@ describe('getProcessor function', () => {
     }
 
     const processor = getProcessor(event)
-    expect(processor).toBeDefined()
+    expect(processor).toBeInstanceOf(ALBProcessor)
   })
 
-  it('Should return a Processor (V1) for an event without requestContext', () => {
+  it('Should return EventV1Processor for an event without requestContext', () => {
     const event = {
       httpMethod: 'GET',
       path: '/',
@@ -1002,10 +1009,10 @@ describe('getProcessor function', () => {
     // while LambdaEvent RequestContext property is mandatory, it can be absent when testing through invoke-api or AWS Console
     // in such cases, a V1 processor should be returned
     const processor = getProcessor(event as unknown as LambdaEvent)
-    expect(processor).toBeDefined()
+    expect(processor).toBeInstanceOf(EventV1Processor)
   })
 
-  it('Should return a Processor (V2) for an APIGatewayProxyEventV2 event', () => {
+  it('Should return EventV2Processor for an APIGatewayProxyEventV2 event', () => {
     const event: APIGatewayProxyEventV2 = {
       version: '2.0',
       routeKey: '$default',
@@ -1018,6 +1025,6 @@ describe('getProcessor function', () => {
     }
 
     const processor = getProcessor(event)
-    expect(processor).toBeDefined()
+    expect(processor).toBeInstanceOf(EventV2Processor)
   })
 })
