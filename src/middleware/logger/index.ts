@@ -80,10 +80,9 @@ function log(
  */
 export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
   return async function logger(c, next) {
-    const { method } = c.req
+    const { method, url } = c.req
 
-    const url = new URL(c.req.raw.url)
-    const path = url.pathname + url.search
+    const path = url.slice(url.indexOf('/', 8))
 
     log(fn, LogPrefix.Incoming, method, path)
 
