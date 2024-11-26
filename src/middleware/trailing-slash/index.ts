@@ -28,7 +28,7 @@ export const trimTrailingSlash = (): MiddlewareHandler => {
       c.res.status === 404 &&
       c.req.method === 'GET' &&
       c.req.path !== '/' &&
-      c.req.path[c.req.path.length - 1] === '/'
+      c.req.path.at(-1) === '/'
     ) {
       const url = new URL(c.req.url)
       url.pathname = url.pathname.substring(0, url.pathname.length - 1)
@@ -57,11 +57,7 @@ export const appendTrailingSlash = (): MiddlewareHandler => {
   return async function appendTrailingSlash(c, next) {
     await next()
 
-    if (
-      c.res.status === 404 &&
-      c.req.method === 'GET' &&
-      c.req.path[c.req.path.length - 1] !== '/'
-    ) {
+    if (c.res.status === 404 && c.req.method === 'GET' && c.req.path.at(-1) !== '/') {
       const url = new URL(c.req.url)
       url.pathname += '/'
 
