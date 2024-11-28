@@ -167,10 +167,9 @@ export const resolveCallback = async (
 
   const resStr = Promise.all(callbacks.map((c) => c({ phase, buffer, context }))).then((res) =>
     Promise.all(
-      res
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .filter<string>(Boolean as any)
-        .map((str) => resolveCallback(str, phase, false, context, buffer))
+      (res.filter((res) => !!res) as string[]).map((str) =>
+        resolveCallback(str, phase, false, context, buffer)
+      )
     ).then(() => (buffer as [string])[0])
   )
 
