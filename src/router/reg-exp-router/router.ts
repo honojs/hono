@@ -14,11 +14,12 @@ type StaticMap<T> = Record<string, Result<T>>
 type Matcher<T> = [RegExp, HandlerData<T>[], StaticMap<T>]
 type HandlerWithMetadata<T> = [T, number] // [handler, paramCount]
 
+const createEmptyParams = () => Object.create(null)
 const emptyParam: string[] = []
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const nullMatcher: Matcher<any> = [/^$/, [], Object.create(null)]
+const nullMatcher: Matcher<any> = [/^$/, [], createEmptyParams()]
 
-let wildcardRegExpCache: Record<string, RegExp> = Object.create(null)
+let wildcardRegExpCache: Record<string, RegExp> = createEmptyParams()
 function buildWildcardRegExp(path: string): RegExp {
   return (wildcardRegExpCache[path] ??= new RegExp(
     path === '*'
@@ -30,7 +31,7 @@ function buildWildcardRegExp(path: string): RegExp {
 }
 
 function clearWildcardRegExpCache() {
-  wildcardRegExpCache = Object.create(null)
+  wildcardRegExpCache = createEmptyParams()
 }
 
 function buildMatcherFromPreprocessedRoutes<T>(
@@ -50,11 +51,11 @@ function buildMatcherFromPreprocessedRoutes<T>(
       isStaticA ? 1 : isStaticB ? -1 : pathA.length - pathB.length
     )
 
-  const staticMap: StaticMap<T> = Object.create(null)
+  const staticMap: StaticMap<T> = createEmptyParams()
   for (let i = 0, j = -1, len = routesWithStaticPathFlag.length; i < len; i++) {
     const [pathErrorCheckOnly, path, handlers] = routesWithStaticPathFlag[i]
     if (pathErrorCheckOnly) {
-      staticMap[path] = [handlers.map(([h]) => [h, Object.create(null)]), emptyParam]
+      staticMap[path] = [handlers.map(([h]) => [h, createEmptyParams()]), emptyParam]
     } else {
       j++
     }
@@ -71,7 +72,7 @@ function buildMatcherFromPreprocessedRoutes<T>(
     }
 
     handlerData[j] = handlers.map(([h, paramCount]) => {
-      const paramIndexMap: ParamIndexMap = Object.create(null)
+      const paramIndexMap: ParamIndexMap = createEmptyParams()
       paramCount -= 1
       for (; paramCount >= 0; paramCount--) {
         const [key, value] = paramAssoc[paramCount]
@@ -127,8 +128,8 @@ export class RegExpRouter<T> implements Router<T> {
   #routes?: Record<string, Record<string, HandlerWithMetadata<T>[]>>
 
   constructor() {
-    this.#middleware = { [METHOD_NAME_ALL]: Object.create(null) }
-    this.#routes = { [METHOD_NAME_ALL]: Object.create(null) }
+    this.#middleware = { [METHOD_NAME_ALL]: createEmptyParams() }
+    this.#routes = { [METHOD_NAME_ALL]: createEmptyParams() }
   }
 
   add(method: string, path: string, handler: T) {
@@ -141,7 +142,7 @@ export class RegExpRouter<T> implements Router<T> {
 
     if (!middleware[method]) {
       ;[middleware, routes].forEach((handlerMap) => {
-        handlerMap[method] = Object.create(null)
+        handlerMap[method] = createEmptyParams()
         Object.keys(handlerMap[METHOD_NAME_ALL]).forEach((p) => {
           handlerMap[method][p] = [...handlerMap[METHOD_NAME_ALL][p]]
         })
@@ -231,7 +232,7 @@ export class RegExpRouter<T> implements Router<T> {
   }
 
   #buildAllMatchers(): Record<string, Matcher<T> | null> {
-    const matchers: Record<string, Matcher<T> | null> = Object.create(null)
+    const matchers: Record<string, Matcher<T> | null> = createEmptyParams()
 
     Object.keys(this.#routes!)
       .concat(Object.keys(this.#middleware!))
