@@ -13,21 +13,21 @@ type HandlerParamsSet<T> = HandlerSet<T> & {
   params: Record<string, string>
 }
 
-const createEmptyParams = () => Object.create(null)
+const createEmptyRecord = () => Object.create(null)
 
-const emptyParams = createEmptyParams()
+const emptyParams = createEmptyRecord()
 
 export class Node<T> {
   #methods: Record<string, HandlerSet<T>>[] = []
 
-  #children: Record<string, Node<T>> = createEmptyParams()
+  #children: Record<string, Node<T>> = createEmptyRecord()
   #patterns: Pattern[] = []
   #order: number = 0
-  #params: Record<string, string> = createEmptyParams()
+  #params: Record<string, string> = createEmptyRecord()
 
   constructor(method?: string, handler?: T) {
     if (method && handler) {
-      const m: Record<string, HandlerSet<T>> = createEmptyParams()
+      const m: Record<string, HandlerSet<T>> = createEmptyRecord()
       m[method] = { handler, possibleKeys: [], score: 0 }
       this.#methods = [m]
     }
@@ -63,7 +63,7 @@ export class Node<T> {
       curNode = curNode.#children[p]
     }
 
-    const m: Record<string, HandlerSet<T>> = createEmptyParams()
+    const m: Record<string, HandlerSet<T>> = createEmptyRecord()
 
     const handlerSet: HandlerSet<T> = {
       handler,
@@ -89,7 +89,7 @@ export class Node<T> {
       const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T> | undefined
       const processedSet: Record<number, boolean> = {}
       if (handlerSet) {
-        handlerSet.params = createEmptyParams()
+        handlerSet.params = createEmptyRecord()
         for (let i = 0, len = handlerSet.possibleKeys.length; i < len; i++) {
           const key = handlerSet.possibleKeys[i]
           const processed = processedSet[handlerSet.score]
@@ -147,7 +147,7 @@ export class Node<T> {
             const wildcardNode = node.#children['*']
             if (wildcardNode) {
               handlerSets.push(
-                ...this.#getHandlerSets(wildcardNode, method, node.#params, createEmptyParams())
+                ...this.#getHandlerSets(wildcardNode, method, node.#params, createEmptyRecord())
               )
               tempNodes.push(wildcardNode)
             }
@@ -199,7 +199,7 @@ export class Node<T> {
       })
     }
 
-    this.#params = createEmptyParams()
+    this.#params = createEmptyRecord()
 
     return [handlerSets.map(({ handler, params }) => [handler, params] as [T, Params])]
   }
