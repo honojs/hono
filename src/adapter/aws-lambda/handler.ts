@@ -325,10 +325,18 @@ export class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGat
   }
 
   protected getQueryString(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
-    return Object.entries(event.queryStringParameters || {})
-      .filter(([, value]) => value)
-      .map(([key, value]) => `${key}=${value}`)
-      .join('&')
+    // In the case of gateway Integration either queryStringParameters or multiValueQueryStringParameters can be present not both
+    if (event.multiValueQueryStringParameters) {
+      return Object.entries(event.multiValueQueryStringParameters || {})
+        .filter(([, value]) => value)
+        .map(([key, value]) => `${key}=${value.join(`&${key}=`)}`)
+        .join('&')
+    } else {
+      return Object.entries(event.queryStringParameters || {})
+        .filter(([, value]) => value)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('&')
+    }
   }
 
   protected getCookies(
