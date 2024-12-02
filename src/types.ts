@@ -89,7 +89,10 @@ export type H<
   R extends HandlerResponse<any> = any
 > = Handler<E, P, I, R> | MiddlewareHandler<E, P, I>
 
-export type NotFoundHandler<E extends Env = any> = (c: Context<E>) => Response | Promise<Response>
+export type NotFoundHandler<E extends Env = any> = (
+  c: Context<E>,
+  message?: string | object
+) => Response | Promise<Response>
 
 export interface HTTPResponseError extends Error {
   getResponse: () => Response
