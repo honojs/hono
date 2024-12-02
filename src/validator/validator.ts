@@ -89,6 +89,9 @@ export const validator = <
           !contentType ||
           !(multipartRegex.test(contentType) || urlencodedRegex.test(contentType))
         ) {
+          console.warn(
+            'Validator target is "form" but request is missing a Content-Type header containing "multipart/form-data" or "application/x-www-form-encoded"'
+          )
           break
         }
 
