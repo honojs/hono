@@ -22,9 +22,6 @@ export const regExpRouter = createHonoRouter('RegExpRouter', new RegExpRouter())
 export const trieRouter = createHonoRouter('TrieRouter', new TrieRouter())
 export const patternRouter = createHonoRouter('PatternRouter', new PatternRouter())
 export const optimizedRouters = [
-  createHonoRouter('Optimized RegExpRouter', new OptimizeRouter({
-    router: new RegExpRouter(),
-  })),
   createHonoRouter('Optimized TrieRouter', new OptimizeRouter({
     router: new TrieRouter(),
   })),
