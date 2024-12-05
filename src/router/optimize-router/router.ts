@@ -1,4 +1,5 @@
-import { METHOD_NAME_ALL, type Params, type Result, type Router } from '../../router'
+import { METHOD_NAME_ALL } from '../../router'
+import type { Params, Result, Router } from '../../router'
 import { getPattern, splitRoutingPath } from '../../utils/url'
 
 const isStaticPath = (path: string) => {
