@@ -21,12 +21,9 @@ export class OptimizeRouter<T> implements Router<T> {
     const order = this.#handlers.length - 1
 
     if (isStaticPath(path)) {
-      if (!this.#routes[path]) {
-        this.#routes[path] = Object.create(null)
-      }
-      if (!this.#routes[path][method]) {
-        this.#routes[path][method] = []
-      }
+      this.#routes[path] ||= Object.create(null)
+      this.#routes[path][method] ||= []
+
       this.#routes[path][method].push(order)
     } else {
       this.#router.add(method, path, order)
@@ -34,16 +31,18 @@ export class OptimizeRouter<T> implements Router<T> {
   }
 
   match(method: string, path: string): Result<T> {
-    const matchResult = this.#router.match(method, path)[0]
-    const staticOrder = this.#routes[path]
+    const dynamicResult = this.#router.match(method, path)
+    const matchResult = dynamicResult[0]
+    const staticResult = this.#routes[path]
 
-    if (staticOrder === undefined) {
+    if (staticResult === undefined) {
       return [
-        matchResult.map(([order, params]) => [this.#handlers[order], params]) as [T, Params][],
-      ]
+        matchResult.map(([order, params]) => [this.#handlers[order], params]),
+        dynamicResult[1],
+      ] as Result<T>
     }
 
-    const order = staticOrder[method] || staticOrder[METHOD_NAME_ALL]
+    const order = staticResult[method] || staticResult[METHOD_NAME_ALL]
 
     if (order) {
       for (const o of order) {
@@ -55,6 +54,9 @@ export class OptimizeRouter<T> implements Router<T> {
       matchResult.sort((a, b) => a[0] - b[0])
     }
 
-    return [matchResult.map(([order, params]) => [this.#handlers[order], params]) as [T, Params][]]
+    return [
+      matchResult.map(([order, params]) => [this.#handlers[order], params]),
+      dynamicResult[1],
+    ] as Result<T>
   }
 }
