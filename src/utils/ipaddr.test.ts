@@ -4,6 +4,7 @@ import {
   convertIPv6ToBinary,
   distinctRemoteAddr,
   expandIPv6,
+  isIPv6MappedIPv4,
 } from './ipaddr'
 
 describe('expandIPv6', () => {
@@ -57,5 +58,15 @@ describe('convertIPv6ToString', () => {
     ${'1234:5678:9abc:def0:1234:5678:9abc:def0'} | ${'1234:5678:9abc:def0:1234:5678:9abc:def0'}
   `('convertIPv6ToString($input) === $expected', ({ input, expected }) => {
     expect(convertIPv6BinaryToString(convertIPv6ToBinary(input))).toBe(expected)
+  })
+})
+
+describe('isIPv6MappedIPv4', () => {
+  it('Should result is valid', () => {
+    expect(isIPv6MappedIPv4('::0')).toBeFalsy()
+    expect(isIPv6MappedIPv4('::1')).toBeFalsy()
+
+    expect(isIPv6MappedIPv4('::ffff:127.0.0.1')).toBeTruthy()
+    expect(isIPv6MappedIPv4('::ffff:0.0.0.0')).toBeTruthy()
   })
 })
