@@ -62,6 +62,7 @@ export const convertIPv4ToBinary = (ipv4: string): bigint => {
  */
 export const convertIPv6ToBinary = (ipv6: string): bigint => {
   const sections = expandIPv6(ipv6).split(':')
+
   let result = 0n
   for (let i = 0; i < 8; i++) {
     result <<= 16n
@@ -110,4 +111,24 @@ export const convertIPv6BinaryToString = (ipV6: bigint): string => {
   }
 
   return sections.join(':').replace(/:{2,}/g, '::')
+}
+
+/**
+ * Check if the given IPv6 address is an IPv6-mapped IPv4 address.
+ *
+ * An IPv6-mapped IPv4 address has the form ::ffff:w.x.y.z, where w.x.y.z is the
+ * IPv4 address. This function verifies that the IPv6 address has the correct
+ * format and returns true if it is an IPv6-mapped IPv4 address.
+ *
+ * @param ipV6 The IPv6 address to check.
+ * @returns True if the address is an IPv6-mapped IPv4 address, false otherwise.
+ */
+export const isIPv6MappedIPv4 = (ipV6: string): boolean => {
+  const sections = expandIPv6(ipV6).split(':')
+
+  if (sections.length === 8 && sections[6] === 'ffff') {
+    return true
+  }
+
+  return false
 }

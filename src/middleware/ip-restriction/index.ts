@@ -11,6 +11,7 @@ import {
   convertIPv6BinaryToString,
   convertIPv6ToBinary,
   distinctRemoteAddr,
+  isIPv6MappedIPv4,
 } from '../../utils/ipaddr'
 
 /**
@@ -75,8 +76,9 @@ const buildMatcher = (
       if (type === undefined) {
         throw new TypeError(`Invalid rule: ${rule}`)
       }
+
       staticRules.add(
-        type === 'IPv4'
+        type === 'IPv4' || isIPv6MappedIPv4(rule)
           ? rule // IPv4 address is already normalized, so it is registered as is.
           : convertIPv6BinaryToString(convertIPv6ToBinary(rule)) // normalize IPv6 address (e.g. 0000:0000:0000:0000:0000:0000:0000:0001 => ::1)
       )
