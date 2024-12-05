@@ -2,17 +2,9 @@ import { METHOD_NAME_ALL } from '../../router'
 import type { Params, Result, Router } from '../../router'
 import { getPattern, splitRoutingPath } from '../../utils/url'
 
-const isStaticPath = (path: string) => {
-  const parts = splitRoutingPath(path)
+const emptyParams = Object.create(null)
 
-  for (const part of parts) {
-    if (getPattern(part)) {
-      return false
-    }
-  }
-
-  return true
-}
+const isStaticPath = (path: string) => splitRoutingPath(path).every((p) => getPattern(p) === null)
 
 export class OptimizeRouter<T> implements Router<T> {
   name: string = 'OptimizeRouter'
@@ -55,7 +47,7 @@ export class OptimizeRouter<T> implements Router<T> {
 
     if (order) {
       for (const o of order) {
-        matchResult.push([o, Object.create(null)])
+        matchResult.push([o, emptyParams])
       }
     }
 
