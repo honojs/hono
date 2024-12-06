@@ -52,7 +52,6 @@ export const getPattern = (label: string): Pattern | null => {
   // *            => wildcard
   // :id{[0-9]+}  => ([0-9]+)
   // :id          => (.+)
-  //const name = ''
 
   if (label === '*') {
     return '*'
@@ -61,11 +60,7 @@ export const getPattern = (label: string): Pattern | null => {
   const match = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
   if (match) {
     if (!patternCache[label]) {
-      if (match[2]) {
-        patternCache[label] = [label, match[1], new RegExp('^' + match[2] + '$')]
-      } else {
-        patternCache[label] = [label, match[1], true]
-      }
+      patternCache[label] = [label, match[1], match[2] ? new RegExp('^' + match[2] + '$') : true]
     }
 
     return patternCache[label]

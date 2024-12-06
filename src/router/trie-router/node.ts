@@ -13,27 +13,28 @@ type HandlerParamsSet<T> = HandlerSet<T> & {
   params: Record<string, string>
 }
 
+const createEmptyRecord = () => Object.create(null)
+
+const emptyParams = createEmptyRecord()
+
 export class Node<T> {
-  #methods: Record<string, HandlerSet<T>>[]
+  #methods: Record<string, HandlerSet<T>>[] = []
 
-  #children: Record<string, Node<T>>
-  #patterns: Pattern[]
+  #children: Record<string, Node<T>> = createEmptyRecord()
+  #patterns: Pattern[] = []
   #order: number = 0
-  #params: Record<string, string> = Object.create(null)
+  #params: Record<string, string> = createEmptyRecord()
 
-  constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
-    this.#children = children || Object.create(null)
-    this.#methods = []
+  constructor(method?: string, handler?: T) {
     if (method && handler) {
-      const m: Record<string, HandlerSet<T>> = Object.create(null)
+      const m: Record<string, HandlerSet<T>> = createEmptyRecord()
       m[method] = { handler, possibleKeys: [], score: 0 }
       this.#methods = [m]
     }
-    this.#patterns = []
   }
 
   insert(method: string, path: string, handler: T): Node<T> {
-    this.#order = ++this.#order
+    this.#order++
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let curNode: Node<T> = this
@@ -43,10 +44,10 @@ export class Node<T> {
 
     for (let i = 0, len = parts.length; i < len; i++) {
       const p: string = parts[i]
+      const pattern = getPattern(p)
 
-      if (Object.keys(curNode.#children).includes(p)) {
+      if (curNode.#children[p]) {
         curNode = curNode.#children[p]
-        const pattern = getPattern(p)
         if (pattern) {
           possibleKeys.push(pattern[1])
         }
@@ -55,7 +56,6 @@ export class Node<T> {
 
       curNode.#children[p] = new Node()
 
-      const pattern = getPattern(p)
       if (pattern) {
         curNode.#patterns.push(pattern)
         possibleKeys.push(pattern[1])
@@ -63,7 +63,7 @@ export class Node<T> {
       curNode = curNode.#children[p]
     }
 
-    const m: Record<string, HandlerSet<T>> = Object.create(null)
+    const m: Record<string, HandlerSet<T>> = createEmptyRecord()
 
     const handlerSet: HandlerSet<T> = {
       handler,
@@ -77,7 +77,6 @@ export class Node<T> {
     return curNode
   }
 
-  // getHandlerSets
   #getHandlerSets(
     node: Node<T>,
     method: string,
@@ -87,10 +86,10 @@ export class Node<T> {
     const handlerSets: HandlerParamsSet<T>[] = []
     for (let i = 0, len = node.#methods.length; i < len; i++) {
       const m = node.#methods[i]
-      const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>
+      const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T> | undefined
       const processedSet: Record<number, boolean> = {}
-      if (handlerSet !== undefined) {
-        handlerSet.params = Object.create(null)
+      if (handlerSet) {
+        handlerSet.params = createEmptyRecord()
         for (let i = 0, len = handlerSet.possibleKeys.length; i < len; i++) {
           const key = handlerSet.possibleKeys[i]
           const processed = processedSet[handlerSet.score]
@@ -107,7 +106,6 @@ export class Node<T> {
 
   search(method: string, path: string): [[T, Params][]] {
     const handlerSets: HandlerParamsSet<T>[] = []
-    this.#params = Object.create(null)
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const curNode: Node<T> = this
@@ -129,17 +127,10 @@ export class Node<T> {
             // '/hello/*' => match '/hello'
             if (nextNode.#children['*']) {
               handlerSets.push(
-                ...this.#getHandlerSets(
-                  nextNode.#children['*'],
-                  method,
-                  node.#params,
-                  Object.create(null)
-                )
+                ...this.#getHandlerSets(nextNode.#children['*'], method, node.#params, emptyParams)
               )
             }
-            handlerSets.push(
-              ...this.#getHandlerSets(nextNode, method, node.#params, Object.create(null))
-            )
+            handlerSets.push(...this.#getHandlerSets(nextNode, method, node.#params, emptyParams))
           } else {
             tempNodes.push(nextNode)
           }
@@ -153,12 +144,12 @@ export class Node<T> {
           // Wildcard
           // '/hello/*/foo' => match /hello/bar/foo
           if (pattern === '*') {
-            const astNode = node.#children['*']
-            if (astNode) {
+            const wildcardNode = node.#children['*']
+            if (wildcardNode) {
               handlerSets.push(
-                ...this.#getHandlerSets(astNode, method, node.#params, Object.create(null))
+                ...this.#getHandlerSets(wildcardNode, method, node.#params, createEmptyRecord())
               )
-              tempNodes.push(astNode)
+              tempNodes.push(wildcardNode)
             }
             continue
           }
@@ -173,13 +164,16 @@ export class Node<T> {
 
           // `/js/:filename{[a-z]+.js}` => match /js/chunk/123.js
           const restPathString = parts.slice(i).join('/')
-          if (matcher instanceof RegExp && matcher.test(restPathString)) {
+
+          const isMatcher = matcher instanceof RegExp
+
+          if (isMatcher && matcher.test(restPathString)) {
             params[name] = restPathString
             handlerSets.push(...this.#getHandlerSets(child, method, node.#params, params))
             continue
           }
 
-          if (matcher === true || matcher.test(part)) {
+          if (!isMatcher || matcher.test(part)) {
             params[name] = part
             if (isLast) {
               handlerSets.push(...this.#getHandlerSets(child, method, params, node.#params))
@@ -204,6 +198,8 @@ export class Node<T> {
         return a.score - b.score
       })
     }
+
+    this.#params = createEmptyRecord()
 
     return [handlerSets.map(({ handler, params }) => [handler, params] as [T, Params])]
   }

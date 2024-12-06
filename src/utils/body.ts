@@ -91,11 +91,12 @@ interface ParseBody {
     options?: Partial<ParseBodyOptions>
   ): Promise<T>
 }
-export const parseBody: ParseBody = async (
-  request: HonoRequest | Request,
-  options = Object.create(null)
-) => {
-  const { all = false, dot = false } = options
+export const parseBody: ParseBody = async (request: HonoRequest | Request, options = {}) => {
+  const { all, dot } = {
+    all: false,
+    dot: false,
+    ...options,
+  }
 
   const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
   const contentType = headers.get('Content-Type')
