@@ -15,6 +15,7 @@ type HandlerParamsSet<T> = HandlerSet<T> & {
 
 const emptyParams = Object.create(null)
 const optimizedEmptyParams = (() => {
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   const E = function () {}
   E.prototype = emptyParams
   return E
