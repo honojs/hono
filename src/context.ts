@@ -9,6 +9,7 @@ import type {
   RouterRoute,
   TypedResponse,
 } from './types'
+import { newHeaders, newResponse } from './utils/constructors'
 import type { ResponseHeader } from './utils/headers'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { RedirectStatusCode, StatusCode } from './utils/http-status'
@@ -386,7 +387,7 @@ export class Context<
    */
   get res(): Response {
     this.#isFresh = false
-    return (this.#res ||= new Response('404 Not Found', { status: 404 }))
+    return (this.#res ||= newResponse('404 Not Found', { status: 404 }))
   }
 
   /**
@@ -415,7 +416,7 @@ export class Context<
       } catch (e) {
         if (e instanceof TypeError && e.message.includes('immutable')) {
           // `_res` is immutable (probably a response from a fetch API), so retry with a new response.
-          this.res = new Response(_res.body, {
+          this.res = newResponse(_res.body, {
             headers: _res.headers,
             status: _res.status,
           })
@@ -525,7 +526,7 @@ export class Context<
     if (options?.append) {
       if (!this.#headers) {
         this.#isFresh = false
-        this.#headers = new Headers(this.#preparedHeaders)
+        this.#headers = newHeaders(this.#preparedHeaders)
         this.#preparedHeaders = {}
       }
       this.#headers.append(name, value)
@@ -630,13 +631,13 @@ export class Context<
   ): Response {
     // Optimized
     if (this.#isFresh && !headers && !arg && this.#status === 200) {
-      return new Response(data, {
+      return newResponse(data, {
         headers: this.#preparedHeaders,
       })
     }
 
     if (arg && typeof arg !== 'number') {
-      const header = new Headers(arg.headers)
+      const header = newHeaders(arg.headers)
       if (this.#headers) {
         // If the header is set by c.header() and arg.headers, c.header() will be prioritized.
         this.#headers.forEach((v, k) => {
@@ -648,7 +649,7 @@ export class Context<
         })
       }
       const headers = setHeaders(header, this.#preparedHeaders)
-      return new Response(data, {
+      return newResponse(data, {
         headers,
         status: arg.status ?? this.#status,
       })
@@ -657,7 +658,7 @@ export class Context<
     const status = typeof arg === 'number' ? arg : this.#status
     this.#preparedHeaders ??= {}
 
-    this.#headers ??= new Headers()
+    this.#headers ??= newHeaders()
     setHeaders(this.#headers, this.#preparedHeaders)
 
     if (this.#res) {
@@ -683,7 +684,7 @@ export class Context<
       }
     }
 
-    return new Response(data, {
+    return newResponse(data, {
       status,
       headers: this.#headers,
     })
@@ -744,11 +745,12 @@ export class Context<
     if (!this.#preparedHeaders) {
       if (this.#isFresh && !headers && !arg) {
         // @ts-expect-error `Response` due to missing some types-only keys
-        return new Response(text)
+        return newResponse(text)
       }
       this.#preparedHeaders = {}
     }
     this.#preparedHeaders['content-type'] = TEXT_PLAIN
+
     // @ts-expect-error `Response` due to missing some types-only keys
     return typeof arg === 'number'
       ? this.#newResponse(text, arg, headers)
@@ -824,7 +826,7 @@ export class Context<
     location: string | URL,
     status?: T
   ): Response & TypedResponse<undefined, T, 'redirect'> => {
-    this.#headers ??= new Headers()
+    this.#headers ??= newHeaders()
     this.#headers.set('Location', String(location))
     return this.newResponse(null, status ?? 302) as any
   }
@@ -842,7 +844,7 @@ export class Context<
    * ```
    */
   notFound = (): Response | Promise<Response> => {
-    this.#notFoundHandler ??= () => new Response()
+    this.#notFoundHandler ??= () => newResponse()
     return this.#notFoundHandler(this)
   }
 }
