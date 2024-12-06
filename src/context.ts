@@ -258,6 +258,8 @@ interface ResponseInit {
 
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
+export const APPLICATION_JSON = 'application/json; charset=UTF-8'
+
 /**
  * Sets the headers of a response.
  *
@@ -777,7 +779,7 @@ export class Context<
   ): JSONRespondReturn<T, U> => {
     const body = JSON.stringify(object)
     this.#preparedHeaders ??= {}
-    this.#preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
+    this.#preparedHeaders['content-type'] = APPLICATION_JSON
     /* eslint-disable @typescript-eslint/no-explicit-any */
     return (
       typeof arg === 'number' ? this.#newResponse(body, arg, headers) : this.#newResponse(body, arg)
