@@ -13,6 +13,15 @@ type HandlerParamsSet<T> = HandlerSet<T> & {
   params: Record<string, string>
 }
 
+const emptyParams = Object.create(null)
+const OptimizedEmptyParams = (() => {
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  const E = function () {}
+  E.prototype = emptyParams
+  return E
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+})() as unknown as { new (): any }
+
 export class Node<T> {
   #methods: Record<string, HandlerSet<T>>[]
 
@@ -90,7 +99,7 @@ export class Node<T> {
       const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>
       const processedSet: Record<number, boolean> = {}
       if (handlerSet !== undefined) {
-        handlerSet.params = Object.create(null)
+        handlerSet.params = new OptimizedEmptyParams()
         for (let i = 0, len = handlerSet.possibleKeys.length; i < len; i++) {
           const key = handlerSet.possibleKeys[i]
           const processed = processedSet[handlerSet.score]
@@ -107,7 +116,7 @@ export class Node<T> {
 
   search(method: string, path: string): [[T, Params][]] {
     const handlerSets: HandlerParamsSet<T>[] = []
-    this.#params = Object.create(null)
+    this.#params = new OptimizedEmptyParams()
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const curNode: Node<T> = this
@@ -129,17 +138,10 @@ export class Node<T> {
             // '/hello/*' => match '/hello'
             if (nextNode.#children['*']) {
               handlerSets.push(
-                ...this.#getHandlerSets(
-                  nextNode.#children['*'],
-                  method,
-                  node.#params,
-                  Object.create(null)
-                )
+                ...this.#getHandlerSets(nextNode.#children['*'], method, node.#params, emptyParams)
               )
             }
-            handlerSets.push(
-              ...this.#getHandlerSets(nextNode, method, node.#params, Object.create(null))
-            )
+            handlerSets.push(...this.#getHandlerSets(nextNode, method, node.#params, emptyParams))
           } else {
             tempNodes.push(nextNode)
           }
@@ -155,9 +157,7 @@ export class Node<T> {
           if (pattern === '*') {
             const astNode = node.#children['*']
             if (astNode) {
-              handlerSets.push(
-                ...this.#getHandlerSets(astNode, method, node.#params, Object.create(null))
-              )
+              handlerSets.push(...this.#getHandlerSets(astNode, method, node.#params, emptyParams))
               tempNodes.push(astNode)
             }
             continue
