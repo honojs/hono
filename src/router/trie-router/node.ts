@@ -19,6 +19,7 @@ const optimizedEmptyParams = (() => {
   const E = function () {}
   E.prototype = emptyParams
   return E
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 })() as unknown as { new (): any }
 
 export class Node<T> {
