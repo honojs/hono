@@ -14,7 +14,7 @@ type HandlerParamsSet<T> = HandlerSet<T> & {
 }
 
 const emptyParams = Object.create(null)
-const optimizedEmptyParams = (() => {
+const OptimizedEmptyParams = (() => {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const E = function () {}
   E.prototype = emptyParams
@@ -99,7 +99,7 @@ export class Node<T> {
       const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>
       const processedSet: Record<number, boolean> = {}
       if (handlerSet !== undefined) {
-        handlerSet.params = new optimizedEmptyParams()
+        handlerSet.params = new OptimizedEmptyParams()
         for (let i = 0, len = handlerSet.possibleKeys.length; i < len; i++) {
           const key = handlerSet.possibleKeys[i]
           const processed = processedSet[handlerSet.score]
@@ -116,7 +116,7 @@ export class Node<T> {
 
   search(method: string, path: string): [[T, Params][]] {
     const handlerSets: HandlerParamsSet<T>[] = []
-    this.#params = new optimizedEmptyParams()
+    this.#params = new OptimizedEmptyParams()
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const curNode: Node<T> = this
