@@ -29,7 +29,7 @@ type HeaderRecord =
 /**
  * Data type can be a string, ArrayBuffer, or ReadableStream or Buffer.
  */
-export type Data = string | ArrayBuffer | ReadableStream | Buffer
+export type Data = string | ArrayBuffer | ReadableStream | Uint8Array
 
 /**
  * Interface for the execution context in a web worker or similar environment.
