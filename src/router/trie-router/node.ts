@@ -83,7 +83,7 @@ export class Node<T> {
   #getHandlerSets(
     node: Node<T>,
     method: string,
-    nodeParams?: Record<string, string>,
+    nodeParams: Record<string, string>,
     params?: Record<string, string>
   ): HandlerParamsSet<T>[] {
     const handlerSets: HandlerParamsSet<T>[] = []
@@ -94,7 +94,7 @@ export class Node<T> {
       if (handlerSet !== undefined) {
         handlerSet.params = Object.create(null)
         handlerSets.push(handlerSet)
-        if (nodeParams) {
+        if (nodeParams !== emptyParams || (params && params !== emptyParams)) {
           for (let i = 0, len = handlerSet.possibleKeys.length; i < len; i++) {
             const key = handlerSet.possibleKeys[i]
             const processed = processedSet[handlerSet.score]
@@ -131,9 +131,11 @@ export class Node<T> {
           if (isLast) {
             // '/hello/*' => match '/hello'
             if (nextNode.#children['*']) {
-              handlerSets.push(...this.#getHandlerSets(nextNode.#children['*'], method))
+              handlerSets.push(
+                ...this.#getHandlerSets(nextNode.#children['*'], method, node.#params)
+              )
             }
-            handlerSets.push(...this.#getHandlerSets(nextNode, method))
+            handlerSets.push(...this.#getHandlerSets(nextNode, method, node.#params))
           } else {
             tempNodes.push(nextNode)
           }
