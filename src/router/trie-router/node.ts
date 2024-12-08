@@ -13,13 +13,15 @@ type HandlerParamsSet<T> = HandlerSet<T> & {
   params: Record<string, string>
 }
 
+const emptyParams = Object.create(null)
+
 export class Node<T> {
   #methods: Record<string, HandlerSet<T>>[]
 
   #children: Record<string, Node<T>>
   #patterns: Pattern[]
   #order: number = 0
-  #params: Record<string, string> = Object.create(null)
+  #params: Record<string, string> = emptyParams
 
   constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
     this.#children = children || Object.create(null)
@@ -107,7 +109,7 @@ export class Node<T> {
 
   search(method: string, path: string): [[T, Params][]] {
     const handlerSets: HandlerParamsSet<T>[] = []
-    this.#params = Object.create(null)
+    this.#params = emptyParams
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const curNode: Node<T> = this
@@ -147,8 +149,7 @@ export class Node<T> {
 
         for (let k = 0, len3 = node.#patterns.length; k < len3; k++) {
           const pattern = node.#patterns[k]
-
-          const params = { ...node.#params }
+          const params = node.#params === emptyParams ? {} : { ...node.#params }
 
           // Wildcard
           // '/hello/*/foo' => match /hello/bar/foo
