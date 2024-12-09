@@ -841,8 +841,8 @@ export class Context<
    * })
    * ```
    */
-  notFound = (): Response | Promise<Response> => {
+  notFound = (message?: string | object): Response | Promise<Response> => {
     this.#notFoundHandler ??= () => new Response()
-    return this.#notFoundHandler(this)
+    return this.#notFoundHandler(this, message)
   }
 }
