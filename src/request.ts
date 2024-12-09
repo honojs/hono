@@ -361,6 +361,10 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return this.raw.method
   }
 
+  get matchResult(): Result<[unknown, RouterRoute]> {
+    return this.#matchResult
+  }
+
   /**
    * `.matchedRoutes()` can return a matched route in the handler
    *
