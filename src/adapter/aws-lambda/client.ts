@@ -3,7 +3,7 @@ import type { FormValue, ValidationTargets } from '../../types'
 import { serialize } from '../../utils/cookie'
 import type { UnionToIntersection } from '../../utils/types'
 import type { Client, ClientRequestOptions } from '../../client/types'
-import { createProxy, } from '../../client/client'
+import { createProxy } from '../../client/client'
 import {
   buildSearchParams,
   deepMerge,
@@ -27,7 +27,7 @@ export const calculateSHA256 = async (message: string): Promise<string> => {
   return hashHex;
 };
 
-class ClientRequestImpl {
+class LambdaClientRequestImpl {
   private url: string
   private method: string
   private queryParams: URLSearchParams | undefined = undefined
@@ -196,7 +196,7 @@ export const hlc = <T extends Hono<any, any, any>>(
       return establishWebSocket(targetUrl.toString())
     }
 
-    const req = new ClientRequestImpl(url, method)
+    const req = new LambdaClientRequestImpl(url, method)
     if (method) {
       options ??= {}
       const args = deepMerge<ClientRequestOptions>(options, { ...opts.args[1] })
