@@ -1,9 +1,9 @@
-import crypto from 'node:crypto'
 import type { Hono } from '../../hono'
 import type { FormValue, ValidationTargets } from '../../types'
 import { serialize } from '../../utils/cookie'
 import type { UnionToIntersection } from '../../utils/types'
-import type { Callback, Client, ClientRequestOptions } from '../../client/types'
+import type { Client, ClientRequestOptions } from '../../client/types'
+import { createProxy, } from '../../client/client'
 import {
   buildSearchParams,
   deepMerge,
@@ -13,8 +13,7 @@ import {
   replaceUrlProtocol,
 } from '../../client/utils'
 
-// --- 追加：SHA-256計算関数 ---
-const calculateSHA256 = async (message: string): Promise<string> => {
+export const calculateSHA256 = async (message: string): Promise<string> => {
   const msgBuffer = new TextEncoder().encode(message);
   const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
   const hashBytes = new Uint8Array(hashBuffer);
@@ -27,24 +26,6 @@ const calculateSHA256 = async (message: string): Promise<string> => {
 
   return hashHex;
 };
-
-const createProxy = (callback: Callback, path: string[]) => {
-  const proxy: unknown = new Proxy(() => {}, {
-    get(_obj, key) {
-      if (typeof key !== 'string' || key === 'then') {
-        return undefined
-      }
-      return createProxy(callback, [...path, key])
-    },
-    apply(_1, _2, args) {
-      return callback({
-        path,
-        args,
-      })
-    },
-  })
-  return proxy
-}
 
 class ClientRequestImpl {
   private url: string
@@ -137,6 +118,7 @@ class ClientRequestImpl {
     })
   }
 }
+
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const hlc = <T extends Hono<any, any, any>>(

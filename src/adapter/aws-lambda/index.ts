@@ -4,6 +4,7 @@
  */
 
 export { handle, streamHandle } from './handler'
+export { hlc } from './client'
 export type { APIGatewayProxyResult, LambdaEvent } from './handler'
 export type {
   ApiGatewayRequestContext,

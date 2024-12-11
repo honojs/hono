@@ -12,7 +12,7 @@ import {
   replaceUrlProtocol,
 } from './utils'
 
-const createProxy = (callback: Callback, path: string[]) => {
+export const createProxy = (callback: Callback, path: string[]) => {
   const proxy: unknown = new Proxy(() => {}, {
     get(_obj, key) {
       if (typeof key !== 'string' || key === 'then') {
