@@ -1,9 +1,5 @@
-import type { Hono } from '../../hono'
-import type { FormValue, ValidationTargets } from '../../types'
-import { serialize } from '../../utils/cookie'
-import type { UnionToIntersection } from '../../utils/types'
-import type { Client, ClientRequestOptions } from '../../client/types'
 import { createProxy } from '../../client/client'
+import type { Client, ClientRequestOptions } from '../../client/types'
 import {
   buildSearchParams,
   deepMerge,
@@ -12,20 +8,24 @@ import {
   replaceUrlParam,
   replaceUrlProtocol,
 } from '../../client/utils'
+import type { Hono } from '../../hono'
+import type { FormValue, ValidationTargets } from '../../types'
+import { serialize } from '../../utils/cookie'
+import type { UnionToIntersection } from '../../utils/types'
 
 export const calculateSHA256 = async (message: string): Promise<string> => {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
-  const hashBytes = new Uint8Array(hashBuffer);
+  const msgBuffer = new TextEncoder().encode(message)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
+  const hashBytes = new Uint8Array(hashBuffer)
 
-  let hashHex = "";
+  let hashHex = ''
   for (let i = 0; i < hashBytes.length; i++) {
-    const b = hashBytes[i];
-    hashHex += b < 16 ? '0' + b.toString(16) : b.toString(16);
+    const b = hashBytes[i]
+    hashHex += b < 16 ? '0' + b.toString(16) : b.toString(16)
   }
 
-  return hashHex;
-};
+  return hashHex
+}
 
 class LambdaClientRequestImpl {
   private url: string
@@ -93,7 +93,11 @@ class LambdaClientRequestImpl {
       headerValues['Content-Type'] = this.cType
     }
 
-    if ((methodUpperCase === 'POST' || methodUpperCase === 'PUT') && this.rBody && typeof this.rBody === 'string') {
+    if (
+      (methodUpperCase === 'POST' || methodUpperCase === 'PUT') &&
+      this.rBody &&
+      typeof this.rBody === 'string'
+    ) {
       const hash = await calculateSHA256(this.rBody)
       headerValues['x-amz-content-sha256'] = hash
     }
@@ -118,7 +122,6 @@ class LambdaClientRequestImpl {
     })
   }
 }
-
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const hlc = <T extends Hono<any, any, any>>(

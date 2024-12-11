@@ -1,22 +1,22 @@
-// src/adapter/aws-lambda/client.test.ts
-
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+
 import { HttpResponse, http } from 'msw'
 import { setupServer } from 'msw/node'
+import { expect, beforeAll, afterAll, afterEach, describe, it } from 'vitest'
 import { Hono } from '../../hono'
 import { hlc, calculateSHA256 } from './client'
-import { expect, beforeAll, afterAll, afterEach, describe, it } from 'vitest'
 
-const app = new Hono().post('/hash-check', async (c) => {
-  const payload = await c.req.json()
-  const sha256 = c.req.header('x-amz-content-sha256')
-  return c.json({ receivedHash: sha256, payload }, 200)
-}).put('/hash-check', async (c) => {
-  const payload = await c.req.json()
-  const sha256 = c.req.header('x-amz-content-sha256')
-  return c.json({ receivedHash: sha256, payload }, 200)
-})
+const app = new Hono()
+  .post('/hash-check', async (c) => {
+    const payload = await c.req.json()
+    const sha256 = c.req.header('x-amz-content-sha256')
+    return c.json({ receivedHash: sha256, payload }, 200)
+  })
+  .put('/hash-check', async (c) => {
+    const payload = await c.req.json()
+    const sha256 = c.req.header('x-amz-content-sha256')
+    return c.json({ receivedHash: sha256, payload }, 200)
+  })
 
 const server = setupServer(
   http.post('http://localhost/hash-check', async ({ request }) => {
@@ -28,7 +28,10 @@ const server = setupServer(
     if (sha256 === expectedHash) {
       return HttpResponse.json({ result: 'ok', receivedHash: sha256, payload })
     } else {
-      return HttpResponse.json({ result: 'mismatch', receivedHash: sha256, expectedHash }, { status: 400 })
+      return HttpResponse.json(
+        { result: 'mismatch', receivedHash: sha256, expectedHash },
+        { status: 400 }
+      )
     }
   }),
 
@@ -40,7 +43,10 @@ const server = setupServer(
     if (sha256 === expectedHash) {
       return HttpResponse.json({ result: 'ok', receivedHash: sha256, payload })
     } else {
-      return HttpResponse.json({ result: 'mismatch', receivedHash: sha256, expectedHash }, { status: 400 })
+      return HttpResponse.json(
+        { result: 'mismatch', receivedHash: sha256, expectedHash },
+        { status: 400 }
+      )
     }
   })
 )
