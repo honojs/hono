@@ -1,6 +1,6 @@
 import { METHOD_NAME_ALL } from '../../router'
-import type { Params, Result, Router } from '../../router'
-import { getPattern, splitRoutingPath } from '../../utils/url'
+import type { ParamIndexMap, Params, Result, Router } from '../../router'
+import { checkOptionalParameter, getPattern, splitRoutingPath } from '../../utils/url'
 
 const emptyParams = Object.create(null)
 
@@ -17,6 +17,14 @@ export class OptimizeRouter<T> implements Router<T> {
   }
 
   add(method: string, path: string, handler: T) {
+    const results = checkOptionalParameter(path)
+    if (results) {
+      for (let i = 0, len = results.length; i < len; i++) {
+        this.add(method, results[i], handler)
+      }
+      return
+    }
+
     this.#handlers.push(handler)
     const order = this.#handlers.length - 1
 
@@ -45,9 +53,7 @@ export class OptimizeRouter<T> implements Router<T> {
     const order = staticResult[method] || staticResult[METHOD_NAME_ALL]
 
     if (order) {
-      for (const o of order) {
-        matchResult.push([o, emptyParams])
-      }
+      matchResult.push(...order.map<[number, Params] & [number, ParamIndexMap]>((o) => [o, emptyParams]))
     }
 
     if (matchResult.length > 1) {
