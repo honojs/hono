@@ -11,6 +11,7 @@ import type {
 } from './types'
 import { parseBody } from './utils/body'
 import type { BodyData, ParseBodyOptions } from './utils/body'
+import { newResponse } from './utils/constructors'
 import type { CustomHeader, RequestHeader } from './utils/headers'
 import type { Simplify, UnionToIntersection } from './utils/types'
 import { decodeURIComponent_, getQueryParam, getQueryParams, tryDecode } from './utils/url'
@@ -222,7 +223,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
         if (anyCachedKey === 'json') {
           body = JSON.stringify(body)
         }
-        return new Response(body)[key]()
+        return newResponse(body)[key]()
       })
     }
 
