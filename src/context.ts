@@ -777,7 +777,7 @@ export class Context<
   ): JSONRespondReturn<T, U> => {
     const body = JSON.stringify(object)
     this.#preparedHeaders ??= {}
-    this.#preparedHeaders['content-type'] = 'application/json; charset=UTF-8'
+    this.#preparedHeaders['content-type'] = 'application/json'
     /* eslint-disable @typescript-eslint/no-explicit-any */
     return (
       typeof arg === 'number' ? this.#newResponse(body, arg, headers) : this.#newResponse(body, arg)

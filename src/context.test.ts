@@ -51,7 +51,7 @@ describe('Context', () => {
   it('c.json()', async () => {
     const res = c.json({ message: 'Hello' }, 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
     const text = await res.text()
     expect(text).toBe('{"message":"Hello"}')
     expect(res.headers.get('X-Custom')).toBe('Message')
@@ -182,7 +182,7 @@ describe('Context', () => {
     c.status(404)
     const res = c.json({ hono: 'great app' })
     expect(res.status).toBe(404)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
     const obj: { [key: string]: string } = await res.json()
     expect(obj['hono']).toBe('great app')
   })

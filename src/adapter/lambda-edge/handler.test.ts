@@ -13,7 +13,7 @@ describe('isContentTypeBinary', () => {
     expect(isContentTypeBinary('text/javascript')).toBe(false)
     expect(isContentTypeBinary('application/json')).toBe(false)
     expect(isContentTypeBinary('application/ld+json')).toBe(false)
-    expect(isContentTypeBinary('application/json; charset=UTF-8')).toBe(false)
+    expect(isContentTypeBinary('application/json')).toBe(false)
   })
 })
 
