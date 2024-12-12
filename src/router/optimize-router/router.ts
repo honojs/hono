@@ -11,11 +11,13 @@ type InternalHandler<T> = T & {
 }
 type InternalRouter<T> = Router<InternalHandler<T>>
 
+type Route<T> = [InternalHandler<T>, Params] & [InternalHandler<T>, ParamIndexMap]
+
 export class OptimizeRouter<T> implements Router<T> {
   name: string = 'OptimizeRouter'
   #order = 0
   #router: InternalRouter<T>
-  #routes: Record<string, Record<string, [InternalHandler<T>, Params][]>> = Object.create(null)
+  #routes: Record<string, Record<string, Route<T>[]>> = Object.create(null)
 
   constructor(init: { router: InternalRouter<T> }) {
     this.#router = init.router
@@ -30,8 +32,16 @@ export class OptimizeRouter<T> implements Router<T> {
       return
     }
 
-    handler.order = this.#order
-    this.#order++
+    if (typeof handler !== 'function' && typeof handler !== 'object') {
+      handler = Object(handler)
+      this.#transformMatchResult = (matchResult) => {
+          for (const i in matchResult[0]) {
+            matchResult[0][i][0] = matchResult[0][i][0].valueOf() as InternalHandler<T>
+          }
+      }
+    }
+
+   handler.order = ++this.#order
 
     if (isStaticPath(path)) {
       this.#routes[path] ||= Object.create(null)
@@ -56,7 +66,7 @@ export class OptimizeRouter<T> implements Router<T> {
     if (staticHandlers) {
       for (const staticHandler of staticHandlers) {
         matchResult[0].push(
-          staticHandler as [InternalHandler<T>, Params] & [InternalHandler<T>, ParamIndexMap]
+          staticHandler
         )
       }
     }
@@ -65,6 +75,10 @@ export class OptimizeRouter<T> implements Router<T> {
       matchResult[0].sort((a, b) => a[0].order - b[0].order)
     }
 
+    this.#transformMatchResult(matchResult)
+
     return matchResult as Result<T>
   }
+
+  #transformMatchResult = (() => {}) as (matchResult: Result<InternalHandler<T>>) => void
 }
