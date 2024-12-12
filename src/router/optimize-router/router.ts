@@ -6,17 +6,22 @@ const emptyParams = Object.create(null)
 
 const isStaticPath = (path: string) => splitRoutingPath(path).every((p) => getPattern(p) === null)
 
+type InternalHandler<T> = T & {
+  order: number
+}
+type InternalRouter<T> = Router<InternalHandler<T>>
+
 export class OptimizeRouter<T> implements Router<T> {
   name: string = 'OptimizeRouter'
-  #router: Router<number>
-  #handlers: T[] = []
-  #routes: Record<string, Record<string, number[]>> = Object.create(null)
+  #order = 0
+  #router: InternalRouter<T>
+  #routes: Record<string, Record<string, [InternalHandler<T>, Params][]>> = Object.create(null)
 
-  constructor(init: { router: Router<number> }) {
+  constructor(init: { router: InternalRouter<T> }) {
     this.#router = init.router
   }
 
-  add(method: string, path: string, handler: T) {
+  add(method: string, path: string, handler: InternalHandler<T>) {
     const results = checkOptionalParameter(path)
     if (results) {
       for (let i = 0, len = results.length; i < len; i++) {
@@ -25,44 +30,41 @@ export class OptimizeRouter<T> implements Router<T> {
       return
     }
 
-    this.#handlers.push(handler)
-    const order = this.#handlers.length - 1
+    handler.order = this.#order
+    this.#order++
 
     if (isStaticPath(path)) {
       this.#routes[path] ||= Object.create(null)
       this.#routes[path][method] ||= []
 
-      this.#routes[path][method].push(order)
+      this.#routes[path][method].push([handler, emptyParams])
     } else {
-      this.#router.add(method, path, order)
+      this.#router.add(method, path, handler)
     }
   }
 
   match(method: string, path: string): Result<T> {
-    const dynamicResult = this.#router.match(method, path)
-    const matchResult = dynamicResult[0]
+    const matchResult = this.#router.match(method, path)
     const staticResult = this.#routes[path]
 
     if (staticResult === undefined) {
-      return [
-        matchResult.map(([order, params]) => [this.#handlers[order], params]),
-        dynamicResult[1],
-      ] as Result<T>
+      return matchResult as Result<T>
     }
 
-    const order = staticResult[method] || staticResult[METHOD_NAME_ALL]
+    const staticHandlers = staticResult[method] || staticResult[METHOD_NAME_ALL]
 
-    if (order) {
-      matchResult.push(...order.map<[number, Params] & [number, ParamIndexMap]>((o) => [o, emptyParams]))
+    if (staticHandlers) {
+      for (const staticHandler of staticHandlers) {
+        matchResult[0].push(
+          staticHandler as [InternalHandler<T>, Params] & [InternalHandler<T>, ParamIndexMap]
+        )
+      }
     }
 
     if (matchResult.length > 1) {
-      matchResult.sort((a, b) => a[0] - b[0])
+      matchResult[0].sort((a, b) => a[0].order - b[0].order)
     }
 
-    return [
-      matchResult.map(([order, params]) => [this.#handlers[order], params]),
-      dynamicResult[1],
-    ] as Result<T>
+    return matchResult as Result<T>
   }
 }
