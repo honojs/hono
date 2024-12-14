@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.6.13",
+  "version": "4.6.14",
   "description": "Web framework built on Web Standards",
   "main": "dist/cjs/index.js",
   "type": "module",
