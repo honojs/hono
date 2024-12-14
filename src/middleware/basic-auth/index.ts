@@ -120,7 +120,7 @@ export const basicAuth = (
             status,
             headers: {
               ...headers,
-              'content-type': 'application/json; charset=UTF-8',
+              'content-type': 'application/json',
             },
           })
     throw new HTTPException(status, { res })
