@@ -72,8 +72,7 @@ export const validator = <
     switch (target) {
       case 'json':
         if (!contentType || !jsonRegex.test(contentType)) {
-          const message = 'missing Content-Type header "application/json"'
-          throw new HTTPException(415, { message })
+          throw new HTTPException(415, { message: ERROR_MESSAGE_JSON })
           break
         }
         try {
