@@ -63,7 +63,7 @@ export const validator = <
     OutputType,
     E,
     P2
-  >,
+  >
 ): MiddlewareHandler<E, P, V> => {
   return async (c, next) => {
     let value = {}
