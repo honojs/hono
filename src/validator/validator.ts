@@ -63,7 +63,8 @@ export const validator = <
     OutputType,
     E,
     P2
-  >
+  >,
+  { warn = true } = {}
 ): MiddlewareHandler<E, P, V> => {
   return async (c, next) => {
     let value = {}
@@ -72,9 +73,11 @@ export const validator = <
     switch (target) {
       case 'json':
         if (!contentType || !jsonRegex.test(contentType)) {
-          console.warn(
-            'Validator target is "json" but request is missing a Content-Type header containing "application/json"'
-          )
+          if (warn) {
+            console.warn(
+              'Validator target is "json" but request is missing a Content-Type header containing "application/json"'
+            )
+          }
           break
         }
         try {
@@ -89,9 +92,11 @@ export const validator = <
           !contentType ||
           !(multipartRegex.test(contentType) || urlencodedRegex.test(contentType))
         ) {
-          console.warn(
-            'Validator target is "form" but request is missing a Content-Type header containing "multipart/form-data" or "application/x-www-form-encoded"'
-          )
+          if (warn) {
+            console.warn(
+              'Validator target is "form" but request is missing a Content-Type header containing "multipart/form-data" or "application/x-www-form-encoded"'
+            )
+          }
           break
         }
 
