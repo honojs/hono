@@ -72,7 +72,7 @@ export const validator = <
     switch (target) {
       case 'json':
         if (!contentType || !jsonRegex.test(contentType)) {
-          const message = 'missing a Content-Type header "application/json"'
+          const message = 'missing Content-Type header "application/json"'
           throw new HTTPException(415, { message })
           break
         }
@@ -88,7 +88,7 @@ export const validator = <
           !contentType ||
           !(multipartRegex.test(contentType) || urlencodedRegex.test(contentType))
         ) {
-          const message = 'missing a Content-Type header "application/x-www-form-encoded"'
+          const message = 'missing Content-Type header "application/x-www-form-encoded"'
           throw new HTTPException(415, { message })
           break
         }
