@@ -13,7 +13,7 @@ export const getMimeType = (
     return
   }
   let mimeType = mimes[match[1]]
-  if ((mimeType && mimeType.startsWith('text')) || mimeType === 'application/json') {
+  if (mimeType && mimeType.startsWith('text')) {
     mimeType += '; charset=utf-8'
   }
   return mimeType

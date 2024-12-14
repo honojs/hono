@@ -140,7 +140,7 @@ describe('JSON', () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json; charset=utf8',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ foo: 'bar' }),
     })

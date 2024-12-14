@@ -537,7 +537,7 @@ describe('AWS Lambda Adapter for Hono', () => {
         expect(albResponse.statusCode).toBe(200)
         expect(albResponse.headers).toEqual(
           expect.objectContaining({
-            'content-type': 'application/json; charset=UTF-8',
+            'content-type': 'application/json',
           })
         )
       })
@@ -598,7 +598,7 @@ describe('AWS Lambda Adapter for Hono', () => {
         expect(albResponse.multiValueHeaders).toBeDefined()
         expect(albResponse.multiValueHeaders).toEqual(
           expect.objectContaining({
-            'content-type': ['application/json; charset=UTF-8'],
+            'content-type': ['application/json'],
           })
         )
       })
