@@ -71,6 +71,28 @@ describe('Basic Streaming Helper', () => {
     expect(aborted).toBeTruthy()
   })
 
+  it('Check stream Response if pipe is aborted by abort signal', async () => {
+    const ac = new AbortController()
+    const req = new Request('http://localhost/', { signal: ac.signal })
+    const c = new Context(req)
+
+    let aborted = false
+    const res = stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      await stream.pipe(new ReadableStream())
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const pReading = reader.read()
+    ac.abort()
+    await pReading
+    expect(aborted).toBeTruthy()
+  })
+
   it('Check stream Response if error occurred', async () => {
     const onError = vi.fn()
     const res = stream(
