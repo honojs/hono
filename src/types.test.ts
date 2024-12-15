@@ -1298,6 +1298,28 @@ describe('c.var with chaining - test only types', () => {
       return c.json(0)
     })
 
+    new Hono().get(
+      mw1,
+      mw2,
+      mw3,
+      mw4,
+      mw5,
+      mw6,
+      mw7,
+      mw8,
+      async (c) => {
+        expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+      },
+      (c) => c.json(0)
+    )
+
     new Hono().get(mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9, (c) => {
       expectTypeOf(c.req.valid('query')).toMatchTypeOf<{
         bar1: number
@@ -1313,6 +1335,29 @@ describe('c.var with chaining - test only types', () => {
 
       return c.json(0)
     })
+
+    new Hono().get(
+      '/',
+      mw1,
+      mw2,
+      mw3,
+      mw4,
+      mw5,
+      mw6,
+      mw7,
+      mw8,
+      async (c) => {
+        expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+      },
+      (c) => c.json(0)
+    )
 
     new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9, (c) => {
       expectTypeOf(c.req.valid('query')).toMatchTypeOf<{
