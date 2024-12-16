@@ -2,15 +2,13 @@ import { Context } from '../context'
 import { getColorEnabled } from './color'
 
 describe('getColorEnabled() - With colors enabled', () => {
-  const mockContext = new Context(new Request('Hono is cool'))
-
   it('should return true', async () => {
-    expect(getColorEnabled(mockContext)).toBe(true)
+    expect(getColorEnabled()).toBe(true)
   })
 })
 
 describe('getColorEnabled() - With colors disabled in Edge', () => {
-  const edgeContext = new Context(new Request('Hono is cool'), {
+  const edgeContext = new Context(new Request('/'), {
     env: {
       NO_COLOR: false,
     },
@@ -22,7 +20,7 @@ describe('getColorEnabled() - With colors disabled in Edge', () => {
 })
 
 describe('getColorEnabled() - With NO_COLOR environment variable set', () => {
-  const mockContext = new Context(new Request('Hono is cool'))
+  const mockContext = new Context(new Request('/'))
 
   beforeAll(() => {
     vi.stubEnv('NO_COLOR', '1')
