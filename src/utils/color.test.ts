@@ -8,7 +8,7 @@ describe('getColorEnabled() - With colors enabled', () => {
 })
 
 describe('getColorEnabled() - With colors disabled in Edge', () => {
-  const edgeContext = new Context(new Request('/'), {
+  const edgeContext = new Context(new Request('http://localhost/'), {
     env: {
       NO_COLOR: false,
     },
@@ -20,7 +20,7 @@ describe('getColorEnabled() - With colors disabled in Edge', () => {
 })
 
 describe('getColorEnabled() - With NO_COLOR environment variable set', () => {
-  const mockContext = new Context(new Request('/'))
+  const mockContext = new Context(new Request('http://localhost/'))
 
   beforeAll(() => {
     vi.stubEnv('NO_COLOR', '1')
