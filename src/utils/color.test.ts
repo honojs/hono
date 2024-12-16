@@ -10,7 +10,7 @@ describe('getColorEnabled() - With colors enabled', () => {
 describe('getColorEnabled() - With colors disabled in Edge', () => {
   const edgeContext = new Context(new Request('http://localhost/'), {
     env: {
-      NO_COLOR: false,
+      NO_COLOR: true,
     },
   })
 
