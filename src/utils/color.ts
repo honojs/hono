@@ -14,11 +14,12 @@ import { getRuntimeKey, env } from '../helper/adapter'
  *
  * @returns {boolean}
  */
-export function getColorEnabled(c: Context): boolean {
+export function getColorEnabled(c?: Context): boolean {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { Deno } = globalThis as any
+  const { Deno, process } = globalThis as any
 
-  const isNoColor = getRuntimeKey() === 'deno' ? Deno?.noColor : env(c).NO_COLOR
+  const isNoColor =
+    getRuntimeKey() === 'deno' ? Deno?.noColor : c ? env(c).NO_COLOR : 'NO_COLOR' in process?.env
 
   return !isNoColor
 }
