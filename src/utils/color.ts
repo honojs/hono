@@ -2,8 +2,8 @@
  * @module
  * Color utility.
  */
-import { getRuntimeKey, env } from '../helper/adapter'
 import type { Context } from '../context'
+import { getRuntimeKey, env } from '../helper/adapter'
 
 /**
  * Get whether color change on terminal is enabled or disabled.

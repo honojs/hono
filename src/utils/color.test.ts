@@ -1,5 +1,5 @@
-import { getColorEnabled } from './color'
 import { Context } from '../context'
+import { getColorEnabled } from './color'
 
 describe('getColorEnabled() - With colors enabled', () => {
   const mockContext = new Context(new Request('Hono is cool'))

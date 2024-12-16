@@ -3,10 +3,10 @@
  * Logger Middleware for Hono.
  */
 
+import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 import { getColorEnabled } from '../../utils/color'
 import { getPath } from '../../utils/url'
-import type { Context } from '../../context'
 
 enum LogPrefix {
   Outgoing = '-->',
