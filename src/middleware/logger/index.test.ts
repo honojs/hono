@@ -57,6 +57,14 @@ describe('Logger by Middleware', () => {
     expect(log).toMatch(/m?s$/)
   })
 
+  it('Log status 200 with small body and query param', async () => {
+    const res = await app.request('http://localhost/short?foo=bar')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(log.startsWith('--> GET /short?foo=bar \x1b[32m200\x1b[0m')).toBe(true)
+    expect(log).toMatch(/m?s$/)
+  })
+
   it('Log status 200 with big body', async () => {
     const res = await app.request('http://localhost/long')
     expect(res).not.toBeNull()
@@ -105,7 +113,7 @@ describe('Logger by Middleware', () => {
     const res = await app.request('http://localhost/server-error?status=100')
     expect(res).not.toBeNull()
     expect(res.status).toBe(100)
-    expect(log.startsWith('--> GET /server-error 100')).toBe(true)
+    expect(log.startsWith('--> GET /server-error?status=100 100')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 
@@ -113,7 +121,7 @@ describe('Logger by Middleware', () => {
     const res = await app.request('http://localhost/server-error?status=700')
     expect(res).not.toBeNull()
     expect(res.status).toBe(700)
-    expect(log.startsWith('--> GET /server-error 700')).toBe(true)
+    expect(log.startsWith('--> GET /server-error?status=700 700')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
 })
