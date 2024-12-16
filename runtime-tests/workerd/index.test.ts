@@ -67,3 +67,18 @@ describe('workerd with WebSocket', () => {
     expect(closeHandler).toHaveBeenCalled()
   })
 })
+
+describe('worked with getColorEnabled()', async () => {
+  const worker = await unstable_dev('./runtime-tests/workerd/index.ts', {
+    experimental: { disableExperimentalWarning: true },
+  })
+
+  it('Should return 200 response with the colorEnabled', async () => {
+    const res = await worker.fetch('/color')
+    await worker.stop()
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      colorEnabled: false,
+    })
+  })
+})
