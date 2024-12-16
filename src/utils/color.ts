@@ -2,25 +2,23 @@
  * @module
  * Color utility.
  */
+import { getRuntimeKey, env } from '../helper/adapter'
+import type { Context } from '../context'
 
 /**
  * Get whether color change on terminal is enabled or disabled.
  * If `NO_COLOR` environment variable is set, this function returns `false`.
  * @see {@link https://no-color.org/}
  *
+ * @param {Context} c - the context of request
+ *
  * @returns {boolean}
  */
-export function getColorEnabled(): boolean {
+export function getColorEnabled(c: Context): boolean {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { process, Deno } = globalThis as any
+  const { Deno } = globalThis as any
 
-  const isNoColor =
-    typeof Deno?.noColor === 'boolean'
-      ? (Deno.noColor as boolean)
-      : process !== undefined
-      ? // eslint-disable-next-line no-unsafe-optional-chaining
-        'NO_COLOR' in process?.env
-      : false
+  const isNoColor = getRuntimeKey() === 'deno' ? Deno?.noColor : env(c).NO_COLOR
 
   return !isNoColor
 }
