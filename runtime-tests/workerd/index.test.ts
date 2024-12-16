@@ -75,6 +75,7 @@ describe('worked with getColorEnabled()', async () => {
 
   it('Should return 200 response with the colorEnabled', async () => {
     const res = await worker.fetch('/color')
+    await worker.stop()
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       colorEnabled: false,
