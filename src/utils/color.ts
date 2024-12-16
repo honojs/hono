@@ -19,7 +19,11 @@ export function getColorEnabled(c?: Context): boolean {
   const { Deno, process } = globalThis as any
 
   const isNoColor =
-    getRuntimeKey() === 'deno' ? Deno?.noColor : c ? env(c).NO_COLOR : 'NO_COLOR' in process?.env
+    getRuntimeKey() === 'deno'
+      ? Deno?.noColor
+      : c
+      ? env(c).NO_COLOR
+      : process?.env && 'NO_COLOR' in process.env
 
   return !isNoColor
 }
