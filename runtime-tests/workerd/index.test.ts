@@ -68,20 +68,9 @@ describe('workerd with WebSocket', () => {
   })
 })
 
-describe('worked with getColorEnabled()', () => {
-  let worker: UnstableDevWorker
-
-  beforeAll(async () => {
-    worker = await unstable_dev('./runtime-tests/workerd/index.ts', {
-      vars: {
-        NAME: 'Hono',
-      },
-      experimental: { disableExperimentalWarning: true },
-    })
-  })
-
-  afterAll(async () => {
-    await worker.stop()
+describe('worked with getColorEnabled()', async () => {
+  const worker = await unstable_dev('./runtime-tests/workerd/index.ts', {
+    experimental: { disableExperimentalWarning: true },
   })
 
   it('Should return 200 response with the colorEnabled', async () => {
