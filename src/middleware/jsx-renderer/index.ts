@@ -25,7 +25,7 @@ type Component = (
   c: Context
 ) => HtmlEscapedString | Promise<HtmlEscapedString>
 
-type ComponentWithChildren = (
+export type ComponentWithChildren = (
   props: PropsWithChildren<PropsForRenderer & { Layout: FC }>,
   c: Context
 ) => HtmlEscapedString | Promise<HtmlEscapedString>
