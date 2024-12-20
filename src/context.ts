@@ -11,7 +11,7 @@ import type {
 } from './types'
 import type { ResponseHeader } from './utils/headers'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
-import type { RedirectStatusCode, StatusCode } from './utils/http-status'
+import type { NoContentStatusCode, RedirectStatusCode, StatusCode } from './utils/http-status'
 import type { BaseMime } from './utils/mime'
 import type {
   InvalidJSONValue,
@@ -121,7 +121,7 @@ interface BodyRespond extends NewResponse {}
  *
  * @interface TextRespond
  * @template T - The type of the text content.
- * @template U - The type of the status code.
+ * @template U - The type of the status code without 204.
  *
  * @param {T} text - The text content to be included in the response.
  * @param {U} [status] - An optional status code for the response.
@@ -130,12 +130,12 @@ interface BodyRespond extends NewResponse {}
  * @returns {Response & TypedResponse<T, U, 'text'>} - The response after rendering the text content, typed with the provided text and status code types.
  */
 interface TextRespond {
-  <T extends string, U extends StatusCode = StatusCode>(
+  <T extends string, U extends Exclude<StatusCode, NoContentStatusCode> = Exclude<StatusCode, NoContentStatusCode>>(
     text: T,
     status?: U,
     headers?: HeaderRecord
   ): Response & TypedResponse<T, U, 'text'>
-  <T extends string, U extends StatusCode = StatusCode>(text: T, init?: ResponseInit): Response &
+  <T extends string, U extends Exclude<StatusCode, NoContentStatusCode> = Exclude<StatusCode, NoContentStatusCode>>(text: T, init?: ResponseInit): Response &
     TypedResponse<T, U, 'text'>
 }
 
@@ -144,7 +144,7 @@ interface TextRespond {
  *
  * @interface JSONRespond
  * @template T - The type of the JSON value or simplified unknown type.
- * @template U - The type of the status code.
+ * @template U - The type of the status code without 204.
  *
  * @param {T} object - The JSON object to be included in the response.
  * @param {U} [status] - An optional status code for the response.
@@ -155,7 +155,7 @@ interface TextRespond {
 interface JSONRespond {
   <
     T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-    U extends StatusCode = StatusCode
+    U extends Exclude<StatusCode, NoContentStatusCode> = Exclude<StatusCode, NoContentStatusCode>
   >(
     object: T,
     status?: U,
@@ -163,7 +163,7 @@ interface JSONRespond {
   ): JSONRespondReturn<T, U>
   <
     T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-    U extends StatusCode = StatusCode
+    U extends Exclude<StatusCode, NoContentStatusCode> = Exclude<StatusCode, NoContentStatusCode>
   >(
     object: T,
     init?: ResponseInit
@@ -172,13 +172,13 @@ interface JSONRespond {
 
 /**
  * @template T - The type of the JSON value or simplified unknown type.
- * @template U - The type of the status code.
+ * @template U - The type of the status code without 204.
  *
  * @returns {Response & TypedResponse<SimplifyDeepArray<T> extends JSONValue ? (JSONValue extends SimplifyDeepArray<T> ? never : JSONParsed<T>) : never, U, 'json'>} - The response after rendering the JSON object, typed with the provided object and status code types.
  */
 type JSONRespondReturn<
   T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-  U extends StatusCode
+  U extends Exclude<StatusCode, NoContentStatusCode>
 > = Response &
   TypedResponse<
     SimplifyDeepArray<T> extends JSONValue
@@ -194,7 +194,7 @@ type JSONRespondReturn<
  * Interface representing a function that responds with HTML content.
  *
  * @param html - The HTML content to respond with, which can be a string or a Promise that resolves to a string.
- * @param status - (Optional) The HTTP status code for the response.
+ * @param status - (Optional) The HTTP status code without 204 for the response.
  * @param headers - (Optional) A record of headers to include in the response.
  * @param init - (Optional) The response initialization object.
  *
@@ -203,7 +203,7 @@ type JSONRespondReturn<
 interface HTMLRespond {
   <T extends string | Promise<string>>(
     html: T,
-    status?: StatusCode,
+    status?: Exclude<StatusCode, NoContentStatusCode>,
     headers?: HeaderRecord
   ): T extends string ? Response : Promise<Response>
   <T extends string | Promise<string>>(html: T, init?: ResponseInit): T extends string
@@ -736,7 +736,7 @@ export class Context<
    */
   text: TextRespond = (
     text: string,
-    arg?: StatusCode | ResponseInit,
+    arg?: Exclude<StatusCode, NoContentStatusCode> | ResponseInit,
     headers?: HeaderRecord
   ): ReturnType<TextRespond> => {
     // If the header is empty, return Response immediately.
@@ -769,7 +769,7 @@ export class Context<
    */
   json: JSONRespond = <
     T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-    U extends StatusCode = StatusCode
+    U extends Exclude<StatusCode, NoContentStatusCode> = Exclude<StatusCode, NoContentStatusCode>
   >(
     object: T,
     arg?: U | ResponseInit,
@@ -786,7 +786,7 @@ export class Context<
 
   html: HTMLRespond = (
     html: string | Promise<string>,
-    arg?: StatusCode | ResponseInit,
+    arg?: Exclude<StatusCode, NoContentStatusCode> | ResponseInit,
     headers?: HeaderRecord
   ): Response | Promise<Response> => {
     this.#preparedHeaders ??= {}
