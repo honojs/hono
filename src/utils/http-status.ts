@@ -2,7 +2,7 @@
  * @module
  * HTTP Status utility.
  */
-
+ 
 export type InfoStatusCode = 100 | 101 | 102 | 103
 export type NoContentStatusCode = 204
 export type SuccessStatusCode =
