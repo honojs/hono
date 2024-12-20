@@ -5,7 +5,17 @@
 
 export type InfoStatusCode = 100 | 101 | 102 | 103
 export type NoContentStatusCode = 204
-export type SuccessStatusCode = 200 | 201 | 202 | 203 | NoContentStatusCode | 205 | 206 | 207 | 208 | 226
+export type SuccessStatusCode =
+  | 200
+  | 201
+  | 202
+  | 203
+  | NoContentStatusCode
+  | 205
+  | 206
+  | 207
+  | 208
+  | 226
 export type DeprecatedStatusCode = 305 | 306
 export type RedirectStatusCode = 300 | 301 | 302 | 303 | 304 | DeprecatedStatusCode | 307 | 308
 export type ClientErrorStatusCode =

@@ -20,7 +20,7 @@ import type {
   ToSchema,
   TypedResponse,
 } from './types'
-import type { StatusCode } from './utils/http-status'
+import type { NoContentStatusCode, StatusCode } from './utils/http-status'
 import type { Equal, Expect } from './utils/types'
 import { validator } from './validator'
 
@@ -96,7 +96,7 @@ describe('HandlerInterface', () => {
               message: string
             }
             outputFormat: 'json'
-            status: StatusCode
+            status: Exclude<StatusCode, NoContentStatusCode>
           }
         }
       }
@@ -135,7 +135,7 @@ describe('HandlerInterface', () => {
               message: string
             }
             outputFormat: 'json'
-            status: StatusCode
+            status: Exclude<StatusCode, NoContentStatusCode>
           }
         }
       }
@@ -163,7 +163,7 @@ describe('HandlerInterface', () => {
             }
             output: 'foo'
             outputFormat: 'text'
-            status: StatusCode
+            status: Exclude<StatusCode, NoContentStatusCode>
           }
         }
       }
@@ -192,7 +192,7 @@ describe('HandlerInterface', () => {
             }
             output: string
             outputFormat: 'text'
-            status: StatusCode
+            status: Exclude<StatusCode, NoContentStatusCode>
           }
         }
       }
@@ -217,7 +217,7 @@ describe('HandlerInterface', () => {
             }
             output: string
             outputFormat: 'text'
-            status: StatusCode
+            status: Exclude<StatusCode, NoContentStatusCode>
           }
         }
       } & {
@@ -271,7 +271,7 @@ describe('OnHandlerInterface', () => {
             success: boolean
           }
           outputFormat: 'json'
-          status: StatusCode
+          status: Exclude<StatusCode, NoContentStatusCode>
         }
       }
     }
@@ -376,7 +376,7 @@ describe('Support c.json(undefined)', () => {
           input: {}
           output: never
           outputFormat: 'json'
-          status: StatusCode
+          status: Exclude<StatusCode, NoContentStatusCode>
         }
       }
     }
@@ -460,7 +460,7 @@ describe('`json()`', () => {
             message: string
           }
           outputFormat: 'json'
-          status: StatusCode
+          status: Exclude<StatusCode, NoContentStatusCode>
         }
       }
     }
@@ -714,7 +714,7 @@ describe('MergeSchemaPath', () => {
             }
             output: {}
             outputFormat: 'json'
-            status: StatusCode
+            status: Exclude<StatusCode, NoContentStatusCode>
           }
         }
       },
@@ -733,7 +733,7 @@ describe('MergeSchemaPath', () => {
           }
           output: {}
           outputFormat: 'json'
-          status: StatusCode
+          status: Exclude<StatusCode, NoContentStatusCode>
         }
       }
     }
@@ -902,7 +902,7 @@ describe('Different types using json()', () => {
                   ng: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: Exclude<StatusCode, NoContentStatusCode>
               }
             | {
                 input: {}
@@ -910,7 +910,7 @@ describe('Different types using json()', () => {
                   ok: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: Exclude<StatusCode, NoContentStatusCode>
               }
             | {
                 input: {}
@@ -918,7 +918,7 @@ describe('Different types using json()', () => {
                   default: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: Exclude<StatusCode, NoContentStatusCode>
               }
         }
       }
@@ -974,7 +974,7 @@ describe('Different types using json()', () => {
                   default: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: Exclude<StatusCode, NoContentStatusCode>
               }
         }
       }
@@ -1012,7 +1012,7 @@ describe('Different types using json()', () => {
                   ng: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: Exclude<StatusCode, NoContentStatusCode>
               }
             | {
                 input: {}
@@ -1020,7 +1020,7 @@ describe('Different types using json()', () => {
                   ok: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: Exclude<StatusCode, NoContentStatusCode>
               }
             | {
                 input: {}
@@ -1028,7 +1028,7 @@ describe('Different types using json()', () => {
                   default: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: Exclude<StatusCode, NoContentStatusCode>
               }
         }
       }
@@ -1084,7 +1084,7 @@ describe('Different types using json()', () => {
                   default: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: Exclude<StatusCode, NoContentStatusCode>
               }
         }
       }
@@ -1111,7 +1111,7 @@ describe('json() in an async handler', () => {
             ok: boolean
           }
           outputFormat: 'json'
-          status: StatusCode
+          status: Exclude<StatusCode, NoContentStatusCode>
         }
       }
     }

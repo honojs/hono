@@ -130,13 +130,21 @@ interface BodyRespond extends NewResponse {}
  * @returns {Response & TypedResponse<T, U, 'text'>} - The response after rendering the text content, typed with the provided text and status code types.
  */
 interface TextRespond {
-  <T extends string, U extends Exclude<StatusCode, NoContentStatusCode> = Exclude<StatusCode, NoContentStatusCode>>(
+  <
+    T extends string,
+    U extends Exclude<StatusCode, NoContentStatusCode> = Exclude<StatusCode, NoContentStatusCode>
+  >(
     text: T,
     status?: U,
     headers?: HeaderRecord
   ): Response & TypedResponse<T, U, 'text'>
-  <T extends string, U extends Exclude<StatusCode, NoContentStatusCode> = Exclude<StatusCode, NoContentStatusCode>>(text: T, init?: ResponseInit): Response &
-    TypedResponse<T, U, 'text'>
+  <
+    T extends string,
+    U extends Exclude<StatusCode, NoContentStatusCode> = Exclude<StatusCode, NoContentStatusCode>
+  >(
+    text: T,
+    init?: ResponseInit
+  ): Response & TypedResponse<T, U, 'text'>
 }
 
 /**
