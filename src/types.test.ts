@@ -20,7 +20,7 @@ import type {
   ToSchema,
   TypedResponse,
 } from './types'
-import type { StatusCode } from './utils/http-status'
+import type { ContentfulStatusCode, StatusCode } from './utils/http-status'
 import type { Equal, Expect } from './utils/types'
 import { validator } from './validator'
 
@@ -96,7 +96,7 @@ describe('HandlerInterface', () => {
               message: string
             }
             outputFormat: 'json'
-            status: StatusCode
+            status: ContentfulStatusCode
           }
         }
       }
@@ -135,7 +135,7 @@ describe('HandlerInterface', () => {
               message: string
             }
             outputFormat: 'json'
-            status: StatusCode
+            status: ContentfulStatusCode
           }
         }
       }
@@ -163,7 +163,7 @@ describe('HandlerInterface', () => {
             }
             output: 'foo'
             outputFormat: 'text'
-            status: StatusCode
+            status: ContentfulStatusCode
           }
         }
       }
@@ -192,7 +192,7 @@ describe('HandlerInterface', () => {
             }
             output: string
             outputFormat: 'text'
-            status: StatusCode
+            status: ContentfulStatusCode
           }
         }
       }
@@ -217,7 +217,7 @@ describe('HandlerInterface', () => {
             }
             output: string
             outputFormat: 'text'
-            status: StatusCode
+            status: ContentfulStatusCode
           }
         }
       } & {
@@ -271,7 +271,7 @@ describe('OnHandlerInterface', () => {
             success: boolean
           }
           outputFormat: 'json'
-          status: StatusCode
+          status: ContentfulStatusCode
         }
       }
     }
@@ -376,7 +376,7 @@ describe('Support c.json(undefined)', () => {
           input: {}
           output: never
           outputFormat: 'json'
-          status: StatusCode
+          status: ContentfulStatusCode
         }
       }
     }
@@ -460,7 +460,7 @@ describe('`json()`', () => {
             message: string
           }
           outputFormat: 'json'
-          status: StatusCode
+          status: ContentfulStatusCode
         }
       }
     }
@@ -902,7 +902,7 @@ describe('Different types using json()', () => {
                   ng: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
             | {
                 input: {}
@@ -910,7 +910,7 @@ describe('Different types using json()', () => {
                   ok: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
             | {
                 input: {}
@@ -918,7 +918,7 @@ describe('Different types using json()', () => {
                   default: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
         }
       }
@@ -974,7 +974,7 @@ describe('Different types using json()', () => {
                   default: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
         }
       }
@@ -1012,7 +1012,7 @@ describe('Different types using json()', () => {
                   ng: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
             | {
                 input: {}
@@ -1020,7 +1020,7 @@ describe('Different types using json()', () => {
                   ok: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
             | {
                 input: {}
@@ -1028,7 +1028,7 @@ describe('Different types using json()', () => {
                   default: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
         }
       }
@@ -1084,7 +1084,7 @@ describe('Different types using json()', () => {
                   default: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
         }
       }
@@ -1111,7 +1111,7 @@ describe('json() in an async handler', () => {
             ok: boolean
           }
           outputFormat: 'json'
-          status: StatusCode
+          status: ContentfulStatusCode
         }
       }
     }
@@ -2269,5 +2269,24 @@ describe('generic typed variables', () => {
     type Actual = ExtractSchema<typeof route>['/']['$get']['output']
     type Expected = { data: string }
     expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+  })
+})
+describe('status code', () => {
+  const app = new Hono()
+
+  it('should only allow to return .json() with contentful status codes', async () => {
+    const route = app.get('/', async (c) => c.json({}))
+    type Actual = ExtractSchema<typeof route>['/']['$get']['status']
+    expectTypeOf<Actual>().toEqualTypeOf<ContentfulStatusCode>()
+  })
+  it('should only allow to return .body(null) with all status codes', async () => {
+    const route = app.get('/', async (c) => c.body(null))
+    type Actual = ExtractSchema<typeof route>['/']['$get']['status']
+    expectTypeOf<Actual>().toEqualTypeOf<StatusCode>()
+  })
+  it('should only allow to return .text() with contentful status codes', async () => {
+    const route = app.get('/', async (c) => c.text('whatever'))
+    type Actual = ExtractSchema<typeof route>['/']['$get']['status']
+    expectTypeOf<Actual>().toEqualTypeOf<ContentfulStatusCode>()
   })
 })
