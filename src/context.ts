@@ -752,10 +752,12 @@ export class Context<
       this.#preparedHeaders = {}
     }
     this.#preparedHeaders['content-type'] = TEXT_PLAIN
+    if (typeof arg === 'number') {
+      // @ts-expect-error `Response` due to missing some types-only keys
+      return this.#newResponse(text, arg, headers)
+    }
     // @ts-expect-error `Response` due to missing some types-only keys
-    return typeof arg === 'number'
-      ? this.#newResponse(text, arg, headers)
-      : this.#newResponse(text, arg)
+    return this.#newResponse(text, arg)
   }
 
   /**
