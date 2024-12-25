@@ -3,7 +3,7 @@
  * This module provides the `HTTPException` class.
  */
 
-import type { StatusCode } from './utils/http-status'
+import type { ContentfulStatusCode } from './utils/http-status'
 
 /**
  * Options for creating an `HTTPException`.
@@ -45,14 +45,14 @@ type HTTPExceptionOptions = {
  */
 export class HTTPException extends Error {
   readonly res?: Response
-  readonly status: StatusCode
+  readonly status: ContentfulStatusCode
 
   /**
    * Creates an instance of `HTTPException`.
    * @param status - HTTP status code for the exception. Defaults to 500.
    * @param options - Additional options for the exception.
    */
-  constructor(status: StatusCode = 500, options?: HTTPExceptionOptions) {
+  constructor(status: ContentfulStatusCode = 500, options?: HTTPExceptionOptions) {
     super(options?.message, { cause: options?.cause })
     this.res = options?.res
     this.status = status

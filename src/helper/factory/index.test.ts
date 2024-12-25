@@ -4,7 +4,7 @@ import { hc } from '../../client'
 import type { ClientRequest } from '../../client/types'
 import { Hono } from '../../index'
 import type { ToSchema, TypedResponse } from '../../types'
-import type { StatusCode } from '../../utils/http-status'
+import type { ContentfulStatusCode, StatusCode } from '../../utils/http-status'
 import { validator } from '../../validator'
 import { createFactory, createMiddleware } from './index'
 
@@ -106,7 +106,7 @@ describe('createHandler', () => {
             input: {}
             output: 'A'
             outputFormat: 'text'
-            status: StatusCode
+            status: ContentfulStatusCode
           }
         }>
       }>()
