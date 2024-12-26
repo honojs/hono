@@ -11,11 +11,11 @@
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "license": "MIT",
   "devDependencies": {
-    "benchmark": "^2.1.4",
     "edge-mock": "^0.0.15",
     "itty-router": "^3.0.11",
     "node-fetch": "^3.2.10",
     "sunder": "^0.10.1",
-    "worktop": "^0.7.3"
+    "worktop": "^0.7.3",
+    "mitata": "^1.0.23"
   }
 }
