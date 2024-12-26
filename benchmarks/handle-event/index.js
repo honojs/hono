@@ -113,6 +113,18 @@ makeEdgeEnv()
 // FetchEvent Object
 const event = new FetchEvent('fetch', { request })
 
+const fn = async () => {
+  let res = await hono.fetch(event.request)
+  console.log(await res.text())
+  res = await ittyRouter.handle(event.request)
+  console.log(await res.text())
+  res = await sunderApp.handle(event)
+  console.log(await res.text())
+  res = await worktopRouter.run(event)
+  console.log(await res.text())
+}
+fn()
+
 group(() => {
   bench('Hono', async () => {
     await hono.fetch(event.request)
