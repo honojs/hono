@@ -108,7 +108,7 @@ interface Set<E extends Env> {
  */
 interface NewResponse {
   (data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response
-  (data: Data | null, init?: ResponseInit): Response
+  (data: Data | null, init?: ResponseOrInit): Response
 }
 
 /**
@@ -118,7 +118,8 @@ interface BodyRespond {
   // if we return content, only allow the status codes that allow for returning the body
   (data: Data, status?: ContentfulStatusCode, headers?: HeaderRecord): Response
   (data: null, status?: StatusCode, headers?: HeaderRecord): Response
-  (data: Data | null, init?: ResponseInit): Response
+  (data: Data, init?: ResponseOrInit<ContentfulStatusCode>): Response
+  (data: null, init?: ResponseOrInit): Response
 }
 
 /**
@@ -142,7 +143,7 @@ interface TextRespond {
   ): Response & TypedResponse<T, U, 'text'>
   <T extends string, U extends ContentfulStatusCode = ContentfulStatusCode>(
     text: T,
-    init?: ResponseInit
+    init?: ResponseOrInit<U>
   ): Response & TypedResponse<T, U, 'text'>
 }
 
@@ -173,7 +174,7 @@ interface JSONRespond {
     U extends ContentfulStatusCode = ContentfulStatusCode
   >(
     object: T,
-    init?: ResponseInit
+    init?: ResponseOrInit<U>
   ): JSONRespondReturn<T, U>
 }
 
@@ -213,9 +214,10 @@ interface HTMLRespond {
     status?: ContentfulStatusCode,
     headers?: HeaderRecord
   ): T extends string ? Response : Promise<Response>
-  <T extends string | Promise<string>>(html: T, init?: ResponseInit): T extends string
-    ? Response
-    : Promise<Response>
+  <T extends string | Promise<string>>(
+    html: T,
+    init?: ResponseOrInit<ContentfulStatusCode>
+  ): T extends string ? Response : Promise<Response>
 }
 
 /**
@@ -257,11 +259,13 @@ type ResponseHeadersInit =
   | Record<string, string>
   | Headers
 
-interface ResponseInit {
+interface ResponseInit<T extends StatusCode = StatusCode> {
   headers?: ResponseHeadersInit
-  status?: number
+  status?: T
   statusText?: string
 }
+
+type ResponseOrInit<T extends StatusCode = StatusCode> = ResponseInit<T> | Response
 
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
@@ -632,7 +636,7 @@ export class Context<
 
   #newResponse(
     data: Data | null,
-    arg?: StatusCode | ResponseInit,
+    arg?: StatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): Response {
     // Optimized
@@ -739,7 +743,7 @@ export class Context<
    */
   text: TextRespond = (
     text: string,
-    arg?: ContentfulStatusCode | ResponseInit,
+    arg?: ContentfulStatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): ReturnType<TextRespond> => {
     // If the header is empty, return Response immediately.
@@ -777,7 +781,7 @@ export class Context<
     U extends ContentfulStatusCode = ContentfulStatusCode
   >(
     object: T,
-    arg?: U | ResponseInit,
+    arg?: U | ResponseOrInit<U>,
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U> => {
     const body = JSON.stringify(object)
@@ -791,7 +795,7 @@ export class Context<
 
   html: HTMLRespond = (
     html: string | Promise<string>,
-    arg?: ContentfulStatusCode | ResponseInit,
+    arg?: ContentfulStatusCode | ResponseOrInit<ContentfulStatusCode>,
     headers?: HeaderRecord
   ): Response | Promise<Response> => {
     this.#preparedHeaders ??= {}
