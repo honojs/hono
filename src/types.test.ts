@@ -2247,6 +2247,7 @@ describe('Returning type from `app.use(path, mw)`', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 })
+
 describe('generic typed variables', () => {
   const okHelper = (c: Context) => {
     return <TData>(data: TData) => c.json({ data })
@@ -2271,6 +2272,7 @@ describe('generic typed variables', () => {
     expectTypeOf<Actual>().toEqualTypeOf<Expected>()
   })
 })
+
 describe('status code', () => {
   const app = new Hono()
 
@@ -2279,14 +2281,51 @@ describe('status code', () => {
     type Actual = ExtractSchema<typeof route>['/']['$get']['status']
     expectTypeOf<Actual>().toEqualTypeOf<ContentfulStatusCode>()
   })
+
   it('should only allow to return .body(null) with all status codes', async () => {
     const route = app.get('/', async (c) => c.body(null))
     type Actual = ExtractSchema<typeof route>['/']['$get']['status']
     expectTypeOf<Actual>().toEqualTypeOf<StatusCode>()
   })
+
   it('should only allow to return .text() with contentful status codes', async () => {
     const route = app.get('/', async (c) => c.text('whatever'))
     type Actual = ExtractSchema<typeof route>['/']['$get']['status']
     expectTypeOf<Actual>().toEqualTypeOf<ContentfulStatusCode>()
+  })
+
+  it('should throw type error when .json({}) is used with contentless status codes', async () => {
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.json({}, 204))
+    app.get('/', async (c) =>
+      c.json(
+        {},
+        // @ts-expect-error 204 is not contentful status code
+        {
+          status: 204,
+        }
+      )
+    )
+  })
+
+  it('should throw type error when .body(content) is used with contentless status codes', async () => {
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.body('content', 204))
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.body('content', { status: 204 }))
+  })
+
+  it('should throw type error when .text(content) is used with contentless status codes', async () => {
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.text('content', 204))
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.text('content', { status: 204 }))
+  })
+
+  it('should throw type error when .html(content) is used with contentless status codes', async () => {
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.html('<h1>title</h1>', 204))
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.html('<h1>title</h1>', { status: 204 }))
   })
 })
