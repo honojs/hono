@@ -506,6 +506,9 @@
       "request-id": [
         "./dist/types/middleware/request-id"
       ],
+      "language": [
+        "./dist/types/middleware/language"
+      ],
       "streaming": [
         "./dist/types/helper/streaming"
       ],
