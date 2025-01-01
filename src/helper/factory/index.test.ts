@@ -273,16 +273,16 @@ describe('createApp', () => {
     expect(await res.text()).toBe('bar')
   })
 
-  it('Should use the default options', async () => {
-    const app = createFactory({ defaultOptions: { strict: false } }).createApp()
+  it('Should use the default app options', async () => {
+    const app = createFactory({ defaultAppOptions: { strict: false } }).createApp()
     app.get('/hello', (c) => c.text('hello'))
     const res = await app.request('/hello/')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello')
   })
 
-  it('Should override the default options when creating', async () => {
-    const app = createFactory({ defaultOptions: { strict: true } }).createApp({ strict: false })
+  it('Should override the default app options when creating', async () => {
+    const app = createFactory({ defaultAppOptions: { strict: true } }).createApp({ strict: false })
     app.get('/hello', (c) => c.text('hello'))
     const res = await app.request('/hello/')
     expect(res.status).toBe(200)

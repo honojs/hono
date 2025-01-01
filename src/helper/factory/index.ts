@@ -286,18 +286,18 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
 
 export class Factory<E extends Env = any, P extends string = any> {
   private initApp?: InitApp<E>
-  #defaultOptions?: HonoOptions<E>
+  #defaultAppOptions?: HonoOptions<E>
 
-  constructor(init?: { initApp?: InitApp<E>; defaultOptions?: HonoOptions<E> }) {
+  constructor(init?: { initApp?: InitApp<E>; defaultAppOptions?: HonoOptions<E> }) {
     this.initApp = init?.initApp
-    this.#defaultOptions = init?.defaultOptions
+    this.#defaultAppOptions = init?.defaultAppOptions
   }
 
   createApp = (options?: HonoOptions<E>): Hono<E> => {
     const app = new Hono<E>(
-      options && this.#defaultOptions
-        ? { ...this.#defaultOptions, ...options }
-        : options ?? this.#defaultOptions
+      options && this.#defaultAppOptions
+        ? { ...this.#defaultAppOptions, ...options }
+        : options ?? this.#defaultAppOptions
     )
     if (this.initApp) {
       this.initApp(app)
@@ -315,7 +315,7 @@ export class Factory<E extends Env = any, P extends string = any> {
 
 export const createFactory = <E extends Env = any, P extends string = any>(init?: {
   initApp?: InitApp<E>
-  defaultOptions?: HonoOptions<E>
+  defaultAppOptions?: HonoOptions<E>
 }): Factory<E, P> => new Factory<E, P>(init)
 
 export const createMiddleware = <
