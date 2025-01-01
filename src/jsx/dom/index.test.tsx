@@ -19,6 +19,8 @@ import DefaultExport, {
   cloneElement,
   cloneElement as cloneElementForDom,
   createElement as createElementForDom,
+  createContext,
+  useContext,
   createPortal,
   flushSync,
   isValidElement,
@@ -1491,6 +1493,36 @@ describe('DOM', () => {
       await Promise.resolve()
       expect(root.innerHTML).toBe('<div><div><p>Count: 1</p></div><button>+</button></div>')
       expect(renderCount).toBe(2)
+    })
+
+    it('should not return memoized result when context is not changed', async () => {
+      const Context = createContext<[number, (arg: number | ((value: number) => number)) => void]>([
+        0,
+        () => {},
+      ])
+      const Container: FC<{ children: Child }> = ({ children }) => {
+        const [count, setCount] = useState(0)
+        return <Context.Provider value={[count, setCount]}>{children}</Context.Provider>
+      }
+      const Content = () => {
+        const [count, setCount] = useContext(Context)
+        return (
+          <>
+            <span>{count}</span>
+            <button onClick={() => setCount((c) => c + 1)}>+</button>
+          </>
+        )
+      }
+      const app = (
+        <Container>
+          <Content />
+        </Container>
+      )
+      render(app, root)
+      expect(root.innerHTML).toBe('<span>0</span><button>+</button>')
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe('<span>1</span><button>+</button>')
     })
   })
 
