@@ -26,12 +26,8 @@ import type {
   RouterRoute,
   Schema,
 } from './types'
+import { COMPOSED_HANDLER } from './utils/constants'
 import { getPath, getPathNoStrict, mergePath } from './utils/url'
-
-/**
- * Symbol used to mark a composed handler.
- */
-export const COMPOSED_HANDLER = Symbol('composedHandler')
 
 const notFoundHandler = (c: Context) => {
   return c.text('404 Not Found', 404)

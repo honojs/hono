@@ -11,7 +11,7 @@ import type {
 } from './types'
 import type { ResponseHeader } from './utils/headers'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
-import type { RedirectStatusCode, StatusCode } from './utils/http-status'
+import type { ContentfulStatusCode, RedirectStatusCode, StatusCode } from './utils/http-status'
 import type { BaseMime } from './utils/mime'
 import type {
   InvalidJSONValue,
@@ -108,13 +108,19 @@ interface Set<E extends Env> {
  */
 interface NewResponse {
   (data: Data | null, status?: StatusCode, headers?: HeaderRecord): Response
-  (data: Data | null, init?: ResponseInit): Response
+  (data: Data | null, init?: ResponseOrInit): Response
 }
 
 /**
  * Interface for responding with a body.
  */
-interface BodyRespond extends NewResponse {}
+interface BodyRespond {
+  // if we return content, only allow the status codes that allow for returning the body
+  (data: Data, status?: ContentfulStatusCode, headers?: HeaderRecord): Response
+  (data: null, status?: StatusCode, headers?: HeaderRecord): Response
+  (data: Data, init?: ResponseOrInit<ContentfulStatusCode>): Response
+  (data: null, init?: ResponseOrInit): Response
+}
 
 /**
  * Interface for responding with text.
@@ -130,13 +136,15 @@ interface BodyRespond extends NewResponse {}
  * @returns {Response & TypedResponse<T, U, 'text'>} - The response after rendering the text content, typed with the provided text and status code types.
  */
 interface TextRespond {
-  <T extends string, U extends StatusCode = StatusCode>(
+  <T extends string, U extends ContentfulStatusCode = ContentfulStatusCode>(
     text: T,
     status?: U,
     headers?: HeaderRecord
   ): Response & TypedResponse<T, U, 'text'>
-  <T extends string, U extends StatusCode = StatusCode>(text: T, init?: ResponseInit): Response &
-    TypedResponse<T, U, 'text'>
+  <T extends string, U extends ContentfulStatusCode = ContentfulStatusCode>(
+    text: T,
+    init?: ResponseOrInit<U>
+  ): Response & TypedResponse<T, U, 'text'>
 }
 
 /**
@@ -155,7 +163,7 @@ interface TextRespond {
 interface JSONRespond {
   <
     T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-    U extends StatusCode = StatusCode
+    U extends ContentfulStatusCode = ContentfulStatusCode
   >(
     object: T,
     status?: U,
@@ -163,10 +171,10 @@ interface JSONRespond {
   ): JSONRespondReturn<T, U>
   <
     T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-    U extends StatusCode = StatusCode
+    U extends ContentfulStatusCode = ContentfulStatusCode
   >(
     object: T,
-    init?: ResponseInit
+    init?: ResponseOrInit<U>
   ): JSONRespondReturn<T, U>
 }
 
@@ -178,7 +186,7 @@ interface JSONRespond {
  */
 type JSONRespondReturn<
   T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-  U extends StatusCode
+  U extends ContentfulStatusCode
 > = Response &
   TypedResponse<
     SimplifyDeepArray<T> extends JSONValue
@@ -203,12 +211,13 @@ type JSONRespondReturn<
 interface HTMLRespond {
   <T extends string | Promise<string>>(
     html: T,
-    status?: StatusCode,
+    status?: ContentfulStatusCode,
     headers?: HeaderRecord
   ): T extends string ? Response : Promise<Response>
-  <T extends string | Promise<string>>(html: T, init?: ResponseInit): T extends string
-    ? Response
-    : Promise<Response>
+  <T extends string | Promise<string>>(
+    html: T,
+    init?: ResponseOrInit<ContentfulStatusCode>
+  ): T extends string ? Response : Promise<Response>
 }
 
 /**
@@ -250,11 +259,13 @@ type ResponseHeadersInit =
   | Record<string, string>
   | Headers
 
-interface ResponseInit {
+interface ResponseInit<T extends StatusCode = StatusCode> {
   headers?: ResponseHeadersInit
-  status?: number
+  status?: T
   statusText?: string
 }
+
+type ResponseOrInit<T extends StatusCode = StatusCode> = ResponseInit<T> | Response
 
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
@@ -625,7 +636,7 @@ export class Context<
 
   #newResponse(
     data: Data | null,
-    arg?: StatusCode | ResponseInit,
+    arg?: StatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): Response {
     // Optimized
@@ -712,11 +723,7 @@ export class Context<
    * })
    * ```
    */
-  body: BodyRespond = (
-    data: Data | null,
-    arg?: StatusCode | ResponseInit,
-    headers?: HeaderRecord
-  ): Response => {
+  body: BodyRespond = (data, arg?: StatusCode | RequestInit, headers?: HeaderRecord) => {
     return typeof arg === 'number'
       ? this.#newResponse(data, arg, headers)
       : this.#newResponse(data, arg)
@@ -736,7 +743,7 @@ export class Context<
    */
   text: TextRespond = (
     text: string,
-    arg?: StatusCode | ResponseInit,
+    arg?: ContentfulStatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): ReturnType<TextRespond> => {
     // If the header is empty, return Response immediately.
@@ -749,10 +756,12 @@ export class Context<
       this.#preparedHeaders = {}
     }
     this.#preparedHeaders['content-type'] = TEXT_PLAIN
+    if (typeof arg === 'number') {
+      // @ts-expect-error `Response` due to missing some types-only keys
+      return this.#newResponse(text, arg, headers)
+    }
     // @ts-expect-error `Response` due to missing some types-only keys
-    return typeof arg === 'number'
-      ? this.#newResponse(text, arg, headers)
-      : this.#newResponse(text, arg)
+    return this.#newResponse(text, arg)
   }
 
   /**
@@ -769,10 +778,10 @@ export class Context<
    */
   json: JSONRespond = <
     T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
-    U extends StatusCode = StatusCode
+    U extends ContentfulStatusCode = ContentfulStatusCode
   >(
     object: T,
-    arg?: U | ResponseInit,
+    arg?: U | ResponseOrInit<U>,
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U> => {
     const body = JSON.stringify(object)
@@ -786,7 +795,7 @@ export class Context<
 
   html: HTMLRespond = (
     html: string | Promise<string>,
-    arg?: StatusCode | ResponseInit,
+    arg?: ContentfulStatusCode | ResponseOrInit<ContentfulStatusCode>,
     headers?: HeaderRecord
   ): Response | Promise<Response> => {
     this.#preparedHeaders ??= {}
