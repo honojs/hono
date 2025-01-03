@@ -29,7 +29,8 @@ const decodeJwtPart = (part: string): TokenHeader | JWTPayload | undefined =>
 
 export interface TokenHeader {
   alg: SignatureAlgorithm
-  typ?: 'JWT'
+  typ?: 'JWT',
+  kid?: string
 }
 
 export function isTokenHeader(obj: unknown): obj is TokenHeader {
@@ -47,10 +48,18 @@ export function isTokenHeader(obj: unknown): obj is TokenHeader {
 export const sign = async (
   payload: JWTPayload,
   privateKey: SignatureKey,
-  alg: SignatureAlgorithm = 'HS256'
+  keyAlg: SignatureAlgorithm = 'HS256'
 ): Promise<string> => {
   const encodedPayload = encodeJwtPart(payload)
-  const encodedHeader = encodeJwtPart({ alg, typ: 'JWT' } satisfies TokenHeader)
+  let encodedHeader
+  let alg
+  if (typeof privateKey === 'object' && 'alg' in privateKey) {
+    alg = privateKey.alg as SignatureAlgorithm
+    encodedHeader = encodeJwtPart({ alg, typ: 'JWT', kid: privateKey.kid })
+  } else {
+    alg = keyAlg
+    encodedHeader = encodeJwtPart({ alg, typ: 'JWT' })
+  }
 
   const partialToken = `${encodedHeader}.${encodedPayload}`
 
@@ -108,6 +117,15 @@ export const decode = (token: string): { header: TokenHeader; payload: JWTPayloa
       header,
       payload,
     }
+  } catch {
+    throw new JwtTokenInvalid(token)
+  }
+}
+
+export const decodeHeader = (token: string): TokenHeader => {
+  try {
+    const [h] = token.split('.')
+    return decodeJwtPart(h) as TokenHeader
   } catch {
     throw new JwtTokenInvalid(token)
   }
