@@ -277,6 +277,14 @@ describe('OnHandlerInterface', () => {
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
+
+  test('app.on(method, path[], middleware, handler) should not throw a type error', () => {
+    const middleware: MiddlewareHandler<{ Variables: { foo: string } }> = async () => {}
+    app.on('GET', ['/a', '/b'], middleware, (c) => {
+      expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+      return c.json({})
+    })
+  })
 })
 
 describe('TypedResponse', () => {

@@ -1745,10 +1745,10 @@ export interface OnHandlerInterface<
   ): HonoBase<E, S & ToSchema<string, MergePath<BasePath, P>, I, MergeTypedResponse<R>>, BasePath>
 
   // app.on(method | method[], path[], ...handlers[])
-  <I extends Input = BlankInput, R extends HandlerResponse<any> = any>(
+  <I extends Input = BlankInput, R extends HandlerResponse<any> = any, E2 extends Env = E>(
     methods: string | string[],
     paths: string[],
-    ...handlers: H<E, any, I, R>[]
+    ...handlers: H<E2, any, I, R>[]
   ): HonoBase<E, S & ToSchema<string, string, I, MergeTypedResponse<R>>, BasePath>
 }
 
