@@ -116,10 +116,14 @@ interface NewResponse {
  */
 interface BodyRespond {
   // if we return content, only allow the status codes that allow for returning the body
-  (data: Data, status?: ContentfulStatusCode, headers?: HeaderRecord): Response
-  (data: null, status?: StatusCode, headers?: HeaderRecord): Response
-  (data: Data, init?: ResponseOrInit<ContentfulStatusCode>): Response
-  (data: null, init?: ResponseOrInit): Response
+  <U extends ContentfulStatusCode>(data: Data, status?: U, headers?: HeaderRecord): Response &
+    TypedResponse<unknown, U, 'body'>
+  <U extends StatusCode>(data: null, status?: U, headers?: HeaderRecord): Response &
+    TypedResponse<null, U, 'body'>
+  <U extends ContentfulStatusCode>(data: Data, init?: ResponseOrInit<U>): Response &
+    TypedResponse<unknown, U, 'body'>
+  <U extends StatusCode>(data: null, init?: ResponseOrInit<U>): Response &
+    TypedResponse<null, U, 'body'>
 }
 
 /**
@@ -723,10 +727,14 @@ export class Context<
    * })
    * ```
    */
-  body: BodyRespond = (data, arg?: StatusCode | RequestInit, headers?: HeaderRecord) => {
-    return typeof arg === 'number'
-      ? this.#newResponse(data, arg, headers)
-      : this.#newResponse(data, arg)
+  body: BodyRespond = (
+    data: Data | null,
+    arg?: StatusCode | RequestInit,
+    headers?: HeaderRecord
+  ): ReturnType<BodyRespond> => {
+    return (
+      typeof arg === 'number' ? this.#newResponse(data, arg, headers) : this.#newResponse(data, arg)
+    ) as ReturnType<BodyRespond>
   }
 
   /**

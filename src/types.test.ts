@@ -2328,4 +2328,21 @@ describe('status code', () => {
     // @ts-expect-error 204 is not contentful status code
     app.get('/', async (c) => c.html('<h1>title</h1>', { status: 204 }))
   })
+
+  it('.body() not override other responses in hono client', async () => {
+    const router = app.get('/', async (c) => {
+      if (c.req.header('Content-Type') === 'application/json') {
+        return c.text('Hello', 200)
+      }
+
+      if (c.req.header('Content-Type') === 'application/x-www-form-urlencoded') {
+        return c.body('Hello', 201)
+      }
+
+      return c.body(null, 204)
+    })
+
+    type Actual = ExtractSchema<typeof router>['/']['$get']['status']
+    expectTypeOf<Actual>().toEqualTypeOf<204 | 201 | 200>()
+  })
 })
