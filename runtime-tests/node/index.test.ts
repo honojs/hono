@@ -247,3 +247,17 @@ describe('compress', async () => {
     expect(res.text).toBe(cssContent)
   })
 })
+
+describe('Buffers', () => {
+  const app = new Hono().get('/', async (c) => {
+    return c.body(Buffer.from('hello'))
+  })
+
+  const server = createAdaptorServer(app)
+
+  it('should allow returning buffers', async () => {
+    const res = await request(server).get('/')
+    expect(res.status).toBe(200)
+    expect(res.text).toBe('hello')
+  })
+})
