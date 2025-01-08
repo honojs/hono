@@ -1,4 +1,6 @@
 import { assertEquals } from '@std/assert'
+import { Buffer } from 'node:buffer'
+
 import { Context } from '../../src/context.ts'
 import { env, getRuntimeKey } from '../../src/helper/adapter/index.ts'
 import { Hono } from '../../src/hono.ts'
@@ -31,4 +33,14 @@ Deno.test('environment variables', () => {
   const c = new Context(new Request('http://localhost/'))
   const { NAME } = env<{ NAME: string }>(c)
   assertEquals(NAME, 'Deno')
+})
+
+Deno.test('Buffers', async () => {
+  const app = new Hono().get('/', async (c) => {
+    return c.body(Buffer.from('hello'))
+  })
+
+  const res = await app.request('/')
+  assertEquals(res.status, 200)
+  assertEquals(await res.text(), 'hello')
 })

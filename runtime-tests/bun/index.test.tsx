@@ -438,3 +438,15 @@ describe('streaming', () => {
     })
   })
 })
+
+describe('Buffers', () => {
+  const app = new Hono().get('/', async (c) => {
+    return c.body(Buffer.from('hello'))
+  })
+
+  it('should allow returning buffers', async () => {
+    const res = await app.request(new Request('http://localhost/'))
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello')
+  })
+})
