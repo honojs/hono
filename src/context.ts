@@ -1,5 +1,3 @@
-import type { Buffer } from 'node:buffer'
-
 import { HonoRequest } from './request'
 import type { Result } from './router'
 import type {
@@ -29,9 +27,9 @@ type HeaderRecord =
   | Record<string, string | string[]>
 
 /**
- * Data type can be a string, ArrayBuffer, Buffer, or ReadableStream.
+ * Data type can be a string, ArrayBuffer, Uint8Array (buffer), or ReadableStream.
  */
-export type Data = string | ArrayBuffer | ReadableStream | Buffer
+export type Data = string | ArrayBuffer | ReadableStream | Uint8Array
 
 /**
  * Interface for the execution context in a web worker or similar environment.

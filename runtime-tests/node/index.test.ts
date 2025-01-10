@@ -249,14 +249,24 @@ describe('compress', async () => {
 })
 
 describe('Buffers', () => {
-  const app = new Hono().get('/', async (c) => {
-    return c.body(Buffer.from('hello'))
-  })
+  const app = new Hono()
+    .get('/', async (c) => {
+      return c.body(Buffer.from('hello'))
+    })
+    .get('/uint8array', async (c) => {
+      return c.body(Uint8Array.from('hello'.split(''), (c) => c.charCodeAt(0)))
+    })
 
   const server = createAdaptorServer(app)
 
   it('should allow returning buffers', async () => {
     const res = await request(server).get('/')
+    expect(res.status).toBe(200)
+    expect(res.text).toBe('hello')
+  })
+
+  it('should allow returning uint8array as well', async () => {
+    const res = await request(server).get('/uint8array')
     expect(res.status).toBe(200)
     expect(res.text).toBe('hello')
   })
