@@ -7,9 +7,9 @@ import { compose } from '../../compose'
 import type { Context } from '../../context'
 import { METHOD_NAME_ALL } from '../../router'
 import { TrieRouter } from '../../router/trie-router'
-import type { MiddlewareHandler, Next } from '../../types'
+import type { DefaultEnv, Env, MiddlewareHandler, Next } from '../../types'
 
-type Condition = (c: Context) => boolean
+type Condition<E extends Env = DefaultEnv> = (c: Context<E>) => boolean
 
 /**
  * Create a composed middleware that runs the first middleware that returns true.

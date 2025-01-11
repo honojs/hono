@@ -8,10 +8,10 @@ import type { HonoOptions } from '../hono-base'
 import { LinearRouter } from '../router/linear-router'
 import { SmartRouter } from '../router/smart-router'
 import { TrieRouter } from '../router/trie-router'
-import type { BlankEnv, BlankSchema, Env, Schema } from '../types'
+import type { BlankSchema, DefaultEnv, Env, Schema } from '../types'
 
 export class Hono<
-  E extends Env = BlankEnv,
+  E extends Env = DefaultEnv,
   S extends Schema = BlankSchema,
   BasePath extends string = '/'
 > extends HonoBase<E, S, BasePath> {

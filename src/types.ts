@@ -32,6 +32,51 @@ export type Env = {
   Bindings?: Bindings
   Variables?: Variables
 }
+/**
+ * Default `Env` type. This type is designed to be used with interface merging.
+ *
+ * @see {Env}
+ * @example
+ * declare module 'hono' {
+ *   interface DefaultEnv {
+ *     Bindings: DefaultBindings
+ *     Variables: DefaultVariables
+ *   }
+ * }
+ */
+export interface DefaultEnv {}
+/**
+ * Default `Bindings` type. This type is designed to be used with interface merging.
+ *
+ * @see {Bindings}
+ * @example
+ * declare module 'hono' {
+ *   interface DefaultEnv {
+ *     Bindings: DefaultBindings
+ *   }
+ *
+ *   interface DefaultBindings {
+ *     lambdaContext: LambdaContext
+ *   }
+ * }
+ */
+export interface DefaultBindings {}
+/**
+ * Default `Variables` type. This type is designed to be used with interface merging.
+ *
+ * @see {Variables}
+ * @example
+ * declare module 'hono' {
+ *   interface DefaultEnv {
+ *     Variables: DefaultVariables
+ *   }
+ *
+ *   interface DefaultVariables {
+ *     foo: () => string
+ *   }
+ * }
+ */
+export interface DefaultVariables {}
 
 export type Next = () => Promise<void>
 
@@ -55,10 +100,10 @@ export type BlankInput = {}
 //////                            //////
 ////////////////////////////////////////
 
-export interface RouterRoute {
+export interface RouterRoute<E extends Env = DefaultEnv> {
   path: string
   method: string
-  handler: H
+  handler: H<E>
 }
 
 ////////////////////////////////////////
@@ -70,31 +115,33 @@ export interface RouterRoute {
 export type HandlerResponse<O> = Response | TypedResponse<O> | Promise<Response | TypedResponse<O>>
 
 export type Handler<
-  E extends Env = any,
+  E extends Env = DefaultEnv,
   P extends string = any,
   I extends Input = BlankInput,
   R extends HandlerResponse<any> = any
 > = (c: Context<E, P, I>, next: Next) => R
 
 export type MiddlewareHandler<
-  E extends Env = any,
+  E extends Env = DefaultEnv,
   P extends string = string,
   I extends Input = {}
 > = (c: Context<E, P, I>, next: Next) => Promise<Response | void>
 
 export type H<
-  E extends Env = any,
+  E extends Env = DefaultEnv,
   P extends string = any,
   I extends Input = BlankInput,
   R extends HandlerResponse<any> = any
 > = Handler<E, P, I, R> | MiddlewareHandler<E, P, I>
 
-export type NotFoundHandler<E extends Env = any> = (c: Context<E>) => Response | Promise<Response>
+export type NotFoundHandler<E extends Env = DefaultEnv> = (
+  c: Context<E>
+) => Response | Promise<Response>
 
 export interface HTTPResponseError extends Error {
   getResponse: () => Response
 }
-export type ErrorHandler<E extends Env = any> = (
+export type ErrorHandler<E extends Env = DefaultEnv> = (
   err: Error | HTTPResponseError,
   c: Context<E>
 ) => Response | Promise<Response>
@@ -680,11 +727,6 @@ export interface MiddlewareHandlerInterface<
   S extends Schema = BlankSchema,
   BasePath extends string = '/'
 > {
-  //// app.use(...handlers[])
-  <E2 extends Env = E>(
-    ...handlers: MiddlewareHandler<E2, MergePath<BasePath, ExtractStringKey<S>>>[]
-  ): HonoBase<IntersectNonAnyTypes<[E, E2]>, S, BasePath>
-
   // app.use(handler)
   <E2 extends Env = E>(
     handler: MiddlewareHandler<E2, MergePath<BasePath, ExtractStringKey<S>>>
@@ -1058,7 +1100,12 @@ export interface MiddlewareHandlerInterface<
     BasePath
   >
 
-  //// app.use(path, ...handlers[])
+  // app.use(...handlers[])
+  <E2 extends Env = E>(
+    ...handlers: MiddlewareHandler<E2, MergePath<BasePath, ExtractStringKey<S>>>[]
+  ): HonoBase<IntersectNonAnyTypes<[E, E2]>, S, BasePath>
+
+  // app.use(path, ...handlers[])
   <P extends string, E2 extends Env = E>(
     path: P,
     ...handlers: MiddlewareHandler<E2, MergePath<BasePath, P>>[]

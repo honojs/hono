@@ -6,10 +6,10 @@
 import { HonoBase } from '../hono-base'
 import type { HonoOptions } from '../hono-base'
 import { PatternRouter } from '../router/pattern-router'
-import type { BlankEnv, BlankSchema, Env, Schema } from '../types'
+import type { BlankSchema, DefaultEnv, Env, Schema } from '../types'
 
 export class Hono<
-  E extends Env = BlankEnv,
+  E extends Env = DefaultEnv,
   S extends Schema = BlankSchema,
   BasePath extends string = '/'
 > extends HonoBase<E, S, BasePath> {

@@ -1,12 +1,12 @@
 import type { ServeStaticOptions } from '../../middleware/serve-static'
 import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
-import type { Env, MiddlewareHandler } from '../../types'
+import type { DefaultEnv, Env, MiddlewareHandler } from '../../types'
 
 const { open, lstatSync, errors } = Deno
 
-export const serveStatic = <E extends Env = Env>(
+export const serveStatic = <E extends Env = DefaultEnv>(
   options: ServeStaticOptions<E>
-): MiddlewareHandler => {
+): MiddlewareHandler<E> => {
   return async function serveStatic(c, next) {
     const getContent = async (path: string) => {
       try {
@@ -35,7 +35,7 @@ export const serveStatic = <E extends Env = Env>(
       return isDir
     }
 
-    return baseServeStatic({
+    return baseServeStatic<E>({
       ...options,
       getContent,
       pathResolve,

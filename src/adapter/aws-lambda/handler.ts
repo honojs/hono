@@ -1,5 +1,5 @@
 import type { Hono } from '../../hono'
-import type { Env, Schema } from '../../types'
+import type { DefaultEnv, Env, Schema } from '../../types'
 import { decodeBase64, encodeBase64 } from '../../utils/encode'
 import type {
   ALBRequestContext,
@@ -101,7 +101,7 @@ const streamToNodeStream = async (
 }
 
 export const streamHandle = <
-  E extends Env = Env,
+  E extends Env = DefaultEnv,
   S extends Schema = {},
   BasePath extends string = '/'
 >(
@@ -160,7 +160,11 @@ export const streamHandle = <
 /**
  * Accepts events from API Gateway/ELB(`APIGatewayProxyEvent`) and directly through Function Url(`APIGatewayProxyEventV2`)
  */
-export const handle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
+export const handle = <
+  E extends Env = DefaultEnv,
+  S extends Schema = {},
+  BasePath extends string = '/'
+>(
   app: Hono<E, S, BasePath>
 ): ((event: LambdaEvent, lambdaContext?: LambdaContext) => Promise<APIGatewayProxyResult>) => {
   return async (event, lambdaContext?) => {

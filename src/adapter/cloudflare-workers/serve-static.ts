@@ -1,9 +1,9 @@
 import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
 import type { ServeStaticOptions as BaseServeStaticOptions } from '../../middleware/serve-static'
-import type { Env, MiddlewareHandler } from '../../types'
+import type { DefaultEnv, Env, MiddlewareHandler } from '../../types'
 import { getContentFromKVAsset } from './utils'
 
-export type ServeStaticOptions<E extends Env = Env> = BaseServeStaticOptions<E> & {
+export type ServeStaticOptions<E extends Env = DefaultEnv> = BaseServeStaticOptions<E> & {
   // namespace is KVNamespace
   namespace?: unknown
   manifest: object | string
@@ -18,9 +18,9 @@ export type ServeStaticOptions<E extends Env = Env> = BaseServeStaticOptions<E> 
  * please consider using Cloudflare Pages. You can start to create the Cloudflare Pages
  * application with the `npm create hono@latest` command.
  */
-export const serveStatic = <E extends Env = Env>(
+export const serveStatic = <E extends Env = DefaultEnv>(
   options: ServeStaticOptions<E>
-): MiddlewareHandler => {
+): MiddlewareHandler<E> => {
   return async function serveStatic(c, next) {
     const getContent = async (path: string) => {
       return getContentFromKVAsset(path, {
@@ -30,11 +30,12 @@ export const serveStatic = <E extends Env = Env>(
         namespace: options.namespace
           ? options.namespace
           : c.env
-          ? c.env.__STATIC_CONTENT
+          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (c.env as any).__STATIC_CONTENT
           : undefined,
       })
     }
-    return baseServeStatic({
+    return baseServeStatic<E>({
       ...options,
       getContent,
     })(c, next)

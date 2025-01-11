@@ -359,6 +359,21 @@
       "import": "./dist/adapter/aws-lambda/index.js",
       "require": "./dist/cjs/adapter/aws-lambda/index.js"
     },
+    "./aws-lambda/alb": {
+      "types": "./dist/types/adapter/aws-lambda/alb.d.ts",
+      "import": "./dist/adapter/aws-lambda/alb.js",
+      "require": "./dist/cjs/adapter/aws-lambda/alb.js"
+    },
+    "./aws-lambda/api-gateway": {
+      "types": "./dist/types/adapter/aws-lambda/api-gateway.d.ts",
+      "import": "./dist/adapter/aws-lambda/api-gateway.js",
+      "require": "./dist/cjs/adapter/aws-lambda/api-gateway.js"
+    },
+    "./aws-lambda/api-gateway-v2": {
+      "types": "./dist/types/adapter/aws-lambda/api-gateway-v2.d.ts",
+      "import": "./dist/adapter/aws-lambda/api-gateway-v2.js",
+      "require": "./dist/cjs/adapter/aws-lambda/api-gateway-v2.js"
+    },
     "./vercel": {
       "types": "./dist/types/adapter/vercel/index.d.ts",
       "import": "./dist/adapter/vercel/index.js",
@@ -592,6 +607,15 @@
       ],
       "aws-lambda": [
         "./dist/types/adapter/aws-lambda"
+      ],
+      "aws-lambda/alb": [
+        "./dist/types/adapter/aws-lambda/alb.d.ts"
+      ],
+      "aws-lambda/api-gateway":[
+        "./dist/types/adapter/aws-lambda/api-gateway.d.ts"
+      ],
+      "aws-lambda/api-gateway-v2":[
+        "./dist/types/adapter/aws-lambda/api-gateway-v2.d.ts"
       ],
       "vercel": [
         "./dist/types/adapter/vercel"

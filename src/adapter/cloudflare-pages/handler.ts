@@ -1,7 +1,7 @@
 import { Context } from '../../context'
 import type { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
-import type { BlankSchema, Env, Input, MiddlewareHandler, Schema } from '../../types'
+import type { BlankSchema, DefaultEnv, Env, Input, MiddlewareHandler, Schema } from '../../types'
 
 // Ref: https://github.com/cloudflare/workerd/blob/main/types/defines/pages.d.ts
 
@@ -28,7 +28,7 @@ declare type PagesFunction<
 > = (context: EventContext<Env, Params, Data>) => Response | Promise<Response>
 
 export const handle =
-  <E extends Env = Env, S extends Schema = BlankSchema, BasePath extends string = '/'>(
+  <E extends Env = DefaultEnv, S extends Schema = BlankSchema, BasePath extends string = '/'>(
     app: Hono<E, S, BasePath>
   ): PagesFunction<E['Bindings']> =>
   (eventContext) => {
@@ -110,7 +110,7 @@ declare abstract class FetcherLike {
  */
 export const serveStatic = (): MiddlewareHandler => {
   return async (c) => {
-    const env = c.env as { ASSETS: FetcherLike }
+    const env = c.env as unknown as { ASSETS: FetcherLike }
     const res = await env.ASSETS.fetch(c.req.raw)
     if (res.status === 404) {
       return c.notFound()
