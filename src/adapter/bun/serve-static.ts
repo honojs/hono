@@ -2,11 +2,11 @@
 import { stat } from 'node:fs/promises'
 import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
 import type { ServeStaticOptions } from '../../middleware/serve-static'
-import type { Env, MiddlewareHandler } from '../../types'
+import type { DefaultEnv, Env, MiddlewareHandler } from '../../types'
 
-export const serveStatic = <E extends Env = Env>(
+export const serveStatic = <E extends Env = DefaultEnv>(
   options: ServeStaticOptions<E>
-): MiddlewareHandler => {
+): MiddlewareHandler<E> => {
   return async function serveStatic(c, next) {
     const getContent = async (path: string) => {
       path = path.startsWith('/') ? path : `./${path}`
@@ -25,7 +25,7 @@ export const serveStatic = <E extends Env = Env>(
       } catch {}
       return isDir
     }
-    return baseServeStatic({
+    return baseServeStatic<E>({
       ...options,
       getContent,
       pathResolve,

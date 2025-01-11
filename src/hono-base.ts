@@ -10,12 +10,13 @@ import type { ExecutionContext } from './context'
 import type { Router } from './router'
 import { METHODS, METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE } from './router'
 import type {
+  DefaultEnv,
   Env,
   ErrorHandler,
   FetchEventLike,
   H,
-  HTTPResponseError,
   HandlerInterface,
+  HTTPResponseError,
   MergePath,
   MergeSchemaPath,
   MiddlewareHandler,
@@ -62,7 +63,7 @@ export type HonoOptions<E extends Env> = {
    * const app = new Hono({ router: new RegExpRouter() })
    * ```
    */
-  router?: Router<[H, RouterRoute]>
+  router?: Router<[H<E>, RouterRoute<E>]>
   /**
    * `getPath` can handle the host header value.
    *
@@ -95,7 +96,7 @@ type MountOptions =
       replaceRequest?: MountReplaceRequest
     }
 
-class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
+class Hono<E extends Env = DefaultEnv, S extends Schema = {}, BasePath extends string = '/'> {
   get!: HandlerInterface<E, 'get', S, BasePath>
   post!: HandlerInterface<E, 'post', S, BasePath>
   put!: HandlerInterface<E, 'put', S, BasePath>
@@ -110,19 +111,19 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     This class is like an abstract class and does not have a router.
     To use it, inherit the class and implement router in the constructor.
   */
-  router!: Router<[H, RouterRoute]>
+  router!: Router<[H<E>, RouterRoute<E>]>
   readonly getPath: GetPath<E>
   // Cannot use `#` because it requires visibility at JavaScript runtime.
   private _basePath: string = '/'
   #path: string = '/'
 
-  routes: RouterRoute[] = []
+  routes: RouterRoute<E>[] = []
 
   constructor(options: HonoOptions<E> = {}) {
     // Implementation of app.get(...handlers[]) or app.get(path, ...handlers[])
     const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE]
     allMethods.forEach((method) => {
-      this[method] = (args1: string | H, ...args: H[]) => {
+      this[method] = (args1: string | H<E>, ...args: H<E>[]) => {
         if (typeof args1 === 'string') {
           this.#path = args1
         } else {
@@ -136,7 +137,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     })
 
     // Implementation of app.on(method, path, ...handlers[])
-    this.on = (method: string | string[], path: string | string[], ...handlers: H[]) => {
+    this.on = (method: string | string[], path: string | string[], ...handlers: H<E>[]) => {
       for (const p of [path].flat()) {
         this.#path = p
         for (const m of [method].flat()) {
@@ -177,9 +178,9 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     return clone
   }
 
-  #notFoundHandler: NotFoundHandler = notFoundHandler
+  #notFoundHandler: NotFoundHandler<E> = notFoundHandler
   // Cannot use `#` because it requires visibility at JavaScript runtime.
-  private errorHandler: ErrorHandler = errorHandler
+  private errorHandler: ErrorHandler<E> = errorHandler
 
   /**
    * `.route()` allows grouping other Hono instance in routes.
@@ -215,11 +216,11 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         handler = r.handler
       } else {
         handler = async (c: Context, next: Next) =>
-          (await compose<Context>([], app.errorHandler)(c, () => r.handler(c, next))).res
+          (await compose<Context, SubEnv>([], app.errorHandler)(c, () => r.handler(c, next))).res
         ;(handler as any)[COMPOSED_HANDLER] = r.handler
       }
 
-      subApp.#addRoute(r.method, r.path, handler)
+      subApp.#addRoute(r.method, r.path, handler as any)
     })
     return this
   }
@@ -334,7 +335,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     }
 
     // prepare handlers for request
-    const getOptions: (c: Context) => unknown[] = optionHandler
+    const getOptions: (c: Context<E>) => unknown[] = optionHandler
       ? (c) => {
           const options = optionHandler!(c)
           return Array.isArray(options) ? options : [options]
@@ -356,7 +357,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
       }
     })()
 
-    const handler: MiddlewareHandler = async (c, next) => {
+    const handler: MiddlewareHandler<E> = async (c, next) => {
       const res = await applicationHandler(replaceRequest!(c.req.raw), ...getOptions(c))
 
       if (res) {
@@ -369,10 +370,10 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     return this
   }
 
-  #addRoute(method: string, path: string, handler: H) {
+  #addRoute(method: string, path: string, handler: H<E>) {
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
-    const r: RouterRoute = { path, method, handler }
+    const r: RouterRoute<E> = { path, method, handler }
     this.router.add(method, path, [handler, r])
     this.routes.push(r)
   }
@@ -428,7 +429,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         : res ?? this.#notFoundHandler(c)
     }
 
-    const composed = compose<Context>(matchResult[0], this.errorHandler, this.#notFoundHandler)
+    const composed = compose<Context, E>(matchResult[0], this.errorHandler, this.#notFoundHandler)
 
     return (async () => {
       try {
