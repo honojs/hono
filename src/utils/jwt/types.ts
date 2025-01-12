@@ -45,6 +45,13 @@ export class JwtHeaderInvalid extends Error {
   }
 }
 
+export class JwtHeaderRequiresKid extends Error {
+  constructor(header: object) {
+    super(`required "kid" in jwt header: ${JSON.stringify(header)}`)
+    this.name = 'JwtHeaderRequiresKid'
+  }
+}
+
 export class JwtTokenSignatureMismatched extends Error {
   constructor(token: string) {
     super(`token(${token}) signature mismatched`)
