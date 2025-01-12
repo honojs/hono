@@ -10,7 +10,6 @@ import type { MiddlewareHandler } from '../../types'
 import type { CookiePrefixOptions } from '../../utils/cookie'
 import { Jwt } from '../../utils/jwt'
 import '../../context'
-import { decodeHeader } from '../../utils/jwt/jwt'
 
 /**
  * JWK Auth Middleware for Hono.
@@ -132,7 +131,7 @@ export const jwk = (options: ({ keys?: JsonWebKey[] | (() => Promise<JsonWebKey[
       })
     }
 
-    let _keys = typeof options.keys === 'function' ? await options.keys() : options.keys
+    let keys = typeof options.keys === 'function' ? await options.keys() : options.keys
 
     if (options.jwks_uri) {
       const response = await fetch(options.jwks_uri, init)
@@ -143,63 +142,19 @@ export const jwk = (options: ({ keys?: JsonWebKey[] | (() => Promise<JsonWebKey[
       if (!data.keys) {
         throw new Error('invalid JWKS response. "keys" field is missing')
       }
-      if (_keys) {
-        _keys.push(...data.keys)
+      if (keys) {
+        keys.push(...data.keys)
       } else {
-        _keys = data.keys
+        keys = data.keys
       }
-    } else if (!_keys) {
+    } else if (!keys) {
         throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri"')
-    }
-
-    let header
-    try {
-      header = decodeHeader(token)
-    } catch (e) {
-      throw new HTTPException(401, {
-        message: 'Unauthorized',
-        res: unauthorizedResponse({
-          ctx,
-          error: 'invalid_token',
-          statusText: 'Unauthorized',
-          errDescription: 'token verification failure',
-        }),
-        cause: e,
-      })
-    }
-
-    if (!header.kid) {
-      throw new HTTPException(401, {
-        message: 'Unauthorized',
-        res: unauthorizedResponse({
-          ctx,
-          error: 'invalid_token',
-          statusText: 'Unauthorized',
-          errDescription: 'token verification failure',
-        }),
-        cause: new Error(`missing "kid" in JWT header`),
-      })
-    }
-
-    const kid = header.kid
-    const matchingKey = _keys.find((key) => key.kid === kid)
-    if (!matchingKey) {
-      throw new HTTPException(401, {
-        message: 'Unauthorized',
-        res: unauthorizedResponse({
-          ctx,
-          error: 'invalid_token',
-          statusText: 'Unauthorized',
-          errDescription: 'token verification failure',
-        }),
-        cause: new Error(`unmatched "kid" in JWT header`),
-      })
     }
 
     let payload
     let cause
     try {
-      payload = await Jwt.verify(token, matchingKey, matchingKey.alg as any)
+      payload = await Jwt.verifyFromJwks(token, keys)
     } catch (e) {
       cause = e
     }
