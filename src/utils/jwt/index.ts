@@ -3,5 +3,5 @@
  * JWT utility.
  */
 
-import { decode, sign, verify } from './jwt'
-export const Jwt = { sign, verify, decode }
+import { decode, sign, verify, verifyFromJwks } from './jwt'
+export const Jwt = { sign, verify, decode, verifyFromJwks }
