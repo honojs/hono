@@ -11,6 +11,7 @@ import { signing, verifying } from './jws'
 import type { SignatureKey } from './jws'
 import {
   JwtHeaderInvalid,
+  JwtHeaderRequiresKid,
   JwtTokenExpired,
   JwtTokenInvalid,
   JwtTokenIssuedAt,
@@ -106,6 +107,26 @@ export const verify = async (
   }
 
   return payload
+}
+
+export const verifyFromJwks = async (
+  token: string,
+  keys: JsonWebKey[]) => {
+    let header = decodeHeader(token)
+
+    if (!isTokenHeader(header)) {
+      throw new JwtHeaderInvalid(header)
+    }
+    if (!header.kid) {
+      throw new JwtHeaderRequiresKid(header)
+    }
+
+    const matchingKey = keys.find((key) => key.kid === header.kid)
+    if (!matchingKey) {
+      throw new JwtTokenInvalid(token)
+    }
+
+    return await verify(token, matchingKey, matchingKey.alg as any)
 }
 
 export const decode = (token: string): { header: TokenHeader; payload: JWTPayload } => {
