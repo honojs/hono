@@ -72,7 +72,7 @@ describe('JWK', () => {
       return c.json(payload)
     })
 
-    it('Should reject unauthorized requests with missing JWT in header', async () => {
+    it('Should not authorize requests with missing access token', async () => {
       const req = new Request('http://localhost/auth-with-keys/a')
       const res = await app.request(req)
       expect(res).not.toBeNull()
@@ -81,7 +81,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeFalsy()
     })
 
-    it('Should authorize JWT header from a static array passed to options.keys (key 1)', async () => {
+    it('Should authorize from a static array passed to options.keys (key 1)', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys/a')
       req.headers.set('Authorization', `Bearer ${credential}`)
@@ -92,7 +92,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should authorize JWT header from a static array passed to options.keys (key 2)', async () => {
+    it('Should authorize from a static array passed to options.keys (key 2)', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[1])
       const req = new Request('http://localhost/auth-with-keys/a')
       req.headers.set('Authorization', `Bearer ${credential}`)
@@ -103,7 +103,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should authorize JWT header with Unicode payload from a static array passed to options.keys', async () => {
+    it('Should authorize with Unicode payload from a static array passed to options.keys', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-unicode/a')
       req.headers.set('Authorization', `Basic ${credential}`)
@@ -114,7 +114,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should authorize JWT header from a function passed to options.keys', async () => {
+    it('Should authorize from a function passed to options.keys', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-fn/a')
       req.headers.set('Authorization', `Basic ${credential}`)
@@ -125,7 +125,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should authorize JWT header from a URI remotely fetched from options.jwks_uri', async () => {
+    it('Should authorize from a URI remotely fetched from options.jwks_uri', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-jwks_uri/a')
       req.headers.set('Authorization', `Basic ${credential}`)
@@ -136,7 +136,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should reject requests with invalid Unicode payload in header', async () => {
+    it('Should not authorize requests with invalid Unicode payload in header', async () => {
       const invalidToken =
         'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
       const url = 'http://localhost/auth-with-keys-unicode/a'
@@ -151,7 +151,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeFalsy()
     })
 
-    it('Should reject requests with malformed token structure in header', async () => {
+    it('Should not authorize requests with malformed token structure in header', async () => {
       const invalid_token = 'invalid token'
       const url = 'http://localhost/auth-with-keys/a'
       const req = new Request(url)
@@ -165,7 +165,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeFalsy()
     })
 
-    it('Should reject requests without authorization in nested JWK middleware', async () => {
+    it('Should not authorize requests without authorization in nested JWK middleware', async () => {
       const req = new Request('http://localhost/auth-with-keys-nested/a')
       const res = await app.request(req)
       expect(res).not.toBeNull()
@@ -174,7 +174,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeFalsy()
     })
 
-    it('Should authorize - nested', async () => {
+    it('Should authorize requests with authorization in nested JWK middleware', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-nested/a')
       req.headers.set('Authorization', `Bearer ${credential}`)
@@ -209,7 +209,7 @@ describe('JWK', () => {
       return c.json(payload)
     })
 
-    it('Should not authorize', async () => {
+    it('Should not authorize requests with missing access token', async () => {
       const req = new Request('http://localhost/auth-with-keys/a')
       const res = await app.request(req)
       expect(res).not.toBeNull()
@@ -218,7 +218,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeFalsy()
     })
 
-    it('Should authorize', async () => {
+    it('Should authorize from a static array passed to options.keys', async () => {
       const url = 'http://localhost/auth-with-keys/a'
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request(url, {
@@ -233,7 +233,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should authorize Unicode', async () => {
+    it('Should authorize with Unicode payload from a static array passed to options.keys', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-unicode/a', {
         headers: new Headers({
@@ -247,7 +247,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should not authorize Unicode', async () => {
+    it('Should not authorize requests with invalid Unicode payload in cookie', async () => {
       const invalidToken =
         'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
 
@@ -263,7 +263,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeFalsy()
     })
 
-    it('Should not authorize', async () => {
+    it('Should not authorize requests with malformed token structure in cookie', async () => {
       const invalidToken = 'invalid token'
       const url = 'http://localhost/auth-with-keys/a'
       const req = new Request(url)
