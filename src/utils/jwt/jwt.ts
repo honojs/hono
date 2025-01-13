@@ -49,16 +49,14 @@ export function isTokenHeader(obj: unknown): obj is TokenHeader {
 export const sign = async (
   payload: JWTPayload,
   privateKey: SignatureKey,
-  keyAlg: SignatureAlgorithm = 'HS256'
+  alg: SignatureAlgorithm = 'HS256'
 ): Promise<string> => {
   const encodedPayload = encodeJwtPart(payload)
   let encodedHeader
-  let alg
   if (typeof privateKey === 'object' && 'alg' in privateKey) {
     alg = privateKey.alg as SignatureAlgorithm
     encodedHeader = encodeJwtPart({ alg, typ: 'JWT', kid: privateKey.kid })
   } else {
-    alg = keyAlg
     encodedHeader = encodeJwtPart({ alg, typ: 'JWT' })
   }
 
