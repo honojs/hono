@@ -151,11 +151,11 @@ describe('Context', () => {
     c.header('X-Foo', 'Bar')
     c.header('X-Foo', undefined)
     c.header('X-Foo2', 'Bar')
-    let res = c.body('Hi')
+    const res = c.body('Hi')
     expect(res.headers.get('X-Foo')).toBe(null)
     c.header('X-Foo2', undefined)
-    res = c.res
-    expect(res.headers.get('X-Foo2')).toBe(null)
+    const res2 = c.body('Hi')
+    expect(res2.headers.get('X-Foo2')).toBe(null)
   })
 
   it('c.header() - clear the header when append is true', async () => {

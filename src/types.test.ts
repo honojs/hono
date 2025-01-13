@@ -277,6 +277,14 @@ describe('OnHandlerInterface', () => {
     }
     type verify = Expect<Equal<Expected, Actual>>
   })
+
+  test('app.on(method, path[], middleware, handler) should not throw a type error', () => {
+    const middleware: MiddlewareHandler<{ Variables: { foo: string } }> = async () => {}
+    app.on('GET', ['/a', '/b'], middleware, (c) => {
+      expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+      return c.json({})
+    })
+  })
 })
 
 describe('TypedResponse', () => {
@@ -2327,5 +2335,22 @@ describe('status code', () => {
     app.get('/', async (c) => c.html('<h1>title</h1>', 204))
     // @ts-expect-error 204 is not contentful status code
     app.get('/', async (c) => c.html('<h1>title</h1>', { status: 204 }))
+  })
+
+  it('.body() not override other responses in hono client', async () => {
+    const router = app.get('/', async (c) => {
+      if (c.req.header('Content-Type') === 'application/json') {
+        return c.text('Hello', 200)
+      }
+
+      if (c.req.header('Content-Type') === 'application/x-www-form-urlencoded') {
+        return c.body('Hello', 201)
+      }
+
+      return c.body(null, 204)
+    })
+
+    type Actual = ExtractSchema<typeof router>['/']['$get']['status']
+    expectTypeOf<Actual>().toEqualTypeOf<204 | 201 | 200>()
   })
 })
