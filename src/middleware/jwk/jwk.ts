@@ -10,6 +10,7 @@ import type { MiddlewareHandler } from '../../types'
 import type { CookiePrefixOptions } from '../../utils/cookie'
 import { Jwt } from '../../utils/jwt'
 import '../../context'
+import type { ExtendedJsonWebKey } from '../../utils/jwt/jws'
 
 /**
  * JWK Auth Middleware for Hono.
@@ -57,17 +58,9 @@ import '../../context'
  * ```
  */
 
-// Extending the JsonWebKey interface to include the "kid" property through declaration merging.
-// https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.4
-declare global {
-  interface JsonWebKey {
-    kid?: string
-  }
-}
-
 export const jwk = (
   options: {
-    keys?: JsonWebKey[] | (() => Promise<JsonWebKey[]>)
+    keys?: ExtendedJsonWebKey[] | (() => Promise<ExtendedJsonWebKey[]>)
     jwks_uri?: string
     cookie?:
       | string

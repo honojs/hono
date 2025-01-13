@@ -18,7 +18,13 @@ type KeyAlgorithm =
   | (EcdsaParams & EcKeyImportParams)
   | HmacImportParams
 
-export type SignatureKey = string | JsonWebKey | CryptoKey
+// Extending the JsonWebKey interface to include the "kid" property.
+// https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.4
+export interface ExtendedJsonWebKey extends JsonWebKey {
+  kid?: string
+}
+
+export type SignatureKey = string | ExtendedJsonWebKey | CryptoKey
 
 export async function signing(
   privateKey: SignatureKey,

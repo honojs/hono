@@ -8,7 +8,7 @@ import { decodeBase64Url, encodeBase64Url } from '../../utils/encode'
 import { AlgorithmTypes } from './jwa'
 import type { SignatureAlgorithm } from './jwa'
 import { signing, verifying } from './jws'
-import type { SignatureKey } from './jws'
+import type { ExtendedJsonWebKey, SignatureKey } from './jws'
 import {
   JwtHeaderInvalid,
   JwtHeaderRequiresKid,
@@ -107,7 +107,10 @@ export const verify = async (
   return payload
 }
 
-export const verifyFromJwks = async (token: string, keys: JsonWebKey[]) => {
+export const verifyFromJwks = async (
+  token: string,
+  keys: ExtendedJsonWebKey[]
+): Promise<JWTPayload> => {
   const header = decodeHeader(token)
 
   if (!isTokenHeader(header)) {
