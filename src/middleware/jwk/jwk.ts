@@ -17,9 +17,10 @@ import '../../context'
  * @see {@link https://hono.dev/docs/middleware/builtin/jwk}
  *
  * @param {object} options - The options for the JWK middleware.
- * @param {SignatureKey} [options.keys] - The values of your public keys.
+ * @param {JsonWebKey[] | (() => Promise<JsonWebKey[]>)} [options.keys] - The values of your public keys.
+ * @param {string} [options.jwks_uri] - If this value is set, attempt to fetch JWKs from this URI, expecting a JSON response with `keys` which are added to the provided options.keys
  * @param {string} [options.cookie] - If this value is set, then the value is retrieved from the cookie header using that value as a key, which is then validated as a token.
- * @param {SignatureAlgorithm} [options.alg=HS256] - An algorithm type that is used for verifying. Available types are `HS256` | `HS384` | `HS512` | `RS256` | `RS384` | `RS512` | `PS256` | `PS384` | `PS512` | `ES256` | `ES384` | `ES512` | `EdDSA`.
+ * @param {RequestInit} [init] - Optional initialization options for the `fetch` request when retrieving JWKS from a URI.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
@@ -64,11 +65,14 @@ declare global {
   }
 }
 
-export const jwk = (options: ({ keys?: JsonWebKey[] | (() => Promise<JsonWebKey[]>), jwks_uri?: string }) & {
+export const jwk = (options: {
+  keys?: JsonWebKey[] | (() => Promise<JsonWebKey[]>),
+  jwks_uri?: string
   cookie?:
     | string
     | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
-}, init?: RequestInit): MiddlewareHandler => {
+},
+init?: RequestInit): MiddlewareHandler => {
   if (!options || !(options.keys || options.jwks_uri)) {
     throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri"')
   }
