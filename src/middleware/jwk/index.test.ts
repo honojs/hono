@@ -17,7 +17,7 @@ describe('JWT', () => {
     const app = new Hono()
 
     app.use('/auth/*', jwk({ keys: verify_keys }))
-    app.use('/auth-unicode/*', jwk({ keys: verify_keys }))
+    app.use('/auth-unicode/*', jwk({ keys: async () => verify_keys }))
     app.use('/nested/*', async (c, next) => {
       const auth = jwk({ keys: verify_keys })
       return auth(c, next)
