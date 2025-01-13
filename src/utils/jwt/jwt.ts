@@ -30,7 +30,7 @@ const decodeJwtPart = (part: string): TokenHeader | JWTPayload | undefined =>
 
 export interface TokenHeader {
   alg: SignatureAlgorithm
-  typ?: 'JWT',
+  typ?: 'JWT'
   kid?: string
 }
 
@@ -109,24 +109,22 @@ export const verify = async (
   return payload
 }
 
-export const verifyFromJwks = async (
-  token: string,
-  keys: JsonWebKey[]) => {
-    let header = decodeHeader(token)
+export const verifyFromJwks = async (token: string, keys: JsonWebKey[]) => {
+  const header = decodeHeader(token)
 
-    if (!isTokenHeader(header)) {
-      throw new JwtHeaderInvalid(header)
-    }
-    if (!header.kid) {
-      throw new JwtHeaderRequiresKid(header)
-    }
+  if (!isTokenHeader(header)) {
+    throw new JwtHeaderInvalid(header)
+  }
+  if (!header.kid) {
+    throw new JwtHeaderRequiresKid(header)
+  }
 
-    const matchingKey = keys.find((key) => key.kid === header.kid)
-    if (!matchingKey) {
-      throw new JwtTokenInvalid(token)
-    }
+  const matchingKey = keys.find((key) => key.kid === header.kid)
+  if (!matchingKey) {
+    throw new JwtTokenInvalid(token)
+  }
 
-    return await verify(token, matchingKey, matchingKey.alg as any)
+  return await verify(token, matchingKey, matchingKey.alg as SignatureAlgorithm)
 }
 
 export const decode = (token: string): { header: TokenHeader; payload: JWTPayload } => {

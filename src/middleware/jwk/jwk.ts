@@ -61,18 +61,20 @@ import '../../context'
 // https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.4
 declare global {
   interface JsonWebKey {
-    kid?: string;
+    kid?: string
   }
 }
 
-export const jwk = (options: {
-  keys?: JsonWebKey[] | (() => Promise<JsonWebKey[]>),
-  jwks_uri?: string
-  cookie?:
-    | string
-    | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
-},
-init?: RequestInit): MiddlewareHandler => {
+export const jwk = (
+  options: {
+    keys?: JsonWebKey[] | (() => Promise<JsonWebKey[]>)
+    jwks_uri?: string
+    cookie?:
+      | string
+      | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
+  },
+  init?: RequestInit
+): MiddlewareHandler => {
   if (!options || !(options.keys || options.jwks_uri)) {
     throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri"')
   }
@@ -142,7 +144,7 @@ init?: RequestInit): MiddlewareHandler => {
       if (!response.ok) {
         throw new Error(`failed to fetch JWKS from ${options.jwks_uri}`)
       }
-      const data = await response.json() as { keys?: JsonWebKey[] }
+      const data = (await response.json()) as { keys?: JsonWebKey[] }
       if (!data.keys) {
         throw new Error('invalid JWKS response. "keys" field is missing')
       }
@@ -152,7 +154,7 @@ init?: RequestInit): MiddlewareHandler => {
         keys = data.keys
       }
     } else if (!keys) {
-        throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri"')
+      throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri"')
     }
 
     let payload

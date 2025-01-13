@@ -1,10 +1,10 @@
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
-import { jwk } from '.'
+import { Jwt } from '../../utils/jwt'
 import * as test_keys from './keys.test.json'
-import { Jwt } from '../../utils/jwt';
+import { jwk } from '.'
 
-const verify_keys = test_keys.public_keys;
+const verify_keys = test_keys.public_keys
 
 describe('JWT', () => {
   describe('Credentials in header', () => {
@@ -49,7 +49,7 @@ describe('JWT', () => {
     })
 
     it('Should authorize using JWK 1', async () => {
-      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0]);
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth/a')
       req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
@@ -60,7 +60,7 @@ describe('JWT', () => {
     })
 
     it('Should authorize using JWK 2', async () => {
-      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[1]);
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[1])
       const req = new Request('http://localhost/auth/a')
       req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
@@ -71,7 +71,7 @@ describe('JWT', () => {
     })
 
     it('Should authorize Unicode', async () => {
-      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0]);
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-unicode/a')
       req.headers.set('Authorization', `Basic ${credential}`)
       const res = await app.request(req)
@@ -120,7 +120,7 @@ describe('JWT', () => {
     })
 
     it('Should authorize - nested', async () => {
-      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0]);
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/nested/a')
       req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
