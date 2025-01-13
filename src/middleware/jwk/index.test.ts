@@ -22,6 +22,16 @@ describe('JWT', () => {
       const auth = jwk({ keys: verify_keys })
       return auth(c, next)
     })
+    app.use(
+      '/auth-keys-fn/*',
+      jwk({
+        keys: async () => {
+          const response = await app.request('http://localhost/.well-known/jwks.json')
+          const data = await response.json()
+          return data.keys
+        },
+      })
+    )
 
     app.get('/auth/*', (c) => {
       handlerExecuted = true
@@ -33,10 +43,18 @@ describe('JWT', () => {
       const payload = c.get('jwtPayload')
       return c.json(payload)
     })
+    app.get('/auth-keys-fn/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
     app.get('/nested/*', (c) => {
       handlerExecuted = true
       const payload = c.get('jwtPayload')
       return c.json(payload)
+    })
+    app.get('/.well-known/jwks.json', (c) => {
+      return c.json({ keys: verify_keys })
     })
 
     it('Should not authorize', async () => {
@@ -73,6 +91,17 @@ describe('JWT', () => {
     it('Should authorize Unicode', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-unicode/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize Keys function', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-keys-fn/a')
       req.headers.set('Authorization', `Basic ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
