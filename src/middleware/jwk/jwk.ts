@@ -28,29 +28,7 @@ import type { ExtendedJsonWebKey } from '../../utils/jwt/jws'
  * ```ts
  * const app = new Hono()
  *
- * app.use(
- *   '/auth/*',
- *   jwk({
- *     keys: [
- *      {
- *        "kid": "zD3EXVUWK1cPcrs0k8jYby453Emkirs91m7J9asbzrw",
- *        "kty": "RSA",
- *        "use": "sig",
- *        "alg": "RS256",
- *        "e": "AQAB",
- *        "n": "uj53NGvSENC2Ld0-5aNyv5tPJqBDJmZzn0-ApRv8sKk6sdiimikaL8EQpfLOuU3imIC9bPELC6XdqYzAsWOikJZj2Ddt2fqMzNe8EvDOaRdZPnqsjoNQCbz35WXfZLRPizIUSikIGG9itpYzUSAbkfRaQmpjdn_lugHWHlTT8HgtX2WLhloDfEdR9XjoVAFUtNgG7rH-pOF2d3dpI5tfs56JKl7zSTSk6jRIMBmH3X-uPg9j4UivH4aZmpisz_aOYSLbXsMxe4sFRxkcCU893zURSlNiQvPSEnGiJUdCrNF40Oo_eTGR6LQRs3uqdYC1rguQwTzaDCxg2M-ikKciAw",
- *      },
- *      {
- *        "kid": "rnfK5u1_mb11C1sxFOZpIxFIjEnptL_faUqKPPWvWPE",
- *        "kty": "RSA",
- *        "use": "sig",
- *        "alg": "RS256",
- *        "e": "AQAB",
- *        "n": "pF41Z9B9sp5nu2nkeGPOWokb2FD55wrriS62vdGp2jXMJvONK9YP5uiQX2DrtgVorwUgeQhJMbF4LerkU4w0zpzZcXEGQeFFs8mGchETbsVtnfH7zJcb6T5oQYsqNVExV0qLrEilQ8OLFRmT1d2EKKeJ7-V4VUjHcii0X9WFgpyBnVnM7k5RpoXRd0g8jKEhfPKMzSKHKTHitM_7pjadv1Wl_r7yiM4J1ULswBNaXpEJhbbKfWstGHpWA4AWjDc5kYe92J1qYIxbRkfJ53TIchDjldP3DlHXoUvoZLDzenklIJFB9k6_901uBviU72OulV96vnaM1SueMVDhq8R8ow",
- *      }
- *     ],
- *   })
- * )
+ * app.use("/auth/*", jwk({ jwks_uri: "https://example-backend.hono.dev/.well-known/jwks.json" }))
  *
  * app.get('/auth/page', (c) => {
  *   return c.text('You are authorized')
