@@ -9,6 +9,7 @@ import { generateDigest } from './digest'
 type ETagOptions = {
   retainedHeaders?: string[]
   weak?: boolean
+  generateDigest?: (body: Uint8Array) => ArrayBuffer | Promise<ArrayBuffer>
 }
 
 /**
@@ -63,7 +64,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     let etag = res.headers.get('ETag')
 
     if (!etag) {
-      const hash = await generateDigest(res.clone().body)
+      const hash = await generateDigest(res.clone().body, options?.generateDigest)
       if (hash === null) {
         return
       }
