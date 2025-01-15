@@ -2,8 +2,7 @@ import { cpus } from 'node:os'
 import type { WorkerInput, WorkerOutput } from './remove-private-fields-worker'
 
 const workers = Array.from({ length: Math.ceil(cpus().length / 2) }).map(
-  () => new Worker(`${import.meta.dirname}/remove-private-fields-worker.ts`),
-  { type: 'module' }
+  () => new Worker(`${import.meta.dirname}/remove-private-fields-worker.ts`, { type: 'module' })
 )
 let workerIndex = 0
 let taskId = 0
