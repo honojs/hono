@@ -3,7 +3,7 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { removePrivateFields } from './remove-private-fields'
+import { removePrivateFields } from './remove-private-fields-worker'
 
 describe('removePrivateFields', () => {
   it('Works', async () => {

@@ -14,7 +14,7 @@ import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
 import * as glob from 'glob'
 import fs from 'fs'
 import path from 'path'
-import { removePrivateFields } from './remove-private-fields'
+import { cleanupWorkers, removePrivateFields } from './remove-private-fields'
 import { validateExports } from './validate-exports'
 
 const args = arg({
@@ -102,14 +102,18 @@ const dtsEntries = glob.globSync('./dist/types/**/*.d.ts')
 const writer = stdout.writer()
 writer.write('\n')
 let lastOutputLength = 0
-for (let i = 0; i < dtsEntries.length; i++) {
-  const entry = dtsEntries[i]
+let removedCount = 0
 
-  const message = `Removing private fields(${i + 1}/${dtsEntries.length}): ${entry}`
-  writer.write(`\r${' '.repeat(lastOutputLength)}`)
-  lastOutputLength = message.length
-  writer.write(`\r${message}`)
+await Promise.all(
+  dtsEntries.map(async (e) => {
+    await fs.promises.writeFile(e, await removePrivateFields(e))
 
-  fs.writeFileSync(entry, removePrivateFields(entry))
-}
+    const message = `Private fields removed(${++removedCount}/${dtsEntries.length}): ${e}`
+    writer.write(`\r${' '.repeat(lastOutputLength)}`)
+    lastOutputLength = message.length
+    writer.write(`\r${message}`)
+  })
+)
+
 writer.write('\n')
+cleanupWorkers()
