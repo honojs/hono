@@ -1,4 +1,4 @@
-import { stream } from '../../helper/streaming'
+import { stream, streamSSE } from '../../helper/streaming'
 import { Hono } from '../../hono'
 import { compress } from '.'
 
@@ -62,6 +62,13 @@ describe('Compress Middleware', () => {
       // 60000 bytes
       for (let i = 0; i < 10000; i++) {
         await stream.write(new Uint8Array([0, 1, 2, 3, 4, 5])) // Simulated compressed data
+      }
+    })
+  )
+  app.get('/sse', (c) =>
+    streamSSE(c, async (stream) => {
+      for (let i = 0; i < 1000; i++) {
+        await stream.writeSSE({ data: 'chunk' })
       }
     })
   )
@@ -154,6 +161,11 @@ describe('Compress Middleware', () => {
     it('should not compress already compressed streaming responses', async () => {
       const res = await testCompression('/already-compressed-stream', 'gzip', 'br')
       expect((await res.arrayBuffer()).byteLength).toBe(60000)
+    })
+
+    it('should not compress server-sent events', async () => {
+      const res = await testCompression('/sse', 'gzip', null)
+      expect((await res.arrayBuffer()).byteLength).toBe(13000)
     })
   })
 
