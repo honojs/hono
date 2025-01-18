@@ -110,9 +110,6 @@
       "jsr.json",
       "LICENSE",
       "README.md",
-      "docs/CODE_OF_CONDUCT.md",
-      "docs/CONTRIBUTING.md",
-      "docs/MIGRATION.md",
       "src/**/*.ts"
     ],
     "exclude": [

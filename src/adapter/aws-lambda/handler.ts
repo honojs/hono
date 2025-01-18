@@ -184,7 +184,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
   }
 }
 
-abstract class EventProcessor<E extends LambdaEvent> {
+export abstract class EventProcessor<E extends LambdaEvent> {
   protected abstract getPath(event: E): string
 
   protected abstract getMethod(event: E): string
@@ -272,7 +272,7 @@ abstract class EventProcessor<E extends LambdaEvent> {
   }
 }
 
-class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
+export class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
   protected getPath(event: APIGatewayProxyEventV2): string {
     return event.rawPath
   }
@@ -315,7 +315,7 @@ class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
 
 const v2Processor: EventV2Processor = new EventV2Processor()
 
-class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGatewayProxyEventV2>> {
+export class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGatewayProxyEventV2>> {
   protected getPath(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
     return event.path
   }
@@ -325,10 +325,18 @@ class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGatewayPro
   }
 
   protected getQueryString(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
-    return Object.entries(event.queryStringParameters || {})
-      .filter(([, value]) => value)
-      .map(([key, value]) => `${key}=${value}`)
-      .join('&')
+    // In the case of gateway Integration either queryStringParameters or multiValueQueryStringParameters can be present not both
+    if (event.multiValueQueryStringParameters) {
+      return Object.entries(event.multiValueQueryStringParameters || {})
+        .filter(([, value]) => value)
+        .map(([key, value]) => `${key}=${value.join(`&${key}=`)}`)
+        .join('&')
+    } else {
+      return Object.entries(event.queryStringParameters || {})
+        .filter(([, value]) => value)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('&')
+    }
   }
 
   protected getCookies(
@@ -375,7 +383,7 @@ class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGatewayPro
 
 const v1Processor: EventV1Processor = new EventV1Processor()
 
-class ALBProcessor extends EventProcessor<ALBProxyEvent> {
+export class ALBProcessor extends EventProcessor<ALBProxyEvent> {
   protected getHeaders(event: ALBProxyEvent): Headers {
     const headers = new Headers()
     // if multiValueHeaders is present the ALB will use it instead of the headers field
@@ -407,7 +415,7 @@ class ALBProcessor extends EventProcessor<ALBProxyEvent> {
 
   protected getQueryString(event: ALBProxyEvent): string {
     // In the case of ALB Integration either queryStringParameters or multiValueQueryStringParameters can be present not both
-    /* 
+    /*
       In other cases like when using the serverless framework, the event object does contain both queryStringParameters and multiValueQueryStringParameters:
       Below is an example event object for this URL: /payment/b8c55e69?select=amount&select=currency
       {
@@ -471,7 +479,10 @@ export const getProcessor = (event: LambdaEvent): EventProcessor<LambdaEvent> =>
 }
 
 const isProxyEventALB = (event: LambdaEvent): event is ALBProxyEvent => {
-  return Object.hasOwn(event.requestContext, 'elb')
+  if (event.requestContext) {
+    return Object.hasOwn(event.requestContext, 'elb')
+  }
+  return false
 }
 
 const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => {

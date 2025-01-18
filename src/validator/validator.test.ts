@@ -10,7 +10,7 @@ import type {
   ParsedFormValue,
   ValidationTargets,
 } from '../types'
-import type { StatusCode } from '../utils/http-status'
+import type { ContentfulStatusCode } from '../utils/http-status'
 import type { Equal, Expect } from '../utils/types'
 import type { ValidationFunction } from './validator'
 import { validator } from './validator'
@@ -65,7 +65,7 @@ describe('Basic', () => {
         }
         output: 'Valid!'
         outputFormat: 'text'
-        status: StatusCode
+        status: ContentfulStatusCode
       }
     }
   }
@@ -140,7 +140,7 @@ describe('JSON', () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json; charset=utf8',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ foo: 'bar' }),
     })
@@ -477,7 +477,7 @@ describe('Validator middleware with a custom validation function', () => {
           }
         }
         outputFormat: 'json'
-        status: StatusCode
+        status: ContentfulStatusCode
       }
     }
   }
@@ -540,7 +540,7 @@ describe('Validator middleware with Zod validates JSON', () => {
           }
         }
         outputFormat: 'json'
-        status: StatusCode
+        status: ContentfulStatusCode
       }
     }
   }
@@ -829,7 +829,7 @@ describe('Validator middleware with Zod multiple validators', () => {
           title: string
         }
         outputFormat: 'json'
-        status: StatusCode
+        status: ContentfulStatusCode
       }
     }
   }
@@ -893,7 +893,7 @@ it('With path parameters', () => {
         }
         output: 'Valid!'
         outputFormat: 'text'
-        status: StatusCode
+        status: ContentfulStatusCode
       }
     }
   }
@@ -941,7 +941,7 @@ it('`on`', () => {
           success: boolean
         }
         outputFormat: 'json'
-        status: StatusCode
+        status: ContentfulStatusCode
       }
     }
   }
@@ -1198,7 +1198,7 @@ describe('Transform', () => {
             page: number
           }
           outputFormat: 'json'
-          status: StatusCode
+          status: ContentfulStatusCode
         }
       }
     }

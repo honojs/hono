@@ -316,4 +316,4 @@ export const createMiddleware = <
   I extends Input = {}
 >(
   middleware: MiddlewareHandler<E, P, I>
-): MiddlewareHandler<E, P, I> => createFactory<E, P>().createMiddleware<I>(middleware)
+): MiddlewareHandler<E, P, I> => middleware

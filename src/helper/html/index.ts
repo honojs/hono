@@ -47,7 +47,7 @@ export const html = (
       }
     }
   }
-  buffer[0] += strings[strings.length - 1]
+  buffer[0] += strings.at(-1) as string
 
   return buffer.length === 1
     ? 'callbacks' in buffer

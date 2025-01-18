@@ -127,26 +127,26 @@ export const hc = <T extends Hono<any, any, any>>(
     const parts = [...opts.path]
 
     // allow calling .toString() and .valueOf() on the proxy
-    if (parts[parts.length - 1] === 'toString') {
-      if (parts[parts.length - 2] === 'name') {
+    if (parts.at(-1) === 'toString') {
+      if (parts.at(-2) === 'name') {
         // e.g. hc().somePath.name.toString() -> "somePath"
-        return parts[parts.length - 3] || ''
+        return parts.at(-3) || ''
       }
       // e.g. hc().somePath.toString()
       return proxyCallback.toString()
     }
 
-    if (parts[parts.length - 1] === 'valueOf') {
-      if (parts[parts.length - 2] === 'name') {
+    if (parts.at(-1) === 'valueOf') {
+      if (parts.at(-2) === 'name') {
         // e.g. hc().somePath.name.valueOf() -> "somePath"
-        return parts[parts.length - 3] || ''
+        return parts.at(-3) || ''
       }
       // e.g. hc().somePath.valueOf()
       return proxyCallback
     }
 
     let method = ''
-    if (/^\$/.test(parts[parts.length - 1])) {
+    if (/^\$/.test(parts.at(-1) as string)) {
       const last = parts.pop()
       if (last) {
         method = last.replace(/^\$/, '')

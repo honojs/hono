@@ -181,45 +181,53 @@ jobs:
           name: coverage-lambda-edge
           path: coverage/
 
-  perf-measures-type-check-on-pr:
+  perf-measures-type-and-bundle-check-on-pr:
+    name: 'Type & Bundle size Check on PR'
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install
-      - uses: actions/cache/restore@v4
+      - name: Performance measurement of type check
+        run: |
+            bun scripts/generate-app.ts
+            bun tsc -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
+        working-directory: perf-measures/type-check
+      - name: Performance measurement of bundle check
+        run: |
+          bun run build
+          bun perf-measures/bundle-check/scripts/check-bundle-size.ts > perf-measures/bundle-check/size.json
+      - name: Run octocov
+        uses: k1LoW/octocov-action@v1
         with:
-          path: perf-measures/type-check/previous-result.txt
-          restore-keys: |
-            type-check-perf-previous-result-
-          key: type-check-perf-previous-result-
-      - run: bun scripts/generate-app.ts
-        working-directory: perf-measures/type-check
-      - run: bun tsc -p tsconfig.build.json --diagnostics > result.txt
-        working-directory: perf-measures/type-check
-      - run: |
-          {
-            echo 'COMPARISON<<EOF'
-            bun scripts/process-results.ts | column -s '|' -t
-            echo 'EOF'
-          } >> "$GITHUB_ENV"
-        working-directory: perf-measures/type-check
-      - run: echo "$COMPARISON"
-        name: display comparison
+          config: perf-measures/.octocov.perf-measures.yml
+        env:
+          OCTOCOV_CUSTOM_METRICS_BENCHMARK_BUNDLE: perf-measures/bundle-check/size.json
+          OCTOCOV_CUSTOM_METRICS_BENCHMARK_TYPE: perf-measures/type-check/diagnostics.json
 
-  perf-measures-type-check-on-main:
+  perf-measures-type-and-bundle-check-on-main:
+    name: 'Type & Bundle size Check on Main'
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install
-      - run: bun scripts/generate-app.ts
+      - name: Performance measurement of type check
+        run: |
+            bun scripts/generate-app.ts
+            bun tsc -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
         working-directory: perf-measures/type-check
-      - run: bun tsc -p tsconfig.build.json --diagnostics > previous-result.txt
-        working-directory: perf-measures/type-check
-      - uses: actions/cache/save@v4
+      - name: Performance measurement of bundle check
+        run: |
+          bun run build
+          bun perf-measures/bundle-check/scripts/check-bundle-size.ts > perf-measures/bundle-check/size.json
+      - name: Run octocov (main)
+        uses: k1LoW/octocov-action@v1
         with:
-          path: perf-measures/type-check/previous-result.txt
-          key: type-check-perf-previous-result-${{ github.sha }}
+          config: perf-measures/.octocov.perf-measures.main.yml
+        env:
+          OCTOCOV_GITHUB_REF: refs/heads/main
+          OCTOCOV_CUSTOM_METRICS_BENCHMARK_BUNDLE: perf-measures/bundle-check/size.json
+          OCTOCOV_CUSTOM_METRICS_BENCHMARK_TYPE: perf-measures/type-check/diagnostics.json

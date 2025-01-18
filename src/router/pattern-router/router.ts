@@ -3,12 +3,14 @@ import { METHOD_NAME_ALL, UnsupportedPathError } from '../../router'
 
 type Route<T> = [RegExp, string, T] // [pattern, method, handler, path]
 
+const emptyParams = Object.create(null)
+
 export class PatternRouter<T> implements Router<T> {
   name: string = 'PatternRouter'
   #routes: Route<T>[] = []
 
   add(method: string, path: string, handler: T) {
-    const endsWithWildcard = path[path.length - 1] === '*'
+    const endsWithWildcard = path.at(-1) === '*'
     if (endsWithWildcard) {
       path = path.slice(0, -2)
     }
@@ -46,7 +48,7 @@ export class PatternRouter<T> implements Router<T> {
       if (routeMethod === method || routeMethod === METHOD_NAME_ALL) {
         const match = pattern.exec(path)
         if (match) {
-          handlers.push([handler, match.groups || Object.create(null)])
+          handlers.push([handler, match.groups || emptyParams])
         }
       }
     }
