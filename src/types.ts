@@ -1984,9 +1984,9 @@ export type ExtractSchema<T> = UnionToIntersection<
   T extends HonoBase<infer _, infer S, any> ? S : never
 >
 
-type EnvOrEmpty<T> = T extends Env ? (Env extends T ? {} : T) : T
+type ProcessHead<T> = IfAnyThenEmptyObject<T extends Env ? (Env extends T ? {} : T) : T>
 export type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...infer Rest]
-  ? IfAnyThenEmptyObject<EnvOrEmpty<Head>> & IntersectNonAnyTypes<Rest>
+  ? ProcessHead<Head> & IntersectNonAnyTypes<Rest>
   : {}
 
 ////////////////////////////////////////
