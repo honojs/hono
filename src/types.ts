@@ -1939,14 +1939,12 @@ export type ValidationTargets<T extends FormValue = ParsedFormValue, P extends s
 //////                            //////
 ////////////////////////////////////////
 
-type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer Rest}`
-  ? Rest extends `${infer _Pattern}?`
-    ? `${Name}?`
-    : Name
-  : NameWithPattern
-
 type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
-  ? ParamKeyName<NameWithPattern>
+  ? NameWithPattern extends `${infer Name}{${infer Rest}`
+    ? Rest extends `${infer _Pattern}?`
+      ? `${Name}?`
+      : Name
+    : NameWithPattern
   : never
 
 export type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
