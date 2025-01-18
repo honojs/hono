@@ -79,7 +79,6 @@ export class Node<T> {
     return curNode
   }
 
-  // getHandlerSets
   #getHandlerSets(
     node: Node<T>,
     method: string,
