@@ -20,6 +20,39 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).toBe('"4515561204e8269cb4468d5b39288d8f2482dcfe"')
   })
 
+  it('Should return etag header with another algorithm', async () => {
+    const app = new Hono()
+    app.use(
+      '/etag/*',
+      etag({
+        generateDigest: (body: Uint8Array) =>
+          crypto.subtle.digest(
+            {
+              name: 'SHA-256',
+            },
+            body
+          ),
+      })
+    )
+    app.get('/etag/abc', (c) => {
+      return c.text('Hono is cool')
+    })
+    app.get('/etag/def', (c) => {
+      return c.json({ message: 'Hono is cool' })
+    })
+    let res = await app.request('http://localhost/etag/abc')
+    expect(res.headers.get('ETag')).not.toBeFalsy()
+    expect(res.headers.get('ETag')).toBe(
+      '"ee7e84f92c4f54fec768123ac23003a6eb8437db95bcfbfc35db477af1ccb49e"'
+    )
+
+    res = await app.request('http://localhost/etag/def')
+    expect(res.headers.get('ETag')).not.toBeFalsy()
+    expect(res.headers.get('ETag')).toBe(
+      '"6ae7438c67f07b60b2ab069dbce206b00d3528c690840a77e0222d37398a8547"'
+    )
+  })
+
   it('Should return etag header - binary', async () => {
     const app = new Hono()
     app.use('/etag/*', etag())
