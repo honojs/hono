@@ -46,6 +46,7 @@
     "./jsx/dom/css": "./src/jsx/dom/css.ts",
     "./jsx/dom/server": "./src/jsx/dom/server.ts",
     "./jwt": "./src/middleware/jwt/jwt.ts",
+    "./jwk": "./src/middleware/jwk/jwk.ts",
     "./timeout": "./src/middleware/timeout/index.ts",
     "./timing": "./src/middleware/timing/timing.ts",
     "./logger": "./src/middleware/logger/index.ts",

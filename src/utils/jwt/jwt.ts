@@ -8,9 +8,10 @@ import { decodeBase64Url, encodeBase64Url } from '../../utils/encode'
 import { AlgorithmTypes } from './jwa'
 import type { SignatureAlgorithm } from './jwa'
 import { signing, verifying } from './jws'
-import type { SignatureKey } from './jws'
+import type { HonoJsonWebKey, SignatureKey } from './jws'
 import {
   JwtHeaderInvalid,
+  JwtHeaderRequiresKid,
   JwtTokenExpired,
   JwtTokenInvalid,
   JwtTokenIssuedAt,
@@ -30,6 +31,7 @@ const decodeJwtPart = (part: string): TokenHeader | JWTPayload | undefined =>
 export interface TokenHeader {
   alg: SignatureAlgorithm
   typ?: 'JWT'
+  kid?: string
 }
 
 export function isTokenHeader(obj: unknown): obj is TokenHeader {
@@ -50,7 +52,13 @@ export const sign = async (
   alg: SignatureAlgorithm = 'HS256'
 ): Promise<string> => {
   const encodedPayload = encodeJwtPart(payload)
-  const encodedHeader = encodeJwtPart({ alg, typ: 'JWT' } satisfies TokenHeader)
+  let encodedHeader
+  if (typeof privateKey === 'object' && 'alg' in privateKey) {
+    alg = privateKey.alg as SignatureAlgorithm
+    encodedHeader = encodeJwtPart({ alg, typ: 'JWT', kid: privateKey.kid })
+  } else {
+    encodedHeader = encodeJwtPart({ alg, typ: 'JWT' })
+  }
 
   const partialToken = `${encodedHeader}.${encodedPayload}`
 
@@ -99,6 +107,27 @@ export const verify = async (
   return payload
 }
 
+export const verifyFromJwks = async (
+  token: string,
+  keys: HonoJsonWebKey[]
+): Promise<JWTPayload> => {
+  const header = decodeHeader(token)
+
+  if (!isTokenHeader(header)) {
+    throw new JwtHeaderInvalid(header)
+  }
+  if (!header.kid) {
+    throw new JwtHeaderRequiresKid(header)
+  }
+
+  const matchingKey = keys.find((key) => key.kid === header.kid)
+  if (!matchingKey) {
+    throw new JwtTokenInvalid(token)
+  }
+
+  return await verify(token, matchingKey, matchingKey.alg as SignatureAlgorithm)
+}
+
 export const decode = (token: string): { header: TokenHeader; payload: JWTPayload } => {
   try {
     const [h, p] = token.split('.')
@@ -108,6 +137,15 @@ export const decode = (token: string): { header: TokenHeader; payload: JWTPayloa
       header,
       payload,
     }
+  } catch {
+    throw new JwtTokenInvalid(token)
+  }
+}
+
+export const decodeHeader = (token: string): TokenHeader => {
+  try {
+    const [h] = token.split('.')
+    return decodeJwtPart(h) as TokenHeader
   } catch {
     throw new JwtTokenInvalid(token)
   }
