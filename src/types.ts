@@ -1939,14 +1939,12 @@ export type ValidationTargets<T extends FormValue = ParsedFormValue, P extends s
 //////                            //////
 ////////////////////////////////////////
 
-type ParamKeyName<NameWithPattern> = NameWithPattern extends `${infer Name}{${infer Rest}`
-  ? Rest extends `${infer _Pattern}?`
-    ? `${Name}?`
-    : Name
-  : NameWithPattern
-
 type ParamKey<Component> = Component extends `:${infer NameWithPattern}`
-  ? ParamKeyName<NameWithPattern>
+  ? NameWithPattern extends `${infer Name}{${infer Rest}`
+    ? Rest extends `${infer _Pattern}?`
+      ? `${Name}?`
+      : Name
+    : NameWithPattern
   : never
 
 export type ParamKeys<Path> = Path extends `${infer Component}/${infer Rest}`
@@ -1984,9 +1982,9 @@ export type ExtractSchema<T> = UnionToIntersection<
   T extends HonoBase<infer _, infer S, any> ? S : never
 >
 
-type EnvOrEmpty<T> = T extends Env ? (Env extends T ? {} : T) : T
+type ProcessHead<T> = IfAnyThenEmptyObject<T extends Env ? (Env extends T ? {} : T) : T>
 export type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...infer Rest]
-  ? IfAnyThenEmptyObject<EnvOrEmpty<Head>> & IntersectNonAnyTypes<Rest>
+  ? ProcessHead<Head> & IntersectNonAnyTypes<Rest>
   : {}
 
 ////////////////////////////////////////
