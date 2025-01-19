@@ -1,8 +1,5 @@
-import type { Hono } from '../hono'
-import type { FormValue, ValidationTargets } from '../types'
-import { serialize } from '../utils/cookie'
-import type { UnionToIntersection } from '../utils/types'
-import type { Callback, Client, ClientRequestOptions } from './types'
+import { createProxy } from '../../client/client'
+import type { Client, ClientRequestOptions } from '../../client/types'
 import {
   buildSearchParams,
   deepMerge,
@@ -10,27 +7,27 @@ import {
   removeIndexString,
   replaceUrlParam,
   replaceUrlProtocol,
-} from './utils'
+} from '../../client/utils'
+import type { Hono } from '../../hono'
+import type { FormValue, ValidationTargets } from '../../types'
+import { serialize } from '../../utils/cookie'
+import type { UnionToIntersection } from '../../utils/types'
 
-export const createProxy = (callback: Callback, path: string[]) => {
-  const proxy: unknown = new Proxy(() => {}, {
-    get(_obj, key) {
-      if (typeof key !== 'string' || key === 'then') {
-        return undefined
-      }
-      return createProxy(callback, [...path, key])
-    },
-    apply(_1, _2, args) {
-      return callback({
-        path,
-        args,
-      })
-    },
-  })
-  return proxy
+export const calculateSHA256 = async (message: string): Promise<string> => {
+  const msgBuffer = new TextEncoder().encode(message)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
+  const hashBytes = new Uint8Array(hashBuffer)
+
+  let hashHex = ''
+  for (let i = 0; i < hashBytes.length; i++) {
+    const b = hashBytes[i]
+    hashHex += b < 16 ? '0' + b.toString(16) : b.toString(16)
+  }
+
+  return hashHex
 }
 
-class ClientRequestImpl {
+class LambdaClientRequestImpl {
   private url: string
   private method: string
   private queryParams: URLSearchParams | undefined = undefined
@@ -96,6 +93,15 @@ class ClientRequestImpl {
       headerValues['Content-Type'] = this.cType
     }
 
+    if (
+      (methodUpperCase === 'POST' || methodUpperCase === 'PUT') &&
+      this.rBody &&
+      typeof this.rBody === 'string'
+    ) {
+      const hash = await calculateSHA256(this.rBody)
+      headerValues['x-amz-content-sha256'] = hash
+    }
+
     const headers = new Headers(headerValues ?? undefined)
     let url = this.url
 
@@ -108,7 +114,6 @@ class ClientRequestImpl {
     methodUpperCase = this.method.toUpperCase()
     const setBody = !(methodUpperCase === 'GET' || methodUpperCase === 'HEAD')
 
-    // Pass URL string to 1st arg for testing with MSW and node-fetch
     return (opt?.fetch || fetch)(url, {
       body: setBody ? this.rBody : undefined,
       method: methodUpperCase,
@@ -119,7 +124,7 @@ class ClientRequestImpl {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const hc = <T extends Hono<any, any, any>>(
+export const hlc = <T extends Hono<any, any, any>>(
   baseUrl: string,
   options?: ClientRequestOptions
 ) =>
@@ -194,7 +199,7 @@ export const hc = <T extends Hono<any, any, any>>(
       return establishWebSocket(targetUrl.toString())
     }
 
-    const req = new ClientRequestImpl(url, method)
+    const req = new LambdaClientRequestImpl(url, method)
     if (method) {
       options ??= {}
       const args = deepMerge<ClientRequestOptions>(options, { ...opts.args[1] })
