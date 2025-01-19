@@ -21,6 +21,9 @@ import { Hono } from './hono'
  */
 export type {
   Env,
+  DefaultEnv,
+  DefaultBindings,
+  DefaultVariables,
   ErrorHandler,
   Handler,
   MiddlewareHandler,

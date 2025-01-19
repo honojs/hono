@@ -67,7 +67,7 @@ describe('Adapter for Cloudflare Pages', () => {
   it('Should not use `basePath()` if path argument is not passed', async () => {
     const request = new Request('http://localhost/api/error')
     const eventContext = createEventContext({ request })
-    const app = new Hono().basePath('/api')
+    const app = new Hono<Env>().basePath('/api')
 
     app.onError((e) => {
       throw e

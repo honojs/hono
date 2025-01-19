@@ -242,7 +242,7 @@ type ContextOptions<E extends Env> = {
    * Handler for not found responses.
    */
   notFoundHandler?: NotFoundHandler<E>
-  matchResult?: Result<[H, RouterRoute]>
+  matchResult?: Result<[H<E>, RouterRoute<E>]>
   path?: string
 }
 
@@ -339,7 +339,7 @@ export class Context<
   #renderer: Renderer | undefined
   #notFoundHandler: NotFoundHandler<E> | undefined
 
-  #matchResult: Result<[H, RouterRoute]> | undefined
+  #matchResult: Result<[H<E>, RouterRoute<E>]> | undefined
   #path: string | undefined
 
   /**

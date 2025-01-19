@@ -3,7 +3,7 @@ import type { HonoOptions } from './hono-base'
 import { RegExpRouter } from './router/reg-exp-router'
 import { SmartRouter } from './router/smart-router'
 import { TrieRouter } from './router/trie-router'
-import type { BlankEnv, BlankSchema, Env, Schema } from './types'
+import type { BlankSchema, DefaultEnv, Env, Schema } from './types'
 
 /**
  * The Hono class extends the functionality of the HonoBase class.
@@ -14,7 +14,7 @@ import type { BlankEnv, BlankSchema, Env, Schema } from './types'
  * @template BasePath - The base path type.
  */
 export class Hono<
-  E extends Env = BlankEnv,
+  E extends Env = DefaultEnv,
   S extends Schema = BlankSchema,
   BasePath extends string = '/'
 > extends HonoBase<E, S, BasePath> {
