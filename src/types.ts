@@ -157,7 +157,7 @@ export interface HandlerInterface<
     I2 extends Input = I,
     I3 extends Input = I & I2,
     E2 extends Env = E,
-    E3 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>
   >(
     ...handlers: [H<E2, P, I>, H<E3, P, I2>, H<E4, P, I3, R>]
@@ -190,8 +190,8 @@ export interface HandlerInterface<
     I3 extends Input = I & I2,
     I4 extends Input = I & I2 & I3,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
     E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>
   >(
     ...handlers: [H<E2, P, I>, H<E3, P, I2>, H<E4, P, I3>, H<E5, P, I4, R>]
@@ -210,7 +210,7 @@ export interface HandlerInterface<
     I2 extends Input = I,
     I3 extends Input = I & I2,
     E2 extends Env = E,
-    E3 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>
   >(
     path: P,
@@ -227,9 +227,9 @@ export interface HandlerInterface<
     I4 extends Input = I & I2 & I3,
     I5 extends Input = I & I2 & I3 & I4,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
     E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>
   >(
     ...handlers: [H<E2, P, I>, H<E3, P, I2>, H<E4, P, I3>, H<E5, P, I4>, H<E6, P, I5, R>]
@@ -249,8 +249,8 @@ export interface HandlerInterface<
     I3 extends Input = I & I2,
     I4 extends Input = I & I2 & I3,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
     E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>
   >(
     path: P,
@@ -273,10 +273,10 @@ export interface HandlerInterface<
     I5 extends Input = I & I2 & I3 & I4,
     I6 extends Input = I & I2 & I3 & I4 & I5,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
     E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>
   >(
     ...handlers: [
@@ -304,9 +304,9 @@ export interface HandlerInterface<
     I4 extends Input = I & I2 & I3,
     I5 extends Input = I & I2 & I3 & I4,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
     E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>
   >(
     path: P,
@@ -331,11 +331,11 @@ export interface HandlerInterface<
     I6 extends Input = I & I2 & I3 & I4 & I5,
     I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
     E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>
   >(
     ...handlers: [
@@ -365,10 +365,10 @@ export interface HandlerInterface<
     I5 extends Input = I & I2 & I3 & I4,
     I6 extends Input = I & I2 & I3 & I4 & I5,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
     E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>
   >(
     path: P,
@@ -395,12 +395,12 @@ export interface HandlerInterface<
     I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
     I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
     E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>
   >(
     ...handlers: [
@@ -432,11 +432,11 @@ export interface HandlerInterface<
     I6 extends Input = I & I2 & I3 & I4 & I5,
     I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
     E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>
   >(
     path: P,
@@ -465,13 +465,13 @@ export interface HandlerInterface<
     I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
     I9 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
-    E9 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
     E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>
   >(
     ...handlers: [
@@ -505,12 +505,12 @@ export interface HandlerInterface<
     I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
     I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
     E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>
   >(
     path: P,
@@ -541,14 +541,14 @@ export interface HandlerInterface<
     I9 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8,
     I10 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8 & I9,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
-    E9 extends Env = E,
-    E10 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+    E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
     E11 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>
   >(
     ...handlers: [
@@ -584,13 +584,13 @@ export interface HandlerInterface<
     I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
     I9 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
-    E9 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
     E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>
   >(
     path: P,
@@ -623,14 +623,14 @@ export interface HandlerInterface<
     I9 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8,
     I10 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8 & I9,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
-    E9 extends Env = E,
-    E10 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+    E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
     E11 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>
   >(
     path: P,
@@ -712,7 +712,7 @@ export interface MiddlewareHandlerInterface<
   // app.use(handler x3)
   <
     E2 extends Env = E,
-    E3 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
     P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
@@ -733,8 +733,8 @@ export interface MiddlewareHandlerInterface<
   // app.use(handler x4)
   <
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
     E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
     P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
@@ -751,7 +751,7 @@ export interface MiddlewareHandlerInterface<
     P extends string,
     MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
     E2 extends Env = E,
-    E3 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>
   >(
     path: P,
@@ -761,9 +761,9 @@ export interface MiddlewareHandlerInterface<
   // app.use(handler x5)
   <
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
     E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
     P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
@@ -781,8 +781,8 @@ export interface MiddlewareHandlerInterface<
     P extends string,
     MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
     E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>
   >(
     path: P,
@@ -801,10 +801,10 @@ export interface MiddlewareHandlerInterface<
   // app.use(handler x6)
   <
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
     E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
     P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
@@ -823,9 +823,9 @@ export interface MiddlewareHandlerInterface<
     P extends string,
     MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
     E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>
   >(
     path: P,
@@ -845,11 +845,11 @@ export interface MiddlewareHandlerInterface<
   // app.use(handler x7)
   <
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
     E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
     P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
@@ -869,10 +869,10 @@ export interface MiddlewareHandlerInterface<
     P extends string,
     MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
     E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>
   >(
     path: P,
@@ -893,12 +893,12 @@ export interface MiddlewareHandlerInterface<
   // app.use(handler x8)
   <
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
     E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
     P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
@@ -919,11 +919,11 @@ export interface MiddlewareHandlerInterface<
     P extends string,
     MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
     E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>
   >(
     path: P,
@@ -945,13 +945,13 @@ export interface MiddlewareHandlerInterface<
   // app.use(handler x9)
   <
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
-    E9 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
     E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
     P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
@@ -973,12 +973,12 @@ export interface MiddlewareHandlerInterface<
     P extends string,
     MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
     E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>
   >(
     path: P,
@@ -1001,14 +1001,14 @@ export interface MiddlewareHandlerInterface<
   // app.use(handler x10)
   <
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
-    E9 extends Env = E,
-    E10 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+    E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
     E11 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>,
     P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
@@ -1031,13 +1031,13 @@ export interface MiddlewareHandlerInterface<
     P extends string,
     MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
-    E9 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
     E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>
   >(
     path: P,
@@ -1124,7 +1124,7 @@ export interface OnHandlerInterface<
     I2 extends Input = I,
     I3 extends Input = I & I2,
     E2 extends Env = E,
-    E3 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>
   >(
     method: M,
@@ -1147,8 +1147,8 @@ export interface OnHandlerInterface<
     I3 extends Input = I & I2,
     I4 extends Input = I & I2 & I3,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
     E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>
   >(
     method: M,
@@ -1177,9 +1177,9 @@ export interface OnHandlerInterface<
     I4 extends Input = I & I2 & I3,
     I5 extends Input = I & I2 & I3 & I4,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
     E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>
   >(
     method: M,
@@ -1210,10 +1210,10 @@ export interface OnHandlerInterface<
     I5 extends Input = I & I2 & I3 & I4,
     I6 extends Input = I & I2 & I3 & I4 & I5,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
     E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>
   >(
     method: M,
@@ -1246,11 +1246,11 @@ export interface OnHandlerInterface<
     I6 extends Input = I & I2 & I3 & I4 & I5,
     I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
     E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>
   >(
     method: M,
@@ -1285,12 +1285,12 @@ export interface OnHandlerInterface<
     I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
     I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
     E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>
   >(
     method: M,
@@ -1327,13 +1327,13 @@ export interface OnHandlerInterface<
     I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
     I9 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
-    E9 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
     E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>
   >(
     method: M,
@@ -1371,14 +1371,14 @@ export interface OnHandlerInterface<
     I9 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8,
     I10 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8 & I9,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
-    E9 extends Env = E,
-    E10 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+    E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
     E11 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>
   >(
     method: M,
@@ -1461,7 +1461,7 @@ export interface OnHandlerInterface<
     I2 extends Input = I,
     I3 extends Input = I & I2,
     E2 extends Env = E,
-    E3 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>
   >(
     methods: Ms,
@@ -1484,8 +1484,8 @@ export interface OnHandlerInterface<
     I3 extends Input = I & I2,
     I4 extends Input = I & I2 & I3,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
     E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>
   >(
     methods: Ms,
@@ -1514,9 +1514,9 @@ export interface OnHandlerInterface<
     I4 extends Input = I & I2 & I3,
     I5 extends Input = I & I2 & I3 & I4,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
     E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>
   >(
     methods: Ms,
@@ -1547,10 +1547,10 @@ export interface OnHandlerInterface<
     I5 extends Input = I & I2 & I3 & I4,
     I6 extends Input = I & I2 & I3 & I4 & I5,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
     E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>
   >(
     methods: Ms,
@@ -1583,11 +1583,11 @@ export interface OnHandlerInterface<
     I6 extends Input = I & I2 & I3 & I4 & I5,
     I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
     E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>
   >(
     methods: Ms,
@@ -1622,12 +1622,12 @@ export interface OnHandlerInterface<
     I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
     I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
     E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>
   >(
     methods: Ms,
@@ -1663,13 +1663,13 @@ export interface OnHandlerInterface<
     I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
     I9 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
-    E9 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
     E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>
   >(
     methods: Ms,
@@ -1707,14 +1707,14 @@ export interface OnHandlerInterface<
     I9 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8,
     I10 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8 & I9,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
-    E9 extends Env = E,
-    E10 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+    E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
     E11 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>
   >(
     methods: Ms,
