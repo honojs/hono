@@ -1,5 +1,5 @@
 import { Hono } from '../preset/quick'
-import { responseValidator } from '.'
+import { validator, responseValidator } from '.'
 
 const app = new Hono<{
   Bindings: {
@@ -8,8 +8,11 @@ const app = new Hono<{
 }>()
 
 app
-  .use(
+  .get(
     '*',
+    validator('query', (value, c) => {
+      console.log(value, c)
+    }),
     responseValidator('text', (value, c) => {
       console.log(value)
       if (!/\d/.test(value)) {

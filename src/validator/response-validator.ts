@@ -17,8 +17,8 @@ const jsonRegex = /^application\/([a-z-\.]+\+)?json(;\s*[a-zA-Z0-9\-]+\=([^;]+))
 const htmlRegex = /^text\/html(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/
 
 export const responseValidator = <
-  U extends ResponseValidationTargetKeys,
   P extends string,
+  U extends ResponseValidationTargetKeys,
   P2 extends string = P,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any
