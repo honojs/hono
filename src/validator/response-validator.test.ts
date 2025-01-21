@@ -1,5 +1,5 @@
-import { responseValidator } from '.'
 import { Hono } from '../preset/quick'
+import { responseValidator } from '.'
 
 const app = new Hono()
 

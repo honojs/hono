@@ -12,9 +12,6 @@ export type ResponseValidationFunction<
   c: Context<E, P>
 ) => undefined | Response | Promise<Response>
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ExcludeResponseType<T> = T extends Response & TypedResponse<any> ? never : T
-
 const textRegex = /^text\/([a-z-\.]+\+)?(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/
 const jsonRegex = /^application\/([a-z-\.]+\+)?json(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/
 const htmlRegex = /^text\/html(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/
@@ -38,6 +35,7 @@ export const responseValidator = <
     switch (target) {
       case 'body':
         value = c.res.body
+        break
       case 'text':
         if (!contentType || !textRegex.test(contentType)) {
           break
