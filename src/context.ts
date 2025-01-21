@@ -867,7 +867,6 @@ export class Context<
 
   validate = <T>(data: T): T => {
     this.validateData = data
-
     return data
   }
 }
