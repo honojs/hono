@@ -6,7 +6,7 @@ type ResponseValidationTargetKeys = keyof ResponseValidationTargets
 export type ResponseValidationFunction<
   U extends ResponseValidationTargetKeys,
   E extends Env = {},
-  P extends string,
+  P extends string = string
 > = (
   value: ResponseValidationTargets[U],
   c: Context<E, P>
@@ -24,7 +24,7 @@ export const responseValidator = <
   E extends Env = any
 >(
   target: U,
-  validationFunc: ResponseValidationFunction<U, P2, E>
+  validationFunc: ResponseValidationFunction<U, E, P2>
 ): MiddlewareHandler<E, P> => {
   return async (c, next) => {
     await next()
