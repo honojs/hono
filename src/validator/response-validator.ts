@@ -1,5 +1,5 @@
 import type { Context } from '../context'
-import type { Env, MiddlewareHandler, TypedResponse, ResponseValidationTargets } from '../types'
+import type { Env, MiddlewareHandler, ResponseValidationTargets } from '../types'
 
 type ResponseValidationTargetKeys = keyof ResponseValidationTargets
 
