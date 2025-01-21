@@ -1,6 +1,5 @@
 import type { Context } from '../context'
 import type { Env, MiddlewareHandler, ResponseValidationTargets } from '../types'
-import { UnofficialStatusCode } from '../utils/http-status'
 
 type ResponseValidationTargetKeys = keyof ResponseValidationTargets
 
@@ -38,51 +37,47 @@ export const responseValidator = <
 
     const contentType = c.res.headers.get('Content-Type')
 
-    // ToDo: remove satisfies after
     switch (target) {
       case 'body':
         if (!c.res.body) {
           break
         }
-        value = c.res.body satisfies ResponseValidationTargets['body']
+        value = c.res.body
         break
       case 'text':
         if (!contentType || !textRegex.test(contentType) || typeof c.validateData !== 'string') {
           break
         }
-        value = c.validateData satisfies ResponseValidationTargets['text']
+        value = c.validateData
         break
       case 'json':
         if (!contentType || !jsonRegex.test(contentType) || typeof c.validateData !== 'object') {
           break
         }
-        value = c.validateData satisfies ResponseValidationTargets['json']
+        value = c.validateData
         break
       case 'html':
         if (!contentType || !htmlRegex.test(contentType) || typeof c.validateData !== 'string') {
           break
         }
-        value = c.validateData satisfies ResponseValidationTargets['html']
+        value = c.validateData
         break
       case 'header':
-        value = Object.fromEntries(c.res.headers.entries()) as Record<
-          string,
-          string
-        > satisfies ResponseValidationTargets['header']
+        value = Object.fromEntries(c.res.headers.entries()) as Record<string, string>
         break
       case 'cookie':
         value = c.res.headers.getSetCookie().reduce((record, cookie) => {
           const [name, ...rest] = cookie.split('=')
           record[name] = rest.join('=').split(';')[0]
           return record
-        }, {} as Record<string, string>) satisfies ResponseValidationTargets['cookie']
+        }, {} as Record<string, string>)
         break
       case 'status':
         value = {
           ok: c.res.ok,
-          status: c.res.status as UnofficialStatusCode,
+          status: c.res.status,
           statusText: c.res.statusText,
-        } satisfies ResponseValidationTargets['status']
+        }
         break
     }
 
