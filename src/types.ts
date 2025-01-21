@@ -1940,7 +1940,7 @@ export type ValidationTargets<T extends FormValue = ParsedFormValue, P extends s
 ////////////////////////////////////////////////
 
 export type ResponseValidationTargets = {
-  body: ReadableStream<Uint8Array>
+  body: ReadableStream<any> | null
   text: string
   json: any
   html: string

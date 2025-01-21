@@ -1,5 +1,6 @@
 import type { Context } from '../context'
 import type { Env, MiddlewareHandler, ResponseValidationTargets } from '../types'
+import { UnofficialStatusCode } from '../utils/http-status'
 
 type ResponseValidationTargetKeys = keyof ResponseValidationTargets
 
@@ -39,42 +40,48 @@ export const responseValidator = <
 
     switch (target) {
       case 'body':
-        value = c.res.body
+        if (!c.res.body) {
+          break
+        }
+        value = c.res.body satisfies ResponseValidationTargets['body']
         break
       case 'text':
         if (!contentType || !textRegex.test(contentType) || typeof c.validateData !== 'string') {
           break
         }
-        value = c.validateData
+        value = c.validateData satisfies ResponseValidationTargets['text']
         break
       case 'json':
         if (!contentType || !jsonRegex.test(contentType) || typeof c.validateData !== 'object') {
           break
         }
-        value = c.validateData
+        value = c.validateData satisfies ResponseValidationTargets['json']
         break
       case 'html':
         if (!contentType || !htmlRegex.test(contentType) || typeof c.validateData !== 'string') {
           break
         }
-        value = c.validateData
+        value = c.validateData satisfies ResponseValidationTargets['html']
         break
       case 'header':
-        value = Object.fromEntries(c.res.headers.entries())
+        value = Object.fromEntries(c.res.headers.entries()) as Record<
+          string,
+          string
+        > satisfies ResponseValidationTargets['header']
         break
       case 'cookie':
         value = c.res.headers.getSetCookie().reduce((record, cookie) => {
           const [name, ...rest] = cookie.split('=')
           record[name] = rest.join('=').split(';')[0]
           return record
-        }, {} as Record<string, string>)
+        }, {} as Record<string, string>) satisfies ResponseValidationTargets['cookie']
         break
       case 'status':
         value = {
           ok: c.res.ok,
-          status: c.res.status,
+          status: c.res.status as UnofficialStatusCode,
           statusText: c.res.statusText,
-        }
+        } satisfies ResponseValidationTargets['status']
         break
     }
 
