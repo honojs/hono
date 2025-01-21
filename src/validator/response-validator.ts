@@ -5,8 +5,8 @@ type ResponseValidationTargetKeys = keyof ResponseValidationTargets
 
 export type ResponseValidationFunction<
   U extends ResponseValidationTargetKeys,
+  E extends Env = {},
   P extends string,
-  E extends Env
 > = (
   value: ResponseValidationTargets[U],
   c: Context<E, P>
