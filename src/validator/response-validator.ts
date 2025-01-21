@@ -38,6 +38,7 @@ export const responseValidator = <
 
     const contentType = c.res.headers.get('Content-Type')
 
+    // ToDo: remove satisfies after
     switch (target) {
       case 'body':
         if (!c.res.body) {
