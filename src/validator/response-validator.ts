@@ -19,11 +19,12 @@ const htmlRegex = /^text\/html(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/
 export const responseValidator = <
   U extends ResponseValidationTargetKeys,
   P extends string,
+  P2 extends string = P,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any
 >(
   target: U,
-  validationFunc: ResponseValidationFunction<U, P, E>
+  validationFunc: ResponseValidationFunction<U, P2, E>
 ): MiddlewareHandler<E, P> => {
   return async (c, next) => {
     await next()
