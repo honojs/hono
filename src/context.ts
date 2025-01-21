@@ -862,4 +862,12 @@ export class Context<
     this.#notFoundHandler ??= () => new Response()
     return this.#notFoundHandler(this)
   }
+
+  validateData: unknown
+
+  validate = <T>(body: T): T => {
+    this.validateData = body
+
+    return body
+  }
 }

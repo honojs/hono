@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Context } from './context'
+import type { Context, Data } from './context'
 import type { HonoBase } from './hono-base'
 import type { CustomHeader, RequestHeader } from './utils/headers'
 import type { StatusCode } from './utils/http-status'
@@ -1931,6 +1931,26 @@ export type ValidationTargets<T extends FormValue = ParsedFormValue, P extends s
   param: Record<P, P extends `${infer _}?` ? string | undefined : string>
   header: Record<RequestHeader | CustomHeader, string>
   cookie: Record<string, string>
+}
+
+////////////////////////////////////////////////
+//////                                     /////
+//////      ResponseValidationTargets      /////
+//////                                     /////
+////////////////////////////////////////////////
+
+export type ResponseValidationTargets = {
+  body: ReadableStream<Uint8Array>
+  text: string
+  json: any
+  html: string
+  header: Record<RequestHeader | CustomHeader, string>
+  cookie: Record<string, string>
+  status: {
+    ok: boolean
+    status: StatusCode
+    statusText: string
+  }
 }
 
 ////////////////////////////////////////
