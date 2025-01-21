@@ -28,6 +28,10 @@ export const responseValidator = <
   return async (c, next) => {
     await next()
 
+    if (!c.finalized) {
+      return
+    }
+
     let value: unknown
 
     const contentType = c.res.headers.get('Content-Type')
