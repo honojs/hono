@@ -41,7 +41,7 @@ export const responseValidator = <
         value = c.res.body
         break
       case 'text':
-        if (!contentType || !textRegex.test(contentType)) {
+        if (!contentType || !textRegex.test(contentType) || typeof c.validateData !== 'string') {
           break
         }
 
