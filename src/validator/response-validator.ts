@@ -45,7 +45,6 @@ export const responseValidator = <
         if (!contentType || !textRegex.test(contentType) || typeof c.validateData !== 'string') {
           break
         }
-
         value = c.validateData
         break
       case 'json':
@@ -64,10 +63,10 @@ export const responseValidator = <
         value = Object.fromEntries(c.res.headers.entries())
         break
       case 'cookie':
-        value = c.res.headers.getSetCookie().reduce((acc, cookie) => {
+        value = c.res.headers.getSetCookie().reduce((record, cookie) => {
           const [name, ...rest] = cookie.split('=')
-          acc[name] = rest.join('=').split(';')[0]
-          return acc
+          record[name] = rest.join('=').split(';')[0]
+          return record
         }, {} as Record<string, string>)
         break
       case 'status':
@@ -79,7 +78,7 @@ export const responseValidator = <
         break
     }
 
-    const res = await validationFunc(value as never, c as never)
+    const res = await validationFunc(value, c)
 
     if (res instanceof Response) {
       c.res = res
