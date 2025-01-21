@@ -865,9 +865,9 @@ export class Context<
 
   validateData: unknown
 
-  validate = <T>(body: T): T => {
-    this.validateData = body
+  validate = <T>(data: T): T => {
+    this.validateData = data
 
-    return body
+    return data
   }
 }
