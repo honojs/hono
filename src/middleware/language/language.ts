@@ -5,6 +5,7 @@
 import type { Context } from '../../context'
 import { setCookie, getCookie } from '../../helper/cookie'
 import type { MiddlewareHandler } from '../../types'
+import { parseAccept } from '../../utils/parse-accept'
 
 export type DetectorType = 'path' | 'querystring' | 'cookie' | 'header'
 export type CacheType = 'cookie'
@@ -13,7 +14,7 @@ export interface DetectorOptions {
   /** Order of language detection strategies */
   order: DetectorType[]
   /** Query parameter name for language */
-  lookupQuerystring: string
+  lookupQueryString: string
   /** Cookie name for language */
   lookupCookie: string
   /** Index in URL path where language code appears */
@@ -49,7 +50,7 @@ export interface LanguageVariables {
 
 const DEFAULT_OPTIONS: DetectorOptions = {
   order: ['querystring', 'cookie', 'header'],
-  lookupQuerystring: 'lang',
+  lookupQueryString: 'lang',
   lookupCookie: 'language',
   lookupFromHeaderKey: 'accept-language',
   lookupFromPathIndex: 0,
@@ -71,24 +72,7 @@ const DEFAULT_OPTIONS: DetectorOptions = {
  * @returns Array of parsed languages with quality scores
  */
 export function parseAcceptLanguage(header: string): Array<{ lang: string; q: number }> {
-  try {
-    return header
-      .split(',')
-      .map((lang) => {
-        const [language, quality = 'q=1.0'] = lang
-          .trim()
-          .split(';')
-          .map((s) => s.trim())
-        const q = parseFloat(quality.replace('q=', ''))
-        return {
-          lang: language,
-          q: isNaN(q) ? 1.0 : Math.max(0, Math.min(1, q)),
-        }
-      })
-      .sort((a, b) => b.q - a.q)
-  } catch {
-    return []
-  }
+  return parseAccept(header).map(({ type, q }) => ({ lang: type, q }))
 }
 
 /**
@@ -97,10 +81,10 @@ export function parseAcceptLanguage(header: string): Array<{ lang: string; q: nu
  * @param options Detector options
  * @returns Normalized language code or undefined
  */
-export function normalizeLanguage(
+export const normalizeLanguage = (
   lang: string | null | undefined,
   options: DetectorOptions
-): string | undefined {
+): string | undefined => {
   if (!lang) {
     return undefined
   }
@@ -126,9 +110,9 @@ export function normalizeLanguage(
 /**
  * Detects language from query parameter
  */
-export function detectFromQuery(c: Context, options: DetectorOptions): string | undefined {
+export const detectFromQuery = (c: Context, options: DetectorOptions): string | undefined => {
   try {
-    const query = c.req.query(options.lookupQuerystring)
+    const query = c.req.query(options.lookupQueryString)
     return normalizeLanguage(query, options)
   } catch {
     return undefined
@@ -138,7 +122,7 @@ export function detectFromQuery(c: Context, options: DetectorOptions): string | 
 /**
  * Detects language from cookie
  */
-export function detectFromCookie(c: Context, options: DetectorOptions): string | undefined {
+export const detectFromCookie = (c: Context, options: DetectorOptions): string | undefined => {
   try {
     const cookie = getCookie(c, options.lookupCookie)
     return normalizeLanguage(cookie, options)
@@ -238,7 +222,7 @@ function cacheLanguage(c: Context, language: string, options: DetectorOptions): 
 /**
  * Detect language from request
  */
-function detectLanguage(c: Context, options: DetectorOptions): string {
+const detectLanguage = (c: Context, options: DetectorOptions): string => {
   let detectedLang: string | undefined
 
   for (const detectorName of options.order) {
@@ -277,7 +261,7 @@ function detectLanguage(c: Context, options: DetectorOptions): string {
  * @param userOptions Configuration options for the language detector
  * @returns Hono middleware function
  */
-export function languageDetector(userOptions: Partial<DetectorOptions> = {}): MiddlewareHandler {
+export const languageDetector = (userOptions: Partial<DetectorOptions>): MiddlewareHandler => {
   const options: DetectorOptions = {
     ...DEFAULT_OPTIONS,
     ...userOptions,

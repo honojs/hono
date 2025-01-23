@@ -272,4 +272,5 @@ describe('languageDetector', () => {
       consoleSpy.mockRestore()
     })
   })
+  
 })
