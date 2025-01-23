@@ -283,7 +283,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
   ]
 }
 
-export class Factory<E extends Env = any, P extends string = any> {
+export class Factory<E extends Env = Env, P extends string = string> {
   private initApp?: InitApp<E>
 
   constructor(init?: { initApp?: InitApp<E> }) {
@@ -298,7 +298,9 @@ export class Factory<E extends Env = any, P extends string = any> {
     return app
   }
 
-  createMiddleware = <I extends Input = {}>(middleware: MiddlewareHandler<E, P, I>) => middleware
+  createMiddleware = <I extends Input = {}>(
+    middleware: MiddlewareHandler<E, P, I>
+  ): MiddlewareHandler<E, P, I> => middleware
 
   createHandlers: CreateHandlersInterface<E, P> = (...handlers: any) => {
     // @ts-expect-error this should not be typed
@@ -306,7 +308,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   }
 }
 
-export const createFactory = <E extends Env = any, P extends string = any>(init?: {
+export const createFactory = <E extends Env = Env, P extends string = string>(init?: {
   initApp?: InitApp<E>
 }): Factory<E, P> => new Factory<E, P>(init)
 

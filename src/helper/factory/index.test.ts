@@ -3,8 +3,9 @@ import { expectTypeOf } from 'vitest'
 import { hc } from '../../client'
 import type { ClientRequest } from '../../client/types'
 import { Hono } from '../../index'
-import type { ToSchema, TypedResponse } from '../../types'
-import type { ContentfulStatusCode, StatusCode } from '../../utils/http-status'
+import type { ExtractSchema, ToSchema, TypedResponse } from '../../types'
+import type { ContentfulStatusCode } from '../../utils/http-status'
+import type { Equal, Expect } from '../../utils/types'
 import { validator } from '../../validator'
 import { createFactory, createMiddleware } from './index'
 
@@ -327,25 +328,44 @@ describe('createHandler', () => {
   })
 })
 
-describe('createApp', () => {
-  type Env = { Variables: { foo: string } }
-  const factory = createFactory<Env>({
-    initApp: (app) => {
-      app.use((c, next) => {
-        c.set('foo', 'bar')
-        return next()
-      })
-    },
-  })
-  const app = factory.createApp()
-  it('Should set the correct type and initialize the app', async () => {
-    app.get('/', (c) => {
-      expectTypeOf(c.var.foo).toEqualTypeOf<string>()
-      return c.text(c.var.foo)
+describe('createFactory', () => {
+  describe('createApp', () => {
+    type Env = { Variables: { foo: string } }
+    const factory = createFactory<Env>({
+      initApp: (app) => {
+        app.use((c, next) => {
+          c.set('foo', 'bar')
+          return next()
+        })
+      },
     })
-    const res = await app.request('/')
-    expect(res.status).toBe(200)
-    expect(await res.text()).toBe('bar')
+    const app = factory.createApp()
+    it('Should set the correct type and initialize the app', async () => {
+      app.get('/', (c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        return c.text(c.var.foo)
+      })
+      const res = await app.request('/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('bar')
+    })
+  })
+
+  describe('createMiddleware', () => {
+    it('Should set the correct type', () => {
+      const factory = createFactory()
+
+      const middleware = factory.createMiddleware(async (_, next) => {
+        await next()
+      })
+
+      const routes = new Hono().use('*', middleware)
+      type Actual = ExtractSchema<typeof routes>
+      type Expected = {
+        '*': {}
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
   })
 })
 
