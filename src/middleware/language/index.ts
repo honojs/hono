@@ -7,9 +7,8 @@ export {
   detectFromHeader,
   detectFromPath,
   detectFromQuery,
+  DEFAULT_OPTIONS,
 } from './language'
-import type {} from '../..'
-
 declare module '../..' {
   interface ContextVariableMap extends LanguageVariables {}
 }

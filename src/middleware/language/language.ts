@@ -48,7 +48,7 @@ export interface LanguageVariables {
   language: string
 }
 
-const DEFAULT_OPTIONS: DetectorOptions = {
+export const DEFAULT_OPTIONS: DetectorOptions = {
   order: ['querystring', 'cookie', 'header'],
   lookupQueryString: 'lang',
   lookupCookie: 'language',

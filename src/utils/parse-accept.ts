@@ -22,11 +22,11 @@ export const parseAccept = (acceptHeader: string): Accept[] => {
     .sort(sortByQualityAndIndex)
     .map(({ type, params, q }) => ({ type, params, q }))
 }
-
+const parseAcceptValueRegex = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/
 const parseAcceptValue = ({ value, index }: { value: string; index: number }) => {
   const parts = value
     .trim()
-    .split(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/)
+    .split(parseAcceptValueRegex)
     .map((s) => s.trim())
   const type = parts[0]
   if (!type) {
@@ -51,7 +51,7 @@ const parseParams = (paramParts: string[]): Record<string, string> => {
 
 const parseQuality = (qVal?: string): number => {
   if (qVal === undefined) {
-    return 1.0
+    return 1
   }
   if (qVal === '') {
     return 1
