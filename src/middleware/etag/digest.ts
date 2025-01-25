@@ -10,20 +10,13 @@ const mergeBuffers = (buffer1: ArrayBuffer | undefined, buffer2: Uint8Array): Ui
 
 export const generateDigest = async (
   stream: ReadableStream<Uint8Array> | null,
-  generateDigest?: (body: Uint8Array) => ArrayBuffer | Promise<ArrayBuffer>
+  generateDigest: (body: Uint8Array) => ArrayBuffer | Promise<ArrayBuffer>
 ): Promise<string | null> => {
   if (!stream || !crypto || !crypto.subtle) {
     return null
   }
 
   let result: ArrayBuffer | undefined = undefined
-  generateDigest ||= (body: Uint8Array) =>
-    crypto.subtle.digest(
-      {
-        name: 'SHA-1',
-      },
-      body
-    )
 
   const reader = stream.getReader()
   for (;;) {
