@@ -1360,6 +1360,7 @@ export interface OnHandlerInterface<
     M extends string,
     P extends string,
     MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
+    R extends HandlerResponse<any> = any,
     I extends Input = BlankInput,
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -1393,7 +1394,7 @@ export interface OnHandlerInterface<
       H<E8, MergedPath, I7>,
       H<E9, MergedPath, I8>,
       H<E10, MergedPath, I9>,
-      H<E11, MergedPath, I10>
+      H<E11, MergedPath, I10, R>
     ]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11]>,
@@ -1653,6 +1654,7 @@ export interface OnHandlerInterface<
     Ms extends string[],
     P extends string,
     MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
+    R extends HandlerResponse<any> = any,
     I extends Input = BlankInput,
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -1683,7 +1685,7 @@ export interface OnHandlerInterface<
       H<E7, MergedPath, I6>,
       H<E8, MergedPath, I7>,
       H<E9, MergedPath, I8>,
-      H<E10, MergedPath, I9>
+      H<E10, MergedPath, I9, R>
     ]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>,
@@ -1696,6 +1698,7 @@ export interface OnHandlerInterface<
     Ms extends string[],
     P extends string,
     MergedPath extends MergePath<BasePath, P> = MergePath<BasePath, P>,
+    R extends HandlerResponse<any> = any,
     I extends Input = BlankInput,
     I2 extends Input = I,
     I3 extends Input = I & I2,
@@ -1729,7 +1732,7 @@ export interface OnHandlerInterface<
       H<E8, MergedPath, I7>,
       H<E9, MergedPath, I8>,
       H<E10, MergedPath, I9>,
-      H<E11, MergedPath, I10>
+      H<E11, MergedPath, I10, R>
     ]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11]>,
