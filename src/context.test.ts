@@ -51,7 +51,7 @@ describe('Context', () => {
   it('c.json()', async () => {
     const res = c.json({ message: 'Hello' }, 201, { 'X-Custom': 'Message' })
     expect(res.status).toBe(201)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
     const text = await res.text()
     expect(text).toBe('{"message":"Hello"}')
     expect(res.headers.get('X-Custom')).toBe('Message')
@@ -85,6 +85,12 @@ describe('Context', () => {
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe('/destination')
     res = c.redirect('https://example.com/destination')
+    expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe('https://example.com/destination')
+  })
+
+  it('c.redirect() w/ URL', async () => {
+    const res = c.redirect(new URL('/destination', 'https://example.com'))
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe('https://example.com/destination')
   })
@@ -145,11 +151,11 @@ describe('Context', () => {
     c.header('X-Foo', 'Bar')
     c.header('X-Foo', undefined)
     c.header('X-Foo2', 'Bar')
-    let res = c.body('Hi')
+    const res = c.body('Hi')
     expect(res.headers.get('X-Foo')).toBe(null)
     c.header('X-Foo2', undefined)
-    res = c.res
-    expect(res.headers.get('X-Foo2')).toBe(null)
+    const res2 = c.body('Hi')
+    expect(res2.headers.get('X-Foo2')).toBe(null)
   })
 
   it('c.header() - clear the header when append is true', async () => {
@@ -176,7 +182,7 @@ describe('Context', () => {
     c.status(404)
     const res = c.json({ hono: 'great app' })
     expect(res.status).toBe(404)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
     const obj: { [key: string]: string } = await res.json()
     expect(obj['hono']).toBe('great app')
   })

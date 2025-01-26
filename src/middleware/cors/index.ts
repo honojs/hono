@@ -137,7 +137,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       return new Response(null, {
         headers: c.res.headers,
         status: 204,
-        statusText: c.res.statusText,
+        statusText: 'No Content',
       })
     }
     await next()

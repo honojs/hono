@@ -120,11 +120,12 @@ export const createCssJsxDomObjects: CreateCssJsxDomObjectsType = ({ id }) => {
     },
   }
 
-  const Style: FC<PropsWithChildren<void>> = ({ children }) =>
+  const Style: FC<PropsWithChildren<{ nonce?: string }>> = ({ children, nonce }) =>
     ({
       tag: 'style',
       props: {
         id,
+        nonce,
         children:
           children &&
           (Array.isArray(children) ? children : [children]).map(

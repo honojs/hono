@@ -1,5 +1,4 @@
 import { Context } from './context'
-import type { ParamIndexMap, Params } from './router'
 import type { Env, ErrorHandler, NotFoundHandler } from './types'
 
 /**
@@ -31,7 +30,7 @@ interface ComposeContext {
  * @returns {(context: C, next?: Function) => Promise<C>} - A composed middleware function.
  */
 export const compose = <C extends ComposeContext, E extends Env = Env>(
-  middleware: [[Function, unknown], ParamIndexMap | Params][],
+  middleware: [[Function, unknown], unknown][] | [[Function]][],
   onError?: ErrorHandler<E>,
   onNotFound?: NotFoundHandler<E>
 ): ((context: C, next?: Function) => Promise<C>) => {
