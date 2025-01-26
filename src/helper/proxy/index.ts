@@ -38,7 +38,7 @@ interface ProxyFetch {
  *
  * app.any('/proxy/:path', (c) => {
  *   return proxy(`http://${originServer}/${c.req.param('path')}`, {
- *     ...c.req, // optional, specify only when forwarding all the request data (including credentials) is necessary
+ *     ...c.req, // optional, specify only when forwarding all the request data (including credentials) is necessary.
  *     headers: {
  *       ...c.req.header(),
  *       'X-Forwarded-For': '127.0.0.1',
