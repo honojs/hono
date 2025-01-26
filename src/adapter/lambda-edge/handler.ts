@@ -105,7 +105,10 @@ interface CloudFrontResult {
 const convertHeaders = (headers: Headers): CloudFrontHeaders => {
   const cfHeaders: CloudFrontHeaders = {}
   headers.forEach((value, key) => {
-    cfHeaders[key.toLowerCase()] = [{ key: key.toLowerCase(), value }]
+    cfHeaders[key.toLowerCase()] = [
+      ...(cfHeaders[key.toLowerCase()] || []),
+      { key: key.toLowerCase(), value },
+    ]
   })
   return cfHeaders
 }

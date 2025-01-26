@@ -1,4 +1,5 @@
 import { describe } from 'vitest'
+import { setCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import { encodeBase64 } from '../../utils/encode'
 import type { CloudFrontEdgeEvent } from './handler'
@@ -86,5 +87,36 @@ describe('handle', () => {
     const res = await handler(cloudFrontEdgeEvent)
 
     expect(res.body).toBe('https://hono.dev/test-path')
+  })
+
+  it('Should support multiple cookies', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => {
+      setCookie(c, 'cookie1', 'value1')
+      setCookie(c, 'cookie2', 'value2')
+      return c.text('')
+    })
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res.headers).toEqual({
+      'content-type': [
+        {
+          key: 'content-type',
+          value: 'text/plain; charset=UTF-8',
+        },
+      ],
+      'set-cookie': [
+        {
+          key: 'set-cookie',
+          value: 'cookie1=value1; Path=/',
+        },
+        {
+          key: 'set-cookie',
+          value: 'cookie2=value2; Path=/',
+        },
+      ],
+    })
   })
 })
