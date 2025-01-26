@@ -3,13 +3,18 @@
  * Proxy Helper for Hono.
  */
 
+import type { HonoRequest } from '../../request'
+
 interface ProxyRequestInit extends RequestInit {
   raw?: Request
 }
 
 interface ProxyFetch {
-  (input: RequestInfo | URL, init?: ProxyRequestInit): Promise<Response>
-  (input: string | URL | globalThis.Request, init?: ProxyRequestInit): Promise<Response>
+  (input: RequestInfo | URL, init?: ProxyRequestInit | HonoRequest): Promise<Response>
+  (
+    input: string | URL | globalThis.Request,
+    init?: ProxyRequestInit | HonoRequest
+  ): Promise<Response>
 }
 
 /**
