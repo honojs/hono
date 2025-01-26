@@ -28,6 +28,14 @@ describe('Proxy Middleware', () => {
           )
         } else if (req.url === 'https://example.com/post' && req.method === 'POST') {
           return Promise.resolve(new Response(`request body: ${await req.text()}`))
+        } else if (req.url === 'https://example.com/hop-by-hop') {
+          return Promise.resolve(
+            new Response('ok', {
+              headers: {
+                'Transfer-Encoding': 'chunked',
+              },
+            })
+          )
         }
         return Promise.resolve(new Response('not found', { status: 404 }))
       })
@@ -106,6 +114,44 @@ describe('Proxy Middleware', () => {
 
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('request body: test')
+    })
+
+    it('remove hop-by-hop headers', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) => proxy(`https://example.com/${c.req.param('path')}`))
+
+      const res = await app.request('/proxy/hop-by-hop', {
+        headers: {
+          Connection: 'keep-alive',
+          'Keep-Alive': 'timeout=5, max=1000',
+          'Proxy-Authorization': 'Basic 123456',
+        },
+      })
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+
+      expect(req.headers.get('Connection')).toBeNull()
+      expect(req.headers.get('Keep-Alive')).toBeNull()
+      expect(req.headers.get('Proxy-Authorization')).toBeNull()
+
+      expect(res.headers.get('Transfer-Encoding')).toBeNull()
+    })
+
+    it('specify hop-by-hop header by options', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) =>
+        proxy(`https://example.com/${c.req.param('path')}`, {
+          headers: {
+            'Proxy-Authorization': 'Basic 123456',
+          },
+        })
+      )
+
+      const res = await app.request('/proxy/hop-by-hop')
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+
+      expect(req.headers.get('Proxy-Authorization')).toBe('Basic 123456')
+
+      expect(res.headers.get('Transfer-Encoding')).toBeNull()
     })
   })
 })

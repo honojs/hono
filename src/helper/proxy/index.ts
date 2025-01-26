@@ -5,6 +5,17 @@
 
 import type { HonoRequest } from '../../request'
 
+// https://datatracker.ietf.org/doc/html/rfc2616#section-13.5.1
+const hopByHopHeaders = [
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailers',
+  'transfer-encoding',
+]
+
 interface ProxyRequestInit extends RequestInit {
   raw?: Request
 }
@@ -67,6 +78,11 @@ export const proxy: ProxyFetch = async (input, proxyInit) => {
   if (requestInitRaw.body) {
     requestInitRaw.duplex = 'half'
   }
+  if (requestInitRaw.headers) {
+    hopByHopHeaders.forEach((header) => {
+      ;(requestInitRaw.headers as Headers).delete(header)
+    })
+  }
 
   const req = new Request(input, {
     ...requestInitRaw,
@@ -76,6 +92,9 @@ export const proxy: ProxyFetch = async (input, proxyInit) => {
 
   const res = await fetch(req)
   const resHeaders = new Headers(res.headers)
+  hopByHopHeaders.forEach((header) => {
+    resHeaders.delete(header)
+  })
   if (resHeaders.has('content-encoding')) {
     resHeaders.delete('content-encoding')
     // Content-Length is the size of the compressed content, not the size of the original content
