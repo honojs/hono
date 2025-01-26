@@ -3,20 +3,8 @@
  * Proxy Helper for Hono.
  */
 
-// Typical header names for requests for proxy use
-type ProxyRequestHeaderName = 'X-Forwarded-For' | 'X-Forwarded-Proto' | 'X-Forwarded-Host'
-
 interface ProxyRequestInit extends RequestInit {
-  /**
-   * Headers that are overwritten in requests to the origin server.
-   * Specify undefined to delete the header.
-   */
-  proxySetRequestHeaders?: Partial<Record<ProxyRequestHeaderName, string>> &
-    Record<string, string | undefined>
-  /**
-   * Headers included in the response from the origin server that should be removed in the response to the client.
-   */
-  proxyDeleteResponseHeaderNames?: string[]
+  raw?: Request
 }
 
 interface ProxyFetch {
@@ -35,34 +23,54 @@ interface ProxyFetch {
  * @example
  * ```ts
  * app.get('/proxy/:path', (c) => {
- *   return proxyFetch(new Request(`http://${originServer}/${c.req.param('path')}`, c.req.raw), {
- *     proxySetRequestHeaders: {
+ *   return proxyFetch(`http://${originServer}/${c.req.param('path')}`, {
+ *     headers: {
+ *       ...c.req.header(), // optional, specify only when header forwarding is truly necessary.
  *       'X-Forwarded-For': '127.0.0.1',
  *       'X-Forwarded-Host': c.req.header('host'),
- *       Authorization: undefined, // do not propagate request headers contained in c.req.raw
+ *       Authorization: undefined, // do not propagate request headers contained in c.req.header('Authorization')
  *     },
- *     proxyDeleteResponseHeaderNames: ['Cookie'],
+ *   }).then((res) => {
+ *     res.headers.delete('Cookie')
+ *     return res
+ *   })
+ * })
+ * 
+ * app.any('/proxy/:path', (c) => {
+ *   return proxyFetch(`http://${originServer}/${c.req.param('path')}`, {
+ *     ...c.req,
+ *     headers: {
+ *       ...c.req.header(),
+ *       'X-Forwarded-For': '127.0.0.1',
+ *       'X-Forwarded-Host': c.req.header('host'),
+ *       Authorization: undefined, // do not propagate request headers contained in c.req.header('Authorization')
+ *     },
  *   })
  * })
  * ```
  */
 export const proxyFetch: ProxyFetch = async (input, proxyInit) => {
   const {
-    proxySetRequestHeaders = {},
-    proxyDeleteResponseHeaderNames = [],
+    raw,
     ...requestInit
   } = proxyInit ?? {}
 
-  const req = new Request(input, requestInit)
-  req.headers.delete('accept-encoding')
-
-  for (const [key, value] of Object.entries(proxySetRequestHeaders)) {
-    if (value !== undefined) {
-      req.headers.set(key, value)
-    } else {
-      req.headers.delete(key)
-    }
+  const requestInitRaw: RequestInit & { duplex?: 'half' } = raw
+    ? {
+        method: raw.method,
+        body: raw.body,
+        headers: raw.headers,
+      }
+    : {}
+  if (requestInitRaw.body) {
+    requestInitRaw.duplex = 'half'
   }
+
+  const req = new Request(input, {
+    ...requestInitRaw,
+    ...requestInit,
+  })
+  req.headers.delete('accept-encoding')
 
   const res = await fetch(req)
   const resHeaders = new Headers(res.headers)
@@ -70,9 +78,6 @@ export const proxyFetch: ProxyFetch = async (input, proxyInit) => {
     resHeaders.delete('content-encoding')
     // Content-Length is the size of the compressed content, not the size of the original content
     resHeaders.delete('content-length')
-  }
-  for (const key of proxyDeleteResponseHeaderNames) {
-    resHeaders.delete(key)
   }
 
   return new Response(res.body, {

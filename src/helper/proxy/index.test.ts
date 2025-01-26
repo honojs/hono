@@ -4,7 +4,7 @@ import { proxyFetch } from '.'
 describe('Proxy Middleware', () => {
   describe('proxyFetch', () => {
     beforeEach(() => {
-      global.fetch = vi.fn().mockImplementation((req) => {
+      global.fetch = vi.fn().mockImplementation(async (req) => {
         if (req.url === 'https://example.com/compressed') {
           return Promise.resolve(
             new Response('ok', {
@@ -26,6 +26,8 @@ describe('Proxy Middleware', () => {
               },
             })
           )
+        } else if (req.url === 'https://example.com/post' && req.method === 'POST') {
+          return Promise.resolve(new Response(`request body: ${await req.text()}`))
         }
         return Promise.resolve(new Response('not found', { status: 404 }))
       })
@@ -82,71 +84,28 @@ describe('Proxy Middleware', () => {
       expect(res.headers.get('Content-Range')).toBe('bytes 0-2/1024')
     })
 
-    it('proxySetRequestHeaders option', async () => {
+    it('POST request', async () => {
       const app = new Hono()
-      app.get('/proxy/:path', (c) =>
-        proxyFetch(
-          new Request(`https://example.com/${c.req.param('path')}`, {
-            headers: {
-              'X-Request-Id': '123',
-              'X-To-Be-Deleted': 'to-be-deleted',
-              'Accept-Encoding': 'gzip',
-            },
-          }),
-          {
-            proxySetRequestHeaders: {
-              'X-Request-Id': 'abc',
-              'X-Forwarded-For': '127.0.0.1',
-              'X-Forwarded-Host': 'example.com',
-              'X-To-Be-Deleted': undefined,
-            },
-          }
-        )
-      )
-      const res = await app.request('/proxy/compressed')
+      app.all('/proxy/:path', (c) => {
+        return proxyFetch(`https://example.com/${c.req.param('path')}`, {
+          ...c.req,
+          headers: {
+            ...c.req.header(),
+            'X-Request-Id': '123',
+            'Accept-Encoding': 'gzip',
+          },
+        })
+      })
+      const res = await app.request('/proxy/post', {
+        method: 'POST',
+        body: 'test',
+      })
       const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
 
-      expect(req.url).toBe('https://example.com/compressed')
-      expect(req.headers.get('X-Request-Id')).toBe('abc')
-      expect(req.headers.get('X-Forwarded-For')).toBe('127.0.0.1')
-      expect(req.headers.get('X-Forwarded-Host')).toBe('example.com')
-      expect(req.headers.get('X-To-Be-Deleted')).toBeNull()
-      expect(req.headers.get('Accept-Encoding')).toBeNull()
+      expect(req.url).toBe('https://example.com/post')
 
       expect(res.status).toBe(200)
-      expect(res.headers.get('X-Response-Id')).toBe('456')
-      expect(res.headers.get('Content-Encoding')).toBeNull()
-      expect(res.headers.get('Content-Length')).toBeNull()
-      expect(res.headers.get('Content-Range')).toBe('bytes 0-2/1024')
-    })
-
-    it('proxySetRequestHeaderNames option', async () => {
-      const app = new Hono()
-      app.get('/proxy/:path', (c) =>
-        proxyFetch(
-          new Request(`https://example.com/${c.req.param('path')}`, {
-            headers: {
-              'X-Request-Id': '123',
-              'Accept-Encoding': 'gzip',
-            },
-          }),
-          {
-            proxyDeleteResponseHeaderNames: ['X-Response-Id'],
-          }
-        )
-      )
-      const res = await app.request('/proxy/compressed')
-      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
-
-      expect(req.url).toBe('https://example.com/compressed')
-      expect(req.headers.get('X-Request-Id')).toBe('123')
-      expect(req.headers.get('Accept-Encoding')).toBeNull()
-
-      expect(res.status).toBe(200)
-      expect(res.headers.get('X-Response-Id')).toBeNull()
-      expect(res.headers.get('Content-Encoding')).toBeNull()
-      expect(res.headers.get('Content-Length')).toBeNull()
-      expect(res.headers.get('Content-Range')).toBe('bytes 0-2/1024')
+      expect(await res.text()).toBe('request body: test')
     })
   })
 })
