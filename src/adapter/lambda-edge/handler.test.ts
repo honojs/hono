@@ -1,5 +1,8 @@
+import { describe } from 'vitest'
+import { Hono } from '../../hono'
 import { encodeBase64 } from '../../utils/encode'
-import { createBody, isContentTypeBinary } from './handler'
+import type { CloudFrontEdgeEvent } from './handler'
+import { createBody, handle, isContentTypeBinary } from './handler'
 
 describe('isContentTypeBinary', () => {
   it('Should determine whether it is binary', () => {
@@ -34,5 +37,54 @@ describe('createBody', () => {
     expect(createBody('HEAD', body)).not.toEqual(data)
     expect(createBody('POST', body)).toEqual(data)
     expect(createBody('POST', body)).not.toEqual(undefined)
+  })
+})
+
+describe('handle', () => {
+  const cloudFrontEdgeEvent: CloudFrontEdgeEvent = {
+    Records: [
+      {
+        cf: {
+          config: {
+            distributionDomainName: 'd111111abcdef8.cloudfront.net',
+            distributionId: 'EDFDVBD6EXAMPLE',
+            eventType: 'viewer-request',
+            requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+          },
+          request: {
+            clientIp: '1.2.3.4',
+            headers: {
+              host: [
+                {
+                  key: 'Host',
+                  value: 'hono.dev',
+                },
+              ],
+              accept: [
+                {
+                  key: 'accept',
+                  value: '*/*',
+                },
+              ],
+            },
+            method: 'GET',
+            querystring: '',
+            uri: '/test-path',
+          },
+        },
+      },
+    ],
+  }
+
+  it('Should support alternate domain names', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => {
+      return c.text(c.req.url)
+    })
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res.body).toBe('https://hono.dev/test-path')
   })
 })
