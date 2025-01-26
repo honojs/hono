@@ -1,8 +1,8 @@
 import { Hono } from '../../hono'
-import { proxyFetch } from '.'
+import { proxy } from '.'
 
 describe('Proxy Middleware', () => {
-  describe('proxyFetch', () => {
+  describe('proxy', () => {
     beforeEach(() => {
       global.fetch = vi.fn().mockImplementation(async (req) => {
         if (req.url === 'https://example.com/compressed') {
@@ -36,7 +36,7 @@ describe('Proxy Middleware', () => {
     it('compressed', async () => {
       const app = new Hono()
       app.get('/proxy/:path', (c) =>
-        proxyFetch(
+        proxy(
           new Request(`https://example.com/${c.req.param('path')}`, {
             headers: {
               'X-Request-Id': '123',
@@ -62,7 +62,7 @@ describe('Proxy Middleware', () => {
     it('uncompressed', async () => {
       const app = new Hono()
       app.get('/proxy/:path', (c) =>
-        proxyFetch(
+        proxy(
           new Request(`https://example.com/${c.req.param('path')}`, {
             headers: {
               'X-Request-Id': '123',
@@ -87,7 +87,7 @@ describe('Proxy Middleware', () => {
     it('POST request', async () => {
       const app = new Hono()
       app.all('/proxy/:path', (c) => {
-        return proxyFetch(`https://example.com/${c.req.param('path')}`, {
+        return proxy(`https://example.com/${c.req.param('path')}`, {
           ...c.req,
           headers: {
             ...c.req.header(),

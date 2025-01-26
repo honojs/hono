@@ -23,7 +23,7 @@ interface ProxyFetch {
  * @example
  * ```ts
  * app.get('/proxy/:path', (c) => {
- *   return proxyFetch(`http://${originServer}/${c.req.param('path')}`, {
+ *   return proxy(`http://${originServer}/${c.req.param('path')}`, {
  *     headers: {
  *       ...c.req.header(), // optional, specify only when header forwarding is truly necessary.
  *       'X-Forwarded-For': '127.0.0.1',
@@ -35,9 +35,9 @@ interface ProxyFetch {
  *     return res
  *   })
  * })
- * 
+ *
  * app.any('/proxy/:path', (c) => {
- *   return proxyFetch(`http://${originServer}/${c.req.param('path')}`, {
+ *   return proxy(`http://${originServer}/${c.req.param('path')}`, {
  *     ...c.req,
  *     headers: {
  *       ...c.req.header(),
@@ -49,11 +49,8 @@ interface ProxyFetch {
  * })
  * ```
  */
-export const proxyFetch: ProxyFetch = async (input, proxyInit) => {
-  const {
-    raw,
-    ...requestInit
-  } = proxyInit ?? {}
+export const proxy: ProxyFetch = async (input, proxyInit) => {
+  const { raw, ...requestInit } = proxyInit ?? {}
 
   const requestInitRaw: RequestInit & { duplex?: 'half' } = raw
     ? {
