@@ -25,7 +25,7 @@ interface ProxyFetch {
  * app.get('/proxy/:path', (c) => {
  *   return proxy(`http://${originServer}/${c.req.param('path')}`, {
  *     headers: {
- *       ...c.req.header(), // optional, specify only when header forwarding is truly necessary.
+ *       ...c.req.header(), // optional, specify only when forwarding all the request data (including credentials) is necessary.
  *       'X-Forwarded-For': '127.0.0.1',
  *       'X-Forwarded-Host': c.req.header('host'),
  *       Authorization: undefined, // do not propagate request headers contained in c.req.header('Authorization')
@@ -38,7 +38,7 @@ interface ProxyFetch {
  *
  * app.any('/proxy/:path', (c) => {
  *   return proxy(`http://${originServer}/${c.req.param('path')}`, {
- *     ...c.req,
+ *     ...c.req, // optional, specify only when forwarding all the request data (including credentials) is necessary
  *     headers: {
  *       ...c.req.header(),
  *       'X-Forwarded-For': '127.0.0.1',
