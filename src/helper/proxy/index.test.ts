@@ -36,6 +36,14 @@ describe('Proxy Middleware', () => {
               },
             })
           )
+        } else if (req.url === 'https://example.com/set-cookie') {
+          return Promise.resolve(
+            new Response('ok', {
+              headers: {
+                'Set-Cookie': 'test=123',
+              },
+            })
+          )
         }
         return Promise.resolve(new Response('not found', { status: 404 }))
       })
@@ -152,6 +160,24 @@ describe('Proxy Middleware', () => {
       expect(req.headers.get('Proxy-Authorization')).toBe('Basic 123456')
 
       expect(res.headers.get('Transfer-Encoding')).toBeNull()
+    })
+
+    it('modify header', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) =>
+        proxy(`https://example.com/${c.req.param('path')}`, {
+          headers: {
+            'Set-Cookie': 'test=123',
+          },
+        }).then((res) => {
+          res.headers.delete('Set-Cookie')
+          res.headers.set('X-Response-Id', '456')
+          return res
+        })
+      )
+      const res = await app.request('/proxy/set-cookie')
+      expect(res.headers.get('Set-Cookie')).toBeNull()
+      expect(res.headers.get('X-Response-Id')).toBe('456')
     })
   })
 })
