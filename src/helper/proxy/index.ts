@@ -3,7 +3,7 @@
  * Proxy Helper for Hono.
  */
 
-import type { HonoRequest } from '../../request'
+import type { RequestHeader } from '../../utils/headers'
 
 // https://datatracker.ietf.org/doc/html/rfc2616#section-13.5.1
 const hopByHopHeaders = [
@@ -16,16 +16,17 @@ const hopByHopHeaders = [
   'transfer-encoding',
 ]
 
-interface ProxyRequestInit extends RequestInit {
+interface ProxyRequestInit extends Omit<RequestInit, 'headers'> {
   raw?: Request
+  headers?:
+    | HeadersInit
+    | [string, string][]
+    | Record<RequestHeader, string | undefined>
+    | Record<string, string | undefined>
 }
 
 interface ProxyFetch {
-  (input: RequestInfo | URL, init?: ProxyRequestInit | HonoRequest): Promise<Response>
-  (
-    input: string | URL | globalThis.Request,
-    init?: ProxyRequestInit | HonoRequest
-  ): Promise<Response>
+  (input: string | URL | Request, init?: ProxyRequestInit): Promise<Response>
 }
 
 const buildRequestInitFromRequest = (
@@ -72,7 +73,7 @@ const buildRequestInitFromRequest = (
  *   })
  * })
  *
- * app.any('/proxy/:path', (c) => {
+ * app.all('/proxy/:path', (c) => {
  *   return proxy(`http://${originServer}/${c.req.param('path')}`, {
  *     ...c.req, // optional, specify only when forwarding all the request data (including credentials) is necessary.
  *     headers: {
@@ -88,10 +89,14 @@ const buildRequestInitFromRequest = (
 export const proxy: ProxyFetch = async (input, proxyInit) => {
   const { raw, ...requestInit } = proxyInit ?? {}
 
-  const req = new Request(input, {
-    ...buildRequestInitFromRequest(raw),
-    ...requestInit,
-  })
+  const req = new Request(
+    input,
+    // @ts-expect-error `headers` in `requestInit` is not compatible with HeadersInit
+    {
+      ...buildRequestInitFromRequest(raw),
+      ...requestInit,
+    }
+  )
   req.headers.delete('accept-encoding')
 
   const res = await fetch(req)
