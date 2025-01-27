@@ -61,6 +61,18 @@ const run = async (
 }
 
 const contextStash: WeakMap<ReadableStream, Context> = new WeakMap<ReadableStream, Context>()
+let isOldBunVersion = (): boolean => {
+  // @ts-expect-error @types/bun is not installed
+  const version: string = typeof Bun !== 'undefined' ? Bun.version : undefined
+  if (version === undefined) {
+    return false
+  }
+  const result = version.startsWith('1.1') || version.startsWith('1.0') || version.startsWith('0.')
+  // Avoid running this check on every call
+  isOldBunVersion = () => result
+  return result
+}
+
 export const streamSSE = (
   c: Context,
   cb: (stream: SSEStreamingApi) => Promise<void>,
@@ -69,12 +81,15 @@ export const streamSSE = (
   const { readable, writable } = new TransformStream()
   const stream = new SSEStreamingApi(writable, readable)
 
-  // bun does not cancel response stream when request is canceled, so detect abort by signal
-  c.req.raw.signal.addEventListener('abort', () => {
-    if (!stream.closed) {
-      stream.abort()
-    }
-  })
+  // Until Bun v1.1.27, Bun didn't call cancel() on the ReadableStream for Response objects from Bun.serve()
+  if (isOldBunVersion()) {
+    c.req.raw.signal.addEventListener('abort', () => {
+      if (!stream.closed) {
+        stream.abort()
+      }
+    })
+  }
+
   // in bun, `c` is destroyed when the request is returned, so hold it until the end of streaming
   contextStash.set(stream.responseReadable, c)
 
