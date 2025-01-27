@@ -68,7 +68,7 @@ const buildRequestInitFromRequest = (
  *       Authorization: undefined, // do not propagate request headers contained in c.req.header('Authorization')
  *     },
  *   }).then((res) => {
- *     res.headers.delete('Cookie')
+ *     res.headers.delete('Set-Cookie')
  *     return res
  *   })
  * })
