@@ -150,7 +150,10 @@ const createResult = async (res: Response): Promise<CloudFrontResult> => {
 
 const createRequest = (event: CloudFrontEdgeEvent): Request => {
   const queryString = event.Records[0].cf.request.querystring
-  const urlPath = `https://${event.Records[0].cf.request.headers.host[0].value}${event.Records[0].cf.request.uri}`
+  const host =
+    event.Records[0].cf.request.headers?.host?.[0]?.value ||
+    event.Records[0].cf.config.distributionDomainName
+  const urlPath = `https://${host}${event.Records[0].cf.request.uri}`
   const url = queryString ? `${urlPath}?${queryString}` : urlPath
 
   const headers = new Headers()
