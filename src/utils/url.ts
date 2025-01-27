@@ -52,7 +52,6 @@ export const getPattern = (label: string): Pattern | null => {
   // *            => wildcard
   // :id{[0-9]+}  => ([0-9]+)
   // :id          => (.+)
-  //const name = ''
 
   if (label === '*') {
     return '*'

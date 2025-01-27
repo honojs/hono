@@ -24,6 +24,7 @@ export type CookieOptions = {
   signingSecret?: string
   sameSite?: 'Strict' | 'Lax' | 'None' | 'strict' | 'lax' | 'none'
   partitioned?: boolean
+  priority?: 'Low' | 'Medium' | 'High'
   prefix?: CookiePrefixOptions
 } & PartitionedCookieConstraint
 export type CookiePrefixOptions = 'host' | 'secure'
@@ -202,6 +203,10 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
 
   if (opt.sameSite) {
     cookie += `; SameSite=${opt.sameSite.charAt(0).toUpperCase() + opt.sameSite.slice(1)}`
+  }
+
+  if (opt.priority) {
+    cookie += `; Priority=${opt.priority}`
   }
 
   if (opt.partitioned) {

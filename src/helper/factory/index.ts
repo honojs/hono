@@ -40,7 +40,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I3 extends Input = I & I2,
     R extends HandlerResponse<any> = any,
     E2 extends Env = E,
-    E3 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>
   >(
     handler1: H<E2, P, I, R>,
@@ -56,8 +56,8 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I4 extends Input = I & I2 & I3,
     R extends HandlerResponse<any> = any,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
     E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>
   >(
     handler1: H<E2, P, I, R>,
@@ -75,9 +75,9 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I5 extends Input = I & I2 & I3 & I4,
     R extends HandlerResponse<any> = any,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
     E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>
   >(
     handler1: H<E2, P, I, R>,
@@ -97,10 +97,10 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I6 extends Input = I & I2 & I3 & I4 & I5,
     R extends HandlerResponse<any> = any,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
     E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>
   >(
     handler1: H<E2, P, I, R>,
@@ -129,11 +129,11 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
     R extends HandlerResponse<any> = any,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
     E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>
   >(
     handler1: H<E2, P, I, R>,
@@ -165,12 +165,12 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
     R extends HandlerResponse<any> = any,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
     E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>
   >(
     handler1: H<E2, P, I, R>,
@@ -205,13 +205,13 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I9 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8,
     R extends HandlerResponse<any> = any,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
-    E9 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
     E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>
   >(
     handler1: H<E2, P, I, R>,
@@ -249,14 +249,14 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
     I10 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8 & I9,
     R extends HandlerResponse<any> = any,
     E2 extends Env = E,
-    E3 extends Env = E,
-    E4 extends Env = E,
-    E5 extends Env = E,
-    E6 extends Env = E,
-    E7 extends Env = E,
-    E8 extends Env = E,
-    E9 extends Env = E,
-    E10 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+    E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
     E11 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>
   >(
     handler1: H<E2, P, I, R>,
@@ -283,7 +283,7 @@ export interface CreateHandlersInterface<E extends Env, P extends string> {
   ]
 }
 
-export class Factory<E extends Env = any, P extends string = any> {
+export class Factory<E extends Env = Env, P extends string = string> {
   private initApp?: InitApp<E>
 
   constructor(init?: { initApp?: InitApp<E> }) {
@@ -298,7 +298,9 @@ export class Factory<E extends Env = any, P extends string = any> {
     return app
   }
 
-  createMiddleware = <I extends Input = {}>(middleware: MiddlewareHandler<E, P, I>) => middleware
+  createMiddleware = <I extends Input = {}>(
+    middleware: MiddlewareHandler<E, P, I>
+  ): MiddlewareHandler<E, P, I> => middleware
 
   createHandlers: CreateHandlersInterface<E, P> = (...handlers: any) => {
     // @ts-expect-error this should not be typed
@@ -306,7 +308,7 @@ export class Factory<E extends Env = any, P extends string = any> {
   }
 }
 
-export const createFactory = <E extends Env = any, P extends string = any>(init?: {
+export const createFactory = <E extends Env = Env, P extends string = string>(init?: {
   initApp?: InitApp<E>
 }): Factory<E, P> => new Factory<E, P>(init)
 
@@ -316,4 +318,4 @@ export const createMiddleware = <
   I extends Input = {}
 >(
   middleware: MiddlewareHandler<E, P, I>
-): MiddlewareHandler<E, P, I> => createFactory<E, P>().createMiddleware<I>(middleware)
+): MiddlewareHandler<E, P, I> => middleware

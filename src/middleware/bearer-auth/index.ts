@@ -7,7 +7,7 @@ import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 import { timingSafeEqual } from '../../utils/buffer'
-import type { StatusCode } from '../../utils/http-status'
+import type { ContentfulStatusCode } from '../../utils/http-status'
 
 const TOKEN_STRINGS = '[A-Za-z0-9._~+/-]+=*'
 const PREFIX = 'Bearer'
@@ -87,7 +87,7 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
 
   const throwHTTPException = async (
     c: Context,
-    status: StatusCode,
+    status: ContentfulStatusCode,
     wwwAuthenticateHeader: string,
     messageOption: string | object | MessageFunction
   ): Promise<Response> => {
@@ -103,7 +103,7 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
             status,
             headers: {
               ...headers,
-              'content-type': 'application/json; charset=UTF-8',
+              'content-type': 'application/json',
             },
           })
     throw new HTTPException(status, { res })
