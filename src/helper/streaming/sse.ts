@@ -1,6 +1,7 @@
 import type { Context } from '../../context'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
 import { StreamingApi } from '../../utils/stream'
+import { isOldBunVersion } from './utils'
 
 export interface SSEMessage {
   data: string | Promise<string>
@@ -61,17 +62,6 @@ const run = async (
 }
 
 const contextStash: WeakMap<ReadableStream, Context> = new WeakMap<ReadableStream, Context>()
-let isOldBunVersion = (): boolean => {
-  // @ts-expect-error @types/bun is not installed
-  const version: string = typeof Bun !== 'undefined' ? Bun.version : undefined
-  if (version === undefined) {
-    return false
-  }
-  const result = version.startsWith('1.1') || version.startsWith('1.0') || version.startsWith('0.')
-  // Avoid running this check on every call
-  isOldBunVersion = () => result
-  return result
-}
 
 export const streamSSE = (
   c: Context,
