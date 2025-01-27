@@ -273,15 +273,15 @@ export const languageDetector = (userOptions: Partial<DetectorOptions>): Middlew
 
   validateOptions(options)
 
-  return async function languageDetectorMiddleware(c, next) {
+  return async function languageDetector(ctx, next) {
     try {
-      const lang = detectLanguage(c, options)
-      c.set('language', lang)
+      const lang = detectLanguage(ctx, options)
+      ctx.set('language', lang)
     } catch (error) {
       if (options.debug) {
         console.error('Language detection failed:', error)
       }
-      c.set('language', options.fallbackLanguage)
+      ctx.set('language', options.fallbackLanguage)
     }
 
     await next()
