@@ -6,7 +6,7 @@
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
-type CORSOptions = {
+export type CORSOptions = {
   origin: string | string[] | ((origin: string, c: Context) => string | undefined | null)
   allowMethods?: string[]
   allowHeaders?: string[]
