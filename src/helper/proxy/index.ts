@@ -28,6 +28,26 @@ interface ProxyFetch {
   ): Promise<Response>
 }
 
+const buildRequestInitFromRequest = (
+  request: Request | undefined
+): RequestInit & { duplex?: 'half' } => {
+  if (!request) {
+    return {}
+  }
+
+  const headers = new Headers(request.headers)
+  hopByHopHeaders.forEach((header) => {
+    headers.delete(header)
+  })
+
+  return {
+    method: request.method,
+    body: request.body,
+    duplex: request.body ? 'half' : undefined,
+    headers,
+  }
+}
+
 /**
  * Fetch API wrapper for proxy.
  * The parameters and return value are the same as for `fetch` (except for the proxy-specific options).
@@ -68,24 +88,8 @@ interface ProxyFetch {
 export const proxy: ProxyFetch = async (input, proxyInit) => {
   const { raw, ...requestInit } = proxyInit ?? {}
 
-  const requestInitRaw: RequestInit & { duplex?: 'half' } = raw
-    ? {
-        method: raw.method,
-        body: raw.body,
-        headers: raw.headers,
-      }
-    : {}
-  if (requestInitRaw.body) {
-    requestInitRaw.duplex = 'half'
-  }
-  if (requestInitRaw.headers) {
-    hopByHopHeaders.forEach((header) => {
-      ;(requestInitRaw.headers as Headers).delete(header)
-    })
-  }
-
   const req = new Request(input, {
-    ...requestInitRaw,
+    ...buildRequestInitFromRequest(raw),
     ...requestInit,
   })
   req.headers.delete('accept-encoding')
