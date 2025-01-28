@@ -1,5 +1,5 @@
-import { serve } from '@hono/node-server'
-import type { AddressInfo } from 'net'
+import { HttpResponse, http } from 'msw'
+import { setupServer } from 'msw/node'
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
 import { Jwt } from '../../utils/jwt'
@@ -9,10 +9,14 @@ import { jwk } from '.'
 const verify_keys = test_keys.public_keys
 
 describe('JWK', () => {
-  const resource_server = new Hono()
-  resource_server.get('/.well-known/jwks.json', (c) => c.json({ keys: verify_keys }))
-  const server = serve({ fetch: resource_server.fetch })
-  const port = (server.address() as AddressInfo).port
+  const server = setupServer(
+    http.get('http://localhost/.well-known/jwks.json', () => {
+      return HttpResponse.json({ keys: verify_keys })
+    })
+  )
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
 
   describe('Credentials in header', () => {
     let handlerExecuted: boolean
@@ -33,7 +37,7 @@ describe('JWK', () => {
       '/auth-with-keys-fn/*',
       jwk({
         keys: async () => {
-          const response = await fetch(`http://localhost:${port}/.well-known/jwks.json`)
+          const response = await fetch('http://localhost/.well-known/jwks.json')
           const data = await response.json()
           return data.keys
         },
@@ -42,7 +46,7 @@ describe('JWK', () => {
     app.use(
       '/auth-with-jwks_uri/*',
       jwk({
-        jwks_uri: `http://localhost:${port}/.well-known/jwks.json`,
+        jwks_uri: 'http://localhost/.well-known/jwks.json',
       })
     )
 
