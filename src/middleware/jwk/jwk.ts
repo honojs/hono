@@ -83,7 +83,6 @@ export const jwk = (
             options.cookie.key,
             options.cookie.prefixOptions
           )
-          console.log('TOK', token, options, ctx.req.raw.headers)
         } else {
           token = await getSignedCookie(ctx, options.cookie.secret, options.cookie.key)
         }
@@ -118,6 +117,9 @@ export const jwk = (
       const data = (await response.json()) as { keys?: JsonWebKey[] }
       if (!data.keys) {
         throw new Error('invalid JWKS response. "keys" field is missing')
+      }
+      if (!Array.isArray(data.keys)) {
+        throw new Error('invalid JWKS response. "keys" field is not an array')
       }
       if (keys) {
         keys.push(...data.keys)
