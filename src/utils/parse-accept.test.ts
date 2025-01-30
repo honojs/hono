@@ -40,17 +40,17 @@ describe('parseAccept Comprehensive Tests', () => {
 
   describe('Parameter Handling', () => {
     test('handles complex parameters', () => {
-        const header = 'type;a=1;b="2";c=\'3\';d="semi;colon";e="nested"quoted""'
-        const result = parseAccept(header)
-        expect(result[0].params).toEqual({
-          a: '1',
-          b: '"2"',
-          // eslint-disable-next-line quotes
-          c: "'3'",
-          d: '"semi;colon"',
-          e: '"nested"quoted""'
-        })
+      const header = 'type;a=1;b="2";c=\'3\';d="semi;colon";e="nested"quoted""'
+      const result = parseAccept(header)
+      expect(result[0].params).toEqual({
+        a: '1',
+        b: '"2"',
+        // eslint-disable-next-line quotes
+        c: "'3'",
+        d: '"semi;colon"',
+        e: '"nested"quoted""',
       })
+    })
 
     test('handles malformed parameters', () => {
       const header = 'type;=value;;key=;=;====;key====value'
