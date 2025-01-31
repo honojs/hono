@@ -1,5 +1,6 @@
 import { HttpResponse, http } from 'msw'
 import { setupServer } from 'msw/node'
+import { setSignedCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
 import { Jwt } from '../../utils/jwt'
@@ -12,6 +13,12 @@ describe('JWK', () => {
   const server = setupServer(
     http.get('http://localhost/.well-known/jwks.json', () => {
       return HttpResponse.json({ keys: verify_keys })
+    }),
+    http.get('http://localhost/.well-known/missing-jwks.json', () => {
+      return HttpResponse.json({})
+    }),
+    http.get('http://localhost/.well-known/bad-jwks.json', () => {
+      return HttpResponse.json({ keys: 'bad-keys' })
     })
   )
   beforeAll(() => server.listen())
@@ -49,6 +56,18 @@ describe('JWK', () => {
         jwks_uri: 'http://localhost/.well-known/jwks.json',
       })
     )
+    app.use(
+      '/auth-with-missing-jwks_uri/*',
+      jwk({
+        jwks_uri: 'http://localhost/.well-known/missing-jwks.json',
+      })
+    )
+    app.use(
+      '/auth-with-bad-jwks_uri/*',
+      jwk({
+        jwks_uri: 'http://localhost/.well-known/bad-jwks.json',
+      })
+    )
 
     app.get('/auth-with-keys/*', (c) => {
       handlerExecuted = true
@@ -71,6 +90,16 @@ describe('JWK', () => {
       return c.json(payload)
     })
     app.get('/auth-with-jwks_uri/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-missing-jwks_uri/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-bad-jwks_uri/*', (c) => {
       handlerExecuted = true
       const payload = c.get('jwtPayload')
       return c.json(payload)
@@ -129,7 +158,7 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should authorize from a URI remotely fetched from options.jwks_uri', async () => {
+    it('Should authorize from keys remotely fetched from options.jwks_uri', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-jwks_uri/a')
       req.headers.set('Authorization', `Basic ${credential}`)
@@ -138,6 +167,24 @@ describe('JWK', () => {
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({ message: 'hello world' })
       expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not authorize from missing keys remotely fetched from options.jwks_uri', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-missing-jwks_uri/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(500)
+    })
+
+    it('Should not authorize from malformed keys remotely fetched from options.jwks_uri', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-bad-jwks_uri/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(500)
     })
 
     it('Should not authorize requests with invalid Unicode payload in header', async () => {
@@ -200,9 +247,18 @@ describe('JWK', () => {
     const app = new Hono()
 
     app.use('/auth-with-keys/*', jwk({ keys: verify_keys, cookie: 'access_token' }))
+    app.use(
+      '/auth-with-keys-prefixed/*',
+      jwk({ keys: verify_keys, cookie: { key: 'access_token', prefixOptions: 'host' } })
+    )
     app.use('/auth-with-keys-unicode/*', jwk({ keys: verify_keys, cookie: 'access_token' }))
 
     app.get('/auth-with-keys/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-keys-prefixed/*', (c) => {
       handlerExecuted = true
       const payload = c.get('jwtPayload')
       return c.json(payload)
@@ -222,12 +278,27 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeFalsy()
     })
 
-    it('Should authorize from a static array passed to options.keys', async () => {
+    it('Should authorize cookie from a static array passed to options.keys', async () => {
       const url = 'http://localhost/auth-with-keys/a'
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request(url, {
         headers: new Headers({
           Cookie: `access_token=${credential}`,
+        }),
+      })
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(res.status).toBe(200)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize prefixed cookie from a static array passed to options.keys', async () => {
+      const url = 'http://localhost/auth-with-keys-prefixed/a'
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request(url, {
+        headers: new Headers({
+          Cookie: `__Host-access_token=${credential}`,
         }),
       })
       const res = await app.request(req)
@@ -278,6 +349,99 @@ describe('JWK', () => {
       expect(res.headers.get('www-authenticate')).toEqual(
         `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
       )
+      expect(handlerExecuted).toBeFalsy()
+    })
+  })
+
+  describe('Credentials in a signed cookie', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+    const test_secret = 'Shhh'
+
+    app.use(
+      '/auth-with-signed-cookie/*',
+      jwk({ keys: verify_keys, cookie: { key: 'access_token', secret: test_secret } })
+    )
+    app.use(
+      '/auth-with-signed-with-prefix-options-cookie/*',
+      jwk({
+        keys: verify_keys,
+        cookie: { key: 'access_token', secret: test_secret, prefixOptions: 'host' },
+      })
+    )
+
+    app.get('/sign-cookie', async (c) => {
+      const credential = await Jwt.sign(
+        { message: 'signed hello world' },
+        test_keys.private_keys[0]
+      )
+      await setSignedCookie(c, 'access_token', credential, test_secret)
+      return c.text('OK')
+    })
+    app.get('/sign-cookie-with-prefix', async (c) => {
+      const credential = await Jwt.sign(
+        { message: 'signed hello world' },
+        test_keys.private_keys[0]
+      )
+      await setSignedCookie(c, 'access_token', credential, test_secret, { prefix: 'host' })
+      return c.text('OK')
+    })
+    app.get('/auth-with-signed-cookie/*', async (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-signed-with-prefix-options-cookie/*', async (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should authorize signed cookie', async () => {
+      const url = 'http://localhost/auth-with-signed-cookie/a'
+      const sign_res = await app.request('http://localhost/sign-cookie')
+      const cookieHeader = sign_res.headers.get('Set-Cookie') as string
+      expect(cookieHeader).not.toBeNull()
+      const req = new Request(url)
+      req.headers.set('Cookie', cookieHeader)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'signed hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize prefixed signed cookie', async () => {
+      const url = 'http://localhost/auth-with-signed-with-prefix-options-cookie/a'
+      const sign_res = await app.request('http://localhost/sign-cookie-with-prefix')
+      const cookieHeader = sign_res.headers.get('Set-Cookie') as string
+      expect(cookieHeader).not.toBeNull()
+      const req = new Request(url)
+      req.headers.set('Cookie', cookieHeader)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'signed hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not authorize an unsigned cookie', async () => {
+      const url = 'http://localhost/auth-with-signed-cookie/a'
+      const credential = await Jwt.sign(
+        { message: 'unsigned hello world' },
+        test_keys.private_keys[0]
+      )
+      const unsignedCookie = `access_token=${credential}`
+      const req = new Request(url)
+      req.headers.set('Cookie', unsignedCookie)
+      const res = await app.request(req)
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
       expect(handlerExecuted).toBeFalsy()
     })
   })
