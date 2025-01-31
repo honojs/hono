@@ -6,6 +6,10 @@ import { HTTPException } from '../../http-exception'
 import { Jwt } from '../../utils/jwt'
 import * as test_keys from './keys.test.json'
 import { jwk } from '.'
+import { encodeBase64Url } from '../../utils/encode'
+import { utf8Encoder } from '../../utils/jwt/utf8'
+import { JWTPayload } from '../../utils/jwt/types'
+import { HonoJsonWebKey, signing } from '../../utils/jwt/jws'
 
 const verify_keys = test_keys.public_keys
 
@@ -134,6 +138,26 @@ describe('JWK', () => {
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({ message: 'hello world' })
       expect(handlerExecuted).toBeTruthy()
+      expect(res.status).toBe(401)
+    })
+
+    it('Should not authorize a token with missing "kid" in header', async () => {
+      const encodeJwtPart = (part: unknown): string => encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
+      const encodeSignaturePart = (buf: ArrayBufferLike): string => encodeBase64Url(buf).replace(/=/g, '')
+      const jwtSignWithoutKid = async (payload: JWTPayload, privateKey: HonoJsonWebKey) => {
+        const encodedPayload = encodeJwtPart(payload)
+        let encodedHeader = encodeJwtPart({ alg: privateKey.alg, typ: 'JWT' })
+        const partialToken = `${encodedHeader}.${encodedPayload}`
+        const signaturePart = await signing(privateKey, privateKey.alg as any, utf8Encoder.encode(partialToken))
+        const signature = encodeSignaturePart(signaturePart)
+        return `${partialToken}.${signature}`
+      }
+      const credential = await jwtSignWithoutKid({ message: 'hello world' }, test_keys.private_keys[1])
+      const req = new Request('http://localhost/auth-with-keys/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
     })
 
     it('Should authorize with Unicode payload from a static array passed to options.keys', async () => {
