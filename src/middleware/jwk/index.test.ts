@@ -139,7 +139,7 @@ describe('JWK', () => {
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({ message: 'hello world' })
       expect(handlerExecuted).toBeTruthy()
-      expect(res.status).toBe(401)
+      expect(res.status).toBe(200)
     })
 
     it('Should not authorize a token with missing "kid" in header', async () => {
