@@ -28,15 +28,9 @@ After that, please install the dependency environment.
 bun install
 ```
 
-If you can't do that, there is also a `yarn.lock` file, so you can do the same with the `yarn` command.
-
-```bash
-yarn install --frozen-lockfile
-```
-
 ## PRs
 
-Please ensure your PR passes tests with `bun run test` or `yarn test`.
+Please ensure your PR passes tests with `bun run test`.
 
 ## Third-party middleware
 
