@@ -7,6 +7,7 @@ import { encodeBase64Url } from '../../utils/encode'
 import { Jwt } from '../../utils/jwt'
 import type { HonoJsonWebKey } from '../../utils/jwt/jws'
 import { signing } from '../../utils/jwt/jws'
+import { verifyFromJwks } from '../../utils/jwt/jwt'
 import type { JWTPayload } from '../../utils/jwt/types'
 import { utf8Encoder } from '../../utils/jwt/utf8'
 import * as test_keys from './keys.test.json'
@@ -24,11 +25,23 @@ describe('JWK', () => {
     }),
     http.get('http://localhost/.well-known/bad-jwks.json', () => {
       return HttpResponse.json({ keys: 'bad-keys' })
+    }),
+    http.get('http://localhost/.well-known/404-jwks.json', () => {
+      return HttpResponse.text('Not Found', { status: 404 })
     })
   )
   beforeAll(() => server.listen())
   afterEach(() => server.resetHandlers())
   afterAll(() => server.close())
+
+  describe('verifyFromJwks', () => {
+    it('Should throw error on missing options', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      await expect(verifyFromJwks(credential, {})).rejects.toThrow(
+        'verifyFromJwks requires options for either "keys" or "jwks_uri" or both'
+      )
+    })
+  })
 
   describe('Credentials in header', () => {
     let handlerExecuted: boolean
@@ -62,9 +75,22 @@ describe('JWK', () => {
       })
     )
     app.use(
+      '/auth-with-keys-and-jwks_uri/*',
+      jwk({
+        keys: verify_keys,
+        jwks_uri: 'http://localhost/.well-known/jwks.json',
+      })
+    )
+    app.use(
       '/auth-with-missing-jwks_uri/*',
       jwk({
         jwks_uri: 'http://localhost/.well-known/missing-jwks.json',
+      })
+    )
+    app.use(
+      '/auth-with-404-jwks_uri/*',
+      jwk({
+        jwks_uri: 'http://localhost/.well-known/404-jwks.json',
       })
     )
     app.use(
@@ -99,7 +125,17 @@ describe('JWK', () => {
       const payload = c.get('jwtPayload')
       return c.json(payload)
     })
+    app.get('/auth-with-keys-and-jwks_uri/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
     app.get('/auth-with-missing-jwks_uri/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-404-jwks_uri/*', (c) => {
       handlerExecuted = true
       const payload = c.get('jwtPayload')
       return c.json(payload)
@@ -108,6 +144,47 @@ describe('JWK', () => {
       handlerExecuted = true
       const payload = c.get('jwtPayload')
       return c.json(payload)
+    })
+
+    it('Should throw an error if the middleware is missing both keys and jwks_uri (empty)', async () => {
+      expect(() => app.use('/auth-with-empty-middleware/*', jwk({}))).toThrow(
+        'JWK auth middleware requires options for either "keys" or "jwks_uri"'
+      )
+    })
+
+    it('Should throw an error when crypto.subtle is missing', async () => {
+      const subtleSpy = vi.spyOn(global.crypto, 'subtle', 'get').mockReturnValue({
+        importKey: undefined,
+      } as any)
+      expect(() => app.use('/auth-with-bad-env/*', jwk({ keys: verify_keys }))).toThrow()
+      subtleSpy.mockRestore()
+    })
+
+    it('Should return a server error if options.jwks_uri returns a 404', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-404-jwks_uri/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(500)
+    })
+
+    it('Should return a server error if the remotely fetched keys from options.jwks_uri are missing', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-missing-jwks_uri/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(500)
+    })
+
+    it('Should return a server error if the remotely fetched keys from options.jwks_uri are malformed', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-bad-jwks_uri/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(500)
     })
 
     it('Should not authorize requests with missing access token', async () => {
@@ -142,6 +219,32 @@ describe('JWK', () => {
       expect(res.status).toBe(200)
     })
 
+    it('Should not authorize a token with header', async () => {
+      const encodeJwtPart = (part: unknown): string =>
+        encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
+      const encodeSignaturePart = (buf: ArrayBufferLike): string =>
+        encodeBase64Url(buf).replace(/=/g, '')
+      const jwtSignWithoutKid = async (payload: JWTPayload, privateKey: HonoJsonWebKey) => {
+        const encodedPayload = encodeJwtPart(payload)
+        const signaturePart = await signing(
+          privateKey,
+          privateKey.alg as any,
+          utf8Encoder.encode(encodedPayload)
+        )
+        const signature = encodeSignaturePart(signaturePart)
+        return `${encodedPayload}.${signature}`
+      }
+      const credential = await jwtSignWithoutKid(
+        { message: 'hello world' },
+        test_keys.private_keys[1]
+      )
+      const req = new Request('http://localhost/auth-with-keys/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+    })
+
     it('Should not authorize a token with missing "kid" in header', async () => {
       const encodeJwtPart = (part: unknown): string =>
         encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
@@ -163,6 +266,17 @@ describe('JWK', () => {
         { message: 'hello world' },
         test_keys.private_keys[1]
       )
+      const req = new Request('http://localhost/auth-with-keys/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+    })
+
+    it('Should not authorize a token with invalid "kid" in header', async () => {
+      const copy = structuredClone(test_keys.private_keys[1])
+      copy.kid = 'invalid-kid'
+      const credential = await Jwt.sign({ message: 'hello world' }, copy)
       const req = new Request('http://localhost/auth-with-keys/a')
       req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
@@ -203,22 +317,15 @@ describe('JWK', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should not authorize from missing keys remotely fetched from options.jwks_uri', async () => {
+    it('Should authorize from keys and hard-coded and remotely fetched from options.jwks_uri', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
-      const req = new Request('http://localhost/auth-with-missing-jwks_uri/a')
+      const req = new Request('http://localhost/auth-with-keys-and-jwks_uri/a')
       req.headers.set('Authorization', `Basic ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
-      expect(res.status).toBe(500)
-    })
-
-    it('Should not authorize from malformed keys remotely fetched from options.jwks_uri', async () => {
-      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
-      const req = new Request('http://localhost/auth-with-bad-jwks_uri/a')
-      req.headers.set('Authorization', `Basic ${credential}`)
-      const res = await app.request(req)
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(500)
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
     })
 
     it('Should not authorize requests with invalid Unicode payload in header', async () => {
@@ -281,11 +388,15 @@ describe('JWK', () => {
     const app = new Hono()
 
     app.use('/auth-with-keys/*', jwk({ keys: verify_keys, cookie: 'access_token' }))
+    app.use('/auth-with-keys-unicode/*', jwk({ keys: verify_keys, cookie: 'access_token' }))
     app.use(
       '/auth-with-keys-prefixed/*',
       jwk({ keys: verify_keys, cookie: { key: 'access_token', prefixOptions: 'host' } })
     )
-    app.use('/auth-with-keys-unicode/*', jwk({ keys: verify_keys, cookie: 'access_token' }))
+    app.use(
+      '/auth-with-keys-unprefixed/*',
+      jwk({ keys: verify_keys, cookie: { key: 'access_token' } })
+    )
 
     app.get('/auth-with-keys/*', (c) => {
       handlerExecuted = true
@@ -293,6 +404,11 @@ describe('JWK', () => {
       return c.json(payload)
     })
     app.get('/auth-with-keys-prefixed/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-keys-unprefixed/*', (c) => {
       handlerExecuted = true
       const payload = c.get('jwtPayload')
       return c.json(payload)
@@ -333,6 +449,21 @@ describe('JWK', () => {
       const req = new Request(url, {
         headers: new Headers({
           Cookie: `__Host-access_token=${credential}`,
+        }),
+      })
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(res.status).toBe(200)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize unprefixed cookie from a static array passed to options.keys', async () => {
+      const url = 'http://localhost/auth-with-keys-unprefixed/a'
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request(url, {
+        headers: new Headers({
+          Cookie: `access_token=${credential}`,
         }),
       })
       const res = await app.request(req)

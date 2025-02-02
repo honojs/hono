@@ -109,7 +109,11 @@ export const verify = async (
 
 export const verifyFromJwks = async (
   token: string,
-  keys: HonoJsonWebKey[]
+  options: {
+    keys?: HonoJsonWebKey[] | (() => Promise<HonoJsonWebKey[]>)
+    jwks_uri?: string
+  },
+  init?: RequestInit
 ): Promise<JWTPayload> => {
   const header = decodeHeader(token)
 
@@ -118,6 +122,29 @@ export const verifyFromJwks = async (
   }
   if (!header.kid) {
     throw new JwtHeaderRequiresKid(header)
+  }
+
+  let keys = typeof options.keys === 'function' ? await options.keys() : options.keys
+
+  if (options.jwks_uri) {
+    const response = await fetch(options.jwks_uri, init)
+    if (!response.ok) {
+      throw new Error(`failed to fetch JWKS from ${options.jwks_uri}`)
+    }
+    const data = (await response.json()) as { keys?: JsonWebKey[] }
+    if (!data.keys) {
+      throw new Error('invalid JWKS response. "keys" field is missing')
+    }
+    if (!Array.isArray(data.keys)) {
+      throw new Error('invalid JWKS response. "keys" field is not an array')
+    }
+    if (keys) {
+      keys.push(...data.keys)
+    } else {
+      keys = data.keys
+    }
+  } else if (!keys) {
+    throw new Error('verifyFromJwks requires options for either "keys" or "jwks_uri" or both')
   }
 
   const matchingKey = keys.find((key) => key.kid === header.kid)

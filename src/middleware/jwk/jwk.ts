@@ -47,7 +47,7 @@ export const jwk = (
   init?: RequestInit
 ): MiddlewareHandler => {
   if (!options || !(options.keys || options.jwks_uri)) {
-    throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri"')
+    throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri" or both')
   }
 
   if (!crypto.subtle || !crypto.subtle.importKey) {
@@ -107,38 +107,18 @@ export const jwk = (
       })
     }
 
-    let keys = typeof options.keys === 'function' ? await options.keys() : options.keys
-
-    if (options.jwks_uri) {
-      const response = await fetch(options.jwks_uri, init)
-      if (!response.ok) {
-        throw new Error(`failed to fetch JWKS from ${options.jwks_uri}`)
-      }
-      const data = (await response.json()) as { keys?: JsonWebKey[] }
-      if (!data.keys) {
-        throw new Error('invalid JWKS response. "keys" field is missing')
-      }
-      if (!Array.isArray(data.keys)) {
-        throw new Error('invalid JWKS response. "keys" field is not an array')
-      }
-      if (keys) {
-        keys.push(...data.keys)
-      } else {
-        keys = data.keys
-      }
-    } else if (!keys) {
-      throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri"')
-    }
-
     let payload
     let cause
     try {
-      payload = await Jwt.verifyFromJwks(token, keys)
+      payload = await Jwt.verifyFromJwks(token, options, init)
     } catch (e) {
       cause = e
     }
 
     if (!payload) {
+      if (cause instanceof Error && cause.constructor === Error) {
+        throw cause
+      }
       throw new HTTPException(401, {
         message: 'Unauthorized',
         res: unauthorizedResponse({
