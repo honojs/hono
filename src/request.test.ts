@@ -161,6 +161,20 @@ describe('headers', () => {
     const foo = req.header('foo')
     expect(foo).toEqual('')
   })
+
+  test('Keys of the arguments for req.header() are not case-sensitive', () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: 'abc',
+          lowercase: 'lowercase value',
+        },
+      })
+    )
+    expect(req.header('Content-Type')).toBe('application/json')
+    expect(req.header('ApiKey')).toBe('abc')
+  })
 })
 
 const text = '{"foo":"bar"}'
