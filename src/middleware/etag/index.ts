@@ -84,7 +84,6 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     }
 
     if (etagMatches(etag, ifNoneMatch)) {
-      await c.res.blob() // Force using body
       c.res = new Response(null, {
         status: 304,
         statusText: 'Not Modified',
