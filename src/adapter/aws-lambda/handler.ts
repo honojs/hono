@@ -70,15 +70,14 @@ export interface ALBProxyEvent {
   requestContext: ALBRequestContext
 }
 
-type APIGatewayProxyResultResponseHeaders =
-  | {
-      headers: Record<string, string>
-      multiValueHeaders?: undefined
-    }
-  | {
-      headers?: undefined
-      multiValueHeaders: Record<string, string[]>
-    }
+type WithHeaders = {
+  headers: Record<string, string>
+  multiValueHeaders?: undefined
+}
+type WithMultiValueHeaders = {
+  headers?: undefined
+  multiValueHeaders: Record<string, string[]>
+}
 
 export type APIGatewayProxyResult = {
   statusCode: number
@@ -86,7 +85,7 @@ export type APIGatewayProxyResult = {
   body: string
   cookies?: string[]
   isBase64Encoded: boolean
-} & APIGatewayProxyResultResponseHeaders
+} & (WithHeaders | WithMultiValueHeaders)
 
 const getRequestContext = (
   event: LambdaEvent
@@ -168,7 +167,16 @@ export const streamHandle = <
  */
 export const handle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
   app: Hono<E, S, BasePath>
-): ((event: LambdaEvent, lambdaContext?: LambdaContext) => Promise<APIGatewayProxyResult>) => {
+): (<L extends LambdaEvent>(
+  event: L,
+  lambdaContext?: LambdaContext
+) => Promise<
+  APIGatewayProxyResult &
+    (L extends { multiValueHeaders: Record<string, string[]> }
+      ? WithMultiValueHeaders
+      : WithHeaders)
+>) => {
+  // @ts-expect-error FIXME: Fix return typing
   return async (event, lambdaContext?) => {
     const processor = getProcessor(event)
 
