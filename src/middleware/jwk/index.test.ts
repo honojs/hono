@@ -219,12 +219,12 @@ describe('JWK', () => {
       expect(res.status).toBe(200)
     })
 
-    it('Should not authorize a token with header', async () => {
+    it('Should not authorize a token without header', async () => {
       const encodeJwtPart = (part: unknown): string =>
         encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
       const encodeSignaturePart = (buf: ArrayBufferLike): string =>
         encodeBase64Url(buf).replace(/=/g, '')
-      const jwtSignWithoutKid = async (payload: JWTPayload, privateKey: HonoJsonWebKey) => {
+      const jwtSignWithoutHeader = async (payload: JWTPayload, privateKey: HonoJsonWebKey) => {
         const encodedPayload = encodeJwtPart(payload)
         const signaturePart = await signing(
           privateKey,
@@ -234,7 +234,7 @@ describe('JWK', () => {
         const signature = encodeSignaturePart(signaturePart)
         return `${encodedPayload}.${signature}`
       }
-      const credential = await jwtSignWithoutKid(
+      const credential = await jwtSignWithoutHeader(
         { message: 'hello world' },
         test_keys.private_keys[1]
       )
