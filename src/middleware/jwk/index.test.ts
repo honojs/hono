@@ -155,6 +155,7 @@ describe('JWK', () => {
     it('Should throw an error when crypto.subtle is missing', async () => {
       const subtleSpy = vi.spyOn(global.crypto, 'subtle', 'get').mockReturnValue({
         importKey: undefined,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any)
       expect(() => app.use('/auth-with-bad-env/*', jwk({ keys: verify_keys }))).toThrow()
       subtleSpy.mockRestore()
@@ -228,6 +229,7 @@ describe('JWK', () => {
         const encodedPayload = encodeJwtPart(payload)
         const signaturePart = await signing(
           privateKey,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           privateKey.alg as any,
           utf8Encoder.encode(encodedPayload)
         )
@@ -256,6 +258,7 @@ describe('JWK', () => {
         const partialToken = `${encodedHeader}.${encodedPayload}`
         const signaturePart = await signing(
           privateKey,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           privateKey.alg as any,
           utf8Encoder.encode(partialToken)
         )

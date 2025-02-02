@@ -88,3 +88,5 @@ export type JWTPayload = {
    */
   iat?: number
 }
+
+export type { HonoJsonWebKey } from './jws'
