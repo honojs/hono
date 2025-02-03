@@ -1,6 +1,6 @@
 import type { Context } from '../../context'
 import type { AcceptHeader } from '../../utils/headers'
-import { parseAccept } from '../../utils/parse-accept'
+import { parseAccept } from '../../utils/accept'
 
 export interface Accept {
   type: string

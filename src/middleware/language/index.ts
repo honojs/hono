@@ -1,8 +1,7 @@
-import type { LanguageVariables, DetectorType, CacheType } from './language'
-export type { LanguageVariables, DetectorType, CacheType }
+import type { LanguageVariables, DetectorOptions, DetectorType, CacheType } from './language'
+export type { LanguageVariables, DetectorOptions, DetectorType, CacheType }
 export {
   languageDetector,
-  DetectorOptions,
   detectFromCookie,
   detectFromHeader,
   detectFromPath,

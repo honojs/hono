@@ -1,4 +1,4 @@
-import { parseAccept } from './parse-accept'
+import { parseAccept } from './accept'
 
 describe('parseAccept Comprehensive Tests', () => {
   describe('Basic Functionality', () => {
@@ -12,7 +12,9 @@ describe('parseAccept Comprehensive Tests', () => {
 
     test('handles missing header', () => {
       expect(parseAccept('')).toEqual([])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(parseAccept(undefined as any)).toEqual([])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(parseAccept(null as any)).toEqual([])
     })
   })

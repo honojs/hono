@@ -1,5 +1,5 @@
 import { Hono } from '../..'
-import { parseAccept } from '../../utils/parse-accept'
+import { parseAccept } from '../../utils/accept'
 import type { Accept, acceptsConfig, acceptsOptions } from './accepts'
 import { accepts, defaultMatch } from './accepts'
 
