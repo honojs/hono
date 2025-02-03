@@ -57,7 +57,7 @@ function etagMatches(etag: string, ifNoneMatch: string | null) {
 export const etag = (options?: ETagOptions): MiddlewareHandler => {
   const retainedHeaders = options?.retainedHeaders ?? RETAINED_304_HEADERS
   const weak = options?.weak ?? false
-  const _generateDigest =
+  const generator =
     options?.generateDigest ??
     ((body: Uint8Array) =>
       crypto.subtle.digest(
@@ -76,7 +76,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     let etag = res.headers.get('ETag')
 
     if (!etag) {
-      const hash = await generateDigest(res.clone().body, _generateDigest)
+      const hash = await generateDigest(res.clone().body, generator)
       if (hash === null) {
         return
       }
