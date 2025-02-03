@@ -7,7 +7,7 @@ import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 import '../../context'
 
-export type TimingVariables = {
+export interface TimingVariables {
   metric?: {
     headers: string[]
     timers: Map<string, Timer>

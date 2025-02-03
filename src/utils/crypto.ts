@@ -5,7 +5,7 @@
 
 import type { JSONValue } from './types'
 
-type Algorithm = {
+interface Algorithm {
   name: string
   alias: string
 }

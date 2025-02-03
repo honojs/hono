@@ -8,13 +8,13 @@ export const HtmlEscapedCallbackPhase = {
   BeforeStream: 2,
   Stream: 3,
 } as const
-type HtmlEscapedCallbackOpts = {
+interface HtmlEscapedCallbackOpts {
   buffer?: [string]
   phase: (typeof HtmlEscapedCallbackPhase)[keyof typeof HtmlEscapedCallbackPhase]
   context: Readonly<object> // An object unique to each JSX tree. This object is used as the WeakMap key.
 }
 export type HtmlEscapedCallback = (opts: HtmlEscapedCallbackOpts) => Promise<string> | undefined
-export type HtmlEscaped = {
+export interface HtmlEscaped {
   isEscaped: true
   callbacks?: HtmlEscapedCallback[]
 }

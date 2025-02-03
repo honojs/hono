@@ -10,7 +10,7 @@ import type { MiddlewareHandler } from '../../types'
 const ERROR_MESSAGE = 'Payload Too Large'
 
 type OnError = (c: Context) => Response | Promise<Response>
-type BodyLimitOptions = {
+interface BodyLimitOptions {
   maxSize: number
   onError?: OnError
 }

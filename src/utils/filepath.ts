@@ -3,7 +3,7 @@
  * FilePath utility.
  */
 
-type FilePathOptions = {
+interface FilePathOptions {
   filename: string
   root?: string
   defaultDocument?: string
