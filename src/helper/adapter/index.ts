@@ -7,17 +7,7 @@ import type { Context } from '../../context'
 
 export type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'other'
 
-export const env = <
-  T extends Record<string, unknown>,
-  C extends Context = Context<
-    {} & {
-      Bindings: T
-    }
-  >
->(
-  c: Context,
-  runtime?: Runtime
-): T & C['env'] => {
+export const env = <T extends Record<string, unknown>>(c: Context, runtime?: Runtime): T => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const global = globalThis as any
   const globalEnv = global?.process?.env as T
