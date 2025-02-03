@@ -11,18 +11,30 @@ describe('getRuntimeKey', () => {
 
 describe('env', () => {
   describe('Types', () => {
-    type Env = {
-      Bindings: {
-        MY_VAR: string
-      }
-    }
-    const app = new Hono<Env>()
+    it('Should not throw type errors', () => {
+      const app = new Hono()
 
-    it('Should set the type of the Context correctly and not throw a type error')
-    app.get('/var', (c) => {
-      const { MY_VAR } = env<{ MY_VAR: string }>(c)
-      return c.json({
-        var: MY_VAR,
+      app.get('/var', (c) => {
+        const { MY_VAR } = env<{ MY_VAR: string }>(c)
+        return c.json({
+          var: MY_VAR,
+        })
+      })
+    })
+
+    it('Should not throw type errors with explicit Env', () => {
+      type Env = {
+        Bindings: {
+          MY_VAR: string
+        }
+      }
+      const app = new Hono<Env>()
+
+      app.get('/var', (c) => {
+        const { MY_VAR } = env<{ MY_VAR: string }>(c)
+        return c.json({
+          var: MY_VAR,
+        })
       })
     })
   })

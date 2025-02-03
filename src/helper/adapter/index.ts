@@ -15,7 +15,7 @@ export const env = <
     }
   >
 >(
-  c: C,
+  c: Context,
   runtime?: Runtime
 ): T & C['env'] => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
