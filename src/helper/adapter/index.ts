@@ -9,13 +9,11 @@ export type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-lig
 
 export const env = <
   T extends Record<string, unknown>,
-  C extends Context = Context<
-    {} & {
-      Bindings: T
-    }
-  >
+  C extends Context = Context<{
+    Bindings: T
+  }>
 >(
-  c: Context,
+  c: T extends Record<string, unknown> ? Context : C,
   runtime?: Runtime
 ): T & C['env'] => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

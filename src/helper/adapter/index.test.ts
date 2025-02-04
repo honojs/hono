@@ -11,27 +11,41 @@ describe('getRuntimeKey', () => {
 
 describe('env', () => {
   describe('Types', () => {
-    it('Should not throw type errors', () => {
-      const app = new Hono()
+    type Env = {
+      Bindings: {
+        MY_VAR: string
+      }
+    }
 
+    it('Should not throw type errors with env has generics', () => {
+      const app = new Hono()
       app.get('/var', (c) => {
         const { MY_VAR } = env<{ MY_VAR: string }>(c)
+        expectTypeOf<string>(MY_VAR)
         return c.json({
           var: MY_VAR,
         })
       })
     })
 
-    it('Should not throw type errors with explicit Env', () => {
-      type Env = {
-        Bindings: {
-          MY_VAR: string
-        }
-      }
+    it('Should not throw type errors with Hono has generics', () => {
+      const app = new Hono<Env>()
+
+      app.get('/var', (c) => {
+        const { MY_VAR } = env(c)
+        expectTypeOf<string>(MY_VAR)
+        return c.json({
+          var: MY_VAR,
+        })
+      })
+    })
+
+    it('Should not throw type errors with env and Hono have generics', () => {
       const app = new Hono<Env>()
 
       app.get('/var', (c) => {
         const { MY_VAR } = env<{ MY_VAR: string }>(c)
+        expectTypeOf<string>(MY_VAR)
         return c.json({
           var: MY_VAR,
         })
