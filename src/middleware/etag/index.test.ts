@@ -25,7 +25,7 @@ describe('Etag Middleware', () => {
     app.use(
       '/etag/*',
       etag({
-        generateDigest: (body: Uint8Array) =>
+        generateDigest: (body) =>
           crypto.subtle.digest(
             {
               name: 'SHA-256',
