@@ -16,13 +16,39 @@ describe('env', () => {
         MY_VAR: string
       }
     }
-    const app = new Hono<Env>()
 
-    it('Should set the type of the Context correctly and not throw a type error')
-    app.get('/var', (c) => {
-      const { MY_VAR } = env<{ MY_VAR: string }>(c)
-      return c.json({
-        var: MY_VAR,
+    it('Should not throw type errors with env has generics', () => {
+      const app = new Hono()
+      app.get('/var', (c) => {
+        const { MY_VAR } = env<{ MY_VAR: string }>(c)
+        expectTypeOf<string>(MY_VAR)
+        return c.json({
+          var: MY_VAR,
+        })
+      })
+    })
+
+    it('Should not throw type errors with Hono has generics', () => {
+      const app = new Hono<Env>()
+
+      app.get('/var', (c) => {
+        const { MY_VAR } = env(c)
+        expectTypeOf<string>(MY_VAR)
+        return c.json({
+          var: MY_VAR,
+        })
+      })
+    })
+
+    it('Should not throw type errors with env and Hono have generics', () => {
+      const app = new Hono<Env>()
+
+      app.get('/var', (c) => {
+        const { MY_VAR } = env<{ MY_VAR: string }>(c)
+        expectTypeOf<string>(MY_VAR)
+        return c.json({
+          var: MY_VAR,
+        })
       })
     })
   })
