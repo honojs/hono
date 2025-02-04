@@ -497,6 +497,41 @@ export const runTest = ({
       })
     })
 
+    describe('Capture multiple directories', () => {
+      beforeEach(() => {
+        router.add('GET', '/:dirs{.+}/file.html', 'file.html')
+      })
+
+      it('GET /foo/bar/file.html', () => {
+        const res = match('GET', '/foo/bar/file.html')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('file.html')
+        expect(res[0].params['dirs']).toEqual('foo/bar')
+      })
+    })
+
+    describe('Capture multiple directories and optional', () => {
+      beforeEach(() => {
+        router.add('GET', '/:prefix{.+}/contents/:id?', 'contents')
+      })
+
+      it('GET /foo/bar/contents', () => {
+        const res = match('GET', '/foo/bar/contents')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('contents')
+        expect(res[0].params['prefix']).toEqual('foo/bar')
+        expect(res[0].params['id']).toEqual(undefined)
+      })
+
+      it('GET /foo/bar/contents/123', () => {
+        const res = match('GET', '/foo/bar/contents/123')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('contents')
+        expect(res[0].params['prefix']).toEqual('foo/bar')
+        expect(res[0].params['id']).toEqual('123')
+      })
+    })
+
     describe('non ascii characters', () => {
       beforeEach(() => {
         router.add('ALL', '/$/*', 'middleware $')
