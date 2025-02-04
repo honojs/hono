@@ -1,7 +1,7 @@
 import type { Hono } from '../hono'
 import type { HonoBase } from '../hono-base'
 import type { Endpoint, ResponseFormat, Schema } from '../types'
-import type { StatusCode, SuccessStatusCode } from '../utils/http-status'
+import type { RedirectStatusCode, StatusCode, SuccessStatusCode } from '../utils/http-status'
 import type { HasRequiredKeys } from '../utils/types'
 
 type HonoRequest = (typeof Hono.prototype)['request']
@@ -68,7 +68,15 @@ type ClientResponseOfEndpoint<T extends Endpoint = Endpoint> = T extends {
   outputFormat: infer F
   status: infer S
 }
-  ? ClientResponse<O, S extends number ? S : never, F extends ResponseFormat ? F : never>
+  ? F extends 'redirect'
+    ? ClientResponse<O, S extends RedirectStatusCode ? S : never, 'redirect'>
+    :
+        | ClientResponse<O, S extends StatusCode ? S : never, F extends ResponseFormat ? F : never>
+        | ClientResponse<
+            {},
+            S extends StatusCode ? Exclude<Exclude<StatusCode, RedirectStatusCode>, S> : never,
+            F extends ResponseFormat ? F : never
+          >
   : never
 
 export interface ClientResponse<
@@ -89,11 +97,13 @@ export interface ClientResponse<
   url: string
   redirect(url: string, status: number): Response
   clone(): Response
-  json(): F extends 'text'
+  json<JSONT>(): F extends 'text'
     ? Promise<never>
     : F extends 'json'
-    ? Promise<BlankRecordToNever<T>>
-    : Promise<unknown>
+    ? undefined extends JSONT
+      ? Promise<BlankRecordToNever<T>>
+      : Promise<JSONT>
+    : Promise<T & {}>
   text(): F extends 'text' ? (T extends string ? Promise<T> : Promise<never>) : Promise<string>
   blob(): Promise<Blob>
   formData(): Promise<FormData>
@@ -124,12 +134,14 @@ export type InferResponseType<T, U extends StatusCode = StatusCode> = InferRespo
   U
 >
 
+type WithoutEmptyObject<T> = T extends {} ? (keyof T extends never ? never : T) : T
+
 type InferResponseTypeFromEndpoint<T extends Endpoint, U extends StatusCode> = T extends {
   output: infer O
   status: infer S
 }
   ? S extends U
-    ? O
+    ? WithoutEmptyObject<O>
     : never
   : never
 
