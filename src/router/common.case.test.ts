@@ -497,7 +497,7 @@ export const runTest = ({
       })
     })
 
-    describe('Capture multiple directories', () => {
+    describe('Capture simple multiple directories', () => {
       beforeEach(() => {
         router.add('GET', '/:dirs{.+}/file.html', 'file.html')
       })
@@ -507,6 +507,30 @@ export const runTest = ({
         expect(res.length).toBe(1)
         expect(res[0].handler).toEqual('file.html')
         expect(res[0].params['dirs']).toEqual('foo/bar')
+      })
+    })
+
+    describe('Capture complex multiple directories', () => {
+      beforeEach(() => {
+        router.add('GET', '/:first{.+}/middle-a/:reference?', '1')
+        router.add('GET', '/:first{.+}/middle-b/end-c/:uuid', '2')
+        router.add('GET', '/:first{.+}/middle-b/:digest', '3')
+      })
+
+      it('GET /part1/middle-b/latest', () => {
+        const res = match('GET', '/part1/middle-b/latest')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('3')
+        expect(res[0].params['first']).toEqual('part1')
+        expect(res[0].params['digest']).toEqual('latest')
+      })
+
+      it('GET /part1/middle-b/end-c/latest', () => {
+        const res = match('GET', '/part1/middle-b/end-c/latest')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('2')
+        expect(res[0].params['first']).toEqual('part1')
+        expect(res[0].params['uuid']).toEqual('latest')
       })
     })
 

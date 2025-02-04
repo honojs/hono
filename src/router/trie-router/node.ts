@@ -46,9 +46,11 @@ export class Node<T> {
     for (let i = 0, len = parts.length; i < len; i++) {
       const p: string = parts[i]
       const nextP = parts[i + 1]
+      const pattern = getPattern(p, nextP)
+      const key = Array.isArray(pattern) ? pattern[0] : p
 
-      if (Object.keys(curNode.#children).includes(p)) {
-        curNode = curNode.#children[p]
+      if (Object.keys(curNode.#children).includes(key)) {
+        curNode = curNode.#children[key]
         const pattern = getPattern(p, nextP)
         if (pattern) {
           possibleKeys.push(pattern[1])
@@ -56,14 +58,13 @@ export class Node<T> {
         continue
       }
 
-      curNode.#children[p] = new Node()
+      curNode.#children[key] = new Node()
 
-      const pattern = getPattern(p, nextP)
       if (pattern) {
         curNode.#patterns.push(pattern)
         possibleKeys.push(pattern[1])
       }
-      curNode = curNode.#children[p]
+      curNode = curNode.#children[key]
     }
 
     const m: Record<string, HandlerSet<T>> = Object.create(null)

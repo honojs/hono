@@ -59,11 +59,13 @@ export const getPattern = (label: string, next?: string): Pattern | null => {
 
   const match = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
   if (match) {
-    const cacheKey = `${label}-${next}`
+    const cacheKey = `${label}#${next}`
     if (!patternCache[cacheKey]) {
       if (match[2]) {
-        const lookahead = next && next[0] !== ':' && next[0] !== '*' ? `(?=/${next})` : '$'
-        patternCache[cacheKey] = [label, match[1], new RegExp('^' + match[2] + lookahead)]
+        patternCache[cacheKey] =
+          next && next[0] !== ':' && next[0] !== '*'
+            ? [cacheKey, match[1], new RegExp(`^${match[2]}(?=/${next})`)]
+            : [label, match[1], new RegExp(`^${match[2]}$`)]
       } else {
         patternCache[cacheKey] = [label, match[1], true]
       }
