@@ -397,7 +397,7 @@ describe('Context header', () => {
         'X-Custom': 'Message',
       },
     })
-    await expect(c.res.text()).resolves.toBe('foo')
+    expect(await c.res.text()).toBe('foo')
     expect(c.res.headers.get('X-Custom')).toBe('Message')
   })
 
@@ -408,7 +408,7 @@ describe('Context header', () => {
       },
     })
     c.res = makeResponseHeaderImmutable(new Response('bar'))
-    await expect(c.res.text()).resolves.toBe('bar')
+    expect(await c.res.text()).toBe('bar')
     expect(c.res.headers.get('X-Custom')).toBe('Message')
   })
 })
