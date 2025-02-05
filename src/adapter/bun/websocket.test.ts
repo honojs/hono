@@ -34,7 +34,7 @@ describe('upgradeWebSocket()', () => {
         () => Promise.resolve()
       )
 
-    expect(run).rejects.toThrowError(/env has/)
+    await expect(run).rejects.toThrowError(/env has/)
   })
   it('Should response null when upgraded', async () => {
     const { upgradeWebSocket } = createBunWebSocket()
