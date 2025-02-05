@@ -1009,7 +1009,7 @@ d.replaceWith(c.content)
           <ParentAsyncErrorConsumer />
         </ThemeContext.Provider>
       )
-      expect(async () => (await template.toString()).toString()).rejects.toThrow()
+      await expect(async () => (await template.toString()).toString()).rejects.toThrow()
 
       const nextRequest = <Consumer />
       expect(nextRequest.toString()).toBe('<span>light</span>')
