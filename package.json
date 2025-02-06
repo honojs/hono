@@ -239,6 +239,11 @@
       "import": "./dist/middleware/request-id/index.js",
       "require": "./dist/cjs/middleware/request-id/index.js"
     },
+    "./language": {
+      "types": "./dist/types/middleware/language/index.d.ts",
+      "import": "./dist/middleware/language/index.js",
+      "require": "./dist/cjs/middleware/language/index.js"
+    },
     "./secure-headers": {
       "types": "./dist/types/middleware/secure-headers/index.d.ts",
       "import": "./dist/middleware/secure-headers/index.js",
@@ -510,6 +515,9 @@
       ],
       "request-id": [
         "./dist/types/middleware/request-id"
+      ],
+      "language": [
+        "./dist/types/middleware/language"
       ],
       "streaming": [
         "./dist/types/helper/streaming"
