@@ -54,15 +54,6 @@ export type ClientRequest<S extends Schema> = {
       : {}
     : {})
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type BlankRecordToNever<T> = T extends any
-  ? T extends null
-    ? null
-    : keyof T extends never
-    ? never
-    : T
-  : never
-
 type ClientResponseOfEndpoint<T extends Endpoint = Endpoint> = T extends {
   output: infer O
   outputFormat: infer F
@@ -89,11 +80,7 @@ export interface ClientResponse<
   url: string
   redirect(url: string, status: number): Response
   clone(): Response
-  json(): F extends 'text'
-    ? Promise<never>
-    : F extends 'json'
-    ? Promise<BlankRecordToNever<T>>
-    : Promise<unknown>
+  json(): F extends 'text' ? Promise<never> : F extends 'json' ? Promise<T> : Promise<unknown>
   text(): F extends 'text' ? (T extends string ? Promise<T> : Promise<never>) : Promise<string>
   blob(): Promise<Blob>
   formData(): Promise<FormData>
