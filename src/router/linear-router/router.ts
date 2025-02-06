@@ -86,7 +86,9 @@ export class LinearRouter<T> implements Router<T> {
               if (name.charCodeAt(name.length - 1) === 125) {
                 // :label{pattern}
                 const openBracePos = name.indexOf('{')
-                const pattern = name.slice(openBracePos + 1, -1)
+                const next = parts[j + 1]
+                const lookahead = next && next[1] !== ':' && next[1] !== '*' ? `(?=${next})` : ''
+                const pattern = name.slice(openBracePos + 1, -1) + lookahead
                 const restPath = path.slice(pos + 1)
                 const match = new RegExp(pattern, 'd').exec(restPath) as RegExpMatchArrayWithIndices
                 if (!match || match.indices[0][0] !== 0 || match.indices[0][1] === 0) {

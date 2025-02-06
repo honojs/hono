@@ -49,18 +49,46 @@ describe('url', () => {
     expect(ps).toStrictEqual(['users', ':dept{\\d+}', ':@name{[0-9a-zA-Z_-]{3,10}}'])
   })
 
-  it('getPattern', () => {
-    let res = getPattern(':id')
-    expect(res).not.toBeNull()
-    expect(res?.[0]).toBe(':id')
-    expect(res?.[1]).toBe('id')
-    expect(res?.[2]).toBe(true)
-    res = getPattern(':id{[0-9]+}')
-    expect(res?.[0]).toBe(':id{[0-9]+}')
-    expect(res?.[1]).toBe('id')
-    expect(res?.[2]).toEqual(/^[0-9]+$/)
-    res = getPattern('*')
-    expect(res).toBe('*')
+  describe('getPattern', () => {
+    it('no pattern', () => {
+      const res = getPattern('id')
+      expect(res).toBeNull()
+    })
+
+    it('no pattern with next', () => {
+      const res = getPattern('id', 'next')
+      expect(res).toBeNull()
+    })
+
+    it('default pattern', () => {
+      const res = getPattern(':id')
+      expect(res).toEqual([':id', 'id', true])
+    })
+
+    it('default pattern with next', () => {
+      const res = getPattern(':id', 'next')
+      expect(res).toEqual([':id', 'id', true])
+    })
+
+    it('regex pattern', () => {
+      const res = getPattern(':id{[0-9]+}')
+      expect(res).toEqual([':id{[0-9]+}', 'id', /^[0-9]+$/])
+    })
+
+    it('regex pattern with next', () => {
+      const res = getPattern(':id{[0-9]+}', 'next')
+      expect(res).toEqual([':id{[0-9]+}#next', 'id', /^[0-9]+(?=\/next)/])
+    })
+
+    it('wildcard', () => {
+      const res = getPattern('*')
+      expect(res).toBe('*')
+    })
+
+    it('wildcard with next', () => {
+      const res = getPattern('*', 'next')
+      expect(res).toBe('*')
+    })
   })
 
   describe('getPath', () => {

@@ -12,6 +12,8 @@ describe('RegExpRouter', () => {
           'Duplicate param name > parent',
           'Duplicate param name > child',
           'Capture Group > Complex capturing group > GET request',
+          'Capture complex multiple directories > GET /part1/middle-b/latest',
+          'Capture complex multiple directories > GET /part1/middle-b/end-c/latest',
         ],
       },
       {
