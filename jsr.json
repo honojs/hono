@@ -81,6 +81,7 @@
     "./dev": "./src/helper/dev/index.ts",
     "./ws": "./src/helper/websocket/index.ts",
     "./conninfo": "./src/helper/conninfo/index.ts",
+    "./proxy": "./src/helper/proxy/index.ts",
     "./utils/body": "./src/utils/body.ts",
     "./utils/buffer": "./src/utils/buffer.ts",
     "./utils/color": "./src/utils/color.ts",
