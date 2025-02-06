@@ -497,6 +497,19 @@ export const runTest = ({
       })
     })
 
+    describe('Capture regex pattern has trailing wildcard', () => {
+      beforeEach(() => {
+        router.add('GET', '/:dir{[a-z]+}/*/file.html', 'file.html')
+      })
+
+      it('GET /foo/bar/file.html', () => {
+        const res = match('GET', '/foo/bar/file.html')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('file.html')
+        expect(res[0].params['dir']).toEqual('foo')
+      })
+    })
+
     describe('non ascii characters', () => {
       beforeEach(() => {
         router.add('ALL', '/$/*', 'middleware $')

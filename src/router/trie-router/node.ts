@@ -150,6 +150,7 @@ export class Node<T> {
             const astNode = node.#children['*']
             if (astNode) {
               handlerSets.push(...this.#getHandlerSets(astNode, method, node.#params))
+              astNode.#params = params
               tempNodes.push(astNode)
             }
             continue
