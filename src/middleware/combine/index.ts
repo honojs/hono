@@ -48,7 +48,7 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
       try {
         const result = await handler(c, wrappedNext)
         if (result === true && !c.finalized) {
-          await next()
+          await wrappedNext()
         } else if (result === false) {
           lastError = new Error('No successful middleware found')
           continue

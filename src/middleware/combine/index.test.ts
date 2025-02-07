@@ -114,6 +114,27 @@ describe('some', () => {
     expect(middleware2).not.toBeCalled()
     expect(await res.text()).toBe('oops')
   })
+
+  it('Should not call skipped middleware even if next function throws an error with returning truthy value middleware', async () => {
+    const middleware1 = () => true
+    const middleware2 = vi.fn(() => true)
+
+    app.use('/', async (c) => {
+      await some(middleware1, middleware2)(c, () => {
+        throw new Error('Error in next function')
+      })
+    })
+    app.get('/', (c) => {
+      return c.text('Hello World')
+    })
+    app.onError((_, c) => {
+      return c.text('oops')
+    })
+    const res = await app.request('http://localhost/')
+
+    expect(middleware2).not.toBeCalled()
+    expect(await res.text()).toBe('oops')
+  })
 })
 
 describe('every', () => {
