@@ -48,7 +48,7 @@ const replaceGroupMarks = (paths: string[], groups: [string, string][]): string[
 }
 
 const patternCache: { [key: string]: Pattern } = {}
-export const getPattern = (label: string): Pattern | null => {
+export const getPattern = (label: string, next?: string): Pattern | null => {
   // *            => wildcard
   // :id{[0-9]+}  => ([0-9]+)
   // :id          => (.+)
@@ -59,15 +59,19 @@ export const getPattern = (label: string): Pattern | null => {
 
   const match = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
   if (match) {
-    if (!patternCache[label]) {
+    const cacheKey = `${label}#${next}`
+    if (!patternCache[cacheKey]) {
       if (match[2]) {
-        patternCache[label] = [label, match[1], new RegExp('^' + match[2] + '$')]
+        patternCache[cacheKey] =
+          next && next[0] !== ':' && next[0] !== '*'
+            ? [cacheKey, match[1], new RegExp(`^${match[2]}(?=/${next})`)]
+            : [label, match[1], new RegExp(`^${match[2]}$`)]
       } else {
-        patternCache[label] = [label, match[1], true]
+        patternCache[cacheKey] = [label, match[1], true]
       }
     }
 
-    return patternCache[label]
+    return patternCache[cacheKey]
   }
 
   return null
