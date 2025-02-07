@@ -217,7 +217,6 @@ describe('Logger by Middleware with options', () => {
     app = new Hono()
 
     const logFunc = (str: string) => {
-      console.log(str)
       log = str
     }
 

@@ -56,11 +56,11 @@ const trim = (str: string, maxLength: number) => {
 
 function log(
   printFunc: PrintFunc,
+  maxLength: number,
   prefix: string,
   method: string,
   path: string,
   status: number = 0,
-  maxLength: number = Infinity,
   elapsed?: string
 ) {
   const trimmedMethod = trim(method, maxLength)
@@ -103,12 +103,12 @@ export const logger = (options: PrintFunc | LoggerOptions = console.log): Middle
 
     const path = url.slice(url.indexOf('/', 8))
 
-    log(printFunc, LogPrefix.Incoming, method, path, maxLength)
+    log(printFunc, maxLength, LogPrefix.Incoming, method, path)
 
     const start = Date.now()
 
     await next()
 
-    log(printFunc, LogPrefix.Outgoing, method, path, c.res.status, maxLength, time(start))
+    log(printFunc, maxLength, LogPrefix.Outgoing, method, path, c.res.status, time(start))
   }
 }
