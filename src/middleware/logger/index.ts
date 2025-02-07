@@ -47,19 +47,35 @@ const colorStatus = (status: number) => {
 
 type PrintFunc = (str: string, ...rest: string[]) => void
 
+const trim = (str: string, maxLength: number) => {
+  if (str.length > maxLength) {
+    return str.slice(0, maxLength) + '...'
+  }
+  return str
+}
+
 function log(
-  fn: PrintFunc,
+  printFunc: PrintFunc,
   prefix: string,
   method: string,
   path: string,
   status: number = 0,
+  maxLength: number = Infinity,
   elapsed?: string
 ) {
+  const trimmedMethod = trim(method, maxLength)
+  const trimmedPath = trim(path, maxLength)
+
   const out =
     prefix === LogPrefix.Incoming
-      ? `${prefix} ${method} ${path}`
-      : `${prefix} ${method} ${path} ${colorStatus(status)} ${elapsed}`
-  fn(out)
+      ? `${prefix} ${trimmedMethod} ${trimmedPath}`
+      : `${prefix} ${trimmedMethod} ${trimmedPath} ${colorStatus(status)} ${elapsed}`
+  printFunc(out)
+}
+
+type LoggerOptions = {
+  printFunc?: PrintFunc
+  maxLength?: number
 }
 
 /**
@@ -67,7 +83,7 @@ function log(
  *
  * @see {@link https://hono.dev/docs/middleware/builtin/logger}
  *
- * @param {PrintFunc} [fn=console.log] - Optional function for customized logging behavior.
+ * @param {PrintFunc | LoggerOptions} [options=console.log] - Optional function for customized logging behavior or options for the logger middleware.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
@@ -78,18 +94,21 @@ function log(
  * app.get('/', (c) => c.text('Hello Hono!'))
  * ```
  */
-export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
+export const logger = (options: PrintFunc | LoggerOptions = console.log): MiddlewareHandler => {
+  const { printFunc = console.log, maxLength = Infinity } =
+    typeof options === 'function' ? { printFunc: options } : options
+
   return async function logger(c, next) {
     const { method, url } = c.req
 
     const path = url.slice(url.indexOf('/', 8))
 
-    log(fn, LogPrefix.Incoming, method, path)
+    log(printFunc, LogPrefix.Incoming, method, path, maxLength)
 
     const start = Date.now()
 
     await next()
 
-    log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start))
+    log(printFunc, LogPrefix.Outgoing, method, path, c.res.status, maxLength, time(start))
   }
 }
