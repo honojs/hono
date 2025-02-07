@@ -39,20 +39,21 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
   return async function some(c, next) {
     let lastError: unknown
     for (const handler of middleware) {
+      let result: unknown
       try {
-        const result = await handler(c, next)
-        if (result === true && !c.finalized) {
-          await next()
-        } else if (result === false) {
-          lastError = new Error('No successful middleware found')
-          continue
-        }
-        lastError = undefined
-        break
+        result = await handler(c, next)
       } catch (error) {
         lastError = error
         continue
       }
+      if (result === true && !c.finalized) {
+        await next()
+      } else if (result === false) {
+        lastError = new Error('No successful middleware found')
+        continue
+      }
+      lastError = undefined
+      break
     }
     if (lastError) {
       throw lastError
