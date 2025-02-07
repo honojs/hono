@@ -37,10 +37,20 @@ type Condition = (c: Context) => boolean
  */
 export const some = (...middleware: (MiddlewareHandler | Condition)[]): MiddlewareHandler => {
   return async function some(c, next) {
+    let nextError: unknown
+    const tryNext: Next = async () => {
+      try {
+        await next()
+      } catch (error) {
+        nextError = error
+        throw error
+      }
+    }
+
     let lastError: unknown
     for (const handler of middleware) {
       try {
-        const result = await handler(c, next)
+        const result = await handler(c, tryNext)
         if (result === true && !c.finalized) {
           await next()
         } else if (result === false) {
@@ -50,6 +60,11 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
         lastError = undefined
         break
       } catch (error) {
+        if (nextError) {
+          // got an error in `next()`, so we should halt the middleware evaluation here
+          throw nextError
+        }
+
         lastError = error
         continue
       }
