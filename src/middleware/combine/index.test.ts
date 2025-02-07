@@ -92,19 +92,15 @@ describe('some', () => {
     expect(await res.text()).toBe('oops')
   })
 
-  it('Should not call skipped middleware even if next function throws an error', async () => {
+  it('Should not call skipped middleware even if an error is thrown', async () => {
     const middleware1: MiddlewareHandler = async (c, next) => {
       await next()
     }
     const middleware2 = vi.fn(() => true)
 
-    app.use('/', async (c) => {
-      await some(middleware1, middleware2)(c, () => {
-        throw new Error('Error in next function')
-      })
-    })
-    app.get('/', (c) => {
-      return c.text('Hello World')
+    app.use('/', some(middleware1, middleware2))
+    app.get('/', () => {
+      throw new Error('Error')
     })
     app.onError((_, c) => {
       return c.text('oops')
@@ -115,17 +111,13 @@ describe('some', () => {
     expect(await res.text()).toBe('oops')
   })
 
-  it('Should not call skipped middleware even if next function throws an error with returning truthy value middleware', async () => {
+  it('Should not call skipped middleware even if an error is thrown with returning truthy value middleware', async () => {
     const middleware1 = () => true
     const middleware2 = vi.fn(() => true)
 
-    app.use('/', async (c) => {
-      await some(middleware1, middleware2)(c, () => {
-        throw new Error('Error in next function')
-      })
-    })
-    app.get('/', (c) => {
-      return c.text('Hello World')
+    app.use('/', some(middleware1, middleware2))
+    app.get('/', () => {
+      throw new Error('Error')
     })
     app.onError((_, c) => {
       return c.text('oops')
