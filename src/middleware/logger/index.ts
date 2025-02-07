@@ -5,7 +5,6 @@
 
 import type { MiddlewareHandler } from '../../types'
 import { getColorEnabled } from '../../utils/color'
-import { getPath } from '../../utils/url'
 
 enum LogPrefix {
   Outgoing = '-->',
@@ -81,9 +80,9 @@ function log(
  */
 export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
   return async function logger(c, next) {
-    const { method } = c.req
+    const { method, url } = c.req
 
-    const path = getPath(c.req.raw)
+    const path = url.slice(url.indexOf('/', 8))
 
     log(fn, LogPrefix.Incoming, method, path)
 

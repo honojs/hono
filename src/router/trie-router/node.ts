@@ -45,24 +45,26 @@ export class Node<T> {
 
     for (let i = 0, len = parts.length; i < len; i++) {
       const p: string = parts[i]
+      const nextP = parts[i + 1]
+      const pattern = getPattern(p, nextP)
+      const key = Array.isArray(pattern) ? pattern[0] : p
 
-      if (Object.keys(curNode.#children).includes(p)) {
-        curNode = curNode.#children[p]
-        const pattern = getPattern(p)
+      if (Object.keys(curNode.#children).includes(key)) {
+        curNode = curNode.#children[key]
+        const pattern = getPattern(p, nextP)
         if (pattern) {
           possibleKeys.push(pattern[1])
         }
         continue
       }
 
-      curNode.#children[p] = new Node()
+      curNode.#children[key] = new Node()
 
-      const pattern = getPattern(p)
       if (pattern) {
         curNode.#patterns.push(pattern)
         possibleKeys.push(pattern[1])
       }
-      curNode = curNode.#children[p]
+      curNode = curNode.#children[key]
     }
 
     const m: Record<string, HandlerSet<T>> = Object.create(null)
@@ -115,6 +117,7 @@ export class Node<T> {
     const curNode: Node<T> = this
     let curNodes = [curNode]
     const parts = splitPath(path)
+    const curNodesQueue: Node<T>[][] = []
 
     for (let i = 0, len = parts.length; i < len; i++) {
       const part: string = parts[i]
@@ -166,10 +169,21 @@ export class Node<T> {
 
           // `/js/:filename{[a-z]+.js}` => match /js/chunk/123.js
           const restPathString = parts.slice(i).join('/')
-          if (matcher instanceof RegExp && matcher.test(restPathString)) {
-            params[name] = restPathString
-            handlerSets.push(...this.#getHandlerSets(child, method, node.#params, params))
-            continue
+          if (matcher instanceof RegExp) {
+            const m = matcher.exec(restPathString)
+            if (m) {
+              params[name] = m[0]
+              handlerSets.push(...this.#getHandlerSets(child, method, node.#params, params))
+
+              if (Object.keys(child.#children).length) {
+                child.#params = params
+                const componentCount = m[0].match(/\//)?.length ?? 0
+                const targetCurNodes = (curNodesQueue[componentCount] ||= [])
+                targetCurNodes.push(child)
+              }
+
+              continue
+            }
           }
 
           if (matcher === true || matcher.test(part)) {
@@ -189,7 +203,7 @@ export class Node<T> {
         }
       }
 
-      curNodes = tempNodes
+      curNodes = tempNodes.concat(curNodesQueue.shift() ?? [])
     }
 
     if (handlerSets.length > 1) {

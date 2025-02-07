@@ -204,6 +204,11 @@
       "import": "./dist/middleware/jwt/index.js",
       "require": "./dist/cjs/middleware/jwt/index.js"
     },
+    "./jwk": {
+      "types": "./dist/types/middleware/jwk/index.d.ts",
+      "import": "./dist/middleware/jwk/index.js",
+      "require": "./dist/cjs/middleware/jwk/index.js"
+    },
     "./timeout": {
       "types": "./dist/types/middleware/timeout/index.d.ts",
       "import": "./dist/middleware/timeout/index.js",
@@ -238,6 +243,11 @@
       "types": "./dist/types/middleware/request-id/index.d.ts",
       "import": "./dist/middleware/request-id/index.js",
       "require": "./dist/cjs/middleware/request-id/index.js"
+    },
+    "./language": {
+      "types": "./dist/types/middleware/language/index.d.ts",
+      "import": "./dist/middleware/language/index.js",
+      "require": "./dist/cjs/middleware/language/index.js"
     },
     "./secure-headers": {
       "types": "./dist/types/middleware/secure-headers/index.d.ts",
@@ -388,6 +398,11 @@
       "types": "./dist/types/helper/conninfo/index.d.ts",
       "import": "./dist/helper/conninfo/index.js",
       "require": "./dist/cjs/helper/conninfo/index.js"
+    },
+    "./proxy": {
+      "types": "./dist/types/helper/proxy/index.d.ts",
+      "import": "./dist/helper/proxy/index.js",
+      "require": "./dist/cjs/helper/proxy/index.js"
     }
   },
   "typesVersions": {
@@ -506,6 +521,9 @@
       "request-id": [
         "./dist/types/middleware/request-id"
       ],
+      "language": [
+        "./dist/types/middleware/language"
+      ],
       "streaming": [
         "./dist/types/helper/streaming"
       ],
@@ -595,6 +613,9 @@
       ],
       "conninfo": [
         "./dist/types/helper/conninfo"
+      ],
+      "proxy": [
+        "./dist/types/helper/proxy"
       ]
     }
   },
