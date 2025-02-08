@@ -1,5 +1,4 @@
 import { Context } from '../../context'
-import { isOldBunVersion } from './utils'
 import { stream } from '.'
 
 describe('Basic Streaming Helper', () => {
