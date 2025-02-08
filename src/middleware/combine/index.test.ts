@@ -98,10 +98,13 @@ describe('some', () => {
     }
     const middleware2 = vi.fn(() => true)
 
-    app.use('/', some(middleware1, middleware2))
-    app.get('/', () => {
-      throw new Error('Error')
-    })
+    app.use(
+      '/',
+      every(some(middleware1, middleware2), () => {
+        throw new Error('Error')
+      })
+    )
+    app.get('/', (c) => c.text('OK'))
     app.onError((_, c) => {
       return c.text('oops')
     })
@@ -115,10 +118,13 @@ describe('some', () => {
     const middleware1 = () => true
     const middleware2 = vi.fn(() => true)
 
-    app.use('/', some(middleware1, middleware2))
-    app.get('/', () => {
-      throw new Error('Error')
-    })
+    app.use(
+      '/',
+      every(some(middleware1, middleware2), () => {
+        throw new Error('Error')
+      })
+    )
+    app.get('/', (c) => c.text('OK'))
     app.onError((_, c) => {
       return c.text('oops')
     })
