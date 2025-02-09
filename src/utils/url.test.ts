@@ -152,6 +152,8 @@ describe('url', () => {
       expect(mergePath('/book', 'hey', 'say')).toBe('/book/hey/say')
       expect(mergePath('/book', '/hey/', '/say/')).toBe('/book/hey/say/')
       expect(mergePath('/book', '/hey/', '/say/', '/')).toBe('/book/hey/say/')
+      expect(mergePath('/book', '/hey', '/say', '/')).toBe('/book/hey/say')
+      expect(mergePath('/', '/book', '/hey', '/say', '/')).toBe('/book/hey/say')
 
       expect(mergePath('book', '/')).toBe('/book')
       expect(mergePath('book/', '/')).toBe('/book/')
