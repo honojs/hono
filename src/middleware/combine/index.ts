@@ -37,12 +37,18 @@ type Condition = (c: Context) => boolean
  */
 export const some = (...middleware: (MiddlewareHandler | Condition)[]): MiddlewareHandler => {
   return async function some(c, next) {
+    let isNextCalled = false
+    const wrappedNext = () => {
+      isNextCalled = true
+      return next()
+    }
+
     let lastError: unknown
     for (const handler of middleware) {
       try {
-        const result = await handler(c, next)
+        const result = await handler(c, wrappedNext)
         if (result === true && !c.finalized) {
-          await next()
+          await wrappedNext()
         } else if (result === false) {
           lastError = new Error('No successful middleware found')
           continue
@@ -51,7 +57,9 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
         break
       } catch (error) {
         lastError = error
-        continue
+        if (isNextCalled) {
+          break
+        }
       }
     }
     if (lastError) {
