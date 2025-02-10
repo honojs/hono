@@ -141,10 +141,12 @@ export const mergePath = (...paths: string[]): string => {
   let endsWithSlash = false
 
   for (let path of paths) {
+    // calculate endsWithSlash at the start of each iteration
+    endsWithSlash = p.at(-1) === '/'
+
     /* ['/hey/','/say'] => ['/hey', '/say'] */
-    if (p.at(-1) === '/') {
+    if (endsWithSlash) {
       p = p.slice(0, -1)
-      endsWithSlash = true
     }
 
     /* ['/hey','say'] => ['/hey', '/say'] */
