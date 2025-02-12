@@ -68,8 +68,6 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
           },
           body
         )
-    } else {
-      throw new Error('`crypto.subtle` is undefined. Etag middleware requires it.')
     }
   }
 
@@ -82,7 +80,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     let etag = res.headers.get('ETag')
 
     if (!etag) {
-      const hash = await generateDigest(res.clone().body, generator!)
+      const hash = await generateDigest(res.clone().body, generator)
       if (hash === null) {
         return
       }
