@@ -359,6 +359,11 @@
       "import": "./dist/adapter/aws-lambda/index.js",
       "require": "./dist/cjs/adapter/aws-lambda/index.js"
     },
+    "./aws-lambda/llrt": {
+      "types": "./dist/types/adapter/aws-lambda/llrt.d.ts",
+      "import": "./dist/adapter/aws-lambda/llrt.js",
+      "require": "./dist/cjs/adapter/aws-lambda/llrt.js"
+    },
     "./vercel": {
       "types": "./dist/types/adapter/vercel/index.d.ts",
       "import": "./dist/adapter/vercel/index.js",

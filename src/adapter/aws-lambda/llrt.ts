@@ -1,12 +1,7 @@
 /**
  * @module
- * AWS Lambda Adapter for Hono.
+ * AWS Lambda LLRT Adapter for Hono.
  */
-import crypto from 'node:crypto'
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-globalThis.crypto ??= crypto
 
 export { handle, streamHandle } from './handler'
 export type { APIGatewayProxyResult, LambdaEvent } from './handler'
