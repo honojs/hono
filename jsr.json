@@ -75,7 +75,6 @@
     "./deno": "./src/adapter/deno/index.ts",
     "./bun": "./src/adapter/bun/index.ts",
     "./aws-lambda": "./src/adapter/aws-lambda/index.ts",
-    "./aws-lambda/llrt": "./src/adapter/aws-lambda/llrt.ts",
     "./vercel": "./src/adapter/vercel/index.ts",
     "./netlify": "./src/adapter/netlify/index.ts",
     "./lambda-edge": "./src/adapter/lambda-edge/index.ts",
