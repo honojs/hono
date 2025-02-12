@@ -57,15 +57,21 @@ function etagMatches(etag: string, ifNoneMatch: string | null) {
 export const etag = (options?: ETagOptions): MiddlewareHandler => {
   const retainedHeaders = options?.retainedHeaders ?? RETAINED_304_HEADERS
   const weak = options?.weak ?? false
-  const generator =
-    options?.generateDigest ??
-    ((body: Uint8Array) =>
-      crypto.subtle.digest(
-        {
-          name: 'SHA-1',
-        },
-        body
-      ))
+  let generator = options?.generateDigest
+
+  if (!generator) {
+    if (crypto && crypto.subtle) {
+      generator = (body: Uint8Array) =>
+        crypto.subtle.digest(
+          {
+            name: 'SHA-1',
+          },
+          body
+        )
+    } else {
+      throw new Error('`crypto.subtle` is undefined. Etag middleware requires it.')
+    }
+  }
 
   return async function etag(c, next) {
     const ifNoneMatch = c.req.header('If-None-Match') ?? null
@@ -76,7 +82,7 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     let etag = res.headers.get('ETag')
 
     if (!etag) {
-      const hash = await generateDigest(res.clone().body, generator)
+      const hash = await generateDigest(res.clone().body, generator!)
       if (hash === null) {
         return
       }
