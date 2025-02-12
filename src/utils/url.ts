@@ -136,38 +136,27 @@ export const getPathNoStrict = (request: Request): string => {
   return result.length > 1 && result.at(-1) === '/' ? result.slice(0, -1) : result
 }
 
-export const mergePath = (...paths: string[]): string => {
-  let p: string = ''
-  let endsWithSlash = false
-
-  for (let path of paths) {
-    // calculate endsWithSlash at the start of each iteration
-    endsWithSlash = p.at(-1) === '/'
-
-    /* ['/hey/','/say'] => ['/hey', '/say'] */
-    if (endsWithSlash) {
-      p = p.slice(0, -1)
-    }
-
-    /* ['/hey','say'] => ['/hey', '/say'] */
-    if (path[0] !== '/') {
-      path = `/${path}`
-    }
-
-    /* ['/hey/', '/'] => `/hey/` */
-    if (path === '/' && endsWithSlash) {
-      p = `${p}/`
-    } else if (path !== '/') {
-      p = `${p}${path}`
-    }
-
-    /* ['/', '/'] => `/` */
-    if (path === '/' && p === '') {
-      p = '/'
-    }
+/**
+ * Merge paths.
+ * @param {string[]} ...paths - The paths to merge.
+ * @returns {string} The merged path.
+ * @example
+ * mergePath('/api', '/users') // '/api/users'
+ * mergePath('/api/', '/users') // '/api/users'
+ * mergePath('/api', '/') // '/api'
+ * mergePath('/api/', '/') // '/api/'
+ */
+export const mergePath: (...paths: string[]) => string = (
+  base: string | undefined,
+  sub: string | undefined,
+  ...rest: string[]
+): string => {
+  if (rest.length) {
+    sub = mergePath(sub as string, ...rest)
   }
-
-  return p
+  return `${base?.[0] === '/' ? '' : '/'}${base}${
+    sub === '/' ? '' : `${base?.at(-1) === '/' ? '' : '/'}${sub?.[0] === '/' ? sub.slice(1) : sub}`
+  }`
 }
 
 export const checkOptionalParameter = (path: string): string[] | null => {
