@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
 import { decodeBase64, encodeBase64 } from '../../utils/encode'
@@ -8,6 +9,10 @@ import type {
   Handler,
   LambdaContext,
 } from './types'
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+globalThis.crypto ??= crypto
 
 export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2 | ALBProxyEvent
 
