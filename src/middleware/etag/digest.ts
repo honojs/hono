@@ -10,9 +10,9 @@ const mergeBuffers = (buffer1: ArrayBuffer | undefined, buffer2: Uint8Array): Ui
 
 export const generateDigest = async (
   stream: ReadableStream<Uint8Array> | null,
-  generator?: (body: Uint8Array) => ArrayBuffer | Promise<ArrayBuffer>
+  generator: (body: Uint8Array) => ArrayBuffer | Promise<ArrayBuffer>
 ): Promise<string | null> => {
-  if (!stream || !generator) {
+  if (!stream) {
     return null
   }
 

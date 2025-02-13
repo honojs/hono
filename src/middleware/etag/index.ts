@@ -31,6 +31,24 @@ function etagMatches(etag: string, ifNoneMatch: string | null) {
   return ifNoneMatch != null && ifNoneMatch.split(/,\s*/).indexOf(etag) > -1
 }
 
+function initializeGenerator(
+  generator?: ETagOptions['generateDigest']
+): ETagOptions['generateDigest'] | undefined {
+  if (!generator) {
+    if (crypto && crypto.subtle) {
+      generator = (body: Uint8Array) =>
+        crypto.subtle.digest(
+          {
+            name: 'SHA-1',
+          },
+          body
+        )
+    }
+  }
+
+  return generator
+}
+
 /**
  * ETag Middleware for Hono.
  *
@@ -57,19 +75,7 @@ function etagMatches(etag: string, ifNoneMatch: string | null) {
 export const etag = (options?: ETagOptions): MiddlewareHandler => {
   const retainedHeaders = options?.retainedHeaders ?? RETAINED_304_HEADERS
   const weak = options?.weak ?? false
-  let generator = options?.generateDigest
-
-  if (!generator) {
-    if (crypto && crypto.subtle) {
-      generator = (body: Uint8Array) =>
-        crypto.subtle.digest(
-          {
-            name: 'SHA-1',
-          },
-          body
-        )
-    }
-  }
+  const generator = initializeGenerator(options?.generateDigest)
 
   return async function etag(c, next) {
     const ifNoneMatch = c.req.header('If-None-Match') ?? null
@@ -80,6 +86,8 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     let etag = res.headers.get('ETag')
 
     if (!etag) {
+      if (!generator) return
+
       const hash = await generateDigest(res.clone().body, generator)
       if (hash === null) {
         return
