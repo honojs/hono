@@ -12,7 +12,7 @@ export const generateDigest = async (
   stream: ReadableStream<Uint8Array> | null,
   generator: (body: Uint8Array) => ArrayBuffer | Promise<ArrayBuffer>
 ): Promise<string | null> => {
-  if (!stream || !crypto || !crypto.subtle) {
+  if (!stream) {
     return null
   }
 
