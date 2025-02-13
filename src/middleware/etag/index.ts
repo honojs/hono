@@ -86,8 +86,9 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
     let etag = res.headers.get('ETag')
 
     if (!etag) {
-      if (!generator) return
-
+      if (!generator) {
+        return
+      }
       const hash = await generateDigest(res.clone().body, generator)
       if (hash === null) {
         return
