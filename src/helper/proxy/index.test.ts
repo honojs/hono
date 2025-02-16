@@ -5,7 +5,9 @@ describe('Proxy Middleware', () => {
   describe('proxy', () => {
     beforeEach(() => {
       global.fetch = vi.fn().mockImplementation(async (req) => {
-        if (req.url === 'https://example.com/compressed') {
+        if (req.url === 'https://example.com/ok') {
+          return Promise.resolve(new Response('ok'))
+        } else if (req.url === 'https://example.com/compressed') {
           return Promise.resolve(
             new Response('ok', {
               headers: {
@@ -178,6 +180,25 @@ describe('Proxy Middleware', () => {
       const res = await app.request('/proxy/set-cookie')
       expect(res.headers.get('Set-Cookie')).toBeNull()
       expect(res.headers.get('X-Response-Id')).toBe('456')
+    })
+
+    it('does not propagate undefined request headers', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) =>
+        proxy(`https://example.com/${c.req.param('path')}`, {
+          headers: {
+            ...c.req.header(),
+            Authorization: undefined,
+          },
+        })
+      )
+      await app.request('/proxy/ok', {
+        headers: {
+          Authorization: 'Bearer 123',
+        },
+      })
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+      expect(req.headers.get('Authorization')).toBeNull()
     })
   })
 })
