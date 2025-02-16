@@ -29,14 +29,37 @@ interface ProxyFetch {
   (input: string | URL | Request, init?: ProxyRequestInit): Promise<Response>
 }
 
+const propagateRequestHeaders = (headers: Headers, init: ProxyRequestInit | undefined) => {
+  let requestHeaders
+
+  if (Array.isArray(init?.headers)) {
+    requestHeaders = init.headers
+  } else if (init?.headers) {
+    requestHeaders = Object.entries(init.headers)
+  }
+
+  if (requestHeaders) {
+    for (const [name, value] of requestHeaders) {
+      if (value === undefined) {
+        headers.delete(name)
+      } else {
+        headers.append(name, value)
+      }
+    }
+  }
+}
+
 const buildRequestInitFromRequest = (
-  request: Request | undefined
+  request: Request | undefined,
+  requestInit: ProxyRequestInit | undefined
 ): RequestInit & { duplex?: 'half' } => {
   if (!request) {
-    return {}
+    // @ts-expect-error `headers` in `requestInit` is not compatible with HeadersInit
+    return requestInit
   }
 
   const headers = new Headers(request.headers)
+  propagateRequestHeaders(headers, requestInit)
   hopByHopHeaders.forEach((header) => {
     headers.delete(header)
   })
@@ -45,6 +68,7 @@ const buildRequestInitFromRequest = (
     method: request.method,
     body: request.body,
     duplex: request.body ? 'half' : undefined,
+    ...requestInit,
     headers,
   }
 }
@@ -87,16 +111,7 @@ const buildRequestInitFromRequest = (
  * ```
  */
 export const proxy: ProxyFetch = async (input, proxyInit) => {
-  const { raw, ...requestInit } = proxyInit ?? {}
-
-  const req = new Request(
-    input,
-    // @ts-expect-error `headers` in `requestInit` is not compatible with HeadersInit
-    {
-      ...buildRequestInitFromRequest(raw),
-      ...requestInit,
-    }
-  )
+  const req = new Request(input, buildRequestInitFromRequest(proxyInit?.raw, proxyInit))
   req.headers.delete('accept-encoding')
 
   const res = await fetch(req)
