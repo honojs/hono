@@ -44,6 +44,10 @@ describe('Proxy Middleware', () => {
               },
             })
           )
+        } else if (req.url === 'https://example.com/no-propagate') {
+          return Promise.resolve(
+            new Response(`request authorization header: ${req.headers.get('authorization')}`)
+          )
         }
         return Promise.resolve(new Response('not found', { status: 404 }))
       })
@@ -178,6 +182,29 @@ describe('Proxy Middleware', () => {
       const res = await app.request('/proxy/set-cookie')
       expect(res.headers.get('Set-Cookie')).toBeNull()
       expect(res.headers.get('X-Response-Id')).toBe('456')
+    })
+
+    it('does not propagate undefined request headers', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) =>
+        proxy(`https://example.com/${c.req.param('path')}`, {
+          ...c.req,
+          headers: {
+            Authorization: undefined,
+          },
+        })
+      )
+      const res = await app.request('/proxy/no-propagate', {
+        headers: {
+          Authorization: 'Bearer 123',
+        },
+      })
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+      expect(req.headers.get('Authorization')).toBeNull()
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Authorization')).toBeNull()
+      await expect(res.text()).resolves.toBe('request authorization header: null')
     })
   })
 })
