@@ -49,6 +49,28 @@ const buildRequestInitFromRequest = (
   }
 }
 
+const preprocessRequestInit = (requestInit: RequestInit): RequestInit => {
+  if (
+    !requestInit.headers ||
+    Array.isArray(requestInit.headers) ||
+    requestInit.headers instanceof Headers
+  ) {
+    return requestInit
+  }
+
+  const headers = new Headers()
+  for (const [key, value] of Object.entries(requestInit.headers)) {
+    if (value == null) {
+      // delete header if value is null or undefined
+      headers.delete(key)
+    } else {
+      headers.set(key, value)
+    }
+  }
+  requestInit.headers = headers
+  return requestInit
+}
+
 /**
  * Fetch API wrapper for proxy.
  * The parameters and return value are the same as for `fetch` (except for the proxy-specific options).
@@ -89,14 +111,10 @@ const buildRequestInitFromRequest = (
 export const proxy: ProxyFetch = async (input, proxyInit) => {
   const { raw, ...requestInit } = proxyInit ?? {}
 
-  const req = new Request(
-    input,
-    // @ts-expect-error `headers` in `requestInit` is not compatible with HeadersInit
-    {
-      ...buildRequestInitFromRequest(raw),
-      ...requestInit,
-    }
-  )
+  const req = new Request(input, {
+    ...buildRequestInitFromRequest(raw),
+    ...preprocessRequestInit(requestInit as RequestInit),
+  })
   req.headers.delete('accept-encoding')
 
   const res = await fetch(req)
