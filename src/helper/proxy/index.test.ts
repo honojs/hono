@@ -191,16 +191,19 @@ describe('Proxy Middleware', () => {
           ...c.req,
           headers: {
             Authorization: undefined,
+            'X-Request-Id': '123',
           },
         })
       )
       const res = await app.request('/proxy/no-propagate', {
         headers: {
           Authorization: 'Bearer 123',
+          'X-Request-Id': '123',
         },
       })
       const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
       expect(req.headers.get('Authorization')).toBeNull()
+      expect(req.headers.get('X-Request-Id')).toBe('123, 123')
 
       expect(res.status).toBe(200)
       expect(res.headers.get('Authorization')).toBeNull()
