@@ -4,7 +4,7 @@
  */
 
 import type { Context, Data } from '../../context'
-import type { Env, MiddlewareHandler } from '../../types'
+import type { DefaultEnv, Env, MiddlewareHandler } from '../../types'
 import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
 import { getFilePath, getFilePathWithoutDefaultDocument } from '../../utils/filepath'
 import { getMimeType } from '../../utils/mime'
@@ -32,13 +32,13 @@ const defaultPathResolve = (path: string) => path
 /**
  * This middleware is not directly used by the user. Create a wrapper specifying `getContent()` by the environment such as Deno or Bun.
  */
-export const serveStatic = <E extends Env = Env>(
+export const serveStatic = <E extends Env = DefaultEnv>(
   options: ServeStaticOptions<E> & {
     getContent: (path: string, c: Context<E>) => Promise<Data | Response | null>
     pathResolve?: (path: string) => string
     isDir?: (path: string) => boolean | undefined | Promise<boolean | undefined>
   }
-): MiddlewareHandler => {
+): MiddlewareHandler<E> => {
   let isAbsoluteRoot = false
   let root: string
 

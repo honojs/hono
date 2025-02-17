@@ -64,7 +64,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   constructor(
     request: Request,
     path: string = '/',
-    matchResult: Result<[unknown, RouterRoute]> = [[]]
+    matchResult: Result<[unknown, RouterRoute<any>]> = [[]]
   ) {
     this.raw = request
     this.path = path
