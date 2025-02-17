@@ -46,6 +46,7 @@ const buildRequestInitFromRequest = (
     body: request.body,
     duplex: request.body ? 'half' : undefined,
     headers,
+    signal: request.signal,
   }
 }
 

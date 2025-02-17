@@ -7,6 +7,18 @@ describe('Proxy Middleware', () => {
       global.fetch = vi.fn().mockImplementation(async (req) => {
         if (req.url === 'https://example.com/ok') {
           return Promise.resolve(new Response('ok'))
+        } else if (req.url === 'https://example.com/disconnect') {
+          const reader = req.body.getReader()
+          let response
+
+          req.signal.addEventListener('abort', () => {
+            response = req.signal.reason
+            reader.cancel()
+          })
+
+          await reader.read()
+
+          return Promise.resolve(new Response(response))
         } else if (req.url === 'https://example.com/compressed') {
           return Promise.resolve(
             new Response('ok', {
@@ -199,6 +211,20 @@ describe('Proxy Middleware', () => {
       })
       const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
       expect(req.headers.get('Authorization')).toBeNull()
+    })
+
+    it('client disconnect', async () => {
+      const app = new Hono()
+      const controller = new AbortController()
+      app.post('/proxy/:path', (c) => proxy(`https://example.com/${c.req.param('path')}`, c.req))
+      const resPromise = app.request('/proxy/disconnect', {
+        method: 'POST',
+        body: 'test',
+        signal: controller.signal,
+      })
+      controller.abort('client disconnect')
+      const res = await resPromise
+      expect(await res.text()).toBe('client disconnect')
     })
   })
 })
