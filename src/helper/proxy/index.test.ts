@@ -227,7 +227,7 @@ describe('Proxy Middleware', () => {
       expect(await res.text()).toBe('client disconnect')
     })
 
-    it.fails('not found', async () => {
+    it('not found', async () => {
       const app = new Hono()
       app.get('/proxy/:path', (c) => proxy(`https://example.com/${c.req.param('path')}`))
       const res = await app.request('/proxy/404')
