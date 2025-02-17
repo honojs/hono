@@ -108,12 +108,10 @@ const preprocessRequestInit = (requestInit: RequestInit): RequestInit => {
  * })
  * ```
  */
-export const proxy: ProxyFetch = async (input, proxyInit) => {
-  const { raw, ...requestInit } = proxyInit ?? {}
-
+export const proxy: ProxyFetch = async (input, proxyInit = {}) => {
   const req = new Request(input, {
-    ...buildRequestInitFromRequest(raw),
-    ...preprocessRequestInit(requestInit as RequestInit),
+    ...buildRequestInitFromRequest(proxyInit.raw),
+    ...preprocessRequestInit(proxyInit as RequestInit),
   })
   req.headers.delete('accept-encoding')
 
