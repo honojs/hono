@@ -226,5 +226,12 @@ describe('Proxy Middleware', () => {
       const res = await resPromise
       expect(await res.text()).toBe('client disconnect')
     })
+
+    it('not found', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) => proxy(`https://example.com/${c.req.param('path')}`))
+      const res = await app.request('/proxy/404')
+      expect(res.status).toBe(404)
+    })
   })
 })
