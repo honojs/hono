@@ -130,7 +130,8 @@ export const proxy: ProxyFetch = async (input, proxyInit) => {
   }
 
   return new Response(res.body, {
-    ...res,
+    status: res.status,
+    statusText: res.statusText,
     headers: resHeaders,
   })
 }
