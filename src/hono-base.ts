@@ -215,7 +215,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         handler = r.handler
       } else {
         handler = async (c: Context, next: Next) =>
-          (await compose<Context>([], app.errorHandler)(c, () => r.handler(c, next))).res
+          (await compose([], app.errorHandler)(c, () => r.handler(c, next))).res
         ;(handler as any)[COMPOSED_HANDLER] = r.handler
       }
 
@@ -428,7 +428,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         : res ?? this.#notFoundHandler(c)
     }
 
-    const composed = compose<Context>(matchResult[0], this.errorHandler, this.#notFoundHandler)
+    const composed = compose(matchResult[0], this.errorHandler, this.#notFoundHandler)
 
     return (async () => {
       try {
