@@ -99,7 +99,7 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
 export const every = (...middleware: (MiddlewareHandler | Condition)[]): MiddlewareHandler => {
   return async function every(c, next) {
     const currentRouteIndex = c.req.routeIndex
-    await compose<Context>(
+    await compose(
       middleware.map((m) => [
         [
           async (c: Context, next: Next) => {
