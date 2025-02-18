@@ -701,14 +701,14 @@ describe('Combined Response hooks - modify response content', () => {
   const prependContentAfterResponseHook = (prefix: string): AfterResponseHook => {
     return async (res: Response): Promise<Response> => {
       const originalText = await res.text()
-      return new Response(`${prefix}${originalText}`, { ...res })
+      return new Response(`${prefix}${originalText}`, res)
     }
   }
 
   const appendContentAfterResponseHook = (suffix: string): AfterResponseHook => {
     return async (res: Response): Promise<Response> => {
       const originalText = await res.text()
-      return new Response(`${originalText}${suffix}`, { ...res })
+      return new Response(`${originalText}${suffix}`, res)
     }
   }
 
