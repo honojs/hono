@@ -1,7 +1,7 @@
 import type { Params, Result, Router } from '../../router'
 import { METHOD_NAME_ALL, UnsupportedPathError } from '../../router'
 
-type Route<T> = [RegExp, string, T] // [pattern, method, handler, path]
+type Route<T> = [RegExp, string, T] // [pattern, method, handler]
 
 const emptyParams = Object.create(null)
 
@@ -30,13 +30,15 @@ export class PatternRouter<T> implements Router<T> {
       }
     )
 
-    let re
     try {
-      re = new RegExp(`^${parts.join('')}${endsWithWildcard ? '' : '/?$'}`)
+      this.#routes.push([
+        new RegExp(`^${parts.join('')}${endsWithWildcard ? '' : '/?$'}`),
+        method,
+        handler,
+      ])
     } catch {
       throw new UnsupportedPathError()
     }
-    this.#routes.push([re, method, handler])
   }
 
   match(method: string, path: string): Result<T> {
