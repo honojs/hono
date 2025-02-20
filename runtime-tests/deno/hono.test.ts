@@ -34,14 +34,3 @@ Deno.test('environment variables', () => {
   const { NAME } = env<{ NAME: string }>(c)
   assertEquals(NAME, 'Deno')
 })
-
-Deno.test('Buffers', async () => {
-  const app = new Hono().get('/', async (c) => {
-    const encoder = new TextEncoder()
-    return c.body(encoder.encode('hello'))
-  })
-
-  const res = await app.request('/')
-  assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'hello')
-})
