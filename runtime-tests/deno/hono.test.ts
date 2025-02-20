@@ -37,7 +37,8 @@ Deno.test('environment variables', () => {
 
 Deno.test('Buffers', async () => {
   const app = new Hono().get('/', async (c) => {
-    return c.body(Buffer.from('hello'))
+    const encoder = new TextEncoder()
+    return c.body(encoder.encode('hello'))
   })
 
   const res = await app.request('/')
