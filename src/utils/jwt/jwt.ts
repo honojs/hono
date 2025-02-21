@@ -22,7 +22,8 @@ import type { JWTPayload } from './types'
 import { utf8Decoder, utf8Encoder } from './utf8'
 
 const encodeJwtPart = (part: unknown): string =>
-  encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
+  encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, '')
+
 const encodeSignaturePart = (buf: ArrayBufferLike): string => encodeBase64Url(buf).replace(/=/g, '')
 
 const decodeJwtPart = (part: string): TokenHeader | JWTPayload | undefined =>

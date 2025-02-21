@@ -40,7 +40,7 @@ export type WSReadyState = 0 | 1 | 2 | 3
  * An argument for WSContext class
  */
 export interface WSContextInit<T = unknown> {
-  send(data: string | ArrayBuffer, options: SendOptions): void
+  send(data: string | ArrayBuffer | Uint8Array, options: SendOptions): void
   close(code?: number, reason?: string): void
 
   raw?: T
