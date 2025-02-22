@@ -674,8 +674,5 @@
   },
   "engines": {
     "node": ">=16.9.0"
-  },
-  "dependencies": {
-    "@hono/zod-validator": "^0.4.3"
   }
 }
