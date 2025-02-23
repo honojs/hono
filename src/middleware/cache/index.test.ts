@@ -169,7 +169,7 @@ describe('Cache Middleware', () => {
   })
 
   app.use('/default/*', cache({ cacheName: 'my-app-v1', wait: true, cacheControl: 'max-age=10' }))
-  app.get('/default/:code/', (c) => {
+  app.all('/default/:code/', (c) => {
     const code = parseInt(c.req.param('code'))
     // Intended to avoid the following error: `RangeError: init[“status”] must be in the range of 200 to 599, inclusive.`
     const res = {
@@ -288,6 +288,22 @@ describe('Cache Middleware', () => {
   it('Should not allow "*" as a Vary header in middleware configuration due to its impact on caching effectiveness', async () => {
     expect(() => cache({ cacheName: 'my-app-v1', wait: true, vary: ['*'] })).toThrow()
     expect(() => cache({ cacheName: 'my-app-v1', wait: true, vary: '*' })).toThrow()
+  })
+
+  it.each(['GET', 'HEAD', 'POST', 'PATCH'])('Should cache %s method requests', async (method) => {
+    await app.request('http://localhost/default/200/', { method: method })
+    const res = await app.request('http://localhost/default/200/', { method: method })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('cache-control')).toBe('max-age=10')
+  })
+
+  it.each(['PUT', 'DELETE', 'OPTIONS'])('Should not cache %s method requests', async (method) => {
+    await app.request('http://localhost/default/200/', { method: method })
+    const res = await app.request('http://localhost/default/200/', { method: method })
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('cache-control')).not.toBe('max-age=10')
   })
 
   it.each([200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501])(

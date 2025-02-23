@@ -15,6 +15,17 @@ const defaultCacheableStatusCodes: ReadonlyArray<number> = [
 ]
 
 /**
+ * RFC 7231 Section 4.2.3 specifies methods that can be cached.
+ * See: https://datatracker.ietf.org/doc/html/rfc7231#section-4.2.3
+ */
+const cacheableMethods: ReadonlyMap<string, boolean> = new Map([
+  ['GET', true],
+  ['HEAD', true],
+  ['POST', true],
+  ['PATCH', true],
+])
+
+/**
  * Cache Middleware for Hono.
  *
  * @see {@link https://hono.dev/docs/middleware/builtin/cache}
@@ -117,6 +128,10 @@ export const cache = (options: {
   }
 
   return async function cache(c, next) {
+    if (!cacheableMethods.get(c.req.method)) {
+      await next()
+      return
+    }
     let key = c.req.url
     if (options.keyGenerator) {
       key = await options.keyGenerator(c)
