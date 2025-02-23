@@ -59,7 +59,7 @@ export const jwk = (
   return async function jwk(ctx, next) {
     let credentials = ctx.req.raw.headers.get('Authorization')
     if (options.credentials) {
-        credentials = options.credentials(ctx.req)
+      credentials = options.credentials(ctx.req)
     }
     let token
     if (credentials) {
