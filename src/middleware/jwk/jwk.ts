@@ -38,7 +38,7 @@ import type { HonoJsonWebKey } from '../../utils/jwt/jws'
  * ```
  */
 
-export const jwk = (
+export const jwk = <T>(
   options: {
     keys?: HonoJsonWebKey[] | (() => Promise<HonoJsonWebKey[]>)
     jwks_uri?: string
@@ -48,7 +48,7 @@ export const jwk = (
       | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
   },
   init?: RequestInit
-): MiddlewareHandler => {
+): MiddlewareHandler<{ Variables: { jwtPayload: T } }> => {
   if (!options || !(options.keys || options.jwks_uri)) {
     throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri" or both')
   }
