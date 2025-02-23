@@ -5,7 +5,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Context } from '../../context'
-import type { MiddlewareHandler } from '../../types'
+import type { MiddlewareHandler, TypedResponse } from '../../types'
+import type { StatusCode } from '../../utils/http-status'
 
 /**
  * WebSocket Event Listeners type
@@ -28,7 +29,7 @@ export interface UpgradeWebSocket<T = unknown, U = any, _WSEvents = WSEvents<T>>
       outputFormat: 'ws'
     }
   >
-  (c: Context, events: _WSEvents, options?: U): Promise<Response>
+  (c: Context, events: _WSEvents, options?: U): Promise<TypedResponse<{}, StatusCode, 'ws'>>
 }
 
 /**
