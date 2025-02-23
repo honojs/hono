@@ -20,6 +20,7 @@ import type { HonoJsonWebKey } from '../../utils/jwt/jws'
  * @param {object} options - The options for the JWK middleware.
  * @param {HonoJsonWebKey[] | (() => Promise<HonoJsonWebKey[]>)} [options.keys] - The values of your public keys, or a function that returns them.
  * @param {string} [options.jwks_uri] - If this value is set, attempt to fetch JWKs from this URI, expecting a JSON response with `keys` which are added to the provided options.keys
+ * @param {(HonoRequest) => string} [options.credentials] - If this value is set, then the return value of this function is used as the credentials
  * @param {string} [options.cookie] - If this value is set, then the value is retrieved from the cookie header using that value as a key, which is then validated as a token.
  * @param {RequestInit} [init] - Optional initialization options for the `fetch` request when retrieving JWKS from a URI.
  * @returns {MiddlewareHandler} The middleware handler function.
@@ -40,6 +41,7 @@ export const jwk = (
   options: {
     keys?: HonoJsonWebKey[] | (() => Promise<HonoJsonWebKey[]>)
     jwks_uri?: string
+    credentials?: () => string
     cookie?:
       | string
       | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
@@ -55,7 +57,10 @@ export const jwk = (
   }
 
   return async function jwk(ctx, next) {
-    const credentials = ctx.req.raw.headers.get('Authorization')
+    let credentials = ctx.req.raw.headers.get('Authorization')
+    if (options.credentials) {
+        credentials = options.credentials(ctx.req)
+    }
     let token
     if (credentials) {
       const parts = credentials.split(/\s+/)
