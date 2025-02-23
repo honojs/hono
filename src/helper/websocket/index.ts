@@ -29,7 +29,9 @@ export interface UpgradeWebSocket<T = unknown, U = any, _WSEvents = WSEvents<T>>
       outputFormat: 'ws'
     }
   >
-  (c: Context, events: _WSEvents, options?: U): Promise<TypedResponse<{}, StatusCode, 'ws'>>
+  (c: Context, events: _WSEvents, options?: U): Promise<
+    Response & TypedResponse<{}, StatusCode, 'ws'>
+  >
 }
 
 /**

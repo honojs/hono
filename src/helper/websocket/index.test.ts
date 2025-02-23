@@ -44,7 +44,7 @@ describe('defineWebSocketHelper', () => {
     })
     const c = new Context(new Request('http://localhost'))
     const res = await upgradeWebSocket(c, {})
-    expect((res as Response).status).toBe(200)
+    expect(res.status).toBe(200)
   })
   it('When upgrading failed and use it in handler, it should throw error', async () => {
     const upgradeWebSocket = defineWebSocketHelper(() => {
