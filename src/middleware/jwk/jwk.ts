@@ -11,6 +11,7 @@ import type { CookiePrefixOptions } from '../../utils/cookie'
 import { Jwt } from '../../utils/jwt'
 import '../../context'
 import type { HonoJsonWebKey } from '../../utils/jwt/jws'
+import { HonoRequest } from '../../request'
 
 /**
  * JWK Auth Middleware for Hono.
@@ -41,7 +42,7 @@ export const jwk = (
   options: {
     keys?: HonoJsonWebKey[] | (() => Promise<HonoJsonWebKey[]>)
     jwks_uri?: string
-    credentials?: () => string
+    credentials?: (req: HonoRequest<string>) => string
     cookie?:
       | string
       | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
