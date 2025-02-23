@@ -6,12 +6,12 @@
 import type { Context } from '../../context'
 import { getCookie, getSignedCookie } from '../../helper/cookie'
 import { HTTPException } from '../../http-exception'
+import type { HonoRequest } from '../../request'
 import type { MiddlewareHandler } from '../../types'
 import type { CookiePrefixOptions } from '../../utils/cookie'
 import { Jwt } from '../../utils/jwt'
 import '../../context'
 import type { HonoJsonWebKey } from '../../utils/jwt/jws'
-import { HonoRequest } from '../../request'
 
 /**
  * JWK Auth Middleware for Hono.
