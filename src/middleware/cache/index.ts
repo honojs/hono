@@ -77,7 +77,7 @@ export const cache = (options: {
     )
   }
 
-  const cacheableStatusCodes = (options.cacheableStatusCodes ?? defaultCacheableStatusCodes).reduce(
+  const cacheableStatusCodes = new Set(options.cacheableStatusCodes ?? defaultCacheableStatusCodes)
     (acc, code) => {
       acc.add(code)
       return acc
