@@ -7,6 +7,20 @@ import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
 /**
+ * RFC 7231 Section 6.1 specifies status codes that can be cached by default.
+ * See: https://datatracker.ietf.org/doc/html/rfc7231#section-6.1
+ */
+const defaultCacheableStatusCodes: ReadonlyArray<number> = [
+  200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501,
+]
+
+/**
+ * RFC 7231 Section 4.2.3 specifies methods that can be cached.
+ * See: https://datatracker.ietf.org/doc/html/rfc7231#section-4.2.3
+ */
+const cacheableMethods: ReadonlySet<string> = new Set(['GET', 'HEAD', 'POST', 'PATCH'])
+
+/**
  * Cache Middleware for Hono.
  *
  * @see {@link https://hono.dev/docs/middleware/builtin/cache}
@@ -17,6 +31,7 @@ import type { MiddlewareHandler } from '../../types'
  * @param {string} [options.cacheControl] - A string of directives for the `Cache-Control` header.
  * @param {string | string[]} [options.vary] - Sets the `Vary` header in the response. If the original response header already contains a `Vary` header, the values are merged, removing any duplicates.
  * @param {Function} [options.keyGenerator] - Generates keys for every request in the `cacheName` store. This can be used to cache data based on request parameters or context parameters.
+ * @param {number[]} [options.cacheableStatusCodes=[200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501]] - An array of status codes that can be cached.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If the `vary` option includes "*".
  *
@@ -37,6 +52,7 @@ export const cache = (options: {
   cacheControl?: string
   vary?: string | string[]
   keyGenerator?: (c: Context) => Promise<string> | string
+  cacheableStatusCodes?: number[]
 }): MiddlewareHandler => {
   if (!globalThis.caches) {
     console.log('Cache Middleware is not enabled because caches is not defined.')
@@ -60,6 +76,14 @@ export const cache = (options: {
       'Middleware vary configuration cannot include "*", as it disallows effective caching.'
     )
   }
+
+  const cacheableStatusCodes = new Set(options.cacheableStatusCodes ?? defaultCacheableStatusCodes)
+    (acc, code) => {
+      acc.add(code)
+      return acc
+    },
+    new Set<number>()
+  )
 
   const addHeader = (c: Context) => {
     if (cacheControlDirectives) {
@@ -99,6 +123,10 @@ export const cache = (options: {
   }
 
   return async function cache(c, next) {
+    if (!cacheableMethods.has(c.req.method)) {
+      await next()
+      return
+    }
     let key = c.req.url
     if (options.keyGenerator) {
       key = await options.keyGenerator(c)
@@ -113,7 +141,7 @@ export const cache = (options: {
     }
 
     await next()
-    if (!c.res.ok) {
+    if (!cacheableStatusCodes.has(c.res.status)) {
       return
     }
     addHeader(c)
