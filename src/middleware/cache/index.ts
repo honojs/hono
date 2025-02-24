@@ -18,12 +18,7 @@ const defaultCacheableStatusCodes: ReadonlyArray<number> = [
  * RFC 7231 Section 4.2.3 specifies methods that can be cached.
  * See: https://datatracker.ietf.org/doc/html/rfc7231#section-4.2.3
  */
-const cacheableMethods: ReadonlyMap<string, boolean> = new Map([
-  ['GET', true],
-  ['HEAD', true],
-  ['POST', true],
-  ['PATCH', true],
-])
+const cacheableMethods: ReadonlySet<string> = new Set(['GET', 'HEAD', 'POST', 'PATCH'])
 
 /**
  * Cache Middleware for Hono.
@@ -84,10 +79,10 @@ export const cache = (options: {
 
   const cacheableStatusCodes = (options.cacheableStatusCodes ?? defaultCacheableStatusCodes).reduce(
     (acc, code) => {
-      acc.set(code, true)
+      acc.add(code)
       return acc
     },
-    new Map<number, boolean>()
+    new Set<number>()
   )
 
   const addHeader = (c: Context) => {
@@ -128,7 +123,7 @@ export const cache = (options: {
   }
 
   return async function cache(c, next) {
-    if (!cacheableMethods.get(c.req.method)) {
+    if (!cacheableMethods.has(c.req.method)) {
       await next()
       return
     }
@@ -146,7 +141,7 @@ export const cache = (options: {
     }
 
     await next()
-    if (!cacheableStatusCodes.get(c.res.status)) {
+    if (!cacheableStatusCodes.has(c.res.status)) {
       return
     }
     addHeader(c)
