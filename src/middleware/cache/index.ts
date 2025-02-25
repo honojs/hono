@@ -78,12 +78,6 @@ export const cache = (options: {
   }
 
   const cacheableStatusCodes = new Set(options.cacheableStatusCodes ?? defaultCacheableStatusCodes)
-    (acc, code) => {
-      acc.add(code)
-      return acc
-    },
-    new Set<number>()
-  )
 
   const addHeader = (c: Context) => {
     if (cacheControlDirectives) {
