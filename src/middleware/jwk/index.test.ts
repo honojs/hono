@@ -43,6 +43,59 @@ describe('JWK', () => {
     })
   })
 
+  describe('options.skip_if_no_token = true', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    app.use('/skip-auth-if-no-token/*', jwk({ keys: verify_keys, skip_if_no_token: true }))
+
+    app.get('/skip-auth-if-no-token/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload ?? { message: 'hello anon' })
+    })
+
+    it('Should skip JWK if no token is present', async () => {
+      const req = new Request('http://localhost/skip-auth-if-no-token/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello anon' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize if token is present', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/skip-auth-if-no-token/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not authorize if bad token is present', async () => {
+      const invalidToken =
+        'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+      const url = 'http://localhost/skip-auth-if-no-token/a'
+      const req = new Request(url)
+      req.headers.set('Authorization', `Basic ${invalidToken}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+  })
+
   describe('Credentials in header', () => {
     let handlerExecuted: boolean
 
@@ -78,7 +131,7 @@ describe('JWK', () => {
       '/auth-with-keys-and-jwks_uri/*',
       jwk({
         keys: verify_keys,
-        jwks_uri: 'http://localhost/.well-known/jwks.json',
+        jwks_uri: () => 'http://localhost/.well-known/jwks.json',
       })
     )
     app.use(

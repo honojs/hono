@@ -18,17 +18,17 @@ import type { HonoJsonWebKey } from '../../utils/jwt/jws'
  * @see {@link https://hono.dev/docs/middleware/builtin/jwk}
  *
  * @param {object} options - The options for the JWK middleware.
- * @param {HonoJsonWebKey[] | (() => Promise<HonoJsonWebKey[]>)} [options.keys] - The values of your public keys, or a function that returns them.
- * @param {string} [options.jwks_uri] - If this value is set, attempt to fetch JWKs from this URI, expecting a JSON response with `keys` which are added to the provided options.keys
- * @param {string} [options.cookie] - If this value is set, then the value is retrieved from the cookie header using that value as a key, which is then validated as a token.
- * @param {RequestInit} [init] - Optional initialization options for the `fetch` request when retrieving JWKS from a URI.
+ * @param {HonoJsonWebKey[] | ((ctx: Context) => Promise<HonoJsonWebKey[]> | HonoJsonWebKey[])} [options.keys] - The values of your public keys, or an async function that returns them.
+ * @param {string | ((ctx: Context) => Promise<string> | string)} [options.jwks_uri] - If set, attempt to fetch JWKs from this URI, expecting a JSON response with `keys` which are added to the provided options.keys
+ * @param {string} [options.cookie] - If set, the middleware retrieves the token from a cookie (optionally signed).
+ * @param {RequestInit} [init] - Optional init options for the `fetch` request when retrieving JWKS from a URI.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
  * ```ts
  * const app = new Hono()
  *
- * app.use("/auth/*", jwk({ jwks_uri: "https://example-backend.hono.dev/.well-known/jwks.json" }))
+ * app.use("/auth/*", jwk({ jwks_uri: (c) => `https://${c.env.backendServer}/.well-known/jwks.json` }))
  *
  * app.get('/auth/page', (c) => {
  *   return c.text('You are authorized')
@@ -38,11 +38,12 @@ import type { HonoJsonWebKey } from '../../utils/jwt/jws'
 
 export const jwk = (
   options: {
-    keys?: HonoJsonWebKey[] | (() => Promise<HonoJsonWebKey[]>)
-    jwks_uri?: string
+    keys?: HonoJsonWebKey[] | ((ctx: Context) => Promise<HonoJsonWebKey[]> | HonoJsonWebKey[])
+    jwks_uri?: string | ((ctx: Context) => Promise<string> | string)
     cookie?:
       | string
       | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
+    skip_if_no_token?: boolean
   },
   init?: RequestInit
 ): MiddlewareHandler => {
@@ -96,6 +97,9 @@ export const jwk = (
     }
 
     if (!token) {
+      if (options.skip_if_no_token) {
+        return next()
+      }
       const errDescription = 'no authorization included in request'
       throw new HTTPException(401, {
         message: errDescription,
@@ -110,7 +114,10 @@ export const jwk = (
     let payload
     let cause
     try {
-      payload = await Jwt.verifyFromJwks(token, options, init)
+      const keys = typeof options.keys === 'function' ? await options.keys(ctx) : options.keys
+      const jwks_uri =
+        typeof options.jwks_uri === 'function' ? await options.jwks_uri(ctx) : options.jwks_uri
+      payload = await Jwt.verifyFromJwks(token, { keys, jwks_uri }, init)
     } catch (e) {
       cause = e
     }
