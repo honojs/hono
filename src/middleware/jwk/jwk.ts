@@ -28,7 +28,7 @@ import type { HonoJsonWebKey } from '../../utils/jwt/jws'
  * ```ts
  * const app = new Hono()
  *
- * app.use("/auth/*", jwk({ jwks_uri: (c) => `https://${c.env.backendServer}/.well-known/jwks.json` }))
+ * app.use("/auth/*", jwk({ jwks_uri: (c) => `https://${c.env.authServer}/.well-known/jwks.json` }))
  *
  * app.get('/auth/page', (c) => {
  *   return c.text('You are authorized')
