@@ -18,9 +18,10 @@ import type { HonoJsonWebKey } from '../../utils/jwt/jws'
  * @see {@link https://hono.dev/docs/middleware/builtin/jwk}
  *
  * @param {object} options - The options for the JWK middleware.
- * @param {HonoJsonWebKey[] | ((ctx: Context) => Promise<HonoJsonWebKey[]> | HonoJsonWebKey[])} [options.keys] - The values of your public keys, or an async function that returns them.
- * @param {string | ((ctx: Context) => Promise<string> | string)} [options.jwks_uri] - If set, attempt to fetch JWKs from this URI, expecting a JSON response with `keys` which are added to the provided options.keys
- * @param {string} [options.cookie] - If set, the middleware retrieves the token from a cookie (optionally signed).
+ * @param {HonoJsonWebKey[] | ((ctx: Context) => Promise<HonoJsonWebKey[]> | HonoJsonWebKey[])} [options.keys] - The public keys used for JWK verification, or a function that returns them.
+ * @param {string | ((ctx: Context) => Promise<string> | string)} [options.jwks_uri] - If set to a URI string or a function that returns a URI string, attempt to fetch JWKs from it. The response must be a JSON object containing a `keys` array, which will be merged with the `keys` option.
+ * @param {boolean} [options.allow_anon] - If set to `true`, the middleware allows requests without a token to proceed without authentication.
+ * @param {string} [options.cookie] - If set, the middleware attempts to retrieve the token from a cookie with these options (optionally signed) only if no token is found in the header.
  * @param {RequestInit} [init] - Optional init options for the `fetch` request when retrieving JWKS from a URI.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
@@ -40,10 +41,10 @@ export const jwk = (
   options: {
     keys?: HonoJsonWebKey[] | ((ctx: Context) => Promise<HonoJsonWebKey[]> | HonoJsonWebKey[])
     jwks_uri?: string | ((ctx: Context) => Promise<string> | string)
+    allow_anon?: boolean
     cookie?:
       | string
       | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
-    skip_if_no_token?: boolean
   },
   init?: RequestInit
 ): MiddlewareHandler => {
@@ -97,7 +98,7 @@ export const jwk = (
     }
 
     if (!token) {
-      if (options.skip_if_no_token) {
+      if (options.allow_anon) {
         return next()
       }
       const errDescription = 'no authorization included in request'

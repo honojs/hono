@@ -43,7 +43,7 @@ describe('JWK', () => {
     })
   })
 
-  describe('options.skip_if_no_token = true', () => {
+  describe('options.allow_anon = true', () => {
     let handlerExecuted: boolean
 
     beforeEach(() => {
@@ -52,16 +52,16 @@ describe('JWK', () => {
 
     const app = new Hono()
 
-    app.use('/skip-auth-if-no-token/*', jwk({ keys: verify_keys, skip_if_no_token: true }))
+    app.use('/backend-auth-or-anon/*', jwk({ keys: verify_keys, allow_anon: true }))
 
-    app.get('/skip-auth-if-no-token/*', (c) => {
+    app.get('/backend-auth-or-anon/*', (c) => {
       handlerExecuted = true
       const payload = c.get('jwtPayload')
       return c.json(payload ?? { message: 'hello anon' })
     })
 
     it('Should skip JWK if no token is present', async () => {
-      const req = new Request('http://localhost/skip-auth-if-no-token/a')
+      const req = new Request('http://localhost/backend-auth-or-anon/a')
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
@@ -71,7 +71,7 @@ describe('JWK', () => {
 
     it('Should authorize if token is present', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
-      const req = new Request('http://localhost/skip-auth-if-no-token/a')
+      const req = new Request('http://localhost/backend-auth-or-anon/a')
       req.headers.set('Authorization', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
@@ -83,7 +83,7 @@ describe('JWK', () => {
     it('Should not authorize if bad token is present', async () => {
       const invalidToken =
         'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
-      const url = 'http://localhost/skip-auth-if-no-token/a'
+      const url = 'http://localhost/backend-auth-or-anon/a'
       const req = new Request(url)
       req.headers.set('Authorization', `Basic ${invalidToken}`)
       const res = await app.request(req)
