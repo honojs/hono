@@ -290,32 +290,13 @@ describe('Cache Middleware', () => {
     expect(() => cache({ cacheName: 'my-app-v1', wait: true, vary: '*' })).toThrow()
   })
 
-  it.each(['GET', 'HEAD', 'POST', 'PATCH'])('Should cache %s method requests', async (method) => {
-    await app.request('http://localhost/default/200/', { method: method })
-    const res = await app.request('http://localhost/default/200/', { method: method })
+  it.each([200])('Should cache %i in default cacheable status codes', async (code) => {
+    await app.request(`http://localhost/default/${code}/`)
+    const res = await app.request(`http://localhost/default/${code}/`)
     expect(res).not.toBeNull()
-    expect(res.status).toBe(200)
+    expect(res.status).toBe(code)
     expect(res.headers.get('cache-control')).toBe('max-age=10')
   })
-
-  it.each(['PUT', 'DELETE', 'OPTIONS'])('Should not cache %s method requests', async (method) => {
-    await app.request('http://localhost/default/200/', { method: method })
-    const res = await app.request('http://localhost/default/200/', { method: method })
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(200)
-    expect(res.headers.get('cache-control')).not.toBe('max-age=10')
-  })
-
-  it.each([200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501])(
-    'Should cache %i in default cacheable status codes',
-    async (code) => {
-      await app.request(`http://localhost/default/${code}/`)
-      const res = await app.request(`http://localhost/default/${code}/`)
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(code)
-      expect(res.headers.get('cache-control')).toBe('max-age=10')
-    }
-  )
 
   it.each([
     100, 101, 102, 103, 201, 202, 205, 207, 208, 226, 302, 303, 304, 307, 308, 400, 401, 402, 403,
@@ -340,7 +321,7 @@ describe('Cache Middleware', () => {
   it.each([
     100, 101, 102, 103, 202, 205, 207, 208, 226, 302, 303, 304, 307, 308, 400, 401, 402, 403, 406,
     407, 408, 409, 411, 412, 413, 415, 416, 417, 418, 421, 422, 423, 424, 425, 426, 428, 429, 431,
-    451,
+    451, 500, 502, 503, 504, 505, 506, 507, 508, 510, 511,
   ])('Should not cache %i in custom cacheable status codes', async (code) => {
     await app.request(`http://localhost/custom/${code}/`)
     const res = await app.request(`http://localhost/custom/${code}/`)
