@@ -12,7 +12,7 @@ export interface BunServerWebSocket<T> {
   readyState: 0 | 1 | 2 | 3
 }
 
-interface BunWebSocketHandler<T> {
+export interface BunWebSocketHandler<T> {
   open(ws: BunServerWebSocket<T>): void
   close(ws: BunServerWebSocket<T>, code?: number, reason?: string): void
   message(ws: BunServerWebSocket<T>, message: string | { buffer: ArrayBufferLike }): void
