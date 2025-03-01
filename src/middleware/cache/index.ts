@@ -22,7 +22,7 @@ const defaultCacheableStatusCodes: ReadonlyArray<number> = [200]
  * @param {string} [options.cacheControl] - A string of directives for the `Cache-Control` header.
  * @param {string | string[]} [options.vary] - Sets the `Vary` header in the response. If the original response header already contains a `Vary` header, the values are merged, removing any duplicates.
  * @param {Function} [options.keyGenerator] - Generates keys for every request in the `cacheName` store. This can be used to cache data based on request parameters or context parameters.
- * @param {number[]} [options.cacheableStatusCodes=[200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501]] - An array of status codes that can be cached.
+ * @param {number[]} [options.cacheableStatusCodes=[200]] - An array of status codes that can be cached.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If the `vary` option includes "*".
  *
