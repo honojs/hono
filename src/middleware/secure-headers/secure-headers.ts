@@ -8,7 +8,7 @@ import type { MiddlewareHandler } from '../../types'
 import { encodeBase64 } from '../../utils/encode'
 import type { PermissionsPolicyDirective } from './permissions-policy'
 
-export type SecureHeadersVariables = {
+export interface SecureHeadersVariables {
   secureHeadersNonce?: string
 }
 
