@@ -236,47 +236,47 @@ describe('createHandler', () => {
       { Variables: { foo1: string } },
       string,
       { out: { query: { bar1: number } } }
-    >(async () => {})
+    >(async () => { })
     const mw2 = createMiddleware<
       { Variables: { foo2: string } },
       string,
       { out: { query: { bar2: number } } }
-    >(async () => {})
+    >(async () => { })
     const mw3 = createMiddleware<
       { Variables: { foo3: string } },
       string,
       { out: { query: { bar3: number } } }
-    >(async () => {})
+    >(async () => { })
     const mw4 = createMiddleware<
       { Variables: { foo4: string } },
       string,
       { out: { query: { bar4: number } } }
-    >(async () => {})
+    >(async () => { })
     const mw5 = createMiddleware<
       { Variables: { foo5: string } },
       string,
       { out: { query: { bar5: number } } }
-    >(async () => {})
+    >(async () => { })
     const mw6 = createMiddleware<
       { Variables: { foo6: string } },
       string,
       { out: { query: { bar6: number } } }
-    >(async () => {})
+    >(async () => { })
     const mw7 = createMiddleware<
       { Variables: { foo7: string } },
       string,
       { out: { query: { bar7: number } } }
-    >(async () => {})
+    >(async () => { })
     const mw8 = createMiddleware<
       { Variables: { foo8: string } },
       string,
       { out: { query: { bar8: number } } }
-    >(async () => {})
+    >(async () => { })
     const mw9 = createMiddleware<
       { Variables: { foo9: string } },
       string,
       { out: { query: { bar9: number } } }
-    >(async () => {})
+    >(async () => { })
 
     it('Should not throw type error', () => {
       factory.createHandlers(
@@ -372,6 +372,15 @@ describe('createFactory', () => {
     const app = createFactory({ defaultAppOptions: { strict: false } }).createApp()
     app.get('/hello', (c) => c.text('hello'))
     const res = await app.request('/hello/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello')
+  })
+  it('Should use the default app options for a second app as well', async () => {
+    const factory = createFactory({ defaultAppOptions: { strict: false } })
+    const firstApp = factory.createApp()
+    const secondApp = factory.createApp()
+    secondApp.get('/hello', (c) => c.text('hello'))
+    const res = await secondApp.request('/hello/')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello')
   })

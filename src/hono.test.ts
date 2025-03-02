@@ -3594,3 +3594,11 @@ describe('Generics for Bindings and Variables', () => {
     })
   })
 })
+
+it('Should not modify the options passed to it',()=>{
+  const options = {strict:true}
+  const clone = structuredClone(options)
+  const app = new Hono(clone)
+  
+  expect(clone).toEqual(options)
+})

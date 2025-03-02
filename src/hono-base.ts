@@ -162,10 +162,9 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
       return this as any
     }
 
-    const strict = options.strict ?? true
-    delete options.strict
-    Object.assign(this, options)
-    this.getPath = strict ? options.getPath ?? getPath : getPathNoStrict
+    const { strict, ...optionsWithoutStrict } = options
+    Object.assign(this, optionsWithoutStrict)
+    this.getPath = options.strict ?? true? options.getPath ?? getPath : getPathNoStrict
   }
 
   #clone(): Hono<E, S, BasePath> {
