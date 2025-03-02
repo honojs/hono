@@ -383,6 +383,16 @@ describe('createFactory', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('hello')
   })
+
+  it('Should apply the default app options after calling createApp', async () => {
+    const factory = createFactory({ defaultAppOptions: { strict: false } })
+    factory.createApp() // Call once
+    const secondApp = factory.createApp()
+    secondApp.get('/hello', (c) => c.text('hello'))
+    const res = await secondApp.request('/hello/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello')
+  })
 })
 
 describe('Lint rules', () => {
