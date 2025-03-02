@@ -294,10 +294,11 @@ export class Factory<E extends Env = Env, P extends string = string> {
   }
 
   createApp = (options?: HonoOptions<E>): Hono<E> => {
+    const defaultAppOptions = { ...this.#defaultAppOptions }
     const app = new Hono<E>(
       options && this.#defaultAppOptions
-        ? { ...this.#defaultAppOptions, ...options }
-        : options ?? this.#defaultAppOptions
+        ? { ...defaultAppOptions, ...options }
+        : options ?? defaultAppOptions
     )
     if (this.initApp) {
       this.initApp(app)
