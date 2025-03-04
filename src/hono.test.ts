@@ -305,89 +305,98 @@ describe('Register handlers without a path', () => {
   })
 })
 
-describe('router option', () => {
-  it('Should be SmartRouter', () => {
-    const app = new Hono()
-    expect(app.router instanceof SmartRouter).toBe(true)
-  })
-  it('Should be RegExpRouter', () => {
-    const app = new Hono({
-      router: new RegExpRouter(),
+describe('Options', () => {
+  describe('router option', () => {
+    it('Should be SmartRouter', () => {
+      const app = new Hono()
+      expect(app.router instanceof SmartRouter).toBe(true)
     })
-    expect(app.router instanceof RegExpRouter).toBe(true)
-  })
-})
-
-describe('strict parameter', () => {
-  describe('strict is true with not slash', () => {
-    const app = new Hono()
-
-    app.get('/hello', (c) => {
-      return c.text('/hello')
-    })
-
-    it('/hello/ is not found', async () => {
-      let res = await app.request('http://localhost/hello')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-      res = await app.request('http://localhost/hello/')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(404)
+    it('Should be RegExpRouter', () => {
+      const app = new Hono({
+        router: new RegExpRouter(),
+      })
+      expect(app.router instanceof RegExpRouter).toBe(true)
     })
   })
 
-  describe('strict is true with slash', () => {
-    const app = new Hono()
+  describe('strict parameter', () => {
+    describe('strict is true with not slash', () => {
+      const app = new Hono()
 
-    app.get('/hello/', (c) => {
-      return c.text('/hello/')
+      app.get('/hello', (c) => {
+        return c.text('/hello')
+      })
+
+      it('/hello/ is not found', async () => {
+        let res = await app.request('http://localhost/hello')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        res = await app.request('http://localhost/hello/')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(404)
+      })
     })
 
-    it('/hello is not found', async () => {
-      let res = await app.request('http://localhost/hello/')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-      res = await app.request('http://localhost/hello')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(404)
+    describe('strict is true with slash', () => {
+      const app = new Hono()
+
+      app.get('/hello/', (c) => {
+        return c.text('/hello/')
+      })
+
+      it('/hello is not found', async () => {
+        let res = await app.request('http://localhost/hello/')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        res = await app.request('http://localhost/hello')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(404)
+      })
+    })
+
+    describe('strict is false', () => {
+      const app = new Hono({ strict: false })
+
+      app.get('/hello', (c) => {
+        return c.text('/hello')
+      })
+
+      it('/hello and /hello/ are treated as the same', async () => {
+        let res = await app.request('http://localhost/hello')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        res = await app.request('http://localhost/hello/')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+      })
+    })
+
+    describe('strict is false with `getPath` option', () => {
+      const app = new Hono({
+        strict: false,
+        getPath: getPath,
+      })
+
+      app.get('/hello', (c) => {
+        return c.text('/hello')
+      })
+
+      it('/hello and /hello/ are treated as the same', async () => {
+        let res = await app.request('http://localhost/hello')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        res = await app.request('http://localhost/hello/')
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+      })
     })
   })
 
-  describe('strict is false', () => {
-    const app = new Hono({ strict: false })
-
-    app.get('/hello', (c) => {
-      return c.text('/hello')
-    })
-
-    it('/hello and /hello/ are treated as the same', async () => {
-      let res = await app.request('http://localhost/hello')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-      res = await app.request('http://localhost/hello/')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-    })
-  })
-
-  describe('strict is false with `getPath` option', () => {
-    const app = new Hono({
-      strict: false,
-      getPath: getPath,
-    })
-
-    app.get('/hello', (c) => {
-      return c.text('/hello')
-    })
-
-    it('/hello and /hello/ are treated as the same', async () => {
-      let res = await app.request('http://localhost/hello')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-      res = await app.request('http://localhost/hello/')
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-    })
+  it('Should not modify the options passed to it', () => {
+    const options = { strict: true }
+    const clone = structuredClone(options)
+    const app = new Hono(clone)
+    expect(clone).toEqual(options)
   })
 })
 
