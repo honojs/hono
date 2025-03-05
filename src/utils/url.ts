@@ -166,7 +166,7 @@ export const checkOptionalParameter = (path: string): string[] | null => {
    in other cases it will return null
   */
 
-  if (!path.match(/\:.+\?$/)) {
+  if (path.charCodeAt(path.length - 1) !== 63 || !path.includes(':')) {
     return null
   }
 
