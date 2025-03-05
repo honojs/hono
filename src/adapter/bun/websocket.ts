@@ -6,7 +6,7 @@ import { getBunServer } from './server'
  * @internal
  */
 export interface BunServerWebSocket<T> {
-  send(data: string | ArrayBufferLike, compress?: boolean): void
+  send(data: string | ArrayBuffer | Uint8Array, compress?: boolean): void
   close(code?: number, reason?: string): void
   data: T
   readyState: 0 | 1 | 2 | 3
