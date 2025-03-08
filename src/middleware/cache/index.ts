@@ -5,11 +5,12 @@
 
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
+import type { StatusCode } from '../../utils/http-status'
 
 /**
  * status codes that can be cached by default.
  */
-const defaultCacheableStatusCodes: ReadonlyArray<number> = [200]
+const defaultCacheableStatusCodes: ReadonlyArray<StatusCode> = [200]
 
 /**
  * Cache Middleware for Hono.
@@ -43,7 +44,7 @@ export const cache = (options: {
   cacheControl?: string
   vary?: string | string[]
   keyGenerator?: (c: Context) => Promise<string> | string
-  cacheableStatusCodes?: number[]
+  cacheableStatusCodes?: StatusCode[]
 }): MiddlewareHandler => {
   if (!globalThis.caches) {
     console.log('Cache Middleware is not enabled because caches is not defined.')
@@ -68,7 +69,9 @@ export const cache = (options: {
     )
   }
 
-  const cacheableStatusCodes = new Set(options.cacheableStatusCodes ?? defaultCacheableStatusCodes)
+  const cacheableStatusCodes = new Set<number>(
+    options.cacheableStatusCodes ?? defaultCacheableStatusCodes
+  )
 
   const addHeader = (c: Context) => {
     if (cacheControlDirectives) {
