@@ -74,6 +74,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   /**
    * `.req.param()` gets the path parameters.
+   * `.req.rawParam()` gets the raw (encoded) path parameters.
    *
    * @see {@link https://hono.dev/docs/api/routing#path-parameter}
    *
@@ -82,6 +83,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * const name = c.req.param('name')
    * // or all parameters at once
    * const { id, comment_id } = c.req.param()
+   * 
+   * const rawKey = c.req.rawParam('key') // Encoded
    * ```
    */
   param<P2 extends ParamKeys<P> = ParamKeys<P>>(key: P2 extends `${infer _}?` ? never : P2): string
@@ -94,10 +97,20 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     return key ? this.#getDecodedParam(key) : this.#getAllDecodedParams()
   }
 
+  rawParam(key: string): unknown {
+    return this.#getRawParam(key)
+  }
+
   #getDecodedParam(key: string): string | undefined {
     const paramKey = this.#matchResult[0][this.routeIndex][1][key]
     const param = this.#getParamValue(paramKey)
     return param ? (/\%/.test(param) ? tryDecodeURIComponent(param) : param) : undefined
+  }
+
+  #getRawParam(key: string): string | undefined {
+    const rawParamKey = this.#matchResult[0][this.routeIndex][1][key]
+    const rawParam = this.#getParamValue(rawParamKey)
+    return rawParam ? rawParam : undefined
   }
 
   #getAllDecodedParams(): Record<string, string> {
