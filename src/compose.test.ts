@@ -740,10 +740,10 @@ describe('Compose', function () {
     ctx.set('middleware', 0)
     ctx.set('next', 0)
 
-    await compose(middleware)(ctx, (ctx: Context, next: Next) => {
+    await compose(middleware)(ctx, ((ctx: Context, next: Next) => {
       ctx.set('next', ctx.get('next') + 1)
       return next()
-    })
+    }) as Next)
 
     expect(ctx.get('middleware')).toEqual(1)
     expect(ctx.get('next')).toEqual(1)
