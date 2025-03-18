@@ -46,28 +46,35 @@ export const compose = <E extends Env = Env>(
         handler = (i === middleware.length && next) || undefined
       }
 
-      if (handler) {
-        try {
-          res = await handler(context, () => dispatch(i + 1))
-        } catch (err) {
-          if (err instanceof Error && onError) {
-            context.error = err
-            res = await onError(err, context)
-            isError = true
-          } else {
-            throw err
+      for (;;) {
+        if (handler) {
+          try {
+            res = await handler(context, () => dispatch(i + 1))
+          } catch (err) {
+            if (err instanceof Error && onError) {
+              context.error = err
+              res = await onError(err, context)
+              isError = true
+            } else {
+              throw err
+            }
+          }
+
+          if (typeof res === 'function') {
+            handler = res
+            continue
+          }
+        } else {
+          if (context.finalized === false && onNotFound) {
+            res = await onNotFound(context)
           }
         }
-      } else {
-        if (context.finalized === false && onNotFound) {
-          res = await onNotFound(context)
-        }
-      }
 
-      if (res && (context.finalized === false || isError)) {
-        context.res = res
+        if (res && (context.finalized === false || isError)) {
+          context.res = res
+        }
+        return context
       }
-      return context
     }
   }
 }
