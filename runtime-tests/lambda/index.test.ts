@@ -249,6 +249,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('Hello Lambda!')
     expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.multiValueHeaders).toBeUndefined()
     expect(response.isBase64Encoded).toBe(false)
   })
 
@@ -268,6 +269,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('RmFrZSBJbWFnZQ==')
     expect(response.headers['content-type']).toMatch(/^image\/png/)
+    expect(response.multiValueHeaders).toBeUndefined()
     expect(response.isBase64Encoded).toBe(true)
   })
 
@@ -289,6 +291,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('Hello Lambda!')
     expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.multiValueHeaders).toBeUndefined()
     expect(response.isBase64Encoded).toBe(false)
   })
 
@@ -309,6 +312,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('Hello Lambda!')
     expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.multiValueHeaders).toBeUndefined()
     expect(response.isBase64Encoded).toBe(false)
   })
 
@@ -540,6 +544,7 @@ describe('AWS Lambda Adapter for Hono', () => {
             'content-type': 'application/json',
           })
         )
+        expect(albResponse.multiValueHeaders).toBeUndefined()
       })
 
       it('Should extract single-value headers and return 200 (APIGatewayProxyEvent)', async () => {
@@ -687,6 +692,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(albResponse.statusCode).toBe(200)
     expect(albResponse.body).toBe('Valid Cookies')
     expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(albResponse.multiValueHeaders).toBeUndefined()
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -709,7 +715,10 @@ describe('AWS Lambda Adapter for Hono', () => {
 
     expect(albResponse.statusCode).toBe(200)
     expect(albResponse.body).toBe('Valid Cookies')
-    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(albResponse.headers).toBeUndefined()
+    expect(albResponse.multiValueHeaders['content-type']).toEqual([
+      expect.stringMatching(/^text\/plain/),
+    ])
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -759,9 +768,8 @@ describe('AWS Lambda Adapter for Hono', () => {
 
     expect(albResponse.statusCode).toBe(200)
     expect(albResponse.body).toBe('Cookies Set')
-    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
-    expect(albResponse.multiValueHeaders).toBeDefined()
-    expect(albResponse.multiValueHeaders && albResponse.multiValueHeaders['set-cookie']).toEqual(
+    expect(albResponse.headers).toBeUndefined()
+    expect(albResponse.multiValueHeaders['set-cookie']).toEqual(
       expect.arrayContaining([testCookie1.serialized, testCookie2.serialized])
     )
     expect(albResponse.isBase64Encoded).toBe(false)
@@ -794,6 +802,7 @@ describe('AWS Lambda Adapter for Hono', () => {
       })
     )
     expect(albResponse.headers['content-type']).toMatch(/^application\/json/)
+    expect(albResponse.multiValueHeaders).toBeUndefined()
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -823,7 +832,10 @@ describe('AWS Lambda Adapter for Hono', () => {
         key2: 'value2',
       })
     )
-    expect(albResponse.headers['content-type']).toMatch(/^application\/json/)
+    expect(albResponse.headers).toBeUndefined()
+    expect(albResponse.multiValueHeaders['content-type']).toEqual([
+      expect.stringMatching(/^application\/json/),
+    ])
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -853,7 +865,10 @@ describe('AWS Lambda Adapter for Hono', () => {
         key2: ['value2', 'otherValue2'],
       })
     )
-    expect(albResponse.headers['content-type']).toMatch(/^application\/json/)
+    expect(albResponse.headers).toBeUndefined()
+    expect(albResponse.multiValueHeaders['content-type']).toEqual([
+      expect.stringMatching(/^application\/json/),
+    ])
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 })
