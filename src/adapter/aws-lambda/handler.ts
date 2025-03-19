@@ -70,17 +70,22 @@ export interface ALBProxyEvent {
   requestContext: ALBRequestContext
 }
 
-export interface APIGatewayProxyResult {
+type WithHeaders = {
+  headers: Record<string, string>
+  multiValueHeaders?: undefined
+}
+type WithMultiValueHeaders = {
+  headers?: undefined
+  multiValueHeaders: Record<string, string[]>
+}
+
+export type APIGatewayProxyResult = {
   statusCode: number
   statusDescription?: string
   body: string
-  headers: Record<string, string>
   cookies?: string[]
-  multiValueHeaders?: {
-    [headerKey: string]: string[]
-  }
   isBase64Encoded: boolean
-}
+} & (WithHeaders | WithMultiValueHeaders)
 
 const getRequestContext = (
   event: LambdaEvent
@@ -162,7 +167,16 @@ export const streamHandle = <
  */
 export const handle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
   app: Hono<E, S, BasePath>
-): ((event: LambdaEvent, lambdaContext?: LambdaContext) => Promise<APIGatewayProxyResult>) => {
+): (<L extends LambdaEvent>(
+  event: L,
+  lambdaContext?: LambdaContext
+) => Promise<
+  APIGatewayProxyResult &
+    (L extends { multiValueHeaders: Record<string, string[]> }
+      ? WithMultiValueHeaders
+      : WithHeaders)
+>) => {
+  // @ts-expect-error FIXME: Fix return typing
   return async (event, lambdaContext?) => {
     const processor = getProcessor(event)
 
@@ -190,11 +204,7 @@ export abstract class EventProcessor<E extends LambdaEvent> {
 
   protected abstract getCookies(event: E, headers: Headers): void
 
-  protected abstract setCookiesToResult(
-    event: E,
-    result: APIGatewayProxyResult,
-    cookies: string[]
-  ): void
+  protected abstract setCookiesToResult(result: APIGatewayProxyResult, cookies: string[]): void
 
   createRequest(event: E): Request {
     const queryString = this.getQueryString(event)
@@ -234,19 +244,27 @@ export abstract class EventProcessor<E extends LambdaEvent> {
 
     const result: APIGatewayProxyResult = {
       body: body,
-      headers: {},
-      multiValueHeaders: event.multiValueHeaders ? {} : undefined,
       statusCode: res.status,
       isBase64Encoded,
+      ...(event.multiValueHeaders
+        ? {
+            multiValueHeaders: {},
+          }
+        : {
+            headers: {},
+          }),
     }
 
     this.setCookies(event, res, result)
-    res.headers.forEach((value, key) => {
-      result.headers[key] = value
-      if (event.multiValueHeaders && result.multiValueHeaders) {
+    if (result.multiValueHeaders) {
+      res.headers.forEach((value, key) => {
         result.multiValueHeaders[key] = [value]
-      }
-    })
+      })
+    } else {
+      res.headers.forEach((value, key) => {
+        result.headers[key] = value
+      })
+    }
 
     return result
   }
@@ -260,7 +278,7 @@ export abstract class EventProcessor<E extends LambdaEvent> {
             .map(([, v]) => v)
 
       if (Array.isArray(cookies)) {
-        this.setCookiesToResult(event, result, cookies)
+        this.setCookiesToResult(result, cookies)
         res.headers.delete('set-cookie')
       }
     }
@@ -286,11 +304,7 @@ export class EventV2Processor extends EventProcessor<APIGatewayProxyEventV2> {
     }
   }
 
-  protected setCookiesToResult(
-    _: APIGatewayProxyEventV2,
-    result: APIGatewayProxyResult,
-    cookies: string[]
-  ): void {
+  protected setCookiesToResult(result: APIGatewayProxyResult, cookies: string[]): void {
     result.cookies = cookies
   }
 
@@ -365,11 +379,7 @@ export class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGat
     return headers
   }
 
-  protected setCookiesToResult(
-    _: APIGatewayProxyEvent,
-    result: APIGatewayProxyResult,
-    cookies: string[]
-  ): void {
+  protected setCookiesToResult(result: APIGatewayProxyResult, cookies: string[]): void {
     result.multiValueHeaders = {
       'set-cookie': cookies,
     }
@@ -446,13 +456,9 @@ export class ALBProcessor extends EventProcessor<ALBProxyEvent> {
     }
   }
 
-  protected setCookiesToResult(
-    event: ALBProxyEvent,
-    result: APIGatewayProxyResult,
-    cookies: string[]
-  ): void {
+  protected setCookiesToResult(result: APIGatewayProxyResult, cookies: string[]): void {
     // when multi value headers is enabled
-    if (event.multiValueHeaders && result.multiValueHeaders) {
+    if (result.multiValueHeaders) {
       result.multiValueHeaders['set-cookie'] = cookies
     } else {
       // otherwise serialize the set-cookie
