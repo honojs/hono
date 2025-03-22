@@ -60,6 +60,7 @@ const _baseMimes = {
   mid: 'audio/x-midi',
   midi: 'audio/x-midi',
   mjs: 'text/javascript',
+  mov: 'video/quicktime',
   mp3: 'audio/mpeg',
   mp4: 'video/mp4',
   mpeg: 'video/mpeg',
