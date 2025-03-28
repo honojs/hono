@@ -191,6 +191,9 @@ export const hc = <T extends Hono<any, any, any>>(
         return new WebSocket(...args)
       }
 
+      // Header: Sec-WebSocket-Protocol
+      // TODO@abegehr
+
       return establishWebSocket(targetUrl.toString())
     }
 
