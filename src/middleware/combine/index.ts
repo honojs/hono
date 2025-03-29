@@ -152,7 +152,7 @@ export const except = (
         return condition
       }
     })
-    .filter(Boolean) as Condition[]
+    .filter((condition) => !!condition) as Condition[]
 
   if (router) {
     conditions.unshift((c: Context) => !!router?.match(METHOD_NAME_ALL, c.req.path)?.[0]?.[0]?.[0])
