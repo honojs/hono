@@ -24,6 +24,7 @@ function createEventContext(
     next: vi.fn(),
     params: {},
     passThroughOnException: vi.fn(),
+    props: {},
     request: new Request('http://localhost/api/foo'),
     waitUntil: vi.fn(),
     ...context,
@@ -39,6 +40,7 @@ describe('Adapter for Cloudflare Pages', () => {
     }
     const waitUntil = vi.fn()
     const passThroughOnException = vi.fn()
+    const props = {}
     const eventContext = createEventContext({
       request,
       env,
@@ -55,7 +57,7 @@ describe('Adapter for Cloudflare Pages', () => {
     expect(appFetchSpy).toHaveBeenCalledWith(
       request,
       { ...env, eventContext },
-      { waitUntil, passThroughOnException }
+      { waitUntil, passThroughOnException, props }
     )
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
