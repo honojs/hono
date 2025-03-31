@@ -47,7 +47,7 @@ describe('parseAccept Comprehensive Tests', () => {
       expect(result[0].params).toEqual({
         a: '1',
         b: '"2"',
-         
+
         c: "'3'",
         d: '"semi;colon"',
         e: '"nested"quoted""',
