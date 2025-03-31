@@ -1,4 +1,4 @@
-/* eslint-disable quotes */
+ 
 import type {
   Callback,
   CloudFrontConfig,

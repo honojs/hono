@@ -27,7 +27,7 @@ const splitRule = (rule: string): string[] => {
     const char = rule[i]
 
     // consume quote
-    // eslint-disable-next-line quotes
+     
     if (char === "'" || char === '"') {
       const quote = char
       i++

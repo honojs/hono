@@ -49,7 +49,7 @@ type BasicAuthOptions =
  *   '/auth/*',
  *   basicAuth({
  *     username: 'hono',
- *     password: 'acoolproject',
+ *     password: 'ahotproject',
  *   })
  * )
  *

@@ -68,7 +68,7 @@ function initializeGenerator(
  *
  * app.use('/etag/*', etag())
  * app.get('/etag/abc', (c) => {
- *   return c.text('Hono is cool')
+ *   return c.text('Hono is hot')
  * })
  * ```
  */

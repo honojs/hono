@@ -575,7 +575,7 @@ export class Context<
    * @example
    * ```ts
    * app.use('*', async (c, next) => {
-   *   c.set('message', 'Hono is cool!!')
+   *   c.set('message', 'Hono is hot!!')
    *   await next()
    * })
    * ```

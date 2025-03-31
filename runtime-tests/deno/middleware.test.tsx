@@ -13,7 +13,7 @@ Deno.test('Basic Auth Middleware', async () => {
   const app = new Hono()
 
   const username = 'hono'
-  const password = 'acoolproject'
+  const password = 'ahotproject'
 
   app.use(
     '/auth/*',
