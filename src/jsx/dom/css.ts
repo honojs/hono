@@ -44,7 +44,7 @@ const splitRule = (rule: string): string[] => {
     }
 
     // comments are removed from the rule in advance
-
+    // eslint-disable-next-line quotes
     if (char === '{') {
       depth++
       continue
