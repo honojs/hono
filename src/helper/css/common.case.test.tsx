@@ -1,4 +1,3 @@
- 
 /** @jsxImportSource ../../jsx */
 import type {
   Style as StyleComponent,
