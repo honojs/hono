@@ -60,7 +60,7 @@ type BearerAuthOptions =
  * ```ts
  * const app = new Hono()
  *
- * const token = 'honoiscool'
+ * const token = 'honoishot'
  *
  * app.use('/api/*', bearerAuth({ token }))
  *

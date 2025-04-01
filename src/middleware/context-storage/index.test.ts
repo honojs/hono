@@ -12,7 +12,7 @@ describe('Context Storage Middleware', () => {
 
   app.use(contextStorage())
   app.use(async (c, next) => {
-    c.set('message', 'Hono is cool!!')
+    c.set('message', 'Hono is hot!!')
     await next()
   })
   app.get('/', (c) => {
@@ -25,6 +25,6 @@ describe('Context Storage Middleware', () => {
 
   it('Should get context', async () => {
     const res = await app.request('/')
-    expect(await res.text()).toBe('Hono is cool!!')
+    expect(await res.text()).toBe('Hono is hot!!')
   })
 })
