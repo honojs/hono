@@ -1,4 +1,3 @@
-/* eslint-disable quotes */
 /** @jsxImportSource ../../jsx */
 import type {
   Style as StyleComponent,

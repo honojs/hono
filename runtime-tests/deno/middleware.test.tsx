@@ -13,7 +13,7 @@ Deno.test('Basic Auth Middleware', async () => {
   const app = new Hono()
 
   const username = 'hono'
-  const password = 'acoolproject'
+  const password = 'ahotproject'
 
   app.use(
     '/auth/*',
@@ -29,7 +29,7 @@ Deno.test('Basic Auth Middleware', async () => {
   assertEquals(res.status, 401)
   assertEquals(await res.text(), 'Unauthorized')
 
-  const credential = 'aG9ubzphY29vbHByb2plY3Q='
+  const credential = 'aG9ubzphaG90cHJvamVjdA=='
 
   const req = new Request('http://localhost/auth/a')
   req.headers.set('Authorization', `Basic ${credential}`)
