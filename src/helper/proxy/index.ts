@@ -128,7 +128,9 @@ export const proxy: ProxyFetch = async (input, proxyInit) => {
     // Content-Length is the size of the compressed content, not the size of the original content
     resHeaders.delete('content-length')
   }
-
+  // Enforce 204 has no body
+  const body = res.status === 204 ? null : res.body;
+  
   return new Response(res.body, {
     status: res.status,
     statusText: res.statusText,
