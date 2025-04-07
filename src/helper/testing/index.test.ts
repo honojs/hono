@@ -17,6 +17,16 @@ describe('hono testClient', () => {
     expect(await res.json()).toEqual({ hello: 'world' })
   })
 
+  it('Should use the passed in headers', async () => {
+    const app = new Hono().get('/search', (c) => {
+      return c.json({ query: c.req.header('x-query') })
+    })
+    const res = await testClient(app, undefined, undefined, {
+      headers: { 'x-query': 'abc' },
+    }).search.$get()
+    expect(await res.json()).toEqual({ query: 'abc' })
+  })
+
   it('Should return a correct URL with out throwing an error', async () => {
     const app = new Hono().get('/abc', (c) => c.json(0))
     const url = testClient(app).abc.$url()
