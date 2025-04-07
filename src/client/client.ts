@@ -125,28 +125,29 @@ export const hc = <T extends Hono<any, any, any>>(
 ) =>
   createProxy(function proxyCallback(opts) {
     const parts = [...opts.path]
+    const lastParts = parts.slice(-3).reverse()
 
     // allow calling .toString() and .valueOf() on the proxy
-    if (parts.at(-1) === 'toString') {
-      if (parts.at(-2) === 'name') {
+    if (lastParts[0] === 'toString') {
+      if (lastParts[1] === 'name') {
         // e.g. hc().somePath.name.toString() -> "somePath"
-        return parts.at(-3) || ''
+        return lastParts[2] || ''
       }
       // e.g. hc().somePath.toString()
       return proxyCallback.toString()
     }
 
-    if (parts.at(-1) === 'valueOf') {
-      if (parts.at(-2) === 'name') {
+    if (lastParts[0] === 'valueOf') {
+      if (lastParts[1] === 'name') {
         // e.g. hc().somePath.name.valueOf() -> "somePath"
-        return parts.at(-3) || ''
+        return lastParts[2] || ''
       }
       // e.g. hc().somePath.valueOf()
       return proxyCallback
     }
 
     let method = ''
-    if (/^\$/.test(parts.at(-1) as string)) {
+    if (/^\$/.test(lastParts[0] as string)) {
       const last = parts.pop()
       if (last) {
         method = last.replace(/^\$/, '')
