@@ -17,7 +17,7 @@ export const testClient = <T extends Hono<any, Schema, string>>(
   app: T,
   Env?: ExtractEnv<T>['Bindings'] | {},
   executionCtx?: ExecutionContext,
-  options?: Omit<ClientRequestOptions, "fetch">
+  options?: Omit<ClientRequestOptions, 'fetch'>
 ): UnionToIntersection<Client<T>> => {
   const customFetch = (input: RequestInfo | URL, init?: RequestInit) => {
     return app.request(input, init, Env, executionCtx)
