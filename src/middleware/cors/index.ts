@@ -126,7 +126,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       }
 
       const allowMethods = findAllowMethods(c.req.header('origin') || '', c)
-      if (allowMethods?.length) {
+      if (allowMethods.length) {
         set('Access-Control-Allow-Methods', allowMethods.join(','))
       }
 
