@@ -206,7 +206,6 @@ describe('Context', () => {
     c.status(202)
     expect(c.res.headers.get('X-Custom4')).toBe('Message4')
     expect(c.res.status).toBe(201)
-
     expect(await res.text()).toBe('this is body')
   })
 
