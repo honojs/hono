@@ -5,7 +5,7 @@ import type { Env, MiddlewareHandler, TypedResponse, ValidationTargets } from '.
 import type { BodyData } from '../utils/body'
 import { bufferToFormData } from '../utils/buffer'
 
-type ValidationTargetKeysWithBody = 'form' | 'json'
+type ValidationTargetKeysWithBody = 'form' | 'json' | 'formdot'
 type ValidationTargetByMethod<M> = M extends 'get' | 'head' // GET and HEAD request must not have a body content.
   ? Exclude<keyof ValidationTargets, ValidationTargetKeysWithBody>
   : keyof ValidationTargets
@@ -81,6 +81,22 @@ export const validator = <
           throw new HTTPException(400, { message })
         }
         break
+      case 'formdot': {
+        if (
+          !contentType ||
+          !(multipartRegex.test(contentType) || urlencodedRegex.test(contentType))
+        ) {
+          break
+        }
+        try {
+          value = await c.req.parseBody({ dot: true, all: true })
+        } catch (e) {
+          let message = 'Malformed FormData request.'
+          message += e instanceof Error ? ` ${e.message}` : ` ${String(e)}`
+          throw new HTTPException(400, { message })
+        }
+        break
+      }
       case 'form': {
         if (
           !contentType ||

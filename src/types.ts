@@ -7,6 +7,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Context } from './context'
 import type { HonoBase } from './hono-base'
+import type { BodyData } from './utils/body'
 import type { CustomHeader, RequestHeader } from './utils/headers'
 import type { StatusCode } from './utils/http-status'
 import type {
@@ -1930,6 +1931,7 @@ export type ParsedFormValue = string | File
 export type ValidationTargets<T extends FormValue = ParsedFormValue, P extends string = string> = {
   json: any
   form: Record<string, T | T[]>
+  formdot: BodyData<{ dot: true; all: true }>
   query: Record<string, string | string[]>
   param: Record<P, P extends `${infer _}?` ? string | undefined : string>
   header: Record<RequestHeader | CustomHeader, string>

@@ -293,7 +293,7 @@ describe('FormData', () => {
   })
 })
 
-describe('Malformed FormData request', () => {
+describe('form - Malformed FormData request', () => {
   const app = new Hono()
   app.post(
     '/post',
@@ -316,6 +316,140 @@ describe('Malformed FormData request', () => {
     const data = await res.json()
     expect(data['success']).toBe(false)
     expect(data['message']).toMatch(/^Malformed FormData request./)
+  })
+})
+
+describe('Formdot', () => {
+  const app = new Hono()
+  app.post(
+    '/post',
+    validator('formdot', (value) => value),
+    (c) => {
+      return c.json(c.req.valid('formdot'))
+    }
+  )
+
+  it('Should return 200 response with a valid nested form data', async () => {
+    const formData = new FormData()
+    formData.append('view', 'welcome')
+    formData.append('welcome.messages', 'hi')
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      body: formData,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ view: 'welcome', welcome: { messages: 'hi' } })
+  })
+
+  it('Should validate a URL Encoded Data', async () => {
+    const params = new URLSearchParams()
+    params.append('view', 'about')
+    params.append('about.messages', 'hello')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: params,
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      view: 'about',
+      about: { messages: 'hello' },
+    })
+  })
+
+  it('Should validate if Content-Type is a application/x-www-form-urlencoded with a charset', async () => {
+    const params = new URLSearchParams()
+    params.append('view', 'sitemap')
+    params.append('about.messages', 'bonjour')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: params,
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      },
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      view: 'sitemap',
+      about: { messages: 'bonjour' },
+    })
+  })
+
+  it('Should return `foo[]` as an array for multiple elements', async () => {
+    const form = new FormData()
+    form.append('bar[]', 'bar1')
+    form.append('bar[]', 'bar2')
+    form.append('foo.bar[]', 'foo1')
+    form.append('foo.bar[]', 'foo2')
+    form.append('foo.baz[]', 'foo3')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: form,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      'bar[]': ['bar1', 'bar2'],
+      foo: {
+        'bar[]': ['foo1', 'foo2'],
+        'baz[]': 'foo3',
+      },
+    })
+  })
+
+  it('Should return `foo` as an array if multiple values are appended', async () => {
+    const form = new FormData()
+    form.append('foo.bar.baz', 'baz1')
+    form.append('foo.bar.baz', 'baz2')
+    form.append('foo.baz', 'baz3')
+    form.append('baz.bar', 'bar1')
+    form.append('baz.bar', 'bar2')
+    form.append('baz.bar', 'bar3')
+    form.append('baz.foo', 'bar4')
+    const res = await app.request('/post', {
+      method: 'POST',
+      body: form,
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      foo: {
+        bar: {
+          baz: ['baz1', 'baz2'],
+        },
+        baz: 'baz3',
+      },
+      baz: {
+        bar: ['bar1', 'bar2', 'bar3'],
+        foo: 'bar4',
+      },
+    })
+  })
+
+  describe('Malformed FormData request', () => {
+    const app = new Hono()
+    app.post(
+      '/post',
+      validator('formdot', (value) => value),
+      (c) => {
+        return c.json(c.req.valid('formdot'))
+      }
+    )
+    app.onError(onErrorHandler)
+
+    it('Should return 400 response, for malformed content type header', async () => {
+      const res = await app.request('http://localhost/post', {
+        method: 'POST',
+        body: 'hola',
+        headers: {
+          'content-type': 'multipart/form-data',
+        },
+      })
+      expect(res.status).toBe(400)
+      const data = await res.json()
+      expect(data['success']).toBe(false)
+      expect(data['message']).toMatch(/^Malformed FormData request./)
+    })
   })
 })
 
