@@ -11,9 +11,3 @@ coverage:
       default:
         target: 75%
         threshold: 1%
-
-flags:
-  bundle:
-    paths:
-      - dist/
-    carryforward: true
