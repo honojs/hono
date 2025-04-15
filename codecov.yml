@@ -15,5 +15,5 @@ coverage:
 flags:
   bundle:
     paths:
-      - dist/
+      - coverage/
     carryforward: true
