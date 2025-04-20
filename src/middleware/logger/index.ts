@@ -97,8 +97,8 @@ export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
 
 /**
  * Sets color output option for logger middleware builtin Hono.
- * @param {boolean} enabled - Sets to `true` to enable colorized logging, or `false` to disable it. 
+ * @param {boolean} enabled - Sets to `true` to enable colorized logging, or `false` to disable it.
  */
-export function setLoggerColorEnabled(enabled: boolean): void{
+export function setLoggerColorEnabled(enabled: boolean): void {
   colorEnabled = enabled
 }
