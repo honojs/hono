@@ -1,15 +1,16 @@
 import { Hono } from '../../hono'
-import { logger, setLoggerColorEnabled } from '.'
 
 describe('Logger by Middleware', () => {
   let app: Hono
   let log: string
+  let setLoggerColorEnabled: (enabled: boolean) => void
 
-  beforeEach(() => {
+  beforeEach(async () => {
     function sleep(time: number) {
       return new Promise((resolve) => setTimeout(resolve, time))
     }
-
+    const { logger, setLoggerColorEnabled: _ } = await import('.')
+    setLoggerColorEnabled = _
     app = new Hono()
 
     const logFn = (str: string) => {
@@ -145,13 +146,16 @@ describe('Logger by Middleware', () => {
 describe('Logger by Middleware in NO_COLOR', () => {
   let app: Hono
   let log: string
+  let setLoggerColorEnabled: (enabled: boolean) => void
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.stubEnv('NO_COLOR', '1')
     function sleep(time: number) {
       return new Promise((resolve) => setTimeout(resolve, time))
     }
 
+    const { logger, setLoggerColorEnabled: _ } = await import('.')
+    setLoggerColorEnabled = _
     app = new Hono()
 
     const logFn = (str: string) => {
