@@ -1,5 +1,5 @@
 import { Hono } from '../../hono'
-import { logger } from '.'
+import { logger, setLoggerColorEnabled } from '.'
 
 describe('Logger by Middleware', () => {
   let app: Hono
@@ -124,6 +124,17 @@ describe('Logger by Middleware', () => {
     expect(log.startsWith('--> GET /server-error?status=700 700')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
+
+  it('Can change logger color', async () => {
+    const res = await app.request('http://localhost/empty')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    setLoggerColorEnabled(false)
+    expect(log.startsWith('--> GET /empty 200')).toBe(true)
+    setLoggerColorEnabled(true)
+    expect(log.startsWith('--> GET /empty \x1b[32m200\x1b[0m')).toBe(true)
+    expect(log).toMatch(/m?s$/)
+  })
 })
 
 describe('Logger by Middleware in NO_COLOR', () => {
@@ -200,5 +211,13 @@ describe('Logger by Middleware in NO_COLOR', () => {
     expect(res.status).toBe(404)
     expect(log.startsWith('--> GET /notfound 404')).toBe(true)
     expect(log).toMatch(/m?s$/)
+  })
+
+  it('setLoggerColorEnabled take precedence over NO_COLOR', async () => {
+    const res = await app.request('http://localhost/empty')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    setLoggerColorEnabled(true)
+    expect(log.startsWith('--> GET /empty \x1b[32m200\x1b[0m')).toBe(true)
   })
 })

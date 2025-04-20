@@ -6,6 +6,8 @@
 import type { MiddlewareHandler } from '../../types'
 import { getColorEnabled } from '../../utils/color'
 
+let colorEnabled = getColorEnabled()
+
 enum LogPrefix {
   Outgoing = '-->',
   Incoming = '<--',
@@ -26,7 +28,6 @@ const time = (start: number) => {
 }
 
 const colorStatus = (status: number) => {
-  const colorEnabled = getColorEnabled()
   if (colorEnabled) {
     switch ((status / 100) | 0) {
       case 5: // red = error
@@ -92,4 +93,12 @@ export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
 
     log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start))
   }
+}
+
+/**
+ * Sets color output option for logger middleware builtin Hono.
+ * @param {boolean} enabled - Sets to `true` to enable colorized logging, or `false` to disable it. 
+ */
+export function setLoggerColorEnabled(enabled: boolean): void{
+  colorEnabled = enabled
 }
