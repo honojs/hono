@@ -126,12 +126,17 @@ describe('Logger by Middleware', () => {
   })
 
   it('Can change logger color', async () => {
-    const res = await app.request('http://localhost/empty')
-    expect(res).not.toBeNull()
-    expect(res.status).toBe(200)
     setLoggerColorEnabled(false)
+    const res1 = await app.request('http://localhost/empty')
+    expect(res1).not.toBeNull()
+    expect(res1.status).toBe(200)
     expect(log.startsWith('--> GET /empty 200')).toBe(true)
+    expect(log).toMatch(/m?s$/)
+
     setLoggerColorEnabled(true)
+    const res2 = await app.request('http://localhost/empty')
+    expect(res2).not.toBeNull()
+    expect(res2.status).toBe(200)
     expect(log.startsWith('--> GET /empty \x1b[32m200\x1b[0m')).toBe(true)
     expect(log).toMatch(/m?s$/)
   })
@@ -214,10 +219,10 @@ describe('Logger by Middleware in NO_COLOR', () => {
   })
 
   it('setLoggerColorEnabled take precedence over NO_COLOR', async () => {
+    setLoggerColorEnabled(true)
     const res = await app.request('http://localhost/empty')
     expect(res).not.toBeNull()
     expect(res.status).toBe(200)
-    setLoggerColorEnabled(true)
     expect(log.startsWith('--> GET /empty \x1b[32m200\x1b[0m')).toBe(true)
   })
 })
