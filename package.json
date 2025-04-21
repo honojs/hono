@@ -668,7 +668,7 @@
     "typescript": "^5.3.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
     "vitest": "^3.0.5",
-    "wrangler": "3.58.0",
+    "wrangler": "4.12.0",
     "ws": "^8.18.0",
     "zod": "^3.23.8"
   },
