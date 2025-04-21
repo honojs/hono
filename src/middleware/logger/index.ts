@@ -4,7 +4,7 @@
  */
 
 import type { MiddlewareHandler } from '../../types'
-import { getColorEnabled } from '../../utils/color'
+import { getColorEnabledAsync } from '../../utils/color'
 
 enum LogPrefix {
   Outgoing = '-->',
@@ -25,8 +25,8 @@ const time = (start: number) => {
   return humanize([delta < 1000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
 }
 
-const colorStatus = (status: number) => {
-  const colorEnabled = getColorEnabled()
+const colorStatus = async (status: number) => {
+  const colorEnabled = await getColorEnabledAsync()
   if (colorEnabled) {
     switch ((status / 100) | 0) {
       case 5: // red = error
@@ -47,7 +47,7 @@ const colorStatus = (status: number) => {
 
 type PrintFunc = (str: string, ...rest: string[]) => void
 
-function log(
+async function log(
   fn: PrintFunc,
   prefix: string,
   method: string,
@@ -58,7 +58,7 @@ function log(
   const out =
     prefix === LogPrefix.Incoming
       ? `${prefix} ${method} ${path}`
-      : `${prefix} ${method} ${path} ${colorStatus(status)} ${elapsed}`
+      : `${prefix} ${method} ${path} ${await colorStatus(status)} ${elapsed}`
   fn(out)
 }
 
@@ -84,12 +84,12 @@ export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
 
     const path = url.slice(url.indexOf('/', 8))
 
-    log(fn, LogPrefix.Incoming, method, path)
+    await log(fn, LogPrefix.Incoming, method, path)
 
     const start = Date.now()
 
     await next()
 
-    log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start))
+    await log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start))
   }
 }
