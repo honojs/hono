@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { expectTypeOf } from 'vitest'
 import { hc } from './client'
 import type { Context, ExecutionContext } from './context'
@@ -1584,6 +1584,8 @@ describe('Request methods with custom middleware', () => {
 
   app.use('*', async (c, next) => {
     const query = c.req.query('foo')
+
+    // @ts-ignore
     const param = c.req.param('foo') // This will cause a type error.
     const header = c.req.header('User-Agent')
     await next()
@@ -2194,7 +2196,7 @@ describe('Context is not finalized', () => {
   it('should throw error - lack `await next()`', async () => {
     const app = new Hono()
 
-    // @ts-expect-error not typed
+    // @ts-ignore
     app.use('*', () => {})
     app.get('/foo', (c) => {
       return c.text('foo')
@@ -2213,7 +2215,7 @@ describe('Context is not finalized', () => {
       await next()
     })
 
-    // @ts-expect-error not typed
+    // @ts-ignore
     app.get('/foo', () => {})
     app.onError((err, c) => {
       return c.text(err.message, 500)
@@ -2656,10 +2658,10 @@ describe('app.mount()', () => {
         {
           // Force mocking!
 
-          // @ts-expect-error not typed
+          // @ts-ignore
           waitUntil: 'waitUntil',
 
-          // @ts-expect-error no typed
+          // @ts-ignore
           passThroughOnException: 'passThroughOnException',
         }
       )
@@ -3043,7 +3045,7 @@ describe('c.var - with testing types', () => {
     mw10(),
     (c) => {
       return c.text(
-        // @ts-expect-error not typed
+        // @ts-expect-error
         c.var.echo('hello') +
           c.var.echo2('hello2') +
           c.var.echo3('hello3') +
@@ -3138,28 +3140,28 @@ describe('c.var - with testing types', () => {
     )
   })
 
-  // @ts-expect-error not typed
+  // @ts-expect-error
   app.get('/path/10', mw(), mw2(), mw3(), mw4(), mw5(), mw6(), mw7(), mw8(), mw9(), mw10(), (c) => {
     return c.text(
-      // @ts-expect-error not type
+      // @ts-expect-error
       c.var.echo('hello') +
-        // @ts-expect-error not type
+        // @ts-expect-error
         c.var.echo2('hello2') +
-        // @ts-expect-error not type
+        // @ts-expect-error
         c.var.echo3('hello3') +
-        // @ts-expect-error not type
+        // @ts-expect-error
         c.var.echo4('hello4') +
-        // @ts-expect-error not type
+        // @ts-expect-error
         c.var.echo5('hello5') +
-        // @ts-expect-error not type
+        // @ts-expect-error
         c.var.echo6('hello6') +
-        // @ts-expect-error not type
+        // @ts-expect-error
         c.var.echo7('hello7') +
-        // @ts-expect-error not type
+        // @ts-expect-error
         c.var.echo8('hello8') +
-        // @ts-expect-error not type
+        // @ts-expect-error
         c.var.echo9('hello9') +
-        // @ts-expect-error not type
+        // @ts-expect-error
         c.var.echo10('hello10')
     )
   })
@@ -3242,7 +3244,7 @@ describe('c.var - with testing types', () => {
     )
   })
 
-  // @ts-expect-error not type
+  // @ts-expect-error
   app.on(
     'GET',
     '/on/10',
@@ -3258,25 +3260,25 @@ describe('c.var - with testing types', () => {
     mw10(),
     (c) => {
       return c.text(
-        // @ts-expect-error not type
+        // @ts-expect-error
         c.var.echo('hello') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo2('hello2') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo3('hello3') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo4('hello4') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo5('hello5') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo6('hello6') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo7('hello7') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo8('hello8') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo9('hello9') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo10('hello10')
       )
     }
@@ -3373,7 +3375,7 @@ describe('c.var - with testing types', () => {
     }
   )
 
-  // @ts-expect-error not type
+  // @ts-expect-error
   app.on(
     ['GET', 'POST'],
     '/on/10',
@@ -3389,25 +3391,25 @@ describe('c.var - with testing types', () => {
     mw10(),
     (c) => {
       return c.text(
-        // @ts-expect-error not type
+        // @ts-expect-error
         c.var.echo('hello') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo2('hello2') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo3('hello3') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo4('hello4') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo5('hello5') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo6('hello6') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo7('hello7') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo8('hello8') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo9('hello9') +
-          // @ts-expect-error not type
+          // @ts-expect-error
           c.var.echo10('hello10')
       )
     }
@@ -3502,7 +3504,7 @@ describe('c.var - with testing types', () => {
   it('Should be a read-only', () => {
     expect(() => {
       app.get('/path/1', mw(), (c) => {
-        // @ts-expect-error not type
+        // @ts-expect-error
         c.var.echo = 'hello'
         return c.text(c.var.echo('hello'))
       })
@@ -3537,9 +3539,9 @@ describe('c.var - with testing types', () => {
 
   it('Should throw type errors', (c) => {
     try {
-      // @ts-expect-error not type
+      // @ts-expect-error
       app.get(['foo', 'bar'], poweredBy())
-      // @ts-expect-error not type
+      // @ts-expect-error
       app.use(['foo', 'bar'], poweredBy())
     } catch {}
   })
@@ -3547,13 +3549,13 @@ describe('c.var - with testing types', () => {
 
 describe('Compatible with extended Hono classes, such Zod OpenAPI Hono.', () => {
   class ExtendedHono extends Hono {
-    // @ts-expect-error not type
+    // @ts-ignore
     route(path: string, app?: Hono) {
-      // @ts-expect-error not typev
+      // @ts-ignore
       super.route(path, app)
       return this
     }
-    // @ts-expect-error not type
+    // @ts-ignore
     basePath(path: string) {
       return new ExtendedHono(super.basePath(path))
     }
