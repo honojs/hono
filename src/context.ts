@@ -599,6 +599,7 @@ export class Context<
     }
     return Object.fromEntries(this.#var)
   }
+
   #newResponse(
     data: Data | null,
     arg?: StatusCode | ResponseOrInit,
@@ -672,9 +673,7 @@ export class Context<
     arg?: StatusCode | RequestInit,
     headers?: HeaderRecord
   ): ReturnType<BodyRespond> => {
-    return (
-      typeof arg === 'number' ? this.#newResponse(data, arg, headers) : this.#newResponse(data, arg)
-    ) as ReturnType<BodyRespond>
+    return this.#newResponse(data, arg, headers) as ReturnType<BodyRespond>
   }
 
   /**
@@ -698,8 +697,7 @@ export class Context<
       text,
       arg,
       setDefaultContentType(this.finalized, TEXT_PLAIN, headers)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ) as any
+    ) as ReturnType<TextRespond>
   }
 
   /**
@@ -723,7 +721,6 @@ export class Context<
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U> => {
     const body = JSON.stringify(object)
-
     return this.#newResponse(
       body,
       arg,
