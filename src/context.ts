@@ -605,32 +605,27 @@ export class Context<
     arg?: StatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): Response {
-    let mergedHeaders: Headers
-
-    if (typeof arg === 'object' && arg.headers) {
-      const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers)
-      mergedHeaders = argHeaders
-    } else {
-      mergedHeaders = new Headers()
-    }
-
-    if (headers) {
-      Object.entries(headers).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-          value.forEach((v) => mergedHeaders.append(key, v))
+    if (typeof arg === 'object' && arg.headers instanceof Headers) {
+      arg.headers.forEach((value, key) => {
+        if (key.toLowerCase() === 'set-cookie') {
+          this.res.headers.append(key, value)
         } else {
-          mergedHeaders.set(key, value)
+          this.res.headers.set(key, value)
         }
       })
     }
 
-    mergedHeaders.forEach((value, key) => {
-      if (key.toLowerCase() === 'set-cookie') {
-        this.res.headers.append(key, value)
-      } else {
-        this.res.headers.set(key, value)
+    if (headers) {
+      for (const [key, value] of Object.entries(headers)) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => {
+            this.res.headers.append(key, v)
+          })
+        } else {
+          this.res.headers.set(key, value)
+        }
       }
-    })
+    }
 
     const status =
       typeof arg === 'number'
