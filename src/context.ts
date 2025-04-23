@@ -508,7 +508,7 @@ export class Context<
    * ```
    */
   header: SetHeaders = (name, value, options): void => {
-    if (this.#res) {
+    if (this.finalized && this.#res) {
       this.#res = new Response(this.#res.body, this.#res)
     }
 
@@ -609,9 +609,9 @@ export class Context<
       const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers)
       argHeaders.forEach((value, key) => {
         if (key.toLowerCase() === 'set-cookie') {
-          this.res.headers.append(key, value)
+          this.header(key, value, { append: true })
         } else {
-          this.res.headers.set(key, value)
+          this.header(key, value)
         }
       })
     }
@@ -620,10 +620,10 @@ export class Context<
       for (const [key, value] of Object.entries(headers)) {
         if (Array.isArray(value)) {
           value.forEach((v) => {
-            this.res.headers.append(key, v)
+            this.header(key, v, { append: true })
           })
         } else {
-          this.res.headers.set(key, value)
+          this.header(key, value)
         }
       }
     }
