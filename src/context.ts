@@ -508,8 +508,8 @@ export class Context<
    * ```
    */
   header: SetHeaders = (name, value, options): void => {
-    if (this.finalized && this.#res) {
-      this.#res = new Response(this.#res.body, this.#res)
+    if (this.finalized) {
+      this.#res = new Response((this.#res as Response).body, this.#res)
     }
 
     // Clear the header
