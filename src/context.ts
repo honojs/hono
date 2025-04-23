@@ -328,7 +328,7 @@ export class Context<
    */
   error: Error | undefined
 
-  #status: StatusCode = 200
+  #status: StatusCode | undefined
   #executionCtx: FetchEventLike | ExecutionContext | undefined
   #res: Response | undefined
   #layout: Layout<PropsForRenderer & { Layout: Layout }> | undefined
@@ -605,8 +605,9 @@ export class Context<
     arg?: StatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): Response {
-    if (typeof arg === 'object' && arg.headers instanceof Headers) {
-      arg.headers.forEach((value, key) => {
+    if (typeof arg === 'object' && 'headers' in arg) {
+      const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers)
+      argHeaders.forEach((value, key) => {
         if (key.toLowerCase() === 'set-cookie') {
           this.res.headers.append(key, value)
         } else {
@@ -688,11 +689,14 @@ export class Context<
     arg?: ContentfulStatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): ReturnType<TextRespond> => {
-    return this.#newResponse(
-      text,
-      arg,
-      setDefaultContentType(this.finalized, TEXT_PLAIN, headers)
-    ) as ReturnType<TextRespond>
+    return !this.#res && !this.#status && !arg && !headers
+      ? // Optimization for Hello World
+        (new Response(text) as ReturnType<TextRespond>)
+      : (this.#newResponse(
+          text,
+          arg,
+          setDefaultContentType(this.finalized, TEXT_PLAIN, headers)
+        ) as ReturnType<TextRespond>)
   }
 
   /**
