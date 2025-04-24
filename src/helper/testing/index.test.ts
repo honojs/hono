@@ -2,10 +2,41 @@ import { Hono } from '../../hono'
 import { testClient } from '.'
 
 describe('hono testClient', () => {
-  it('Should return the correct search result', async () => {
+  it('GET Should return the correct search result', async () => {
     const app = new Hono().get('/search', (c) => c.json({ hello: 'world' }))
     const res = await testClient(app).search.$get()
     expect(await res.json()).toEqual({ hello: 'world' })
+  })
+
+  it('GET :id Should return the correct search result', async () => {
+    const app = new Hono().get('/search/:id', (c) => c.json({ hello: 'world' + c.req.param('id') }))
+    const res = await testClient(app).search[':id'].$get({
+      param: { id: '1' },
+    })
+    expect(await res.json()).toEqual({ hello: 'world1' })
+  })
+
+  it('POST Should return the correct search result', async () => {
+    const app = new Hono().post('/search', async (c) => {
+      const data = await c.req.formData()
+      return c.json({ hello: data.get('hello') })
+    })
+    const res = await testClient(app).search.$post({
+      form: { hello: 'world' },
+    })
+    expect(await res.json()).toEqual({ hello: 'world' })
+  })
+
+  it('POST :id Should return the correct search result', async () => {
+    const app = new Hono().post('/search/:id', async (c) => {
+      const data = await c.req.formData()
+      return c.json({ hello: data.get('hello') + c.req.param('id') })
+    })
+    const res = await testClient(app).search[':id'].$post({
+      param: { id: '1' },
+      form: { hello: 'world' },
+    })
+    expect(await res.json()).toEqual({ hello: 'world' + '1' })
   })
 
   it('Should return the correct environment variables value', async () => {
