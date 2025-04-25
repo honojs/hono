@@ -3,6 +3,7 @@ import type { ZodSchema } from 'zod'
 import { z } from 'zod'
 import { Hono } from '../hono'
 import { HTTPException } from '../http-exception'
+import { some } from '../middleware/combine'
 import type {
   ErrorHandler,
   ExtractSchema,
@@ -14,7 +15,6 @@ import type { ContentfulStatusCode } from '../utils/http-status'
 import type { Equal, Expect } from '../utils/types'
 import type { ValidationFunction } from './validator'
 import { validator } from './validator'
-import { some } from '../middleware/combine'
 
 // Reference implementation for only testing
 const zodValidator = <

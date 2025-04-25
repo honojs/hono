@@ -1,15 +1,15 @@
-import { Input } from './../../types'
 /**
  * @module
  * Combine Middleware for Hono.
  */
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { compose } from '../../compose'
 import type { Context } from '../../context'
 import { METHOD_NAME_ALL } from '../../router'
 import { TrieRouter } from '../../router/trie-router'
 import type { MiddlewareHandler, Next } from '../../types'
 import type { UnionToIntersection } from '../../utils/types'
+import type { Input } from './../../types'
 
 type Condition = (c: Context) => boolean
 

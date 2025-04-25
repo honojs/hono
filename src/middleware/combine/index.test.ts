@@ -1,7 +1,7 @@
 import { Hono } from '../../hono'
 import type { MiddlewareHandler } from '../../types'
-import { every, except, some } from '.'
 import { validator } from '../../validator'
+import { every, except, some } from '.'
 
 const nextMiddleware: MiddlewareHandler = async (_, next) => await next()
 
