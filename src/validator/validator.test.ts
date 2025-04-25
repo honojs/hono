@@ -238,7 +238,7 @@ describe('FormData', () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
-        "Content-Type": ""
+        'Content-Type': '',
       },
       body: formData,
     })
@@ -351,8 +351,8 @@ describe('JSON and FormData', () => {
   app.post(
     '/',
     some(
-     validator('json', (value) => value),
-     validator('form', (value) => value)
+      validator('json', (value) => value),
+      validator('form', (value) => value)
     ),
     async (c) => {
       const jsonData = c.req.valid('json')
@@ -649,8 +649,8 @@ describe('Validator middleware with Zod validates Form data', () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      }
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
     })
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('Invalid!')
@@ -886,8 +886,8 @@ describe('Validator middleware with Zod multiple validators', () => {
     const res = await app.request('http://localhost/posts?page=2', {
       method: 'POST',
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      }
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
     })
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('Invalid!')

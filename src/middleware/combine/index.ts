@@ -1,4 +1,4 @@
-import { Input } from './../../types';
+import { Input } from './../../types'
 /**
  * @module
  * Combine Middleware for Hono.
@@ -37,7 +37,19 @@ type Condition = (c: Context) => boolean
  * ));
  * ```
  */
-export const some = <M extends (MiddlewareHandler | Condition)[]>(...middleware: M): MiddlewareHandler<any, any, (UnionToIntersection<M[number] extends MiddlewareHandler<any, any, infer UInput> ? UInput : never>) extends infer UInputs ? UInputs extends Input ? UInputs : never : never> => {
+export const some = <M extends (MiddlewareHandler | Condition)[]>(
+  ...middleware: M
+): MiddlewareHandler<
+  any,
+  any,
+  UnionToIntersection<
+    M[number] extends MiddlewareHandler<any, any, infer UInput> ? UInput : never
+  > extends infer UInputs
+    ? UInputs extends Input
+      ? UInputs
+      : never
+    : never
+> => {
   return async function some(c, next) {
     let isNextCalled = false
     const wrappedNext = () => {
@@ -98,7 +110,19 @@ export const some = <M extends (MiddlewareHandler | Condition)[]>(...middleware:
  * ));
  * ```
  */
-export const every = (...middleware: (MiddlewareHandler | Condition)[]): MiddlewareHandler => {
+export const every = <M extends (MiddlewareHandler | Condition)[]>(
+  ...middleware: M
+): MiddlewareHandler<
+  any,
+  any,
+  UnionToIntersection<
+    M[number] extends MiddlewareHandler<any, any, infer UInput> ? UInput : never
+  > extends infer UInputs
+    ? UInputs extends Input
+      ? UInputs
+      : never
+    : never
+> => {
   return async function every(c, next) {
     const currentRouteIndex = c.req.routeIndex
     await compose(
@@ -140,10 +164,21 @@ export const every = (...middleware: (MiddlewareHandler | Condition)[]): Middlew
  * ));
  * ```
  */
-export const except = (
+
+export const except = <M extends MiddlewareHandler[]>(
   condition: string | Condition | (string | Condition)[],
-  ...middleware: MiddlewareHandler[]
-): MiddlewareHandler => {
+  ...middleware: M
+): MiddlewareHandler<
+  any,
+  any,
+  UnionToIntersection<
+    M[number] extends MiddlewareHandler<any, any, infer UInput> ? UInput : never
+  > extends infer UInputs
+    ? UInputs extends Input
+      ? UInputs
+      : never
+    : never
+> => {
   let router: TrieRouter<true> | undefined = undefined
   const conditions = (Array.isArray(condition) ? condition : [condition])
     .map((condition) => {
