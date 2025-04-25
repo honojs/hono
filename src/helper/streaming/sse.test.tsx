@@ -76,6 +76,11 @@ describe('SSE Streaming helper', () => {
   })
 
   it('Check streamSSE Response if aborted by abort signal', async () => {
+    // Emulate an old version of Bun (version 1.1.0) for this specific test case
+    // @ts-expect-error Bun is not typed
+    global.Bun = {
+      version: '1.1.0',
+    }
     const ac = new AbortController()
     const req = new Request('http://localhost/', { signal: ac.signal })
     const c = new Context(req)

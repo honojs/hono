@@ -159,7 +159,7 @@ describe('render to string', () => {
     expect(template.toString()).toBe('<p><span>a</span><span>b</span></p>')
   })
 
-  it('Empty elements are rended withtout closing tag', () => {
+  it('Empty elements are rended without closing tag', () => {
     const template = <input />
     expect(template.toString()).toBe('<input/>')
   })
@@ -1009,7 +1009,7 @@ d.replaceWith(c.content)
           <ParentAsyncErrorConsumer />
         </ThemeContext.Provider>
       )
-      expect(async () => (await template.toString()).toString()).rejects.toThrow()
+      await expect(async () => (await template.toString()).toString()).rejects.toThrow()
 
       const nextRequest = <Consumer />
       expect(nextRequest.toString()).toBe('<span>light</span>')

@@ -51,7 +51,7 @@ const toHash = (str: string): string => {
 
 const cssStringReStr: string = [
   '"(?:(?:\\\\[\\s\\S]|[^"\\\\])*)"', // double quoted string
-  // eslint-disable-next-line quotes
+
   "'(?:(?:\\\\[\\s\\S]|[^'\\\\])*)'", // single quoted string
 ].join('|')
 const minifyCssRe: RegExp = new RegExp(

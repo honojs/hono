@@ -2,11 +2,13 @@ import { assertEquals } from '@std/assert'
 import { stream, streamSSE } from '../../src/helper/streaming/index.ts'
 import { Hono } from '../../src/hono.ts'
 
-Deno.test('Shuld call onAbort via stream', async () => {
+Deno.test('Should call onAbort via stream', async () => {
   const app = new Hono()
+  let streamStarted = false
   let aborted = false
   app.get('/stream', (c) => {
     return stream(c, (stream) => {
+      streamStarted = true
       stream.onAbort(() => {
         aborted = true
       })
@@ -23,7 +25,9 @@ Deno.test('Shuld call onAbort via stream', async () => {
   })
   const res = fetch(req).catch(() => {})
   assertEquals(aborted, false)
-  await new Promise((resolve) => setTimeout(resolve, 10))
+  while (!streamStarted) {
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
   ac.abort()
   await res
   while (!aborted) {
@@ -34,7 +38,7 @@ Deno.test('Shuld call onAbort via stream', async () => {
   await server.shutdown()
 })
 
-Deno.test('Shuld not call onAbort via stream if already closed', async () => {
+Deno.test('Should not call onAbort via stream if already closed', async () => {
   const app = new Hono()
   let aborted = false
   app.get('/stream', (c) => {
@@ -54,11 +58,13 @@ Deno.test('Shuld not call onAbort via stream if already closed', async () => {
   await server.shutdown()
 })
 
-Deno.test('Shuld call onAbort via streamSSE', async () => {
+Deno.test('Should call onAbort via streamSSE', async () => {
   const app = new Hono()
+  let streamStarted = false
   let aborted = false
   app.get('/stream', (c) => {
     return streamSSE(c, (stream) => {
+      streamStarted = true
       stream.onAbort(() => {
         aborted = true
       })
@@ -73,10 +79,11 @@ Deno.test('Shuld call onAbort via streamSSE', async () => {
   const req = new Request(`http://localhost:${server.addr.port}/stream`, {
     signal: ac.signal,
   })
-  assertEquals
   const res = fetch(req).catch(() => {})
   assertEquals(aborted, false)
-  await new Promise((resolve) => setTimeout(resolve, 10))
+  while (!streamStarted) {
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
   ac.abort()
   await res
   while (!aborted) {
@@ -87,7 +94,7 @@ Deno.test('Shuld call onAbort via streamSSE', async () => {
   await server.shutdown()
 })
 
-Deno.test('Shuld not call onAbort via streamSSE if already closed', async () => {
+Deno.test('Should not call onAbort via streamSSE if already closed', async () => {
   const app = new Hono()
   let aborted = false
   app.get('/stream', (c) => {

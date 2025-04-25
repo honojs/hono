@@ -5,7 +5,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Context } from '../../context'
-import type { MiddlewareHandler } from '../../types'
+import type { MiddlewareHandler, TypedResponse } from '../../types'
+import type { StatusCode } from '../../utils/http-status'
 
 /**
  * WebSocket Event Listeners type
@@ -20,16 +21,18 @@ export interface WSEvents<T = unknown> {
 /**
  * Upgrade WebSocket Type
  */
-export type UpgradeWebSocket<T = unknown, U = any> = (
-  createEvents: (c: Context) => WSEvents<T> | Promise<WSEvents<T>>,
-  options?: U
-) => MiddlewareHandler<
-  any,
-  string,
-  {
-    outputFormat: 'ws'
-  }
->
+export interface UpgradeWebSocket<T = unknown, U = any, _WSEvents = WSEvents<T>> {
+  (createEvents: (c: Context) => _WSEvents | Promise<_WSEvents>, options?: U): MiddlewareHandler<
+    any,
+    string,
+    {
+      outputFormat: 'ws'
+    }
+  >
+  (c: Context, events: _WSEvents, options?: U): Promise<
+    Response & TypedResponse<{}, StatusCode, 'ws'>
+  >
+}
 
 /**
  * ReadyState for WebSocket
@@ -39,8 +42,8 @@ export type WSReadyState = 0 | 1 | 2 | 3
 /**
  * An argument for WSContext class
  */
-export interface WSContestInit<T = unknown> {
-  send(data: string | ArrayBuffer, options: SendOptions): void
+export interface WSContextInit<T = unknown> {
+  send(data: string | ArrayBuffer | Uint8Array, options: SendOptions): void
   close(code?: number, reason?: string): void
 
   raw?: T
@@ -60,18 +63,15 @@ export interface SendOptions {
  * A context for controlling WebSockets
  */
 export class WSContext<T = unknown> {
-  #init: WSContestInit<T>
-  constructor(init: WSContestInit<T>) {
+  #init: WSContextInit<T>
+  constructor(init: WSContextInit<T>) {
     this.#init = init
     this.raw = init.raw
     this.url = init.url ? new URL(init.url) : null
     this.protocol = init.protocol ?? null
   }
   send(source: string | ArrayBuffer | Uint8Array, options?: SendOptions): void {
-    this.#init.send(
-      typeof source === 'string' ? source : source instanceof Uint8Array ? source.buffer : source,
-      options ?? {}
-    )
+    this.#init.send(source, options ?? {})
   }
   raw?: T
   binaryType: BinaryType = 'arraybuffer'
@@ -106,14 +106,30 @@ export type WebSocketHelperDefineHandler<T, U> = (
 export const defineWebSocketHelper = <T = unknown, U = any>(
   handler: WebSocketHelperDefineHandler<T, U>
 ): UpgradeWebSocket<T, U> => {
-  return (createEvents, options) => {
-    return async function UpgradeWebSocket(c, next) {
-      const events = await createEvents(c)
-      const result = await handler(c, events, options)
-      if (result) {
-        return result
+  return ((
+    ...args:
+      | [createEvents: (c: Context) => WSEvents<T> | Promise<WSEvents<T>>, options?: U]
+      | [c: Context, events: WSEvents<T>, options?: U]
+  ) => {
+    if (typeof args[0] === 'function') {
+      const [createEvents, options] = args
+      return async function upgradeWebSocket(c, next) {
+        const events = await createEvents(c)
+        const result = await handler(c, events, options as U)
+        if (result) {
+          return result
+        }
+        await next()
       }
-      await next()
+    } else {
+      const [c, events, options] = args as [c: Context, events: WSEvents<T>, options?: U]
+      return (async () => {
+        const upgraded = await handler(c, events, options as U)
+        if (!upgraded) {
+          throw new Error('Failed to upgrade WebSocket')
+        }
+        return upgraded
+      })()
     }
-  }
+  }) as UpgradeWebSocket<T, U>
 }

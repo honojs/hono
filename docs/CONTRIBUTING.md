@@ -16,7 +16,7 @@ I want to write the code as I like.
 So, if you propose great ideas, but I do not appropriate them, the idea may not be accepted.
 
 Although, don't worry!
-Hono is tested well, polished by the contributors, and used by many developers. And I'll try my best to make Hono cool, beautiful, and ultrafast.
+Hono is tested well, polished by the contributors, and used by many developers. And I'll try my best to make Hono cool and hot, beautiful, and ultrafast.
 
 ## Installing dependencies
 
@@ -28,15 +28,9 @@ After that, please install the dependency environment.
 bun install
 ```
 
-If you can't do that, there is also a `yarn.lock` file, so you can do the same with the `yarn` command.
-
-```bash
-yarn install --frozen-lockfile
-```
-
 ## PRs
 
-Please ensure your PR passes tests with `bun run test` or `yarn test`.
+Please ensure your PR passes tests with `bun run test`.
 
 ## Third-party middleware
 

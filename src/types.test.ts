@@ -20,7 +20,7 @@ import type {
   ToSchema,
   TypedResponse,
 } from './types'
-import type { StatusCode } from './utils/http-status'
+import type { ContentfulStatusCode, StatusCode } from './utils/http-status'
 import type { Equal, Expect } from './utils/types'
 import { validator } from './validator'
 
@@ -96,7 +96,7 @@ describe('HandlerInterface', () => {
               message: string
             }
             outputFormat: 'json'
-            status: StatusCode
+            status: ContentfulStatusCode
           }
         }
       }
@@ -135,7 +135,7 @@ describe('HandlerInterface', () => {
               message: string
             }
             outputFormat: 'json'
-            status: StatusCode
+            status: ContentfulStatusCode
           }
         }
       }
@@ -163,7 +163,7 @@ describe('HandlerInterface', () => {
             }
             output: 'foo'
             outputFormat: 'text'
-            status: StatusCode
+            status: ContentfulStatusCode
           }
         }
       }
@@ -192,7 +192,7 @@ describe('HandlerInterface', () => {
             }
             output: string
             outputFormat: 'text'
-            status: StatusCode
+            status: ContentfulStatusCode
           }
         }
       }
@@ -217,7 +217,7 @@ describe('HandlerInterface', () => {
             }
             output: string
             outputFormat: 'text'
-            status: StatusCode
+            status: ContentfulStatusCode
           }
         }
       } & {
@@ -271,11 +271,19 @@ describe('OnHandlerInterface', () => {
             success: boolean
           }
           outputFormat: 'json'
-          status: StatusCode
+          status: ContentfulStatusCode
         }
       }
     }
     type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  test('app.on(method, path[], middleware, handler) should not throw a type error', () => {
+    const middleware: MiddlewareHandler<{ Variables: { foo: string } }> = async () => {}
+    app.on('GET', ['/a', '/b'], middleware, (c) => {
+      expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+      return c.json({})
+    })
   })
 })
 
@@ -376,7 +384,7 @@ describe('Support c.json(undefined)', () => {
           input: {}
           output: never
           outputFormat: 'json'
-          status: StatusCode
+          status: ContentfulStatusCode
         }
       }
     }
@@ -460,7 +468,7 @@ describe('`json()`', () => {
             message: string
           }
           outputFormat: 'json'
-          status: StatusCode
+          status: ContentfulStatusCode
         }
       }
     }
@@ -902,7 +910,7 @@ describe('Different types using json()', () => {
                   ng: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
             | {
                 input: {}
@@ -910,7 +918,7 @@ describe('Different types using json()', () => {
                   ok: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
             | {
                 input: {}
@@ -918,7 +926,7 @@ describe('Different types using json()', () => {
                   default: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
         }
       }
@@ -974,7 +982,7 @@ describe('Different types using json()', () => {
                   default: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
         }
       }
@@ -1012,7 +1020,7 @@ describe('Different types using json()', () => {
                   ng: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
             | {
                 input: {}
@@ -1020,7 +1028,7 @@ describe('Different types using json()', () => {
                   ok: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
             | {
                 input: {}
@@ -1028,7 +1036,7 @@ describe('Different types using json()', () => {
                   default: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
         }
       }
@@ -1084,7 +1092,7 @@ describe('Different types using json()', () => {
                   default: boolean
                 }
                 outputFormat: 'json'
-                status: StatusCode
+                status: ContentfulStatusCode
               }
         }
       }
@@ -1111,7 +1119,7 @@ describe('json() in an async handler', () => {
             ok: boolean
           }
           outputFormat: 'json'
-          status: StatusCode
+          status: ContentfulStatusCode
         }
       }
     }
@@ -1298,6 +1306,28 @@ describe('c.var with chaining - test only types', () => {
       return c.json(0)
     })
 
+    new Hono().get(
+      mw1,
+      mw2,
+      mw3,
+      mw4,
+      mw5,
+      mw6,
+      mw7,
+      mw8,
+      async (c) => {
+        expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+      },
+      (c) => c.json(0)
+    )
+
     new Hono().get(mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9, (c) => {
       expectTypeOf(c.req.valid('query')).toMatchTypeOf<{
         bar1: number
@@ -1313,6 +1343,29 @@ describe('c.var with chaining - test only types', () => {
 
       return c.json(0)
     })
+
+    new Hono().get(
+      '/',
+      mw1,
+      mw2,
+      mw3,
+      mw4,
+      mw5,
+      mw6,
+      mw7,
+      mw8,
+      async (c) => {
+        expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+      },
+      (c) => c.json(0)
+    )
 
     new Hono().get('/', mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9, (c) => {
       expectTypeOf(c.req.valid('query')).toMatchTypeOf<{
@@ -2247,6 +2300,7 @@ describe('Returning type from `app.use(path, mw)`', () => {
     type verify = Expect<Equal<Expected, Actual>>
   })
 })
+
 describe('generic typed variables', () => {
   const okHelper = (c: Context) => {
     return <TData>(data: TData) => c.json({ data })
@@ -2269,5 +2323,79 @@ describe('generic typed variables', () => {
     type Actual = ExtractSchema<typeof route>['/']['$get']['output']
     type Expected = { data: string }
     expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+  })
+})
+
+describe('status code', () => {
+  const app = new Hono()
+
+  it('should only allow to return .json() with contentful status codes', async () => {
+    const route = app.get('/', async (c) => c.json({}))
+    type Actual = ExtractSchema<typeof route>['/']['$get']['status']
+    expectTypeOf<Actual>().toEqualTypeOf<ContentfulStatusCode>()
+  })
+
+  it('should only allow to return .body(null) with all status codes', async () => {
+    const route = app.get('/', async (c) => c.body(null))
+    type Actual = ExtractSchema<typeof route>['/']['$get']['status']
+    expectTypeOf<Actual>().toEqualTypeOf<StatusCode>()
+  })
+
+  it('should only allow to return .text() with contentful status codes', async () => {
+    const route = app.get('/', async (c) => c.text('whatever'))
+    type Actual = ExtractSchema<typeof route>['/']['$get']['status']
+    expectTypeOf<Actual>().toEqualTypeOf<ContentfulStatusCode>()
+  })
+
+  it('should throw type error when .json({}) is used with contentless status codes', async () => {
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.json({}, 204))
+    app.get('/', async (c) =>
+      c.json(
+        {},
+        // @ts-expect-error 204 is not contentful status code
+        {
+          status: 204,
+        }
+      )
+    )
+  })
+
+  it('should throw type error when .body(content) is used with contentless status codes', async () => {
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.body('content', 204))
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.body('content', { status: 204 }))
+  })
+
+  it('should throw type error when .text(content) is used with contentless status codes', async () => {
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.text('content', 204))
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.text('content', { status: 204 }))
+  })
+
+  it('should throw type error when .html(content) is used with contentless status codes', async () => {
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.html('<h1>title</h1>', 204))
+    // @ts-expect-error 204 is not contentful status code
+    app.get('/', async (c) => c.html('<h1>title</h1>', { status: 204 }))
+  })
+
+  it('.body() not override other responses in hono client', async () => {
+    const router = app.get('/', async (c) => {
+      if (c.req.header('Content-Type') === 'application/json') {
+        return c.text('Hello', 200)
+      }
+
+      if (c.req.header('Content-Type') === 'application/x-www-form-urlencoded') {
+        return c.body('Hello', 201)
+      }
+
+      return c.body(null, 204)
+    })
+
+    type Actual = ExtractSchema<typeof router>['/']['$get']['status']
+    expectTypeOf<Actual>().toEqualTypeOf<204 | 201 | 200>()
   })
 })

@@ -1,6 +1,17 @@
 import { Readable } from 'stream'
-import { handle, streamHandle } from '../../src/adapter/aws-lambda/handler'
-import type { LambdaEvent } from '../../src/adapter/aws-lambda/handler'
+import {
+  ALBProcessor,
+  EventV1Processor,
+  EventV2Processor,
+  getProcessor,
+  handle,
+  streamHandle,
+} from '../../src/adapter/aws-lambda/handler'
+import type {
+  ALBProxyEvent,
+  APIGatewayProxyEventV2,
+  LambdaEvent,
+} from '../../src/adapter/aws-lambda/handler'
 import type {
   ApiGatewayRequestContext,
   ApiGatewayRequestContextV2,
@@ -238,6 +249,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('Hello Lambda!')
     expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.multiValueHeaders).toBeUndefined()
     expect(response.isBase64Encoded).toBe(false)
   })
 
@@ -257,6 +269,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('RmFrZSBJbWFnZQ==')
     expect(response.headers['content-type']).toMatch(/^image\/png/)
+    expect(response.multiValueHeaders).toBeUndefined()
     expect(response.isBase64Encoded).toBe(true)
   })
 
@@ -278,6 +291,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('Hello Lambda!')
     expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.multiValueHeaders).toBeUndefined()
     expect(response.isBase64Encoded).toBe(false)
   })
 
@@ -298,6 +312,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('Hello Lambda!')
     expect(response.headers['content-type']).toMatch(/^text\/plain/)
+    expect(response.multiValueHeaders).toBeUndefined()
     expect(response.isBase64Encoded).toBe(false)
   })
 
@@ -526,9 +541,10 @@ describe('AWS Lambda Adapter for Hono', () => {
         expect(albResponse.statusCode).toBe(200)
         expect(albResponse.headers).toEqual(
           expect.objectContaining({
-            'content-type': 'application/json; charset=UTF-8',
+            'content-type': 'application/json',
           })
         )
+        expect(albResponse.multiValueHeaders).toBeUndefined()
       })
 
       it('Should extract single-value headers and return 200 (APIGatewayProxyEvent)', async () => {
@@ -587,7 +603,7 @@ describe('AWS Lambda Adapter for Hono', () => {
         expect(albResponse.multiValueHeaders).toBeDefined()
         expect(albResponse.multiValueHeaders).toEqual(
           expect.objectContaining({
-            'content-type': ['application/json; charset=UTF-8'],
+            'content-type': ['application/json'],
           })
         )
       })
@@ -676,6 +692,7 @@ describe('AWS Lambda Adapter for Hono', () => {
     expect(albResponse.statusCode).toBe(200)
     expect(albResponse.body).toBe('Valid Cookies')
     expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(albResponse.multiValueHeaders).toBeUndefined()
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -698,7 +715,10 @@ describe('AWS Lambda Adapter for Hono', () => {
 
     expect(albResponse.statusCode).toBe(200)
     expect(albResponse.body).toBe('Valid Cookies')
-    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
+    expect(albResponse.headers).toBeUndefined()
+    expect(albResponse.multiValueHeaders['content-type']).toEqual([
+      expect.stringMatching(/^text\/plain/),
+    ])
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -748,9 +768,8 @@ describe('AWS Lambda Adapter for Hono', () => {
 
     expect(albResponse.statusCode).toBe(200)
     expect(albResponse.body).toBe('Cookies Set')
-    expect(albResponse.headers['content-type']).toMatch(/^text\/plain/)
-    expect(albResponse.multiValueHeaders).toBeDefined()
-    expect(albResponse.multiValueHeaders && albResponse.multiValueHeaders['set-cookie']).toEqual(
+    expect(albResponse.headers).toBeUndefined()
+    expect(albResponse.multiValueHeaders['set-cookie']).toEqual(
       expect.arrayContaining([testCookie1.serialized, testCookie2.serialized])
     )
     expect(albResponse.isBase64Encoded).toBe(false)
@@ -783,6 +802,7 @@ describe('AWS Lambda Adapter for Hono', () => {
       })
     )
     expect(albResponse.headers['content-type']).toMatch(/^application\/json/)
+    expect(albResponse.multiValueHeaders).toBeUndefined()
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -812,7 +832,10 @@ describe('AWS Lambda Adapter for Hono', () => {
         key2: 'value2',
       })
     )
-    expect(albResponse.headers['content-type']).toMatch(/^application\/json/)
+    expect(albResponse.headers).toBeUndefined()
+    expect(albResponse.multiValueHeaders['content-type']).toEqual([
+      expect.stringMatching(/^application\/json/),
+    ])
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 
@@ -842,7 +865,10 @@ describe('AWS Lambda Adapter for Hono', () => {
         key2: ['value2', 'otherValue2'],
       })
     )
-    expect(albResponse.headers['content-type']).toMatch(/^application\/json/)
+    expect(albResponse.headers).toBeUndefined()
+    expect(albResponse.multiValueHeaders['content-type']).toEqual([
+      expect.stringMatching(/^application\/json/),
+    ])
     expect(albResponse.isBase64Encoded).toBe(false)
   })
 })
@@ -965,5 +991,55 @@ describe('streamHandle function', () => {
     // Check for JSON prelude and NULL sequence
     const nullSequence = '\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000'
     expect(output).toContain(jsonResponsePrelude.replace(nullSequence, ''))
+  })
+})
+
+describe('getProcessor function', () => {
+  it('Should return ALBProcessor for an ALBProxyEvent event', () => {
+    const event: ALBProxyEvent = {
+      httpMethod: 'GET',
+      path: '/',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: {
+        elb: {
+          targetGroupArn:
+            'arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/lambda-279XGJDqGZ5rsrHC2Fjr/49e9d65c45c6791a',
+        },
+      },
+    }
+
+    const processor = getProcessor(event)
+    expect(processor).toBeInstanceOf(ALBProcessor)
+  })
+
+  it('Should return EventV1Processor for an event without requestContext', () => {
+    const event = {
+      httpMethod: 'GET',
+      path: '/',
+      body: null,
+      isBase64Encoded: false,
+    }
+
+    // while LambdaEvent RequestContext property is mandatory, it can be absent when testing through invoke-api or AWS Console
+    // in such cases, a V1 processor should be returned
+    const processor = getProcessor(event as unknown as LambdaEvent)
+    expect(processor).toBeInstanceOf(EventV1Processor)
+  })
+
+  it('Should return EventV2Processor for an APIGatewayProxyEventV2 event', () => {
+    const event: APIGatewayProxyEventV2 = {
+      version: '2.0',
+      routeKey: '$default',
+      headers: { 'content-type': 'text/plain' },
+      rawPath: '/',
+      rawQueryString: '',
+      body: null,
+      isBase64Encoded: false,
+      requestContext: testApiGatewayRequestContextV2,
+    }
+
+    const processor = getProcessor(event)
+    expect(processor).toBeInstanceOf(EventV2Processor)
   })
 })

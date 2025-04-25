@@ -105,7 +105,10 @@ interface CloudFrontResult {
 const convertHeaders = (headers: Headers): CloudFrontHeaders => {
   const cfHeaders: CloudFrontHeaders = {}
   headers.forEach((value, key) => {
-    cfHeaders[key.toLowerCase()] = [{ key: key.toLowerCase(), value }]
+    cfHeaders[key.toLowerCase()] = [
+      ...(cfHeaders[key.toLowerCase()] || []),
+      { key: key.toLowerCase(), value },
+    ]
   })
   return cfHeaders
 }
@@ -141,13 +144,16 @@ const createResult = async (res: Response): Promise<CloudFrontResult> => {
     status: res.status.toString(),
     headers: convertHeaders(res.headers),
     body,
-    ...(isBase64Encoded ? { bodyEncoding: 'base64' } : {}),
+    ...(isBase64Encoded && { bodyEncoding: 'base64' }),
   }
 }
 
 const createRequest = (event: CloudFrontEdgeEvent): Request => {
   const queryString = event.Records[0].cf.request.querystring
-  const urlPath = `https://${event.Records[0].cf.config.distributionDomainName}${event.Records[0].cf.request.uri}`
+  const host =
+    event.Records[0].cf.request.headers?.host?.[0]?.value ||
+    event.Records[0].cf.config.distributionDomainName
+  const urlPath = `https://${host}${event.Records[0].cf.request.uri}`
   const url = queryString ? `${urlPath}?${queryString}` : urlPath
 
   const headers = new Headers()

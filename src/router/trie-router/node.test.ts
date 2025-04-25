@@ -28,7 +28,7 @@ describe('Get with *', () => {
   })
 })
 
-describe('Get with * inclusing JS reserved words', () => {
+describe('Get with * including JS reserved words', () => {
   const node = new Node()
   node.insert('get', '*', 'get all')
   it('get /', () => {
@@ -120,6 +120,17 @@ describe('Name path', () => {
     expect(resB.length).toBe(1)
     expect(resB[0][0]).toEqual('resource')
     expect(resB[0][1]).toEqual({ id: 'b' })
+  })
+
+  it('Should return a sorted values', () => {
+    const node = new Node()
+    node.insert('get', '/resource/a', 'A')
+    node.insert('get', '/resource/*', 'Star')
+    const [res] = node.search('get', '/resource/a')
+    expect(res).not.toBeNull()
+    expect(res.length).toBe(2)
+    expect(res[0][0]).toEqual('A')
+    expect(res[1][0]).toEqual('Star')
   })
 })
 

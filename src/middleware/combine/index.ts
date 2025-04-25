@@ -37,12 +37,18 @@ type Condition = (c: Context) => boolean
  */
 export const some = (...middleware: (MiddlewareHandler | Condition)[]): MiddlewareHandler => {
   return async function some(c, next) {
+    let isNextCalled = false
+    const wrappedNext = () => {
+      isNextCalled = true
+      return next()
+    }
+
     let lastError: unknown
     for (const handler of middleware) {
       try {
-        const result = await handler(c, next)
+        const result = await handler(c, wrappedNext)
         if (result === true && !c.finalized) {
-          await next()
+          await wrappedNext()
         } else if (result === false) {
           lastError = new Error('No successful middleware found')
           continue
@@ -51,7 +57,9 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
         break
       } catch (error) {
         lastError = error
-        continue
+        if (isNextCalled) {
+          break
+        }
       }
     }
     if (lastError) {
@@ -89,19 +97,22 @@ export const some = (...middleware: (MiddlewareHandler | Condition)[]): Middlewa
  * ```
  */
 export const every = (...middleware: (MiddlewareHandler | Condition)[]): MiddlewareHandler => {
-  const wrappedMiddleware = middleware.map((m) => async (c: Context, next: Next) => {
-    const res = await m(c, next)
-    if (res === false) {
-      throw new Error('Unmet condition')
-    }
-    return res
-  })
-
-  const handler = async (c: Context, next: Next) =>
-    compose<Context>(wrappedMiddleware.map((m) => [[m, undefined], c.req.param()]))(c, next)
-
   return async function every(c, next) {
-    await handler(c, next)
+    const currentRouteIndex = c.req.routeIndex
+    await compose(
+      middleware.map((m) => [
+        [
+          async (c: Context, next: Next) => {
+            c.req.routeIndex = currentRouteIndex // should be unchanged in this context
+            const res = await m(c, next)
+            if (res === false) {
+              throw new Error('Unmet condition')
+            }
+            return res
+          },
+        ],
+      ])
+    )(c, next)
   }
 }
 

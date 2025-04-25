@@ -5,10 +5,10 @@
 
 import { HonoRequest } from '../request'
 
-type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot } & {}
+type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot }
 type BodyDataValueDotAll = {
   [x: string]: string | File | (string | File)[] | BodyDataValueDotAll
-} & {}
+}
 type SimplifyBodyData<T> = {
   [K in keyof T]: string | File | (string | File)[] | BodyDataValueDotAll extends T[K]
     ? string | File | (string | File)[] | BodyDataValueDotAll

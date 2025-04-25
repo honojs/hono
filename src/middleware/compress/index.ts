@@ -42,6 +42,7 @@ export const compress = (options?: CompressionOptions): MiddlewareHandler => {
     // Check if response should be compressed
     if (
       ctx.res.headers.has('Content-Encoding') || // already encoded
+      ctx.res.headers.has('Transfer-Encoding') || // already encoded or chunked
       ctx.req.method === 'HEAD' || // HEAD request
       (contentLength && Number(contentLength) < threshold) || // content-length below threshold
       !shouldCompress(ctx.res) || // not compressible type

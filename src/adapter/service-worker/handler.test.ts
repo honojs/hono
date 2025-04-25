@@ -10,7 +10,6 @@ beforeAll(() => {
     function fetch(this: undefined | typeof globalThis, arg0: string | Request) {
       if (this !== globalThis) {
         const error = new Error(
-          // eslint-disable-next-line quotes
           "Failed to execute 'fetch' on 'WorkerGlobalScope': Illegal invocation"
         )
         error.name = 'TypeError'

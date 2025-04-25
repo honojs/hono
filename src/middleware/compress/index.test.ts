@@ -1,4 +1,4 @@
-import { stream } from '../../helper/streaming'
+import { stream, streamSSE } from '../../helper/streaming'
 import { Hono } from '../../hono'
 import { compress } from '.'
 
@@ -46,6 +46,18 @@ describe('Compress Middleware', () => {
     c.header('Content-Length', '1024')
     return c.body(new Uint8Array(1024)) // Simulated compressed data
   })
+  app.get('/transfer-encoding-deflate', (c) => {
+    c.header('Content-Type', 'application/octet-stream')
+    c.header('Transfer-Encoding', 'deflate')
+    c.header('Content-Length', '1024')
+    return c.body(new Uint8Array(1024)) // Simulated deflate data
+  })
+  app.get('/chunked', (c) => {
+    c.header('Content-Type', 'application/octet-stream')
+    c.header('Transfer-Encoding', 'chunked')
+    c.header('Content-Length', '1024')
+    return c.body(new Uint8Array(1024)) // Simulated chunked data
+  })
   app.get('/stream', (c) =>
     stream(c, async (stream) => {
       c.header('Content-Type', 'text/plain')
@@ -62,6 +74,13 @@ describe('Compress Middleware', () => {
       // 60000 bytes
       for (let i = 0; i < 10000; i++) {
         await stream.write(new Uint8Array([0, 1, 2, 3, 4, 5])) // Simulated compressed data
+      }
+    })
+  )
+  app.get('/sse', (c) =>
+    streamSSE(c, async (stream) => {
+      for (let i = 0; i < 1000; i++) {
+        await stream.writeSSE({ data: 'chunk' })
       }
     })
   )
@@ -126,6 +145,18 @@ describe('Compress Middleware', () => {
       const res = await testCompression('/jpeg-image', 'gzip', null)
       expect(res.headers.get('Content-Length')).toBeDefined()
     })
+
+    it('should not compress transfer-encoding: deflate', async () => {
+      const res = await testCompression('/transfer-encoding-deflate', 'gzip', null)
+      expect(res.headers.get('Content-Length')).toBe('1024')
+      expect(res.headers.get('Transfer-Encoding')).toBe('deflate')
+    })
+
+    it('should not compress transfer-encoding: chunked', async () => {
+      const res = await testCompression('/chunked', 'gzip', null)
+      expect(res.headers.get('Content-Length')).toBe('1024')
+      expect(res.headers.get('Transfer-Encoding')).toBe('chunked')
+    })
   })
 
   describe('JSON Handling', () => {
@@ -154,6 +185,11 @@ describe('Compress Middleware', () => {
     it('should not compress already compressed streaming responses', async () => {
       const res = await testCompression('/already-compressed-stream', 'gzip', 'br')
       expect((await res.arrayBuffer()).byteLength).toBe(60000)
+    })
+
+    it('should not compress server-sent events', async () => {
+      const res = await testCompression('/sse', 'gzip', null)
+      expect((await res.arrayBuffer()).byteLength).toBe(13000)
     })
   })
 

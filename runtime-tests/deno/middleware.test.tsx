@@ -13,7 +13,7 @@ Deno.test('Basic Auth Middleware', async () => {
   const app = new Hono()
 
   const username = 'hono'
-  const password = 'acoolproject'
+  const password = 'ahotproject'
 
   app.use(
     '/auth/*',
@@ -29,7 +29,7 @@ Deno.test('Basic Auth Middleware', async () => {
   assertEquals(res.status, 401)
   assertEquals(await res.text(), 'Unauthorized')
 
-  const credential = 'aG9ubzphY29vbHByb2plY3Q='
+  const credential = 'aG9ubzphaG90cHJvamVjdA=='
 
   const req = new Request('http://localhost/auth/a')
   req.headers.set('Authorization', `Basic ${credential}`)
@@ -139,6 +139,22 @@ Deno.test('Serve Static middleware', async () => {
   res = await app.request('http://localhost/static-absolute-root/plain.txt')
   assertEquals(res.status, 200)
   assertEquals(await res.text(), 'Deno!')
+
+  res = await app.request('http://localhost/static')
+  assertEquals(res.status, 404)
+  assertEquals(await res.text(), '404 Not Found')
+
+  res = await app.request('http://localhost/static/dir')
+  assertEquals(res.status, 404)
+  assertEquals(await res.text(), '404 Not Found')
+
+  res = await app.request('http://localhost/static/helloworld/nested')
+  assertEquals(res.status, 404)
+  assertEquals(await res.text(), '404 Not Found')
+
+  res = await app.request('http://localhost/static/helloworld/../')
+  assertEquals(res.status, 404)
+  assertEquals(await res.text(), '404 Not Found')
 })
 
 Deno.test('JWT Authentication middleware', async () => {

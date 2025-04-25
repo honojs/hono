@@ -1,42 +1,25 @@
-import { Context } from './context'
-import type { ParamIndexMap, Params } from './router'
-import type { Env, ErrorHandler, NotFoundHandler } from './types'
-
-/**
- * Interface representing the context for a composition operation.
- */
-interface ComposeContext {
-  /**
-   * Indicates whether the composition process has been finalized.
-   */
-  finalized: boolean
-
-  /**
-   * The result of the composition process. The type is unknown and should be
-   * specified based on the context where this interface is used.
-   */
-  res: unknown
-}
+import type { Context } from './context'
+import type { Env, ErrorHandler, Next, NotFoundHandler } from './types'
 
 /**
  * Compose middleware functions into a single function based on `koa-compose` package.
  *
- * @template C - The context type.
  * @template E - The environment type.
  *
- * @param {[[Function, unknown], ParamIndexMap | Params][]} middleware - An array of middleware functions and their corresponding parameters.
+ * @param {[[Function, unknown], unknown][] | [[Function]][]} middleware - An array of middleware functions and their corresponding parameters.
  * @param {ErrorHandler<E>} [onError] - An optional error handler function.
  * @param {NotFoundHandler<E>} [onNotFound] - An optional not-found handler function.
  *
- * @returns {(context: C, next?: Function) => Promise<C>} - A composed middleware function.
+ * @returns {(context: Context, next?: Next) => Promise<Context>} - A composed middleware function.
  */
-export const compose = <C extends ComposeContext, E extends Env = Env>(
-  middleware: [[Function, unknown], ParamIndexMap | Params][],
+export const compose = <E extends Env = Env>(
+  middleware: [[Function, unknown], unknown][] | [[Function]][],
   onError?: ErrorHandler<E>,
   onNotFound?: NotFoundHandler<E>
-): ((context: C, next?: Function) => Promise<C>) => {
+): ((context: Context, next?: Next) => Promise<Context>) => {
   return (context, next) => {
     let index = -1
+
     return dispatch(0)
 
     /**
@@ -44,9 +27,9 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
      *
      * @param {number} i - The current index in the middleware array.
      *
-     * @returns {Promise<C>} - A promise that resolves to the context.
+     * @returns {Promise<Context>} - A promise that resolves to the context.
      */
-    async function dispatch(i: number): Promise<C> {
+    async function dispatch(i: number): Promise<Context> {
       if (i <= index) {
         throw new Error('next() called multiple times')
       }
@@ -58,30 +41,26 @@ export const compose = <C extends ComposeContext, E extends Env = Env>(
 
       if (middleware[i]) {
         handler = middleware[i][0][0]
-        if (context instanceof Context) {
-          context.req.routeIndex = i
-        }
+        context.req.routeIndex = i
       } else {
         handler = (i === middleware.length && next) || undefined
       }
 
-      if (!handler) {
-        if (context instanceof Context && context.finalized === false && onNotFound) {
-          res = await onNotFound(context)
-        }
-      } else {
+      if (handler) {
         try {
-          res = await handler(context, () => {
-            return dispatch(i + 1)
-          })
+          res = await handler(context, () => dispatch(i + 1))
         } catch (err) {
-          if (err instanceof Error && context instanceof Context && onError) {
+          if (err instanceof Error && onError) {
             context.error = err
             res = await onError(err, context)
             isError = true
           } else {
             throw err
           }
+        }
+      } else {
+        if (context.finalized === false && onNotFound) {
+          res = await onNotFound(context)
         }
       }
 
