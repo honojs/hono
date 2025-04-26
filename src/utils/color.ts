@@ -47,7 +47,7 @@ export async function getColorEnabledAsync(): Promise<boolean> {
       : navigator.userAgent === 'Cloudflare-Workers'
       ? // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        'NO_COLOR' in ((await import('cloudflare:workers')).env ?? {})
+        'NO_COLOR' in ((await import('cloudflare:workers')).env ?? {}) // ?? {} is for backward compat
       : false
 
   return !isNoColor
