@@ -4,6 +4,7 @@
  */
 
 import { HonoRequest } from '../request'
+import { createEmptyRecord } from './common'
 
 type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot }
 type BodyDataValueDotAll = {
@@ -93,7 +94,7 @@ interface ParseBody {
 }
 export const parseBody: ParseBody = async (
   request: HonoRequest | Request,
-  options = Object.create(null)
+  options = createEmptyRecord()
 ) => {
   const { all = false, dot = false } = options
 
@@ -143,7 +144,7 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
   formData: FormData,
   options: ParseBodyOptions
 ): T {
-  const form: BodyData = Object.create(null)
+  const form: BodyData = createEmptyRecord()
 
   formData.forEach((value, key) => {
     const shouldParseAllValues = options.all || key.endsWith('[]')
@@ -217,7 +218,7 @@ const handleParsingNestedValues = (
         Array.isArray(nestedForm[key]) ||
         nestedForm[key] instanceof File
       ) {
-        nestedForm[key] = Object.create(null)
+        nestedForm[key] = createEmptyRecord()
       }
       nestedForm = nestedForm[key] as unknown as BodyData
     }

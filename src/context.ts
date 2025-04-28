@@ -9,6 +9,7 @@ import type {
   RouterRoute,
   TypedResponse,
 } from './types'
+import { createResponse } from './utils/common'
 import type { ResponseHeader } from './utils/headers'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { ContentfulStatusCode, RedirectStatusCode, StatusCode } from './utils/http-status'
@@ -396,9 +397,7 @@ export class Context<
    * The Response object for the current request.
    */
   get res(): Response {
-    return (this.#res ||= new Response('404 Not Found', {
-      status: 404,
-    }))
+    return (this.#res ||= createResponse('404 Not Found', { status: 404 }))
   }
 
   /**
@@ -408,7 +407,7 @@ export class Context<
    */
   set res(_res: Response | undefined) {
     if (this.#res && _res) {
-      _res = new Response(_res.body, _res)
+      _res = createResponse(_res.body, _res)
       for (const [k, v] of this.#res.headers.entries()) {
         if (k === 'content-type') {
           continue
@@ -509,7 +508,7 @@ export class Context<
    */
   header: SetHeaders = (name, value, options): void => {
     if (this.finalized) {
-      this.#res = new Response((this.#res as Response).body, this.#res)
+      this.#res = createResponse((this.#res as Response).body, this.#res)
     }
 
     // Clear the header
@@ -635,7 +634,7 @@ export class Context<
         ? arg.status
         : this.#status
 
-    return new Response(data, {
+    return createResponse(data, {
       status,
       headers: this.res.headers,
     })
@@ -691,7 +690,7 @@ export class Context<
   ): ReturnType<TextRespond> => {
     return !this.#res && !this.#status && !arg && !headers
       ? // Optimization for Hello World
-        (new Response(text) as ReturnType<TextRespond>)
+        (createResponse(text) as ReturnType<TextRespond>)
       : (this.#newResponse(
           text,
           arg,
@@ -779,7 +778,7 @@ export class Context<
    * ```
    */
   notFound = (): Response | Promise<Response> => {
-    this.#notFoundHandler ??= () => new Response()
+    this.#notFoundHandler ??= () => createResponse()
     return this.#notFoundHandler(this)
   }
 }

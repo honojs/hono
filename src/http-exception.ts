@@ -3,6 +3,7 @@
  * This module provides the `HTTPException` class.
  */
 
+import { createResponse } from './utils/common'
 import type { ContentfulStatusCode } from './utils/http-status'
 
 /**
@@ -65,13 +66,13 @@ export class HTTPException extends Error {
    */
   getResponse(): Response {
     if (this.res) {
-      const newResponse = new Response(this.res.body, {
+      const newResponse = createResponse(this.res.body, {
         status: this.status,
         headers: this.res.headers,
       })
       return newResponse
     }
-    return new Response(this.message, {
+    return createResponse(this.message, {
       status: this.status,
     })
   }
