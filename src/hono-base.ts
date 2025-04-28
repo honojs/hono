@@ -92,7 +92,7 @@ type MountOptions =
   | MountOptionHandler
   | {
       optionHandler?: MountOptionHandler
-      replaceRequest?: MountReplaceRequest
+      replaceRequest?: MountReplaceRequest | false
     }
 
 class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
@@ -328,7 +328,11 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         optionHandler = options
       } else {
         optionHandler = options.optionHandler
-        replaceRequest = options.replaceRequest
+        if (options.replaceRequest === false) {
+          replaceRequest = (request) => request
+        } else {
+          replaceRequest = options.replaceRequest
+        }
       }
     }
 
@@ -356,7 +360,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     })()
 
     const handler: MiddlewareHandler = async (c, next) => {
-      const res = await applicationHandler(replaceRequest!(c.req.raw), ...getOptions(c))
+      const res = await applicationHandler(replaceRequest(c.req.raw), ...getOptions(c))
 
       if (res) {
         return res
