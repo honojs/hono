@@ -2734,6 +2734,25 @@ describe('app.mount()', () => {
       expect(await res.text()).toBe('/app')
     })
   })
+
+  describe('With replaceRequest: false', () => {
+    const anotherApp = (req: Request) => {
+      const path = getPath(req)
+      if (path === '/app') {
+        return new Response(getPath(req))
+      }
+      return new Response(null, { status: 404 })
+    }
+
+    const app = new Hono()
+    app.mount('/app', anotherApp, { replaceRequest: false })
+
+    it('Should return 200 response with the correct path', async () => {
+      const res = await app.request('/app')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/app')
+    })
+  })
 })
 
 describe('HEAD method', () => {
