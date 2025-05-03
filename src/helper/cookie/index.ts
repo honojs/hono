@@ -15,7 +15,7 @@ interface GetCookie {
 
 interface GetSignedCookie {
   (c: Context, secret: string | BufferSource, key: string): Promise<string | undefined | false>
-  (c: Context, secret: string): Promise<SignedCookie>
+  (c: Context, secret: string | BufferSource): Promise<SignedCookie>
   (
     c: Context,
     secret: string | BufferSource,
