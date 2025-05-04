@@ -5,7 +5,7 @@ describe('Tagged Template Literals', () => {
   it('Should escape special characters', () => {
     const name = 'John "Johnny" Smith'
 
-    expect(html`<p>I'm ${name}.</p>`.toString()).toBe("<p>I'm John &quot;Johnny&quot; Smith.</p>")
+    expect(html`<p>I'm ${name}.</p>`.toString()).toBe('<p>I\'m John &quot;Johnny&quot; Smith.</p>')
   })
 
   describe('Booleans, Null, and Undefined Are Ignored', () => {
@@ -36,7 +36,7 @@ describe('Tagged Template Literals', () => {
       const res = html`<p>I'm ${name}.</p>`
       expect(res).toBeInstanceOf(Promise)
 
-      expect((await res).toString()).toBe("<p>I'm John &quot;Johnny&quot; Smith.</p>")
+      expect((await res).toString()).toBe('<p>I\'m John &quot;Johnny&quot; Smith.</p>')
     })
 
     it('Should return raw value when some variables contains Promise<HtmlEscapedString> in variables', async () => {
@@ -60,9 +60,9 @@ describe('Tagged Template Literals', () => {
       const res = html`<p>I'm ${name}.</p>`
       expect(res).toBeInstanceOf(Promise)
 
-      expect((await res).toString()).toBe("<p>I'm Hono.</p>")
+      expect((await res).toString()).toBe('<p>I\'m Hono.</p>')
       expect(await resolveCallback(await res, HtmlEscapedCallbackPhase.Stringify, false, {})).toBe(
-        "<p>I'm Hono!.</p>"
+        '<p>I\'m Hono!.</p>'
       )
     })
   })
@@ -72,7 +72,7 @@ describe('raw', () => {
   it('Should be marked as escaped.', () => {
     const name = 'John &quot;Johnny&quot; Smith'
     expect(html`<p>I'm ${raw(name)}.</p>`.toString()).toBe(
-      "<p>I'm John &quot;Johnny&quot; Smith.</p>"
+      '<p>I\'m John &quot;Johnny&quot; Smith.</p>'
     )
   })
 })

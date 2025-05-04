@@ -12,11 +12,11 @@ const HEAD_OPENING_REGEX = /<head[^>]*>/i
  * A middleware for setting HTML head elements
  * @param head - a string or a function that returns a string or a promise of a string
  * @returns a middleware handler that sets the HTML head elements
- * 
+ *
  * @example
  * ```ts
  * import { htmlHead } from 'hono/middleware/html-head'
- * 
+ *
  * app.use('*', htmlHead('<link rel="stylesheet" href="/style.css">'))
  * app.get('/', (c) => c.html(html`<html><head></head><body>Hello World!</body></html>`))
  * ```
