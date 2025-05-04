@@ -97,7 +97,7 @@ export const renderTest = (
     it('Should render CSS with variable', async () => {
       const headerClass = css`
         background-color: blue;
-        content: '${'I\'m a variable!'}';
+        content: '${"I'm a variable!"}';
       `
       const template = (
         <>

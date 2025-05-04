@@ -28,7 +28,7 @@ const splitRule = (rule: string): string[] => {
 
     // consume quote
 
-    if (char === '\'' || char === '"') {
+    if (char === "'" || char === '"') {
       const quote = char
       i++
       for (; i < len; i++) {
