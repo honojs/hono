@@ -163,7 +163,7 @@ describe('toSSG function', () => {
   it('Should correctly generate files with the expected paths', async () => {
     app.get('/data', (c) =>
       c.text(JSON.stringify({ title: 'hono' }), 200, {
-        'Content-Type': 'text/foo',
+        'Content-Type': 'text/x-foo',
       })
     )
     await toSSG(app, fsMock, {
