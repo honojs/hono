@@ -57,6 +57,7 @@
     "./language": "./src/middleware/language/language.ts",
     "./secure-headers": "./src/middleware/secure-headers/secure-headers.ts",
     "./combine": "./src/middleware/combine/index.ts",
+    "./html-head": "./src/middleware/html-head/index.ts",
     "./ssg": "./src/helper/ssg/index.ts",
     "./streaming": "./src/helper/streaming/index.ts",
     "./validator": "./src/validator/index.ts",

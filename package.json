@@ -259,6 +259,11 @@
       "import": "./dist/middleware/combine/index.js",
       "require": "./dist/cjs/middleware/combine/index.js"
     },
+    "./html-head": {
+      "types": "./dist/types/middleware/html-head/index.d.ts",
+      "import": "./dist/middleware/html-head/index.js",
+      "require": "./dist/cjs/middleware/html-head/index.js"
+    },
     "./ssg": {
       "types": "./dist/types/helper/ssg/index.d.ts",
       "import": "./dist/helper/ssg/index.js",
@@ -535,6 +540,9 @@
       ],
       "combine": [
         "./dist/types/middleware/combine"
+      ],
+      "html-head": [
+        "./dist/types/middleware/html-head"
       ],
       "validator": [
         "./dist/types/validator/index.d.ts"
