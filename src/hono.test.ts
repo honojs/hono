@@ -3622,3 +3622,24 @@ describe('Generics for Bindings and Variables', () => {
     })
   })
 })
+
+describe('XXX', () => {
+  const app = new Hono()
+
+  app.use(async (c, next) => {
+    c.header('foo', 'bar', { append: true })
+    c.res // call Context.res()
+    await next()
+  })
+
+  app.get('/', (c) => {
+    c.header('Content-Type', 'text/html; charset=UTF-8')
+    return c.body('<html><body><h1>Hello World</h1></body></html>')
+  })
+
+  it('Should return a correct content type', async () => {
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).match(/^text\/html/)
+  })
+})
