@@ -30,6 +30,9 @@ export const htmlHead = (
     if (!contentType?.startsWith('text/html')) {
       return
     }
+
+    const isStream = c.res.headers.get('Transfer-Encoding') === 'chunked'
+
     if (typeof head === 'function') {
       const html = await c.res.text()
       const generatedHead = await head(c, html)
@@ -43,6 +46,18 @@ export const htmlHead = (
       if (!c.res.body) {
         return
       }
+
+      if (!isStream) {
+        const html = await c.res.text()
+        let replaced = false
+        const newHtml = html.replace(HEAD_OPENING_REGEX, (cur) => {
+          replaced = true
+          return `${cur}${head}`
+        })
+        c.res = c.body(replaced ? newHtml : `<head>${head}</head>${html}`)
+        return
+      }
+
       let cur = ''
       let injected = false
       const stream = c.res.body
