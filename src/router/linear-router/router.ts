@@ -1,10 +1,11 @@
 import type { Params, Result, Router } from '../../router'
 import { METHOD_NAME_ALL, UnsupportedPathError } from '../../router'
+import { createEmptyRecord } from '../../utils/common'
 import { checkOptionalParameter } from '../../utils/url'
 
 type RegExpMatchArrayWithIndices = RegExpMatchArray & { indices: [number, number][] }
 
-const emptyParams = Object.create(null)
+const emptyParams = createEmptyRecord()
 
 const splitPathRe = /\/(:\w+(?:{(?:(?:{[\d,]+})|[^}])+})?)|\/[^\/\?]+|(\?)/g
 const splitByStarRe = /\*/
@@ -68,7 +69,7 @@ export class LinearRouter<T> implements Router<T> {
           }
           handlers.push([handler, emptyParams])
         } else if (hasLabel && !hasStar) {
-          const params: Record<string, string> = Object.create(null)
+          const params: Record<string, string> = createEmptyRecord()
           const parts = routePath.match(splitPathRe) as string[]
 
           const lastIndex = parts.length - 1
