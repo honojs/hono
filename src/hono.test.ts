@@ -3623,7 +3623,7 @@ describe('Generics for Bindings and Variables', () => {
   })
 })
 
-describe.only('app.basePath() with the internal #clone()', () => {
+describe('app.basePath() with the internal #clone()', () => {
   const app = new Hono()
     .notFound((c) => {
       return c.text(`Custom not found`, 404)
