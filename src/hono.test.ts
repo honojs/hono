@@ -3622,3 +3622,29 @@ describe('Generics for Bindings and Variables', () => {
     })
   })
 })
+
+describe.only('app.basePath() with the internal #clone()', () => {
+  const app = new Hono()
+    .notFound((c) => {
+      return c.text(`Custom not found`, 404)
+    })
+    .onError((error, c) => {
+      return c.text(`Custom error "${error.message}"`, 500)
+    })
+    .basePath('/api')
+    .get('/test', async () => {
+      throw new Error('API Test error')
+    })
+
+  it('Should return the custom not found', async () => {
+    const res = await app.request('/api/not-found')
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('Custom not found')
+  })
+
+  it('Should return the custom error', async () => {
+    const res = await app.request('/api/test')
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe('Custom error "API Test error"')
+  })
+})
