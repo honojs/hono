@@ -1,5 +1,6 @@
 import type { Params } from '../../router'
 import { METHOD_NAME_ALL } from '../../router'
+import { createEmptyRecord } from '../../utils/common'
 import type { Pattern } from '../../utils/url'
 import { getPattern, splitPath, splitRoutingPath } from '../../utils/url'
 
@@ -13,7 +14,7 @@ type HandlerParamsSet<T> = HandlerSet<T> & {
   params: Record<string, string>
 }
 
-const emptyParams = Object.create(null)
+const emptyParams = createEmptyRecord()
 
 export class Node<T> {
   #methods: Record<string, HandlerSet<T>>[]
@@ -24,10 +25,10 @@ export class Node<T> {
   #params: Record<string, string> = emptyParams
 
   constructor(method?: string, handler?: T, children?: Record<string, Node<T>>) {
-    this.#children = children || Object.create(null)
+    this.#children = children || createEmptyRecord()
     this.#methods = []
     if (method && handler) {
-      const m: Record<string, HandlerSet<T>> = Object.create(null)
+      const m: Record<string, HandlerSet<T>> = createEmptyRecord()
       m[method] = { handler, possibleKeys: [], score: 0 }
       this.#methods = [m]
     }
@@ -67,7 +68,7 @@ export class Node<T> {
       curNode = curNode.#children[key]
     }
 
-    const m: Record<string, HandlerSet<T>> = Object.create(null)
+    const m: Record<string, HandlerSet<T>> = createEmptyRecord()
 
     const handlerSet: HandlerSet<T> = {
       handler,
@@ -93,7 +94,7 @@ export class Node<T> {
       const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>
       const processedSet: Record<number, boolean> = {}
       if (handlerSet !== undefined) {
-        handlerSet.params = Object.create(null)
+        handlerSet.params = createEmptyRecord()
         handlerSets.push(handlerSet)
         if (nodeParams !== emptyParams || (params && params !== emptyParams)) {
           for (let i = 0, len = handlerSet.possibleKeys.length; i < len; i++) {
