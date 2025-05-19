@@ -10,17 +10,17 @@ import type { Cookie, CookieOptions, CookiePrefixOptions, SignedCookie } from '.
 interface GetCookie {
   (c: Context, key: string): string | undefined
   (c: Context): Cookie
-  (c: Context, key: string, prefixOptions: CookiePrefixOptions): string | undefined
+  (c: Context, key: string, prefixOptions?: CookiePrefixOptions): string | undefined
 }
 
 interface GetSignedCookie {
   (c: Context, secret: string | BufferSource, key: string): Promise<string | undefined | false>
-  (c: Context, secret: string): Promise<SignedCookie>
+  (c: Context, secret: string | BufferSource): Promise<SignedCookie>
   (
     c: Context,
     secret: string | BufferSource,
     key: string,
-    prefixOptions: CookiePrefixOptions
+    prefixOptions?: CookiePrefixOptions
   ): Promise<string | undefined | false>
 }
 
@@ -124,7 +124,7 @@ export const setSignedCookie = async (
 }
 
 export const deleteCookie = (c: Context, name: string, opt?: CookieOptions): string | undefined => {
-  const deletedCookie = getCookie(c, name)
+  const deletedCookie = getCookie(c, name, opt?.prefix)
   setCookie(c, name, '', { ...opt, maxAge: 0 })
   return deletedCookie
 }
