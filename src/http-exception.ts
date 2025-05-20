@@ -11,7 +11,7 @@ import type { ContentfulStatusCode } from './utils/http-status'
  * @property message - Optional custom error message.
  * @property cause - Optional cause of the error.
  */
-type HTTPExceptionOptions = {
+interface HTTPExceptionOptions {
   res?: Response
   message?: string
   cause?: unknown
