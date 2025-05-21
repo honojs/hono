@@ -152,6 +152,12 @@ export const combineAfterGenerateHooks = (
   }
 }
 
+export interface SSGPlugin {
+  beforeRequestHook?: BeforeRequestHook | BeforeRequestHook[]
+  afterResponseHook?: AfterResponseHook | AfterResponseHook[]
+  afterGenerateHook?: AfterGenerateHook | AfterGenerateHook[]
+}
+
 export interface ToSSGOptions {
   dir?: string
   beforeRequestHook?: BeforeRequestHook | BeforeRequestHook[]
@@ -159,6 +165,7 @@ export interface ToSSGOptions {
   afterGenerateHook?: AfterGenerateHook | AfterGenerateHook[]
   concurrency?: number
   extensionMap?: Record<string, string>
+  plugins?: SSGPlugin[]
 }
 
 /**
