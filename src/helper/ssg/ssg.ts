@@ -344,15 +344,63 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
   let result: ToSSGResult | undefined
   const getInfoPromises: Promise<unknown>[] = []
   const savePromises: Promise<string | undefined>[] = []
+  const plugins = options?.plugins || []
+  const beforeRequestHooks: BeforeRequestHook[] = []
+  const afterResponseHooks: AfterResponseHook[] = []
+  const afterGenerateHooks: AfterGenerateHook[] = []
+  if (options?.beforeRequestHook) {
+    beforeRequestHooks.push(
+      ...(Array.isArray(options.beforeRequestHook)
+        ? options.beforeRequestHook
+        : [options.beforeRequestHook])
+    )
+  }
+  if (options?.afterResponseHook) {
+    afterResponseHooks.push(
+      ...(Array.isArray(options.afterResponseHook)
+        ? options.afterResponseHook
+        : [options.afterResponseHook])
+    )
+  }
+  if (options?.afterGenerateHook) {
+    afterGenerateHooks.push(
+      ...(Array.isArray(options.afterGenerateHook)
+        ? options.afterGenerateHook
+        : [options.afterGenerateHook])
+    )
+  }
+  for (const plugin of plugins) {
+    if (plugin.beforeRequestHook) {
+      beforeRequestHooks.push(
+        ...(Array.isArray(plugin.beforeRequestHook)
+          ? plugin.beforeRequestHook
+          : [plugin.beforeRequestHook])
+      )
+    }
+    if (plugin.afterResponseHook) {
+      afterResponseHooks.push(
+        ...(Array.isArray(plugin.afterResponseHook)
+          ? plugin.afterResponseHook
+          : [plugin.afterResponseHook])
+      )
+    }
+    if (plugin.afterGenerateHook) {
+      afterGenerateHooks.push(
+        ...(Array.isArray(plugin.afterGenerateHook)
+          ? plugin.afterGenerateHook
+          : [plugin.afterGenerateHook])
+      )
+    }
+  }
   try {
     const outputDir = options?.dir ?? './static'
     const concurrency = options?.concurrency ?? DEFAULT_CONCURRENCY
 
     const combinedBeforeRequestHook = combineBeforeRequestHooks(
-      options?.beforeRequestHook || ((req) => req)
+      beforeRequestHooks.length > 0 ? beforeRequestHooks : [(req) => req]
     )
     const combinedAfterResponseHook = combineAfterResponseHooks(
-      options?.afterResponseHook || ((req) => req)
+      afterResponseHooks.length > 0 ? afterResponseHooks : [(req) => req]
     )
     const getInfoGen = fetchRoutesContent(
       app,
@@ -389,8 +437,8 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
     const errorObj = error instanceof Error ? error : new Error(String(error))
     result = { success: false, files: [], error: errorObj }
   }
-  if (options?.afterGenerateHook) {
-    const combinedAfterGenerateHooks = combineAfterGenerateHooks(options?.afterGenerateHook)
+  if (afterGenerateHooks.length > 0) {
+    const combinedAfterGenerateHooks = combineAfterGenerateHooks(afterGenerateHooks)
     await combinedAfterGenerateHooks(result)
   }
   return result
