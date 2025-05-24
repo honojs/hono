@@ -186,14 +186,17 @@ jobs:
     name: 'Type & Bundle size Check on PR'
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - name: Performance measurement of type check
         run: |
-            bun scripts/generate-app.ts
-            bun tsc -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
+          bun scripts/generate-app.ts
+          bun tsc -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
         working-directory: perf-measures/type-check
       - name: Performance measurement of bundle check
         run: |
@@ -211,14 +214,17 @@ jobs:
     name: 'Type & Bundle size Check on Main'
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - name: Performance measurement of type check
         run: |
-            bun scripts/generate-app.ts
-            bun tsc -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
+          bun scripts/generate-app.ts
+          bun tsc -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
         working-directory: perf-measures/type-check
       - name: Performance measurement of bundle check
         run: |
