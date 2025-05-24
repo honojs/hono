@@ -206,6 +206,7 @@ jobs:
         uses: k1LoW/octocov-action@v1
         with:
           config: perf-measures/.octocov.perf-measures.yml
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
           OCTOCOV_CUSTOM_METRICS_BENCHMARK_BUNDLE: perf-measures/bundle-check/size.json
           OCTOCOV_CUSTOM_METRICS_BENCHMARK_TYPE: perf-measures/type-check/diagnostics.json
@@ -234,6 +235,7 @@ jobs:
         uses: k1LoW/octocov-action@v1
         with:
           config: perf-measures/.octocov.perf-measures.main.yml
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
           OCTOCOV_GITHUB_REF: refs/heads/main
           OCTOCOV_CUSTOM_METRICS_BENCHMARK_BUNDLE: perf-measures/bundle-check/size.json
