@@ -188,6 +188,7 @@ jobs:
     if: github.event_name == 'pull_request'
     permissions:
       contents: read
+      issues: write
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
@@ -217,7 +218,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
