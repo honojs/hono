@@ -55,7 +55,7 @@ runs:
       if: ${{ inputs.target-ref == 'auto' }}
       uses: k1LoW/octocov-action@v1
       with:
-        config: perf-measures/.octocov.perf-measures.yml
+        config: perf-measures/.octocov.${{ inputs.typescript-impl }}.perf-measures.yml
       env:
         OCTOCOV_CUSTOM_METRICS_BENCHMARK_BUNDLE: perf-measures/bundle-check/size.json
         OCTOCOV_CUSTOM_METRICS_BENCHMARK_TYPE: perf-measures/type-check/diagnostics.json
@@ -64,7 +64,7 @@ runs:
       if: ${{ inputs.target-ref == 'main' }}
       uses: k1LoW/octocov-action@v1
       with:
-        config: perf-measures/.octocov.perf-measures.main.yml
+        config: perf-measures/.octocov.${{ inputs.typescript-impl }}.perf-measures.main.yml
       env:
         OCTOCOV_GITHUB_REF: 'refs/heads/main'
         OCTOCOV_CUSTOM_METRICS_BENCHMARK_BUNDLE: perf-measures/bundle-check/size.json
