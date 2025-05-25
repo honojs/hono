@@ -245,6 +245,8 @@ jobs:
         run: |
           bun scripts/generate-app.ts
           bun tsgo -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
+        env:
+          BENCHMARK_TS_IMPL: typescript-go
         working-directory: perf-measures/type-check
       - name: Performance measurement of bundle check
         run: |
@@ -270,6 +272,8 @@ jobs:
         run: |
           bun scripts/generate-app.ts
           bun tsgo -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
+        env:
+          BENCHMARK_TS_IMPL: typescript-go
         working-directory: perf-measures/type-check
       - name: Performance measurement of bundle check
         run: |

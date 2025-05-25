@@ -6,6 +6,7 @@ async function main() {
     output: process.stdout,
     terminal: false,
   })
+  const tsImplId = process.env['BENCHMARK_TS_IMPL'] || 'typescript'
   const toKebabCase = (str: string): string => {
     return str
       .replace(/([a-z])([A-Z])/g, '$1-$2')
@@ -37,7 +38,7 @@ async function main() {
   }
   const benchmark = {
     key: 'diagnostics',
-    name: 'Compiler Diagnostics',
+    name: `Compiler Diagnostics (${tsImplId})`,
     metrics,
   }
   console.log(JSON.stringify(benchmark, null, 2))
