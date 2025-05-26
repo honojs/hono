@@ -6,7 +6,11 @@ async function main() {
     output: process.stdout,
     terminal: false,
   })
-  const tsImplId = process.env['BENCHMARK_TS_IMPL'] || 'typescript'
+  const tsImplLabel = process.env['BENCHMARK_TS_IMPL_LABEL']
+  if (!tsImplLabel) {
+    throw new Error('BENCHMARK_TS_IMPL_LABEL must be set')
+  }
+
   const toKebabCase = (str: string): string => {
     return str
       .replace(/([a-z])([A-Z])/g, '$1-$2')
@@ -38,7 +42,7 @@ async function main() {
   }
   const benchmark = {
     key: 'diagnostics',
-    name: `Compiler Diagnostics (${tsImplId})`,
+    name: `Compiler Diagnostics (${tsImplLabel})`,
     metrics,
   }
   console.log(JSON.stringify(benchmark, null, 2))

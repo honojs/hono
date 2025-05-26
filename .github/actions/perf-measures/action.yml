@@ -33,7 +33,7 @@ runs:
       shell: bash
       working-directory: perf-measures/type-check
       env:
-        BENCHMARK_TS_IMPL: tsc
+        BENCHMARK_TS_IMPL_LABEL: tsc
 
     - name: Performance measurement of type check (typescript-go)
       if: ${{ inputs.typescript-impl == 'tsgo' }}
@@ -43,7 +43,7 @@ runs:
       shell: bash
       working-directory: perf-measures/type-check
       env:
-        BENCHMARK_TS_IMPL: typescript-go
+        BENCHMARK_TS_IMPL_LABEL: typescript-go
 
     - name: Performance measurement of bundle check
       run: |
