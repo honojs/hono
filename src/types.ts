@@ -2002,3 +2002,5 @@ export abstract class FetchEventLike {
   abstract passThroughOnException(): void
   abstract waitUntil(promise: Promise<void>): void
 }
+
+type Foo = {}
