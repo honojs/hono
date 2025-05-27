@@ -283,8 +283,8 @@ describe('Etag Middleware', () => {
 
     res = await app.request('http://localhost/etag/abc', {
       headers: {
-        'If-None-Match': 'W/"d104fafdb380655dab607c9bddc4d4982037afa1"'
-      }
+        'If-None-Match': 'W/"d104fafdb380655dab607c9bddc4d4982037afa1"',
+      },
     })
 
     expect(res.status).toBe(304)
