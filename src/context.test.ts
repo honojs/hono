@@ -306,6 +306,7 @@ describe('event and executionCtx', () => {
       executionCtx: {
         passThroughOnException: pathThroughOnException,
         waitUntil: waitUntil,
+        props: {},
       },
       env: {},
     })
