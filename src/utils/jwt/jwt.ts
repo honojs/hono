@@ -153,7 +153,7 @@ export const verifyFromJwks = async (
     throw new JwtTokenInvalid(token)
   }
 
-  return await verify(token, matchingKey, matchingKey.alg as SignatureAlgorithm)
+  return await verify(token, matchingKey, (matchingKey.alg as SignatureAlgorithm) || header.alg)
 }
 
 export const decode = (token: string): { header: TokenHeader; payload: JWTPayload } => {

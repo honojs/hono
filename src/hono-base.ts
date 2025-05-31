@@ -173,6 +173,8 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
       router: this.router,
       getPath: this.getPath,
     })
+    clone.errorHandler = this.errorHandler
+    clone.#notFoundHandler = this.#notFoundHandler
     clone.routes = this.routes
     return clone
   }

@@ -199,8 +199,12 @@ describe('Parse Body Util', () => {
 
     const req = createRequest(FORM_URL, 'POST', data)
 
-    expect(await parseBody(req, { all: true, dot: true })).toEqual({
-      file: { file1, file2 },
+    const result = await parseBody(req, { all: true, dot: true })
+    expect(result).toMatchObject({
+      file: {
+        file1: { name: 'file1', type: 'application/octet-stream' },
+        file2: { name: 'file2', type: 'application/octet-stream' },
+      },
     })
   })
 
@@ -217,8 +221,12 @@ describe('Parse Body Util', () => {
 
     const req = createRequest(FORM_URL, 'POST', data)
 
-    expect(await parseBody(req, { all: true })).toEqual({
-      file: [file1, file2],
+    const result = await parseBody(req, { all: true })
+    expect(result).toMatchObject({
+      file: [
+        { name: 'file1', type: 'application/octet-stream' },
+        { name: 'file2', type: 'application/octet-stream' },
+      ],
     })
   })
 

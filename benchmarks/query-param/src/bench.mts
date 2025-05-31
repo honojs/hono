@@ -1,4 +1,5 @@
 import { run, group, bench } from 'mitata'
+import { getQueryStrings } from '../../../src/utils/url'
 import fastQuerystring from './fast-querystring.mts'
 import hono from './hono.mts'
 import qs from './qs.mts'
@@ -38,6 +39,17 @@ import qs from './qs.mts'
     bench('hono', () => hono(url, key))
     bench('fastQuerystring', () => fastQuerystring(url, key))
     bench('qs', () => qs(url, key))
+    bench('URLSearchParams', () => {
+      const params = new URLSearchParams(getQueryStrings(url))
+      if (key) {
+        return params.get(key)
+      }
+      const obj = {}
+      for (const [k, v] of params) {
+        obj[k] = v
+      }
+      return obj
+    })
   })
 })
 
