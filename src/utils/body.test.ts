@@ -239,7 +239,7 @@ describe('Parse Body Util', () => {
     const req = createRequest(FORM_URL, 'POST', data)
 
     expect(await parseBody(req, { all: true })).toEqual({
-      'file[]': ['aaa', 'bbb'],
+      file: ['aaa', 'bbb'],
       message: 'hello',
     })
   })
