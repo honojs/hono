@@ -9,9 +9,6 @@ export const generateDigest = async (
   let result: ArrayBuffer | undefined = undefined
 
   if (input instanceof ArrayBuffer) {
-    if (input.byteLength === 0) {
-      return null
-    }
     result = await generator(new Uint8Array(input))
   } else {
     const chunks: Uint8Array[] = []
