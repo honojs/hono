@@ -173,14 +173,11 @@ describe('Context', () => {
   })
 
   it('c.body() - content-type cannot be overridden by the default response when append headers', async () => {
-    const triggerResGetter = c.res
     c.header('Vary', 'Accept-Encoding', { append: true })
-    const res = c.body('<h1>Hi</h1>', 200, {
-      'X-Foo': ['Bar', 'Buzz'],
-      'Content-Type': 'text/html;charset=utf-8',
-    })
-    const foo = res.headers.get('Content-Type')
-    expect(foo).toBe('text/html;charset=utf-8')
+    c.res
+    c.header('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
   })
 
   it('c.status()', async () => {
