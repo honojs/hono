@@ -232,15 +232,25 @@ describe('Parse Body Util', () => {
 
   it('should parse multiple values if key ends with `[]`', async () => {
     const data = new FormData()
-    data.append('file[]', 'aaa')
-    data.append('file[]', 'bbb')
+    data.append('foo[]', 'aaa')
+    data.append('foo[]', 'bbb')
     data.append('message', 'hello')
 
     const req = createRequest(FORM_URL, 'POST', data)
 
     expect(await parseBody(req, { all: true })).toEqual({
-      file: ['aaa', 'bbb'],
+      'foo[]': ['aaa', 'bbb'],
       message: 'hello',
+    })
+  })
+
+  it('should parse single value as array if the key has []', async () => {
+    const data = new FormData()
+    data.append('foo[]', 'bar')
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { all: true })).toEqual({
+      'foo[]': ['bar'],
     })
   })
 

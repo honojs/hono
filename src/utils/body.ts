@@ -151,8 +151,7 @@ function convertFormDataToBodyData<T extends BodyData = BodyData>(
     if (!shouldParseAllValues) {
       form[key] = value
     } else {
-      const keyWithoutBrackets = key.replace(/\[\]$/, '')
-      handleParsingAllValues(form, keyWithoutBrackets, value)
+      handleParsingAllValues(form, key, value)
     }
   })
 
@@ -189,7 +188,11 @@ const handleParsingAllValues = (
       form[key] = [form[key] as string | File, value]
     }
   } else {
-    form[key] = value
+    if (!key.endsWith('[]')) {
+      form[key] = value
+    } else {
+      form[key] = [value]
+    }
   }
 }
 
