@@ -17,6 +17,22 @@ describe('hono testClient', () => {
     expect(await res.json()).toEqual({ hello: 'world' })
   })
 
+  it('Should support POST methods', async () => {
+    const app = new Hono().post('/search', async (c) => {
+      const body = await c.req.json()
+      return c.json({ echo: body.hello })
+    })
+    const res = await testClient(app).search.$post(
+      {},
+      {
+        headers: { 'Content-Type': 'application/json' },
+        init: { body: JSON.stringify({ hello: 'world' }) },
+      }
+    )
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ echo: 'world' })
+  })
+
   it('Should return a correct URL with out throwing an error', async () => {
     const app = new Hono().get('/abc', (c) => c.json(0))
     const url = testClient(app).abc.$url()
