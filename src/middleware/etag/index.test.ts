@@ -296,9 +296,12 @@ describe('Etag Middleware', () => {
 
     it('Should not generate etag with custom generator when crypto is unavailable', async () => {
       const app = new Hono()
-      app.use('/etag/*', etag({
-        generateDigest: undefined
-      }))
+      app.use(
+        '/etag/*',
+        etag({
+          generateDigest: undefined,
+        })
+      )
       app.get('/etag/no-custom-digest', (c) => c.text('Hono is hot'))
       const res = await app.request('/etag/no-custom-digest')
       expect(res.status).toBe(200)
@@ -396,11 +399,14 @@ describe('Etag Middleware', () => {
 
     it('Should propagate generateDigest errors', async () => {
       const app = new Hono()
-      app.use('/etag/*', etag({
-        generateDigest: () => {
-          throw new Error('Digest generation failed')
-        }
-      }))
+      app.use(
+        '/etag/*',
+        etag({
+          generateDigest: () => {
+            throw new Error('Digest generation failed')
+          },
+        })
+      )
       app.get('/etag/error-digest', (c) => c.text('Error test'))
 
       const res = await app.request('http://localhost/etag/error-digest')
@@ -411,15 +417,18 @@ describe('Etag Middleware', () => {
   describe('Digest generation edge cases', () => {
     it('Should handle ArrayBuffer input directly', async () => {
       const app = new Hono()
-      app.use('/etag/*', etag({
-        generateDigest: (body: Uint8Array) => {
-          const result = new ArrayBuffer(2)
-          const view = new Uint8Array(result)
-          view[0] = body[0] || 0xaa
-          view[1] = body[1] || 0xbb
-          return result
-        }
-      }))
+      app.use(
+        '/etag/*',
+        etag({
+          generateDigest: (body: Uint8Array) => {
+            const result = new ArrayBuffer(2)
+            const view = new Uint8Array(result)
+            view[0] = body[0] || 0xaa
+            view[1] = body[1] || 0xbb
+            return result
+          },
+        })
+      )
       app.get('/etag/array-buffer', (c) => {
         const buffer = new ArrayBuffer(4)
         const view = new Uint8Array(buffer)
@@ -437,9 +446,12 @@ describe('Etag Middleware', () => {
 
     it('Should handle generator returning empty ArrayBuffer', async () => {
       const app = new Hono()
-      app.use('/etag/*', etag({
-        generateDigest: () => new ArrayBuffer(0)
-      }))
+      app.use(
+        '/etag/*',
+        etag({
+          generateDigest: () => new ArrayBuffer(0),
+        })
+      )
       app.get('/etag/empty-result', (c) => c.text('Test'))
 
       const res = await app.request('http://localhost/etag/empty-result')
@@ -449,20 +461,23 @@ describe('Etag Middleware', () => {
 
     it('Should handle async generator with ArrayBuffer input (covers line 13-14)', async () => {
       const app = new Hono()
-      app.use('/etag/*', etag({
-        generateDigest: async (body: Uint8Array) => {
-          // This async function will trigger the await on line 13-14 in digest.ts
-          return new Promise(resolve => {
-            setTimeout(() => {
-              const result = new ArrayBuffer(2)
-              const view = new Uint8Array(result)
-              view[0] = body[0] || 0xaa
-              view[1] = body[1] || 0xbb
-              resolve(result)
-            }, 0)
-          })
-        }
-      }))
+      app.use(
+        '/etag/*',
+        etag({
+          generateDigest: async (body: Uint8Array) => {
+            // This async function will trigger the await on line 13-14 in digest.ts
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                const result = new ArrayBuffer(2)
+                const view = new Uint8Array(result)
+                view[0] = body[0] || 0xaa
+                view[1] = body[1] || 0xbb
+                resolve(result)
+              }, 0)
+            })
+          },
+        })
+      )
       app.get('/etag/async-arraybuffer', (c) => {
         // Use ArrayBuffer to trigger the ArrayBuffer branch in digest.ts
         const buffer = new ArrayBuffer(2)
@@ -479,16 +494,19 @@ describe('Etag Middleware', () => {
 
     it('Should handle async generator returning empty ArrayBuffer with ArrayBuffer input', async () => {
       const app = new Hono()
-      app.use('/etag/*', etag({
-        generateDigest: async () => {
-          // Async generator that returns empty ArrayBuffer - covers line 50-51
-          return new Promise(resolve => {
-            setTimeout(() => {
-              resolve(new ArrayBuffer(0))
-            }, 0)
-          })
-        }
-      }))
+      app.use(
+        '/etag/*',
+        etag({
+          generateDigest: async () => {
+            // Async generator that returns empty ArrayBuffer - covers line 50-51
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                resolve(new ArrayBuffer(0))
+              }, 0)
+            })
+          },
+        })
+      )
       app.get('/etag/async-empty-arraybuffer', (c) => {
         const buffer = new ArrayBuffer(1)
         const view = new Uint8Array(buffer)
@@ -503,14 +521,17 @@ describe('Etag Middleware', () => {
 
     it('Should handle hex conversion for all byte values', async () => {
       const app = new Hono()
-      app.use('/etag/*', etag({
-        generateDigest: (body: Uint8Array) => {
-          const result = new ArrayBuffer(body.length)
-          const view = new Uint8Array(result)
-          view.set(body)
-          return result
-        }
-      }))
+      app.use(
+        '/etag/*',
+        etag({
+          generateDigest: (body: Uint8Array) => {
+            const result = new ArrayBuffer(body.length)
+            const view = new Uint8Array(result)
+            view.set(body)
+            return result
+          },
+        })
+      )
       app.get('/etag/hex-test', (c) => {
         const buffer = new ArrayBuffer(4)
         const view = new Uint8Array(buffer)
