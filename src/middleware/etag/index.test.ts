@@ -160,13 +160,13 @@ describe('Etag Middleware', () => {
     app.use('/etag/*', etag())
     app.get('/etag/no-clone', (c) => {
       const originalResponse = c.text('Lambda test content')
-      // Mock Lambda environment where clone() doesn't work properly
+      // Mock AWS Lambda environment where clone() doesn't work properly
       const mockResponse = new Response(originalResponse.body, {
         status: originalResponse.status,
         statusText: originalResponse.statusText,
         headers: originalResponse.headers,
       })
-      // Override clone to throw error (Lambda-like behavior)
+      // Override clone to throw error (AWS Lambda-like behavior)
       mockResponse.clone = () => {
         throw new Error('clone() not supported in Lambda')
       }
