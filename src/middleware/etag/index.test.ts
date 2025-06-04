@@ -168,7 +168,7 @@ describe('Etag Middleware', () => {
       })
       // Override clone to throw error (AWS Lambda-like behavior)
       mockResponse.clone = () => {
-        throw new Error('clone() not supported in Lambda')
+        throw new Error('clone() not supported in AWS Lambda')
       }
       return mockResponse
     })
