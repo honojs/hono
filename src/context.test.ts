@@ -172,6 +172,29 @@ describe('Context', () => {
     expect(foo).toBe('Bar, Buzz')
   })
 
+  it('c.body() - content-type cannot be overridden by the default response when append headers', async () => {
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.res
+    c.header('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
+  })
+
+  it('c.body() - content-type can set explicitly via c.res.headers', async () => {
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.res.headers.set('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
+  })
+
+  it('c.body() - Different header settings require ensuring order', async () => {
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.header('Content-Type', 'image/png')
+    c.res.headers.set('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
+  })
+
   it('c.status()', async () => {
     c.status(201)
     const res = c.body('Hi')
