@@ -93,7 +93,15 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
       if (!generator) {
         return
       }
-      const hash = await generateDigest(res.clone().body, generator)
+      let hash: string | null = null
+      try {
+        hash = await generateDigest(res.clone().body, generator)
+      } catch {
+        // Fallback for environments where res.clone() is not supported (e.g., AWS Lambda)
+        const buffer = await res.arrayBuffer()
+        hash = await generateDigest(buffer, generator)
+        c.res = new Response(buffer, res)
+      }
       if (hash === null) {
         return
       }
