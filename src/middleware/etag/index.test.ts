@@ -155,6 +155,29 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).toBeNull()
   })
 
+  it('Should handle clone() not supported (Lambda-like environment)', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/no-clone', (c) => {
+      const originalResponse = c.text('Lambda test content')
+      // Mock AWS Lambda environment where clone() doesn't work properly
+      const mockResponse = new Response(originalResponse.body, {
+        status: originalResponse.status,
+        statusText: originalResponse.statusText,
+        headers: originalResponse.headers,
+      })
+      // Override clone to throw error (AWS Lambda-like behavior)
+      mockResponse.clone = () => {
+        throw new Error('clone() not supported in AWS Lambda')
+      }
+      return mockResponse
+    })
+    const res = await app.request('/etag/no-clone')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('ETag')).not.toBeNull()
+    expect(await res.text()).toBe('Lambda test content')
+  })
+
   it('Should return etag header - weak', async () => {
     const app = new Hono()
     app.use('/etag/*', etag({ weak: true }))
@@ -268,6 +291,26 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('Cache-Control')).toBe(cacheControl)
     expect(res.headers.get('x-message-retain')).toBe(message)
     expect(res.headers.get('x-message')).toBeFalsy()
+  })
+
+  it('Should return 304 when weak ETag in If-None-Match matches the generated ETag', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/abc', (c) => {
+      return c.text('Hono is hot')
+    })
+    let res = await app.request('http://localhost/etag/abc')
+    const headerEtag = res.headers.get('ETag')!
+
+    expect(headerEtag).not.toBeFalsy()
+
+    res = await app.request('http://localhost/etag/abc', {
+      headers: {
+        'If-None-Match': 'W/"d104fafdb380655dab607c9bddc4d4982037afa1"',
+      },
+    })
+
+    expect(res.status).toBe(304)
   })
 
   describe('When crypto is not available', () => {

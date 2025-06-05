@@ -1492,6 +1492,27 @@ describe('Error handle', () => {
       expect(await res.text()).toBe('Custom Error')
     })
   })
+
+  describe('HTTPException with finally block', () => {
+    const app = new Hono()
+    app.use(async (c) => {
+      try {
+        throw new Error()
+      } catch (cause) {
+        throw new HTTPException(302, {
+          cause,
+          res: c.redirect('/?error=invalid_request', 302),
+        })
+      } finally {
+        c.header('x-custom', 'custom message')
+      }
+    })
+    it('Should have the custom header', async () => {
+      const res = await app.request('http://localhost/')
+      expect(res.status).toBe(302)
+      expect(res.headers.get('x-custom')).toBe('custom message')
+    })
+  })
 })
 
 describe('Error handling in middleware', () => {
@@ -3626,7 +3647,7 @@ describe('Generics for Bindings and Variables', () => {
 describe('app.basePath() with the internal #clone()', () => {
   const app = new Hono()
     .notFound((c) => {
-      return c.text(`Custom not found`, 404)
+      return c.text('Custom not found', 404)
     })
     .onError((error, c) => {
       return c.text(`Custom error "${error.message}"`, 500)

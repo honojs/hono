@@ -35,7 +35,8 @@ const notFoundHandler = (c: Context) => {
 
 const errorHandler = (err: Error | HTTPResponseError, c: Context) => {
   if ('getResponse' in err) {
-    return err.getResponse()
+    const res = err.getResponse()
+    return c.newResponse(res.body, res)
   }
   console.error(err)
   return c.text('Internal Server Error', 500)

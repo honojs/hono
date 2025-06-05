@@ -9,23 +9,25 @@ const mergeBuffers = (buffer1: ArrayBuffer | undefined, buffer2: Uint8Array): Ui
 }
 
 export const generateDigest = async (
-  stream: ReadableStream<Uint8Array> | null,
+  input: ReadableStream<Uint8Array> | ArrayBuffer | null,
   generator: (body: Uint8Array) => ArrayBuffer | Promise<ArrayBuffer>
 ): Promise<string | null> => {
-  if (!stream) {
+  if (!input) {
     return null
   }
 
   let result: ArrayBuffer | undefined = undefined
-
-  const reader = stream.getReader()
-  for (;;) {
-    const { value, done } = await reader.read()
-    if (done) {
-      break
+  if (input instanceof ArrayBuffer) {
+    result = await generator(new Uint8Array(input))
+  } else {
+    const reader = input.getReader()
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (done) {
+        break
+      }
+      result = await generator(mergeBuffers(result, value))
     }
-
-    result = await generator(mergeBuffers(result, value))
   }
 
   if (!result) {
