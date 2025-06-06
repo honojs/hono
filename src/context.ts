@@ -512,16 +512,13 @@ export class Context<
       this.#res = new Response((this.#res as Response).body, this.#res)
     }
 
-    // Clear the header
+    const headers = this.res.headers
     if (value === undefined) {
-      this.res.headers.delete(name)
-      return
-    }
-
-    if (options?.append) {
-      this.res.headers.append(name, value)
+      headers.delete(name)
+    } else if (options?.append) {
+      headers.append(name, value)
     } else {
-      this.res.headers.set(name, value)
+      headers.set(name, value)
     }
   }
 
@@ -607,21 +604,17 @@ export class Context<
   ): Response {
     if (typeof arg === 'object' && 'headers' in arg) {
       const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers)
-      argHeaders.forEach((value, key) => {
-        if (key.toLowerCase() === 'set-cookie') {
-          this.header(key, value, { append: true })
-        } else {
-          this.header(key, value)
-        }
-      })
+      for (const [key, value] of argHeaders) {
+        this.header(key, value, { append: key.toLowerCase() === 'set-cookie' })
+      }
     }
 
     if (headers) {
       for (const [key, value] of Object.entries(headers)) {
         if (Array.isArray(value)) {
-          value.forEach((v) => {
+          for (const v of value) {
             this.header(key, v, { append: true })
-          })
+          }
         } else {
           this.header(key, value)
         }
@@ -719,9 +712,8 @@ export class Context<
     arg?: U | ResponseOrInit<U>,
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U> => {
-    const body = JSON.stringify(object)
     return this.#newResponse(
-      body,
+      JSON.stringify(object),
       arg,
       setDefaultContentType(this.finalized, 'application/json', headers)
     ) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
@@ -735,12 +727,9 @@ export class Context<
     const TEXT_HTML = 'text/html; charset=UTF-8'
     const res = (html: string) =>
       this.#newResponse(html, arg, setDefaultContentType(this.finalized, TEXT_HTML, headers))
-    if (typeof html === 'object') {
-      return resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then((html) =>
-        res(html)
-      )
-    }
-    return res(html)
+    return typeof html === 'object'
+      ? resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res)
+      : res(html)
   }
 
   /**
