@@ -4,7 +4,7 @@
  */
 import type { MiddlewareHandler } from '../../types'
 
-type PoweredByOptions = {
+interface PoweredByOptions {
   /**
    * The value for X-Powered-By header.
    * @default Hono
