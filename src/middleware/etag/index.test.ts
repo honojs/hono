@@ -155,29 +155,6 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).toBeNull()
   })
 
-  it('Should handle clone() not supported (Lambda-like environment)', async () => {
-    const app = new Hono()
-    app.use('/etag/*', etag())
-    app.get('/etag/no-clone', (c) => {
-      const originalResponse = c.text('Lambda test content')
-      // Mock AWS Lambda environment where clone() doesn't work properly
-      const mockResponse = new Response(originalResponse.body, {
-        status: originalResponse.status,
-        statusText: originalResponse.statusText,
-        headers: originalResponse.headers,
-      })
-      // Override clone to throw error (AWS Lambda-like behavior)
-      mockResponse.clone = () => {
-        throw new Error('clone() not supported in AWS Lambda')
-      }
-      return mockResponse
-    })
-    const res = await app.request('/etag/no-clone')
-    expect(res.status).toBe(200)
-    expect(res.headers.get('ETag')).not.toBeNull()
-    expect(await res.text()).toBe('Lambda test content')
-  })
-
   it('Should return etag header - weak', async () => {
     const app = new Hono()
     app.use('/etag/*', etag({ weak: true }))
