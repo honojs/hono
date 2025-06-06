@@ -360,7 +360,7 @@ describe('Context header', () => {
   })
 
   it('Should rewrite header values correctly', async () => {
-    await c.html('foo')
+    c.res = await c.html('foo')
     const res = c.text('foo')
     expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
   })

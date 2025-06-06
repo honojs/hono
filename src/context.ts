@@ -273,17 +273,11 @@ type ResponseOrInit<T extends StatusCode = StatusCode> = ResponseInit<T> | Respo
 
 export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
 
-const setDefaultContentType = (
-  finalized: boolean,
-  contentType: string,
-  headers?: HeaderRecord
-): HeaderRecord => {
-  return finalized
-    ? headers ?? {}
-    : {
-        'Content-Type': contentType,
-        ...headers,
-      }
+const setDefaultContentType = (contentType: string, headers?: HeaderRecord): HeaderRecord => {
+  return {
+    'Content-Type': contentType,
+    ...headers,
+  }
 }
 
 export class Context<
@@ -334,6 +328,7 @@ export class Context<
   #layout: Layout<PropsForRenderer & { Layout: Layout }> | undefined
   #renderer: Renderer | undefined
   #notFoundHandler: NotFoundHandler<E> | undefined
+  #preparedHeaders: Headers | undefined
 
   #matchResult: Result<[H, RouterRoute]> | undefined
   #path: string | undefined
@@ -396,8 +391,8 @@ export class Context<
    * The Response object for the current request.
    */
   get res(): Response {
-    return (this.#res ||= new Response('404 Not Found', {
-      status: 404,
+    return (this.#res ||= new Response(null, {
+      headers: (this.#preparedHeaders ??= new Headers()),
     }))
   }
 
@@ -511,8 +506,7 @@ export class Context<
     if (this.finalized) {
       this.#res = new Response((this.#res as Response).body, this.#res)
     }
-
-    const headers = this.res.headers
+    const headers = this.#res ? this.#res.headers : (this.#preparedHeaders ??= new Headers())
     if (value === undefined) {
       headers.delete(name)
     } else if (options?.append) {
@@ -602,36 +596,33 @@ export class Context<
     arg?: StatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): Response {
+    const responseHeaders = this.#res
+      ? new Headers(this.#res.headers)
+      : this.#preparedHeaders ?? new Headers()
+
     if (typeof arg === 'object' && 'headers' in arg) {
       const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers)
       for (const [key, value] of argHeaders) {
-        this.header(key, value, { append: key.toLowerCase() === 'set-cookie' })
+        if (key.toLowerCase() === 'set-cookie') {
+          responseHeaders.append(key, value)
+        } else {
+          responseHeaders.set(key, value)
+        }
       }
     }
 
     if (headers) {
       for (const [key, value] of Object.entries(headers)) {
         if (Array.isArray(value)) {
-          for (const v of value) {
-            this.header(key, v, { append: true })
-          }
+          for (const v of value) responseHeaders.append(key, v)
         } else {
-          this.header(key, value)
+          responseHeaders.set(key, value)
         }
       }
     }
 
-    const status =
-      typeof arg === 'number'
-        ? arg
-        : typeof arg === 'object' && 'status' in arg
-        ? arg.status
-        : this.#status
-
-    return new Response(data, {
-      status,
-      headers: this.res.headers,
-    })
+    const status = typeof arg === 'number' ? arg : arg?.status ?? this.#status
+    return new Response(data, { status, headers: responseHeaders })
   }
 
   newResponse: NewResponse = (...args) => this.#newResponse(...(args as Parameters<NewResponse>))
@@ -661,9 +652,7 @@ export class Context<
     data: Data | null,
     arg?: StatusCode | RequestInit,
     headers?: HeaderRecord
-  ): ReturnType<BodyRespond> => {
-    return this.#newResponse(data, arg, headers) as ReturnType<BodyRespond>
-  }
+  ): ReturnType<BodyRespond> => this.#newResponse(data, arg, headers) as ReturnType<BodyRespond>
 
   /**
    * `.text()` can render text as `Content-Type:text/plain`.
@@ -682,13 +671,12 @@ export class Context<
     arg?: ContentfulStatusCode | ResponseOrInit,
     headers?: HeaderRecord
   ): ReturnType<TextRespond> => {
-    return !this.#res && !this.#status && !arg && !headers
-      ? // Optimization for Hello World
-        (new Response(text) as ReturnType<TextRespond>)
+    return !this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized
+      ? (new Response(text) as ReturnType<TextRespond>)
       : (this.#newResponse(
           text,
           arg,
-          setDefaultContentType(this.finalized, TEXT_PLAIN, headers)
+          setDefaultContentType(TEXT_PLAIN, headers)
         ) as ReturnType<TextRespond>)
   }
 
@@ -715,7 +703,7 @@ export class Context<
     return this.#newResponse(
       JSON.stringify(object),
       arg,
-      setDefaultContentType(this.finalized, 'application/json', headers)
+      setDefaultContentType('application/json', headers)
     ) /* eslint-disable @typescript-eslint/no-explicit-any */ as any
   }
 
@@ -726,7 +714,7 @@ export class Context<
   ): Response | Promise<Response> => {
     const TEXT_HTML = 'text/html; charset=UTF-8'
     const res = (html: string) =>
-      this.#newResponse(html, arg, setDefaultContentType(this.finalized, TEXT_HTML, headers))
+      this.#newResponse(html, arg, setDefaultContentType(TEXT_HTML, headers))
     return typeof html === 'object'
       ? resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res)
       : res(html)
