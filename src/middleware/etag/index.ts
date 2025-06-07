@@ -3,6 +3,7 @@
  * ETag Middleware for Hono.
  */
 
+import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 import { generateDigest } from './digest'
 
@@ -10,6 +11,7 @@ type ETagOptions = {
   retainedHeaders?: string[]
   weak?: boolean
   generateDigest?: (body: Uint8Array) => ArrayBuffer | Promise<ArrayBuffer>
+  getBody?: (c: Context) => ArrayBuffer | Promise<ArrayBuffer>
 }
 
 /**
@@ -64,6 +66,9 @@ function initializeGenerator(
  * @param {function(Uint8Array): ArrayBuffer | Promise<ArrayBuffer>} [options.generateDigest] -
  * A custom digest generation function. By default, it uses 'SHA-1'
  * This function is called with the response body as a `Uint8Array` and should return a hash as an `ArrayBuffer` or a Promise of one.
+ * @param {function(Context): ArrayBuffer | Promise<ArrayBuffer>} [options.getBody] -
+ * A custom function to get the body for ETag calculation. By default, it uses the response body.
+ * Useful for customizing what data is used to generate the ETag or in environments like AWS Lambda where `c.res.clone()` is not supported.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
@@ -93,7 +98,10 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
       if (!generator) {
         return
       }
-      const hash = await generateDigest(res.clone().body, generator)
+
+      const body = options?.getBody ? await options.getBody(c) : res.clone().body
+      const hash = await generateDigest(body, generator)
+
       if (hash === null) {
         return
       }
