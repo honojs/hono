@@ -441,6 +441,14 @@ describe('Context header', () => {
     c.header('X-Custom', 'Message')
     expect(c.res.headers.get('X-Custom')).toBe('Message')
   })
+
+  it('Should handle headers with array values correctly', async () => {
+    c.header('X-Array', 'value1')
+    const res = c.json({ test: 'data' }, 200, {
+      'X-Array': ['new1', 'new2'],
+    })
+    expect(res.headers.get('X-Array')).toBe('new1, new2')
+  })
 })
 
 describe('Pass a ResponseInit to respond methods', () => {

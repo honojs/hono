@@ -612,11 +612,14 @@ export class Context<
     }
 
     if (headers) {
-      for (const [key, value] of Object.entries(headers)) {
-        if (Array.isArray(value)) {
-          for (const v of value) responseHeaders.append(key, v)
+      for (const [k, v] of Object.entries(headers)) {
+        if (typeof v === 'string') {
+          responseHeaders.set(k, v)
         } else {
-          responseHeaders.set(key, value)
+          responseHeaders.delete(k)
+          for (const v2 of v) {
+            responseHeaders.append(k, v2)
+          }
         }
       }
     }
