@@ -715,9 +715,8 @@ export class Context<
     arg?: ContentfulStatusCode | ResponseOrInit<ContentfulStatusCode>,
     headers?: HeaderRecord
   ): Response | Promise<Response> => {
-    const TEXT_HTML = 'text/html; charset=UTF-8'
     const res = (html: string) =>
-      this.#newResponse(html, arg, setDefaultContentType(TEXT_HTML, headers))
+      this.#newResponse(html, arg, setDefaultContentType('text/html; charset=UTF-8', headers))
     return typeof html === 'object'
       ? resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res)
       : res(html)
