@@ -1910,7 +1910,7 @@ export type TypedResponse<
   _format: F
 }
 
-type MergeTypedResponse<T> = T extends Promise<infer T2>
+export type MergeTypedResponse<T> = T extends Promise<infer T2>
   ? T2 extends TypedResponse
     ? T2
     : TypedResponse
