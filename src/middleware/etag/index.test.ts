@@ -329,7 +329,7 @@ describe('Etag Middleware', () => {
       })
     )
     app.get('/etag/custom-both', (c) => {
-      return c.json({ message: 'Different content' })
+      return c.text('Different content')
     })
 
     const res = await app.request('http://localhost/etag/custom-both')
@@ -338,6 +338,7 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).toBe(
       '"6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d"'
     )
+    expect(await res.text()).toBe('Different content')
   })
 
   describe('When crypto is not available', () => {
