@@ -1,5 +1,6 @@
 import type { Context } from '../../context'
 import { GET_MATCH_RESULT } from '../../request/constants'
+import type { RouterRoute } from '../../types'
 
 /**
  * Get matched routes in the handler
@@ -27,7 +28,8 @@ import { GET_MATCH_RESULT } from '../../request/constants'
  * })
  * ```
  */
-export const matchedRoutes = (c: Context) => c.req[GET_MATCH_RESULT][0].map(([[, route]]) => route)
+export const matchedRoutes = (c: Context): RouterRoute[] =>
+  c.req[GET_MATCH_RESULT][0].map(([[, route]]) => route)
 
 /**
  * Get the route path registered within the handler
@@ -44,7 +46,7 @@ export const matchedRoutes = (c: Context) => c.req[GET_MATCH_RESULT][0].map(([[,
  * })
  * ```
  */
-export const routePath = (c: Context) => matchedRoutes(c)[c.req.routeIndex].path
+export const routePath = (c: Context): string => matchedRoutes(c)[c.req.routeIndex].path
 
 /**
  * Get the basePath for the matched route
@@ -66,4 +68,4 @@ export const routePath = (c: Context) => matchedRoutes(c)[c.req.routeIndex].path
  * app.route('/sub', subApp)
  * ```
  */
-export const basePath = (c: Context) => matchedRoutes(c)[c.req.routeIndex].basePath
+export const basePath = (c: Context): string => matchedRoutes(c)[c.req.routeIndex].basePath
