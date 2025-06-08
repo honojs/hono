@@ -449,6 +449,14 @@ describe('Context header', () => {
     })
     expect(res.headers.get('X-Array')).toBe('new1, new2')
   })
+
+  it('Should remove existing header when new value is empty array', async () => {
+    c.header('X-Test', 'existing')
+    const res = c.json({ test: 'data' }, 200, {
+      'X-Test': [],
+    })
+    expect(res.headers.get('X-Test')).toBeNull()
+  })
 })
 
 describe('Pass a ResponseInit to respond methods', () => {
