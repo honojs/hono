@@ -1,6 +1,7 @@
 import type { Context } from '../../context'
 import { GET_MATCH_RESULT } from '../../request/constants'
 import type { RouterRoute } from '../../types'
+import { getPattern, splitRoutingPath } from '../../utils/url'
 
 /**
  * Get matched routes in the handler
@@ -49,10 +50,32 @@ export const matchedRoutes = (c: Context): RouterRoute[] =>
 export const routePath = (c: Context): string => matchedRoutes(c)[c.req.routeIndex].path
 
 /**
- * Get the basePath for the matched route
+ * Get the basePath of the as-is route specified by routing.
  *
  * @param {Context} c - The context object
- * @returns The basePath for the matched route
+ * @returns The basePath of the as-is route specified by routing.
+ *
+ * @example
+ * ```ts
+ * import { baseRoutePath } from 'hono/route'
+ *
+ * const app = new Hono()
+ *
+ * const subApp = new Hono()
+ * subApp.get('/posts/:id', (c) => {
+ *   return c.text(baseRoutePath(c)) // '/:sub'
+ * })
+ *
+ * app.route('/:sub', subApp)
+ * ```
+ */
+export const baseRoutePath = (c: Context): string => matchedRoutes(c)[c.req.routeIndex].basePath
+
+/**
+ * Get the basePath with embedded parameters
+ *
+ * @param {Context} c - The context object
+ * @returns The basePath with embedded parameters.
  *
  * @example
  * ```ts
@@ -62,10 +85,47 @@ export const routePath = (c: Context): string => matchedRoutes(c)[c.req.routeInd
  *
  * const subApp = new Hono()
  * subApp.get('/posts/:id', (c) => {
- *   return c.text(basePath(c)) // '/sub'
+ *   return c.text(basePath(c)) // '/requested-sub-app-path'
  * })
  *
- * app.route('/sub', subApp)
+ * app.route('/:sub', subApp)
  * ```
  */
-export const basePath = (c: Context): string => matchedRoutes(c)[c.req.routeIndex].basePath
+const basePathCacheMap: WeakMap<Context, string[]> = new WeakMap()
+export const basePath = (c: Context): string => {
+  const routeIndex = c.req.routeIndex
+
+  const cache = basePathCacheMap.get(c) || []
+  if (typeof cache[routeIndex] === 'string') {
+    return cache[routeIndex]
+  }
+
+  let result: string
+  const rp = baseRoutePath(c)
+  if (!/[:*]/.test(rp)) {
+    result = rp
+  } else {
+    const paths = splitRoutingPath(rp)
+
+    const reqPath = c.req.path
+    let basePathLength = 0
+    for (let i = 0, len = paths.length; i < len; i++) {
+      const pattern = getPattern(paths[i], paths[i + 1])
+      if (pattern) {
+        basePathLength +=
+          (reqPath
+            .substring(basePathLength + 1)
+            .match(pattern[2] === true || pattern === '*' ? /[^\/]+/ : pattern[2])?.[0].length ||
+            0) + 1
+      } else {
+        basePathLength += paths[i].length + 1 // +1 for '/'
+      }
+    }
+    result = reqPath.substring(0, basePathLength)
+  }
+
+  cache[routeIndex] = result
+  basePathCacheMap.set(c, cache)
+
+  return result
+}

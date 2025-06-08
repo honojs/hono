@@ -1,6 +1,5 @@
 import { Context } from '../../context'
-import { HonoRequest } from '../../request'
-import { matchedRoutes, routePath, basePath } from '.'
+import { matchedRoutes, routePath, baseRoutePath, basePath } from '.'
 
 const defaultContextOptions = {
   executionCtx: {
@@ -10,7 +9,7 @@ const defaultContextOptions = {
   env: {},
 }
 
-describe.only('matchedRoutes', () => {
+describe('matchedRoutes', () => {
   it('should return matched routes', () => {
     const handlerA = () => {}
     const handlerB = () => {}
@@ -68,8 +67,44 @@ describe('routePath', () => {
   })
 })
 
+describe('baseRoutePath', () => {
+  it('should return raw basePath', () => {
+    const handlerA = () => {}
+    const handlerB = () => {}
+    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
+    const c = new Context(rawRequest, {
+      path: '/123/key',
+      matchResult: [
+        [
+          [
+            [handlerA, { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' }],
+            { id: '123' },
+          ],
+          [
+            [handlerA, { basePath: '/sub', handler: handlerB, method: 'GET', path: '/:id/:name' }],
+            { id: '456', name: 'key' },
+          ],
+          [
+            [handlerA, { basePath: '/:sub', handler: handlerB, method: 'GET', path: '/:id/:name' }],
+            { id: '456', name: 'key' },
+          ],
+        ],
+      ],
+      ...defaultContextOptions,
+    })
+
+    expect(baseRoutePath(c)).toBe('/')
+
+    c.req.routeIndex = 1
+    expect(baseRoutePath(c)).toBe('/sub')
+
+    c.req.routeIndex = 2
+    expect(baseRoutePath(c)).toBe('/:sub')
+  })
+})
+
 describe('basePath', () => {
-  test('req.basePath', () => {
+  it('should return basePath without parameters', () => {
     const handlerA = () => {}
     const handlerB = () => {}
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
@@ -94,5 +129,73 @@ describe('basePath', () => {
 
     c.req.routeIndex = 1
     expect(basePath(c)).toBe('/sub')
+  })
+
+  it('should return basePath with embedded parameters', () => {
+    const handlerA = () => {}
+    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
+    const c = new Context(rawRequest, {
+      path: '/sub-app-path/123/key',
+      matchResult: [
+        [
+          [
+            [handlerA, { basePath: '/:sub', handler: handlerA, method: 'GET', path: '/:id' }],
+            { id: '123' },
+          ],
+        ],
+      ],
+      ...defaultContextOptions,
+    })
+
+    expect(basePath(c)).toBe('/sub-app-path')
+  })
+
+  it('should return basePath with wildcard', () => {
+    const handlerA = () => {}
+    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
+    const c = new Context(rawRequest, {
+      path: '/sub-app-path/foo/app/123/key',
+      matchResult: [
+        [
+          [
+            [
+              handlerA,
+              { basePath: '/sub-app-path/*/app', handler: handlerA, method: 'GET', path: '/:id' },
+            ],
+            { id: '123' },
+          ],
+        ],
+      ],
+      ...defaultContextOptions,
+    })
+
+    expect(basePath(c)).toBe('/sub-app-path/foo/app')
+  })
+
+  it('should return basePath with custom regex pattern', () => {
+    const handlerA = () => {}
+    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
+    const c = new Context(rawRequest, {
+      path: '/sub-app-path/foo/123/key',
+      matchResult: [
+        [
+          [
+            [
+              handlerA,
+              {
+                basePath: '/sub-app-path/:sub{foo|bar}',
+                handler: handlerA,
+                method: 'GET',
+                path: '/:id',
+              },
+            ],
+            { sub: 'foo', id: '123' },
+          ],
+        ],
+      ],
+      ...defaultContextOptions,
+    })
+
+    expect(basePath(c)).toBe('/sub-app-path/foo')
   })
 })
