@@ -1,9 +1,10 @@
 import type { Params, Result, Router } from '../../router'
 import { METHOD_NAME_ALL, UnsupportedPathError } from '../../router'
+import { createEmptyRecord } from '../../utils/common'
 
 type Route<T> = [RegExp, string, T] // [pattern, method, handler]
 
-const emptyParams = Object.create(null)
+const emptyParams = createEmptyRecord()
 
 export class PatternRouter<T> implements Router<T> {
   name: string = 'PatternRouter'

@@ -26,6 +26,7 @@ import type {
   RouterRoute,
   Schema,
 } from './types'
+import { createResponse } from './utils/common'
 import { COMPOSED_HANDLER } from './utils/constants'
 import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
@@ -303,7 +304,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * // Create itty-router application
    * const ittyRouter = IttyRouter()
    * // GET /itty-router/hello
-   * ittyRouter.get('/hello', () => new Response('Hello from itty-router'))
+   * ittyRouter.get('/hello', () => createResponse('Hello from itty-router'))
    *
    * const app = new Hono()
    * app.mount('/itty-router', ittyRouter.handle)
@@ -399,7 +400,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     // Handle HEAD method
     if (method === 'HEAD') {
       return (async () =>
-        new Response(null, await this.#dispatch(request, executionCtx, env, 'GET')))()
+        createResponse(null, await this.#dispatch(request, executionCtx, env, 'GET')))()
     }
 
     const path = this.getPath(request, { env })
