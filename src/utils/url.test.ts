@@ -111,6 +111,11 @@ describe('url', () => {
       path = getPath(new Request('https://example.com/hello/hey/'))
       expect(path).toBe('/hello/hey/')
     })
+
+    it('getPath - http+unix', () => {
+      const path = getPath(new Request('http+unix://%2Ftmp%2Fsocket%2Esock/hello/'))
+      expect(path).toBe('/hello/')
+    })
   })
 
   describe('getQueryStrings', () => {
