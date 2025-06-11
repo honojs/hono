@@ -172,6 +172,14 @@ describe('Context', () => {
     expect(foo).toBe('Bar, Buzz')
   })
 
+  it('c.body() - content-type cannot be overridden by the default response when append headers', async () => {
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.res
+    c.header('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
+  })
+
   it('c.status()', async () => {
     c.status(201)
     const res = c.body('Hi')
