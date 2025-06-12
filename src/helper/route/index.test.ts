@@ -126,6 +126,7 @@ describe('basePath', () => {
     })
 
     expect(basePath(c)).toBe('/')
+    expect(basePath(c)).toBe('/') // cached value
 
     c.req.routeIndex = 1
     expect(basePath(c)).toBe('/sub')
