@@ -22,7 +22,7 @@ import { handle } from './handler'
  * fire(app)
  * ```
  */
-const fire = (app: Hono) => {
+const fire = (app: Hono): void => {
   // @ts-expect-error addEventListener is not typed well
   addEventListener('fetch', handle(app))
 }
