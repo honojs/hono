@@ -49,9 +49,8 @@ export class Node<T> {
       const pattern = getPattern(p, nextP)
       const key = Array.isArray(pattern) ? pattern[0] : p
 
-      if (Object.keys(curNode.#children).includes(key)) {
+      if (key in curNode.#children) {
         curNode = curNode.#children[key]
-        const pattern = getPattern(p, nextP)
         if (pattern) {
           possibleKeys.push(pattern[1])
         }
@@ -67,16 +66,13 @@ export class Node<T> {
       curNode = curNode.#children[key]
     }
 
-    const m: Record<string, HandlerSet<T>> = Object.create(null)
-
-    const handlerSet: HandlerSet<T> = {
-      handler,
-      possibleKeys: possibleKeys.filter((v, i, a) => a.indexOf(v) === i),
-      score: this.#order,
-    }
-
-    m[method] = handlerSet
-    curNode.#methods.push(m)
+    curNode.#methods.push({
+      [method]: {
+        handler,
+        possibleKeys: possibleKeys.filter((v, i, a) => a.indexOf(v) === i),
+        score: this.#order,
+      },
+    })
 
     return curNode
   }
@@ -159,7 +155,7 @@ export class Node<T> {
             continue
           }
 
-          if (part === '') {
+          if (!part) {
             continue
           }
 
