@@ -4,7 +4,7 @@ import { JSDOM } from 'jsdom'
 import type { HtmlEscapedString } from '../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback as rawResolveCallback } from '../utils/html'
 import { ErrorBoundary } from './components'
-import { Suspense, renderToReadableStream } from './streaming'
+import { Suspense, renderToReadableStream, StreamingContext } from './streaming'
 
 function resolveCallback(template: string | HtmlEscapedString) {
   return rawResolveCallback(template, HtmlEscapedCallbackPhase.Stream, false, {})
@@ -253,6 +253,57 @@ d.parentElement.insertBefore(c.content,d.nextSibling)
 })(document)
 </script>`,
         `<template data-hono-target="H:${suspenseCounter}"><div>Hello</div></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:${suspenseCounter}')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script><script>
+((d,c,n) => {
+d=d.getElementById('E:${errorBoundaryCounter}')
+if(!d)return
+n=d.nextSibling
+while(n.nodeType!=8||n.nodeValue!='E:${errorBoundaryCounter}'){n=n.nextSibling}
+n.remove()
+d.remove()
+})(document)
+</script>`,
+      ])
+
+      expect(replacementResult(`<html><body>${chunks.join('')}</body></html>`)).toEqual(
+        '<div>Hello</div>'
+      )
+    })
+
+    it('with StreamingContext', async () => {
+      const stream = renderToReadableStream(
+        <StreamingContext value={{ scriptNonce: 'test-nonce' }}>
+          <ErrorBoundary fallback={<Fallback />}>
+            <Suspense fallback={<p>Loading...</p>}>
+              <Component />
+            </Suspense>
+          </ErrorBoundary>
+        </StreamingContext>
+      )
+      const chunks = []
+      const textDecoder = new TextDecoder()
+      for await (const chunk of stream as any) {
+        chunks.push(textDecoder.decode(chunk))
+      }
+
+      expect(chunks).toEqual([
+        `<template id="E:${errorBoundaryCounter}"></template><!--E:${errorBoundaryCounter}-->`,
+        `<template data-hono-target="E:${errorBoundaryCounter}"><template id="H:${suspenseCounter}"></template><p>Loading...</p><!--/$--></template><script nonce="test-nonce">
+((d,c) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('E:${errorBoundaryCounter}')
+if(!d)return
+d.parentElement.insertBefore(c.content,d.nextSibling)
+})(document)
+</script>`,
+        `<template data-hono-target="H:${suspenseCounter}"><div>Hello</div></template><script nonce="test-nonce">
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:${suspenseCounter}')
