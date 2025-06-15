@@ -9,6 +9,7 @@ import type {
   RouterRoute,
   TypedResponse,
 } from './types'
+import { createResponse } from './utils/common'
 import type { ResponseHeader } from './utils/headers'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { ContentfulStatusCode, RedirectStatusCode, StatusCode } from './utils/http-status'
@@ -401,7 +402,7 @@ export class Context<
    */
   get res(): Response {
     this.#isFresh = false
-    return (this.#res ||= new Response('404 Not Found', { status: 404 }))
+    return (this.#res ||= createResponse('404 Not Found', { status: 404 }))
   }
 
   /**
@@ -412,7 +413,7 @@ export class Context<
   set res(_res: Response | undefined) {
     this.#isFresh = false
     if (this.#res && _res) {
-      _res = new Response(_res.body, _res)
+      _res = createResponse(_res.body, _res)
       for (const [k, v] of this.#res.headers.entries()) {
         if (k === 'content-type') {
           continue
@@ -513,7 +514,7 @@ export class Context<
    */
   header: SetHeaders = (name, value, options): void => {
     if (this.finalized) {
-      this.#res = new Response((this.#res as Response).body, this.#res)
+      this.#res = createResponse((this.#res as Response).body, this.#res)
     }
     // Clear the header
     if (value === undefined) {
@@ -636,7 +637,7 @@ export class Context<
   ): Response {
     // Optimized
     if (this.#isFresh && !headers && !arg && this.#status === 200) {
-      return new Response(data, {
+      return createResponse(data, {
         headers: this.#preparedHeaders,
       })
     }
@@ -654,7 +655,7 @@ export class Context<
         })
       }
       const headers = setHeaders(header, this.#preparedHeaders)
-      return new Response(data, {
+      return createResponse(data, {
         headers,
         status: arg.status ?? this.#status,
       })
@@ -689,7 +690,7 @@ export class Context<
       }
     }
 
-    return new Response(data, {
+    return createResponse(data, {
       status,
       headers: this.#headers,
     })
@@ -750,7 +751,7 @@ export class Context<
     if (!this.#preparedHeaders) {
       if (this.#isFresh && !headers && !arg) {
         // @ts-expect-error `Response` due to missing some types-only keys
-        return new Response(text)
+        return createResponse(text)
       }
       this.#preparedHeaders = {}
     }
@@ -850,7 +851,7 @@ export class Context<
    * ```
    */
   notFound = (): Response | Promise<Response> => {
-    this.#notFoundHandler ??= () => new Response()
+    this.#notFoundHandler ??= () => createResponse()
     return this.#notFoundHandler(this)
   }
 }
