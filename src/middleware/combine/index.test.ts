@@ -1,5 +1,6 @@
 import { Hono } from '../../hono'
 import type { MiddlewareHandler } from '../../types'
+import { validator } from '../../validator'
 import { every, except, some } from '.'
 
 const nextMiddleware: MiddlewareHandler = async (_, next) => await next()
@@ -135,6 +136,50 @@ describe('some', () => {
   })
 })
 
+describe('some with validators', () => {
+  const app = new Hono()
+  app.post(
+    '/',
+    some(
+      validator('json', (value) => value),
+      validator('form', (value) => value)
+    ),
+    async (c) => {
+      const jsonData = c.req.valid('json')
+      const formData = c.req.valid('form')
+      return c.json({
+        json: jsonData,
+        form: formData,
+      })
+    }
+  )
+
+  it('Should validate a JSON request', async () => {
+    const res = await app.request('/', {
+      method: 'POST',
+      body: JSON.stringify({ foo: 'bar' }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.json).toEqual({ foo: 'bar' })
+  })
+
+  it('Should validate a FormData request', async () => {
+    const form = new FormData()
+    form.append('foo', 'bar')
+    const res = await app.request('/', {
+      method: 'POST',
+      body: form,
+    })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.form).toEqual({ foo: 'bar' })
+  })
+})
+
 describe('every', () => {
   let app: Hono
 
@@ -223,6 +268,29 @@ describe('every', () => {
 
     const res = await app.request('http://localhost/123')
     expect(await res.json()).toEqual({ id: '123' })
+  })
+})
+
+describe('every with validators', () => {
+  const app = new Hono()
+  app.post('/', every(validator('json', (value) => value)), async (c) => {
+    const jsonData = c.req.valid('json')
+    return c.json({
+      json: jsonData,
+    })
+  })
+
+  it('Should validate a JSON request', async () => {
+    const res = await app.request('/', {
+      method: 'POST',
+      body: JSON.stringify({ foo: 'bar' }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.json).toEqual({ foo: 'bar' })
   })
 })
 
@@ -334,5 +402,59 @@ describe('except', () => {
     expect(middleware1).not.toBeCalled()
     expect(middleware2).not.toBeCalled()
     expect(await res.text()).toBe('Hello Public User 123')
+  })
+})
+
+describe('except with validators', () => {
+  const app = new Hono()
+  app.post(
+    '/',
+    every(
+      except(
+        (c) => {
+          return c.req.query('body_type') !== 'json'
+        },
+        validator('json', (value) => value)
+      ),
+      except(
+        (c) => {
+          return c.req.query('body_type') !== 'form'
+        },
+        validator('form', (value) => value)
+      )
+    ),
+    async (c) => {
+      const jsonData = c.req.valid('json')
+      const formData = c.req.valid('form')
+      return c.json({
+        json: jsonData,
+        form: formData,
+      })
+    }
+  )
+
+  it('Should validate a JSON request', async () => {
+    const res = await app.request('/?body_type=json', {
+      method: 'POST',
+      body: JSON.stringify({ foo: 'bar' }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.json).toEqual({ foo: 'bar' })
+  })
+
+  it('Should validate a FormData request', async () => {
+    const form = new FormData()
+    form.append('foo', 'bar')
+    const res = await app.request('/?body_type=form', {
+      method: 'POST',
+      body: form,
+    })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.form).toEqual({ foo: 'bar' })
   })
 })
