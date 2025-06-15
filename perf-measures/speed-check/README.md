@@ -12,7 +12,7 @@ This tool is inspired by and references the [bun-http-framework-benchmark](https
 ## 🚀 Usage
 
 ```bash
-cd perf-measures/http-benchmark
+cd perf-measures/speed-check
 
 # Compare current branch vs main
 bun run benchmark.ts
