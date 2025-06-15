@@ -39,6 +39,19 @@ runs:
         bun perf-measures/bundle-check/scripts/check-bundle-size.ts > perf-measures/bundle-check/size.json
       shell: bash
 
+    - name: Install bombardier for speed check
+      run: |
+        wget -O bombardier.tar.gz https://github.com/codesenberg/bombardier/releases/download/v1.2.6/bombardier-linux-amd64.tar.gz
+        tar -xzf bombardier.tar.gz
+        sudo mv bombardier /usr/local/bin/
+        rm bombardier.tar.gz
+      shell: bash
+
+    - name: Performance measurement of HTTP speed check
+      run: |
+        bun perf-measures/speed-check/scripts/benchmark.ts --ci > perf-measures/speed-check/results.json
+      shell: bash
+
     - name: Run octocov
       if: ${{ inputs.target-ref == 'auto' }}
       uses: k1LoW/octocov-action@v1
@@ -48,6 +61,7 @@ runs:
         OCTOCOV_CUSTOM_METRICS_BUNDLE_SIZE_CHECK: perf-measures/bundle-check/size.json
         OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSC: perf-measures/type-check/diagnostics-tsc.json
         OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSGO: perf-measures/type-check/diagnostics-tsgo.json
+        OCTOCOV_CUSTOM_METRICS_SPEED_CHECK: perf-measures/speed-check/results.json
 
     - name: Run octocov with custom target ref
       if: ${{ inputs.target-ref == 'main' }}
@@ -59,3 +73,4 @@ runs:
         OCTOCOV_CUSTOM_METRICS_BUNDLE_SIZE_CHECK: perf-measures/bundle-check/size.json
         OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSC: perf-measures/type-check/diagnostics-tsc.json
         OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSGO: perf-measures/type-check/diagnostics-tsgo.json
+        OCTOCOV_CUSTOM_METRICS_SPEED_CHECK: perf-measures/speed-check/results.json

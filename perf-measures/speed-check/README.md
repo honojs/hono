@@ -15,13 +15,16 @@ This tool is inspired by and references the [bun-http-framework-benchmark](https
 cd perf-measures/speed-check
 
 # Compare current branch vs main
-bun run benchmark.ts
+bun run scripts/benchmark.ts
 
 # Compare against specific version
-bun run benchmark.ts --baseline=v4.7.11
+bun run scripts/benchmark.ts --baseline=v4.7.11
 
 # Custom configuration
-bun run benchmark.ts --baseline=main --target=current --runs=3
+bun run scripts/benchmark.ts --baseline=main --target=current --runs=3
+
+# CI mode (current branch only, JSON output for octocov)
+bun run scripts/benchmark.ts --ci
 ```
 
 ## 📊 Metrics

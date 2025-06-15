@@ -14,11 +14,12 @@
  *   --skip-tests        Skip endpoint validation tests
  */
 
-import { spawn } from 'child_process'
-import { existsSync, mkdirSync, writeFileSync, rmSync } from 'fs'
-import { join } from 'path'
+import { spawn } from 'node:child_process'
+import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { join } from 'node:path'
 
 // Configuration from command line arguments
+const ciMode = process.argv.includes('--ci')
 const baseline = process.argv.find((arg) => arg.startsWith('--baseline='))?.split('=')[1] || 'main'
 const target = process.argv.find((arg) => arg.startsWith('--target='))?.split('=')[1] || 'current'
 const runs = parseInt(process.argv.find((arg) => arg.startsWith('--runs='))?.split('=')[1] || '1')
@@ -50,6 +51,12 @@ app
 export default app`
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const log = (...args: any[]) => {
+  if (!ciMode) {
+    console.log(...args)
+  }
+}
 
 const runCommand = async (command: string, cwd: string) => {
   const parts = command.split(' ')
@@ -89,7 +96,7 @@ const setupTemp = () => {
 }
 
 const buildVersion = async (version: string, name: string) => {
-  console.log(`📦 Building ${name} (${version})...`)
+  log(`📦 Building ${name} (${version})...`)
 
   let needsRestore = false
   let stashRef = ''
@@ -121,7 +128,7 @@ const buildVersion = async (version: string, name: string) => {
 
   // Test endpoints (optional)
   if (!skipTests) {
-    console.log(`🧪 Testing endpoints for ${name}...`)
+    log(`🧪 Testing endpoints for ${name}...`)
     const server = spawn('bun', [appPath], {
       cwd: TEMP_DIR,
       env: { ...process.env, NODE_ENV: 'production' },
@@ -152,13 +159,13 @@ const buildVersion = async (version: string, name: string) => {
         throw new Error('[POST /json] test failed')
       }
 
-      console.log(`  ✅ Tests passed for ${name}`)
+      log(`  ✅ Tests passed for ${name}`)
     } finally {
       server.kill()
       await sleep(1000)
     }
   } else {
-    console.log(`  ⏭️ Skipping endpoint tests for ${name}`)
+    log(`  ⏭️ Skipping endpoint tests for ${name}`)
   }
 
   // Restore git state
@@ -173,7 +180,7 @@ const buildVersion = async (version: string, name: string) => {
 }
 
 const runBenchmark = async (appPath: string, name: string) => {
-  console.log(`⚡ Running HTTP benchmark for ${name}...`)
+  log(`⚡ Running HTTP benchmark for ${name}...`)
 
   const bodyFile = join(TEMP_DIR, 'body.json')
   const commands = [
@@ -185,7 +192,7 @@ const runBenchmark = async (appPath: string, name: string) => {
   const allRuns: number[][] = []
 
   for (let run = 0; run < runs; run++) {
-    console.log(`  Run ${run + 1}/${runs}`)
+    log(`  Run ${run + 1}/${runs}`)
 
     const server = spawn('bun', [appPath], {
       cwd: TEMP_DIR,
@@ -198,13 +205,13 @@ const runBenchmark = async (appPath: string, name: string) => {
     try {
       for (const command of commands) {
         const result = await runCommand(command, process.cwd())
-        console.log(result.stdout)
+        log(result.stdout)
 
         const match = result.stdout.match(/Reqs\/sec\s+(\d+[.|,]\d+)/)
         if (match) {
           runResults.push(parseFloat(match[1].replace(',', '')))
         } else {
-          console.log('❌ Failed to parse result')
+          log('❌ Failed to parse result')
           runResults.push(0)
         }
       }
@@ -227,19 +234,61 @@ const runBenchmark = async (appPath: string, name: string) => {
 }
 
 const main = async () => {
-  console.log('🏁 Hono HTTP Benchmark')
-  console.log('======================')
-  console.log(`Baseline: ${baseline}`)
-  console.log(`Target: ${target}`)
-  console.log(`Runs: ${runs}`)
-  console.log(`Duration: ${duration}s`)
-  console.log(`Concurrency: ${concurrency}`)
-  console.log(`Skip Tests: ${skipTests}`)
-  console.log('')
+  log('🏁 Hono HTTP Benchmark')
+  log('======================')
+  log(`Baseline: ${baseline}`)
+  log(`Target: ${target}`)
+  log(`Runs: ${runs}`)
+  log(`Duration: ${duration}s`)
+  log(`Concurrency: ${concurrency}`)
+  log(`Skip Tests: ${skipTests}`)
+  log('')
 
   setupTemp()
 
   try {
+    if (ciMode) {
+      // CI mode: measure current branch only
+      const targetPath = await buildVersion(target, 'target')
+      const targetResult = await runBenchmark(targetPath, 'target')
+
+      // Generate octocov-compatible output
+      const benchmark = {
+        key: 'speed-check',
+        name: 'HTTP Speed Check',
+        metrics: [
+          {
+            key: 'ping',
+            name: 'Ping (req/s)',
+            value: targetResult.ping,
+            unit: 'req/s',
+          },
+          {
+            key: 'query',
+            name: 'Query (req/s)',
+            value: targetResult.query,
+            unit: 'req/s',
+          },
+          {
+            key: 'body',
+            name: 'Body (req/s)',
+            value: targetResult.body,
+            unit: 'req/s',
+          },
+          {
+            key: 'average',
+            name: 'Average (req/s)',
+            value: targetResult.average,
+            unit: 'req/s',
+          },
+        ],
+      }
+
+      console.log(JSON.stringify(benchmark, null, 2))
+      return
+    }
+
+    // Normal mode: compare baseline vs target
     const baselinePath = await buildVersion(baseline, 'baseline')
     const targetPath = await buildVersion(target, 'target')
 
