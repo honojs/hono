@@ -45,6 +45,11 @@ export interface ExecutionContext {
    * Allows the event to be passed through to subsequent event listeners.
    */
   passThroughOnException(): void
+  /**
+   * For compatibility with Wrangler 4.x.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  props: any
 }
 
 /**
