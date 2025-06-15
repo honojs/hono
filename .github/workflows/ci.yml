@@ -216,6 +216,28 @@ jobs:
             const fs = require('fs');
             const results = fs.readFileSync('benchmarks/http-server/benchmark-results.md', 'utf8');
 
+            // Minimize previous benchmark comments
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            for (const comment of comments.data) {
+              if (comment.body.includes('## HTTP Performance Benchmark')) {
+                await github.rest.graphql(`
+                  mutation {
+                    minimizeComment(input: { subjectId: "${comment.node_id}", classifier: OUTDATED }) {
+                      minimizedComment {
+                        isMinimized
+                      }
+                    }
+                  }
+                `);
+              }
+            }
+
+            // Post new comment
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,

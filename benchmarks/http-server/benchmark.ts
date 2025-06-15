@@ -23,7 +23,7 @@ const baseline = process.argv.find((arg) => arg.startsWith('--baseline='))?.spli
 const target = process.argv.find((arg) => arg.startsWith('--target='))?.split('=')[1] || 'current'
 const runs = parseInt(process.argv.find((arg) => arg.startsWith('--runs='))?.split('=')[1] || '1')
 const duration = parseInt(
-  process.argv.find((arg) => arg.startsWith('--duration='))?.split('=')[1] || '5'
+  process.argv.find((arg) => arg.startsWith('--duration='))?.split('=')[1] || '10'
 )
 const concurrency = 500
 const skipTests = process.argv.includes('--skip-tests')
@@ -33,8 +33,8 @@ const TEMP_DIR = join(SCRIPT_DIR, '.benchmark-temp')
 const HONO_ROOT = join(SCRIPT_DIR, '../..')
 
 // Test app template (embedded to avoid file dependency issues)
-const getAppTemplate = () => `import { Hono } from './dist/index.js'
-import { RegExpRouter } from './dist/router/reg-exp-router/index.js'
+const getAppTemplate = () => `import { Hono } from './src/index.ts'
+import { RegExpRouter } from './src/router/reg-exp-router/index.ts'
 
 const app = new Hono({ router: new RegExpRouter() })
 
@@ -90,13 +90,13 @@ const setupTemp = () => {
 }
 
 const buildVersion = async (version: string, name: string) => {
-  console.log(`📦 Building ${name} (${version})...`)
+  console.log(`📦 Preparing ${name} (${version})...`)
 
   let needsRestore = false
   let stashRef = ''
 
   if (version === 'current') {
-    await runCommand('bun run build', HONO_ROOT)
+    // No build needed - use src directly
   } else {
     // Ensure we have the latest remote refs
     await runCommand('git fetch origin', HONO_ROOT)
@@ -113,14 +113,14 @@ const buildVersion = async (version: string, name: string) => {
 
     await runCommand(`git checkout ${version}`, HONO_ROOT)
     await runCommand('bun install', HONO_ROOT)
-    await runCommand('bun run build', HONO_ROOT)
+    // No build needed - use src directly
   }
 
   const versionDir = join(TEMP_DIR, name)
   mkdirSync(versionDir, { recursive: true })
-  await runCommand(`cp -r ${HONO_ROOT}/dist ${versionDir}/dist`, process.cwd())
+  await runCommand(`cp -r ${HONO_ROOT}/src ${versionDir}/src`, process.cwd())
 
-  const appPath = join(versionDir, 'app.js')
+  const appPath = join(versionDir, 'app.ts')
   writeFileSync(appPath, getAppTemplate())
 
   // Test endpoints (optional)
