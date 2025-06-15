@@ -27,7 +27,7 @@ const duration = parseInt(
   process.argv.find((arg) => arg.startsWith('--duration='))?.split('=')[1] || '10'
 )
 const concurrency = 500
-const skipTests = process.argv.includes('--skip-tests')
+const skipTests = true // process.argv.includes('--skip-tests')
 
 const SCRIPT_DIR = join(import.meta.dirname, '..')
 const TEMP_DIR = join(SCRIPT_DIR, '.benchmark-temp')

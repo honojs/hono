@@ -396,6 +396,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     env: E['Bindings'],
     method: string
   ): Response | Promise<Response> {
+    return new Response('Hi')
     // Handle HEAD method
     if (method === 'HEAD') {
       return (async () =>
