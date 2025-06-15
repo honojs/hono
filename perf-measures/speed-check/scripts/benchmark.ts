@@ -32,11 +32,6 @@ const skipTests = process.argv.includes('--skip-tests')
 const TEMP_DIR = join(process.cwd(), '.benchmark-temp')
 const HONO_ROOT = join(process.cwd(), '../..')
 
-// Debug: Log paths in CI mode
-if (ciMode) {
-  console.error(`DEBUG: HONO_ROOT = ${HONO_ROOT}`)
-  console.error(`DEBUG: process.cwd() = ${process.cwd()}`)
-}
 
 // Test app template (embedded to avoid file dependency issues)
 const getAppTemplate = () => `import { Hono } from './dist/index.js'
@@ -259,12 +254,9 @@ const main = async () => {
   try {
     if (ciMode) {
       // CI mode: measure current branch only (dist already built)
-      const distPath = join(HONO_ROOT, 'dist')
-      console.error(`DEBUG: Checking dist at ${distPath}`)
-      console.error(`DEBUG: Dist exists: ${existsSync(distPath)}`)
-
       const versionDir = join(TEMP_DIR, 'current')
       mkdirSync(versionDir, { recursive: true })
+      const distPath = join(HONO_ROOT, 'dist')
       await runCommand(`cp -r ${distPath} ${versionDir}/`, process.cwd())
 
       const appPath = join(versionDir, 'app.js')
