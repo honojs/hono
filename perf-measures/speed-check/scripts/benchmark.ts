@@ -32,7 +32,6 @@ const skipTests = process.argv.includes('--skip-tests')
 const TEMP_DIR = join(process.cwd(), '.benchmark-temp')
 const HONO_ROOT = join(process.cwd(), '../..')
 
-
 // Test app template (embedded to avoid file dependency issues)
 const getAppTemplate = () => `import { Hono } from './dist/index.js'
 import { RegExpRouter } from './dist/router/reg-exp-router/index.js'
