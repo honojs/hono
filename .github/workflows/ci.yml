@@ -225,7 +225,7 @@ jobs:
 
             for (const comment of comments.data) {
               if (comment.body.includes('## HTTP Performance Benchmark')) {
-                await github.rest.graphql(`
+                await github.graphql(`
                   mutation {
                     minimizeComment(input: { subjectId: "${comment.node_id}", classifier: OUTDATED }) {
                       minimizedComment {
