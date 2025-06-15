@@ -19,7 +19,7 @@ import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 
 // Configuration from command line arguments
-const baseline = process.argv.find((arg) => arg.startsWith('--baseline='))?.split('=')[1] || 'main'
+const baseline = process.argv.find((arg) => arg.startsWith('--baseline='))?.split('=')[1] || 'origin/main'
 const target = process.argv.find((arg) => arg.startsWith('--target='))?.split('=')[1] || 'current'
 const runs = parseInt(process.argv.find((arg) => arg.startsWith('--runs='))?.split('=')[1] || '1')
 const duration = parseInt(
@@ -98,6 +98,9 @@ const buildVersion = async (version: string, name: string) => {
   if (version === 'current') {
     await runCommand('bun run build', HONO_ROOT)
   } else {
+    // Ensure we have the latest remote refs
+    await runCommand('git fetch origin', HONO_ROOT)
+    
     try {
       const stashResult = await runCommand('git stash push -m "benchmark-temp"', HONO_ROOT)
       needsRestore = stashResult.stdout.includes('Saved working directory')
