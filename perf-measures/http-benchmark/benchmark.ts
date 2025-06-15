@@ -61,7 +61,6 @@ class BenchmarkRunner {
     }
     mkdirSync(TEMP_DIR, { recursive: true })
 
-
     // Create JSON payload file for POST test
     writeFileSync(join(TEMP_DIR, 'body.json'), '{"hello":"world"}')
   }
