@@ -6,7 +6,7 @@ HTTP performance benchmarking tool that compares main vs current versions.
 
 ### In Pull Requests
 
-Comment `/benchmark` on any pull request to run the HTTP benchmark and get performance comparison results.
+HTTP benchmarks are automatically run for each pull request and results are commented on the PR.
 
 ### Local Development
 

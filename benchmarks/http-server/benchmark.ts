@@ -23,7 +23,7 @@ const baseline = process.argv.find((arg) => arg.startsWith('--baseline='))?.spli
 const target = process.argv.find((arg) => arg.startsWith('--target='))?.split('=')[1] || 'current'
 const runs = parseInt(process.argv.find((arg) => arg.startsWith('--runs='))?.split('=')[1] || '1')
 const duration = parseInt(
-  process.argv.find((arg) => arg.startsWith('--duration='))?.split('=')[1] || '10'
+  process.argv.find((arg) => arg.startsWith('--duration='))?.split('=')[1] || '5'
 )
 const concurrency = 500
 const skipTests = process.argv.includes('--skip-tests')

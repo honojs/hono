@@ -192,6 +192,37 @@ jobs:
         with:
           target-ref: 'auto'
 
+  http-benchmark-on-pr:
+    name: 'HTTP Speed Check on PR'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - name: Install bombardier
+        run: |
+          wget -O bombardier https://github.com/codesenberg/bombardier/releases/download/v2.0.1/bombardier-linux-amd64
+          chmod +x bombardier
+          sudo mv bombardier /usr/local/bin/
+      - name: Run HTTP benchmark
+        run: |
+          cd benchmarks/http-server
+          bun run benchmark.ts
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const results = fs.readFileSync('benchmarks/http-server/benchmark-results.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: results
+            });
+
   perf-measures-check-on-main:
     name: 'Type & Bundle size Check on Main'
     runs-on: ubuntu-latest
