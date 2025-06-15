@@ -22,7 +22,9 @@ import { join } from 'path'
 const baseline = process.argv.find((arg) => arg.startsWith('--baseline='))?.split('=')[1] || 'main'
 const target = process.argv.find((arg) => arg.startsWith('--target='))?.split('=')[1] || 'current'
 const runs = parseInt(process.argv.find((arg) => arg.startsWith('--runs='))?.split('=')[1] || '1')
-const duration = parseInt(process.argv.find((arg) => arg.startsWith('--duration='))?.split('=')[1] || '10')
+const duration = parseInt(
+  process.argv.find((arg) => arg.startsWith('--duration='))?.split('=')[1] || '10'
+)
 const concurrency = 500
 const skipTests = process.argv.includes('--skip-tests')
 
@@ -266,32 +268,53 @@ const main = async () => {
     const baselineName = `hono (${baseline})`
     const targetName = `hono (${target})`
     const maxNameLength = Math.max(baselineName.length, targetName.length, 16)
-    
+
     const formatName = (name: string) => name.padEnd(maxNameLength)
     const formatNumber = (num: number) => num.toFixed(2).padStart(10)
     const formatAverage = (num: number) => num.toFixed(3).padStart(7)
-    const formatChange = (change: string) => ((Number(change) >= 0 ? '+' : '') + change + '%').padStart(10)
+    const formatChange = (change: string) =>
+      ((Number(change) >= 0 ? '+' : '') + change + '%').padStart(10)
 
     console.log('')
-    console.log(`| ${'Framework'.padEnd(maxNameLength)} | Runtime | Average | Ping       | Query      | Body       |`)
-    console.log(`| ${'-'.repeat(maxNameLength)} | ------- | ------- | ---------- | ---------- | ---------- |`)
     console.log(
-      `| ${formatName(baselineName)} | bun     | ${formatAverage(baselineResult.average)} | ${formatNumber(baselineResult.ping)} | ${formatNumber(baselineResult.query)} | ${formatNumber(baselineResult.body)} |`
+      `| ${'Framework'.padEnd(
+        maxNameLength
+      )} | Runtime | Average | Ping       | Query      | Body       |`
     )
     console.log(
-      `| ${formatName(targetName)} | bun     | ${formatAverage(targetResult.average)} | ${formatNumber(targetResult.ping)} | ${formatNumber(targetResult.query)} | ${formatNumber(targetResult.body)} |`
+      `| ${'-'.repeat(maxNameLength)} | ------- | ------- | ---------- | ---------- | ---------- |`
     )
     console.log(
-      `| ${' '.repeat(maxNameLength)} |         | ${((Number(overallChange) >= 0 ? '+' : '') + overallChange + '%').padStart(7)} | ${formatChange(pingChange)} | ${formatChange(queryChange)} | ${formatChange(bodyChange)} |`
+      `| ${formatName(baselineName)} | bun     | ${formatAverage(
+        baselineResult.average
+      )} | ${formatNumber(baselineResult.ping)} | ${formatNumber(
+        baselineResult.query
+      )} | ${formatNumber(baselineResult.body)} |`
+    )
+    console.log(
+      `| ${formatName(targetName)} | bun     | ${formatAverage(
+        targetResult.average
+      )} | ${formatNumber(targetResult.ping)} | ${formatNumber(
+        targetResult.query
+      )} | ${formatNumber(targetResult.body)} |`
+    )
+    console.log(
+      `| ${' '.repeat(maxNameLength)} |         | ${(
+        (Number(overallChange) >= 0 ? '+' : '') +
+        overallChange +
+        '%'
+      ).padStart(7)} | ${formatChange(pingChange)} | ${formatChange(queryChange)} | ${formatChange(
+        bodyChange
+      )} |`
     )
     console.log('')
-    
+
     // Individual changes summary
     console.log('📊 Performance Changes:')
-    console.log(`   Overall: ${(Number(overallChange) >= 0 ? '+' : '')}${overallChange}%`)
-    console.log(`   Ping:    ${(Number(pingChange) >= 0 ? '+' : '')}${pingChange}%`)
-    console.log(`   Query:   ${(Number(queryChange) >= 0 ? '+' : '')}${queryChange}%`)
-    console.log(`   Body:    ${(Number(bodyChange) >= 0 ? '+' : '')}${bodyChange}%`)
+    console.log(`   Overall: ${Number(overallChange) >= 0 ? '+' : ''}${overallChange}%`)
+    console.log(`   Ping:    ${Number(pingChange) >= 0 ? '+' : ''}${pingChange}%`)
+    console.log(`   Query:   ${Number(queryChange) >= 0 ? '+' : ''}${queryChange}%`)
+    console.log(`   Body:    ${Number(bodyChange) >= 0 ? '+' : ''}${bodyChange}%`)
     console.log('')
   } catch (error) {
     console.error('❌ Benchmark failed:', error)
