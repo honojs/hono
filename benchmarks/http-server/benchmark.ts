@@ -19,7 +19,6 @@ import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 
 // Configuration from command line arguments
-const ciMode = process.argv.includes('--ci')
 const baseline = process.argv.find((arg) => arg.startsWith('--baseline='))?.split('=')[1] || 'main'
 const target = process.argv.find((arg) => arg.startsWith('--target='))?.split('=')[1] || 'current'
 const runs = parseInt(process.argv.find((arg) => arg.startsWith('--runs='))?.split('=')[1] || '1')
@@ -29,7 +28,7 @@ const duration = parseInt(
 const concurrency = 500
 const skipTests = process.argv.includes('--skip-tests')
 
-const SCRIPT_DIR = join(import.meta.dirname, '..')
+const SCRIPT_DIR = import.meta.dirname
 const TEMP_DIR = join(SCRIPT_DIR, '.benchmark-temp')
 const HONO_ROOT = join(SCRIPT_DIR, '../..')
 
@@ -52,12 +51,6 @@ app
 export default app`
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-const log = (...args: unknown[]) => {
-  if (!ciMode) {
-    console.log(...args)
-  }
-}
 
 const runCommand = async (command: string, cwd: string) => {
   const parts = command.split(' ')
@@ -97,15 +90,13 @@ const setupTemp = () => {
 }
 
 const buildVersion = async (version: string, name: string) => {
-  log(`📦 Building ${name} (${version})...`)
+  console.log(`📦 Building ${name} (${version})...`)
 
   let needsRestore = false
   let stashRef = ''
 
   if (version === 'current') {
-    if (!ciMode) {
-      await runCommand('bun run build', HONO_ROOT)
-    }
+    await runCommand('bun run build', HONO_ROOT)
   } else {
     try {
       const stashResult = await runCommand('git stash push -m "benchmark-temp"', HONO_ROOT)
@@ -119,9 +110,7 @@ const buildVersion = async (version: string, name: string) => {
 
     await runCommand(`git checkout ${version}`, HONO_ROOT)
     await runCommand('bun install', HONO_ROOT)
-    if (!ciMode) {
-      await runCommand('bun run build', HONO_ROOT)
-    }
+    await runCommand('bun run build', HONO_ROOT)
   }
 
   const versionDir = join(TEMP_DIR, name)
@@ -133,7 +122,7 @@ const buildVersion = async (version: string, name: string) => {
 
   // Test endpoints (optional)
   if (!skipTests) {
-    log(`🧪 Testing endpoints for ${name}...`)
+    console.log(`🧪 Testing endpoints for ${name}...`)
     const server = spawn('bun', [appPath], {
       cwd: TEMP_DIR,
       env: { ...process.env, NODE_ENV: 'production' },
@@ -164,13 +153,13 @@ const buildVersion = async (version: string, name: string) => {
         throw new Error('[POST /json] test failed')
       }
 
-      log(`  ✅ Tests passed for ${name}`)
+      console.log(`  ✅ Tests passed for ${name}`)
     } finally {
       server.kill()
       await sleep(1000)
     }
   } else {
-    log(`  ⏭️ Skipping endpoint tests for ${name}`)
+    console.log(`  ⏭️ Skipping endpoint tests for ${name}`)
   }
 
   // Restore git state
@@ -185,7 +174,7 @@ const buildVersion = async (version: string, name: string) => {
 }
 
 const runBenchmark = async (appPath: string, name: string) => {
-  log(`⚡ Running HTTP benchmark for ${name}...`)
+  console.log(`⚡ Running HTTP benchmark for ${name}...`)
 
   const bodyFile = join(TEMP_DIR, 'body.json')
   const commands = [
@@ -197,7 +186,7 @@ const runBenchmark = async (appPath: string, name: string) => {
   const allRuns: number[][] = []
 
   for (let run = 0; run < runs; run++) {
-    log(`  Run ${run + 1}/${runs}`)
+    console.log(`  Run ${run + 1}/${runs}`)
 
     const server = spawn('bun', [appPath], {
       cwd: TEMP_DIR,
@@ -210,13 +199,13 @@ const runBenchmark = async (appPath: string, name: string) => {
     try {
       for (const command of commands) {
         const result = await runCommand(command, process.cwd())
-        log(result.stdout)
+        console.log(result.stdout)
 
         const match = result.stdout.match(/Reqs\/sec\s+(\d+[.|,]\d+)/)
         if (match) {
           runResults.push(parseFloat(match[1].replace(',', '')))
         } else {
-          log('❌ Failed to parse result')
+          console.log('❌ Failed to parse result')
           runResults.push(0)
         }
       }
@@ -239,68 +228,20 @@ const runBenchmark = async (appPath: string, name: string) => {
 }
 
 const main = async () => {
-  log('🏁 Hono HTTP Benchmark')
-  log('======================')
-  log(`Baseline: ${baseline}`)
-  log(`Target: ${target}`)
-  log(`Runs: ${runs}`)
-  log(`Duration: ${duration}s`)
-  log(`Concurrency: ${concurrency}`)
-  log(`Skip Tests: ${skipTests}`)
-  log('')
+  console.log('🏁 Hono HTTP Benchmark')
+  console.log('======================')
+  console.log(`Baseline: ${baseline}`)
+  console.log(`Target: ${target}`)
+  console.log(`Runs: ${runs}`)
+  console.log(`Duration: ${duration}s`)
+  console.log(`Concurrency: ${concurrency}`)
+  console.log(`Skip Tests: ${skipTests}`)
+  console.log('')
 
   setupTemp()
 
   try {
-    if (ciMode) {
-      // CI mode: measure current branch only (dist already built)
-      const versionDir = join(TEMP_DIR, 'current')
-      mkdirSync(versionDir, { recursive: true })
-      const distPath = join(HONO_ROOT, 'dist')
-      await runCommand(`cp -r ${distPath} ${versionDir}/`, process.cwd())
-
-      const appPath = join(versionDir, 'app.js')
-      writeFileSync(appPath, getAppTemplate())
-
-      const targetResult = await runBenchmark(appPath, 'current')
-
-      // Generate octocov-compatible output
-      const benchmark = {
-        key: 'speed-check',
-        name: 'HTTP speed check',
-        metrics: [
-          {
-            key: 'ping',
-            name: 'Ping (req/s)',
-            value: targetResult.ping,
-            unit: 'req/s',
-          },
-          {
-            key: 'query',
-            name: 'Query (req/s)',
-            value: targetResult.query,
-            unit: 'req/s',
-          },
-          {
-            key: 'body',
-            name: 'Body (req/s)',
-            value: targetResult.body,
-            unit: 'req/s',
-          },
-          {
-            key: 'average',
-            name: 'Average (req/s)',
-            value: targetResult.average,
-            unit: 'req/s',
-          },
-        ],
-      }
-
-      console.log(JSON.stringify(benchmark, null, 2))
-      return
-    }
-
-    // Normal mode: compare baseline vs target
+    // Compare baseline vs target
     const baselinePath = await buildVersion(baseline, 'baseline')
     const targetPath = await buildVersion(target, 'target')
 
@@ -308,75 +249,66 @@ const main = async () => {
     const targetResult = await runBenchmark(targetPath, 'target')
 
     // Calculate changes
-    const overallChange = (
-      ((targetResult.average - baselineResult.average) / baselineResult.average) *
-      100
-    ).toFixed(2)
-    const pingChange = (
-      ((targetResult.ping - baselineResult.ping) / baselineResult.ping) *
-      100
-    ).toFixed(2)
-    const queryChange = (
-      ((targetResult.query - baselineResult.query) / baselineResult.query) *
-      100
-    ).toFixed(2)
-    const bodyChange = (
-      ((targetResult.body - baselineResult.body) / baselineResult.body) *
-      100
-    ).toFixed(2)
+    const calculateChange = (target: number, baseline: number) =>
+      (((target - baseline) / baseline) * 100).toFixed(2)
 
-    // Format output
-    const baselineName = `hono (${baseline})`
-    const targetName = `hono (${target})`
-    const maxNameLength = Math.max(baselineName.length, targetName.length, 16)
+    const changes = {
+      average: calculateChange(targetResult.average, baselineResult.average),
+      ping: calculateChange(targetResult.ping, baselineResult.ping),
+      query: calculateChange(targetResult.query, baselineResult.query),
+      body: calculateChange(targetResult.body, baselineResult.body),
+    }
 
-    const formatName = (name: string) => name.padEnd(maxNameLength)
-    const formatNumber = (num: number) => num.toFixed(2).padStart(10)
-    const formatAverage = (num: number) => num.toFixed(3).padStart(7)
-    const formatChange = (change: string) =>
-      ((Number(change) >= 0 ? '+' : '') + change + '%').padStart(10)
+    // Format numbers
+    const format = (num: number) => num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    const formatChange = (change: string) => (Number(change) >= 0 ? '+' : '') + change + '%'
 
+    // Generate table data
+    const rows = [
+      {
+        framework: `hono (${baseline})`,
+        runtime: 'bun',
+        average: format(baselineResult.average),
+        ping: format(baselineResult.ping),
+        query: format(baselineResult.query),
+        body: format(baselineResult.body),
+      },
+      {
+        framework: `hono (${target})`,
+        runtime: 'bun',
+        average: format(targetResult.average),
+        ping: format(targetResult.ping),
+        query: format(targetResult.query),
+        body: format(targetResult.body),
+      },
+      {
+        framework: 'Change',
+        runtime: '',
+        average: formatChange(changes.average),
+        ping: formatChange(changes.ping),
+        query: formatChange(changes.query),
+        body: formatChange(changes.body),
+      },
+    ]
+
+    const table = [
+      '| Framework | Runtime | Average | Ping | Query | Body |',
+      '| --- | --- | --- | --- | --- | --- |',
+      ...rows.map(
+        (row) =>
+          `| ${row.framework} | ${row.runtime} | ${row.average} | ${row.ping} | ${row.query} | ${row.body} |`
+      ),
+    ]
+
+    // Console output
     console.log('')
-    console.log(
-      `| ${'Framework'.padEnd(
-        maxNameLength
-      )} | Runtime | Average | Ping       | Query      | Body       |`
-    )
-    console.log(
-      `| ${'-'.repeat(maxNameLength)} | ------- | ------- | ---------- | ---------- | ---------- |`
-    )
-    console.log(
-      `| ${formatName(baselineName)} | bun     | ${formatAverage(
-        baselineResult.average
-      )} | ${formatNumber(baselineResult.ping)} | ${formatNumber(
-        baselineResult.query
-      )} | ${formatNumber(baselineResult.body)} |`
-    )
-    console.log(
-      `| ${formatName(targetName)} | bun     | ${formatAverage(
-        targetResult.average
-      )} | ${formatNumber(targetResult.ping)} | ${formatNumber(
-        targetResult.query
-      )} | ${formatNumber(targetResult.body)} |`
-    )
-    console.log(
-      `| ${' '.repeat(maxNameLength)} |         | ${(
-        (Number(overallChange) >= 0 ? '+' : '') +
-        overallChange +
-        '%'
-      ).padStart(7)} | ${formatChange(pingChange)} | ${formatChange(queryChange)} | ${formatChange(
-        bodyChange
-      )} |`
-    )
+    table.forEach((line) => console.log(line))
     console.log('')
 
-    // Individual changes summary
-    console.log('📊 Performance Changes:')
-    console.log(`   Overall: ${Number(overallChange) >= 0 ? '+' : ''}${overallChange}%`)
-    console.log(`   Ping:    ${Number(pingChange) >= 0 ? '+' : ''}${pingChange}%`)
-    console.log(`   Query:   ${Number(queryChange) >= 0 ? '+' : ''}${queryChange}%`)
-    console.log(`   Body:    ${Number(bodyChange) >= 0 ? '+' : ''}${bodyChange}%`)
-    console.log('')
+    // Markdown output
+    const markdownOutput = ['## HTTP Performance Benchmark', '', ...table].join('\n')
+
+    writeFileSync(join(SCRIPT_DIR, 'benchmark-results.md'), markdownOutput)
   } catch (error) {
     console.error('❌ Benchmark failed:', error)
     throw error
