@@ -41,7 +41,7 @@ async function main() {
     }
   }
   const benchmark = {
-    key: 'diagnostics',
+    key: `diagnostics-${toKebabCase(tsImplLabel)}`,
     name: `Compiler Diagnostics (${tsImplLabel})`,
     metrics,
   }

@@ -186,26 +186,18 @@ jobs:
     name: 'Type & Bundle size Check on PR'
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    strategy:
-      matrix:
-        typescript-impl: ['tsc', 'tsgo']
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/perf-measures
         with:
-          typescript-impl: ${{ matrix.typescript-impl }}
           target-ref: 'auto'
 
   perf-measures-check-on-main:
     name: 'Type & Bundle size Check on Main'
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    strategy:
-      matrix:
-        typescript-impl: ['tsc', 'tsgo']
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/perf-measures
         with:
-          typescript-impl: ${{ matrix.typescript-impl }}
           target-ref: 'main'
