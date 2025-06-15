@@ -183,7 +183,7 @@ jobs:
           path: coverage/
 
   perf-measures-check-on-pr:
-    name: 'Type & Bundle size Check on PR'
+    name: 'Type & Bundle size & Speed Check on PR'
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
@@ -193,7 +193,7 @@ jobs:
           target-ref: 'auto'
 
   perf-measures-check-on-main:
-    name: 'Type & Bundle size Check on Main'
+    name: 'Type & Bundle size & Speed Check on Main'
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
