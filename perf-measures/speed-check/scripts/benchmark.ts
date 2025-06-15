@@ -267,7 +267,7 @@ const main = async () => {
       // Generate octocov-compatible output
       const benchmark = {
         key: 'speed-check',
-        name: 'HTTP Speed Check',
+        name: 'HTTP speed check',
         metrics: [
           {
             key: 'ping',

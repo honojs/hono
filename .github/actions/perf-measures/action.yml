@@ -58,9 +58,9 @@ runs:
         config: perf-measures/.octocov.consolidated.perf-measures.yml
       env:
         OCTOCOV_CUSTOM_METRICS_BUNDLE_SIZE_CHECK: perf-measures/bundle-check/size.json
+        OCTOCOV_CUSTOM_METRICS_SPEED_CHECK: perf-measures/speed-check/results.json
         OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSC: perf-measures/type-check/diagnostics-tsc.json
         OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSGO: perf-measures/type-check/diagnostics-tsgo.json
-        OCTOCOV_CUSTOM_METRICS_SPEED_CHECK: perf-measures/speed-check/results.json
 
     - name: Run octocov with custom target ref
       if: ${{ inputs.target-ref == 'main' }}
@@ -70,6 +70,6 @@ runs:
       env:
         OCTOCOV_GITHUB_REF: 'refs/heads/main'
         OCTOCOV_CUSTOM_METRICS_BUNDLE_SIZE_CHECK: perf-measures/bundle-check/size.json
+        OCTOCOV_CUSTOM_METRICS_SPEED_CHECK: perf-measures/speed-check/results.json
         OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSC: perf-measures/type-check/diagnostics-tsc.json
         OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSGO: perf-measures/type-check/diagnostics-tsgo.json
-        OCTOCOV_CUSTOM_METRICS_SPEED_CHECK: perf-measures/speed-check/results.json
