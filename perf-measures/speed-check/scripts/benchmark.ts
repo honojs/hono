@@ -52,7 +52,7 @@ export default app`
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-const log = (...args: any[]) => {
+const log = (...args: unknown[]) => {
   if (!ciMode) {
     console.log(...args)
   }
@@ -255,11 +255,11 @@ const main = async () => {
       // CI mode: measure current branch only (dist already built)
       const versionDir = join(TEMP_DIR, 'current')
       mkdirSync(versionDir, { recursive: true })
-      await runCommand(`cp -r ${HONO_ROOT}/dist ${versionDir}/dist`, process.cwd())
-      
+      await runCommand(`cp -r ${HONO_ROOT}/dist ${versionDir}/`, process.cwd())
+
       const appPath = join(versionDir, 'app.js')
       writeFileSync(appPath, getAppTemplate())
-      
+
       const targetResult = await runBenchmark(appPath, 'current')
 
       // Generate octocov-compatible output
