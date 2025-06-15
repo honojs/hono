@@ -18,5 +18,5 @@ customMetrics:
     key: bundle-size-check
   diagnostics-tsc:
     key: diagnostics-tsc
-  diagnostics-tsgo:
-    key: diagnostics-tsgo
+  diagnostics-typescript-go:
+    key: diagnostics-typescript-go
