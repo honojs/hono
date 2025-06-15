@@ -102,7 +102,9 @@ const buildVersion = async (version: string, name: string) => {
   let stashRef = ''
 
   if (version === 'current') {
-    await runCommand('bun run build', HONO_ROOT)
+    if (!ciMode) {
+      await runCommand('bun run build', HONO_ROOT)
+    }
   } else {
     try {
       const stashResult = await runCommand('git stash push -m "benchmark-temp"', HONO_ROOT)
@@ -116,7 +118,9 @@ const buildVersion = async (version: string, name: string) => {
 
     await runCommand(`git checkout ${version}`, HONO_ROOT)
     await runCommand('bun install', HONO_ROOT)
-    await runCommand('bun run build', HONO_ROOT)
+    if (!ciMode) {
+      await runCommand('bun run build', HONO_ROOT)
+    }
   }
 
   const versionDir = join(TEMP_DIR, name)
@@ -248,9 +252,15 @@ const main = async () => {
 
   try {
     if (ciMode) {
-      // CI mode: measure current branch only
-      const targetPath = await buildVersion(target, 'target')
-      const targetResult = await runBenchmark(targetPath, 'target')
+      // CI mode: measure current branch only (dist already built)
+      const versionDir = join(TEMP_DIR, 'current')
+      mkdirSync(versionDir, { recursive: true })
+      await runCommand(`cp -r ${HONO_ROOT}/dist ${versionDir}/dist`, process.cwd())
+      
+      const appPath = join(versionDir, 'app.js')
+      writeFileSync(appPath, getAppTemplate())
+      
+      const targetResult = await runBenchmark(appPath, 'current')
 
       // Generate octocov-compatible output
       const benchmark = {

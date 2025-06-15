@@ -14,9 +14,9 @@ summary:
 customMetrics:
   bundle-size-check:
     key: bundle-size-check
+  speed-check:
+    key: speed-check
   diagnostics-tsc:
     key: diagnostics-tsc
   diagnostics-typescript-go:
     key: diagnostics-typescript-go
-  speed-check:
-    key: speed-check
