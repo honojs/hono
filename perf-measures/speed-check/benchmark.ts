@@ -1,79 +1,42 @@
 /**
  * Hono HTTP Performance Benchmark
  *
- * This benchmark tool is inspired by and references the bun-http-framework-benchmark project:
- * https://github.com/honojs/bun-http-framework-benchmark
- *
- * Some test patterns and bombardier usage are adapted from that repository.
+ * Inspired by https://github.com/SaltyAom/bun-http-framework-benchmark
  *
  * Usage:
- *   bun run benchmark.ts [--baseline=main] [--target=current] [--runs=3]
+ *   bun run benchmark.ts [options]
  *
- * Examples:
- *   bun run benchmark.ts                           # Compare current branch vs main
- *   bun run benchmark.ts --runs=5                  # Run 5 times for more accuracy
- *   bun run benchmark.ts --baseline=v4.7.11       # Compare against specific tag
+ * Options:
+ *   --baseline=<ref>    Git reference for baseline (default: main)
+ *   --target=<ref>      Git reference for target (default: current)
+ *   --runs=<number>     Number of benchmark runs (default: 1)
+ *   --duration=<number> Duration of each test in seconds (default: 10)
+ *   --skip-tests        Skip endpoint validation tests
  */
 
 import { spawn } from 'child_process'
 import { existsSync, mkdirSync, writeFileSync, rmSync } from 'fs'
 import { join } from 'path'
 
-interface BenchmarkConfig {
-  baseline: string
-  target: string
-  runs: number
-  duration: number
-  concurrency: number
-}
-
-interface BenchmarkResult {
-  name: string
-  average: number
-  ping: number
-  query: number
-  body: number
-  runs: number[]
-}
-
-const CONFIG: BenchmarkConfig = {
-  baseline: process.argv.find((arg) => arg.startsWith('--baseline='))?.split('=')[1] || 'main',
-  target: process.argv.find((arg) => arg.startsWith('--target='))?.split('=')[1] || 'current',
-  runs: parseInt(process.argv.find((arg) => arg.startsWith('--runs='))?.split('=')[1] || '1'),
-  duration: 10,
-  concurrency: 500,
-}
+// Configuration from command line arguments
+const baseline = process.argv.find((arg) => arg.startsWith('--baseline='))?.split('=')[1] || 'main'
+const target = process.argv.find((arg) => arg.startsWith('--target='))?.split('=')[1] || 'current'
+const runs = parseInt(process.argv.find((arg) => arg.startsWith('--runs='))?.split('=')[1] || '1')
+const duration = parseInt(process.argv.find((arg) => arg.startsWith('--duration='))?.split('=')[1] || '10')
+const concurrency = 500
+const skipTests = process.argv.includes('--skip-tests')
 
 const TEMP_DIR = join(process.cwd(), '.benchmark-temp')
 const HONO_ROOT = join(process.cwd(), '../..')
 
-class BenchmarkRunner {
-  private testApps = new Map<string, string>()
-
-  constructor() {
-    this.setupTempDir()
-    this.createTestApps()
-  }
-
-  private setupTempDir() {
-    if (existsSync(TEMP_DIR)) {
-      rmSync(TEMP_DIR, { recursive: true })
-    }
-    mkdirSync(TEMP_DIR, { recursive: true })
-
-    // Create JSON payload file for POST test
-    writeFileSync(join(TEMP_DIR, 'body.json'), '{"hello":"world"}')
-  }
-
-  private createTestApps() {
-    // Test app template adapted from bun-http-framework-benchmark
-    // https://github.com/honojs/bun-http-framework-benchmark/blob/main/src/bun/hono.ts
-    const appTemplate = `import { Hono } from './hono-dist/index.js'
-import { RegExpRouter } from './hono-dist/router/reg-exp-router/index.js'
+// Test app template (embedded to avoid file dependency issues)
+const getAppTemplate = () => `import { Hono } from './dist/index.js'
+import { RegExpRouter } from './dist/router/reg-exp-router/index.js'
 
 const app = new Hono({ router: new RegExpRouter() })
 
-app.get('/', (c) => c.text('Hi'))
+app
+  .get('/', (c) => c.text('Hi'))
   .post('/json', (c) => c.req.json().then(c.json))
   .get('/id/:id', (c) => {
     const id = c.req.param('id')
@@ -84,301 +47,260 @@ app.get('/', (c) => c.text('Hi'))
 
 export default app`
 
-    this.testApps.set('baseline', appTemplate)
-    this.testApps.set('target', appTemplate)
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const runCommand = async (command: string, cwd: string) => {
+  const parts = command.split(' ')
+  const proc = spawn(parts[0], parts.slice(1), { cwd })
+
+  let stdout = ''
+  let stderr = ''
+
+  proc.stdout.on('data', (data) => {
+    stdout += data
+  })
+  proc.stderr.on('data', (data) => {
+    stderr += data
+  })
+
+  const exitCode = await new Promise<number>((resolve) => {
+    proc.on('close', resolve)
+  })
+
+  if (exitCode !== 0) {
+    console.error(`Command failed: ${command}`)
+    console.error(`Exit code: ${exitCode}`)
+    console.error(`Stdout: ${stdout}`)
+    console.error(`Stderr: ${stderr}`)
+    throw new Error(`Command failed: ${command}`)
   }
 
-  async buildVersion(version: string, name: string) {
-    console.log(`📦 Building ${name} (${version})...`)
+  return { stdout, stderr }
+}
 
-    // Save current state if targeting current branch
-    let needsRestore = false
-    let stashRef = ''
+const setupTemp = () => {
+  if (existsSync(TEMP_DIR)) {
+    rmSync(TEMP_DIR, { recursive: true })
+  }
+  mkdirSync(TEMP_DIR, { recursive: true })
+  writeFileSync(join(TEMP_DIR, 'body.json'), '{"hello":"world"}')
+}
 
-    if (version === 'current') {
-      // Just build current state
-      await this.runCommand('bun run build', HONO_ROOT)
-    } else {
-      // Stash current changes and checkout target version
-      try {
-        const stashResult = await this.runCommand('git stash push -m "benchmark-temp"', HONO_ROOT)
-        needsRestore = stashResult.stdout.includes('Saved working directory')
-        if (needsRestore) {
-          stashRef = 'stash@{0}'
-        }
-      } catch {
-        // No changes to stash
+const buildVersion = async (version: string, name: string) => {
+  console.log(`📦 Building ${name} (${version})...`)
+
+  let needsRestore = false
+  let stashRef = ''
+
+  if (version === 'current') {
+    await runCommand('bun run build', HONO_ROOT)
+  } else {
+    try {
+      const stashResult = await runCommand('git stash push -m "benchmark-temp"', HONO_ROOT)
+      needsRestore = stashResult.stdout.includes('Saved working directory')
+      if (needsRestore) {
+        stashRef = 'stash@{0}'
       }
-
-      await this.runCommand(`git checkout ${version}`, HONO_ROOT)
-      await this.runCommand('bun install', HONO_ROOT)
-      await this.runCommand('bun run build', HONO_ROOT)
+    } catch {
+      // No changes to stash
     }
 
-    // Run endpoint tests to ensure app is working correctly
-    console.log(`🧪 Testing endpoints for ${name}...`)
-    const versionDir = join(TEMP_DIR, name)
-    mkdirSync(versionDir, { recursive: true })
-
-    // Copy built files first
-    await this.runCommand(`cp -r ${HONO_ROOT}/dist ${versionDir}/hono-dist`, process.cwd())
-
-    // Create test app
-    const appPath = join(versionDir, 'app.ts')
-    writeFileSync(appPath, this.testApps.get(name === 'baseline' ? 'baseline' : 'target')!)
-
-    await this.testEndpoints(appPath, name)
-
-    // Restore original state if needed
-    if (version !== 'current' && needsRestore) {
-      await this.runCommand('git checkout -', HONO_ROOT)
-      await this.runCommand(`git stash pop ${stashRef}`, HONO_ROOT)
-    } else if (version !== 'current') {
-      await this.runCommand('git checkout -', HONO_ROOT)
-    }
-
-    return appPath
+    await runCommand(`git checkout ${version}`, HONO_ROOT)
+    await runCommand('bun install', HONO_ROOT)
+    await runCommand('bun run build', HONO_ROOT)
   }
 
-  async testEndpoints(appPath: string, name: string) {
-    console.log(`  Starting test server for ${name}...`)
+  const versionDir = join(TEMP_DIR, name)
+  mkdirSync(versionDir, { recursive: true })
+  await runCommand(`cp -r ${HONO_ROOT}/dist ${versionDir}/dist`, process.cwd())
 
-    // Start server
+  const appPath = join(versionDir, 'app.js')
+  writeFileSync(appPath, getAppTemplate())
+
+  // Test endpoints (optional)
+  if (!skipTests) {
+    console.log(`🧪 Testing endpoints for ${name}...`)
     const server = spawn('bun', [appPath], {
       cwd: TEMP_DIR,
       env: { ...process.env, NODE_ENV: 'production' },
     })
-
-    // Wait for server to start
-    await this.sleep(2000)
+    await sleep(2000)
 
     try {
-      // Test 1: GET / should return "Hi"
       const res1 = await fetch('http://127.0.0.1:3000/')
-      const text1 = await res1.text()
-      if (text1 !== 'Hi') {
-        throw new Error(`[GET /] Expected "Hi", got "${text1}"`)
+      if ((await res1.text()) !== 'Hi') {
+        throw new Error('[GET /] test failed')
       }
 
-      // Test 2: GET /id/:id should set header and return params and query
       const res2 = await fetch('http://127.0.0.1:3000/id/1?name=bun')
-      const poweredBy = res2.headers.get('x-powered-by')
-      const text2 = await res2.text()
-
-      if (poweredBy !== 'benchmark') {
-        throw new Error(
-          `[GET /id/:id] Expected x-powered-by header "benchmark", got "${poweredBy}"`
-        )
-      }
-      if (text2 !== '1 bun') {
-        throw new Error(`[GET /id/:id] Expected "1 bun", got "${text2}"`)
+      if (res2.headers.get('x-powered-by') !== 'benchmark' || (await res2.text()) !== '1 bun') {
+        throw new Error('[GET /id/:id] test failed')
       }
 
-      // Test 3: POST /json should mirror json result
       const body = JSON.stringify({ hello: 'world' })
       const res3 = await fetch('http://127.0.0.1:3000/json', {
         method: 'POST',
         body,
-        headers: {
-          'content-type': 'application/json',
-          'content-length': body.length.toString(),
-        },
+        headers: { 'content-type': 'application/json', 'content-length': body.length.toString() },
       })
-
-      const contentType = res3.headers.get('content-type')
-      const text3 = await res3.text()
-
-      if (!contentType?.includes('application/json')) {
-        throw new Error(
-          `[POST /json] Expected content-type to include "application/json", got "${contentType}"`
-        )
-      }
-      if (text3 !== body) {
-        throw new Error(`[POST /json] Expected "${body}", got "${text3}"`)
+      if (
+        !res3.headers.get('content-type')?.includes('application/json') ||
+        (await res3.text()) !== body
+      ) {
+        throw new Error('[POST /json] test failed')
       }
 
       console.log(`  ✅ Tests passed for ${name}`)
     } finally {
-      // Kill server
       server.kill()
-      await this.sleep(1000)
+      await sleep(1000)
     }
+  } else {
+    console.log(`  ⏭️ Skipping endpoint tests for ${name}`)
   }
 
-  async runHttpBenchmark(appPath: string, name: string): Promise<BenchmarkResult> {
-    console.log(`⚡ Running HTTP benchmark for ${name}...`)
+  // Restore git state
+  if (version !== 'current' && needsRestore) {
+    await runCommand('git checkout -', HONO_ROOT)
+    await runCommand(`git stash pop ${stashRef}`, HONO_ROOT)
+  } else if (version !== 'current') {
+    await runCommand('git checkout -', HONO_ROOT)
+  }
 
-    // Bombardier commands adapted from bun-http-framework-benchmark
-    // https://github.com/honojs/bun-http-framework-benchmark/blob/main/bench.ts
-    const bodyFile = join(TEMP_DIR, 'body.json')
-    const commands = [
-      `bombardier --fasthttp -c ${CONFIG.concurrency} -d ${CONFIG.duration}s http://127.0.0.1:3000/`,
-      `bombardier --fasthttp -c ${CONFIG.concurrency} -d ${CONFIG.duration}s http://127.0.0.1:3000/id/1?name=bun`,
-      `bombardier --fasthttp -c ${CONFIG.concurrency} -d ${CONFIG.duration}s -m POST -H Content-Type:application/json -f ${bodyFile} http://127.0.0.1:3000/json`,
-    ]
+  return appPath
+}
 
-    const allRuns: number[][] = []
+const runBenchmark = async (appPath: string, name: string) => {
+  console.log(`⚡ Running HTTP benchmark for ${name}...`)
 
-    for (let run = 0; run < CONFIG.runs; run++) {
-      console.log(`  Run ${run + 1}/${CONFIG.runs}`)
+  const bodyFile = join(TEMP_DIR, 'body.json')
+  const commands = [
+    `bombardier --fasthttp -c ${concurrency} -d ${duration}s http://127.0.0.1:3000/`,
+    `bombardier --fasthttp -c ${concurrency} -d ${duration}s http://127.0.0.1:3000/id/1?name=bun`,
+    `bombardier --fasthttp -c ${concurrency} -d ${duration}s -m POST -H Content-Type:application/json -f ${bodyFile} http://127.0.0.1:3000/json`,
+  ]
 
-      // Start server
-      const server = spawn('bun', [appPath], {
-        cwd: TEMP_DIR,
-        env: { ...process.env, NODE_ENV: 'production' },
-      })
+  const allRuns: number[][] = []
 
-      // Wait for server to start
-      await this.sleep(1000)
+  for (let run = 0; run < runs; run++) {
+    console.log(`  Run ${run + 1}/${runs}`)
 
-      const runResults: number[] = []
+    const server = spawn('bun', [appPath], {
+      cwd: TEMP_DIR,
+      env: { ...process.env, NODE_ENV: 'production' },
+    })
+    await sleep(1000)
 
-      try {
-        for (let i = 0; i < commands.length; i++) {
-          const command = commands[i]
+    const runResults: number[] = []
 
-          const result = await this.runCommand(command, process.cwd())
-          console.log(result.stdout)
+    try {
+      for (const command of commands) {
+        const result = await runCommand(command, process.cwd())
+        console.log(result.stdout)
 
-          const match = result.stdout.match(/Reqs\/sec\s+(\d+[.|,]\d+)/)
-
-          if (match) {
-            const score = parseFloat(match[1].replace(',', ''))
-            runResults.push(score)
-          } else {
-            console.log('      ❌ Failed to parse result')
-            runResults.push(0)
-          }
+        const match = result.stdout.match(/Reqs\/sec\s+(\d+[.|,]\d+)/)
+        if (match) {
+          runResults.push(parseFloat(match[1].replace(',', '')))
+        } else {
+          console.log('❌ Failed to parse result')
+          runResults.push(0)
         }
-      } finally {
-        // Kill server
-        server.kill()
-        await this.sleep(500)
       }
-
-      allRuns.push(runResults)
+    } finally {
+      server.kill()
+      await sleep(500)
     }
 
-    // Calculate averages
-    const avgPing = this.average(allRuns.map((run) => run[0]))
-    const avgQuery = this.average(allRuns.map((run) => run[1]))
-    const avgBody = this.average(allRuns.map((run) => run[2]))
-    const overall = (avgPing + avgQuery + avgBody) / 3
-
-    return {
-      name,
-      average: overall,
-      ping: avgPing,
-      query: avgQuery,
-      body: avgBody,
-      runs: allRuns.map((run) => (run[0] + run[1] + run[2]) / 3),
-    }
+    allRuns.push(runResults)
   }
 
-  private async runCommand(command: string, cwd: string) {
-    const parts = command.split(' ')
-    const proc = spawn(parts[0], parts.slice(1), { cwd })
+  const average = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stdout = await new Response(proc.stdout as any).text()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stderr = await new Response(proc.stderr as any).text()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (proc as any).exited
+  const ping = average(allRuns.map((run) => run[0]))
+  const query = average(allRuns.map((run) => run[1]))
+  const body = average(allRuns.map((run) => run[2]))
+  const overall = (ping + query + body) / 3
 
-    if (result !== 0 && result !== null && result !== undefined) {
-      console.error(`Command failed: ${command}`)
-      console.error(`Exit code: ${result}`)
-      console.error(`Stdout: ${stdout}`)
-      console.error(`Stderr: ${stderr}`)
-      throw new Error(`Command failed: ${command}`)
-    }
+  return { name, average: overall, ping, query, body, runs: allRuns.map((run) => average(run)) }
+}
 
-    return { stdout, stderr }
-  }
+const main = async () => {
+  console.log('🏁 Hono HTTP Benchmark')
+  console.log('======================')
+  console.log(`Baseline: ${baseline}`)
+  console.log(`Target: ${target}`)
+  console.log(`Runs: ${runs}`)
+  console.log(`Duration: ${duration}s`)
+  console.log(`Concurrency: ${concurrency}`)
+  console.log(`Skip Tests: ${skipTests}`)
+  console.log('')
 
-  private sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms))
-  }
+  setupTemp()
 
-  private average(numbers: number[]): number {
-    return numbers.reduce((a, b) => a + b, 0) / numbers.length
-  }
+  try {
+    const baselinePath = await buildVersion(baseline, 'baseline')
+    const targetPath = await buildVersion(target, 'target')
 
-  async cleanup() {
+    const baselineResult = await runBenchmark(baselinePath, 'baseline')
+    const targetResult = await runBenchmark(targetPath, 'target')
+
+    // Calculate changes
+    const overallChange = (
+      ((targetResult.average - baselineResult.average) / baselineResult.average) *
+      100
+    ).toFixed(2)
+    const pingChange = (
+      ((targetResult.ping - baselineResult.ping) / baselineResult.ping) *
+      100
+    ).toFixed(2)
+    const queryChange = (
+      ((targetResult.query - baselineResult.query) / baselineResult.query) *
+      100
+    ).toFixed(2)
+    const bodyChange = (
+      ((targetResult.body - baselineResult.body) / baselineResult.body) *
+      100
+    ).toFixed(2)
+
+    // Format output
+    const baselineName = `hono (${baseline})`
+    const targetName = `hono (${target})`
+    const maxNameLength = Math.max(baselineName.length, targetName.length, 16)
+    
+    const formatName = (name: string) => name.padEnd(maxNameLength)
+    const formatNumber = (num: number) => num.toFixed(2).padStart(10)
+    const formatAverage = (num: number) => num.toFixed(3).padStart(7)
+    const formatChange = (change: string) => ((Number(change) >= 0 ? '+' : '') + change + '%').padStart(10)
+
+    console.log('')
+    console.log(`| ${'Framework'.padEnd(maxNameLength)} | Runtime | Average | Ping       | Query      | Body       |`)
+    console.log(`| ${'-'.repeat(maxNameLength)} | ------- | ------- | ---------- | ---------- | ---------- |`)
+    console.log(
+      `| ${formatName(baselineName)} | bun     | ${formatAverage(baselineResult.average)} | ${formatNumber(baselineResult.ping)} | ${formatNumber(baselineResult.query)} | ${formatNumber(baselineResult.body)} |`
+    )
+    console.log(
+      `| ${formatName(targetName)} | bun     | ${formatAverage(targetResult.average)} | ${formatNumber(targetResult.ping)} | ${formatNumber(targetResult.query)} | ${formatNumber(targetResult.body)} |`
+    )
+    console.log(
+      `| ${' '.repeat(maxNameLength)} |         | ${((Number(overallChange) >= 0 ? '+' : '') + overallChange + '%').padStart(7)} | ${formatChange(pingChange)} | ${formatChange(queryChange)} | ${formatChange(bodyChange)} |`
+    )
+    console.log('')
+    
+    // Individual changes summary
+    console.log('📊 Performance Changes:')
+    console.log(`   Overall: ${(Number(overallChange) >= 0 ? '+' : '')}${overallChange}%`)
+    console.log(`   Ping:    ${(Number(pingChange) >= 0 ? '+' : '')}${pingChange}%`)
+    console.log(`   Query:   ${(Number(queryChange) >= 0 ? '+' : '')}${queryChange}%`)
+    console.log(`   Body:    ${(Number(bodyChange) >= 0 ? '+' : '')}${bodyChange}%`)
+    console.log('')
+  } catch (error) {
+    console.error('❌ Benchmark failed:', error)
+    throw error
+  } finally {
     if (existsSync(TEMP_DIR)) {
       rmSync(TEMP_DIR, { recursive: true })
     }
   }
 }
 
-async function main() {
-  console.log('🏁 Hono HTTP Benchmark')
-  console.log('======================')
-  console.log(`Baseline: ${CONFIG.baseline}`)
-  console.log(`Target: ${CONFIG.target}`)
-  console.log(`Runs: ${CONFIG.runs}`)
-  console.log(`Duration: ${CONFIG.duration}s`)
-  console.log(`Concurrency: ${CONFIG.concurrency}`)
-  console.log('')
-
-  const runner = new BenchmarkRunner()
-
-  try {
-    // Build both versions
-    const baselinePath = await runner.buildVersion(CONFIG.baseline, 'baseline')
-    const targetPath = await runner.buildVersion(CONFIG.target, 'target')
-
-    // Run HTTP benchmarks
-    const baselineResult = await runner.runHttpBenchmark(baselinePath, 'baseline')
-    const targetResult = await runner.runHttpBenchmark(targetPath, 'target')
-
-    // Calculate performance difference
-    const perfDiff = (
-      ((targetResult.average - baselineResult.average) / baselineResult.average) *
-      100
-    ).toFixed(2)
-
-    // Output results
-    console.log('')
-    console.log('|  Framework       | Runtime | Average | Ping       | Query      | Body       |')
-    console.log('| ---------------- | ------- | ------- | ---------- | ---------- | ---------- |')
-    console.log(
-      `| hono (${CONFIG.baseline}) | bun | ${baselineResult.average.toFixed(
-        3
-      )} | ${baselineResult.ping.toFixed(2)} | ${baselineResult.query.toFixed(
-        2
-      )} | ${baselineResult.body.toFixed(2)} |`
-    )
-    console.log(
-      `| hono (${CONFIG.target}) | bun | ${targetResult.average.toFixed(
-        3
-      )} | ${targetResult.ping.toFixed(2)} | ${targetResult.query.toFixed(
-        2
-      )} | ${targetResult.body.toFixed(2)} |`
-    )
-    console.log('')
-    console.log(`Performance change: ${Number(perfDiff) >= 0 ? '+' : ''}${perfDiff}%`)
-
-    // Save results for CI
-    const results = {
-      performance: {
-        baseline: baselineResult,
-        target: targetResult,
-        improvement: parseFloat(perfDiff),
-      },
-    }
-
-    writeFileSync('benchmark-results.json', JSON.stringify(results, null, 2))
-    console.log('')
-    console.log('💾 Results saved to benchmark-results.json')
-  } catch (error) {
-    console.error('❌ Benchmark failed:', error)
-    throw error
-  } finally {
-    await runner.cleanup()
-  }
-}
-
-// Run if this file is executed directly
 main()
