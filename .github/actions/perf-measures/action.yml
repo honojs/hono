@@ -41,10 +41,9 @@ runs:
 
     - name: Install bombardier for speed check
       run: |
-        wget -O bombardier.tar.gz https://github.com/codesenberg/bombardier/releases/download/v1.2.6/bombardier-linux-amd64.tar.gz
-        tar -xzf bombardier.tar.gz
+        wget -O bombardier https://github.com/codesenberg/bombardier/releases/download/v2.0.1/bombardier-linux-amd64
+        chmod +x bombardier
         sudo mv bombardier /usr/local/bin/
-        rm bombardier.tar.gz
       shell: bash
 
     - name: Performance measurement of HTTP speed check
