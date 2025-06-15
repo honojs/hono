@@ -281,7 +281,7 @@ export const TEXT_PLAIN = 'text/plain; charset=UTF-8'
  * @returns The updated Headers object.
  */
 const setHeaders = (headers: Headers, map: Record<string, string> = {}) => {
-  for (const key of Object.keys(map)) {
+  for (const key in map) {
     headers.set(key, map[key])
   }
   return headers
@@ -678,7 +678,8 @@ export class Context<
     }
 
     headers ??= {}
-    for (const [k, v] of Object.entries(headers)) {
+    for (const k in headers) {
+      const v = (headers as Record<string, string | string[]>)[k]
       if (typeof v === 'string') {
         this.#headers.set(k, v)
       } else {

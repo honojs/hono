@@ -102,10 +102,10 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
 
   #getAllDecodedParams(): Record<string, string> {
     const decoded: Record<string, string> = {}
+    const paramMap = this.#matchResult[0][this.routeIndex][1]
 
-    const keys = Object.keys(this.#matchResult[0][this.routeIndex][1])
-    for (const key of keys) {
-      const value = this.#getParamValue(this.#matchResult[0][this.routeIndex][1][key])
+    for (const key in paramMap) {
+      const value = this.#getParamValue(paramMap[key])
       if (value && typeof value === 'string') {
         decoded[key] = /\%/.test(value) ? tryDecodeURIComponent(value) : value
       }
@@ -216,7 +216,11 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
       return cachedBody
     }
 
-    const anyCachedKey = Object.keys(bodyCache)[0]
+    let anyCachedKey: string | undefined
+    for (const key in bodyCache) {
+      anyCachedKey = key
+      break
+    }
     if (anyCachedKey) {
       return (bodyCache[anyCachedKey as keyof Body] as Promise<BodyInit>).then((body) => {
         if (anyCachedKey === 'json') {

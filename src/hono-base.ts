@@ -141,7 +141,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
       for (const p of [path].flat()) {
         this.#path = p
         for (const m of [method].flat()) {
-          handlers.map((handler) => {
+          handlers.forEach((handler) => {
             this.#addRoute(m.toUpperCase(), this.#path, handler)
           })
         }
@@ -211,7 +211,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     app: Hono<SubEnv, SubSchema, SubBasePath>
   ): Hono<E, MergeSchemaPath<SubSchema, MergePath<BasePath, SubPath>> | S, BasePath> {
     const subApp = this.basePath(path)
-    app.routes.map((r) => {
+    app.routes.forEach((r) => {
       let handler
       if (app.errorHandler === errorHandler) {
         handler = r.handler
