@@ -10,6 +10,8 @@ class Context implements ExecutionContext {
   async waitUntil(promise: Promise<unknown>): Promise<void> {
     await promise
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  props: any
 }
 
 describe('Customizing Caching Keys', () => {
