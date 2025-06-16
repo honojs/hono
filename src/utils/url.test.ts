@@ -204,6 +204,7 @@ describe('url', () => {
       expect(getQueryParam('http://example.com/?Hono+is=a+web+framework', 'Hono is')).toBe(
         'a web framework'
       )
+      expect(getQueryParam('http://example.com/?q=%h', 'q')).toBe('%h')
 
       expect(getQueryParam('http://example.com/?name0=sam&name1=tom', 'name0')).toBe('sam')
       expect(getQueryParam('http://example.com/?name0=sam&name1=tom', 'name1')).toBe('tom')

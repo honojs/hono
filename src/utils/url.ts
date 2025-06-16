@@ -196,95 +196,31 @@ export const checkOptionalParameter = (path: string): string[] | null => {
   return results.filter((v, i, a) => a.indexOf(v) === i)
 }
 
-// Optimized
-const _decodeURI = (value: string) => {
-  if (!/[%+]/.test(value)) {
-    return value
-  }
-  if (value.indexOf('+') !== -1) {
-    value = value.replace(/\+/g, ' ')
-  }
-  return value.indexOf('%') !== -1 ? decodeURIComponent_(value) : value
-}
-
 const _getQueryParam = (
   url: string,
   key?: string,
   multiple?: boolean
-): string | undefined | Record<string, string> | string[] | Record<string, string[]> => {
-  let encoded
+):
+  | string
+  | undefined
+  | string[]
+  | Record<string, string | undefined>
+  | Record<string, string[]> => {
+  const searchParams = new URLSearchParams(getQueryStrings(url))
 
-  if (!multiple && key && !/[%+]/.test(key)) {
-    // optimized for unencoded key
-
-    let keyIndex = url.indexOf(`?${key}`, 8)
-    if (keyIndex === -1) {
-      keyIndex = url.indexOf(`&${key}`, 8)
-    }
-    while (keyIndex !== -1) {
-      const trailingKeyCode = url.charCodeAt(keyIndex + key.length + 1)
-      if (trailingKeyCode === 61) {
-        const valueIndex = keyIndex + key.length + 2
-        const endIndex = url.indexOf('&', valueIndex)
-        return _decodeURI(url.slice(valueIndex, endIndex === -1 ? undefined : endIndex))
-      } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
-        return ''
-      }
-      keyIndex = url.indexOf(`&${key}`, keyIndex + 1)
-    }
-
-    encoded = /[%+]/.test(url)
-    if (!encoded) {
-      return undefined
-    }
-    // fallback to default routine
+  if (key) {
+    const params = multiple ? searchParams.getAll(key) : searchParams.get(key)
+    return multiple ? (params?.length ? params : undefined) : params ?? undefined
   }
 
-  const results: Record<string, string> | Record<string, string[]> = {}
-  encoded ??= /[%+]/.test(url)
+  const result = Array.from(searchParams.keys()).reduce<
+    Record<string, string | undefined> | Record<string, string[]>
+  >((acc, key) => {
+    acc[key] = multiple ? searchParams.getAll(key) : searchParams.get(key) ?? undefined
+    return acc
+  }, {})
 
-  let keyIndex = url.indexOf('?', 8)
-  while (keyIndex !== -1) {
-    const nextKeyIndex = url.indexOf('&', keyIndex + 1)
-    let valueIndex = url.indexOf('=', keyIndex)
-    if (valueIndex > nextKeyIndex && nextKeyIndex !== -1) {
-      valueIndex = -1
-    }
-    let name = url.slice(
-      keyIndex + 1,
-      valueIndex === -1 ? (nextKeyIndex === -1 ? undefined : nextKeyIndex) : valueIndex
-    )
-    if (encoded) {
-      name = _decodeURI(name)
-    }
-
-    keyIndex = nextKeyIndex
-
-    if (name === '') {
-      continue
-    }
-
-    let value
-    if (valueIndex === -1) {
-      value = ''
-    } else {
-      value = url.slice(valueIndex + 1, nextKeyIndex === -1 ? undefined : nextKeyIndex)
-      if (encoded) {
-        value = _decodeURI(value)
-      }
-    }
-
-    if (multiple) {
-      if (!(results[name] && Array.isArray(results[name]))) {
-        results[name] = []
-      }
-      ;(results[name] as string[]).push(value)
-    } else {
-      results[name] ??= value
-    }
-  }
-
-  return key ? results[key] : results
+  return result
 }
 
 export const getQueryParam: (
