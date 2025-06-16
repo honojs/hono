@@ -94,6 +94,11 @@
       "import": "./dist/middleware/cache/index.js",
       "require": "./dist/cjs/middleware/cache/index.js"
     },
+    "./route": {
+      "types": "./dist/types/helper/route/index.d.ts",
+      "import": "./dist/helper/route/index.js",
+      "require": "./dist/cjs/helper/route/index.js"
+    },
     "./cookie": {
       "types": "./dist/types/helper/cookie/index.d.ts",
       "import": "./dist/helper/cookie/index.js",
@@ -439,6 +444,9 @@
       ],
       "cache": [
         "./dist/types/middleware/cache"
+      ],
+      "route": [
+        "./dist/types/helper/route"
       ],
       "cookie": [
         "./dist/types/helper/cookie"
