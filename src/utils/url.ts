@@ -105,7 +105,12 @@ const tryDecodeURI = (str: string) => tryDecode(str, decodeURI)
 
 export const getPath = (request: Request): string => {
   const url = request.url
-  const start = url.indexOf('/', 8)
+  const start = url.indexOf(
+    '/',
+    url.charCodeAt(9) === 58
+      ? 13 // http+unix://
+      : 8 // http:// or https://
+  )
   let i = start
   for (; i < url.length; i++) {
     const charCode = url.charCodeAt(i)
