@@ -244,6 +244,16 @@ describe('Parse Body Util', () => {
     })
   })
 
+  it('should parse single value as array if the key has `[]`', async () => {
+    const data = new FormData()
+    data.append('foo[]', 'bar')
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { all: true })).toEqual({
+      'foo[]': ['bar'],
+    })
+  })
+
   it('should return blank object if body is JSON', async () => {
     const payload = { message: 'hello hono' }
 
