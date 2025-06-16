@@ -30,7 +30,7 @@ const fire = (
     fetch: undefined,
   }
 ): void => {
-  // @ts-expect-error addEventListener is not typed well
+  // @ts-expect-error addEventListener is not typed well in ServiceWorker-like contexts, see: https://github.com/microsoft/TypeScript/issues/14877
   addEventListener('fetch', handle(app, options))
 }
 
