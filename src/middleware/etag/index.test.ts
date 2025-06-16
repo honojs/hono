@@ -270,6 +270,26 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('x-message')).toBeFalsy()
   })
 
+  it('Should return 304 when weak ETag in If-None-Match matches the generated ETag', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/abc', (c) => {
+      return c.text('Hono is hot')
+    })
+    let res = await app.request('http://localhost/etag/abc')
+    const headerEtag = res.headers.get('ETag')!
+
+    expect(headerEtag).not.toBeFalsy()
+
+    res = await app.request('http://localhost/etag/abc', {
+      headers: {
+        'If-None-Match': 'W/"d104fafdb380655dab607c9bddc4d4982037afa1"',
+      },
+    })
+
+    expect(res.status).toBe(304)
+  })
+
   describe('When crypto is not available', () => {
     let _crypto: Crypto | undefined
     beforeAll(() => {

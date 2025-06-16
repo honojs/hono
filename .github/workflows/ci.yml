@@ -182,53 +182,75 @@ jobs:
           name: coverage-lambda-edge
           path: coverage/
 
-  perf-measures-type-and-bundle-check-on-pr:
+  perf-measures-check-on-pr:
     name: 'Type & Bundle size Check on PR'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/perf-measures
+        with:
+          target-ref: 'auto'
+
+  http-benchmark-on-pr:
+    name: 'HTTP Speed Check on PR'
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install
-      - name: Performance measurement of type check
+      - name: Install bombardier
         run: |
-            bun scripts/generate-app.ts
-            bun tsc -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
-        working-directory: perf-measures/type-check
-      - name: Performance measurement of bundle check
+          wget -O bombardier https://github.com/codesenberg/bombardier/releases/download/v2.0.1/bombardier-linux-amd64
+          chmod +x bombardier
+          sudo mv bombardier /usr/local/bin/
+      - name: Run HTTP benchmark
         run: |
-          bun run build
-          bun perf-measures/bundle-check/scripts/check-bundle-size.ts > perf-measures/bundle-check/size.json
-      - name: Run octocov
-        uses: k1LoW/octocov-action@v1
+          cd benchmarks/http-server
+          bun run benchmark.ts
+      - name: Comment PR
+        uses: actions/github-script@v7
         with:
-          config: perf-measures/.octocov.perf-measures.yml
-        env:
-          OCTOCOV_CUSTOM_METRICS_BENCHMARK_BUNDLE: perf-measures/bundle-check/size.json
-          OCTOCOV_CUSTOM_METRICS_BENCHMARK_TYPE: perf-measures/type-check/diagnostics.json
+          script: |
+            const fs = require('fs');
+            const results = fs.readFileSync('benchmarks/http-server/benchmark-results.md', 'utf8');
 
-  perf-measures-type-and-bundle-check-on-main:
+            // Minimize previous benchmark comments
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            for (const comment of comments.data) {
+              if (comment.body.includes('## HTTP Performance Benchmark')) {
+                await github.graphql(`
+                  mutation {
+                    minimizeComment(input: { subjectId: "${comment.node_id}", classifier: OUTDATED }) {
+                      minimizedComment {
+                        isMinimized
+                      }
+                    }
+                  }
+                `);
+              }
+            }
+
+            // Post new comment
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: results
+            });
+
+  perf-measures-check-on-main:
     name: 'Type & Bundle size Check on Main'
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install
-      - name: Performance measurement of type check
-        run: |
-            bun scripts/generate-app.ts
-            bun tsc -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
-        working-directory: perf-measures/type-check
-      - name: Performance measurement of bundle check
-        run: |
-          bun run build
-          bun perf-measures/bundle-check/scripts/check-bundle-size.ts > perf-measures/bundle-check/size.json
-      - name: Run octocov (main)
-        uses: k1LoW/octocov-action@v1
+      - uses: ./.github/actions/perf-measures
         with:
-          config: perf-measures/.octocov.perf-measures.main.yml
-        env:
-          OCTOCOV_GITHUB_REF: refs/heads/main
-          OCTOCOV_CUSTOM_METRICS_BENCHMARK_BUNDLE: perf-measures/bundle-check/size.json
-          OCTOCOV_CUSTOM_METRICS_BENCHMARK_TYPE: perf-measures/type-check/diagnostics.json
+          target-ref: 'main'

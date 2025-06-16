@@ -412,31 +412,19 @@ export class Context<
   set res(_res: Response | undefined) {
     this.#isFresh = false
     if (this.#res && _res) {
-      try {
-        for (const [k, v] of this.#res.headers.entries()) {
-          if (k === 'content-type') {
-            continue
-          }
-          if (k === 'set-cookie') {
-            const cookies = this.#res.headers.getSetCookie()
-            _res.headers.delete('set-cookie')
-            for (const cookie of cookies) {
-              _res.headers.append('set-cookie', cookie)
-            }
-          } else {
-            _res.headers.set(k, v)
-          }
+      _res = new Response(_res.body, _res)
+      for (const [k, v] of this.#res.headers.entries()) {
+        if (k === 'content-type') {
+          continue
         }
-      } catch (e) {
-        if (e instanceof TypeError && e.message.includes('immutable')) {
-          // `_res` is immutable (probably a response from a fetch API), so retry with a new response.
-          this.res = new Response(_res.body, {
-            headers: _res.headers,
-            status: _res.status,
-          })
-          return
+        if (k === 'set-cookie') {
+          const cookies = this.#res.headers.getSetCookie()
+          _res.headers.delete('set-cookie')
+          for (const cookie of cookies) {
+            _res.headers.append('set-cookie', cookie)
+          }
         } else {
-          throw e
+          _res.headers.set(k, v)
         }
       }
     }
@@ -510,7 +498,7 @@ export class Context<
   /**
    * `.header()` can set headers.
    *
-   * @see {@link https://hono.dev/docs/api/context#body}
+   * @see {@link https://hono.dev/docs/api/context#header}
    *
    * @example
    * ```ts
@@ -524,6 +512,9 @@ export class Context<
    * ```
    */
   header: SetHeaders = (name, value, options): void => {
+    if (this.finalized) {
+      this.#res = new Response((this.#res as Response).body, this.#res)
+    }
     // Clear the header
     if (value === undefined) {
       if (this.#headers) {

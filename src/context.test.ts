@@ -199,7 +199,6 @@ describe('Context', () => {
     expect(res.headers.get('x-Custom2')).toBe('Message2-Override')
     expect(res.headers.get('x-Custom3')).toBe('Message3')
     expect(res.status).toBe(201)
-    expect(await res.text()).toBe('this is body')
 
     // res is already set.
     c.res = res
@@ -207,6 +206,7 @@ describe('Context', () => {
     c.status(202)
     expect(c.res.headers.get('X-Custom4')).toBe('Message4')
     expect(c.res.status).toBe(201)
+    expect(await res.text()).toBe('this is body')
   })
 
   it('Inherit current status if not specified', async () => {
@@ -409,6 +409,13 @@ describe('Context header', () => {
     })
     c.res = makeResponseHeaderImmutable(new Response('bar'))
     expect(await c.res.text()).toBe('bar')
+    expect(c.res.headers.get('X-Custom')).toBe('Message')
+  })
+
+  it('Should be able to set headers if the context is finalized', async () => {
+    c.res = makeResponseHeaderImmutable(new Response('bar'))
+    expect(c.finalized).toBe(true)
+    c.header('X-Custom', 'Message')
     expect(c.res.headers.get('X-Custom')).toBe('Message')
   })
 })

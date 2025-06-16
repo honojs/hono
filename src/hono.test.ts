@@ -1492,6 +1492,27 @@ describe('Error handle', () => {
       expect(await res.text()).toBe('Custom Error')
     })
   })
+
+  describe('HTTPException with finally block', () => {
+    const app = new Hono()
+    app.use(async (c) => {
+      try {
+        throw new Error()
+      } catch (cause) {
+        throw new HTTPException(302, {
+          cause,
+          res: c.redirect('/?error=invalid_request', 302),
+        })
+      } finally {
+        c.header('x-custom', 'custom message')
+      }
+    })
+    it('Should have the custom header', async () => {
+      const res = await app.request('http://localhost/')
+      expect(res.status).toBe(302)
+      expect(res.headers.get('x-custom')).toBe('custom message')
+    })
+  })
 })
 
 describe('Error handling in middleware', () => {
@@ -2734,6 +2755,25 @@ describe('app.mount()', () => {
       expect(await res.text()).toBe('/app')
     })
   })
+
+  describe('With replaceRequest: false', () => {
+    const anotherApp = (req: Request) => {
+      const path = getPath(req)
+      if (path === '/app') {
+        return new Response(getPath(req))
+      }
+      return new Response(null, { status: 404 })
+    }
+
+    const app = new Hono()
+    app.mount('/app', anotherApp, { replaceRequest: false })
+
+    it('Should return 200 response with the correct path', async () => {
+      const res = await app.request('/app')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('/app')
+    })
+  })
 })
 
 describe('HEAD method', () => {
@@ -3601,5 +3641,31 @@ describe('Generics for Bindings and Variables', () => {
       expectTypeOf(c.env.foo).toMatchTypeOf<string>()
       return c.text('Hello Hono!')
     })
+  })
+})
+
+describe('app.basePath() with the internal #clone()', () => {
+  const app = new Hono()
+    .notFound((c) => {
+      return c.text('Custom not found', 404)
+    })
+    .onError((error, c) => {
+      return c.text(`Custom error "${error.message}"`, 500)
+    })
+    .basePath('/api')
+    .get('/test', async () => {
+      throw new Error('API Test error')
+    })
+
+  it('Should return the custom not found', async () => {
+    const res = await app.request('/api/not-found')
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('Custom not found')
+  })
+
+  it('Should return the custom error', async () => {
+    const res = await app.request('/api/test')
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe('Custom error "API Test error"')
   })
 })

@@ -161,7 +161,18 @@ describe('toSSG function', () => {
   })
 
   it('Should correctly generate files with the expected paths', async () => {
-    await toSSG(app, fsMock, { dir: './static' })
+    app.get('/data', (c) =>
+      c.text(JSON.stringify({ title: 'hono' }), 200, {
+        'Content-Type': 'text/x-foo',
+      })
+    )
+    await toSSG(app, fsMock, {
+      dir: './static',
+      extensionMap: {
+        ...defaultExtensionMap,
+        'text/x-foo': 'foo',
+      },
+    })
 
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
@@ -173,6 +184,7 @@ describe('toSSG function', () => {
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.html', expect.any(String))
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/Charlie.html', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/data.foo', expect.any(String))
   })
 
   it('should modify the request if the hook is provided', async () => {

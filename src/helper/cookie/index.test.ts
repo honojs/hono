@@ -430,5 +430,19 @@ describe('Cookie Middleware', () => {
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('choco')
     })
+
+    app.get('/delete-cookie-with-prefix', (c) => {
+      const deleted = deleteCookie(c, 'delicious_cookie', { prefix: 'secure' })
+      return c.text(deleted || '')
+    })
+
+    it('Get deleted value with prefix', async () => {
+      const cookieString = '__Secure-delicious_cookie=choco'
+      const req = new Request('http://localhost/delete-cookie-with-prefix')
+      req.headers.set('Cookie', cookieString)
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('choco')
+    })
   })
 })

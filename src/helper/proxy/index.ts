@@ -110,7 +110,8 @@ const preprocessRequestInit = (requestInit: RequestInit): RequestInit => {
  * ```
  */
 export const proxy: ProxyFetch = async (input, proxyInit) => {
-  const { raw, ...requestInit } = proxyInit ?? {}
+  const { raw, ...requestInit } =
+    proxyInit instanceof Request ? { raw: proxyInit } : proxyInit ?? {}
 
   const req = new Request(input, {
     ...buildRequestInitFromRequest(raw),

@@ -1,9 +1,9 @@
 import { unstable_dev } from 'wrangler'
-import type { UnstableDevWorker } from 'wrangler'
+import type { Unstable_DevWorker } from 'wrangler'
 import { WebSocket } from 'ws'
 
 describe('workerd', () => {
-  let worker: UnstableDevWorker
+  let worker: Unstable_DevWorker
 
   beforeAll(async () => {
     worker = await unstable_dev('./runtime-tests/workerd/index.ts', {
@@ -48,10 +48,10 @@ describe('workerd with WebSocket', () => {
       ws.addEventListener('open', () => {
         openHandler()
         ws.send('Hello')
-        resolve(undefined)
       })
       ws.addEventListener('close', async () => {
         closeHandler()
+        resolve(undefined)
       })
       ws.addEventListener('message', async (event) => {
         messageHandler(event.data)

@@ -233,5 +233,27 @@ describe('Proxy Middleware', () => {
       const res = await app.request('/proxy/404')
       expect(res.status).toBe(404)
     })
+
+    it('pass a Request object to proxyInit', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) => {
+        const req = new Request(c.req.raw, {
+          headers: {
+            'X-Request-Id': '123',
+            'Accept-Encoding': 'gzip',
+          },
+        })
+        return proxy(`https://example.com/${c.req.param('path')}`, req)
+      })
+      const res = await app.request('/proxy/compressed')
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+
+      expect(req.url).toBe('https://example.com/compressed')
+      expect(req.headers.get('X-Request-Id')).toBe('123')
+      expect(req.headers.get('Accept-Encoding')).toBeNull()
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('ok')
+    })
   })
 })
