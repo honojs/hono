@@ -48,12 +48,12 @@ export type JwtVariables<T = any> = {
  * ```
  */
 export const jwt = (options: {
-  secret: SignatureKey,
+  secret: SignatureKey
   cookie?:
     | string
     | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
-  alg?: SignatureAlgorithm,
-  headerName?: string,
+  alg?: SignatureAlgorithm
+  headerName?: string
 }): MiddlewareHandler => {
   if (!options || !options.secret) {
     throw new Error('JWT auth middleware requires options for "secret"')
@@ -65,7 +65,7 @@ export const jwt = (options: {
 
   return async function jwt(ctx, next) {
     const headerName = options.headerName || 'Authorization'
-    
+
     const credentials = ctx.req.raw.headers.get(headerName)
     let token
     if (credentials) {
