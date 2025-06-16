@@ -47,6 +47,17 @@ describe('CORS by Middleware', () => {
     })
   )
 
+  app.use(
+    '/api7/*',
+    cors({
+      origin: (origin) => (origin === 'http://example.com' ? origin : '*'),
+      allowMethods: (origin) =>
+        origin === 'http://example.com'
+          ? ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE']
+          : ['GET', 'HEAD'],
+    })
+  )
+
   app.get('/api/abc', (c) => {
     return c.json({ success: true })
   })
@@ -64,6 +75,10 @@ describe('CORS by Middleware', () => {
   })
 
   app.get('/api5/abc', () => {
+    return new Response(JSON.stringify({ success: true }))
+  })
+
+  app.get('/api7/abc', () => {
     return new Response(JSON.stringify({ success: true }))
   })
 
@@ -202,5 +217,27 @@ describe('CORS by Middleware', () => {
     })
 
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+  })
+
+  it('Allow methods by function', async () => {
+    const req = new Request('http://localhost/api7/abc', {
+      headers: {
+        Origin: 'http://example.com',
+      },
+      method: 'OPTIONS',
+    })
+    const res = await app.request(req)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
+    expect(res.headers.get('Access-Control-Allow-Methods')).toBe('GET,HEAD,POST,PATCH,DELETE')
+
+    const req2 = new Request('http://localhost/api7/abc', {
+      headers: {
+        Origin: 'http://example.org',
+      },
+      method: 'OPTIONS',
+    })
+    const res2 = await app.request(req2)
+    expect(res2.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    expect(res2.headers.get('Access-Control-Allow-Methods')).toBe('GET,HEAD')
   })
 })
