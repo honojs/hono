@@ -360,7 +360,9 @@ export const toSSG: ToSSGInterface = async (app, fs, options) => {
             return
           }
           for (const content of getContentGen) {
-            savePromises.push(saveContentToFile(content, fs, outputDir).catch((e) => e))
+            savePromises.push(
+              saveContentToFile(content, fs, outputDir, options?.extensionMap).catch((e) => e)
+            )
           }
         })
       )

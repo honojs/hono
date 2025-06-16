@@ -36,6 +36,23 @@ describe('defineWebSocketHelper', () => {
     await upgradeWebSocket(() => ({}))(new Context(new Request('http://localhost')), next)
     expect(next).toBeCalled()
   })
+  it('Use upgradeWebSocket in return', async () => {
+    const upgradeWebSocket = defineWebSocketHelper(() => {
+      return new Response('Hello World', {
+        status: 200,
+      })
+    })
+    const c = new Context(new Request('http://localhost'))
+    const res = await upgradeWebSocket(c, {})
+    expect(res.status).toBe(200)
+  })
+  it('When upgrading failed and use it in handler, it should throw error', async () => {
+    const upgradeWebSocket = defineWebSocketHelper(() => {
+      return
+    })
+    const c = new Context(new Request('http://localhost'))
+    expect(() => upgradeWebSocket(c, {})).rejects.toThrow()
+  })
 })
 describe('WSContext', () => {
   it('Should close() works', async () => {

@@ -498,7 +498,7 @@ export class Context<
   /**
    * `.header()` can set headers.
    *
-   * @see {@link https://hono.dev/docs/api/context#body}
+   * @see {@link https://hono.dev/docs/api/context#header}
    *
    * @example
    * ```ts

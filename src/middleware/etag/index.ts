@@ -27,8 +27,12 @@ export const RETAINED_304_HEADERS = [
   'vary',
 ]
 
+const stripWeak = (tag: string) => tag.replace(/^W\//, '')
+
 function etagMatches(etag: string, ifNoneMatch: string | null) {
-  return ifNoneMatch != null && ifNoneMatch.split(/,\s*/).indexOf(etag) > -1
+  return (
+    ifNoneMatch != null && ifNoneMatch.split(/,\s*/).some((t) => stripWeak(t) === stripWeak(etag))
+  )
 }
 
 function initializeGenerator(

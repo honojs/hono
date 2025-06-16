@@ -1,0 +1,61 @@
+name: 'Performance Measures'
+description: 'Run type check and bundle size performance measurements'
+
+inputs:
+  target-ref:
+    description: 'Target ref (main or auto). Set to "auto" to delegate ref detection to octocov.'
+    required: false
+    default: 'auto'
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v4
+    - uses: oven-sh/setup-bun@v2
+    - run: bun install
+      shell: bash
+
+    - name: Performance measurement of type check (tsc)
+      run: |
+        bun scripts/generate-app.ts
+        bun tsc -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics-tsc.json
+      shell: bash
+      working-directory: perf-measures/type-check
+      env:
+        BENCHMARK_TS_IMPL_LABEL: tsc
+
+    - name: Performance measurement of type check (typescript-go)
+      run: |
+        bun scripts/generate-app.ts
+        bun tsgo -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics-tsgo.json
+      shell: bash
+      working-directory: perf-measures/type-check
+      env:
+        BENCHMARK_TS_IMPL_LABEL: typescript-go
+
+    - name: Performance measurement of bundle check
+      run: |
+        bun run build
+        bun perf-measures/bundle-check/scripts/check-bundle-size.ts > perf-measures/bundle-check/size.json
+      shell: bash
+
+    - name: Run octocov
+      if: ${{ inputs.target-ref == 'auto' }}
+      uses: k1LoW/octocov-action@v1
+      with:
+        config: perf-measures/.octocov.consolidated.perf-measures.yml
+      env:
+        OCTOCOV_CUSTOM_METRICS_BUNDLE_SIZE_CHECK: perf-measures/bundle-check/size.json
+        OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSC: perf-measures/type-check/diagnostics-tsc.json
+        OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSGO: perf-measures/type-check/diagnostics-tsgo.json
+
+    - name: Run octocov with custom target ref
+      if: ${{ inputs.target-ref == 'main' }}
+      uses: k1LoW/octocov-action@v1
+      with:
+        config: perf-measures/.octocov.consolidated.perf-measures.main.yml
+      env:
+        OCTOCOV_GITHUB_REF: 'refs/heads/main'
+        OCTOCOV_CUSTOM_METRICS_BUNDLE_SIZE_CHECK: perf-measures/bundle-check/size.json
+        OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSC: perf-measures/type-check/diagnostics-tsc.json
+        OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSGO: perf-measures/type-check/diagnostics-tsgo.json

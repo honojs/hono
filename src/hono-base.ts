@@ -35,7 +35,8 @@ const notFoundHandler = (c: Context) => {
 
 const errorHandler = (err: Error | HTTPResponseError, c: Context) => {
   if ('getResponse' in err) {
-    return err.getResponse()
+    const res = err.getResponse()
+    return c.newResponse(res.body, res)
   }
   console.error(err)
   return c.text('Internal Server Error', 500)
@@ -92,7 +93,7 @@ type MountOptions =
   | MountOptionHandler
   | {
       optionHandler?: MountOptionHandler
-      replaceRequest?: MountReplaceRequest
+      replaceRequest?: MountReplaceRequest | false
     }
 
 class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'> {
@@ -172,6 +173,8 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
       router: this.router,
       getPath: this.getPath,
     })
+    clone.errorHandler = this.errorHandler
+    clone.#notFoundHandler = this.#notFoundHandler
     clone.routes = this.routes
     return clone
   }
@@ -328,7 +331,11 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
         optionHandler = options
       } else {
         optionHandler = options.optionHandler
-        replaceRequest = options.replaceRequest
+        if (options.replaceRequest === false) {
+          replaceRequest = (request) => request
+        } else {
+          replaceRequest = options.replaceRequest
+        }
       }
     }
 
@@ -356,7 +363,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     })()
 
     const handler: MiddlewareHandler = async (c, next) => {
-      const res = await applicationHandler(replaceRequest!(c.req.raw), ...getOptions(c))
+      const res = await applicationHandler(replaceRequest(c.req.raw), ...getOptions(c))
 
       if (res) {
         return res
