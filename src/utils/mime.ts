@@ -80,6 +80,7 @@ const _baseMimes = {
   wasm: 'application/wasm',
   webm: 'video/webm',
   weba: 'audio/webm',
+  webmanifest: 'application/manifest+json',
   webp: 'image/webp',
   woff: 'font/woff',
   woff2: 'font/woff2',
