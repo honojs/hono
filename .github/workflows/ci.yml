@@ -211,6 +211,7 @@ jobs:
           bun run benchmark.ts
       - name: Comment PR
         uses: actions/github-script@v7
+        if: github.event.pull_request.head.repo.full_name == github.repository
         with:
           script: |
             const fs = require('fs');
@@ -238,12 +239,18 @@ jobs:
             }
 
             // Post new comment
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: results
             });
+      - name: Show benchmark results for forks
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "## HTTP Performance Benchmark Results"
+          echo "Note: Cannot post comment due to security restrictions on fork PRs"
+          cat benchmarks/http-server/benchmark-results.md
 
   perf-measures-check-on-main:
     name: 'Type & Bundle size Check on Main'
