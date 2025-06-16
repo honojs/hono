@@ -5,6 +5,7 @@ const defaultContextOptions = {
   executionCtx: {
     waitUntil: () => {},
     passThroughOnException: () => {},
+    props: {},
   },
   env: {},
 }

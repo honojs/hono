@@ -30,7 +30,8 @@ import { getPattern, splitRoutingPath } from '../../utils/url'
  * ```
  */
 export const matchedRoutes = (c: Context): RouterRoute[] =>
-  c.req[GET_MATCH_RESULT][0].map(([[, route]]) => route)
+  // @ts-expect-error c.req[GET_MATCH_RESULT] is not typed
+  (c.req as unknown)[GET_MATCH_RESULT][0].map(([[, route]]) => route)
 
 /**
  * Get the route path registered within the handler
