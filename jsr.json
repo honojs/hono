@@ -24,6 +24,7 @@
     "./body-limit": "./src/middleware/body-limit/index.ts",
     "./ip-restriction": "./src/middleware/ip-restriction/index.ts",
     "./cache": "./src/middleware/cache/index.ts",
+    "./route": "./src/helper/route/index.ts",
     "./cookie": "./src/helper/cookie/index.ts",
     "./accepts": "./src/helper/accepts/index.ts",
     "./compress": "./src/middleware/compress/index.ts",
