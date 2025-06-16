@@ -1,7 +1,7 @@
+import { describe } from 'vitest'
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
 import { jwt } from '.'
-import { describe } from 'vitest'
 
 describe('JWT', () => {
   describe('Credentials in header', () => {
@@ -131,10 +131,10 @@ describe('JWT', () => {
 
     const app = new Hono()
 
-    app.use('/auth/*', jwt({ secret: 'a-secret', header: 'x-custom-auth-header' }))
-    app.use('/auth-unicode/*', jwt({ secret: 'a-secret', header: 'x-custom-auth-header' }))
+    app.use('/auth/*', jwt({ secret: 'a-secret', headerName: 'x-custom-auth-header' }))
+    app.use('/auth-unicode/*', jwt({ secret: 'a-secret', headerName: 'x-custom-auth-header' }))
     app.use('/nested/*', async (c, next) => {
-      const auth = jwt({ secret: 'a-secret', header: 'x-custom-auth-header' })
+      const auth = jwt({ secret: 'a-secret', headerName: 'x-custom-auth-header' })
       return auth(c, next)
     })
 
