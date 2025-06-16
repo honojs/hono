@@ -13,7 +13,8 @@ enum LogPrefix {
 }
 
 const humanize = (times: string[]) => {
-  const [delimiter, separator] = [',', '.']
+  const delimiter = ','
+  const separator = '.'
 
   const orderTimes = times.map((v) => v.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1' + delimiter))
 
@@ -25,8 +26,7 @@ const time = (start: number) => {
   return humanize([delta < 1000 ? delta + 'ms' : Math.round(delta / 1000) + 's'])
 }
 
-const colorStatus = (status: number) => {
-  const colorEnabled = getColorEnabled()
+const colorStatus = (status: number, colorEnabled: boolean) => {
   if (colorEnabled) {
     switch ((status / 100) | 0) {
       case 5: // red = error
@@ -52,13 +52,14 @@ function log(
   prefix: string,
   method: string,
   path: string,
+  colorEnabled: boolean,
   status: number = 0,
   elapsed?: string
 ) {
   const out =
     prefix === LogPrefix.Incoming
       ? `${prefix} ${method} ${path}`
-      : `${prefix} ${method} ${path} ${colorStatus(status)} ${elapsed}`
+      : `${prefix} ${method} ${path} ${colorStatus(status, colorEnabled)} ${elapsed}`
   fn(out)
 }
 
@@ -79,17 +80,18 @@ function log(
  * ```
  */
 export const logger = (fn: PrintFunc = console.log): MiddlewareHandler => {
+  const colorEnabled = getColorEnabled()
   return async function logger(c, next) {
     const { method, url } = c.req
 
     const path = url.slice(url.indexOf('/', 8))
 
-    log(fn, LogPrefix.Incoming, method, path)
+    log(fn, LogPrefix.Incoming, method, path, colorEnabled)
 
     const start = Date.now()
 
     await next()
 
-    log(fn, LogPrefix.Outgoing, method, path, c.res.status, time(start))
+    log(fn, LogPrefix.Outgoing, method, path, colorEnabled, c.res.status, time(start))
   }
 }
