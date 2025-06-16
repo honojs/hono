@@ -3,6 +3,7 @@
  * Buffer utility.
  */
 
+import { createResponse } from './common'
 import { sha256 } from './crypto'
 
 export const equal = (a: ArrayBuffer, b: ArrayBuffer): boolean => {
@@ -56,7 +57,7 @@ export const bufferToFormData = (
   arrayBuffer: ArrayBuffer,
   contentType: string
 ): Promise<FormData> => {
-  const response = new Response(arrayBuffer, {
+  const response = createResponse(arrayBuffer, {
     headers: {
       'Content-Type': contentType,
     },

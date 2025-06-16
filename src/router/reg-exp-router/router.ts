@@ -4,6 +4,7 @@ import {
   METHOD_NAME_ALL,
   UnsupportedPathError,
 } from '../../router'
+import { createEmptyRecord } from '../../utils/common'
 import { checkOptionalParameter } from '../../utils/url'
 import { PATH_ERROR } from './node'
 import type { ParamAssocArray } from './node'
@@ -16,9 +17,9 @@ type HandlerWithMetadata<T> = [T, number] // [handler, paramCount]
 
 const emptyParam: string[] = []
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const nullMatcher: Matcher<any> = [/^$/, [], Object.create(null)]
+const nullMatcher: Matcher<any> = [/^$/, [], createEmptyRecord()]
 
-let wildcardRegExpCache: Record<string, RegExp> = Object.create(null)
+let wildcardRegExpCache: Record<string, RegExp> = createEmptyRecord()
 function buildWildcardRegExp(path: string): RegExp {
   return (wildcardRegExpCache[path] ??= new RegExp(
     path === '*'
@@ -30,7 +31,7 @@ function buildWildcardRegExp(path: string): RegExp {
 }
 
 function clearWildcardRegExpCache() {
-  wildcardRegExpCache = Object.create(null)
+  wildcardRegExpCache = createEmptyRecord()
 }
 
 function buildMatcherFromPreprocessedRoutes<T>(
@@ -50,11 +51,11 @@ function buildMatcherFromPreprocessedRoutes<T>(
       isStaticA ? 1 : isStaticB ? -1 : pathA.length - pathB.length
     )
 
-  const staticMap: StaticMap<T> = Object.create(null)
+  const staticMap: StaticMap<T> = createEmptyRecord()
   for (let i = 0, j = -1, len = routesWithStaticPathFlag.length; i < len; i++) {
     const [pathErrorCheckOnly, path, handlers] = routesWithStaticPathFlag[i]
     if (pathErrorCheckOnly) {
-      staticMap[path] = [handlers.map(([h]) => [h, Object.create(null)]), emptyParam]
+      staticMap[path] = [handlers.map(([h]) => [h, createEmptyRecord()]), emptyParam]
     } else {
       j++
     }
@@ -71,7 +72,7 @@ function buildMatcherFromPreprocessedRoutes<T>(
     }
 
     handlerData[j] = handlers.map(([h, paramCount]) => {
-      const paramIndexMap: ParamIndexMap = Object.create(null)
+      const paramIndexMap: ParamIndexMap = createEmptyRecord()
       paramCount -= 1
       for (; paramCount >= 0; paramCount--) {
         const [key, value] = paramAssoc[paramCount]
@@ -127,8 +128,8 @@ export class RegExpRouter<T> implements Router<T> {
   #routes?: Record<string, Record<string, HandlerWithMetadata<T>[]>>
 
   constructor() {
-    this.#middleware = { [METHOD_NAME_ALL]: Object.create(null) }
-    this.#routes = { [METHOD_NAME_ALL]: Object.create(null) }
+    this.#middleware = { [METHOD_NAME_ALL]: createEmptyRecord() }
+    this.#routes = { [METHOD_NAME_ALL]: createEmptyRecord() }
   }
 
   add(method: string, path: string, handler: T) {
@@ -141,7 +142,7 @@ export class RegExpRouter<T> implements Router<T> {
 
     if (!middleware[method]) {
       ;[middleware, routes].forEach((handlerMap) => {
-        handlerMap[method] = Object.create(null)
+        handlerMap[method] = createEmptyRecord()
         Object.keys(handlerMap[METHOD_NAME_ALL]).forEach((p) => {
           handlerMap[method][p] = [...handlerMap[METHOD_NAME_ALL][p]]
         })
@@ -231,7 +232,7 @@ export class RegExpRouter<T> implements Router<T> {
   }
 
   #buildAllMatchers(): Record<string, Matcher<T> | null> {
-    const matchers: Record<string, Matcher<T> | null> = Object.create(null)
+    const matchers: Record<string, Matcher<T> | null> = createEmptyRecord()
 
     Object.keys(this.#routes!)
       .concat(Object.keys(this.#middleware!))

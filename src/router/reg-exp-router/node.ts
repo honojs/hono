@@ -1,3 +1,5 @@
+import { createEmptyRecord } from '../../utils/common'
+
 const LABEL_REG_EXP_STR = '[^/]+'
 const ONLY_WILDCARD_REG_EXP_STR = '.*'
 const TAIL_WILDCARD_REG_EXP_STR = '(?:|/.*)'
@@ -45,7 +47,7 @@ function compareKey(a: string, b: string): number {
 export class Node {
   #index?: number
   #varIndex?: number
-  #children: Record<string, Node> = Object.create(null)
+  #children: Record<string, Node> = createEmptyRecord()
 
   insert(
     tokens: readonly string[],
