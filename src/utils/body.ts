@@ -188,7 +188,11 @@ const handleParsingAllValues = (
       form[key] = [form[key] as string | File, value]
     }
   } else {
-    form[key] = value
+    if (!key.endsWith('[]')) {
+      form[key] = value
+    } else {
+      form[key] = [value]
+    }
   }
 }
 

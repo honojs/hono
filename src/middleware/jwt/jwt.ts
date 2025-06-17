@@ -27,6 +27,7 @@ export type JwtVariables<T = any> = {
  * @param {SignatureKey} [options.secret] - A value of your secret key.
  * @param {string} [options.cookie] - If this value is set, then the value is retrieved from the cookie header using that value as a key, which is then validated as a token.
  * @param {SignatureAlgorithm} [options.alg=HS256] - An algorithm type that is used for verifying. Available types are `HS256` | `HS384` | `HS512` | `RS256` | `RS384` | `RS512` | `PS256` | `PS384` | `PS512` | `ES256` | `ES384` | `ES512` | `EdDSA`.
+ * @param {string} [options.headerName='Authorization'] - The name of the header to look for the JWT token. Default is 'Authorization'.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
@@ -37,6 +38,7 @@ export type JwtVariables<T = any> = {
  *   '/auth/*',
  *   jwt({
  *     secret: 'it-is-very-secret',
+ *     headerName: 'x-custom-auth-header', // Optional, default is 'Authorization'
  *   })
  * )
  *
@@ -51,6 +53,7 @@ export const jwt = (options: {
     | string
     | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
   alg?: SignatureAlgorithm
+  headerName?: string
 }): MiddlewareHandler => {
   if (!options || !options.secret) {
     throw new Error('JWT auth middleware requires options for "secret"')
@@ -61,7 +64,9 @@ export const jwt = (options: {
   }
 
   return async function jwt(ctx, next) {
-    const credentials = ctx.req.raw.headers.get('Authorization')
+    const headerName = options.headerName || 'Authorization'
+
+    const credentials = ctx.req.raw.headers.get(headerName)
     let token
     if (credentials) {
       const parts = credentials.split(/\s+/)
