@@ -17,6 +17,7 @@ import type {
   FileSystemModule,
   ToSSGResult,
   SSGPlugin,
+  ToSSGOptions,
 } from './ssg'
 
 const resolveRoutesContent = async (res: ReturnType<typeof fetchRoutesContent>) => {
@@ -229,16 +230,22 @@ describe('toSSG function', () => {
       writeFile: vi.fn(() => Promise.resolve()),
       mkdir: vi.fn(() => Promise.resolve()),
     }
-    const afterGenerateHookMock: AfterGenerateHook = vi.fn<AfterGenerateHook>((result) => {
-      if (result.files) {
-        result.files.forEach((file) => console.log(file))
+    const afterGenerateHookMock: AfterGenerateHook = vi.fn<AfterGenerateHook>(
+      (result, fsModule, options) => {
+        if (result.files) {
+          result.files.forEach((file) => console.log(file))
+        }
       }
-    })
+    )
 
     await toSSG(app, fsMock, { dir: './static', afterGenerateHook: afterGenerateHookMock })
 
     expect(afterGenerateHookMock).toHaveBeenCalled()
-    expect(afterGenerateHookMock).toHaveBeenCalledWith(expect.anything())
+    expect(afterGenerateHookMock).toHaveBeenCalledWith(
+      expect.anything(), // result
+      expect.anything(), // fsModule
+      expect.anything() // options
+    )
   })
 
   it('should handle asynchronous beforeRequestHook correctly', async () => {
@@ -272,7 +279,7 @@ describe('toSSG function', () => {
   })
 
   it('should handle asynchronous afterGenerateHook correctly', async () => {
-    const afterGenerateHook: AfterGenerateHook = async (result) => {
+    const afterGenerateHook: AfterGenerateHook = async (result, fsModule, options) => {
       await new Promise((resolve) => setTimeout(resolve, 10))
       console.log(`Generated ${result.files.length} files.`)
     }
@@ -760,13 +767,21 @@ describe('Combined Generate hooks - AfterGenerateHook', () => {
   let fsMock: FileSystemModule
 
   const logResultAfterGenerateHook = (): AfterGenerateHook => {
-    return async (result: ToSSGResult): Promise<void> => {
+    return async (
+      result: ToSSGResult,
+      fsModule: FileSystemModule,
+      options?: ToSSGOptions
+    ): Promise<void> => {
       console.log('Generation completed with status:', result.success) // Log the generation success
     }
   }
 
   const appendFilesAfterGenerateHook = (additionalFiles: string[]): AfterGenerateHook => {
-    return async (result: ToSSGResult): Promise<void> => {
+    return async (
+      result: ToSSGResult,
+      fsModule: FileSystemModule,
+      options?: ToSSGOptions
+    ): Promise<void> => {
       result.files = result.files.concat(additionalFiles) // Append additional files to the result
     }
   }
@@ -892,7 +907,7 @@ describe('SSG Plugin System', () => {
     }
 
     const sitemapPlugin: SSGPlugin = {
-      afterGenerateHook: (result) => {
+      afterGenerateHook: (result, fsModule, options) => {
         result.files.push('sitemap.xml')
       },
     }
