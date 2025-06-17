@@ -172,6 +172,29 @@ describe('Context', () => {
     expect(foo).toBe('Bar, Buzz')
   })
 
+  it('c.body() - content-type cannot be overridden by the default response when append headers', async () => {
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.res
+    c.header('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
+  })
+
+  it('c.body() - content-type can set explicitly via c.res.headers', async () => {
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.res.headers.set('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
+  })
+
+  it('c.body() - Different header settings require ensuring order', async () => {
+    c.header('Vary', 'Accept-Encoding', { append: true })
+    c.header('Content-Type', 'image/png')
+    c.res.headers.set('Content-Type', 'text/html')
+    const res = c.body('<h1>Hi</h1>')
+    expect(res.headers.get('Content-Type')).toMatch('text/html')
+  })
+
   it('c.status()', async () => {
     c.status(201)
     const res = c.body('Hi')
@@ -306,6 +329,7 @@ describe('event and executionCtx', () => {
       executionCtx: {
         passThroughOnException: pathThroughOnException,
         waitUntil: waitUntil,
+        props: {},
       },
       env: {},
     })
@@ -417,6 +441,22 @@ describe('Context header', () => {
     expect(c.finalized).toBe(true)
     c.header('X-Custom', 'Message')
     expect(c.res.headers.get('X-Custom')).toBe('Message')
+  })
+
+  it('Should handle headers with array values correctly', async () => {
+    c.header('X-Array', 'value1')
+    const res = c.json({ test: 'data' }, 200, {
+      'X-Array': ['new1', 'new2'],
+    })
+    expect(res.headers.get('X-Array')).toBe('new1, new2')
+  })
+
+  it('Should remove existing header when new value is empty array', async () => {
+    c.header('X-Test', 'existing')
+    const res = c.json({ test: 'data' }, 200, {
+      'X-Test': [],
+    })
+    expect(res.headers.get('X-Test')).toBeNull()
   })
 })
 

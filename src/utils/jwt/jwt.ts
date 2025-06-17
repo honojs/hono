@@ -23,7 +23,6 @@ import { utf8Decoder, utf8Encoder } from './utf8'
 
 const encodeJwtPart = (part: unknown): string =>
   encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, '')
-
 const encodeSignaturePart = (buf: ArrayBufferLike): string => encodeBase64Url(buf).replace(/=/g, '')
 
 const decodeJwtPart = (part: string): TokenHeader | JWTPayload | undefined =>
@@ -111,7 +110,7 @@ export const verify = async (
 export const verifyFromJwks = async (
   token: string,
   options: {
-    keys?: HonoJsonWebKey[] | (() => Promise<HonoJsonWebKey[]>)
+    keys?: HonoJsonWebKey[]
     jwks_uri?: string
   },
   init?: RequestInit
@@ -125,8 +124,6 @@ export const verifyFromJwks = async (
     throw new JwtHeaderRequiresKid(header)
   }
 
-  let keys = typeof options.keys === 'function' ? await options.keys() : options.keys
-
   if (options.jwks_uri) {
     const response = await fetch(options.jwks_uri, init)
     if (!response.ok) {
@@ -139,16 +136,16 @@ export const verifyFromJwks = async (
     if (!Array.isArray(data.keys)) {
       throw new Error('invalid JWKS response. "keys" field is not an array')
     }
-    if (keys) {
-      keys.push(...data.keys)
+    if (options.keys) {
+      options.keys.push(...data.keys)
     } else {
-      keys = data.keys
+      options.keys = data.keys
     }
-  } else if (!keys) {
+  } else if (!options.keys) {
     throw new Error('verifyFromJwks requires options for either "keys" or "jwks_uri" or both')
   }
 
-  const matchingKey = keys.find((key) => key.kid === header.kid)
+  const matchingKey = options.keys.find((key) => key.kid === header.kid)
   if (!matchingKey) {
     throw new JwtTokenInvalid(token)
   }

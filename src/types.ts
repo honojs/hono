@@ -56,6 +56,7 @@ export type BlankInput = {}
 ////////////////////////////////////////
 
 export interface RouterRoute {
+  basePath: string
   path: string
   method: string
   handler: H
