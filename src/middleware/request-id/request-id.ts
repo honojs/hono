@@ -6,11 +6,11 @@
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
-export type RequestIdVariables = {
+export interface RequestIdVariables {
   requestId: string
 }
 
-export type RequestIdOptions = {
+export interface RequestIdOptions {
   limitLength?: number
   headerName?: string
   generator?: (c: Context) => string
