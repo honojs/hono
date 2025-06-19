@@ -217,7 +217,7 @@ export class JSXNode implements HtmlEscaped {
         buffer[0] += ` ${key}="`
         buffer.unshift('"', v)
       } else if (typeof v === 'function') {
-        if (!key.startsWith('on')) {
+        if (!key.startsWith('on') && key !== 'ref') {
           throw `Invalid prop '${key}' of type 'function' supplied to '${tag}'.`
         }
         // maybe event handler for client components, just ignore in server components
