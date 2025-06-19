@@ -50,7 +50,7 @@ type BearerAuthOptions =
  * @param {string} [options.headerName=Authorization] - The header name.
  * @param {Function} [options.hashFunction] - A function to handle hashing for safe comparison of authentication tokens.
  * @param {string | object | MessageFunction} [options.noAuthenticationHeaderMessage="Unauthorized"] - The no authentication header message.
- * @param {string | object | MessageFunction} [options.invalidAuthenticationHeaderMeasage="Bad Request"] - The invalid authentication header message.
+ * @param {string | object | MessageFunction} [options.invalidAuthenticationHeaderMessage="Bad Request"] - The invalid authentication header message.
  * @param {string | object | MessageFunction} [options.invalidTokenMessage="Unauthorized"] - The invalid token message.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If neither "token" nor "verifyToken" options are provided.
