@@ -36,12 +36,14 @@ export function getColorEnabled(): boolean {
 export async function getColorEnabledAsync(): Promise<boolean> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { navigator } = globalThis as any
+  // Avoid analysis of cloudflare scheme by bundlers
+  const cfWorkers = 'cloudflare:workers'
 
   const isNoColor =
     navigator !== undefined && navigator.userAgent === 'Cloudflare-Workers'
       ? // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        'NO_COLOR' in ((await import('cloudflare:workers')).env ?? {}) // ?? {} is for backward compat
+        'NO_COLOR' in ((await import(cfWorkers)).env ?? {}) // {} is for backward compat
       : !getColorEnabled()
 
   return !isNoColor
