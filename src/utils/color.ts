@@ -37,7 +37,8 @@ export async function getColorEnabledAsync(): Promise<boolean> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { navigator } = globalThis as any
   // Avoid analysis of cloudflare scheme by bundlers
-  const cfWorkers = 'cloudflare:workers'
+  // eslint-disable-next-line prefer-const
+  let cfWorkers = 'cloudflare:workers'
 
   const isNoColor =
     navigator !== undefined && navigator.userAgent === 'Cloudflare-Workers'
