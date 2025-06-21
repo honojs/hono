@@ -18,6 +18,12 @@ describe('Parse cookie', () => {
     expect(cookie['best_cookie']).toBe(' sugar ')
   })
 
+  it('Should not throw a URIError when parsing a invalid string', () => {
+    const cookieString = 'yummy_cookie="choco%2";'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['yummy_cookie']).toBe('choco%2')
+  })
+
   it('Should parse empty cookies', () => {
     const cookie: Cookie = parse('')
     expect(Object.keys(cookie).length).toBe(0)
