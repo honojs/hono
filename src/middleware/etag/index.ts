@@ -93,7 +93,26 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
       if (!generator) {
         return
       }
-      const hash = await generateDigest(res.clone().body, generator)
+
+      const isLambda = !!(
+        process.env.AWS_EXECUTION_ENV ||
+        process.env.LAMBDA_TASK_ROOT ||
+        process.env.AWS_LAMBDA_FUNCTION_NAME
+      )
+      let hash: string | null = null
+
+      if (isLambda) {
+        const buffer = await res.arrayBuffer()
+        hash = await generateDigest(buffer, generator)
+        c.res = new Response(buffer, {
+          status: res.status,
+          statusText: res.statusText,
+          headers: new Headers(res.headers),
+        })
+      } else {
+        hash = await generateDigest(res.clone().body, generator)
+      }
+
       if (hash === null) {
         return
       }
