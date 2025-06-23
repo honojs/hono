@@ -188,7 +188,7 @@ describe('render to string', () => {
     it('Should get an error if both dangerouslySetInnerHTML and children are specified', () => {
       expect(() =>
         (<span dangerouslySetInnerHTML={{ __html: '" is allowed here' }}>Hello</span>).toString()
-      ).toThrow()
+      ).toThrow(Error)
     })
   })
 
@@ -368,7 +368,7 @@ describe('render to string', () => {
     it('should raise an error if used in other props', () => {
       const onClick = () => {}
       const template = <button data-handler={onClick}>Click</button>
-      expect(() => template.toString()).toThrow()
+      expect(() => template.toString()).toThrow(Error)
     })
   })
 

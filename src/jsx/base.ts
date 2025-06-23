@@ -209,7 +209,7 @@ export class JSXNode implements HtmlEscaped {
         }
       } else if (key === 'dangerouslySetInnerHTML') {
         if (children.length > 0) {
-          throw 'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
+          throw new Error('Can only set one of `children` or `props.dangerouslySetInnerHTML`.')
         }
 
         children = [raw(v.__html)]
@@ -218,7 +218,7 @@ export class JSXNode implements HtmlEscaped {
         buffer.unshift('"', v)
       } else if (typeof v === 'function') {
         if (!key.startsWith('on') && key !== 'ref') {
-          throw `Invalid prop '${key}' of type 'function' supplied to '${tag}'.`
+          throw new Error(`Invalid prop '${key}' of type 'function' supplied to '${tag}'.`)
         }
         // maybe event handler for client components, just ignore in server components
       } else {

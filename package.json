@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.8.0",
+  "version": "4.8.2",
   "description": "Web framework built on Web Standards",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -13,7 +13,7 @@
     "test": "tsc --noEmit && vitest --run && vitest -c .vitest.config/jsx-runtime-default.ts --run && vitest -c .vitest.config/jsx-runtime-dom.ts --run",
     "test:watch": "vitest --watch",
     "test:deno": "deno test --allow-read --allow-env --allow-write --allow-net -c runtime-tests/deno/deno.json runtime-tests/deno && deno test --no-lock -c runtime-tests/deno-jsx/deno.precompile.json runtime-tests/deno-jsx && deno test --no-lock -c runtime-tests/deno-jsx/deno.react-jsx.json runtime-tests/deno-jsx",
-    "test:bun": "bun test --jsx-import-source ../../src/jsx runtime-tests/bun/index.test.tsx",
+    "test:bun": "bun test --jsx-import-source ../../src/jsx runtime-tests/bun/*",
     "test:fastly": "vitest --run --config ./runtime-tests/fastly/vitest.config.ts",
     "test:node": "vitest --run --config ./runtime-tests/node/vitest.config.ts",
     "test:workerd": "vitest --run --config ./runtime-tests/workerd/vitest.config.ts",
