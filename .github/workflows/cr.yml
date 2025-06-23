@@ -1,0 +1,37 @@
+name: cr
+on:
+  push:
+    branches: [main]
+    tags: ['!**'] # Avoid publishing on tags
+  pull_request:
+    types: [opened, synchronize, labeled] # Run on PR creation, updates, and when labels are added
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }} # Concurrency group for each PR
+  cancel-in-progress: true # Cancel in progress builds for the same PR
+
+jobs:
+  publish:
+    if: github.repository == 'honojs/hono' && (github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'cr-tracked'))
+    runs-on: ubuntu-latest
+    name: 'Publish: pkg.pr.new'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Build
+        run: bun run build
+
+      - name: Publish to StackBlitz
+        run: |
+          bun pkg-pr-new publish --compact
