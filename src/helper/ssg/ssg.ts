@@ -5,7 +5,7 @@ import { createPool } from '../../utils/concurrent'
 import { getExtension } from '../../utils/mime'
 import type { AddedSSGDataRequest, SSGParams } from './middleware'
 import { SSG_CONTEXT, X_HONO_DISABLE_SSG_HEADER_KEY } from './middleware'
-import { dirname, filterStaticGenerateRoutes, joinPaths } from './utils'
+import { dirname, filterStaticGenerateRoutes, isDynamicRoute, joinPaths } from './utils'
 
 const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
 
@@ -278,10 +278,6 @@ export const fetchRoutesContent = function* <
       }
     })
   }
-}
-
-const isDynamicRoute = (path: string): boolean => {
-  return path.split('/').some((segment) => segment.startsWith(':') || segment.includes('*'))
 }
 
 /**
