@@ -171,7 +171,7 @@ type HandleOptions = {
  */
 export const handle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
   app: Hono<E, S, BasePath>,
-  { contentTypesAsBinary }: HandleOptions
+  { contentTypesAsBinary }: HandleOptions = { contentTypesAsBinary: [] }
 ): (<L extends LambdaEvent>(
   event: L,
   lambdaContext?: LambdaContext
