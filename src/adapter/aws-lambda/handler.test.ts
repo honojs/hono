@@ -29,6 +29,124 @@ describe('isContentEncodingBinary', () => {
   })
 })
 
+describe('EventProcessor.createResult with contentTypsAsBinary', () => {
+  it('Should encode as base64 when content-type is in contentTypesAsBinary array', async () => {
+    const event: LambdaEvent = {
+      version: '1.0',
+      resource: '/my/path',
+      path: '/my/path',
+      httpMethod: 'GET',
+      headers: {},
+      multiValueHeaders: {},
+      queryStringParameters: {},
+      requestContext: {
+        accountId: '123456789012',
+        apiId: 'id',
+        authorizer: { claims: null, scopes: null },
+        domainName: 'id.execute-api.us-east-1.amazonaws.com',
+        domainPrefix: 'id',
+        extendedRequestId: 'request-id',
+        httpMethod: 'GET',
+        identity: {
+          sourceIp: '192.0.2.1',
+          userAgent: 'user-agent',
+          clientCert: {
+            clientCertPem: 'CERT_CONTENT',
+            subjectDN: 'www.example.com',
+            issuerDN: 'Example issuer',
+            serialNumber: 'a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1',
+            validity: {
+              notBefore: 'May 28 12:30:02 2019 GMT',
+              notAfter: 'Aug  5 09:36:04 2021 GMT',
+            },
+          },
+        },
+        path: '/my/path',
+        protocol: 'HTTP/1.1',
+        requestId: 'id=',
+        requestTime: '04/Mar/2020:19:15:17 +0000',
+        requestTimeEpoch: 1583349317135,
+        resourcePath: '/my/path',
+        stage: '$default',
+      },
+      pathParameters: {},
+      stageVariables: {},
+      body: null,
+      isBase64Encoded: false,
+    }
+
+    const processor = getProcessor(event)
+    const response = new Response('test content', {
+      headers: { 'content-type': 'application/custom' },
+    })
+
+    const result = await processor.createResult(event, response, {
+      contentTypesAsBinary: ['application/custom'],
+    })
+
+    expect(result.isBase64Encoded).toBe(true)
+    expect(result.body).toBe('dGVzdCBjb250ZW50')
+  })
+
+  it('Should not encode as base64 when content-type is not in contentTypesAsBinary array', async () => {
+    const event: LambdaEvent = {
+      version: '1.0',
+      resource: '/my/path',
+      path: '/my/path',
+      httpMethod: 'GET',
+      headers: {},
+      multiValueHeaders: {},
+      queryStringParameters: {},
+      requestContext: {
+        accountId: '123456789012',
+        apiId: 'id',
+        authorizer: { claims: null, scopes: null },
+        domainName: 'id.execute-api.us-east-1.amazonaws.com',
+        domainPrefix: 'id',
+        extendedRequestId: 'request-id',
+        httpMethod: 'GET',
+        identity: {
+          sourceIp: '192.0.2.1',
+          userAgent: 'user-agent',
+          clientCert: {
+            clientCertPem: 'CERT_CONTENT',
+            subjectDN: 'www.example.com',
+            issuerDN: 'Example issuer',
+            serialNumber: 'a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1',
+            validity: {
+              notBefore: 'May 28 12:30:02 2019 GMT',
+              notAfter: 'Aug  5 09:36:04 2021 GMT',
+            },
+          },
+        },
+        path: '/my/path',
+        protocol: 'HTTP/1.1',
+        requestId: 'id=',
+        requestTime: '04/Mar/2020:19:15:17 +0000',
+        requestTimeEpoch: 1583349317135,
+        resourcePath: '/my/path',
+        stage: '$default',
+      },
+      pathParameters: {},
+      stageVariables: {},
+      body: null,
+      isBase64Encoded: false,
+    }
+
+    const processor = getProcessor(event)
+    const response = new Response('test content', {
+      headers: { 'content-type': 'application/json' },
+    })
+
+    const result = await processor.createResult(event, response, {
+      contentTypesAsBinary: ['application/custom'],
+    })
+
+    expect(result.isBase64Encoded).toBe(false)
+    expect(result.body).toBe('test content')
+  })
+})
+
 describe('EventProcessor.createRequest', () => {
   it('Should return valid Request object from version 1.0 API Gateway event', () => {
     const event: LambdaEvent = {
