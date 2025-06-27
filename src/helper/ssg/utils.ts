@@ -69,3 +69,7 @@ export const filterStaticGenerateRoutes = <E extends Env>(
     return acc
   }, [] as FilterStaticGenerateRouteData[])
 }
+
+export const isDynamicRoute = (path: string): boolean => {
+  return path.split('/').some((segment) => segment.startsWith(':') || segment.includes('*'))
+}
