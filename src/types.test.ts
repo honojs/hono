@@ -2698,4 +2698,129 @@ describe('RPC supports Middleware responses', () => {
       ;(await res.json())['200']
     }
   })
+
+  const middleware = createMiddleware(async () => {})
+  const handler = (c: Context) => c.json({ ok: true }, 200)
+  type Expected = {
+    '/': {
+      $get: {
+        input: {}
+        output: {
+          ok: true
+        }
+        outputFormat: 'json'
+        status: 200
+      }
+    }
+  }
+
+  it('Should infer the correct response type with 1 middleware and 1 handler', () => {
+    const routes = new Hono().get('/', middleware, handler)
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 1 middleware and 2 handler', () => {
+    const routes = new Hono().get('/', middleware, handler, handler)
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 2 middleware and 1 handler', () => {
+    const routes = new Hono().get('/', middleware, middleware, handler)
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 3 middleware and 1 handler', () => {
+    const routes = new Hono().get('/', middleware, middleware, middleware, handler)
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 4 middleware and 1 handler', () => {
+    const routes = new Hono().get('/', middleware, middleware, middleware, middleware, handler)
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 5 middleware and 1 handler', () => {
+    const routes = new Hono().get(
+      '/',
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      handler
+    )
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 6 middleware and 1 handler', () => {
+    const routes = new Hono().get(
+      '/',
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      handler
+    )
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 7 middleware and 1 handler', () => {
+    const routes = new Hono().get(
+      '/',
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      handler
+    )
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 8 middleware and 1 handler', () => {
+    const routes = new Hono().get(
+      '/',
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      handler
+    )
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 9 middleware and 1 handler', () => {
+    const routes = new Hono().get(
+      '/',
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      handler
+    )
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
 })
