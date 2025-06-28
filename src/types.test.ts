@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { expectTypeOf } from 'vitest'
+import { hc } from './client'
 import { Context } from './context'
 import { createMiddleware } from './helper/factory'
 import { Hono } from './hono'
@@ -2397,5 +2398,304 @@ describe('status code', () => {
 
     type Actual = ExtractSchema<typeof router>['/']['$get']['status']
     expectTypeOf<Actual>().toEqualTypeOf<204 | 201 | 200>()
+  })
+})
+
+describe('RPC supports Middleware responses', () => {
+  it('Should handle the responses from 1 handler', async () => {
+    const routes = new Hono().get('/single', (c) => c.json({ '200': true }, 200))
+    const client = hc<typeof routes>('http://localhost')
+    const res = await client.single.$get()
+    if (res.status === 200) {
+      ;(await res.json())['200']
+    }
+  })
+
+  it('Should handle the responses from 2 handlers', async () => {
+    const routes = new Hono().get(
+      '/double',
+      async (c) => c.json({ '400': true }, 400),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof routes>('http://localhost')
+    const res = await client.double.$get()
+    if (res.status === 400) {
+      ;(await res.json())['400']
+    }
+    if (res.status === 200) {
+      ;(await res.json())['200']
+    }
+  })
+
+  it('Should handle the responses from 3 handlers', async () => {
+    const routes = new Hono().get(
+      '/foo',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof routes>('http://localhost')
+    const res = await client.foo.$get()
+    if (res.status === 500) {
+      ;(await res.json())['500']
+    }
+    if (res.status === 400) {
+      ;(await res.json())['400']
+    }
+    if (res.status === 200) {
+      ;(await res.json())['200']
+    }
+  })
+
+  it('Should handle the responses from 4 handlers', async () => {
+    const routes = new Hono().get(
+      '/bar',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '300': true }, 300),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof routes>('http://localhost')
+    const res = await client.bar.$get()
+    if (res.status === 500) {
+      ;(await res.json())['500']
+    }
+    if (res.status === 400) {
+      ;(await res.json())['400']
+    }
+    if (res.status === 300) {
+      ;(await res.json())['300']
+    }
+    if (res.status === 200) {
+      ;(await res.json())['200']
+    }
+  })
+
+  it('Should handle the responses from 5 handlers', async () => {
+    const routes = new Hono().get(
+      '/baz',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '300': true }, 300),
+      async (c) => c.json({ '201': true }, 201),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof routes>('http://localhost')
+    const res = await client.baz.$get()
+    if (res.status === 500) {
+      ;(await res.json())['500']
+    }
+    if (res.status === 400) {
+      ;(await res.json())['400']
+    }
+    if (res.status === 300) {
+      ;(await res.json())['300']
+    }
+    if (res.status === 201) {
+      ;(await res.json())['201']
+    }
+    if (res.status === 200) {
+      ;(await res.json())['200']
+    }
+  })
+
+  it('Should handle the responses from 6 handlers', async () => {
+    const routes = new Hono().get(
+      '/qux',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '300': true }, 300),
+      async (c) => c.json({ '201': true }, 201),
+      async (c) => c.json({ '202': true }, 202),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof routes>('http://localhost')
+    const res = await client.qux.$get()
+    if (res.status === 500) {
+      ;(await res.json())['500']
+    }
+    if (res.status === 400) {
+      ;(await res.json())['400']
+    }
+    if (res.status === 300) {
+      ;(await res.json())['300']
+    }
+    if (res.status === 201) {
+      ;(await res.json())['201']
+    }
+    if (res.status === 202) {
+      ;(await res.json())['202']
+    }
+    if (res.status === 200) {
+      ;(await res.json())['200']
+    }
+  })
+
+  it('Should handle the responses from 7 handlers', async () => {
+    const routes = new Hono().get(
+      '/seven',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '300': true }, 300),
+      async (c) => c.json({ '201': true }, 201),
+      async (c) => c.json({ '202': true }, 202),
+      async (c) => c.json({ '203': true }, 203),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof routes>('http://localhost')
+    const res = await client.seven.$get()
+    if (res.status === 500) {
+      ;(await res.json())['500']
+    }
+    if (res.status === 400) {
+      ;(await res.json())['400']
+    }
+    if (res.status === 300) {
+      ;(await res.json())['300']
+    }
+    if (res.status === 201) {
+      ;(await res.json())['201']
+    }
+    if (res.status === 202) {
+      ;(await res.json())['202']
+    }
+    if (res.status === 203) {
+      ;(await res.json())['203']
+    }
+    if (res.status === 200) {
+      ;(await res.json())['200']
+    }
+  })
+
+  it('Should handle the responses from 8 handlers', async () => {
+    const routes = new Hono().get(
+      '/eight',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '401': true }, 401),
+      async (c) => c.json({ '300': true }, 300),
+      async (c) => c.json({ '201': true }, 201),
+      async (c) => c.json({ '202': true }, 202),
+      async (c) => c.json({ '203': true }, 203),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof routes>('http://localhost')
+    const res = await client.eight.$get()
+    if (res.status === 500) {
+      ;(await res.json())['500']
+    }
+    if (res.status === 400) {
+      ;(await res.json())['400']
+    }
+    if (res.status === 401) {
+      ;(await res.json())['401']
+    }
+    if (res.status === 300) {
+      ;(await res.json())['300']
+    }
+    if (res.status === 201) {
+      ;(await res.json())['201']
+    }
+    if (res.status === 202) {
+      ;(await res.json())['202']
+    }
+    if (res.status === 203) {
+      ;(await res.json())['203']
+    }
+    if (res.status === 200) {
+      ;(await res.json())['200']
+    }
+  })
+
+  it('Should handle the responses from 9 handlers', async () => {
+    const routes = new Hono().get(
+      '/nine',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '401': true }, 401),
+      async (c) => c.json({ '403': true }, 403),
+      async (c) => c.json({ '300': true }, 300),
+      async (c) => c.json({ '201': true }, 201),
+      async (c) => c.json({ '202': true }, 202),
+      async (c) => c.json({ '203': true }, 203),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof routes>('http://localhost')
+    const res = await client.nine.$get()
+    if (res.status === 500) {
+      ;(await res.json())['500']
+    }
+    if (res.status === 400) {
+      ;(await res.json())['400']
+    }
+    if (res.status === 401) {
+      ;(await res.json())['401']
+    }
+    if (res.status === 403) {
+      ;(await res.json())['403']
+    }
+    if (res.status === 300) {
+      ;(await res.json())['300']
+    }
+    if (res.status === 201) {
+      ;(await res.json())['201']
+    }
+    if (res.status === 202) {
+      ;(await res.json())['202']
+    }
+    if (res.status === 203) {
+      ;(await res.json())['203']
+    }
+    if (res.status === 200) {
+      ;(await res.json())['200']
+    }
+  })
+
+  it('Should handle the responses from 10 handlers', async () => {
+    const routes = new Hono().get(
+      '/ten',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '401': true }, 401),
+      async (c) => c.json({ '403': true }, 403),
+      async (c) => c.json({ '404': true }, 404),
+      async (c) => c.json({ '300': true }, 300),
+      async (c) => c.json({ '201': true }, 201),
+      async (c) => c.json({ '202': true }, 202),
+      async (c) => c.json({ '203': true }, 203),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof routes>('http://localhost')
+    const res = await client.ten.$get()
+    if (res.status === 500) {
+      ;(await res.json())['500']
+    }
+    if (res.status === 400) {
+      ;(await res.json())['400']
+    }
+    if (res.status === 401) {
+      ;(await res.json())['401']
+    }
+    if (res.status === 403) {
+      ;(await res.json())['403']
+    }
+    if (res.status === 404) {
+      ;(await res.json())['404']
+    }
+    if (res.status === 300) {
+      ;(await res.json())['300']
+    }
+    if (res.status === 201) {
+      ;(await res.json())['201']
+    }
+    if (res.status === 202) {
+      ;(await res.json())['202']
+    }
+    if (res.status === 203) {
+      ;(await res.json())['203']
+    }
+    if (res.status === 200) {
+      ;(await res.json())['200']
+    }
   })
 })
