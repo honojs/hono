@@ -54,6 +54,7 @@ export const jwt = (options: {
     | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
   alg?: SignatureAlgorithm
   headerName?: string
+  issuer?: string | RegExp
 }): MiddlewareHandler => {
   if (!options || !options.secret) {
     throw new Error('JWT auth middleware requires options for "secret"')
@@ -121,7 +122,7 @@ export const jwt = (options: {
     let payload
     let cause
     try {
-      payload = await Jwt.verify(token, options.secret, options.alg)
+      payload = await Jwt.verify(token, options.secret, options.alg, options.issuer)
     } catch (e) {
       cause = e
     }

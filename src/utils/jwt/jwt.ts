@@ -15,6 +15,7 @@ import {
   JwtTokenExpired,
   JwtTokenInvalid,
   JwtTokenIssuedAt,
+  JwtTokenIssuer,
   JwtTokenNotBefore,
   JwtTokenSignatureMismatched,
 } from './types'
@@ -71,7 +72,8 @@ export const sign = async (
 export const verify = async (
   token: string,
   publicKey: SignatureKey,
-  alg: SignatureAlgorithm = 'HS256'
+  alg: SignatureAlgorithm = 'HS256',
+  issuer?: string | RegExp
 ): Promise<JWTPayload> => {
   const tokenParts = token.split('.')
   if (tokenParts.length !== 3) {
@@ -91,6 +93,17 @@ export const verify = async (
   }
   if (payload.iat && now < payload.iat) {
     throw new JwtTokenIssuedAt(now, payload.iat)
+  }
+  if (issuer) {
+    if (!payload.iss) {
+      throw new JwtTokenIssuer(issuer, null)
+    }
+    if (typeof issuer === 'string' && payload.iss !== issuer) {
+      throw new JwtTokenIssuer(issuer, payload.iss)
+    }
+    if (issuer instanceof RegExp && !issuer.test(payload.iss)) {
+      throw new JwtTokenIssuer(issuer, payload.iss)
+    }
   }
 
   const headerPayload = token.substring(0, token.lastIndexOf('.'))
@@ -113,7 +126,8 @@ export const verifyFromJwks = async (
     keys?: HonoJsonWebKey[]
     jwks_uri?: string
   },
-  init?: RequestInit
+  init?: RequestInit,
+  issuer?: string | RegExp
 ): Promise<JWTPayload> => {
   const header = decodeHeader(token)
 
@@ -150,7 +164,12 @@ export const verifyFromJwks = async (
     throw new JwtTokenInvalid(token)
   }
 
-  return await verify(token, matchingKey, (matchingKey.alg as SignatureAlgorithm) || header.alg)
+  return await verify(
+    token,
+    matchingKey,
+    (matchingKey.alg as SignatureAlgorithm) || header.alg,
+    issuer
+  )
 }
 
 export const decode = (token: string): { header: TokenHeader; payload: JWTPayload } => {
