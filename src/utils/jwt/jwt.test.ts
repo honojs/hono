@@ -143,7 +143,10 @@ describe('JWT', () => {
     let err
     let authorized
     try {
-      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256, 'some')
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        iss: 'some',
+      })
     } catch (e) {
       err = e
     }
@@ -158,7 +161,10 @@ describe('JWT', () => {
     let err
     let authorized
     try {
-      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256, 'expected-issuer')
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        iss: 'expected-issuer',
+      })
     } catch (e) {
       err = e
     }
@@ -173,7 +179,10 @@ describe('JWT', () => {
     let err
     let authorized
     try {
-      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256, /^(hello|hi)$/)
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        iss: /^(hello|hi)$/,
+      })
     } catch (e) {
       err = e
     }
@@ -188,7 +197,10 @@ describe('JWT', () => {
     let err
     let authorized
     try {
-      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256, 'correct-issuer')
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        iss: 'correct-issuer',
+      })
     } catch (e) {
       err = e
     }
@@ -203,7 +215,10 @@ describe('JWT', () => {
     let err
     let authorized
     try {
-      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256, /^(hello|hi)$/)
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        iss: /^(hello|hi)$/,
+      })
     } catch (e) {
       err = e
     }
