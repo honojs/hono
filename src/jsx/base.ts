@@ -423,10 +423,17 @@ export const cloneElement = <T extends JSXNode | JSX.Element>(
   props: Partial<Props>,
   ...children: Child[]
 ): T => {
+  let childrenToClone
+  if (children.length > 0) {
+    childrenToClone = children
+  } else {
+    const c = (element as JSXNode).props.children
+    childrenToClone = Array.isArray(c) ? c : [c]
+  }
   return jsx(
     (element as JSXNode).tag,
     { ...(element as JSXNode).props, ...props },
-    ...(children as (string | number | HtmlEscapedString)[])
+    ...(children.length ? children : childrenToClone)
   ) as T
 }
 
