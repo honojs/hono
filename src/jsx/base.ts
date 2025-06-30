@@ -433,7 +433,7 @@ export const cloneElement = <T extends JSXNode | JSX.Element>(
   return jsx(
     (element as JSXNode).tag,
     { ...(element as JSXNode).props, ...props },
-    ...(children.length ? children : childrenToClone)
+    ...childrenToClone
   ) as T
 }
 
