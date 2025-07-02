@@ -21,7 +21,6 @@ export type CookieOptions = {
   maxAge?: number
   path?: string
   secure?: boolean
-  signingSecret?: string
   sameSite?: 'Strict' | 'Lax' | 'None' | 'strict' | 'lax' | 'none'
   partitioned?: boolean
   priority?: 'Low' | 'Medium' | 'High'
