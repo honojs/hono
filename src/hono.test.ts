@@ -25,6 +25,27 @@ type Env = {
   }
 }
 
+const createResponseProxy = (response: Response) => {
+  return new Proxy(response, {
+    get(target, prop, receiver) {
+      const value = target[prop as keyof Response]
+      if (typeof value === 'function') {
+        return Object.defineProperties(
+          function (...args: unknown[]) {
+            // @ts-expect-error: `this` context is intentionally dynamic for proxy method binding
+            return Reflect.apply(value, this === receiver ? target : this, args)
+          },
+          {
+            name: { value: value.name },
+            length: { value: value.length },
+          }
+        )
+      }
+      return value
+    },
+  })
+}
+
 describe('GET Request', () => {
   describe('without middleware', () => {
     // In other words, this is a test for cases that do not use `compose()`
@@ -48,25 +69,9 @@ describe('GET Request', () => {
       return c.json(c.env)
     })
 
-    app.get(
-      '/proxy-object',
-      () =>
-        new Proxy(new Response('proxy'), {
-          get(target, prop: keyof Response) {
-            return target[prop]
-          },
-        })
-    )
+    app.get('/proxy-object', () => createResponseProxy(new Response('proxy')))
 
-    app.get(
-      '/async-proxy-object',
-      async () =>
-        new Proxy(new Response('proxy'), {
-          get(target, prop: keyof Response) {
-            return target[prop]
-          },
-        })
-    )
+    app.get('/async-proxy-object', async () => createResponseProxy(new Response('proxy')))
 
     it('GET http://localhost/hello is ok', async () => {
       const res = await app.request('http://localhost/hello')
@@ -159,25 +164,9 @@ describe('GET Request', () => {
       return c.json(c.env)
     })
 
-    app.get(
-      '/proxy-object',
-      () =>
-        new Proxy(new Response('proxy'), {
-          get(target, prop: keyof Response) {
-            return target[prop]
-          },
-        })
-    )
+    app.get('/proxy-object', () => createResponseProxy(new Response('proxy')))
 
-    app.get(
-      '/async-proxy-object',
-      async () =>
-        new Proxy(new Response('proxy'), {
-          get(target, prop: keyof Response) {
-            return target[prop]
-          },
-        })
-    )
+    app.get('/async-proxy-object', async () => createResponseProxy(new Response('proxy')))
 
     it('GET http://localhost/hello is ok', async () => {
       const res = await app.request('http://localhost/hello')

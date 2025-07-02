@@ -10,13 +10,26 @@ const makeResponseHeaderImmutable = (res: Response) => {
         }
         return Reflect.set(target, prop, value)
       },
-      get(target, prop) {
+      get(target, prop, receiver) {
         if (prop === 'set') {
           return function () {
             throw new TypeError('Cannot modify headers: Headers are immutable')
           }
         }
-        return Reflect.get(target, prop)
+        const value = Reflect.get(target, prop)
+        if (typeof value === 'function') {
+          return Object.defineProperties(
+            function (...args: unknown[]) {
+              // @ts-expect-error: `this` context is intentionally dynamic for proxy method binding
+              return Reflect.apply(value, this === receiver ? target : this, args)
+            },
+            {
+              name: { value: value.name },
+              length: { value: value.length },
+            }
+          )
+        }
+        return value
       },
     }),
     writable: false,
