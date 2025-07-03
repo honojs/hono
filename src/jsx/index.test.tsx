@@ -159,7 +159,7 @@ describe('render to string', () => {
     expect(template.toString()).toBe('<p><span>a</span><span>b</span></p>')
   })
 
-  it('Empty elements are rended withtout closing tag', () => {
+  it('Empty elements are rended without closing tag', () => {
     const template = <input />
     expect(template.toString()).toBe('<input/>')
   })
@@ -188,7 +188,7 @@ describe('render to string', () => {
     it('Should get an error if both dangerouslySetInnerHTML and children are specified', () => {
       expect(() =>
         (<span dangerouslySetInnerHTML={{ __html: '" is allowed here' }}>Hello</span>).toString()
-      ).toThrow()
+      ).toThrow(Error)
     })
   })
 
@@ -359,10 +359,16 @@ describe('render to string', () => {
       expect(template.toString()).toBe('<button>Click</button>')
     })
 
+    it('should be ignored used in ref props', () => {
+      const ref = () => {}
+      const template = <div ref={ref}>Content</div>
+      expect(template.toString()).toBe('<div>Content</div>')
+    })
+
     it('should raise an error if used in other props', () => {
       const onClick = () => {}
       const template = <button data-handler={onClick}>Click</button>
-      expect(() => template.toString()).toThrow()
+      expect(() => template.toString()).toThrow(Error)
     })
   })
 
@@ -1009,7 +1015,7 @@ d.replaceWith(c.content)
           <ParentAsyncErrorConsumer />
         </ThemeContext.Provider>
       )
-      expect(async () => (await template.toString()).toString()).rejects.toThrow()
+      await expect(async () => (await template.toString()).toString()).rejects.toThrow()
 
       const nextRequest = <Consumer />
       expect(nextRequest.toString()).toBe('<span>light</span>')

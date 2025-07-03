@@ -3,8 +3,9 @@ import { expectTypeOf } from 'vitest'
 import { hc } from '../../client'
 import type { ClientRequest } from '../../client/types'
 import { Hono } from '../../index'
-import type { ToSchema, TypedResponse } from '../../types'
-import type { StatusCode } from '../../utils/http-status'
+import type { ExtractSchema, ToSchema, TypedResponse } from '../../types'
+import type { ContentfulStatusCode } from '../../utils/http-status'
+import type { Equal, Expect } from '../../utils/types'
 import { validator } from '../../validator'
 import { createFactory, createMiddleware } from './index'
 
@@ -35,6 +36,32 @@ describe('createMiddleware', () => {
     const client = hc<typeof route>('http://localhost')
     const url = client.message.$url()
     expect(url.pathname).toBe('/message')
+  })
+
+  it('Should pass generics types to chained handlers', () => {
+    type Bindings = {
+      MY_VAR_IN_BINDINGS: string
+    }
+
+    type Variables = {
+      MY_VAR: string
+    }
+
+    const app = new Hono<{ Bindings: Bindings }>()
+
+    app.get(
+      '/',
+      createMiddleware<{ Variables: Variables }>(async (c, next) => {
+        await next()
+      }),
+      createMiddleware(async (c, next) => {
+        await next()
+      }),
+      async (c) => {
+        const v = c.get('MY_VAR')
+        expectTypeOf(v).toEqualTypeOf<string>()
+      }
+    )
   })
 })
 
@@ -80,7 +107,7 @@ describe('createHandler', () => {
             input: {}
             output: 'A'
             outputFormat: 'text'
-            status: StatusCode
+            status: ContentfulStatusCode
           }
         }>
       }>()
@@ -201,27 +228,160 @@ describe('createHandler', () => {
       expectTypeOf(routes).toEqualTypeOf<Expected>()
     })
   })
+
+  describe('Types - Context Env with Multiple Middlewares', () => {
+    const factory = createFactory()
+
+    const mw1 = createMiddleware<
+      { Variables: { foo1: string } },
+      string,
+      { out: { query: { bar1: number } } }
+    >(async () => {})
+    const mw2 = createMiddleware<
+      { Variables: { foo2: string } },
+      string,
+      { out: { query: { bar2: number } } }
+    >(async () => {})
+    const mw3 = createMiddleware<
+      { Variables: { foo3: string } },
+      string,
+      { out: { query: { bar3: number } } }
+    >(async () => {})
+    const mw4 = createMiddleware<
+      { Variables: { foo4: string } },
+      string,
+      { out: { query: { bar4: number } } }
+    >(async () => {})
+    const mw5 = createMiddleware<
+      { Variables: { foo5: string } },
+      string,
+      { out: { query: { bar5: number } } }
+    >(async () => {})
+    const mw6 = createMiddleware<
+      { Variables: { foo6: string } },
+      string,
+      { out: { query: { bar6: number } } }
+    >(async () => {})
+    const mw7 = createMiddleware<
+      { Variables: { foo7: string } },
+      string,
+      { out: { query: { bar7: number } } }
+    >(async () => {})
+    const mw8 = createMiddleware<
+      { Variables: { foo8: string } },
+      string,
+      { out: { query: { bar8: number } } }
+    >(async () => {})
+    const mw9 = createMiddleware<
+      { Variables: { foo9: string } },
+      string,
+      { out: { query: { bar9: number } } }
+    >(async () => {})
+
+    it('Should not throw type error', () => {
+      factory.createHandlers(
+        mw1,
+        mw2,
+        mw3,
+        mw4,
+        mw5,
+        mw6,
+        mw7,
+        mw8,
+        async (c) => {
+          expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+        },
+        (c) => c.json(0)
+      )
+
+      factory.createHandlers(mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9, (c) => {
+        expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo9).toEqualTypeOf<string>()
+
+        return c.json({
+          foo1: c.get('foo1'),
+          foo2: c.get('foo2'),
+          foo3: c.get('foo3'),
+          foo4: c.get('foo4'),
+          foo5: c.get('foo5'),
+          foo6: c.get('foo6'),
+          foo7: c.get('foo7'),
+          foo8: c.get('foo8'),
+          foo9: c.get('foo9'),
+        })
+      })
+    })
+  })
 })
 
-describe('createApp', () => {
-  type Env = { Variables: { foo: string } }
-  const factory = createFactory<Env>({
-    initApp: (app) => {
-      app.use((c, next) => {
-        c.set('foo', 'bar')
-        return next()
-      })
-    },
-  })
-  const app = factory.createApp()
-  it('Should set the correct type and initialize the app', async () => {
-    app.get('/', (c) => {
-      expectTypeOf(c.var.foo).toEqualTypeOf<string>()
-      return c.text(c.var.foo)
+describe('createFactory', () => {
+  describe('createApp', () => {
+    type Env = { Variables: { foo: string } }
+    const factory = createFactory<Env>({
+      initApp: (app) => {
+        app.use((c, next) => {
+          c.set('foo', 'bar')
+          return next()
+        })
+      },
     })
-    const res = await app.request('/')
+    const app = factory.createApp()
+    it('Should set the correct type and initialize the app', async () => {
+      app.get('/', (c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        return c.text(c.var.foo)
+      })
+      const res = await app.request('/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('bar')
+    })
+  })
+
+  describe('createMiddleware', () => {
+    it('Should set the correct type', () => {
+      const factory = createFactory()
+
+      const middleware = factory.createMiddleware(async (_, next) => {
+        await next()
+      })
+
+      const routes = new Hono().use('*', middleware)
+      type Actual = ExtractSchema<typeof routes>
+      type Expected = {
+        '*': {}
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+  })
+
+  it('Should use the default app options', async () => {
+    const app = createFactory({ defaultAppOptions: { strict: false } }).createApp()
+    app.get('/hello', (c) => c.text('hello'))
+    const res = await app.request('/hello/')
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('bar')
+    expect(await res.text()).toBe('hello')
+  })
+
+  it('Should override the default app options when creating', async () => {
+    const app = createFactory({ defaultAppOptions: { strict: true } }).createApp({ strict: false })
+    app.get('/hello', (c) => c.text('hello'))
+    const res = await app.request('/hello/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello')
   })
 })
 

@@ -1,4 +1,5 @@
 import { Hono } from '../..'
+import { Context } from '../../context'
 import { upgradeWebSocket } from '.'
 
 describe('upgradeWebSocket middleware', () => {
@@ -20,14 +21,13 @@ describe('upgradeWebSocket middleware', () => {
     app.get(
       '/ws',
       upgradeWebSocket(() => ({
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         onMessage(evt, ws) {
-          resolve(evt.data)
+          resolve([evt.data, ws.readyState || 1])
         },
       }))
     )
   )
-  it('Should receive message is valid', async () => {
+  it('Should receive message and readyState is valid', async () => {
     const sendingData = Math.random().toString()
     await app.request('/ws', {
       headers: {
@@ -40,6 +40,20 @@ describe('upgradeWebSocket middleware', () => {
       })
     )
 
-    expect(sendingData).toBe(await wsPromise)
+    expect([sendingData, 1]).toStrictEqual(await wsPromise)
+  })
+  it('Should call next() when header does not have upgrade', async () => {
+    const next = vi.fn()
+    await upgradeWebSocket(() => ({}))(
+      new Context(
+        new Request('http://localhost', {
+          headers: {
+            Upgrade: 'example',
+          },
+        })
+      ),
+      next
+    )
+    expect(next).toBeCalled()
   })
 })

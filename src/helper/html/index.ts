@@ -17,8 +17,9 @@ export const html = (
   for (let i = 0, len = strings.length - 1; i < len; i++) {
     buffer[0] += strings[i]
 
-    const children =
-      values[i] instanceof Array ? (values[i] as Array<unknown>).flat(Infinity) : [values[i]]
+    const children = Array.isArray(values[i])
+      ? (values[i] as Array<unknown>).flat(Infinity)
+      : [values[i]]
     for (let i = 0, len = children.length; i < len; i++) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const child = children[i] as any
@@ -46,7 +47,7 @@ export const html = (
       }
     }
   }
-  buffer[0] += strings[strings.length - 1]
+  buffer[0] += strings.at(-1) as string
 
   return buffer.length === 1
     ? 'callbacks' in buffer

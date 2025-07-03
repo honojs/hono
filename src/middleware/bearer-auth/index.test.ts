@@ -400,7 +400,7 @@ describe('Bearer Auth by Middleware', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe('{"message":"Custom no authentication header message as object"}')
   })
@@ -423,7 +423,7 @@ describe('Bearer Auth by Middleware', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe(
       '{"message":"Custom no authentication header message as function object"}'
@@ -450,7 +450,7 @@ describe('Bearer Auth by Middleware', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(400)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe(
       '{"message":"Custom invalid authentication header message as object"}'
@@ -477,7 +477,7 @@ describe('Bearer Auth by Middleware', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(400)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe(
       '{"message":"Custom invalid authentication header message as function object"}'
@@ -500,7 +500,7 @@ describe('Bearer Auth by Middleware', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe('{"message":"Custom invalid token message as object"}')
   })
@@ -521,7 +521,7 @@ describe('Bearer Auth by Middleware', () => {
     const res = await app.request(req)
     expect(res).not.toBeNull()
     expect(res.status).toBe(401)
-    expect(res.headers.get('Content-Type')).toMatch('application/json; charset=UTF-8')
+    expect(res.headers.get('Content-Type')).toMatch('application/json')
     expect(handlerExecuted).toBeFalsy()
     expect(await res.text()).toBe('{"message":"Custom invalid token message as function object"}')
   })

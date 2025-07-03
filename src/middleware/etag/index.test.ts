@@ -6,18 +6,51 @@ describe('Etag Middleware', () => {
     const app = new Hono()
     app.use('/etag/*', etag())
     app.get('/etag/abc', (c) => {
-      return c.text('Hono is cool')
+      return c.text('Hono is hot')
     })
     app.get('/etag/def', (c) => {
-      return c.json({ message: 'Hono is cool' })
+      return c.json({ message: 'Hono is hot' })
     })
     let res = await app.request('http://localhost/etag/abc')
     expect(res.headers.get('ETag')).not.toBeFalsy()
-    expect(res.headers.get('ETag')).toBe('"4e32298b1cb4edc595237405e5b696e105c2399a"')
+    expect(res.headers.get('ETag')).toBe('"d104fafdb380655dab607c9bddc4d4982037afa1"')
 
     res = await app.request('http://localhost/etag/def')
     expect(res.headers.get('ETag')).not.toBeFalsy()
-    expect(res.headers.get('ETag')).toBe('"4515561204e8269cb4468d5b39288d8f2482dcfe"')
+    expect(res.headers.get('ETag')).toBe('"67340414f1a52c4669a6cec71f0ae04532b29249"')
+  })
+
+  it('Should return etag header with another algorithm', async () => {
+    const app = new Hono()
+    app.use(
+      '/etag/*',
+      etag({
+        generateDigest: (body) =>
+          crypto.subtle.digest(
+            {
+              name: 'SHA-256',
+            },
+            body
+          ),
+      })
+    )
+    app.get('/etag/abc', (c) => {
+      return c.text('Hono is hot')
+    })
+    app.get('/etag/def', (c) => {
+      return c.json({ message: 'Hono is hot' })
+    })
+    let res = await app.request('http://localhost/etag/abc')
+    expect(res.headers.get('ETag')).not.toBeFalsy()
+    expect(res.headers.get('ETag')).toBe(
+      '"ed00834279b4fd5dcdc7ab6a5c9774de8afb2de30da2c8e0f17d0952839b5370"'
+    )
+
+    res = await app.request('http://localhost/etag/def')
+    expect(res.headers.get('ETag')).not.toBeFalsy()
+    expect(res.headers.get('ETag')).toBe(
+      '"83b61a767db6e22afea68dd645b4d4597a06276c8ce7f895ad865cf4ab154ec4"'
+    )
   })
 
   it('Should return etag header - binary', async () => {
@@ -65,16 +98,73 @@ describe('Etag Middleware', () => {
     expect(res.headers.get('ETag')).not.toBe(hash)
   })
 
+  it('Should not be the same etag - ReadableStream', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/rs1', (c) => {
+      return c.body(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array([1]))
+            controller.enqueue(new Uint8Array([2]))
+            controller.close()
+          },
+        })
+      )
+    })
+    app.get('/etag/rs2', (c) => {
+      return c.body(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array([1]))
+            controller.enqueue(new Uint8Array([3]))
+            controller.close()
+          },
+        })
+      )
+    })
+
+    let res = await app.request('http://localhost/etag/rs1')
+    const hash = res.headers.get('Etag')
+    res = await app.request('http://localhost/etag/rs2')
+    expect(res.headers.get('ETag')).not.toBe(hash)
+  })
+
+  it('Should not return etag header when the stream is empty', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/abc', (c) => {
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.close()
+        },
+      })
+      return c.body(stream)
+    })
+    const res = await app.request('http://localhost/etag/abc')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('ETag')).toBeNull()
+  })
+
+  it('Should not return etag header when body is null', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/abc', () => new Response(null, { status: 500 }))
+    const res = await app.request('http://localhost/etag/abc')
+    expect(res.status).toBe(500)
+    expect(res.headers.get('ETag')).toBeNull()
+  })
+
   it('Should return etag header - weak', async () => {
     const app = new Hono()
     app.use('/etag/*', etag({ weak: true }))
     app.get('/etag/abc', (c) => {
-      return c.text('Hono is cool')
+      return c.text('Hono is hot')
     })
 
     const res = await app.request('http://localhost/etag/abc')
     expect(res.headers.get('ETag')).not.toBeFalsy()
-    expect(res.headers.get('ETag')).toBe('W/"4e32298b1cb4edc595237405e5b696e105c2399a"')
+    expect(res.headers.get('ETag')).toBe('W/"d104fafdb380655dab607c9bddc4d4982037afa1"')
   })
 
   it('Should handle conditional GETs', async () => {
@@ -132,11 +222,11 @@ describe('Etag Middleware', () => {
     const app = new Hono()
     app.use('/etag/*', etag())
     app.use('/etag/*', etag())
-    app.get('/etag/abc', (c) => c.text('Hono is cool'))
+    app.get('/etag/abc', (c) => c.text('Hono is hot'))
 
     const res = await app.request('http://localhost/etag/abc')
     expect(res.headers.get('ETag')).not.toBeFalsy()
-    expect(res.headers.get('ETag')).toBe('"4e32298b1cb4edc595237405e5b696e105c2399a"')
+    expect(res.headers.get('ETag')).toBe('"d104fafdb380655dab607c9bddc4d4982037afa1"')
   })
 
   it('Should not override ETag headers from upstream', async () => {
@@ -161,7 +251,7 @@ describe('Etag Middleware', () => {
       })
     )
     app.get('/etag', (c) => {
-      return c.text('Hono is cool', 200, {
+      return c.text('Hono is hot', 200, {
         'cache-control': cacheControl,
         'x-message-retain': message,
         'x-message': message,
@@ -169,14 +259,59 @@ describe('Etag Middleware', () => {
     })
     const res = await app.request('/etag', {
       headers: {
-        'If-None-Match': '"4e32298b1cb4edc595237405e5b696e105c2399a"',
+        'If-None-Match': '"d104fafdb380655dab607c9bddc4d4982037afa1"',
       },
     })
     expect(res.status).toBe(304)
     expect(res.headers.get('ETag')).not.toBeFalsy()
-    expect(res.headers.get('ETag')).toBe('"4e32298b1cb4edc595237405e5b696e105c2399a"')
+    expect(res.headers.get('ETag')).toBe('"d104fafdb380655dab607c9bddc4d4982037afa1"')
     expect(res.headers.get('Cache-Control')).toBe(cacheControl)
     expect(res.headers.get('x-message-retain')).toBe(message)
     expect(res.headers.get('x-message')).toBeFalsy()
+  })
+
+  it('Should return 304 when weak ETag in If-None-Match matches the generated ETag', async () => {
+    const app = new Hono()
+    app.use('/etag/*', etag())
+    app.get('/etag/abc', (c) => {
+      return c.text('Hono is hot')
+    })
+    let res = await app.request('http://localhost/etag/abc')
+    const headerEtag = res.headers.get('ETag')!
+
+    expect(headerEtag).not.toBeFalsy()
+
+    res = await app.request('http://localhost/etag/abc', {
+      headers: {
+        'If-None-Match': 'W/"d104fafdb380655dab607c9bddc4d4982037afa1"',
+      },
+    })
+
+    expect(res.status).toBe(304)
+  })
+
+  describe('When crypto is not available', () => {
+    let _crypto: Crypto | undefined
+    beforeAll(() => {
+      _crypto = globalThis.crypto
+      Object.defineProperty(globalThis, 'crypto', {
+        value: {},
+      })
+    })
+
+    afterAll(() => {
+      Object.defineProperty(globalThis, 'crypto', {
+        value: _crypto,
+      })
+    })
+
+    it('Should not generate etag', async () => {
+      const app = new Hono()
+      app.use('/etag/*', etag())
+      app.get('/etag/no-digest', (c) => c.text('Hono is hot'))
+      const res = await app.request('/etag/no-digest')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('ETag')).toBeNull()
+    })
   })
 })

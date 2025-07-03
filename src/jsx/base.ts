@@ -1,7 +1,7 @@
 import { raw } from '../helper/html'
 import { escapeToBuffer, resolveCallbackSync, stringBufferToString } from '../utils/html'
 import type { HtmlEscaped, HtmlEscapedString, StringBufferWithCallbacks } from '../utils/html'
-import { DOM_RENDERER } from './constants'
+import { DOM_RENDERER, DOM_MEMO } from './constants'
 import type { Context } from './context'
 import { createContext, globalContexts, useContext } from './context'
 import { domRenderers } from './intrinsic-element/common'
@@ -29,6 +29,9 @@ export namespace JSX {
   }
   export interface IntrinsicElements extends IntrinsicElementsDefined {
     [tagName: string]: Props
+  }
+  export interface IntrinsicAttributes {
+    key?: string | number | bigint | null | undefined
   }
 }
 
@@ -206,7 +209,7 @@ export class JSXNode implements HtmlEscaped {
         }
       } else if (key === 'dangerouslySetInnerHTML') {
         if (children.length > 0) {
-          throw 'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
+          throw new Error('Can only set one of `children` or `props.dangerouslySetInnerHTML`.')
         }
 
         children = [raw(v.__html)]
@@ -214,8 +217,8 @@ export class JSXNode implements HtmlEscaped {
         buffer[0] += ` ${key}="`
         buffer.unshift('"', v)
       } else if (typeof v === 'function') {
-        if (!key.startsWith('on')) {
-          throw `Invalid prop '${key}' of type 'function' supplied to '${tag}'.`
+        if (!key.startsWith('on') && key !== 'ref') {
+          throw new Error(`Invalid prop '${key}' of type 'function' supplied to '${tag}'.`)
         }
         // maybe event handler for client components, just ignore in server components
       } else {
@@ -239,7 +242,7 @@ export class JSXNode implements HtmlEscaped {
 }
 
 class JSXFunctionNode extends JSXNode {
-  toStringToBuffer(buffer: StringBufferWithCallbacks): void {
+  override toStringToBuffer(buffer: StringBufferWithCallbacks): void {
     const { children } = this
 
     const res = (this.tag as Function).call(null, {
@@ -281,7 +284,7 @@ class JSXFunctionNode extends JSXNode {
 }
 
 export class JSXFragmentNode extends JSXNode {
-  toStringToBuffer(buffer: StringBufferWithCallbacks): void {
+  override toStringToBuffer(buffer: StringBufferWithCallbacks): void {
     childrenToStringToBuffer(this.children, buffer)
   }
 }
@@ -343,7 +346,7 @@ export const jsxFn = (
   }
 }
 
-const shallowEqual = (a: Props, b: Props): boolean => {
+export const shallowEqual = (a: Props, b: Props): boolean => {
   if (a === b) {
     return true
   }
@@ -370,19 +373,30 @@ const shallowEqual = (a: Props, b: Props): boolean => {
   return true
 }
 
+export type MemorableFC<T> = FC<T> & {
+  [DOM_MEMO]: (prevProps: Readonly<T>, nextProps: Readonly<T>) => boolean
+}
 export const memo = <T>(
   component: FC<T>,
   propsAreEqual: (prevProps: Readonly<T>, nextProps: Readonly<T>) => boolean = shallowEqual
 ): FC<T> => {
   let computed: ReturnType<FC<T>> = null
   let prevProps: T | undefined = undefined
-  return ((props) => {
+  const wrapper: MemorableFC<T> = ((props: T) => {
     if (prevProps && !propsAreEqual(prevProps, props)) {
       computed = null
     }
     prevProps = props
     return (computed ||= component(props))
-  }) as FC<T>
+  }) as MemorableFC<T>
+
+  // This function is for toString(), but it can also be used for DOM renderer.
+  // So, set DOM_MEMO and DOM_RENDERER for DOM renderer.
+  wrapper[DOM_MEMO] = propsAreEqual
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(wrapper as any)[DOM_RENDERER] = component
+
+  return wrapper as FC<T>
 }
 
 export const Fragment = ({
@@ -409,10 +423,17 @@ export const cloneElement = <T extends JSXNode | JSX.Element>(
   props: Partial<Props>,
   ...children: Child[]
 ): T => {
+  let childrenToClone
+  if (children.length > 0) {
+    childrenToClone = children
+  } else {
+    const c = (element as JSXNode).props.children
+    childrenToClone = Array.isArray(c) ? c : [c]
+  }
   return jsx(
     (element as JSXNode).tag,
     { ...(element as JSXNode).props, ...props },
-    ...(children as (string | number | HtmlEscapedString)[])
+    ...childrenToClone
   ) as T
 }
 

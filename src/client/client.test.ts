@@ -50,6 +50,7 @@ describe('Basic - JSON', () => {
     )
     .get('/hello-not-found', (c) => c.notFound())
     .get('/null', (c) => c.json(null))
+    .get('/empty', (c) => c.json({}))
 
   type AppType = typeof route
 
@@ -76,6 +77,9 @@ describe('Basic - JSON', () => {
     }),
     http.get('http://localhost/null', () => {
       return HttpResponse.json(null)
+    }),
+    http.get('http://localhost/empty', () => {
+      return HttpResponse.json({})
     }),
     http.get('http://localhost/api/string', () => {
       return HttpResponse.json('a-string')
@@ -137,6 +141,14 @@ describe('Basic - JSON', () => {
     const data = await res.json()
     expectTypeOf(data).toMatchTypeOf<null>()
     expect(data).toBe(null)
+  })
+
+  it('Should get a `{}` content', async () => {
+    const client = hc<AppType>('http://localhost')
+    const res = await client.empty.$get()
+    const data = await res.json()
+    expectTypeOf(data).toMatchTypeOf<{}>()
+    expect(data).toStrictEqual({})
   })
 
   it('Should have correct types - primitives', async () => {
@@ -844,6 +856,27 @@ describe('$url() with a param option', () => {
       },
     })
     expect(url.pathname).toBe('/something/123/456')
+  })
+})
+
+describe('$url() with a query option', () => {
+  const app = new Hono().get(
+    '/posts',
+    validator('query', () => {
+      return {} as { filter: 'test' }
+    }),
+    (c) => c.json({ ok: true })
+  )
+  type AppType = typeof app
+  const client = hc<AppType>('http://localhost')
+
+  it('Should return the correct path - /posts?filter=test', async () => {
+    const url = client.posts.$url({
+      query: {
+        filter: 'test',
+      },
+    })
+    expect(url.search).toBe('?filter=test')
   })
 })
 

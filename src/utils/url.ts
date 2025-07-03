@@ -48,11 +48,10 @@ const replaceGroupMarks = (paths: string[], groups: [string, string][]): string[
 }
 
 const patternCache: { [key: string]: Pattern } = {}
-export const getPattern = (label: string): Pattern | null => {
+export const getPattern = (label: string, next?: string): Pattern | null => {
   // *            => wildcard
   // :id{[0-9]+}  => ([0-9]+)
   // :id          => (.+)
-  //const name = ''
 
   if (label === '*') {
     return '*'
@@ -60,18 +59,37 @@ export const getPattern = (label: string): Pattern | null => {
 
   const match = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
   if (match) {
-    if (!patternCache[label]) {
+    const cacheKey = `${label}#${next}`
+    if (!patternCache[cacheKey]) {
       if (match[2]) {
-        patternCache[label] = [label, match[1], new RegExp('^' + match[2] + '$')]
+        patternCache[cacheKey] =
+          next && next[0] !== ':' && next[0] !== '*'
+            ? [cacheKey, match[1], new RegExp(`^${match[2]}(?=/${next})`)]
+            : [label, match[1], new RegExp(`^${match[2]}$`)]
       } else {
-        patternCache[label] = [label, match[1], true]
+        patternCache[cacheKey] = [label, match[1], true]
       }
     }
 
-    return patternCache[label]
+    return patternCache[cacheKey]
   }
 
   return null
+}
+
+type Decoder = (str: string) => string
+export const tryDecode = (str: string, decoder: Decoder): string => {
+  try {
+    return decoder(str)
+  } catch {
+    return str.replace(/(?:%[0-9A-Fa-f]{2})+/g, (match) => {
+      try {
+        return decoder(match)
+      } catch {
+        return match
+      }
+    })
+  }
 }
 
 /**
@@ -83,23 +101,16 @@ export const getPattern = (label: string): Pattern | null => {
  * tryDecodeURI('Hello%20World') // 'Hello World'
  * tryDecodeURI('Hello%20World/%A4%A2') // 'Hello World/%A4%A2'
  */
-const tryDecodeURI = (str: string): string => {
-  try {
-    return decodeURI(str)
-  } catch {
-    return str.replace(/(?:%[0-9A-Fa-f]{2})+/g, (match) => {
-      try {
-        return decodeURI(match)
-      } catch {
-        return match
-      }
-    })
-  }
-}
+const tryDecodeURI = (str: string) => tryDecode(str, decodeURI)
 
 export const getPath = (request: Request): string => {
   const url = request.url
-  const start = url.indexOf('/', 8)
+  const start = url.indexOf(
+    '/',
+    url.charCodeAt(9) === 58
+      ? 13 // http+unix://
+      : 8 // http:// or https://
+  )
   let i = start
   for (; i < url.length; i++) {
     const charCode = url.charCodeAt(i)
@@ -127,39 +138,30 @@ export const getPathNoStrict = (request: Request): string => {
   const result = getPath(request)
 
   // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
-  return result.length > 1 && result[result.length - 1] === '/' ? result.slice(0, -1) : result
+  return result.length > 1 && result.at(-1) === '/' ? result.slice(0, -1) : result
 }
 
-export const mergePath = (...paths: string[]): string => {
-  let p: string = ''
-  let endsWithSlash = false
-
-  for (let path of paths) {
-    /* ['/hey/','/say'] => ['/hey', '/say'] */
-    if (p[p.length - 1] === '/') {
-      p = p.slice(0, -1)
-      endsWithSlash = true
-    }
-
-    /* ['/hey','say'] => ['/hey', '/say'] */
-    if (path[0] !== '/') {
-      path = `/${path}`
-    }
-
-    /* ['/hey/', '/'] => `/hey/` */
-    if (path === '/' && endsWithSlash) {
-      p = `${p}/`
-    } else if (path !== '/') {
-      p = `${p}${path}`
-    }
-
-    /* ['/', '/'] => `/` */
-    if (path === '/' && p === '') {
-      p = '/'
-    }
+/**
+ * Merge paths.
+ * @param {string[]} ...paths - The paths to merge.
+ * @returns {string} The merged path.
+ * @example
+ * mergePath('/api', '/users') // '/api/users'
+ * mergePath('/api/', '/users') // '/api/users'
+ * mergePath('/api', '/') // '/api'
+ * mergePath('/api/', '/') // '/api/'
+ */
+export const mergePath: (...paths: string[]) => string = (
+  base: string | undefined,
+  sub: string | undefined,
+  ...rest: string[]
+): string => {
+  if (rest.length) {
+    sub = mergePath(sub as string, ...rest)
   }
-
-  return p
+  return `${base?.[0] === '/' ? '' : '/'}${base}${
+    sub === '/' ? '' : `${base?.at(-1) === '/' ? '' : '/'}${sub?.[0] === '/' ? sub.slice(1) : sub}`
+  }`
 }
 
 export const checkOptionalParameter = (path: string): string[] | null => {
@@ -169,7 +171,7 @@ export const checkOptionalParameter = (path: string): string[] | null => {
    in other cases it will return null
   */
 
-  if (!path.match(/\:.+\?$/)) {
+  if (path.charCodeAt(path.length - 1) !== 63 || !path.includes(':')) {
     return null
   }
 
@@ -207,7 +209,7 @@ const _decodeURI = (value: string) => {
   if (value.indexOf('+') !== -1) {
     value = value.replace(/\+/g, ' ')
   }
-  return /%/.test(value) ? decodeURIComponent_(value) : value
+  return value.indexOf('%') !== -1 ? tryDecode(value, decodeURIComponent_) : value
 }
 
 const _getQueryParam = (

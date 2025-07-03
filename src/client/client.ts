@@ -4,6 +4,7 @@ import { serialize } from '../utils/cookie'
 import type { UnionToIntersection } from '../utils/types'
 import type { Callback, Client, ClientRequestOptions } from './types'
 import {
+  buildSearchParams,
   deepMerge,
   mergePath,
   removeIndexString,
@@ -49,20 +50,7 @@ class ClientRequestImpl {
   ) => {
     if (args) {
       if (args.query) {
-        for (const [k, v] of Object.entries(args.query)) {
-          if (v === undefined) {
-            continue
-          }
-
-          this.queryParams ||= new URLSearchParams()
-          if (Array.isArray(v)) {
-            for (const v2 of v) {
-              this.queryParams.append(k, v2)
-            }
-          } else {
-            this.queryParams.set(k, v)
-          }
-        }
+        this.queryParams = buildSearchParams(args.query)
       }
 
       if (args.form) {
@@ -92,12 +80,8 @@ class ClientRequestImpl {
     let methodUpperCase = this.method.toUpperCase()
 
     const headerValues: Record<string, string> = {
-      ...(args?.header ?? {}),
-      ...(typeof opt?.headers === 'function'
-        ? await opt.headers()
-        : opt?.headers
-        ? opt.headers
-        : {}),
+      ...args?.header,
+      ...(typeof opt?.headers === 'function' ? await opt.headers() : opt?.headers),
     }
 
     if (args?.cookie) {
@@ -141,28 +125,29 @@ export const hc = <T extends Hono<any, any, any>>(
 ) =>
   createProxy(function proxyCallback(opts) {
     const parts = [...opts.path]
+    const lastParts = parts.slice(-3).reverse()
 
     // allow calling .toString() and .valueOf() on the proxy
-    if (parts[parts.length - 1] === 'toString') {
-      if (parts[parts.length - 2] === 'name') {
+    if (lastParts[0] === 'toString') {
+      if (lastParts[1] === 'name') {
         // e.g. hc().somePath.name.toString() -> "somePath"
-        return parts[parts.length - 3] || ''
+        return lastParts[2] || ''
       }
       // e.g. hc().somePath.toString()
       return proxyCallback.toString()
     }
 
-    if (parts[parts.length - 1] === 'valueOf') {
-      if (parts[parts.length - 2] === 'name') {
+    if (lastParts[0] === 'valueOf') {
+      if (lastParts[1] === 'name') {
         // e.g. hc().somePath.name.valueOf() -> "somePath"
-        return parts[parts.length - 3] || ''
+        return lastParts[2] || ''
       }
       // e.g. hc().somePath.valueOf()
       return proxyCallback
     }
 
     let method = ''
-    if (/^\$/.test(parts[parts.length - 1])) {
+    if (/^\$/.test(lastParts[0] as string)) {
       const last = parts.pop()
       if (last) {
         method = last.replace(/^\$/, '')
@@ -172,10 +157,16 @@ export const hc = <T extends Hono<any, any, any>>(
     const path = parts.join('/')
     const url = mergePath(baseUrl, path)
     if (method === 'url') {
-      if (opts.args[0] && opts.args[0].param) {
-        return new URL(replaceUrlParam(url, opts.args[0].param))
+      let result = url
+      if (opts.args[0]) {
+        if (opts.args[0].param) {
+          result = replaceUrlParam(url, opts.args[0].param)
+        }
+        if (opts.args[0].query) {
+          result = result + '?' + buildSearchParams(opts.args[0].query).toString()
+        }
       }
-      return new URL(url)
+      return new URL(result)
     }
     if (method === 'ws') {
       const webSocketUrl = replaceUrlProtocol(
@@ -207,7 +198,7 @@ export const hc = <T extends Hono<any, any, any>>(
     const req = new ClientRequestImpl(url, method)
     if (method) {
       options ??= {}
-      const args = deepMerge<ClientRequestOptions>(options, { ...(opts.args[1] ?? {}) })
+      const args = deepMerge<ClientRequestOptions>(options, { ...opts.args[1] })
       return req.fetch(opts.args[0], args)
     }
     return req

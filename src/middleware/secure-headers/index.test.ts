@@ -1,4 +1,3 @@
-/* eslint-disable quotes */
 import { Hono } from '../../hono'
 import { poweredBy } from '../powered-by'
 import { NONCE, secureHeaders } from '.'
@@ -199,7 +198,7 @@ describe('Secure Headers Middleware', () => {
     const app = new Hono()
 
     app.get('/test', secureHeaders(), poweredBy(), async (c) => {
-      return c.text('Hono is cool')
+      return c.text('Hono is hot')
     })
 
     app.get(
@@ -209,19 +208,19 @@ describe('Secure Headers Middleware', () => {
       }),
       poweredBy(),
       async (c) => {
-        return c.text('Hono is cool')
+        return c.text('Hono is hot')
       }
     )
 
     const res = await app.request('/test')
     const poweredby = res.headers.get('X-Powered-By')
     expect(poweredby).toEqual(null)
-    expect(await res.text()).toEqual('Hono is cool')
+    expect(await res.text()).toEqual('Hono is hot')
 
     const res2 = await app.request('/test2')
     const poweredby2 = res2.headers.get('X-Powered-By')
     expect(poweredby2).toEqual('Hono')
-    expect(await res2.text()).toEqual('Hono is cool')
+    expect(await res2.text()).toEqual('Hono is hot')
   })
 
   describe.each([
@@ -474,8 +473,8 @@ describe('Secure Headers Middleware', () => {
 
       const res = await app.request('/test')
       const csp = res.headers.get(cspHeaderName)
-      expect(csp).toMatch(`script-src 'self' 'nonce-scriptSrc'`)
-      expect(csp).toMatch(`style-src 'self' 'nonce-styleSrc'`)
+      expect(csp).toMatch("script-src 'self' 'nonce-scriptSrc'")
+      expect(csp).toMatch("style-src 'self' 'nonce-styleSrc'")
       expect(await res.text()).toEqual('script: scriptSrc, style: styleSrc')
     })
   })

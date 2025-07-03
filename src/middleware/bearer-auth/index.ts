@@ -7,7 +7,7 @@ import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 import { timingSafeEqual } from '../../utils/buffer'
-import type { StatusCode } from '../../utils/http-status'
+import type { ContentfulStatusCode } from '../../utils/http-status'
 
 const TOKEN_STRINGS = '[A-Za-z0-9._~+/-]+=*'
 const PREFIX = 'Bearer'
@@ -50,7 +50,7 @@ type BearerAuthOptions =
  * @param {string} [options.headerName=Authorization] - The header name.
  * @param {Function} [options.hashFunction] - A function to handle hashing for safe comparison of authentication tokens.
  * @param {string | object | MessageFunction} [options.noAuthenticationHeaderMessage="Unauthorized"] - The no authentication header message.
- * @param {string | object | MessageFunction} [options.invalidAuthenticationHeaderMeasage="Bad Request"] - The invalid authentication header message.
+ * @param {string | object | MessageFunction} [options.invalidAuthenticationHeaderMessage="Bad Request"] - The invalid authentication header message.
  * @param {string | object | MessageFunction} [options.invalidTokenMessage="Unauthorized"] - The invalid token message.
  * @returns {MiddlewareHandler} The middleware handler function.
  * @throws {Error} If neither "token" nor "verifyToken" options are provided.
@@ -60,7 +60,7 @@ type BearerAuthOptions =
  * ```ts
  * const app = new Hono()
  *
- * const token = 'honoiscool'
+ * const token = 'honoishot'
  *
  * app.use('/api/*', bearerAuth({ token }))
  *
@@ -87,7 +87,7 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
 
   const throwHTTPException = async (
     c: Context,
-    status: StatusCode,
+    status: ContentfulStatusCode,
     wwwAuthenticateHeader: string,
     messageOption: string | object | MessageFunction
   ): Promise<Response> => {
@@ -103,7 +103,7 @@ export const bearerAuth = (options: BearerAuthOptions): MiddlewareHandler => {
             status,
             headers: {
               ...headers,
-              'content-type': 'application/json; charset=UTF-8',
+              'content-type': 'application/json',
             },
           })
     throw new HTTPException(status, { res })

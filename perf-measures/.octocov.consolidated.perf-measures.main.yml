@@ -1,0 +1,22 @@
+locale: "en"
+repository: ${GITHUB_REPOSITORY}/perf-measures
+coverage:
+  if: false
+codeToTestRatio:
+  if: false
+testExecutionTime:
+  if: false
+report:
+  datastores:
+    - artifact://${GITHUB_REPOSITORY}
+summary:
+  if: true
+customMetrics:
+  bundle-size-check:
+    key: bundle-size-check
+  speed-check:
+    key: speed-check
+  diagnostics-tsc:
+    key: diagnostics-tsc
+  diagnostics-typescript-go:
+    key: diagnostics-typescript-go

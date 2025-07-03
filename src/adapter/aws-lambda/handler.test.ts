@@ -13,7 +13,7 @@ describe('isContentTypeBinary', () => {
     expect(isContentTypeBinary('text/javascript')).toBe(false)
     expect(isContentTypeBinary('application/json')).toBe(false)
     expect(isContentTypeBinary('application/ld+json')).toBe(false)
-    expect(isContentTypeBinary('application/json; charset=UTF-8')).toBe(false)
+    expect(isContentTypeBinary('application/json')).toBe(false)
   })
 })
 
@@ -45,6 +45,8 @@ describe('EventProcessor.createRequest', () => {
         header1: ['value1'],
         header2: ['value1', 'value2', 'value3'],
       },
+      // This value doesn't match multi value's content.
+      // We want to assert handler is using the multi value's content when both are available.
       queryStringParameters: {
         parameter2: 'value',
       },
@@ -96,7 +98,7 @@ describe('EventProcessor.createRequest', () => {
 
     expect(request.method).toEqual('GET')
     expect(request.url).toEqual(
-      'https://id.execute-api.us-east-1.amazonaws.com/my/path?parameter2=value'
+      'https://id.execute-api.us-east-1.amazonaws.com/my/path?parameter1=value1&parameter1=value2&parameter2=value'
     )
     expect(Object.fromEntries(request.headers)).toEqual({
       'content-type': 'application/json',

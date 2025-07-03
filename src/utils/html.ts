@@ -11,7 +11,7 @@ export const HtmlEscapedCallbackPhase = {
 type HtmlEscapedCallbackOpts = {
   buffer?: [string]
   phase: (typeof HtmlEscapedCallbackPhase)[keyof typeof HtmlEscapedCallbackPhase]
-  context: object // An object unique to each JSX tree. This object is used as the WeakMap key.
+  context: Readonly<object> // An object unique to each JSX tree. This object is used as the WeakMap key.
 }
 export type HtmlEscapedCallback = (opts: HtmlEscapedCallbackOpts) => Promise<string> | undefined
 export type HtmlEscaped = {

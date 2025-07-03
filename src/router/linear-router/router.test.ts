@@ -7,7 +7,10 @@ describe('LinearRouter', () => {
     skip: [
       {
         reason: 'UnsupportedPath',
-        tests: ['Multi match > `params` per a handler > GET /entry/123/show'],
+        tests: [
+          'Multi match > `params` per a handler > GET /entry/123/show',
+          'Capture regex pattern has trailing wildcard > GET /foo/bar/file.html',
+        ],
       },
       {
         reason: 'LinearRouter allows trailing slashes',
@@ -47,6 +50,19 @@ describe('LinearRouter', () => {
       const [res] = router.match('GET', '/book/')
       expect(res.length).toBe(1)
       expect(res[0][0]).toBe('GET /book')
+    })
+  })
+
+  describe('Skip part', () => {
+    const router = new LinearRouter<string>()
+
+    beforeEach(() => {
+      router.add('GET', '/products/:id{d+}', 'GET /products/:id{d+}')
+    })
+
+    it('GET /products/list', () => {
+      const [res] = router.match('GET', '/products/list')
+      expect(res.length).toBe(0)
     })
   })
 })

@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { vi } from 'vitest'
-import { encodeBase64 } from '../encode'
+import { encodeBase64, encodeBase64Url } from '../encode'
 import { AlgorithmTypes } from './jwa'
+import { signing } from './jws'
 import * as JWT from './jwt'
+import { verifyFromJwks } from './jwt'
 import {
   JwtAlgorithmNotImplemented,
   JwtTokenExpired,
@@ -11,6 +13,7 @@ import {
   JwtTokenNotBefore,
   JwtTokenSignatureMismatched,
 } from './types'
+import { utf8Encoder } from './utf8'
 
 describe('isTokenHeader', () => {
   it('should return true for valid TokenHeader', () => {
@@ -235,6 +238,48 @@ describe('JWT', () => {
     expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
   })
 
+  it('sign & verify & decode with a custom secret', async () => {
+    const payload = { message: 'hello world' }
+    const algorithm = {
+      name: 'HMAC',
+      hash: {
+        name: 'SHA-256',
+      },
+    }
+    const secret = await crypto.subtle.importKey(
+      'raw',
+      Buffer.from('cefb73234d5fae4bf27662900732b52943e8d53e871fe0f353da95de4599c21d', 'hex'),
+      algorithm,
+      false,
+      ['sign', 'verify']
+    )
+    const tok = await JWT.sign(payload, secret)
+    const expected =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.qunGhchNXH_unqWXN6hB0Elhzr5SykSXVhklLti1aFI'
+    expect(tok).toEqual(expected)
+
+    const verifiedPayload = await JWT.verify(tok, secret)
+    expect(verifiedPayload).not.toBeUndefined()
+    expect(verifiedPayload).toEqual(payload)
+
+    const invalidSecret = await crypto.subtle.importKey(
+      'raw',
+      Buffer.from('cefb73234d5fae4bf27662900732b52943e8d53e871fe0f353da95de41111111', 'hex'),
+      algorithm,
+      false,
+      ['sign', 'verify']
+    )
+    let err = null
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, invalidSecret)
+    } catch (e) {
+      err = e
+    }
+    expect(authorized).toBeUndefined()
+    expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+  })
+
   const rsTestCases = [
     {
       alg: AlgorithmTypes.RS256,
@@ -432,6 +477,45 @@ describe('JWT', () => {
   })
 })
 
+describe('verifyFromJwks header.alg fallback', () => {
+  it('Should use header.alg as fallback when matchingKey.alg is missing', async () => {
+    // Setup: Create a JWT signed with HS384 (different from default HS256)
+    const payload = { message: 'hello world' }
+    const headerAlg = 'HS384' // Non-default value
+    const secret = 'secret'
+    const kid = 'dummy'
+
+    // Create JWT (signed with HS384)
+    const header = { alg: headerAlg, typ: 'JWT', kid }
+    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encodedHeader = encode(header)
+    const encodedPayload = encode(payload)
+    const signingInput = `${encodedHeader}.${encodedPayload}`
+
+    // Use signing function from jws.ts instead of createHmac directly
+    const signatureBuffer = await signing(secret, headerAlg, utf8Encoder.encode(signingInput))
+    const signature = encodeBase64Url(signatureBuffer)
+
+    const token = `${encodedHeader}.${encodedPayload}.${signature}`
+
+    // Create a key without alg property
+    const keys = [
+      {
+        kty: 'oct',
+        kid,
+        k: encodeBase64Url(utf8Encoder.encode(secret).buffer),
+        use: 'sig',
+        // alg is intentionally omitted
+      },
+    ]
+
+    // Execute: Verify the JWT token signed with HS384
+    const result = await verifyFromJwks(token, { keys })
+
+    // If verification succeeds, it means header.alg was used
+    expect(result).toEqual(payload)
+  })
+})
 async function exportPEMPrivateKey(key: CryptoKey): Promise<string> {
   const exported = await crypto.subtle.exportKey('pkcs8', key)
   const pem = `-----BEGIN PRIVATE KEY-----\n${encodeBase64(exported)}\n-----END PRIVATE KEY-----`

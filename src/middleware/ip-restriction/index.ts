@@ -48,16 +48,16 @@ const buildMatcher = (
       functionRules.push(rule)
     } else {
       if (IS_CIDR_NOTATION_REGEX.test(rule)) {
-        const splittedRule = rule.split('/')
+        const separatedRule = rule.split('/')
 
-        const addrStr = splittedRule[0]
+        const addrStr = separatedRule[0]
         const type = distinctRemoteAddr(addrStr)
         if (type === undefined) {
           throw new TypeError(`Invalid rule: ${rule}`)
         }
 
         const isIPv4 = type === 'IPv4'
-        const prefix = parseInt(splittedRule[1])
+        const prefix = parseInt(separatedRule[1])
 
         if (isIPv4 ? prefix === 32 : prefix === 128) {
           // this rule is a static rule

@@ -126,19 +126,18 @@ type SecureHeadersCallback = (
 ) => [string, string][]
 
 const generateNonce = () => {
-  const buffer = new Uint8Array(16)
-  crypto.getRandomValues(buffer)
-  return encodeBase64(buffer)
+  const arrayBuffer = new Uint8Array(16)
+  crypto.getRandomValues(arrayBuffer)
+  return encodeBase64(arrayBuffer.buffer)
 }
 
 export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
-  const nonce =
-    ctx.get('secureHeadersNonce') ||
-    (() => {
-      const newNonce = generateNonce()
-      ctx.set('secureHeadersNonce', newNonce)
-      return newNonce
-    })()
+  const key = 'secureHeadersNonce'
+  const init = ctx.get(key)
+  const nonce = init || generateNonce()
+  if (init == null) {
+    ctx.set(key, nonce)
+  }
   return `'nonce-${nonce}'`
 }
 

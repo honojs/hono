@@ -5,19 +5,31 @@
   Copyright (c) 2022 Taishi Naritomi
 */
 
-import { exec } from 'child_process'
-import fs from 'fs'
-import path from 'path'
+/// <reference types="bun-types/bun" />
+
 import arg from 'arg'
+import { $, stdout } from 'bun'
 import { build } from 'esbuild'
 import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
-import glob from 'glob'
+import * as glob from 'glob'
+import fs from 'fs'
+import path from 'path'
+import { cleanupWorkers, removePrivateFields } from './remove-private-fields'
+import { validateExports } from './validate-exports'
 
 const args = arg({
   '--watch': Boolean,
 })
 
 const isWatch = args['--watch'] || false
+
+const readJsonExports = (path: string) => JSON.parse(fs.readFileSync(path, 'utf-8')).exports
+
+const [packageJsonExports, jsrJsonExports] = ['./package.json', './jsr.json'].map(readJsonExports)
+
+// Validate exports of package.json and jsr.json
+validateExports(packageJsonExports, jsrJsonExports, 'jsr.json')
+validateExports(jsrJsonExports, packageJsonExports, 'package.json')
 
 const entryPoints = glob.sync('./src/**/*.ts', {
   ignore: ['./src/**/*.test.ts', './src/mod.ts', './src/middleware.ts', './src/deno/**/*.ts'],
@@ -81,4 +93,27 @@ const esmBuild = () =>
 
 Promise.all([esmBuild(), cjsBuild()])
 
-exec(`tsc ${isWatch ? '-w' : ''} --emitDeclarationOnly --declaration --project tsconfig.build.json`)
+await $`tsc ${
+  isWatch ? '-w' : ''
+} --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow()
+
+// Remove #private fields
+const dtsEntries = glob.globSync('./dist/types/**/*.d.ts')
+const writer = stdout.writer()
+writer.write('\n')
+let lastOutputLength = 0
+let removedCount = 0
+
+await Promise.all(
+  dtsEntries.map(async (e) => {
+    await fs.promises.writeFile(e, await removePrivateFields(e))
+
+    const message = `Private fields removed(${++removedCount}/${dtsEntries.length}): ${e}`
+    writer.write(`\r${' '.repeat(lastOutputLength)}`)
+    lastOutputLength = message.length
+    writer.write(`\r${message}`)
+  })
+)
+
+writer.write('\n')
+cleanupWorkers()

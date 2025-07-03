@@ -33,7 +33,9 @@ export class JwtTokenExpired extends Error {
 
 export class JwtTokenIssuedAt extends Error {
   constructor(currentTimestamp: number, iat: number) {
-    super(`Incorrect "iat" claim must be a older than "${currentTimestamp}" (iat: "${iat}")`)
+    super(
+      `Invalid "iat" claim, must be a valid number lower than "${currentTimestamp}" (iat: "${iat}")`
+    )
     this.name = 'JwtTokenIssuedAt'
   }
 }
@@ -42,6 +44,13 @@ export class JwtHeaderInvalid extends Error {
   constructor(header: object) {
     super(`jwt header is invalid: ${JSON.stringify(header)}`)
     this.name = 'JwtHeaderInvalid'
+  }
+}
+
+export class JwtHeaderRequiresKid extends Error {
+  constructor(header: object) {
+    super(`required "kid" in jwt header: ${JSON.stringify(header)}`)
+    this.name = 'JwtHeaderRequiresKid'
   }
 }
 
@@ -81,3 +90,5 @@ export type JWTPayload = {
    */
   iat?: number
 }
+
+export type { HonoJsonWebKey } from './jws'

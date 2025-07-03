@@ -1,6 +1,7 @@
 import { upgradeWebSocket } from '../../src/adapter/cloudflare-workers'
 import { env, getRuntimeKey } from '../../src/helper/adapter'
 import { Hono } from '../../src/hono'
+import { getColorEnabledAsync } from '../../src/utils/color'
 
 const app = new Hono()
 
@@ -21,5 +22,9 @@ app.get(
     }
   })
 )
+
+app.get('/color', async (c) => {
+  return c.text((await getColorEnabledAsync()) ? 'True' : 'False')
+})
 
 export default app

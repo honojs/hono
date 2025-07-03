@@ -4,7 +4,7 @@
 
 ### `deno.land/x` to JSR
 
-There is no braking change, but we no longer publish the module from `deno.land/x`. If you want to use Hono on Deno, use JSR instead of it.
+There is no breaking change, but we no longer publish the module from `deno.land/x`. If you want to use Hono on Deno, use JSR instead of it.
 
 If you migrate, replace the path `deno.land/x` with JSR's.
 

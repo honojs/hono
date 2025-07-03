@@ -50,7 +50,7 @@ interface ViewTransitionType {
 }
 
 interface StyleType {
-  (args?: { children?: Promise<string> }): HtmlEscapedString
+  (args?: { children?: Promise<string>; nonce?: string }): HtmlEscapedString
 }
 
 /**
@@ -62,8 +62,9 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
   const [cssJsxDomObject, StyleRenderToDom] = createCssJsxDomObjects({ id })
 
   const contextMap: WeakMap<object, usedClassNameData> = new WeakMap()
+  const nonceMap: WeakMap<object, string | undefined> = new WeakMap()
 
-  const replaceStyleRe = new RegExp(`(<style id="${id}">.*?)(</style>)`)
+  const replaceStyleRe = new RegExp(`(<style id="${id}"(?: nonce="[^"]*")?>.*?)(</style>)`)
 
   const newCssClassNameObject = (cssClassName: CssClassNameCommon): Promise<string> => {
     const appendStyle: HtmlEscapedCallback = ({ buffer, context }): Promise<string> | undefined => {
@@ -88,9 +89,11 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
         return
       }
 
-      const appendStyleScript = `<script>document.querySelector('#${id}').textContent+=${JSON.stringify(
-        stylesStr
-      )}</script>`
+      const nonce = nonceMap.get(context)
+      const appendStyleScript = `<script${
+        nonce ? ` nonce="${nonce}"` : ''
+      }>document.querySelector('#${id}').textContent+=${JSON.stringify(stylesStr)}</script>`
+
       if (buffer) {
         buffer[0] = `${appendStyleScript}${buffer[0]}`
         return
@@ -100,7 +103,7 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
     }
 
     const addClassNameToContext: HtmlEscapedCallback = ({ context }) => {
-      if (!contextMap.get(context)) {
+      if (!contextMap.has(context)) {
         contextMap.set(context, [{}, {}])
       }
       const [toAdd, added] = contextMap.get(context) as usedClassNameData
@@ -156,10 +159,19 @@ export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultConte
     return newCssClassNameObject(viewTransitionCommon(strings as any, values))
   }) as ViewTransitionType
 
-  const Style: StyleType = ({ children } = {}) =>
-    children
-      ? raw(`<style id="${id}">${(children as unknown as CssClassName)[STYLE_STRING]}</style>`)
-      : raw(`<style id="${id}"></style>`)
+  const Style: StyleType = ({ children, nonce } = {}) =>
+    raw(
+      `<style id="${id}"${nonce ? ` nonce="${nonce}"` : ''}>${
+        children ? (children as unknown as CssClassName)[STYLE_STRING] : ''
+      }</style>`,
+      [
+        ({ context }) => {
+          nonceMap.set(context, nonce)
+          return undefined
+        },
+      ]
+    )
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(Style as any)[DOM_RENDERER] = StyleRenderToDom
 

@@ -497,6 +497,78 @@ export const runTest = ({
       })
     })
 
+    describe('Capture simple multiple directories', () => {
+      beforeEach(() => {
+        router.add('GET', '/:dirs{.+}/file.html', 'file.html')
+      })
+
+      it('GET /foo/bar/file.html', () => {
+        const res = match('GET', '/foo/bar/file.html')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('file.html')
+        expect(res[0].params['dirs']).toEqual('foo/bar')
+      })
+    })
+
+    describe('Capture regex pattern has trailing wildcard', () => {
+      beforeEach(() => {
+        router.add('GET', '/:dir{[a-z]+}/*/file.html', 'file.html')
+      })
+
+      it('GET /foo/bar/file.html', () => {
+        const res = match('GET', '/foo/bar/file.html')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('file.html')
+        expect(res[0].params['dir']).toEqual('foo')
+      })
+    })
+
+    describe('Capture complex multiple directories', () => {
+      beforeEach(() => {
+        router.add('GET', '/:first{.+}/middle-a/:reference?', '1')
+        router.add('GET', '/:first{.+}/middle-b/end-c/:uuid', '2')
+        router.add('GET', '/:first{.+}/middle-b/:digest', '3')
+      })
+
+      it('GET /part1/middle-b/latest', () => {
+        const res = match('GET', '/part1/middle-b/latest')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('3')
+        expect(res[0].params['first']).toEqual('part1')
+        expect(res[0].params['digest']).toEqual('latest')
+      })
+
+      it('GET /part1/middle-b/end-c/latest', () => {
+        const res = match('GET', '/part1/middle-b/end-c/latest')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('2')
+        expect(res[0].params['first']).toEqual('part1')
+        expect(res[0].params['uuid']).toEqual('latest')
+      })
+    })
+
+    describe('Capture multiple directories and optional', () => {
+      beforeEach(() => {
+        router.add('GET', '/:prefix{.+}/contents/:id?', 'contents')
+      })
+
+      it('GET /foo/bar/contents', () => {
+        const res = match('GET', '/foo/bar/contents')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('contents')
+        expect(res[0].params['prefix']).toEqual('foo/bar')
+        expect(res[0].params['id']).toEqual(undefined)
+      })
+
+      it('GET /foo/bar/contents/123', () => {
+        const res = match('GET', '/foo/bar/contents/123')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('contents')
+        expect(res[0].params['prefix']).toEqual('foo/bar')
+        expect(res[0].params['id']).toEqual('123')
+      })
+    })
+
     describe('non ascii characters', () => {
       beforeEach(() => {
         router.add('ALL', '/$/*', 'middleware $')

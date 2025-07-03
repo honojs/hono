@@ -106,7 +106,7 @@ describe('Cookie Middleware', () => {
       expect(res.headers.get('Fortune-Cookie')).toBe('lots-of-money')
     })
 
-    it('Get signed cookie witn invalid signature', async () => {
+    it('Get signed cookie with invalid signature', async () => {
       const req = new Request('http://localhost/cookie-signed-get-one')
       // fortune_cookie has invalid signature
       const cookieString =
@@ -425,6 +425,20 @@ describe('Cookie Middleware', () => {
     it('Get deleted value', async () => {
       const cookieString = 'delicious_cookie=choco'
       const req = new Request('http://localhost/delete-cookie-with-deleted-value')
+      req.headers.set('Cookie', cookieString)
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('choco')
+    })
+
+    app.get('/delete-cookie-with-prefix', (c) => {
+      const deleted = deleteCookie(c, 'delicious_cookie', { prefix: 'secure' })
+      return c.text(deleted || '')
+    })
+
+    it('Get deleted value with prefix', async () => {
+      const cookieString = '__Secure-delicious_cookie=choco'
+      const req = new Request('http://localhost/delete-cookie-with-prefix')
       req.headers.set('Cookie', cookieString)
       const res = await app.request(req)
       expect(res.status).toBe(200)

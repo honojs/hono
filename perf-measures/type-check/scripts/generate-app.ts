@@ -20,6 +20,8 @@ export const app = new Hono()`
 const routes = generateRoutes(count)
 
 writeFile(path.join(import.meta.dirname, '../generated/app.ts'), routes, (err) => {
-  if (err) { throw err }
+  if (err) {
+    throw err
+  }
   console.log(`${count} routes have been written to app.ts`)
 })

@@ -81,17 +81,20 @@ describe('matchedRoutes', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
     const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
       [
-        [[handlerA, { handler: handlerA, method: 'GET', path: '/:id' }], { id: '123' }],
         [
-          [handlerA, { handler: handlerB, method: 'GET', path: '/:id/:name' }],
+          [handlerA, { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' }],
+          { id: '123' },
+        ],
+        [
+          [handlerA, { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' }],
           { id: '456', name: 'key' },
         ],
       ],
     ])
 
     expect(req.matchedRoutes).toEqual([
-      { handler: handlerA, method: 'GET', path: '/:id' },
-      { handler: handlerB, method: 'GET', path: '/:id/:name' },
+      { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' },
+      { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' },
     ])
   })
 })
@@ -103,9 +106,12 @@ describe('routePath', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
     const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
       [
-        [[handlerA, { handler: handlerA, method: 'GET', path: '/:id' }], { id: '123' }],
         [
-          [handlerA, { handler: handlerB, method: 'GET', path: '/:id/:name' }],
+          [handlerA, { basePath: '/', handler: handlerA, method: 'GET', path: '/:id' }],
+          { id: '123' },
+        ],
+        [
+          [handlerA, { basePath: '/', handler: handlerB, method: 'GET', path: '/:id/:name' }],
           { id: '456', name: 'key' },
         ],
       ],
@@ -160,6 +166,20 @@ describe('headers', () => {
     const req = new HonoRequest(new Request('http://localhost', { headers: { foo: '' } }))
     const foo = req.header('foo')
     expect(foo).toEqual('')
+  })
+
+  test('Keys of the arguments for req.header() are not case-sensitive', () => {
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: 'abc',
+          lowercase: 'lowercase value',
+        },
+      })
+    )
+    expect(req.header('Content-Type')).toBe('application/json')
+    expect(req.header('ApiKey')).toBe('abc')
   })
 })
 

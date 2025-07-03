@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.6.3",
+  "version": "4.8.3",
   "description": "Web framework built on Web Standards",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -13,21 +13,21 @@
     "test": "tsc --noEmit && vitest --run && vitest -c .vitest.config/jsx-runtime-default.ts --run && vitest -c .vitest.config/jsx-runtime-dom.ts --run",
     "test:watch": "vitest --watch",
     "test:deno": "deno test --allow-read --allow-env --allow-write --allow-net -c runtime-tests/deno/deno.json runtime-tests/deno && deno test --no-lock -c runtime-tests/deno-jsx/deno.precompile.json runtime-tests/deno-jsx && deno test --no-lock -c runtime-tests/deno-jsx/deno.react-jsx.json runtime-tests/deno-jsx",
-    "test:bun": "bun test --jsx-import-source ../../src/jsx runtime-tests/bun/index.test.tsx",
+    "test:bun": "bun test --jsx-import-source ../../src/jsx runtime-tests/bun/*",
     "test:fastly": "vitest --run --config ./runtime-tests/fastly/vitest.config.ts",
     "test:node": "vitest --run --config ./runtime-tests/node/vitest.config.ts",
     "test:workerd": "vitest --run --config ./runtime-tests/workerd/vitest.config.ts",
     "test:lambda": "vitest --run --config ./runtime-tests/lambda/vitest.config.ts",
     "test:lambda-edge": "vitest --run --config ./runtime-tests/lambda-edge/vitest.config.ts",
     "test:all": "bun run test && bun test:deno && bun test:bun && bun test:fastly && bun test:node && bun test:workerd && bun test:lambda && bun test:lambda-edge",
-    "lint": "eslint src runtime-tests",
-    "lint:fix": "eslint src runtime-tests --fix",
-    "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\"",
-    "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\"",
-    "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json ",
-    "build": "bun run --shell bun remove-dist && bun ./build.ts && bun run copy:package.cjs.json",
+    "lint": "eslint src runtime-tests build perf-measures",
+    "lint:fix": "eslint src runtime-tests build perf-measures --fix",
+    "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\"",
+    "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\"",
+    "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json",
+    "build": "bun run --shell bun remove-dist && bun ./build/build.ts && bun run copy:package.cjs.json",
     "postbuild": "publint",
-    "watch": "bun run --shell bun remove-dist && bun ./build.ts --watch && bun run copy:package.cjs.json",
+    "watch": "bun run --shell bun remove-dist && bun ./build/build.ts --watch && bun run copy:package.cjs.json",
     "coverage": "vitest --run --coverage",
     "prerelease": "bun test:deno && bun run build",
     "release": "np",
@@ -38,6 +38,11 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/cjs/index.js"
+    },
+    "./request": {
+      "types": "./dist/types/request.d.ts",
+      "import": "./dist/request.js",
+      "require": "./dist/cjs/request.js"
     },
     "./types": {
       "types": "./dist/types/types.d.ts",
@@ -88,6 +93,11 @@
       "types": "./dist/types/middleware/cache/index.d.ts",
       "import": "./dist/middleware/cache/index.js",
       "require": "./dist/cjs/middleware/cache/index.js"
+    },
+    "./route": {
+      "types": "./dist/types/helper/route/index.d.ts",
+      "import": "./dist/helper/route/index.js",
+      "require": "./dist/cjs/helper/route/index.js"
     },
     "./cookie": {
       "types": "./dist/types/helper/cookie/index.d.ts",
@@ -199,6 +209,11 @@
       "import": "./dist/middleware/jwt/index.js",
       "require": "./dist/cjs/middleware/jwt/index.js"
     },
+    "./jwk": {
+      "types": "./dist/types/middleware/jwk/index.d.ts",
+      "import": "./dist/middleware/jwk/index.js",
+      "require": "./dist/cjs/middleware/jwk/index.js"
+    },
     "./timeout": {
       "types": "./dist/types/middleware/timeout/index.d.ts",
       "import": "./dist/middleware/timeout/index.js",
@@ -233,6 +248,11 @@
       "types": "./dist/types/middleware/request-id/index.d.ts",
       "import": "./dist/middleware/request-id/index.js",
       "require": "./dist/cjs/middleware/request-id/index.js"
+    },
+    "./language": {
+      "types": "./dist/types/middleware/language/index.d.ts",
+      "import": "./dist/middleware/language/index.js",
+      "require": "./dist/cjs/middleware/language/index.js"
     },
     "./secure-headers": {
       "types": "./dist/types/middleware/secure-headers/index.d.ts",
@@ -383,10 +403,18 @@
       "types": "./dist/types/helper/conninfo/index.d.ts",
       "import": "./dist/helper/conninfo/index.js",
       "require": "./dist/cjs/helper/conninfo/index.js"
+    },
+    "./proxy": {
+      "types": "./dist/types/helper/proxy/index.d.ts",
+      "import": "./dist/helper/proxy/index.js",
+      "require": "./dist/cjs/helper/proxy/index.js"
     }
   },
   "typesVersions": {
     "*": {
+      "request": [
+        "./dist/types/request"
+      ],
       "types": [
         "./dist/types/types"
       ],
@@ -416,6 +444,9 @@
       ],
       "cache": [
         "./dist/types/middleware/cache"
+      ],
+      "route": [
+        "./dist/types/helper/route"
       ],
       "cookie": [
         "./dist/types/helper/cookie"
@@ -497,6 +528,9 @@
       ],
       "request-id": [
         "./dist/types/middleware/request-id"
+      ],
+      "language": [
+        "./dist/types/middleware/language"
       ],
       "streaming": [
         "./dist/types/helper/streaming"
@@ -587,6 +621,9 @@
       ],
       "conninfo": [
         "./dist/types/helper/conninfo"
+      ],
+      "proxy": [
+        "./dist/types/helper/proxy"
       ]
     }
   },
@@ -619,28 +656,31 @@
   ],
   "devDependencies": {
     "@hono/eslint-config": "^1.0.2",
-    "@hono/node-server": "^1.8.2",
-    "@types/glob": "^8.0.0",
-    "@types/jsdom": "^21.1.4",
+    "@hono/node-server": "^1.13.5",
+    "@types/glob": "^8.1.0",
+    "@types/jsdom": "^21.1.7",
     "@types/node": "20.11.4",
-    "@types/supertest": "^2.0.12",
-    "@vitest/coverage-v8": "^2.0.5",
+    "@types/supertest": "^2.0.16",
+    "@typescript/native-preview": "7.0.0-dev.20250523.1",
+    "@vitest/coverage-v8": "^3.0.5",
     "arg": "^5.0.2",
-    "esbuild": "^0.15.12",
+    "bun-types": "^1.1.39",
+    "esbuild": "^0.15.18",
     "eslint": "^9.10.0",
-    "glob": "7.2.3",
+    "glob": "^11.0.0",
     "jsdom": "^22.1.0",
-    "msw": "^2.3.0",
-    "np": "7.7.0",
+    "msw": "^2.6.0",
+    "np": "10.2.0",
+    "pkg-pr-new": "^0.0.53",
     "prettier": "^2.6.2",
-    "publint": "^0.1.8",
-    "supertest": "^6.3.3",
+    "publint": "^0.1.16",
+    "supertest": "^6.3.4",
     "typescript": "^5.3.3",
     "vite-plugin-fastly-js-compute": "^0.4.2",
-    "vitest": "^2.0.5",
-    "wrangler": "3.58.0",
-    "ws": "^8.17.0",
-    "zod": "^3.20.2"
+    "vitest": "^3.0.5",
+    "wrangler": "4.12.0",
+    "ws": "^8.18.0",
+    "zod": "^3.23.8"
   },
   "engines": {
     "node": ">=16.9.0"

@@ -29,7 +29,7 @@ const asyncLocalStorage = new AsyncLocalStorage<Context>()
  * app.use(contextStorage())
  *
  * app.use(async (c, next) => {
- *   c.set('message', 'Hono is cool!!)
+ *   c.set('message', 'Hono is hot!!)
  *   await next()
  * })
  *

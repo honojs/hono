@@ -1,9 +1,9 @@
 import { unstable_dev } from 'wrangler'
-import type { UnstableDevWorker } from 'wrangler'
+import type { Unstable_DevWorker } from 'wrangler'
 import { WebSocket } from 'ws'
 
 describe('workerd', () => {
-  let worker: UnstableDevWorker
+  let worker: Unstable_DevWorker
 
   beforeAll(async () => {
     worker = await unstable_dev('./runtime-tests/workerd/index.ts', {
@@ -29,6 +29,12 @@ describe('workerd', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('Hono')
   })
+
+  it('Should return 200 response with the true message', async () => {
+    const res = await worker.fetch('/color')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('True')
+  })
 })
 
 describe('workerd with WebSocket', () => {
@@ -48,10 +54,10 @@ describe('workerd with WebSocket', () => {
       ws.addEventListener('open', () => {
         openHandler()
         ws.send('Hello')
-        resolve(undefined)
       })
       ws.addEventListener('close', async () => {
         closeHandler()
+        resolve(undefined)
       })
       ws.addEventListener('message', async (event) => {
         messageHandler(event.data)
@@ -65,5 +71,28 @@ describe('workerd with WebSocket', () => {
     expect(openHandler).toHaveBeenCalled()
     expect(messageHandler).toHaveBeenCalledWith('Hello')
     expect(closeHandler).toHaveBeenCalled()
+  })
+})
+
+describe('workerd with NO_COLOR', () => {
+  let worker: Unstable_DevWorker
+
+  beforeAll(async () => {
+    worker = await unstable_dev('./runtime-tests/workerd/index.ts', {
+      vars: {
+        NO_COLOR: true,
+      },
+      experimental: { disableExperimentalWarning: true },
+    })
+  })
+
+  afterAll(async () => {
+    await worker.stop()
+  })
+
+  it('Should return 200 response with the false message', async () => {
+    const res = await worker.fetch('/color')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('False')
   })
 })

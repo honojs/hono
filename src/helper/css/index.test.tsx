@@ -1,8 +1,8 @@
 /** @jsxImportSource ../../jsx */
 import { Hono } from '../../'
 import { html } from '../../helper/html'
-import { isValidElement } from '../../jsx'
 import type { JSXNode } from '../../jsx'
+import { isValidElement } from '../../jsx'
 import { Suspense, renderToReadableStream } from '../../jsx/streaming'
 import type { HtmlEscapedString } from '../../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
@@ -55,6 +55,18 @@ describe('CSS Helper', () => {
         <h1 class="${headerClass}">Hello!</h1>`
       expect(await toString(template)).toBe(
         `<style id="hono-css">.css-2458908649{background-color:blue}</style>
+        <h1 class="css-2458908649">Hello!</h1>`
+      )
+    })
+
+    it('Should render CSS styles with `html` tag function and CSP nonce', async () => {
+      const headerClass = css`
+        background-color: blue;
+      `
+      const template = html`${Style({ nonce: '1234' })}
+        <h1 class="${headerClass}">Hello!</h1>`
+      expect(await toString(template)).toBe(
+        `<style id="hono-css" nonce="1234">.css-2458908649{background-color:blue}</style>
         <h1 class="css-2458908649">Hello!</h1>`
       )
     })
@@ -227,6 +239,23 @@ describe('CSS Helper', () => {
       })
     })
 
+    app.get('/stream-with-nonce', (c) => {
+      const stream = renderToReadableStream(
+        <>
+          <Style nonce='1234' />
+          <Suspense fallback={<p>Loading...</p>}>
+            <h1 class={headerClass}>Hello!</h1>
+          </Suspense>
+        </>
+      )
+      return c.body(stream, {
+        headers: {
+          'Content-Type': 'text/html; charset=UTF-8',
+          'Transfer-Encoding': 'chunked',
+        },
+      })
+    })
+
     it('/sync', async () => {
       const res = await app.request('http://localhost/sync')
       expect(res).not.toBeNull()
@@ -243,6 +272,22 @@ describe('CSS Helper', () => {
 ((d,c,n) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('H:0')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`
+      )
+    })
+
+    it('/stream-with-nonce', async () => {
+      const res = await app.request('http://localhost/stream-with-nonce')
+      expect(res).not.toBeNull()
+      expect(await res.text()).toBe(
+        `<style id="hono-css" nonce="1234"></style><template id="H:1"></template><p>Loading...</p><!--/$--><script nonce="1234">document.querySelector('#hono-css').textContent+=".css-2458908649{background-color:blue}"</script><template data-hono-target="H:1"><h1 class="css-2458908649">Hello!</h1></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:1')
 if(!d)return
 do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
 d.replaceWith(c.content)

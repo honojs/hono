@@ -44,7 +44,8 @@ const createRenderer =
       ? jsx(
           (props: any) => component(props, c),
           {
-            ...{ Layout, ...(props as any) },
+            Layout,
+            ...(props as any),
           },
           children as any
         )

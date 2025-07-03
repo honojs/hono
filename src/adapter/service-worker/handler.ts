@@ -7,17 +7,18 @@ import type { Hono } from '../../hono'
 import type { FetchEvent } from './types'
 
 type Handler = (evt: FetchEvent) => void
+export type HandleOptions = {
+  fetch?: typeof fetch
+}
 
 /**
  * Adapter for Service Worker
  */
 export const handle = (
   app: Hono,
-  opts: {
-    fetch?: typeof fetch
-  } = {
-    // To use `fetch` on a Service Worker correctly, first refer to `self.fetch`.
-    fetch: globalThis.self !== undefined ? globalThis.self.fetch : fetch,
+  opts: HandleOptions = {
+    // To use `fetch` on a Service Worker correctly, bind it to `globalThis`.
+    fetch: globalThis.fetch.bind(globalThis),
   }
 ): Handler => {
   return (evt) => {

@@ -1,4 +1,5 @@
 import {
+  buildSearchParams,
   deepMerge,
   mergePath,
   removeIndexString,
@@ -56,6 +57,18 @@ describe('replaceUrlParams', () => {
     }
     const replacedUrl = replaceUrlParam(url, params)
     expect(replacedUrl).toBe('http://localhost/something/123/456')
+  })
+})
+
+describe('buildSearchParams', () => {
+  it('Should build URLSearchParams correctly', () => {
+    const query = {
+      id: '123',
+      type: 'test',
+      tag: ['a', 'b'],
+    }
+    const searchParams = buildSearchParams(query)
+    expect(searchParams.toString()).toBe('id=123&type=test&tag=a&tag=b')
   })
 })
 

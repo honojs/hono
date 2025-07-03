@@ -1,6 +1,7 @@
 import { Hono } from '../..'
+import { parseAccept } from '../../utils/accept'
 import type { Accept, acceptsConfig, acceptsOptions } from './accepts'
-import { accepts, defaultMatch, parseAccept } from './accepts'
+import { accepts, defaultMatch } from './accepts'
 
 describe('parseAccept', () => {
   test('should parse accept header', () => {
@@ -10,8 +11,8 @@ describe('parseAccept', () => {
     expect(accepts).toEqual([
       { type: 'text/html', params: {}, q: 1 },
       { type: 'application/xhtml+xml', params: {}, q: 1 },
-      { type: 'application/xml', params: { q: '0.9' }, q: 0.9 },
       { type: 'image/webp', params: {}, q: 1 },
+      { type: 'application/xml', params: { q: '0.9' }, q: 0.9 },
       { type: '*/*', params: { q: '0.8', level: '1', foo: 'bar' }, q: 0.8 },
     ])
   })

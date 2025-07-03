@@ -12,6 +12,15 @@ import type { AddressType } from '../helper/conninfo'
  */
 export const expandIPv6 = (ipV6: string): string => {
   const sections = ipV6.split(':')
+  if (IPV4_REGEX.test(sections.at(-1) as string)) {
+    sections.splice(
+      -1,
+      1,
+      ...convertIPv6BinaryToString(convertIPv4ToBinary(sections.at(-1) as string)) // => ::7f00:0001
+        .substring(2) // => 7f00:0001
+        .split(':') // => ['7f00', '0001']
+    )
+  }
   for (let i = 0; i < sections.length; i++) {
     const node = sections[i]
     if (node !== '') {
@@ -71,11 +80,29 @@ export const convertIPv6ToBinary = (ipv6: string): bigint => {
 }
 
 /**
+ * Convert a binary representation of an IPv4 address to a string.
+ * @param ipV4 binary IPv4 Address
+ * @return IPv4 Address in string
+ */
+export const convertIPv4BinaryToString = (ipV4: bigint): string => {
+  const sections = []
+  for (let i = 0; i < 4; i++) {
+    sections.push((ipV4 >> BigInt(8 * (3 - i))) & 0xffn)
+  }
+  return sections.join('.')
+}
+
+/**
  * Convert a binary representation of an IPv6 address to a string.
  * @param ipV6 binary IPv6 Address
  * @return normalized IPv6 Address in string
  */
 export const convertIPv6BinaryToString = (ipV6: bigint): string => {
+  // IPv6-mapped IPv4 address
+  if (ipV6 >> 32n === 0xffffn) {
+    return `::ffff:${convertIPv4BinaryToString(ipV6 & 0xffffffffn)}`
+  }
+
   const sections = []
   for (let i = 0; i < 8; i++) {
     sections.push(((ipV6 >> BigInt(16 * (7 - i))) & 0xffffn).toString(16))

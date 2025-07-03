@@ -18,7 +18,7 @@ body:
       required: true
   - type: input
     attributes:
-      label: What runtime/platform is your app running on?
+      label: What runtime/platform is your app running on? (with version if possible)
       placeholder: Cloudflare Workers, Deno, Bun, etc.
     validations:
       required: true

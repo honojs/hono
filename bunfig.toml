@@ -1,6 +1,3 @@
-[install.lockfile]
-print = "yarn"
-
 [test]
 coverage = true
 coverageReporter = ["text", "lcov"]

@@ -47,6 +47,11 @@ describe('Basic Streaming Helper', () => {
   })
 
   it('Check stream Response if aborted by abort signal', async () => {
+    // Emulate an old version of Bun (version 1.1.0) for this specific test case
+    // @ts-expect-error Bun is not typed
+    global.Bun = {
+      version: '1.1.0',
+    }
     const ac = new AbortController()
     const req = new Request('http://localhost/', { signal: ac.signal })
     const c = new Context(req)
@@ -69,6 +74,37 @@ describe('Basic Streaming Helper', () => {
     expect(value).toEqual(new Uint8Array([0]))
     ac.abort()
     expect(aborted).toBeTruthy()
+    // @ts-expect-error Bun is not typed
+    delete global.Bun
+  })
+
+  it('Check stream Response if pipe is aborted by abort signal', async () => {
+    // Emulate an old version of Bun (version 1.1.0) for this specific test case
+    // @ts-expect-error Bun is not typed
+    global.Bun = {
+      version: '1.1.0',
+    }
+    const ac = new AbortController()
+    const req = new Request('http://localhost/', { signal: ac.signal })
+    const c = new Context(req)
+
+    let aborted = false
+    const res = stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      await stream.pipe(new ReadableStream())
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const pReading = reader.read()
+    ac.abort()
+    await pReading
+    expect(aborted).toBeTruthy()
+    // @ts-expect-error Bun is not typed
+    delete global.Bun
   })
 
   it('Check stream Response if error occurred', async () => {

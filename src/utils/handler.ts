@@ -3,7 +3,7 @@
  * Handler utility.
  */
 
-import { COMPOSED_HANDLER } from '../hono-base'
+import { COMPOSED_HANDLER } from './constants'
 
 export const isMiddleware = (handler: Function) => handler.length > 1
 export const findTargetHandler = (handler: Function): Function => {

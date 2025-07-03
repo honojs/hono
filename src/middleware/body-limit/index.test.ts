@@ -20,12 +20,12 @@ const buildRequestInit = (init: RequestInit = {}): RequestInit & { duplex: 'half
 describe('Body Limit Middleware', () => {
   let app: Hono
 
-  const exampleText = 'hono is so cool' // 15byte
-  const exampleText2 = 'hono is so cool and cute' // 24byte
+  const exampleText = 'hono is so hot' // 14byte
+  const exampleText2 = 'hono is so hot and cute' // 23byte
 
   beforeEach(() => {
     app = new Hono()
-    app.use('*', bodyLimit({ maxSize: 15 }))
+    app.use('*', bodyLimit({ maxSize: 14 }))
     app.get('/', (c) => c.text('index'))
     app.post('/body-limit-15byte', async (c) => {
       return c.text(await c.req.raw.text())

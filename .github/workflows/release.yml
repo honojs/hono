@@ -16,11 +16,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - name: Install deno
-        uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
-
+          deno-version: v2.x
+      - run: deno install --no-lock --allow-scripts
       - name: Publish to JSR
-        run: deno run -A jsr:@david/publish-on-tag@0.1.3
+        run: deno run -A jsr:@david/publish-on-tag@0.1.4
