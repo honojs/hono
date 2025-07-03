@@ -43,6 +43,7 @@ export type AddedSSGDataRequest = Request & {
 export const ssgParams: SSGParamsMiddleware = (params) => async (c, next) => {
   if (isDynamicRoute(c.req.path)) {
     ;(c.req.raw as AddedSSGDataRequest).ssgParams = Array.isArray(params) ? params : await params(c)
+    return c.notFound() // Prevent subsequent handler execution after ssgParams
   }
   await next()
 }
