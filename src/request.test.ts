@@ -222,6 +222,18 @@ describe('Body methods with caching', () => {
     )
   })
 
+  test('req.json() should keep the content as is', async () => {
+    const text = '{ "foo" : "bar" }'
+    const req = new HonoRequest(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: text,
+      })
+    )
+    expect(await req.json()).toEqual(JSON.parse(text))
+    expect(await req.text()).toEqual(text)
+  })
+
   test('req.arrayBuffer()', async () => {
     const buffer = new TextEncoder().encode('{"foo":"bar"}').buffer
     const req = new HonoRequest(
