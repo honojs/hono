@@ -11,6 +11,7 @@ import type { CookiePrefixOptions } from '../../utils/cookie'
 import { Jwt } from '../../utils/jwt'
 import '../../context'
 import type { HonoJsonWebKey } from '../../utils/jwt/jws'
+import type { VerifyOptions } from '../../utils/jwt/jwt'
 
 /**
  * JWK Auth Middleware for Hono.
@@ -45,9 +46,12 @@ export const jwk = (
     cookie?:
       | string
       | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
+    verification?: VerifyOptions
   },
   init?: RequestInit
 ): MiddlewareHandler => {
+  const verifyOpts = options.verification || {}
+
   if (!options || !(options.keys || options.jwks_uri)) {
     throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri" or both')
   }
@@ -118,7 +122,7 @@ export const jwk = (
       const keys = typeof options.keys === 'function' ? await options.keys(ctx) : options.keys
       const jwks_uri =
         typeof options.jwks_uri === 'function' ? await options.jwks_uri(ctx) : options.jwks_uri
-      payload = await Jwt.verifyFromJwks(token, { keys, jwks_uri }, init)
+      payload = await Jwt.verifyFromJwks(token, { keys, jwks_uri, verification: verifyOpts }, init)
     } catch (e) {
       cause = e
     }

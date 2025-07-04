@@ -12,6 +12,7 @@ import { Jwt } from '../../utils/jwt'
 import '../../context'
 import type { SignatureAlgorithm } from '../../utils/jwt/jwa'
 import type { SignatureKey } from '../../utils/jwt/jws'
+import type { VerifyOptions } from '../../utils/jwt/jwt'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type JwtVariables<T = any> = {
@@ -54,7 +55,10 @@ export const jwt = (options: {
     | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
   alg?: SignatureAlgorithm
   headerName?: string
+  verification?: VerifyOptions
 }): MiddlewareHandler => {
+  const verifyOpts = options.verification || {}
+
   if (!options || !options.secret) {
     throw new Error('JWT auth middleware requires options for "secret"')
   }
@@ -121,7 +125,10 @@ export const jwt = (options: {
     let payload
     let cause
     try {
-      payload = await Jwt.verify(token, options.secret, options.alg)
+      payload = await Jwt.verify(token, options.secret, {
+        alg: options.alg,
+        ...verifyOpts,
+      })
     } catch (e) {
       cause = e
     }
