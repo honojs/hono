@@ -11,8 +11,14 @@ export type SignedCookie = Record<string, string | false>
 type PartitionedCookieConstraint =
   | { partitioned: true; secure: true }
   | { partitioned?: boolean; secure?: boolean } // reset to default
-type SecureCookieConstraint = { secure: true }
-type HostCookieConstraint = { secure: true; path: '/'; domain?: undefined }
+interface SecureCookieConstraint {
+  secure: true
+}
+interface HostCookieConstraint {
+  secure: true
+  path: '/'
+  domain?: undefined
+}
 
 export type CookieOptions = {
   domain?: string
