@@ -163,7 +163,7 @@ export const streamHandle = <
 }
 
 type HandleOptions = {
-  contentTypesAsBinary: string[]
+  isContentTypeBinary: ((contentType: string) => boolean) | undefined
 }
 
 /**
@@ -171,7 +171,7 @@ type HandleOptions = {
  */
 export const handle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
   app: Hono<E, S, BasePath>,
-  { contentTypesAsBinary }: HandleOptions = { contentTypesAsBinary: [] }
+  { isContentTypeBinary }: HandleOptions = { isContentTypeBinary: undefined }
 ): (<L extends LambdaEvent>(
   event: L,
   lambdaContext?: LambdaContext
@@ -194,7 +194,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
       lambdaContext,
     })
 
-    return processor.createResult(event, res, { contentTypesAsBinary })
+    return processor.createResult(event, res, { isContentTypeBinary })
   }
 }
 
@@ -239,19 +239,16 @@ export abstract class EventProcessor<E extends LambdaEvent> {
   async createResult(
     event: E,
     res: Response,
-    options: { contentTypesAsBinary: string[] } = { contentTypesAsBinary: [] }
+    options: Pick<HandleOptions, 'isContentTypeBinary'>
   ): Promise<APIGatewayProxyResult> {
+    // determine whether the response body should be base64 encoded
     const contentType = res.headers.get('content-type')
-    let isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
+    const _isContentTypeBinary = options.isContentTypeBinary ?? isContentTypeBinary // override default function if provided
+    let isBase64Encoded = contentType && _isContentTypeBinary(contentType) ? true : false
 
     if (!isBase64Encoded) {
       const contentEncoding = res.headers.get('content-encoding')
       isBase64Encoded = isContentEncodingBinary(contentEncoding)
-    }
-
-    if (!isBase64Encoded) {
-      // fallback: treat specific content-type as binary to be base64-encoded
-      isBase64Encoded = options.contentTypesAsBinary.includes(contentType ?? '')
     }
 
     const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
@@ -504,6 +501,12 @@ const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => 
   return Object.hasOwn(event, 'rawPath')
 }
 
+/**
+ * Check if the given content type is binary.
+ * This is a default function and may be overridden by the user via `isContentTypeBinary` option in handler().
+ * @param contentType The content type to check.
+ * @returns True if the content type is binary, false otherwise.
+ */
 export const isContentTypeBinary = (contentType: string) => {
   return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
     contentType

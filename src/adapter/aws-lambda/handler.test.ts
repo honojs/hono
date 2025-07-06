@@ -81,14 +81,14 @@ describe('EventProcessor.createResult with contentTypsAsBinary', () => {
     })
 
     const result = await processor.createResult(event, response, {
-      contentTypesAsBinary: ['application/custom'],
+      isContentTypeBinary: (contentType: string) => contentType === 'application/custom',
     })
 
     expect(result.isBase64Encoded).toBe(true)
     expect(result.body).toBe('dGVzdCBjb250ZW50')
   })
 
-  it('Should not encode as base64 when content-type is not in contentTypesAsBinary array', async () => {
+  it('Should not encode as base64 when content-type is not in isContentTypeBinary array', async () => {
     const event: LambdaEvent = {
       version: '1.0',
       resource: '/my/path',
@@ -139,7 +139,7 @@ describe('EventProcessor.createResult with contentTypsAsBinary', () => {
     })
 
     const result = await processor.createResult(event, response, {
-      contentTypesAsBinary: ['application/custom'],
+      isContentTypeBinary: (contentType: string) => contentType === 'application/custom',
     })
 
     expect(result.isBase64Encoded).toBe(false)
