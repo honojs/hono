@@ -24,6 +24,7 @@ import type { VerifyOptions } from '../../utils/jwt/jwt'
  * @param {boolean} [options.allow_anon] - If set to `true`, the middleware allows requests without a token to proceed without authentication.
  * @param {string} [options.cookie] - If set, the middleware attempts to retrieve the token from a cookie with these options (optionally signed) only if no token is found in the header.
  * @param {RequestInit} [init] - Optional init options for the `fetch` request when retrieving JWKS from a URI.
+ * @param {VerifyOptions} [options.verification] - Additional options for JWK payload verification.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example

@@ -29,6 +29,7 @@ export type JwtVariables<T = any> = {
  * @param {string} [options.cookie] - If this value is set, then the value is retrieved from the cookie header using that value as a key, which is then validated as a token.
  * @param {SignatureAlgorithm} [options.alg=HS256] - An algorithm type that is used for verifying. Available types are `HS256` | `HS384` | `HS512` | `RS256` | `RS384` | `RS512` | `PS256` | `PS384` | `PS512` | `ES256` | `ES384` | `ES512` | `EdDSA`.
  * @param {string} [options.headerName='Authorization'] - The name of the header to look for the JWT token. Default is 'Authorization'.
+ * @param {VerifyOptions} [options.verification] - Additional options for JWT payload verification.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
