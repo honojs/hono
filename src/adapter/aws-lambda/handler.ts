@@ -544,7 +544,7 @@ const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => 
  * @param contentType The content type to check.
  * @returns True if the content type is binary, false otherwise.
  */
-export const defaultIsContentTypeBinary = (contentType: string) => {
+export const defaultIsContentTypeBinary = (contentType: string): boolean => {
   return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
     contentType
   )
