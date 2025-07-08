@@ -1,19 +1,19 @@
 import type { LambdaEvent } from './handler'
-import { getProcessor, isContentEncodingBinary, isContentTypeBinary } from './handler'
+import { getProcessor, isContentEncodingBinary, defaultIsContentTypeBinary } from './handler'
 
 describe('isContentTypeBinary', () => {
   it('Should determine whether it is binary', () => {
-    expect(isContentTypeBinary('image/png')).toBe(true)
-    expect(isContentTypeBinary('font/woff2')).toBe(true)
-    expect(isContentTypeBinary('image/svg+xml')).toBe(false)
-    expect(isContentTypeBinary('image/svg+xml; charset=UTF-8')).toBe(false)
-    expect(isContentTypeBinary('text/plain')).toBe(false)
-    expect(isContentTypeBinary('text/plain; charset=UTF-8')).toBe(false)
-    expect(isContentTypeBinary('text/css')).toBe(false)
-    expect(isContentTypeBinary('text/javascript')).toBe(false)
-    expect(isContentTypeBinary('application/json')).toBe(false)
-    expect(isContentTypeBinary('application/ld+json')).toBe(false)
-    expect(isContentTypeBinary('application/json')).toBe(false)
+    expect(defaultIsContentTypeBinary('image/png')).toBe(true)
+    expect(defaultIsContentTypeBinary('font/woff2')).toBe(true)
+    expect(defaultIsContentTypeBinary('image/svg+xml')).toBe(false)
+    expect(defaultIsContentTypeBinary('image/svg+xml; charset=UTF-8')).toBe(false)
+    expect(defaultIsContentTypeBinary('text/plain')).toBe(false)
+    expect(defaultIsContentTypeBinary('text/plain; charset=UTF-8')).toBe(false)
+    expect(defaultIsContentTypeBinary('text/css')).toBe(false)
+    expect(defaultIsContentTypeBinary('text/javascript')).toBe(false)
+    expect(defaultIsContentTypeBinary('application/json')).toBe(false)
+    expect(defaultIsContentTypeBinary('application/ld+json')).toBe(false)
+    expect(defaultIsContentTypeBinary('application/json')).toBe(false)
   })
 })
 

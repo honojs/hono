@@ -243,8 +243,8 @@ export abstract class EventProcessor<E extends LambdaEvent> {
   ): Promise<APIGatewayProxyResult> {
     // determine whether the response body should be base64 encoded
     const contentType = res.headers.get('content-type')
-    const _isContentTypeBinary = options.isContentTypeBinary ?? isContentTypeBinary // overwrite default function if provided
-    let isBase64Encoded = contentType && _isContentTypeBinary(contentType) ? true : false
+    const isContentTypeBinary = options.isContentTypeBinary ?? defaultIsContentTypeBinary // overwrite default function if provided
+    let isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
 
     if (!isBase64Encoded) {
       const contentEncoding = res.headers.get('content-encoding')
@@ -507,7 +507,7 @@ const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => 
  * @param contentType The content type to check.
  * @returns True if the content type is binary, false otherwise.
  */
-export const isContentTypeBinary = (contentType: string) => {
+export const defaultIsContentTypeBinary = (contentType: string) => {
   return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
     contentType
   )
