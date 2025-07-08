@@ -167,7 +167,44 @@ type HandleOptions = {
 }
 
 /**
- * Accepts events from API Gateway/ELB(`APIGatewayProxyEvent`) and directly through Function Url(`APIGatewayProxyEventV2`)
+ * Converts a Hono application to an AWS Lambda handler.
+ *
+ * Accepts events from API Gateway (v1 and v2), Application Load Balancer (ALB),
+ * and Lambda Function URLs.
+ *
+ * @param app - The Hono application instance
+ * @param options - Optional configuration
+ * @param options.isContentTypeBinary - A function to determine if the content type is binary.
+ *                                      If not provided, the default function will be used.
+ * @returns Lambda handler function
+ *
+ * @example
+ * ```js
+ * import { Hono } from 'hono'
+ * import { handle } from 'hono/aws-lambda'
+ *
+ * const app = new Hono()
+ *
+ * app.get('/', (c) => c.text('Hello from Lambda'))
+ * app.get('/json', (c) => c.json({ message: 'Hello JSON' }))
+ *
+ * export const handler = handle(app)
+ * ```
+ *
+ * @example
+ * ```js
+ * // With custom binary content type detection
+ * import { handle, defaultIsContentTypeBinary } from 'hono/aws-lambda'
+ * export const handler = handle(app, {
+ *   isContentTypeBinary: (contentType) => {
+ *     if (defaultIsContentTypeBinary(contentType)) {
+ *       // default logic same as prior to v4.8.4
+ *       return true
+ *     }
+ *     return contentType.startsWith('image/') || contentType === 'application/pdf'
+ *   }
+ * })
+ * ```
  */
 export const handle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
   app: Hono<E, S, BasePath>,
