@@ -102,6 +102,17 @@ jobs:
         with:
           name: coverage-bun
           path: coverage/
+
+  bun-windows:
+    name: 'Bun - Windows'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: '1.1.39'
+      - run: bun run test:bun
+
   fastly:
     name: 'Fastly Compute'
     runs-on: ubuntu-latest
