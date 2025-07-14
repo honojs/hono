@@ -22,6 +22,7 @@ import type { HonoJsonWebKey } from '../../utils/jwt/jws'
  * @param {string | ((ctx: Context) => Promise<string> | string)} [options.jwks_uri] - If set to a URI string or a function that returns a URI string, attempt to fetch JWKs from it. The response must be a JSON object containing a `keys` array, which will be merged with the `keys` option.
  * @param {boolean} [options.allow_anon] - If set to `true`, the middleware allows requests without a token to proceed without authentication.
  * @param {string} [options.cookie] - If set, the middleware attempts to retrieve the token from a cookie with these options (optionally signed) only if no token is found in the header.
+ * @param {string} [options.headerName='Authorization'] - The name of the header to look for the JWT token. Default is 'Authorization'.
  * @param {RequestInit} [init] - Optional init options for the `fetch` request when retrieving JWKS from a URI.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
@@ -29,7 +30,10 @@ import type { HonoJsonWebKey } from '../../utils/jwt/jws'
  * ```ts
  * const app = new Hono()
  *
- * app.use("/auth/*", jwk({ jwks_uri: (c) => `https://${c.env.authServer}/.well-known/jwks.json` }))
+ * app.use("/auth/*", jwk({
+ *   jwks_uri: (c) => `https://${c.env.authServer}/.well-known/jwks.json`,
+ *   headerName: 'x-custom-auth-header', // Optional, default is 'Authorization'
+ * }))
  *
  * app.get('/auth/page', (c) => {
  *   return c.text('You are authorized')
@@ -45,6 +49,7 @@ export const jwk = (
     cookie?:
       | string
       | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
+    headerName?: string
   },
   init?: RequestInit
 ): MiddlewareHandler => {
@@ -57,7 +62,9 @@ export const jwk = (
   }
 
   return async function jwk(ctx, next) {
-    const credentials = ctx.req.raw.headers.get('Authorization')
+    const headerName = options.headerName || 'Authorization'
+
+    const credentials = ctx.req.raw.headers.get(headerName)
     let token
     if (credentials) {
       const parts = credentials.split(/\s+/)
