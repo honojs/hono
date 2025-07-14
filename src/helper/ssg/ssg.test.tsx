@@ -955,3 +955,42 @@ describe('SSG Plugin System', () => {
     )
   })
 })
+
+describe('ssgParams', () => {
+  it('should invoke callback only once', async () => {
+    const app = new Hono()
+    const cb = vi.fn(() => [{ post: '1' }, { post: '2' }])
+    app.get('/post/:post', ssgParams(cb), (c) => c.html(<h1>{c.req.param('post')}</h1>))
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+    await toSSG(app, fsMock)
+
+    expect(cb).toHaveBeenCalledTimes(1)
+  })
+
+  it('should not invoke handler after ssgParams for dynamic route request', async () => {
+    const app = new Hono()
+    const log = vi.fn()
+    app.get(
+      '/shops/:id',
+      ssgParams(() => [{ id: 'shop1' }]),
+      async (c) => {
+        const id = c.req.param('id')
+        log(id)
+        return c.html(id)
+      }
+    )
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+    await toSSG(app, fsMock)
+
+    expect(log).toHaveBeenCalledTimes(1)
+    expect(log).toHaveBeenCalledWith('shop1')
+    expect(fsMock.writeFile).toHaveBeenCalledTimes(1)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/shops/shop1.html', 'shop1')
+  })
+})

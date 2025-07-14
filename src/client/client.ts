@@ -166,6 +166,7 @@ export const hc = <T extends Hono<any, any, any>>(
           result = result + '?' + buildSearchParams(opts.args[0].query).toString()
         }
       }
+      result = removeIndexString(result)
       return new URL(result)
     }
     if (method === 'ws') {
