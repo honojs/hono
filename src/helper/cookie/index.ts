@@ -75,7 +75,12 @@ export const getSignedCookie: GetSignedCookie = async (
   return obj as any
 }
 
-export const setCookie = (c: Context, name: string, value: string, opt?: CookieOptions): void => {
+export const generateCookie = (
+  c: Context,
+  name: string,
+  value: string,
+  opt?: CookieOptions
+): string => {
   // Cookie names prefixed with __Secure- can be used only if they are set with the secure attribute.
   // Cookie names prefixed with __Host- can be used only if they are set with the secure attribute, must have a path of / (meaning any path at the host)
   // and must not have a Domain attribute.
@@ -93,6 +98,12 @@ export const setCookie = (c: Context, name: string, value: string, opt?: CookieO
   } else {
     cookie = serialize(name, value, { path: '/', ...opt })
   }
+
+  return cookie
+}
+
+export const setCookie = (c: Context, name: string, value: string, opt?: CookieOptions): void => {
+  const cookie = generateCookie(c, name, value, opt)
   c.header('Set-Cookie', cookie, { append: true })
 }
 
