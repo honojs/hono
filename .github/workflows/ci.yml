@@ -204,7 +204,7 @@ jobs:
         run: |
           sudo apt-get install gcc git wget make libncurses-dev flex bison gperf libgtk-3-dev
           git clone https://github.com/Moddable-OpenSource/moddable
-          export MODDABLE=$GITHUB_WORKSPACE:/moddable
+          export MODDABLE="${GITHUB_WORKSPACE}/moddable"
           export PATH=$PATH:$MODDABLE/build/bin/lin/release
           cd $MODDABLE/build/makefiles/lin
           make
