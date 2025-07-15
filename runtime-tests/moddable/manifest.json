@@ -13,7 +13,7 @@
     "modules": {
         "*": [
             "$(MODDABLE)/examples/io/streams/modules/streams.js",
-            "./dist/main.js"
+            "./dist/simple-app.js"
         ]
     },
     "creation": {
