@@ -208,7 +208,8 @@ jobs:
           export PATH=$PATH:$MODDABLE/build/bin/lin/release
           cd $MODDABLE/build/makefiles/lin
           make
-
+      - name: Run mcconfig
+        run: mcconfig
       - run: bun run build
       - run: bun run test:moddable
       - uses: actions/upload-artifact@v4
