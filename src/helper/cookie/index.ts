@@ -107,13 +107,13 @@ export const setCookie = (c: Context, name: string, value: string, opt?: CookieO
   c.header('Set-Cookie', cookie, { append: true })
 }
 
-export const setSignedCookie = async (
+export const generateSignedCookie = async (
   c: Context,
   name: string,
   value: string,
   secret: string | BufferSource,
   opt?: CookieOptions
-): Promise<void> => {
+): Promise<string> => {
   let cookie
   if (opt?.prefix === 'secure') {
     cookie = await serializeSigned('__Secure-' + name, value, secret, {
@@ -131,6 +131,18 @@ export const setSignedCookie = async (
   } else {
     cookie = await serializeSigned(name, value, secret, { path: '/', ...opt })
   }
+
+  return cookie
+}
+
+export const setSignedCookie = async (
+  c: Context,
+  name: string,
+  value: string,
+  secret: string | BufferSource,
+  opt?: CookieOptions
+): Promise<void> => {
+  const cookie = await generateSignedCookie(c, name, value, secret, opt)
   c.header('set-cookie', cookie, { append: true })
 }
 
