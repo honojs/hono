@@ -3,4 +3,5 @@
  * @module
  */
 
+import './patch'
 export { Handler, handle } from './handler'
