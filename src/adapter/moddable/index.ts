@@ -9,7 +9,4 @@
  * @module
  */
 
-export {
-  Handler,
-  handle
-} from './handler'
+export { Handler, handle } from './handler'

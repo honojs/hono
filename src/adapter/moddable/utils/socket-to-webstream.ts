@@ -1,4 +1,4 @@
-import type { Socket } from "socket"
+import type { Socket } from 'socket'
 
 export function createStreamFromSocket(socket: Socket) {
   const readable = new ReadableStream<Uint8Array>({
@@ -28,7 +28,7 @@ export function createStreamFromSocket(socket: Socket) {
           }
         }
       }
-    }
+    },
   })
   const writable = new WritableStream<Uint8Array>({
     write(chunk) {
@@ -36,10 +36,10 @@ export function createStreamFromSocket(socket: Socket) {
     },
     close() {
       socket.close()
-    }
+    },
   })
   return {
     readable,
-    writable
+    writable,
   }
 }

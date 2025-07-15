@@ -2,11 +2,11 @@ const HEADER_END = [13, 10, 13, 10] // \r\n\r\n
 
 function findHeaderEnd(buff: Uint8Array): number {
   for (let i = 0; i <= buff.length - HEADER_END.length; i++) {
-    let found = true;
+    let found = true
     for (let j = 0; j < HEADER_END.length; j++) {
       if (buff[i + j] !== HEADER_END[j]) {
-        found = false;
-        break;
+        found = false
+        break
       }
     }
     if (found) {
@@ -17,17 +17,17 @@ function findHeaderEnd(buff: Uint8Array): number {
 }
 
 export async function parseHTTP(input: ReadableStream<Uint8Array>) {
-  const reader = input.getReader();
-  
+  const reader = input.getReader()
+
   // first, continue reading until we find the end of the headers
   let httpMetadata = new Uint8Array(0)
   let firstBody = new Uint8Array(0)
   while (true) {
-    const { done, value } = await reader.read();
+    const { done, value } = await reader.read()
     if (done) {
       return null // unexpected end of stream
     }
-    httpMetadata = new Uint8Array([...httpMetadata, ...value]);
+    httpMetadata = new Uint8Array([...httpMetadata, ...value])
     const headerEndIndex = findHeaderEnd(httpMetadata)
     if (headerEndIndex !== -1) {
       // end of headers found
@@ -38,17 +38,17 @@ export async function parseHTTP(input: ReadableStream<Uint8Array>) {
   }
   const body = new ReadableStream<Uint8Array>({
     async start(controller) {
-      controller.enqueue(firstBody);
+      controller.enqueue(firstBody)
       firstBody = new Uint8Array(0) // for memory efficiency
       while (true) {
-        const { done, value } = await reader.read();
+        const { done, value } = await reader.read()
         if (done) {
-          controller.close();
-          break;
+          controller.close()
+          break
         }
-        controller.enqueue(value);
+        controller.enqueue(value)
       }
-    }
+    },
   })
   const metadataText = new TextDecoder().decode(httpMetadata)
   const [requestLine, ...headerLines] = metadataText.split('\r\n')
@@ -66,7 +66,7 @@ export async function parseHTTP(input: ReadableStream<Uint8Array>) {
   }
   const headers: Record<string, string> = {}
   for (const line of headerLines) {
-    if (line.trim() === '') continue // skip empty lines
+    if (line.trim() === '') {continue} // skip empty lines
     const keyValueIndex = line.indexOf(':')
     if (keyValueIndex === -1) {
       continue // invalid header line
@@ -81,6 +81,6 @@ export async function parseHTTP(input: ReadableStream<Uint8Array>) {
     path,
     version,
     headers,
-    body
+    body,
   }
 }

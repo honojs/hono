@@ -12,14 +12,12 @@ const encoder = new TextEncoder()
 /**
  * A handler passed to TCP Server
  */
-export type Handler = (this: {
-  callback: () => void;
-}) => void
+export type Handler = (this: { callback: () => void }) => void
 
 /**
  * Create a callback function passed to TCP Server
  * @param app Hono app or an object which has `fetch` method.
- * @param port 
+ * @param port
  * @returns a handler passed to TCP Server
  * @example
  * ```ts
@@ -29,16 +27,14 @@ export type Handler = (this: {
  *
  * const app = new Hono()
  * app.get('/', c => c.text('Hello Hono on moddable!'))
- * 
+ *
  * const listener = new Listener({ port: 3000 })
  * listener.callback = handle(app)
  * trace('Server is running on http://localhost:3000')
  * ```
  */
-export function handle(app: {
-  fetch: (req: Request) => Promise<Response> | Response
-}): Handler {
-  return async function callback () {
+export function handle(app: { fetch: (req: Request) => Promise<Response> | Response }): Handler {
+  return async function callback() {
     const socket = new Socket({ listener: this })
     const { readable, writable } = createStreamFromSocket(socket)
     // parse the request
@@ -51,7 +47,7 @@ export function handle(app: {
     const req = new Request(`http://localhost/${rawRequest.path}`, {
       method: rawRequest.method,
       headers: rawRequest.headers,
-      body: rawRequest.body
+      body: rawRequest.body,
     })
     const res = await app.fetch(req)
     // send response
@@ -60,7 +56,7 @@ export function handle(app: {
     res.headers.forEach((v, k) => {
       writer.write(encoder.encode(`${k}: ${v}\r\n`))
     })
-    writer.write(encoder.encode(`\r\n`))
+    writer.write(encoder.encode('\r\n'))
     if (res.body) {
       const reader = res.body.getReader()
       while (true) {
