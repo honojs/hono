@@ -93,7 +93,6 @@ export const generateCookie = (name: string, value: string, opt?: CookieOptions)
   } else {
     cookie = serialize(name, value, { path: '/', ...opt })
   }
-
   return cookie
 }
 
@@ -125,7 +124,6 @@ export const generateSignedCookie = async (
   } else {
     cookie = await serializeSigned(name, value, secret, { path: '/', ...opt })
   }
-
   return cookie
 }
 
