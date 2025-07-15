@@ -1,0 +1,22 @@
+{
+    "include": [
+        "$(MODDABLE)/examples/manifest_base.json",
+        "$(MODDABLE)/examples/manifest_net.json",
+        "$(MODULES)/network/http/manifest.json",
+        "$(MODDABLE)/modules/data/headers/manifest.json",
+        "$(MODDABLE)/modules/data/url/manifest.json",
+        "$(MODDABLE)/modules/data/text/encoder/manifest.json",
+        "$(MODDABLE)/modules/data/text/decoder/manifest.json",
+        "$(MODDABLE)/modules/data/headers/manifest.json",
+        "$(MODDABLE)/modules/network/websocket/manifest.json"
+    ],
+    "modules": {
+        "*": [
+            "$(MODDABLE)/examples/io/streams/modules/streams.js",
+            "./dist/main.js"
+        ]
+    },
+    "creation": {
+        "stack": 2048
+    }
+}
