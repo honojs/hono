@@ -66,7 +66,9 @@ export async function parseHTTP(input: ReadableStream<Uint8Array>) {
   }
   const headers: Record<string, string> = {}
   for (const line of headerLines) {
-    if (line.trim() === '') {continue} // skip empty lines
+    if (line.trim() === '') {
+      continue
+    } // skip empty lines
     const keyValueIndex = line.indexOf(':')
     if (keyValueIndex === -1) {
       continue // invalid header line

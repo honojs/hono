@@ -46,10 +46,10 @@ describe('Secure Headers Middleware', () => {
       '*',
       secureHeaders({
         contentSecurityPolicy: {
-          defaultSrc: ['\'self\''],
+          defaultSrc: ["'self'"],
         },
         contentSecurityPolicyReportOnly: {
-          defaultSrc: ['\'self\''],
+          defaultSrc: ["'self'"],
         },
         crossOriginEmbedderPolicy: true,
         permissionsPolicy: {
@@ -80,8 +80,8 @@ describe('Secure Headers Middleware', () => {
     expect(res.headers.get('Origin-Agent-Cluster')).toEqual('?1')
     expect(res.headers.get('Cross-Origin-Embedder-Policy')).toEqual('require-corp')
     expect(res.headers.get('Permissions-Policy')).toEqual('camera=()')
-    expect(res.headers.get('Content-Security-Policy')).toEqual('default-src \'self\'')
-    expect(res.headers.get('Content-Security-Policy-Report-Only')).toEqual('default-src \'self\'')
+    expect(res.headers.get('Content-Security-Policy')).toEqual("default-src 'self'")
+    expect(res.headers.get('Content-Security-Policy-Report-Only')).toEqual("default-src 'self'")
   })
 
   it('specific headers disabled', async () => {
@@ -236,15 +236,15 @@ describe('Secure Headers Middleware', () => {
         '/test',
         secureHeaders({
           [cspSettingName]: {
-            defaultSrc: ['\'self\''],
-            baseUri: ['\'self\''],
-            fontSrc: ['\'self\'', 'https:', 'data:'],
-            frameAncestors: ['\'self\''],
-            imgSrc: ['\'self\'', 'data:'],
-            objectSrc: ['\'none\''],
-            scriptSrc: ['\'self\''],
-            scriptSrcAttr: ['\'none\''],
-            styleSrc: ['\'self\'', 'https:', '\'unsafe-inline\''],
+            defaultSrc: ["'self'"],
+            baseUri: ["'self'"],
+            fontSrc: ["'self'", 'https:', 'data:'],
+            frameAncestors: ["'self'"],
+            imgSrc: ["'self'", 'data:'],
+            objectSrc: ["'none'"],
+            scriptSrc: ["'self'"],
+            scriptSrcAttr: ["'none'"],
+            styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
           },
         })
       )
@@ -256,7 +256,7 @@ describe('Secure Headers Middleware', () => {
 
       const res = await app.request('/test')
       expect(res.headers.get(cspHeaderName)).toEqual(
-        'default-src \'self\'; base-uri \'self\'; font-src \'self\' https: data:; frame-ancestors \'self\'; img-src \'self\' data:; object-src \'none\'; script-src \'self\'; script-src-attr \'none\'; style-src \'self\' https: \'unsafe-inline\''
+        "default-src 'self'; base-uri 'self'; font-src 'self' https: data:; frame-ancestors 'self'; img-src 'self' data:; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self' https: 'unsafe-inline'"
       )
     })
 
@@ -266,7 +266,7 @@ describe('Secure Headers Middleware', () => {
         '/test',
         secureHeaders({
           [cspSettingName]: {
-            defaultSrc: ['\'self\''],
+            defaultSrc: ["'self'"],
           },
         })
       )
@@ -276,7 +276,7 @@ describe('Secure Headers Middleware', () => {
       })
 
       const res = await app.request('/test')
-      expect(res.headers.get(cspHeaderName)).toEqual('default-src \'self\'')
+      expect(res.headers.get(cspHeaderName)).toEqual("default-src 'self'")
     })
 
     it('No CSP Setting', async () => {
@@ -303,7 +303,7 @@ describe('Secure Headers Middleware', () => {
             },
           ],
           [cspSettingName]: {
-            defaultSrc: ['\'self\''],
+            defaultSrc: ["'self'"],
             reportTo: 'endpoint-1',
           },
         })
@@ -320,7 +320,7 @@ describe('Secure Headers Middleware', () => {
             },
           ],
           [cspSettingName]: {
-            defaultSrc: ['\'self\''],
+            defaultSrc: ["'self'"],
             reportTo: 'endpoint-1',
           },
         })
@@ -348,7 +348,7 @@ describe('Secure Headers Middleware', () => {
             },
           ],
           [cspSettingName]: {
-            defaultSrc: ['\'self\''],
+            defaultSrc: ["'self'"],
             reportTo: 'g2',
           },
         })
@@ -368,7 +368,7 @@ describe('Secure Headers Middleware', () => {
             },
           ],
           [cspSettingName]: {
-            defaultSrc: ['\'self\''],
+            defaultSrc: ["'self'"],
             reportTo: 'e1',
           },
         })
@@ -382,25 +382,25 @@ describe('Secure Headers Middleware', () => {
       expect(res1.headers.get('Reporting-Endpoints')).toEqual(
         'endpoint-1="https://example.com/reports"'
       )
-      expect(res1.headers.get(cspHeaderName)).toEqual('default-src \'self\'; report-to endpoint-1')
+      expect(res1.headers.get(cspHeaderName)).toEqual("default-src 'self'; report-to endpoint-1")
 
       const res2 = await app.request('/test2')
       expect(res2.headers.get('Report-To')).toEqual(
         '{"group":"endpoint-1","max_age":10886400,"endpoints":[{"url":"https://example.com/reports"}]}'
       )
-      expect(res2.headers.get(cspHeaderName)).toEqual('default-src \'self\'; report-to endpoint-1')
+      expect(res2.headers.get(cspHeaderName)).toEqual("default-src 'self'; report-to endpoint-1")
 
       const res3 = await app.request('/test3')
       expect(res3.headers.get('Report-To')).toEqual(
         '{"group":"g1","max_age":10886400,"endpoints":[{"url":"https://a.example.com/reports"},{"url":"https://b.example.com/reports"}]}, {"group":"g2","max_age":10886400,"endpoints":[{"url":"https://c.example.com/reports"},{"url":"https://d.example.com/reports"}]}'
       )
-      expect(res3.headers.get(cspHeaderName)).toEqual('default-src \'self\'; report-to g2')
+      expect(res3.headers.get(cspHeaderName)).toEqual("default-src 'self'; report-to g2")
 
       const res4 = await app.request('/test4')
       expect(res4.headers.get('Reporting-Endpoints')).toEqual(
         'e1="https://a.example.com/reports", e2="https://b.example.com/reports"'
       )
-      expect(res4.headers.get(cspHeaderName)).toEqual('default-src \'self\'; report-to e1')
+      expect(res4.headers.get(cspHeaderName)).toEqual("default-src 'self'; report-to e1")
     })
 
     it('CSP nonce for script-src', async () => {
@@ -409,7 +409,7 @@ describe('Secure Headers Middleware', () => {
         '/test',
         secureHeaders({
           [cspSettingName]: {
-            scriptSrc: ['\'self\'', NONCE],
+            scriptSrc: ["'self'", NONCE],
           },
         })
       )
@@ -431,8 +431,8 @@ describe('Secure Headers Middleware', () => {
         '/test',
         secureHeaders({
           [cspSettingName]: {
-            scriptSrc: ['\'self\'', NONCE],
-            styleSrc: ['\'self\'', NONCE],
+            scriptSrc: ["'self'", NONCE],
+            styleSrc: ["'self'", NONCE],
           },
         })
       )
@@ -459,8 +459,8 @@ describe('Secure Headers Middleware', () => {
         '/test',
         secureHeaders({
           [cspSettingName]: {
-            scriptSrc: ['\'self\'', setNonce],
-            styleSrc: ['\'self\'', setNonce],
+            scriptSrc: ["'self'", setNonce],
+            styleSrc: ["'self'", setNonce],
           },
         })
       )
@@ -473,8 +473,8 @@ describe('Secure Headers Middleware', () => {
 
       const res = await app.request('/test')
       const csp = res.headers.get(cspHeaderName)
-      expect(csp).toMatch('script-src \'self\' \'nonce-scriptSrc\'')
-      expect(csp).toMatch('style-src \'self\' \'nonce-styleSrc\'')
+      expect(csp).toMatch("script-src 'self' 'nonce-scriptSrc'")
+      expect(csp).toMatch("style-src 'self' 'nonce-styleSrc'")
       expect(await res.text()).toEqual('script: scriptSrc, style: styleSrc')
     })
   })
