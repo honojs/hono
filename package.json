@@ -657,7 +657,6 @@
   "devDependencies": {
     "@hono/eslint-config": "^1.0.2",
     "@hono/node-server": "^1.13.5",
-    "@moddable/typings": "^5.8.0",
     "@types/glob": "^8.1.0",
     "@types/jsdom": "^21.1.7",
     "@types/node": "20.11.4",

@@ -3,6 +3,7 @@
  * @module
  */
 
+// @ts-ignore Runtime API
 import { Socket } from 'socket'
 import { parseHTTP } from './utils/http-parser'
 import { createStreamFromSocket } from './utils/socket-to-webstream'
