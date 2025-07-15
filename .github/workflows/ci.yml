@@ -202,6 +202,7 @@ jobs:
       - run: bun install
       - name: Install Moddable SDK
         run: |
+          bun i -g node-gyp-build
           bun i -g xs-dev
       - name: Run mcconfig
         run: xs-dev
