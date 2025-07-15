@@ -6,5 +6,7 @@ describe('moddable', () => {
   })
   it('dist', () => {
     execSync(`cd runtime-tests/moddable && mcconfig -dl -m -p lin`)
+  }, {
+    timeout: 1000 * 60 * 5 // 5 minutes
   })
 })
