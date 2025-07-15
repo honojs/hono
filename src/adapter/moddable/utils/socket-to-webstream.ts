@@ -1,7 +1,11 @@
 interface Socket {
-  callback: (this: {
-    read(type: typeof ArrayBuffer): ArrayBuffer
-  }, message: number, value?: unknown) => void
+  callback: (
+    this: {
+      read(type: typeof ArrayBuffer): ArrayBuffer
+    },
+    message: number,
+    value?: unknown
+  ) => void
   write(chunk: ArrayBuffer): void
   close(): void
 }
