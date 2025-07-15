@@ -75,12 +75,7 @@ export const getSignedCookie: GetSignedCookie = async (
   return obj as any
 }
 
-export const generateCookie = (
-  c: Context,
-  name: string,
-  value: string,
-  opt?: CookieOptions
-): string => {
+export const generateCookie = (name: string, value: string, opt?: CookieOptions): string => {
   // Cookie names prefixed with __Secure- can be used only if they are set with the secure attribute.
   // Cookie names prefixed with __Host- can be used only if they are set with the secure attribute, must have a path of / (meaning any path at the host)
   // and must not have a Domain attribute.
@@ -103,12 +98,11 @@ export const generateCookie = (
 }
 
 export const setCookie = (c: Context, name: string, value: string, opt?: CookieOptions): void => {
-  const cookie = generateCookie(c, name, value, opt)
+  const cookie = generateCookie(name, value, opt)
   c.header('Set-Cookie', cookie, { append: true })
 }
 
 export const generateSignedCookie = async (
-  c: Context,
   name: string,
   value: string,
   secret: string | BufferSource,
@@ -142,7 +136,7 @@ export const setSignedCookie = async (
   secret: string | BufferSource,
   opt?: CookieOptions
 ): Promise<void> => {
-  const cookie = await generateSignedCookie(c, name, value, secret, opt)
+  const cookie = await generateSignedCookie(name, value, secret, opt)
   c.header('set-cookie', cookie, { append: true })
 }
 
