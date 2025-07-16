@@ -1,4 +1,4 @@
-import { exec, execSync, spawn, spawnSync } from "node:child_process"
+import { execSync, spawn } from "node:child_process"
 
 function isCommandAvailable(command: string): boolean {
   try {
@@ -28,7 +28,7 @@ if (!moddableEnvironment) {
 }
 
 const skip = !isModdableInstalled || !moddableEnvironment
-console.log(`Moddable environment: ${moddableEnvironment}, isModdableInstalled: ${isModdableInstalled}`)
+
 describe('moddable', { skip },  (aa) => {
   beforeAll(() => {
     execSync('bun build runtime-tests/moddable/tests/main.ts --external socket --external streams --external text/decoder --external text/encoder --external headers --outdir runtime-tests/moddable/dist')
@@ -46,13 +46,11 @@ describe('moddable', { skip },  (aa) => {
       let output = ''
       mcconfigProc.stdout.on('data', data => {
         output += data.toString()
-        console.log(output)
-        if (output.includes('listening on port 5002.')) {
+        if (output.includes('connected to "moddable"')) {
           resolve()
         }
       })
     })
-    await new Promise(resolve => setTimeout(resolve, 1000)) // wait for server to start
     expect(await fetch('http://localhost:3000').then(res => res.text())).toEqual('{"hono":"moddable"}')
     mcconfigProc.kill('SIGSTOP')
   })
