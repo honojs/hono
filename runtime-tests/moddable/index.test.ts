@@ -47,11 +47,12 @@ describe('moddable', { skip },  (aa) => {
       mcconfigProc.stdout.on('data', data => {
         output += data.toString()
         console.log(output)
-        if (output.includes('connected to "moddable"')) {
+        if (output.includes('listening on port 5002.')) {
           resolve()
         }
       })
     })
+    await new Promise(resolve => setTimeout(resolve, 1000)) // wait for server to start
     expect(await fetch('http://localhost:3000').then(res => res.text())).toEqual('{"hono":"moddable"}')
     mcconfigProc.kill('SIGSTOP')
   })
