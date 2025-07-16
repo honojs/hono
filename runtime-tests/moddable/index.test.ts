@@ -21,7 +21,7 @@ if (!moddableEnvironment) {
 }
 
 const skip = !isModdableInstalled || !moddableEnvironment
-
+console.log(`Moddable environment: ${moddableEnvironment}, isModdableInstalled: ${isModdableInstalled}`)
 describe('moddable', { skip },  (aa) => {
   beforeAll(() => {
     execSync('bun build runtime-tests/moddable/tests/main.ts --external socket --external streams --external text/decoder --external text/encoder --external headers --outdir runtime-tests/moddable/dist')
