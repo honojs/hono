@@ -216,6 +216,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-moddable
+          path: coverage/
 
   perf-measures-check-on-pr:
     name: 'Type & Bundle size Check on PR'
