@@ -210,14 +210,12 @@ jobs:
           make
           cd $MODDABLE/tools/xsbug-log
           bun install
-      - run: bun run build
-      - name: Run GUI test using xvfb-action
-        uses: GabrielBB/xvfb-action@v1
-        with:
-          run: |
-            export MODDABLE="${GITHUB_WORKSPACE}/moddable"
-            export PATH=$PATH:$MODDABLE/build/bin/lin/release
-            bun run test:moddable
+          sudo apt-get install -y xvfb
+      #- run: bun run build
+      - run: |
+          export MODDABLE="${GITHUB_WORKSPACE}/moddable"
+          export PATH=$PATH:$MODDABLE/build/bin/lin/release
+          xvfb-run bun run test:moddable
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-moddable
