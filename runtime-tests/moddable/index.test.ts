@@ -1,18 +1,18 @@
 import { exec, execSync, spawn, spawnSync } from "node:child_process"
 
-let isModdableInstalled = true
-try {
-  const proc = spawnSync('mcconfig', [], {
-    cwd: 'runtime-tests/moddable',
-  })
-  console.log(proc, proc.status)
-  if (proc.status !== 0) {
-    isModdableInstalled = false
+function isCommandAvailable(command: string): boolean {
+  try {
+    const checkCommand = process.platform === 'win32' 
+      ? `where ${command}` 
+      : `command -v ${command}`;
+    execSync(checkCommand, { stdio: 'pipe' });
+    return true;
+  } catch (error) {
+    return false;
   }
-} catch (error) {
-  console.log(error)
-  isModdableInstalled = false
 }
+
+const isModdableInstalled = isCommandAvailable('mcconfig')
 let moddableEnvironment: 'win' | 'mac' | 'lin' | undefined = undefined
 if (process.platform === 'win32') {
   moddableEnvironment = 'win'
