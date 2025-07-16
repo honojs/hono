@@ -45,7 +45,7 @@ export function handle(app: { fetch: (req: Request) => Promise<Response> | Respo
       return
     }
     // create request
-    const req = new Request(`http://localhost/${rawRequest.path}`, {
+    const req = new Request(`http://localhost${rawRequest.path}`, {
       method: rawRequest.method,
       headers: rawRequest.headers,
       body: rawRequest.body,

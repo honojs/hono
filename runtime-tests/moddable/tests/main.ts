@@ -4,7 +4,9 @@ import { handle } from '../../../src/adapter/moddable'
 import { Listener } from 'socket'
 
 const app = new Hono()
-  .get('/', c => c.text('Hello Hono!'))
+  .get('/', c => c.json({
+    hono: 'moddable',
+  }))
 
 const listener = new Listener({ port: 3000 })
-listener.handler = handle(app)
+listener.callback = handle(app)
