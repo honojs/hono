@@ -128,7 +128,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
     } else {
-      throw new Error("'content-type' header is missing in the response")
+      throw new Error('\'content-type\' header is missing in the response')
     }
   })
 
@@ -203,7 +203,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
     } else {
-      throw new Error("'content-type' header is missing in the response")
+      throw new Error('\'content-type\' header is missing in the response')
     }
   })
 
@@ -326,7 +326,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
     } else {
-      throw new Error("'content-type' header is missing in the response")
+      throw new Error('\'content-type\' header is missing in the response')
     }
   })
 
@@ -467,7 +467,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^text\/plain/)
     } else {
-      throw new Error("'content-type' header is missing in the response")
+      throw new Error('\'content-type\' header is missing in the response')
     }
   })
 
@@ -508,7 +508,7 @@ describe('Lambda@Edge Adapter for Hono', () => {
     if (response.headers && response.headers['content-type']) {
       expect(response.headers['content-type'][0].value).toMatch(/^image\/png/)
     } else {
-      throw new Error("'content-type' header is missing in the response")
+      throw new Error('\'content-type\' header is missing in the response')
     }
   })
 

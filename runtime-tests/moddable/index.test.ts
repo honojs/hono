@@ -1,14 +1,12 @@
-import { execSync, spawn } from "node:child_process"
+import { execSync, spawn } from 'node:child_process'
 
 function isCommandAvailable(command: string): boolean {
   try {
-    const checkCommand = process.platform === 'win32' 
-      ? `where ${command}` 
-      : `command -v ${command}`;
-    execSync(checkCommand, { stdio: 'pipe' });
-    return true;
-  } catch (error) {
-    return false;
+    const checkCommand = process.platform === 'win32' ? `where ${command}` : `command -v ${command}`
+    execSync(checkCommand, { stdio: 'pipe' })
+    return true
+  } catch (_error) {
+    return false
   }
 }
 
@@ -29,29 +27,37 @@ if (!moddableEnvironment) {
 
 const skip = !isModdableInstalled || !moddableEnvironment
 
-describe('moddable', { skip },  (aa) => {
+describe('moddable', { skip }, () => {
   beforeAll(() => {
-    execSync('bun build runtime-tests/moddable/tests/main.ts --external socket --external streams --external text/decoder --external text/encoder --external headers --outdir runtime-tests/moddable/dist')
+    execSync(
+      'bun build runtime-tests/moddable/tests/main.ts --external socket --external streams --external text/decoder --external text/encoder --external headers --outdir runtime-tests/moddable/dist'
+    )
   })
-  it('dist', {
-    timeout: 1000 * 60 * 5 // 5 minutes
-  }, async () => {
-    const mcconfigProc = spawn('mcconfig', ['-m', '-dl', '-p', moddableEnvironment], {
-      cwd: 'runtime-tests/moddable',
-    })
-    await new Promise<void>((resolve, reject) => {
-      mcconfigProc.on('error', (err) => {
-        reject(err)
+  it(
+    'dist',
+    {
+      timeout: 1000 * 60 * 5, // 5 minutes
+    },
+    async () => {
+      const mcconfigProc = spawn('mcconfig', ['-m', '-dl', '-p', moddableEnvironment], {
+        cwd: 'runtime-tests/moddable',
       })
-      let output = ''
-      mcconfigProc.stdout.on('data', data => {
-        output += data.toString()
-        if (output.includes('connected to "moddable"')) {
-          resolve()
-        }
+      await new Promise<void>((resolve, reject) => {
+        mcconfigProc.on('error', (err) => {
+          reject(err)
+        })
+        let output = ''
+        mcconfigProc.stdout.on('data', (data) => {
+          output += data.toString()
+          if (output.includes('connected to "moddable"')) {
+            resolve()
+          }
+        })
       })
-    })
-    expect(await fetch('http://localhost:3000').then(res => res.text())).toEqual('{"hono":"moddable"}')
-    mcconfigProc.kill('SIGSTOP')
-  })
+      expect(await fetch('http://localhost:3000').then((res) => res.text())).toEqual(
+        '{"hono":"moddable"}'
+      )
+      mcconfigProc.kill('SIGSTOP')
+    }
+  )
 })
