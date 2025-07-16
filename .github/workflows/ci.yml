@@ -208,13 +208,11 @@ jobs:
           export PATH=$PATH:$MODDABLE/build/bin/lin/release
           cd $MODDABLE/build/makefiles/lin
           make
-      - name: Run mcconfig
-        run: |
+      - run: bun run build
+      - run: |
           export MODDABLE="${GITHUB_WORKSPACE}/moddable"
           export PATH=$PATH:$MODDABLE/build/bin/lin/release
           bun run test:moddable
-      - run: bun run build
-      - run: bun run test:moddable
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-moddable
