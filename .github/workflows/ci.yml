@@ -208,6 +208,8 @@ jobs:
           export PATH=$PATH:$MODDABLE/build/bin/lin/release
           cd $MODDABLE/build/makefiles/lin
           make
+          cd $MODDABLE/tools/xsbug-log
+          bun install
       - run: bun run build
       - run: |
           export MODDABLE="${GITHUB_WORKSPACE}/moddable"
