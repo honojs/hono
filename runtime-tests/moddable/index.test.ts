@@ -4,6 +4,7 @@ let isModdableInstalled = true
 try {
   execSync('cd runtime-tests/moddable && mcconfig', { stdio: 'ignore' })
 } catch (error) {
+  console.log(error)
   isModdableInstalled = false
 }
 let moddableEnvironment: 'win' | 'mac' | 'lin' | undefined = undefined
