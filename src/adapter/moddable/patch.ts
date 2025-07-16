@@ -1,13 +1,13 @@
 // @ts-expect-error Runtime API
 import Headers from 'headers'
+// @ts-expect-error Runtime API
 import { ReadableStream, WritableStream, AbortController, AbortSignal } from 'streams'
+// @ts-expect-error Runtime API
 import TextDecoder from 'text/decoder'
+// @ts-expect-error Runtime API
 import TextEncoder from 'text/encoder'
 import URL from 'url'
-// @ts-expect-error Runtime API
-// @ts-expect-error Runtime API
 import { AdapterRequest, AdapterResponse } from './utils/fetch'
-// @ts-expect-error Runtime API
 
 // @ts-expect-error Patch global objects
 globalThis.URL ??= URL

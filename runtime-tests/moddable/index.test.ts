@@ -5,7 +5,7 @@ function isCommandAvailable(command: string): boolean {
     const checkCommand = process.platform === 'win32' ? `where ${command}` : `command -v ${command}`
     execSync(checkCommand, { stdio: 'pipe' })
     return true
-  } catch (_error) {
+  } catch {
     return false
   }
 }
