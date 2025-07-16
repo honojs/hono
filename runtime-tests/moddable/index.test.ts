@@ -1,8 +1,13 @@
-import { exec, execSync, spawn } from "node:child_process"
+import { exec, execSync, spawn, spawnSync } from "node:child_process"
 
 let isModdableInstalled = true
 try {
-  execSync('cd runtime-tests/moddable && mcconfig', { stdio: 'ignore' })
+  const proc = spawnSync('mcconfig', [], {
+    cwd: 'runtime-tests/moddable',
+  })
+  if (proc.status !== 0) {
+    isModdableInstalled = false
+  }
 } catch (error) {
   console.log(error)
   isModdableInstalled = false
