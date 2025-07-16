@@ -5,6 +5,7 @@ try {
   const proc = spawnSync('mcconfig', [], {
     cwd: 'runtime-tests/moddable',
   })
+  console.log(proc, proc.status)
   if (proc.status !== 0) {
     isModdableInstalled = false
   }
