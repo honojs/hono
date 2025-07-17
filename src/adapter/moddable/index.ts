@@ -5,3 +5,4 @@
 
 import './patch'
 export { Handler, handle } from './handler'
+export { getConnInfo } from './conninfo'

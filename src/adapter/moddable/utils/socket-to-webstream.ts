@@ -13,6 +13,7 @@ interface Socket {
 export function createStreamFromSocket(socket: Socket) {
   const readable = new ReadableStream<Uint8Array>({
     start(controller) {
+
       socket.callback = function (message, value) {
         switch (message) {
           case -2: {

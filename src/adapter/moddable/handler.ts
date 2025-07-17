@@ -34,7 +34,7 @@ export type Handler = (this: { callback: () => void }) => void
  * trace('Server is running on http://localhost:3000')
  * ```
  */
-export function handle(app: { fetch: (req: Request) => Promise<Response> | Response }): Handler {
+export function handle(app: { fetch: (req: Request, env: unknown) => Promise<Response> | Response }): Handler {
   return async function callback() {
     const socket = new Socket({ listener: this })
     const { readable, writable } = createStreamFromSocket(socket)
@@ -50,7 +50,9 @@ export function handle(app: { fetch: (req: Request) => Promise<Response> | Respo
       headers: rawRequest.headers,
       body: rawRequest.body,
     })
-    const res = await app.fetch(req)
+    const res = await app.fetch(req, {
+      socket
+    })
     // send response
     const writer = writable.getWriter()
     writer.write(encoder.encode(`HTTP/1.1 ${res.status} ${res.statusText}\r\n`))
