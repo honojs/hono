@@ -3,11 +3,11 @@
  * @module
  */
 
+import './patch'
 // @ts-expect-error Runtime API
 import { Socket } from 'socket'
 import type { HandleFunction } from './handler'
 import { createHandleFunction } from './handler'
-import './patch'
 export { Handler } from './handler'
 export { getConnInfo } from './conninfo'
 
