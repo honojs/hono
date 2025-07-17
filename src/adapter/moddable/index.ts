@@ -3,14 +3,13 @@
  * @module
  */
 
+// @ts-expect-error Runtime API
+import { Socket } from 'socket'
 import type { HandleFunction } from './handler'
 import { createHandleFunction } from './handler'
 import './patch'
 export { Handler } from './handler'
 export { getConnInfo } from './conninfo'
-
-// @ts-expect-error Runtime API
-import { Socket } from 'socket'
 
 /**
  * Create a callback function passed to TCP Server

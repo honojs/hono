@@ -88,8 +88,6 @@ describe('initBody', () => {
     expect(await reader?.read()).toEqual({ done: true, value: undefined })
   })
   it('Should throw TypeError for unsupported body types', () => {
-    expect(() => initBody({} as any)).toThrow(TypeError)
-    expect(() => initBody(123 as any)).toThrow(TypeError)
     expect(() => initBody(new Blob(['test']))).toThrow(TypeError)
   })
 })

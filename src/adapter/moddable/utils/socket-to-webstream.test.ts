@@ -4,9 +4,8 @@ import { createStreamFromSocket } from './socket-to-webstream'
 describe('createStreamFromSocket', () => {
   it('Should create writable stream from socket', async () => {
     const writeMock = vi.fn()
-    let promise!: Promise<void>
-    let resolve!: () => void
-    promise = new Promise((res) => {
+    let resolve!: (arg: undefined) => void
+    const promise = new Promise((res) => {
       resolve = res
     })
     class MockSocket implements Socket {
@@ -20,7 +19,7 @@ describe('createStreamFromSocket', () => {
         writeMock(data)
       }
       close() {
-        resolve()
+        resolve(undefined)
       }
     }
     const writer = createStreamFromSocket(new MockSocket()).writable.getWriter()
@@ -39,7 +38,9 @@ describe('createStreamFromSocket', () => {
       write(data: Uint8Array) {
         console.log('write', data)
       }
-      close() {}
+      close() {
+        // pass
+      }
     }
     const socket = new MockSocket()
     const reader = createStreamFromSocket(socket).readable.getReader()
@@ -62,7 +63,9 @@ describe('createStreamFromSocket', () => {
       write(data: Uint8Array) {
         console.log('write', data)
       }
-      close() {}
+      close() {
+        // pass
+      }
     }
     const socket = new MockSocket()
     const reader = createStreamFromSocket(socket).readable.getReader()

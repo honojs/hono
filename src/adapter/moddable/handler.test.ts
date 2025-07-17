@@ -1,4 +1,4 @@
-import type { Socket, SocketConstructor, SocketInit } from './handler'
+import type { Socket, SocketConstructor } from './handler'
 import { createHandleFunction } from './handler'
 
 const encoder = new TextEncoder()
@@ -11,7 +11,8 @@ describe('handler', () => {
     const responsePromise = new Promise((resolve) => {
       let response: string = ''
       MockSocket = class implements Socket {
-        constructor(opts: SocketInit) {
+        constructor() {
+          // eslint-disable-next-line @typescript-eslint/no-this-alias
           socket = this
         }
         callback: (
@@ -52,7 +53,8 @@ describe('handler', () => {
     const responsePromise = new Promise((resolve) => {
       let response: string = ''
       MockSocket = class implements Socket {
-        constructor(opts: SocketInit) {
+        constructor() {
+          // eslint-disable-next-line @typescript-eslint/no-this-alias
           socket = this
         }
         callback: (
