@@ -1,7 +1,8 @@
 export const validateExports = (
   source: Record<string, unknown>,
   target: Record<string, unknown>,
-  fileName: string
+  fileName: string,
+  ignore: string[] = []
 ) => {
   const isEntryInTarget = (entry: string): boolean => {
     if (entry in target) {
@@ -31,6 +32,9 @@ export const validateExports = (
 
   Object.keys(source).forEach((sourceEntry) => {
     if (!isEntryInTarget(sourceEntry)) {
+      if (ignore.includes(sourceEntry)) {
+        return
+      }
       throw new Error(`Missing "${sourceEntry}" in '${fileName}'`)
     }
   })
