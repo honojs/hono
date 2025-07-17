@@ -1,6 +1,6 @@
 const HEADER_END = [13, 10, 13, 10] // \r\n\r\n
 
-function findHeaderEnd(buff: Uint8Array): number {
+export function findHeaderEnd(buff: Uint8Array): number {
   for (let i = 0; i <= buff.length - HEADER_END.length; i++) {
     let found = true
     for (let j = 0; j < HEADER_END.length; j++) {
@@ -83,6 +83,6 @@ export async function parseHTTP(input: ReadableStream<Uint8Array>) {
     path,
     version,
     headers,
-    body,
+    body: method === 'GET' || method === 'HEAD' ? null : body, // GET and HEAD requests do not have a body
   }
 }

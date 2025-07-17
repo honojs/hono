@@ -14,14 +14,14 @@ const METHOD_MAP = {
   PATCH: 'PATCH',
   patch: 'PATCH',
 }
-const normalizeMethod = (method: string): string => {
+export const normalizeMethod = (method: string): string => {
   if (method in METHOD_MAP) {
     return METHOD_MAP[method as keyof typeof METHOD_MAP]
   }
   return method.toUpperCase()
 }
 
-function initHeaders(headers?: HeadersInit): Headers {
+export function initHeaders(headers?: HeadersInit): Headers {
   const initHeaders = new Headers()
   if (headers) {
     if (Array.isArray(headers)) {
@@ -43,7 +43,7 @@ function initHeaders(headers?: HeadersInit): Headers {
   }
   return initHeaders
 }
-function bodyInitToBody(bodyInit: BodyInit | null): ReadableStream<Uint8Array> | null {
+export function initBody(bodyInit: BodyInit | null): ReadableStream<Uint8Array> | null {
   if (bodyInit === null) {
     return null
   }
@@ -137,7 +137,7 @@ export class AdapterRequest implements Request {
     this.body =
       input instanceof AdapterRequest
         ? input.body
-        : bodyInitToBody((init?.body as BodyInit) ?? null)
+        : initBody((init?.body as BodyInit) ?? null)
     this.bodyUsed = input instanceof AdapterRequest ? input.bodyUsed : false
   }
   clone(): AdapterRequest {
@@ -176,9 +176,11 @@ export class AdapterRequest implements Request {
     return JSON.parse(text)
   }
   async formData(): Promise<FormData> {
-    throw new Error('FormData is not implemented')
+    // FormData does not exist in the Moddable environment
+    throw new Error('FormData is not supported in moddable')
   }
   async blob(): Promise<Blob> {
+    // Blob does not exist in the Moddable environment
     throw new Error('Blob is not supported in moddable')
   }
   async bytes(): Promise<Uint8Array> {
@@ -202,7 +204,7 @@ export class AdapterResponse implements Response {
     this.ok = this.status >= 200 && this.status < 300
     this.statusText = init?.statusText ?? ''
     this.redirected = false
-    this.body = bodyInitToBody(body ?? null)
+    this.body = initBody(body ?? null)
   }
 
   clone(): AdapterResponse {
@@ -248,9 +250,11 @@ export class AdapterResponse implements Response {
     return JSON.parse(text)
   }
   async formData(): Promise<FormData> {
-    throw new Error('FormData is not implemented')
+    // FormData does not exist in the Moddable environment
+    throw new Error('FormData is not supported in moddable')
   }
   async blob(): Promise<Blob> {
+    // Blob does not exist in the Moddable environment
     throw new Error('Blob is not supported in moddable')
   }
   async bytes(): Promise<Uint8Array> {

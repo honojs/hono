@@ -15,16 +15,10 @@ export function createStreamFromSocket(socket: Socket) {
             controller.close()
             break
           }
-          case 1: {
-            // connect
-            break
-          }
           case 2: {
             // received data
-            if (value) {
-              const buff = new Uint8Array(this.read(ArrayBuffer))
-              controller.enqueue(buff)
-            }
+            const buff = new Uint8Array(this.read(ArrayBuffer))
+            controller.enqueue(buff)
           }
         }
       }
