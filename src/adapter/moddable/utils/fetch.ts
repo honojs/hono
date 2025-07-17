@@ -135,9 +135,7 @@ export class AdapterRequest implements Request {
       this.signal = controller.signal
     }
     this.body =
-      input instanceof AdapterRequest
-        ? input.body
-        : initBody((init?.body as BodyInit) ?? null)
+      input instanceof AdapterRequest ? input.body : initBody((init?.body as BodyInit) ?? null)
     this.bodyUsed = input instanceof AdapterRequest ? input.bodyUsed : false
   }
   clone(): AdapterRequest {

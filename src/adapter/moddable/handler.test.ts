@@ -1,10 +1,11 @@
-import { createHandleFunction, Socket, SocketConstructor, SocketInit } from "./handler"
+import type { Socket, SocketConstructor, SocketInit } from './handler'
+import { createHandleFunction } from './handler'
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
 describe('handler', () => {
-  it ('Should create a HTTP response', async () => {
+  it('Should create a HTTP response', async () => {
     let MockSocket!: SocketConstructor
     let socket!: Socket
     const responsePromise = new Promise((resolve) => {
@@ -13,7 +14,11 @@ describe('handler', () => {
         constructor(opts: SocketInit) {
           socket = this
         }
-        callback: (this: { read(type: typeof ArrayBuffer): ArrayBuffer }, message: number, value?: unknown) => void = () => null
+        callback: (
+          this: { read(type: typeof ArrayBuffer): ArrayBuffer },
+          message: number,
+          value?: unknown
+        ) => void = () => null
         write(chunk: ArrayBuffer): void {
           response += decoder.decode(chunk)
         }
@@ -24,17 +29,22 @@ describe('handler', () => {
     })
     const handle = createHandleFunction(MockSocket)
     const callback = handle({
-      fetch: () => new Response('Hello World')
+      fetch: () => new Response('Hello World'),
     })
     callback.call({
-      callback: () => {}
+      callback: () => {},
     })
-    socket.callback.call({
-      read() {
-        return encoder.encode('GET / HTTP/1.1\r\nHost: localhost\r\n\r\n').buffer
+    socket.callback.call(
+      {
+        read() {
+          return encoder.encode('GET / HTTP/1.1\r\nHost: localhost\r\n\r\n').buffer
+        },
       },
-    }, 2)
-    expect(await responsePromise).toEqual('HTTP/1.1 200 \r\ncontent-type: text/plain;charset=UTF-8\r\n\r\nHello World')
+      2
+    )
+    expect(await responsePromise).toEqual(
+      'HTTP/1.1 200 \r\ncontent-type: text/plain;charset=UTF-8\r\n\r\nHello World'
+    )
   })
   it('Should close the socket on invalid request', async () => {
     let MockSocket!: SocketConstructor
@@ -45,7 +55,11 @@ describe('handler', () => {
         constructor(opts: SocketInit) {
           socket = this
         }
-        callback: (this: { read(type: typeof ArrayBuffer): ArrayBuffer }, message: number, value?: unknown) => void = () => null
+        callback: (
+          this: { read(type: typeof ArrayBuffer): ArrayBuffer },
+          message: number,
+          value?: unknown
+        ) => void = () => null
         write(chunk: ArrayBuffer): void {
           response += decoder.decode(chunk)
         }
@@ -56,16 +70,19 @@ describe('handler', () => {
     })
     const handle = createHandleFunction(MockSocket)
     const callback = handle({
-      fetch: () => new Response('Hello World')
+      fetch: () => new Response('Hello World'),
     })
     callback.call({
-      callback: () => {}
+      callback: () => {},
     })
-    socket.callback.call({
-      read() {
-        return encoder.encode('aa\r\n\r\n').buffer
+    socket.callback.call(
+      {
+        read() {
+          return encoder.encode('aa\r\n\r\n').buffer
+        },
       },
-    }, 2)
+      2
+    )
     expect(await responsePromise).toEqual('')
   })
 })

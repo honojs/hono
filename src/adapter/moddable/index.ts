@@ -3,7 +3,8 @@
  * @module
  */
 
-import { createHandleFunction, HandleFunction } from './handler'
+import type { HandleFunction } from './handler'
+import { createHandleFunction } from './handler'
 import './patch'
 export { Handler } from './handler'
 export { getConnInfo } from './conninfo'

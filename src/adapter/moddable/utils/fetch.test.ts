@@ -1,4 +1,4 @@
-import { AdapterRequest, AdapterResponse, initBody, initHeaders, normalizeMethod } from "./fetch"
+import { AdapterRequest, AdapterResponse, initBody, initHeaders, normalizeMethod } from './fetch'
 
 describe('normalizeMethod', () => {
   it('Should normalize HTTP methods to uppercase', () => {
@@ -22,14 +22,21 @@ describe('initHeaders', () => {
     expect([...clonedHeaders.entries()]).toEqual([...headers.entries()])
   })
   it('Should initialize headers from an object', () => {
-    const headers = initHeaders({ 'Content-Type': 'application/json', 'X-Custom-Header': 'value', nullHeader: null as unknown as string })
+    const headers = initHeaders({
+      'Content-Type': 'application/json',
+      'X-Custom-Header': 'value',
+      nullHeader: null as unknown as string,
+    })
     expect(Object.fromEntries(headers.entries())).toEqual({
       'content-type': 'application/json',
       'x-custom-header': 'value',
     })
   })
   it('Should initialize headers from an array', () => {
-    const headers = initHeaders([['Content-Type', 'application/json'], ['X-Custom-Header', 'value']])
+    const headers = initHeaders([
+      ['Content-Type', 'application/json'],
+      ['X-Custom-Header', 'value'],
+    ])
     expect(headers.get('Content-Type')).toBe('application/json')
     expect(headers.get('X-Custom-Header')).toBe('value')
   })
@@ -44,7 +51,7 @@ describe('initBody', () => {
     const body = initBody(stream)
     expect(body).toBe(stream)
   })
-  it('Should convert ArrayBuffer to ReadableStream', async() => {
+  it('Should convert ArrayBuffer to ReadableStream', async () => {
     const buffer = new ArrayBuffer(8)
     const body = initBody(buffer)
     expect(body instanceof ReadableStream).toBe(true)
@@ -52,26 +59,32 @@ describe('initBody', () => {
     expect(await reader?.read()).toEqual({ done: false, value: new Uint8Array(buffer) })
     expect(await reader?.read()).toEqual({ done: true, value: undefined })
   })
-  it('Should convert Uint8Array to ReadableStream', async() => {
+  it('Should convert Uint8Array to ReadableStream', async () => {
     const body = initBody(new Uint8Array([1, 2, 3]))
     expect(body instanceof ReadableStream).toBe(true)
     const reader = body?.getReader()
     expect(await reader?.read()).toEqual({ done: false, value: new Uint8Array([1, 2, 3]) })
     expect(await reader?.read()).toEqual({ done: true, value: undefined })
   })
-  it('Should convert string to ReadableStream', async() => {
+  it('Should convert string to ReadableStream', async () => {
     const body = initBody('Hello World')
     expect(body instanceof ReadableStream).toBe(true)
     const reader = body?.getReader()
-    expect(await reader?.read()).toEqual({ done: false, value: new TextEncoder().encode('Hello World') })
+    expect(await reader?.read()).toEqual({
+      done: false,
+      value: new TextEncoder().encode('Hello World'),
+    })
     expect(await reader?.read()).toEqual({ done: true, value: undefined })
   })
-  it('Should convert URLSearchParams to ReadableStream', async() => {
+  it('Should convert URLSearchParams to ReadableStream', async () => {
     const params = new URLSearchParams('key1=value1&key2=value2')
     const body = initBody(params)
     expect(body instanceof ReadableStream).toBe(true)
     const reader = body?.getReader()
-    expect(await reader?.read()).toEqual({ done: false, value: new TextEncoder().encode('key1=value1&key2=value2') })
+    expect(await reader?.read()).toEqual({
+      done: false,
+      value: new TextEncoder().encode('key1=value1&key2=value2'),
+    })
     expect(await reader?.read()).toEqual({ done: true, value: undefined })
   })
   it('Should throw TypeError for unsupported body types', () => {

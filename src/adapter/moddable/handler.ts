@@ -14,8 +14,8 @@ const encoder = new TextEncoder()
 export type Handler = (this: { callback: () => void }) => void
 
 export interface SocketInit {
-    listener: { callback: Handler }
-  }
+  listener: { callback: Handler }
+}
 export interface Socket {
   callback: (
     this: {
@@ -32,11 +32,13 @@ export interface SocketConstructor {
 }
 
 export type HandleFunction = (app: {
-    fetch: (req: Request, env: unknown) => Promise<Response> | Response;
+  fetch: (req: Request, env: unknown) => Promise<Response> | Response
 }) => Handler
 
 export function createHandleFunction(Socket: SocketConstructor): HandleFunction {
-  return function handle(app: { fetch: (req: Request, env: unknown) => Promise<Response> | Response }): Handler {
+  return function handle(app: {
+    fetch: (req: Request, env: unknown) => Promise<Response> | Response
+  }): Handler {
     return async function callback() {
       const socket = new Socket({ listener: this })
       const { readable, writable } = createStreamFromSocket(socket)
@@ -53,7 +55,7 @@ export function createHandleFunction(Socket: SocketConstructor): HandleFunction 
         body: rawRequest.body,
       })
       const res = await app.fetch(req, {
-        socket
+        socket,
       })
       // send response
       const writer = writable.getWriter()

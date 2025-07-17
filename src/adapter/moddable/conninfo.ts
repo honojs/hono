@@ -7,9 +7,11 @@ import type { GetConnInfo } from '../../helper/conninfo'
  * @returns ConnInfo
  */
 export const getConnInfo: GetConnInfo = (c: Context) => {
-  const socket = c.env.socket as {
-    get: (type: 'REMOTE_IP') => string | undefined
-  } | undefined
+  const socket = c.env.socket as
+    | {
+        get: (type: 'REMOTE_IP') => string | undefined
+      }
+    | undefined
 
   if (!socket) {
     throw new TypeError('env has to include the socket object.')
@@ -18,7 +20,7 @@ export const getConnInfo: GetConnInfo = (c: Context) => {
   const addr = socket.get('REMOTE_IP')
   if (!addr) {
     return {
-      remote: {}
+      remote: {},
     }
   }
   return {

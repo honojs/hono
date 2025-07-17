@@ -1,4 +1,4 @@
-import type { Socket } from "../handler"
+import type { Socket } from '../handler'
 
 export function createStreamFromSocket(socket: Socket) {
   const readable = new ReadableStream<Uint8Array>({

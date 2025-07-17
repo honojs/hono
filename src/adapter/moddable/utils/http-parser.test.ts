@@ -1,4 +1,4 @@
-import { findHeaderEnd, parseHTTP } from "./http-parser"
+import { findHeaderEnd, parseHTTP } from './http-parser'
 
 const encoder = new TextEncoder()
 
@@ -32,8 +32,8 @@ describe('parseHTTP', () => {
     expect(result?.path).toEqual('/')
     expect(result?.version).toEqual('HTTP/1.1')
     expect(result?.headers).toEqual({
-      'host': 'example.com',
-      'connection': 'keep-alive',
+      host: 'example.com',
+      connection: 'keep-alive',
     })
     expect(await new Response(result?.body).text()).toEqual(bodyPart)
   })
@@ -50,7 +50,9 @@ describe('parseHTTP', () => {
   it('Should return null for empty first line', async () => {
     const request = new ReadableStream<Uint8Array>({
       start(controller) {
-        controller.enqueue(encoder.encode('\r\nHost: example.com\r\nConnection: keep-alive\r\n\r\n'))
+        controller.enqueue(
+          encoder.encode('\r\nHost: example.com\r\nConnection: keep-alive\r\n\r\n')
+        )
         controller.close()
       },
     })
@@ -60,7 +62,9 @@ describe('parseHTTP', () => {
   it('Should return null for empty HTTP version', async () => {
     const request = new ReadableStream<Uint8Array>({
       start(controller) {
-        controller.enqueue(encoder.encode('GET\r\nHost: example.com\r\nConnection: keep-alive\r\n\r\n'))
+        controller.enqueue(
+          encoder.encode('GET\r\nHost: example.com\r\nConnection: keep-alive\r\n\r\n')
+        )
         controller.close()
       },
     })
@@ -70,7 +74,9 @@ describe('parseHTTP', () => {
   it('Should return null for HTTP version other than HTTP/1.1', async () => {
     const request = new ReadableStream<Uint8Array>({
       start(controller) {
-        controller.enqueue(encoder.encode('GET / HTTP/2.0\r\nHost: example.com\r\nConnection: keep-alive\r\n\r\n'))
+        controller.enqueue(
+          encoder.encode('GET / HTTP/2.0\r\nHost: example.com\r\nConnection: keep-alive\r\n\r\n')
+        )
         controller.close()
       },
     })
@@ -80,13 +86,15 @@ describe('parseHTTP', () => {
   it('Should skip header line for invalid header lines', async () => {
     const request = new ReadableStream<Uint8Array>({
       start(controller) {
-        controller.enqueue(encoder.encode('GET / HTTP/1.1\r\nHost example.com\r\nConnection: keep-alive\r\n\r\n'))
+        controller.enqueue(
+          encoder.encode('GET / HTTP/1.1\r\nHost example.com\r\nConnection: keep-alive\r\n\r\n')
+        )
         controller.close()
       },
     })
     const result = await parseHTTP(request)
     expect(result?.headers).toEqual({
-      'connection': 'keep-alive',
+      connection: 'keep-alive',
     })
   })
 })

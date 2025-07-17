@@ -1,10 +1,10 @@
-import type { Context } from "../../context"
-import { getConnInfo } from "./conninfo"
+import type { Context } from '../../context'
+import { getConnInfo } from './conninfo'
 
 describe('getConnInfo', () => {
   it('Should throw an error if socket is not available', () => {
     const c: Context = {
-      env: {}
+      env: {},
     } as unknown as Context
     expect(() => getConnInfo(c)).toThrow(TypeError)
   })
@@ -12,12 +12,12 @@ describe('getConnInfo', () => {
     const c: Context = {
       env: {
         socket: {
-          get: () => undefined
-        }
-      }
+          get: () => undefined,
+        },
+      },
     } as unknown as Context
     expect(getConnInfo(c)).toEqual({
-      remote: {}
+      remote: {},
     })
   })
   it('Should return remote address and transport type', () => {
@@ -31,8 +31,8 @@ describe('getConnInfo', () => {
     expect(getConnInfo(c)).toEqual({
       remote: {
         address: '1.1.1.1',
-        transport: 'tcp'
-      }
+        transport: 'tcp',
+      },
     })
   })
 })
