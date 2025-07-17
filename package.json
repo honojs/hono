@@ -385,6 +385,11 @@
       "import": "./dist/adapter/service-worker/index.js",
       "require": "./dist/cjs/adapter/service-worker/index.js"
     },
+    "./moddable": {
+      "types": "./dist/types/adapter/moddable/index.d.ts",
+      "import": "./dist/adapter/moddable/index.js",
+      "require": "./dist/cjs/adapter/moddable/index.js"
+    },
     "./testing": {
       "types": "./dist/types/helper/testing/index.d.ts",
       "import": "./dist/helper/testing/index.js",
@@ -610,6 +615,9 @@
       ],
       "service-worker": [
         "./dist/types/adapter/service-worker"
+      ],
+      "moddable": [
+        "./dist/types/adapter/moddable"
       ],
       "testing": [
         "./dist/types/helper/testing"
