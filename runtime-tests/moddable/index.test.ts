@@ -32,6 +32,7 @@ describe('moddable', { skip }, () => {
     execSync(
       'bun build runtime-tests/moddable/tests/main.ts --external socket --external streams --external text/decoder --external text/encoder --external headers --outdir runtime-tests/moddable/dist'
     )
+    execSync('bunx kill-port 5002')
   })
   it(
     'dist',
@@ -60,4 +61,8 @@ describe('moddable', { skip }, () => {
       mcconfigProc.kill('SIGSTOP')
     }
   )
+  afterAll(() => {
+    console.log('Stopping Moddable environment...')
+  })
+  
 })
