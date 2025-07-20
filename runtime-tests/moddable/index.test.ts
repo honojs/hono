@@ -64,5 +64,4 @@ describe('moddable', { skip }, () => {
   afterAll(() => {
     console.log('Stopping Moddable environment...')
   })
-  
 })
