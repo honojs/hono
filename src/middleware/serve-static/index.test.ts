@@ -1,3 +1,4 @@
+import path, { join } from 'node:path'
 import { Hono } from '../../hono'
 import { serveStatic as baseServeStatic } from '.'
 
@@ -12,11 +13,11 @@ describe('Serve Static Middleware', () => {
 
   const serveStatic = baseServeStatic({
     getContent,
-    pathResolve: (path) => {
-      return `./${path}`
-    },
+    join,
     isDir: (path) => {
-      return path === 'static/hello.world'
+      if (path === 'static/sub' || path === 'static/hello.world') {
+        return true
+      }
     },
     onFound: (path, c) => {
       if (path.endsWith('hello.html')) {
@@ -36,36 +37,29 @@ describe('Serve Static Middleware', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Encoding')).toBeNull()
     expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
-    expect(await res.text()).toBe('Hello in ./static/hello.html')
-    expect(res.headers.get('X-Custom')).toBe('Found the file at ./static/hello.html')
+    expect(await res.text()).toBe('Hello in static/hello.html')
+    expect(res.headers.get('X-Custom')).toBe('Found the file at static/hello.html')
   })
 
   it('Should return 200 response - /static/sub', async () => {
     const res = await app.request('/static/sub')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
-    expect(await res.text()).toBe('Hello in ./static/sub/index.html')
-  })
-
-  it('Should return 200 response - /static/helloworld', async () => {
-    const res = await app.request('/static/helloworld')
-    expect(res.status).toBe(200)
-    expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
-    expect(await res.text()).toBe('Hello in ./static/helloworld/index.html')
+    expect(await res.text()).toBe('Hello in static/sub/index.html')
   })
 
   it('Should return 200 response - /static/hello.world', async () => {
     const res = await app.request('/static/hello.world')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
-    expect(await res.text()).toBe('Hello in ./static/hello.world/index.html')
+    expect(await res.text()).toBe('Hello in static/hello.world/index.html')
   })
 
   it('Should decode URI strings - /static/%E7%82%8E.txt', async () => {
     const res = await app.request('/static/%E7%82%8E.txt')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toMatch(/^text\/plain/)
-    expect(await res.text()).toBe('Hello in ./static/炎.txt')
+    expect(await res.text()).toBe('Hello in static/炎.txt')
   })
 
   it('Should return 404 response - /static/not-found.txt', async () => {
@@ -92,6 +86,7 @@ describe('Serve Static Middleware', () => {
       '*',
       baseServeStatic({
         getContent,
+        join,
         precompressed: true,
       })
     )
@@ -112,6 +107,7 @@ describe('Serve Static Middleware', () => {
       '*',
       baseServeStatic({
         getContent,
+        join,
         precompressed: true,
       })
     )
@@ -132,6 +128,7 @@ describe('Serve Static Middleware', () => {
       '*',
       baseServeStatic({
         getContent,
+        join,
         precompressed: true,
       })
     )
@@ -152,6 +149,7 @@ describe('Serve Static Middleware', () => {
       '*',
       baseServeStatic({
         getContent,
+        join,
         precompressed: true,
       })
     )
@@ -172,6 +170,7 @@ describe('Serve Static Middleware', () => {
       '*',
       baseServeStatic({
         getContent,
+        join,
         precompressed: true,
       })
     )
@@ -192,6 +191,7 @@ describe('Serve Static Middleware', () => {
       '*',
       baseServeStatic({
         getContent,
+        join,
         precompressed: true,
       })
     )
@@ -213,6 +213,7 @@ describe('Serve Static Middleware', () => {
     const app = new Hono().use(
       '*',
       baseServeStatic({
+        join,
         getContent: async () => {
           return response
         },
@@ -228,15 +229,11 @@ describe('Serve Static Middleware', () => {
   })
 
   describe('Changing root path', () => {
-    const pathResolve = (path: string) => {
-      return path.startsWith('/') ? path : `./${path}`
-    }
-
     it('Should return the content with absolute root path', async () => {
       const app = new Hono()
       const serveStatic = baseServeStatic({
         getContent,
-        pathResolve,
+        join,
         root: '/home/hono/child',
       })
       app.get('/static/*', serveStatic)
@@ -249,7 +246,7 @@ describe('Serve Static Middleware', () => {
       const app = new Hono()
       const serveStatic = baseServeStatic({
         getContent,
-        pathResolve,
+        join,
         root: '/home/hono/../parent',
       })
       app.get('/static/*', serveStatic)
@@ -262,26 +259,39 @@ describe('Serve Static Middleware', () => {
       const app = new Hono()
       const serveStatic = baseServeStatic({
         getContent,
-        pathResolve,
+        join,
         root: '../home/hono',
       })
       app.get('/static/*', serveStatic)
 
       const res = await app.request('/static/html/hello.html')
-      expect(await res.text()).toBe('Hello in ./../home/hono/static/html/hello.html')
+      expect(await res.text()).toBe('Hello in ../home/hono/static/html/hello.html')
     })
 
     it('Should not allow directory traversal with . as relative path', async () => {
       const app = new Hono()
       const serveStatic = baseServeStatic({
         getContent,
-        pathResolve,
+        join,
         root: '.',
       })
       app.get('*', serveStatic)
 
       const res = await app.request('///etc/passwd')
-      expect(res.status).toBe(404)
+      expect(await res.text()).toBe('Hello in etc/passwd')
+    })
+
+    it('Should handle Windows absolute path with drive letter', async () => {
+      const app = new Hono()
+      const serveStatic = baseServeStatic({
+        getContent,
+        join: path.win32.join,
+        root: 'C:\\Program Files\\App',
+      })
+      app.get('/static/*', serveStatic)
+
+      const res = await app.request('/static/file.txt')
+      expect(await res.text()).toBe(`Hello in C:\\Program Files\\App\\static\\file.txt`)
     })
   })
 })

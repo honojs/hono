@@ -6,7 +6,6 @@
 import type { Context, Data } from '../../context'
 import type { Env, MiddlewareHandler } from '../../types'
 import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
-import { getFilePath, getFilePathWithoutDefaultDocument } from '../../utils/filepath'
 import { getMimeType } from '../../utils/mime'
 
 export type ServeStaticOptions<E extends Env = Env> = {
@@ -27,17 +26,10 @@ const ENCODINGS = {
 const ENCODINGS_ORDERED_KEYS = Object.keys(ENCODINGS) as (keyof typeof ENCODINGS)[]
 
 const DEFAULT_DOCUMENT = 'index.html'
-const defaultPathResolve = (path: string) => path
 
-const isAbsolutePath = (path: string) => {
-  const isUnixAbsolutePath = path.startsWith('/')
-  const hasDriveLetter = /^[a-zA-Z]:\\/.test(path)
-  const isUncPath = /^\\\\[^\\]+\\[^\\]+/.test(path)
-  return isUnixAbsolutePath || hasDriveLetter || isUncPath
-}
-
-const windowsPathToUnixPath = (path: string) => {
-  return path.replace(/^[a-zA-Z]:/, '').replace(/\\/g, '/')
+const defaultJoin = (...paths: string[]) => {
+  const path = (paths[0] + '/' + paths[1]).replace(/\/+/g, '/').replace(/^\.\//, '')
+  return new URL(`file://${path}`).pathname
 }
 
 /**
@@ -46,80 +38,60 @@ const windowsPathToUnixPath = (path: string) => {
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E> & {
     getContent: (path: string, c: Context<E>) => Promise<Data | Response | null>
+    join: (...paths: string[]) => string
+    /**
+     * @deprecated Currently, `pathResolve` is no longer used. Please specify `join` instead.
+     */
     pathResolve?: (path: string) => string
     isDir?: (path: string) => boolean | undefined | Promise<boolean | undefined>
   }
 ): MiddlewareHandler => {
-  let isAbsoluteRoot = false
-  let root: string
-
-  if (options.root) {
-    if (isAbsolutePath(options.root)) {
-      isAbsoluteRoot = true
-      root = windowsPathToUnixPath(options.root)
-      root = new URL(`file://${root}`).pathname
-    } else {
-      root = options.root
-    }
+  const root = options.root ?? './'
+  const optionPath = options.path
+  let join = options.join
+  if (!join) {
+    console.log(
+      `Specify the \`join\` option according to the runtime. Example \`import { join } from 'node:path\` In this case, it will fall back to the default join function.`
+    )
+    join = defaultJoin
+  }
+  if (options.pathResolve) {
+    console.log(`Currently, \`pathResolve\` is no longer used. Please specify \`join\` instead.`)
   }
 
   return async (c, next) => {
     // Do nothing if Response is already set
     if (c.finalized) {
-      await next()
-      return
+      return next()
     }
 
-    let filename = options.path ?? decodeURI(c.req.path)
-    filename = options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename
+    let filename: string
 
-    // If it was Directory, force `/` on the end.
-    if (!filename.endsWith('/') && options.isDir) {
-      const path = getFilePathWithoutDefaultDocument({
-        filename,
-        root,
-      })
-      if (path && (await options.isDir(path))) {
-        filename += '/'
+    if (options.path) {
+      filename = options.path
+    } else {
+      try {
+        filename = decodeURIComponent(c.req.path)
+        if (/(?:^|[\/\\])\.\.(?:$|[\/\\])/.test(filename)) {
+          throw new Error()
+        }
+      } catch {
+        await options.onNotFound?.(c.req.path, c)
+        return next()
       }
     }
 
-    let path = getFilePath({
-      filename,
+    let path = join(
       root,
-      defaultDocument: DEFAULT_DOCUMENT,
-    })
+      !optionPath && options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename
+    )
 
-    if (!path) {
-      return await next()
-    }
-
-    if (isAbsoluteRoot) {
-      path = '/' + path
+    if (options.isDir && options.isDir(path)) {
+      path = join(path, DEFAULT_DOCUMENT)
     }
 
     const getContent = options.getContent
-    const pathResolve = options.pathResolve ?? defaultPathResolve
-    path = pathResolve(path)
     let content = await getContent(path, c)
-
-    if (!content) {
-      let pathWithoutDefaultDocument = getFilePathWithoutDefaultDocument({
-        filename,
-        root,
-      })
-      if (!pathWithoutDefaultDocument) {
-        return await next()
-      }
-      pathWithoutDefaultDocument = pathResolve(pathWithoutDefaultDocument)
-
-      if (pathWithoutDefaultDocument !== path) {
-        content = await getContent(pathWithoutDefaultDocument, c)
-        if (content) {
-          path = pathWithoutDefaultDocument
-        }
-      }
-    }
 
     if (content instanceof Response) {
       return c.newResponse(content.body, content)
