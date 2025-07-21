@@ -23,7 +23,7 @@ export type CookieOptions = {
   secure?: boolean
   sameSite?: 'Strict' | 'Lax' | 'None' | 'strict' | 'lax' | 'none'
   partitioned?: boolean
-  priority?: 'Low' | 'Medium' | 'High'
+  priority?: 'Low' | 'Medium' | 'High' | 'low' | 'medium' | 'high'
   prefix?: CookiePrefixOptions
 } & PartitionedCookieConstraint
 export type CookiePrefixOptions = 'host' | 'secure'
@@ -206,7 +206,7 @@ const _serialize = (name: string, value: string, opt: CookieOptions = {}): strin
   }
 
   if (opt.priority) {
-    cookie += `; Priority=${opt.priority}`
+    cookie += `; Priority=${opt.priority.charAt(0).toUpperCase() + opt.priority.slice(1)}`
   }
 
   if (opt.partitioned) {
