@@ -35,4 +35,33 @@ describe('Adapter for Next.js', () => {
     const req = new Request('http://localhost/api/error')
     expect(() => handler(req)).toThrowError('Custom Error')
   })
+
+  it('Should read `c.env`', async () => {
+    process.env.MESSAGE = 'Hono is hot!'
+
+    const app = new Hono<{
+      Bindings: {
+        MESSAGE: string
+      }
+    }>()
+    app.get('/api/authors', async (c) => {
+      return c.json([
+        {
+          name: 'yusukebe',
+          message: c.env.MESSAGE
+        },
+      ])
+    })
+    const handler = handle(app)
+    const req = new Request('http://localhost/api/authors')
+    const res = await handler(req)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual([
+      {
+        name: 'yusukebe',
+        message: process.env.MESSAGE
+      },
+    ])
+    delete process.env.MESSAGE
+  })
 })
