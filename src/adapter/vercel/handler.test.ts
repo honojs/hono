@@ -48,7 +48,7 @@ describe('Adapter for Next.js', () => {
       return c.json([
         {
           name: 'yusukebe',
-          message: c.env.MESSAGE
+          message: c.env.MESSAGE,
         },
       ])
     })
@@ -59,7 +59,7 @@ describe('Adapter for Next.js', () => {
     expect(await res.json()).toEqual([
       {
         name: 'yusukebe',
-        message: process.env.MESSAGE
+        message: process.env.MESSAGE,
       },
     ])
     delete process.env.MESSAGE
