@@ -2,7 +2,7 @@ const isWindowsPath = (path: string): boolean => {
   return /^[a-zA-Z]:/.test(path) || path.includes('\\')
 }
 
-export const defaultJoin = (...paths: string[]) => {
+export const defaultJoin = (...paths: string[]): string => {
   if (paths.length === 0) return '.'
 
   const isWindows = paths.some(isWindowsPath)
