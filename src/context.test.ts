@@ -108,6 +108,12 @@ describe('Context', () => {
     expect(res.headers.get('Location')).toBe('https://example.com/destination')
   })
 
+  it('c.redirect() w/ URL encoded', async () => {
+    const res = c.redirect(new URL('/小麦粉', 'https://example.com'))
+    expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe('https://example.com/%E5%B0%8F%E9%BA%A6%E7%B2%89')
+  })
+
   it('c.header()', async () => {
     c.header('X-Foo', 'Bar')
     const res = c.body('Hi')
