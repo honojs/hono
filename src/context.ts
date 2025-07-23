@@ -285,6 +285,24 @@ const setDefaultContentType = (contentType: string, headers?: HeaderRecord): Hea
   }
 }
 
+/**
+ * This function ensures that the string is safely encoded,
+ * and not double-encoded.
+ * The input string may or may not escaped by encodeURI.
+ */
+const safeEncodeURI = (str: string) => {
+  try {
+    // decodeURI will throw if str contains %
+    // In that case, we can assume that str is not encoded
+    return encodeURI(decodeURI(str))
+  } catch (e) {
+    if (e instanceof URIError) {
+      return encodeURI(str)
+    }
+    throw e
+  }
+}
+
 export class Context<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Env = any,
@@ -746,7 +764,7 @@ export class Context<
     location: string | URL,
     status?: T
   ): Response & TypedResponse<undefined, T, 'redirect'> => {
-    this.header('Location', String(location))
+    this.header('Location', safeEncodeURI(String(location)))
     return this.newResponse(null, status ?? 302) as any
   }
 
