@@ -124,7 +124,7 @@ describe('Serve Static Middleware', () => {
     expect(res.status).toBe(404)
     expect(res.headers.get('X-Custom')).toBe('Bun')
     expect(onNotFound).toHaveBeenCalledWith(
-      './runtime-tests/bun/favicon-notfound.ico',
+      'runtime-tests/bun/favicon-notfound.ico',
       expect.anything()
     )
   })

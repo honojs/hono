@@ -7,6 +7,7 @@ import type { Context, Data } from '../../context'
 import type { Env, MiddlewareHandler } from '../../types'
 import { COMPRESSIBLE_CONTENT_TYPE_REGEX } from '../../utils/compress'
 import { getMimeType } from '../../utils/mime'
+import { defaultJoin } from './path'
 
 export type ServeStaticOptions<E extends Env = Env> = {
   root?: string
@@ -27,18 +28,13 @@ const ENCODINGS_ORDERED_KEYS = Object.keys(ENCODINGS) as (keyof typeof ENCODINGS
 
 const DEFAULT_DOCUMENT = 'index.html'
 
-const defaultJoin = (...paths: string[]) => {
-  const path = (paths[0] + '/' + paths[1]).replace(/\/+/g, '/').replace(/^\.\//, '')
-  return new URL(`file://${path}`).pathname
-}
-
 /**
  * This middleware is not directly used by the user. Create a wrapper specifying `getContent()` by the environment such as Deno or Bun.
  */
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E> & {
     getContent: (path: string, c: Context<E>) => Promise<Data | Response | null>
-    join: (...paths: string[]) => string
+    join?: (...paths: string[]) => string
     /**
      * @deprecated Currently, `pathResolve` is no longer used. Please specify `join` instead.
      */
@@ -86,7 +82,7 @@ export const serveStatic = <E extends Env = Env>(
       !optionPath && options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename
     )
 
-    if (options.isDir && options.isDir(path)) {
+    if (options.isDir && (await options.isDir(path))) {
       path = join(path, DEFAULT_DOCUMENT)
     }
 

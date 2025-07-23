@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { stat } from 'node:fs/promises'
+import { join } from 'node:path'
 import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
 import type { ServeStaticOptions } from '../../middleware/serve-static'
 import type { Env, MiddlewareHandler } from '../../types'
@@ -9,13 +10,9 @@ export const serveStatic = <E extends Env = Env>(
 ): MiddlewareHandler => {
   return async function serveStatic(c, next) {
     const getContent = async (path: string) => {
-      path = path.startsWith('/') ? path : `./${path}`
       // @ts-ignore
       const file = Bun.file(path)
       return (await file.exists()) ? file : null
-    }
-    const pathResolve = (path: string) => {
-      return path.startsWith('/') ? path : `./${path}`
     }
     const isDir = async (path: string) => {
       let isDir
@@ -28,7 +25,7 @@ export const serveStatic = <E extends Env = Env>(
     return baseServeStatic({
       ...options,
       getContent,
-      pathResolve,
+      join,
       isDir,
     })(c, next)
   }

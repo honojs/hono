@@ -1,4 +1,3 @@
-import path, { join } from 'node:path'
 import { Hono } from '../../hono'
 import { serveStatic as baseServeStatic } from '.'
 
@@ -13,7 +12,6 @@ describe('Serve Static Middleware', () => {
 
   const serveStatic = baseServeStatic({
     getContent,
-    join,
     isDir: (path) => {
       if (path === 'static/sub' || path === 'static/hello.world') {
         return true
@@ -86,7 +84,6 @@ describe('Serve Static Middleware', () => {
       '*',
       baseServeStatic({
         getContent,
-        join,
         precompressed: true,
       })
     )
@@ -107,7 +104,6 @@ describe('Serve Static Middleware', () => {
       '*',
       baseServeStatic({
         getContent,
-        join,
         precompressed: true,
       })
     )
@@ -128,7 +124,6 @@ describe('Serve Static Middleware', () => {
       '*',
       baseServeStatic({
         getContent,
-        join,
         precompressed: true,
       })
     )
@@ -149,7 +144,6 @@ describe('Serve Static Middleware', () => {
       '*',
       baseServeStatic({
         getContent,
-        join,
         precompressed: true,
       })
     )
@@ -170,7 +164,6 @@ describe('Serve Static Middleware', () => {
       '*',
       baseServeStatic({
         getContent,
-        join,
         precompressed: true,
       })
     )
@@ -191,7 +184,6 @@ describe('Serve Static Middleware', () => {
       '*',
       baseServeStatic({
         getContent,
-        join,
         precompressed: true,
       })
     )
@@ -213,7 +205,6 @@ describe('Serve Static Middleware', () => {
     const app = new Hono().use(
       '*',
       baseServeStatic({
-        join,
         getContent: async () => {
           return response
         },
@@ -233,7 +224,6 @@ describe('Serve Static Middleware', () => {
       const app = new Hono()
       const serveStatic = baseServeStatic({
         getContent,
-        join,
         root: '/home/hono/child',
       })
       app.get('/static/*', serveStatic)
@@ -246,7 +236,6 @@ describe('Serve Static Middleware', () => {
       const app = new Hono()
       const serveStatic = baseServeStatic({
         getContent,
-        join,
         root: '/home/hono/../parent',
       })
       app.get('/static/*', serveStatic)
@@ -259,7 +248,6 @@ describe('Serve Static Middleware', () => {
       const app = new Hono()
       const serveStatic = baseServeStatic({
         getContent,
-        join,
         root: '../home/hono',
       })
       app.get('/static/*', serveStatic)
@@ -272,7 +260,6 @@ describe('Serve Static Middleware', () => {
       const app = new Hono()
       const serveStatic = baseServeStatic({
         getContent,
-        join,
         root: '.',
       })
       app.get('*', serveStatic)
@@ -285,48 +272,12 @@ describe('Serve Static Middleware', () => {
       const app = new Hono()
       const serveStatic = baseServeStatic({
         getContent,
-        join: path.win32.join,
         root: 'C:\\Program Files\\App',
       })
       app.get('/static/*', serveStatic)
 
       const res = await app.request('/static/file.txt')
       expect(await res.text()).toBe(`Hello in C:\\Program Files\\App\\static\\file.txt`)
-    })
-  })
-
-  describe('Windows', () => {
-    const app = new Hono()
-    const getContent = vi.fn(async (path) => {
-      return `Hello in ${path}`
-    })
-
-    const serveStatic = baseServeStatic({
-      getContent,
-      join: path.win32.join,
-      isDir: (path) => path === 'static\\sub',
-    })
-
-    app.get('/static/*', serveStatic)
-
-    beforeEach(() => {
-      getContent.mockClear()
-    })
-
-    // Test only basic patterns
-    it('Should return 200 response - /static/hello.html', async () => {
-      const res = await app.request('/static/hello.html')
-      expect(res.status).toBe(200)
-      expect(res.headers.get('Content-Encoding')).toBeNull()
-      expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
-      expect(await res.text()).toBe('Hello in static\\hello.html')
-    })
-
-    it('Should return 200 response - /static/sub', async () => {
-      const res = await app.request('/static/sub')
-      expect(res.status).toBe(200)
-      expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
-      expect(await res.text()).toBe('Hello in static\\sub\\index.html')
     })
   })
 
@@ -338,7 +289,6 @@ describe('Serve Static Middleware', () => {
 
     const serveStatic = baseServeStatic({
       getContent,
-      join: path.win32.join,
       isDir: (path) => path === 'C:\\Users\\yusuke\\work\\app\\static\\sub',
       root: 'C:\\Users\\yusuke\\work\\app',
     })
