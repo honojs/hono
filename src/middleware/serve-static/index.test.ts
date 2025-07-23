@@ -294,4 +294,77 @@ describe('Serve Static Middleware', () => {
       expect(await res.text()).toBe(`Hello in C:\\Program Files\\App\\static\\file.txt`)
     })
   })
+
+  describe('Windows', () => {
+    const app = new Hono()
+    const getContent = vi.fn(async (path) => {
+      return `Hello in ${path}`
+    })
+
+    const serveStatic = baseServeStatic({
+      getContent,
+      join: path.win32.join,
+      isDir: (path) => path === 'static\\sub',
+    })
+
+    app.get('/static/*', serveStatic)
+
+    beforeEach(() => {
+      getContent.mockClear()
+    })
+
+    // Test only basic patterns
+    it('Should return 200 response - /static/hello.html', async () => {
+      const res = await app.request('/static/hello.html')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
+      expect(await res.text()).toBe('Hello in static\\hello.html')
+    })
+
+    it('Should return 200 response - /static/sub', async () => {
+      const res = await app.request('/static/sub')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
+      expect(await res.text()).toBe('Hello in static\\sub\\index.html')
+    })
+  })
+
+  describe('Windows with root option', () => {
+    const app = new Hono()
+    const getContent = vi.fn(async (path) => {
+      return `Hello in ${path}`
+    })
+
+    const serveStatic = baseServeStatic({
+      getContent,
+      join: path.win32.join,
+      isDir: (path) => path === 'C:\\Users\\yusuke\\work\\app\\static\\sub',
+      root: 'C:\\Users\\yusuke\\work\\app',
+    })
+
+    app.get('/static/*', serveStatic)
+
+    beforeEach(() => {
+      getContent.mockClear()
+    })
+
+    // Test only basic patterns
+    it('Should return 200 response - /static/hello.html', async () => {
+      const res = await app.request('/static/hello.html')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
+      expect(await res.text()).toBe('Hello in C:\\Users\\yusuke\\work\\app\\static\\hello.html')
+    })
+
+    it('Should return 200 response - /static/sub', async () => {
+      const res = await app.request('/static/sub')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Type')).toMatch(/^text\/html/)
+      expect(await res.text()).toBe(
+        'Hello in C:\\Users\\yusuke\\work\\app\\static\\sub\\index.html'
+      )
+    })
+  })
 })
