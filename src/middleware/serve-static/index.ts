@@ -34,6 +34,10 @@ const DEFAULT_DOCUMENT = 'index.html'
 export const serveStatic = <E extends Env = Env>(
   options: ServeStaticOptions<E> & {
     getContent: (path: string, c: Context<E>) => Promise<Data | Response | null>
+    /**
+     *
+     * `join` option according to the runtime. Example `import { join } from 'node:path`. If not specified, it will fall back to the default join function.`
+     */
     join?: (...paths: string[]) => string
     /**
      * @deprecated Currently, `pathResolve` is no longer used. Please specify `join` instead.
@@ -44,13 +48,7 @@ export const serveStatic = <E extends Env = Env>(
 ): MiddlewareHandler => {
   const root = options.root ?? './'
   const optionPath = options.path
-  let join = options.join
-  if (!join) {
-    console.log(
-      `Specify the \`join\` option according to the runtime. Example \`import { join } from 'node:path\` In this case, it will fall back to the default join function.`
-    )
-    join = defaultJoin
-  }
+  const join = options.join ?? defaultJoin
   if (options.pathResolve) {
     console.log(`Currently, \`pathResolve\` is no longer used. Please specify \`join\` instead.`)
   }
