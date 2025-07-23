@@ -40,7 +40,7 @@ export const serveStatic = <E extends Env = Env>(
      */
     join?: (...paths: string[]) => string
     /**
-     * @deprecated Currently, `pathResolve` is no longer used. Please specify `join` instead.
+     * @deprecated Currently, `pathResolve` is no longer used.
      */
     pathResolve?: (path: string) => string
     isDir?: (path: string) => boolean | undefined | Promise<boolean | undefined>
@@ -49,9 +49,6 @@ export const serveStatic = <E extends Env = Env>(
   const root = options.root ?? './'
   const optionPath = options.path
   const join = options.join ?? defaultJoin
-  if (options.pathResolve) {
-    console.log(`Currently, \`pathResolve\` is no longer used. Please specify \`join\` instead.`)
-  }
 
   return async (c, next) => {
     // Do nothing if Response is already set
