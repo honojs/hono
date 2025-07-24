@@ -20,6 +20,7 @@ import type {
   JSONValue,
   SimplifyDeepArray,
 } from './utils/types'
+import { safeEncodeURI } from './utils/url'
 
 type HeaderRecord =
   | Record<'Content-Type', BaseMime>
@@ -282,24 +283,6 @@ const setDefaultContentType = (contentType: string, headers?: HeaderRecord): Hea
   return {
     'Content-Type': contentType,
     ...headers,
-  }
-}
-
-/**
- * This function ensures that the string is safely encoded,
- * and not double-encoded.
- * The input string may or may not escaped by encodeURI.
- */
-const safeEncodeURI = (str: string) => {
-  try {
-    // decodeURI will throw if str contains %
-    // In that case, we can assume that str is not encoded
-    return encodeURI(decodeURI(str))
-  } catch (e) {
-    if (e instanceof URIError) {
-      return encodeURI(str)
-    }
-    throw e
   }
 }
 

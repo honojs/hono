@@ -7,6 +7,7 @@ import {
   getQueryParams,
   getQueryStrings,
   mergePath,
+  safeEncodeURI,
   splitPath,
   splitRoutingPath,
 } from './url'
@@ -301,6 +302,22 @@ describe('url', () => {
       expect(getQueryParams('http://example.com/?toString')).toEqual({
         toString: [''],
       })
+    })
+  })
+
+  describe('safeEncodeURI', () => {
+    it('Encode multibytes', async () => {
+      expect(safeEncodeURI('こんにちは')).toBe('%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF')
+    })
+
+    it('Encode unencoded, but URI invalid ASCII chars', async () => {
+      expect(safeEncodeURI('https://example.com/%hello')).toBe('https://example.com/%25hello')
+    })
+
+    it('Do not change the encoded string', async () => {
+      expect(
+        safeEncodeURI('https://example.com/%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF?abc')
+      ).toBe('https://example.com/%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF?abc')
     })
   })
 })
