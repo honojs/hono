@@ -159,7 +159,7 @@ function unauthorizedResponse(opts: {
   })
 }
 
-export const verifyFromJwks = Jwt.verifyFromJwks
+export const verifyWithJwks = Jwt.verifyWithJwks
 export const verify = Jwt.verify
 export const decode = Jwt.decode
 export const sign = Jwt.sign

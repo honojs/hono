@@ -107,7 +107,7 @@ export const verify = async (
   return payload
 }
 
-export const verifyFromJwks = async (
+export const verifyWithJwks = async (
   token: string,
   options: {
     keys?: HonoJsonWebKey[]
@@ -142,7 +142,7 @@ export const verifyFromJwks = async (
       options.keys = data.keys
     }
   } else if (!options.keys) {
-    throw new Error('verifyFromJwks requires options for either "keys" or "jwks_uri" or both')
+    throw new Error('verifyWithJwks requires options for either "keys" or "jwks_uri" or both')
   }
 
   const matchingKey = options.keys.find((key) => key.kid === header.kid)
