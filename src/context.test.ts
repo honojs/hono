@@ -108,6 +108,13 @@ describe('Context', () => {
     expect(res.headers.get('Location')).toBe('https://example.com/destination')
   })
 
+  it('c.redirect() w/ multibytes', async () => {
+    const res = c.redirect('https://example.com/こんにちは')
+    expect(res.headers.get('Location')).toBe(
+      'https://example.com/%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF'
+    )
+  })
+
   it('c.header()', async () => {
     c.header('X-Foo', 'Bar')
     const res = c.body('Hi')
