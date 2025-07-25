@@ -162,11 +162,53 @@ export const streamHandle = <
   )
 }
 
+type HandleOptions = {
+  isContentTypeBinary: ((contentType: string) => boolean) | undefined
+}
+
 /**
- * Accepts events from API Gateway/ELB(`APIGatewayProxyEvent`) and directly through Function Url(`APIGatewayProxyEventV2`)
+ * Converts a Hono application to an AWS Lambda handler.
+ *
+ * Accepts events from API Gateway (v1 and v2), Application Load Balancer (ALB),
+ * and Lambda Function URLs.
+ *
+ * @param app - The Hono application instance
+ * @param options - Optional configuration
+ * @param options.isContentTypeBinary - A function to determine if the content type is binary.
+ *                                      If not provided, the default function will be used.
+ * @returns Lambda handler function
+ *
+ * @example
+ * ```js
+ * import { Hono } from 'hono'
+ * import { handle } from 'hono/aws-lambda'
+ *
+ * const app = new Hono()
+ *
+ * app.get('/', (c) => c.text('Hello from Lambda'))
+ * app.get('/json', (c) => c.json({ message: 'Hello JSON' }))
+ *
+ * export const handler = handle(app)
+ * ```
+ *
+ * @example
+ * ```js
+ * // With custom binary content type detection
+ * import { handle, defaultIsContentTypeBinary } from 'hono/aws-lambda'
+ * export const handler = handle(app, {
+ *   isContentTypeBinary: (contentType) => {
+ *     if (defaultIsContentTypeBinary(contentType)) {
+ *       // default logic same as prior to v4.8.4
+ *       return true
+ *     }
+ *     return contentType.startsWith('image/') || contentType === 'application/pdf'
+ *   }
+ * })
+ * ```
  */
 export const handle = <E extends Env = Env, S extends Schema = {}, BasePath extends string = '/'>(
-  app: Hono<E, S, BasePath>
+  app: Hono<E, S, BasePath>,
+  { isContentTypeBinary }: HandleOptions = { isContentTypeBinary: undefined }
 ): (<L extends LambdaEvent>(
   event: L,
   lambdaContext?: LambdaContext
@@ -189,7 +231,7 @@ export const handle = <E extends Env = Env, S extends Schema = {}, BasePath exte
       lambdaContext,
     })
 
-    return processor.createResult(event, res)
+    return processor.createResult(event, res, { isContentTypeBinary })
   }
 }
 
@@ -231,8 +273,14 @@ export abstract class EventProcessor<E extends LambdaEvent> {
     return new Request(url, requestInit)
   }
 
-  async createResult(event: E, res: Response): Promise<APIGatewayProxyResult> {
+  async createResult(
+    event: E,
+    res: Response,
+    options: Pick<HandleOptions, 'isContentTypeBinary'>
+  ): Promise<APIGatewayProxyResult> {
+    // determine whether the response body should be base64 encoded
     const contentType = res.headers.get('content-type')
+    const isContentTypeBinary = options.isContentTypeBinary ?? defaultIsContentTypeBinary // overwrite default function if provided
     let isBase64Encoded = contentType && isContentTypeBinary(contentType) ? true : false
 
     if (!isBase64Encoded) {
@@ -490,7 +538,13 @@ const isProxyEventV2 = (event: LambdaEvent): event is APIGatewayProxyEventV2 => 
   return Object.hasOwn(event, 'rawPath')
 }
 
-export const isContentTypeBinary = (contentType: string) => {
+/**
+ * Check if the given content type is binary.
+ * This is a default function and may be overwritten by the user via `isContentTypeBinary` option in handler().
+ * @param contentType The content type to check.
+ * @returns True if the content type is binary, false otherwise.
+ */
+export const defaultIsContentTypeBinary = (contentType: string): boolean => {
   return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
     contentType
   )
