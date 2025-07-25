@@ -319,5 +319,15 @@ describe('url', () => {
         safeEncodeURI('https://example.com/%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF?abc')
       ).toBe('https://example.com/%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF?abc')
     })
+
+    it('Should be the same strings', async () => {
+      expect(
+        safeEncodeURI(
+          'https://login.microsoftonline.com/redacted-id&scope=email%20openid%20profile%20offline_access&redirect_uri=https%3A%2F%2Fredacted-domain.org%2Fapi%2Fauth%2Fcallback&client-request-id=redacted-id&response_mode=query&client_info=1&x-client-SKU=msal.js.node&x-client-VER=3.6.4&x-client-OS=linux&x-client-CPU=x64&response_type=code&code_challenge=7C75MO8zdoJZn7_sIpxcFEQzPvzWIMzD2tUf-lqevR0&code_challenge_method=S256'
+        )
+      ).toBe(
+        'https://login.microsoftonline.com/redacted-id&scope=email%20openid%20profile%20offline_access&redirect_uri=https%3A%2F%2Fredacted-domain.org%2Fapi%2Fauth%2Fcallback&client-request-id=redacted-id&response_mode=query&client_info=1&x-client-SKU=msal.js.node&x-client-VER=3.6.4&x-client-OS=linux&x-client-CPU=x64&response_type=code&code_challenge=7C75MO8zdoJZn7_sIpxcFEQzPvzWIMzD2tUf-lqevR0&code_challenge_method=S256'
+      )
+    })
   })
 })
