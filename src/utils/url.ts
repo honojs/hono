@@ -318,11 +318,13 @@ export const decodeURIComponent_ = decodeURIComponent
  */
 export const safeEncodeURI = (str: string): string => {
   try {
-    // decodeURI will throw if str contains %
-    // In that case, we can assume that str is not encoded
-    return encodeURI(decodeURI(str))
+    // Try to decode the string
+    const decoded = decodeURI(str)
+    // If successful, encode only if it's different from the original
+    return decoded === str ? encodeURI(str) : str
   } catch (e) {
     if (e instanceof URIError) {
+      // If decoding fails, the string is not encoded, so encode it
       return encodeURI(str)
     }
     throw e
