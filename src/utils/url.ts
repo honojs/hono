@@ -316,17 +316,12 @@ export const decodeURIComponent_ = decodeURIComponent
  * and not double-encoded.
  * The input string may or may not escaped by encodeURI.
  */
+
+const isByteString = (str: string): boolean => {
+  // eslint-disable-next-line no-control-regex
+  return !/[^\x00-\xFF]/.test(str)
+}
+
 export const safeEncodeURI = (str: string): string => {
-  try {
-    // Try to decode the string
-    const decoded = decodeURI(str)
-    // If successful, encode only if it's different from the original
-    return decoded === str ? encodeURI(str) : str
-  } catch (e) {
-    if (e instanceof URIError) {
-      // If decoding fails, the string is not encoded, so encode it
-      return encodeURI(str)
-    }
-    throw e
-  }
+  return isByteString(str) ? str : encodeURI(str)
 }
