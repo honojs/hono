@@ -304,34 +304,4 @@ describe('url', () => {
       })
     })
   })
-
-  describe('safeEncodeURI', () => {
-    it('Encode multibytes', async () => {
-      expect(safeEncodeURI('こんにちは')).toBe('%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF')
-    })
-
-    it('Keep strings with invalid ASCII chars', async () => {
-      expect(safeEncodeURI('https://example.com/%hello')).toBe('https://example.com/%hello')
-    })
-
-    it('Keep strings with an encoded string', async () => {
-      expect(
-        safeEncodeURI('https://example.com/%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF?abc')
-      ).toBe('https://example.com/%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF?abc')
-    })
-
-    it('Keep strings with encoded :// unchanged', () => {
-      expect(safeEncodeURI('https://localhost/api?redirect_uri=https%3A%2F%2Fexample.com')).toBe(
-        'https://localhost/api?redirect_uri=https%3A%2F%2Fexample.com'
-      )
-    })
-
-    it('Keep strings with encoded spaces and :// unchanged', async () => {
-      expect(
-        safeEncodeURI(
-          'https://localhost/api?redirect_uri=https%3A%2F%2Fexample.com&scope=email%20profile'
-        )
-      ).toBe('https://localhost/api?redirect_uri=https%3A%2F%2Fexample.com&scope=email%20profile')
-    })
-  })
 })

@@ -310,18 +310,3 @@ export const getQueryParams = (
 // `decodeURIComponent` is a long name.
 // By making it a function, we can use it commonly when minified, reducing the amount of code.
 export const decodeURIComponent_ = decodeURIComponent
-
-/**
- * This function ensures that the string is safely encoded,
- * and not double-encoded.
- * The input string may or may not escaped by encodeURI.
- */
-
-const isByteString = (str: string): boolean => {
-  // eslint-disable-next-line no-control-regex
-  return !/[^\x00-\xFF]/.test(str)
-}
-
-export const safeEncodeURI = (str: string): string => {
-  return isByteString(str) ? str : encodeURI(str)
-}
