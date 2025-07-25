@@ -7,7 +7,6 @@ import {
   getQueryParams,
   getQueryStrings,
   mergePath,
-  safeEncodeURI,
   splitPath,
   splitRoutingPath,
 } from './url'

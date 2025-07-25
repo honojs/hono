@@ -20,7 +20,6 @@ import type {
   JSONValue,
   SimplifyDeepArray,
 } from './utils/types'
-import { safeEncodeURI } from './utils/url'
 
 type HeaderRecord =
   | Record<'Content-Type', BaseMime>
