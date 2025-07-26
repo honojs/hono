@@ -118,7 +118,7 @@ export const jwk = (
       const keys = typeof options.keys === 'function' ? await options.keys(ctx) : options.keys
       const jwks_uri =
         typeof options.jwks_uri === 'function' ? await options.jwks_uri(ctx) : options.jwks_uri
-      payload = await Jwt.verifyFromJwks(token, { keys, jwks_uri }, init)
+      payload = await Jwt.verifyWithJwks(token, { keys, jwks_uri }, init)
     } catch (e) {
       cause = e
     }

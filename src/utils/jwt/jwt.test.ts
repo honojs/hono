@@ -4,7 +4,7 @@ import { encodeBase64, encodeBase64Url } from '../encode'
 import { AlgorithmTypes } from './jwa'
 import { signing } from './jws'
 import * as JWT from './jwt'
-import { verifyFromJwks } from './jwt'
+import { verifyWithJwks } from './jwt'
 import {
   JwtAlgorithmNotImplemented,
   JwtTokenExpired,
@@ -477,7 +477,7 @@ describe('JWT', () => {
   })
 })
 
-describe('verifyFromJwks header.alg fallback', () => {
+describe('verifyWithJwks header.alg fallback', () => {
   it('Should use header.alg as fallback when matchingKey.alg is missing', async () => {
     // Setup: Create a JWT signed with HS384 (different from default HS256)
     const payload = { message: 'hello world' }
@@ -510,7 +510,7 @@ describe('verifyFromJwks header.alg fallback', () => {
     ]
 
     // Execute: Verify the JWT token signed with HS384
-    const result = await verifyFromJwks(token, { keys })
+    const result = await verifyWithJwks(token, { keys })
 
     // If verification succeeds, it means header.alg was used
     expect(result).toEqual(payload)
