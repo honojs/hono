@@ -17,6 +17,10 @@ import path from 'path'
 import { cleanupWorkers, removePrivateFields } from './remove-private-fields'
 import { validateExports } from './validate-exports'
 
+const PACKAGES_NOT_PUBLISHED_TO_JSR = [
+  './moddable', // because the code depends on runtime-specific APIs can't be published to JSR
+]
+
 const args = arg({
   '--watch': Boolean,
 })
@@ -28,7 +32,7 @@ const readJsonExports = (path: string) => JSON.parse(fs.readFileSync(path, 'utf-
 const [packageJsonExports, jsrJsonExports] = ['./package.json', './jsr.json'].map(readJsonExports)
 
 // Validate exports of package.json and jsr.json
-validateExports(packageJsonExports, jsrJsonExports, 'jsr.json')
+validateExports(packageJsonExports, jsrJsonExports, 'jsr.json', PACKAGES_NOT_PUBLISHED_TO_JSR)
 validateExports(jsrJsonExports, packageJsonExports, 'package.json')
 
 const entryPoints = glob.sync('./src/**/*.ts', {
