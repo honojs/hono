@@ -23,9 +23,6 @@ export const serveStatic = <E extends Env = Env>(
         return null
       }
     }
-    const pathResolve = (path: string) => {
-      return path.startsWith('/') ? path : `./${path}`
-    }
     const isDir = (path: string) => {
       let isDir
       try {
@@ -34,11 +31,9 @@ export const serveStatic = <E extends Env = Env>(
       } catch {}
       return isDir
     }
-
     return baseServeStatic({
       ...options,
       getContent,
-      pathResolve,
       isDir,
     })(c, next)
   }
