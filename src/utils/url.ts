@@ -310,23 +310,3 @@ export const getQueryParams = (
 // `decodeURIComponent` is a long name.
 // By making it a function, we can use it commonly when minified, reducing the amount of code.
 export const decodeURIComponent_ = decodeURIComponent
-
-/**
- * This function ensures that the string is safely encoded,
- * and not double-encoded.
- * The input string may or may not escaped by encodeURI.
- */
-export const safeEncodeURI = (str: string): string => {
-  try {
-    // Try to decode the string
-    const decoded = decodeURI(str)
-    // If successful, encode only if it's different from the original
-    return decoded === str ? encodeURI(str) : str
-  } catch (e) {
-    if (e instanceof URIError) {
-      // If decoding fails, the string is not encoded, so encode it
-      return encodeURI(str)
-    }
-    throw e
-  }
-}
