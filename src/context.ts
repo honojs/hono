@@ -20,7 +20,6 @@ import type {
   JSONValue,
   SimplifyDeepArray,
 } from './utils/types'
-import { safeEncodeURI } from './utils/url'
 
 type HeaderRecord =
   | Record<'Content-Type', BaseMime>
@@ -747,7 +746,13 @@ export class Context<
     location: string | URL,
     status?: T
   ): Response & TypedResponse<undefined, T, 'redirect'> => {
-    this.header('Location', safeEncodeURI(String(location)))
+    const locationString = String(location)
+    this.header(
+      'Location',
+      // Multibyes should be encoded
+      // eslint-disable-next-line no-control-regex
+      !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
+    )
     return this.newResponse(null, status ?? 302) as any
   }
 
