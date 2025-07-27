@@ -1,5 +1,5 @@
-import { fetchRP, DetailedError } from 'fetch-result-please'
 import type { ClientResponse, ObjectType } from './types'
+import { fetchRP, DetailedError } from './utils_fetchRP'
 
 export { DetailedError }
 

@@ -669,7 +669,6 @@
     "editorconfig-checker": "^6.1.0",
     "esbuild": "^0.15.18",
     "eslint": "^9.10.0",
-    "fetch-result-please": "^0.2.0",
     "glob": "^11.0.0",
     "jsdom": "^22.1.0",
     "msw": "^2.6.0",
