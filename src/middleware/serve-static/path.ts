@@ -3,7 +3,9 @@ const isWindowsPath = (path: string): boolean => {
 }
 
 export const defaultJoin = (...paths: string[]): string => {
-  if (paths.length === 0) return '.'
+  if (paths.length === 0) {
+    return '.'
+  }
 
   const isWindows = paths.some(isWindowsPath)
   const sep = isWindows ? '\\' : '/'
@@ -13,7 +15,9 @@ export const defaultJoin = (...paths: string[]): string => {
 
   for (let i = 1; i < paths.length; i++) {
     const segment = paths[i]
-    if (!segment) continue
+    if (!segment) {
+      continue
+    }
 
     if (result && !result.endsWith(sep) && !result.endsWith(otherSep)) {
       result += sep
