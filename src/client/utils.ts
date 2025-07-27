@@ -1,4 +1,7 @@
-import type { ObjectType } from './types'
+import { fetchRP, DetailedError } from 'fetch-result-please'
+import type { ClientResponse, ObjectType } from './types'
+
+export { DetailedError }
 
 export const mergePath = (base: string, path: string) => {
   base = base.replace(/\/+$/, '')
@@ -71,4 +74,20 @@ export function deepMerge<T>(target: T, source: Record<string, unknown>): T {
   }
 
   return merged as T
+}
+
+/**
+ * Shortcut to get a consumable response from `hc` fetch calls, with types inference.
+ *
+ * Smartly parse the response data, and automatically throw an error if the response is not ok.
+ *
+ * To handle an error, see {@link DetailedError} interface.
+ *
+ * @example hcParse(client.posts.$get())
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function hcParse<T extends ClientResponse<any>>(
+  fetchRes: T | Promise<T>
+): Promise<T extends ClientResponse<infer RT> ? RT : never> {
+  return fetchRP(fetchRes)
 }
