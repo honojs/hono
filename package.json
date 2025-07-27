@@ -24,6 +24,7 @@
     "lint:fix": "eslint src runtime-tests build perf-measures --fix",
     "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\"",
     "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\"",
+    "editorconfig-checker": "editorconfig-checker",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json",
     "build": "bun run --shell bun remove-dist && bun ./build/build.ts && bun run copy:package.cjs.json",
     "postbuild": "publint",
