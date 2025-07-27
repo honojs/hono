@@ -100,7 +100,7 @@ const buildVersion = async (version: string, name: string) => {
   } else {
     // Ensure we have the latest remote refs
     await runCommand('git fetch origin', HONO_ROOT)
-    
+
     try {
       const stashResult = await runCommand('git stash push -m "benchmark-temp"', HONO_ROOT)
       needsRestore = stashResult.stdout.includes('Saved working directory')
