@@ -19,7 +19,8 @@
     "test:workerd": "vitest --run --config ./runtime-tests/workerd/vitest.config.ts",
     "test:lambda": "vitest --run --config ./runtime-tests/lambda/vitest.config.ts",
     "test:lambda-edge": "vitest --run --config ./runtime-tests/lambda-edge/vitest.config.ts",
-    "test:all": "bun run test && bun test:deno && bun test:bun && bun test:fastly && bun test:node && bun test:workerd && bun test:lambda && bun test:lambda-edge",
+    "test:moddable": "vitest --run --config ./runtime-tests/moddable/vitest.config.ts",
+    "test:all": "bun run test && bun test:deno && bun test:bun && bun test:fastly && bun test:node && bun test:workerd && bun test:lambda && bun test:lambda-edge && bun test:moddable",
     "lint": "eslint src runtime-tests build perf-measures",
     "lint:fix": "eslint src runtime-tests build perf-measures --fix",
     "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\"",
@@ -384,6 +385,11 @@
       "import": "./dist/adapter/service-worker/index.js",
       "require": "./dist/cjs/adapter/service-worker/index.js"
     },
+    "./moddable": {
+      "types": "./dist/types/adapter/moddable/index.d.ts",
+      "import": "./dist/adapter/moddable/index.js",
+      "require": "./dist/cjs/adapter/moddable/index.js"
+    },
     "./testing": {
       "types": "./dist/types/helper/testing/index.d.ts",
       "import": "./dist/helper/testing/index.js",
@@ -609,6 +615,9 @@
       ],
       "service-worker": [
         "./dist/types/adapter/service-worker"
+      ],
+      "moddable": [
+        "./dist/types/adapter/moddable"
       ],
       "testing": [
         "./dist/types/helper/testing"
