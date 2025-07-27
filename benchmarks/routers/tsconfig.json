@@ -4,7 +4,5 @@
     "esModuleInterop": true,
     "module": "NodeNext"
   },
-  "include": [
-    "./src"
-  ]
+  "include": ["./src"]
 }

@@ -2,15 +2,9 @@
   "name": "@hono/hono",
   "version": "0.0.0",
   "compilerOptions": {
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "deno.ns"
-    ]
+    "lib": ["dom", "dom.iterable", "deno.ns"]
   },
-  "unstable": [
-    "sloppy-imports"
-  ],
+  "unstable": ["sloppy-imports"],
   "exports": {
     ".": "./src/index.ts",
     "./request": "./src/request.ts",
@@ -111,15 +105,7 @@
     "./utils/ipaddr": "./src/utils/ipaddr.ts"
   },
   "publish": {
-    "include": [
-      "jsr.json",
-      "LICENSE",
-      "README.md",
-      "src/**/*.ts"
-    ],
-    "exclude": [
-      "src/**/*.test.ts",
-      "src/**/*.test.tsx"
-    ]
+    "include": ["jsr.json", "LICENSE", "README.md", "src/**/*.ts"],
+    "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
   }
 }

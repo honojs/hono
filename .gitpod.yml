@@ -1,5 +1,5 @@
 tasks:
-  - name:  Setup
+  - name: Setup
     init: bun install --no-save
 image:
   file: ./.devcontainer/Dockerfile
