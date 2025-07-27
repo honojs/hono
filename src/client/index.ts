@@ -4,6 +4,7 @@
  */
 
 export { hc } from './client'
+export { hcParse, DetailedError } from './utils'
 export type {
   InferResponseType,
   InferRequestType,

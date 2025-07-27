@@ -1,6 +1,11 @@
+import { serve } from '@hono/node-server'
+import { Hono } from '../hono'
+import type { Expect, Equal } from '../utils/types'
+import { hc } from './client'
 import {
   buildSearchParams,
   deepMerge,
+  hcParse,
   mergePath,
   removeIndexString,
   replaceUrlParam,
@@ -138,4 +143,49 @@ describe('deepMerge', () => {
       timeout: 2,
     })
   })
+})
+
+describe('hcParse', async () => {
+  const app = new Hono()
+    .get('/text', (c) => c.text('hi'))
+    .get('/json', (c) => c.json({ message: 'hi' }))
+
+  const client = hc<typeof app>('http://127.0.0.1:3301')
+
+  const server = serve({
+    fetch: app.fetch,
+    port: 3301,
+    hostname: '127.0.0.1',
+  })
+
+  // Wait until the server is ready
+  while (!server.listening) {
+    await new Promise((r) => setTimeout(r, 200))
+  }
+
+  await Promise.all([
+    it('should auto parse the text response - async fetch', async () => {
+      const result = await hcParse(client.text.$get())
+      expect(result).toBe('hi')
+      type _verify = Expect<Equal<typeof result, 'hi'>>
+    }),
+    it('should auto parse the text response - sync fetch', async () => {
+      const result = await hcParse(await client.text.$get())
+      expect(result).toBe('hi')
+      type _verify = Expect<Equal<typeof result, 'hi'>>
+    }),
+    it('should auto parse the json response - async fetch', async () => {
+      const result = await hcParse(client.json.$get())
+      expect(result).toEqual({ message: 'hi' })
+      type _verify = Expect<Equal<typeof result, { message: string }>>
+    }),
+    it('should auto parse the json response - sync fetch', async () => {
+      const result = await hcParse(await client.json.$get())
+      expect(result).toEqual({ message: 'hi' })
+      type _verify = Expect<Equal<typeof result, { message: string }>>
+    }),
+  ])
+
+  // Explicitly close server after 5 secs just to make sure there's no leak.
+  new Promise((r) => setTimeout(r, 5000)).then(() => server.close())
 })
