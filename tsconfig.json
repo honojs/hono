@@ -10,13 +10,10 @@
     "skipLibCheck": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "types": [
-      "node",
-      "vitest/globals"
-    ],
+    "types": ["node", "vitest/globals"],
     "jsx": "react",
     "jsxFactory": "jsx",
-    "jsxFragmentFactory": "Fragment",
+    "jsxFragmentFactory": "Fragment"
   },
   "include": [
     "src/**/*.ts",
@@ -24,5 +21,5 @@
     "src/**/*.mts",
     "src/**/*.test.ts",
     "src/**/*.test.tsx"
-  ],
+  ]
 }
