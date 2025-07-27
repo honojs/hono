@@ -1,75 +1,36 @@
-const isWindowsPath = (path: string): boolean => {
-  return /^[a-zA-Z]:/.test(path) || path.includes('\\')
-}
-
+/**
+ * `defaultJoin` does not support Windows paths and always uses `/` separators
+ * for security and cross-platform consistency.
+ * If you need Windows path support, please use `node:path` etc. instead.
+ */
 export const defaultJoin = (...paths: string[]): string => {
-  if (paths.length === 0) {
-    return '.'
-  }
+  if (paths.length === 0) return '.'
+  if (paths.length === 1 && paths[0] === '') return '.'
 
-  const isWindows = paths.some(isWindowsPath)
-  const sep = isWindows ? '\\' : '/'
-  const otherSep = isWindows ? '/' : '\\'
+  // Join non-empty paths with '/'
+  let result = paths.filter((p) => p !== '').join('/')
 
-  let result = paths[0] || ''
+  // Normalize multiple slashes to single slash
+  result = result.replace(/\/+/g, '/')
 
-  for (let i = 1; i < paths.length; i++) {
-    const segment = paths[i]
-    if (!segment) {
-      continue
-    }
+  // Handle path resolution (. and ..)
+  const segments = result.split('/')
+  const resolved = []
+  const isAbsolute = result.startsWith('/')
 
-    if (result && !result.endsWith(sep) && !result.endsWith(otherSep)) {
-      result += sep
-    }
-    result += segment
-  }
-
-  result = result.replace(/[/\\]+/g, sep)
-
-  if (result.startsWith(`.${sep}`)) {
-    result = result.slice(2)
-  }
-
-  const segments = result.split(/[/\\]/)
-  const resolvedSegments: string[] = []
-
-  let hasRoot = false
-  if (segments[0] === '' || /^[a-zA-Z]:$/.test(segments[0])) {
-    hasRoot = true
-    if (/^[a-zA-Z]:$/.test(segments[0])) {
-      resolvedSegments.push(segments[0])
-    }
-  }
-
-  for (let i = hasRoot ? 1 : 0; i < segments.length; i++) {
-    const segment = segments[i]
-    if (segment === '.' || segment === '') {
-      continue
-    } else if (segment === '..') {
-      if (
-        resolvedSegments.length > 0 &&
-        resolvedSegments[resolvedSegments.length - 1] !== '..' &&
-        !/^[a-zA-Z]:$/.test(resolvedSegments[resolvedSegments.length - 1])
-      ) {
-        resolvedSegments.pop()
-      } else if (!hasRoot) {
-        resolvedSegments.push('..')
+  for (const segment of segments) {
+    if (segment === '' || segment === '.') continue
+    if (segment === '..') {
+      if (resolved.length > 0 && resolved[resolved.length - 1] !== '..') {
+        resolved.pop()
+      } else if (!isAbsolute) {
+        resolved.push('..')
       }
     } else {
-      resolvedSegments.push(segment)
+      resolved.push(segment)
     }
   }
 
-  let finalPath = resolvedSegments.join(sep)
-
-  if (hasRoot && segments[0] === '') {
-    finalPath = sep + finalPath
-  }
-
-  if (!finalPath) {
-    return hasRoot ? sep : '.'
-  }
-
-  return finalPath
+  const final = resolved.join('/')
+  return isAbsolute ? '/' + final : final || '.'
 }

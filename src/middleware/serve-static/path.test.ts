@@ -1,43 +1,51 @@
+import { join as posixJoin } from 'node:path/posix'
 import { defaultJoin } from './path'
 
 describe('defaultJoin', () => {
-  it('should behave like Node.js path.join for Unix paths', () => {
-    expect(defaultJoin('./public', 'static/main.html')).toBe('public/static/main.html')
-    expect(defaultJoin('/home/yusuke/work/app/public', 'static/main.html')).toBe(
-      '/home/yusuke/work/app/public/static/main.html'
-    )
-    expect(defaultJoin('./public', '/absolute/path.html')).toBe('public/absolute/path.html')
-    expect(defaultJoin('./public', '../parent/file.html')).toBe('parent/file.html')
-    expect(defaultJoin('public', './file.html')).toBe('public/file.html')
-    expect(defaultJoin('public/', 'file.html')).toBe('public/file.html')
-    expect(defaultJoin('public', 'sub/', 'file.html')).toBe('public/sub/file.html')
-    expect(defaultJoin('', 'file.html')).toBe('file.html')
-    expect(defaultJoin('public', '')).toBe('public')
-  })
+  describe('Comparison with node:path/posix.join', () => {
+    it('Should behave like path.posix.join for all path operations', () => {
+      const testCases = [
+        // Basic path joining
+        ['/home/yusuke/work/app/public', 'static/main.html'],
+        ['public', 'sub/', 'file.html'],
+        ['', 'file.html'],
+        ['public', ''],
+        ['public/', 'file.html'],
+        ['public', 'static', 'main.html'],
+        ['assets', 'images', 'logo.png'],
 
-  it('should behave like Node.js path.win32.join for Windows paths', () => {
-    expect(defaultJoin('C:\\Users\\user', 'Documents\\file.txt')).toBe(
-      'C:\\Users\\user\\Documents\\file.txt'
-    )
-    expect(defaultJoin('public', 'static\\main.html')).toBe('public\\static\\main.html')
-    expect(defaultJoin('.\\public', 'static/main.html')).toBe('public\\static\\main.html')
-    expect(defaultJoin('C:\\Program Files\\App', 'static\\file.txt')).toBe(
-      'C:\\Program Files\\App\\static\\file.txt'
-    )
-    expect(defaultJoin('public\\', 'file.html')).toBe('public\\file.html')
-    expect(defaultJoin('public', 'sub\\', 'file.html')).toBe('public\\sub\\file.html')
-    expect(defaultJoin('', 'file.html')).toBe('file.html')
-    expect(defaultJoin('public', '')).toBe('public')
-  })
+        // Parent directory references
+        ['public', '../parent/file.html'],
+        ['public', '../../grandparent/file.html'],
+        ['/abs/path', '../relative.html'],
+        ['a/b', '../c'],
+        ['a/b/c', '../../d'],
 
-  it('should handle mixed path separators', () => {
-    expect(defaultJoin('C:\\Users', 'Documents/file.txt')).toBe('C:\\Users\\Documents\\file.txt')
-    expect(defaultJoin('public\\', 'static/main.html')).toBe('public\\static\\main.html')
-    expect(defaultJoin('./public', 'static\\main.html')).toBe('public\\static\\main.html')
-  })
+        // Current directory references
+        ['./public', 'static/main.html'],
+        ['public', './file.html'],
+        ['./public', '/absolute/path.html'],
+        ['.', 'file.html'],
+        ['public/.', 'file.html'],
 
-  it('should handle Windows relative paths with ..', () => {
-    expect(defaultJoin('.\\public', '..\\parent\\file.html')).toBe('parent\\file.html')
-    expect(defaultJoin('C:\\Users\\user', '..\\other\\file.txt')).toBe('C:\\Users\\other\\file.txt')
+        // Edge cases
+        [],
+        ['.'],
+        [''],
+        ['/'],
+        ['a', 'b', 'c'],
+
+        // Backslash handling (security)
+        ['static', 'test\\file.txt'],
+        ['public', 'path\\with\\backslash'],
+        ['C:\\Windows', 'System32\\file.txt'],
+      ]
+
+      testCases.forEach(([...args]) => {
+        const expected = posixJoin(...args)
+        const actual = defaultJoin(...args)
+        expect(actual).toBe(expected)
+      })
+    })
   })
 })
