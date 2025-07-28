@@ -149,6 +149,11 @@ describe('hcParse', async () => {
   const app = new Hono()
     .get('/text', (c) => c.text('hi'))
     .get('/json', (c) => c.json({ message: 'hi' }))
+    .get('/404', (c) => c.notFound())
+    .get('/raw', (c) => {
+      c.header('content-type', '')
+      return c.body('hello')
+    })
 
   const client = hc<typeof app>('http://127.0.0.1:3301')
 
@@ -183,6 +188,16 @@ describe('hcParse', async () => {
       const result = await hcParse(await client.json.$get())
       expect(result).toEqual({ message: 'hi' })
       type _verify = Expect<Equal<typeof result, { message: string }>>
+    }),
+    it('should throw error when the response is not ok', async () => {
+      await expect(hcParse(client['404'].$get())).rejects.toThrowError('404 Not Found')
+    }),
+    it('should parse as text for raw responses without content-type header', async () => {
+      const result = await hcParse(client.raw.$get())
+      console.log((await client.raw.$get()).headers.get('content-type'))
+      expect(result).toBe('hello')
+      // TODO: uncomment next line after `body` response are typed
+      // type _verify = Expect<Equal<typeof result, 'hello'>>
     }),
   ])
 
