@@ -111,6 +111,7 @@ const request = new Request('http://localhost/user/lookup/username/hey', { metho
 makeEdgeEnv()
 
 // FetchEvent Object
+// eslint-disable-next-line no-undef
 const event = new FetchEvent('fetch', { request })
 
 const fn = async () => {

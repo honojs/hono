@@ -5,7 +5,7 @@ interface ExtendableEvent extends Event {
 
 export interface FetchEvent extends ExtendableEvent {
   readonly clientId: string
-  readonly handled: Promise<undefined>
+  readonly handled: Promise<void>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly preloadResponse: Promise<any>
   readonly request: Request
