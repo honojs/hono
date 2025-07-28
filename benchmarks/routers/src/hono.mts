@@ -1,6 +1,6 @@
+import { PatternRouter } from '../../../src/router/pattern-router/index.ts'
 import { RegExpRouter } from '../../../src/router/reg-exp-router/index.ts'
 import { TrieRouter } from '../../../src/router/trie-router/index.ts'
-import { PatternRouter } from '../../../src/router/pattern-router/index.ts'
 import type { Router } from '../../../src/router.ts'
 import type { RouterInterface } from './tool.mts'
 import { routes, handler } from './tool.mts'

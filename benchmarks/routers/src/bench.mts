@@ -7,9 +7,9 @@ import { koaTreeRouter } from './koa-tree-router.mts'
 import { medleyRouter } from './medley-router.mts'
 import { memoiristRouter } from './memoirist.mts'
 import { radix3Router } from './radix3.mts'
+import { rou3Router } from './rou3.mts'
 import type { Route, RouterInterface } from './tool.mts'
 import { trekRouter } from './trek-router.mts'
-import { rou3Router } from './rou3.mts'
 
 const routers: RouterInterface[] = [
   regExpRouter,
