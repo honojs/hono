@@ -209,7 +209,7 @@ export class JSXNode implements HtmlEscaped {
         }
       } else if (key === 'dangerouslySetInnerHTML') {
         if (children.length > 0) {
-          throw 'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
+          throw new Error('Can only set one of `children` or `props.dangerouslySetInnerHTML`.')
         }
 
         children = [raw(v.__html)]
@@ -217,8 +217,8 @@ export class JSXNode implements HtmlEscaped {
         buffer[0] += ` ${key}="`
         buffer.unshift('"', v)
       } else if (typeof v === 'function') {
-        if (!key.startsWith('on')) {
-          throw `Invalid prop '${key}' of type 'function' supplied to '${tag}'.`
+        if (!key.startsWith('on') && key !== 'ref') {
+          throw new Error(`Invalid prop '${key}' of type 'function' supplied to '${tag}'.`)
         }
         // maybe event handler for client components, just ignore in server components
       } else {
@@ -423,10 +423,17 @@ export const cloneElement = <T extends JSXNode | JSX.Element>(
   props: Partial<Props>,
   ...children: Child[]
 ): T => {
+  let childrenToClone
+  if (children.length > 0) {
+    childrenToClone = children
+  } else {
+    const c = (element as JSXNode).props.children
+    childrenToClone = Array.isArray(c) ? c : [c]
+  }
   return jsx(
     (element as JSXNode).tag,
     { ...(element as JSXNode).props, ...props },
-    ...(children as (string | number | HtmlEscapedString)[])
+    ...childrenToClone
   ) as T
 }
 

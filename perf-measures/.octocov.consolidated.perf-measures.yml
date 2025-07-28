@@ -1,4 +1,4 @@
-locale: "en"
+locale: 'en'
 repository: ${GITHUB_REPOSITORY}/perf-measures
 coverage:
   if: false
@@ -13,3 +13,10 @@ comment:
   if: is_pull_request
 summary:
   if: true
+customMetrics:
+  bundle-size-check:
+    key: bundle-size-check
+  diagnostics-tsc:
+    key: diagnostics-tsc
+  diagnostics-typescript-go:
+    key: diagnostics-typescript-go

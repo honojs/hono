@@ -1,6 +1,6 @@
 {
   "name": "hono",
-  "version": "4.7.11",
+  "version": "4.8.9",
   "description": "Web framework built on Web Standards",
   "main": "dist/cjs/index.js",
   "type": "module",
@@ -13,17 +13,17 @@
     "test": "tsc --noEmit && vitest --run && vitest -c .vitest.config/jsx-runtime-default.ts --run && vitest -c .vitest.config/jsx-runtime-dom.ts --run",
     "test:watch": "vitest --watch",
     "test:deno": "deno test --allow-read --allow-env --allow-write --allow-net -c runtime-tests/deno/deno.json runtime-tests/deno && deno test --no-lock -c runtime-tests/deno-jsx/deno.precompile.json runtime-tests/deno-jsx && deno test --no-lock -c runtime-tests/deno-jsx/deno.react-jsx.json runtime-tests/deno-jsx",
-    "test:bun": "bun test --jsx-import-source ../../src/jsx runtime-tests/bun/index.test.tsx",
+    "test:bun": "bun test --jsx-import-source ../../src/jsx runtime-tests/bun/*",
     "test:fastly": "vitest --run --config ./runtime-tests/fastly/vitest.config.ts",
     "test:node": "vitest --run --config ./runtime-tests/node/vitest.config.ts",
     "test:workerd": "vitest --run --config ./runtime-tests/workerd/vitest.config.ts",
     "test:lambda": "vitest --run --config ./runtime-tests/lambda/vitest.config.ts",
     "test:lambda-edge": "vitest --run --config ./runtime-tests/lambda-edge/vitest.config.ts",
     "test:all": "bun run test && bun test:deno && bun test:bun && bun test:fastly && bun test:node && bun test:workerd && bun test:lambda && bun test:lambda-edge",
-    "lint": "eslint src runtime-tests build perf-measures",
-    "lint:fix": "eslint src runtime-tests build perf-measures --fix",
-    "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\"",
-    "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\"",
+    "lint": "eslint src runtime-tests build perf-measures benchmarks",
+    "lint:fix": "eslint src runtime-tests build perf-measures benchmarks --fix",
+    "format": "prettier --check --cache \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\" \"benchmarks/**/*.{js,ts,tsx}\"",
+    "format:fix": "prettier --write --cache --cache-strategy metadata \"src/**/*.{js,ts,tsx}\" \"runtime-tests/**/*.{js,ts,tsx}\" \"build/**/*.{js,ts,tsx}\" \"perf-measures/**/*.{js,ts,tsx}\" \"benchmarks/**/*.{js,ts,tsx}\"",
     "copy:package.cjs.json": "cp ./package.cjs.json ./dist/cjs/package.json && cp ./package.cjs.json ./dist/types/package.json",
     "build": "bun run --shell bun remove-dist && bun ./build/build.ts && bun run copy:package.cjs.json",
     "postbuild": "publint",
@@ -93,6 +93,11 @@
       "types": "./dist/types/middleware/cache/index.d.ts",
       "import": "./dist/middleware/cache/index.js",
       "require": "./dist/cjs/middleware/cache/index.js"
+    },
+    "./route": {
+      "types": "./dist/types/helper/route/index.d.ts",
+      "import": "./dist/helper/route/index.js",
+      "require": "./dist/cjs/helper/route/index.js"
     },
     "./cookie": {
       "types": "./dist/types/helper/cookie/index.d.ts",
@@ -440,6 +445,9 @@
       "cache": [
         "./dist/types/middleware/cache"
       ],
+      "route": [
+        "./dist/types/helper/route"
+      ],
       "cookie": [
         "./dist/types/helper/cookie"
       ],
@@ -663,6 +671,7 @@
     "jsdom": "^22.1.0",
     "msw": "^2.6.0",
     "np": "10.2.0",
+    "pkg-pr-new": "^0.0.53",
     "prettier": "^2.6.2",
     "publint": "^0.1.16",
     "supertest": "^6.3.4",

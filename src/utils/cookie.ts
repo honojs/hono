@@ -3,7 +3,7 @@
  * Cookie utility.
  */
 
-import { decodeURIComponent_ } from './url'
+import { decodeURIComponent_, tryDecode } from './url'
 
 export type Cookie = Record<string, string>
 export type SignedCookie = Record<string, string | false>
@@ -21,7 +21,6 @@ export type CookieOptions = {
   maxAge?: number
   path?: string
   secure?: boolean
-  signingSecret?: string
   sameSite?: 'Strict' | 'Lax' | 'None' | 'strict' | 'lax' | 'none'
   partitioned?: boolean
   priority?: 'Low' | 'Medium' | 'High'
@@ -101,7 +100,8 @@ export const parse = (cookie: string, name?: string): Cookie => {
       cookieValue = cookieValue.slice(1, -1)
     }
     if (validCookieValueRegEx.test(cookieValue)) {
-      parsedCookie[cookieName] = decodeURIComponent_(cookieValue)
+      parsedCookie[cookieName] =
+        cookieValue.indexOf('%') !== -1 ? tryDecode(cookieValue, decodeURIComponent_) : cookieValue
       if (name) {
         // Fast-path: return only the demanded-key immediately. Other keys are not needed.
         break

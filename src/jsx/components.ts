@@ -2,8 +2,10 @@ import { raw } from '../helper/html'
 import type { HtmlEscapedCallback, HtmlEscapedString } from '../utils/html'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../utils/html'
 import { DOM_RENDERER } from './constants'
+import { useContext } from './context'
 import { ErrorBoundary as ErrorBoundaryDomRenderer } from './dom/components'
 import type { HasRenderToDom } from './dom/render'
+import { StreamingContext } from './streaming'
 import type { Child, FC, PropsWithChildren } from './'
 
 let errorBoundaryCounter = 0
@@ -45,6 +47,8 @@ export const ErrorBoundary: FC<
   if (!Array.isArray(children)) {
     children = [children]
   }
+
+  const nonce = useContext(StreamingContext)?.scriptNonce
 
   let fallbackStr: string | undefined
   const fallbackRes = (error: Error): HtmlEscapedString => {
@@ -110,7 +114,9 @@ d.replaceWith(c.content)
             const content = htmlArray.join('')
             let html = buffer
               ? ''
-              : `<template data-hono-target="E:${index}">${content}</template><script>
+              : `<template data-hono-target="E:${index}">${content}</template><script${
+                  nonce ? ` nonce="${nonce}"` : ''
+                }>
 ((d,c) => {
 c=d.currentScript.previousSibling
 d=d.getElementById('E:${index}')

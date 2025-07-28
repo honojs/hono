@@ -339,6 +339,42 @@ describe('Basic - query, queries, form, path params, header and cookie', () => {
   })
 })
 
+describe('Basic - $url()', () => {
+  const api = new Hono().get('/', (c) => c.text('API')).get('/posts/:id', (c) => c.text('Post'))
+  const content = new Hono().get(
+    '/search',
+    validator('query', () => {
+      return { page: '1', limit: '10' }
+    }),
+    (c) => c.text('Search')
+  )
+  const app = new Hono()
+    .get('/', (c) => c.text('Index'))
+    .route('/api', api)
+    .route('/content', content)
+
+  it('Should return a correct url via $url().href', async () => {
+    const client = hc<typeof app>('http://fake')
+    expect(client.index.$url().href).toBe('http://fake/')
+    expect(client.api.$url().href).toBe('http://fake/api')
+    expect(
+      client.api.posts[':id'].$url({
+        param: {
+          id: '123',
+        },
+      }).href
+    ).toBe('http://fake/api/posts/123')
+    expect(
+      client.content.search.$url({
+        query: {
+          page: '123',
+          limit: '20',
+        },
+      }).href
+    ).toBe('http://fake/content/search?page=123&limit=20')
+  })
+})
+
 describe('Form - Multiple Values', () => {
   const server = setupServer(
     http.post('http://localhost/multiple-values', async ({ request }) => {

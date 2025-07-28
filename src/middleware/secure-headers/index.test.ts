@@ -473,8 +473,8 @@ describe('Secure Headers Middleware', () => {
 
       const res = await app.request('/test')
       const csp = res.headers.get(cspHeaderName)
-      expect(csp).toMatch(`script-src 'self' 'nonce-scriptSrc'`)
-      expect(csp).toMatch(`style-src 'self' 'nonce-styleSrc'`)
+      expect(csp).toMatch("script-src 'self' 'nonce-scriptSrc'")
+      expect(csp).toMatch("style-src 'self' 'nonce-styleSrc'")
       expect(await res.text()).toEqual('script: scriptSrc, style: styleSrc')
     })
   })

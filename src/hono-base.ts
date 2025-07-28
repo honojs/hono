@@ -378,7 +378,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   #addRoute(method: string, path: string, handler: H) {
     method = method.toUpperCase()
     path = mergePath(this._basePath, path)
-    const r: RouterRoute = { path, method, handler }
+    const r: RouterRoute = { basePath: this._basePath, path, method, handler }
     this.router.add(method, path, [handler, r])
     this.routes.push(r)
   }
@@ -506,6 +506,16 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   /**
    * `.fire()` automatically adds a global fetch event listener.
    * This can be useful for environments that adhere to the Service Worker API, such as non-ES module Cloudflare Workers.
+   * @deprecated
+   * Use `fire` from `hono/service-worker` instead.
+   * ```ts
+   * import { Hono } from 'hono'
+   * import { fire } from 'hono/service-worker'
+   *
+   * const app = new Hono()
+   * // ...
+   * fire(app)
+   * ```
    * @see https://hono.dev/docs/api/hono#fire
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
    * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/

@@ -2,9 +2,6 @@ name: 'Performance Measures'
 description: 'Run type check and bundle size performance measurements'
 
 inputs:
-  typescript-impl:
-    description: 'TypeScript implementation to use: "tsc" (Current compiler) or "tsgo" (Future compiler implemented in Go)'
-    required: true
   target-ref:
     description: 'Target ref (main or auto). Set to "auto" to delegate ref detection to octocov.'
     required: false
@@ -18,28 +15,19 @@ runs:
     - run: bun install
       shell: bash
 
-    - name: Exit if unknown typescript-impl
-      if: ${{ inputs.typescript-impl != 'tsc' && inputs.typescript-impl != 'tsgo' }}
-      shell: bash
-      run: |
-        echo "::error::Unknown typescript implementation specified: ${{ inputs.typescript-impl }}"
-        exit 1
-
     - name: Performance measurement of type check (tsc)
-      if: ${{ inputs.typescript-impl == 'tsc' }}
       run: |
         bun scripts/generate-app.ts
-        bun tsc -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
+        bun tsc -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics-tsc.json
       shell: bash
       working-directory: perf-measures/type-check
       env:
         BENCHMARK_TS_IMPL_LABEL: tsc
 
     - name: Performance measurement of type check (typescript-go)
-      if: ${{ inputs.typescript-impl == 'tsgo' }}
       run: |
         bun scripts/generate-app.ts
-        bun tsgo -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics.json
+        bun tsgo -p tsconfig.build.json --diagnostics | bun scripts/process-results.ts > diagnostics-tsgo.json
       shell: bash
       working-directory: perf-measures/type-check
       env:
@@ -55,17 +43,19 @@ runs:
       if: ${{ inputs.target-ref == 'auto' }}
       uses: k1LoW/octocov-action@v1
       with:
-        config: perf-measures/.octocov.${{ inputs.typescript-impl }}.perf-measures.yml
+        config: perf-measures/.octocov.consolidated.perf-measures.yml
       env:
-        OCTOCOV_CUSTOM_METRICS_BENCHMARK_BUNDLE: perf-measures/bundle-check/size.json
-        OCTOCOV_CUSTOM_METRICS_BENCHMARK_TYPE: perf-measures/type-check/diagnostics.json
+        OCTOCOV_CUSTOM_METRICS_BUNDLE_SIZE_CHECK: perf-measures/bundle-check/size.json
+        OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSC: perf-measures/type-check/diagnostics-tsc.json
+        OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSGO: perf-measures/type-check/diagnostics-tsgo.json
 
     - name: Run octocov with custom target ref
       if: ${{ inputs.target-ref == 'main' }}
       uses: k1LoW/octocov-action@v1
       with:
-        config: perf-measures/.octocov.${{ inputs.typescript-impl }}.perf-measures.main.yml
+        config: perf-measures/.octocov.consolidated.perf-measures.main.yml
       env:
         OCTOCOV_GITHUB_REF: 'refs/heads/main'
-        OCTOCOV_CUSTOM_METRICS_BENCHMARK_BUNDLE: perf-measures/bundle-check/size.json
-        OCTOCOV_CUSTOM_METRICS_BENCHMARK_TYPE: perf-measures/type-check/diagnostics.json
+        OCTOCOV_CUSTOM_METRICS_BUNDLE_SIZE_CHECK: perf-measures/bundle-check/size.json
+        OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSC: perf-measures/type-check/diagnostics-tsc.json
+        OCTOCOV_CUSTOM_METRICS_DIAGNOSTICS_TSGO: perf-measures/type-check/diagnostics-tsgo.json

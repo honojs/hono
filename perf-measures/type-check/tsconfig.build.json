@@ -1,7 +1,7 @@
 {
-    "extends": "../tsconfig.json",
-    "include": ["client.ts"],
-    "compilerOptions": {
-        "skipLibCheck": true
-    }
+  "extends": "../tsconfig.json",
+  "include": ["client.ts"],
+  "compilerOptions": {
+    "skipLibCheck": true
+  }
 }
