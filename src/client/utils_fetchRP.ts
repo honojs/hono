@@ -14,12 +14,7 @@ export async function fetchRP(fetchRes: Response | Promise<Response>): Promise<a
 
   if (hasBody) {
     const responseType = detectResponseType(_fetchRes)
-
-    switch (responseType) {
-      default: {
-        _fetchRes._data = await _fetchRes[responseType]()
-      }
-    }
+    _fetchRes._data = await _fetchRes[responseType]()
   }
 
   if (!_fetchRes.ok) {
