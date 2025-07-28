@@ -88,6 +88,14 @@ export function deepMerge<T>(target: T, source: Record<string, unknown>): T {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function hcParse<T extends ClientResponse<any>>(
   fetchRes: T | Promise<T>
-): Promise<T extends ClientResponse<infer RT> ? RT : never> {
+): Promise<
+  T extends ClientResponse<infer RT, infer _, infer RF>
+    ? RF extends 'json'
+      ? RT
+      : RT extends string
+      ? RT
+      : string
+    : never
+> {
   return fetchRP(fetchRes)
 }
