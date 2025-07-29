@@ -154,6 +154,14 @@ describe('hcParse', async () => {
       c.header('content-type', '')
       return c.body('hello')
     })
+    .get('/rawUnknown', (c) => {
+      c.header('content-type', 'x/custom-type')
+      return c.body('hello')
+    })
+    .get('/rawBuffer', (c) => {
+      c.header('content-type', 'x/custom-type')
+      return c.body(new TextEncoder().encode('hono'))
+    })
 
   const client = hc<typeof app>('http://127.0.0.1:3301')
 
@@ -194,10 +202,13 @@ describe('hcParse', async () => {
     }),
     it('should parse as text for raw responses without content-type header', async () => {
       const result = await hcParse(client.raw.$get())
-      console.log((await client.raw.$get()).headers.get('content-type'))
       expect(result).toBe('hello')
-      // TODO: uncomment next line after `body` response are typed
-      // type _verify = Expect<Equal<typeof result, 'hello'>>
+      type _verify = Expect<Equal<typeof result, 'hello'>>
+    }),
+    it('should parse as unknown string for raw buffer responses with unknown content-type header', async () => {
+      const result = await hcParse(client.rawBuffer.$get())
+      expect(result).toMatchInlineSnapshot('"hono"')
+      type _verify = Expect<Equal<typeof result, string>>
     }),
   ])
 
