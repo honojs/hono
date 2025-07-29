@@ -268,10 +268,10 @@ You do not have to use Body parse middleware to parse request body. Use `c.req.p
 
 ```ts
 // Parse Request body
- app.post('', (c) => {
-   const body = c.req.parseBody()
-   ...
- })
+app.post('', (c) => {
+  const body = c.req.parseBody()
+  ...
+})
 ```
 
 ### GraphQL Server middleware is obsolete
