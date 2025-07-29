@@ -1,4 +1,5 @@
-import { serve } from '@hono/node-server'
+import { HttpResponse, http } from 'msw'
+import { setupServer } from 'msw/node'
 import { Hono } from '../hono'
 import type { Expect, Equal } from '../utils/types'
 import { hc } from './client'
@@ -163,18 +164,44 @@ describe('hcParse', async () => {
       return c.body(new TextEncoder().encode('hono'))
     })
 
-  const client = hc<typeof app>('http://127.0.0.1:3301')
+  const client = hc<typeof app>('http://localhost')
 
-  const server = serve({
-    fetch: app.fetch,
-    port: 3301,
-    hostname: '127.0.0.1',
-  })
+  const server = setupServer(
+    http.get('http://localhost/text', () => {
+      return HttpResponse.text('hi')
+    }),
+    http.get('http://localhost/json', () => {
+      return HttpResponse.json({ message: 'hi' })
+    }),
+    http.get('http://localhost/404', () => {
+      return HttpResponse.text('404 Not Found', { status: 404 })
+    }),
+    http.get('http://localhost', () => {
+      return HttpResponse.text('hello', {
+        headers: {
+          'content-type': '',
+        },
+      })
+    }),
+    http.get('http://localhost/rawUnknown', () => {
+      return HttpResponse.text('hello', {
+        headers: {
+          'content-type': 'x/custom-type',
+        },
+      })
+    }),
+    http.get('http://localhost/rawBuffer', () => {
+      return HttpResponse.text('hono', {
+        headers: {
+          'content-type': 'x/custom-type',
+        },
+      })
+    })
+  )
 
-  // Wait until the server is ready
-  while (!server.listening) {
-    await new Promise((r) => setTimeout(r, 200))
-  }
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
 
   await Promise.all([
     it('should auto parse the text response - async fetch', async () => {
@@ -211,7 +238,4 @@ describe('hcParse', async () => {
       type _verify = Expect<Equal<typeof result, string>>
     }),
   ])
-
-  // Explicitly close server after 5 secs just to make sure there's no leak.
-  new Promise((r) => setTimeout(r, 5000)).then(() => server.close())
 })
