@@ -52,6 +52,7 @@ jobs:
       - run: bun install
       - run: bun run format
       - run: bun run lint
+      - run: bun run editorconfig-checker -format github-actions
       - run: bun run build
       - run: bun run test
       - uses: actions/upload-artifact@v4
