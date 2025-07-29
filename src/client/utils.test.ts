@@ -176,7 +176,7 @@ describe('hcParse', async () => {
     http.get('http://localhost/404', () => {
       return HttpResponse.text('404 Not Found', { status: 404 })
     }),
-    http.get('http://localhost', () => {
+    http.get('http://localhost/raw', () => {
       return HttpResponse.text('hello', {
         headers: {
           'content-type': '',
