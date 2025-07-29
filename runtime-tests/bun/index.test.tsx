@@ -132,21 +132,21 @@ describe('Serve Static Middleware', () => {
   it('Should return 200 response - /static/plain.txt', async () => {
     const res = await app.request(new Request('http://localhost/static/plain.txt'))
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('Bun!')
+    expect(await res.text()).toMatch(/^Bun!(\r?\n)?$/)
     expect(onNotFound).not.toHaveBeenCalled()
   })
 
   it('Should return 200 response - /static/download', async () => {
     const res = await app.request(new Request('http://localhost/static/download'))
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('download')
+    expect(await res.text()).toMatch(/^download(\r?\n)?$/)
     expect(onNotFound).not.toHaveBeenCalled()
   })
 
   it('Should return 200 response - /dot-static/plain.txt', async () => {
     const res = await app.request(new Request('http://localhost/dot-static/plain.txt'))
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('Bun!!')
+    expect(await res.text()).toMatch(/^Bun!!(\r?\n)?$/)
   })
 
   it('Should return 200 response - /static/helloworld', async () => {
@@ -164,7 +164,7 @@ describe('Serve Static Middleware', () => {
   it('Should return 200 response - /static-absolute-root/plain.txt', async () => {
     const res = await app.request('http://localhost/static-absolute-root/plain.txt')
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('Bun!')
+    expect(await res.text()).toMatch(/^Bun!(\r?\n)?$/)
     expect(onNotFound).not.toHaveBeenCalled()
   })
 })

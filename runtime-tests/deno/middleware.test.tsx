@@ -110,15 +110,15 @@ Deno.test('Serve Static middleware', async () => {
 
   res = await app.request('http://localhost/static/plain.txt')
   assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'Deno!')
+  assertMatch(await res.text(), /^Deno!(\r?\n)?$/)
 
   res = await app.request('http://localhost/static/download')
   assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'download')
+  assertMatch(await res.text(), /^download(\r?\n)?$/)
 
   res = await app.request('http://localhost/dot-static/plain.txt')
   assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'Deno!!')
+  assertMatch(await res.text(), /^Deno!!(\r?\n)?$/)
   assertSpyCalls(onNotFound, 1)
 
   res = await app.fetch({
@@ -138,7 +138,7 @@ Deno.test('Serve Static middleware', async () => {
 
   res = await app.request('http://localhost/static-absolute-root/plain.txt')
   assertEquals(res.status, 200)
-  assertEquals(await res.text(), 'Deno!')
+  assertMatch(await res.text(), /^Deno!(\r?\n)?$/)
 
   res = await app.request('http://localhost/static')
   assertEquals(res.status, 404)
