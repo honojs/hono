@@ -79,11 +79,9 @@ export function deepMerge<T>(target: T, source: Record<string, unknown>): T {
 /**
  * Shortcut to get a consumable response from `hc` fetch calls, with types inference.
  *
- * Smartly parse the response data, and automatically throw an error if the response is not ok.
+ * Smartly parse the response data, throwing a structured error if the response is not `ok`. ({@link DetailedError})
  *
- * To handle an error, see {@link DetailedError} interface.
- *
- * @example hcParse(client.posts.$get())
+ * @example const result = await hcParse(client.posts.$get())
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function hcParse<T extends ClientResponse<any>>(

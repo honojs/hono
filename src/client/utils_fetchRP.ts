@@ -6,6 +6,8 @@ const nullBodyResponses = new Set([101, 204, 205, 304])
 
 /**
  * Smartly parses and return the consumable result from a fetch `Response`.
+ *
+ * Throwing a structured error if the response is not `ok`. ({@link DetailedError})
  */
 export async function fetchRP(fetchRes: Response | Promise<Response>): Promise<any> {
   const _fetchRes = (await fetchRes) as unknown as Response & { _data: any }
@@ -60,19 +62,20 @@ export class DetailedError extends Error {
   }
 }
 
-const JSON_RE = /^application\/(?:[\w!#$%&*.^`~-]*\+)?json(?:;.+)?$/i
+// This is used to match the content-type header for 'json'
+const jsonRegex = /^application\/(?:[\w!#$%&*.^`~-]*\+)?json(?:;.+)?$/i
+
 function detectResponseType(response: Response): 'json' | 'text' {
   const _contentType = response.headers.get('content-type')
 
-  // TODO: Do we actually need this line?, Hono always help the user set the `content-type`, including default for `c.body()`
   if (!_contentType) {
     return 'text'
   }
 
-  // Value might look like: `application/json; charset=utf-8`, `text/plain`
+  // `_contentType` might look like: `application/json; charset=utf-8`, `text/plain`, so we get the first part before `;`
   const contentType = _contentType.split(';').shift()!
 
-  if (JSON_RE.test(contentType)) {
+  if (jsonRegex.test(contentType)) {
     return 'json'
   }
 
