@@ -1,6 +1,8 @@
-/* eslint @typescript-eslint/no-explicit-any: 0 */
-
-// References & credits: `fetch-result-please`, `ofetch`
+/**
+ * @description This file is a modified version of `fetch-result-please` (`ofetch`), minimalized and adapted to Hono's custom needs.
+ *
+ * @link https://www.npmjs.com/package/fetch-result-please
+ */
 
 const nullBodyResponses = new Set([101, 204, 205, 304])
 
