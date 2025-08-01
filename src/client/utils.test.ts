@@ -6,7 +6,7 @@ import { hc } from './client'
 import {
   buildSearchParams,
   deepMerge,
-  hcParse,
+  parseResponse,
   mergePath,
   removeIndexString,
   replaceUrlParam,
@@ -146,7 +146,7 @@ describe('deepMerge', () => {
   })
 })
 
-describe('hcParse', async () => {
+describe('parseResponse', async () => {
   const app = new Hono()
     .get('/text', (c) => c.text('hi'))
     .get('/json', (c) => c.json({ message: 'hi' }))
@@ -205,35 +205,35 @@ describe('hcParse', async () => {
 
   await Promise.all([
     it('should auto parse the text response - async fetch', async () => {
-      const result = await hcParse(client.text.$get())
+      const result = await parseResponse(client.text.$get())
       expect(result).toBe('hi')
       type _verify = Expect<Equal<typeof result, 'hi'>>
     }),
     it('should auto parse the text response - sync fetch', async () => {
-      const result = await hcParse(await client.text.$get())
+      const result = await parseResponse(await client.text.$get())
       expect(result).toBe('hi')
       type _verify = Expect<Equal<typeof result, 'hi'>>
     }),
     it('should auto parse the json response - async fetch', async () => {
-      const result = await hcParse(client.json.$get())
+      const result = await parseResponse(client.json.$get())
       expect(result).toEqual({ message: 'hi' })
       type _verify = Expect<Equal<typeof result, { message: string }>>
     }),
     it('should auto parse the json response - sync fetch', async () => {
-      const result = await hcParse(await client.json.$get())
+      const result = await parseResponse(await client.json.$get())
       expect(result).toEqual({ message: 'hi' })
       type _verify = Expect<Equal<typeof result, { message: string }>>
     }),
     it('should throw error when the response is not ok', async () => {
-      await expect(hcParse(client['404'].$get())).rejects.toThrowError('404 Not Found')
+      await expect(parseResponse(client['404'].$get())).rejects.toThrowError('404 Not Found')
     }),
     it('should parse as text for raw responses without content-type header', async () => {
-      const result = await hcParse(client.raw.$get())
+      const result = await parseResponse(client.raw.$get())
       expect(result).toBe('hello')
       type _verify = Expect<Equal<typeof result, 'hello'>>
     }),
     it('should parse as unknown string for raw buffer responses with unknown content-type header', async () => {
-      const result = await hcParse(client.rawBuffer.$get())
+      const result = await parseResponse(client.rawBuffer.$get())
       expect(result).toMatchInlineSnapshot('"hono"')
       type _verify = Expect<Equal<typeof result, string>>
     }),
