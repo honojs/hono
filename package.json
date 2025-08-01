@@ -656,7 +656,7 @@
     "nodejs"
   ],
   "devDependencies": {
-    "@hono/eslint-config": "^1.0.2",
+    "@hono/eslint-config": "^2.0.3",
     "@hono/node-server": "^1.13.5",
     "@types/glob": "^8.1.0",
     "@types/jsdom": "^21.1.7",
