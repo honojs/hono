@@ -14,7 +14,7 @@
  * ```
  */
 
-import { Hono } from './hono';
+import { Hono } from './hono'
 
 /**
  * Types for environment variables, error handlers, handlers, middleware handlers, and more.
