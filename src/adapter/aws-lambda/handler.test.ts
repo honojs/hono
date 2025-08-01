@@ -1,19 +1,19 @@
 import type { LambdaEvent } from './handler'
-import { getProcessor, isContentEncodingBinary, isContentTypeBinary } from './handler'
+import { getProcessor, isContentEncodingBinary, defaultIsContentTypeBinary } from './handler'
 
 describe('isContentTypeBinary', () => {
   it('Should determine whether it is binary', () => {
-    expect(isContentTypeBinary('image/png')).toBe(true)
-    expect(isContentTypeBinary('font/woff2')).toBe(true)
-    expect(isContentTypeBinary('image/svg+xml')).toBe(false)
-    expect(isContentTypeBinary('image/svg+xml; charset=UTF-8')).toBe(false)
-    expect(isContentTypeBinary('text/plain')).toBe(false)
-    expect(isContentTypeBinary('text/plain; charset=UTF-8')).toBe(false)
-    expect(isContentTypeBinary('text/css')).toBe(false)
-    expect(isContentTypeBinary('text/javascript')).toBe(false)
-    expect(isContentTypeBinary('application/json')).toBe(false)
-    expect(isContentTypeBinary('application/ld+json')).toBe(false)
-    expect(isContentTypeBinary('application/json')).toBe(false)
+    expect(defaultIsContentTypeBinary('image/png')).toBe(true)
+    expect(defaultIsContentTypeBinary('font/woff2')).toBe(true)
+    expect(defaultIsContentTypeBinary('image/svg+xml')).toBe(false)
+    expect(defaultIsContentTypeBinary('image/svg+xml; charset=UTF-8')).toBe(false)
+    expect(defaultIsContentTypeBinary('text/plain')).toBe(false)
+    expect(defaultIsContentTypeBinary('text/plain; charset=UTF-8')).toBe(false)
+    expect(defaultIsContentTypeBinary('text/css')).toBe(false)
+    expect(defaultIsContentTypeBinary('text/javascript')).toBe(false)
+    expect(defaultIsContentTypeBinary('application/json')).toBe(false)
+    expect(defaultIsContentTypeBinary('application/ld+json')).toBe(false)
+    expect(defaultIsContentTypeBinary('application/json')).toBe(false)
   })
 })
 
@@ -26,6 +26,110 @@ describe('isContentEncodingBinary', () => {
     expect(isContentEncodingBinary('deflate, gzip')).toBe(true)
     expect(isContentEncodingBinary('')).toBe(false)
     expect(isContentEncodingBinary('unknown')).toBe(false)
+  })
+})
+
+describe('EventProcessor.createResult with contentTypsAsBinary', () => {
+  const event: LambdaEvent = {
+    version: '1.0',
+    resource: '/my/path',
+    path: '/my/path',
+    httpMethod: 'GET',
+    headers: {},
+    multiValueHeaders: {},
+    queryStringParameters: {},
+    requestContext: {
+      accountId: '123456789012',
+      apiId: 'id',
+      authorizer: { claims: null, scopes: null },
+      domainName: 'id.execute-api.us-east-1.amazonaws.com',
+      domainPrefix: 'id',
+      extendedRequestId: 'request-id',
+      httpMethod: 'GET',
+      identity: {
+        sourceIp: '192.0.2.1',
+        userAgent: 'user-agent',
+        clientCert: {
+          clientCertPem: 'CERT_CONTENT',
+          subjectDN: 'www.example.com',
+          issuerDN: 'Example issuer',
+          serialNumber: 'a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1',
+          validity: {
+            notBefore: 'May 28 12:30:02 2019 GMT',
+            notAfter: 'Aug  5 09:36:04 2021 GMT',
+          },
+        },
+      },
+      path: '/my/path',
+      protocol: 'HTTP/1.1',
+      requestId: 'id=',
+      requestTime: '04/Mar/2020:19:15:17 +0000',
+      requestTimeEpoch: 1583349317135,
+      resourcePath: '/my/path',
+      stage: '$default',
+    },
+    pathParameters: {},
+    stageVariables: {},
+    body: null,
+    isBase64Encoded: false,
+  }
+
+  it('Should encode as base64 when content-type is in contentTypesAsBinary array', async () => {
+    const processor = getProcessor(event)
+    const response = new Response('test content', {
+      headers: { 'content-type': 'application/custom' },
+    })
+
+    const result = await processor.createResult(event, response, {
+      isContentTypeBinary: (contentType: string) => contentType === 'application/custom',
+    })
+
+    expect(result.isBase64Encoded).toBe(true)
+    expect(result.body).toBe('dGVzdCBjb250ZW50')
+  })
+
+  it('Should not encode as base64 when content-type is not in isContentTypeBinary array', async () => {
+    const processor = getProcessor(event)
+    const response = new Response('test content', {
+      headers: { 'content-type': 'application/json' },
+    })
+
+    const result = await processor.createResult(event, response, {
+      isContentTypeBinary: (contentType: string) => contentType === 'application/custom',
+    })
+
+    expect(result.isBase64Encoded).toBe(false)
+    expect(result.body).toBe('test content')
+  })
+
+  it('Should use defaultIsContentTypeBinary when isContentTypeBinary is undefined with binary content', async () => {
+    const processor = getProcessor(event)
+    const response = new Response('test image content', {
+      headers: { 'content-type': 'image/png' },
+    })
+
+    // Pass undefined for isContentTypeBinary to test default behavior
+    const result = await processor.createResult(event, response, {
+      isContentTypeBinary: undefined,
+    })
+
+    expect(result.isBase64Encoded).toBe(true)
+    expect(result.body).toBe('dGVzdCBpbWFnZSBjb250ZW50')
+  })
+
+  it('Should use defaultIsContentTypeBinary when isContentTypeBinary is undefined with non-binary content', async () => {
+    const processor = getProcessor(event)
+    const response = new Response('test text content', {
+      headers: { 'content-type': 'text/plain' },
+    })
+
+    // Pass undefined for isContentTypeBinary to test default behavior
+    const result = await processor.createResult(event, response, {
+      isContentTypeBinary: undefined,
+    })
+
+    expect(result.isBase64Encoded).toBe(false)
+    expect(result.body).toBe('test text content')
   })
 })
 
