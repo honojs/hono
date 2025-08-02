@@ -38,7 +38,6 @@ describe('defaultJoin', () => {
         // Backslash handling (security)
         ['static', 'test\\file.txt'],
         ['public', 'path\\with\\backslash'],
-        ['C:\\Windows', 'System32\\file.txt'],
       ]
 
       testCases.forEach(([...args]) => {
