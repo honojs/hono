@@ -1,6 +1,12 @@
+import { HttpResponse, http } from 'msw'
+import { setupServer } from 'msw/node'
+import { Hono } from '../hono'
+import type { Expect, Equal } from '../utils/types'
+import { hc } from './client'
 import {
   buildSearchParams,
   deepMerge,
+  parseResponse,
   mergePath,
   removeIndexString,
   replaceUrlParam,
@@ -138,4 +144,98 @@ describe('deepMerge', () => {
       timeout: 2,
     })
   })
+})
+
+describe('parseResponse', async () => {
+  const app = new Hono()
+    .get('/text', (c) => c.text('hi'))
+    .get('/json', (c) => c.json({ message: 'hi' }))
+    .get('/404', (c) => c.notFound())
+    .get('/raw', (c) => {
+      c.header('content-type', '')
+      return c.body('hello')
+    })
+    .get('/rawUnknown', (c) => {
+      c.header('content-type', 'x/custom-type')
+      return c.body('hello')
+    })
+    .get('/rawBuffer', (c) => {
+      c.header('content-type', 'x/custom-type')
+      return c.body(new TextEncoder().encode('hono'))
+    })
+
+  const client = hc<typeof app>('http://localhost')
+
+  const server = setupServer(
+    http.get('http://localhost/text', () => {
+      return HttpResponse.text('hi')
+    }),
+    http.get('http://localhost/json', () => {
+      return HttpResponse.json({ message: 'hi' })
+    }),
+    http.get('http://localhost/404', () => {
+      return HttpResponse.text('404 Not Found', { status: 404 })
+    }),
+    http.get('http://localhost/raw', () => {
+      return HttpResponse.text('hello', {
+        headers: {
+          'content-type': '',
+        },
+      })
+    }),
+    http.get('http://localhost/rawUnknown', () => {
+      return HttpResponse.text('hello', {
+        headers: {
+          'content-type': 'x/custom-type',
+        },
+      })
+    }),
+    http.get('http://localhost/rawBuffer', () => {
+      return HttpResponse.arrayBuffer(new TextEncoder().encode('hono'), {
+        headers: {
+          'content-type': 'x/custom-type',
+        },
+      })
+    })
+  )
+
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  await Promise.all([
+    it('should auto parse the text response - async fetch', async () => {
+      const result = await parseResponse(client.text.$get())
+      expect(result).toBe('hi')
+      type _verify = Expect<Equal<typeof result, 'hi'>>
+    }),
+    it('should auto parse the text response - sync fetch', async () => {
+      const result = await parseResponse(await client.text.$get())
+      expect(result).toBe('hi')
+      type _verify = Expect<Equal<typeof result, 'hi'>>
+    }),
+    it('should auto parse the json response - async fetch', async () => {
+      const result = await parseResponse(client.json.$get())
+      expect(result).toEqual({ message: 'hi' })
+      type _verify = Expect<Equal<typeof result, { message: string }>>
+    }),
+    it('should auto parse the json response - sync fetch', async () => {
+      const result = await parseResponse(await client.json.$get())
+      expect(result).toEqual({ message: 'hi' })
+      type _verify = Expect<Equal<typeof result, { message: string }>>
+    }),
+    it('should throw error when the response is not ok', async () => {
+      await expect(parseResponse(client['404'].$get())).rejects.toThrowError('404 Not Found')
+    }),
+    it('should parse as text for raw responses without content-type header', async () => {
+      const result = await parseResponse(client.raw.$get())
+      expect(result).toBe('hello')
+      type _verify = Expect<Equal<typeof result, 'hello'>>
+    }),
+    it('should parse as unknown string for raw buffer responses with unknown content-type header', async () => {
+      const result = await parseResponse(client.rawBuffer.$get())
+      expect(result).toMatchInlineSnapshot('"hono"')
+      type _verify = Expect<Equal<typeof result, string>>
+    }),
+  ])
 })
