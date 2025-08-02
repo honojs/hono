@@ -1,38 +1,56 @@
-const mergeBuffers = (buffer1: ArrayBuffer | undefined, buffer2: Uint8Array): Uint8Array => {
-  if (!buffer1) {
-    return buffer2
-  }
-  const merged = new Uint8Array(buffer1.byteLength + buffer2.byteLength)
-  merged.set(new Uint8Array(buffer1), 0)
-  merged.set(buffer2, buffer1.byteLength)
-  return merged
-}
-
 export const generateDigest = async (
-  stream: ReadableStream<Uint8Array> | null,
+  input: ReadableStream<Uint8Array> | ArrayBuffer | null,
   generator: (body: Uint8Array) => ArrayBuffer | Promise<ArrayBuffer>
 ): Promise<string | null> => {
-  if (!stream) {
+  if (!input) {
     return null
   }
 
   let result: ArrayBuffer | undefined = undefined
 
-  const reader = stream.getReader()
-  for (;;) {
-    const { value, done } = await reader.read()
-    if (done) {
-      break
-    }
+  if (input instanceof ArrayBuffer) {
+    result = await generator(new Uint8Array(input))
+  } else {
+    const chunks: Uint8Array[] = []
+    let totalLength = 0
+    const reader = input.getReader()
 
-    result = await generator(mergeBuffers(result, value))
+    try {
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+
+        if (value.length > 0) {
+          chunks.push(value)
+          totalLength += value.length
+        }
+      }
+
+      if (totalLength === 0) {
+        return null
+      }
+
+      const accumulated = new Uint8Array(totalLength)
+      let offset = 0
+      for (const chunk of chunks) {
+        accumulated.set(chunk, offset)
+        offset += chunk.length
+      }
+
+      result = await generator(accumulated)
+    } finally {
+      reader.releaseLock()
+    }
   }
 
-  if (!result) {
+  if (!result || result.byteLength === 0) {
     return null
   }
 
-  return Array.prototype.map
-    .call(new Uint8Array(result), (x) => x.toString(16).padStart(2, '0'))
-    .join('')
+  const bytes = new Uint8Array(result)
+  const hex = new Array(bytes.length)
+  for (let i = 0; i < bytes.length; i++) {
+    hex[i] = bytes[i].toString(16).padStart(2, '0')
+  }
+  return hex.join('')
 }
