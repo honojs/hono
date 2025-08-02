@@ -168,8 +168,17 @@ export interface SSGPlugin {
 
 export interface ToSSGOptions {
   dir?: string
+  /**
+   * @deprecated Use plugins[].beforeRequestHook instead.
+   */
   beforeRequestHook?: BeforeRequestHook | BeforeRequestHook[]
+  /**
+   * @deprecated Use plugins[].afterResponseHook instead.
+   */
   afterResponseHook?: AfterResponseHook | AfterResponseHook[]
+  /**
+   * @deprecated Use plugins[].afterGenerateHook instead.
+   */
   afterGenerateHook?: AfterGenerateHook | AfterGenerateHook[]
   concurrency?: number
   extensionMap?: Record<string, string>
