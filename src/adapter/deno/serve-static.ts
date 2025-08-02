@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import type { ServeStaticOptions } from '../../middleware/serve-static'
 import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
 import type { Env, MiddlewareHandler } from '../../types'
@@ -34,6 +35,7 @@ export const serveStatic = <E extends Env = Env>(
     return baseServeStatic({
       ...options,
       getContent,
+      join,
       isDir,
     })(c, next)
   }
