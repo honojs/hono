@@ -7,7 +7,7 @@ import { encodeBase64Url } from '../../utils/encode'
 import { Jwt } from '../../utils/jwt'
 import type { HonoJsonWebKey } from '../../utils/jwt/jws'
 import { signing } from '../../utils/jwt/jws'
-import { verifyFromJwks } from '../../utils/jwt/jwt'
+import { verifyWithJwks } from '../../utils/jwt/jwt'
 import type { JWTPayload } from '../../utils/jwt/types'
 import { utf8Encoder } from '../../utils/jwt/utf8'
 import * as test_keys from './keys.test.json'
@@ -34,11 +34,11 @@ describe('JWK', () => {
   afterEach(() => server.resetHandlers())
   afterAll(() => server.close())
 
-  describe('verifyFromJwks', () => {
+  describe('verifyWithJwks', () => {
     it('Should throw error on missing options', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
-      await expect(verifyFromJwks(credential, {})).rejects.toThrow(
-        'verifyFromJwks requires options for either "keys" or "jwks_uri" or both'
+      await expect(verifyWithJwks(credential, {})).rejects.toThrow(
+        'verifyWithJwks requires options for either "keys" or "jwks_uri" or both'
       )
     })
   })
