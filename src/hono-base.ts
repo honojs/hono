@@ -43,6 +43,7 @@ const errorHandler = (err: Error | HTTPResponseError, c: Context) => {
 }
 
 type GetPath<E extends Env> = (request: Request, options?: { env?: E['Bindings'] }) => string
+type GetRequest<E extends Env> = (request: Request, options?: { env?: E['Bindings'] }) => Request
 
 export type HonoOptions<E extends Env> = {
   /**
@@ -85,6 +86,21 @@ export type HonoOptions<E extends Env> = {
    * ```
    */
   getPath?: GetPath<E>
+  /**
+   * `getRequest` can override raw request object.
+   *
+   * @example
+   * ```ts
+   * const app = new Hono({
+   *  getRequest: (req) => {
+   *   const url = new URL(req.url)
+   *   url.protocol = req.headers.get('x-forwarded-proto') ?? url.protocol
+   *   url.host = req.headers.get('x-forwarded-host') ?? url.host
+   *   return new Request(url, req),
+   * })
+   * ```
+   */
+  getRequest?: GetRequest<E>
 }
 
 type MountOptionHandler = (c: Context) => unknown
@@ -113,6 +129,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
   */
   router!: Router<[H, RouterRoute]>
   readonly getPath: GetPath<E>
+  readonly getRequest: GetRequest<E>
   // Cannot use `#` because it requires visibility at JavaScript runtime.
   private _basePath: string = '/'
   #path: string = '/'
@@ -166,6 +183,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     const { strict, ...optionsWithoutStrict } = options
     Object.assign(this, optionsWithoutStrict)
     this.getPath = strict ?? true ? options.getPath ?? getPath : getPathNoStrict
+    this.getRequest = options.getRequest ?? ((req) => req)
   }
 
   #clone(): Hono<E, S, BasePath> {
@@ -396,6 +414,8 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     env: E['Bindings'],
     method: string
   ): Response | Promise<Response> {
+    request = this.getRequest(request, { env })
+
     // Handle HEAD method
     if (method === 'HEAD') {
       return (async () =>
