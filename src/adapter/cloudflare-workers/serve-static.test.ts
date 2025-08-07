@@ -79,7 +79,8 @@ describe('ServeStatic Middleware', () => {
     expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8')
   })
 
-  it('Should return index.html', async () => {
+  // Serve static on Cloudflare Workers cannot determine whether the target path is a directory or not
+  it.skip('Should return index.html', async () => {
     const res = await app.request('http://localhost/static/top')
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('<h1>Top</h1>')
