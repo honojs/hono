@@ -75,7 +75,7 @@ export const getSignedCookie: GetSignedCookie = async (
   return obj as any
 }
 
-export const setCookie = (c: Context, name: string, value: string, opt?: CookieOptions): void => {
+export const generateCookie = (name: string, value: string, opt?: CookieOptions): string => {
   // Cookie names prefixed with __Secure- can be used only if they are set with the secure attribute.
   // Cookie names prefixed with __Host- can be used only if they are set with the secure attribute, must have a path of / (meaning any path at the host)
   // and must not have a Domain attribute.
@@ -93,16 +93,20 @@ export const setCookie = (c: Context, name: string, value: string, opt?: CookieO
   } else {
     cookie = serialize(name, value, { path: '/', ...opt })
   }
+  return cookie
+}
+
+export const setCookie = (c: Context, name: string, value: string, opt?: CookieOptions): void => {
+  const cookie = generateCookie(name, value, opt)
   c.header('Set-Cookie', cookie, { append: true })
 }
 
-export const setSignedCookie = async (
-  c: Context,
+export const generateSignedCookie = async (
   name: string,
   value: string,
   secret: string | BufferSource,
   opt?: CookieOptions
-): Promise<void> => {
+): Promise<string> => {
   let cookie
   if (opt?.prefix === 'secure') {
     cookie = await serializeSigned('__Secure-' + name, value, secret, {
@@ -120,6 +124,17 @@ export const setSignedCookie = async (
   } else {
     cookie = await serializeSigned(name, value, secret, { path: '/', ...opt })
   }
+  return cookie
+}
+
+export const setSignedCookie = async (
+  c: Context,
+  name: string,
+  value: string,
+  secret: string | BufferSource,
+  opt?: CookieOptions
+): Promise<void> => {
+  const cookie = await generateSignedCookie(name, value, secret, opt)
   c.header('set-cookie', cookie, { append: true })
 }
 
