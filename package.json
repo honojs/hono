@@ -660,7 +660,7 @@
     "@hono/node-server": "^1.13.5",
     "@types/glob": "^8.1.0",
     "@types/jsdom": "^21.1.7",
-    "@types/node": "20.11.4",
+    "@types/node": "^22.0.0",
     "@types/supertest": "^2.0.16",
     "@typescript/native-preview": "7.0.0-dev.20250523.1",
     "@vitest/coverage-v8": "^3.0.5",
