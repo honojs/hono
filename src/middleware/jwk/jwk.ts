@@ -11,6 +11,7 @@ import type { CookiePrefixOptions } from '../../utils/cookie'
 import { Jwt } from '../../utils/jwt'
 import '../../context'
 import type { HonoJsonWebKey } from '../../utils/jwt/jws'
+import type { VerifyOptions } from '../../utils/jwt/jwt'
 
 /**
  * JWK Auth Middleware for Hono.
@@ -24,6 +25,7 @@ import type { HonoJsonWebKey } from '../../utils/jwt/jws'
  * @param {string} [options.cookie] - If set, the middleware attempts to retrieve the token from a cookie with these options (optionally signed) only if no token is found in the header.
  * @param {string} [options.headerName='Authorization'] - The name of the header to look for the JWT token. Default is 'Authorization'.
  * @param {RequestInit} [init] - Optional init options for the `fetch` request when retrieving JWKS from a URI.
+ * @param {VerifyOptions} [options.verification] - Additional options for JWK payload verification.
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
@@ -49,10 +51,15 @@ export const jwk = (
     cookie?:
       | string
       | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
+
     headerName?: string
+
+    verification?: VerifyOptions
   },
   init?: RequestInit
 ): MiddlewareHandler => {
+  const verifyOpts = options.verification || {}
+
   if (!options || !(options.keys || options.jwks_uri)) {
     throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri" or both')
   }
@@ -125,7 +132,7 @@ export const jwk = (
       const keys = typeof options.keys === 'function' ? await options.keys(ctx) : options.keys
       const jwks_uri =
         typeof options.jwks_uri === 'function' ? await options.jwks_uri(ctx) : options.jwks_uri
-      payload = await Jwt.verifyFromJwks(token, { keys, jwks_uri }, init)
+      payload = await Jwt.verifyFromJwks(token, { keys, jwks_uri, verification: verifyOpts }, init)
     } catch (e) {
       cause = e
     }

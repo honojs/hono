@@ -25,7 +25,7 @@ group('getPath', () => {
 
   bench('slice + for-loop + flag', () => {
     const url = request.url
-    let start = url.indexOf('/', 8)
+    const start = url.indexOf('/', 8)
     let i = start
     let hasPercentEncoding = false
     for (; i < url.length; i++) {

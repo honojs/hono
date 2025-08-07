@@ -81,6 +81,9 @@ export class Node {
       const name = pattern[1]
       let regexpStr = pattern[2] || LABEL_REG_EXP_STR
       if (name && pattern[2]) {
+        if (regexpStr === '.*') {
+          throw PATH_ERROR
+        }
         regexpStr = regexpStr.replace(/^\((?!\?:)(?=[^)]+\)$)/, '(?:') // (a|b) => (?:a|b)
         if (/\((?!\?:)/.test(regexpStr)) {
           // prefix(?:a|b) is allowed, but prefix(a|b) is not

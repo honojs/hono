@@ -166,9 +166,9 @@ export const mergePath: (...paths: string[]) => string = (
 
 export const checkOptionalParameter = (path: string): string[] | null => {
   /*
-   If path is `/api/animals/:type?` it will return:
-   [`/api/animals`, `/api/animals/:type`]
-   in other cases it will return null
+    If path is `/api/animals/:type?` it will return:
+    [`/api/animals`, `/api/animals/:type`]
+    in other cases it will return null
   */
 
   if (path.charCodeAt(path.length - 1) !== 63 || !path.includes(':')) {

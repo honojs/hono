@@ -108,6 +108,27 @@ describe('Context', () => {
     expect(res.headers.get('Location')).toBe('https://example.com/destination')
   })
 
+  it('c.redirect() w/ multibytes', async () => {
+    const res = c.redirect('https://example.com/こんにちは')
+    expect(res.headers.get('Location')).toBe(
+      'https://example.com/%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF'
+    )
+  })
+
+  const unchangedURLString = [
+    'https://example.com/%hello', // invalid ASCII chars
+    'https://example.com/%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF?abc',
+    'https://localhost/api?redirect_uri=https%3A%2F%2Fexample.com', // with ://
+    'https://localhost/api?redirect_uri=https%3A%2F%2Fexample.com&scope=email%20profile', // with spaces and ://
+  ]
+
+  unchangedURLString.forEach((urlString) => {
+    it(`c.redirect() w/ ${urlString}`, () => {
+      const res = c.redirect(urlString)
+      expect(res.headers.get('Location')).toBe(urlString)
+    })
+  })
+
   it('c.header()', async () => {
     c.header('X-Foo', 'Bar')
     const res = c.body('Hi')

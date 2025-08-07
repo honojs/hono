@@ -1,4 +1,5 @@
-import fast, { type Context } from 'https://deno.land/x/fast@4.0.0-beta.1/mod.ts'
+import fast from 'https://deno.land/x/fast@4.0.0-beta.1/mod.ts'
+import type { Context } from 'https://deno.land/x/fast@4.0.0-beta.1/mod.ts'
 
 const app = fast()
 

@@ -1,4 +1,4 @@
-locale: "en"
+locale: 'en'
 repository: ${GITHUB_REPOSITORY}/perf-measures
 coverage:
   if: false

@@ -155,11 +155,11 @@ export class Node<T> {
             continue
           }
 
-          if (!part) {
+          const [key, name, matcher] = pattern
+
+          if (!part && !(matcher instanceof RegExp)) {
             continue
           }
-
-          const [key, name, matcher] = pattern
 
           const child = node.#children[key]
 
