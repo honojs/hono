@@ -7,7 +7,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["src/**/*.ts", "src/**/*.mts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.mts"
+  ],
   "exclude": [
     "src/mod.ts",
     "src/helper.ts",
@@ -15,6 +18,6 @@
     "src/deno/**/*.ts",
     "src/test-utils/*.ts",
     "src/**/*.test.ts",
-    "src/**/*.test.tsx"
+    "src/**/*.test.tsx",
   ]
 }

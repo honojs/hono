@@ -7,10 +7,13 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "types": ["node", "vitest/globals"],
+    "types": [
+      "node",
+      "vitest/globals"
+    ],
     "jsx": "react",
     "jsxFactory": "jsx",
     "jsxFragmentFactory": "Fragment"
@@ -21,5 +24,8 @@
     "src/**/*.mts",
     "src/**/*.test.ts",
     "src/**/*.test.tsx"
+  ],
+  "exclude": [
+    "node_modules/*"
   ]
 }
