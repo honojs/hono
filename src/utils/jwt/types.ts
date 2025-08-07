@@ -40,6 +40,13 @@ export class JwtTokenIssuedAt extends Error {
   }
 }
 
+export class JwtTokenIssuer extends Error {
+  constructor(expected: string | RegExp, iss: string | null) {
+    super(`expected issuer "${expected}", got ${iss ? `"${iss}"` : 'none'} `)
+    this.name = 'JwtTokenIssuer'
+  }
+}
+
 export class JwtHeaderInvalid extends Error {
   constructor(header: object) {
     super(`jwt header is invalid: ${JSON.stringify(header)}`)
@@ -89,6 +96,10 @@ export type JWTPayload = {
    * The token is checked to ensure it is not issued in the future.
    */
   iat?: number
+  /**
+   * The token is checked to ensure it has been issued by a trusted issuer.
+   */
+  iss?: string
 }
 
 export type { HonoJsonWebKey } from './jws'
