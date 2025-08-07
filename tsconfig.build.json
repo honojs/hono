@@ -5,12 +5,9 @@
     "rootDir": "./src/",
     "outDir": "./dist/types/",
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedParameters": true
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.mts"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.mts"],
   "exclude": [
     "src/mod.ts",
     "src/helper.ts",

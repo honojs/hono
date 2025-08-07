@@ -269,4 +269,21 @@ describe('Set cookie', () => {
       })
     }).toThrowError('Partitioned Cookie must have Secure attributes')
   })
+
+  it('Should serialize cookie with lowercase priority values', () => {
+    const lowSerialized = serialize('test_cookie', 'value', {
+      priority: 'low',
+    })
+    expect(lowSerialized).toBe('test_cookie=value; Priority=Low')
+
+    const mediumSerialized = serialize('test_cookie', 'value', {
+      priority: 'medium',
+    })
+    expect(mediumSerialized).toBe('test_cookie=value; Priority=Medium')
+
+    const highSerialized = serialize('test_cookie', 'value', {
+      priority: 'high',
+    })
+    expect(highSerialized).toBe('test_cookie=value; Priority=High')
+  })
 })

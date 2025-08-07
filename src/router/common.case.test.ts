@@ -144,6 +144,26 @@ export const runTest = ({
         expect(res.length).toBe(0)
       })
 
+      it('Parameter with {.*} regexp', () => {
+        router.add('GET', '/files/:name{.*}', 'file')
+        let res = match('GET', '/files')
+        expect(res.length).toBe(0)
+
+        res = match('GET', '/files/a')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('file')
+        expect(res[0].params['name']).toEqual('a')
+
+        res = match('GET', '/files/a/b')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('file')
+        expect(res[0].params['name']).toEqual('a/b')
+
+        res = match('GET', '/files/')
+        expect(res.length).toBe(1)
+        expect(res[0].handler).toEqual('file')
+      })
+
       it('/*', async () => {
         router.add('GET', '/api/*', 'auth middleware')
         router.add('GET', '/api', 'top')

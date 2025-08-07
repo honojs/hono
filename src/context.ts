@@ -121,13 +121,16 @@ interface NewResponse {
  */
 interface BodyRespond {
   // if we return content, only allow the status codes that allow for returning the body
-  <U extends ContentfulStatusCode>(data: Data, status?: U, headers?: HeaderRecord): Response &
-    TypedResponse<unknown, U, 'body'>
-  <U extends StatusCode>(data: null, status?: U, headers?: HeaderRecord): Response &
+  <T extends Data, U extends ContentfulStatusCode>(
+    data: T,
+    status?: U,
+    headers?: HeaderRecord
+  ): Response & TypedResponse<T, U, 'body'>
+  <T extends Data, U extends ContentfulStatusCode>(data: T, init?: ResponseOrInit<U>): Response &
+    TypedResponse<T, U, 'body'>
+  <T extends null, U extends StatusCode>(data: T, status?: U, headers?: HeaderRecord): Response &
     TypedResponse<null, U, 'body'>
-  <U extends ContentfulStatusCode>(data: Data, init?: ResponseOrInit<U>): Response &
-    TypedResponse<unknown, U, 'body'>
-  <U extends StatusCode>(data: null, init?: ResponseOrInit<U>): Response &
+  <T extends null, U extends StatusCode>(data: T, init?: ResponseOrInit<U>): Response &
     TypedResponse<null, U, 'body'>
 }
 
@@ -746,7 +749,13 @@ export class Context<
     location: string | URL,
     status?: T
   ): Response & TypedResponse<undefined, T, 'redirect'> => {
-    this.header('Location', String(location))
+    const locationString = String(location)
+    this.header(
+      'Location',
+      // Multibyes should be encoded
+      // eslint-disable-next-line no-control-regex
+      !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
+    )
     return this.newResponse(null, status ?? 302) as any
   }
 

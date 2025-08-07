@@ -19,7 +19,7 @@ jobs:
       - name: Install deno
         uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.x
+          deno-version: v2.3.7
       - run: deno install --no-lock --allow-scripts
       - name: Publish to JSR
         run: deno run -A jsr:@david/publish-on-tag@0.1.4

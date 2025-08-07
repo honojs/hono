@@ -1,5 +1,13 @@
 import { Hono } from '../../hono'
-import { deleteCookie, getCookie, getSignedCookie, setCookie, setSignedCookie } from '.'
+import {
+  deleteCookie,
+  getCookie,
+  getSignedCookie,
+  setCookie,
+  setSignedCookie,
+  generateCookie,
+  generateSignedCookie,
+} from '.'
 
 describe('Cookie Middleware', () => {
   describe('Parse cookie', () => {
@@ -443,6 +451,51 @@ describe('Cookie Middleware', () => {
       const res = await app.request(req)
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('choco')
+    })
+  })
+
+  describe('Generate cookie', () => {
+    it('should generate a cookie', () => {
+      const cookie = generateCookie('delicious_cookie', 'macha')
+      expect(cookie).toBe('delicious_cookie=macha; Path=/')
+    })
+
+    it('should generate a cookie with options', () => {
+      const cookie = generateCookie('delicious_cookie', 'macha', {
+        path: '/',
+        secure: true,
+        httpOnly: true,
+        domain: 'example.com',
+      })
+      expect(cookie).toBe('delicious_cookie=macha; Domain=example.com; Path=/; HttpOnly; Secure')
+    })
+
+    it('should generate a signed cookie', async () => {
+      const cookie = await generateSignedCookie(
+        'delicious_cookie',
+        'macha',
+        'secret chocolate chips'
+      )
+      expect(cookie).toBe(
+        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Path=/'
+      )
+    })
+
+    it('should generate a signed cookie with options', async () => {
+      const cookie = await generateSignedCookie(
+        'delicious_cookie',
+        'macha',
+        'secret chocolate chips',
+        {
+          path: '/',
+          secure: true,
+          httpOnly: true,
+          domain: 'example.com',
+        }
+      )
+      expect(cookie).toBe(
+        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Domain=example.com; Path=/; HttpOnly; Secure'
+      )
     })
   })
 })

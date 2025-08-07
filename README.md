@@ -6,13 +6,6 @@
 
 <hr />
 
-<p align="center">
-<a href="https://hono.dev"><b>Documentation 👉 hono.dev</b></a><br />
-<i>Now supports <a href="https://jsr.io/@hono/hono">JSR</a> and <code>deno.land/x</code> is deprecated! See <a href="docs/MIGRATION.md">Migration guide</a>.</i>
-</p>
-
-<hr />
-
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/honojs/hono/ci.yml?branch=main)](https://github.com/honojs/hono/actions)
 [![GitHub](https://img.shields.io/github/license/honojs/hono)](https://github.com/honojs/hono/blob/main/LICENSE)
 [![npm](https://img.shields.io/npm/v/hono)](https://www.npmjs.com/package/hono)

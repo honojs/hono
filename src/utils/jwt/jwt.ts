@@ -15,6 +15,7 @@ import {
   JwtTokenExpired,
   JwtTokenInvalid,
   JwtTokenIssuedAt,
+  JwtTokenIssuer,
   JwtTokenNotBefore,
   JwtTokenSignatureMismatched,
 } from './types'
@@ -68,11 +69,47 @@ export const sign = async (
   return `${partialToken}.${signature}`
 }
 
+export type VerifyOptions = {
+  /** The expected issuer used for verifying the token */
+  iss?: string | RegExp
+  /** Verify the `nbf` claim (default: `true`) */
+  nbf?: boolean
+  /** Verify the `exp` claim (default: `true`) */
+  exp?: boolean
+  /** Verify the `iat` claim (default: `true`) */
+  iat?: boolean
+}
+
+export type VerifyOptionsWithAlg = {
+  /** The algorithm used for decoding the token */
+  alg?: SignatureAlgorithm
+} & VerifyOptions
+
+type StrictVerifyOptions = {
+  iss?: string | RegExp
+  nbf: boolean
+  exp: boolean
+  iat: boolean
+}
+
+type StrictVerifyOptionsWithAlg = {
+  alg: SignatureAlgorithm
+} & StrictVerifyOptions
+
 export const verify = async (
   token: string,
   publicKey: SignatureKey,
-  alg: SignatureAlgorithm = 'HS256'
+  algOrOptions?: SignatureAlgorithm | VerifyOptionsWithAlg
 ): Promise<JWTPayload> => {
+  const optsIn = typeof algOrOptions === 'string' ? { alg: algOrOptions } : algOrOptions || {}
+  const opts: StrictVerifyOptionsWithAlg = {
+    alg: optsIn.alg ?? 'HS256',
+    iss: optsIn.iss,
+    nbf: optsIn.nbf ?? true,
+    exp: optsIn.exp ?? true,
+    iat: optsIn.iat ?? true,
+  }
+
   const tokenParts = token.split('.')
   if (tokenParts.length !== 3) {
     throw new JwtTokenInvalid(token)
@@ -83,20 +120,31 @@ export const verify = async (
     throw new JwtHeaderInvalid(header)
   }
   const now = (Date.now() / 1000) | 0
-  if (payload.nbf && payload.nbf > now) {
+  if (opts.nbf && payload.nbf && payload.nbf > now) {
     throw new JwtTokenNotBefore(token)
   }
-  if (payload.exp && payload.exp <= now) {
+  if (opts.exp && payload.exp && payload.exp <= now) {
     throw new JwtTokenExpired(token)
   }
-  if (payload.iat && now < payload.iat) {
+  if (opts.iat && payload.iat && now < payload.iat) {
     throw new JwtTokenIssuedAt(now, payload.iat)
+  }
+  if (opts.iss) {
+    if (!payload.iss) {
+      throw new JwtTokenIssuer(opts.iss, null)
+    }
+    if (typeof opts.iss === 'string' && payload.iss !== opts.iss) {
+      throw new JwtTokenIssuer(opts.iss, payload.iss)
+    }
+    if (opts.iss instanceof RegExp && !opts.iss.test(payload.iss)) {
+      throw new JwtTokenIssuer(opts.iss, payload.iss)
+    }
   }
 
   const headerPayload = token.substring(0, token.lastIndexOf('.'))
   const verified = await verifying(
     publicKey,
-    alg,
+    opts.alg,
     decodeBase64Url(tokenParts[2]),
     utf8Encoder.encode(headerPayload)
   )
@@ -112,9 +160,12 @@ export const verifyWithJwks = async (
   options: {
     keys?: HonoJsonWebKey[]
     jwks_uri?: string
+    verification?: VerifyOptions
   },
   init?: RequestInit
 ): Promise<JWTPayload> => {
+  const verifyOpts = options.verification || {}
+
   const header = decodeHeader(token)
 
   if (!isTokenHeader(header)) {
@@ -150,7 +201,10 @@ export const verifyWithJwks = async (
     throw new JwtTokenInvalid(token)
   }
 
-  return await verify(token, matchingKey, (matchingKey.alg as SignatureAlgorithm) || header.alg)
+  return await verify(token, matchingKey, {
+    alg: (matchingKey.alg as SignatureAlgorithm) || header.alg,
+    ...verifyOpts,
+  })
 }
 
 export const decode = (token: string): { header: TokenHeader; payload: JWTPayload } => {

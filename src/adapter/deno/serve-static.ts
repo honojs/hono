@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import type { ServeStaticOptions } from '../../middleware/serve-static'
 import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
 import type { Env, MiddlewareHandler } from '../../types'
@@ -23,9 +24,6 @@ export const serveStatic = <E extends Env = Env>(
         return null
       }
     }
-    const pathResolve = (path: string) => {
-      return path.startsWith('/') ? path : `./${path}`
-    }
     const isDir = (path: string) => {
       let isDir
       try {
@@ -34,11 +32,10 @@ export const serveStatic = <E extends Env = Env>(
       } catch {}
       return isDir
     }
-
     return baseServeStatic({
       ...options,
       getContent,
-      pathResolve,
+      join,
       isDir,
     })(c, next)
   }
