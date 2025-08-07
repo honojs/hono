@@ -7,7 +7,7 @@ import { encodeBase64Url } from '../../utils/encode'
 import { Jwt } from '../../utils/jwt'
 import type { HonoJsonWebKey } from '../../utils/jwt/jws'
 import { signing } from '../../utils/jwt/jws'
-import { verifyFromJwks } from '../../utils/jwt/jwt'
+import { verifyWithJwks } from '../../utils/jwt/jwt'
 import type { JWTPayload } from '../../utils/jwt/types'
 import { utf8Encoder } from '../../utils/jwt/utf8'
 import * as test_keys from './keys.test.json'
@@ -34,11 +34,11 @@ describe('JWK', () => {
   afterEach(() => server.resetHandlers())
   afterAll(() => server.close())
 
-  describe('verifyFromJwks', () => {
+  describe('verifyWithJwks', () => {
     it('Should throw error on missing options', async () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
-      await expect(verifyFromJwks(credential, {})).rejects.toThrow(
-        'verifyFromJwks requires options for either "keys" or "jwks_uri" or both'
+      await expect(verifyWithJwks(credential, {})).rejects.toThrow(
+        'verifyWithJwks requires options for either "keys" or "jwks_uri" or both'
       )
     })
   })
@@ -426,6 +426,57 @@ describe('JWK', () => {
       const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
       const req = new Request('http://localhost/auth-with-keys-nested/a')
       req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+  })
+
+  describe('Credentials in custom header', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    app.use('/auth-with-keys/*', jwk({ keys: verify_keys, headerName: 'x-custom-auth-header' }))
+
+    app.get('/auth-with-keys/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should not authorize', async () => {
+      const req = new Request('http://localhost/auth-with-keys/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize even if default authorization header present', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+
+      const req = new Request('http://localhost/auth-with-keys/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[1])
+
+      const req = new Request('http://localhost/auth-with-keys/a')
+      req.headers.set('x-custom-auth-header', `Bearer ${credential}`)
       const res = await app.request(req)
       expect(res).not.toBeNull()
       expect(res.status).toBe(200)
