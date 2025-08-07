@@ -4,12 +4,13 @@ import { encodeBase64, encodeBase64Url } from '../encode'
 import { AlgorithmTypes } from './jwa'
 import { signing } from './jws'
 import * as JWT from './jwt'
-import { verifyFromJwks } from './jwt'
+import { verifyWithJwks } from './jwt'
 import {
   JwtAlgorithmNotImplemented,
   JwtTokenExpired,
   JwtTokenInvalid,
   JwtTokenIssuedAt,
+  JwtTokenIssuer,
   JwtTokenNotBefore,
   JwtTokenSignatureMismatched,
 } from './types'
@@ -133,6 +134,96 @@ describe('JWT', () => {
     }
     expect(err).toEqual(new JwtTokenIssuedAt(now, iat))
     expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenIssuer (none)', async () => {
+    const tok =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2MzMwNDY0MDB9.Ha3tPZzmnLGyFfZYd7GSV0iCn2F9kbZffFVZcTe5kJo'
+    const secret = 'a-secret'
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        iss: 'some',
+      })
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenIssuer('some', null))
+    expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenIssuer (wrong - string)', async () => {
+    const tok =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2MzMwNDY0MDAsImlzcyI6ImZha2UtaXNzdWVyIn0.miyPU40DBvhxpAUsndssJOMBsP1aqc8JClGnriPHfXk'
+    const secret = 'a-secret'
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        iss: 'expected-issuer',
+      })
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenIssuer('expected-issuer', 'fake-issuer'))
+    expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenIssuer (wrong - RegExp)', async () => {
+    const tok =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2MzMwNDY0MDAsImlzcyI6ImhleSJ9.Q0NJwoj-meWy42pFFrPNlREe2lOagWioJUjR4eJCx0k'
+    const secret = 'a-secret'
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        iss: /^(hello|hi)$/,
+      })
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenIssuer(/^(hello|hi)$/, 'hey'))
+    expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenIssuer (correct - string)', async () => {
+    const tok =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2MzMwNDY0MDAsImlzcyI6ImNvcnJlY3QtaXNzdWVyIn0.gF8S6M2QcfTTscgxeyihNk28JAOa8mfL1bXPb3_E3rk'
+    const secret = 'a-secret'
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        iss: 'correct-issuer',
+      })
+    } catch (e) {
+      err = e
+    }
+    expect(err).toBeUndefined()
+    expect(authorized?.iss).toEqual('correct-issuer')
+  })
+
+  it('JwtTokenIssuer (correct - RegExp)', async () => {
+    const tok =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2MzMwNDY0MDAsImlzcyI6ImhlbGxvIn0.5DDuValGGQu4EfS3DY7C4hwwHyTNSTD93K_YEjBzgAc'
+    const secret = 'a-secret'
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, {
+        alg: AlgorithmTypes.HS256,
+        iss: /^(hello|hi)$/,
+      })
+    } catch (e) {
+      err = e
+    }
+    expect(err).toBeUndefined()
+    expect(authorized?.iss).toEqual('hello')
   })
 
   it('HS256 sign & verify & decode', async () => {
@@ -477,7 +568,7 @@ describe('JWT', () => {
   })
 })
 
-describe('verifyFromJwks header.alg fallback', () => {
+describe('verifyWithJwks header.alg fallback', () => {
   it('Should use header.alg as fallback when matchingKey.alg is missing', async () => {
     // Setup: Create a JWT signed with HS384 (different from default HS256)
     const payload = { message: 'hello world' }
@@ -510,7 +601,7 @@ describe('verifyFromJwks header.alg fallback', () => {
     ]
 
     // Execute: Verify the JWT token signed with HS384
-    const result = await verifyFromJwks(token, { keys })
+    const result = await verifyWithJwks(token, { keys })
 
     // If verification succeeds, it means header.alg was used
     expect(result).toEqual(payload)
