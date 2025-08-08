@@ -151,6 +151,7 @@ describe('parseResponse', async () => {
     .get('/text', (c) => c.text('hi'))
     .get('/json', (c) => c.json({ message: 'hi' }))
     .get('/404', (c) => c.notFound())
+    .get('/500', (c) => c.text('500 Internal Server Error', 500))
     .get('/raw', (c) => {
       c.header('content-type', '')
       return c.body('hello')
@@ -175,6 +176,9 @@ describe('parseResponse', async () => {
     }),
     http.get('http://localhost/404', () => {
       return HttpResponse.text('404 Not Found', { status: 404 })
+    }),
+    http.get('http://localhost/500', () => {
+      return HttpResponse.text('500 Internal Server Error', { status: 500 })
     }),
     http.get('http://localhost/raw', () => {
       return HttpResponse.text('hello', {
@@ -236,6 +240,24 @@ describe('parseResponse', async () => {
       const result = await parseResponse(client.rawBuffer.$get())
       expect(result).toMatchInlineSnapshot('"hono"')
       type _verify = Expect<Equal<typeof result, string>>
+    }),
+    it('should throw error matching snapshots', async () => {
+      // Defined 404 route
+      await expect(parseResponse(client['404'].$get())).rejects.toThrowErrorMatchingInlineSnapshot(
+        '[DetailedError: 404 Not Found]'
+      )
+
+      // Defined 500 route
+      await expect(parseResponse(client['500'].$get())).rejects.toThrowErrorMatchingInlineSnapshot(
+        '[DetailedError: 500 Internal Server Error]'
+      )
+
+      // Not defined route
+      // Note: the error in this test case is thrown at the `fetch` call (.$get()), not during the `parseResponse` call, so I think `parseResponse` should not try to catch and wrap it into a structured error, which could be inconsistent, if the user awaited the fetch.
+      await expect(
+        // @ts-expect-error noRoute is not defined
+        parseResponse(client['noRoute'].$get())
+      ).rejects.toThrowErrorMatchingInlineSnapshot('[TypeError: fetch failed]')
     }),
   ])
 })
