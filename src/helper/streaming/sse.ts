@@ -1,5 +1,7 @@
 import type { Context } from '../../context'
+import { TypedResponse } from '../../types'
 import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
+import { StatusCode } from '../../utils/http-status'
 import { StreamingApi } from '../../utils/stream'
 import { isOldBunVersion } from './utils'
 
@@ -63,11 +65,13 @@ const run = async (
 
 const contextStash: WeakMap<ReadableStream, Context> = new WeakMap<ReadableStream, Context>()
 
+type SSEResponse<T = unknown> = Response & TypedResponse<T, StatusCode, 'sse'>
+
 export const streamSSE = (
   c: Context,
   cb: (stream: SSEStreamingApi) => Promise<void>,
   onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>
-): Response => {
+): SSEResponse => {
   const { readable, writable } = new TransformStream()
   const stream = new SSEStreamingApi(writable, readable)
 
@@ -90,5 +94,5 @@ export const streamSSE = (
 
   run(stream, cb, onError)
 
-  return c.newResponse(stream.responseReadable)
+  return c.newResponse(stream.responseReadable) as SSEResponse
 }
