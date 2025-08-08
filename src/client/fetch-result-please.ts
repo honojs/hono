@@ -57,6 +57,7 @@ export class DetailedError extends Error {
     options: { detail?: any; code?: any; statusCode?: number; log?: any } = {}
   ) {
     super(message)
+    this.name = 'DetailedError'
     this.log = options.log
     this.detail = options.detail
     this.code = options.code
