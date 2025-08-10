@@ -1,6 +1,6 @@
+import type { SuccessStatusCode } from '../utils/http-status'
 import { fetchRP, DetailedError } from './fetch-result-please'
 import type { ClientResponse, ObjectType } from './types'
-import type { SuccessStatusCode } from '../utils/http-status'
 
 export { DetailedError }
 
@@ -96,7 +96,11 @@ export async function parseResponse<T extends ClientResponse<any>>(
         ? RT
         : string
       : never
-    : Extract<T, ClientResponse<any, SuccessStatusCode, any>> extends ClientResponse<infer RT, infer _, infer RF>
+    : Extract<T, ClientResponse<any, SuccessStatusCode, any>> extends ClientResponse<
+        infer RT,
+        infer _,
+        infer RF
+      >
     ? RF extends 'json'
       ? RT
       : RT extends string
