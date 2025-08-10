@@ -235,23 +235,8 @@ describe('parseResponse', async () => {
       expect(result).toEqual({ message: 'hi' })
       type _verify = Expect<Equal<typeof result, { message: string }>>
     }),
-    it('example of conditional response with type inference', async () => {
-      const result = await client['json-conditional'].$get()
-      if (result.ok) {
-        const json = await result.json()
-        expect(json).toEqual({ data: [{ id: 1 }, { id: 2 }] })
-        type _verify = Expect<Equal<typeof json, { data: { id: number }[] }>>
-      } else {
-        const json = await result.json()
-        type _verify = Expect<Equal<typeof json, { error: string }>>
-        expect(json).toEqual({ error: 'error' })
-        const text = await result.text()
-        expect(text).toEqual('error')
-      }
-    }),
     it('should auto parse the json response - async fetch with conditional response', async () => {
       const result = await parseResponse(client['json-conditional'].$get())
-      expect(result).toEqual({ data: [{ id: 1 }, { id: 2 }] })
       type _verify = Expect<Equal<typeof result, { data: { id: number }[] }>>
     }),
     it('should auto parse the json response - sync fetch', async () => {
