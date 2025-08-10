@@ -1,5 +1,6 @@
 import { fetchRP, DetailedError } from './fetch-result-please'
 import type { ClientResponse, ObjectType } from './types'
+import type { SuccessStatusCode } from '../utils/http-status'
 
 export { DetailedError }
 
@@ -87,7 +88,15 @@ export function deepMerge<T>(target: T, source: Record<string, unknown>): T {
 export async function parseResponse<T extends ClientResponse<any>>(
   fetchRes: T | Promise<T>
 ): Promise<
-  T extends ClientResponse<infer RT, infer _, infer RF>
+  Extract<T, ClientResponse<any, SuccessStatusCode, any>> extends never
+    ? T extends ClientResponse<infer RT, infer _, infer RF>
+      ? RF extends 'json'
+        ? RT
+        : RT extends string
+        ? RT
+        : string
+      : never
+    : Extract<T, ClientResponse<any, SuccessStatusCode, any>> extends ClientResponse<infer RT, infer _, infer RF>
     ? RF extends 'json'
       ? RT
       : RT extends string

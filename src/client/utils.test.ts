@@ -150,6 +150,12 @@ describe('parseResponse', async () => {
   const app = new Hono()
     .get('/text', (c) => c.text('hi'))
     .get('/json', (c) => c.json({ message: 'hi' }))
+    .get('/json-conditional', (c) => {
+      if (Math.random() > 0.5) {
+        return c.json({ error: 'error' }, 500)
+      }
+      return c.json({ data: [{ id: 1 }, { id: 2 }] }, 200)
+    })
     .get('/404', (c) => c.notFound())
     .get('/500', (c) => c.text('500 Internal Server Error', 500))
     .get('/raw', (c) => {
@@ -173,6 +179,12 @@ describe('parseResponse', async () => {
     }),
     http.get('http://localhost/json', () => {
       return HttpResponse.json({ message: 'hi' })
+    }),
+    http.get('http://localhost/json-conditional', () => {
+      if (Math.random() > 0.5) {
+        return HttpResponse.json({ error: 'error' }, { status: 500 })
+      }
+      return HttpResponse.json({ data: [{ id: 1 }, { id: 2 }] })
     }),
     http.get('http://localhost/404', () => {
       return HttpResponse.text('404 Not Found', { status: 404 })
@@ -222,6 +234,25 @@ describe('parseResponse', async () => {
       const result = await parseResponse(client.json.$get())
       expect(result).toEqual({ message: 'hi' })
       type _verify = Expect<Equal<typeof result, { message: string }>>
+    }),
+    it('example of conditional response with type inference', async () => {
+      const result = await client['json-conditional'].$get()
+      if (result.ok) {
+        const json = await result.json()
+        expect(json).toEqual({ data: [{ id: 1 }, { id: 2 }] })
+        type _verify = Expect<Equal<typeof json, { data: { id: number }[] }>>
+      } else {
+        const json = await result.json()
+        type _verify = Expect<Equal<typeof json, { error: string }>>
+        expect(json).toEqual({ error: 'error' })
+        const text = await result.text()
+        expect(text).toEqual('error')
+      }
+    }),
+    it('should auto parse the json response - async fetch with conditional response', async () => {
+      const result = await parseResponse(client['json-conditional'].$get())
+      expect(result).toEqual({ data: [{ id: 1 }, { id: 2 }] })
+      type _verify = Expect<Equal<typeof result, { data: { id: number }[] }>>
     }),
     it('should auto parse the json response - sync fetch', async () => {
       const result = await parseResponse(await client.json.$get())
