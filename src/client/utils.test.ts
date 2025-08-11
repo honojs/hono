@@ -256,19 +256,6 @@ describe('parseResponse', async () => {
       expect(result).toEqual({ message: 'hi' })
       type _verify = Expect<Equal<typeof result, { message: string }>>
     }),
-    it('should bypass error responses in the result type inference - simple 404', async () => {
-      const result = await parseResponse(client['404'].$get())
-      expect(result).toBeUndefined()
-      type _verify = Expect<Equal<typeof result, undefined>>
-    }),
-    it('should bypass error responses in the result type inference - conditional - json', async () => {
-      const result = await parseResponse(client['might-error-json'].$get())
-      type _verify = Expect<Equal<typeof result, { data: { id: number }[] }>>
-    }),
-    it('should bypass error responses in the result type inference - conditional - mixed json/text', async () => {
-      const result = await parseResponse(client['might-error-mixed-json-text'].$get())
-      type _verify = Expect<Equal<typeof result, { message: string }>>
-    }),
     it('should auto parse the json response - sync fetch', async () => {
       const result = await parseResponse(await client.json.$get())
       expect(result).toEqual({ message: 'hi' })
@@ -304,6 +291,30 @@ describe('parseResponse', async () => {
         // @ts-expect-error noRoute is not defined
         parseResponse(client['noRoute'].$get())
       ).rejects.toThrowErrorMatchingInlineSnapshot('[TypeError: fetch failed]')
+    }),
+    it('(type-only) should bypass error responses in the result type inference - simple 404', async () => {
+      type ResultType = Awaited<
+        ReturnType<typeof parseResponse<Awaited<ReturnType<(typeof client)['404']['$get']>>>>
+      >
+      type _verify = Expect<Equal<Awaited<ResultType>, undefined>>
+    }),
+    it('(type-only) should bypass error responses in the result type inference - conditional - json', async () => {
+      type ResultType = Awaited<
+        ReturnType<
+          typeof parseResponse<Awaited<ReturnType<(typeof client)['might-error-json']['$get']>>>
+        >
+      >
+      type _verify = Expect<Equal<ResultType, { data: { id: number }[] }>>
+    }),
+    it('(type-only) should bypass error responses in the result type inference - conditional - mixed json/text', async () => {
+      type ResultType = Awaited<
+        ReturnType<
+          typeof parseResponse<
+            Awaited<ReturnType<(typeof client)['might-error-mixed-json-text']['$get']>>
+          >
+        >
+      >
+      type _verify = Expect<Equal<ResultType, { message: string }>>
     }),
   ])
 })
