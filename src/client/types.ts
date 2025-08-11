@@ -136,7 +136,10 @@ export type InferRequestOptionsType<T> = T extends (
   ? NonNullable<R>
   : never
 
-export type FilterClientResponses<
+/**
+ * Filter a ClientResponse type so it only includes responses of specific status codes.
+ */
+export type FilterClientResponseByStatusCode<
   T extends ClientResponse<any, any, any>,
   U extends number = StatusCode
 > = T extends ClientResponse<infer RT, infer RC, infer RF>
