@@ -207,7 +207,7 @@ describe('parseResponse', async () => {
       })
     }),
     http.get('http://localhost/rawBuffer', () => {
-      return HttpResponse.arrayBuffer(new TextEncoder().encode('hono'), {
+      return HttpResponse.arrayBuffer(new TextEncoder().encode('hono').buffer, {
         headers: {
           'content-type': 'x/custom-type',
         },
