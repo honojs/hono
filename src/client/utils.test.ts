@@ -150,13 +150,20 @@ describe('parseResponse', async () => {
   const app = new Hono()
     .get('/text', (c) => c.text('hi'))
     .get('/json', (c) => c.json({ message: 'hi' }))
-    .get('/json-conditional', (c) => {
+    .get('/might-error-json', (c) => {
       if (Math.random() > 0.5) {
         return c.json({ error: 'error' }, 500)
       }
-      return c.json({ data: [{ id: 1 }, { id: 2 }] }, 200)
+      return c.json({ data: [{ id: 1 }, { id: 2 }] })
     })
-    .get('/404', (c) => c.notFound())
+    .get('/might-error-mixed-json-text', (c) => {
+      if (Math.random() > 0.5) {
+        return c.text('500 Internal Server Error', 500)
+      }
+      return c.json({ message: 'Success' })
+    })
+    .get('/200-explicit', (c) => c.text('OK', 200))
+    .get('/404', (c) => c.text('404 Not Found', 404))
     .get('/500', (c) => c.text('500 Internal Server Error', 500))
     .get('/raw', (c) => {
       c.header('content-type', '')
@@ -180,11 +187,20 @@ describe('parseResponse', async () => {
     http.get('http://localhost/json', () => {
       return HttpResponse.json({ message: 'hi' })
     }),
-    http.get('http://localhost/json-conditional', () => {
+    http.get('http://localhost/might-error-json', () => {
       if (Math.random() > 0.5) {
         return HttpResponse.json({ error: 'error' }, { status: 500 })
       }
       return HttpResponse.json({ data: [{ id: 1 }, { id: 2 }] })
+    }),
+    http.get('http://localhost/might-error-mixed-json-text', () => {
+      if (Math.random() > 0.5) {
+        return HttpResponse.text('500 Internal Server Error', { status: 500 })
+      }
+      return HttpResponse.json({ message: 'Success' })
+    }),
+    http.get('http://localhost/200-explicit', () => {
+      return HttpResponse.text('OK', { status: 200 })
     }),
     http.get('http://localhost/404', () => {
       return HttpResponse.text('404 Not Found', { status: 404 })
@@ -230,14 +246,28 @@ describe('parseResponse', async () => {
       expect(result).toBe('hi')
       type _verify = Expect<Equal<typeof result, 'hi'>>
     }),
+    it('should auto parse text response - explicit 200', async () => {
+      const result = await parseResponse(client['200-explicit'].$get())
+      expect(result).toBe('OK')
+      type _verify = Expect<Equal<typeof result, 'OK'>>
+    }),
     it('should auto parse the json response - async fetch', async () => {
       const result = await parseResponse(client.json.$get())
       expect(result).toEqual({ message: 'hi' })
       type _verify = Expect<Equal<typeof result, { message: string }>>
     }),
-    it('should auto parse the json response - async fetch with conditional response', async () => {
-      const result = await parseResponse(client['json-conditional'].$get())
+    it('should bypass error responses in the result type inference - simple 404', async () => {
+      const result = await parseResponse(client['404'].$get())
+      expect(result).toBeUndefined()
+      type _verify = Expect<Equal<typeof result, undefined>>
+    }),
+    it('should bypass error responses in the result type inference - conditional - json', async () => {
+      const result = await parseResponse(client['might-error-json'].$get())
       type _verify = Expect<Equal<typeof result, { data: { id: number }[] }>>
+    }),
+    it('should bypass error responses in the result type inference - conditional - mixed json/text', async () => {
+      const result = await parseResponse(client['might-error-mixed-json-text'].$get())
+      type _verify = Expect<Equal<typeof result, { message: string }>>
     }),
     it('should auto parse the json response - sync fetch', async () => {
       const result = await parseResponse(await client.json.$get())
