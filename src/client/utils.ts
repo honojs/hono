@@ -1,5 +1,10 @@
+import type {
+  ClientErrorStatusCode,
+  ContentfulStatusCode,
+  ServerErrorStatusCode,
+} from '../utils/http-status'
 import { fetchRP, DetailedError } from './fetch-result-please'
-import type { ClientResponse, ObjectType } from './types'
+import type { ClientResponse, FilterClientResponseByStatusCode, ObjectType } from './types'
 
 export { DetailedError }
 
@@ -87,13 +92,23 @@ export function deepMerge<T>(target: T, source: Record<string, unknown>): T {
 export async function parseResponse<T extends ClientResponse<any>>(
   fetchRes: T | Promise<T>
 ): Promise<
-  T extends ClientResponse<infer RT, infer _, infer RF>
+  FilterClientResponseByStatusCode<
+    T,
+    Exclude<ContentfulStatusCode, ClientErrorStatusCode | ServerErrorStatusCode> // Filter out the error responses
+  > extends never
+    ? // Filtered responses does not include any contentful responses, exit with undefined
+      undefined
+    : // Filtered responses includes contentful responses, proceed to infer the type
+    FilterClientResponseByStatusCode<
+        T,
+        Exclude<ContentfulStatusCode, ClientErrorStatusCode | ServerErrorStatusCode>
+      > extends ClientResponse<infer RT, infer _, infer RF>
     ? RF extends 'json'
       ? RT
       : RT extends string
       ? RT
       : string
-    : never
+    : undefined
 > {
   return fetchRP(fetchRes)
 }

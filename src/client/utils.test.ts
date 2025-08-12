@@ -150,7 +150,20 @@ describe('parseResponse', async () => {
   const app = new Hono()
     .get('/text', (c) => c.text('hi'))
     .get('/json', (c) => c.json({ message: 'hi' }))
-    .get('/404', (c) => c.notFound())
+    .get('/might-error-json', (c) => {
+      if (Math.random() > 0.5) {
+        return c.json({ error: 'error' }, 500)
+      }
+      return c.json({ data: [{ id: 1 }, { id: 2 }] })
+    })
+    .get('/might-error-mixed-json-text', (c) => {
+      if (Math.random() > 0.5) {
+        return c.text('500 Internal Server Error', 500)
+      }
+      return c.json({ message: 'Success' })
+    })
+    .get('/200-explicit', (c) => c.text('OK', 200))
+    .get('/404', (c) => c.text('404 Not Found', 404))
     .get('/500', (c) => c.text('500 Internal Server Error', 500))
     .get('/raw', (c) => {
       c.header('content-type', '')
@@ -174,6 +187,21 @@ describe('parseResponse', async () => {
     http.get('http://localhost/json', () => {
       return HttpResponse.json({ message: 'hi' })
     }),
+    http.get('http://localhost/might-error-json', () => {
+      if (Math.random() > 0.5) {
+        return HttpResponse.json({ error: 'error' }, { status: 500 })
+      }
+      return HttpResponse.json({ data: [{ id: 1 }, { id: 2 }] })
+    }),
+    http.get('http://localhost/might-error-mixed-json-text', () => {
+      if (Math.random() > 0.5) {
+        return HttpResponse.text('500 Internal Server Error', { status: 500 })
+      }
+      return HttpResponse.json({ message: 'Success' })
+    }),
+    http.get('http://localhost/200-explicit', () => {
+      return HttpResponse.text('OK', { status: 200 })
+    }),
     http.get('http://localhost/404', () => {
       return HttpResponse.text('404 Not Found', { status: 404 })
     }),
@@ -195,7 +223,7 @@ describe('parseResponse', async () => {
       })
     }),
     http.get('http://localhost/rawBuffer', () => {
-      return HttpResponse.arrayBuffer(new TextEncoder().encode('hono'), {
+      return HttpResponse.arrayBuffer(new TextEncoder().encode('hono').buffer, {
         headers: {
           'content-type': 'x/custom-type',
         },
@@ -217,6 +245,11 @@ describe('parseResponse', async () => {
       const result = await parseResponse(await client.text.$get())
       expect(result).toBe('hi')
       type _verify = Expect<Equal<typeof result, 'hi'>>
+    }),
+    it('should auto parse text response - explicit 200', async () => {
+      const result = await parseResponse(client['200-explicit'].$get())
+      expect(result).toBe('OK')
+      type _verify = Expect<Equal<typeof result, 'OK'>>
     }),
     it('should auto parse the json response - async fetch', async () => {
       const result = await parseResponse(client.json.$get())
@@ -258,6 +291,30 @@ describe('parseResponse', async () => {
         // @ts-expect-error noRoute is not defined
         parseResponse(client['noRoute'].$get())
       ).rejects.toThrowErrorMatchingInlineSnapshot('[TypeError: fetch failed]')
+    }),
+    it('(type-only) should bypass error responses in the result type inference - simple 404', async () => {
+      type ResultType = Awaited<
+        ReturnType<typeof parseResponse<Awaited<ReturnType<(typeof client)['404']['$get']>>>>
+      >
+      type _verify = Expect<Equal<Awaited<ResultType>, undefined>>
+    }),
+    it('(type-only) should bypass error responses in the result type inference - conditional - json', async () => {
+      type ResultType = Awaited<
+        ReturnType<
+          typeof parseResponse<Awaited<ReturnType<(typeof client)['might-error-json']['$get']>>>
+        >
+      >
+      type _verify = Expect<Equal<ResultType, { data: { id: number }[] }>>
+    }),
+    it('(type-only) should bypass error responses in the result type inference - conditional - mixed json/text', async () => {
+      type ResultType = Awaited<
+        ReturnType<
+          typeof parseResponse<
+            Awaited<ReturnType<(typeof client)['might-error-mixed-json-text']['$get']>>
+          >
+        >
+      >
+      type _verify = Expect<Equal<ResultType, { message: string }>>
     }),
   ])
 })
