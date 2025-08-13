@@ -154,7 +154,7 @@ export namespace JSX {
     autocapitalize?: 'off' | 'none' | 'on' | 'sentences' | 'words' | 'characters' | undefined
     autofocus?: boolean | undefined
     class?: string | Promise<string> | undefined
-    contenteditable?: boolean | 'inherit' | undefined
+    contenteditable?: boolean | 'inherit' | 'plaintext-only' | undefined
     contextmenu?: string | undefined
     dir?: string | undefined
     draggable?: 'true' | 'false' | boolean | undefined
