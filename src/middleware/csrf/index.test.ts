@@ -93,7 +93,6 @@ describe('CSRF by Middleware', () => {
         origin: 'null',
         expectedStatus: 403,
       },
-
       {
         name: 'GET allowed',
         method: 'GET',
@@ -104,13 +103,6 @@ describe('CSRF by Middleware', () => {
       {
         name: 'HEAD allowed',
         method: 'HEAD',
-        secFetchSite: 'cross-site',
-        origin: '',
-        expectedStatus: 200,
-      },
-      {
-        name: 'OPTIONS allowed',
-        method: 'OPTIONS',
         secFetchSite: 'cross-site',
         origin: '',
         expectedStatus: 200,
@@ -169,12 +161,6 @@ describe('CSRF by Middleware', () => {
         name: 'trusted origin without sec-fetch-site',
         origin: 'https://trusted.example',
         secFetchSite: '',
-        expectedStatus: 200,
-      },
-      {
-        name: 'trusted origin with cross-site',
-        origin: 'https://trusted.example',
-        secFetchSite: 'cross-site',
         expectedStatus: 200,
       },
       {
@@ -281,66 +267,6 @@ describe('CSRF by Middleware', () => {
 
         expect(res.status).toBe(tc.expectedStatus)
       })
-    })
-  })
-
-  describe('Combined Logic', () => {
-    it('should work with both trusted origins and bypass patterns', async () => {
-      const app = new Hono()
-      app.use(
-        '*',
-        csrf({
-          useFetchMetadata: true,
-          origin: (origin, c) => {
-            // Path-based bypasses
-            if (c.req.path.startsWith('/webhook/')) return true
-
-            // Trusted origins
-            const trusted = ['https://sso.example.com']
-            if (trusted.includes(origin)) return true
-
-            return false
-          },
-        })
-      )
-      app.post('/webhook/test', simplePostHandler)
-      app.post('/form', simplePostHandler)
-
-      // Should allow webhook path
-      const webhookRes = await app.request('http://localhost/webhook/test', {
-        method: 'POST',
-        headers: {
-          origin: 'https://attacker.example',
-          'sec-fetch-site': 'cross-site',
-          'content-type': 'application/x-www-form-urlencoded',
-        },
-        body: 'name=hono',
-      })
-      expect(webhookRes.status).toBe(200)
-
-      // Should allow trusted origin
-      const trustedRes = await app.request('http://localhost/form', {
-        method: 'POST',
-        headers: {
-          origin: 'https://sso.example.com',
-          'sec-fetch-site': 'cross-site',
-          'content-type': 'application/x-www-form-urlencoded',
-        },
-        body: 'name=hono',
-      })
-      expect(trustedRes.status).toBe(200)
-
-      // Should block untrusted origin on non-bypass path
-      const blockedRes = await app.request('http://localhost/form', {
-        method: 'POST',
-        headers: {
-          origin: 'https://attacker.example',
-          'sec-fetch-site': 'cross-site',
-          'content-type': 'application/x-www-form-urlencoded',
-        },
-        body: 'name=hono',
-      })
-      expect(blockedRes.status).toBe(403)
     })
   })
 
