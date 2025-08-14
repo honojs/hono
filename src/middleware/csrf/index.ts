@@ -8,8 +8,10 @@ import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 
 type IsAllowedOriginHandler = (origin: string, context: Context) => boolean
+type IsAllowedSecFetchSiteHandler = (secFetchSite: string, context: Context) => boolean
 interface CSRFOptions {
   origin?: string | string[] | IsAllowedOriginHandler
+  secFetchSite?: string | string[] | IsAllowedSecFetchSiteHandler
 }
 
 const isSafeMethodRe = /^(GET|HEAD)$/
@@ -51,6 +53,20 @@ const isRequestedByFormElementRe =
  *     origin: (origin) => /https:\/\/(\w+\.)?myapp\.example\.com$/.test(origin),
  *   })
  * )
+ *
+ * // Use sec-fetch-site header to allow requests
+ *
+ * // By default, allowed if sec-fetch-site is same-origin
+ * app.use(csrf())
+ *
+ * // string[]
+ * // You can allow requests from the same site by specifying the following.
+ * // This is easier and more reliable than using a regular expression in origin to extend permissions
+ * app.use(csrf({ secFetchSite: ['same-origin', 'same-site'] }))
+ *
+ * // Function
+ * // You can use functions to allow for complex conditions
+ * app.use(csrf({ secFetchSite: (secFetchSite) => secFetchSite === 'same-origin' }))
  * ```
  */
 export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
@@ -73,10 +89,29 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
     return handler(origin, c)
   }
 
+  const allowedSecFetchSiteHandler: IsAllowedSecFetchSiteHandler = ((optsSecFetchSite) => {
+    if (!optsSecFetchSite) {
+      return (secFetchSite) => secFetchSite === 'same-origin'
+    } else if (typeof optsSecFetchSite === 'string') {
+      return (secFetchSite) => secFetchSite === optsSecFetchSite
+    } else if (typeof optsSecFetchSite === 'function') {
+      return optsSecFetchSite
+    } else {
+      return (secFetchSite) => optsSecFetchSite.includes(secFetchSite)
+    }
+  })(options?.secFetchSite)
+  const isAllowedSecFetchSite = (secFetchSite: string | undefined, c: Context) => {
+    if (secFetchSite === undefined) {
+      return false
+    }
+    return allowedSecFetchSiteHandler(secFetchSite, c)
+  }
+
   return async function csrf(c, next) {
     if (
       !isSafeMethodRe.test(c.req.method) &&
       isRequestedByFormElementRe.test(c.req.header('content-type') || 'text/plain') &&
+      !isAllowedSecFetchSite(c.req.header('sec-fetch-site'), c) &&
       !isAllowedOrigin(c.req.header('origin'), c)
     ) {
       const res = new Response('Forbidden', {
