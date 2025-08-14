@@ -27,6 +27,323 @@ describe('CSRF by Middleware', () => {
     simplePostHandler.mockClear()
   })
 
+  describe('Fetch Metadata Protection', () => {
+    const app = new Hono()
+    app.use('*', csrf({ useFetchMetadata: true }))
+    app.get('/form', (c) => c.html('<form></form>'))
+    app.post('/form', simplePostHandler)
+    app.put('/form', simplePostHandler)
+    app.options('/form', (c) => c.text('OK'))
+
+    const tests = [
+      {
+        name: 'same-origin allowed',
+        method: 'POST',
+        secFetchSite: 'same-origin',
+        origin: '',
+        expectedStatus: 200,
+      },
+      {
+        name: 'none allowed',
+        method: 'POST',
+        secFetchSite: 'none',
+        origin: '',
+        expectedStatus: 200,
+      },
+      {
+        name: 'cross-site blocked',
+        method: 'POST',
+        secFetchSite: 'cross-site',
+        origin: '',
+        expectedStatus: 403,
+      },
+      {
+        name: 'same-site blocked',
+        method: 'POST',
+        secFetchSite: 'same-site',
+        origin: '',
+        expectedStatus: 403,
+      },
+
+      {
+        name: 'no header with no origin',
+        method: 'POST',
+        secFetchSite: '',
+        origin: '',
+        expectedStatus: 200,
+      },
+      {
+        name: 'no header with matching origin',
+        method: 'POST',
+        secFetchSite: '',
+        origin: 'http://localhost',
+        expectedStatus: 200,
+      },
+      {
+        name: 'no header with mismatched origin',
+        method: 'POST',
+        secFetchSite: '',
+        origin: 'https://attacker.example',
+        expectedStatus: 403,
+      },
+      {
+        name: 'no header with null origin',
+        method: 'POST',
+        secFetchSite: '',
+        origin: 'null',
+        expectedStatus: 403,
+      },
+
+      {
+        name: 'GET allowed',
+        method: 'GET',
+        secFetchSite: 'cross-site',
+        origin: '',
+        expectedStatus: 200,
+      },
+      {
+        name: 'HEAD allowed',
+        method: 'HEAD',
+        secFetchSite: 'cross-site',
+        origin: '',
+        expectedStatus: 200,
+      },
+      {
+        name: 'OPTIONS allowed',
+        method: 'OPTIONS',
+        secFetchSite: 'cross-site',
+        origin: '',
+        expectedStatus: 200,
+      },
+      {
+        name: 'PUT blocked',
+        method: 'PUT',
+        secFetchSite: 'cross-site',
+        origin: '',
+        expectedStatus: 403,
+      },
+    ]
+
+    tests.forEach((tc) => {
+      it(tc.name, async () => {
+        const headers: Record<string, string> = {
+          'content-type': 'application/x-www-form-urlencoded',
+        }
+        if (tc.secFetchSite) {
+          headers['sec-fetch-site'] = tc.secFetchSite
+        }
+        if (tc.origin) {
+          headers['origin'] = tc.origin
+        }
+
+        const requestOptions: RequestInit = {
+          method: tc.method,
+          headers,
+        }
+
+        // Don't add body for safe methods (GET, HEAD)
+        if (!['GET', 'HEAD'].includes(tc.method)) {
+          requestOptions.body = 'name=hono'
+        }
+
+        const res = await app.request('http://localhost/form', requestOptions)
+
+        expect(res.status).toBe(tc.expectedStatus)
+      })
+    })
+  })
+
+  describe('Trusted Origins', () => {
+    const app = new Hono()
+    app.use(
+      '*',
+      csrf({
+        useFetchMetadata: true,
+        origin: ['https://trusted.example'],
+      })
+    )
+    app.post('/form', simplePostHandler)
+
+    const tests = [
+      {
+        name: 'trusted origin without sec-fetch-site',
+        origin: 'https://trusted.example',
+        secFetchSite: '',
+        expectedStatus: 200,
+      },
+      {
+        name: 'trusted origin with cross-site',
+        origin: 'https://trusted.example',
+        secFetchSite: 'cross-site',
+        expectedStatus: 200,
+      },
+      {
+        name: 'untrusted origin without sec-fetch-site',
+        origin: 'https://attacker.example',
+        secFetchSite: '',
+        expectedStatus: 403,
+      },
+      {
+        name: 'untrusted origin with cross-site',
+        origin: 'https://attacker.example',
+        secFetchSite: 'cross-site',
+        expectedStatus: 403,
+      },
+    ]
+
+    tests.forEach((tc) => {
+      it(tc.name, async () => {
+        const headers: Record<string, string> = {
+          origin: tc.origin,
+          'content-type': 'application/x-www-form-urlencoded',
+        }
+        if (tc.secFetchSite) {
+          headers['sec-fetch-site'] = tc.secFetchSite
+        }
+
+        const res = await app.request('http://localhost/form', {
+          method: 'POST',
+          headers,
+          body: 'name=hono',
+        })
+
+        expect(res.status).toBe(tc.expectedStatus)
+      })
+    })
+  })
+
+  describe('Bypass Patterns', () => {
+    const app = new Hono()
+    app.use(
+      '*',
+      csrf({
+        useFetchMetadata: true,
+        origin: (origin, c) => {
+          // Path-based bypasses
+          if (c.req.path.startsWith('/bypass/')) return true
+          if (c.req.path === '/only/specific') return true
+          return false
+        },
+      })
+    )
+    app.post('/bypass/test', simplePostHandler)
+    app.post('/only/specific', simplePostHandler)
+    app.post('/api/test', simplePostHandler)
+
+    const tests = [
+      {
+        name: 'bypass path without sec-fetch-site',
+        path: '/bypass/test',
+        secFetchSite: '',
+        expectedStatus: 200,
+      },
+      {
+        name: 'bypass path with cross-site',
+        path: '/bypass/test',
+        secFetchSite: 'cross-site',
+        expectedStatus: 200,
+      },
+      {
+        name: 'specific bypass path',
+        path: '/only/specific',
+        secFetchSite: 'cross-site',
+        expectedStatus: 200,
+      },
+      {
+        name: 'non-bypass path without sec-fetch-site',
+        path: '/api/test',
+        secFetchSite: '',
+        expectedStatus: 403,
+      },
+      {
+        name: 'non-bypass path with cross-site',
+        path: '/api/test',
+        secFetchSite: 'cross-site',
+        expectedStatus: 403,
+      },
+    ]
+
+    tests.forEach((tc) => {
+      it(tc.name, async () => {
+        const headers: Record<string, string> = {
+          origin: 'https://attacker.example',
+          'content-type': 'application/x-www-form-urlencoded',
+        }
+        if (tc.secFetchSite) {
+          headers['sec-fetch-site'] = tc.secFetchSite
+        }
+
+        const res = await app.request('http://localhost' + tc.path, {
+          method: 'POST',
+          headers,
+          body: 'name=hono',
+        })
+
+        expect(res.status).toBe(tc.expectedStatus)
+      })
+    })
+  })
+
+  describe('Combined Logic', () => {
+    it('should work with both trusted origins and bypass patterns', async () => {
+      const app = new Hono()
+      app.use(
+        '*',
+        csrf({
+          useFetchMetadata: true,
+          origin: (origin, c) => {
+            // Path-based bypasses
+            if (c.req.path.startsWith('/webhook/')) return true
+
+            // Trusted origins
+            const trusted = ['https://sso.example.com']
+            if (trusted.includes(origin)) return true
+
+            return false
+          },
+        })
+      )
+      app.post('/webhook/test', simplePostHandler)
+      app.post('/form', simplePostHandler)
+
+      // Should allow webhook path
+      const webhookRes = await app.request('http://localhost/webhook/test', {
+        method: 'POST',
+        headers: {
+          origin: 'https://attacker.example',
+          'sec-fetch-site': 'cross-site',
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        body: 'name=hono',
+      })
+      expect(webhookRes.status).toBe(200)
+
+      // Should allow trusted origin
+      const trustedRes = await app.request('http://localhost/form', {
+        method: 'POST',
+        headers: {
+          origin: 'https://sso.example.com',
+          'sec-fetch-site': 'cross-site',
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        body: 'name=hono',
+      })
+      expect(trustedRes.status).toBe(200)
+
+      // Should block untrusted origin on non-bypass path
+      const blockedRes = await app.request('http://localhost/form', {
+        method: 'POST',
+        headers: {
+          origin: 'https://attacker.example',
+          'sec-fetch-site': 'cross-site',
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        body: 'name=hono',
+      })
+      expect(blockedRes.status).toBe(403)
+    })
+  })
+
   describe('simple usage', () => {
     const app = new Hono()
 
@@ -36,6 +353,7 @@ describe('CSRF by Middleware', () => {
     app.put('/form', (c) => c.text('OK'))
     app.delete('/form', (c) => c.text('OK'))
     app.patch('/form', (c) => c.text('OK'))
+    app.options('/form', (c) => c.text('OK'))
 
     describe('GET /form', async () => {
       it('should be 200 for any request', async () => {
@@ -49,6 +367,14 @@ describe('CSRF by Middleware', () => {
     describe('HEAD /form', async () => {
       it('should be 200 for any request', async () => {
         const res = await app.request('http://localhost/form', { method: 'HEAD' })
+
+        expect(res.status).toBe(200)
+      })
+    })
+
+    describe('OPTIONS /form', async () => {
+      it('should be 200 for any request', async () => {
+        const res = await app.request('http://localhost/form', { method: 'OPTIONS' })
 
         expect(res.status).toBe(200)
       })
