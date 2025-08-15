@@ -8,9 +8,10 @@ import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 
 type IsAllowedOriginHandler = (origin: string, context: Context) => boolean
+type IsAllowedSecFetchSiteHandler = (secFetchSite: string, context: Context) => boolean
 interface CSRFOptions {
   origin?: string | string[] | IsAllowedOriginHandler
-  useFetchMetadata?: boolean
+  secFetchSite?: string | string[] | IsAllowedSecFetchSiteHandler
 }
 
 const isSafeMethodRe = /^(GET|HEAD|OPTIONS)$/
@@ -18,97 +19,69 @@ const isRequestedByFormElementRe =
   /^\b(application\/x-www-form-urlencoded|multipart\/form-data|text\/plain)\b/i
 
 /**
- * Modern CSRF protection using Fetch Metadata
- */
-const checkFetchMetadata = (c: Context, handler: IsAllowedOriginHandler): boolean => {
-  // Always allow safe methods
-  if (isSafeMethodRe.test(c.req.method)) {
-    return true
-  }
-
-  const secFetchSite = c.req.header('sec-fetch-site')
-  const origin = c.req.header('origin')
-
-  // Check Sec-Fetch-Site header first
-  if (secFetchSite) {
-    if (secFetchSite === 'same-origin' || secFetchSite === 'none') {
-      return true
-    }
-    // cross-site or same-site - delegate to handler
-    return origin ? handler(origin, c) : false
-  }
-
-  // Fallback to Origin header check
-  if (!origin) {
-    // No Origin header - assume same-origin or non-browser request
-    return true
-  }
-
-  // Check if origin hostname matches Host header
-  try {
-    const originUrl = new URL(origin)
-    const hostHeader = c.req.header('host')
-    // For the fallback case, we need to extract host from request URL if Host header is missing
-    const requestUrl = new URL(c.req.url)
-    const requestHost = hostHeader || requestUrl.host
-    if (requestHost && originUrl.host === requestHost) {
-      return true
-    }
-  } catch {
-    // Invalid origin
-  }
-
-  // Use handler for final decision
-  return handler(origin, c)
-}
-
-/**
  * CSRF Protection Middleware for Hono.
+ *
+ * Protects against Cross-Site Request Forgery attacks by validating request origins
+ * and sec-fetch-site headers. The request is allowed if either validation passes.
  *
  * @see {@link https://hono.dev/docs/middleware/builtin/csrf}
  *
  * @param {CSRFOptions} [options] - The options for the CSRF protection middleware.
- * @param {string|string[]|(origin: string, context: Context) => boolean} [options.origin] - Specify origins.
- * @param {boolean} [options.useFetchMetadata] - Enable modern Fetch Metadata-based protection.
+ * @param {string|string[]|(origin: string, context: Context) => boolean} [options.origin] -
+ *   Allowed origins for requests.
+ *   - string: Single allowed origin (e.g., 'https://example.com')
+ *   - string[]: Multiple allowed origins
+ *   - function: Custom validation logic
+ *   - Default: Only same origin as the request URL
+ * @param {string|string[]|(secFetchSite: string, context: Context) => boolean} [options.secFetchSite] -
+ *   Sec-Fetch-Site header validation. Standard values include 'same-origin', 'same-site', 'cross-site', 'none'.
+ *   - string: Single allowed value (e.g., 'same-origin')
+ *   - string[]: Multiple allowed values (e.g., ['same-origin', 'same-site'])
+ *   - function: Custom validation with access to context
+ *   - Default: Only allows 'same-origin'
  * @returns {MiddlewareHandler} The middleware handler function.
  *
  * @example
  * ```ts
  * const app = new Hono()
  *
- * // Legacy CSRF protection
- * app.use(csrf())
- * app.use(csrf({ origin: 'myapp.example.com' }))
+ * // Default: both origin and sec-fetch-site validation
+ * app.use('*', csrf())
  *
- * // Modern Fetch Metadata-based protection with trusted origins
- * app.use(csrf({
- *   useFetchMetadata: true,
- *   origin: ['https://sso.example.com', 'https://api.example.com']
- * }))
+ * // Allow specific origins
+ * app.use('*', csrf({ origin: 'https://example.com' }))
+ * app.use('*', csrf({ origin: ['https://app.com', 'https://api.com'] }))
  *
- * // Modern protection with bypass patterns
- * app.use(csrf({
- *   useFetchMetadata: true,
- *   origin: (origin, c) => {
- *     // Path-based bypasses
- *     if (c.req.path.startsWith('/api/webhook/')) return true
- *     if (c.req.path === '/auth/callback') return true
+ * // Allow specific sec-fetch-site values
+ * app.use('*', csrf({ secFetchSite: 'same-origin' }))
+ * app.use('*', csrf({ secFetchSite: ['same-origin', 'same-site'] }))
  *
- *     // Trusted origins
- *     const trusted = ['https://sso.example.com']
- *     return trusted.includes(origin)
+ * // Dynamic sec-fetch-site validation
+ * app.use('*', csrf({
+ *   secFetchSite: (secFetchSite, c) => {
+ *     // Always allow same-origin
+ *     if (secFetchSite === 'same-origin') return true
+ *     // Allow cross-site for webhook endpoints
+ *     if (secFetchSite === 'cross-site' && c.req.path.startsWith('/webhook/')) {
+ *       return true
+ *     }
+ *     return false
  *   }
  * }))
  *
- * // Hybrid approach
- * app.use(csrf({
- *   origin: 'https://example.com', // works for both legacy and modern
- *   useFetchMetadata: true
+ * // Dynamic origin validation
+ * app.use('*', csrf({
+ *   origin: (origin, c) => {
+ *     // Allow same origin
+ *     if (origin === new URL(c.req.url).origin) return true
+ *     // Allow specific trusted domains
+ *     return ['https://app.example.com', 'https://admin.example.com'].includes(origin)
+ *   }
  * }))
  * ```
  */
 export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
-  const handler: IsAllowedOriginHandler = ((optsOrigin) => {
+  const originHandler: IsAllowedOriginHandler = ((optsOrigin) => {
     if (!optsOrigin) {
       return (origin, c) => origin === new URL(c.req.url).origin
     } else if (typeof optsOrigin === 'string') {
@@ -119,32 +92,43 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
       return (origin) => optsOrigin.includes(origin)
     }
   })(options?.origin)
-
   const isAllowedOrigin = (origin: string | undefined, c: Context) => {
     if (origin === undefined) {
       // denied always when origin header is not present
       return false
     }
-    return handler(origin, c)
+    return originHandler(origin, c)
+  }
+
+  const secFetchSiteHandler: IsAllowedSecFetchSiteHandler = ((optsSecFetchSite) => {
+    if (!optsSecFetchSite) {
+      // Default: only allow same-origin
+      return (secFetchSite) => secFetchSite === 'same-origin'
+    } else if (typeof optsSecFetchSite === 'string') {
+      return (secFetchSite) => secFetchSite === optsSecFetchSite
+    } else if (typeof optsSecFetchSite === 'function') {
+      return optsSecFetchSite
+    } else {
+      return (secFetchSite) => optsSecFetchSite.includes(secFetchSite)
+    }
+  })(options?.secFetchSite)
+  const isAllowedSecFetchSite = (secFetchSite: string | undefined, c: Context) => {
+    if (secFetchSite === undefined) {
+      // denied always when sec-fetch-site header is not present
+      return false
+    }
+    return secFetchSiteHandler(secFetchSite, c)
   }
 
   return async function csrf(c, next) {
-    // Use modern Fetch Metadata-based protection if enabled
-    if (options?.useFetchMetadata) {
-      if (!checkFetchMetadata(c, handler)) {
-        const res = new Response('Forbidden', { status: 403 })
-        throw new HTTPException(403, { res })
-      }
-    } else {
-      // Legacy CSRF protection
-      if (
-        !isSafeMethodRe.test(c.req.method) &&
-        isRequestedByFormElementRe.test(c.req.header('content-type') || 'text/plain') &&
-        !isAllowedOrigin(c.req.header('origin'), c)
-      ) {
-        const res = new Response('Forbidden', { status: 403 })
-        throw new HTTPException(403, { res })
-      }
+    if (
+      !isSafeMethodRe.test(c.req.method) &&
+      isRequestedByFormElementRe.test(c.req.header('content-type') || 'text/plain') &&
+      !isAllowedSecFetchSite(c.req.header('sec-fetch-site'), c) &&
+      !isAllowedOrigin(c.req.header('origin'), c)
+    ) {
+      const res = new Response('Forbidden', { status: 403 })
+      throw new HTTPException(403, { res })
     }
 
     await next()

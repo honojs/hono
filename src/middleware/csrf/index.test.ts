@@ -11,13 +11,14 @@ const simplePostHandler = vi.fn(async (c: Context) => {
   }
 })
 
-const buildSimplePostRequestData = (origin?: string) => ({
+const buildSimplePostRequestData = (options: { origin?: string; secFetchSite?: string } = {}) => ({
   method: 'POST',
   headers: Object.assign(
     {
       'content-type': 'application/x-www-form-urlencoded',
     },
-    origin ? { origin } : {}
+    options?.origin ? { origin: options.origin } : {},
+    options?.secFetchSite ? { 'sec-fetch-site': options.secFetchSite } : {}
   ) as Record<string, string>,
   body: 'name=hono',
 })
@@ -25,249 +26,6 @@ const buildSimplePostRequestData = (origin?: string) => ({
 describe('CSRF by Middleware', () => {
   beforeEach(() => {
     simplePostHandler.mockClear()
-  })
-
-  describe('Fetch Metadata Protection', () => {
-    const app = new Hono()
-    app.use('*', csrf({ useFetchMetadata: true }))
-    app.get('/form', (c) => c.html('<form></form>'))
-    app.post('/form', simplePostHandler)
-    app.put('/form', simplePostHandler)
-    app.options('/form', (c) => c.text('OK'))
-
-    const tests = [
-      {
-        name: 'same-origin allowed',
-        method: 'POST',
-        secFetchSite: 'same-origin',
-        origin: '',
-        expectedStatus: 200,
-      },
-      {
-        name: 'none allowed',
-        method: 'POST',
-        secFetchSite: 'none',
-        origin: '',
-        expectedStatus: 200,
-      },
-      {
-        name: 'cross-site blocked',
-        method: 'POST',
-        secFetchSite: 'cross-site',
-        origin: '',
-        expectedStatus: 403,
-      },
-      {
-        name: 'same-site blocked',
-        method: 'POST',
-        secFetchSite: 'same-site',
-        origin: '',
-        expectedStatus: 403,
-      },
-
-      {
-        name: 'no header with no origin',
-        method: 'POST',
-        secFetchSite: '',
-        origin: '',
-        expectedStatus: 200,
-      },
-      {
-        name: 'no header with matching origin',
-        method: 'POST',
-        secFetchSite: '',
-        origin: 'http://localhost',
-        expectedStatus: 200,
-      },
-      {
-        name: 'no header with mismatched origin',
-        method: 'POST',
-        secFetchSite: '',
-        origin: 'https://attacker.example',
-        expectedStatus: 403,
-      },
-      {
-        name: 'no header with null origin',
-        method: 'POST',
-        secFetchSite: '',
-        origin: 'null',
-        expectedStatus: 403,
-      },
-      {
-        name: 'GET allowed',
-        method: 'GET',
-        secFetchSite: 'cross-site',
-        origin: '',
-        expectedStatus: 200,
-      },
-      {
-        name: 'HEAD allowed',
-        method: 'HEAD',
-        secFetchSite: 'cross-site',
-        origin: '',
-        expectedStatus: 200,
-      },
-      {
-        name: 'PUT blocked',
-        method: 'PUT',
-        secFetchSite: 'cross-site',
-        origin: '',
-        expectedStatus: 403,
-      },
-    ]
-
-    tests.forEach((tc) => {
-      it(tc.name, async () => {
-        const headers: Record<string, string> = {
-          'content-type': 'application/x-www-form-urlencoded',
-        }
-        if (tc.secFetchSite) {
-          headers['sec-fetch-site'] = tc.secFetchSite
-        }
-        if (tc.origin) {
-          headers['origin'] = tc.origin
-        }
-
-        const requestOptions: RequestInit = {
-          method: tc.method,
-          headers,
-        }
-
-        // Don't add body for safe methods (GET, HEAD)
-        if (!['GET', 'HEAD'].includes(tc.method)) {
-          requestOptions.body = 'name=hono'
-        }
-
-        const res = await app.request('http://localhost/form', requestOptions)
-
-        expect(res.status).toBe(tc.expectedStatus)
-      })
-    })
-  })
-
-  describe('Trusted Origins', () => {
-    const app = new Hono()
-    app.use(
-      '*',
-      csrf({
-        useFetchMetadata: true,
-        origin: ['https://trusted.example'],
-      })
-    )
-    app.post('/form', simplePostHandler)
-
-    const tests = [
-      {
-        name: 'trusted origin without sec-fetch-site',
-        origin: 'https://trusted.example',
-        secFetchSite: '',
-        expectedStatus: 200,
-      },
-      {
-        name: 'untrusted origin without sec-fetch-site',
-        origin: 'https://attacker.example',
-        secFetchSite: '',
-        expectedStatus: 403,
-      },
-      {
-        name: 'untrusted origin with cross-site',
-        origin: 'https://attacker.example',
-        secFetchSite: 'cross-site',
-        expectedStatus: 403,
-      },
-    ]
-
-    tests.forEach((tc) => {
-      it(tc.name, async () => {
-        const headers: Record<string, string> = {
-          origin: tc.origin,
-          'content-type': 'application/x-www-form-urlencoded',
-        }
-        if (tc.secFetchSite) {
-          headers['sec-fetch-site'] = tc.secFetchSite
-        }
-
-        const res = await app.request('http://localhost/form', {
-          method: 'POST',
-          headers,
-          body: 'name=hono',
-        })
-
-        expect(res.status).toBe(tc.expectedStatus)
-      })
-    })
-  })
-
-  describe('Bypass Patterns', () => {
-    const app = new Hono()
-    app.use(
-      '*',
-      csrf({
-        useFetchMetadata: true,
-        origin: (origin, c) => {
-          // Path-based bypasses
-          if (c.req.path.startsWith('/bypass/')) return true
-          if (c.req.path === '/only/specific') return true
-          return false
-        },
-      })
-    )
-    app.post('/bypass/test', simplePostHandler)
-    app.post('/only/specific', simplePostHandler)
-    app.post('/api/test', simplePostHandler)
-
-    const tests = [
-      {
-        name: 'bypass path without sec-fetch-site',
-        path: '/bypass/test',
-        secFetchSite: '',
-        expectedStatus: 200,
-      },
-      {
-        name: 'bypass path with cross-site',
-        path: '/bypass/test',
-        secFetchSite: 'cross-site',
-        expectedStatus: 200,
-      },
-      {
-        name: 'specific bypass path',
-        path: '/only/specific',
-        secFetchSite: 'cross-site',
-        expectedStatus: 200,
-      },
-      {
-        name: 'non-bypass path without sec-fetch-site',
-        path: '/api/test',
-        secFetchSite: '',
-        expectedStatus: 403,
-      },
-      {
-        name: 'non-bypass path with cross-site',
-        path: '/api/test',
-        secFetchSite: 'cross-site',
-        expectedStatus: 403,
-      },
-    ]
-
-    tests.forEach((tc) => {
-      it(tc.name, async () => {
-        const headers: Record<string, string> = {
-          origin: 'https://attacker.example',
-          'content-type': 'application/x-www-form-urlencoded',
-        }
-        if (tc.secFetchSite) {
-          headers['sec-fetch-site'] = tc.secFetchSite
-        }
-
-        const res = await app.request('http://localhost' + tc.path, {
-          method: 'POST',
-          headers,
-          body: 'name=hono',
-        })
-
-        expect(res.status).toBe(tc.expectedStatus)
-      })
-    })
   })
 
   describe('simple usage', () => {
@@ -323,7 +81,7 @@ describe('CSRF by Middleware', () => {
          */
         const res = await app.request(
           'http://localhost/form',
-          buildSimplePostRequestData('http://localhost')
+          buildSimplePostRequestData({ origin: 'http://localhost' })
         )
 
         expect(res.status).toBe(200)
@@ -350,7 +108,7 @@ describe('CSRF by Middleware', () => {
          */
         const res = await app.request(
           'http://localhost/form',
-          buildSimplePostRequestData('http://example.com')
+          buildSimplePostRequestData({ origin: 'http://example.com' })
         )
 
         expect(res.status).toBe(403)
@@ -378,7 +136,7 @@ describe('CSRF by Middleware', () => {
        */
       const res = await app.request(
         'http://localhost/form',
-        buildSimplePostRequestData('http://example.com')
+        buildSimplePostRequestData({ origin: 'http://example.com' })
       )
 
       expect(res.status).toBe(403)
@@ -405,7 +163,7 @@ describe('CSRF by Middleware', () => {
        */
       const res = await app.request(
         'http://localhost/form',
-        buildSimplePostRequestData('http://example.com')
+        buildSimplePostRequestData({ origin: 'http://example.com' })
       )
 
       expect(res.status).toBe(403)
@@ -484,7 +242,7 @@ describe('CSRF by Middleware', () => {
       it('should be 200 for allowed origin', async () => {
         const res = await app.request(
           'https://example.com/form',
-          buildSimplePostRequestData('https://example.com')
+          buildSimplePostRequestData({ origin: 'https://example.com' })
         )
         expect(res.status).toBe(200)
       })
@@ -492,7 +250,7 @@ describe('CSRF by Middleware', () => {
       it('should be 403 for not allowed origin', async () => {
         const res = await app.request(
           'https://example.jp/form',
-          buildSimplePostRequestData('https://example.jp')
+          buildSimplePostRequestData({ origin: 'https://example.jp' })
         )
         expect(res.status).toBe(403)
         expect(simplePostHandler).not.toHaveBeenCalled()
@@ -513,13 +271,13 @@ describe('CSRF by Middleware', () => {
       it('should be 200 for allowed origin', async () => {
         let res = await app.request(
           'https://hono.example.com/form',
-          buildSimplePostRequestData('https://hono.example.com')
+          buildSimplePostRequestData({ origin: 'https://hono.example.com' })
         )
         expect(res.status).toBe(200)
 
         res = await app.request(
           'https://example.com/form',
-          buildSimplePostRequestData('https://example.com')
+          buildSimplePostRequestData({ origin: 'https://example.com' })
         )
         expect(res.status).toBe(200)
       })
@@ -527,7 +285,7 @@ describe('CSRF by Middleware', () => {
       it('should be 403 for not allowed origin', async () => {
         const res = await app.request(
           'http://example.jp/form',
-          buildSimplePostRequestData('http://example.jp')
+          buildSimplePostRequestData({ origin: 'http://example.jp' })
         )
         expect(res.status).toBe(403)
         expect(simplePostHandler).not.toHaveBeenCalled()
@@ -548,13 +306,13 @@ describe('CSRF by Middleware', () => {
       it('should be 200 for allowed origin', async () => {
         let res = await app.request(
           'https://hono.example.com/form',
-          buildSimplePostRequestData('https://hono.example.com')
+          buildSimplePostRequestData({ origin: 'https://hono.example.com' })
         )
         expect(res.status).toBe(200)
 
         res = await app.request(
           'https://example.com/form',
-          buildSimplePostRequestData('https://example.com')
+          buildSimplePostRequestData({ origin: 'https://example.com' })
         )
         expect(res.status).toBe(200)
       })
@@ -562,17 +320,111 @@ describe('CSRF by Middleware', () => {
       it('should be 403 for not allowed origin', async () => {
         let res = await app.request(
           'http://honojs.hono.example.jp/form',
-          buildSimplePostRequestData('http://example.jp')
+          buildSimplePostRequestData({ origin: 'http://example.jp' })
         )
         expect(res.status).toBe(403)
         expect(simplePostHandler).not.toHaveBeenCalled()
 
         res = await app.request(
           'http://example.jp/form',
-          buildSimplePostRequestData('http://example.jp')
+          buildSimplePostRequestData({ origin: 'http://example.jp' })
         )
         expect(res.status).toBe(403)
         expect(simplePostHandler).not.toHaveBeenCalled()
+      })
+    })
+  })
+
+  describe('with secFetchSite option', () => {
+    describe('string', () => {
+      const app = new Hono()
+      app.use('*', csrf({ secFetchSite: 'same-origin' }))
+      app.post('/form', simplePostHandler)
+
+      it('should allow matching value', async () => {
+        const res = await app.request(
+          'http://localhost/form',
+          buildSimplePostRequestData({ secFetchSite: 'same-origin' })
+        )
+        expect(res.status).toBe(200)
+      })
+
+      it('should block non-matching value', async () => {
+        const res = await app.request(
+          'http://localhost/form',
+          buildSimplePostRequestData({ secFetchSite: 'cross-site' })
+        )
+        expect(res.status).toBe(403)
+      })
+    })
+
+    describe('string[]', () => {
+      const app = new Hono()
+      app.use('*', csrf({ secFetchSite: ['same-origin', 'none'] }))
+      app.post('/form', simplePostHandler)
+
+      it('should allow "same-origin" value', async () => {
+        const res = await app.request(
+          'http://localhost/form',
+          buildSimplePostRequestData({ secFetchSite: 'same-origin' })
+        )
+        expect(res.status).toBe(200)
+      })
+
+      it('should allow "none" value', async () => {
+        const res = await app.request(
+          'http://localhost/form',
+          buildSimplePostRequestData({ secFetchSite: 'none' })
+        )
+        expect(res.status).toBe(200)
+      })
+
+      it('should block not included values', async () => {
+        const res = await app.request(
+          'http://localhost/form',
+          buildSimplePostRequestData({ secFetchSite: 'cross-site' })
+        )
+        expect(res.status).toBe(403)
+      })
+    })
+
+    describe('IsAllowedSecFetchSiteHandler', () => {
+      const app = new Hono()
+      app.use(
+        '*',
+        csrf({
+          secFetchSite: (secFetchSite, c) => {
+            if (secFetchSite === 'same-origin') return true
+            if (c.req.path.startsWith('/webhook/')) return true
+            return false
+          },
+        })
+      )
+      app.post('/form', simplePostHandler)
+      app.post('/webhook/test', simplePostHandler)
+
+      it('should use custom logic for allowed values', async () => {
+        const res = await app.request(
+          'http://localhost/form',
+          buildSimplePostRequestData({ secFetchSite: 'same-origin' })
+        )
+        expect(res.status).toBe(200)
+      })
+
+      it('should use custom logic for path-based bypass', async () => {
+        const res = await app.request(
+          'http://localhost/webhook/test',
+          buildSimplePostRequestData({ secFetchSite: 'cross-site' })
+        )
+        expect(res.status).toBe(200)
+      })
+
+      it('should block when custom logic returns false', async () => {
+        const res = await app.request(
+          'http://localhost/form',
+          buildSimplePostRequestData({ secFetchSite: 'cross-site' })
+        )
+        expect(res.status).toBe(403)
       })
     })
   })
