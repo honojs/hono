@@ -356,6 +356,14 @@ describe('Basic - $url()', () => {
   it('Should return a correct url via $url().href', async () => {
     const client = hc<typeof app>('http://fake')
     expect(client.index.$url().href).toBe('http://fake/')
+    expect(
+      client.index.$url({
+        query: {
+          page: '123',
+          limit: '20',
+        },
+      }).href
+    ).toBe('http://fake/?page=123&limit=20')
     expect(client.api.$url().href).toBe('http://fake/api')
     expect(
       client.api.posts[':id'].$url({
