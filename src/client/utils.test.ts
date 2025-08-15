@@ -122,6 +122,24 @@ describe('removeIndexString', () => {
     newUrl = removeIndexString(url)
     expect(newUrl).toBe('/subindex')
   })
+
+  it('Should remove `/index` with query parameters', () => {
+    let url = 'http://localhost/index?page=123&limit=20'
+    let newUrl = removeIndexString(url)
+    expect(newUrl).toBe('http://localhost/?page=123&limit=20')
+
+    url = 'https://example.com/index?q=search'
+    newUrl = removeIndexString(url)
+    expect(newUrl).toBe('https://example.com/?q=search')
+
+    url = '/api/index?filter=test'
+    newUrl = removeIndexString(url)
+    expect(newUrl).toBe('/api?filter=test')
+
+    url = '/index?a=1&b=2&c=3'
+    newUrl = removeIndexString(url)
+    expect(newUrl).toBe('?a=1&b=2&c=3')
+  })
 })
 
 describe('deepMerge', () => {
