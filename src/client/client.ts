@@ -2,6 +2,7 @@ import type { Hono } from '../hono'
 import type { FormValue, ValidationTargets } from '../types'
 import { serialize } from '../utils/cookie'
 import type { UnionToIntersection } from '../utils/types'
+import { EventSource } from './eventsource'
 import type { Callback, Client, ClientRequestOptions } from './types'
 import {
   buildSearchParams,
@@ -194,6 +195,9 @@ export const hc = <T extends Hono<any, any, any>>(
       }
 
       return establishWebSocket(targetUrl.toString())
+    }
+    if (method === 'sse') {
+      return new EventSource(url, opts.args[0])
     }
 
     const req = new ClientRequestImpl(url, method)
