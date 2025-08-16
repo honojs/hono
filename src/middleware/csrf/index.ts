@@ -14,7 +14,7 @@ interface CSRFOptions {
   secFetchSite?: string | string[] | IsAllowedSecFetchSiteHandler
 }
 
-const isSafeMethodRe = /^(GET|HEAD|OPTIONS)$/
+const isSafeMethodRe = /^(GET|HEAD)$/
 const isRequestedByFormElementRe =
   /^\b(application\/x-www-form-urlencoded|multipart\/form-data|text\/plain)\b/i
 

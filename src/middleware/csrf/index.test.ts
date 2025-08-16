@@ -37,7 +37,6 @@ describe('CSRF by Middleware', () => {
     app.put('/form', (c) => c.text('OK'))
     app.delete('/form', (c) => c.text('OK'))
     app.patch('/form', (c) => c.text('OK'))
-    app.options('/form', (c) => c.text('OK'))
 
     describe('GET /form', async () => {
       it('should be 200 for any request', async () => {
@@ -51,14 +50,6 @@ describe('CSRF by Middleware', () => {
     describe('HEAD /form', async () => {
       it('should be 200 for any request', async () => {
         const res = await app.request('http://localhost/form', { method: 'HEAD' })
-
-        expect(res.status).toBe(200)
-      })
-    })
-
-    describe('OPTIONS /form', async () => {
-      it('should be 200 for any request', async () => {
-        const res = await app.request('http://localhost/form', { method: 'OPTIONS' })
 
         expect(res.status).toBe(200)
       })
