@@ -5,8 +5,10 @@
 
 import { HonoRequest } from '../request'
 
-type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot }
-type BodyDataValueDotAll = {
+interface BodyDataValueDot {
+  [x: string]: string | File | BodyDataValueDot
+}
+interface BodyDataValueDotAll {
   [x: string]: string | File | (string | File)[] | BodyDataValueDotAll
 }
 type SimplifyBodyData<T> = {
@@ -39,7 +41,7 @@ export type BodyData<T extends Partial<ParseBodyOptions> = {}> = SimplifyBodyDat
   Record<string, BodyDataValue<T>>
 >
 
-export type ParseBodyOptions = {
+export interface ParseBodyOptions {
   /**
    * Determines whether all fields with multiple values should be parsed as arrays.
    * @default false
