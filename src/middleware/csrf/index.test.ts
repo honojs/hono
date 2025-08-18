@@ -347,6 +347,14 @@ describe('CSRF by Middleware', () => {
         )
         expect(res.status).toBe(403)
       })
+
+      it('should block unknown values', async () => {
+        const res = await app.request(
+          'http://localhost/form',
+          buildSimplePostRequestData({ secFetchSite: 'any' })
+        )
+        expect(res.status).toBe(403)
+      })
     })
 
     describe('string[]', () => {

@@ -8,10 +8,18 @@ import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
 
 type IsAllowedOriginHandler = (origin: string, context: Context) => boolean
-type IsAllowedSecFetchSiteHandler = (secFetchSite: string, context: Context) => boolean
+
+const secFetchSiteValues = ['same-origin', 'same-site', 'none', 'cross-site'] as const
+type SecFetchSite = (typeof secFetchSiteValues)[number]
+
+const isSecFetchSite = (value: string): value is SecFetchSite =>
+  (secFetchSiteValues as readonly string[]).includes(value)
+
+type IsAllowedSecFetchSiteHandler = (secFetchSite: SecFetchSite, context: Context) => boolean
+
 interface CSRFOptions {
   origin?: string | string[] | IsAllowedOriginHandler
-  secFetchSite?: string | string[] | IsAllowedSecFetchSiteHandler
+  secFetchSite?: SecFetchSite | SecFetchSite[] | IsAllowedSecFetchSiteHandler
 }
 
 const isSafeMethodRe = /^(GET|HEAD)$/
@@ -115,6 +123,10 @@ export const csrf = (options?: CSRFOptions): MiddlewareHandler => {
   const isAllowedSecFetchSite = (secFetchSite: string | undefined, c: Context) => {
     if (secFetchSite === undefined) {
       // denied always when sec-fetch-site header is not present
+      return false
+    }
+    // type guard to check if the value is a valid SecFetchSite
+    if (!isSecFetchSite(secFetchSite)) {
       return false
     }
     return secFetchSiteHandler(secFetchSite, c)
