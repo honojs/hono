@@ -255,5 +255,24 @@ describe('Proxy Middleware', () => {
       expect(res.status).toBe(200)
       expect(await res.text()).toBe('ok')
     })
+
+    it('Should call the custom fetch method when specified', async () => {
+      const customFetch = vi.fn().mockImplementation(async () => {
+        return new Response('custom fetch response')
+      })
+      const app = new Hono()
+      app.get('/', () =>
+        proxy(
+          `https://example.com/`,
+          {},
+          {
+            fetch: customFetch,
+          }
+        )
+      )
+      const res = await app.request('/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('custom fetch response')
+    })
   })
 })
