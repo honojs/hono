@@ -38,7 +38,7 @@ export default defineConfig({
             'scripts/**/(*.)+(spec|test).+(ts|tsx|js)',
             'build/**/(*.)+(spec|test).+(ts|tsx|js)',
           ],
-          name: 'unit',
+          name: 'main',
         },
       },
       {
