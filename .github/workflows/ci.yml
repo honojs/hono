@@ -26,12 +26,10 @@ jobs:
           pattern: coverage-*
           merge-multiple: true
           path: ./coverage
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           directory: ./coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   main:
     name: 'Main'
