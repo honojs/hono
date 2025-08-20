@@ -7,6 +7,7 @@ export default defineConfig({
     coverage: {
       enabled: true,
       provider: 'v8',
+      reportsDirectory: './coverage/raw/default',
       reporter: ['json', 'text', 'html'],
       exclude: [
         ...(configDefaults.coverage.exclude ?? []),
@@ -31,8 +32,7 @@ export default defineConfig({
         },
         extends: true,
         test: {
-          environment: 'node',
-          exclude: [...configDefaults.exclude, 'src/jsx', '**/*.case.test.*'],
+          exclude: [...configDefaults.exclude, '**/sandbox/**', '**/*.case.test.*'],
           include: [
             'src/**/(*.)+(spec|test).+(ts|tsx|js)',
             'scripts/**/(*.)+(spec|test).+(ts|tsx|js)',
