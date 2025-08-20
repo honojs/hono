@@ -1,19 +1,8 @@
-/// <reference types="vitest" />
 import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
-  esbuild: {
-    jsx: 'automatic',
-    jsxImportSource: __dirname + '/../src/jsx',
-  },
   test: {
     globals: true,
-    include: [
-      '**/src/**/(*.)+(spec|test).+(ts|tsx|js)',
-      '**/scripts/**/(*.)+(spec|test).+(ts|tsx|js)',
-      '**/build/**/(*.)+(spec|test).+(ts|tsx|js)',
-    ],
-    exclude: [...configDefaults.exclude, '**/sandbox/**', '**/*.case.test.+(ts|tsx|js)'],
     setupFiles: ['./.vitest.config/setup-vitest.ts'],
     coverage: {
       enabled: true,
@@ -34,6 +23,46 @@ export default defineConfig({
         'src/utils/http-status.ts',
       ],
     },
-    pool: 'forks',
+    projects: [
+      './runtime-tests/*/vitest.config.ts',
+      {
+        esbuild: {
+          jsx: 'automatic',
+          jsxImportSource: './src/jsx',
+        },
+        extends: true,
+        test: {
+          exclude: [...configDefaults.exclude, '**/sandbox/**', '**/*.case.test.*'],
+          include: [
+            'src/**/(*.)+(spec|test).+(ts|tsx|js)',
+            'scripts/**/(*.)+(spec|test).+(ts|tsx|js)',
+            'build/**/(*.)+(spec|test).+(ts|tsx|js)',
+          ],
+          name: 'main',
+        },
+      },
+      {
+        esbuild: {
+          jsx: 'automatic',
+          jsxImportSource: './src/jsx',
+        },
+        extends: true,
+        test: {
+          include: ['src/jsx/dom/**/(*.)+(spec|test).+(ts|tsx|js)', 'src/jsx/hooks/dom.test.tsx'],
+          name: 'jsx-runtime-default',
+        },
+      },
+      {
+        esbuild: {
+          jsx: 'automatic',
+          jsxImportSource: './src/jsx/dom',
+        },
+        extends: true,
+        test: {
+          include: ['src/jsx/dom/**/(*.)+(spec|test).+(ts|tsx|js)', 'src/jsx/hooks/dom.test.tsx'],
+          name: 'jsx-runtime-dom',
+        },
+      },
+    ],
   },
 })
