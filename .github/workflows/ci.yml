@@ -18,12 +18,7 @@ jobs:
     needs:
       - main
       - bun
-      - fastly
-      - node
       - deno
-      - workerd
-      - lambda
-      - lambda-edge
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -123,10 +118,6 @@ jobs:
       - run: bun install
       - run: bun run build
       - run: bun run test:fastly
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage-fastly
-          path: coverage/
 
   node:
     name: 'Node.js v${{ matrix.node }}'
@@ -143,11 +134,6 @@ jobs:
       - run: bun install
       - run: bun run build
       - run: bun run test:node
-      - uses: actions/upload-artifact@v4
-        if: matrix.node == '22.x'
-        with:
-          name: coverage-node
-          path: coverage/
 
   workerd:
     name: 'workerd'
@@ -161,10 +147,6 @@ jobs:
       - run: bun install
       - run: bun run build
       - run: bun run test:workerd
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage-workerd
-          path: coverage/
 
   lambda:
     name: 'AWS Lambda'
@@ -175,10 +157,6 @@ jobs:
       - run: bun install
       - run: bun run build
       - run: bun run test:lambda
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage-lambda
-          path: coverage/
 
   lambda-edge:
     name: 'Lambda@Edge'
@@ -189,10 +167,6 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:lambda-edge
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage-lambda-edge
-          path: coverage/
 
   perf-measures-check-on-pr:
     name: 'Type & Bundle size Check on PR'

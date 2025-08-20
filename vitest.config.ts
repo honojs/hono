@@ -1,24 +1,12 @@
-/// <reference types="vitest" />
 import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
-  esbuild: {
-    jsx: 'automatic',
-    jsxImportSource: __dirname + '/../src/jsx',
-  },
   test: {
     globals: true,
-    include: [
-      '**/src/**/(*.)+(spec|test).+(ts|tsx|js)',
-      '**/scripts/**/(*.)+(spec|test).+(ts|tsx|js)',
-      '**/build/**/(*.)+(spec|test).+(ts|tsx|js)',
-    ],
-    exclude: [...configDefaults.exclude, '**/sandbox/**', '**/*.case.test.+(ts|tsx|js)'],
     setupFiles: ['./.vitest.config/setup-vitest.ts'],
     coverage: {
       enabled: true,
       provider: 'v8',
-      reportsDirectory: './coverage/raw/default',
       reporter: ['json', 'text', 'html'],
       exclude: [
         ...(configDefaults.coverage.exclude ?? []),
@@ -34,6 +22,47 @@ export default defineConfig({
         'src/utils/http-status.ts',
       ],
     },
-    pool: 'forks',
+    projects: [
+      './runtime-tests/*/vitest.config.ts',
+      {
+        esbuild: {
+          jsx: 'automatic',
+          jsxImportSource: './src/jsx',
+        },
+        extends: true,
+        test: {
+          environment: 'node',
+          exclude: [...configDefaults.exclude, 'src/jsx', '**/*.case.test.*'],
+          include: [
+            'src/**/(*.)+(spec|test).+(ts|tsx|js)',
+            'scripts/**/(*.)+(spec|test).+(ts|tsx|js)',
+            'build/**/(*.)+(spec|test).+(ts|tsx|js)',
+          ],
+          name: 'unit',
+        },
+      },
+      {
+        esbuild: {
+          jsx: 'automatic',
+          jsxImportSource: './src/jsx',
+        },
+        extends: true,
+        test: {
+          include: ['src/jsx/dom/**/(*.)+(spec|test).+(ts|tsx|js)', 'src/jsx/hooks/dom.test.tsx'],
+          name: 'jsx-runtime-default',
+        },
+      },
+      {
+        esbuild: {
+          jsx: 'automatic',
+          jsxImportSource: './src/jsx/dom',
+        },
+        extends: true,
+        test: {
+          include: ['src/jsx/dom/**/(*.)+(spec|test).+(ts|tsx|js)', 'src/jsx/hooks/dom.test.tsx'],
+          name: 'jsx-runtime-dom',
+        },
+      },
+    ],
   },
 })
