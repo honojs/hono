@@ -23,6 +23,7 @@ interface ProxyRequestInit extends Omit<RequestInit, 'headers'> {
     | [string, string][]
     | Record<RequestHeader, string | undefined>
     | Record<string, string | undefined>
+  customFetch?: (request: Request) => Promise<Response>
 }
 
 interface ProxyFetch {
@@ -110,7 +111,7 @@ const preprocessRequestInit = (requestInit: RequestInit): RequestInit => {
  * ```
  */
 export const proxy: ProxyFetch = async (input, proxyInit) => {
-  const { raw, ...requestInit } =
+  const { raw, customFetch, ...requestInit } =
     proxyInit instanceof Request ? { raw: proxyInit } : proxyInit ?? {}
 
   const req = new Request(input, {
@@ -119,7 +120,7 @@ export const proxy: ProxyFetch = async (input, proxyInit) => {
   })
   req.headers.delete('accept-encoding')
 
-  const res = await fetch(req)
+  const res = await (customFetch || fetch)(req)
   const resHeaders = new Headers(res.headers)
   hopByHopHeaders.forEach((header) => {
     resHeaders.delete(header)
