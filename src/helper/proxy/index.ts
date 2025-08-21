@@ -23,7 +23,7 @@ interface ProxyRequestInit extends Omit<RequestInit, 'headers'> {
     | [string, string][]
     | Record<RequestHeader, string | undefined>
     | Record<string, string | undefined>
-  customFetch: (request: Request) => Promise<Response>
+  customFetch?: (request: Request) => Promise<Response>
 }
 
 interface ProxyFetch {
