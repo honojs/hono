@@ -677,7 +677,7 @@
     "prettier": "^2.6.2",
     "publint": "^0.1.16",
     "supertest": "^6.3.4",
-    "typescript": "^5.3.3",
+    "typescript": "^5.9.2",
     "vite-plugin-fastly-js-compute": "^0.4.2",
     "vitest": "^3.2.4",
     "wrangler": "4.12.0",

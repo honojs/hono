@@ -85,8 +85,8 @@ export const websocket: BunWebSocketHandler<BunWebSocketData> = {
   message(ws, message) {
     const websocketListeners = ws.data.events
     if (websocketListeners.onMessage) {
-      const normalizedReceiveData =
-        typeof message === 'string' ? message : (message.buffer satisfies WSMessageReceive)
+      const normalizedReceiveData: WSMessageReceive =
+        typeof message === 'string' ? message : message.buffer
 
       websocketListeners.onMessage(createWSMessageEvent(normalizedReceiveData), createWSContext(ws))
     }

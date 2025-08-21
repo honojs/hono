@@ -495,7 +495,7 @@ describe('Infer the response/request type', () => {
       const req = client.index.$get
 
       type Actual = InferResponseType<typeof req>
-      type Expected = { ok: boolean }
+      type Expected = { ok: true }
       type verify = Expect<Equal<Expected, Actual>>
     })
 
@@ -558,7 +558,7 @@ describe('Merge path with `app.route()`', () => {
     const client = hc<AppType>('http://localhost')
     const res = await client.api.search.$get()
     const data = await res.json()
-    type verify = Expect<Equal<boolean, typeof data.ok>>
+    type verify = Expect<Equal<true, typeof data.ok>>
     expect(data.ok).toBe(true)
   })
 
@@ -569,7 +569,7 @@ describe('Merge path with `app.route()`', () => {
     const client = hc<AppType>('http://localhost')
     const res = await client.api.search.$get()
     const data = await res.json()
-    type verify = Expect<Equal<boolean, typeof data.ok>>
+    type verify = Expect<Equal<true, typeof data.ok>>
     expect(data.ok).toBe(true)
   })
 
@@ -580,7 +580,7 @@ describe('Merge path with `app.route()`', () => {
     const client = hc<AppType>('http://localhost')
     const res = await client.v1.book.$get()
     const data = await res.json()
-    type verify = Expect<Equal<boolean, typeof data.ok>>
+    type verify = Expect<Equal<true, typeof data.ok>>
     expect(data.ok).toBe(true)
   })
 
@@ -1308,7 +1308,7 @@ describe('Redirect response - only types', () => {
     type Actual = InferResponseType<typeof req>
     type Expected =
       | {
-          ok: boolean
+          ok: true
         }
       | undefined
     type verify = Expect<Equal<Expected, Actual>>

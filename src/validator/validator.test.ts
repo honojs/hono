@@ -938,7 +938,7 @@ it('`on`', () => {
           }
         }
         output: {
-          success: boolean
+          success: true
         }
         outputFormat: 'json'
         status: ContentfulStatusCode

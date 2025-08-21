@@ -70,7 +70,7 @@ export class WSContext<T = unknown> {
     this.url = init.url ? new URL(init.url) : null
     this.protocol = init.protocol ?? null
   }
-  send(source: string | ArrayBuffer | Uint8Array, options?: SendOptions): void {
+  send(source: string | ArrayBuffer | Uint8Array<ArrayBuffer>, options?: SendOptions): void {
     this.#init.send(source, options ?? {})
   }
   raw?: T
@@ -85,7 +85,12 @@ export class WSContext<T = unknown> {
   }
 }
 
-export type WSMessageReceive = string | Blob | ArrayBufferLike
+export type WSMessageReceive =
+  | string
+  | Blob
+  | ArrayBuffer
+  | SharedArrayBuffer
+  | Uint8Array<ArrayBuffer>
 
 export const createWSMessageEvent = (source: WSMessageReceive): MessageEvent<WSMessageReceive> => {
   return new MessageEvent<WSMessageReceive>('message', {
