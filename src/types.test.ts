@@ -268,7 +268,7 @@ describe('OnHandlerInterface', () => {
             }
           }
           output: {
-            success: boolean
+            success: true
           }
           outputFormat: 'json'
           status: ContentfulStatusCode
@@ -907,7 +907,7 @@ describe('Different types using json()', () => {
             | {
                 input: {}
                 output: {
-                  ng: boolean
+                  ng: true
                 }
                 outputFormat: 'json'
                 status: ContentfulStatusCode
@@ -915,7 +915,7 @@ describe('Different types using json()', () => {
             | {
                 input: {}
                 output: {
-                  ok: boolean
+                  ok: true
                 }
                 outputFormat: 'json'
                 status: ContentfulStatusCode
@@ -923,7 +923,7 @@ describe('Different types using json()', () => {
             | {
                 input: {}
                 output: {
-                  default: boolean
+                  default: true
                 }
                 outputFormat: 'json'
                 status: ContentfulStatusCode
@@ -963,7 +963,7 @@ describe('Different types using json()', () => {
             | {
                 input: {}
                 output: {
-                  ng: boolean
+                  ng: true
                 }
                 outputFormat: 'json'
                 status: 400
@@ -971,7 +971,7 @@ describe('Different types using json()', () => {
             | {
                 input: {}
                 output: {
-                  ok: boolean
+                  ok: true
                 }
                 outputFormat: 'json'
                 status: 200
@@ -979,7 +979,7 @@ describe('Different types using json()', () => {
             | {
                 input: {}
                 output: {
-                  default: boolean
+                  default: true
                 }
                 outputFormat: 'json'
                 status: ContentfulStatusCode
@@ -1017,7 +1017,7 @@ describe('Different types using json()', () => {
             | {
                 input: {}
                 output: {
-                  ng: boolean
+                  ng: true
                 }
                 outputFormat: 'json'
                 status: ContentfulStatusCode
@@ -1025,7 +1025,7 @@ describe('Different types using json()', () => {
             | {
                 input: {}
                 output: {
-                  ok: boolean
+                  ok: true
                 }
                 outputFormat: 'json'
                 status: ContentfulStatusCode
@@ -1033,7 +1033,7 @@ describe('Different types using json()', () => {
             | {
                 input: {}
                 output: {
-                  default: boolean
+                  default: true
                 }
                 outputFormat: 'json'
                 status: ContentfulStatusCode
@@ -1073,7 +1073,7 @@ describe('Different types using json()', () => {
             | {
                 input: {}
                 output: {
-                  ng: boolean
+                  ng: true
                 }
                 outputFormat: 'json'
                 status: 400
@@ -1081,7 +1081,7 @@ describe('Different types using json()', () => {
             | {
                 input: {}
                 output: {
-                  ok: boolean
+                  ok: true
                 }
                 outputFormat: 'json'
                 status: 200
@@ -1089,7 +1089,7 @@ describe('Different types using json()', () => {
             | {
                 input: {}
                 output: {
-                  default: boolean
+                  default: true
                 }
                 outputFormat: 'json'
                 status: ContentfulStatusCode
@@ -1116,7 +1116,7 @@ describe('json() in an async handler', () => {
         $get: {
           input: {}
           output: {
-            ok: boolean
+            ok: true
           }
           outputFormat: 'json'
           status: ContentfulStatusCode
@@ -1141,7 +1141,7 @@ describe('json() in an async handler', () => {
         $get: {
           input: {}
           output: {
-            ok: boolean
+            ok: true
           }
           outputFormat: 'json'
           status: 200

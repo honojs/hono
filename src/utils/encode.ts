@@ -3,7 +3,7 @@
  * Encode utility.
  */
 
-export const decodeBase64Url = (str: string): Uint8Array => {
+export const decodeBase64Url = (str: string): Uint8Array<ArrayBuffer> => {
   return decodeBase64(str.replace(/_|-/g, (m) => ({ _: '/', '-': '+' }[m] ?? m)))
 }
 
@@ -22,9 +22,9 @@ export const encodeBase64 = (buf: ArrayBufferLike): string => {
 }
 
 // atob does not support utf-8 characters. So we need a little bit hack.
-export const decodeBase64 = (str: string): Uint8Array => {
+export const decodeBase64 = (str: string): Uint8Array<ArrayBuffer> => {
   const binary = atob(str)
-  const bytes = new Uint8Array(new ArrayBuffer(binary.length))
+  const bytes = new Uint8Array<ArrayBuffer>(new ArrayBuffer(binary.length))
   const half = binary.length / 2
   for (let i = 0, j = binary.length - 1; i <= half; i++, j--) {
     bytes[i] = binary.charCodeAt(i)
