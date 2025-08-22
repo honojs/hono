@@ -684,6 +684,7 @@
     "ws": "^8.18.0",
     "zod": "^3.23.8"
   },
+  "packageManager": "bun@1.2.20",
   "engines": {
     "node": ">=16.9.0"
   }
