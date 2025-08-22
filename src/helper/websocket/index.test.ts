@@ -72,10 +72,10 @@ describe('WSContext', () => {
   })
   it('Should send() works', async () => {
     let ws!: WSContext
-    const promise = new Promise<string | ArrayBuffer>((resolve) => {
+    const promise = new Promise<string | ArrayBuffer | Uint8Array<ArrayBuffer>>((resolve) => {
       ws = new WSContext({
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        send(data, _options) {
+        send(data: string | ArrayBuffer | Uint8Array<ArrayBuffer>, _options) {
           resolve(data)
         },
       } as WSContextInit)

@@ -9,7 +9,7 @@ import { generateDigest } from './digest'
 type ETagOptions = {
   retainedHeaders?: string[]
   weak?: boolean
-  generateDigest?: (body: Uint8Array) => ArrayBuffer | Promise<ArrayBuffer>
+  generateDigest?: (body: Uint8Array<ArrayBuffer>) => ArrayBuffer | Promise<ArrayBuffer>
 }
 
 /**
@@ -40,7 +40,7 @@ function initializeGenerator(
 ): ETagOptions['generateDigest'] | undefined {
   if (!generator) {
     if (crypto && crypto.subtle) {
-      generator = (body: Uint8Array) =>
+      generator = (body: Uint8Array<ArrayBuffer>) =>
         crypto.subtle.digest(
           {
             name: 'SHA-1',

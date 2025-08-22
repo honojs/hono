@@ -47,7 +47,7 @@ export async function verifying(
   return await crypto.subtle.verify(algorithm, cryptoKey, signature, data)
 }
 
-function pemToBinary(pem: string): Uint8Array {
+function pemToBinary(pem: string): Uint8Array<ArrayBuffer> {
   return decodeBase64(pem.replace(/-+(BEGIN|END).*/g, '').replace(/\s/g, ''))
 }
 

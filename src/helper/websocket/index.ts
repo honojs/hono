@@ -70,7 +70,7 @@ export class WSContext<T = unknown> {
     this.url = init.url ? new URL(init.url) : null
     this.protocol = init.protocol ?? null
   }
-  send(source: string | ArrayBuffer | Uint8Array, options?: SendOptions): void {
+  send(source: string | ArrayBuffer | Uint8Array<ArrayBuffer>, options?: SendOptions): void {
     this.#init.send(source, options ?? {})
   }
   raw?: T

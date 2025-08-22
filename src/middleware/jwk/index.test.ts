@@ -275,7 +275,7 @@ describe('JWK', () => {
 
     it('Should not authorize a token without header', async () => {
       const encodeJwtPart = (part: unknown): string =>
-        encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
+        encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, '')
       const encodeSignaturePart = (buf: ArrayBufferLike): string =>
         encodeBase64Url(buf).replace(/=/g, '')
       const jwtSignWithoutHeader = async (payload: JWTPayload, privateKey: HonoJsonWebKey) => {
@@ -302,7 +302,7 @@ describe('JWK', () => {
 
     it('Should not authorize a token with missing "kid" in header', async () => {
       const encodeJwtPart = (part: unknown): string =>
-        encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
+        encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, '')
       const encodeSignaturePart = (buf: ArrayBufferLike): string =>
         encodeBase64Url(buf).replace(/=/g, '')
       const jwtSignWithoutKid = async (payload: JWTPayload, privateKey: HonoJsonWebKey) => {
