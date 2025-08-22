@@ -339,10 +339,7 @@ describe('JWT', () => {
     }
     const secret = await crypto.subtle.importKey(
       'raw',
-      Buffer.from(
-        'cefb73234d5fae4bf27662900732b52943e8d53e871fe0f353da95de4599c21d',
-        'hex'
-      ) as BufferSource,
+      Buffer.from('cefb73234d5fae4bf27662900732b52943e8d53e871fe0f353da95de4599c21d', 'hex'),
       algorithm,
       false,
       ['sign', 'verify']
@@ -358,10 +355,7 @@ describe('JWT', () => {
 
     const invalidSecret = await crypto.subtle.importKey(
       'raw',
-      Buffer.from(
-        'cefb73234d5fae4bf27662900732b52943e8d53e871fe0f353da95de41111111',
-        'hex'
-      ) as BufferSource,
+      Buffer.from('cefb73234d5fae4bf27662900732b52943e8d53e871fe0f353da95de41111111', 'hex'),
       algorithm,
       false,
       ['sign', 'verify']

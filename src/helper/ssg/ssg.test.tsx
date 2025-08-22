@@ -367,7 +367,7 @@ describe('saveContentToFile function', () => {
   const gzFileArrayBuffer = gzFileBuffer.buffer.slice(
     gzFileBuffer.byteOffset,
     gzFileBuffer.byteLength + gzFileBuffer.byteOffset
-  ) as ArrayBuffer
+  )
   // PNG, red dot (1x1)
   const pngFileBuffer = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCCAAAALw',
@@ -376,7 +376,7 @@ describe('saveContentToFile function', () => {
   const pngFileArrayBuffer = pngFileBuffer.buffer.slice(
     pngFileBuffer.byteOffset,
     pngFileBuffer.byteLength + pngFileBuffer.byteOffset
-  ) as ArrayBuffer
+  )
 
   const fileData = [
     { routePath: '/', content: 'Home Page', mimeType: 'text/html' },

@@ -85,12 +85,7 @@ export class WSContext<T = unknown> {
   }
 }
 
-export type WSMessageReceive =
-  | string
-  | Blob
-  | ArrayBuffer
-  | SharedArrayBuffer
-  | Uint8Array<ArrayBuffer>
+export type WSMessageReceive = string | Blob | ArrayBufferLike
 
 export const createWSMessageEvent = (source: WSMessageReceive): MessageEvent<WSMessageReceive> => {
   return new MessageEvent<WSMessageReceive>('message', {

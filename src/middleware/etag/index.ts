@@ -45,7 +45,7 @@ function initializeGenerator(
           {
             name: 'SHA-1',
           },
-          body.buffer
+          body
         )
     }
   }
