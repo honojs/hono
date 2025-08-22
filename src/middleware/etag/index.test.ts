@@ -290,6 +290,57 @@ describe('Etag Middleware', () => {
     expect(res.status).toBe(304)
   })
 
+  it('Should use custom getBody function', async () => {
+    const customBuffer = new ArrayBuffer(1)
+
+    const app = new Hono()
+    app.use(
+      '/etag/*',
+      etag({
+        getBody: async () => customBuffer,
+      })
+    )
+    app.get('/etag/custom', (c) => {
+      return c.text('Original response content')
+    })
+
+    const res = await app.request('http://localhost/etag/custom')
+    expect(res.headers.get('ETag')).not.toBeFalsy()
+    // ETag should be calculated from custom body, not the actual response
+    expect(res.headers.get('ETag')).toBe('"5ba93c9db0cff93f52b521d7420e43f6eda2784f"')
+    expect(await res.text()).toBe('Original response content')
+  })
+
+  it('Should work with getBody and custom generateDigest', async () => {
+    const customBuffer = new ArrayBuffer(1)
+
+    const app = new Hono()
+    app.use(
+      '/etag/*',
+      etag({
+        getBody: async () => customBuffer,
+        generateDigest: (body) =>
+          crypto.subtle.digest(
+            {
+              name: 'SHA-256',
+            },
+            body
+          ),
+      })
+    )
+    app.get('/etag/custom-both', (c) => {
+      return c.text('Different content')
+    })
+
+    const res = await app.request('http://localhost/etag/custom-both')
+    expect(res.headers.get('ETag')).not.toBeFalsy()
+    // Should use SHA-256 hash of the custom buffer
+    expect(res.headers.get('ETag')).toBe(
+      '"6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d"'
+    )
+    expect(await res.text()).toBe('Different content')
+  })
+
   describe('When crypto is not available', () => {
     let _crypto: Crypto | undefined
     beforeAll(() => {
