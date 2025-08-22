@@ -93,7 +93,11 @@ export const etag = (options?: ETagOptions): MiddlewareHandler => {
       if (!generator) {
         return
       }
-      const hash = await generateDigest(res.clone().body, generator)
+      const hash = await generateDigest(
+        // This type casing avoids the type error for `deno publish`
+        res.clone().body as ReadableStream<Uint8Array<ArrayBuffer>>,
+        generator
+      )
       if (hash === null) {
         return
       }
