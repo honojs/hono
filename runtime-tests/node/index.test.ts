@@ -1,5 +1,6 @@
 import { createAdaptorServer, serve } from '@hono/node-server'
-import request from 'supertest'
+import * as undici from 'undici'
+import { once } from 'node:events'
 import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { Hono } from '../../src'
@@ -23,18 +24,18 @@ describe('Basic', () => {
     return c.text(getRuntimeKey())
   })
 
-  const server = createAdaptorServer(app)
+  const agent = createAgent(app)
 
   it('Should return 200 response', async () => {
-    const res = await request(server).get('/')
+    const res = await agent.get('/')
     expect(res.status).toBe(200)
-    expect(res.text).toBe('Hello! Node.js!')
+    await expect(res.text()).resolves.toBe('Hello! Node.js!')
   })
 
   it('Should return correct runtime name', async () => {
-    const res = await request(server).get('/runtime-name')
+    const res = await agent.get('/runtime-name')
     expect(res.status).toBe(200)
-    expect(res.text).toBe('node')
+    await expect(res.text()).resolves.toBe('node')
   })
 })
 
@@ -61,19 +62,19 @@ describe('Basic Auth Middleware', () => {
 
   app.get('/auth/*', () => new Response('auth'))
 
-  const server = createAdaptorServer(app)
+  const agent = createAgent(app)
 
   it('Should not authorize, return 401 Response', async () => {
-    const res = await request(server).get('/auth/a')
+    const res = await agent.get('/auth/a')
     expect(res.status).toBe(401)
-    expect(res.text).toBe('Unauthorized')
+    await expect(res.text()).resolves.toBe('Unauthorized')
   })
 
   it('Should authorize, return 200 Response', async () => {
     const credential = 'aG9uby11c2VyLWE6aG9uby1wYXNzd29yZC1h'
-    const res = await request(server).get('/auth/a').set('Authorization', `Basic ${credential}`)
+    const res = await agent.get('/auth/a', { headers: { Authorization: `Basic ${credential}` } })
     expect(res.status).toBe(200)
-    expect(res.text).toBe('auth')
+    await expect(res.text()).resolves.toBe('auth')
   })
 })
 
@@ -83,20 +84,20 @@ describe('JWT Auth Middleware', () => {
   app.use('/jwt/*', jwt({ secret: 'a-secret' }))
   app.get('/jwt/a', (c) => c.text('auth'))
 
-  const server = createAdaptorServer(app)
+  const agent = createAgent(app)
 
   it('Should not authorize, return 401 Response', async () => {
-    const res = await request(server).get('/jwt/a')
+    const res = await agent.get('/jwt/a')
     expect(res.status).toBe(401)
-    expect(res.text).toBe('Unauthorized')
+    await expect(res.text()).resolves.toBe('Unauthorized')
   })
 
   it('Should authorize, return 200 Response', async () => {
     const credential =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
-    const res = await request(server).get('/jwt/a').set('Authorization', `Bearer ${credential}`)
+    const res = await agent.get('/jwt/a', { headers: { Authorization: `Bearer ${credential}` } })
     expect(res.status).toBe(200)
-    expect(res.text).toBe('auth')
+    await expect(res.text()).resolves.toBe('auth')
   })
 })
 
@@ -124,20 +125,22 @@ describe('stream', () => {
     })
   })
 
-  const server = createAdaptorServer(app)
+  const agent = createAgent(app)
 
   beforeEach(() => {
     aborted = false
   })
 
   it('Should call onAbort', async () => {
-    const req = request(server)
-      .get('/stream')
-      .end(() => {})
+    const controller = new AbortController()
+    const res = expect(agent.get('/stream', { signal: controller.signal })).rejects.toThrow(
+      'This operation was aborted'
+    )
 
     expect(aborted).toBe(false)
     await new Promise((resolve) => setTimeout(resolve, 10))
-    req.abort()
+    controller.abort()
+    await res
     while (!aborted) {
       await new Promise((resolve) => setTimeout(resolve))
     }
@@ -146,9 +149,9 @@ describe('stream', () => {
 
   it('Should not be called onAbort if already closed', async () => {
     expect(aborted).toBe(false)
-    const res = await request(server).get('/streamHello')
+    const res = await agent.get('/streamHello')
     expect(res.status).toBe(200)
-    expect(res.text).toBe('Hello')
+    await expect(res.text()).resolves.toBe('Hello')
     expect(aborted).toBe(false)
   })
 })
@@ -177,20 +180,22 @@ describe('streamSSE', () => {
     })
   })
 
-  const server = createAdaptorServer(app)
+  const agent = createAgent(app)
 
   beforeEach(() => {
     aborted = false
   })
 
   it('Should call onAbort', async () => {
-    const req = request(server)
-      .get('/stream')
-      .end(() => {})
+    const controller = new AbortController()
+    const res = expect(agent.get('/stream', { signal: controller.signal })).rejects.toThrow(
+      'This operation was aborted'
+    )
 
     expect(aborted).toBe(false)
     await new Promise((resolve) => setTimeout(resolve, 10))
-    req.abort()
+    controller.abort()
+    await res
     while (!aborted) {
       await new Promise((resolve) => setTimeout(resolve))
     }
@@ -199,9 +204,9 @@ describe('streamSSE', () => {
 
   it('Should not be called onAbort if already closed', async () => {
     expect(aborted).toBe(false)
-    const res = await request(server).get('/streamHello')
+    const res = await agent.get('/streamHello')
     expect(res.status).toBe(200)
-    expect(res.text).toBe('Hello')
+    await expect(res.text()).resolves.toBe('Hello')
     expect(aborted).toBe(false)
   })
 })
@@ -234,17 +239,17 @@ describe('compress', async () => {
   app.get('/fetch/:file', (c) => {
     return fetch(`http://${serverInfo.address}:${serverInfo.port}/${c.req.param('file')}`)
   })
-  const server = createAdaptorServer(app)
+  const agent = createAgent(app)
 
   afterAll(() => {
     externalServer.close()
   })
 
   it('Should be compressed a fetch response', async () => {
-    const res = await request(server).get('/fetch/style.css')
+    const res = await agent.get('/fetch/style.css')
     expect(res.status).toBe(200)
-    expect(res.headers['content-encoding']).toBe('gzip')
-    expect(res.text).toBe(cssContent)
+    expect(res.headers.get('content-encoding')).toBe('gzip')
+    await expect(res.text()).resolves.toBe(cssContent)
   })
 })
 
@@ -257,17 +262,40 @@ describe('Buffers', () => {
       return c.body(Uint8Array.from('hello'.split(''), (c) => c.charCodeAt(0)))
     })
 
-  const server = createAdaptorServer(app)
+  const agent = createAgent(app)
 
   it('should allow returning buffers', async () => {
-    const res = await request(server).get('/')
+    const res = await agent.get('/')
     expect(res.status).toBe(200)
-    expect(res.text).toBe('hello')
+    await expect(res.text()).resolves.toBe('hello')
   })
 
   it('should allow returning uint8array as well', async () => {
-    const res = await request(server).get('/uint8array')
+    const res = await agent.get('/uint8array')
     expect(res.status).toBe(200)
-    expect(res.text).toBe('hello')
+    await expect(res.text()).resolves.toBe('hello')
   })
 })
+
+function createAgent(app: Hono) {
+  const server = createAdaptorServer(app)
+  const listening = once(server.listen(), 'listening')
+
+  return {
+    async get(path: string, init?: undici.RequestInit) {
+      await listening
+      const url = new URL(path, getOrigin())
+      return undici.fetch(url, init)
+    },
+  }
+
+  function getOrigin(): string {
+    let address = server.address()
+
+    if (typeof address === 'object') {
+      address = address?.port ? `http://localhost:${address.port}` : 'http://localhost'
+    }
+
+    return address
+  }
+}
