@@ -29,13 +29,13 @@ describe('Basic', () => {
   it('Should return 200 response', async () => {
     const res = await agent.get('/')
     expect(res.status).toBe(200)
-    expect(res.text).toBe('Hello! Node.js!')
+    await expect(res.text()).resolves.toBe('Hello! Node.js!')
   })
 
   it('Should return correct runtime name', async () => {
     const res = await agent.get('/runtime-name')
     expect(res.status).toBe(200)
-    expect(res.text).toBe('node')
+    await expect(res.text()).resolves.toBe('node')
   })
 })
 
@@ -67,14 +67,14 @@ describe('Basic Auth Middleware', () => {
   it('Should not authorize, return 401 Response', async () => {
     const res = await agent.get('/auth/a')
     expect(res.status).toBe(401)
-    expect(res.text).toBe('Unauthorized')
+    await expect(res.text()).resolves.toBe('Unauthorized')
   })
 
   it('Should authorize, return 200 Response', async () => {
     const credential = 'aG9uby11c2VyLWE6aG9uby1wYXNzd29yZC1h'
     const res = await agent.get('/auth/a', { headers: { Authorization: `Basic ${credential}` } })
     expect(res.status).toBe(200)
-    expect(res.text).toBe('auth')
+    await expect(res.text()).resolves.toBe('auth')
   })
 })
 
@@ -89,7 +89,7 @@ describe('JWT Auth Middleware', () => {
   it('Should not authorize, return 401 Response', async () => {
     const res = await agent.get('/jwt/a')
     expect(res.status).toBe(401)
-    expect(res.text).toBe('Unauthorized')
+    await expect(res.text()).resolves.toBe('Unauthorized')
   })
 
   it('Should authorize, return 200 Response', async () => {
@@ -97,7 +97,7 @@ describe('JWT Auth Middleware', () => {
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
     const res = await agent.get('/jwt/a', { headers: { Authorization: `Bearer ${credential}` } })
     expect(res.status).toBe(200)
-    expect(res.text).toBe('auth')
+    await expect(res.text()).resolves.toBe('auth')
   })
 })
 
@@ -151,7 +151,7 @@ describe('stream', () => {
     expect(aborted).toBe(false)
     const res = await agent.get('/streamHello')
     expect(res.status).toBe(200)
-    expect(res.text).toBe('Hello')
+    await expect(res.text()).resolves.toBe('Hello')
     expect(aborted).toBe(false)
   })
 })
@@ -206,7 +206,7 @@ describe('streamSSE', () => {
     expect(aborted).toBe(false)
     const res = await agent.get('/streamHello')
     expect(res.status).toBe(200)
-    expect(res.text).toBe('Hello')
+    await expect(res.text()).resolves.toBe('Hello')
     expect(aborted).toBe(false)
   })
 })
@@ -249,7 +249,7 @@ describe('compress', async () => {
     const res = await agent.get('/fetch/style.css')
     expect(res.status).toBe(200)
     expect(res.headers.get('content-encoding')).toBe('gzip')
-    expect(res.text).toBe(cssContent)
+    await expect(res.text()).resolves.toBe(cssContent)
   })
 })
 
@@ -267,13 +267,13 @@ describe('Buffers', () => {
   it('should allow returning buffers', async () => {
     const res = await agent.get('/')
     expect(res.status).toBe(200)
-    expect(res.text).toBe('hello')
+    await expect(res.text()).resolves.toBe('hello')
   })
 
   it('should allow returning uint8array as well', async () => {
     const res = await agent.get('/uint8array')
     expect(res.status).toBe(200)
-    expect(res.text).toBe('hello')
+    await expect(res.text()).resolves.toBe('hello')
   })
 })
 
@@ -285,13 +285,7 @@ function createAgent(app: Hono) {
     async get(path: string, init?: undici.RequestInit) {
       await listening
       const url = new URL(path, getOrigin())
-      const response = await undici.fetch(url, init)
-
-      return {
-        headers: response.headers,
-        status: response.status,
-        text: await response.text(),
-      }
+      return undici.fetch(url, init)
     },
   }
 
