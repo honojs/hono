@@ -383,15 +383,18 @@ export class EventV1Processor extends EventProcessor<Exclude<LambdaEvent, APIGat
 
   protected getQueryString(event: Exclude<LambdaEvent, APIGatewayProxyEventV2>): string {
     // In the case of gateway Integration either queryStringParameters or multiValueQueryStringParameters can be present not both
+    // API Gateway passes decoded values, so we need to re-encode them to preserve the original URL
     if (event.multiValueQueryStringParameters) {
       return Object.entries(event.multiValueQueryStringParameters || {})
         .filter(([, value]) => value)
-        .map(([key, value]) => `${key}=${value.join(`&${key}=`)}`)
+        .map(([key, values]) =>
+          values.map((value) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&')
+        )
         .join('&')
     } else {
       return Object.entries(event.queryStringParameters || {})
         .filter(([, value]) => value)
-        .map(([key, value]) => `${key}=${value}`)
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value || '')}`)
         .join('&')
     }
   }
