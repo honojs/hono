@@ -82,7 +82,7 @@ export enum CryptoKeyUsage {
 /**
  * JWT Payload
  */
-export type JWTPayload = {
+export interface JWTPayload {
   [key: string]: unknown
   /**
    * The token is checked to ensure it has not expired.
