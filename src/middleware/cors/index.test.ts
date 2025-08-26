@@ -229,7 +229,7 @@ describe('CORS by Middleware', () => {
   })
 
   it('Allow origins by promise returning function', async () => {
-    let req = new Request('http://localhost/api4/abc', {
+    let req = new Request('http://localhost/api8/abc', {
       headers: {
         Origin: 'http://subdomain.example.com',
       },
@@ -237,11 +237,11 @@ describe('CORS by Middleware', () => {
     let res = await app.request(req)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://subdomain.example.com')
 
-    req = new Request('http://localhost/api4/abc')
+    req = new Request('http://localhost/api8/abc')
     res = await app.request(req)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('http://example.com')
 
-    req = new Request('http://localhost/api4/abc', {
+    req = new Request('http://localhost/api8/abc', {
       headers: {
         Referer: 'http://evil-example.com/',
       },
