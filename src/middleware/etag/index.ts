@@ -6,7 +6,7 @@
 import type { MiddlewareHandler } from '../../types'
 import { generateDigest } from './digest'
 
-type ETagOptions = {
+interface ETagOptions {
   retainedHeaders?: string[]
   weak?: boolean
   generateDigest?: (body: Uint8Array<ArrayBuffer>) => ArrayBuffer | Promise<ArrayBuffer>

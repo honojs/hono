@@ -208,7 +208,7 @@ export const keyframesCommon = (
   }
 }
 
-type ViewTransitionType = {
+interface ViewTransitionType {
   (strings: TemplateStringsArray, values: CssVariableType[]): CssClassName
   (content: CssClassName): CssClassName
   (): CssClassName

@@ -2,7 +2,7 @@
 declare const __STATIC_CONTENT: unknown
 declare const __STATIC_CONTENT_MANIFEST: string
 
-export type KVAssetOptions = {
+export interface KVAssetOptions {
   manifest?: object | string
   // namespace is KVNamespace
   namespace?: unknown

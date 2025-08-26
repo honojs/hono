@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
 
-export type WorkerInput = {
+export interface WorkerInput {
   file: string
   taskId: number
 }

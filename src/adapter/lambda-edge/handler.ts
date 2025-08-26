@@ -78,7 +78,7 @@ export interface CloudFrontEdgeEvent {
   Records: CloudFrontEvent[]
 }
 
-type CloudFrontContext = {}
+interface CloudFrontContext {}
 
 export interface Callback {
   (err: Error | null, result?: CloudFrontRequest | CloudFrontResult): void

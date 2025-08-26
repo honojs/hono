@@ -16,14 +16,19 @@ import type { CustomHeader, RequestHeader } from './utils/headers'
 import type { Simplify, UnionToIntersection } from './utils/types'
 import { decodeURIComponent_, getQueryParam, getQueryParams, tryDecode } from './utils/url'
 
-type Body = {
+interface Body {
   json: any
   text: string
   arrayBuffer: ArrayBuffer
   blob: Blob
   formData: FormData
 }
-type BodyCache = Partial<Body & { parsedBody: BodyData }>
+
+interface BodyWithParsedBody extends Body {
+  parsedBody: BodyData
+}
+
+type BodyCache = Partial<BodyWithParsedBody>
 
 const tryDecodeURIComponent = (str: string) => tryDecode(str, decodeURIComponent_)
 

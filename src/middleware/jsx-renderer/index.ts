@@ -15,7 +15,7 @@ import type { HtmlEscapedString } from '../../utils/html'
 export const RequestContext: JSXContext<Context<any, any, {}> | null> =
   createContext<Context | null>(null)
 
-type RendererOptions = {
+interface RendererOptions {
   docType?: boolean | string
   stream?: boolean | Record<string, string>
 }
