@@ -96,9 +96,9 @@ describe('handle', () => {
     const app = new Hono()
 
     app.get('/', (c) => {
-      const fetchEvent = c.env as FetchEvent
       return c.json({
-        clientId: fetchEvent.clientId,
+        // @ts-expect-error executionCtx is FetchEvent but not typed well
+        clientId: c.executionCtx.clientId,
       })
     })
 
