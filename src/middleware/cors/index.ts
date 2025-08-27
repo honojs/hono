@@ -7,8 +7,11 @@ import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
 
 type CORSOptions = {
-  origin: string | string[] | ((origin: string, c: Context) => string | undefined | null)
-  allowMethods?: string[] | ((origin: string, c: Context) => string[])
+  origin:
+    | string
+    | string[]
+    | ((origin: string, c: Context) => Promise<string> | string | undefined | null)
+  allowMethods?: string[] | ((origin: string, c: Context) => Promise<string[]> | string[])
   allowHeaders?: string[]
   maxAge?: number
   credentials?: boolean
@@ -21,8 +24,8 @@ type CORSOptions = {
  * @see {@link https://hono.dev/docs/middleware/builtin/cors}
  *
  * @param {CORSOptions} [options] - The options for the CORS middleware.
- * @param {string | string[] | ((origin: string, c: Context) => string | undefined | null)} [options.origin='*'] - The value of "Access-Control-Allow-Origin" CORS header.
- * @param {string[] | ((origin: string, c: Context) => string[])} [options.allowMethods=['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH']] - The value of "Access-Control-Allow-Methods" CORS header.
+ * @param {string | string[] | ((origin: string, c: Context) => Promise<string> | string | undefined | null)} [options.origin='*'] - The value of "Access-Control-Allow-Origin" CORS header.
+ * @param {string[] | ((origin: string, c: Context) => Promise<string[]> | string[])} [options.allowMethods=['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH']] - The value of "Access-Control-Allow-Methods" CORS header.
  * @param {string[]} [options.allowHeaders=[]] - The value of "Access-Control-Allow-Headers" CORS header.
  * @param {number} [options.maxAge] - The value of "Access-Control-Max-Age" CORS header.
  * @param {boolean} [options.credentials] - The value of "Access-Control-Allow-Credentials" CORS header.
@@ -95,7 +98,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
       c.res.headers.set(key, value)
     }
 
-    const allowOrigin = findAllowOrigin(c.req.header('origin') || '', c)
+    const allowOrigin = await findAllowOrigin(c.req.header('origin') || '', c)
     if (allowOrigin) {
       set('Access-Control-Allow-Origin', allowOrigin)
     }
@@ -125,7 +128,7 @@ export const cors = (options?: CORSOptions): MiddlewareHandler => {
         set('Access-Control-Max-Age', opts.maxAge.toString())
       }
 
-      const allowMethods = findAllowMethods(c.req.header('origin') || '', c)
+      const allowMethods = await findAllowMethods(c.req.header('origin') || '', c)
       if (allowMethods.length) {
         set('Access-Control-Allow-Methods', allowMethods.join(','))
       }
