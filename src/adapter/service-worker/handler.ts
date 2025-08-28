@@ -24,7 +24,8 @@ export const handle = (
   return (evt) => {
     evt.respondWith(
       (async () => {
-        const res = await app.fetch(evt.request, evt)
+        // @ts-expect-error Passing FetchEvent but app.fetch expects ExecutionContext
+        const res = await app.fetch(evt.request, {}, evt)
         if (opts.fetch && res.status === 404) {
           return await opts.fetch(evt.request)
         }
