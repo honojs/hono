@@ -25,6 +25,14 @@ type Body = {
 }
 type BodyCache = Partial<Body & { parsedBody: BodyData }>
 
+const BODY_TYPE_TO_TRANSFORMER_MAPPING: { [K in keyof Body]: (body: unknown) => Body[K] } = {
+  json: (body) => JSON.stringify(body),
+  text: (body) => body as string,
+  arrayBuffer: (body) => body as ArrayBuffer,
+  blob: (body) => body as Blob,
+  formData: (body) => body as FormData,
+}
+
 const tryDecodeURIComponent = (str: string) => tryDecode(str, decodeURIComponent_)
 
 export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
@@ -228,6 +236,40 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     }
 
     return (bodyCache[key] = raw[key]())
+  }
+
+  /**
+   * `.new()` creates a new Request object with the same properties as the current request.
+   * This method reconstructs the request body from cached data if it has been consumed,
+   * or consumes and caches the body if it hasn't been consumed yet but is available.
+   *
+   * @example
+   * ```ts
+   * app.post('/clone', async (c) => {
+   *   const newRequest = await c.req.new()
+   *   // Use the new request for further processing
+   * })
+   * ```
+   */
+  new = async (): Promise<Request> => {
+    const requestInit: RequestInit = { method: this.method, headers: this.header() }
+    const cachedKeys = Object.keys(this.bodyCache) as Array<keyof typeof this.bodyCache>
+    // If no body is cached but the raw request has a body and it's not consumed, consume it
+    if (cachedKeys.length === 0 && this.raw.body && !this.raw.bodyUsed) {
+      const body = await this.raw.text()
+      this.bodyCache.text = body
+      requestInit.body = body
+      return new Request(this.url, requestInit)
+    }
+
+    const firstKey = cachedKeys[0] as keyof Body | undefined
+    // If no cached body, return request without body
+    if (firstKey == null) return new Request(this.url, requestInit)
+
+    const cachedBody = await this.bodyCache[firstKey]
+    requestInit.body = BODY_TYPE_TO_TRANSFORMER_MAPPING[firstKey](cachedBody) ?? cachedBody
+
+    return new Request(this.url, requestInit)
   }
 
   /**
