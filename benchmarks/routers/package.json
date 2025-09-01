@@ -7,18 +7,18 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "tsx": "^3.12.2"
+    "tsx": "^4.20.5"
   },
   "dependencies": {
     "@medley/router": "^0.2.1",
-    "express": "^4.19.2",
-    "find-my-way": "^8.2.0",
+    "express": "^4.21.2",
+    "find-my-way": "^9.3.0",
     "koa-router": "^12.0.1",
-    "koa-tree-router": "^0.12.1",
-    "memoirist": "^0.2.0",
-    "mitata": "^0.1.6",
+    "koa-tree-router": "^0.13.1",
+    "memoirist": "^0.4.0",
+    "mitata": "^1.0.34",
     "radix3": "^1.1.2",
-    "rou3": "^0.1.0",
+    "rou3": "^0.7.3",
     "trek-router": "^1.2.0"
   }
 }
