@@ -13,16 +13,22 @@ Tested routes:
 - [Hono RegExpRouter](https://github.com/honojs/hono)
 - [Hono TrieRouter](https://github.com/honojs/hono)
 
+Install:
+
+```
+bun install
+```
+
 For Node.js:
 
 ```
-yarn bench:node
+bun run bench:node
 ```
 
 For Bun:
 
 ```
-yarn bench:bun
+bun run bench:bun
 ```
 
 This project is heavily impaired by [delvedor/router-benchmark](https://github.com/delvedor/router-benchmark)
