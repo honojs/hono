@@ -1,4 +1,4 @@
-import { run, bench, group } from 'mitata'
+import { run, bench, group, summary } from 'mitata'
 import { expressRouter } from './express.mts'
 import { findMyWayRouter } from './find-my-way.mts'
 import { regExpRouter, trieRouter, patternRouter } from './hono.mts'
@@ -66,24 +66,29 @@ const routes: (Route & { name: string })[] = [
   },
 ]
 
+/*
 for (const route of routes) {
-  group(`${route.name} - ${route.method} ${route.path}`, () => {
+  summary(() => {
+    group(`${route.name} - ${route.method} ${route.path}`, () => {
+      for (const router of routers) {
+        bench(router.name, async () => {
+          router.match(route)
+        })
+      }
+    })
+  })
+}*/
+
+group('all together', () => {
+  summary(() => {
     for (const router of routers) {
       bench(router.name, async () => {
-        router.match(route)
+        for (const route of routes) {
+          router.match(route)
+        }
       })
     }
   })
-}
-
-group('all together', () => {
-  for (const router of routers) {
-    bench(router.name, async () => {
-      for (const route of routes) {
-        router.match(route)
-      }
-    })
-  }
 })
 
 await run()
