@@ -66,7 +66,6 @@ const routes: (Route & { name: string })[] = [
   },
 ]
 
-/*
 for (const route of routes) {
   summary(() => {
     group(`${route.name} - ${route.method} ${route.path}`, () => {
@@ -77,7 +76,7 @@ for (const route of routes) {
       }
     })
   })
-}*/
+}
 
 group('all together', () => {
   summary(() => {
