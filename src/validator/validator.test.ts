@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { ZodSchema } from 'zod'
 import { z } from 'zod'
+import type { Context } from '../context'
 import { Hono } from '../hono'
 import { HTTPException } from '../http-exception'
 import type {
@@ -8,12 +9,24 @@ import type {
   ExtractSchema,
   MiddlewareHandler,
   ParsedFormValue,
+  TypedResponse,
   ValidationTargets,
 } from '../types'
 import type { ContentfulStatusCode } from '../utils/http-status'
 import type { Equal, Expect } from '../utils/types'
 import type { ValidationFunction } from './validator'
 import { validator } from './validator'
+
+// Helper type to extract the response type from the validation function
+type InferValidatorResponse<VF> = VF extends (value: any, c: any) => infer R
+  ? R extends Promise<infer PR>
+    ? PR extends Response | TypedResponse<any, any, any>
+      ? PR
+      : never
+    : R extends Response | TypedResponse<any, any, any>
+    ? R
+    : never
+  : never
 
 // Reference implementation for only testing
 const zodValidator = <
@@ -24,19 +37,31 @@ const zodValidator = <
 >(
   target: Target,
   schema: T
-): MiddlewareHandler<
-  E,
-  P,
-  { in: { [K in Target]: z.input<T> }; out: { [K in Target]: z.output<T> } }
-> =>
-  validator(target, (value, c) => {
+) => {
+  const validationFunc = (value: unknown, c: Context<E, P>) => {
     const result = schema.safeParse(value)
     if (!result.success) {
       return c.text('Invalid!', 400)
     }
-    const data = result.data as z.output<T>
-    return data
-  })
+    return result.data as z.output<T>
+  }
+
+  type ResponseType = InferValidatorResponse<typeof validationFunc>
+
+  return validator(target, validationFunc) as MiddlewareHandler<
+    E,
+    P,
+    { in: { [K in Target]: z.input<T> }; out: { [K in Target]: z.output<T> } },
+    ResponseType
+  >
+}
+// validator(target, (value, c) => {
+//   const result = schema.safeParse(value)
+//   if (!result.success) {
+//     return c.text('Invalid!', 400)
+//   }
+//   return result.data as z.output<T>
+// })
 
 describe('Basic', () => {
   const app = new Hono()
@@ -53,7 +78,7 @@ describe('Basic', () => {
       }
     }),
     (c) => {
-      return c.text('Valid!')
+      return c.text('Valid!', 200)
     }
   )
 
@@ -61,11 +86,22 @@ describe('Basic', () => {
     '/search': {
       $get: {
         input: {
-          query: undefined
-        }
-        output: 'Valid!'
-        outputFormat: 'text'
-        status: ContentfulStatusCode
+            query: {
+                [x: string]: string | string[];
+            };
+        };
+        output: "Invalid!";
+        outputFormat: "text";
+        status: 400;
+      } | {
+        input: {
+            query: {
+                [x: string]: string | string[];
+            };
+        };
+        output: "Valid!";
+        outputFormat: "text";
+        status: 200;
       }
     }
   }
@@ -81,7 +117,7 @@ describe('Basic', () => {
 
   it('Should return 400 response', async () => {
     const res = await app.request('http://localhost/search')
-    expect(res.status).toBe(200)
+    expect(res.status).toBe(400)
   })
 })
 
@@ -527,6 +563,16 @@ describe('Validator middleware with Zod validates JSON', () => {
   type Expected = {
     '/post': {
       $post: {
+            input: {
+                json: {
+                    id: number;
+                    title: string;
+                };
+            };
+            output: "Invalid!";
+            outputFormat: "text";
+            status: 400;
+      } | {
         input: {
           json: {
             id: number
@@ -815,6 +861,19 @@ describe('Validator middleware with Zod multiple validators', () => {
   type Expected = {
     '/posts': {
       $post: {
+        input: {
+            query: {
+                page: string;
+            };
+        } & {
+            form: {
+                title: string;
+            };
+        };
+        output: "Invalid!";
+        outputFormat: "text";
+        status: 400;
+      } | {
         input: {
           query: {
             page: string
@@ -1153,6 +1212,15 @@ describe('Validator with using Zod directly', () => {
       '/posts': {
         $post: {
           input: {
+              json: any;
+          };
+          output: {
+              foo: string;
+          };
+          outputFormat: "json";
+          status: 401;
+        } | {
+          input: {
             json: {
               type: 'a'
               name: string
@@ -1205,5 +1273,8 @@ describe('Transform', () => {
 
     type Actual = ExtractSchema<typeof route>
     type verify = Expect<Equal<Expected, Actual>>
+
+    // Temporary: let's see what the actual type is
+    type TestActual = Actual
   })
 })
