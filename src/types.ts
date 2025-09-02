@@ -81,7 +81,7 @@ export type MiddlewareHandler<
   E extends Env = any,
   P extends string = string,
   I extends Input = {},
-  R extends HandlerResponse<any> = never
+  R extends HandlerResponse<any> = Response
 > = (c: Context<E, P, I>, next: Next) => Promise<R | void>
 
 export type H<
@@ -130,16 +130,12 @@ export interface HandlerInterface<
     I2 extends Input = I,
     R extends HandlerResponse<any> = any,
     E2 extends Env = E,
-    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
-    // Middleware
-    M1 extends H<E2, P, any> = H<E2, P, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>
   >(
-    ...handlers: [H<E2, P, I> & M1, H<E3, P, I2, R>]
+    ...handlers: [H<E2, P, I>, H<E3, P, I2, R>]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3]>,
-    S & ToSchema<M, P, I2, MergeTypedResponse<R> | MergeTypedResponse<MR1>>,
+    S & ToSchema<M, P, I2, MergeTypedResponse<R>>,
     BasePath
   >
 
@@ -2425,17 +2421,32 @@ export type ExtractSchemaForStatusCode<T, Status extends number> = {
   }
 }
 
+// export type ExtractHandlerResponse<T> = T extends (c: any, next: any) => Promise<infer R>
+//   ? R extends void
+//     ? never // Handler returns void → never
+//     : R extends Response | TypedResponse<any, any, any>
+//     ? R // Handler returns a response → keep it
+//     : never // Something else → never
+//   : T extends (c: any, next: any) => infer R
+//   ? R extends Response | TypedResponse<any, any, any>
+//     ? R
+//     : never
+//   : never
+
 export type ExtractHandlerResponse<T> = T extends (c: any, next: any) => Promise<infer R>
-  ? R extends void
-    ? never // Handler returns void → never
-    : R extends Response | TypedResponse<any, any, any>
-    ? R // Handler returns a response → keep it
-    : never // Something else → never
+  ? Exclude<R, void> extends never
+    ? never // Only void in the type → filter out
+    : Exclude<R, void> extends Response | TypedResponse<any, any, any>
+    ? Exclude<R, void> // Return the response type without void
+    : never // Invalid response type → filter out
   : T extends (c: any, next: any) => infer R
   ? R extends Response | TypedResponse<any, any, any>
     ? R
     : never
   : never
+
+// Special type to indicate "not specified"
+type NotSpecified = { readonly __notSpecified: unique symbol }
 
 type ProcessHead<T> = IfAnyThenEmptyObject<T extends Env ? (Env extends T ? {} : T) : T>
 export type IntersectNonAnyTypes<T extends any[]> = T extends [infer Head, ...infer Rest]
