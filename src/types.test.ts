@@ -2410,7 +2410,7 @@ describe('RPC supports Middleware responses', () => {
     const res = await client.single.$get()
 
     if (res.status === 200) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
     }
   })
 
@@ -2423,10 +2423,10 @@ describe('RPC supports Middleware responses', () => {
     const client = hc<typeof app>('http://localhost', { fetch: app.request })
     const res = await client.double.$get()
     if (res.status === 400) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
     }
     if (res.status === 200) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
     }
   })
 
@@ -2440,13 +2440,13 @@ describe('RPC supports Middleware responses', () => {
     const client = hc<typeof app>('http://localhost', { fetch: app.request })
     const res = await client.foo.$get()
     if (res.status === 500) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>()
     }
     if (res.status === 400) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
     }
     if (res.status === 200) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
     }
   })
 
@@ -2461,16 +2461,16 @@ describe('RPC supports Middleware responses', () => {
     const client = hc<typeof app>('http://localhost', { fetch: app.request })
     const res = await client.bar.$get()
     if (res.status === 500) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>()
     }
     if (res.status === 400) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
     }
     if (res.status === 300) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
     }
     if (res.status === 200) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
     }
   })
 
@@ -2486,19 +2486,19 @@ describe('RPC supports Middleware responses', () => {
     const client = hc<typeof app>('http://localhost', { fetch: app.request })
     const res = await client.baz.$get()
     if (res.status === 500) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>()
     }
     if (res.status === 400) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
     }
     if (res.status === 300) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
     }
     if (res.status === 201) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>()
     }
     if (res.status === 200) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
     }
   })
 
@@ -2515,22 +2515,22 @@ describe('RPC supports Middleware responses', () => {
     const client = hc<typeof app>('http://localhost', { fetch: app.request })
     const res = await client.qux.$get()
     if (res.status === 500) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>()
     }
     if (res.status === 400) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
     }
     if (res.status === 300) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
     }
     if (res.status === 201) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>()
     }
     if (res.status === 202) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>()
     }
     if (res.status === 200) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
     }
   })
 
@@ -2548,25 +2548,25 @@ describe('RPC supports Middleware responses', () => {
     const client = hc<typeof app>('http://localhost', { fetch: app.request })
     const res = await client.seven.$get()
     if (res.status === 500) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>()
     }
     if (res.status === 400) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
     }
     if (res.status === 300) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
     }
     if (res.status === 201) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>()
     }
     if (res.status === 202) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>()
     }
     if (res.status === 203) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>()
     }
     if (res.status === 200) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
     }
   })
 
@@ -2585,28 +2585,28 @@ describe('RPC supports Middleware responses', () => {
     const client = hc<typeof app>('http://localhost', { fetch: app.request })
     const res = await client.eight.$get()
     if (res.status === 500) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>()
     }
     if (res.status === 400) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
     }
     if (res.status === 401) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
     }
     if (res.status === 300) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
     }
     if (res.status === 201) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>()
     }
     if (res.status === 202) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>()
     }
     if (res.status === 203) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>()
     }
     if (res.status === 200) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
     }
   })
 
@@ -2626,31 +2626,31 @@ describe('RPC supports Middleware responses', () => {
     const client = hc<typeof app>('http://localhost', { fetch: app.request })
     const res = await client.nine.$get()
     if (res.status === 500) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>()
     }
     if (res.status === 400) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
     }
     if (res.status === 401) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
     }
     if (res.status === 403) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 403: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 403: true }>()
     }
     if (res.status === 300) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
     }
     if (res.status === 201) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>()
     }
     if (res.status === 202) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>()
     }
     if (res.status === 203) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>()
     }
     if (res.status === 200) {
-      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
     }
   })
 
