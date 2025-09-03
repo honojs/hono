@@ -163,16 +163,18 @@ export interface HandlerInterface<
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
     // Middleware
     M1 extends H<E2, P, any> = H<E2, P, any>,
-    M2 extends H<E3, P, any> = H<E3, P, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>
+    M2 extends H<E3, P, any> = H<E3, P, any>
   >(
     ...handlers: [H<E2, P, I> & M1, H<E3, P, I2> & M2, H<E4, P, I3, R>]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3, E4]>,
     S &
-      ToSchema<M, P, I3, MergeTypedResponse<R> | MergeTypedResponse<MR1> | MergeTypedResponse<MR2>>,
+      ToSchema<
+        M,
+        P,
+        I3,
+        MergeTypedResponse<R> | MergeMiddlewareResponse<M1> | MergeMiddlewareResponse<M2>
+      >,
     BasePath
   >
 
@@ -186,15 +188,14 @@ export interface HandlerInterface<
     E2 extends Env = E,
     E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
     // Middleware
-    M1 extends H<E2, MergedPath, any> = H<E2, MergedPath, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>
+    M1 extends H<E2, MergedPath, any> = H<E2, MergedPath, any>
   >(
     path: P,
     ...handlers: [H<E2, MergedPath, I> & M1, H<E3, MergedPath, I2, R>]
   ): HonoBase<
     E,
-    S & ToSchema<M, MergePath<BasePath, P>, I2, MergeTypedResponse<R> | MergeTypedResponse<MR1>>,
+    S &
+      ToSchema<M, MergePath<BasePath, P>, I2, MergeTypedResponse<R> | MergeMiddlewareResponse<M1>>,
     BasePath
   >
 
@@ -213,11 +214,7 @@ export interface HandlerInterface<
     // Middleware
     M1 extends H<E2, P, any> = H<E2, P, any>,
     M2 extends H<E3, P, any> = H<E3, P, any>,
-    M3 extends H<E4, P, any> = H<E4, P, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>
+    M3 extends H<E4, P, any> = H<E4, P, any>
   >(
     ...handlers: [H<E2, P, I> & M1, H<E3, P, I2> & M2, H<E4, P, I3> & M3, H<E5, P, I4, R>]
   ): HonoBase<
@@ -228,9 +225,9 @@ export interface HandlerInterface<
         P,
         I4,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
       >,
     BasePath
   >
@@ -248,10 +245,7 @@ export interface HandlerInterface<
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
     // Middleware
     M1 extends H<E2, MergedPath, any> = H<E2, MergedPath, any>,
-    M2 extends H<E3, MergedPath, any> = H<E3, MergedPath, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>
+    M2 extends H<E3, MergedPath, any> = H<E3, MergedPath, any>
   >(
     path: P,
     ...handlers: [H<E2, MergedPath, I> & M1, H<E3, MergedPath, I2> & M2, H<E4, MergedPath, I3, R>]
@@ -262,7 +256,7 @@ export interface HandlerInterface<
         M,
         MergePath<BasePath, P>,
         I3,
-        MergeTypedResponse<R> | MergeTypedResponse<MR1> | MergeTypedResponse<MR2>
+        MergeTypedResponse<R> | MergeMiddlewareResponse<M1> | MergeMiddlewareResponse<M2>
       >,
     BasePath
   >
@@ -285,12 +279,7 @@ export interface HandlerInterface<
     M1 extends H<E2, P, any> = H<E2, P, any>,
     M2 extends H<E3, P, any> = H<E3, P, any>,
     M3 extends H<E4, P, any> = H<E4, P, any>,
-    M4 extends H<E5, P, any> = H<E5, P, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>,
-    MR4 extends HandlerResponse<any> = ExtractHandlerResponse<M4>
+    M4 extends H<E5, P, any> = H<E5, P, any>
   >(
     ...handlers: [
       H<E2, P, I> & M1,
@@ -307,10 +296,10 @@ export interface HandlerInterface<
         P,
         I5,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
-        | MergeTypedResponse<MR4>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
+        | MergeMiddlewareResponse<M4>
       >,
     BasePath
   >
@@ -331,11 +320,7 @@ export interface HandlerInterface<
     // Middleware
     M1 extends H<E2, MergedPath, any> = H<E2, MergedPath, any>,
     M2 extends H<E3, MergedPath, any> = H<E3, MergedPath, any>,
-    M3 extends H<E4, MergedPath, any> = H<E4, MergedPath, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>
+    M3 extends H<E4, MergedPath, any> = H<E4, MergedPath, any>
   >(
     path: P,
     ...handlers: [
@@ -352,9 +337,9 @@ export interface HandlerInterface<
         MergePath<BasePath, P>,
         I4,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
       >,
     BasePath
   >
@@ -380,13 +365,7 @@ export interface HandlerInterface<
     M2 extends H<E3, P, any> = H<E3, P, any>,
     M3 extends H<E4, P, any> = H<E4, P, any>,
     M4 extends H<E5, P, any> = H<E5, P, any>,
-    M5 extends H<E6, P, any> = H<E6, P, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>,
-    MR4 extends HandlerResponse<any> = ExtractHandlerResponse<M4>,
-    MR5 extends HandlerResponse<any> = ExtractHandlerResponse<M5>
+    M5 extends H<E6, P, any> = H<E6, P, any>
   >(
     ...handlers: [
       H<E2, P, I> & M1,
@@ -404,11 +383,11 @@ export interface HandlerInterface<
         P,
         I6,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
-        | MergeTypedResponse<MR4>
-        | MergeTypedResponse<MR5>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
+        | MergeMiddlewareResponse<M4>
+        | MergeMiddlewareResponse<M5>
       >,
     BasePath
   >
@@ -432,12 +411,7 @@ export interface HandlerInterface<
     M1 extends H<E2, MergedPath, any> = H<E2, MergedPath, any>,
     M2 extends H<E3, MergedPath, any> = H<E3, MergedPath, any>,
     M3 extends H<E4, MergedPath, any> = H<E4, MergedPath, any>,
-    M4 extends H<E5, MergedPath, any> = H<E5, MergedPath, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>,
-    MR4 extends HandlerResponse<any> = ExtractHandlerResponse<M4>
+    M4 extends H<E5, MergedPath, any> = H<E5, MergedPath, any>
   >(
     path: P,
     ...handlers: [
@@ -455,10 +429,10 @@ export interface HandlerInterface<
         MergePath<BasePath, P>,
         I5,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
-        | MergeTypedResponse<MR4>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
+        | MergeMiddlewareResponse<M4>
       >,
     BasePath
   >
@@ -487,14 +461,7 @@ export interface HandlerInterface<
     M3 extends H<E4, P, any> = H<E4, P, any>,
     M4 extends H<E5, P, any> = H<E5, P, any>,
     M5 extends H<E6, P, any> = H<E6, P, any>,
-    M6 extends H<E7, P, any> = H<E7, P, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>,
-    MR4 extends HandlerResponse<any> = ExtractHandlerResponse<M4>,
-    MR5 extends HandlerResponse<any> = ExtractHandlerResponse<M5>,
-    MR6 extends HandlerResponse<any> = ExtractHandlerResponse<M6>
+    M6 extends H<E7, P, any> = H<E7, P, any>
   >(
     ...handlers: [
       H<E2, P, I> & M1,
@@ -513,12 +480,12 @@ export interface HandlerInterface<
         P,
         I7,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
-        | MergeTypedResponse<MR4>
-        | MergeTypedResponse<MR5>
-        | MergeTypedResponse<MR6>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
+        | MergeMiddlewareResponse<M4>
+        | MergeMiddlewareResponse<M5>
+        | MergeMiddlewareResponse<M6>
       >,
     BasePath
   >
@@ -545,13 +512,7 @@ export interface HandlerInterface<
     M2 extends H<E3, MergedPath, any> = H<E3, MergedPath, any>,
     M3 extends H<E4, MergedPath, any> = H<E4, MergedPath, any>,
     M4 extends H<E5, MergedPath, any> = H<E5, MergedPath, any>,
-    M5 extends H<E6, MergedPath, any> = H<E6, MergedPath, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>,
-    MR4 extends HandlerResponse<any> = ExtractHandlerResponse<M4>,
-    MR5 extends HandlerResponse<any> = ExtractHandlerResponse<M5>
+    M5 extends H<E6, MergedPath, any> = H<E6, MergedPath, any>
   >(
     path: P,
     ...handlers: [
@@ -570,11 +531,11 @@ export interface HandlerInterface<
         MergePath<BasePath, P>,
         I6,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
-        | MergeTypedResponse<MR4>
-        | MergeTypedResponse<MR5>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
+        | MergeMiddlewareResponse<M4>
+        | MergeMiddlewareResponse<M5>
       >,
     BasePath
   >
@@ -606,15 +567,7 @@ export interface HandlerInterface<
     M4 extends H<E5, P, any> = H<E5, P, any>,
     M5 extends H<E6, P, any> = H<E6, P, any>,
     M6 extends H<E7, P, any> = H<E7, P, any>,
-    M7 extends H<E8, P, any> = H<E8, P, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>,
-    MR4 extends HandlerResponse<any> = ExtractHandlerResponse<M4>,
-    MR5 extends HandlerResponse<any> = ExtractHandlerResponse<M5>,
-    MR6 extends HandlerResponse<any> = ExtractHandlerResponse<M6>,
-    MR7 extends HandlerResponse<any> = ExtractHandlerResponse<M7>
+    M7 extends H<E8, P, any> = H<E8, P, any>
   >(
     ...handlers: [
       H<E2, P, I> & M1,
@@ -634,13 +587,13 @@ export interface HandlerInterface<
         P,
         I8,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
-        | MergeTypedResponse<MR4>
-        | MergeTypedResponse<MR5>
-        | MergeTypedResponse<MR6>
-        | MergeTypedResponse<MR7>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
+        | MergeMiddlewareResponse<M4>
+        | MergeMiddlewareResponse<M5>
+        | MergeMiddlewareResponse<M6>
+        | MergeMiddlewareResponse<M7>
       >,
     BasePath
   >
@@ -670,14 +623,7 @@ export interface HandlerInterface<
     M3 extends H<E4, MergedPath, any> = H<E4, MergedPath, any>,
     M4 extends H<E5, MergedPath, any> = H<E5, MergedPath, any>,
     M5 extends H<E6, MergedPath, any> = H<E6, MergedPath, any>,
-    M6 extends H<E7, MergedPath, any> = H<E7, MergedPath, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>,
-    MR4 extends HandlerResponse<any> = ExtractHandlerResponse<M4>,
-    MR5 extends HandlerResponse<any> = ExtractHandlerResponse<M5>,
-    MR6 extends HandlerResponse<any> = ExtractHandlerResponse<M6>
+    M6 extends H<E7, MergedPath, any> = H<E7, MergedPath, any>
   >(
     path: P,
     ...handlers: [
@@ -697,12 +643,12 @@ export interface HandlerInterface<
         MergePath<BasePath, P>,
         I7,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
-        | MergeTypedResponse<MR4>
-        | MergeTypedResponse<MR5>
-        | MergeTypedResponse<MR6>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
+        | MergeMiddlewareResponse<M4>
+        | MergeMiddlewareResponse<M5>
+        | MergeMiddlewareResponse<M6>
       >,
     BasePath
   >
@@ -737,16 +683,7 @@ export interface HandlerInterface<
     M5 extends H<E6, P, any> = H<E6, P, any>,
     M6 extends H<E7, P, any> = H<E7, P, any>,
     M7 extends H<E8, P, any> = H<E8, P, any>,
-    M8 extends H<E9, P, any> = H<E9, P, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>,
-    MR4 extends HandlerResponse<any> = ExtractHandlerResponse<M4>,
-    MR5 extends HandlerResponse<any> = ExtractHandlerResponse<M5>,
-    MR6 extends HandlerResponse<any> = ExtractHandlerResponse<M6>,
-    MR7 extends HandlerResponse<any> = ExtractHandlerResponse<M7>,
-    MR8 extends HandlerResponse<any> = ExtractHandlerResponse<M8>
+    M8 extends H<E9, P, any> = H<E9, P, any>
   >(
     ...handlers: [
       H<E2, P, I> & M1,
@@ -767,14 +704,14 @@ export interface HandlerInterface<
         P,
         I9,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
-        | MergeTypedResponse<MR4>
-        | MergeTypedResponse<MR5>
-        | MergeTypedResponse<MR6>
-        | MergeTypedResponse<MR7>
-        | MergeTypedResponse<MR8>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
+        | MergeMiddlewareResponse<M4>
+        | MergeMiddlewareResponse<M5>
+        | MergeMiddlewareResponse<M6>
+        | MergeMiddlewareResponse<M7>
+        | MergeMiddlewareResponse<M8>
       >,
     BasePath
   >
@@ -807,15 +744,7 @@ export interface HandlerInterface<
     M4 extends H<E5, MergedPath, any> = H<E5, MergedPath, any>,
     M5 extends H<E6, MergedPath, any> = H<E6, MergedPath, any>,
     M6 extends H<E7, MergedPath, any> = H<E7, MergedPath, any>,
-    M7 extends H<E8, MergedPath, any> = H<E8, MergedPath, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>,
-    MR4 extends HandlerResponse<any> = ExtractHandlerResponse<M4>,
-    MR5 extends HandlerResponse<any> = ExtractHandlerResponse<M5>,
-    MR6 extends HandlerResponse<any> = ExtractHandlerResponse<M6>,
-    MR7 extends HandlerResponse<any> = ExtractHandlerResponse<M7>
+    M7 extends H<E8, MergedPath, any> = H<E8, MergedPath, any>
   >(
     path: P,
     ...handlers: [
@@ -836,13 +765,13 @@ export interface HandlerInterface<
         MergePath<BasePath, P>,
         I8,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
-        | MergeTypedResponse<MR4>
-        | MergeTypedResponse<MR5>
-        | MergeTypedResponse<MR6>
-        | MergeTypedResponse<MR7>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
+        | MergeMiddlewareResponse<M4>
+        | MergeMiddlewareResponse<M5>
+        | MergeMiddlewareResponse<M6>
+        | MergeMiddlewareResponse<M7>
       >,
     BasePath
   >
@@ -880,17 +809,7 @@ export interface HandlerInterface<
     M6 extends H<E7, P, any> = H<E7, P, any>,
     M7 extends H<E8, P, any> = H<E8, P, any>,
     M8 extends H<E9, P, any> = H<E9, P, any>,
-    M9 extends H<E10, P, any> = H<E10, P, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>,
-    MR4 extends HandlerResponse<any> = ExtractHandlerResponse<M4>,
-    MR5 extends HandlerResponse<any> = ExtractHandlerResponse<M5>,
-    MR6 extends HandlerResponse<any> = ExtractHandlerResponse<M6>,
-    MR7 extends HandlerResponse<any> = ExtractHandlerResponse<M7>,
-    MR8 extends HandlerResponse<any> = ExtractHandlerResponse<M8>,
-    MR9 extends HandlerResponse<any> = ExtractHandlerResponse<M9>
+    M9 extends H<E10, P, any> = H<E10, P, any>
   >(
     ...handlers: [
       H<E2, P, I> & M1,
@@ -912,15 +831,15 @@ export interface HandlerInterface<
         P,
         I10,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
-        | MergeTypedResponse<MR4>
-        | MergeTypedResponse<MR5>
-        | MergeTypedResponse<MR6>
-        | MergeTypedResponse<MR7>
-        | MergeTypedResponse<MR8>
-        | MergeTypedResponse<MR9>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
+        | MergeMiddlewareResponse<M4>
+        | MergeMiddlewareResponse<M5>
+        | MergeMiddlewareResponse<M6>
+        | MergeMiddlewareResponse<M7>
+        | MergeMiddlewareResponse<M8>
+        | MergeMiddlewareResponse<M9>
       >,
     BasePath
   >
@@ -956,16 +875,7 @@ export interface HandlerInterface<
     M5 extends H<E6, MergedPath, any> = H<E6, MergedPath, any>,
     M6 extends H<E7, MergedPath, any> = H<E7, MergedPath, any>,
     M7 extends H<E8, MergedPath, any> = H<E8, MergedPath, any>,
-    M8 extends H<E9, MergedPath, any> = H<E9, MergedPath, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>,
-    MR4 extends HandlerResponse<any> = ExtractHandlerResponse<M4>,
-    MR5 extends HandlerResponse<any> = ExtractHandlerResponse<M5>,
-    MR6 extends HandlerResponse<any> = ExtractHandlerResponse<M6>,
-    MR7 extends HandlerResponse<any> = ExtractHandlerResponse<M7>,
-    MR8 extends HandlerResponse<any> = ExtractHandlerResponse<M8>
+    M8 extends H<E9, MergedPath, any> = H<E9, MergedPath, any>
   >(
     path: P,
     ...handlers: [
@@ -987,14 +897,14 @@ export interface HandlerInterface<
         MergePath<BasePath, P>,
         I9,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
-        | MergeTypedResponse<MR4>
-        | MergeTypedResponse<MR5>
-        | MergeTypedResponse<MR6>
-        | MergeTypedResponse<MR7>
-        | MergeTypedResponse<MR8>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
+        | MergeMiddlewareResponse<M4>
+        | MergeMiddlewareResponse<M5>
+        | MergeMiddlewareResponse<M6>
+        | MergeMiddlewareResponse<M7>
+        | MergeMiddlewareResponse<M8>
       >,
     BasePath
   >
@@ -1033,17 +943,7 @@ export interface HandlerInterface<
     M6 extends H<E7, MergedPath, any> = H<E7, MergedPath, any>,
     M7 extends H<E8, MergedPath, any> = H<E8, MergedPath, any>,
     M8 extends H<E9, MergedPath, any> = H<E9, MergedPath, any>,
-    M9 extends H<E10, MergedPath, any> = H<E10, MergedPath, any>,
-    // Middleware return type
-    MR1 extends HandlerResponse<any> = ExtractHandlerResponse<M1>,
-    MR2 extends HandlerResponse<any> = ExtractHandlerResponse<M2>,
-    MR3 extends HandlerResponse<any> = ExtractHandlerResponse<M3>,
-    MR4 extends HandlerResponse<any> = ExtractHandlerResponse<M4>,
-    MR5 extends HandlerResponse<any> = ExtractHandlerResponse<M5>,
-    MR6 extends HandlerResponse<any> = ExtractHandlerResponse<M6>,
-    MR7 extends HandlerResponse<any> = ExtractHandlerResponse<M7>,
-    MR8 extends HandlerResponse<any> = ExtractHandlerResponse<M8>,
-    MR9 extends HandlerResponse<any> = ExtractHandlerResponse<M9>
+    M9 extends H<E10, MergedPath, any> = H<E10, MergedPath, any>
   >(
     path: P,
     ...handlers: [
@@ -1066,15 +966,15 @@ export interface HandlerInterface<
         MergePath<BasePath, P>,
         I10,
         | MergeTypedResponse<R>
-        | MergeTypedResponse<MR1>
-        | MergeTypedResponse<MR2>
-        | MergeTypedResponse<MR3>
-        | MergeTypedResponse<MR4>
-        | MergeTypedResponse<MR5>
-        | MergeTypedResponse<MR6>
-        | MergeTypedResponse<MR7>
-        | MergeTypedResponse<MR8>
-        | MergeTypedResponse<MR9>
+        | MergeMiddlewareResponse<M1>
+        | MergeMiddlewareResponse<M2>
+        | MergeMiddlewareResponse<M3>
+        | MergeMiddlewareResponse<M4>
+        | MergeMiddlewareResponse<M5>
+        | MergeMiddlewareResponse<M6>
+        | MergeMiddlewareResponse<M7>
+        | MergeMiddlewareResponse<M8>
+        | MergeMiddlewareResponse<M9>
       >,
     BasePath
   >
@@ -2348,6 +2248,8 @@ type MergeTypedResponse<T> = T extends Promise<infer T2>
   : T extends TypedResponse
   ? T
   : TypedResponse
+
+type MergeMiddlewareResponse<T> = MergeTypedResponse<ExtractHandlerResponse<T>>
 
 ////////////////////////////////////////
 //////                             /////
