@@ -3658,3 +3658,16 @@ describe('app.basePath() with the internal #clone()', () => {
     expect(await res.text()).toBe('Custom error "API Test error"')
   })
 })
+describe('Catch-all route with empty segment', () => {
+  it('Should return empty string for empty catch-all param', async () => {
+    const app = new Hono()
+    app.get('/:remaining{.*}', (c) => {
+      const remaining = c.req.param('remaining')
+      return c.json({ type: typeof remaining, value: remaining })
+    })
+    const res = await app.request('http://localhost/')
+    expect(res.status).toBe(200)
+    const json = await res.json()
+    expect(json).toEqual({ type: 'string', value: '' })
+  })
+})
