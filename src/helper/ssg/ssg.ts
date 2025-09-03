@@ -349,6 +349,22 @@ export interface ToSSGAdaptorInterface<
 }
 
 /**
+ * The default plugin that defines the recommended behavior.
+ *
+ * @experimental
+ * `defaultPlugin` is an experimental feature.
+ * The API might be changed.
+ */
+export const defaultPlugin: SSGPlugin = {
+  afterResponseHook: (res) => {
+    if (res.status === 301 || res.status == 302) {
+      return false
+    }
+    return res
+  },
+}
+
+/**
  * @experimental
  * `toSSG` is an experimental feature.
  * The API might be changed.
