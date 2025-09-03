@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { expectTypeOf } from 'vitest'
+import { hc } from './client'
 import { Context } from './context'
 import { createMiddleware } from './helper/factory'
 import { Hono } from './hono'
@@ -2399,5 +2400,430 @@ describe('status code', () => {
 
     type Actual = ExtractSchema<typeof router>['/']['$get']['status']
     expectTypeOf<Actual>().toEqualTypeOf<204 | 201 | 200>()
+  })
+})
+
+describe('RPC supports Middleware responses', () => {
+  it('Should handle the responses from 1 handler', async () => {
+    const app = new Hono().get('/single', (c) => c.json({ '200': true }, 200))
+    const client = hc<typeof app>('http://localhost', { fetch: app.request })
+    const res = await client.single.$get()
+
+    if (res.status === 200) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+    }
+  })
+
+  it('Should handle the responses from 2 handlers', async () => {
+    const app = new Hono().get(
+      '/double',
+      async (c) => c.json({ '400': true }, 400),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof app>('http://localhost', { fetch: app.request })
+    const res = await client.double.$get()
+    if (res.status === 400) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+    }
+    if (res.status === 200) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+    }
+  })
+
+  it('Should handle the responses from 3 handlers', async () => {
+    const app = new Hono().get(
+      '/foo',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof app>('http://localhost', { fetch: app.request })
+    const res = await client.foo.$get()
+    if (res.status === 500) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+    }
+    if (res.status === 400) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+    }
+    if (res.status === 200) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+    }
+  })
+
+  it('Should handle the responses from 4 handlers', async () => {
+    const app = new Hono().get(
+      '/bar',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '300': true }, 300),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof app>('http://localhost', { fetch: app.request })
+    const res = await client.bar.$get()
+    if (res.status === 500) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+    }
+    if (res.status === 400) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+    }
+    if (res.status === 300) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>();
+    }
+    if (res.status === 200) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+    }
+  })
+
+  it('Should handle the responses from 5 handlers', async () => {
+    const app = new Hono().get(
+      '/baz',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '300': true }, 300),
+      async (c) => c.json({ '201': true }, 201),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof app>('http://localhost', { fetch: app.request })
+    const res = await client.baz.$get()
+    if (res.status === 500) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+    }
+    if (res.status === 400) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+    }
+    if (res.status === 300) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>();
+    }
+    if (res.status === 201) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>();
+    }
+    if (res.status === 200) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+    }
+  })
+
+  it('Should handle the responses from 6 handlers', async () => {
+    const app = new Hono().get(
+      '/qux',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '300': true }, 300),
+      async (c) => c.json({ '201': true }, 201),
+      async (c) => c.json({ '202': true }, 202),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof app>('http://localhost', { fetch: app.request })
+    const res = await client.qux.$get()
+    if (res.status === 500) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+    }
+    if (res.status === 400) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+    }
+    if (res.status === 300) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>();
+    }
+    if (res.status === 201) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>();
+    }
+    if (res.status === 202) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>();
+    }
+    if (res.status === 200) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+    }
+  })
+
+  it('Should handle the responses from 7 handlers', async () => {
+    const app = new Hono().get(
+      '/seven',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '300': true }, 300),
+      async (c) => c.json({ '201': true }, 201),
+      async (c) => c.json({ '202': true }, 202),
+      async (c) => c.json({ '203': true }, 203),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof app>('http://localhost', { fetch: app.request })
+    const res = await client.seven.$get()
+    if (res.status === 500) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+    }
+    if (res.status === 400) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+    }
+    if (res.status === 300) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>();
+    }
+    if (res.status === 201) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>();
+    }
+    if (res.status === 202) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>();
+    }
+    if (res.status === 203) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>();
+    }
+    if (res.status === 200) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+    }
+  })
+
+  it('Should handle the responses from 8 handlers', async () => {
+    const app = new Hono().get(
+      '/eight',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '401': true }, 401),
+      async (c) => c.json({ '300': true }, 300),
+      async (c) => c.json({ '201': true }, 201),
+      async (c) => c.json({ '202': true }, 202),
+      async (c) => c.json({ '203': true }, 203),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof app>('http://localhost', { fetch: app.request })
+    const res = await client.eight.$get()
+    if (res.status === 500) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+    }
+    if (res.status === 400) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+    }
+    if (res.status === 401) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>();
+    }
+    if (res.status === 300) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>();
+    }
+    if (res.status === 201) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>();
+    }
+    if (res.status === 202) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>();
+    }
+    if (res.status === 203) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>();
+    }
+    if (res.status === 200) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+    }
+  })
+
+  it('Should handle the responses from 9 handlers', async () => {
+    const app = new Hono().get(
+      '/nine',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '401': true }, 401),
+      async (c) => c.json({ '403': true }, 403),
+      async (c) => c.json({ '300': true }, 300),
+      async (c) => c.json({ '201': true }, 201),
+      async (c) => c.json({ '202': true }, 202),
+      async (c) => c.json({ '203': true }, 203),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof app>('http://localhost', { fetch: app.request })
+    const res = await client.nine.$get()
+    if (res.status === 500) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>();
+    }
+    if (res.status === 400) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>();
+    }
+    if (res.status === 401) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>();
+    }
+    if (res.status === 403) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 403: true }>();
+    }
+    if (res.status === 300) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>();
+    }
+    if (res.status === 201) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>();
+    }
+    if (res.status === 202) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>();
+    }
+    if (res.status === 203) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>();
+    }
+    if (res.status === 200) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>();
+    }
+  })
+
+  it('Should handle the responses from 10 handlers', async () => {
+    const app = new Hono().get(
+      '/ten',
+      async (c) => c.json({ '500': true }, 500),
+      async (c) => c.json({ '400': true }, 400),
+      async (c) => c.json({ '401': true }, 401),
+      async (c) => c.json({ '403': true }, 403),
+      async (c) => c.json({ '404': true }, 404),
+      async (c) => c.json({ '300': true }, 300),
+      async (c) => c.json({ '201': true }, 201),
+      async (c) => c.json({ '202': true }, 202),
+      async (c) => c.json({ '203': true }, 203),
+      (c) => c.json({ '200': true }, 200)
+    )
+    const client = hc<typeof app>('http://localhost', { fetch: app.request })
+    const res = await client.ten.$get()
+    if (res.status === 500) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 500: true }>()
+    }
+    if (res.status === 400) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 400: true }>()
+    }
+    if (res.status === 401) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 401: true }>()
+    }
+    if (res.status === 403) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 403: true }>()
+    }
+    if (res.status === 404) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 404: true }>()
+    }
+    if (res.status === 300) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 300: true }>()
+    }
+    if (res.status === 201) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 201: true }>()
+    }
+    if (res.status === 202) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 202: true }>()
+    }
+    if (res.status === 203) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 203: true }>()
+    }
+    if (res.status === 200) {
+      expectTypeOf(await res.json()).toEqualTypeOf<{ 200: true }>()
+    }
+  })
+
+  const middleware = createMiddleware(async () => {})
+  const handler = (c: Context) => c.json({ ok: true }, 200)
+  type Expected = {
+    '/': {
+      $get: {
+        input: {}
+        output: {
+          ok: true
+        }
+        outputFormat: 'json'
+        status: 200
+      }
+    }
+  }
+
+  it('Should infer the correct response type with 1 middleware and 1 handler', () => {
+    const routes = new Hono().get('/', middleware, handler)
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 1 middleware and 2 handler', () => {
+    const routes = new Hono().get('/', middleware, handler, handler)
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 2 middleware and 1 handler', () => {
+    const routes = new Hono().get('/', middleware, middleware, handler)
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 3 middleware and 1 handler', () => {
+    const routes = new Hono().get('/', middleware, middleware, middleware, handler)
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 4 middleware and 1 handler', () => {
+    const routes = new Hono().get('/', middleware, middleware, middleware, middleware, handler)
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 5 middleware and 1 handler', () => {
+    const routes = new Hono().get(
+      '/',
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      handler
+    )
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 6 middleware and 1 handler', () => {
+    const routes = new Hono().get(
+      '/',
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      handler
+    )
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 7 middleware and 1 handler', () => {
+    const routes = new Hono().get(
+      '/',
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      handler
+    )
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 8 middleware and 1 handler', () => {
+    const routes = new Hono().get(
+      '/',
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      handler
+    )
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer the correct response type with 9 middleware and 1 handler', () => {
+    const routes = new Hono().get(
+      '/',
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      middleware,
+      handler
+    )
+    type Actual = ExtractSchema<typeof routes>
+    type verify = Expect<Equal<Expected, Actual>>
   })
 })
