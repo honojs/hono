@@ -1133,7 +1133,7 @@ export interface MiddlewareHandlerInterface<
   // app.get(path, handler)
   <P extends string, MergedPath extends MergePath<BasePath, P>, E2 extends Env = E>(
     path: P,
-    handler: MiddlewareHandler<E2, MergedPath>
+    handler: MiddlewareHandler<E2, MergedPath, any, any>
   ): HonoBase<IntersectNonAnyTypes<[E, E2]>, ChangePathOfSchema<S, MergedPath>, BasePath>
 
   // app.use(handler x3)
@@ -1143,7 +1143,11 @@ export interface MiddlewareHandlerInterface<
     E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
     P extends string = MergePath<BasePath, ExtractStringKey<S>>
   >(
-    ...handlers: [MiddlewareHandler<E2, P>, MiddlewareHandler<E3, P>, MiddlewareHandler<E4, P>]
+    ...handlers: [
+      MiddlewareHandler<E2, P, any, any>,
+      MiddlewareHandler<E3, P, any, any>,
+      MiddlewareHandler<E4, P, any, any>
+    ]
   ): HonoBase<IntersectNonAnyTypes<[E, E2, E3, E4]>, S, BasePath>
 
   // app.get(path, handler x2)
@@ -2420,18 +2424,6 @@ export type ExtractSchemaForStatusCode<T, Status extends number> = {
     >
   }
 }
-
-// export type ExtractHandlerResponse<T> = T extends (c: any, next: any) => Promise<infer R>
-//   ? R extends void
-//     ? never // Handler returns void → never
-//     : R extends Response | TypedResponse<any, any, any>
-//     ? R // Handler returns a response → keep it
-//     : never // Something else → never
-//   : T extends (c: any, next: any) => infer R
-//   ? R extends Response | TypedResponse<any, any, any>
-//     ? R
-//     : never
-//   : never
 
 export type ExtractHandlerResponse<T> = T extends (c: any, next: any) => Promise<infer R>
   ? Exclude<R, void> extends never
