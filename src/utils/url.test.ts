@@ -116,6 +116,15 @@ describe('url', () => {
       const path = getPath(new Request('http+unix://%2Ftmp%2Fsocket%2Esock/hello/'))
       expect(path).toBe('/hello/')
     })
+
+    it.each([
+      'http:/example.com/hello', // invalid HTTP URL
+      'http:///hello', // invalid HTTP URL
+      'http://a/:/hello', // starts with `/:/`
+      'x://a/:/hello', // unknown schema
+    ])('getPath - %s', (url) => {
+      expect(getPath(new Request(url))).toBe(new URL(url).pathname)
+    })
   })
 
   describe('getQueryStrings', () => {
