@@ -840,6 +840,14 @@ describe('SSG Plugin System', () => {
     }
   })
 
+  it('should use defaultPlugin when plugins option is omitted', async () => {
+    // @ts-expect-error defaultPlugin has afterResponseHook
+    const defaultPluginSpy = vi.spyOn(defaultPlugin, 'afterResponseHook')
+    await toSSG(app, fsMock, { dir: './static' })
+    expect(defaultPluginSpy).toHaveBeenCalled()
+    defaultPluginSpy.mockRestore()
+  })
+
   it('should skip 301/302 redirect responses with defaultPlugin', async () => {
     const result = await toSSG(app, fsMock, { plugins: [defaultPlugin], dir: './static' })
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '<h1>Home</h1>')
