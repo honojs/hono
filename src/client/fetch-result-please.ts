@@ -13,18 +13,17 @@ const nullBodyResponses = new Set([101, 204, 205, 304])
  */
 export async function fetchRP(fetchRes: Response | Promise<Response>): Promise<any> {
   const _fetchRes = (await fetchRes) as unknown as Response & {
-    _data: any;
+    _data: any
     /**
      * @description BodyInit property from whatwg-fetch polyfill
      *
      * @link https://github.com/JakeChampion/fetch/blob/main/fetch.js#L238
      */
-    _bodyInit?: any;
-  };
+    _bodyInit?: any
+  }
 
   const hasBody =
-    (_fetchRes.body || _fetchRes._bodyInit) &&
-    !nullBodyResponses.has(_fetchRes.status);
+    (_fetchRes.body || _fetchRes._bodyInit) && !nullBodyResponses.has(_fetchRes.status)
 
   if (hasBody) {
     const responseType = detectResponseType(_fetchRes)
