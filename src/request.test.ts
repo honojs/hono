@@ -66,7 +66,7 @@ describe('Param', () => {
     ])
 
     expect(req.param('id')).toBe('123')
-    expect(req.param('name')).toBe(undefined)
+    expect(req.param('name')).toBe('')
 
     req.routeIndex = 1
     expect(req.param('id')).toBe('123')
@@ -83,11 +83,29 @@ describe('Param', () => {
     ])
 
     expect(req.param('id')).toBe('123')
-    expect(req.param('name')).toBe(undefined)
+    expect(req.param('name')).toBe('')
 
     req.routeIndex = 1
     expect(req.param('id')).toBe('456')
     expect(req.param('name')).toBe('key')
+  })
+
+  test('req.param() returns empty string for missing param', () => {
+    const rawRequest = new Request('http://localhost')
+    const req = new HonoRequest<'/:remaining'>(rawRequest, '/', [
+      [[[undefined, {} as RouterRoute], { remaining: 0 }]],
+      [''],
+    ])
+    expect(req.param('remaining')).toBe('')
+  })
+
+  test('req.param() without argument returns object with empty string for missing param', () => {
+    const rawRequest = new Request('http://localhost')
+    const req = new HonoRequest<'/:remaining'>(rawRequest, '/', [
+      [[[undefined, {} as RouterRoute], { remaining: 0 }]],
+      [''],
+    ])
+    expect(req.param()).toEqual({ remaining: '' })
   })
 })
 
