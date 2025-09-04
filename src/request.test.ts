@@ -41,10 +41,8 @@ describe('Param', () => {
   test('req.param() should return empty string for zero-length match', () => {
     // Simulate a route like '/:remaining{.*}' matching '/'
     const rawRequest = new Request('http://localhost/')
-    const req = new HonoRequest<'/:remaining{.*}'> (rawRequest, '/', [
-      [
-        [[undefined, {} as RouterRoute], { remaining: 0 }],
-      ],
+    const req = new HonoRequest<'/:remaining{.*}'>(rawRequest, '/', [
+      [[[undefined, {} as RouterRoute], { remaining: 0 }]],
       [''], // ParamStash with empty string for remaining
     ])
 
