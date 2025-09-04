@@ -42,7 +42,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
-      - run: bun install
+      - run: bun install --frozen-lockfile
       - run: bun run format
       - run: bun run lint
       - run: bun run editorconfig-checker -format github-actions
@@ -92,7 +92,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
-      - run: bun install
+      - run: bun install --frozen-lockfile
       - run: bun run test:bun
       - uses: actions/upload-artifact@v4
         with:
@@ -117,7 +117,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
-      - run: bun install
+      - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:fastly
 
@@ -135,7 +135,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
-      - run: bun install
+      - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:node
 
@@ -150,7 +150,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
-      - run: bun install
+      - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:workerd
 
@@ -162,7 +162,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
-      - run: bun install
+      - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run test:lambda
 
@@ -197,7 +197,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
-      - run: bun install
+      - run: bun install --frozen-lockfile
       - name: Install bombardier
         run: |
           wget -O bombardier https://github.com/codesenberg/bombardier/releases/download/v2.0.1/bombardier-linux-amd64
