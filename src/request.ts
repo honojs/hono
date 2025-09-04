@@ -98,7 +98,9 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   #getDecodedParam(key: string): string | undefined {
     const paramKey = this.#matchResult[0][this.routeIndex][1][key]
     const param = this.#getParamValue(paramKey)
-    return param ? (/\%/.test(param) ? tryDecodeURIComponent(param) : param) : undefined
+    if (param === undefined) return undefined
+    // param can legitimately be an empty string ('') when matched by patterns like {.*}
+    return /\%/.test(param) ? tryDecodeURIComponent(param) : param
   }
 
   #getAllDecodedParams(): Record<string, string> {
@@ -107,7 +109,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     const keys = Object.keys(this.#matchResult[0][this.routeIndex][1])
     for (const key of keys) {
       const value = this.#getParamValue(this.#matchResult[0][this.routeIndex][1][key])
-      if (value && typeof value === 'string') {
+      // Include empty string values; only skip undefined (no match)
+      if (typeof value === 'string') {
         decoded[key] = /\%/.test(value) ? tryDecodeURIComponent(value) : value
       }
     }

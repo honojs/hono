@@ -38,6 +38,23 @@ describe('Query', () => {
 })
 
 describe('Param', () => {
+  test('req.param() should return empty string for zero-length match', () => {
+    // Simulate a route like '/:remaining{.*}' matching '/'
+    const rawRequest = new Request('http://localhost/')
+    const req = new HonoRequest<'/:remaining{.*}'> (rawRequest, '/', [
+      [
+        [[undefined, {} as RouterRoute], { remaining: 0 }],
+      ],
+      [''], // ParamStash with empty string for remaining
+    ])
+
+    // Single param access should be empty string, not undefined
+    expect(req.param('remaining')).toBe('')
+
+    // All params should include key with empty string value
+    const all = req.param()
+    expect(all).toEqual({ remaining: '' })
+  })
   test('req.param() with ParamStash', () => {
     const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
     const req = new HonoRequest<'/:id/:name'>(rawRequest, '/123/key', [
