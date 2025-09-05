@@ -1092,6 +1092,87 @@ describe('Clone Request object', () => {
       expect(await res.json()).toEqual({ foo: 'bar' })
     })
   })
+
+  describe('Raw Request preservation after validation', () => {
+    it('Should preserve raw Request after JSON validation for external libraries', async () => {
+      const app = new Hono()
+
+      app.post(
+        '/json-validation',
+        validator('json', (value) => value),
+        async (c) => {
+          function createExternalRequest() {
+            return new Request(c.req.raw.url, {
+              method: c.req.raw.method,
+              headers: c.req.raw.headers,
+            })
+          }
+
+          const externalRequest = createExternalRequest()
+          const clone1 = c.req.raw.clone()
+          const clone2 = c.req.raw.clone()
+
+          return c.json({
+            success: true,
+            externalRequestMethod: externalRequest.method,
+            originalMethod: c.req.raw.method,
+            cloned: clone1 instanceof Request && clone2 instanceof Request,
+          })
+        }
+      )
+
+      const testData = { message: 'test', userId: 123 }
+      const res = await app.request('/json-validation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testData),
+      })
+
+      expect(res.status).toBe(200)
+
+      const result = await res.json()
+
+      expect(result.success).toBe(true)
+      expect(result.externalRequestMethod).toBe('POST')
+      expect(result.originalMethod).toBe('POST')
+      expect(result.cloned).toBe(true)
+    })
+
+    it('Should preserve raw Request after form validation for external libraries', async () => {
+      const app = new Hono()
+
+      app.post(
+        '/form-validation',
+        validator('form', (value) => value),
+        async (c) => {
+          expect(() => {
+            return new Request(c.req.raw.url, {
+              method: c.req.raw.method,
+              headers: c.req.raw.headers,
+            })
+          }, 'Test that raw request can be used by external libraries after form validation').not.toThrow()
+          expect(() => c.req.raw.clone()).not.toThrow()
+
+          return c.json({ success: true })
+        }
+      )
+
+      const formData = new FormData()
+      formData.append('username', 'testuser')
+      formData.append('email', 'test@example.com')
+
+      const res = await app.request('/form-validation', {
+        method: 'POST',
+        body: formData,
+      })
+
+      expect(res.status).toBe(200)
+
+      const result = await res.json()
+
+      expect(result.success).toBe(true)
+    })
+  })
 })
 
 describe('Async validator function', () => {

@@ -187,6 +187,97 @@ const text = '{"foo":"bar"}'
 const json = { foo: 'bar' }
 const buffer = new TextEncoder().encode('{"foo":"bar"}').buffer
 
+describe('Raw Request preservation', () => {
+  test('raw Request remains unconsumed after body parsing', async () => {
+    const originalRequest = new Request('http://localhost/', {
+      method: 'POST',
+      body: JSON.stringify({ test: 'data' }),
+      headers: { 'Content-Type': 'application/json' },
+    })
+    const req = new HonoRequest(originalRequest)
+
+    await req.json()
+    await req.text()
+    await req.arrayBuffer()
+
+    expect(() => req.raw.clone(), 'The raw request should still be usable').not.toThrow()
+    expect(
+      () => new Request(req.raw.url, { method: req.raw.method, headers: req.raw.headers }),
+      'Should be able to create a new Request from the raw request'
+    ).not.toThrow()
+    expect(req.raw.method).toBe('POST')
+    expect(req.raw.url).toBe('http://localhost/')
+    expect(req.raw.headers.get('Content-Type')).toBe('application/json')
+  })
+
+  test('raw Request can be cloned multiple times after body parsing', async () => {
+    const originalRequest = new Request('http://localhost/', {
+      method: 'POST',
+      body: JSON.stringify({ data: 'test' }),
+      headers: { 'Content-Type': 'application/json' },
+    })
+    const req = new HonoRequest(originalRequest)
+
+    await req.json()
+    await req.text()
+    const clone1 = req.raw.clone()
+    const clone2 = req.raw.clone()
+    const clone3 = req.raw.clone()
+
+    expect(clone1).toBeInstanceOf(Request)
+    expect(clone2).toBeInstanceOf(Request)
+    expect(clone3).toBeInstanceOf(Request)
+    expect(clone1.method).toBe(clone2.method)
+    expect(clone1.url).toBe(clone2.url)
+    expect(clone1.method).toBe(clone3.method)
+  })
+
+  test('external libraries can use raw Request after validation', async () => {
+    const originalRequest = new Request('http://localhost/api/test', {
+      method: 'POST',
+      body: JSON.stringify({ username: 'test', password: 'secret' }),
+      headers: { 'Content-Type': 'application/json' },
+    })
+    const req = new HonoRequest(originalRequest)
+
+    const data = await req.json()
+    expect(data).toStrictEqual({ username: 'test', password: 'secret' })
+
+    function externalLibraryRequest() {
+      return new Request(req.raw.url, {
+        method: req.raw.method,
+        headers: req.raw.headers,
+      })
+    }
+
+    const newRequest = externalLibraryRequest()
+
+    expect(newRequest.method).toBe('POST')
+    expect(newRequest.url).toBe('http://localhost/api/test')
+    expect(newRequest.headers.get('Content-Type')).toBe('application/json')
+  })
+
+  test('different body types can be accessed after raw Request preservation', async () => {
+    const formData = new FormData()
+    formData.append('field1', 'value1')
+    formData.append('field2', 'value2')
+    const originalRequest = new Request('http://localhost', {
+      method: 'POST',
+      body: formData,
+    })
+
+    const req = new HonoRequest(originalRequest)
+
+    const parsedFormData = await req.formData()
+
+    expect(parsedFormData.get('field1')).toBe('value1')
+    expect(parsedFormData.get('field2')).toBe('value2')
+    expect(() => req.raw.clone(), 'Raw request should still be usable').not.toThrow()
+    const clonedForExternal = req.raw.clone()
+    expect(clonedForExternal.method).toBe('POST')
+  })
+})
+
 describe('Body methods with caching', () => {
   test('req.text()', async () => {
     const req = new HonoRequest(

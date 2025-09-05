@@ -227,7 +227,8 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
       })
     }
 
-    return (bodyCache[key] = raw[key]())
+    const clonedRaw = raw.clone()
+    return (bodyCache[key] = clonedRaw[key]())
   }
 
   /**
