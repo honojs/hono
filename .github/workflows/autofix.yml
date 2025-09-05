@@ -23,7 +23,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: '.tool-versions'
-      - run: bun install
+      - run: bun install --frozen-lockfile
       - run: bun run format:fix
       - run: bun run lint:fix
       - name: Apply fixes
