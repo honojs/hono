@@ -29,7 +29,7 @@ jobs:
           bun-version-file: '.tool-versions'
 
       - name: Install Dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Build
         run: bun run build
