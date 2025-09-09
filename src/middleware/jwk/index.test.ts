@@ -743,4 +743,135 @@ describe('JWK', () => {
       })
     })
   })
+
+  describe('Verification of token attributes', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    function inFuture() {
+      return Date.now() / 1000 + 100
+    }
+
+    function inPast() {
+      return Date.now() / 1000 - 100
+    }
+
+    const app = new Hono()
+
+    app.use('/auth-with-keys-default/*', jwk({ keys: verify_keys }))
+    app.use(
+      '/auth-with-keys-and-issuer/*',
+      jwk({ keys: verify_keys, verification: { iss: 'http://issuer.test' } })
+    )
+
+    app.get('/auth-with-keys-default/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-keys-and-issuer/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should validate exp/nbf/iat and pass when good by default', async () => {
+      const payload = {
+        exp: inFuture(),
+        nbf: inPast(),
+        iat: inPast(),
+        iss: 'http://not-checked.test',
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-default/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual(payload)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should validate exp and fail when bad', async () => {
+      const payload = {
+        exp: inPast(),
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-default/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should validate nbf and fail when bad', async () => {
+      const payload = {
+        nbf: inFuture(),
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-default/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should validate iat and fail when bad', async () => {
+      const payload = {
+        iat: inFuture(),
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-default/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should validate iss when supplied', async () => {
+      const payload = {
+        iss: 'http://issuer.test',
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-and-issuer/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual(payload)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should reject missing iss when required', async () => {
+      const payload = {
+        // Nothing
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-and-issuer/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should reject iss when different', async () => {
+      const payload = {
+        iss: 'http://bad-issuer.test',
+      }
+      const credential = await Jwt.sign(payload, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-and-issuer/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(handlerExecuted).toBeFalsy()
+    })
+  })
 })
