@@ -194,21 +194,12 @@ interface JSONRespond {
  * @template T - The type of the JSON value or simplified unknown type.
  * @template U - The type of the status code.
  *
- * @returns {Response & TypedResponse<SimplifyDeepArray<T> extends JSONValue ? (JSONValue extends SimplifyDeepArray<T> ? never : JSONParsed<T>) : never, U, 'json'>} - The response after rendering the JSON object, typed with the provided object and status code types.
+ * @returns {Response & TypedResponse<JSONParsed<T>, U, 'json'>} - The response after rendering the JSON object, typed with the provided object and status code types.
  */
 type JSONRespondReturn<
   T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
   U extends ContentfulStatusCode
-> = Response &
-  TypedResponse<
-    SimplifyDeepArray<T> extends JSONValue
-      ? JSONValue extends SimplifyDeepArray<T>
-        ? never
-        : JSONParsed<T>
-      : never,
-    U,
-    'json'
-  >
+> = Response & TypedResponse<JSONParsed<T>, U, 'json'>
 
 /**
  * Interface representing a function that responds with HTML content.
