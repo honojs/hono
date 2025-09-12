@@ -71,13 +71,23 @@ export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
       return next()
     }
 
-    if (c.req.raw.headers.has('content-length')) {
-      // we can trust content-length header because it's already validated by server
+    const hasTransferEncoding = c.req.raw.headers.has('transfer-encoding')
+    const hasContentLength = c.req.raw.headers.has('content-length')
+
+    // RFC 7230: If both Transfer-Encoding and Content-Length are present,
+    // Transfer-Encoding takes precedence and Content-Length should be ignored
+    if (hasTransferEncoding && hasContentLength) {
+      // Both headers present - follow RFC 7230 and ignore Content-Length
+      // This might indicate request smuggling attempt
+    }
+
+    if (hasContentLength && !hasTransferEncoding) {
+      // Only Content-Length present - we can trust it
       const contentLength = parseInt(c.req.raw.headers.get('content-length') || '0', 10)
       return contentLength > maxSize ? onError(c) : next()
     }
 
-    // maybe chunked transfer encoding
+    // Transfer-Encoding present (chunked) or no length headers
 
     let size = 0
     const rawReader = c.req.raw.body.getReader()
