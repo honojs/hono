@@ -13,13 +13,7 @@ import type { ResponseHeader } from './utils/headers'
 import { HtmlEscapedCallbackPhase, resolveCallback } from './utils/html'
 import type { ContentfulStatusCode, RedirectStatusCode, StatusCode } from './utils/http-status'
 import type { BaseMime } from './utils/mime'
-import type {
-  InvalidJSONValue,
-  IsAny,
-  JSONParsed,
-  JSONValue,
-  SimplifyDeepArray,
-} from './utils/types'
+import type { InvalidJSONValue, IsAny, JSONParsed, JSONValue } from './utils/types'
 
 type HeaderRecord =
   | Record<'Content-Type', BaseMime>
@@ -174,7 +168,7 @@ interface TextRespond {
  */
 interface JSONRespond {
   <
-    T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
+    T extends JSONValue | {} | InvalidJSONValue,
     U extends ContentfulStatusCode = ContentfulStatusCode
   >(
     object: T,
@@ -182,7 +176,7 @@ interface JSONRespond {
     headers?: HeaderRecord
   ): JSONRespondReturn<T, U>
   <
-    T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
+    T extends JSONValue | {} | InvalidJSONValue,
     U extends ContentfulStatusCode = ContentfulStatusCode
   >(
     object: T,
@@ -196,8 +190,8 @@ interface JSONRespond {
  *
  * @returns {Response & TypedResponse<JSONParsed<T>, U, 'json'>} - The response after rendering the JSON object, typed with the provided object and status code types.
  */
-type JSONRespondReturn<
-  T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
+export type JSONRespondReturn<
+  T extends JSONValue | {} | InvalidJSONValue,
   U extends ContentfulStatusCode
 > = Response & TypedResponse<JSONParsed<T>, U, 'json'>
 
@@ -695,7 +689,7 @@ export class Context<
    * ```
    */
   json: JSONRespond = <
-    T extends JSONValue | SimplifyDeepArray<unknown> | InvalidJSONValue,
+    T extends JSONValue | {} | InvalidJSONValue,
     U extends ContentfulStatusCode = ContentfulStatusCode
   >(
     object: T,
