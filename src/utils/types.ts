@@ -41,27 +41,49 @@ type IsInvalid<T> = T extends InvalidJSONValue ? true : false
 type OmitSymbolKeys<T> = { [K in keyof T as K extends symbol ? never : K]: T[K] }
 
 export type JSONValue = JSONObject | JSONArray | JSONPrimitive
-// Non-JSON values such as `Date` implement `.toJSON()`, so they can be transformed to a value assignable to `JSONObject`:
-export type JSONParsed<T> = T extends { toJSON(): infer J }
+/**
+ * Convert a type to a JSON-compatible type.
+ *
+ * Non-JSON values such as `Date` implement `.toJSON()`,
+ * so they can be transformed to a value assignable to `JSONObject`
+ *
+ * `JSON.stringify()` throws a `TypeError` when it encounters a `bigint` value,
+ * unless a custom `replacer` function or `.toJSON()` method is provided.
+ *
+ * This behaviour can be controlled by the `TError` generic type parameter,
+ * which defaults to `bigint | ReadonlyArray<bigint>`.
+ * You can set it to `never` to disable this check.
+ */
+export type JSONParsed<T, TError = bigint | ReadonlyArray<bigint>> = T extends TError
+  ? never
+  : T extends {
+      toJSON(): infer J
+    }
   ? (() => J) extends () => JSONPrimitive
     ? J
     : (() => J) extends () => { toJSON(): unknown }
     ? {}
-    : JSONParsed<J>
+    : JSONParsed<J, TError>
   : T extends JSONPrimitive
   ? T
   : T extends InvalidJSONValue
   ? never
   : T extends ReadonlyArray<unknown>
-  ? { [K in keyof T]: JSONParsed<InvalidToNull<T[K]>> }
-  : T extends Set<unknown> | Map<unknown, unknown>
+  ? { [K in keyof T]: JSONParsed<InvalidToNull<T[K]>, TError> }
+  : T extends Set<unknown> | Map<unknown, unknown> | Record<string, never>
   ? {}
   : T extends object
-  ? {
-      [K in keyof OmitSymbolKeys<T> as IsInvalid<T[K]> extends true
-        ? never
-        : K]: boolean extends IsInvalid<T[K]> ? JSONParsed<T[K]> | undefined : JSONParsed<T[K]>
-    }
+  ? T[keyof T] extends TError
+    ? never
+    : {
+        [K in keyof OmitSymbolKeys<T> as IsInvalid<T[K]> extends true
+          ? never
+          : K]: boolean extends IsInvalid<T[K]>
+          ? JSONParsed<T[K], TError> | undefined
+          : JSONParsed<T[K], TError>
+      }
+  : T extends unknown
+  ? JSONValue
   : never
 
 /**

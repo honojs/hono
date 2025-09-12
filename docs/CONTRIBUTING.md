@@ -25,7 +25,7 @@ The `honojs/hono` project uses [Bun](https://bun.sh/) as its package manager. De
 After that, please install the dependency environment.
 
 ```bash
-bun install
+bun install --frozen-lockfile
 ```
 
 ## PRs

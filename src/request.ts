@@ -86,38 +86,36 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   param<P2 extends ParamKeys<P> = ParamKeys<P>>(key: P2 extends `${infer _}?` ? never : P2): string
-  param<P2 extends RemoveQuestion<ParamKeys<P>> = RemoveQuestion<ParamKeys<P>>>(
-    key: P2
-  ): string | undefined
+  param<P2 extends RemoveQuestion<ParamKeys<P>> = RemoveQuestion<ParamKeys<P>>>(key: P2): string | undefined
   param(key: string): string | undefined
   param<P2 extends string = P>(): Simplify<UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>>
   param(key?: string): unknown {
     if (key === undefined) return this.#getAllDecodedParams()
-    const value = this.#getDecodedParam(key)
-    return value === undefined ? '' : value
+    const paramKeys = this.#matchResult[0][this.routeIndex][1]
+    if (!Object.prototype.hasOwnProperty.call(paramKeys, key)) {
+      return undefined
+    }
+    return this.#getDecodedParam(key)
   }
+
 
   #getDecodedParam(key: string): string | undefined {
     const paramKey = this.#matchResult[0][this.routeIndex][1][key]
     const param = this.#getParamValue(paramKey)
-    return param !== undefined
-      ? /\%/.test(param)
-        ? tryDecodeURIComponent(param)
-        : param
-      : undefined
+    return param ? (/\%/.test(param) ? tryDecodeURIComponent(param) : param) : undefined
   }
 
   #getAllDecodedParams(): Record<string, string> {
     const decoded: Record<string, string> = {}
+
     const keys = Object.keys(this.#matchResult[0][this.routeIndex][1])
     for (const key of keys) {
       const value = this.#getParamValue(this.#matchResult[0][this.routeIndex][1][key])
-      if (typeof value === 'string') {
-        decoded[key] = /%/.test(value) ? tryDecodeURIComponent(value) : value
-      } else {
-        decoded[key] = ''
+      if (value && typeof value === 'string') {
+        decoded[key] = /\%/.test(value) ? tryDecodeURIComponent(value) : value
       }
     }
+
     return decoded
   }
 

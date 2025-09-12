@@ -12,6 +12,16 @@ import { validator } from '../validator'
 import { hc } from './client'
 import type { ClientResponse, InferRequestType, InferResponseType } from './types'
 
+class SafeBigInt {
+  unsafe = BigInt(42)
+
+  toJSON() {
+    return {
+      value: '42n',
+    }
+  }
+}
+
 describe('Basic - JSON', () => {
   const app = new Hono()
 
@@ -51,6 +61,8 @@ describe('Basic - JSON', () => {
     .get('/hello-not-found', (c) => c.notFound())
     .get('/null', (c) => c.json(null))
     .get('/empty', (c) => c.json({}))
+    .get('/bigint', (c) => c.json({ value: BigInt(42) }))
+    .get('/safe-bigint', (c) => c.json(new SafeBigInt()))
 
   type AppType = typeof route
 
@@ -80,6 +92,12 @@ describe('Basic - JSON', () => {
     }),
     http.get('http://localhost/empty', () => {
       return HttpResponse.json({})
+    }),
+    http.get('http://localhost/bigint', () => {
+      return HttpResponse.json({ value: BigInt(42) })
+    }),
+    http.get('http://localhost/safe-bigint', () => {
+      return HttpResponse.json(new SafeBigInt())
     }),
     http.get('http://localhost/api/string', () => {
       return HttpResponse.json('a-string')
@@ -149,6 +167,26 @@ describe('Basic - JSON', () => {
     const data = await res.json()
     expectTypeOf(data).toMatchTypeOf<{}>()
     expect(data).toStrictEqual({})
+  })
+
+  it('Should get a `{}` content', async () => {
+    const client = hc<AppType>('http://localhost')
+    const res = await client['safe-bigint'].$get()
+    const data = await res.json()
+    expectTypeOf(data).toMatchTypeOf<{ value: string }>()
+    expect(data).toStrictEqual({ value: '42n' })
+  })
+
+  it('Should get an error response', async () => {
+    const client = hc<AppType>('http://localhost')
+    const res = await client.bigint.$get()
+    const data = await res.json()
+    expectTypeOf(data).toMatchTypeOf<never>()
+    expect(res.status).toBe(500)
+    expect(data).toMatchObject({
+      message: 'Do not know how to serialize a BigInt',
+      name: 'TypeError',
+    })
   })
 
   it('Should have correct types - primitives', async () => {

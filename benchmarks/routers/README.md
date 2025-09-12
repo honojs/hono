@@ -16,7 +16,7 @@ Tested routes:
 Install:
 
 ```
-bun install
+bun install --frozen-lockfile
 ```
 
 For Node.js:

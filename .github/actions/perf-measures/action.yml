@@ -12,7 +12,9 @@ runs:
   steps:
     - uses: actions/checkout@v4
     - uses: oven-sh/setup-bun@v2
-    - run: bun install
+      with:
+        bun-version-file: '.tool-versions'
+    - run: bun install --frozen-lockfile
       shell: bash
 
     - name: Performance measurement of type check (tsc)

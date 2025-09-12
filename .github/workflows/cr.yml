@@ -22,12 +22,14 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version-file: '.tool-versions'
 
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: '.tool-versions'
 
       - name: Install Dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Build
         run: bun run build

@@ -335,4 +335,24 @@ describe('parseResponse', async () => {
       type _verify = Expect<Equal<ResultType, { message: string }>>
     }),
   ])
+
+  it('should parse json response with _bodyInit when body is undefined', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      body: undefined,
+      _bodyInit: '{"message":"test"}',
+      json: async () => ({ message: 'test' }),
+    })
+
+    global.fetch = mockFetch
+
+    const mockClientResponse = {
+      $get: mockFetch,
+    }
+
+    const result = await parseResponse(mockClientResponse.$get())
+    expect(result).toEqual({ message: 'test' })
+  })
 })

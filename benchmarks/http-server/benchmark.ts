@@ -113,7 +113,7 @@ const buildVersion = async (version: string, name: string) => {
     }
 
     await runCommand(`git checkout ${version}`, HONO_ROOT)
-    await runCommand('bun install', HONO_ROOT)
+    await runCommand('bun install --frozen-lockfile', HONO_ROOT)
     // No build needed - use src directly
   }
 
