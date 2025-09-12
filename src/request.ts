@@ -86,7 +86,9 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
    * ```
    */
   param<P2 extends ParamKeys<P> = ParamKeys<P>>(key: P2 extends `${infer _}?` ? never : P2): string
-  param<P2 extends RemoveQuestion<ParamKeys<P>> = RemoveQuestion<ParamKeys<P>>>(key: P2): string | undefined
+  param<P2 extends RemoveQuestion<ParamKeys<P>> = RemoveQuestion<ParamKeys<P>>>(
+    key: P2
+  ): string | undefined
   param(key: string): string | undefined
   param<P2 extends string = P>(): Simplify<UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>>
   param(key?: string): unknown {
@@ -97,7 +99,6 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     }
     return this.#getDecodedParam(key)
   }
-
 
   #getDecodedParam(key: string): string | undefined {
     const paramKey = this.#matchResult[0][this.routeIndex][1][key]
