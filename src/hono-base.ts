@@ -14,7 +14,6 @@ import type {
   ErrorHandler,
   FetchEventLike,
   H,
-  HTTPResponseError,
   HandlerInterface,
   MergePath,
   MergeSchemaPath,
@@ -29,11 +28,11 @@ import type {
 import { COMPOSED_HANDLER } from './utils/constants'
 import { getPath, getPathNoStrict, mergePath } from './utils/url'
 
-const notFoundHandler = (c: Context) => {
+const notFoundHandler: NotFoundHandler = (c) => {
   return c.text('404 Not Found', 404)
 }
 
-const errorHandler = (err: Error | HTTPResponseError, c: Context) => {
+const errorHandler: ErrorHandler = (err, c) => {
   if ('getResponse' in err) {
     const res = err.getResponse()
     return c.newResponse(res.body, res)
