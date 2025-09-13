@@ -92,7 +92,12 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   param(key: string): string | undefined
   param<P2 extends string = P>(): Simplify<UnionToIntersection<ParamKeyToRecord<ParamKeys<P2>>>>
   param(key?: string): unknown {
-    return key ? this.#getDecodedParam(key) : this.#getAllDecodedParams()
+    if (key === undefined) return this.#getAllDecodedParams()
+    const paramKeys = this.#matchResult[0][this.routeIndex][1]
+    if (!Object.prototype.hasOwnProperty.call(paramKeys, key)) {
+      return undefined
+    }
+    return this.#getDecodedParam(key)
   }
 
   #getDecodedParam(key: string): string | undefined {
