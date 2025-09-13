@@ -72,6 +72,16 @@ describe('Param', () => {
     expect(req.param('id')).toBe('456')
     expect(req.param('name')).toBe('key')
   })
+
+  test('req.param() for optional param', () => {
+    const rawRequest = new Request('http://localhost?page=2&tag=A&tag=B')
+    const req = new HonoRequest<'/:optional{.*}'>(rawRequest, '/', [
+      [[[undefined, {} as RouterRoute], { optional: '' }]],
+    ])
+
+    expect(req.param('optional')).toBe('')
+    expect(req.param()).toEqual({ optional: '' })
+  })
 })
 
 describe('matchedRoutes', () => {
