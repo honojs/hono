@@ -357,7 +357,7 @@ export interface ToSSGAdaptorInterface<
  */
 export const defaultPlugin: SSGPlugin = {
   afterResponseHook: (res) => {
-    if (res.status === 301 || res.status == 302) {
+    if (res.status !== 200) {
       return false
     }
     return res
