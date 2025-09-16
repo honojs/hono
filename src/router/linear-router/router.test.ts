@@ -1,6 +1,6 @@
-import { UnsupportedPathError } from '../../router';
-import { runTest } from '../common.case.test';
-import { LinearRouter } from './router';
+import { UnsupportedPathError } from '../../router'
+import { runTest } from '../common.case.test'
+import { LinearRouter } from './router'
 
 describe('LinearRouter', () => {
   runTest({
@@ -124,7 +124,10 @@ describe('LinearRouter', () => {
       })
 
       it('should match multiple parameters', () => {
-        const result = LinearRouter.matchRoute('/users/123/posts/456', '/users/:userId/posts/:postId')
+        const result = LinearRouter.matchRoute(
+          '/users/123/posts/456',
+          '/users/:userId/posts/:postId'
+        )
         expect(result).not.toBeNull()
         expect(result!.params).toEqual({ userId: '123', postId: '456' })
         expect(result!.paramIndexMap).toEqual({ userId: 0, postId: 1 })
@@ -169,7 +172,10 @@ describe('LinearRouter', () => {
       })
 
       it('should match parameter with custom pattern', () => {
-        const result = LinearRouter.matchRoute('/files/image.jpg', '/files/:filename{[^/]+\\.[a-z]+}')
+        const result = LinearRouter.matchRoute(
+          '/files/image.jpg',
+          '/files/:filename{[^/]+\\.[a-z]+}'
+        )
         expect(result).not.toBeNull()
         expect(result!.params).toEqual({ filename: 'image.jpg' })
       })
@@ -177,13 +183,19 @@ describe('LinearRouter', () => {
 
     describe('Complex patterns', () => {
       it('should match mixed static and dynamic segments', () => {
-        const result = LinearRouter.matchRoute('/api/v1/users/123/profile', '/api/v1/users/:id/profile')
+        const result = LinearRouter.matchRoute(
+          '/api/v1/users/123/profile',
+          '/api/v1/users/:id/profile'
+        )
         expect(result).not.toBeNull()
         expect(result!.params).toEqual({ id: '123' })
       })
 
       it('should match multiple parameters with static segments', () => {
-        const result = LinearRouter.matchRoute('/api/users/123/posts/456/comments', '/api/users/:userId/posts/:postId/comments')
+        const result = LinearRouter.matchRoute(
+          '/api/users/123/posts/456/comments',
+          '/api/users/:userId/posts/:postId/comments'
+        )
         expect(result).not.toBeNull()
         expect(result!.params).toEqual({ userId: '123', postId: '456' })
         expect(result!.paramIndexMap).toEqual({ userId: 0, postId: 1 })
