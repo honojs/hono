@@ -3,6 +3,7 @@ import type { ZodSchema } from 'zod'
 import { z } from 'zod'
 import { Hono } from '../hono'
 import { HTTPException } from '../http-exception'
+import { some } from '../middleware/combine'
 import type {
   ErrorHandler,
   ExtractSchema,
@@ -120,12 +121,12 @@ describe('JSON', () => {
       method: 'POST',
       body: JSON.stringify({ foo: 'bar' }),
     })
-    expect(res.status).toBe(200)
-    const data = await res.json()
-    expect(data.foo).toBeUndefined()
+    expect(res.status).toBe(415)
+    const data = await res.text()
+    expect(data).toBe('Missing Content-Type header "application/json"')
   })
 
-  it('Should not validate if Content-Type is wrong', async () => {
+  it('Should not validate and return 415 if Content-Type is wrong', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
@@ -133,7 +134,7 @@ describe('JSON', () => {
       },
       body: JSON.stringify({ foo: 'bar' }),
     })
-    expect(res.status).toBe(200)
+    expect(res.status).toBe(415)
   })
 
   it('Should validate if Content-Type is a application/json with a charset', async () => {
@@ -172,7 +173,7 @@ describe('JSON', () => {
     expect(await res.json()).toEqual({ foo: 'bar' })
   })
 
-  it('Should not validate if Content-Type does not start with application/json', async () => {
+  it('Should return 415 response if Content-Type does not start with application/json', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
       headers: {
@@ -180,9 +181,9 @@ describe('JSON', () => {
       },
       body: JSON.stringify({ foo: 'bar' }),
     })
-    expect(res.status).toBe(200)
-    const data = await res.json()
-    expect(data.foo).toBeUndefined()
+    expect(res.status).toBe(415)
+    const data = await res.text()
+    expect(data).toBe('Missing Content-Type header "application/json"')
   })
 })
 
@@ -229,6 +230,32 @@ describe('FormData', () => {
     })
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ message: 'hi' })
+  })
+
+  it('Should return 415 response if Content-Type is not set', async () => {
+    const formData = new FormData()
+    formData.append('message', 'hi')
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': '',
+      },
+      body: formData,
+    })
+    expect(res.status).toBe(415)
+  })
+
+  it('Should return 415 response if Content-Type is wrong', async () => {
+    const formData = new FormData()
+    formData.append('message', 'hi')
+    const res = await app.request('http://localhost/post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: formData,
+    })
+    expect(res.status).toBe(415)
   })
 
   it('Should validate a URL Encoded Data', async () => {
@@ -323,8 +350,10 @@ describe('JSON and FormData', () => {
   const app = new Hono()
   app.post(
     '/',
-    validator('json', (value) => value),
-    validator('form', (value) => value),
+    some(
+      validator('json', (value) => value),
+      validator('form', (value) => value)
+    ),
     async (c) => {
       const jsonData = c.req.valid('json')
       const formData = c.req.valid('form')
@@ -619,6 +648,9 @@ describe('Validator middleware with Zod validates Form data', () => {
   it('Should validate Form data and return 400 response', async () => {
     const res = await app.request('http://localhost/post', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
     })
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('Invalid!')
@@ -853,6 +885,9 @@ describe('Validator middleware with Zod multiple validators', () => {
   it('Should validate both query param and form data and return 400 response', async () => {
     const res = await app.request('http://localhost/posts?page=2', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
     })
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('Invalid!')
