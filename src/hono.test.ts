@@ -3658,6 +3658,7 @@ describe('app.basePath() with the internal #clone()', () => {
     expect(await res.text()).toBe('Custom error "API Test error"')
   })
 })
+
 describe('Catch-all route with empty segment', () => {
   it('Should return empty string for empty catch-all param', async () => {
     const app = new Hono()

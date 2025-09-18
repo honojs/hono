@@ -103,7 +103,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
   #getDecodedParam(key: string): string | undefined {
     const paramKey = this.#matchResult[0][this.routeIndex][1][key]
     const param = this.#getParamValue(paramKey)
-    return param ? (/\%/.test(param) ? tryDecodeURIComponent(param) : param) : undefined
+    return param && /\%/.test(param) ? tryDecodeURIComponent(param) : param
   }
 
   #getAllDecodedParams(): Record<string, string> {
@@ -112,7 +112,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     const keys = Object.keys(this.#matchResult[0][this.routeIndex][1])
     for (const key of keys) {
       const value = this.#getParamValue(this.#matchResult[0][this.routeIndex][1][key])
-      if (value && typeof value === 'string') {
+      if (value !== undefined) {
         decoded[key] = /\%/.test(value) ? tryDecodeURIComponent(value) : value
       }
     }

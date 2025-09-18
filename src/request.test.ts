@@ -64,7 +64,7 @@ describe('Param', () => {
     ])
 
     expect(req.param('id')).toBe('123')
-    expect(req.param('name')).toBe('')
+    expect(req.param('name')).toBe(undefined)
 
     req.routeIndex = 1
     expect(req.param('id')).toBe('123')
@@ -81,7 +81,7 @@ describe('Param', () => {
     ])
 
     expect(req.param('id')).toBe('123')
-    expect(req.param('name')).toBe('')
+    expect(req.param('name')).toBe(undefined)
 
     req.routeIndex = 1
     expect(req.param('id')).toBe('456')
