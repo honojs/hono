@@ -3,6 +3,7 @@
  * @module
  */
 import type { Hono } from '../../hono'
+import type { Env, Schema } from '../../types'
 import { handle } from './handler'
 import type { HandleOptions } from './handler'
 
@@ -24,8 +25,8 @@ import type { HandleOptions } from './handler'
  * fire(app)
  * ```
  */
-const fire = (
-  app: Hono,
+const fire = <E extends Env, S extends Schema, BasePath extends string>(
+  app: Hono<E, S, BasePath>,
   options: HandleOptions = {
     fetch: undefined,
   }
