@@ -63,6 +63,11 @@ describe('routePath', () => {
 
     expect(routePath(c)).toBe('/:id')
 
+    expect(routePath(c, 0)).toBe('/:id')
+    expect(routePath(c, 1)).toBe('/:id/:name')
+    expect(routePath(c, -1)).toBe('/:id/:name')
+    expect(routePath(c, 2)).toBe('')
+
     c.req.routeIndex = 1
     expect(routePath(c)).toBe('/:id/:name')
   })
@@ -96,6 +101,12 @@ describe('baseRoutePath', () => {
 
     expect(baseRoutePath(c)).toBe('/')
 
+    expect(baseRoutePath(c, 0)).toBe('/')
+    expect(baseRoutePath(c, 1)).toBe('/sub')
+    expect(baseRoutePath(c, 2)).toBe('/:sub')
+    expect(baseRoutePath(c, -1)).toBe('/:sub')
+    expect(baseRoutePath(c, 3)).toBe('')
+
     c.req.routeIndex = 1
     expect(baseRoutePath(c)).toBe('/sub')
 
@@ -128,6 +139,11 @@ describe('basePath', () => {
 
     expect(basePath(c)).toBe('/')
     expect(basePath(c)).toBe('/') // cached value
+
+    expect(basePath(c, 0)).toBe('/')
+    expect(basePath(c, 1)).toBe('/sub')
+    expect(basePath(c, -1)).toBe('/sub')
+    expect(basePath(c, 2)).toBe('')
 
     c.req.routeIndex = 1
     expect(basePath(c)).toBe('/sub')
