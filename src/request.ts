@@ -70,6 +70,7 @@ export class HonoRequest<P extends string = '/', I extends Input['out'] = {}> {
     this.path = path
     this.#matchResult = matchResult
     this.#validatedData = {}
+    /* eslint-disable @typescript-eslint/no-this-alias */
     const self = this
     Object.defineProperty(this, 'raw', {
       get() {
