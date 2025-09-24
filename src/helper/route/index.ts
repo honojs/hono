@@ -37,23 +37,32 @@ export const matchedRoutes = (c: Context): RouterRoute[] =>
  * Get the route path registered within the handler
  *
  * @param {Context} c - The context object
+ * @param {number} index - The index of the root from which to retrieve the path, similar to Array.prototype.at(), where a negative number is the index counted from the end of the matching root. Defaults to the current root index.
  * @returns The route path registered within the handler
  *
  * @example
  * ```ts
  * import { routePath } from 'hono/route'
  *
+ * app.use('*', (c, next) => {
+ *   console.log(routePath(c)) // '*'
+ *   console.log(routePath(c, -1)) // '/posts/:id'
+ *   return next()
+ * })
+ *
  * app.get('/posts/:id', (c) => {
  *   return c.text(routePath(c)) // '/posts/:id'
  * })
  * ```
  */
-export const routePath = (c: Context): string => matchedRoutes(c)[c.req.routeIndex].path
+export const routePath = (c: Context, index?: number): string =>
+  matchedRoutes(c).at(index ?? c.req.routeIndex)?.path ?? ''
 
 /**
  * Get the basePath of the as-is route specified by routing.
  *
  * @param {Context} c - The context object
+ * @param {number} index - The index of the root from which to retrieve the path, similar to Array.prototype.at(), where a negative number is the index counted from the end of the matching root. Defaults to the current root index.
  * @returns The basePath of the as-is route specified by routing.
  *
  * @example
@@ -70,12 +79,14 @@ export const routePath = (c: Context): string => matchedRoutes(c)[c.req.routeInd
  * app.route('/:sub', subApp)
  * ```
  */
-export const baseRoutePath = (c: Context): string => matchedRoutes(c)[c.req.routeIndex].basePath
+export const baseRoutePath = (c: Context, index?: number): string =>
+  matchedRoutes(c).at(index ?? c.req.routeIndex)?.basePath ?? ''
 
 /**
  * Get the basePath with embedded parameters
  *
  * @param {Context} c - The context object
+ * @param {number} index - The index of the root from which to retrieve the path, similar to Array.prototype.at(), where a negative number is the index counted from the end of the matching root. Defaults to the current root index.
  * @returns The basePath with embedded parameters.
  *
  * @example
@@ -92,17 +103,17 @@ export const baseRoutePath = (c: Context): string => matchedRoutes(c)[c.req.rout
  * app.route('/:sub', subApp)
  * ```
  */
-const basePathCacheMap: WeakMap<Context, string[]> = new WeakMap()
-export const basePath = (c: Context): string => {
-  const routeIndex = c.req.routeIndex
+const basePathCacheMap: WeakMap<Context, Record<number, string>> = new WeakMap()
+export const basePath = (c: Context, index?: number): string => {
+  index ??= c.req.routeIndex
 
   const cache = basePathCacheMap.get(c) || []
-  if (typeof cache[routeIndex] === 'string') {
-    return cache[routeIndex]
+  if (typeof cache[index] === 'string') {
+    return cache[index]
   }
 
   let result: string
-  const rp = baseRoutePath(c)
+  const rp = baseRoutePath(c, index)
   if (!/[:*]/.test(rp)) {
     result = rp
   } else {
@@ -123,7 +134,7 @@ export const basePath = (c: Context): string => {
     result = reqPath.substring(0, basePathLength)
   }
 
-  cache[routeIndex] = result
+  cache[index] = result
   basePathCacheMap.set(c, cache)
 
   return result
