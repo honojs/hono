@@ -534,21 +534,20 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    * @example
    * ```ts
    * // == logger-middleware.ts
-   * // Adds a variable `logger` to `c.env` in the middleware
-   * const loggerMiddleware = createMiddleware<{ Variables: { logger: Logger } }>(...);
+   * // Adds a variable `logger` to `c.var` in the middleware
+   * export const loggerMiddleware = createMiddleware<{ Variables: { logger: Logger } }>(...);
    *
    * // == index.ts
    * // Initialize an OpenAPIHono instance (zod-openapi middleware)
-   * const baseApp = new OpenAPIHono();
-   * const baseAppWithMiddlewares = baseApp
-   *   .openapi(someRoute, someHandler)
+   * export const _baseApp = new OpenAPIHono();
+   * export const baseAppWithMiddlewares = baseApp
    *   .use(loggerMiddleware())
    *   // Because we called .use(), the return type is now
    *   // `Hono<{ Variables: { logger: Logger } }>` instead of `OpenAPIHono`
    *   .openapi(someRoute, someHandler) // <- ❌ Error, Hono instance doesn't have .openapi()!
    *
-   * // Helper function to get the correctly typed base app
-   * export const getBaseApp = () => baseApp as OpenAPIHono<(typeof baseAppWithMiddlewares)["~env"]>;
+   * // Export the original `_baseApp` OpenAPIHono instance, but still retain the correct inferred Env types from `baseAppWithMiddlewares`
+   * export const baseApp = _baseApp as OpenAPIHono<(typeof baseAppWithMiddlewares)["~env"]>;
    *
    * // == auth.ts
    * const authRoutes = getBaseApp()
