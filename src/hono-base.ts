@@ -525,7 +525,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
     addEventListener('fetch', (event: FetchEventLike): void => {
       event.respondWith(this.#dispatch(event.request, event, undefined, event.request.method))
     })
-  }
+  };
 
   /**
    * `['~env']` is meant to be a type-only property to expose the generic type parameter `E`.
@@ -557,8 +557,8 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    *     c.var.logger("log message");
    *   })
    */
-  ["~env"]: E = undefined as unknown as E
-  ["~schema"]: S = undefined as unknown as S
+  ['~env']: E = undefined as unknown as E;
+  ['~schema']: S = undefined as unknown as S
 }
 
 export { Hono as HonoBase }
