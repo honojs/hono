@@ -556,8 +556,7 @@ class Hono<E extends Env = Env, S extends Schema = {}, BasePath extends string =
    *     c.var.logger("log message");
    *   })
    */
-  ['~env']: E = undefined as unknown as E;
-  ['~schema']: S = undefined as unknown as S
+  ['~env']: E = undefined as unknown as E
 }
 
 export { Hono as HonoBase }
