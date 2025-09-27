@@ -49,6 +49,11 @@ export interface Router<T> {
    * @returns The result of the match.
    */
   match(method: string, path: string): Result<T>
+
+  /**
+   * Clears all routes from the router.
+   */
+  clear?(): void
 }
 
 /**
