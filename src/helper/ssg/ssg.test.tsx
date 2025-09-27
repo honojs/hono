@@ -9,7 +9,13 @@ import {
   onlySSG,
   ssgParams,
 } from './middleware'
-import { defaultExtensionMap, fetchRoutesContent, saveContentToFile, toSSG } from './ssg'
+import {
+  defaultExtensionMap,
+  fetchRoutesContent,
+  saveContentToFile,
+  toSSG,
+  defaultPlugin,
+} from './ssg'
 import type {
   AfterGenerateHook,
   AfterResponseHook,
@@ -826,11 +832,39 @@ describe('SSG Plugin System', () => {
     app.get('/', (c) => c.html('<h1>Home</h1>'))
     app.get('/about', (c) => c.html('<h1>About</h1>'))
     app.get('/blog', (c) => c.html('<h1>Blog</h1>'))
+    app.get('/created', (c) => c.text('201 Created', 201))
+    app.get('/redirect', (c) => c.redirect('/'))
+    app.get('/notfound', (c) => c.notFound())
+    app.get('/error', (c) => c.text('500 Error', 500))
 
     fsMock = {
       writeFile: vi.fn(() => Promise.resolve()),
       mkdir: vi.fn(() => Promise.resolve()),
     }
+  })
+
+  it('should use defaultPlugin when plugins option is omitted', async () => {
+    // @ts-expect-error defaultPlugin has afterResponseHook
+    const defaultPluginSpy = vi.spyOn(defaultPlugin, 'afterResponseHook')
+    await toSSG(app, fsMock, { dir: './static' })
+    expect(defaultPluginSpy).toHaveBeenCalled()
+    defaultPluginSpy.mockRestore()
+  })
+
+  it('should skip non-200 responses with defaultPlugin', async () => {
+    const result = await toSSG(app, fsMock, { plugins: [defaultPlugin], dir: './static' })
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '<h1>Home</h1>')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', '<h1>About</h1>')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/blog.html', '<h1>Blog</h1>')
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/created.txt', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/redirect.txt', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/notfound.txt', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/error.txt', expect.any(String))
+    expect(result.files.some((f) => f.includes('created'))).toBe(false)
+    expect(result.files.some((f) => f.includes('redirect'))).toBe(false)
+    expect(result.files.some((f) => f.includes('notfound'))).toBe(false)
+    expect(result.files.some((f) => f.includes('error'))).toBe(false)
+    expect(result.success).toBe(true)
   })
 
   it('should correctly apply plugins with beforeRequestHook', async () => {
@@ -849,7 +883,7 @@ describe('SSG Plugin System', () => {
       plugins: [plugin],
     })
 
-    expect(result.files).toHaveLength(2) // Home and About pages only
+    expect(result.files).toHaveLength(6)
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '<h1>Home</h1>')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', '<h1>About</h1>')
     expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/blog.html', '<h1>Blog</h1>')
@@ -916,7 +950,7 @@ describe('SSG Plugin System', () => {
       plugins: [skipBlogPlugin, prefixPlugin, sitemapPlugin],
     })
 
-    expect(result.files).toHaveLength(3) // Home, About, and sitemap.xml
+    expect(result.files).toHaveLength(7)
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '[Prefix] <h1>Home</h1>')
     expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', '[Prefix] <h1>About</h1>')
     expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/blog.html', expect.any(String))
