@@ -273,4 +273,9 @@ export class RegExpRouter<T> implements Router<T> {
       return buildMatcherFromPreprocessedRoutes(routes)
     }
   }
+
+  clear(): void {
+    this.#middleware = { [METHOD_NAME_ALL]: Object.create(null) }
+    this.#routes = { [METHOD_NAME_ALL]: Object.create(null) }
+  }
 }
