@@ -908,6 +908,112 @@ describe('Infer the response type with different status codes', () => {
   })
 })
 
+describe('Infer the response types from middlewares', () => {
+  const app = new Hono()
+    .get(
+      '/',
+      validator('query', (input, c) => {
+        if (!input.page || typeof input.page !== 'string') {
+          return c.json({ error: 'Bad request' as const }, 400)
+        }
+
+        return input as { page: string }
+      }),
+      async (c) => {
+        const query = c.req.valid('query')
+        return c.json({ data: 'foo', page: query.page }, 200)
+      }
+    )
+    .post(
+      '/posts',
+      async (c, next) => {
+        const auth = c.req.header('authorization')
+        if (!auth || !auth.startsWith('Bearer ')) {
+          return c.json({ error: 'Unauthorized' as const }, 401)
+        }
+        return next()
+      },
+      validator('json', (input, c) => {
+        if (!input.title) {
+          return c.json({ error: 'Bad request' as const }, 400)
+        }
+
+        return input as { title: string }
+      }),
+      (c) => {
+        const data = c.req.valid('json')
+        return c.json(data, 200)
+      }
+    )
+
+  type AppType = typeof app
+  const client = hc<AppType>('', { fetch: app.request })
+
+  it('Should infer response type of status 200 correctly', () => {
+    const req = client.posts.$post
+
+    type Actual = InferResponseType<typeof req, 200>
+    type Expected = {
+      title: string
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer response type of status 400 correctly', () => {
+    const req = client.posts.$post
+
+    type Actual = InferResponseType<typeof req, 400>
+    type Expected = {
+      error: 'Bad request'
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer response type of status 401 correctly', () => {
+    const req = client.posts.$post
+
+    type Actual = InferResponseType<typeof req, 401>
+    type Expected = {
+      error: 'Unauthorized'
+    }
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should infer all possible response statuses', async () => {
+    const req = await client.posts.$post({
+      json: {
+        title: 'hello'
+      }
+    })
+
+    type Actual = typeof req.status
+    type Expected = 200 | 400 | 401
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should properly assign response to corresponding status', async () => {
+    const req = await client.posts.$post({
+      json: {
+        title: 'hello'
+      }
+    })
+
+    if (req.status === 200) {
+      const data = await req.json();
+
+      expectTypeOf(data).toEqualTypeOf<{ title: string }>()
+    } else if (req.status === 400) {
+      const data = await req.json();
+
+      expectTypeOf(data).toEqualTypeOf<{ error: 'Bad request' }>()
+    } else if (req.status === 401) {
+      const data = await req.json();
+
+      expectTypeOf(data).toEqualTypeOf<{ error: 'Unauthorized' }>()
+    }
+  })
+})
+
 describe('$url() with a param option', () => {
   const app = new Hono()
     .get('/posts/:id/comments', (c) => c.json({ ok: true }))
