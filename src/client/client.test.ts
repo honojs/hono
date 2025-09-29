@@ -982,8 +982,8 @@ describe('Infer the response types from middlewares', () => {
   it('Should infer all possible response statuses', async () => {
     const req = await client.posts.$post({
       json: {
-        title: 'hello'
-      }
+        title: 'hello',
+      },
     })
 
     type Actual = typeof req.status
@@ -994,20 +994,20 @@ describe('Infer the response types from middlewares', () => {
   it('Should properly assign response to corresponding status', async () => {
     const req = await client.posts.$post({
       json: {
-        title: 'hello'
-      }
+        title: 'hello',
+      },
     })
 
     if (req.status === 200) {
-      const data = await req.json();
+      const data = await req.json()
 
       expectTypeOf(data).toEqualTypeOf<{ title: string }>()
     } else if (req.status === 400) {
-      const data = await req.json();
+      const data = await req.json()
 
       expectTypeOf(data).toEqualTypeOf<{ error: 'Bad request' }>()
     } else if (req.status === 401) {
-      const data = await req.json();
+      const data = await req.json()
 
       expectTypeOf(data).toEqualTypeOf<{ error: 'Unauthorized' }>()
     }

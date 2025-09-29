@@ -1,12 +1,7 @@
 import type { Context } from '../context'
 import { getCookie } from '../helper/cookie'
 import { HTTPException } from '../http-exception'
-import type {
-  Env,
-  MiddlewareHandler,
-  TypedResponse,
-  ValidationTargets,
-} from '../types'
+import type { Env, MiddlewareHandler, TypedResponse, ValidationTargets } from '../types'
 import type { BodyData } from '../utils/body'
 import { bufferToFormData } from '../utils/buffer'
 
@@ -171,7 +166,7 @@ export const validator = <
 
     c.req.addValidatedData(target, res as never)
 
-    return await next() as ExtractValidationResponse<VF>
+    return (await next()) as ExtractValidationResponse<VF>
   }
 }
 
