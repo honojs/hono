@@ -130,12 +130,13 @@ export interface HandlerInterface<
     I2 extends Input = I,
     R extends HandlerResponse<any> = any,
     E2 extends Env = E,
-    E3 extends Env = IntersectNonAnyTypes<[E, E2]>
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    M1 extends H<E2, P, any> = H<E2, P, any>
   >(
-    ...handlers: [H<E2, P, I>, H<E3, P, I2, R>]
+    ...handlers: [H<E2, P, I> & M1, H<E3, P, I2, R>]
   ): HonoBase<
     IntersectNonAnyTypes<[E, E2, E3]>,
-    S & ToSchema<M, P, I2, MergeTypedResponse<R>>,
+    S & ToSchema<M, P, I2, MergeTypedResponse<R> | MergeMiddlewareResponseStrict<M1>>,
     BasePath
   >
 
@@ -173,7 +174,9 @@ export interface HandlerInterface<
         M,
         P,
         I3,
-        MergeTypedResponse<R> | MergeMiddlewareResponse<M1> | MergeMiddlewareResponse<M2>
+        | MergeTypedResponse<R>
+        | MergeMiddlewareResponseStrict<M1>
+        | MergeMiddlewareResponseStrict<M2>
       >,
     BasePath
   >
