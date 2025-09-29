@@ -305,9 +305,9 @@ export class Factory<E extends Env = Env, P extends string = string> {
     return app
   }
 
-  createMiddleware = <I extends Input = {}>(
-    middleware: MiddlewareHandler<E, P, I>
-  ): MiddlewareHandler<E, P, I> => middleware
+  createMiddleware = <I extends Input = {}, R extends HandlerResponse<any> = Response>(
+    middleware: MiddlewareHandler<E, P, I, R>
+  ): MiddlewareHandler<E, P, I, R> => middleware
 
   createHandlers: CreateHandlersInterface<E, P> = (...handlers: any) => {
     // @ts-expect-error this should not be typed
@@ -323,7 +323,8 @@ export const createFactory = <E extends Env = Env, P extends string = string>(in
 export const createMiddleware = <
   E extends Env = any,
   P extends string = string,
-  I extends Input = {}
+  I extends Input = {},
+  R extends HandlerResponse<any> = Response
 >(
-  middleware: MiddlewareHandler<E, P, I>
-): MiddlewareHandler<E, P, I> => middleware
+  middleware: MiddlewareHandler<E, P, I, R>
+): MiddlewareHandler<E, P, I, R> => middleware
