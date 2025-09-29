@@ -190,7 +190,7 @@ interface JSONRespond {
  *
  * @returns {Response & TypedResponse<JSONParsed<T>, U, 'json'>} - The response after rendering the JSON object, typed with the provided object and status code types.
  */
-export type JSONRespondReturn<
+type JSONRespondReturn<
   T extends JSONValue | {} | InvalidJSONValue,
   U extends ContentfulStatusCode
 > = Response & TypedResponse<JSONParsed<T>, U, 'json'>
