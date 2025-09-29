@@ -109,10 +109,12 @@ describe('HandlerInterface', () => {
     const middleware: MiddlewareHandler<
       Env,
       '/foo',
-      { in: { json: Payload }; out: { json: Payload } }
+      { in: { json: Payload }; out: { json: Payload } },
+      never
     > = async (_c, next) => {
       await next()
     }
+
     test('Context and AppType', () => {
       const route = app.get('/foo', middleware, (c) => {
         type Expected = Context<Env, '/foo', { in: { json: Payload }; out: { json: Payload } }>
@@ -145,7 +147,7 @@ describe('HandlerInterface', () => {
 
   describe('With path parameters', () => {
     const app = new Hono<Env>()
-    const middleware: MiddlewareHandler<Env, '/post/:id'> = async (_c, next) => {
+    const middleware: MiddlewareHandler<Env, '/post/:id', {}, never> = async (_c, next) => {
       await next()
     }
     it('Should have the `param` type', () => {
